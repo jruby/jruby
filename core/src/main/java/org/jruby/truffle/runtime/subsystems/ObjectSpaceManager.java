@@ -219,10 +219,10 @@ public class ObjectSpaceManager {
 
         };
 
-        context.getSafepointManager().pauseAllThreadsAndExecute(new Consumer<Boolean>() {
+        context.getSafepointManager().pauseAllThreadsAndExecute(new Consumer<RubyThread>() {
 
             @Override
-            public void accept(Boolean isPausingThread) {
+            public void accept(RubyThread currentThread) {
                 synchronized (liveObjects) {
                     context.getCoreLibrary().getGlobalVariablesObject().visitObjectGraph(visitor);
                     context.getCoreLibrary().getMainObject().visitObjectGraph(visitor);

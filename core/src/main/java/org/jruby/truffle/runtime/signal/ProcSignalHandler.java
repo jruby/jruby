@@ -11,6 +11,7 @@ package org.jruby.truffle.runtime.signal;
 
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyProc;
+import org.jruby.truffle.runtime.core.RubyThread;
 import org.jruby.truffle.runtime.subsystems.ThreadManager;
 import org.jruby.truffle.runtime.util.Consumer;
 
@@ -30,11 +31,10 @@ public class ProcSignalHandler implements SignalHandler {
     @Override
     public void handle(Signal signal) {
         final ThreadManager threadManager = context.getThreadManager();
-        context.getSafepointManager().pauseAllThreadsAndExecuteSignalHandler(new Consumer<Boolean>() {
+        context.getSafepointManager().pauseAllThreadsAndExecuteSignalHandler(new Consumer<RubyThread>() {
 
-            @Override
-            public void accept(Boolean isPausingThread) {
-                if (threadManager.getCurrentThread() == threadManager.getRootThread()) {
+            public void accept(RubyThread currentThread) {
+                if (currentThread == threadManager.getRootThread()) {
                     proc.rootCall();
                 }
             }

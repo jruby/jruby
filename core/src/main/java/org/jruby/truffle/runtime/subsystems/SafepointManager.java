@@ -31,7 +31,7 @@ public class SafepointManager {
     @CompilerDirectives.CompilationFinal private Assumption assumption = Truffle.getRuntime().createAssumption();
     private CyclicBarrier barrier;
     private int liveThreads = 1;
-    private Consumer<Boolean> action;
+    private Consumer<RubyThread> action;
 
     public SafepointManager(RubyContext context) {
         this.context = context;
@@ -74,13 +74,13 @@ public class SafepointManager {
         waitOnBarrier();
 
         try {
-            action.accept(false);
+            action.accept(context.getThreadManager().getCurrentThread());
         } finally {
             waitOnBarrier();
         }
     }
 
-    public void pauseAllThreadsAndExecute(final Consumer<Boolean> action) {
+    public void pauseAllThreadsAndExecute(final Consumer<RubyThread> action) {
         CompilerDirectives.transferToInterpreter();
 
         try {
@@ -98,7 +98,7 @@ public class SafepointManager {
             assumption = Truffle.getRuntime().createAssumption();
 
             try {
-                action.accept(true);
+                action.accept(context.getThreadManager().getCurrentThread());
             } finally {
                 // wait for all threads to execute the action
                 waitOnBarrier();
@@ -108,7 +108,7 @@ public class SafepointManager {
         }
     }
 
-    public void pauseAllThreadsAndExecuteSignalHandler(final Consumer<Boolean> action) {
+    public void pauseAllThreadsAndExecuteSignalHandler(final Consumer<RubyThread> action) {
         CompilerDirectives.transferToInterpreter();
 
         // The current (Java) thread is not a Ruby thread, so we do not touch the global lock.

@@ -114,11 +114,11 @@ public abstract class ThreadNodes {
 
         @Specialization
         public RubyThread kill(final RubyThread thread) {
-            getContext().getSafepointManager().pauseAllThreadsAndExecute(new Consumer<Boolean>() {
+            getContext().getSafepointManager().pauseAllThreadsAndExecute(new Consumer<RubyThread>() {
 
                 @Override
-                public void accept(Boolean isPausingThread) {
-                    if (getContext().getThreadManager().getCurrentThread() == thread) {
+                public void accept(RubyThread currentThread) {
+                    if (currentThread == thread) {
                         throw new ThreadExitException();
                     }
                 }
@@ -230,11 +230,11 @@ public abstract class ThreadNodes {
 
             final RaiseException exceptionWrapper = new RaiseException((RubyException) exception);
 
-            getContext().getSafepointManager().pauseAllThreadsAndExecute(new Consumer<Boolean>() {
+            getContext().getSafepointManager().pauseAllThreadsAndExecute(new Consumer<RubyThread>() {
 
                 @Override
-                public void accept(Boolean isPausingThread) {
-                    if (getContext().getThreadManager().getCurrentThread() == thread) {
+                public void accept(RubyThread currentThread) {
+                    if (currentThread == thread) {
                         throw exceptionWrapper;
                     }
                 }
