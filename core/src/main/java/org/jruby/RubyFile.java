@@ -410,37 +410,6 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         return null;
     }
 
-    @JRubyMethod(required = 1)
-    public IRubyObject lchmod(ThreadContext context, IRubyObject arg) {
-        int mode = (int) arg.convertToInteger().getLongValue();
-
-        if (!new File(getPath()).exists()) {
-            throw context.runtime.newErrnoENOENTError(getPath());
-        }
-
-        return context.runtime.newFixnum(context.runtime.getPosix().lchmod(getPath(), mode));
-    }
-
-    // TODO: this method is not present in MRI!
-    @JRubyMethod(required = 2)
-    public IRubyObject lchown(ThreadContext context, IRubyObject arg1, IRubyObject arg2) {
-        int owner = -1;
-        if (!arg1.isNil()) {
-            owner = RubyNumeric.num2int(arg1);
-        }
-
-        int group = -1;
-        if (!arg2.isNil()) {
-            group = RubyNumeric.num2int(arg2);
-        }
-
-        if (!new File(getPath()).exists()) {
-            throw context.runtime.newErrnoENOENTError(getPath());
-        }
-
-        return context.runtime.newFixnum(context.runtime.getPosix().lchown(getPath(), owner, group));
-    }
-
     @JRubyMethod
     public IRubyObject lstat(ThreadContext context) {
         checkClosed(context);
