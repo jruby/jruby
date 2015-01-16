@@ -5755,6 +5755,13 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
         return this;
     }
 
+    @JRubyMethod
+    public IRubyObject freeze(ThreadContext context) {
+        if (isFrozen()) return this;
+        resize(size());
+        return super.freeze(context);
+    }
+
     /**
      * Mutator for internal string representation.
      *
