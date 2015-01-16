@@ -450,14 +450,6 @@ public class MapJavaProxy extends ConcreteJavaProxy {
         return getOrCreateRubyHashMap().key(context, expected);
     }
 
-    /** rb_hash_indexes
-     *
-     */
-    @JRubyMethod(name = {"indexes", "indices"}, rest = true)
-    public RubyArray indices(ThreadContext context, IRubyObject[] indices) {
-        return getOrCreateRubyHashMap().indices(context, indices);
-    }
-
     /** rb_hash_keys
      *
      */
