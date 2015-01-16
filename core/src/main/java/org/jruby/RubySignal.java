@@ -58,7 +58,7 @@ public class RubySignal {
         //registerThreadDumpSignalHandler(runtime);
     }
     
-    @JRubyMethod(module = true)
+    @JRubyMethod(meta = true)
     public static IRubyObject list(ThreadContext context, IRubyObject recv) {
         Ruby runtime = recv.getRuntime();
         RubyHash names = RubyHash.newHash(runtime);
@@ -79,27 +79,27 @@ public class RubySignal {
         return names;
     }
 
-    @JRubyMethod(required = 2, module = true)
+    @JRubyMethod(required = 2, meta = true)
     public static IRubyObject __jtrap_kernel(final IRubyObject recv, IRubyObject block, IRubyObject sig) {
         return SIGNALS.trap(recv, block, sig);
     }
 
-    @JRubyMethod(required = 1, module = true)
+    @JRubyMethod(required = 1, meta = true)
     public static IRubyObject __jtrap_platform_kernel(final IRubyObject recv, IRubyObject sig) {
         return SIGNALS.restorePlatformDefault(recv, sig);
     }
 
-    @JRubyMethod(required = 1, module = true)
+    @JRubyMethod(required = 1, meta = true)
     public static IRubyObject __jtrap_osdefault_kernel(final IRubyObject recv, IRubyObject sig) {
         return SIGNALS.restoreOSDefault(recv, sig);
     }
 
-    @JRubyMethod(required = 1, module = true)
+    @JRubyMethod(required = 1, meta = true)
     public static IRubyObject __jtrap_restore_kernel(final IRubyObject recv, IRubyObject sig) {
         return SIGNALS.ignore(recv, sig);
     }
 
-    @JRubyMethod(required = 1, module = true)
+    @JRubyMethod(required = 1, meta = true)
     public static IRubyObject signame(ThreadContext context, final IRubyObject recv, IRubyObject rubySig) {
         long sig = rubySig.convertToInteger().getLongValue();
         String signame = signo2signm(sig);
