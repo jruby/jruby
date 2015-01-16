@@ -25,7 +25,10 @@ import org.jruby.truffle.runtime.core.RubyEncoding;
 import org.jruby.truffle.runtime.core.RubyNilClass;
 import org.jruby.truffle.runtime.core.RubyRegexp;
 import org.jruby.truffle.runtime.core.RubyString;
+import org.jruby.truffle.runtime.core.RubySymbol;
 import org.jruby.util.ByteList;
+
+import static org.jruby.util.StringSupport.CR_7BIT;
 
 @CoreClass(name = "Regexp")
 public abstract class RegexpNodes {
@@ -338,6 +341,35 @@ public abstract class RegexpNodes {
             }
 
             return regexp.getRegex().getOptions();
+        }
+
+    }
+
+    @CoreMethod(names = { "quote", "escape" }, needsSelf = false, onSingleton = true, required = 1)
+    public abstract static class QuoteNode extends CoreMethodNode {
+
+        public QuoteNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public QuoteNode(QuoteNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public RubyString quote(RubyString raw) {
+            notDesignedForCompilation();
+
+            boolean isAsciiOnly = raw.getByteList().getEncoding().isAsciiCompatible() && raw.scanForCodeRange() == CR_7BIT;
+
+            return getContext().makeString(org.jruby.RubyRegexp.quote19(raw.getBytes(), isAsciiOnly));
+        }
+
+        @Specialization
+        public RubyString quote(RubySymbol raw) {
+            notDesignedForCompilation();
+
+            return quote(raw.toRubyString());
         }
 
     }
