@@ -46,6 +46,7 @@
           <include>bin/rdoc*</include>
           <include>bin/testrb*</include>
           <include>lib/ruby/stdlib/**</include>
+          <include>lib/ruby/truffle/**</include>
         </includes>
         <excludes>
           <exclude>bin/jruby</exclude>
