@@ -1451,14 +1451,6 @@ public class RubyHash extends RubyObject implements Map {
         return modified[0];
     }
 
-    /** rb_hash_sort
-     *
-     */
-    @JRubyMethod
-    public IRubyObject sort(ThreadContext context, Block block) {
-        return to_a().sort_bang(context, block);
-    }
-
     /** rb_hash_index
      *
      */
