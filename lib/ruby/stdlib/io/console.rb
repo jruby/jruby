@@ -190,7 +190,7 @@ if RbConfig::CONFIG['host_os'].downcase =~ /darwin|openbsd|freebsd|netbsd|linux/
       nil
     end
   end
-else
+elsif RbConfig::CONFIG['host_os'] !~ /(mswin)|(win32)|(ming)/
   result = begin
     old_stderr = $stderr.dup
     $stderr.reopen('/dev/null')
