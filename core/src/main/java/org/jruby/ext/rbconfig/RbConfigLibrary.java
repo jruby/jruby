@@ -474,7 +474,7 @@ public class RbConfigLibrary implements Library {
         return SafePropertyAccessor.getProperty("jruby.shell", Platform.IS_WINDOWS ? "cmd.exe" : "/bin/sh").replace('\\', '/');
     }
 
-    @JRubyMethod(name = "ruby", module = true)
+    @JRubyMethod(name = "ruby", meta = true)
     public static IRubyObject ruby(ThreadContext context, IRubyObject recv) {
         Ruby runtime = context.runtime;
         RubyHash configHash = (RubyHash) runtime.getModule("RbConfig").getConstant("CONFIG");
