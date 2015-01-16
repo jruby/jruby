@@ -585,7 +585,6 @@ public class RubyFixnum extends RubyInteger implements Constantizable {
         return context.runtime.getFalse();
     }
 
-    @JRubyMethod
     public IRubyObject pred(ThreadContext context) {
         return context.runtime.newFixnum(value-1);
     }
