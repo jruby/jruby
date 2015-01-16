@@ -188,7 +188,7 @@ public class RubyProcess {
             return invokedynamic(context, runtime.newFixnum(status), MethodNames.OP_EQUAL, other);
         }
 
-        @JRubyMethod(name = {"to_i", "to_int"})
+        @JRubyMethod(name = {"to_i"})
         public IRubyObject to_i(ThreadContext context) {
             return to_i(context.runtime);
         }
