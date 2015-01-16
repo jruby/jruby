@@ -1038,13 +1038,6 @@ public class RubyKernel {
         }
     };
 
-
-    @JRubyMethod(module = true, visibility = PRIVATE)
-    public static IRubyObject callcc(ThreadContext context, IRubyObject recv, Block block) {
-        RubyContinuation continuation = new RubyContinuation(context.runtime);
-        return continuation.enter(context, continuation, block);
-    }
-
     public static IRubyObject caller(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
         return caller20(context, recv, args, block);
     }
