@@ -1494,14 +1494,6 @@ public class RubyHash extends RubyObject implements Map {
         }
     }
 
-    /** rb_hash_indexes
-     *
-     */
-    @JRubyMethod(name = {"indexes", "indices"}, rest = true)
-    public RubyArray indices(ThreadContext context, IRubyObject[] indices) {
-        return values_at(context, indices);
-    }
-
     /** rb_hash_keys
      *
      */
