@@ -73,7 +73,7 @@ freezing to) a specific jruby-complete jar version.</description>
       </extension>
     </extensions>
     <directory>${basedir}/pkg</directory>
-    <finalName>${project.artifactId}-9.0.0.0.pre1-SNAPSHOT</finalName>
+    <finalName>${project.artifactId}-9.0.0.0.pre1</finalName>
     <plugins>
       <plugin>
         <groupId>de.saumya.mojo</groupId>
@@ -120,7 +120,7 @@ freezing to) a specific jruby-complete jar version.</description>
         <artifactId>maven-invoker-plugin</artifactId>
         <configuration>
           <properties>
-            <ruby.version>9.0.0.0.pre1-SNAPSHOT</ruby.version>
+            <ruby.version>9.0.0.0.pre1</ruby.version>
             <gem.home>${project.build.directory}/rubygems</gem.home>
             <gem.path>${project.build.directory}/rubygems</gem.path>
           </properties>
