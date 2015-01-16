@@ -121,6 +121,7 @@ public class RubyFiber extends RubyBasicObject {
                 // TODO(cs) what is a suitable timeout?
                 message = messageQueue.poll(1, TimeUnit.SECONDS);
             } catch (InterruptedException e) {
+                getContext().getSafepointManager().poll();
                 // Poll again
             }
         } while (message == null);

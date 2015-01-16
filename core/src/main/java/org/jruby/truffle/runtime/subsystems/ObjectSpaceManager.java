@@ -138,6 +138,7 @@ public class ObjectSpaceManager {
             try {
                 finalizerReference = (FinalizerReference) finalizerQueue.remove();
             } catch (InterruptedException e) {
+                context.getSafepointManager().poll();
                 continue;
             } finally {
                 context.getThreadManager().enterGlobalLock(runningThread);
@@ -179,6 +180,7 @@ public class ObjectSpaceManager {
                 try {
                     finished.await();
                 } catch (InterruptedException e) {
+                    // TODO: context.getSafepointManager().poll();
                 } finally {
                     context.getThreadManager().enterGlobalLock(finalizerThread);
                 }

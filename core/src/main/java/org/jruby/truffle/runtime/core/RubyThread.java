@@ -116,6 +116,7 @@ public class RubyThread extends RubyBasicObject {
                     finished.await();
                     break;
                 } catch (InterruptedException e) {
+                    getContext().getSafepointManager().poll();
                     // Await again
                 }
             }
