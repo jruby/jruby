@@ -1627,7 +1627,7 @@ public class RubyKernel {
     /* Actual exec definition which calls this internal version is specified 
      * in /core/src/main/ruby/jruby/kernel/kernel.rb.
      */
-    @JRubyMethod(required = 4, module = true, visibility = PRIVATE)
+    @JRubyMethod(required = 4, visibility = PRIVATE)
     public static IRubyObject _exec_internal(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
         Ruby runtime = context.runtime;
         
