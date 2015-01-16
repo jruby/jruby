@@ -692,6 +692,7 @@ public abstract class KernelNodes {
                     exitCode = process.waitFor();
                     break;
                 } catch (InterruptedException e) {
+                    context.getSafepointManager().poll();
                     continue;
                 }
             }
