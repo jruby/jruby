@@ -715,11 +715,7 @@ public abstract class KernelNodes {
 
         @Specialization
         public Object exit(UndefinedPlaceholder exitCode) {
-            notDesignedForCompilation();
-
-            getContext().shutdown();
-            System.exit(0);
-            return null;
+            return exit(0);
         }
 
         @Specialization
