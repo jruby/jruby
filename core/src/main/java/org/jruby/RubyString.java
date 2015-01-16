@@ -5742,6 +5742,26 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
         return newStr;
     }
 
+    @JRubyMethod(name="scrub!")
+    public IRubyObject scrub_bang(ThreadContext context, Block block) {
+        return scrub_bang(context, context.nil, block);
+    }
+
+    // MRI: str_scrub arity 1
+    @JRubyMethod(name="scrub!")
+    public IRubyObject scrub_bang(ThreadContext context, IRubyObject repl, Block block) {
+        IRubyObject newStr = strScrub(context, repl, block);
+        if (!newStr.isNil()) return replace(newStr);
+        return this;
+    }
+
+    @JRubyMethod
+    public IRubyObject freeze(ThreadContext context) {
+        if (isFrozen()) return this;
+        resize(size());
+        return super.freeze(context);
+    }
+
     /**
      * Mutator for internal string representation.
      *
