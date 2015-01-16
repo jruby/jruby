@@ -1210,6 +1210,11 @@ public class RubyFixnum extends RubyInteger implements Constantizable {
         return ((RubyFixnum) this).op_plus_one(context);
     }
 
+    @JRubyMethod
+    public IRubyObject bit_length(ThreadContext context) {
+        return context.runtime.newFixnum(64 - Long.numberOfLeadingZeros(value));
+    }
+
     @Override
     public IRubyObject id() {
         if (value <= Long.MAX_VALUE / 2 && value >= Long.MIN_VALUE / 2) {
