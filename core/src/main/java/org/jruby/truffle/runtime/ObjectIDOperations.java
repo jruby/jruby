@@ -54,7 +54,7 @@ public abstract class ObjectIDOperations {
         return SMALL_FIXNUM_MIN <= fixnum && fixnum <= SMALL_FIXNUM_MAX;
     }
 
-    public static long smallFixnumToIDOverflow(long fixnum) throws ArithmeticException{
+    public static long smallFixnumToIDOverflow(long fixnum) throws ArithmeticException {
         return ExactMath.addExact(ExactMath.multiplyExact(fixnum, 2), 1);
     }
 
