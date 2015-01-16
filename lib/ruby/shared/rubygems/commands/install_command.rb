@@ -21,7 +21,10 @@ class Gem::Commands::InstallCommand < Gem::Command
   def initialize
     defaults = Gem::DependencyInstaller::DEFAULT_OPTIONS.merge({
       :format_executable => false,
+      :lock              => true,
+      :suggest_alternate => true,
       :version           => Gem::Requirement.default,
+      :without_groups    => [],
     })
 
     super 'install', 'Install a gem into the local repository', defaults
@@ -32,10 +35,28 @@ class Gem::Commands::InstallCommand < Gem::Command
     add_version_option
     add_prerelease_option "to be installed. (Only for listed gems)"
 
-    add_option(:"Install/Update", '-g', '--file FILE',
+    add_option(:"Install/Update", '-g', '--file [FILE]',
                'Read from a gem dependencies API file and',
                'install the listed gems') do |v,o|
+      v = Gem::GEM_DEP_FILES.find do |file|
+        File.exist? file
+      end unless v
+
+      unless v then
+        message = v ? v : "(tried #{Gem::GEM_DEP_FILES.join ', '})"
+
+        raise OptionParser::InvalidArgument,
+                "cannot find gem dependencies file #{message}"
+      end
+
       o[:gemdeps] = v
+    end
+
+    add_option(:"Install/Update", '--without GROUPS', Array,
+               'Omit the named groups (comma separated)',
+               'when installing from a gem dependencies',
+               'file') do |v,o|
+      o[:without_groups].concat v.map { |without| without.intern }
     end
 
     add_option(:"Install/Update", '--default',
@@ -44,7 +65,23 @@ class Gem::Commands::InstallCommand < Gem::Command
       o[:install_as_default] = v
     end
 
-    @installed_specs = nil
+    add_option(:"Install/Update", '--explain',
+               'Rather than install the gems, indicate which would',
+               'be installed') do |v,o|
+      o[:explain] = v
+    end
+
+    add_option(:"Install/Update", '--[no-]lock',
+               'Create a lock file (when used with -g/--file)') do |v,o|
+      o[:lock] = v
+    end
+
+    add_option(:"Install/Update", '--[no-]suggestions',
+               'Suggest alternates when gems are not found') do |v,o|
+      o[:suggest_alternate] = v
+    end
+
+    @installed_specs = []
   end
 
   def arguments # :nodoc:
@@ -53,7 +90,7 @@ class Gem::Commands::InstallCommand < Gem::Command
 
   def defaults_str # :nodoc:
     "--both --version '#{Gem::Requirement.default}' --document --no-force\n" +
-    "--install-dir #{Gem.dir}"
+    "--install-dir #{Gem.dir} --lock"
   end
 
   def description # :nodoc:
@@ -66,6 +103,25 @@ The wrapper allows you to choose among alternate gem versions using _version_.
 
 For example `rake _0.7.3_ --version` will run rake version 0.7.3 if a newer
 version is also installed.
+
+Gem Dependency Files
+====================
+
+RubyGems can install a consistent set of gems across multiple environments
+using `gem install -g` when a gem dependencies file (gem.deps.rb, Gemfile or
+Isolate) is present.  If no explicit file is given RubyGems attempts to find
+one in the current directory.
+
+When the RUBYGEMS_GEMDEPS environment variable is set to a gem dependencies
+file the gems from that file will be activated at startup time.  Set it to a
+specific filename or to "-" to have RubyGems automatically discover the gem
+dependencies file by walking up from the current directory.
+
+NOTE: Enabling automatic discovery on multiuser systems can lead to
+execution of arbitrary code when used from directories outside your control.
+
+Extension Install Failures
+==========================
 
 If an extension fails to compile during gem installation the gem
 specification is not written out, but the gem remains unpacked in the
@@ -129,9 +185,9 @@ to write the specification by hand.  For example:
   end
 
   def execute
-    if gf = options[:gemdeps] then
-      install_from_gemdeps gf
-      return
+    if options.include? :gemdeps then
+      install_from_gemdeps
+      return # not reached
     end
 
     @installed_specs = []
@@ -147,17 +203,14 @@ to write the specification by hand.  For example:
 
     show_installed
 
-    raise Gem::SystemExitException, exit_code
+    terminate_interaction exit_code
   end
 
-  def install_from_gemdeps gf # :nodoc:
+  def install_from_gemdeps # :nodoc:
     require 'rubygems/request_set'
     rs = Gem::RequestSet.new
-    rs.load_gemdeps gf
 
-    rs.resolve
-
-    specs = rs.install options do |req, inst|
+    specs = rs.install_from_gemdeps options do |req, inst|
       s = req.full_spec
 
       if inst
@@ -169,19 +222,71 @@ to write the specification by hand.  For example:
 
     @installed_specs = specs
 
-    raise Gem::SystemExitException, 0
+    terminate_interaction
   end
 
   def install_gem name, version # :nodoc:
     return if options[:conservative] and
       not Gem::Dependency.new(name, version).matching_specs.empty?
 
-    inst = Gem::DependencyInstaller.new options
-    inst.install name, Gem::Requirement.create(version)
+    req = Gem::Requirement.create(version)
 
-    @installed_specs.push(*inst.installed_gems)
+    if options[:ignore_dependencies] then
+      install_gem_without_dependencies name, req
+    else
+      inst = Gem::DependencyInstaller.new options
+      request_set = inst.resolve_dependencies name, req
 
-    show_install_errors inst.errors
+      if options[:explain]
+        puts "Gems to install:"
+
+        request_set.sorted_requests.each do |s|
+          puts "  #{s.full_name}"
+        end
+
+        return
+      else
+        @installed_specs.concat request_set.install options
+      end
+
+      show_install_errors inst.errors
+    end
+  end
+
+  def install_gem_without_dependencies name, req # :nodoc:
+    gem = nil
+
+    if local? then
+      if name =~ /\.gem$/ and File.file? name then
+        source = Gem::Source::SpecificFile.new name
+        spec = source.spec
+      else
+        source = Gem::Source::Local.new
+        spec = source.find_gem name, req
+      end
+      gem = source.download spec if spec
+    end
+
+    if remote? and not gem then
+      dependency = Gem::Dependency.new name, req
+      dependency.prerelease = options[:prerelease]
+
+      fetcher = Gem::RemoteFetcher.fetcher
+      gem = fetcher.download_to_cache dependency
+    end
+
+    inst = Gem::Installer.new gem, options
+    inst.install
+
+    require 'rubygems/dependency_installer'
+    dinst = Gem::DependencyInstaller.new options
+    dinst.installed_gems.replace [inst.spec]
+
+    Gem.done_installing_hooks.each do |hook|
+      hook.call dinst, [inst.spec]
+    end unless Gem.done_installing_hooks.empty?
+
+    @installed_specs.push(inst.spec)
   end
 
   def install_gems # :nodoc:
@@ -195,8 +300,10 @@ to write the specification by hand.  For example:
       rescue Gem::InstallError => e
         alert_error "Error installing #{gem_name}:\n\t#{e.message}"
         exit_code |= 1
-      rescue Gem::GemNotFoundException => e
-        show_lookup_failure e.name, e.version, e.errors, options[:domain]
+      rescue Gem::GemNotFoundException, Gem::UnsatisfiableDependencyError => e
+        domain = options[:domain]
+        domain = :local unless options[:suggest_alternate]
+        show_lookup_failure e.name, e.version, e.errors, domain
 
         exit_code |= 2
       end
