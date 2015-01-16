@@ -71,6 +71,58 @@ public class ThreadManager {
         return result;
     }
 
+    public static interface BlockingActionWithoutGlobalLock<T> {
+        public static boolean SUCCESS = true;
+
+        T block() throws InterruptedException;
+    }
+
+    /**
+     * Runs {@code action} until it returns a non-null value.
+     * The action might be {@link Thread#interrupted()}, for instance by
+     * the {@link SafepointManager}, in which case it will be run again.
+     *
+     * @param action must not touch any Ruby state
+     * @return the first non-null return value from {@code action}
+     */
+    @CompilerDirectives.TruffleBoundary
+    public <T> T runUntilResult(BlockingActionWithoutGlobalLock<T> action) {
+        T result = null;
+
+        do {
+            result = runOnce(action);
+        } while (result == null);
+
+        return result;
+    }
+
+    /**
+     * Runs {@code action} once.
+     * The action might be {@link Thread#interrupted()}, for instance by
+     * the {@link SafepointManager}, in which case null will be returned.
+     *
+     * @param action must not touch any Ruby state
+     * @return the return value from {@code action} or null if interrupted
+     */
+    @CompilerDirectives.TruffleBoundary
+    public <T> T runOnce(BlockingActionWithoutGlobalLock<T> action) {
+        T result = null;
+        final RubyThread runningThread = leaveGlobalLock();
+
+        try {
+            try {
+                result = action.block();
+            } finally {
+                // We need to enter the global lock before anything else!
+                enterGlobalLock(runningThread);
+            }
+        } catch (InterruptedException e) {
+            // We were interrupted, possibly by the SafepointManager.
+            runningThread.getContext().getSafepointManager().poll();
+        }
+        return result;
+    }
+
     public RubyThread getCurrentThread() {
         return currentThread;
     }

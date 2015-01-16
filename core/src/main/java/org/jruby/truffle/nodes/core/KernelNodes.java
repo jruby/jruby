@@ -16,6 +16,7 @@ import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.*;
 import com.oracle.truffle.api.nodes.UnexpectedResultException;
 import com.oracle.truffle.api.source.SourceSection;
+
 import org.jruby.common.IRubyWarnings;
 import org.jruby.runtime.Visibility;
 import org.jruby.truffle.nodes.RubyNode;
@@ -40,6 +41,7 @@ import org.jruby.truffle.runtime.core.*;
 import org.jruby.truffle.runtime.hash.HashOperations;
 import org.jruby.truffle.runtime.hash.KeyValue;
 import org.jruby.truffle.runtime.methods.InternalMethod;
+import org.jruby.truffle.runtime.subsystems.ThreadManager.BlockingActionWithoutGlobalLock;
 import org.jruby.util.ByteList;
 import org.jruby.util.cli.Options;
 
@@ -676,7 +678,7 @@ public abstract class KernelNodes {
                 builder.environment().put(keyValue.getKey().toString(), keyValue.getValue().toString());
             }
 
-            Process process;
+            final Process process;
 
             try {
                 process = builder.start();
@@ -685,17 +687,12 @@ public abstract class KernelNodes {
                 throw new RuntimeException(e);
             }
 
-            int exitCode;
-
-            while (true) {
-                try {
-                    exitCode = process.waitFor();
-                    break;
-                } catch (InterruptedException e) {
-                    context.getSafepointManager().poll();
-                    continue;
+            int exitCode = context.getThreadManager().runUntilResult(new BlockingActionWithoutGlobalLock<Integer>() {
+                @Override
+                public Integer block() throws InterruptedException {
+                    return process.waitFor();
                 }
-            }
+            });
 
             System.exit(exitCode);
         }
@@ -1967,17 +1964,13 @@ public abstract class KernelNodes {
         private double doSleep(final double duration) {
             final long start = System.nanoTime();
 
-            final RubyThread runningThread = getContext().getThreadManager().leaveGlobalLock();
-
-            try {
-                try {
+            getContext().getThreadManager().runOnce(new BlockingActionWithoutGlobalLock<Boolean>() {
+                @Override
+                public Boolean block() throws InterruptedException {
                     Thread.sleep((long) (duration * 1000));
-                } finally {
-                    getContext().getThreadManager().enterGlobalLock(runningThread);
+                    return SUCCESS;
                 }
-            } catch (InterruptedException e) {
-                getContext().getSafepointManager().poll();
-            }
+            });
 
             final long end = System.nanoTime();
 
