@@ -978,11 +978,6 @@ public class RubyEnumerable {
         return block.isGiven() ? each_with_objectCommon19(context, self, block, arg) : enumeratorizeWithSize(context, self, "each_with_object", new IRubyObject[] { arg }, enumSizeFn(context, self));
     }
 
-    @JRubyMethod
-    public static IRubyObject with_object(ThreadContext context, IRubyObject self, final IRubyObject arg, final Block block) {
-        return block.isGiven() ? each_with_objectCommon19(context, self, block, arg) : enumeratorize(context.runtime, self, "with_object", arg);
-    }
-
     @JRubyMethod(rest = true)
     public static IRubyObject each_entry(ThreadContext context, final IRubyObject self, final IRubyObject[] args, final Block block) {
         return block.isGiven() ? each_entryCommon(context, self, args, block) : enumeratorizeWithSize(context, self, "each_entry", args, enumSizeFn(context, self));
