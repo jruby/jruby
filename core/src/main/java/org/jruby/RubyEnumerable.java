@@ -1461,7 +1461,6 @@ public class RubyEnumerable {
     
     @JRubyMethod(name = "any?")
     public static IRubyObject any_p(ThreadContext context, IRubyObject self, final Block block) {
-        if (self instanceof RubyArray) return ((RubyArray) self).any_p(context, block);
         return any_pCommon(context, self, block, block.arity());
     }
     
