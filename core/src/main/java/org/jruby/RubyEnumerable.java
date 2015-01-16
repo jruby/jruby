@@ -969,11 +969,6 @@ public class RubyEnumerable {
     }
 
     @JRubyMethod
-    public static IRubyObject enum_with_index(ThreadContext context, IRubyObject self, Block block) {
-        return block.isGiven() ? each_with_indexCommon(context, self, block) : enumeratorize(context.runtime, self, "enum_with_index");
-    }
-
-    @JRubyMethod
     public static IRubyObject each_with_object(ThreadContext context, IRubyObject self, IRubyObject arg, Block block) {
         return block.isGiven() ? each_with_objectCommon19(context, self, block, arg) : enumeratorizeWithSize(context, self, "each_with_object", new IRubyObject[] { arg }, enumSizeFn(context, self));
     }
