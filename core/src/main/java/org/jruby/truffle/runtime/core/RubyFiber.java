@@ -10,11 +10,13 @@
 package org.jruby.truffle.runtime.core;
 
 import com.oracle.truffle.api.nodes.ControlFlowException;
+
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.objects.Allocator;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.subsystems.FiberManager;
 import org.jruby.truffle.runtime.subsystems.ThreadManager;
+import org.jruby.truffle.runtime.subsystems.ThreadManager.BlockingActionWithoutGlobalLock;
 
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
@@ -108,23 +110,18 @@ public class RubyFiber extends RubyBasicObject {
     }
 
     /**
-     * Send the Java thread that represents this fiber to sleep until it recieves a resume or exit
+     * Send the Java thread that represents this fiber to sleep until it receives a resume or exit
      * message. On entry, assumes that the GIL is not held. On exit, holding the GIL.
      */
     public Object waitForResume() {
         RubyNode.notDesignedForCompilation();
 
-        FiberMessage message = null;
-
-        do {
-            try {
-                // TODO(cs) what is a suitable timeout?
-                message = messageQueue.poll(1, TimeUnit.SECONDS);
-            } catch (InterruptedException e) {
-                getContext().getSafepointManager().poll();
-                // Poll again
+        FiberMessage message = getContext().getThreadManager().runUntilResult(new BlockingActionWithoutGlobalLock<FiberMessage>() {
+            @Override
+            public FiberMessage block() throws InterruptedException {
+                return messageQueue.poll(1, TimeUnit.SECONDS);
             }
-        } while (message == null);
+        });
 
         if (message instanceof FiberExitMessage) {
             throw new FiberExitException();

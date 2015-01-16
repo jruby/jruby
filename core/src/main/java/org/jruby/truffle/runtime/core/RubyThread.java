@@ -17,6 +17,7 @@ import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.control.ReturnException;
 import org.jruby.truffle.runtime.control.ThreadExitException;
 import org.jruby.truffle.runtime.subsystems.ThreadManager;
+import org.jruby.truffle.runtime.subsystems.ThreadManager.BlockingActionWithoutGlobalLock;
 
 import java.util.concurrent.CountDownLatch;
 
@@ -108,21 +109,13 @@ public class RubyThread extends RubyBasicObject {
     }
 
     public void join() {
-        final RubyThread runningThread = getContext().getThreadManager().leaveGlobalLock();
-
-        try {
-            while (true) {
-                try {
-                    finished.await();
-                    break;
-                } catch (InterruptedException e) {
-                    getContext().getSafepointManager().poll();
-                    // Await again
-                }
+        getContext().getThreadManager().runUntilResult(new BlockingActionWithoutGlobalLock<Boolean>() {
+            @Override
+            public Boolean block() throws InterruptedException {
+                finished.await();
+                return SUCCESS;
             }
-        } finally {
-            getContext().getThreadManager().enterGlobalLock(runningThread);
-        }
+        });
 
         if (exception != null) {
             throw new RaiseException(exception);
