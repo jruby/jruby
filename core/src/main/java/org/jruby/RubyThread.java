@@ -107,7 +107,10 @@ public class RubyThread extends RubyObject implements ExecutionContext {
     /** The thread-like think that is actually executing */
     private volatile ThreadLike threadImpl;
 
-    /** Normal thread-local variables */
+    /** Fiber-local variables */
+    private volatile transient Map<IRubyObject, IRubyObject> fiberLocalVariables;
+
+    /** Normal thread-local variables (local to parent thread if in a fiber) */
     private volatile transient Map<IRubyObject, IRubyObject> threadLocalVariables;
 
     /** Context-local variables, internal-ish thread locals */
@@ -789,15 +792,22 @@ public class RubyThread extends RubyObject implements ExecutionContext {
         }
     }
     
-    private synchronized Map<IRubyObject, IRubyObject> getThreadLocals() {
+    private synchronized Map<IRubyObject, IRubyObject> getFiberLocals() {
+        if (fiberLocalVariables == null) {
+            fiberLocalVariables = new HashMap<IRubyObject, IRubyObject>();
+        }
+        return fiberLocalVariables;
+    }
+
+    private synchronized Map<IRubyObject, IRubyObject> getThreadLocals(ThreadContext context) {
+        return context.getFiberCurrentThread().getThreadLocals0();
+    }
+
+    private synchronized Map<IRubyObject, IRubyObject> getThreadLocals0() {
         if (threadLocalVariables == null) {
             threadLocalVariables = new HashMap<IRubyObject, IRubyObject>();
         }
         return threadLocalVariables;
-    }
-
-    private void clearThreadLocals() {
-        threadLocalVariables = null;
     }
 
     @Override
@@ -810,21 +820,56 @@ public class RubyThread extends RubyObject implements ExecutionContext {
     }
 
     @JRubyMethod(name = "[]", required = 1)
-    public IRubyObject op_aref(IRubyObject key) {
+    public synchronized IRubyObject op_aref(IRubyObject key) {
         IRubyObject value;
-        if ((value = getThreadLocals().get(getSymbolKey(key))) != null) {
+        if ((value = getFiberLocals().get(getSymbolKey(key))) != null) {
             return value;
         }
         return getRuntime().getNil();
     }
 
     @JRubyMethod(name = "[]=", required = 2)
-    public IRubyObject op_aset(IRubyObject key, IRubyObject value) {
+    public synchronized IRubyObject op_aset(IRubyObject key, IRubyObject value) {
         key = getSymbolKey(key);
         
-        getThreadLocals().put(key, value);
+        getFiberLocals().put(key, value);
         return value;
     }
+
+    @JRubyMethod(name = "thread_variable?", required = 1)
+    public synchronized IRubyObject thread_variable_p(ThreadContext context, IRubyObject key) {
+        IRubyObject value;
+        return context.runtime.newBoolean(getThreadLocals(context).containsKey(getSymbolKey(key)));
+    }
+
+    @JRubyMethod(name = "thread_variable_get", required = 1)
+    public synchronized IRubyObject thread_variable_get(ThreadContext context, IRubyObject key) {
+        IRubyObject value;
+        if ((value = getThreadLocals(context).get(getSymbolKey(key))) != null) {
+            return value;
+        }
+        return context.runtime.getNil();
+    }
+
+    @JRubyMethod(name = "thread_variable_set", required = 2)
+    public synchronized IRubyObject thread_variable_set(ThreadContext context, IRubyObject key, IRubyObject value) {
+        key = getSymbolKey(key);
+
+        getThreadLocals(context).put(key, value);
+
+        return value;
+    }
+
+    @JRubyMethod(name = "thread_variables")
+    public synchronized IRubyObject thread_variables(ThreadContext context) {
+        Map<IRubyObject, IRubyObject> vars = getThreadLocals(context);
+        RubyArray ary = RubyArray.newArray(context.runtime, vars.size());
+        for (Map.Entry<IRubyObject, IRubyObject> entry : vars.entrySet()) {
+            ary.append(entry.getKey());
+        }
+        return ary;
+    }
+
 
     @JRubyMethod
     public RubyBoolean abort_on_exception() {
@@ -971,14 +1016,14 @@ public class RubyThread extends RubyObject implements ExecutionContext {
     public RubyBoolean key_p(IRubyObject key) {
         key = getSymbolKey(key);
         
-        return getRuntime().newBoolean(getThreadLocals().containsKey(key));
+        return getRuntime().newBoolean(getFiberLocals().containsKey(key));
     }
 
     @JRubyMethod
     public RubyArray keys() {
-        IRubyObject[] keys = new IRubyObject[getThreadLocals().size()];
+        IRubyObject[] keys = new IRubyObject[getFiberLocals().size()];
         
-        return RubyArray.newArrayNoCopy(getRuntime(), getThreadLocals().keySet().toArray(keys));
+        return RubyArray.newArrayNoCopy(getRuntime(), getFiberLocals().keySet().toArray(keys));
     }
     
     @JRubyMethod(meta = true)
