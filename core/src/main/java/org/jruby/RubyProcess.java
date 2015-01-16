@@ -315,7 +315,7 @@ public class RubyProcess {
 
     @JRubyModule(name="Process::UID")
     public static class UserID {
-        @JRubyMethod(name = "change_privilege", module = true)
+        @JRubyMethod(name = "change_privilege", module = true, visibility = PRIVATE)
         public static IRubyObject change_privilege(IRubyObject self, IRubyObject arg) {
             throw self.getRuntime().newNotImplementedError("Process::UID::change_privilege not implemented yet");
         }
@@ -324,7 +324,7 @@ public class RubyProcess {
         public static IRubyObject eid(IRubyObject self) {
             return euid(self.getRuntime());
         }
-        @JRubyMethod(name = "eid", module = true)
+        @JRubyMethod(name = "eid", module = true, visibility = PRIVATE)
         public static IRubyObject eid(ThreadContext context, IRubyObject self) {
             return euid(context.runtime);
         }
@@ -333,7 +333,7 @@ public class RubyProcess {
         public static IRubyObject eid(IRubyObject self, IRubyObject arg) {
             return eid(self.getRuntime(), arg);
         }
-        @JRubyMethod(name = "eid=", module = true)
+        @JRubyMethod(name = "eid=", module = true, visibility = PRIVATE)
         public static IRubyObject eid(ThreadContext context, IRubyObject self, IRubyObject arg) {
             return eid(context.runtime, arg);
         }
@@ -341,17 +341,17 @@ public class RubyProcess {
             return euid_set(runtime, arg);
         }
         
-        @JRubyMethod(name = "grant_privilege", module = true)
+        @JRubyMethod(name = "grant_privilege", module = true, visibility = PRIVATE)
         public static IRubyObject grant_privilege(IRubyObject self, IRubyObject arg) {
             throw self.getRuntime().newNotImplementedError("Process::UID::grant_privilege not implemented yet");
         }
         
-        @JRubyMethod(name = "re_exchange", module = true)
+        @JRubyMethod(name = "re_exchange", module = true, visibility = PRIVATE)
         public static IRubyObject re_exchange(ThreadContext context, IRubyObject self) {
             return switch_rb(context, self, Block.NULL_BLOCK);
         }
         
-        @JRubyMethod(name = "re_exchangeable?", module = true)
+        @JRubyMethod(name = "re_exchangeable?", module = true, visibility = PRIVATE)
         public static IRubyObject re_exchangeable_p(IRubyObject self) {
             throw self.getRuntime().newNotImplementedError("Process::UID::re_exchangeable? not implemented yet");
         }
@@ -360,7 +360,7 @@ public class RubyProcess {
         public static IRubyObject rid(IRubyObject self) {
             return rid(self.getRuntime());
         }
-        @JRubyMethod(name = "rid", module = true)
+        @JRubyMethod(name = "rid", module = true, visibility = PRIVATE)
         public static IRubyObject rid(ThreadContext context, IRubyObject self) {
             return rid(context.runtime);
         }
@@ -368,7 +368,7 @@ public class RubyProcess {
             return uid(runtime);
         }
         
-        @JRubyMethod(name = "sid_available?", module = true)
+        @JRubyMethod(name = "sid_available?", module = true, visibility = PRIVATE)
         public static IRubyObject sid_available_p(IRubyObject self) {
             throw self.getRuntime().newNotImplementedError("Process::UID::sid_available not implemented yet");
         }
