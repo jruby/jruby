@@ -2132,6 +2132,11 @@ public class RubyModule extends RubyObject {
         return newMethod(null, symbol.asJavaString(), false, null);
     }
 
+    @JRubyMethod(name = "public_instance_method", required = 1)
+    public IRubyObject public_instance_method(IRubyObject symbol) {
+        return newMethod(null, symbol.asJavaString(), false, PUBLIC);
+    }
+
     /** rb_class_protected_instance_methods
      *
      */
