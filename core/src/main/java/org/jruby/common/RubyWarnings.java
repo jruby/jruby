@@ -81,7 +81,7 @@ public class RubyWarnings implements IRubyWarnings, WarnCallback {
 
         StringBuilder buffer = new StringBuilder(100);
 
-        buffer.append(fileName).append(':').append(lineNumber).append(": ");
+        buffer.append(fileName).append(':').append(lineNumber).append(' ');
         buffer.append("warning: ").append(message).append('\n');
         IRubyObject errorStream = runtime.getGlobalVariables().get("$stderr");
         errorStream.callMethod(runtime.getCurrentContext(), "write", runtime.newString(buffer.toString()));
