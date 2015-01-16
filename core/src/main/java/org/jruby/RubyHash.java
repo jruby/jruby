@@ -1889,6 +1889,41 @@ public class RubyHash extends RubyObject implements Map {
         return clone;
     }
 
+    @JRubyMethod(name = "any?")
+    public IRubyObject any_p(ThreadContext context, Block block) {
+        if (isEmpty()) return context.runtime.getFalse();
+
+        if (!block.isGiven()) return context.runtime.getTrue();
+
+        if (block.arity().getValue() > 1)
+            return any_p_i_fast(context, block);
+
+        return any_p_i(context, block);
+    }
+
+    private IRubyObject any_p_i(ThreadContext context, Block block) {
+        iteratorEntry();
+        for (RubyHashEntry entry = head.nextAdded; entry != head; entry = entry.nextAdded) {
+            IRubyObject newAssoc = RubyArray.newArray(context.runtime, entry.key, entry.value);
+            if (block.yield(context, newAssoc).isTrue())
+                return context.getRuntime().getTrue();
+        }
+        iteratorExit();
+
+        return context.getRuntime().getFalse();
+    }
+
+    private IRubyObject any_p_i_fast(ThreadContext context, Block block) {
+        iteratorEntry();
+        for (RubyHashEntry entry = head.nextAdded; entry != head; entry = entry.nextAdded) {
+            if (block.yieldSpecific(context, entry.key, entry.value).isTrue())
+                return context.getRuntime().getTrue();
+        }
+        iteratorExit();
+
+        return context.getRuntime().getFalse();
+    }
+
     /**
      * A lightweight dup for internal use that does not dispatch to initialize_copy nor rehash the keys. Intended for
      * use in dup'ing keyword args for processing.
