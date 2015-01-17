@@ -156,8 +156,8 @@ public class UnboxableOpsAnalysisNode extends FlowGraphNode<UnboxableOpsAnalysis
 
     private boolean resemblesALUOp(String name) {
         return name.equals("+") || name.equals("-") || name.equals("*") || name.equals("/") ||
-                name.equals("|") || name.equals("&") || name.equals(">>") || name.equals("<<") ||
-                name.equals(">") || name.equals("<") || name.equals("==") || name.equals("!=");
+                name.equals("|") || name.equals("&") || name.equals("^") || name.equals(">>") || name.equals("<<") ||
+                name.equals(">") || name.equals("<") || name.equals("==") || name.equals("===") || name.equals("!=");
     }
 
     private Class getUnboxedResultType(Class operandType, String name) {
@@ -169,11 +169,14 @@ public class UnboxableOpsAnalysisNode extends FlowGraphNode<UnboxableOpsAnalysis
                 case '/' : return operandType == Float.class ? Float.class : operandType == Fixnum.class ? Fixnum.class : null;
                 case '>' :
                 case '<' : return operandType == Float.class || operandType == Fixnum.class ? Boolean.class : null;
+                case '|' :
+                case '&' :
+                case '^' : return operandType == Fixnum.class ? Fixnum.class : null;
                 default  : return null;
             }
         } else if (name.equals(">>") || name.equals("<<")) {
             return Fixnum.class;
-        } else if (name.equals("==") || name.equals("===")) {
+        } else if (name.equals("!=") || name.equals("==") || name.equals("===")) {
             return Boolean.class;
         } else {
             return null;
@@ -210,7 +213,7 @@ public class UnboxableOpsAnalysisNode extends FlowGraphNode<UnboxableOpsAnalysis
             } else {
                 if (name.equals(">>")) return Operation.ISHR;
                 if (name.equals("<<")) return Operation.ISHL;
-                if (name.equals("==") || name.equals("===")) return Operation.IEQ;
+                if (name.equals("!=") || name.equals("==") || name.equals("===")) return Operation.IEQ;
             }
         }
 
