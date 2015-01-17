@@ -243,13 +243,11 @@ public class UnboxableOpsAnalysisNode extends FlowGraphNode<UnboxableOpsAnalysis
             // should ideally be done 'on-demand'. This indicates that this could
             // be a backward-flow algo OR that this algo should be run on a
             // dataflow graph / SSA graph.
-            if (srcType == Float.class) {
+            if (srcType == Float.class || srcType == Fixnum.class) {
                 unboxedAndDirty = true;
-                tmpState.unboxedVars.put(dst, srcType);
-            } else if (srcType == Fixnum.class) {
-                unboxedAndDirty = true;
-                tmpState.unboxedVars.put(dst, srcType);
             }
+
+            tmpState.unboxedVars.put(dst, dstType);
         } else if (i instanceof ClosureAcceptingInstr) {
             Operand o = ((ClosureAcceptingInstr)i).getClosureArg();
             // Process calls specially -- these are what we want to optimize!
@@ -261,7 +259,7 @@ public class UnboxableOpsAnalysisNode extends FlowGraphNode<UnboxableOpsAnalysis
                     Operand a = c.getArg1();
                     Class receiverType = getOperandType(tmpState, r);
                     Class argType = getOperandType(tmpState, a);
-                    // Optimistically assume that call is an ALU op
+
                     if (problem.acceptsArgTypes(m, receiverType, argType)) {
                         Class unboxedType = problem.getUnboxedType(m, receiverType, argType);
                         unboxedAndDirty = true;
@@ -270,7 +268,7 @@ public class UnboxableOpsAnalysisNode extends FlowGraphNode<UnboxableOpsAnalysis
                         tmpState.unboxedVars.put(dst, dstType);
 
                         // If 'r' and 'a' are not already in unboxed forms at this point,
-                        // they will get unboxed after this, because we want to opt. this call
+                        // they will get unboxed after this, because we want to opt. this call.
                         if (r instanceof Variable) {
                             tmpState.unboxedVars.put((Variable)r, unboxedType);
                         }
@@ -413,17 +411,16 @@ public class UnboxableOpsAnalysisNode extends FlowGraphNode<UnboxableOpsAnalysis
             }
 
             return unboxedVar;
-        } else {
-            if (arg instanceof Float) {
-                return new UnboxedFloat(((Float)arg).getValue());
-            } else if (arg instanceof Fixnum) {
-                return new UnboxedFixnum(((Fixnum)arg).getValue());
-            } else if (arg instanceof Boolean) {
-                return new UnboxedBoolean(((Boolean)arg).isTrue());
-            }
-            // This has to be a known operand like (UnboxedBoolean, etc.)
-            return arg;
+        } else if (arg instanceof Float) {
+            return new UnboxedFloat(((Float)arg).getValue());
+        } else if (arg instanceof Fixnum) {
+            return new UnboxedFixnum(((Fixnum)arg).getValue());
+        } else if (arg instanceof Boolean) {
+            return new UnboxedBoolean(((Boolean)arg).isTrue());
         }
+
+        // This has to be a known operand like (UnboxedBoolean, etc.)
+        return arg;
     }
 
     private Operand getUnboxedOperand(UnboxState state, Map<Variable, TemporaryLocalVariable> unboxMap, Operand arg) {
@@ -431,16 +428,16 @@ public class UnboxableOpsAnalysisNode extends FlowGraphNode<UnboxableOpsAnalysis
             Variable v = (Variable)arg;
             Class unboxedType = state.unboxedVars.get(v);
             return unboxedType == null ? arg : getUnboxedVar(unboxedType, unboxMap, v);
-        } else {
-            if (arg instanceof Float) {
-                return new UnboxedFloat(((Float)arg).getValue());
-            } else if (arg instanceof Fixnum) {
-                return new UnboxedFixnum(((Fixnum)arg).getValue());
-            } else if (arg instanceof Boolean) {
-                return new UnboxedBoolean(((Boolean)arg).isTrue());
-            }
-            return arg;
+        } else if (arg instanceof Float) {
+            return new UnboxedFloat(((Float)arg).getValue());
+        } else if (arg instanceof Fixnum) {
+            return new UnboxedFixnum(((Fixnum)arg).getValue());
+        } else if (arg instanceof Boolean) {
+            return new UnboxedBoolean(((Boolean)arg).isTrue());
         }
+
+        // This has to be a known operand like (UnboxedBoolean, etc.)
+        return arg;
     }
 
     private void boxRequiredVars(Instr i, UnboxState state, Map<Variable, TemporaryLocalVariable> unboxMap, Variable dst, boolean hasRescuer, boolean isDFBarrier, List<Instr> newInstrs) {
@@ -613,9 +610,10 @@ public class UnboxableOpsAnalysisNode extends FlowGraphNode<UnboxableOpsAnalysis
                         Operand unboxedSrc = src instanceof Variable ? getUnboxedVar(srcType, unboxMap, (Variable)src) : src;
                         TemporaryLocalVariable unboxedDst = getUnboxedVar(srcType, unboxMap, dst);
                         newInstrs.add(new CopyInstr(Operation.COPY, unboxedDst, unboxedSrc));
-                        tmpState.unboxedVars.put(dst, srcType);
                         unboxedAndDirty = true;
                     }
+
+                    tmpState.unboxedVars.put(dst, dstType);
                 } else if (i instanceof ClosureAcceptingInstr) {
                     Operand o = ((ClosureAcceptingInstr)i).getClosureArg();
                     if (i instanceof CallBase && o == null) {
@@ -627,7 +625,6 @@ public class UnboxableOpsAnalysisNode extends FlowGraphNode<UnboxableOpsAnalysis
                             Class receiverType = getOperandType(tmpState, r);
                             Class argType = getOperandType(tmpState, a);
 
-                            // Optimistically assume that call is an ALU op
                             Operation unboxedOp = null;
                             Class unboxedType = null;
                             if (problem.acceptsArgTypes(m, receiverType, argType)) {
