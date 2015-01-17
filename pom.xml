@@ -601,12 +601,14 @@
     <profile>
       <id>bootstrap</id>
       <modules>
+        <module>ext</module>
         <module>test</module>
       </modules>
     </profile>
     <profile>
       <id>bootstrap-no-launcher</id>
       <modules>
+        <module>ext</module>
         <module>test</module>
       </modules>
     </profile>
@@ -737,16 +739,6 @@
       </properties>
     </profile>
     <profile>
-      <id>all</id>
-      <build>
-        <defaultGoal>install</defaultGoal>
-      </build>
-      <modules>
-        <module>test</module>
-        <module>maven</module>
-      </modules>
-    </profile>
-    <profile>
       <id>jruby_complete_jar_extended</id>
       <build>
         <defaultGoal>install</defaultGoal>
@@ -757,11 +749,23 @@
       </modules>
     </profile>
     <profile>
+      <id>all</id>
+      <build>
+        <defaultGoal>install</defaultGoal>
+      </build>
+      <modules>
+        <module>ext</module>
+        <module>test</module>
+        <module>maven</module>
+      </modules>
+    </profile>
+    <profile>
       <id>clean</id>
       <build>
         <defaultGoal>clean</defaultGoal>
       </build>
       <modules>
+        <module>ext</module>
         <module>test</module>
         <module>maven</module>
       </modules>
