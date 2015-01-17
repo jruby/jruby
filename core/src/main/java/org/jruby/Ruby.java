@@ -138,8 +138,6 @@ import org.jruby.runtime.profile.ProfilingServiceLookup;
 import org.jruby.runtime.profile.builtin.ProfiledMethods;
 import org.jruby.runtime.scope.ManyVarsDynamicScope;
 import org.jruby.threading.DaemonThreadFactory;
-import org.jruby.truffle.TruffleBridgeImpl;
-import org.jruby.truffle.translator.TranslatorDriver;
 import org.jruby.util.ByteList;
 import org.jruby.util.DefinedMessage;
 import org.jruby.util.JRubyClassLoader;
@@ -166,6 +164,7 @@ import java.io.InputStream;
 import java.io.PrintStream;
 import java.io.PrintWriter;
 import java.lang.ref.WeakReference;
+import java.lang.reflect.Constructor;
 import java.net.BindException;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -837,7 +836,7 @@ public final class Ruby implements Constantizable {
     public IRubyObject runInterpreter(ThreadContext context, ParseResult parseResult, IRubyObject self) {
        if (getInstanceConfig().getCompileMode() == CompileMode.TRUFFLE) {
            assert parseResult instanceof RootNode;
-           getTruffleBridge().execute(TranslatorDriver.ParserContext.TOP_LEVEL, getTruffleBridge().toTruffle(self), null, (RootNode) parseResult);
+           getTruffleBridge().execute(getTruffleBridge().toTruffle(self), (RootNode) parseResult);
            return getNil();
        } else {
            try {
@@ -853,7 +852,7 @@ public final class Ruby implements Constantizable {
 
         if (getInstanceConfig().getCompileMode() == CompileMode.TRUFFLE) {
             assert rootNode instanceof RootNode;
-            getTruffleBridge().execute(TranslatorDriver.ParserContext.TOP_LEVEL, getTruffleBridge().toTruffle(self), null, (RootNode) rootNode);
+            getTruffleBridge().execute(getTruffleBridge().toTruffle(self), (RootNode) rootNode);
             return getNil();
         } else {
             try {
@@ -905,9 +904,11 @@ public final class Ruby implements Constantizable {
              */
 
             try {
-                truffleBridge = new TruffleBridgeImpl(this);
+                Class<?> clazz = getClass().getClassLoader().loadClass("org.jruby.truffle.TruffleBridgeImpl");
+                Constructor<?> con = clazz.getConstructor(Ruby.class);
+                truffleBridge = (TruffleBridge) con.newInstance(this);
                 truffleBridge.init();
-            } catch (NoClassDefFoundError e) {
+            } catch (Exception e) {
                 throw new UnsupportedOperationException("Support for Truffle has been removed from this distribution", e);
             }
         }

@@ -89,6 +89,7 @@
     </mailingList>
   </mailingLists>
   <modules>
+    <module>truffle</module>
     <module>core</module>
     <module>lib</module>
   </modules>
