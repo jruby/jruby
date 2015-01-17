@@ -93,7 +93,7 @@ project 'JRuby', 'https://github.com/jruby/jruby' do
     properties 'jruby.home' => '${basedir}/..'
   end
 
-  modules [ 'core', 'lib' ]
+  modules [ 'truffle', 'core', 'lib' ]
 
   plugin_management do
     jar( 'junit:junit:4.11',

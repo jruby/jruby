@@ -18,6 +18,7 @@ project 'JRuby Main Maven Artifact' do
   end
 
   jar 'org.jruby:jruby-core:${project.version}'
+  jar 'org.jruby:jruby-truffle:${project.version}'
   jar 'org.jruby:jruby-stdlib:${project.version}'
 
   # we have no sources and attach an empty jar later in the build to
