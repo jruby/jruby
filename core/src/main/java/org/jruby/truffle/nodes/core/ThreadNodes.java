@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2014 Oracle and/or its affiliates. All rights reserved. This
+ * Copyright (c) 2013, 2015 Oracle and/or its affiliates. All rights reserved. This
  * code is released under a tri EPL/GPL/LGPL license. You can use it,
  * redistribute it and/or modify it under the terms of the:
  *
@@ -114,11 +114,11 @@ public abstract class ThreadNodes {
 
         @Specialization
         public RubyThread kill(final RubyThread thread) {
-            getContext().getSafepointManager().pauseAllThreadsAndExecute(new Consumer<Boolean>() {
+            getContext().getSafepointManager().pauseAllThreadsAndExecute(new Consumer<RubyThread>() {
 
                 @Override
-                public void accept(Boolean isPausingThread) {
-                    if (getContext().getThreadManager().getCurrentThread() == thread) {
+                public void accept(RubyThread currentThread) {
+                    if (currentThread == thread) {
                         throw new ThreadExitException();
                     }
                 }
@@ -230,11 +230,11 @@ public abstract class ThreadNodes {
 
             final RaiseException exceptionWrapper = new RaiseException((RubyException) exception);
 
-            getContext().getSafepointManager().pauseAllThreadsAndExecute(new Consumer<Boolean>() {
+            getContext().getSafepointManager().pauseAllThreadsAndExecute(new Consumer<RubyThread>() {
 
                 @Override
-                public void accept(Boolean isPausingThread) {
-                    if (getContext().getThreadManager().getCurrentThread() == thread) {
+                public void accept(RubyThread currentThread) {
+                    if (currentThread == thread) {
                         throw exceptionWrapper;
                     }
                 }

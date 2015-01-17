@@ -5,7 +5,7 @@
   <parent>
     <groupId>org.jruby</groupId>
     <artifactId>jruby-ext</artifactId>
-    <version>9.0.0.0.dev-SNAPSHOT</version>
+    <version>9.0.0.0.pre1</version>
   </parent>
   <groupId>rubygems</groupId>
   <artifactId>jruby-readline</artifactId>
@@ -28,9 +28,8 @@
     <tesla.dump.readonly>true</tesla.dump.readonly>
     <gem.path>${gem.home}</gem.path>
     <gem.home>${basedir}/../target/rubygems</gem.home>
-    <jruby.plugins.version>1.0.5</jruby.plugins.version>
+    <jruby.plugins.version>1.0.7</jruby.plugins.version>
     <tesla.dump.pom>pom.xml</tesla.dump.pom>
-    <project.build.sourceEncoding>utf-8</project.build.sourceEncoding>
   </properties>
   <dependencies>
     <dependency>
@@ -93,6 +92,21 @@
         </configuration>
       </plugin>
       <plugin>
+        <artifactId>maven-dependency-plugin</artifactId>
+        <executions>
+          <execution>
+            <phase>generate-test-resources</phase>
+            <goals>
+              <goal>copy-dependencies</goal>
+            </goals>
+            <configuration>
+              <outputDirectory>lib</outputDirectory>
+              <useRepositoryLayout>true</useRepositoryLayout>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+      <plugin>
         <groupId>de.saumya.mojo</groupId>
         <artifactId>gem-maven-plugin</artifactId>
         <version>${jruby.plugins.version}</version>
@@ -109,20 +123,6 @@
           <includeDependencies>true</includeDependencies>
           <useRepositoryLayout>true</useRepositoryLayout>
         </configuration>
-      </plugin>
-      <plugin>
-        <artifactId>maven-deploy-plugin</artifactId>
-        <executions>
-          <execution>
-            <goals>
-              <goal>deploy</goal>
-            </goals>
-            <configuration>
-              <skip>false</skip>
-              <altDeploymentRepository>sonatype-nexus-snapshots::default::https://oss.sonatype.org/content/repositories/snapshots/</altDeploymentRepository>
-            </configuration>
-          </execution>
-        </executions>
       </plugin>
     </plugins>
   </build>

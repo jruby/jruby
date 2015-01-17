@@ -9,7 +9,7 @@
   </parent>
   <groupId>org.jruby</groupId>
   <artifactId>jruby-parent</artifactId>
-  <version>9.0.0.0-SNAPSHOT</version>
+  <version>9.0.0.0.pre1</version>
   <packaging>pom</packaging>
   <name>JRuby</name>
   <description>JRuby is the effort to recreate the Ruby (http://www.ruby-lang.org) interpreter in Java.</description>
@@ -138,6 +138,7 @@
     <power_assert.version>0.1.4</power_assert.version>
     <version.jruby>${project.version}</version.jruby>
     <bouncy-castle.version>1.47</bouncy-castle.version>
+    <jruby.home>${basedir}/..</jruby.home>
     <main.basedir>${project.basedir}</main.basedir>
     <github.global.server>github</github.global.server>
     <joda.time.version>2.5</joda.time.version>
@@ -600,12 +601,14 @@
     <profile>
       <id>bootstrap</id>
       <modules>
+        <module>ext</module>
         <module>test</module>
       </modules>
     </profile>
     <profile>
       <id>bootstrap-no-launcher</id>
       <modules>
+        <module>ext</module>
         <module>test</module>
       </modules>
     </profile>
@@ -736,16 +739,6 @@
       </properties>
     </profile>
     <profile>
-      <id>all</id>
-      <build>
-        <defaultGoal>install</defaultGoal>
-      </build>
-      <modules>
-        <module>test</module>
-        <module>maven</module>
-      </modules>
-    </profile>
-    <profile>
       <id>jruby_complete_jar_extended</id>
       <build>
         <defaultGoal>install</defaultGoal>
@@ -756,11 +749,23 @@
       </modules>
     </profile>
     <profile>
+      <id>all</id>
+      <build>
+        <defaultGoal>install</defaultGoal>
+      </build>
+      <modules>
+        <module>ext</module>
+        <module>test</module>
+        <module>maven</module>
+      </modules>
+    </profile>
+    <profile>
       <id>clean</id>
       <build>
         <defaultGoal>clean</defaultGoal>
       </build>
       <modules>
+        <module>ext</module>
         <module>test</module>
         <module>maven</module>
       </modules>

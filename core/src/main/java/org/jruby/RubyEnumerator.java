@@ -29,8 +29,8 @@ package org.jruby;
 
 import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyModule;
-import org.jruby.exceptions.JumpException;
 import org.jruby.exceptions.RaiseException;
+import org.jruby.exceptions.Unrescuable;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.BlockCallback;
@@ -596,6 +596,9 @@ public class RubyEnumerator extends RubyObject {
 
         /** the last value we got, used for peek */
         private IRubyObject lastValue;
+
+        /** Exception used for unrolling the iteration on terminate */
+        private static class TerminateEnumeration extends RuntimeException implements Unrescuable {}
         
         public ThreadedNexter(Ruby runtime, IRubyObject object, String method, IRubyObject[] methodArgs) {
             super(runtime, object, method, methodArgs);
@@ -708,25 +711,29 @@ public class RubyEnumerator extends RubyObject {
             
             try {
                 IRubyObject oldExc = runtime.getGlobalVariables().get("$!");
+                final TerminateEnumeration terminateEnumeration = new TerminateEnumeration();
                 try {
                     object.callMethod(context, method, methodArgs, CallBlock.newCallClosure(object, object.getMetaClass(), Arity.OPTIONAL, new BlockCallback() {
                         @Override
                         public IRubyObject call(ThreadContext context, IRubyObject[] args, Block block) {
                             try {
                                 if (DEBUG) System.out.println(Thread.currentThread().getName() + ": exchanging: " + Arrays.toString(args));
-                                if (die) throw new JumpException.BreakJump(-1, NEVER);
+                                if (die) throw terminateEnumeration;
                                 out.put(RubyEnumerable.packEnumValues(runtime, args));
-                                if (die) throw new JumpException.BreakJump(-1, NEVER);
+                                if (die) throw terminateEnumeration;
                             } catch (InterruptedException ie) {
                                 if (DEBUG) System.out.println(Thread.currentThread().getName() + ": interrupted");
 
-                                throw new JumpException.BreakJump(-1, NEVER);
+                                throw terminateEnumeration;
                             }
 
                             return context.nil;
                         }
                     }, context));
-                } catch (JumpException.BreakJump bj) {
+                } catch (TerminateEnumeration te) {
+                    if (te != terminateEnumeration) {
+                        throw te;
+                    }
                     // ignore, we're shutting down
                 } catch (RaiseException re) {
                     runtime.getGlobalVariables().set("$!", oldExc);

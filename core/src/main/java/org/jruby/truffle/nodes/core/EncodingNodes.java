@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014 Oracle and/or its affiliates. All rights reserved. This
+ * Copyright (c) 2014, 2015 Oracle and/or its affiliates. All rights reserved. This
  * code is released under a tri EPL/GPL/LGPL license. You can use it,
  * redistribute it and/or modify it under the terms of the:
  *
@@ -12,6 +12,7 @@ package org.jruby.truffle.nodes.core;
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.source.SourceSection;
+import com.oracle.truffle.api.utilities.ConditionProfile;
 import org.jcodings.Encoding;
 import org.jcodings.EncodingDB;
 import org.jcodings.specific.ASCIIEncoding;
@@ -28,6 +29,46 @@ import org.jruby.util.ByteList;
 
 @CoreClass(name = "Encoding")
 public abstract class EncodingNodes {
+
+    @CoreMethod(names = "compatible?", needsSelf = false, onSingleton = true, required = 2)
+    public abstract static class CompatibleQueryNode extends CoreMethodNode {
+
+        ConditionProfile compatibleEncodingProfile = ConditionProfile.createBinaryProfile();
+
+        public CompatibleQueryNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public CompatibleQueryNode(CompatibleQueryNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public Object isCompatible(RubyString first, RubyString second) {
+            notDesignedForCompilation();
+
+            Encoding compatibleEncoding = org.jruby.RubyEncoding.areCompatible(first, second);
+
+            if (compatibleEncodingProfile.profile(compatibleEncoding != null)) {
+                return RubyEncoding.getEncoding(compatibleEncoding);
+            } else {
+                return getContext().getCoreLibrary().getNilObject();
+            }
+        }
+
+        @Specialization
+        public Object isCompatible(RubyEncoding first, RubyEncoding second) {
+            notDesignedForCompilation();
+
+            Encoding compatibleEncoding = org.jruby.RubyEncoding.areCompatible(first.getEncoding(), second.getEncoding());
+
+            if (compatibleEncodingProfile.profile(compatibleEncoding != null)) {
+                return RubyEncoding.getEncoding(compatibleEncoding);
+            } else {
+                return getContext().getCoreLibrary().getNilObject();
+            }
+        }
+    }
 
     @CoreMethod(names = "default_external", onSingleton = true)
     public abstract static class DefaultExternalNode extends CoreMethodNode {

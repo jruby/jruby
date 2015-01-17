@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2014 Oracle and/or its affiliates. All rights reserved. This
+ * Copyright (c) 2013, 2015 Oracle and/or its affiliates. All rights reserved. This
  * code is released under a tri EPL/GPL/LGPL license. You can use it,
  * redistribute it and/or modify it under the terms of the:
  *
@@ -63,6 +63,10 @@ public class FeatureManager {
                 }
 
                 if (feature.equals("thread")) {
+                    return true;
+                }
+
+                if (feature.equals("time")) {
                     return true;
                 }
 
@@ -151,8 +155,10 @@ public class FeatureManager {
                 }
             }
 
-            context.loadFile(fileName, currentNode);
             context.getCoreLibrary().getLoadedFeatures().slowPush(context.makeString(expandedPath));
+
+            // TODO (nirvdrum 15-Jan-15): If we fail to load, we should remove the path from the loaded features because subsequent requires of the same statement may succeed.
+            context.loadFile(fileName, currentNode);
         }
 
         return true;

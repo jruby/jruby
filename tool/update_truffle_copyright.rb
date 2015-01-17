@@ -1,4 +1,4 @@
-# Copyright (c) 2014 Oracle and/or its affiliates. All rights reserved. This
+# Copyright (c) 2014, 2015 Oracle and/or its affiliates. All rights reserved. This
 # code is released under a tri EPL/GPL/LGPL license. You can use it,
 # redistribute it and/or modify it under the terms of the:
 # 
@@ -14,9 +14,9 @@ OTHER_COPYRIGHTS = [
   /Copyright \(c\) \d{4}(?:-\d{4})?, Evan Phoenix/
 ]
 
+EXTENSIONS = %w[.java .rb]
+
 truffle_paths = %w[
-  bench/truffle/compare.rb
-  bench/truffle/report/report.rb
   core/src/main/java/org/jruby/truffle
   core/src/main/ruby/jruby/truffle/core
   test/truffle/pe/pe.rb
@@ -32,7 +32,7 @@ since = Time.now - days * 24 * 3600
 
 puts "Fixing copyright years for commits in the last #{days} days"
 
-now_year = Time.now.year
+now_year = Time.now.year # Hack this with previous year if needed
 abort "Too far back in time: #{since} but we are in #{now_year}" unless since.year == now_year
 
 repo = Rugged::Repository.new('.')
@@ -52,7 +52,7 @@ diff = first_commit.diff(head_commit)
 paths = diff.each_delta.to_a.map { |delta|
   delta.new_file[:path]
 }.select { |path|
-  truffle_paths.any? { |prefix| path.start_with? prefix }
+  EXTENSIONS.include?(File.extname(path)) and truffle_paths.any? { |prefix| path.start_with? prefix }
 }
 
 paths.each do |file|

@@ -953,12 +953,7 @@ class TestFile < Test::Unit::TestCase
       File.open('pom.xml') { |file|
         # chown
         assert_equal(0, file.chown(-1, -1))
-	assert_equal(0, file.chown(nil, nil))
-        # lchown
-	# NOTE: hmm, it seems that MRI
-	# doesn't have File#lchown method at all!
-        assert_equal(0, file.lchown(-1, -1))
-        assert_equal(0, file.lchown(nil, nil))
+        assert_equal(0, file.chown(nil, nil))
       }
     end
   end

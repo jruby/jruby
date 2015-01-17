@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2014 Oracle and/or its affiliates. All rights reserved. This
+ * Copyright (c) 2013, 2015 Oracle and/or its affiliates. All rights reserved. This
  * code is released under a tri EPL/GPL/LGPL license. You can use it,
  * redistribute it and/or modify it under the terms of the:
  *
@@ -41,7 +41,7 @@ public abstract class SignalNodes {
 
             final Signal signal = new Signal(signalName.toString());
 
-            final SignalHandler newHandler = new ProcSignalHandler(block);
+            final SignalHandler newHandler = new ProcSignalHandler(getContext(), block);
             final SignalHandler oldHandler = Signal.handle(signal, newHandler);
 
             if (oldHandler instanceof ProcSignalHandler) {

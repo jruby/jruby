@@ -732,7 +732,7 @@ public abstract class KernelNodes {
 
     }
 
-    @CoreMethod(names = "exit!", isModuleFunction = true)
+    @CoreMethod(names = "exit!", isModuleFunction = true, optional = 1)
     public abstract static class ExitBangNode extends CoreMethodNode {
 
         public ExitBangNode(RubyContext context, SourceSection sourceSection) {
@@ -744,11 +744,17 @@ public abstract class KernelNodes {
         }
 
         @Specialization
-        public RubyNilClass exit() {
+        public RubyNilClass exit(UndefinedPlaceholder exitCode) {
+            return exit(1);
+        }
+
+        @Specialization
+        public RubyNilClass exit(int exitCode) {
             CompilerDirectives.transferToInterpreter();
-            System.exit(1);
+            System.exit(exitCode);
             return getContext().getCoreLibrary().getNilObject();
         }
+
     }
 
     @CoreMethod(names = "extend", argumentsAsArray = true, required = 1)
@@ -1430,12 +1436,18 @@ public abstract class KernelNodes {
         }
 
         @Specialization
-        public RubyNilClass print(final VirtualFrame frame, final Object[] args) {
+        public RubyNilClass print(VirtualFrame frame, Object[] args) {
+            final byte[][] bytes = new byte[args.length][];
+
+            for (int i = 0; i < args.length; i++) {
+                bytes[i] = ((RubyString) toS.call(frame, args[i], "to_s", null)).getBytes().bytes();
+            }
+
             final RubyThread runningThread = getContext().getThreadManager().leaveGlobalLock();
 
             try {
-                for (Object arg : args) {
-                    write(((RubyString) toS.call(frame, arg, "to_s", null)).getBytes().bytes());
+                for (byte[] string : bytes) {
+                    write(string);
                 }
             } finally {
                 getContext().getThreadManager().enterGlobalLock(runningThread);
@@ -1956,23 +1968,23 @@ public abstract class KernelNodes {
 
         @TruffleBoundary
         private double doSleep(final double duration) {
+            final long start = System.nanoTime();
+
             final RubyThread runningThread = getContext().getThreadManager().leaveGlobalLock();
 
             try {
-                final long start = System.nanoTime();
-
                 try {
                     Thread.sleep((long) (duration * 1000));
-                } catch (InterruptedException e) {
-                    // Ignore interruption
+                } finally {
+                    getContext().getThreadManager().enterGlobalLock(runningThread);
                 }
-
-                final long end = System.nanoTime();
-
-                return (end - start) / 1e9;
-            } finally {
-                getContext().getThreadManager().enterGlobalLock(runningThread);
+            } catch (InterruptedException e) {
+                getContext().getSafepointManager().poll();
             }
+
+            final long end = System.nanoTime();
+
+            return (end - start) / 1e9;
         }
 
     }
@@ -2009,6 +2021,7 @@ public abstract class KernelNodes {
                 final RubyThread runningThread = getContext().getThreadManager().leaveGlobalLock();
 
                 try {
+                    // TODO(CS): this is only safe if values' toString() are pure.
                     StringFormatter.format(getContext(), printStream, format, values);
                 } finally {
                     getContext().getThreadManager().enterGlobalLock(runningThread);

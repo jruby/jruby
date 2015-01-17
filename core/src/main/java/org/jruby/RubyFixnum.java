@@ -342,18 +342,6 @@ public class RubyFixnum extends RubyInteger implements Constantizable {
         return getRuntime().newString(bl);
     }
 
-    /** fix_id2name
-     * 
-     */
-    @JRubyMethod
-    public IRubyObject id2name() {
-        RubySymbol symbol = RubySymbol.getSymbolLong(getRuntime(), value);
-        
-        if (symbol != null) return getRuntime().newString(symbol.asJavaString());
-
-        return getRuntime().getNil();
-    }
-
     /** fix_to_sym
      * 
      */
@@ -597,7 +585,6 @@ public class RubyFixnum extends RubyInteger implements Constantizable {
         return context.runtime.getFalse();
     }
 
-    @JRubyMethod
     public IRubyObject pred(ThreadContext context) {
         return context.runtime.newFixnum(value-1);
     }
@@ -1221,6 +1208,11 @@ public class RubyFixnum extends RubyInteger implements Constantizable {
     @JRubyMethod
     public IRubyObject succ(ThreadContext context) {
         return ((RubyFixnum) this).op_plus_one(context);
+    }
+
+    @JRubyMethod
+    public IRubyObject bit_length(ThreadContext context) {
+        return context.runtime.newFixnum(64 - Long.numberOfLeadingZeros(value));
     }
 
     @Override

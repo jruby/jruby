@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2014 Oracle and/or its affiliates. All rights reserved. This
+ * Copyright (c) 2013, 2015 Oracle and/or its affiliates. All rights reserved. This
  * code is released under a tri EPL/GPL/LGPL license. You can use it,
  * redistribute it and/or modify it under the terms of the:
  *
@@ -13,14 +13,22 @@ import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.SourceSection;
+import com.oracle.truffle.api.utilities.ConditionProfile;
+import org.joni.Option;
 import org.jruby.runtime.Visibility;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.runtime.UndefinedPlaceholder;
+import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
 import org.jruby.truffle.runtime.core.RubyEncoding;
+import org.jruby.truffle.runtime.core.RubyNilClass;
 import org.jruby.truffle.runtime.core.RubyRegexp;
 import org.jruby.truffle.runtime.core.RubyString;
+import org.jruby.truffle.runtime.core.RubySymbol;
 import org.jruby.util.ByteList;
+
+import static org.jruby.util.StringSupport.CR_7BIT;
 
 @CoreClass(name = "Regexp")
 public abstract class RegexpNodes {
@@ -175,8 +183,10 @@ public abstract class RegexpNodes {
 
     }
 
-    @CoreMethod(names = "initialize", required = 1)
+    @CoreMethod(names = "initialize", required = 1, optional = 1, lowerFixnumParameters = 2)
     public abstract static class InitializeNode extends CoreMethodNode {
+
+        private ConditionProfile booleanOptionsProfile = ConditionProfile.createBinaryProfile();
 
         public InitializeNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -187,7 +197,7 @@ public abstract class RegexpNodes {
         }
 
         @Specialization
-        public RubyRegexp initialize(RubyRegexp regexp, RubyString string) {
+        public RubyRegexp initialize(RubyRegexp regexp, RubyString string, @SuppressWarnings("unused") UndefinedPlaceholder options) {
             notDesignedForCompilation();
 
             regexp.initialize(this, string.getBytes());
@@ -195,13 +205,54 @@ public abstract class RegexpNodes {
         }
 
         @Specialization
-        public RubyRegexp initialize(RubyRegexp regexp, RubyRegexp from) {
+        public RubyRegexp initialize(RubyRegexp regexp, RubyString string, @SuppressWarnings("unused") RubyNilClass options) {
             notDesignedForCompilation();
 
-            regexp.initialize(this, from.getSource()); // TODO: is copying needed?
+            return initialize(regexp, string, UndefinedPlaceholder.INSTANCE);
+        }
+
+        @Specialization
+        public RubyRegexp initialize(RubyRegexp regexp, RubyString string, boolean options) {
+            notDesignedForCompilation();
+
+            if (booleanOptionsProfile.profile(options)) {
+                return initialize(regexp, string, Option.IGNORECASE);
+            } else {
+                return initialize(regexp, string, UndefinedPlaceholder.INSTANCE);
+            }
+        }
+
+        @Specialization
+        public RubyRegexp initialize(RubyRegexp regexp, RubyString string, int options) {
+            notDesignedForCompilation();
+
+            regexp.initialize(this, string.getBytes(), options);
             return regexp;
         }
 
+        @Specialization(guards = "!isRubyNilClass(arguments[2])")
+        public RubyRegexp initialize(RubyRegexp regexp, RubyString string, @SuppressWarnings("unused") Object options) {
+            notDesignedForCompilation();
+
+            return initialize(regexp, string, Option.IGNORECASE);
+        }
+
+        @Specialization
+        public RubyRegexp initialize(RubyRegexp regexp, RubyRegexp from, @SuppressWarnings("unused") UndefinedPlaceholder options) {
+            notDesignedForCompilation();
+
+            regexp.initialize(this, from.getSource(), from.getRegex().getOptions()); // TODO: is copying needed?
+            return regexp;
+        }
+
+        @Specialization
+        public RubyRegexp initialize(RubyRegexp regexp, RubyRegexp from, @SuppressWarnings("unused") Object options) {
+            notDesignedForCompilation();
+
+            getContext().getWarnings().warn("flags ignored");
+
+            return initialize(regexp, from, UndefinedPlaceholder.INSTANCE);
+        }
     }
 
     @CoreMethod(names = "initialize_copy", visibility = Visibility.PRIVATE, required = 1)
@@ -262,6 +313,63 @@ public abstract class RegexpNodes {
         @Specialization
         public Object match(RubyRegexp regexp, RubyString string) {
             return regexp.matchCommon(string.getBytes(), false, false);
+        }
+
+    }
+
+    @CoreMethod(names = "options")
+    public abstract static class OptionsNode extends CoreMethodNode {
+
+        private final ConditionProfile notYetInitializedProfile = ConditionProfile.createBinaryProfile();
+
+        public OptionsNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public OptionsNode(OptionsNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public int options(RubyRegexp regexp) {
+            notDesignedForCompilation();
+
+            if (notYetInitializedProfile.profile(regexp.getRegex() == null)) {
+                CompilerDirectives.transferToInterpreter();
+
+                throw new RaiseException(getContext().getCoreLibrary().typeError("uninitialized Regexp", this));
+            }
+
+            return regexp.getRegex().getOptions();
+        }
+
+    }
+
+    @CoreMethod(names = { "quote", "escape" }, needsSelf = false, onSingleton = true, required = 1)
+    public abstract static class QuoteNode extends CoreMethodNode {
+
+        public QuoteNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public QuoteNode(QuoteNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public RubyString quote(RubyString raw) {
+            notDesignedForCompilation();
+
+            boolean isAsciiOnly = raw.getByteList().getEncoding().isAsciiCompatible() && raw.scanForCodeRange() == CR_7BIT;
+
+            return getContext().makeString(org.jruby.RubyRegexp.quote19(raw.getBytes(), isAsciiOnly));
+        }
+
+        @Specialization
+        public RubyString quote(RubySymbol raw) {
+            notDesignedForCompilation();
+
+            return quote(raw.toRubyString());
         }
 
     }

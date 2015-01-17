@@ -5,19 +5,20 @@
   <parent>
     <groupId>org.jruby</groupId>
     <artifactId>jruby-artifacts</artifactId>
-    <version>9.0.0.0-SNAPSHOT</version>
+    <version>9.0.0.0.pre1</version>
   </parent>
   <artifactId>jruby-stdlib</artifactId>
   <name>JRuby Stdlib</name>
   <properties>
-    <tesla.dump.readonly>true</tesla.dump.readonly>
     <jruby.complete.gems>${jruby.complete.home}/lib/ruby/gems/shared</jruby.complete.gems>
-    <main.basedir>${project.parent.parent.basedir}</main.basedir>
+    <tesla.version>0.1.1</tesla.version>
     <gem.home>${jruby_home}/lib/ruby/gems/shared</gem.home>
-    <tesla.dump.pom>pom.xml</tesla.dump.pom>
+    <main.basedir>${project.parent.parent.basedir}</main.basedir>
     <jruby.complete.home>${project.build.outputDirectory}/META-INF/jruby.home</jruby.complete.home>
     <jruby_home>${basedir}/../..</jruby_home>
-    <tesla.version>0.1.1</tesla.version>
+    <tesla.dump.pom>pom.xml</tesla.dump.pom>
+    <tesla.dump.readonly>true</tesla.dump.readonly>
+    <jruby.home>${basedir}/../..</jruby.home>
   </properties>
   <build>
     <resources>
@@ -45,6 +46,7 @@
           <include>bin/rdoc*</include>
           <include>bin/testrb*</include>
           <include>lib/ruby/stdlib/**</include>
+          <include>lib/ruby/truffle/**</include>
         </includes>
         <excludes>
           <exclude>bin/jruby</exclude>

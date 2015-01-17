@@ -12,9 +12,11 @@ package org.jruby.truffle.nodes.rubinius;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.utilities.ConditionProfile;
+
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyNilClass;
 import org.jruby.truffle.runtime.core.RubyString;
+import org.jruby.truffle.runtime.core.RubyThread;
 import org.jruby.util.StringSupport;
 
 /**
@@ -35,7 +37,14 @@ public abstract class VMPrimitiveNodes {
 
         @Specialization
         public RubyNilClass vmGCStart() {
-            System.gc();
+            final RubyThread runningThread = getContext().getThreadManager().leaveGlobalLock();
+
+            try {
+                System.gc();
+            } finally {
+                getContext().getThreadManager().enterGlobalLock(runningThread);
+            }
+
             return getContext().getCoreLibrary().getNilObject();
         }
 

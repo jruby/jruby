@@ -168,10 +168,16 @@ public class UnboxableOpsAnalysisNode extends FlowGraphNode<UnboxableOpsAnalysis
                 case '*' :
                 case '/' : return operandType == Float.class ? Float.class : operandType == Fixnum.class ? Fixnum.class : null;
                 case '>' :
-                case '<' : return operandType == Float.class || operandType == Fixnum.class ? UnboxedBoolean.class : null;
+                case '<' : return operandType == Float.class || operandType == Fixnum.class ? Boolean.class : null;
+                default  : return null;
             }
+        } else if (name.equals(">>") || name.equals("<<")) {
+            return Fixnum.class;
+        } else if (name.equals("==") || name.equals("===")) {
+            return Boolean.class;
+        } else {
+            return null;
         }
-        return null;
     }
 
     private Operation getUnboxedOp(Class unboxedType, String name) {
@@ -201,12 +207,10 @@ public class UnboxableOpsAnalysisNode extends FlowGraphNode<UnboxableOpsAnalysis
                     case '&' : return Operation.IAND;
                     case '^' : return Operation.IXOR;
                 }
-            } else if (name.length() == 2) {
+            } else {
                 if (name.equals(">>")) return Operation.ISHR;
                 if (name.equals("<<")) return Operation.ISHL;
-                if (name.equals("==")) return Operation.IEQ;
-            } else if (name.equals("===")) {
-                return Operation.IEQ;
+                if (name.equals("==") || name.equals("===")) return Operation.IEQ;
             }
         }
 
@@ -237,7 +241,7 @@ public class UnboxableOpsAnalysisNode extends FlowGraphNode<UnboxableOpsAnalysis
             }
 
             // But, the unboxed forms themselves are still usable
-            // after this instruction -- we way just have boxed them
+            // after this instruction -- we may have boxed them
             // needlessly if the exception itself wasn't raised.
         } 
         
@@ -279,7 +283,6 @@ public class UnboxableOpsAnalysisNode extends FlowGraphNode<UnboxableOpsAnalysis
 
     @Override
     public void applyTransferFunction(Instr i) {
-
         Variable dst = null;
         Class    dstType = Object.class; // default worst case assumption
         boolean  unboxedAndDirty = false;
@@ -322,8 +325,8 @@ public class UnboxableOpsAnalysisNode extends FlowGraphNode<UnboxableOpsAnalysis
                     Class receiverType = getOperandType(tmpState, r);
                     Class argType = getOperandType(tmpState, a);
                     // Optimistically assume that call is an ALU op
-                    if ((receiverType == Float.class || receiverType == Fixnum.class) && 
-                        (argType == Float.class || argType == Fixnum.class))
+                    if (receiverType == Float.class ||
+                        (receiverType == Fixnum.class && (argType == Float.class || argType == Fixnum.class)))
                     {
                         Class unboxedType = (receiverType == Float.class || argType == Float.class) ? Float.class : Fixnum.class;
                         unboxedAndDirty = true;
@@ -414,7 +417,7 @@ public class UnboxableOpsAnalysisNode extends FlowGraphNode<UnboxableOpsAnalysis
         switch (t) {
         case FLOAT: return c == Float.class;
         case FIXNUM: return c == Fixnum.class;
-        case BOOLEAN: return c == UnboxedBoolean.class;
+        case BOOLEAN: return c == Boolean.class;
         default: return c != Float.class && c != Boolean.class && c != Fixnum.class;
         }
     }
@@ -440,7 +443,6 @@ public class UnboxableOpsAnalysisNode extends FlowGraphNode<UnboxableOpsAnalysis
         TemporaryLocalVariable unboxedV = getUnboxedVar(reqdType, unboxMap, v);
         TemporaryVariableType vType = unboxedV.getType();
         if (vType == TemporaryVariableType.BOOLEAN) {
-            // boolean literals are lightweight enough that they dont need unboxed variants.
             newInstrs.add(new BoxBooleanInstr(v, unboxedV));
         } else if (vType == TemporaryVariableType.FLOAT) { // SSS FIXME: This is broken
             newInstrs.add(new BoxFloatInstr(v, unboxedV));
@@ -453,8 +455,7 @@ public class UnboxableOpsAnalysisNode extends FlowGraphNode<UnboxableOpsAnalysis
 
     public void unboxVar(UnboxState state, Class reqdType, Map<Variable, TemporaryLocalVariable> unboxMap, Variable v, List<Instr> newInstrs) {
         Variable unboxedV = getUnboxedVar(reqdType, unboxMap, v);
-        if (reqdType == UnboxedBoolean.class) {
-            // boolean literals are lightweight enough that they dont need unboxed variants.
+        if (reqdType == Boolean.class) {
             newInstrs.add(new UnboxBooleanInstr(unboxedV, v));
         } else if (reqdType == Float.class) { // SSS FIXME: This is broken
             newInstrs.add(new UnboxFloatInstr(unboxedV, v));
@@ -482,7 +483,7 @@ public class UnboxableOpsAnalysisNode extends FlowGraphNode<UnboxableOpsAnalysis
                 return new UnboxedFloat(((Float)arg).getValue());
             } else if (arg instanceof Fixnum) {
                 return new UnboxedFixnum(((Fixnum)arg).getValue());
-            } else if (arg instanceof org.jruby.ir.operands.Boolean) {
+            } else if (arg instanceof Boolean) {
                 return new UnboxedBoolean(((Boolean)arg).isTrue());
             }
             // This has to be a known operand like (UnboxedBoolean, etc.)
@@ -684,7 +685,7 @@ public class UnboxableOpsAnalysisNode extends FlowGraphNode<UnboxableOpsAnalysis
                     Operand o = ((ClosureAcceptingInstr)i).getClosureArg();
                     if (i instanceof CallBase && o == null) {
                         CallBase c = (CallBase)i;
-                        String m = c.getName();
+                        String   m = c.getName();
                         Operand  r = c.getReceiver();
                         if (dst != null && c.getArgsCount() == 1 && resemblesALUOp(m)) {
                             Operand a = c.getArg1();
@@ -694,8 +695,8 @@ public class UnboxableOpsAnalysisNode extends FlowGraphNode<UnboxableOpsAnalysis
                             // Optimistically assume that call is an ALU op
                             Operation unboxedOp = null;
                             Class unboxedType = null;
-                            if ((receiverType == Float.class || receiverType == Fixnum.class) && 
-                                (argType == Float.class || argType == Fixnum.class))
+                            if (receiverType == Float.class ||
+                                (receiverType == Fixnum.class && (argType == Float.class || argType == Fixnum.class)))
                             {
                                 unboxedType = (receiverType == Float.class || argType == Float.class) ? Float.class : Fixnum.class;
                                 unboxedOp = getUnboxedOp(unboxedType, m);

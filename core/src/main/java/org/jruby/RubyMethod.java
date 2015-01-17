@@ -34,6 +34,7 @@ package org.jruby;
 import org.jruby.ext.jruby.JRubyLibrary;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyClass;
+import org.jruby.internal.runtime.methods.AliasMethod;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.internal.runtime.methods.ProcMethod;
 import org.jruby.internal.runtime.methods.UndefinedMethod;
@@ -300,6 +301,14 @@ public class RubyMethod extends AbstractRubyMethod {
     public IRubyObject super_method(ThreadContext context) {
         RubyModule superClass = Helpers.findImplementerIfNecessary(receiver.getMetaClass(), implementationModule).getSuperClass();
         return super_method(context, receiver, superClass);
+    }
+
+    @JRubyMethod
+    public IRubyObject original_name(ThreadContext context) {
+        if (method instanceof AliasMethod) {
+            return context.runtime.newString(((AliasMethod)method).getOldName());
+        }
+        return name(context);
     }
 }
 

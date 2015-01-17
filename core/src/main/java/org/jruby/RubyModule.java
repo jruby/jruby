@@ -144,6 +144,9 @@ public class RubyModule extends RubyObject {
     }
 
     public void checkValidBindTargetFrom(ThreadContext context, RubyModule originModule) throws RaiseException {
+        // Module methods can always be transplanted
+        if (originModule.isModule()) return;
+
         if (!this.hasModuleInHierarchy(originModule)) {
             if (originModule instanceof MetaClass) {
                 throw context.runtime.newTypeError("can't bind singleton method to a different class");
@@ -2127,6 +2130,11 @@ public class RubyModule extends RubyObject {
     @JRubyMethod(name = "instance_method", required = 1)
     public IRubyObject instance_method(IRubyObject symbol) {
         return newMethod(null, symbol.asJavaString(), false, null);
+    }
+
+    @JRubyMethod(name = "public_instance_method", required = 1)
+    public IRubyObject public_instance_method(IRubyObject symbol) {
+        return newMethod(null, symbol.asJavaString(), false, PUBLIC);
     }
 
     /** rb_class_protected_instance_methods

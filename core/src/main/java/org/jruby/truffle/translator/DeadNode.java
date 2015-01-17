@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2014 Oracle and/or its affiliates. All rights reserved. This
+ * Copyright (c) 2013, 2015 Oracle and/or its affiliates. All rights reserved. This
  * code is released under a tri EPL/GPL/LGPL license. You can use it,
  * redistribute it and/or modify it under the terms of the:
  *
@@ -20,12 +20,15 @@ import org.jruby.truffle.runtime.RubyContext;
  */
 public class DeadNode extends RubyNode {
 
-    public DeadNode(RubyContext context, SourceSection sourceSection) {
+    private final String description;
+
+    public DeadNode(RubyContext context, SourceSection sourceSection, String description) {
         super(context, sourceSection);
+        this.description = description;
     }
 
     @Override
     public Object execute(VirtualFrame frame) {
-        throw new UnsupportedOperationException("Dead nodes should have been pruned before execution starts");
+        throw new UnsupportedOperationException("Dead nodes should have been pruned before execution starts: " + description);
     }
 }

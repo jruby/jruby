@@ -206,7 +206,7 @@ project 'JRuby', 'https://github.com/jruby/jruby' do
   [ 'bootstrap', 'bootstrap-no-launcher' ].each do |name|
     profile name do
 
-      modules [ 'test' ]
+      modules [ 'ext', 'test' ]
 
     end
   end
@@ -241,16 +241,23 @@ project 'JRuby', 'https://github.com/jruby/jruby' do
     end
   end
 
-  all_modules = [ 'test', 'maven' ]
+  profile 'jruby_complete_jar_extended' do
 
-  [ 'all', 'jruby_complete_jar_extended' ].each do |name|
-    profile name do
+    modules [ 'test', 'maven' ]
 
-      modules all_modules
+    build do
+      default_goal 'install'
+    end
+  end
 
-      build do
-        default_goal 'install'
-      end
+  all_modules = [ 'ext', 'test', 'maven' ]
+
+  profile 'all' do
+
+    modules all_modules
+
+    build do
+      default_goal 'install'
     end
   end
 

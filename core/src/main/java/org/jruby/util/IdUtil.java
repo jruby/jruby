@@ -131,7 +131,6 @@ public final class IdUtil {
     }
 
     public static boolean isNameCharacter19(char c) {
-        int letter;
         return Character.isLetterOrDigit(c) || c == '_';
     }
     

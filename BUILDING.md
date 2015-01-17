@@ -336,7 +336,7 @@ rake maven:dump_poms
 
 about the ruby DSL for those poms just look in the existing pom.rb/Mavenfile files - there are plenty of examples for all kind of situations. (more documentation to come).
 
-regular maven uses the the jruby from the installation, i.e. 9.0.0.0.dev. this also means that a regular maven run does not depend under the hood on any other jruby versions from maven central.
+regular maven uses the the jruby from the installation, i.e. 9.0.0.0. this also means that a regular maven run does not depend under the hood on any other jruby versions from maven central.
 
 at some parts there are **inline** plugins in **pom.rb** or **Mavenfile** which will work directly with regular maven where there is a special plugin running those ruby parts. see **./lib/pom.rb**.
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2014 Oracle and/or its affiliates. All rights reserved. This
+ * Copyright (c) 2013, 2015 Oracle and/or its affiliates. All rights reserved. This
  * code is released under a tri EPL/GPL/LGPL license. You can use it,
  * redistribute it and/or modify it under the terms of the:
  *
@@ -151,13 +151,15 @@ public class StringFormatter {
                         break;
                     }
 
+                    case 'x':
+                    case 'X':
                     case 'd': {
                         if (lengthModifier != 0) {
                             formatBuilder.append(" ");
                             formatBuilder.append(lengthModifier);
                         }
 
-                        formatBuilder.append("d");
+                        formatBuilder.append(type);
                         final Object value = values.get(v);
                         final long longValue;
                         if (value instanceof Integer) {
@@ -167,6 +169,7 @@ public class StringFormatter {
                         } else {
                             throw new UnsupportedOperationException();
                         }
+
                         stream.printf(formatBuilder.toString(), longValue);
                         break;
                     }
@@ -181,10 +184,13 @@ public class StringFormatter {
                     }
 
                     default:
-                        throw new RuntimeException("Kernel#sprintf error " + type);
+                        throw new RuntimeException("Kernel#sprintf error -- unknown format: " + type);
                 }
 
-                v++;
+                // Showing a literal '%' would not reference any particular value, so don't increment the value lookup index.
+                if (type != '%') {
+                    v++;
+                }
             } else {
                 stream.print(c);
             }

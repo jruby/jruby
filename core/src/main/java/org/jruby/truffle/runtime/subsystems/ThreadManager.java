@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2014 Oracle and/or its affiliates. All rights reserved. This
+ * Copyright (c) 2013, 2015 Oracle and/or its affiliates. All rights reserved. This
  * code is released under a tri EPL/GPL/LGPL license. You can use it,
  * redistribute it and/or modify it under the terms of the:
  *
@@ -10,6 +10,7 @@
 package org.jruby.truffle.runtime.subsystems;
 
 import com.oracle.truffle.api.CompilerDirectives;
+
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyThread;
 
@@ -32,8 +33,13 @@ public class ThreadManager {
 
     public ThreadManager(RubyContext context) {
         rootThread = new RubyThread(context.getCoreLibrary().getThreadClass(), this);
+        rootThread.setRootThread(Thread.currentThread());
         runningThreads.add(rootThread);
         enterGlobalLock(rootThread);
+    }
+
+    public RubyThread getRootThread() {
+        return rootThread;
     }
 
     /**
@@ -69,16 +75,18 @@ public class ThreadManager {
         return currentThread;
     }
 
-    public void registerThread(RubyThread thread) {
-        synchronized (this) {
-            runningThreads.add(thread);
+    public void interruptAllThreads() {
+        for (RubyThread thread : runningThreads) {
+            thread.interrupt();
         }
     }
 
-    public void unregisterThread(RubyThread thread) {
-        synchronized (this) {
-            runningThreads.remove(thread);
-        }
+    public synchronized void registerThread(RubyThread thread) {
+        runningThreads.add(thread);
+    }
+
+    public synchronized void unregisterThread(RubyThread thread) {
+        runningThreads.remove(thread);
     }
 
     public void shutdown() {

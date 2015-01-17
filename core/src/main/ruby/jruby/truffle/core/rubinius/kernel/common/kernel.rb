@@ -69,4 +69,8 @@ module Kernel
   end
   module_function :StringValue
 
+  def define_singleton_method(*args, &block)
+    singleton_class.send(:define_method, *args, &block)
+  end
+
 end
