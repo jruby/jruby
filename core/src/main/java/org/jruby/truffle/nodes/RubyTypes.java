@@ -21,7 +21,12 @@ import org.jruby.truffle.runtime.core.*;
  * The list of types and type conversions that the AST interpreter knows about and can specialise
  * using. Used by the DSL.
  */
-@DSLOptions(useNewLayout=true)
+@DSLOptions(
+        useNewLayout = true,
+        monomorphicTypeBoxingOptimization = DSLOptions.TypeBoxingOptimization.NONE,
+        polymorphicTypeBoxingElimination = DSLOptions.TypeBoxingOptimization.NONE,
+        implicitTypeBoxingOptimization = DSLOptions.TypeBoxingOptimization.NONE,
+        voidBoxingOptimization = DSLOptions.TypeBoxingOptimization.NONE)
 @TypeSystem({ //
                 UndefinedPlaceholder.class, //
                 boolean.class, //
