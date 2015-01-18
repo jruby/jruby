@@ -22,10 +22,6 @@ class Float
   DIG        = 15
   MANT_DIG   = 53
 
-  def negative?
-    self < 0
-  end
-
   # for Float ** Rational we would normally do Rational.convert(a) ** b, but
   # this ends up being recursive using Rubinius' code, so we use this helper
   # instead.

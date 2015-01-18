@@ -148,9 +148,7 @@ public abstract class KernelNodes {
 
         @Specialization
         public boolean sameOrEqual(VirtualFrame frame, Object a, Object b) {
-            if (areSame(frame, a, b))
-                return true;
-            return areEqual(frame, a, b);
+            return areSame(frame, a, b) || areEqual(frame, a, b);
         }
 
     }

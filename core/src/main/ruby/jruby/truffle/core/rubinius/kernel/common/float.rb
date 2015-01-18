@@ -41,4 +41,21 @@ class Float < Numeric
     (f * (RADIX ** e)).to_r
   end
 
+  def arg
+    if nan?
+      self
+    elsif negative?
+      Math::PI
+    else
+      0
+    end
+  end
+  alias_method :angle, :arg
+  alias_method :phase, :arg
+
+  def negative?
+    Rubinius.primitive :float_negative
+    raise PrimitiveFailure, "Float#negative primitive failed"
+  end
+
 end

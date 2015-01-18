@@ -55,6 +55,52 @@ public abstract class BasicObjectNodes {
 
     }
 
+
+    @CoreMethod(names = "==", required = 1)
+    public abstract static class EqualNode extends BinaryCoreMethodNode {
+
+        public EqualNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public EqualNode(EqualNode prev) {
+            super(prev);
+        }
+
+        @Specialization public boolean equal(boolean a, boolean b) { return a == b; }
+        @Specialization public boolean equal(int a, int b) { return a == b; }
+        @Specialization public boolean equal(long a, long b) { return a == b; }
+        @Specialization public boolean equal(double a, double b) { return a == b; }
+
+        @Specialization public boolean equal(RubyBasicObject a, RubyBasicObject b) {
+            return a == b;
+        }
+
+        @Specialization(guards = {"isNotRubyBasicObject(left)", "isNotRubyBasicObject(right)", "notSameClass"})
+        public boolean equal(Object a, Object b) {
+            return false;
+        }
+
+        @Specialization(guards = "isNotRubyBasicObject(left)")
+        public boolean equal(Object a, RubyBasicObject b) {
+            return false;
+        }
+
+        @Specialization(guards = "isNotRubyBasicObject(right)")
+        public boolean equal(RubyBasicObject a, Object b) {
+            return false;
+        }
+
+        protected boolean isNotRubyBasicObject(Object value) {
+            return !(value instanceof RubyBasicObject);
+        }
+
+        protected boolean notSameClass(Object a, Object b) {
+            return a.getClass() != b.getClass();
+        }
+
+    }
+
     @CoreMethod(names = "!=", required = 1)
     public abstract static class NotEqualNode extends CoreMethodNode {
 
@@ -151,7 +197,7 @@ public abstract class BasicObjectNodes {
 
     }
 
-    @CoreMethod(names = {"equal?", "=="}, required = 1)
+    @CoreMethod(names = "equal?", required = 1)
     public abstract static class ReferenceEqualNode extends BinaryCoreMethodNode {
 
         public ReferenceEqualNode(RubyContext context, SourceSection sourceSection) {
@@ -167,7 +213,7 @@ public abstract class BasicObjectNodes {
         @Specialization public boolean equal(boolean a, boolean b) { return a == b; }
         @Specialization public boolean equal(int a, int b) { return a == b; }
         @Specialization public boolean equal(long a, long b) { return a == b; }
-        @Specialization public boolean equal(double a, double b) { return a == b; }
+        @Specialization public boolean equal(double a, double b) { return Double.doubleToRawLongBits(a) == Double.doubleToRawLongBits(b); }
 
         @Specialization public boolean equal(RubyBasicObject a, RubyBasicObject b) {
             return a == b;
