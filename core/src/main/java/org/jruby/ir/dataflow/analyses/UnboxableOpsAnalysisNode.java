@@ -154,69 +154,6 @@ public class UnboxableOpsAnalysisNode extends FlowGraphNode<UnboxableOpsAnalysis
         }
     }
 
-    private boolean resemblesALUOp(String name) {
-        return name.equals("+") || name.equals("-") || name.equals("*") || name.equals("/") ||
-                name.equals("|") || name.equals("&") || name.equals(">>") || name.equals("<<") ||
-                name.equals(">") || name.equals("<") || name.equals("==") || name.equals("!=");
-    }
-
-    private Class getUnboxedResultType(Class operandType, String name) {
-        if (name.length() == 1) {
-            switch (name.charAt(0)) {
-                case '+' :
-                case '-' :
-                case '*' :
-                case '/' : return operandType == Float.class ? Float.class : operandType == Fixnum.class ? Fixnum.class : null;
-                case '>' :
-                case '<' : return operandType == Float.class || operandType == Fixnum.class ? Boolean.class : null;
-                default  : return null;
-            }
-        } else if (name.equals(">>") || name.equals("<<")) {
-            return Fixnum.class;
-        } else if (name.equals("==") || name.equals("===")) {
-            return Boolean.class;
-        } else {
-            return null;
-        }
-    }
-
-    private Operation getUnboxedOp(Class unboxedType, String name) {
-        if (unboxedType == Float.class) {
-            if (name.length() == 1) {
-                switch (name.charAt(0)) {
-                    case '+' : return Operation.FADD;
-                    case '-' : return Operation.FSUB;
-                    case '*' : return Operation.FMUL;
-                    case '/' : return Operation.FDIV;
-                    case '>' : return Operation.FGT;
-                    case '<' : return Operation.FLT;
-                }
-            } else if (name.equals("==") || name.equals("===")) {
-                return Operation.FEQ;
-            }
-        } else if (unboxedType == Fixnum.class) {
-            if (name.length() == 1) {
-                switch (name.charAt(0)) {
-                    case '+' : return Operation.IADD;
-                    case '-' : return Operation.ISUB;
-                    case '*' : return Operation.IMUL;
-                    case '/' : return Operation.IDIV;
-                    case '>' : return Operation.IGT;
-                    case '<' : return Operation.ILT;
-                    case '|' : return Operation.IOR;
-                    case '&' : return Operation.IAND;
-                    case '^' : return Operation.IXOR;
-                }
-            } else {
-                if (name.equals(">>")) return Operation.ISHR;
-                if (name.equals("<<")) return Operation.ISHL;
-                if (name.equals("==") || name.equals("===")) return Operation.IEQ;
-            }
-        }
-
-        return null;
-    }
-
     private void markLocalVariables(Collection<Variable> varsToBox, Set<Variable> varsToCheck) {
         for (Variable v: varsToCheck) {
             if (v instanceof LocalVariable) varsToBox.add(v);
@@ -306,13 +243,11 @@ public class UnboxableOpsAnalysisNode extends FlowGraphNode<UnboxableOpsAnalysis
             // should ideally be done 'on-demand'. This indicates that this could
             // be a backward-flow algo OR that this algo should be run on a
             // dataflow graph / SSA graph.
-            if (srcType == Float.class) {
+            if (srcType == Float.class || srcType == Fixnum.class) {
                 unboxedAndDirty = true;
-                tmpState.unboxedVars.put(dst, srcType);
-            } else if (srcType == Fixnum.class) {
-                unboxedAndDirty = true;
-                tmpState.unboxedVars.put(dst, srcType);
             }
+
+            tmpState.unboxedVars.put(dst, dstType);
         } else if (i instanceof ClosureAcceptingInstr) {
             Operand o = ((ClosureAcceptingInstr)i).getClosureArg();
             // Process calls specially -- these are what we want to optimize!
@@ -320,22 +255,20 @@ public class UnboxableOpsAnalysisNode extends FlowGraphNode<UnboxableOpsAnalysis
                 CallBase c = (CallBase)i;
                 String   m = c.getName();
                 Operand  r = c.getReceiver();
-                if (dst != null && c.getArgsCount() == 1 && resemblesALUOp(m)) {
+                if (dst != null && c.getArgsCount() == 1 && problem.isUnboxableMethod(m)) {
                     Operand a = c.getArg1();
                     Class receiverType = getOperandType(tmpState, r);
                     Class argType = getOperandType(tmpState, a);
-                    // Optimistically assume that call is an ALU op
-                    if (receiverType == Float.class ||
-                        (receiverType == Fixnum.class && (argType == Float.class || argType == Fixnum.class)))
-                    {
-                        Class unboxedType = (receiverType == Float.class || argType == Float.class) ? Float.class : Fixnum.class;
+
+                    if (problem.acceptsArgTypes(m, receiverType, argType)) {
+                        Class unboxedType = problem.getUnboxedType(m, receiverType, argType);
                         unboxedAndDirty = true;
 
-                        dstType = getUnboxedResultType(unboxedType, m);
+                        dstType = problem.getUnboxedResultType(m, unboxedType);
                         tmpState.unboxedVars.put(dst, dstType);
 
                         // If 'r' and 'a' are not already in unboxed forms at this point,
-                        // they will get unboxed after this, because we want to opt. this call
+                        // they will get unboxed after this, because we want to opt. this call.
                         if (r instanceof Variable) {
                             tmpState.unboxedVars.put((Variable)r, unboxedType);
                         }
@@ -478,17 +411,16 @@ public class UnboxableOpsAnalysisNode extends FlowGraphNode<UnboxableOpsAnalysis
             }
 
             return unboxedVar;
-        } else {
-            if (arg instanceof Float) {
-                return new UnboxedFloat(((Float)arg).getValue());
-            } else if (arg instanceof Fixnum) {
-                return new UnboxedFixnum(((Fixnum)arg).getValue());
-            } else if (arg instanceof Boolean) {
-                return new UnboxedBoolean(((Boolean)arg).isTrue());
-            }
-            // This has to be a known operand like (UnboxedBoolean, etc.)
-            return arg;
+        } else if (arg instanceof Float) {
+            return new UnboxedFloat(((Float)arg).getValue());
+        } else if (arg instanceof Fixnum) {
+            return new UnboxedFixnum(((Fixnum)arg).getValue());
+        } else if (arg instanceof Boolean) {
+            return new UnboxedBoolean(((Boolean)arg).isTrue());
         }
+
+        // This has to be a known operand like (UnboxedBoolean, etc.)
+        return arg;
     }
 
     private Operand getUnboxedOperand(UnboxState state, Map<Variable, TemporaryLocalVariable> unboxMap, Operand arg) {
@@ -496,16 +428,16 @@ public class UnboxableOpsAnalysisNode extends FlowGraphNode<UnboxableOpsAnalysis
             Variable v = (Variable)arg;
             Class unboxedType = state.unboxedVars.get(v);
             return unboxedType == null ? arg : getUnboxedVar(unboxedType, unboxMap, v);
-        } else {
-            if (arg instanceof Float) {
-                return new UnboxedFloat(((Float)arg).getValue());
-            } else if (arg instanceof Fixnum) {
-                return new UnboxedFixnum(((Fixnum)arg).getValue());
-            } else if (arg instanceof Boolean) {
-                return new UnboxedBoolean(((Boolean)arg).isTrue());
-            }
-            return arg;
+        } else if (arg instanceof Float) {
+            return new UnboxedFloat(((Float)arg).getValue());
+        } else if (arg instanceof Fixnum) {
+            return new UnboxedFixnum(((Fixnum)arg).getValue());
+        } else if (arg instanceof Boolean) {
+            return new UnboxedBoolean(((Boolean)arg).isTrue());
         }
+
+        // This has to be a known operand like (UnboxedBoolean, etc.)
+        return arg;
     }
 
     private void boxRequiredVars(Instr i, UnboxState state, Map<Variable, TemporaryLocalVariable> unboxMap, Variable dst, boolean hasRescuer, boolean isDFBarrier, List<Instr> newInstrs) {
@@ -678,34 +610,32 @@ public class UnboxableOpsAnalysisNode extends FlowGraphNode<UnboxableOpsAnalysis
                         Operand unboxedSrc = src instanceof Variable ? getUnboxedVar(srcType, unboxMap, (Variable)src) : src;
                         TemporaryLocalVariable unboxedDst = getUnboxedVar(srcType, unboxMap, dst);
                         newInstrs.add(new CopyInstr(Operation.COPY, unboxedDst, unboxedSrc));
-                        tmpState.unboxedVars.put(dst, srcType);
                         unboxedAndDirty = true;
                     }
+
+                    tmpState.unboxedVars.put(dst, dstType);
                 } else if (i instanceof ClosureAcceptingInstr) {
                     Operand o = ((ClosureAcceptingInstr)i).getClosureArg();
                     if (i instanceof CallBase && o == null) {
                         CallBase c = (CallBase)i;
                         String   m = c.getName();
                         Operand  r = c.getReceiver();
-                        if (dst != null && c.getArgsCount() == 1 && resemblesALUOp(m)) {
+                        if (dst != null && c.getArgsCount() == 1 && problem.isUnboxableMethod(m)) {
                             Operand a = c.getArg1();
                             Class receiverType = getOperandType(tmpState, r);
                             Class argType = getOperandType(tmpState, a);
 
-                            // Optimistically assume that call is an ALU op
                             Operation unboxedOp = null;
                             Class unboxedType = null;
-                            if (receiverType == Float.class ||
-                                (receiverType == Fixnum.class && (argType == Float.class || argType == Fixnum.class)))
-                            {
-                                unboxedType = (receiverType == Float.class || argType == Float.class) ? Float.class : Fixnum.class;
-                                unboxedOp = getUnboxedOp(unboxedType, m);
+                            if (problem.acceptsArgTypes(m, receiverType, argType)) {
+                                unboxedType = problem.getUnboxedType(m, receiverType, argType);
+                                unboxedOp = problem.getUnboxedOp(m, unboxedType);
                             }
 
                             if (unboxedType != null && unboxedOp != null) {
                                 unboxedAndDirty = true;
 
-                                dstType = getUnboxedResultType(unboxedType, m);
+                                dstType = problem.getUnboxedResultType(m, unboxedType);
                                 tmpState.unboxedVars.put(dst, dstType);
 
                                 TemporaryLocalVariable unboxedDst = getUnboxedVar(dstType, unboxMap, dst);
