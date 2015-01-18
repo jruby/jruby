@@ -18,8 +18,16 @@ import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.RubyGC;
 import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.runtime.core.RubyArray;
 import org.jruby.truffle.runtime.core.RubyBinding;
+import org.jruby.truffle.runtime.core.RubyHash;
+import org.jruby.truffle.runtime.core.RubyNilClass;
+import org.jruby.truffle.runtime.hash.HashOperations;
+import org.jruby.truffle.runtime.hash.KeyValue;
 import org.jruby.util.Memo;
+
+import java.util.ArrayList;
+import java.util.Collection;
 
 @CoreClass(name = "Truffle::Primitive")
 public abstract class TrufflePrimitiveNodes {
@@ -64,6 +72,53 @@ public abstract class TrufflePrimitiveNodes {
                     getContext().getCoreLibrary().getBindingClass(),
                     RubyArguments.getSelf(frame.getArguments()),
                     frame);
+        }
+
+    }
+
+    @CoreMethod(names = "coverage_result", onSingleton = true)
+    public abstract static class CoverageResultNode extends CoreMethodNode {
+
+        public CoverageResultNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public CoverageResultNode(CoverageResultNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public RubyHash coverageResult() {
+            // TODO(CS, 18-Jan-15) Implement
+
+            final Collection<KeyValue> keyValues = new ArrayList<>();
+
+            for (String file : new String[]{"example.rb"}) {
+                final Object[] array = new Object[]{getContext().getCoreLibrary().getNilObject(), 1, 2, 3};
+                keyValues.add(new KeyValue(getContext().makeString(file), new RubyArray(getContext().getCoreLibrary().getArrayClass(), array, array.length)));
+            }
+
+            return HashOperations.verySlowFromEntries(getContext(), keyValues);
+        }
+
+    }
+
+    @CoreMethod(names = "coverage_start", onSingleton = true)
+    public abstract static class CoverageStartNode extends CoreMethodNode {
+
+        public CoverageStartNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public CoverageStartNode(CoverageStartNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public RubyNilClass coverageStart() {
+            // TODO(CS, 18-Jan-15) Implement
+
+            return getContext().getCoreLibrary().getNilObject();
         }
 
     }

@@ -19,6 +19,7 @@ import org.jruby.util.cli.Options;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.List;
 
 public class HashOperations {
@@ -39,7 +40,7 @@ public class HashOperations {
     }
 
     @CompilerDirectives.TruffleBoundary
-    public static RubyHash verySlowFromEntries(RubyContext context, List<KeyValue> entries) {
+    public static RubyHash verySlowFromEntries(RubyContext context, Collection<KeyValue> entries) {
         RubyNode.notDesignedForCompilation();
 
         final RubyHash hash = new RubyHash(context.getCoreLibrary().getHashClass(), null, null, null, 0, null);
@@ -198,7 +199,7 @@ public class HashOperations {
     }
 
     @CompilerDirectives.TruffleBoundary
-    public static void verySlowSetKeyValues(RubyHash hash, List<KeyValue> keyValues) {
+    public static void verySlowSetKeyValues(RubyHash hash, Collection<KeyValue> keyValues) {
         final int size = keyValues.size();
         hash.setStore(new Entry[capacityGreaterThan(size)], 0, null, null);
 

@@ -135,6 +135,9 @@ public class TruffleBridgeImpl implements TruffleBridge {
         // Libraries copied unmodified from MRI
         loadPath.slowPush(truffleContext.makeString(new File(home, "lib/ruby/truffle/mri").toString()));
 
+        // Our own implementations
+        loadPath.slowPush(truffleContext.makeString(new File(home, "lib/ruby/truffle/truffle").toString()));
+
         // Shims
         loadPath.slowPush(truffleContext.makeString(new File(home, "lib/ruby/truffle/shims").toString()));
 
