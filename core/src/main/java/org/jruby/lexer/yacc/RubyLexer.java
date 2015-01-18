@@ -1113,8 +1113,13 @@ public class RubyLexer {
             if (tok == Tokens.tSTRING_END && (yaccValue.equals("\"") || yaccValue.equals("'"))) {
                 if (((lex_state == LexState.EXPR_BEG || lex_state == LexState.EXPR_ENDFN) && !conditionState.isInState() ||
                         isARG()) && src.peek(':')) {
-                    src.read();
-                    tok = Tokens.tLABEL_END;
+                    int c1 = src.read();
+                    if (src.peek(':')) { // "mod"::SOMETHING (hack MRI does not do this)
+                        src.unread(c1);
+                    } else {
+                        src.read();
+                        tok = Tokens.tLABEL_END;
+                    }
                 }
             }
 
