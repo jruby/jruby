@@ -1,4 +1,0 @@
-fails:Float#abs returns the absolute value
-fails:Float#abs returns 0.0 if -0.0
-fails:Float#abs returns Infinity if -Infinity
-fails:Float#abs returns NaN if NaN
