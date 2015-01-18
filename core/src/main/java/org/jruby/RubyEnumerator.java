@@ -474,7 +474,14 @@ public class RubyEnumerator extends RubyObject {
         
         return nexter.peek();
     }
-    
+
+    @JRubyMethod(name = "peek_values")
+    public synchronized IRubyObject peekValues(ThreadContext context) {
+        ensureNexter(context);
+
+        return RubyArray.newArray(context.runtime, nexter.peek());
+    }
+
     private void ensureNexter(ThreadContext context) {
         if (nexter == null) {
             if (Options.ENUMERATOR_LIGHTWEIGHT.load()) {
