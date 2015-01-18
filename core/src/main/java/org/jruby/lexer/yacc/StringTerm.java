@@ -56,10 +56,6 @@ public class StringTerm extends StrTerm {
         this.nest  = 0;
     }
 
-    public int getNest() {
-        return nest;
-    }
-
     protected ByteList createByteList(RubyLexer lexer) {
         return new ByteList(new byte[]{}, lexer.getEncoding());
     }
@@ -134,6 +130,7 @@ public class StringTerm extends StrTerm {
                 break;
             }
             case '{':
+                //lexer.setBraceNest(lexer.getBraceNest() + 1);
                 lexer.setValue("#" + (char) c);
                 return Tokens.tSTRING_DBEG;
             default:

@@ -326,6 +326,7 @@ public class RubyLexer {
 
     // Count of nested parentheses
     private int parenNest = 0;
+    private int braceNest = 0;
 
     private int leftParenBegin = 0;
 
@@ -333,6 +334,14 @@ public class RubyLexer {
         parenNest++;
 
         return parenNest;
+    }
+
+    public int getBraceNest() {
+        return braceNest;
+    }
+
+    public void setBraceNest(int nest) {
+        braceNest = nest;
     }
 
     public int getLeftParenBegin() {
@@ -356,6 +365,8 @@ public class RubyLexer {
         resetStacks();
         lex_strterm = null;
         commandStart = true;
+        parenNest = 0;
+        braceNest = 0;
     }
 
     public int nextToken() throws IOException {
@@ -467,6 +478,10 @@ public class RubyLexer {
         } else {
             System.out.println(lex_state);
         }
+    }
+
+    public LexState getState() {
+        return lex_state;
     }
 
     public void setState(LexState state) {
@@ -1094,7 +1109,16 @@ public class RubyLexer {
         
         if (lex_strterm != null) {
             int tok = lex_strterm.parseString(this, src);
-            if (tok == Tokens.tSTRING_END || tok == Tokens.tREGEXP_END) {
+
+            if (tok == Tokens.tSTRING_END && (yaccValue.equals("\"") || yaccValue.equals("'"))) {
+                if (((lex_state == LexState.EXPR_BEG || lex_state == LexState.EXPR_ENDFN) && !conditionState.isInState() ||
+                        isARG()) && src.peek(':')) {
+                    src.read();
+                    tok = Tokens.tLABEL_END;
+                }
+            }
+
+            if (tok == Tokens.tSTRING_END || tok == Tokens.tREGEXP_END || tok == Tokens.tLABEL_END) {
                 lex_strterm = null;
                 setState(LexState.EXPR_END);
             }
@@ -1861,6 +1885,8 @@ public class RubyLexer {
     }
     
     private int leftCurly() {
+        braceNest++;
+        //System.out.println("lcurly: " + braceNest);
         if (leftParenBegin > 0 && leftParenBegin == parenNest) {
             setState(LexState.EXPR_BEG);
             leftParenBegin = 0;
@@ -2182,7 +2208,10 @@ public class RubyLexer {
         cmdArgumentState.restart();
         setState(LexState.EXPR_ENDARG);
         yaccValue = "}";
-        return Tokens.tRCURLY;
+        //System.out.println("braceNest: " + braceNest);
+        int tok = /*braceNest != 0 ? Tokens.tSTRING_DEND : */ Tokens.tRCURLY;
+        braceNest--;
+        return tok;
     }
 
     private int rightParen() {
