@@ -19,6 +19,11 @@
   <properties>
     <tesla.dump.pom>pom.xml</tesla.dump.pom>
   </properties>
+  <parent>
+    <groupId>org.sonatype.oss</groupId>
+    <artifactId>oss-parent</artifactId>
+    <version>7</version>
+  </parent>
   <dependencies>
     <dependency>
       <groupId>com.oracle</groupId>
@@ -37,6 +42,44 @@
             <goals>
               <goal>shade</goal>
             </goals>
+          </execution>
+        </executions>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-jar-plugin</artifactId>
+        <executions>
+          <execution>
+            <id>empty-javadoc-jar</id>
+            <phase>package</phase>
+            <goals>
+              <goal>jar</goal>
+            </goals>
+            <configuration>
+              <classifier>javadoc</classifier>
+              <includes>
+                <include>${basedir}/src/main/resource/empty</include>
+              </includes>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-jar-plugin</artifactId>
+        <executions>
+          <execution>
+            <id>empty-sources-jar</id>
+            <phase>package</phase>
+            <goals>
+              <goal>jar</goal>
+            </goals>
+            <configuration>
+              <includes>
+                <include>${basedir}/src/main/resource/empty</include>
+              </includes>
+              <classifier>sources</classifier>
+            </configuration>
           </execution>
         </executions>
       </plugin>
