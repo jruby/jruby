@@ -50,18 +50,33 @@ public class SafepointManager {
         }
     }
 
-    public void leaveThread() {
+    public void leaveThreadAndGlobalLock() {
         CompilerAsserts.neverPartOfCompilation();
+
+        RubyThread thread = context.getThreadManager().leaveGlobalLock();
 
         // Leave only when there is no more running safepoint action.
         while (!lock.tryLock()) {
-            poll();
+            pollWithoutGlobalLock(thread);
         }
-        // lock acquired
+        // SafepointManager lock acquired
         try {
             liveThreads--;
         } finally {
             lock.unlock();
+        }
+    }
+
+    private void pollWithoutGlobalLock(RubyThread thread) {
+        try {
+            assumption.check();
+        } catch (InvalidAssumptionException e) {
+            context.getThreadManager().enterGlobalLock(thread);
+            try {
+                assumptionInvalidated();
+            } finally {
+                context.getThreadManager().leaveGlobalLock();
+            }
         }
     }
 
