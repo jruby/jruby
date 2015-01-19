@@ -114,7 +114,7 @@ public class ObjectSpaceManager {
     private void runFinalizers() {
         // Run in a loop
 
-        while (true) {
+        while (!stop) {
             // Is there a finalizer ready to immediately run?
 
             FinalizerReference finalizerReference = (FinalizerReference) finalizerQueue.poll();
