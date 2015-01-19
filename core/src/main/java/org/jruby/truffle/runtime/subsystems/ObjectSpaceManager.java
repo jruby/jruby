@@ -64,7 +64,6 @@ public class ObjectSpaceManager {
     private final ReferenceQueue<RubyBasicObject> finalizerQueue = new ReferenceQueue<>();
     private RubyThread finalizerThread;
     private boolean stop;
-    private CountDownLatch finished = new CountDownLatch(1);
 
     public ObjectSpaceManager(RubyContext context) {
         this.context = context;
@@ -144,8 +143,6 @@ public class ObjectSpaceManager {
                 runFinalizers(finalizerReference);
             }
         }
-
-        finished.countDown();
     }
 
     private static void runFinalizers(FinalizerReference finalizerReference) {
@@ -172,14 +169,7 @@ public class ObjectSpaceManager {
             // Tell the finalizer thread to stop and wait for it to do so
             stop = true;
             finalizerThread.interrupt();
-
-            context.getThreadManager().runOnce(new BlockingActionWithoutGlobalLock<Boolean>() {
-                @Override
-                public Boolean block() throws InterruptedException {
-                    finished.await();
-                    return SUCCESS;
-                }
-            });
+            finalizerThread.join();
 
             // Run any finalizers for objects that are still live
 
