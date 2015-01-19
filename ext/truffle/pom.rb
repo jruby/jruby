@@ -17,3 +17,9 @@ profile :bootstrap do
     snapshots 'false'
   end
 end
+
+distribution_management do
+  snapshot_repository :id => 'sonatype-nexus-snapshots', :url =>  'https://oss.sonatype.org/content/repositories/snapshots'
+  repository :id => 'sonatype-nexus-staging', :url =>  'https://oss.sonatype.org/service/local/staging/deploy/maven2'
+end
+
