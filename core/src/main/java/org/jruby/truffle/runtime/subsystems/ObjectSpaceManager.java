@@ -161,24 +161,25 @@ public class ObjectSpaceManager {
     public void shutdown() {
         RubyNode.notDesignedForCompilation();
 
+        if (finalizerThread == null) {
+            return;
+        }
+
         // TODO (eregon): refactor this without explicit interrupt
         context.getThreadManager().enterGlobalLock(finalizerThread);
 
         try {
             // Tell the finalizer thread to stop and wait for it to do so
+            stop = true;
+            finalizerThread.interrupt();
 
-            if (finalizerThread != null) {
-                stop = true;
-                finalizerThread.interrupt();
-
-                context.getThreadManager().runOnce(new BlockingActionWithoutGlobalLock<Boolean>() {
-                    @Override
-                    public Boolean block() throws InterruptedException {
-                        finished.await();
-                        return SUCCESS;
-                    }
-                });
-            }
+            context.getThreadManager().runOnce(new BlockingActionWithoutGlobalLock<Boolean>() {
+                @Override
+                public Boolean block() throws InterruptedException {
+                    finished.await();
+                    return SUCCESS;
+                }
+            });
 
             // Run any finalizers for objects that are still live
 
