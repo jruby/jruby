@@ -425,7 +425,7 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, Constanti
             @Override
             public IRubyObject yield(ThreadContext context, IRubyObject[] args, IRubyObject self,
                                      Binding binding, Type type, Block block) {
-                RubyProc.prepareArgs(context, type, block.arity(), args);
+                RubyProc.prepareArgs(context, type, block.getBody(), args);
                 return yieldInner(context, context.runtime.newArrayNoCopyLight(args), block);
             }
 
