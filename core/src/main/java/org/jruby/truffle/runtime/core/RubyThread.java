@@ -77,8 +77,8 @@ public class RubyThread extends RubyBasicObject {
         thread = new Thread(new Runnable() {
             @Override
             public void run() {
-                context.getSafepointManager().enterThread();
                 finalThread.manager.registerThread(finalThread);
+                context.getSafepointManager().enterThread();
                 finalThread.manager.enterGlobalLock(finalThread);
 
                 try {
@@ -91,8 +91,9 @@ public class RubyThread extends RubyBasicObject {
                     exception = getContext().getCoreLibrary().unexpectedReturn(currentNode);
                 } finally {
                     context.getSafepointManager().leaveThread();
-                    finalThread.manager.unregisterThread(finalThread);
                     finalThread.manager.leaveGlobalLock();
+                    finalThread.manager.unregisterThread(finalThread);
+
                     finalThread.finished.countDown();
                     status = Status.DEAD;
                     thread = null;
