@@ -851,25 +851,23 @@ public abstract class KernelNodes {
         public RubyString gets(VirtualFrame frame) {
             notDesignedForCompilation();
 
-            final RubyContext context = getContext();
+            // TODO(CS): having some trouble interacting with JRuby stdin - so using this hack
+            final InputStream in = getContext().getRuntime().getInstanceConfig().getInput();
 
-            final Frame caller = Truffle.getRuntime().getCallerFrame().getFrame(FrameInstance.FrameAccess.READ_WRITE, false);
+            final BufferedReader reader = new BufferedReader(new InputStreamReader(in));
 
-            final String line;
+            final String line = getContext().getThreadManager().runOnce(new BlockingActionWithoutGlobalLock<String>() {
+                @Override
+                public String block() throws InterruptedException {
+                    return gets(reader);
+                }
+            });
 
-            final RubyThread runningThread = getContext().getThreadManager().leaveGlobalLock();
-
-            try {
-                line = gets(context);
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            } finally {
-                getContext().getThreadManager().enterGlobalLock(runningThread);
-            }
-
-            final RubyString rubyLine = context.makeString(line);
+            final RubyString rubyLine = getContext().makeString(line);
 
             // Set the local variable $_ in the caller
+
+            final Frame caller = Truffle.getRuntime().getCallerFrame().getFrame(FrameInstance.FrameAccess.READ_WRITE, false);
 
             final FrameSlot slot = caller.getFrameDescriptor().findFrameSlot("$_");
 
@@ -881,22 +879,12 @@ public abstract class KernelNodes {
         }
 
         @TruffleBoundary
-        private static String gets(RubyContext context) throws IOException {
-            // TODO(CS): having some trouble interacting with JRuby stdin - so using this hack
-
-            final StringBuilder builder = new StringBuilder();
-
-            while (true) {
-                final int c = context.getRuntime().getInstanceConfig().getInput().read();
-
-                if (c == -1 || c == '\r' || c == '\n') {
-                    break;
-                }
-
-                builder.append((char) c);
+        private static String gets(BufferedReader reader) throws InterruptedException {
+            try {
+                return reader.readLine();
+            } catch (IOException e) {
+                throw new RuntimeException(e);
             }
-
-            return builder.toString();
         }
 
     }
