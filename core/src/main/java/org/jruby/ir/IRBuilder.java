@@ -3124,7 +3124,7 @@ public class IRBuilder {
             // of StandardError.  I am ignoring this for now and treating this as undefined behavior.
             //
             // Solution: Create a 'StandardError' operand type to eliminate this.
-            Variable v = addResultInstr(s, new InheritanceSearchConstInstr(s.createTemporaryVariable(), s.getCurrentModuleVariable(), "StandardError", false));
+            Variable v = addResultInstr(s, new InheritanceSearchConstInstr(s.createTemporaryVariable(), new ObjectClass(), "StandardError", false));
             outputExceptionCheck(s, v, exc, caughtLabel);
         }
 
