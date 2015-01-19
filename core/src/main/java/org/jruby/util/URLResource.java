@@ -159,7 +159,7 @@ public class URLResource extends AbstractFileResource {
         }
         try
         {
-            pathname = new URI("/" + pathname).normalize().getPath().replaceAll("^/(../)*", "");
+            pathname = new URI(pathname.replaceFirst("^/*", "/")).normalize().getPath().replaceAll("^/([.][.]/)*", "");
         } catch (URISyntaxException e) {
             pathname = pathname.replaceAll("^[.]?/+", "");
         }
