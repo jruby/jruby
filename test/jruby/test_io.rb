@@ -426,20 +426,6 @@ class TestIO < Test::Unit::TestCase
   end
   private :ensure_files
   
-  # JRUBY-4908  ... Solaris is commented out for now until I can figure out why
-  # ci will not run it properly.
-  if !WINDOWS && !SOLARIS
-    def test_sh_used_appropriately
-      # should not use sh
-      p, o, i, e = IO.popen4("/bin/ps -a -f")
-      assert_match p.to_s, i.read.lines.grep(/\/bin\/ps -a -f/).first
-      
-      # should use sh
-      p, o, i, e = IO.popen4("/bin/ps -a -f | grep [/]bin/ps'")
-      assert_no_match Regexp.new(p.to_s), i.read.lines.grep(/\/bin\/ps/).first
-    end
-  end
-  
   # JRUBY-5114
   def test_autoclose_false_leaves_channels_open
     channel = java.io.FileInputStream.new(__FILE__).channel
