@@ -74,11 +74,9 @@ public class RubyThread extends RubyBasicObject {
         final RubyThread finalThread = this;
         final Runnable finalRunnable = runnable;
 
-        new Thread(new Runnable() {
-
+        thread = new Thread(new Runnable() {
             @Override
             public void run() {
-                thread = Thread.currentThread();
                 context.getSafepointManager().enterThread();
                 finalThread.manager.registerThread(finalThread);
                 finalThread.manager.enterGlobalLock(finalThread);
@@ -101,7 +99,9 @@ public class RubyThread extends RubyBasicObject {
                 }
             }
 
-        }).start();
+        });
+        thread.setDaemon(true);
+        thread.start();
     }
 
     public void setRootThread(Thread thread) {
