@@ -11,7 +11,8 @@ project 'JRuby Ext' do
               'tesla.dump.readonly' => true )
 
   modules [ 'readline',
-            'ripper' ]
+            'ripper',
+            'truffle' ]
 
   plugin( :deploy,
           'skip' =>  'true' )

@@ -61,11 +61,12 @@ project 'JRuby Core' do
   jar 'com.headius:unsafe-mock', '${unsafe.version}', :scope => 'provided'
   jar 'com.headius:jsr292-mock:1.1', :scope => 'provided'
 
+  jar 'com.headius:openjdk-truffle:0.6'
+  jar 'com.oracle:truffle-dsl-processor:0.6', :scope => 'provided'
+
   jar 'bsf:bsf:2.4.0', :scope => 'provided'
   jar 'com.jcraft:jzlib:1.1.3'
   jar 'com.martiansoftware:nailgun-server:0.9.1'
-  jar 'com.oracle:truffle:0.6'
-  jar 'com.oracle:truffle-dsl-processor:0.6', :scope => 'provided'
   jar 'junit:junit', :scope => 'test'
   jar 'org.apache.ant:ant:${ant.version}', :scope => 'provided'
   jar 'org.osgi:org.osgi.core:5.0.0', :scope => 'provided'

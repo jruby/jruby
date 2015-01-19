@@ -13,6 +13,7 @@
   <modules>
     <module>readline</module>
     <module>ripper</module>
+    <module>truffle</module>
   </modules>
   <properties>
     <tesla.dump.readonly>true</tesla.dump.readonly>
