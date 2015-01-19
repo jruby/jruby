@@ -74,11 +74,16 @@ public class SafepointManager {
     }
 
     private void assumptionInvalidated() {
+        // wait other threads to reach their safepoint
+        waitOnBarrier();
+
+        // wait the assumption to be renewed
         waitOnBarrier();
 
         try {
             action.accept(context.getThreadManager().getCurrentThread());
         } finally {
+            // wait other threads to finish their action
             waitOnBarrier();
         }
     }
@@ -100,6 +105,9 @@ public class SafepointManager {
             waitOnBarrier();
 
             assumption = Truffle.getRuntime().createAssumption();
+
+            // wait for all threads to see the new assumption
+            waitOnBarrier();
 
             try {
                 action.accept(context.getThreadManager().getCurrentThread());
@@ -131,6 +139,9 @@ public class SafepointManager {
             waitOnBarrierNoGlobalLock();
 
             assumption = Truffle.getRuntime().createAssumption();
+
+            // wait for all threads to see the new assumption
+            waitOnBarrierNoGlobalLock();
 
             // wait for all Ruby threads to execute the action
             waitOnBarrierNoGlobalLock();
