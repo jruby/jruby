@@ -29,6 +29,7 @@ public class SafepointManager {
     private final RubyContext context;
 
     @CompilerDirectives.CompilationFinal private Assumption assumption = Truffle.getRuntime().createAssumption();
+    private final Lock lock = new ReentrantLock();
     private CyclicBarrier barrier;
     private int liveThreads = 1;
     private Consumer<RubyThread> action;
@@ -37,18 +38,31 @@ public class SafepointManager {
         this.context = context;
     }
 
-    public synchronized void enterThread() {
+    public void enterThread() {
         CompilerAsserts.neverPartOfCompilation();
 
-        liveThreads++;
+        // Waits for lock to become available
+        lock.lock();
+        try {
+            liveThreads++;
+        } finally {
+            lock.unlock();
+        }
     }
 
-    public synchronized void leaveThread() {
+    public void leaveThread() {
         CompilerAsserts.neverPartOfCompilation();
 
-        poll();
-
-        liveThreads--;
+        // Leave only when there is no more running safepoint action.
+        while (!lock.tryLock()) {
+            poll();
+        }
+        // lock acquired
+        try {
+            liveThreads--;
+        } finally {
+            lock.unlock();
+        }
     }
 
     public void poll() {
@@ -69,50 +83,60 @@ public class SafepointManager {
         }
     }
 
-    public synchronized void pauseAllThreadsAndExecute(final Consumer<RubyThread> action) {
+    public void pauseAllThreadsAndExecute(final Consumer<RubyThread> action) {
         CompilerDirectives.transferToInterpreter();
 
-        SafepointManager.this.action = action;
-
-        barrier = new CyclicBarrier(liveThreads);
-
-        assumption.invalidate();
-
-        context.getThreadManager().interruptAllThreads();
-
-        // wait for all threads to reach their safepoint
-        waitOnBarrier();
-
-        assumption = Truffle.getRuntime().createAssumption();
-
+        lock.lock();
         try {
-            action.accept(context.getThreadManager().getCurrentThread());
-        } finally {
-            // wait for all threads to execute the action
+            SafepointManager.this.action = action;
+
+            barrier = new CyclicBarrier(liveThreads);
+
+            assumption.invalidate();
+
+            context.getThreadManager().interruptAllThreads();
+
+            // wait for all threads to reach their safepoint
             waitOnBarrier();
+
+            assumption = Truffle.getRuntime().createAssumption();
+
+            try {
+                action.accept(context.getThreadManager().getCurrentThread());
+            } finally {
+                // wait for all threads to execute the action
+                waitOnBarrier();
+            }
+        } finally {
+            lock.unlock();
         }
     }
 
-    public synchronized void pauseAllThreadsAndExecuteSignalHandler(final Consumer<RubyThread> action) {
+    public void pauseAllThreadsAndExecuteSignalHandler(final Consumer<RubyThread> action) {
         CompilerDirectives.transferToInterpreter();
 
-        // The current (Java) thread is not a Ruby thread, so we do not touch the global lock.
+        lock.lock();
+        try {
+            // The current (Java) thread is not a Ruby thread, so we do not touch the global lock.
 
-        SafepointManager.this.action = action;
+            SafepointManager.this.action = action;
 
-        barrier = new CyclicBarrier(liveThreads + 1);
+            barrier = new CyclicBarrier(liveThreads + 1);
 
-        assumption.invalidate();
+            assumption.invalidate();
 
-        context.getThreadManager().interruptAllThreads();
+            context.getThreadManager().interruptAllThreads();
 
-        // wait for all threads to reach their safepoint
-        waitOnBarrierNoGlobalLock();
+            // wait for all threads to reach their safepoint
+            waitOnBarrierNoGlobalLock();
 
-        assumption = Truffle.getRuntime().createAssumption();
+            assumption = Truffle.getRuntime().createAssumption();
 
-        // wait for all Ruby threads to execute the action
-        waitOnBarrierNoGlobalLock();
+            // wait for all Ruby threads to execute the action
+            waitOnBarrierNoGlobalLock();
+        } finally {
+            lock.unlock();
+        }
     }
 
     private void waitOnBarrier() {
