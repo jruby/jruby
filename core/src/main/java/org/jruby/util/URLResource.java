@@ -5,6 +5,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.MalformedURLException;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.Enumeration;
 import java.util.LinkedHashSet;
@@ -157,8 +159,8 @@ public class URLResource extends AbstractFileResource {
         }
         try
         {
-            pathname = new NormalizedFile("/" + pathname).getCanonicalPath().substring(1);
-        } catch (IOException e) {
+            pathname = new URI("/" + pathname).normalize().getPath().replaceAll("^/(../)*", "");
+        } catch (URISyntaxException e) {
             pathname = pathname.replaceAll("^[.]?/+", "");
         }
         URL url = cl.getResource(pathname);
