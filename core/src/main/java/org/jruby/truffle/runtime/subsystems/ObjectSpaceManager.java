@@ -63,7 +63,6 @@ public class ObjectSpaceManager {
     private final Map<RubyBasicObject, FinalizerReference> finalizerReferences = new WeakHashMap<>();
     private final ReferenceQueue<RubyBasicObject> finalizerQueue = new ReferenceQueue<>();
     private RubyThread finalizerThread;
-    private Thread finalizerJavaThread;
     private boolean stop;
     private CountDownLatch finished = new CountDownLatch(1);
 
@@ -134,8 +133,6 @@ public class ObjectSpaceManager {
 
             // Leave the global lock and wait on the finalizer queue
 
-            finalizerJavaThread = Thread.currentThread();
-
             finalizerReference = context.getThreadManager().runOnce(new BlockingActionWithoutGlobalLock<FinalizerReference>() {
                 @Override
                 public FinalizerReference block() throws InterruptedException {
@@ -172,10 +169,7 @@ public class ObjectSpaceManager {
 
             if (finalizerThread != null) {
                 stop = true;
-
-                if (finalizerJavaThread != null) {
-                    finalizerJavaThread.interrupt();
-                }
+                finalizerThread.interrupt();
 
                 context.getThreadManager().runOnce(new BlockingActionWithoutGlobalLock<Boolean>() {
                     @Override
