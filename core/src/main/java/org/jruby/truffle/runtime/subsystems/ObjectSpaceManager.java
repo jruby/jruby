@@ -14,14 +14,12 @@ import com.oracle.truffle.api.frame.Frame;
 import com.oracle.truffle.api.frame.FrameInstance;
 import com.oracle.truffle.api.frame.FrameInstanceVisitor;
 import com.oracle.truffle.api.frame.FrameSlot;
-
 import org.jruby.runtime.Visibility;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
 import org.jruby.truffle.runtime.core.RubyProc;
 import org.jruby.truffle.runtime.core.RubyThread;
-import org.jruby.truffle.runtime.subsystems.ThreadManager.BlockingActionWithoutGlobalLock;
 import org.jruby.truffle.runtime.util.Consumer;
 
 import java.lang.ref.ReferenceQueue;
@@ -134,18 +132,18 @@ public class ObjectSpaceManager {
 
             // Leave the global lock and wait on the finalizer queue
 
+            final RubyThread runningThread = context.getThreadManager().leaveGlobalLock();
             finalizerJavaThread = Thread.currentThread();
 
-            finalizerReference = context.getThreadManager().runOnce(new BlockingActionWithoutGlobalLock<FinalizerReference>() {
-                @Override
-                public FinalizerReference block() throws InterruptedException {
-                    return (FinalizerReference) finalizerQueue.remove();
-                }
-            });
-
-            if (finalizerReference != null) {
-                runFinalizers(finalizerReference);
+            try {
+                finalizerReference = (FinalizerReference) finalizerQueue.remove();
+            } catch (InterruptedException e) {
+                continue;
+            } finally {
+                context.getThreadManager().enterGlobalLock(runningThread);
             }
+
+            runFinalizers(finalizerReference);
         }
 
         finished.countDown();
@@ -164,7 +162,6 @@ public class ObjectSpaceManager {
     public void shutdown() {
         RubyNode.notDesignedForCompilation();
 
-        // TODO (eregon): refactor this without explicit interrupt
         context.getThreadManager().enterGlobalLock(finalizerThread);
 
         try {
@@ -177,13 +174,14 @@ public class ObjectSpaceManager {
                     finalizerJavaThread.interrupt();
                 }
 
-                context.getThreadManager().runOnce(new BlockingActionWithoutGlobalLock<Boolean>() {
-                    @Override
-                    public Boolean block() throws InterruptedException {
-                        finished.await();
-                        return SUCCESS;
-                    }
-                });
+                context.getThreadManager().leaveGlobalLock();
+
+                try {
+                    finished.await();
+                } catch (InterruptedException e) {
+                } finally {
+                    context.getThreadManager().enterGlobalLock(finalizerThread);
+                }
             }
 
             // Run any finalizers for objects that are still live

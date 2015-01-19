@@ -14,7 +14,6 @@ import com.oracle.truffle.api.CompilerAsserts;
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.Truffle;
 import com.oracle.truffle.api.nodes.InvalidAssumptionException;
-
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyThread;
 import org.jruby.truffle.runtime.util.Consumer;
@@ -136,7 +135,6 @@ public class SafepointManager {
             } catch (BrokenBarrierException e) {
                 throw new RuntimeException(e);
             } catch (InterruptedException e) {
-                throw new RuntimeException("Should not be interrupted while waiting on the safepoint barrier", e);
             }
         }
     }

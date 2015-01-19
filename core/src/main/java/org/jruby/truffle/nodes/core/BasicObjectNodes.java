@@ -111,7 +111,7 @@ public abstract class BasicObjectNodes {
         }
 
         @Specialization(rewriteOn = ArithmeticException.class)
-        public long objectIDSmallFixnumOverflow(long value) throws ArithmeticException {
+        public long objectIDSmallFixnumOverflow(long value) {
             return ObjectIDOperations.smallFixnumToIDOverflow(value);
         }
 

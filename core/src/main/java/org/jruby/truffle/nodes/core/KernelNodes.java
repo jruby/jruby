@@ -16,7 +16,6 @@ import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.*;
 import com.oracle.truffle.api.nodes.UnexpectedResultException;
 import com.oracle.truffle.api.source.SourceSection;
-
 import org.jruby.common.IRubyWarnings;
 import org.jruby.runtime.Visibility;
 import org.jruby.truffle.nodes.RubyNode;
@@ -41,7 +40,6 @@ import org.jruby.truffle.runtime.core.*;
 import org.jruby.truffle.runtime.hash.HashOperations;
 import org.jruby.truffle.runtime.hash.KeyValue;
 import org.jruby.truffle.runtime.methods.InternalMethod;
-import org.jruby.truffle.runtime.subsystems.ThreadManager.BlockingActionWithoutGlobalLock;
 import org.jruby.util.ByteList;
 import org.jruby.util.cli.Options;
 
@@ -678,7 +676,7 @@ public abstract class KernelNodes {
                 builder.environment().put(keyValue.getKey().toString(), keyValue.getValue().toString());
             }
 
-            final Process process;
+            Process process;
 
             try {
                 process = builder.start();
@@ -687,12 +685,16 @@ public abstract class KernelNodes {
                 throw new RuntimeException(e);
             }
 
-            int exitCode = context.getThreadManager().runUntilResult(new BlockingActionWithoutGlobalLock<Integer>() {
-                @Override
-                public Integer block() throws InterruptedException {
-                    return process.waitFor();
+            int exitCode;
+
+            while (true) {
+                try {
+                    exitCode = process.waitFor();
+                    break;
+                } catch (InterruptedException e) {
+                    continue;
                 }
-            });
+            }
 
             System.exit(exitCode);
         }
@@ -712,7 +714,11 @@ public abstract class KernelNodes {
 
         @Specialization
         public Object exit(UndefinedPlaceholder exitCode) {
-            return exit(0);
+            notDesignedForCompilation();
+
+            getContext().shutdown();
+            System.exit(0);
+            return null;
         }
 
         @Specialization
@@ -851,23 +857,25 @@ public abstract class KernelNodes {
         public RubyString gets(VirtualFrame frame) {
             notDesignedForCompilation();
 
-            // TODO(CS): having some trouble interacting with JRuby stdin - so using this hack
-            final InputStream in = getContext().getRuntime().getInstanceConfig().getInput();
-
-            final BufferedReader reader = new BufferedReader(new InputStreamReader(in));
-
-            final String line = getContext().getThreadManager().runOnce(new BlockingActionWithoutGlobalLock<String>() {
-                @Override
-                public String block() throws InterruptedException {
-                    return gets(reader);
-                }
-            });
-
-            final RubyString rubyLine = getContext().makeString(line);
-
-            // Set the local variable $_ in the caller
+            final RubyContext context = getContext();
 
             final Frame caller = Truffle.getRuntime().getCallerFrame().getFrame(FrameInstance.FrameAccess.READ_WRITE, false);
+
+            final String line;
+
+            final RubyThread runningThread = getContext().getThreadManager().leaveGlobalLock();
+
+            try {
+                line = gets(context);
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            } finally {
+                getContext().getThreadManager().enterGlobalLock(runningThread);
+            }
+
+            final RubyString rubyLine = context.makeString(line);
+
+            // Set the local variable $_ in the caller
 
             final FrameSlot slot = caller.getFrameDescriptor().findFrameSlot("$_");
 
@@ -879,12 +887,22 @@ public abstract class KernelNodes {
         }
 
         @TruffleBoundary
-        private static String gets(BufferedReader reader) throws InterruptedException {
-            try {
-                return reader.readLine();
-            } catch (IOException e) {
-                throw new RuntimeException(e);
+        private static String gets(RubyContext context) throws IOException {
+            // TODO(CS): having some trouble interacting with JRuby stdin - so using this hack
+
+            final StringBuilder builder = new StringBuilder();
+
+            while (true) {
+                final int c = context.getRuntime().getInstanceConfig().getInput().read();
+
+                if (c == -1 || c == '\r' || c == '\n') {
+                    break;
+                }
+
+                builder.append((char) c);
             }
+
+            return builder.toString();
         }
 
     }
@@ -1952,13 +1970,17 @@ public abstract class KernelNodes {
         private double doSleep(final double duration) {
             final long start = System.nanoTime();
 
-            getContext().getThreadManager().runOnce(new BlockingActionWithoutGlobalLock<Boolean>() {
-                @Override
-                public Boolean block() throws InterruptedException {
+            final RubyThread runningThread = getContext().getThreadManager().leaveGlobalLock();
+
+            try {
+                try {
                     Thread.sleep((long) (duration * 1000));
-                    return SUCCESS;
+                } finally {
+                    getContext().getThreadManager().enterGlobalLock(runningThread);
                 }
-            });
+            } catch (InterruptedException e) {
+                getContext().getSafepointManager().poll();
+            }
 
             final long end = System.nanoTime();
 
