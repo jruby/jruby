@@ -303,6 +303,7 @@ public class TextAreaReadline implements KeyListener {
         runtime.getGlobalVariables().set("$stdin", in);
 
         RubyIO out = new RubyIO(runtime, getOutputStream());
+        out.setSync(true);
         runtime.getGlobalVariables().set("$stdout", out);
         runtime.getGlobalVariables().set("$stderr", out);
     }
