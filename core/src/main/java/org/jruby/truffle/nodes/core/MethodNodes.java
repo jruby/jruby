@@ -14,9 +14,11 @@ import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.IndirectCallNode;
 import com.oracle.truffle.api.source.SourceSection;
+
 import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyMethod;
+import org.jruby.truffle.runtime.core.RubyModule;
 import org.jruby.truffle.runtime.core.RubySymbol;
 import org.jruby.truffle.runtime.methods.InternalMethod;
 
@@ -71,6 +73,42 @@ public abstract class MethodNodes {
             notDesignedForCompilation();
 
             return getContext().newSymbol(method.getMethod().getName());
+        }
+
+    }
+
+    @CoreMethod(names = "owner")
+    public abstract static class OwnerNode extends CoreMethodNode {
+
+        public OwnerNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public OwnerNode(OwnerNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public RubyModule owner(RubyMethod method) {
+            return method.getMethod().getDeclaringModule();
+        }
+
+    }
+
+    @CoreMethod(names = "receiver")
+    public abstract static class ReceiverNode extends CoreMethodNode {
+
+        public ReceiverNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public ReceiverNode(ReceiverNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public Object receiver(RubyMethod method) {
+            return method.getReceiver();
         }
 
     }
