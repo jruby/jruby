@@ -18,6 +18,7 @@ import com.oracle.truffle.api.instrument.TruffleEventReceiver;
 import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.nodes.UnexpectedResultException;
 import com.oracle.truffle.api.source.SourceSection;
+
 import org.jruby.truffle.nodes.dispatch.DispatchAction;
 import org.jruby.truffle.nodes.instrument.RubyWrapperNode;
 import org.jruby.truffle.nodes.yield.YieldDispatchNode;
@@ -426,6 +427,16 @@ public abstract class RubyNode extends Node implements ProbeNode.Instrumentable 
     @SuppressWarnings("static-method")
     public boolean isRubyEncodingConverter(Object value) {
         return value instanceof RubyEncodingConverter;
+    }
+
+    @SuppressWarnings("static-method")
+    public boolean isRubyMethod(Object value) {
+        return value instanceof RubyMethod;
+    }
+
+    @SuppressWarnings("static-method")
+    public boolean isRubyUnboundMethod(Object value) {
+        return value instanceof RubyUnboundMethod;
     }
 
     @SuppressWarnings("static-method")
