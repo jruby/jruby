@@ -1307,11 +1307,20 @@ public abstract class KernelNodes {
 
         @Specialization
         public RubyMethod method(Object object, RubySymbol name) {
+            return method(object, name.toString());
+        }
+
+        @Specialization
+        public RubyMethod method(Object object, RubyString name) {
+            return method(object, name.toString());
+        }
+
+        private RubyMethod method(Object object, String name) {
             notDesignedForCompilation();
 
             // TODO(CS, 11-Jan-15) cache this lookup
 
-            final InternalMethod method = ModuleOperations.lookupMethod(getContext().getCoreLibrary().getMetaClass(object), name.toString());
+            final InternalMethod method = ModuleOperations.lookupMethod(getContext().getCoreLibrary().getMetaClass(object), name);
 
             if (method == null) {
                 throw new UnsupportedOperationException();
