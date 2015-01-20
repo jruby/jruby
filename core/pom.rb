@@ -265,7 +265,7 @@ project 'JRuby Core' do
       plugin :shade do
         execute_goals( 'shade',
                        :id => 'pack jruby-core-noasm.jar',
-                       :phase => 'verify',
+                       :phase => 'package',
                        'shadedArtifactAttached' =>  'true',
                        'shadedClassifierName' =>  'noasm',
                        'artifactSet' => {
@@ -276,7 +276,7 @@ project 'JRuby Core' do
                                             'shadedPattern' =>  'org.jruby.org.objectweb' } ] )
         execute_goals( 'shade',
                        :id => 'pack jruby-core-complete.jar',
-                       :phase => 'verify',
+                       :phase => 'package',
                        'shadedArtifactAttached' =>  'true',
                        'shadedClassifierName' =>  'complete',
                        'relocations' => [ { 'pattern' =>  'org.objectweb',
