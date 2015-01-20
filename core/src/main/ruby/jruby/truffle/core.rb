@@ -28,6 +28,7 @@ require_relative 'core/rubinius/api/shims/enumerator'
 require_relative 'core/rubinius/api/shims/undefined'
 require_relative 'core/rubinius/api/shims/metrics'
 
+require_relative 'core/rubinius/kernel/bootstrap/basic_object'
 require_relative 'core/rubinius/kernel/bootstrap/time'
 require_relative 'core/rubinius/kernel/bootstrap/type'
 require_relative 'core/rubinius/kernel/bootstrap/string'

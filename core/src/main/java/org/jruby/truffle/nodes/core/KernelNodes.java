@@ -30,6 +30,8 @@ import org.jruby.truffle.nodes.objects.SingletonClassNode;
 import org.jruby.truffle.nodes.objects.SingletonClassNodeFactory;
 import org.jruby.truffle.nodes.objectstorage.ReadHeadObjectFieldNode;
 import org.jruby.truffle.nodes.objectstorage.WriteHeadObjectFieldNode;
+import org.jruby.truffle.nodes.rubinius.ObjectPrimitiveNodes;
+import org.jruby.truffle.nodes.rubinius.ObjectPrimitiveNodesFactory;
 import org.jruby.truffle.nodes.yield.YieldNode;
 import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.backtrace.Activation;
@@ -1389,19 +1391,6 @@ public abstract class KernelNodes {
         }
     }
 
-    @CoreMethod(names = "object_id")
-    public abstract static class ObjectIDNode extends BasicObjectNodes.IDNode {
-
-        public ObjectIDNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
-        public ObjectIDNode(ObjectIDNode prev) {
-            super(prev);
-        }
-
-    }
-
     @CoreMethod(names = "print", isModuleFunction = true, argumentsAsArray = true)
     public abstract static class PrintNode extends CoreMethodNode {
 
@@ -2212,13 +2201,13 @@ public abstract class KernelNodes {
     public abstract static class ToSNode extends CoreMethodNode {
 
         @Child private ClassNode classNode;
-        @Child private BasicObjectNodes.IDNode idNode;
+        @Child private ObjectPrimitiveNodes.ObjectIDNode objectIDNode;
         @Child private ToHexStringNode toHexStringNode;
 
         public ToSNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
             classNode = KernelNodesFactory.ClassNodeFactory.create(context, sourceSection, new RubyNode[]{null});
-            idNode = BasicObjectNodesFactory.IDNodeFactory.create(context, sourceSection, new RubyNode[]{null});
+            objectIDNode = ObjectPrimitiveNodesFactory.ObjectIDNodeFactory.create(context, sourceSection, new RubyNode[] { null });
             toHexStringNode = KernelNodesFactory.ToHexStringNodeFactory.create(context, sourceSection, new RubyNode[]{null});
         }
 
@@ -2234,7 +2223,7 @@ public abstract class KernelNodes {
                 className = "Class";
             }
 
-            Object id = idNode.executeObjectID(frame, self);
+            Object id = objectIDNode.executeObjectID(frame, self);
             String hexID = toHexStringNode.executeToHexString(frame, id);
 
             return getContext().makeString("#<" + className + ":0x" + hexID + ">");
