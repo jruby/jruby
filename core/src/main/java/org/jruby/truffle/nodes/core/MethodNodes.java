@@ -9,13 +9,14 @@
  */
 package org.jruby.truffle.nodes.core;
 
+import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.Truffle;
-import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.IndirectCallNode;
 import com.oracle.truffle.api.source.SourceSection;
 
+import org.jruby.truffle.nodes.core.BasicObjectNodes.ReferenceEqualNode;
 import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyMethod;
@@ -26,6 +27,39 @@ import org.jruby.truffle.runtime.methods.InternalMethod;
 
 @CoreClass(name = "Method")
 public abstract class MethodNodes {
+
+    @CoreMethod(names = { "==", "eql?" }, required = 1)
+    public abstract static class EqualNode extends CoreMethodNode {
+
+        @Child protected ReferenceEqualNode referenceEqualNode;
+
+        public EqualNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public EqualNode(EqualNode prev) {
+            super(prev);
+        }
+
+        protected boolean areSame(VirtualFrame frame, Object left, Object right) {
+            if (referenceEqualNode == null) {
+                CompilerDirectives.transferToInterpreterAndInvalidate();
+                referenceEqualNode = insert(BasicObjectNodesFactory.ReferenceEqualNodeFactory.create(getContext(), getSourceSection(), null, null));
+            }
+            return referenceEqualNode.executeReferenceEqual(frame, left, right);
+        }
+
+        @Specialization
+        public boolean equal(VirtualFrame frame, RubyMethod a, RubyMethod b) {
+            return areSame(frame, a.getReceiver(), b.getReceiver()) && a.getMethod() == b.getMethod();
+        }
+
+        @Specialization(guards = "!isRubyMethod(arguments[1])")
+        public boolean equal(RubyMethod a, Object b) {
+            return false;
+        }
+
+    }
 
     @CoreMethod(names = "call", argumentsAsArray = true)
     public abstract static class CallNode extends CoreMethodNode {

@@ -1,1 +1,0 @@
-fails:Method#unbind rebinding UnboundMethod to Method's obj produces exactly equivalent Methods
