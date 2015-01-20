@@ -13,12 +13,12 @@ import org.jruby.truffle.runtime.methods.InternalMethod;
 
 public class RubyMethod extends RubyBasicObject {
 
-    private Object object;
-    private InternalMethod method;
+    private final Object receiver;
+    private final InternalMethod method;
 
     public RubyMethod(RubyClass rubyClass, Object object, InternalMethod method) {
         super(rubyClass);
-        this.object = object;
+        this.receiver = object;
         this.method = method;
     }
 
@@ -26,7 +26,7 @@ public class RubyMethod extends RubyBasicObject {
         return method;
     }
 
-    public Object getObject() {
-        return object;
+    public Object getReceiver() {
+        return receiver;
     }
 }

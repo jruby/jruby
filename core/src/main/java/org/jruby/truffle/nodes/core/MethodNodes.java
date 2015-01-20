@@ -48,7 +48,7 @@ public abstract class MethodNodes {
             return callNode.call(frame, method.getMethod().getCallTarget(), RubyArguments.pack(
                     internalMethod,
                     internalMethod.getDeclarationFrame(),
-                    method.getObject(),
+                    method.getReceiver(),
                     null,
                     arguments));
         }
