@@ -1531,7 +1531,7 @@ public class RubyKernel {
     public static IRubyObject system19(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
         Ruby runtime = context.runtime;
 
-        if (runtime.getPosix().isNative()) {
+        if (runtime.getPosix().isNative() && !Platform.IS_WINDOWS) {
             // MRI: rb_f_system
             long pid;
             int[] status = new int[1];
