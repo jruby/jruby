@@ -10,6 +10,7 @@
 package org.jruby.truffle.nodes.core;
 
 import com.oracle.truffle.api.Truffle;
+import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.IndirectCallNode;
@@ -20,6 +21,7 @@ import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyMethod;
 import org.jruby.truffle.runtime.core.RubyModule;
 import org.jruby.truffle.runtime.core.RubySymbol;
+import org.jruby.truffle.runtime.core.RubyUnboundMethod;
 import org.jruby.truffle.runtime.methods.InternalMethod;
 
 @CoreClass(name = "Method")
@@ -109,6 +111,26 @@ public abstract class MethodNodes {
         @Specialization
         public Object receiver(RubyMethod method) {
             return method.getReceiver();
+        }
+
+    }
+
+    @CoreMethod(names = "unbind")
+    public abstract static class UnbindNode extends CoreMethodNode {
+
+        public UnbindNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public UnbindNode(UnbindNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public RubyUnboundMethod unbind(RubyMethod method) {
+            notDesignedForCompilation();
+
+            return new RubyUnboundMethod(getContext().getCoreLibrary().getUnboundMethodClass(), method.getMethod());
         }
 
     }
