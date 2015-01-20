@@ -199,7 +199,6 @@ public class URLResource extends AbstractFileResource {
         }
         catch (MalformedURLException e)
         {
-            e.printStackTrace();
             // file does not exists
             return new URLResource(URI + pathname, (URL)null, null);
         }
