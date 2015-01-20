@@ -1311,7 +1311,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
 
             try {
                 if (millis == 0) {
-                    semaphore.acquire();
+                    semaphore.tryAcquire(Long.MAX_VALUE, TimeUnit.MILLISECONDS);
                 } else {
                     semaphore.tryAcquire(millis, TimeUnit.MILLISECONDS);
                 }
