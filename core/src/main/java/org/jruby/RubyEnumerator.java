@@ -66,6 +66,8 @@ public class RubyEnumerator extends RubyObject {
 
     /** A value or proc to provide the size of the Enumerator contents*/
     private IRubyObject size;
+    
+    private IRubyObject feedValue;
 
     public static void defineEnumerator(Ruby runtime) {
         RubyModule enm = runtime.getClassFromPath("Enumerable");
@@ -247,6 +249,8 @@ public class RubyEnumerator extends RubyObject {
         this.method = method.asJavaString();
         this.methodArgs = methodArgs;
         this.size = size;
+        //this.sizeFn = sizeFn;
+        this.feedValue = getRuntime().getNil();
         setInstanceVariable("@__object__", object);
         setInstanceVariable("@__method__", method);
         setInstanceVariable("@__args__", RubyArray.newArrayNoCopyLight(getRuntime(), methodArgs));
@@ -261,6 +265,9 @@ public class RubyEnumerator extends RubyObject {
         copy.object     = this.object;
         copy.method     = this.method;
         copy.methodArgs = this.methodArgs;
+        copy.size       = this.size;
+        //copy.sizeFn       = this.sizeFn;
+        copy.feedValue = getRuntime().getNil();
         return copy;
     }
 
@@ -433,6 +440,7 @@ public class RubyEnumerator extends RubyObject {
     public synchronized IRubyObject next(ThreadContext context) {
         ensureNexter(context);
 
+        if (!feedValue.isNil()) feedValue = context.runtime.getNil();
         return nexter.next();
     }
 
@@ -467,6 +475,17 @@ public class RubyEnumerator extends RubyObject {
         ensureNexter(context);
 
         return RubyArray.newArray(context.runtime, nexter.next());
+    }
+
+    @JRubyMethod(compat = RUBY1_9)
+    public IRubyObject feed(ThreadContext context, IRubyObject val) {
+        ensureNexter(context);
+        if (!feedValue.isNil())
+            throw getRuntime().newTypeError("feed value already set");
+
+        feedValue = val;
+        nexter.setFeedValue(val);
+        return getRuntime().getNil();
     }
 
     private void ensureNexter(ThreadContext context) {
@@ -508,11 +527,21 @@ public class RubyEnumerator extends RubyObject {
         /** args to each method */
         protected final IRubyObject[] methodArgs;
 
+        private IRubyObject feedValue;
+
         public Nexter(Ruby runtime, IRubyObject object, String method, IRubyObject[] methodArgs) {
             this.object = object;
             this.method = method;
             this.methodArgs = methodArgs;
             this.runtime = runtime;
+        }
+
+        public void setFeedValue(IRubyObject feedValue) {
+            this.feedValue = feedValue;
+        }
+
+        public IRubyObject getFeedValue() {
+            return feedValue;
         }
 
         public abstract IRubyObject next();
@@ -583,6 +612,7 @@ public class RubyEnumerator extends RubyObject {
 
         public ThreadedNexter(Ruby runtime, IRubyObject object, String method, IRubyObject[] methodArgs) {
             super(runtime, object, method, methodArgs);
+            setFeedValue(runtime.getNil());
         }
 
         public synchronized IRubyObject next() {
@@ -702,7 +732,9 @@ public class RubyEnumerator extends RubyObject {
                                 throw new JumpException.BreakJump(-1, NEVER);
                             }
 
-                            return context.nil;
+                            IRubyObject feedValue = getFeedValue();
+                            setFeedValue(context.nil);
+                            return feedValue;
                         }
                     }, context));
                 } catch (JumpException.BreakJump bj) {
