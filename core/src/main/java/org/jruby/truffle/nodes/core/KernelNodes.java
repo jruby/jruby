@@ -529,17 +529,6 @@ public abstract class KernelNodes {
 
     }
 
-    @CoreMethod(names = "eql?", required = 1)
-    public abstract static class EqlNode extends BasicObjectNodes.ReferenceEqualNode {
-        public EqlNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
-        public EqlNode(EqlNode prev) {
-            super(prev);
-        }
-    }
-
     @CoreMethod(names = "eval", isModuleFunction = true, required = 1, optional = 3)
     public abstract static class EvalNode extends CoreMethodNode {
 

@@ -22,7 +22,6 @@ import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.cast.BooleanCastNodeFactory;
 import org.jruby.truffle.nodes.dispatch.*;
 import org.jruby.truffle.nodes.yield.YieldDispatchHeadNode;
-import org.jruby.truffle.runtime.ObjectIDOperations;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.UndefinedPlaceholder;
 import org.jruby.truffle.runtime.control.RaiseException;
