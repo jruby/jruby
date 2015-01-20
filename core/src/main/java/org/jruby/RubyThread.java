@@ -1223,9 +1223,12 @@ public class RubyThread extends RubyObject implements ExecutionContext {
         assert this == getRuntime().getCurrentContext().getThread();
         sleepTask.millis = millis;
         try {
-            if (executeTask(getContext(), null, sleepTask) >= millis) {
+            long timeSlept = executeTask(getContext(), null, sleepTask);
+            if (millis == 0 || timeSlept >= millis) {
+                // sleep was unbounded or we slept long enough
                 return true;
             } else {
+                // sleep was bounded and we did not sleep long enough
                 return false;
             }
         } finally {
@@ -1344,8 +1347,8 @@ public class RubyThread extends RubyObject implements ExecutionContext {
 
     public <Data, Return> Return executeTask(ThreadContext context, Data data, Task<Data, Return> task) throws InterruptedException {
         try {
-            this.unblockFunc = task;
             this.unblockArg = data;
+            this.unblockFunc = task;
 
             // check for interrupt before going into blocking call
             pollThreadEvents(context);
