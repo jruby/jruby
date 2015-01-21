@@ -16,6 +16,7 @@ import org.jruby.ast.Node;
 import org.jruby.ast.OptArgNode;
 import org.jruby.ast.UnnamedRestArgNode;
 import org.jruby.ast.util.ArgsUtil;
+import org.jruby.ast.RequiredKeywordArgumentValueNode;
 import org.jruby.common.IRubyWarnings.ID;
 import org.jruby.evaluator.ASTInterpreter;
 import org.jruby.exceptions.JumpException;
@@ -2712,6 +2713,26 @@ public class Helpers {
             }
         }
 
+        if (argsNode.getKeywords() != null) {
+            for (Node keyWordNode : argsNode.getKeywords().childNodes()) {
+                for (Node asgnNode : keyWordNode.childNodes()) {
+                    if (added) builder.append(';');
+                    added = true;
+                    if (isRequiredKeywordArgumentValueNode(asgnNode))
+                        builder.append("K").append(((DAsgnNode) asgnNode).getName());
+                    else
+                        builder.append("k").append(((DAsgnNode) asgnNode).getName());
+                }
+            }
+        }
+
+        if (argsNode.getKeyRest() != null) {
+            if (added) builder.append(';');
+            added = true;
+            builder.append("e").append(argsNode.getKeyRest().getName());
+        }
+
+
         if (argsNode.getBlock() != null) {
             if (added) builder.append(';');
             added = true;
@@ -2777,6 +2798,12 @@ public class Helpers {
             } else if (param.charAt(0) == 'b') {
                 // block arg
                 elem.add(RubySymbol.newSymbol(runtime, "block"));
+            } else if (param.charAt(0) == 'k') {
+                elem.add(RubySymbol.newSymbol(runtime, "key"));
+            } else if (param.charAt(0) == 'K') {
+                elem.add(RubySymbol.newSymbol(runtime, "keyreq"));
+            } else if (param.charAt(0) == 'e') {
+                elem.add(RubySymbol.newSymbol(runtime, "keyrest"));
             }
 
             if (param.length() > 1) {
@@ -3101,4 +3128,9 @@ public class Helpers {
     public static StaticScope decodeBlockScope(ThreadContext context, String scopeString) {
         return decodeScope(context, context.getCurrentStaticScope(), scopeString);
     }
+
+    private static boolean isRequiredKeywordArgumentValueNode(Node asgnNode) {
+        return asgnNode.childNodes().get(0) instanceof RequiredKeywordArgumentValueNode;
+    }
+
 }
