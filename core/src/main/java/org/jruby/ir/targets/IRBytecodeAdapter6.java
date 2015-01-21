@@ -53,16 +53,26 @@ public class IRBytecodeAdapter6 extends IRBytecodeAdapter{
         super(adapter, signature, classData);
     }
 
-    public void pushFixnum(long l) {
-        loadRuntime();
-        adapter.ldc(l);
-        adapter.invokevirtual(p(Ruby.class), "newFixnum", sig(RubyFixnum.class, long.class));
+    public void pushFixnum(final long l) {
+        cacheValuePermanently(newFieldName("fixnum"), RubyFixnum.class, new Runnable() {
+            @Override
+            public void run() {
+                loadRuntime();
+                adapter.ldc(l);
+                adapter.invokevirtual(p(Ruby.class), "newFixnum", sig(RubyFixnum.class, long.class));
+            }
+        });
     }
 
-    public void pushFloat(double d) {
-        loadRuntime();
-        adapter.ldc(d);
-        adapter.invokevirtual(p(Ruby.class), "newFloat", sig(RubyFloat.class, double.class));
+    public void pushFloat(final double d) {
+        cacheValuePermanently(newFieldName("float"), RubyFloat.class, new Runnable() {
+            @Override
+            public void run() {
+                loadRuntime();
+                adapter.ldc(d);
+                adapter.invokevirtual(p(Ruby.class), "newFloat", sig(RubyFloat.class, double.class));
+            }
+        });
     }
 
     public void pushString(ByteList bl) {
@@ -71,44 +81,50 @@ public class IRBytecodeAdapter6 extends IRBytecodeAdapter{
         adapter.invokestatic(p(RubyString.class), "newStringShared", sig(RubyString.class, Ruby.class, ByteList.class));
     }
 
+    private String newFieldName(String baseName) {
+        return baseName + getClassData().callSiteCount.getAndIncrement();
+    }
+
     /**
      * Stack required: none
      *
      * @param bl ByteList for the String to push
      */
-    public void pushFrozenString(ByteList bl) {
-        // FIXME: too much bytecode
-        String cacheField = "frozenString" + getClassData().callSiteCount.getAndIncrement();
-        Label done = new Label();
-        adapter.getClassVisitor().visitField(Opcodes.ACC_PRIVATE | Opcodes.ACC_STATIC, cacheField, ci(RubyString.class), null, null).visitEnd();
-        adapter.getstatic(getClassData().clsName, cacheField, ci(RubyString.class));
-        adapter.dup();
-        adapter.ifnonnull(done);
-        adapter.pop();
-        loadRuntime();
-        adapter.ldc(bl.toString());
-        adapter.ldc(bl.getEncoding().toString());
-        invokeIRHelper("newFrozenStringFromRaw", sig(RubyString.class, Ruby.class, String.class, String.class));
-        adapter.dup();
-        adapter.putstatic(getClassData().clsName, cacheField, ci(RubyString.class));
-        adapter.label(done);
+    public void pushFrozenString(final ByteList bl) {
+        cacheValuePermanently(newFieldName("frozenString"), RubyString.class, new Runnable() {
+            @Override
+            public void run() {
+                loadRuntime();
+                adapter.ldc(bl.toString());
+                adapter.ldc(bl.getEncoding().toString());
+                invokeIRHelper("newFrozenStringFromRaw", sig(RubyString.class, Ruby.class, String.class, String.class));
+            }
+        });
     }
 
-    public void pushByteList(ByteList bl) {
-        // FIXME: too much bytecode
-        String cacheField = "byteList" + getClassData().callSiteCount.getAndIncrement();
+    public void pushByteList(final ByteList bl) {
+        cacheValuePermanently(newFieldName("byteList"), ByteList.class, new Runnable() {
+            @Override
+            public void run() {
+                loadRuntime();
+                adapter.ldc(bl.toString());
+                adapter.ldc(bl.getEncoding().toString());
+                invokeIRHelper("newByteListFromRaw", sig(ByteList.class, Ruby.class, String.class, String.class));
+            }
+        });
+    }
+
+    public void cacheValuePermanently(String cacheField, Class type, Runnable construction) {
+        // FIXME: too much bytecode...make it a separate method?
         Label done = new Label();
-        adapter.getClassVisitor().visitField(Opcodes.ACC_PRIVATE | Opcodes.ACC_STATIC, cacheField, ci(ByteList.class), null, null).visitEnd();
-        adapter.getstatic(getClassData().clsName, cacheField, ci(ByteList.class));
+        adapter.getClassVisitor().visitField(Opcodes.ACC_PRIVATE | Opcodes.ACC_STATIC, cacheField, ci(type), null, null).visitEnd();
+        adapter.getstatic(getClassData().clsName, cacheField, ci(type));
         adapter.dup();
         adapter.ifnonnull(done);
         adapter.pop();
-        loadRuntime();
-        adapter.ldc(bl.toString());
-        adapter.ldc(bl.getEncoding().toString());
-        invokeIRHelper("newByteListFromRaw", sig(ByteList.class, Ruby.class, String.class, String.class));
+        construction.run();
         adapter.dup();
-        adapter.putstatic(getClassData().clsName, cacheField, ci(ByteList.class));
+        adapter.putstatic(getClassData().clsName, cacheField, ci(type));
         adapter.label(done);
     }
 
