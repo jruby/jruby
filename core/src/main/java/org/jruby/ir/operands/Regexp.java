@@ -1,6 +1,5 @@
 package org.jruby.ir.operands;
 
-import org.jruby.RubyRegexp;
 import org.jruby.ir.IRVisitor;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.runtime.ThreadContext;
@@ -13,7 +12,6 @@ import org.jruby.util.RegexpOptions;
 public class Regexp extends ImmutableLiteral {
     final public RegexpOptions options;
     final private ByteList source;
-    private RubyRegexp rubyRegexp;
 
     public Regexp(ByteList source, RegexpOptions options) {
         super(OperandType.REGEXP);
