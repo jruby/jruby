@@ -25,13 +25,13 @@ import org.jruby.truffle.runtime.core.RubyNilClass;
 public abstract class ObjectPrimitiveNodes {
 
     @RubiniusPrimitive(name = "object_id")
-    public abstract static class ObjectIDNode extends RubiniusPrimitiveNode {
+    public abstract static class ObjectIDPrimitiveNode extends RubiniusPrimitiveNode {
 
-        public ObjectIDNode(RubyContext context, SourceSection sourceSection) {
+        public ObjectIDPrimitiveNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
         }
 
-        public ObjectIDNode(ObjectIDNode prev) {
+        public ObjectIDPrimitiveNode(ObjectIDPrimitiveNode prev) {
             super(prev);
         }
 

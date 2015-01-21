@@ -2164,13 +2164,13 @@ public abstract class KernelNodes {
     public abstract static class ToSNode extends CoreMethodNode {
 
         @Child private ClassNode classNode;
-        @Child private ObjectPrimitiveNodes.ObjectIDNode objectIDNode;
+        @Child private ObjectPrimitiveNodes.ObjectIDPrimitiveNode objectIDNode;
         @Child private ToHexStringNode toHexStringNode;
 
         public ToSNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
             classNode = ClassNodeFactory.create(context, sourceSection, null);
-            objectIDNode = ObjectPrimitiveNodesFactory.ObjectIDNodeFactory.create(context, sourceSection, new RubyNode[] { null });
+            objectIDNode = ObjectPrimitiveNodesFactory.ObjectIDPrimitiveNodeFactory.create(context, sourceSection, new RubyNode[] { null });
             toHexStringNode = KernelNodesFactory.ToHexStringNodeFactory.create(context, sourceSection, new RubyNode[]{null});
         }
 
