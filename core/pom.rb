@@ -61,9 +61,6 @@ project 'JRuby Core' do
   jar 'com.headius:unsafe-mock', '${unsafe.version}', :scope => 'provided'
   jar 'com.headius:jsr292-mock:1.1', :scope => 'provided'
 
-  jar 'com.headius:openjdk-truffle:0.6'
-  jar 'com.oracle:truffle-dsl-processor:0.6', :scope => 'provided'
-
   jar 'bsf:bsf:2.4.0', :scope => 'provided'
   jar 'com.jcraft:jzlib:1.1.3'
   jar 'com.martiansoftware:nailgun-server:0.9.1'
@@ -181,8 +178,7 @@ project 'JRuby Core' do
     execute_goals( 'compile',
                    :id => 'default-compile',
                    :phase => 'compile',
-                   'annotationProcessors' => [ 'org.jruby.anno.AnnotationBinder',
-                                               'com.oracle.truffle.dsl.processor.TruffleProcessor' ],
+                   'annotationProcessors' => [ 'org.jruby.anno.AnnotationBinder' ],
                    'generatedSourcesDirectory' =>  'target/generated-sources',
                    'compilerArgs' => [ '-XDignore.symbol.file=true',
                                        '-J-Duser.language=en',
