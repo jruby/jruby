@@ -6,6 +6,8 @@ package org.jruby.ir.targets;
 
 import com.headius.invokebinder.Signature;
 import java.math.BigInteger;
+import java.util.concurrent.Callable;
+
 import org.jcodings.Encoding;
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
@@ -128,9 +130,16 @@ public class IRBytecodeAdapter6 extends IRBytecodeAdapter{
         adapter.label(done);
     }
 
-    public void pushRegexp(int options) {
-        adapter.pushInt(options);
-        invokeIRHelper("constructRubyRegexp", sig(RubyRegexp.class, ThreadContext.class, RubyString.class, int.class));
+    public void pushRegexp(final ByteList source, final int options) {
+        cacheValuePermanently(newFieldName("regexp"), RubyRegexp.class, new Runnable() {
+            @Override
+            public void run() {
+                loadContext();
+                pushByteList(source);
+                adapter.pushInt(options);
+                invokeIRHelper("newLiteralRegexp", sig(RubyRegexp.class, ThreadContext.class, ByteList.class, int.class));
+            }
+        });
     }
 
     public void pushDRegexp(Runnable callback, RegexpOptions options, int arity) {

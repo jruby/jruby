@@ -8,6 +8,7 @@ import org.jruby.RubyString;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.util.ByteList;
 import org.jruby.util.RegexpOptions;
 import org.objectweb.asm.Handle;
 import org.objectweb.asm.Opcodes;
@@ -39,9 +40,8 @@ public class RegexpObjectSite extends LazyObjectSite {
     }
 
     // normal regexp
-    public IRubyObject construct(ThreadContext context, RubyString pattern) {
-        RubyRegexp regexp = IRRuntimeHelpers.constructRubyRegexp(context, pattern, options);
-        regexp.setLiteral();
+    public IRubyObject construct(ThreadContext context, ByteList pattern) {
+        RubyRegexp regexp = IRRuntimeHelpers.newLiteralRegexp(context, pattern, options);
 
         return regexp;
     }

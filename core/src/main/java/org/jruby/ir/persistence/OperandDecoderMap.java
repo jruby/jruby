@@ -1,10 +1,13 @@
 package org.jruby.ir.persistence;
 
 import org.jcodings.specific.USASCIIEncoding;
+import org.jcodings.specific.UTF8Encoding;
+import org.jruby.RubyEncoding;
 import org.jruby.RubyInstanceConfig;
 import org.jruby.ir.IRClosure;
 import org.jruby.ir.IRManager;
 import org.jruby.ir.operands.*;
+import org.jruby.util.ByteList;
 import org.jruby.util.KeyValuePair;
 import org.jruby.util.RegexpOptions;
 
@@ -103,11 +106,12 @@ class OperandDecoderMap {
     }
 
     private Regexp decodeRegexp() {
-        Operand regex = d.decodeOperand();
+        // FIXME: This is wrong
+        String source = d.decodeString();
         boolean isNone = d.decodeBoolean();
         RegexpOptions options = RegexpOptions.fromEmbeddedOptions(d.decodeInt());
         options.setEncodingNone(isNone);
-        return new Regexp(regex, options);
+        return new Regexp(new ByteList(source.getBytes(RubyEncoding.UTF8), UTF8Encoding.INSTANCE), options);
     }
 
     private Operand decodeTemporaryVariable() {

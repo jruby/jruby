@@ -2992,7 +2992,7 @@ public class IRBuilder {
     public Operand buildRegexp(RegexpNode reNode, IRScope s) {
         // SSS FIXME: Rather than throw syntax error at runtime, we should detect
         // regexp syntax errors at build time and add an exception-throwing instruction instead
-        return copyAndReturnValue(s, new Regexp(new StringLiteral(reNode.getValue()), reNode.getOptions()));
+        return copyAndReturnValue(s, new Regexp(reNode.getValue(), reNode.getOptions()));
     }
 
     public Operand buildRescue(RescueNode node, IRScope s) {
