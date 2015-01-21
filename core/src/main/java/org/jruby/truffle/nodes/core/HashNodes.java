@@ -736,7 +736,7 @@ public abstract class HashNodes {
 
     }
 
-    @CoreMethod(names = { "has_key?", "key?" }, required = 1)
+    @CoreMethod(names = { "has_key?", "key?", "include?", "member?" }, required = 1)
     public abstract static class KeyNode extends HashCoreMethodNode {
 
         @Child private CallDispatchHeadNode eqlNode;

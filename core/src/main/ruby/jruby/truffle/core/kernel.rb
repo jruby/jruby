@@ -46,13 +46,3 @@ module Kernel
   alias_method :untrusted?, :tainted?
 
 end
-
-# Here temporarily
-
-class Hash
-
-  def include?(key)
-    keys.include? key
-  end
-
-end
