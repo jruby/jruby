@@ -1,5 +1,6 @@
 package org.jruby.runtime.callsite;
 
+import org.jruby.RubyBasicObject;
 import org.jruby.RubyClass;
 import org.jruby.RubyFixnum;
 import org.jruby.RubyFloat;
@@ -415,6 +416,6 @@ public abstract class CachingCallSite extends CallSite {
 
     private static RubyClass getClass(IRubyObject self) {
         // the cast in the following line is necessary due to lacking optimizations in Hotspot
-        return self.getMetaClass();
+        return ((RubyBasicObject) self).getMetaClass();
     }
 }
