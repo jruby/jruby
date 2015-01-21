@@ -951,19 +951,25 @@ public abstract class KernelNodes {
     @CoreMethod(names = "instance_of?", required = 1)
     public abstract static class InstanceOfNode extends CoreMethodNode {
 
+        @Child private ClassNode classNode;
+
         public InstanceOfNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
+            classNode = ClassNodeFactory.create(context, sourceSection, null);
         }
 
         public InstanceOfNode(InstanceOfNode prev) {
             super(prev);
+            classNode = prev.classNode;
         }
 
         @TruffleBoundary
         @Specialization
         public boolean instanceOf(Object self, RubyClass rubyClass) {
-            // TODO(CS): fast path
-            return getContext().getCoreLibrary().getLogicalClass(self) == rubyClass;
+            notDesignedForCompilation();
+
+            // TODO(CS): faster path for this?
+            return classNode.executeGetClass(self) == rubyClass;
         }
 
     }
@@ -1171,8 +1177,8 @@ public abstract class KernelNodes {
         @TruffleBoundary
         @Specialization
         public boolean isA(Object self, RubyClass rubyClass) {
-            // TODO(CS): fast path
             notDesignedForCompilation();
+            // TODO(CS): fast path
             return ModuleOperations.assignableTo(getContext().getCoreLibrary().getMetaClass(self), rubyClass);
         }
 
