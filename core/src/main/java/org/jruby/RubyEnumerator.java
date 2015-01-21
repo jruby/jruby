@@ -490,7 +490,7 @@ public class RubyEnumerator extends RubyObject {
     @JRubyMethod(name = "next_values")
     public synchronized IRubyObject nextValues(ThreadContext context) {
         ensureNexter(context);
-
+        if (!feedValue.isNil()) feedValue = context.runtime.getNil();
         return RubyArray.newArray(context.runtime, nexter.next());
     }
 
