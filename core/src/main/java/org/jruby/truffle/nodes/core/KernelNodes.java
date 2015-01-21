@@ -26,6 +26,8 @@ import org.jruby.truffle.nodes.control.WhileNode;
 import org.jruby.truffle.nodes.dispatch.*;
 import org.jruby.truffle.nodes.globals.WrapInThreadLocalNode;
 import org.jruby.truffle.nodes.literal.BooleanLiteralNode;
+import org.jruby.truffle.nodes.objects.ClassNode;
+import org.jruby.truffle.nodes.objects.ClassNodeFactory;
 import org.jruby.truffle.nodes.objects.SingletonClassNode;
 import org.jruby.truffle.nodes.objects.SingletonClassNodeFactory;
 import org.jruby.truffle.nodes.objectstorage.ReadHeadObjectFieldNode;
@@ -420,47 +422,23 @@ public abstract class KernelNodes {
     }
 
     @CoreMethod(names = "class")
-    public abstract static class ClassNode extends CoreMethodNode {
+    public abstract static class KernelClassNode extends CoreMethodNode {
 
-        public ClassNode(RubyContext context, SourceSection sourceSection) {
+        @Child private ClassNode classNode;
+
+        public KernelClassNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
+            classNode = ClassNodeFactory.create(context, sourceSection, null);
         }
 
-        public ClassNode(ClassNode prev) {
+        public KernelClassNode(KernelClassNode prev) {
             super(prev);
-        }
-
-        public abstract RubyClass executeGetClass(VirtualFrame frame, Object value);
-
-        @Specialization
-        public RubyClass getClass(boolean value) {
-            notDesignedForCompilation();
-
-            if (value) {
-                return getContext().getCoreLibrary().getTrueClass();
-            } else {
-                return getContext().getCoreLibrary().getFalseClass();
-            }
+            classNode = prev.classNode;
         }
 
         @Specialization
-        public RubyClass getClass(int value) {
-            return getContext().getCoreLibrary().getFixnumClass();
-        }
-
-        @Specialization
-        public RubyClass getClass(long value) {
-            return getContext().getCoreLibrary().getFixnumClass();
-        }
-
-        @Specialization
-        public RubyClass getClass(double value) {
-            return getContext().getCoreLibrary().getFloatClass();
-        }
-
-        @Specialization
-        public RubyClass getClass(RubyBasicObject self) {
-            return self.getLogicalClass();
+        public RubyClass getClass(Object self) {
+            return classNode.executeGetClass(self);
         }
 
     }
@@ -2191,7 +2169,7 @@ public abstract class KernelNodes {
 
         public ToSNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            classNode = KernelNodesFactory.ClassNodeFactory.create(context, sourceSection, new RubyNode[]{null});
+            classNode = ClassNodeFactory.create(context, sourceSection, null);
             objectIDNode = ObjectPrimitiveNodesFactory.ObjectIDNodeFactory.create(context, sourceSection, new RubyNode[] { null });
             toHexStringNode = KernelNodesFactory.ToHexStringNodeFactory.create(context, sourceSection, new RubyNode[]{null});
         }
@@ -2202,7 +2180,7 @@ public abstract class KernelNodes {
         public RubyString toS(VirtualFrame frame, Object self) {
             notDesignedForCompilation();
 
-            String className = classNode.executeGetClass(frame, self).getName();
+            String className = classNode.executeGetClass(self).getName();
 
             if (className == null) {
                 className = "Class";

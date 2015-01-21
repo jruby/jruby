@@ -12,9 +12,12 @@ package org.jruby.truffle.nodes.rubinius;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.SourceSection;
+
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.core.KernelNodes;
 import org.jruby.truffle.nodes.core.KernelNodesFactory;
+import org.jruby.truffle.nodes.objects.ClassNode;
+import org.jruby.truffle.nodes.objects.ClassNodeFactory;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.*;
 
@@ -48,11 +51,11 @@ public abstract class TypePrimitiveNodes {
     @RubiniusPrimitive(name = "vm_object_class", needsSelf = false)
     public static abstract class VMObjectClassPrimitiveNode extends RubiniusPrimitiveNode {
 
-        @Child private KernelNodes.ClassNode classNode;
+        @Child private ClassNode classNode;
 
         public VMObjectClassPrimitiveNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            classNode = KernelNodesFactory.ClassNodeFactory.create(context, sourceSection, new RubyNode[]{null});
+            classNode = ClassNodeFactory.create(context, sourceSection, null);
         }
 
         public VMObjectClassPrimitiveNode(VMObjectClassPrimitiveNode prev) {
@@ -61,8 +64,8 @@ public abstract class TypePrimitiveNodes {
         }
 
         @Specialization
-        public RubyClass vmObjectClass(VirtualFrame frame, Object object) {
-            return classNode.executeGetClass(frame, object);
+        public RubyClass vmObjectClass(Object object) {
+            return classNode.executeGetClass(object);
         }
 
     }
