@@ -15,6 +15,7 @@ import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.Truffle;
 import com.oracle.truffle.api.nodes.InvalidAssumptionException;
 
+import org.jruby.RubyThread.Status;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyThread;
 import org.jruby.truffle.runtime.util.Consumer;
@@ -50,10 +51,8 @@ public class SafepointManager {
         }
     }
 
-    public void leaveThreadAndGlobalLock() {
+    public void leaveThread(RubyThread thread) {
         CompilerAsserts.neverPartOfCompilation();
-
-        RubyThread thread = context.getThreadManager().leaveGlobalLock();
 
         // Leave only when there is no more running safepoint action.
         while (!lock.tryLock()) {
@@ -71,12 +70,7 @@ public class SafepointManager {
         try {
             assumption.check();
         } catch (InvalidAssumptionException e) {
-            context.getThreadManager().enterGlobalLock(thread);
-            try {
-                assumptionInvalidated();
-            } finally {
-                context.getThreadManager().leaveGlobalLock();
-            }
+            assumptionInvalidated(thread);
         }
     }
 
@@ -84,11 +78,11 @@ public class SafepointManager {
         try {
             assumption.check();
         } catch (InvalidAssumptionException e) {
-            assumptionInvalidated();
+            assumptionInvalidated(context.getThreadManager().getCurrentThread());
         }
     }
 
-    private void assumptionInvalidated() {
+    private void assumptionInvalidated(RubyThread thread) {
         // wait other threads to reach their safepoint
         waitOnBarrier();
 
@@ -96,7 +90,9 @@ public class SafepointManager {
         waitOnBarrier();
 
         try {
-            action.accept(context.getThreadManager().getCurrentThread());
+            if (thread.getStatus() != Status.ABORTING) {
+                action.accept(thread);
+            }
         } finally {
             // wait other threads to finish their action
             waitOnBarrier();

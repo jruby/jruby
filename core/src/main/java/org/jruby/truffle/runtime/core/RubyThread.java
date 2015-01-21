@@ -90,7 +90,9 @@ public class RubyThread extends RubyBasicObject {
                 } catch (ReturnException e) {
                     exception = getContext().getCoreLibrary().unexpectedReturn(currentNode);
                 } finally {
-                    context.getSafepointManager().leaveThreadAndGlobalLock();
+                    status = Status.ABORTING;
+                    context.getThreadManager().leaveGlobalLock();
+                    context.getSafepointManager().leaveThread(finalThread);
                     finalThread.manager.unregisterThread(finalThread);
 
                     finalThread.finished.countDown();
