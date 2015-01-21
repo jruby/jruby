@@ -17,6 +17,7 @@ import com.oracle.truffle.api.nodes.UnexpectedResultException;
 import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.utilities.BranchProfile;
 import com.oracle.truffle.api.utilities.ConditionProfile;
+
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNode;
@@ -1462,7 +1463,7 @@ public abstract class FixnumNodes {
 
     }
 
-    @CoreMethod(names = "abs")
+    @CoreMethod(names = { "abs", "magnitude" })
     public abstract static class AbsNode extends CoreMethodNode {
 
         public AbsNode(RubyContext context, SourceSection sourceSection) {

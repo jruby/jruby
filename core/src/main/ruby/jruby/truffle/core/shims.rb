@@ -9,18 +9,6 @@
 # These are implemented just to get other stuff working - we'll go back and
 # implement these properly later.
 
-class Fixnum
-
-  alias_method :magnitude, :abs
-
-end
-
-class Bignum
-  
-  alias_method :magnitude, :abs
-
-end
-
 class Channel
 end
 

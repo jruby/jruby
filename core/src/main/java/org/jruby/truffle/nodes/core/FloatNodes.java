@@ -15,6 +15,7 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.utilities.BranchProfile;
 import com.oracle.truffle.api.utilities.ConditionProfile;
+
 import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.runtime.DebugOperations;
@@ -559,7 +560,7 @@ public abstract class FloatNodes {
         }
     }
 
-    @CoreMethod(names = "abs")
+    @CoreMethod(names = { "abs", "magnitude" })
     public abstract static class AbsNode extends CoreMethodNode {
 
         public AbsNode(RubyContext context, SourceSection sourceSection) {

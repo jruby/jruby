@@ -43,6 +43,10 @@ class Numeric
   #   b.coerce a => [Bignum, Bignum]
   #++
 
+  def abs
+    self < 0 ? -self : self
+  end
+
   def coerce(other)
     if other.instance_of? self.class
       return [other, self]
@@ -102,8 +106,10 @@ class Numeric
     self.to_f / other
   end
 
+  alias_method :magnitude, :abs
+
   def real?
     true
   end
-  
+
 end

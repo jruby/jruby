@@ -13,6 +13,7 @@ import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.utilities.BranchProfile;
+
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyArray;
 import org.jruby.truffle.runtime.core.RubyBignum;
@@ -575,7 +576,7 @@ public abstract class BignumNodes {
 
     }
 
-    @CoreMethod(names = "abs")
+    @CoreMethod(names = { "abs", "magnitude" })
     public abstract static class AbsNode extends BignumCoreMethodNode {
 
         public AbsNode(RubyContext context, SourceSection sourceSection) {
