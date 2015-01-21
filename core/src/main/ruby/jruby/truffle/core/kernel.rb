@@ -41,10 +41,6 @@ module Kernel
     print sprintf(*args)
   end
 
-  # from BasicObject
-  alias_method :eql?, :equal?
-  alias_method :send, :__send__
-
   alias_method :trust, :untaint
   alias_method :untrust, :taint
   alias_method :untrusted?, :tainted?

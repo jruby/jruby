@@ -6,22 +6,12 @@
 # GNU General Public License version 2
 # GNU Lesser General Public License version 2.1
 
-require_relative 'core/main'
-require_relative 'core/kernel'
-require_relative 'core/config'
-require_relative 'core/float'
-require_relative 'core/math'
-require_relative 'core/thread'
-require_relative 'core/module'
-require_relative 'core/hash'
-require_relative 'core/fixnum'
-require_relative 'core/method'
-
+# Load Rubinius API
 require_relative 'core/rubinius/api/compat/type'
-
 require_relative 'core/rubinius/api/kernel/common/thread'
 require_relative 'core/rubinius/api/kernel/common/type'
 
+# Patch rubinius-core-api to make it work for us
 require_relative 'core/rubinius/api/shims/rubinius'
 require_relative 'core/rubinius/api/shims/lookuptable'
 require_relative 'core/rubinius/api/shims/thread'
@@ -29,7 +19,9 @@ require_relative 'core/rubinius/api/shims/enumerator'
 require_relative 'core/rubinius/api/shims/undefined'
 require_relative 'core/rubinius/api/shims/metrics'
 
+# Load bootstrap
 require_relative 'core/rubinius/kernel/bootstrap/basic_object'
+require_relative 'core/rubinius/kernel/bootstrap/kernel'
 require_relative 'core/rubinius/kernel/bootstrap/time'
 require_relative 'core/rubinius/kernel/bootstrap/type'
 require_relative 'core/rubinius/kernel/bootstrap/string'
@@ -38,6 +30,7 @@ require_relative 'core/rubinius/kernel/bootstrap/nil'
 require_relative 'core/rubinius/kernel/bootstrap/true'
 require_relative 'core/rubinius/kernel/bootstrap/false'
 
+# Load common
 require_relative 'core/rubinius/kernel/common/kernel'
 require_relative 'core/rubinius/kernel/common/array'
 require_relative 'core/rubinius/kernel/common/rational'
@@ -60,5 +53,17 @@ require_relative 'core/rubinius/kernel/common/complex'
 require_relative 'core/rubinius/kernel/common/fixnum'
 require_relative 'core/rubinius/kernel/common/regexp'
 require_relative 'core/rubinius/kernel/common/main'
+
+# Load JRuby+Truffle specific Ruby code
+require_relative 'core/main'
+require_relative 'core/kernel'
+require_relative 'core/config'
+require_relative 'core/float'
+require_relative 'core/math'
+require_relative 'core/thread'
+require_relative 'core/module'
+require_relative 'core/hash'
+require_relative 'core/fixnum'
+require_relative 'core/method'
 
 require_relative 'core/shims'
