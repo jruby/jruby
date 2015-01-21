@@ -28,6 +28,11 @@
 
 class Numeric
 
+  def eql?(other)
+    return false unless other.instance_of? self.class
+    self == other
+  end
+
   #--
   # We deviate from MRI behavior here because we ensure that Fixnum op Bignum
   # => Bignum (possibly normalized to Fixnum)
