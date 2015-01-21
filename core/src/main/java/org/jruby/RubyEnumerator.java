@@ -245,15 +245,15 @@ public class RubyEnumerator extends RubyObject {
     }
 
     private IRubyObject initialize20(IRubyObject object, IRubyObject method, IRubyObject[] methodArgs, IRubyObject size) {
+        final Ruby runtime = getRuntime();
         this.object = object;
         this.method = method.asJavaString();
         this.methodArgs = methodArgs;
         this.size = size;
-        //this.sizeFn = sizeFn;
-        this.feedValue = getRuntime().getNil();
+        this.feedValue = runtime.getNil();
         setInstanceVariable("@__object__", object);
         setInstanceVariable("@__method__", method);
-        setInstanceVariable("@__args__", RubyArray.newArrayNoCopyLight(getRuntime(), methodArgs));
+        setInstanceVariable("@__args__", RubyArray.newArrayNoCopyLight(runtime, methodArgs));
         return this;
     }
 
@@ -266,8 +266,7 @@ public class RubyEnumerator extends RubyObject {
         copy.method     = this.method;
         copy.methodArgs = this.methodArgs;
         copy.size       = this.size;
-        //copy.sizeFn       = this.sizeFn;
-        copy.feedValue = getRuntime().getNil();
+        copy.feedValue  = getRuntime().getNil();
         return copy;
     }
 
@@ -439,8 +438,7 @@ public class RubyEnumerator extends RubyObject {
     @JRubyMethod
     public synchronized IRubyObject next(ThreadContext context) {
         ensureNexter(context);
-
-        if (!feedValue.isNil()) feedValue = context.runtime.getNil();
+        if (!feedValue.isNil()) feedValue = context.nil;
         return nexter.next();
     }
 
@@ -473,19 +471,19 @@ public class RubyEnumerator extends RubyObject {
     @JRubyMethod(name = "next_values", compat = RUBY1_9)
     public synchronized IRubyObject nextValues(ThreadContext context) {
         ensureNexter(context);
-        if (!feedValue.isNil()) feedValue = context.runtime.getNil();
+        if (!feedValue.isNil()) feedValue = context.nil;
         return RubyArray.newArray(context.runtime, nexter.next());
     }
 
     @JRubyMethod(compat = RUBY1_9)
     public IRubyObject feed(ThreadContext context, IRubyObject val) {
         ensureNexter(context);
-        if (!feedValue.isNil())
-            throw getRuntime().newTypeError("feed value already set");
-
+        if (!feedValue.isNil()) {
+            throw context.runtime.newTypeError("feed value already set");
+        }
         feedValue = val;
         nexter.setFeedValue(val);
-        return getRuntime().getNil();
+        return context.nil;
     }
 
     private void ensureNexter(ThreadContext context) {
