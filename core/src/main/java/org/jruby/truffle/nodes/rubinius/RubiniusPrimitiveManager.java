@@ -42,12 +42,12 @@ public class RubiniusPrimitiveManager {
     public static RubiniusPrimitiveManager create() {
         final List<NodeFactory<? extends RubyNode>> nodeFactories = new ArrayList<>();
 
-        nodeFactories.addAll(TimePrimitiveNodesFactory.getFactories());
-        nodeFactories.addAll(TypePrimitiveNodesFactory.getFactories());
-        nodeFactories.addAll(StringPrimitiveNodesFactory.getFactories());
         nodeFactories.addAll(VMPrimitiveNodesFactory.getFactories());
-        nodeFactories.addAll(FixnumPrimitiveNodesFactory.getFactories());
         nodeFactories.addAll(ObjectPrimitiveNodesFactory.getFactories());
+        nodeFactories.addAll(TimePrimitiveNodesFactory.getFactories());
+        nodeFactories.addAll(StringPrimitiveNodesFactory.getFactories());
+        nodeFactories.addAll(FixnumPrimitiveNodesFactory.getFactories());
+        nodeFactories.addAll(EncodingPrimitiveNodesFactory.getFactories());
 
         final Map<String, RubiniusPrimitiveConstructor> primitives = new HashMap<>();
 

@@ -98,4 +98,22 @@ public abstract class ObjectPrimitiveNodes {
 
     }
 
+    @RubiniusPrimitive(name = "object_infect", needsSelf = false)
+    public static abstract class ObjectInfectPrimitiveNode extends RubiniusPrimitiveNode {
+
+        public ObjectInfectPrimitiveNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public ObjectInfectPrimitiveNode(ObjectInfectPrimitiveNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public Object objectInfect(Object object) {
+            throw new UnsupportedOperationException("object_infect");
+        }
+
+    }
+
 }
