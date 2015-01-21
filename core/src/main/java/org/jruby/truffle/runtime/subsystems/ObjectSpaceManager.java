@@ -89,7 +89,7 @@ public class ObjectSpaceManager {
             // TODO(CS): should we be running this in a real Ruby thread?
 
             finalizerThread = new RubyThread(context.getCoreLibrary().getThreadClass(), context.getThreadManager());
-
+            finalizerThread.ignoreSafepointActions();
             finalizerThread.initialize(context, null, new Runnable() {
 
                 @Override
@@ -210,9 +210,6 @@ public class ObjectSpaceManager {
 
             @Override
             public void accept(RubyThread currentThread) {
-                if (currentThread == finalizerThread) {
-                    return;
-                }
                 synchronized (liveObjects) {
                     visitor.visit(currentThread);
                     context.getCoreLibrary().getGlobalVariablesObject().visitObjectGraph(visitor);

@@ -57,6 +57,10 @@ public class RubyThread extends RubyBasicObject {
         threadLocals = new RubyBasicObject(rubyClass.getContext().getCoreLibrary().getObjectClass());
     }
 
+    public void ignoreSafepointActions() {
+        status = Status.ABORTING;
+    }
+
     public void initialize(RubyContext context, RubyNode currentNode, RubyProc block) {
         final RubyProc finalBlock = block;
 
