@@ -9,7 +9,86 @@
 # These are implemented just to get other stuff working - we'll go back and
 # implement these properly later.
 
+# Here otherwise it causes problems for RubySpec
 class Channel
+end
+
+module STDIN
+  def self.external_encoding
+    @external || Encoding.default_external
+  end
+
+  def self.internal_encoding
+    @internal
+  end
+
+  def self.set_encoding(external, internal)
+    @external = external
+    @internal = internal
+  end
+end
+
+module STDOUT
+  def self.puts(*values)
+    Kernel.send(:puts, *values)
+  end
+
+  def self.print(*values)
+    Kernel.send(:print, *values)
+  end
+
+  def self.printf(*values)
+    Kernel.send(:printf, *values)
+  end
+
+  def self.write(value)
+    print value
+  end
+
+  def self.flush
+    Truffle::Debug.flush_stdout
+  end
+
+  def self.sync
+    false
+  end
+
+  def self.sync=(value)
+  end
+
+  def self.external_encoding
+    @external
+  end
+
+  def self.internal_encoding
+    @internal
+  end
+
+  def self.set_encoding(external, internal)
+    @external = external
+    @internal = internal
+  end
+end
+
+$stdout = STDOUT
+
+module STDERR
+  def self.puts(*values)
+    Kernel.send(:puts, *values)
+  end
+
+  def self.external_encoding
+    @external
+  end
+
+  def self.internal_encoding
+    @internal
+  end
+
+  def self.set_encoding(external, internal)
+    @external = external
+    @internal = internal
+  end
 end
 
 ARGF = Object.new
