@@ -54,16 +54,18 @@ require_relative 'core/rubinius/kernel/common/fixnum'
 require_relative 'core/rubinius/kernel/common/regexp'
 require_relative 'core/rubinius/kernel/common/main'
 
-# Load JRuby+Truffle specific Ruby code
-require_relative 'core/main'
-require_relative 'core/kernel'
-require_relative 'core/config'
-require_relative 'core/float'
-require_relative 'core/math'
-require_relative 'core/thread'
-require_relative 'core/module'
-require_relative 'core/hash'
+# Load JRuby+Truffle classes
 require_relative 'core/fixnum'
+require_relative 'core/float'
+require_relative 'core/hash'
+require_relative 'core/kernel'
+require_relative 'core/math'
 require_relative 'core/method'
+require_relative 'core/module'
+require_relative 'core/thread'
 
 require_relative 'core/shims'
+
+# Start running Ruby code outside classes
+require_relative 'core/config'
+require_relative 'core/main'
