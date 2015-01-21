@@ -2718,10 +2718,11 @@ public class Helpers {
                 for (Node asgnNode : keyWordNode.childNodes()) {
                     if (added) builder.append(';');
                     added = true;
-                    if (isRequiredKeywordArgumentValueNode(asgnNode))
+                    if (isRequiredKeywordArgumentValueNode(asgnNode)) {
                         builder.append("K").append(((DAsgnNode) asgnNode).getName());
-                    else
+                    } else {
                         builder.append("k").append(((DAsgnNode) asgnNode).getName());
+                    }
                 }
             }
         }
