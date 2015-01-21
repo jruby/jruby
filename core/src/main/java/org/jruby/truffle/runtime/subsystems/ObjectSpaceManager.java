@@ -210,6 +210,9 @@ public class ObjectSpaceManager {
 
             @Override
             public void accept(RubyThread currentThread) {
+                if (currentThread == finalizerThread) {
+                    return;
+                }
                 synchronized (liveObjects) {
                     visitor.visit(currentThread);
                     context.getCoreLibrary().getGlobalVariablesObject().visitObjectGraph(visitor);
