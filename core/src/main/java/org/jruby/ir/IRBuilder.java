@@ -13,11 +13,9 @@ import org.jruby.ir.instructions.defined.GetErrorInfoInstr;
 import org.jruby.ir.instructions.defined.RestoreErrorInfoInstr;
 import org.jruby.ir.listeners.IRScopeListener;
 import org.jruby.ir.operands.*;
-import org.jruby.ir.operands.Boolean;
 import org.jruby.ir.operands.Float;
 import org.jruby.ir.transformations.inlining.SimpleCloneInfo;
 import org.jruby.parser.StaticScope;
-import org.jruby.runtime.Arity;
 import org.jruby.runtime.CallType;
 import org.jruby.runtime.Helpers;
 import org.jruby.runtime.RubyEvent;
@@ -1104,7 +1102,9 @@ public class IRBuilder {
         IRClassBody body = new IRClassBody(manager, s, className, classNode.getPosition().getLine(), classNode.getScope());
         Variable classVar = addResultInstr(s, new DefineClassInstr(s.createTemporaryVariable(), body, container, superClass));
 
-        return buildModuleOrClassBody(s, classVar, body, classNode.getBodyNode(), classNode.getPosition().getLine(), NullBlock.INSTANCE);
+        Variable processBodyResult = addResultInstr(s, new ProcessModuleBodyInstr(s.createTemporaryVariable(), classVar, NullBlock.INSTANCE));
+        newIRBuilder(manager).buildModuleOrClassBody(body, classNode.getBodyNode(), classNode.getPosition().getLine());
+        return processBodyResult;
     }
 
     // class Foo; class << self; end; end
@@ -1116,7 +1116,9 @@ public class IRBuilder {
         Variable sClassVar = addResultInstr(s, new DefineMetaClassInstr(s.createTemporaryVariable(), receiver, body));
 
         // sclass bodies inherit the block of their containing method
-        return buildModuleOrClassBody(s, sClassVar, body, sclassNode.getBodyNode(), sclassNode.getPosition().getLine(), s.getYieldClosureVariable());
+        Variable processBodyResult = addResultInstr(s, new ProcessModuleBodyInstr(s.createTemporaryVariable(), sClassVar, NullBlock.INSTANCE));
+        newIRBuilder(manager).buildModuleOrClassBody(body, sclassNode.getBodyNode(), sclassNode.getPosition().getLine());
+        return processBodyResult;
     }
 
     // @@c
@@ -2641,7 +2643,9 @@ public class IRBuilder {
         IRModuleBody body = new IRModuleBody(manager, s, moduleName, moduleNode.getPosition().getLine(), moduleNode.getScope());
         Variable moduleVar = addResultInstr(s, new DefineModuleInstr(s.createTemporaryVariable(), body, container));
 
-        return buildModuleOrClassBody(s, moduleVar, body, moduleNode.getBodyNode(), moduleNode.getPosition().getLine(), NullBlock.INSTANCE);
+        Variable processBodyResult = addResultInstr(s, new ProcessModuleBodyInstr(s.createTemporaryVariable(), moduleVar, NullBlock.INSTANCE));
+        newIRBuilder(manager).buildModuleOrClassBody(body, moduleNode.getBodyNode(), moduleNode.getPosition().getLine());
+        return processBodyResult;
     }
 
     public Operand buildMultipleAsgn(MultipleAsgnNode multipleAsgnNode, IRScope s) {
@@ -3529,29 +3533,24 @@ public class IRBuilder {
         return newArgs;
     }
 
-    private Operand buildModuleOrClassBody(IRScope parent, Variable moduleVar, IRModuleBody body, Node bodyNode, int linenumber, Operand block) {
-        Variable processBodyResult = addResultInstr(parent, new ProcessModuleBodyInstr(parent.createTemporaryVariable(), moduleVar, block));
-        IRBuilder bodyBuilder = newIRBuilder(manager);
-
+    private void buildModuleOrClassBody(IRModuleBody body, Node bodyNode, int linenumber) {
         if (RubyInstanceConfig.FULL_TRACE_ENABLED) {
-            bodyBuilder.addInstr(body, new TraceInstr(RubyEvent.CLASS, null, body.getFileName(), linenumber));
+            addInstr(body, new TraceInstr(RubyEvent.CLASS, null, body.getFileName(), linenumber));
         }
 
         // Prepare all implicit state (self, frame block, etc)
-        bodyBuilder.prepareImplicitState(body);
+        prepareImplicitState(body);
 
-        bodyBuilder.addInstr(body, new CopyInstr(body.getCurrentScopeVariable(), CURRENT_SCOPE[0])); // %scope
-        bodyBuilder.addInstr(body, new CopyInstr(body.getCurrentModuleVariable(), SCOPE_MODULE[0])); // %module
+        addInstr(body, new CopyInstr(body.getCurrentScopeVariable(), CURRENT_SCOPE[0])); // %scope
+        addInstr(body, new CopyInstr(body.getCurrentModuleVariable(), SCOPE_MODULE[0])); // %module
         // Create a new nested builder to ensure this gets its own IR builder state
-        Operand bodyReturnValue = bodyBuilder.build(bodyNode, body);
+        Operand bodyReturnValue = build(bodyNode, body);
 
         if (RubyInstanceConfig.FULL_TRACE_ENABLED) {
-            bodyBuilder.addInstr(body, new TraceInstr(RubyEvent.END, null, body.getFileName(), -1));
+            addInstr(body, new TraceInstr(RubyEvent.END, null, body.getFileName(), -1));
         }
 
-        bodyBuilder.addInstr(body, new ReturnInstr(bodyReturnValue));
-
-        return processBodyResult;
+        addInstr(body, new ReturnInstr(bodyReturnValue));
     }
 
     private String methodNameFor(IRScope s) {
