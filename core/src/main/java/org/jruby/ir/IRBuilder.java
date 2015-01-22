@@ -2414,7 +2414,7 @@ public class IRBuilder {
 
         if (splatKeywordArgument != null) { // splat kwargs merge with any explicit kwargs
             Variable tmp = s.createTemporaryVariable();
-            s.addInstr(new RuntimeHelperCall(tmp, MERGE_KWARGS, new Operand[] { splatKeywordArgument, new Hash(args)}));
+            addInstr(s, new RuntimeHelperCall(tmp, MERGE_KWARGS, new Operand[] { splatKeywordArgument, new Hash(args)}));
             return tmp;
         } else {
             return copyAndReturnValue(s, new Hash(args));
