@@ -10,9 +10,7 @@ project 'JRuby Ext' do
   properties( 'tesla.dump.pom' => 'pom.xml',
               'tesla.dump.readonly' => true )
 
-  modules [ 'readline',
-            'ripper',
-            'truffle' ]
+  modules [ 'ripper' ]
 
   plugin( :deploy,
           'skip' =>  'true' )

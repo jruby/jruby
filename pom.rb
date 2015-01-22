@@ -175,15 +175,6 @@ project 'JRuby', 'https://github.com/jruby/jruby' do
     default_goal 'package'
   end
 
-  profile 'ext' do
-
-    modules [ 'ext' ]
-
-    build do
-      default_goal 'install'
-    end
-  end
-
   profile 'test' do
     properties 'invoker.skip' => false
     modules [ 'test' ]
@@ -206,7 +197,7 @@ project 'JRuby', 'https://github.com/jruby/jruby' do
   [ 'bootstrap', 'bootstrap-no-launcher' ].each do |name|
     profile name do
 
-      modules [ 'ext', 'test' ]
+      modules [ 'test' ]
 
     end
   end
@@ -250,7 +241,7 @@ project 'JRuby', 'https://github.com/jruby/jruby' do
     end
   end
 
-  all_modules = [ 'ext', 'test', 'maven' ]
+  all_modules = [ 'test', 'maven' ]
 
   profile 'all' do
 

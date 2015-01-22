@@ -528,15 +528,6 @@
   </reporting>
   <profiles>
     <profile>
-      <id>ext</id>
-      <build>
-        <defaultGoal>install</defaultGoal>
-      </build>
-      <modules>
-        <module>ext</module>
-      </modules>
-    </profile>
-    <profile>
       <id>test</id>
       <modules>
         <module>test</module>
@@ -602,14 +593,12 @@
     <profile>
       <id>bootstrap</id>
       <modules>
-        <module>ext</module>
         <module>test</module>
       </modules>
     </profile>
     <profile>
       <id>bootstrap-no-launcher</id>
       <modules>
-        <module>ext</module>
         <module>test</module>
       </modules>
     </profile>
@@ -755,7 +744,6 @@
         <defaultGoal>install</defaultGoal>
       </build>
       <modules>
-        <module>ext</module>
         <module>test</module>
         <module>maven</module>
       </modules>
@@ -766,7 +754,6 @@
         <defaultGoal>clean</defaultGoal>
       </build>
       <modules>
-        <module>ext</module>
         <module>test</module>
         <module>maven</module>
       </modules>
