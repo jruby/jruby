@@ -1,8 +1,0 @@
-This artifact is provided as a temporary Maven Central location for the Truffle
-libraries. It will not be supported in the future.
-
-To deploy to Maven Central:
-
-* You must have push rights to com.headius groupId.
-
-mvn -Pbootstrap -Psonatype-oss-release clean deploy
