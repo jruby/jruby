@@ -69,7 +69,7 @@ ruby/test_primitive.rb
 # TODO 2.1 parser
 #ruby/test_proc.rb
 # hangs when run with other tests
-#ruby/test_process.rb
+ruby/test_process.rb
 ruby/test_rand.rb
 ruby/test_range.rb
 ruby/test_rational.rb

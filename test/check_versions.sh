@@ -56,7 +56,8 @@ function check {
 check test/target/jruby-tests-$jar_version.jar
 check maven/jruby-stdlib/target/jruby-stdlib-$jar_version.jar
 check maven/jruby-jars/pkg/jruby-jars-$gem_version.gem
-check maven/jruby-jars/lib/jruby-core-$jar_version.jar
+check maven/jruby-jars/lib/jruby-core-$jar_version-complete.jar
+check maven/jruby-jars/lib/jruby-truffle-$jar_version-complete.jar
 check maven/jruby-jars/lib/jruby-stdlib-$jar_version.jar
 check maven/jruby-complete/target/jruby-complete-$jar_version.jar
 check maven/jruby/target/jruby-$jar_version.jar
@@ -68,5 +69,7 @@ check maven/jruby-dist/target/jruby-dist-$jar_version-bin.zip jruby-$jar_version
 check core/target/jruby-core-$jar_version-noasm.jar
 check core/target/jruby-core-$jar_version.jar
 check core/target/jruby-core-$jar_version-complete.jar
+check truffle/target/jruby-truffle-$jar_version.jar
+check truffle/target/jruby-truffle-$jar_version-complete.jar
 
 exit "${failed[0]}"
