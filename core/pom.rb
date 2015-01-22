@@ -210,17 +210,6 @@ project 'JRuby Core' do
                    'failOnError' =>  'false' )
   end
 
-  plugin :shade do
-    execute_goals( 'shade',
-                   :id => 'pack jruby.jar',
-                   :phase => 'package',
-                   'relocations' => [ { 'pattern' => 'org.objectweb',
-                                        'shadedPattern' => 'org.jruby.org.objectweb' } ],
-                   'outputFile' => '${jruby.basedir}/lib/jruby.jar',
-                   'transformers' => [ { '@implementation' => 'org.apache.maven.plugins.shade.resource.ManifestResourceTransformer',
-                                         'mainClass' => 'org.jruby.Main' } ] )
-  end
-
   plugin( :surefire,
           'forkCount' =>  '1',
           'reuseForks' =>  'false',
