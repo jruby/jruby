@@ -26,7 +26,6 @@ project 'JRuby Main Maven Artifact With ASM Relocated' do
                         'org.ow2.asm:asm-commons',
                         'org.ow2.asm:asm-analysis',
                         'org.ow2.asm:asm-util' ] )
-  jar 'org.jruby:jruby-truffle:${project.version}'
   jar 'org.jruby:jruby-stdlib:${project.version}'
 
   # we have no sources and attach an empty jar later in the build to
