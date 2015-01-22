@@ -2746,6 +2746,7 @@ public abstract class ArrayNodes {
                             getContext().getRuntime(),
                             getContext().toJRuby(array),
                             getContext().toJRuby(format).getByteList()).getByteList());
+        }
 
         protected boolean arrayIsLongs(RubyArray array) {
             return array.getStore() instanceof long[];
