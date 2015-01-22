@@ -11,36 +11,32 @@ Prerequisites:
 JRuby uses Maven for building and bootstrapping itself, along with Rake,
 RSpec, and MSpec for running integration tests.
 
-Bootstrapping JRuby
--------------------
+Building Commandline JRuby
+--------------------------
 
 The first time you enter a new source dump of JRuby (from a src zip or
-from a git clone), you will want to fully bootstrap the environment. The
+from a git clone), you need to build the lib/jruby.jar. The
 command to execute is:
 
 ```
 mvn
 ```
 
-Or if you prefer to be more explicit, the default "package" goal can
+Or if you prefer to be more explicit, the default "install" goal can
 be specified:
 
 ```
-mvn package
+mvn install
 ```
 
 This will do all of the following:
 
 * Compile JRuby
+* Compile JRuby-Truffle
 * Build `lib/jruby.jar`, needed for running at command line
 * It will install the default gems specifications `lib/ruby/gems/shared/specifications/default/` and the ruby files of those gems in `lib/ruby/stdlib/`.
 
 The environment is now suitable for running Ruby applications.
-
-Bootstrapping only needs to be done once at first entry into a JRuby
-source dump or if you are updating JRuby from a git repository.
-
-The list of the default gems can be found at the beginning of `lib/pom.rb`.
 
 Running JRuby
 -------------
@@ -53,18 +49,9 @@ rvm use system
 
 *to make sure you do not use another Ruby's gems or execute another Ruby implementation.*
 
-Once bootstrapped, JRuby can be run with the `bin/jruby` executable. If
-the `jruby-launcher` gem installed successfully, this will be a native
+After building lib/jruby.jar, JRuby can be run with the `bin/jruby` executable. If the `jruby-launcher` gem installed successfully, this will be a native
 executable for your platform; otherwise, it will be a copy of the
 `bin/jruby.bash` bash script.
-
-Bootstrapping will install the following gems:
-
-* `rspec`
-* `jruby-launcher`
-
-and dependencies of these gems. A list of the gem versions can be found in
-`test/pom.xml` in the `dependencies` section.
 
 RubyGems is installed by default, and available in `bin/gem`. It will
 attempt to locate the `jruby` executable using `/usr/bin/env`, so you
@@ -81,7 +68,7 @@ Developing and Testing
 JRuby employs a large suite of tests, so there are many ways you can
 verify that JRuby is still fully functional.
 
-### Bootstrapping
+### Setup Testing
 
 In order to prepare JRuby for testing, you must bootstrap the dev
 environment. This will do the following:
@@ -99,7 +86,6 @@ In case there is a problem with installing the jruby-launcher (due to missing co
 mvn -Pbootstrap-no-launcher
 ```
 
-
 This only needs to be run once to install these gems or if you update
 one of the gems to a newer version or clean out all installed gems.
 
@@ -110,16 +96,6 @@ After changing Java code, you can recompile quickly by running:
 ```
 mvn
 ```
-
-If you only want to build JRuby core (everything that goes in jruby.jar), you can use
-the following command:
-
-```
-mvn -pl core
-```
-
-This is generally the quickest way to build when you are just modifying JRuby core
-classes.
 
 ### Day to Day Testing
 
@@ -303,20 +279,14 @@ rake maven:dump_poms
 ```
 or
 ```
-rmvn validate -Pall
+rmvn installe -Pall
 ```
 
-on master you need to run
-```
-rake maven:set_version
-```
-
-manually rollback the poms in ./ext/ if their main versions have been changed
-and then commit and tag everything respectively.  Now deploy the maven 
+Now deploy the maven 
 artifact to sonatype oss.
 
 ```
-mvn clean deploy -Psonatype-oss-release -Prelease
+mvn clean deploy -Psonatype-oss-release
 ```
 
 go to oss.sonatype.org and close the deployment which will check if all 'required' files are in place and then finally push the release to maven central and . . . 
@@ -349,5 +319,5 @@ rake maven:dump_poms
 ```
 or
 ```
-rmvn validate -Pall
+rmvn install -Pall
 ```
