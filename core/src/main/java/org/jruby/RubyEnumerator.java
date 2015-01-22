@@ -67,6 +67,8 @@ public class RubyEnumerator extends RubyObject {
 
     /** Function object for lazily computing size (used for internally created enumerators) */
     private SizeFn sizeFn;
+    
+    private IRubyObject feedValue;
 
     public static void defineEnumerator(Ruby runtime) {
         RubyModule enm = runtime.getClassFromPath("Enumerable");
@@ -255,14 +257,16 @@ public class RubyEnumerator extends RubyObject {
     }
 
     private IRubyObject initialize20(IRubyObject object, IRubyObject method, IRubyObject[] methodArgs, IRubyObject size, SizeFn sizeFn) {
+        final Ruby runtime = getRuntime();
         this.object = object;
         this.method = method.asJavaString();
         this.methodArgs = methodArgs;
         this.size = size;
         this.sizeFn = sizeFn;
+        this.feedValue = runtime.getNil();
         setInstanceVariable("@__object__", object);
         setInstanceVariable("@__method__", method);
-        setInstanceVariable("@__args__", RubyArray.newArrayNoCopyLight(getRuntime(), methodArgs));
+        setInstanceVariable("@__args__", RubyArray.newArrayNoCopyLight(runtime, methodArgs));
         return this;
     }
 
@@ -275,7 +279,8 @@ public class RubyEnumerator extends RubyObject {
         copy.method     = this.method;
         copy.methodArgs = this.methodArgs;
         copy.size       = this.size;
-        copy.sizeFn       = this.sizeFn;
+        copy.sizeFn     = this.sizeFn;
+        copy.feedValue  = getRuntime().getNil();
         return copy;
     }
 
@@ -452,7 +457,7 @@ public class RubyEnumerator extends RubyObject {
     @JRubyMethod
     public synchronized IRubyObject next(ThreadContext context) {
         ensureNexter(context);
-        
+        if (!feedValue.isNil()) feedValue = context.nil;
         return nexter.next();
     }
     
@@ -485,8 +490,19 @@ public class RubyEnumerator extends RubyObject {
     @JRubyMethod(name = "next_values")
     public synchronized IRubyObject nextValues(ThreadContext context) {
         ensureNexter(context);
-
+        if (!feedValue.isNil()) feedValue = context.nil;
         return RubyArray.newArray(context.runtime, nexter.next());
+    }
+
+    @JRubyMethod
+    public IRubyObject feed(ThreadContext context, IRubyObject val) {
+        ensureNexter(context);
+        if (!feedValue.isNil()) {
+            throw context.runtime.newTypeError("feed value already set");
+        }
+        feedValue = val;
+        nexter.setFeedValue(val);
+        return context.nil;
     }
 
     private void ensureNexter(ThreadContext context) {
@@ -537,6 +553,8 @@ public class RubyEnumerator extends RubyObject {
 
         /** args to each method */
         protected final IRubyObject[] methodArgs;
+
+        private IRubyObject feedValue;
         
         public Nexter(Ruby runtime, IRubyObject object, String method, IRubyObject[] methodArgs) {
             this.object = object;
@@ -544,7 +562,15 @@ public class RubyEnumerator extends RubyObject {
             this.methodArgs = methodArgs;
             this.runtime = runtime;
         }
-        
+
+        public void setFeedValue(IRubyObject feedValue) {
+            this.feedValue = feedValue;
+        }
+
+        public IRubyObject getFeedValue() {
+            return feedValue;
+        }
+
         public abstract IRubyObject next();
         
         public abstract void shutdown();
@@ -616,8 +642,9 @@ public class RubyEnumerator extends RubyObject {
         
         public ThreadedNexter(Ruby runtime, IRubyObject object, String method, IRubyObject[] methodArgs) {
             super(runtime, object, method, methodArgs);
+            setFeedValue(runtime.getNil());
         }
-        
+
         @Override
         public synchronized IRubyObject next() {
             if (doneObject != null) {
@@ -741,7 +768,9 @@ public class RubyEnumerator extends RubyObject {
                                 throw terminateEnumeration;
                             }
 
-                            return context.nil;
+                            IRubyObject feedValue = getFeedValue();
+                            setFeedValue(context.nil);
+                            return feedValue;
                         }
                     }, context));
                 } catch (TerminateEnumeration te) {
