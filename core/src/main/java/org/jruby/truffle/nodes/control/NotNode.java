@@ -11,20 +11,22 @@ package org.jruby.truffle.nodes.control;
 
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.SourceSection;
+
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.cast.BooleanCastNode;
+import org.jruby.truffle.nodes.cast.BooleanCastNodeFactory;
 import org.jruby.truffle.runtime.RubyContext;
 
 /**
- * Represents a Ruby {@code not} or {@code !} expression.
+ * Cast to boolean and negate, as {@code BasicObject#!}.
  */
 public class NotNode extends RubyNode {
 
     @Child private BooleanCastNode child;
 
-    public NotNode(RubyContext context, SourceSection sourceSection, BooleanCastNode child) {
+    public NotNode(RubyContext context, SourceSection sourceSection, RubyNode child) {
         super(context, sourceSection);
-        this.child = child;
+        this.child = BooleanCastNodeFactory.create(context, sourceSection, child);
     }
 
     @Override

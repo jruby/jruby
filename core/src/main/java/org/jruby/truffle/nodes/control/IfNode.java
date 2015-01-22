@@ -15,6 +15,7 @@ import com.oracle.truffle.api.utilities.ConditionProfile;
 
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.cast.BooleanCastNode;
+import org.jruby.truffle.nodes.cast.BooleanCastNodeFactory;
 import org.jruby.truffle.runtime.RubyContext;
 
 /**
@@ -28,14 +29,14 @@ public class IfNode extends RubyNode {
     @Child private RubyNode elseBody;
     private final ConditionProfile conditionProfile = ConditionProfile.createCountingProfile();
 
-    public IfNode(RubyContext context, SourceSection sourceSection, BooleanCastNode condition, RubyNode thenBody, RubyNode elseBody) {
+    public IfNode(RubyContext context, SourceSection sourceSection, RubyNode condition, RubyNode thenBody, RubyNode elseBody) {
         super(context, sourceSection);
 
         assert condition != null;
         assert thenBody != null;
         assert elseBody != null;
 
-        this.condition = condition;
+        this.condition = BooleanCastNodeFactory.create(context, sourceSection, condition);
         this.thenBody = thenBody;
         this.elseBody = elseBody;
     }

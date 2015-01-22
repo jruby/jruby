@@ -19,6 +19,7 @@ import com.oracle.truffle.api.utilities.BranchProfile;
 
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.cast.BooleanCastNode;
+import org.jruby.truffle.nodes.cast.BooleanCastNodeFactory;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.BreakException;
 import org.jruby.truffle.runtime.control.NextException;
@@ -34,12 +35,12 @@ public final class WhileNode extends RubyNode {
         this.loopNode = Truffle.getRuntime().createLoopNode(repeatingNode);
     }
 
-    public static WhileNode createWhile(RubyContext context, SourceSection sourceSection, BooleanCastNode condition, RubyNode body) {
+    public static WhileNode createWhile(RubyContext context, SourceSection sourceSection, RubyNode condition, RubyNode body) {
         RepeatingNode repeatingNode = new WhileRepeatingNode(context, condition, body);
         return new WhileNode(context, sourceSection, repeatingNode);
     }
 
-    public static WhileNode createDoWhile(RubyContext context, SourceSection sourceSection, BooleanCastNode condition, RubyNode body) {
+    public static WhileNode createDoWhile(RubyContext context, SourceSection sourceSection, RubyNode condition, RubyNode body) {
         RepeatingNode repeatingNode = new DoWhileRepeatingNode(context, condition, body);
         return new WhileNode(context, sourceSection, repeatingNode);
     }
@@ -66,16 +67,16 @@ public final class WhileNode extends RubyNode {
         protected final BranchProfile redoUsed = BranchProfile.create();
         protected final BranchProfile nextUsed = BranchProfile.create();
 
-        public WhileRepeatingBaseNode(RubyContext context, BooleanCastNode condition, RubyNode body) {
+        public WhileRepeatingBaseNode(RubyContext context, RubyNode condition, RubyNode body) {
             this.context = context;
-            this.condition = condition;
+            this.condition = BooleanCastNodeFactory.create(context, condition.getSourceSection(), condition);
             this.body = body;
         }
     }
 
     private static class WhileRepeatingNode extends WhileRepeatingBaseNode implements RepeatingNode {
 
-        public WhileRepeatingNode(RubyContext context, BooleanCastNode condition, RubyNode body) {
+        public WhileRepeatingNode(RubyContext context, RubyNode condition, RubyNode body) {
             super(context, condition, body);
         }
 
@@ -102,9 +103,9 @@ public final class WhileNode extends RubyNode {
 
     }
     
-    private static class DoWhileRepeatingNode extends WhileRepeatingNode implements RepeatingNode {
+    private static class DoWhileRepeatingNode extends WhileRepeatingBaseNode implements RepeatingNode {
 
-        public DoWhileRepeatingNode(RubyContext context, BooleanCastNode condition, RubyNode body) {
+        public DoWhileRepeatingNode(RubyContext context, RubyNode condition, RubyNode body) {
             super(context, condition, body);
         }
 

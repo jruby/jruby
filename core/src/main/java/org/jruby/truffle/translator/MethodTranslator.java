@@ -122,9 +122,8 @@ class MethodTranslator extends BodyTranslator {
                 preludeBuilder =
                         new BehaveAsBlockNode(context, sourceSection,
                                 new IfNode(context, sourceSection,
-                                        BooleanCastNodeFactory.create(context, sourceSection,
-                                            new ShouldDestructureNode(context, sourceSection, arity,
-                                                    new RespondToNode(context, sourceSection, readArrayNode, "to_ary"))),
+                                        new ShouldDestructureNode(context, sourceSection, arity,
+                                                new RespondToNode(context, sourceSection, readArrayNode, "to_ary")),
                                         SequenceNode.sequence(context, sourceSection, writeArrayNode, newDestructureArguments),
                                         NodeUtil.cloneNode(loadArguments)),
                                 NodeUtil.cloneNode(loadArguments));

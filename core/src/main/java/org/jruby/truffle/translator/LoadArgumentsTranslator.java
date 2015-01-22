@@ -408,8 +408,7 @@ public class LoadArgumentsTranslator extends Translator {
                         ArrayCastNodeFactory.create(context, sourceSection,
                                 readArgument(sourceSection))),
                 new IfNode(context, sourceSection,
-                        BooleanCastNodeFactory.create(context, sourceSection,
-                                new IsNilNode(context, sourceSection, ReadLocalVariableNodeFactory.create(context, sourceSection, arraySlot))),
+                        new IsNilNode(context, sourceSection, ReadLocalVariableNodeFactory.create(context, sourceSection, arraySlot)),
                         nil,
                         notNil == null ? new NilLiteralNode(context, sourceSection) : notNil));
     }

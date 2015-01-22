@@ -698,8 +698,6 @@ public class BodyTranslator extends Translator {
 
                 // Create the if node
 
-                final BooleanCastNode conditionCastNode = BooleanCastNodeFactory.create(context, sourceSection, conditionNode);
-
                 RubyNode thenNode;
 
                 if (when.getBodyNode() == null) {
@@ -708,7 +706,7 @@ public class BodyTranslator extends Translator {
                     thenNode = when.getBodyNode().accept(this);
                 }
 
-                final IfNode ifNode = new IfNode(context, sourceSection, conditionCastNode, thenNode, elseNode);
+                final IfNode ifNode = new IfNode(context, sourceSection, conditionNode, thenNode, elseNode);
 
                 // This if becomes the else for the next if
 
@@ -751,11 +749,9 @@ public class BodyTranslator extends Translator {
 
                 // Create the if node
 
-                final BooleanCastNode conditionCastNode = BooleanCastNodeFactory.create(context, sourceSection, conditionNode);
-
                 final RubyNode thenNode = when.getBodyNode().accept(this);
 
-                final IfNode ifNode = new IfNode(context, sourceSection, conditionCastNode, thenNode, elseNode);
+                final IfNode ifNode = new IfNode(context, sourceSection, conditionNode, thenNode, elseNode);
 
                 // This if becomes the else for the next if
 
@@ -1095,11 +1091,9 @@ public class BodyTranslator extends Translator {
         final RubyNode begin = node.getBeginNode().accept(this);
         final RubyNode end = node.getEndNode().accept(this);
 
-        final BooleanCastNode beginCast = BooleanCastNodeFactory.create(context, sourceSection, begin);
-        final BooleanCastNode endCast = BooleanCastNodeFactory.create(context, sourceSection, end);
         final FlipFlopStateNode stateNode = createFlipFlopState(sourceSection, 0);
 
-        return new FlipFlopNode(context, sourceSection, beginCast, endCast, stateNode, node.isExclusive());
+        return new FlipFlopNode(context, sourceSection, begin, end, stateNode, node.isExclusive());
     }
 
     protected FlipFlopStateNode createFlipFlopState(SourceSection sourceSection, int depth) {
@@ -1428,12 +1422,10 @@ public class BodyTranslator extends Translator {
             condition = node.getCondition().accept(this);
         }
 
-        final BooleanCastNode conditionCast = BooleanCastNodeFactory.create(context, sourceSection, condition);
-
         final RubyNode thenBodyTranslated = thenBody.accept(this);
         final RubyNode elseBodyTranslated = elseBody.accept(this);
 
-        return new IfNode(context, sourceSection, conditionCast, thenBodyTranslated, elseBodyTranslated);
+        return new IfNode(context, sourceSection, condition, thenBodyTranslated, elseBodyTranslated);
     }
 
     @Override
@@ -2432,24 +2424,15 @@ public class BodyTranslator extends Translator {
     public RubyNode visitUntilNode(org.jruby.ast.UntilNode node) {
         final SourceSection sourceSection = translate(node.getPosition());
 
-        RubyNode condition;
-
-        if (node.getConditionNode() == null) {
-            condition = new ObjectLiteralNode(context, sourceSection, context.getCoreLibrary().getNilObject());
-        } else {
-            condition = node.getConditionNode().accept(this);
-        }
-
-        final BooleanCastNode conditionCast = BooleanCastNodeFactory.create(context, sourceSection, condition);
-        final NotNode conditionCastNot = new NotNode(context, sourceSection, conditionCast);
-        final BooleanCastNode conditionCastNotCast = BooleanCastNodeFactory.create(context, sourceSection, conditionCastNot);
+        RubyNode condition = node.getConditionNode().accept(this);
+        RubyNode conditionInversed = new NotNode(context, sourceSection, condition);
 
         RubyNode body = node.getBodyNode().accept(this);
 
         if (node.evaluateAtStart()) {
-            return WhileNode.createWhile(context, sourceSection, conditionCastNotCast, body);
+            return WhileNode.createWhile(context, sourceSection, conditionInversed, body);
         } else {
-            return WhileNode.createDoWhile(context, sourceSection, conditionCastNotCast, body);
+            return WhileNode.createDoWhile(context, sourceSection, conditionInversed, body);
         }
     }
 
@@ -2464,15 +2447,7 @@ public class BodyTranslator extends Translator {
     public RubyNode visitWhileNode(org.jruby.ast.WhileNode node) {
         final SourceSection sourceSection = translate(node.getPosition());
 
-        RubyNode condition;
-
-        if (node.getConditionNode() == null) {
-            condition = new ObjectLiteralNode(context, sourceSection, context.getCoreLibrary().getNilObject());
-        } else {
-            condition = node.getConditionNode().accept(this);
-        }
-
-        final BooleanCastNode conditionCast = BooleanCastNodeFactory.create(context, sourceSection, condition);
+        RubyNode condition = node.getConditionNode().accept(this);
 
         translatingWhile = true;
 
@@ -2485,9 +2460,9 @@ public class BodyTranslator extends Translator {
         }
 
         if (node.evaluateAtStart()) {
-            return WhileNode.createWhile(context, sourceSection, conditionCast, body);
+            return WhileNode.createWhile(context, sourceSection, condition, body);
         } else {
-            return WhileNode.createDoWhile(context, sourceSection, conditionCast, body);
+            return WhileNode.createDoWhile(context, sourceSection, condition, body);
         }
     }
 
