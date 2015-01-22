@@ -58,6 +58,10 @@ public class RubySymbol extends RubyBasicObject {
                 callTarget, callTarget, null, null, null, getContext().getCoreLibrary().getNilObject(), null);
     }
 
+    public ByteList getSymbolBytes() {
+        return symbolBytes;
+    }
+
     public org.jruby.RubySymbol getJRubySymbol() {
         RubyNode.notDesignedForCompilation();
 

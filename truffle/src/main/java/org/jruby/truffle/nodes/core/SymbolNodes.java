@@ -186,7 +186,7 @@ public abstract class SymbolNodes {
         public RubyString toS(RubySymbol symbol) {
             notDesignedForCompilation();
 
-            return getContext().makeString(symbol.getJRubySymbol().to_s().asString().decodeString());
+            return getContext().makeString(symbol.getSymbolBytes().dup());
         }
 
     }
@@ -203,7 +203,7 @@ public abstract class SymbolNodes {
         }
 
         @Specialization
-        public RubyString toS(RubySymbol symbol) {
+        public RubyString inspect(RubySymbol symbol) {
             notDesignedForCompilation();
 
             return getContext().makeString(symbol.getJRubySymbol().inspect(getContext().getRuntime().getCurrentContext()).asString().decodeString());
