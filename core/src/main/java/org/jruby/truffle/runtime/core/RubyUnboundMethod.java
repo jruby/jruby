@@ -13,11 +13,17 @@ import org.jruby.truffle.runtime.methods.InternalMethod;
 
 public class RubyUnboundMethod extends RubyBasicObject {
 
-    private InternalMethod method;
+    private final RubyModule origin;
+    private final InternalMethod method;
 
-    public RubyUnboundMethod(RubyClass rubyClass, InternalMethod method) {
+    public RubyUnboundMethod(RubyClass rubyClass, RubyModule origin, InternalMethod method) {
         super(rubyClass);
+        this.origin = origin;
         this.method = method;
+    }
+
+    public RubyModule getOrigin() {
+        return origin;
     }
 
     public InternalMethod getMethod() {

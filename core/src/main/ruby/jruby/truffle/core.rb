@@ -66,6 +66,7 @@ require_relative 'core/math'
 require_relative 'core/method'
 require_relative 'core/module'
 require_relative 'core/thread'
+require_relative 'core/unbound_method'
 
 require_relative 'core/shims'
 

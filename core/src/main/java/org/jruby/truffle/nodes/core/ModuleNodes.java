@@ -1291,7 +1291,7 @@ public abstract class ModuleNodes {
                 throw new UnsupportedOperationException();
             }
 
-            return new RubyUnboundMethod(getContext().getCoreLibrary().getUnboundMethodClass(), method);
+            return new RubyUnboundMethod(getContext().getCoreLibrary().getUnboundMethodClass(), module, method);
         }
 
     }

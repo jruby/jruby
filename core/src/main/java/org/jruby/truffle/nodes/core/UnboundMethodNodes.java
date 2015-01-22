@@ -10,18 +10,12 @@
 package org.jruby.truffle.nodes.core;
 
 import com.oracle.truffle.api.dsl.Specialization;
-import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.SourceSection;
 
-import org.jruby.truffle.nodes.core.MethodNodes.NameNode;
-import org.jruby.truffle.nodes.core.MethodNodes.OwnerNode;
-import org.jruby.truffle.nodes.yield.YieldDispatchHeadNode;
+import org.jruby.runtime.Visibility;
 import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.UndefinedPlaceholder;
-import org.jruby.truffle.runtime.core.RubyBignum;
 import org.jruby.truffle.runtime.core.RubyMethod;
 import org.jruby.truffle.runtime.core.RubyModule;
-import org.jruby.truffle.runtime.core.RubyProc;
 import org.jruby.truffle.runtime.core.RubySymbol;
 import org.jruby.truffle.runtime.core.RubyUnboundMethod;
 
@@ -62,6 +56,25 @@ public abstract class UnboundMethodNodes {
             notDesignedForCompilation();
 
             return getContext().newSymbol(unboundMethod.getMethod().getName());
+        }
+
+    }
+
+    // TODO: We should have an additional method for this but we need to access it for #inspect.
+    @CoreMethod(names = "origin", visibility = Visibility.PRIVATE)
+    public abstract static class OriginNode extends CoreMethodNode {
+
+        public OriginNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public OriginNode(OriginNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public RubyModule origin(RubyUnboundMethod unboundMethod) {
+            return unboundMethod.getOrigin();
         }
 
     }

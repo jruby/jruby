@@ -17,8 +17,11 @@ import com.oracle.truffle.api.nodes.IndirectCallNode;
 import com.oracle.truffle.api.source.SourceSection;
 
 import org.jruby.truffle.nodes.core.BasicObjectNodes.ReferenceEqualNode;
+import org.jruby.truffle.nodes.objects.ClassNode;
+import org.jruby.truffle.nodes.objects.ClassNodeFactory;
 import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.runtime.core.RubyClass;
 import org.jruby.truffle.runtime.core.RubyMethod;
 import org.jruby.truffle.runtime.core.RubyModule;
 import org.jruby.truffle.runtime.core.RubySymbol;
@@ -152,19 +155,24 @@ public abstract class MethodNodes {
     @CoreMethod(names = "unbind")
     public abstract static class UnbindNode extends CoreMethodNode {
 
+        @Child private ClassNode classNode;
+
         public UnbindNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
+            classNode = ClassNodeFactory.create(context, sourceSection, null);
         }
 
         public UnbindNode(UnbindNode prev) {
             super(prev);
+            classNode = prev.classNode;
         }
 
         @Specialization
         public RubyUnboundMethod unbind(RubyMethod method) {
             notDesignedForCompilation();
 
-            return new RubyUnboundMethod(getContext().getCoreLibrary().getUnboundMethodClass(), method.getMethod());
+            RubyClass receiverClass = classNode.executeGetClass(method.getReceiver());
+            return new RubyUnboundMethod(getContext().getCoreLibrary().getUnboundMethodClass(), receiverClass, method.getMethod());
         }
 
     }
