@@ -23,6 +23,7 @@ import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.cast.BooleanCastNode;
 import org.jruby.truffle.nodes.cast.BooleanCastNodeFactory;
 import org.jruby.truffle.nodes.control.WhileNode;
+import org.jruby.truffle.nodes.core.KernelNodesFactory.SameOrEqualNodeFactory;
 import org.jruby.truffle.nodes.dispatch.*;
 import org.jruby.truffle.nodes.globals.WrapInThreadLocalNode;
 import org.jruby.truffle.nodes.literal.BooleanLiteralNode;
@@ -204,30 +205,25 @@ public abstract class KernelNodes {
     @CoreMethod(names = {"<=>"}, required = 1)
     public abstract static class CompareNode extends CoreMethodNode {
 
-        @Child private CallDispatchHeadNode equalNode;
-        @Child private BooleanCastNode booleanCast;
+        @Child private SameOrEqualNode equalNode;
 
         public CompareNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            equalNode = DispatchHeadNodeFactory.createMethodCall(context);
-            booleanCast = BooleanCastNodeFactory.create(context, sourceSection, null);
+            equalNode = SameOrEqualNodeFactory.create(context, sourceSection, new RubyNode[] { null, null });
         }
 
         public CompareNode(CompareNode prev) {
             super(prev);
             equalNode = prev.equalNode;
-            booleanCast = prev.booleanCast;
         }
 
         @Specialization
-        public Object compare(VirtualFrame frame, RubyBasicObject self, RubyBasicObject other) {
-            notDesignedForCompilation();
-
-            if ((self == other) || booleanCast.executeBoolean(frame, equalNode.call(frame, self, "==", null, other))) {
+        public Object compare(VirtualFrame frame, Object self, Object other) {
+            if (equalNode.executeSameOrEqual(frame, self, other)) {
                 return 0;
+            } else {
+                return getContext().getCoreLibrary().getNilObject();
             }
-
-            return getContext().getCoreLibrary().getNilObject();
         }
 
     }
