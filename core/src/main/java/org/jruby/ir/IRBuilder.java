@@ -1,7 +1,6 @@
 package org.jruby.ir;
 
 import org.jcodings.specific.ASCIIEncoding;
-import org.jruby.EvalType;
 import org.jruby.Ruby;
 import org.jruby.RubyInstanceConfig;
 import org.jruby.ast.*;
@@ -483,13 +482,8 @@ public class IRBuilder {
     }
 
     private void buildLambdaInner(LambdaNode node) {
-        // Prepare all implicit state (self, frame block, etc)
-        prepareImplicitState(scope);
-
-        // Set %current_scope = <current-scope>
-        // Set %current_module = <current-module>
-        addInstr(new CopyInstr(scope.getCurrentScopeVariable(), CURRENT_SCOPE[0]));
-        addInstr(new CopyInstr(scope.getCurrentModuleVariable(), SCOPE_MODULE[0]));
+        prepareImplicitState();                                    // recv_self, add frame block, etc)
+        addCurrentScopeAndModule();                                // %current_scope/%current_module
 
         receiveBlockArgs(node, scope);
 
@@ -1655,41 +1649,38 @@ public class IRBuilder {
 
     // Called by defineMethod but called on a new builder so things like ensure block info recording
     // do not get confused.
-    protected IRMethod defineMethodInner(MethodDefNode defNode, IRMethod method, IRScope parent) {
+    protected void defineMethodInner(MethodDefNode defNode, IRScope parent) {
         if (RubyInstanceConfig.FULL_TRACE_ENABLED) {
-            addInstr(method, new TraceInstr(RubyEvent.CALL, method.getName(), method.getFileName(), method.getLineNumber()));
+            addInstr(new TraceInstr(RubyEvent.CALL, scope.getName(), scope.getFileName(), scope.getLineNumber()));
         }
 
-        // Prepare all implicit state (self, frame block, etc)
-        prepareImplicitState(method);
+        prepareImplicitState();                                    // recv_self, add frame block, etc)
 
-        // These instructions need to be toward the top of the method because they may both be needed for
-        // processing optional arguments as in def foo(a = Object).
+        // These instructions need to be toward the top of the method because they may both be needed for processing
+        // optional arguments as in def foo(a = Object).
         // Set %current_scope = <current-scope>
         // Set %current_module = isInstanceMethod ? %self.metaclass : %self
         int nearestScopeDepth = parent.getNearestModuleReferencingScopeDepth();
-        addInstr(method, new CopyInstr(method.getCurrentScopeVariable(), CurrentScope.ScopeFor(nearestScopeDepth == -1 ? 1 : nearestScopeDepth)));
-        addInstr(method, new CopyInstr(method.getCurrentModuleVariable(), ScopeModule.ModuleFor(nearestScopeDepth == -1 ? 1 : nearestScopeDepth)));
+        addInstr(new CopyInstr(scope.getCurrentScopeVariable(), CurrentScope.ScopeFor(nearestScopeDepth == -1 ? 1 : nearestScopeDepth)));
+        addInstr(new CopyInstr(scope.getCurrentModuleVariable(), ScopeModule.ModuleFor(nearestScopeDepth == -1 ? 1 : nearestScopeDepth)));
 
         // Build IR for arguments (including the block arg)
-        receiveMethodArgs(defNode.getArgsNode(), method);
+        receiveMethodArgs(defNode.getArgsNode(), (IRMethod) scope);
 
         // Thread poll on entry to method
-        addInstr(method, new ThreadPollInstr());
+        addInstr(new ThreadPollInstr());
 
         // Build IR for body
-        Operand rv = newIRBuilder(manager, method).build(defNode.getBodyNode(), method);
+        Operand rv = build(defNode.getBodyNode(), scope);
 
         if (RubyInstanceConfig.FULL_TRACE_ENABLED) {
-            addInstr(method, new TraceInstr(RubyEvent.RETURN, method.getName(), method.getFileName(), -1));
+            addInstr(new TraceInstr(RubyEvent.RETURN, scope.getName(), scope.getFileName(), -1));
         }
 
-        if (rv != null) addInstr(method, new ReturnInstr(rv));
+        if (rv != null) addInstr(new ReturnInstr(rv));
 
         // If the method can receive non-local returns
-        if (method.canReceiveNonlocalReturns()) handleNonlocalReturnInMethod(method);
-
-        return method;
+        if (scope.canReceiveNonlocalReturns()) handleNonlocalReturnInMethod(scope);
     }
 
     private IRMethod defineNewMethod(MethodDefNode defNode, IRScope parent, boolean isInstanceMethod) {
@@ -1853,18 +1844,16 @@ public class IRBuilder {
     /**
      * Prepare implicit runtime state needed for typical methods to execute. This includes such things
      * as the implicit self variable and any yieldable block available to this scope.
-     *
-     * @param s the scope to which we are adding instructions
      */
-    private void prepareImplicitState(IRScope s) {
+    private void prepareImplicitState() {
         // Receive self
-        addInstr(s, new ReceiveSelfInstr(s.getSelf()));
+        addInstr(new ReceiveSelfInstr(scope.getSelf()));
 
         // used for yields; metaclass body (sclass) inherits yield var from surrounding, and accesses it as implicit
-        if (s instanceof IRMethod || s instanceof IRMetaClassBody) {
-            addInstr(s, new LoadImplicitClosureInstr(s.getYieldClosureVariable()));
+        if (scope instanceof IRMethod || scope instanceof IRMetaClassBody) {
+            addInstr(new LoadImplicitClosureInstr(scope.getYieldClosureVariable()));
         } else {
-            addInstr(s, new LoadFrameClosureInstr(s.getYieldClosureVariable()));
+            addInstr(new LoadFrameClosureInstr(scope.getYieldClosureVariable()));
         }
     }
 
@@ -2350,23 +2339,14 @@ public class IRBuilder {
     }
 
     private void buildForIterInner(ForNode forNode) {
-        // Prepare all implicit state (self, frame block, etc)
-        prepareImplicitState(scope);
+        prepareImplicitState();                                    // recv_self, add frame block, etc)
 
-        // Build args
         Node varNode = forNode.getVarNode();
         if (varNode != null && varNode.getNodeType() != null) receiveBlockArgs(forNode, scope);
 
-        // Set %current_scope = <current-scope>
-        // Set %current_module = <current-module>
-        addInstr(new CopyInstr(scope.getCurrentScopeVariable(), CURRENT_SCOPE[0]));
-        addInstr(new CopyInstr(scope.getCurrentModuleVariable(), SCOPE_MODULE[0]));
-
-        // Thread poll on entry of closure
-        addInstr(new ThreadPollInstr());
-
-        // Start label -- used by redo!
-        addInstr(new LabelInstr(((IRClosure) scope).startLabel));
+        addCurrentScopeAndModule();                                // %current_scope/%current_module
+        addInstr(new ThreadPollInstr());                           // Thread poll on entry of closure
+        addInstr(new LabelInstr(((IRClosure) scope).startLabel));  // Start label -- used by redo!
 
         // Build closure body and return the result of the closure
         Operand closureRetVal = forNode.getBodyNode() == null ? manager.getNil() : build(forNode.getBodyNode(), scope);
@@ -2503,22 +2483,13 @@ public class IRBuilder {
     }
 
     private void buildIterInner(IterNode iterNode) {
-        // Prepare all implicit state (self, frame block, etc)
-        prepareImplicitState(scope);
+        prepareImplicitState();                                    // recv_self, add frame block, etc)
 
-        // Build args
         if (iterNode.getVarNode().getNodeType() != null) receiveBlockArgs(iterNode, scope);
 
-        // Set %current_scope = <current-scope>
-        // Set %current_module = <current-module>
-        addInstr(new CopyInstr(scope.getCurrentScopeVariable(), CURRENT_SCOPE[0]));
-        addInstr(new CopyInstr(scope.getCurrentModuleVariable(), SCOPE_MODULE[0]));
-
-        // Thread poll on entry of closure
-        addInstr(new ThreadPollInstr());
-
-        // start label -- used by redo!
-        addInstr(new LabelInstr(((IRClosure) scope).startLabel));
+        addCurrentScopeAndModule();                                // %current_scope/%current_module
+        addInstr(new ThreadPollInstr());                           // Thread poll on entry of closure
+        addInstr(new LabelInstr(((IRClosure) scope).startLabel));  // start label -- used by redo!
 
         // Build closure body and return the result of the closure
         Operand closureRetVal = iterNode.getBodyNode() == null ? manager.getNil() : build(iterNode.getBodyNode(), scope);
@@ -3220,34 +3191,14 @@ public class IRBuilder {
         return U_NIL;
     }
 
-    public IREvalScript buildEvalRoot(StaticScope staticScope, IRScope containingScope, String file, int lineNumber, RootNode rootNode, EvalType evalType) {
-        // Top-level script!
-        IREvalScript script;
+    public void buildEvalRoot(RootNode rootNode) {
+        addInstr(new LineNumberInstr(scope.getLineNumber()));
 
-        if (evalType == EvalType.BINDING_EVAL) {
-            script = new IRBindingEvalScript(manager, containingScope, file, lineNumber, staticScope, evalType);
-        } else {
-            script = new IREvalScript(manager, containingScope, file, lineNumber, staticScope, evalType);
-        }
+        prepareImplicitState();                                    // recv_self, add frame block, etc)
+        addCurrentScopeAndModule();                                // %current_scope/%current_module
 
-        // We link IRScope to StaticScope because we may add additional variables (like %block).  During execution
-        // we end up growing dynamicscope potentially based on any changes made.
-        staticScope.setIRScope(script);
-
-        // Debug info: record line number
-        addInstr(script, new LineNumberInstr(lineNumber));
-
-        prepareImplicitState(script);
-
-        // Set %current_scope = <current-scope>
-        // Set %current_module = <current-module>
-        addInstr(script, new CopyInstr(script.getCurrentScopeVariable(), CURRENT_SCOPE[0]));
-        addInstr(script, new CopyInstr(script.getCurrentModuleVariable(), SCOPE_MODULE[0]));
-        // Build IR for the tree and return the result of the expression tree
-        Operand rval = rootNode.getBodyNode() == null ? manager.getNil() : build(rootNode.getBodyNode(), script);
-        addInstr(script, new ReturnInstr(rval));
-
-        return script;
+        Operand returnValue = rootNode.getBodyNode() == null ? manager.getNil() : build(rootNode.getBodyNode(), scope);
+        addInstr(new ReturnInstr(returnValue));
     }
 
     public static IRScriptBody buildRoot(IRManager manager, RootNode rootNode) {
@@ -3262,19 +3213,17 @@ public class IRBuilder {
         return script;
     }
 
-    private IRScriptBody buildRootInner(IRScriptBody script, RootNode rootNode) {
-        // Prepare all implicit state (self, frame block, etc)
-        prepareImplicitState(script);
+    private void addCurrentScopeAndModule() {
+        addInstr(new CopyInstr(scope.getCurrentScopeVariable(), CURRENT_SCOPE[0])); // %current_scope
+        addInstr(new CopyInstr(scope.getCurrentModuleVariable(), SCOPE_MODULE[0])); // %current_module
+    }
 
-        // Set %current_scope = <current-scope>
-        // Set %current_module = <current-module>
-        addInstr(script, new CopyInstr(script.getCurrentScopeVariable(), CURRENT_SCOPE[0]));
-        addInstr(script, new CopyInstr(script.getCurrentModuleVariable(), SCOPE_MODULE[0]));
+    private void buildRootInner(IRScriptBody script, RootNode rootNode) {
+        prepareImplicitState();                                    // recv_self, add frame block, etc)
+        addCurrentScopeAndModule();                                // %current_scope/%current_module
 
         // Build IR for the tree and return the result of the expression tree
-        addInstr(script, new ReturnInstr(build(rootNode.getBodyNode(), script)));
-
-        return script;
+        addInstr(new ReturnInstr(build(rootNode.getBodyNode(), script)));
     }
 
     public Operand buildSelf(IRScope s) {
@@ -3539,12 +3488,9 @@ public class IRBuilder {
             addInstr(new TraceInstr(RubyEvent.CLASS, null, scope.getFileName(), linenumber));
         }
 
-        // Prepare all implicit state (self, frame block, etc)
-        prepareImplicitState(scope);
+        prepareImplicitState();                                    // recv_self, add frame block, etc)
+        addCurrentScopeAndModule();                                // %current_scope/%current_module
 
-        addInstr(new CopyInstr(scope.getCurrentScopeVariable(), CURRENT_SCOPE[0])); // %scope
-        addInstr(new CopyInstr(scope.getCurrentModuleVariable(), SCOPE_MODULE[0])); // %module
-        // Create a new nested builder to ensure this gets its own IR builder state
         Operand bodyReturnValue = build(bodyNode, scope);
 
         if (RubyInstanceConfig.FULL_TRACE_ENABLED) {
