@@ -1603,11 +1603,29 @@ public abstract class KernelNodes {
             return getContext().getRandom().nextInt(max);
         }
 
+        @Specialization(guards = "isZero")
+        public double randZero(long max) {
+            return getContext().getRandom().nextDouble();
+        }
+
+        @Specialization(guards = "isNonZero")
+        public long randNonZero(long max) {
+            return getContext().getRandom().nextLong() % max;
+        }
+
         protected boolean isZero(int max) {
             return max == 0;
         }
 
         protected boolean isNonZero(int max) {
+            return max != 0;
+        }
+
+        protected boolean isZero(long max) {
+            return max == 0;
+        }
+
+        protected boolean isNonZero(long max) {
             return max != 0;
         }
 
