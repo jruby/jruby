@@ -481,30 +481,30 @@ public class IRBuilder {
         return operand;
     }
 
-    public Operand buildLambda(LambdaNode node, IRScope s) {
-        IRClosure closure = new IRClosure(manager, s, node.getPosition().getLine(), node.getScope(), Signature.from(node), node.getArgumentType());
-
-        // Create a new nested builder to ensure this gets its own IR builder state
-        // like the ensure block stack
-        IRBuilder closureBuilder = newIRBuilder(manager);
-
+    private void buildLambdaInner(IRClosure closure, LambdaNode node) {
         // Prepare all implicit state (self, frame block, etc)
-        closureBuilder.prepareImplicitState(closure);
+        prepareImplicitState(closure);
 
         // Set %current_scope = <current-scope>
         // Set %current_module = <current-module>
-        closureBuilder.addInstr(closure, new CopyInstr(closure.getCurrentScopeVariable(), CURRENT_SCOPE[0]));
-        closureBuilder.addInstr(closure, new CopyInstr(closure.getCurrentModuleVariable(), SCOPE_MODULE[0]));
+        addInstr(closure, new CopyInstr(closure.getCurrentScopeVariable(), CURRENT_SCOPE[0]));
+        addInstr(closure, new CopyInstr(closure.getCurrentModuleVariable(), SCOPE_MODULE[0]));
 
-        // args
-        closureBuilder.receiveBlockArgs(node, closure);
+        receiveBlockArgs(node, closure);
 
-        Operand closureRetVal = node.getBody() == null ? manager.getNil() : closureBuilder.build(node.getBody(), closure);
+        Operand closureRetVal = node.getBody() == null ? manager.getNil() : build(node.getBody(), closure);
 
         // can be U_NIL if the node is an if node with returns in both branches.
-        if (closureRetVal != U_NIL) closureBuilder.addInstr(closure, new ReturnInstr(closureRetVal));
+        if (closureRetVal != U_NIL) addInstr(closure, new ReturnInstr(closureRetVal));
 
-        closureBuilder.handleBreakAndReturnsInLambdas(closure);
+        handleBreakAndReturnsInLambdas(closure);
+    }
+
+    public Operand buildLambda(LambdaNode node, IRScope s) {
+        IRClosure closure = new IRClosure(manager, s, node.getPosition().getLine(), node.getScope(), Signature.from(node), node.getArgumentType());
+
+        // Create a new nested builder to ensure this gets its own IR builder state like the ensure block stack
+        newIRBuilder(manager).buildLambdaInner(closure, node);
 
         Variable lambda = s.createTemporaryVariable();
         WrappedIRClosure lambdaBody = new WrappedIRClosure(closure.getSelf(), closure);
@@ -2348,37 +2348,38 @@ public class IRBuilder {
         return result;
     }
 
+    private void buildForIterInner(IRClosure closure, ForNode forNode) {
+        // Prepare all implicit state (self, frame block, etc)
+        prepareImplicitState(closure);
+
+        // Build args
+        Node varNode = forNode.getVarNode();
+        if (varNode != null && varNode.getNodeType() != null) receiveBlockArgs(forNode, closure);
+
+        // Set %current_scope = <current-scope>
+        // Set %current_module = <current-module>
+        addInstr(closure, new CopyInstr(closure.getCurrentScopeVariable(), CURRENT_SCOPE[0]));
+        addInstr(closure, new CopyInstr(closure.getCurrentModuleVariable(), SCOPE_MODULE[0]));
+
+        // Thread poll on entry of closure
+        addInstr(closure, new ThreadPollInstr());
+
+        // Start label -- used by redo!
+        addInstr(closure, new LabelInstr(closure.startLabel));
+
+        // Build closure body and return the result of the closure
+        Operand closureRetVal = forNode.getBodyNode() == null ? manager.getNil() : build(forNode.getBodyNode(), closure);
+        if (closureRetVal != U_NIL) { // can be null if the node is an if node with returns in both branches.
+            addInstr(closure, new ReturnInstr(closureRetVal));
+        }
+    }
+
     public Operand buildForIter(final ForNode forNode, IRScope s) {
         // Create a new closure context
         IRClosure closure = new IRFor(manager, s, forNode.getPosition().getLine(), forNode.getScope(), Signature.from(forNode), forNode.getArgumentType());
 
-        // Create a new nested builder to ensure this gets its own IR builder state
-        // like the ensure block stack
-        IRBuilder forBuilder = newIRBuilder(manager);
-
-        // Prepare all implicit state (self, frame block, etc)
-        forBuilder.prepareImplicitState(closure);
-
-        // Build args
-        Node varNode = forNode.getVarNode();
-        if (varNode != null && varNode.getNodeType() != null) forBuilder.receiveBlockArgs(forNode, closure);
-
-        // Set %current_scope = <current-scope>
-        // Set %current_module = <current-module>
-        forBuilder.addInstr(closure, new CopyInstr(closure.getCurrentScopeVariable(), CURRENT_SCOPE[0]));
-        forBuilder.addInstr(closure, new CopyInstr(closure.getCurrentModuleVariable(), SCOPE_MODULE[0]));
-
-        // Thread poll on entry of closure
-        forBuilder.addInstr(closure, new ThreadPollInstr());
-
-        // Start label -- used by redo!
-        forBuilder.addInstr(closure, new LabelInstr(closure.startLabel));
-
-        // Build closure body and return the result of the closure
-        Operand closureRetVal = forNode.getBodyNode() == null ? manager.getNil() : forBuilder.build(forNode.getBodyNode(), closure);
-        if (closureRetVal != U_NIL) { // can be null if the node is an if node with returns in both branches.
-            forBuilder.addInstr(closure, new ReturnInstr(closureRetVal));
-        }
+        // Create a new nested builder to ensure this gets its own IR builder state like the ensure block stack
+        newIRBuilder(manager).buildForIterInner(closure, forNode);
 
         return new WrappedIRClosure(s.getSelf(), closure);
     }
@@ -2500,7 +2501,7 @@ public class IRBuilder {
         return addResultInstr(s, new GetFieldInstr(s.createTemporaryVariable(), s.getSelf(), node.getName()));
     }
 
-    public void buildIterInner(IRClosure closure, IterNode iterNode) {
+    private void buildIterInner(IRClosure closure, IterNode iterNode) {
         // Prepare all implicit state (self, frame block, etc)
         prepareImplicitState(closure);
 
@@ -2928,22 +2929,23 @@ public class IRBuilder {
         }
     }
 
+    private void buildPrePostExeInner(IRClosure closure, Node body) {
+        // Set up %current_scope and %current_module
+        addInstr(closure, new CopyInstr(closure.getCurrentScopeVariable(), CURRENT_SCOPE[0]));
+        addInstr(closure, new CopyInstr(closure.getCurrentModuleVariable(), SCOPE_MODULE[0]));
+        build(body, closure);
+
+        // END does not have either explicit or implicit return, so we add one
+        addInstr(closure, new ReturnInstr(new Nil()));
+    }
+
     public Operand buildPostExe(PostExeNode postExeNode, IRScope s) {
         IRScope topLevel = s.getTopLevelScope();
         IRScope nearestLVarScope = s.getNearestTopLocalVariableScope();
 
         IRClosure endClosure = new IRClosure(manager, s, postExeNode.getPosition().getLine(), nearestLVarScope.getStaticScope(), Signature.from(postExeNode), postExeNode.getArgumentType(), "_END_", true);
-        // Create a new nested builder to ensure this gets its own IR builder state
-        // like the ensure block stack
-        IRBuilder closureBuilder = newIRBuilder(manager);
-
-        // Set up %current_scope and %current_module
-        closureBuilder.addInstr(endClosure, new CopyInstr(endClosure.getCurrentScopeVariable(), CURRENT_SCOPE[0]));
-        closureBuilder.addInstr(endClosure, new CopyInstr(endClosure.getCurrentModuleVariable(), SCOPE_MODULE[0]));
-        closureBuilder.build(postExeNode.getBodyNode(), endClosure);
-
-        // END does not have either explicit or implicit return, so we add one
-        closureBuilder.addInstr(endClosure, new ReturnInstr(new Nil()));
+        // Create a new nested builder to ensure this gets its own IR builder state like the ensure block stack
+        newIRBuilder(manager).buildPrePostExeInner(endClosure, postExeNode.getBodyNode());
 
         // Add an instruction in 's' to record the end block in the 'topLevel' scope.
         // SSS FIXME: IR support for end-blocks that access vars in non-toplevel-scopes
@@ -2955,17 +2957,8 @@ public class IRBuilder {
 
     public Operand buildPreExe(PreExeNode preExeNode, IRScope s) {
         IRClosure beginClosure = new IRFor(manager, s, preExeNode.getPosition().getLine(), s.getTopLevelScope().getStaticScope(), Signature.from(preExeNode), preExeNode.getArgumentType(), "_BEGIN_");
-        // Create a new nested builder to ensure this gets its own IR builder state
-        // like the ensure block stack
-        IRBuilder closureBuilder = newIRBuilder(manager);
-
-        // Set up %current_scope and %current_module
-        closureBuilder.addInstr(beginClosure, new CopyInstr(beginClosure.getCurrentScopeVariable(), CURRENT_SCOPE[0]));
-        closureBuilder.addInstr(beginClosure, new CopyInstr(beginClosure.getCurrentModuleVariable(), SCOPE_MODULE[0]));
-        closureBuilder.build(preExeNode.getBodyNode(), beginClosure);
-
-        // BEGIN does not have either explicit or implicit return, so we add one
-        closureBuilder.addInstr(beginClosure, new ReturnInstr(new Nil()));
+        // Create a new nested builder to ensure this gets its own IR builder state like the ensure block stack
+        newIRBuilder(manager).buildPrePostExeInner(beginClosure, preExeNode.getBodyNode());
 
         // Record the begin block at IR build time
         s.getTopLevelScope().recordBeginBlock(beginClosure);
