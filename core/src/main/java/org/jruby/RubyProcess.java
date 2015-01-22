@@ -1094,7 +1094,7 @@ public class RubyProcess {
                 Ruby runtime = context.runtime;
                 int result = checkErrno(runtime, runtime.getPosix().waitpid(pid, status, 0));
                 
-                return RubyStatus.newProcessStatus(runtime, result, pid);
+                return RubyStatus.newProcessStatus(runtime, status[0], pid);
             }
         };
         
