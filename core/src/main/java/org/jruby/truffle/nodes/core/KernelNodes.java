@@ -962,9 +962,6 @@ public abstract class KernelNodes {
         @TruffleBoundary
         @Specialization
         public boolean instanceOf(Object self, RubyClass rubyClass) {
-            notDesignedForCompilation();
-
-            // TODO(CS): faster path for this?
             return classNode.executeGetClass(self) == rubyClass;
         }
 
