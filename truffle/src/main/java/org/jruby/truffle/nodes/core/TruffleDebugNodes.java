@@ -17,6 +17,7 @@ import org.jruby.truffle.runtime.DebugOperations;
 import org.jruby.truffle.runtime.RubyCallStack;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.backtrace.Backtrace;
+import org.jruby.truffle.runtime.core.RubyArray;
 import org.jruby.truffle.runtime.core.RubyNilClass;
 import org.jruby.truffle.runtime.core.RubyString;
 
@@ -102,6 +103,30 @@ public abstract class TruffleDebugNodes {
             notDesignedForCompilation();
 
             return getContext().makeString(value.getClass().getName());
+        }
+
+    }
+
+    @CoreMethod(names = "storage_class", onSingleton = true, required = 1)
+    public abstract static class StorageClassNode extends CoreMethodNode {
+
+        public StorageClassNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public StorageClassNode(StorageClassNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public RubyString javaClassOf(RubyArray array) {
+            notDesignedForCompilation();
+
+            if (array.getStore() == null) {
+                return getContext().makeString("null");
+            } else {
+                return getContext().makeString(array.getStore().getClass().getName());
+            }
         }
 
     }
