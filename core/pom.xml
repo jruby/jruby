@@ -178,17 +178,6 @@
       <scope>provided</scope>
     </dependency>
     <dependency>
-      <groupId>com.headius</groupId>
-      <artifactId>openjdk-truffle</artifactId>
-      <version>0.6</version>
-    </dependency>
-    <dependency>
-      <groupId>com.oracle</groupId>
-      <artifactId>truffle-dsl-processor</artifactId>
-      <version>0.6</version>
-      <scope>provided</scope>
-    </dependency>
-    <dependency>
       <groupId>bsf</groupId>
       <artifactId>bsf</artifactId>
       <version>2.4.0</version>
@@ -435,7 +424,6 @@
             <configuration>
               <annotationProcessors>
                 <annotationProcessor>org.jruby.anno.AnnotationBinder</annotationProcessor>
-                <annotationProcessor>com.oracle.truffle.dsl.processor.TruffleProcessor</annotationProcessor>
               </annotationProcessors>
               <generatedSourcesDirectory>target/generated-sources</generatedSourcesDirectory>
               <compilerArgs>
@@ -516,32 +504,6 @@
                 </fileset>
               </filesets>
               <failOnError>false</failOnError>
-            </configuration>
-          </execution>
-        </executions>
-      </plugin>
-      <plugin>
-        <artifactId>maven-shade-plugin</artifactId>
-        <executions>
-          <execution>
-            <id>pack jruby.jar</id>
-            <phase>package</phase>
-            <goals>
-              <goal>shade</goal>
-            </goals>
-            <configuration>
-              <relocations>
-                <relocation>
-                  <pattern>org.objectweb</pattern>
-                  <shadedPattern>org.jruby.org.objectweb</shadedPattern>
-                </relocation>
-              </relocations>
-              <outputFile>${jruby.basedir}/lib/jruby.jar</outputFile>
-              <transformers>
-                <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
-                  <mainClass>org.jruby.Main</mainClass>
-                </transformer>
-              </transformers>
             </configuration>
           </execution>
         </executions>

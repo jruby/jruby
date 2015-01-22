@@ -37,7 +37,6 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby;
 
-import com.oracle.truffle.api.Truffle;
 import org.jruby.exceptions.MainExitException;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.exceptions.ThreadKill;
