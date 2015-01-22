@@ -2970,6 +2970,31 @@ public abstract class ArrayNodes {
             return array;
         }
 
+        @Specialization(guards = { "isIntegerFixnum", "!isSingleIntegerFixnum", "!isSingleLongFixnum" })
+        public RubyArray pushIntegerFixnum(RubyArray array, Object... values) {
+            final int oldSize = array.getSize();
+            final int newSize = oldSize + values.length;
+
+            int[] oldStore = (int[]) array.getStore();
+            final Object[] store;
+
+            if (oldStore.length < newSize) {
+                extendBranch.enter();
+                store = ArrayUtils.box(oldStore, ArrayUtils.capacity(oldStore.length, newSize) - oldStore.length);
+            } else {
+                store = ArrayUtils.box(oldStore);
+            }
+
+            array.setStore(store, oldSize);
+
+            for (int n = 0; n < values.length; n++) {
+                store[oldSize + n] = values[n];
+            }
+
+            array.setSize(newSize);
+            return array;
+        }
+
         @Specialization(guards = {"isLongFixnum", "isSingleIntegerFixnum"})
         public RubyArray pushLongFixnumSingleIntegerFixnum(RubyArray array, Object... values) {
             final int oldSize = array.getSize();
