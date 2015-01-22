@@ -189,7 +189,7 @@
     </pluginRepository>
   </pluginRepositories>
   <build>
-    <defaultGoal>package</defaultGoal>
+    <defaultGoal>install</defaultGoal>
     <pluginManagement>
       <plugins>
         <plugin>

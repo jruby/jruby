@@ -172,7 +172,7 @@ project 'JRuby', 'https://github.com/jruby/jruby' do
 
 
   build do
-    default_goal 'package'
+    default_goal 'install'
   end
 
   profile 'test' do
