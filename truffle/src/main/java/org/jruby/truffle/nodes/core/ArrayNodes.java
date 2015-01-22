@@ -50,6 +50,7 @@ import org.jruby.truffle.runtime.core.RubySymbol;
 import org.jruby.truffle.runtime.methods.MethodLike;
 import org.jruby.truffle.runtime.methods.SharedMethodInfo;
 import org.jruby.truffle.runtime.util.ArrayUtils;
+import org.jruby.util.ByteList;
 import org.jruby.util.Memo;
 
 import java.util.ArrayList;
@@ -2716,6 +2717,24 @@ public abstract class ArrayNodes {
             super(prev);
         }
 
+        @Specialization(guards = {"arrayIsLongs", "formatIsLStar"})
+        public RubyString packLStar(RubyArray array, RubyString format) {
+            final int size = array.getSize();
+            final long[] store = (long[]) array.getStore();
+            final byte[] bytes = new byte[size * 4];
+
+            for (int n = 0; n < size; n++) {
+                final int value = (int) store[n]; // happy to truncate
+                final int byteOffset = n * 4;
+                bytes[byteOffset + 3] = (byte) (value >>> 24);
+                bytes[byteOffset + 2] = (byte) (value >>> 16);
+                bytes[byteOffset + 1] = (byte) (value >>> 8);
+                bytes[byteOffset + 0] = (byte) value;
+            }
+
+            return new RubyString(getContext().getCoreLibrary().getStringClass(), new ByteList(bytes));
+        }
+
         @CompilerDirectives.TruffleBoundary
         @Specialization
         public RubyString pack(RubyArray array, RubyString format) {
@@ -2728,6 +2747,13 @@ public abstract class ArrayNodes {
                             getContext().toJRuby(array),
                             getContext().toJRuby(format).getByteList()).getByteList());
 
+        protected boolean arrayIsLongs(RubyArray array) {
+            return array.getStore() instanceof long[];
+        }
+
+        protected boolean formatIsLStar(RubyArray array, RubyString format) {
+            final byte[] bytes = format.getBytes().unsafeBytes();
+            return format.getBytes().getEncoding().isAsciiCompatible() && format.length() == 2 && bytes[0] == 'L' && bytes[1] == '*';
         }
 
     }
