@@ -101,7 +101,7 @@ public class SingletonLocalContextProvider extends AbstractLocalContextProvider 
 
     @Override
     public RubyInstanceConfig getRubyInstanceConfig() {
-        return getRuntime().getInstanceConfig();
+        return getGlobalRuntimeConfig(this);
     }
 
     @Override

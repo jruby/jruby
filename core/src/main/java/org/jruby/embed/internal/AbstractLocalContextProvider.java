@@ -92,6 +92,14 @@ public abstract class AbstractLocalContextProvider implements LocalContextProvid
         return Ruby.newInstance(provider.config);
     }
 
+    static RubyInstanceConfig getGlobalRuntimeConfig(AbstractLocalContextProvider provider) {
+        // make sure we do not yet initialize the runtime here
+        if ( Ruby.isGlobalRuntimeReady() ) {
+            return Ruby.getGlobalRuntime().getInstanceConfig();
+        }
+        return provider.config;
+    }
+
     static RubyInstanceConfig getGlobalRuntimeConfigOrNew() {
         return Ruby.isGlobalRuntimeReady() ?
                 Ruby.getGlobalRuntime().getInstanceConfig() :

@@ -69,11 +69,6 @@ public class ThreadSafeLocalContextProvider extends AbstractLocalContextProvider
     }
 
     @Override
-    public RubyInstanceConfig getRubyInstanceConfig() {
-        return getRuntime().getInstanceConfig();
-    }
-
-    @Override
     public BiVariableMap getVarMap() {
         return contextHolder.get().getVarMap(this);
     }
