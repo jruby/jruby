@@ -3099,13 +3099,21 @@ public abstract class ArrayNodes {
             return array;
         }
 
-        @Specialization(guards = "isIntegerFixnum")
+        @Specialization(guards = { "isIntegerFixnum", "!isInteger(arguments[1])" })
         public RubyArray pushIntegerFixnumObject(RubyArray array, Object value) {
             final int oldSize = array.getSize();
             final int newSize = oldSize + 1;
 
             final int[] oldStore = (int[]) array.getStore();
-            final Object[] newStore = ArrayUtils.box(oldStore, newSize);
+            final Object[] newStore;
+
+            if (oldStore.length < newSize) {
+                extendBranch.enter();
+                newStore = ArrayUtils.box(oldStore, ArrayUtils.capacity(oldStore.length, newSize) - oldStore.length);
+            } else {
+                newStore = ArrayUtils.box(oldStore);
+            }
+
             newStore[oldSize] = value;
             array.setStore(newStore, newSize);
             return array;
