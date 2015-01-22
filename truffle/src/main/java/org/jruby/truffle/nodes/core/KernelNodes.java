@@ -1006,17 +1006,19 @@ public abstract class KernelNodes {
         }
 
         @Specialization
-        public Object isInstanceVariableGet(RubyBasicObject object, RubyString name) {
-            notDesignedForCompilation();
-
-            return object.getInstanceVariable(RubyContext.checkInstanceVariableName(getContext(), name.toString(), this));
+        public Object instanceVariableGet(RubyBasicObject object, RubyString name) {
+            return instanceVariableGet(object, name.toString());
         }
 
         @Specialization
-        public Object isInstanceVariableGet(RubyBasicObject object, RubySymbol name) {
+        public Object instanceVariableGet(RubyBasicObject object, RubySymbol name) {
+            return instanceVariableGet(object, name.toString());
+        }
+
+        private Object instanceVariableGet(RubyBasicObject object, String name) {
             notDesignedForCompilation();
 
-            return object.getInstanceVariable(RubyContext.checkInstanceVariableName(getContext(), name.toString(), this));
+            return object.getInstanceVariable(RubyContext.checkInstanceVariableName(getContext(), name, this));
         }
 
     }
