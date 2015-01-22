@@ -59,6 +59,7 @@ import org.jruby.embed.internal.ThreadSafeLocalContextProvider;
 import org.jruby.embed.io.ReaderInputStream;
 import org.jruby.embed.io.WriterOutputStream;
 import org.jruby.embed.util.SystemPropertyCatcher;
+import org.jruby.exceptions.RaiseException;
 import org.jruby.internal.runtime.GlobalVariable;
 import org.jruby.javasupport.JavaEmbedUtils;
 import org.jruby.runtime.Block;
@@ -227,14 +228,16 @@ public class ScriptingContainer implements EmbedRubyInstanceConfigAdapter {
     public ScriptingContainer(LocalContextScope scope, LocalVariableBehavior behavior, boolean lazy) {
         provider = getProviderInstance(scope, behavior, lazy);
         try {
-            initConfig();
-        } catch (Exception ex) {
+            initRubyInstanceConfig();
+        }
+        catch (RaiseException ex) {
+            // TODO this seems useless - except that we get a Java stack trace
             throw new RuntimeException(ex);
         }
         basicProperties = getBasicProperties();
     }
 
-    private LocalContextProvider getProviderInstance(LocalContextScope scope, LocalVariableBehavior behavior, boolean lazy) {
+    static LocalContextProvider getProviderInstance(LocalContextScope scope, LocalVariableBehavior behavior, boolean lazy) {
         switch(scope) {
             case THREADSAFE :
                 return new ThreadSafeLocalContextProvider(behavior, lazy);
@@ -248,7 +251,7 @@ public class ScriptingContainer implements EmbedRubyInstanceConfigAdapter {
         }
     }
 
-    private void initConfig() throws URISyntaxException, UnsupportedEncodingException {
+    private void initRubyInstanceConfig() throws RaiseException {
         List<String> paths = SystemPropertyCatcher.findLoadPaths();
         provider.getRubyInstanceConfig().setLoadPaths(paths);
         String home = SystemPropertyCatcher.findJRubyHome(this);
