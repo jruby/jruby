@@ -8,10 +8,6 @@
 
 module Kernel
 
-  def itself
-    self
-  end
-
   module_function
 
   def p(*args)

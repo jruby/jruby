@@ -73,6 +73,10 @@ module Kernel
     singleton_class.send(:define_method, *args, &block)
   end
 
+  def itself
+    self
+  end
+
   def object_id
     Rubinius.primitive :object_id
     raise PrimitiveFailure, "Kernel#object_id primitive failed"
