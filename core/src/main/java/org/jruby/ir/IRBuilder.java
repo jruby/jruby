@@ -85,10 +85,6 @@ public class IRBuilder {
     static final Operand[] NO_ARGS = new Operand[]{};
     static final UnexecutableNil U_NIL = UnexecutableNil.U_NIL;
 
-    public static IRBuilder createIRBuilder(Ruby runtime, IRManager manager) {
-        return new IRBuilder(manager);
-    }
-
     public static Node buildAST(boolean isCommandLineScript, String arg) {
         Ruby ruby = Ruby.getGlobalRuntime();
 
@@ -283,9 +279,11 @@ public class IRBuilder {
     }
 
     protected IRManager manager;
+    protected IRScope scope;
 
-    public IRBuilder(IRManager manager) {
+    public IRBuilder(IRManager manager, IRScope scope) {
         this.manager = manager;
+        this.scope = scope;
         this.activeRescuers.push(Label.UNRESCUED_REGION_LABEL);
     }
 
@@ -438,8 +436,8 @@ public class IRBuilder {
         return manager.getIRScopeListener() != null;
     }
 
-    public static IRBuilder newIRBuilder(IRManager manager) {
-        return new IRBuilder(manager);
+    public static IRBuilder newIRBuilder(IRManager manager, IRScope scope) {
+        return new IRBuilder(manager, scope);
     }
 
     public Node skipOverNewlines(IRScope s, Node n) {
@@ -504,7 +502,7 @@ public class IRBuilder {
         IRClosure closure = new IRClosure(manager, s, node.getPosition().getLine(), node.getScope(), Signature.from(node), node.getArgumentType());
 
         // Create a new nested builder to ensure this gets its own IR builder state like the ensure block stack
-        newIRBuilder(manager).buildLambdaInner(closure, node);
+        newIRBuilder(manager, closure).buildLambdaInner(closure, node);
 
         Variable lambda = s.createTemporaryVariable();
         WrappedIRClosure lambdaBody = new WrappedIRClosure(closure.getSelf(), closure);
@@ -1103,7 +1101,7 @@ public class IRBuilder {
         Variable classVar = addResultInstr(s, new DefineClassInstr(s.createTemporaryVariable(), body, container, superClass));
 
         Variable processBodyResult = addResultInstr(s, new ProcessModuleBodyInstr(s.createTemporaryVariable(), classVar, NullBlock.INSTANCE));
-        newIRBuilder(manager).buildModuleOrClassBody(body, classNode.getBodyNode(), classNode.getPosition().getLine());
+        newIRBuilder(manager, body).buildModuleOrClassBody(body, classNode.getBodyNode(), classNode.getPosition().getLine());
         return processBodyResult;
     }
 
@@ -1117,7 +1115,7 @@ public class IRBuilder {
 
         // sclass bodies inherit the block of their containing method
         Variable processBodyResult = addResultInstr(s, new ProcessModuleBodyInstr(s.createTemporaryVariable(), sClassVar, NullBlock.INSTANCE));
-        newIRBuilder(manager).buildModuleOrClassBody(body, sclassNode.getBodyNode(), sclassNode.getPosition().getLine());
+        newIRBuilder(manager, body).buildModuleOrClassBody(body, sclassNode.getBodyNode(), sclassNode.getPosition().getLine());
         return processBodyResult;
     }
 
@@ -1677,7 +1675,7 @@ public class IRBuilder {
         addInstr(method, new ThreadPollInstr());
 
         // Build IR for body
-        Operand rv = newIRBuilder(manager).build(defNode.getBodyNode(), method);
+        Operand rv = newIRBuilder(manager, method).build(defNode.getBodyNode(), method);
 
         if (RubyInstanceConfig.FULL_TRACE_ENABLED) {
             addInstr(method, new TraceInstr(RubyEvent.RETURN, method.getName(), method.getFileName(), -1));
@@ -2379,7 +2377,7 @@ public class IRBuilder {
         IRClosure closure = new IRFor(manager, s, forNode.getPosition().getLine(), forNode.getScope(), Signature.from(forNode), forNode.getArgumentType());
 
         // Create a new nested builder to ensure this gets its own IR builder state like the ensure block stack
-        newIRBuilder(manager).buildForIterInner(closure, forNode);
+        newIRBuilder(manager, closure).buildForIterInner(closure, forNode);
 
         return new WrappedIRClosure(s.getSelf(), closure);
     }
@@ -2538,7 +2536,7 @@ public class IRBuilder {
                 Signature.from(iterNode), iterNode.getArgumentType());
 
         // Create a new nested builder to ensure this gets its own IR builder state like the ensure block stack
-        newIRBuilder(manager).buildIterInner(closure, iterNode);
+        newIRBuilder(manager, closure).buildIterInner(closure, iterNode);
 
         return new WrappedIRClosure(s.getSelf(), closure);
     }
@@ -2646,7 +2644,7 @@ public class IRBuilder {
         Variable moduleVar = addResultInstr(s, new DefineModuleInstr(s.createTemporaryVariable(), body, container));
 
         Variable processBodyResult = addResultInstr(s, new ProcessModuleBodyInstr(s.createTemporaryVariable(), moduleVar, NullBlock.INSTANCE));
-        newIRBuilder(manager).buildModuleOrClassBody(body, moduleNode.getBodyNode(), moduleNode.getPosition().getLine());
+        newIRBuilder(manager, body).buildModuleOrClassBody(body, moduleNode.getBodyNode(), moduleNode.getPosition().getLine());
         return processBodyResult;
     }
 
@@ -2945,7 +2943,7 @@ public class IRBuilder {
 
         IRClosure endClosure = new IRClosure(manager, s, postExeNode.getPosition().getLine(), nearestLVarScope.getStaticScope(), Signature.from(postExeNode), postExeNode.getArgumentType(), "_END_", true);
         // Create a new nested builder to ensure this gets its own IR builder state like the ensure block stack
-        newIRBuilder(manager).buildPrePostExeInner(endClosure, postExeNode.getBodyNode());
+        newIRBuilder(manager, endClosure).buildPrePostExeInner(endClosure, postExeNode.getBodyNode());
 
         // Add an instruction in 's' to record the end block in the 'topLevel' scope.
         // SSS FIXME: IR support for end-blocks that access vars in non-toplevel-scopes
@@ -2958,7 +2956,7 @@ public class IRBuilder {
     public Operand buildPreExe(PreExeNode preExeNode, IRScope s) {
         IRClosure beginClosure = new IRFor(manager, s, preExeNode.getPosition().getLine(), s.getTopLevelScope().getStaticScope(), Signature.from(preExeNode), preExeNode.getArgumentType(), "_BEGIN_");
         // Create a new nested builder to ensure this gets its own IR builder state like the ensure block stack
-        newIRBuilder(manager).buildPrePostExeInner(beginClosure, preExeNode.getBodyNode());
+        newIRBuilder(manager, beginClosure).buildPrePostExeInner(beginClosure, preExeNode.getBodyNode());
 
         // Record the begin block at IR build time
         s.getTopLevelScope().recordBeginBlock(beginClosure);
@@ -3249,13 +3247,19 @@ public class IRBuilder {
         return script;
     }
 
-    public IRScriptBody buildRoot(RootNode rootNode) {
+    public static IRScriptBody buildRoot(IRManager manager, RootNode rootNode) {
         String file = rootNode.getPosition().getFile();
         StaticScope staticScope = rootNode.getStaticScope();
 
         // Top-level script!
         IRScriptBody script = new IRScriptBody(manager, file, staticScope);
 
+        newIRBuilder(manager, script).buildRootInner(script, rootNode);
+
+        return script;
+    }
+
+    private IRScriptBody buildRootInner(IRScriptBody script, RootNode rootNode) {
         // Prepare all implicit state (self, frame block, etc)
         prepareImplicitState(script);
 

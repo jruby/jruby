@@ -67,7 +67,7 @@ public class IRMethod extends IRScope {
     /** Run any necessary passes to get the IR ready for interpretation */
     public synchronized InterpreterContext prepareForInterpretation() {
         if (defn != null) {
-            IRBuilder.newIRBuilder(getManager()).defineMethodInner(defn, this, getLexicalParent());
+            IRBuilder.newIRBuilder(getManager(), this).defineMethodInner(defn, this, getLexicalParent());
 
             defn = null;
         }
