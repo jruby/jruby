@@ -1,4 +1,4 @@
-# Copyright (c) 2014 Oracle and/or its affiliates. All rights reserved. This
+# Copyright (c) 2014, 2015 Oracle and/or its affiliates. All rights reserved. This
 # code is released under a tri EPL/GPL/LGPL license. You can use it,
 # redistribute it and/or modify it under the terms of the:
 # 
@@ -7,10 +7,6 @@
 # GNU Lesser General Public License version 2.1
 
 module Kernel
-
-  def itself
-    self
-  end
 
   module_function
 
@@ -44,15 +40,5 @@ module Kernel
   alias_method :trust, :untaint
   alias_method :untrust, :taint
   alias_method :untrusted?, :tainted?
-
-end
-
-# Here temporarily
-
-class Hash
-
-  def include?(key)
-    keys.include? key
-  end
 
 end

@@ -9,7 +9,7 @@
   </parent>
   <groupId>org.jruby</groupId>
   <artifactId>jruby-parent</artifactId>
-  <version>9.0.0.0.pre1</version>
+  <version>9.0.0.0-SNAPSHOT</version>
   <packaging>pom</packaging>
   <name>JRuby</name>
   <description>JRuby is the effort to recreate the Ruby (http://www.ruby-lang.org) interpreter in Java.</description>
@@ -89,6 +89,7 @@
     </mailingList>
   </mailingLists>
   <modules>
+    <module>truffle</module>
     <module>core</module>
     <module>lib</module>
   </modules>
@@ -138,7 +139,6 @@
     <power_assert.version>0.1.4</power_assert.version>
     <version.jruby>${project.version}</version.jruby>
     <bouncy-castle.version>1.47</bouncy-castle.version>
-    <jruby.home>${basedir}/..</jruby.home>
     <main.basedir>${project.basedir}</main.basedir>
     <github.global.server>github</github.global.server>
     <joda.time.version>2.5</joda.time.version>
@@ -188,7 +188,7 @@
     </pluginRepository>
   </pluginRepositories>
   <build>
-    <defaultGoal>package</defaultGoal>
+    <defaultGoal>install</defaultGoal>
     <pluginManagement>
       <plugins>
         <plugin>
@@ -527,15 +527,6 @@
   </reporting>
   <profiles>
     <profile>
-      <id>ext</id>
-      <build>
-        <defaultGoal>install</defaultGoal>
-      </build>
-      <modules>
-        <module>ext</module>
-      </modules>
-    </profile>
-    <profile>
       <id>test</id>
       <modules>
         <module>test</module>
@@ -601,14 +592,12 @@
     <profile>
       <id>bootstrap</id>
       <modules>
-        <module>ext</module>
         <module>test</module>
       </modules>
     </profile>
     <profile>
       <id>bootstrap-no-launcher</id>
       <modules>
-        <module>ext</module>
         <module>test</module>
       </modules>
     </profile>
@@ -754,7 +743,6 @@
         <defaultGoal>install</defaultGoal>
       </build>
       <modules>
-        <module>ext</module>
         <module>test</module>
         <module>maven</module>
       </modules>
@@ -765,7 +753,6 @@
         <defaultGoal>clean</defaultGoal>
       </build>
       <modules>
-        <module>ext</module>
         <module>test</module>
         <module>maven</module>
       </modules>

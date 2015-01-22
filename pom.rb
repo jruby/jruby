@@ -93,7 +93,7 @@ project 'JRuby', 'https://github.com/jruby/jruby' do
     properties 'jruby.home' => '${basedir}/..'
   end
 
-  modules [ 'core', 'lib' ]
+  modules [ 'truffle', 'core', 'lib' ]
 
   plugin_management do
     jar( 'junit:junit:4.11',
@@ -172,16 +172,7 @@ project 'JRuby', 'https://github.com/jruby/jruby' do
 
 
   build do
-    default_goal 'package'
-  end
-
-  profile 'ext' do
-
-    modules [ 'ext' ]
-
-    build do
-      default_goal 'install'
-    end
+    default_goal 'install'
   end
 
   profile 'test' do
@@ -206,7 +197,7 @@ project 'JRuby', 'https://github.com/jruby/jruby' do
   [ 'bootstrap', 'bootstrap-no-launcher' ].each do |name|
     profile name do
 
-      modules [ 'ext', 'test' ]
+      modules [ 'test' ]
 
     end
   end
@@ -250,7 +241,7 @@ project 'JRuby', 'https://github.com/jruby/jruby' do
     end
   end
 
-  all_modules = [ 'ext', 'test', 'maven' ]
+  all_modules = [ 'test', 'maven' ]
 
   profile 'all' do
 

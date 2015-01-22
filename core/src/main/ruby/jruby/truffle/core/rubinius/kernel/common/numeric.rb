@@ -28,6 +28,11 @@
 
 class Numeric
 
+  def eql?(other)
+    return false unless other.instance_of? self.class
+    self == other
+  end
+
   #--
   # We deviate from MRI behavior here because we ensure that Fixnum op Bignum
   # => Bignum (possibly normalized to Fixnum)
@@ -37,6 +42,10 @@ class Numeric
   #   a.coerce b => [Float, Float]
   #   b.coerce a => [Bignum, Bignum]
   #++
+
+  def abs
+    self < 0 ? -self : self
+  end
 
   def coerce(other)
     if other.instance_of? self.class
@@ -97,8 +106,10 @@ class Numeric
     self.to_f / other
   end
 
+  alias_method :magnitude, :abs
+
   def real?
     true
   end
-  
+
 end

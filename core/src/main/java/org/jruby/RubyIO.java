@@ -1766,12 +1766,21 @@ public class RubyIO extends RubyObject implements IOEncodable {
      */
     @JRubyMethod(name = "sync=", required = 1)
     public IRubyObject sync_set(IRubyObject sync) {
-        OpenFile fptr;
+        setSync(sync.isTrue());
 
-        RubyIO io = GetWriteIO();
-        fptr = io.getOpenFileChecked();
-        fptr.setSync(sync.isTrue());
         return sync;
+    }
+
+    public void setSync(boolean sync) {
+        RubyIO io = GetWriteIO();
+        OpenFile fptr = io.getOpenFileChecked();
+        fptr.setSync(sync);
+    }
+
+    public boolean getSync() {
+        RubyIO io = GetWriteIO();
+        OpenFile fptr = io.getOpenFileChecked();
+        return fptr.isSync();
     }
 
     // rb_io_eof

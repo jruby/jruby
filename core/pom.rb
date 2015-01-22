@@ -64,8 +64,6 @@ project 'JRuby Core' do
   jar 'bsf:bsf:2.4.0', :scope => 'provided'
   jar 'com.jcraft:jzlib:1.1.3'
   jar 'com.martiansoftware:nailgun-server:0.9.1'
-  jar 'com.oracle:truffle:0.7-SNAPSHOT'
-  jar 'com.oracle:truffle-dsl-processor:0.7-SNAPSHOT', :scope => 'provided'
   jar 'junit:junit', :scope => 'test'
   jar 'org.apache.ant:ant:${ant.version}', :scope => 'provided'
   jar 'org.osgi:org.osgi.core:5.0.0', :scope => 'provided'
@@ -180,8 +178,7 @@ project 'JRuby Core' do
     execute_goals( 'compile',
                    :id => 'default-compile',
                    :phase => 'compile',
-                   'annotationProcessors' => [ 'org.jruby.anno.AnnotationBinder',
-                                               'com.oracle.truffle.dsl.processor.TruffleProcessor' ],
+                   'annotationProcessors' => [ 'org.jruby.anno.AnnotationBinder' ],
                    'generatedSourcesDirectory' =>  'target/generated-sources',
                    'compilerArgs' => [ '-XDignore.symbol.file=true',
                                        '-J-Duser.language=en',
@@ -211,17 +208,6 @@ project 'JRuby Core' do
                    'filesets' => [ { 'directory' =>  '${project.build.sourceDirectory}',
                                      'includes' => [ '${Constants.java}' ] } ],
                    'failOnError' =>  'false' )
-  end
-
-  plugin :shade do
-    execute_goals( 'shade',
-                   :id => 'pack jruby.jar',
-                   :phase => 'package',
-                   'relocations' => [ { 'pattern' => 'org.objectweb',
-                                        'shadedPattern' => 'org.jruby.org.objectweb' } ],
-                   'outputFile' => '${jruby.basedir}/lib/jruby.jar',
-                   'transformers' => [ { '@implementation' => 'org.apache.maven.plugins.shade.resource.ManifestResourceTransformer',
-                                         'mainClass' => 'org.jruby.Main' } ] )
   end
 
   plugin( :surefire,
@@ -264,7 +250,7 @@ project 'JRuby Core' do
       plugin :shade do
         execute_goals( 'shade',
                        :id => 'pack jruby-core-noasm.jar',
-                       :phase => 'verify',
+                       :phase => 'package',
                        'shadedArtifactAttached' =>  'true',
                        'shadedClassifierName' =>  'noasm',
                        'artifactSet' => {
@@ -275,7 +261,7 @@ project 'JRuby Core' do
                                             'shadedPattern' =>  'org.jruby.org.objectweb' } ] )
         execute_goals( 'shade',
                        :id => 'pack jruby-core-complete.jar',
-                       :phase => 'verify',
+                       :phase => 'package',
                        'shadedArtifactAttached' =>  'true',
                        'shadedClassifierName' =>  'complete',
                        'relocations' => [ { 'pattern' =>  'org.objectweb',

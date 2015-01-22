@@ -132,12 +132,8 @@ public class RubyException extends RubyObject {
         }
     }
 
-    public IRubyObject to_s(ThreadContext context) {
-        return to_s19(context);
-    }
-
     @JRubyMethod(name = "to_s")
-    public IRubyObject to_s19(ThreadContext context) {
+    public IRubyObject to_s(ThreadContext context) {
         if (message.isNil()) return context.runtime.newString(getMetaClass().getRealClass().getName());
 
         message.setTaint(isTaint());
@@ -380,6 +376,14 @@ public class RubyException extends RubyObject {
     // rb_exc_new3
     public static IRubyObject newException(ThreadContext context, RubyClass exceptionClass, IRubyObject message) {
         return exceptionClass.callMethod(context, "new", message.convertToString());
+    }
+
+    @Deprecated
+    public IRubyObject to_s19(ThreadContext context) {
+        if (message.isNil()) return context.runtime.newString(getMetaClass().getRealClass().getName());
+
+        message.setTaint(isTaint());
+        return message.asString();
     }
 
     private BacktraceData backtraceData;

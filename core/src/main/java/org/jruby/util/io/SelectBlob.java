@@ -26,7 +26,6 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.util.io;
 
-import com.oracle.truffle.api.dsl.TypeCheck;
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubyFixnum;

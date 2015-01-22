@@ -250,11 +250,11 @@ public abstract class IRBytecodeAdapter {
     /**
      * Build and save a literal regular expression.
      *
-     * Stack required: ThreadContext, RubyString.
+     * Stack required: none
      *
      * @param options options for the regexp
      */
-    public abstract void pushRegexp(int options);
+    public abstract void pushRegexp(ByteList source, int options);
 
     /**
      * Build a dynamic regexp.

@@ -65,10 +65,6 @@ public class HeredocTerm extends StrTerm {
         this.lastLine = lastLine;
     }
 
-    public int getNest() {
-        return 0;
-    }
-    
     public int parseString(RubyLexer lexer, LexerSource src) throws java.io.IOException {
         boolean indent = (flags & RubyLexer.STR_FUNC_INDENT) != 0;
 

@@ -962,15 +962,6 @@ public class IRRuntimeHelpers {
         return new ByteList(str.getBytes(RubyEncoding.ISO), runtime.getEncodingService().getEncodingFromString(encoding), false);
     }
 
-    public static RubyRegexp constructRubyRegexp(ThreadContext context, RubyString pattern, RegexpOptions options) {
-        return RubyRegexp.newRegexp(context.runtime, pattern.getByteList(), options);
-    }
-
-    // Used by JIT
-    public static RubyRegexp constructRubyRegexp(ThreadContext context, RubyString pattern, int options) {
-        return RubyRegexp.newRegexp(context.runtime, pattern.getByteList(), RegexpOptions.fromEmbeddedOptions(options));
-    }
-
     // Used by JIT
     public static RubyEncoding retrieveEncoding(ThreadContext context, String name) {
         return context.runtime.getEncodingService().getEncoding(retrieveJCodingsEncoding(context, name));
@@ -1238,6 +1229,17 @@ public class IRRuntimeHelpers {
         re.setLiteral();
 
         return re;
+    }
+
+    public static RubyRegexp newLiteralRegexp(ThreadContext context, ByteList source, RegexpOptions options) {
+        RubyRegexp re = RubyRegexp.newRegexp(context.runtime, source, options);
+        re.setLiteral();
+        return re;
+    }
+
+    @JIT
+    public static RubyRegexp newLiteralRegexp(ThreadContext context, ByteList source, int embeddedOptions) {
+        return newLiteralRegexp(context, source, RegexpOptions.fromEmbeddedOptions(embeddedOptions));
     }
 
     @JIT

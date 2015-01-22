@@ -666,6 +666,12 @@ public class Bootstrap {
             constant = UndefinedValue.UNDEFINED;
         }
 
+        // This caching does not take into consideration sites that have many different module targets.
+        //
+        if (true) {
+            return constant;
+        }
+
         SwitchPoint switchPoint = (SwitchPoint)runtime.getConstantInvalidator(constName).getData();
 
         // bind constant until invalidated
@@ -684,6 +690,10 @@ public class Bootstrap {
                 .invokeStaticQuiet(LOOKUP, Bootstrap.class, "testArg0ModuleMatch");
         target = guardWithTest(test, target, fallback);
         site.setTarget(switchPoint.guardWithTest(target, fallback));
+
+        if (Options.INVOKEDYNAMIC_LOG_CONSTANTS.load()) {
+            LOG.info(constName + "\tretrieved and cached from type " + cmVal.getMetaClass());// + " added to PIC" + extractSourceInfo(site));
+        }
 
         return constant;
     }
@@ -728,6 +738,7 @@ public class Bootstrap {
     }
 
     public static boolean testArg0ModuleMatch(IRubyObject arg0, int id) {
+        System.out.println("testing " + arg0 + " for match (id = " + ((RubyModule)arg0).id + "): " + (arg0 instanceof RubyModule && ((RubyModule)arg0).id == id));
         return arg0 instanceof RubyModule && ((RubyModule)arg0).id == id;
     }
 
