@@ -747,7 +747,7 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
         // we end up growing dynamicscope potentially based on any changes made.
         staticScope.setIRScope(script);
 
-        IRBuilder.newIRBuilder(runtime.getIRManager(), script).buildEvalRoot(rootNode);
+        IRBuilder.topIRBuilder(runtime.getIRManager(), script).buildEvalRoot(rootNode);
         BeginEndInterpreterContext ic = (BeginEndInterpreterContext) script.prepareForInterpretation();
 
         if (IRRuntimeHelpers.isDebug()) {

@@ -13,7 +13,6 @@ import org.jruby.ir.instructions.defined.RestoreErrorInfoInstr;
 import org.jruby.ir.operands.*;
 import org.jruby.ir.operands.Float;
 import org.jruby.ir.transformations.inlining.SimpleCloneInfo;
-import org.jruby.parser.StaticScope;
 import org.jruby.runtime.CallType;
 import org.jruby.runtime.Helpers;
 import org.jruby.runtime.RubyEvent;
@@ -276,12 +275,14 @@ public class IRBuilder {
         return loopStack.isEmpty() ? null : loopStack.peek();
     }
 
+    protected IRBuilder parent;
     protected IRManager manager;
     protected IRScope scope;
 
-    public IRBuilder(IRManager manager, IRScope scope) {
+    public IRBuilder(IRManager manager, IRScope scope, IRBuilder parent) {
         this.manager = manager;
         this.scope = scope;
+        this.parent = parent;
         this.activeRescuers.push(Label.UNRESCUED_REGION_LABEL);
     }
 
@@ -434,8 +435,12 @@ public class IRBuilder {
         return manager.getIRScopeListener() != null;
     }
 
-    public static IRBuilder newIRBuilder(IRManager manager, IRScope scope) {
-        return new IRBuilder(manager, scope);
+    public IRBuilder newIRBuilder(IRManager manager, IRScope newScope) {
+        return new IRBuilder(manager, newScope, this);
+    }
+
+    public static IRBuilder topIRBuilder(IRManager manager, IRScope newScope) {
+        return new IRBuilder(manager, newScope, null);
     }
 
     public Node skipOverNewlines(Node n) {
@@ -3200,13 +3205,9 @@ public class IRBuilder {
     }
 
     public static IRScriptBody buildRoot(IRManager manager, RootNode rootNode) {
-        String file = rootNode.getPosition().getFile();
-        StaticScope staticScope = rootNode.getStaticScope();
+        IRScriptBody script = new IRScriptBody(manager, rootNode.getPosition().getFile(), rootNode.getStaticScope());
 
-        // Top-level script!
-        IRScriptBody script = new IRScriptBody(manager, file, staticScope);
-
-        newIRBuilder(manager, script).buildRootInner(script, rootNode);
+        topIRBuilder(manager, script).buildRootInner(rootNode);
 
         return script;
     }
@@ -3216,7 +3217,7 @@ public class IRBuilder {
         addInstr(new CopyInstr(scope.getCurrentModuleVariable(), SCOPE_MODULE[0])); // %current_module
     }
 
-    private void buildRootInner(IRScriptBody script, RootNode rootNode) {
+    private void buildRootInner(RootNode rootNode) {
         prepareImplicitState();                                    // recv_self, add frame block, etc)
         addCurrentScopeAndModule();                                // %current_scope/%current_module
 
