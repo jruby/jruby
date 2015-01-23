@@ -14,7 +14,7 @@ module ShellUtils
   private
 
   def sh(*args)
-    system(*args)
+    system(args.join(' '))
     raise "failed" unless $? == 0
   end
 
@@ -34,6 +34,7 @@ module Commands
     puts 'jt build                                     build'
     puts 'jt clean                                     clean'
     puts 'jt rebuild                                   clean and build'
+    puts 'jt run args...                               run JRuby with -X+T and args'
     puts 'jt test                                      run all specs'
     puts 'jt test fast                                 run all specs except sub-processes, GC, sleep, ...'
     puts 'jt test spec/ruby/language                   run specs in this directory'
@@ -59,6 +60,10 @@ module Commands
   def rebuild
     clean
     build
+  end
+
+  def run(*args)
+    sh *(%w[VERIFY_JRUBY=1 bin/jruby -J-cp truffle/target/jruby-truffle-9.0.0.0-SNAPSHOT.jar -X+T] + args)
   end
 
   def test(*args)
@@ -98,7 +103,7 @@ end
 class JT
   include Commands
 
-  def run(args)
+  def main(args)
     args = args.dup
 
     if args.empty? or %w[-h -help --help].include? args.first
@@ -123,4 +128,4 @@ class JT
   end
 end
 
-JT.new.run(ARGV)
+JT.new.main(ARGV)
