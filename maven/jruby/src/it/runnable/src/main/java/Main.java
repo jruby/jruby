@@ -30,7 +30,7 @@ public class Main extends org.jruby.Main {
         config.setHardExit(true);
 	config.setCurrentDirectory( "uri:classloader://" );
 	config.setJRubyHome( "uri:classloader://META-INF/jruby.home" );
-	config.setLoadPaths( java.util.Arrays.asList("uri:classloader://") );
+	config.setLoadPaths( java.util.Arrays.asList("uri:classloader:/") );
 	java.util.Map env = new java.util.HashMap( System.getenv() );
 	env.put( "JARS_HOME", "uri:classloader://" );
 	// needed for jruby version before 1.7.19
