@@ -314,6 +314,10 @@ public abstract class KernelNodes {
 
         public abstract RubyBinding executeRubyBinding(VirtualFrame frame);
 
+        public Object execute(VirtualFrame frame) {
+            return executeRubyBinding(frame);
+        }
+
         @Specialization
         public RubyBinding binding() {
             // Materialize the caller's frame - false means don't use a slow path to get it - we want to optimize it
