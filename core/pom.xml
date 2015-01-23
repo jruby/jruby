@@ -540,7 +540,8 @@
             <configuration>
               <shadedArtifactAttached>true</shadedArtifactAttached>
               <shadedClassifierName>shaded</shadedClassifierName>
-              <outputFile>${basedir}/../lib/jruby-core-shaded.jar</outputFile>
+              <finalName>${project.artifactId}-shaded</finalName>
+              <outputDirectory>${basedir}/../lib</outputDirectory>
               <relocations>
                 <relocation>
                   <pattern>org.objectweb</pattern>

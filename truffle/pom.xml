@@ -81,7 +81,8 @@
               <goal>shade</goal>
             </goals>
             <configuration>
-              <outputFile>${basedir}/../lib/jruby-truffle-shaded.jar</outputFile>
+              <finalName>${project.artifactId}-shaded</finalName>
+              <outputDirectory>${basedir}/../lib</outputDirectory>
               <artifactSet>
                 <includes>
                   <include>com.oracle:truffle</include>

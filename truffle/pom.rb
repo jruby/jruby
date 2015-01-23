@@ -39,7 +39,8 @@ project 'JRuby Truffle' do
     execute_goals( 'shade',
                    :id => 'pack jruby-truffle-shaded.jar',
                    :phase => 'package',
-                   :outputFile => "${basedir}/../lib/jruby-truffle-shaded.jar",
+                   :finalName => '${project.artifactId}-shaded',
+                   :outputDirectory => '${basedir}/../lib',
                    :artifactSet => { :includes => [ 'com.oracle:truffle' ] },
                    :shadedArtifactAttached =>  'true',
                    :shadedClassifierName =>  'shaded' )
