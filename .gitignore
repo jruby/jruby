@@ -94,12 +94,10 @@ nbproject/private
 # Eclipse files
 /.metadata
 /.recommenders
-core/.apt_generated
-core/.classpath
-core/.gitignore
-core/.project
-core/.settings
-core/build.eclipse
+.classpath
+.project
+.settings
+build.eclipse
 
 # Truffle findbugs
 truffle-findbugs-report.html
