@@ -14,7 +14,7 @@ module ShellUtils
   private
 
   def sh(*args)
-    system(args.join(' '))
+    system(*args)
     raise "failed" unless $? == 0
   end
 
@@ -63,7 +63,7 @@ module Commands
   end
 
   def run(*args)
-    sh *(%w[VERIFY_JRUBY=1 bin/jruby -J-cp truffle/target/jruby-truffle-9.0.0.0-SNAPSHOT.jar -X+T] + args)
+    sh({ "VERIFY_JRUBY" => "1" }, *%w[bin/jruby -J-cp truffle/target/jruby-truffle-9.0.0.0-SNAPSHOT.jar -X+T], *args)
   end
 
   def test(*args)
