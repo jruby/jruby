@@ -43,7 +43,6 @@ freezing to) a specific jruby-complete jar version.</description>
     <tesla.dump.pom>pom.xml</tesla.dump.pom>
     <project.build.sourceEncoding>utf-8</project.build.sourceEncoding>
     <jruby_home>${basedir}/../../</jruby_home>
-    <tesla.version>0.1.1</tesla.version>
   </properties>
   <dependencies>
     <dependency>
@@ -87,8 +86,38 @@ freezing to) a specific jruby-complete jar version.</description>
         </configuration>
       </plugin>
       <plugin>
+        <artifactId>maven-dependency-plugin</artifactId>
+        <executions>
+          <execution>
+            <id>copy shaded jruby jar</id>
+            <goals>
+              <goal>copy</goal>
+            </goals>
+            <configuration>
+              <artifactItems>
+                <artifactItem>
+                  <groupId>org.jruby</groupId>
+                  <artifactId>jruby-core</artifactId>
+                  <version>${project.version}</version>
+                  <classifier>shaded</classifier>
+                  <type>jar</type>
+                  <outputDirectory>${basedir}/lib</outputDirectory>
+                </artifactItem>
+                <artifactItem>
+                  <groupId>org.jruby</groupId>
+                  <artifactId>jruby-truffle</artifactId>
+                  <version>${project.version}</version>
+                  <classifier>shaded</classifier>
+                  <type>jar</type>
+                  <outputDirectory>${basedir}/lib</outputDirectory>
+                </artifactItem>
+              </artifactItems>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+      <plugin>
         <artifactId>maven-clean-plugin</artifactId>
-        <version>2.5</version>
         <executions>
           <execution>
             <id>clean-lib</id>
@@ -119,31 +148,6 @@ freezing to) a specific jruby-complete jar version.</description>
             <gem.path>${project.build.directory}/rubygems</gem.path>
           </properties>
         </configuration>
-      </plugin>
-      <plugin>
-        <groupId>io.tesla.polyglot</groupId>
-        <artifactId>tesla-polyglot-maven-plugin</artifactId>
-        <version>${tesla.version}</version>
-        <executions>
-          <execution>
-            <id>copy jruby.jar</id>
-            <phase>prepare-package</phase>
-            <goals>
-              <goal>execute</goal>
-            </goals>
-            <configuration>
-              <taskId>copy jruby.jar</taskId>
-              <nativePom>Mavenfile</nativePom>
-            </configuration>
-          </execution>
-        </executions>
-        <dependencies>
-          <dependency>
-            <groupId>io.tesla.polyglot</groupId>
-            <artifactId>tesla-polyglot-ruby</artifactId>
-            <version>${tesla.version}</version>
-          </dependency>
-        </dependencies>
       </plugin>
     </plugins>
   </build>

@@ -9,7 +9,8 @@ project 'JRuby Dist' do
 
   properties( 'tesla.dump.pom' => 'pom.xml',
               'tesla.dump.readonly' => true,
-              'main.basedir' => '${project.parent.parent.basedir}' )
+              'main.basedir' => '${project.parent.parent.basedir}',
+              'lib.dir' => '${project.build.directory}/META-INF/jruby.home/lib')
 
   unless version =~ /-SNAPSHOT/
     properties 'jruby.home' => '${basedir}/../..'
@@ -46,6 +47,21 @@ project 'JRuby Dist' do
                                             'type' =>  'jar',
                                             'overWrite' =>  'false',
                                             'outputDirectory' =>  '${project.build.directory}' } ] )
+  execute_goals( 'copy',
+                 :id => 'copy shaded jruby jar',
+                 :stripVersion => true,
+                 :artifactItems => [ { :groupId =>  'org.jruby',
+                                       :artifactId =>  'jruby-core',
+                                       :version =>  '${project.version}',
+                                       :classifier => :shaded,
+                                       :type =>  :jar,
+                                       :outputDirectory =>  '${lib.dir}' },
+                                     { :groupId =>  'org.jruby',
+                                       :artifactId =>  'jruby-truffle',
+                                       :version =>  '${project.version}',
+                                       :classifier => :shaded,
+                                       :type =>  :jar,
+                                       :outputDirectory => '${lib.dir}' } ] )
     end
 
     execute :fix_executable_bits do |ctx|

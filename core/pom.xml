@@ -528,6 +528,34 @@
           </additionalClasspathElements>
         </configuration>
       </plugin>
+      <plugin>
+        <artifactId>maven-shade-plugin</artifactId>
+        <executions>
+          <execution>
+            <id>pack jruby-core-shaded.jar</id>
+            <phase>package</phase>
+            <goals>
+              <goal>shade</goal>
+            </goals>
+            <configuration>
+              <shadedArtifactAttached>true</shadedArtifactAttached>
+              <shadedClassifierName>shaded</shadedClassifierName>
+              <outputFile>${basedir}/../lib/jruby-core-shaded.jar</outputFile>
+              <relocations>
+                <relocation>
+                  <pattern>org.objectweb</pattern>
+                  <shadedPattern>org.jruby.org.objectweb</shadedPattern>
+                </relocation>
+              </relocations>
+              <transformers>
+                <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
+                  <mainClass>org.jruby.Main</mainClass>
+                </transformer>
+              </transformers>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
     </plugins>
   </build>
   <profiles>
@@ -559,28 +587,6 @@
                       <shadedPattern>org.jruby.org.objectweb</shadedPattern>
                     </relocation>
                   </relocations>
-                </configuration>
-              </execution>
-              <execution>
-                <id>pack jruby-core-complete.jar</id>
-                <phase>package</phase>
-                <goals>
-                  <goal>shade</goal>
-                </goals>
-                <configuration>
-                  <shadedArtifactAttached>true</shadedArtifactAttached>
-                  <shadedClassifierName>complete</shadedClassifierName>
-                  <relocations>
-                    <relocation>
-                      <pattern>org.objectweb</pattern>
-                      <shadedPattern>org.jruby.org.objectweb</shadedPattern>
-                    </relocation>
-                  </relocations>
-                  <transformers>
-                    <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
-                      <mainClass>org.jruby.Main</mainClass>
-                    </transformer>
-                  </transformers>
                 </configuration>
               </execution>
             </executions>
@@ -618,28 +624,6 @@
                   </relocations>
                 </configuration>
               </execution>
-              <execution>
-                <id>pack jruby-core-complete.jar</id>
-                <phase>package</phase>
-                <goals>
-                  <goal>shade</goal>
-                </goals>
-                <configuration>
-                  <shadedArtifactAttached>true</shadedArtifactAttached>
-                  <shadedClassifierName>complete</shadedClassifierName>
-                  <relocations>
-                    <relocation>
-                      <pattern>org.objectweb</pattern>
-                      <shadedPattern>org.jruby.org.objectweb</shadedPattern>
-                    </relocation>
-                  </relocations>
-                  <transformers>
-                    <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
-                      <mainClass>org.jruby.Main</mainClass>
-                    </transformer>
-                  </transformers>
-                </configuration>
-              </execution>
             </executions>
           </plugin>
         </plugins>
@@ -673,28 +657,6 @@
                       <shadedPattern>org.jruby.org.objectweb</shadedPattern>
                     </relocation>
                   </relocations>
-                </configuration>
-              </execution>
-              <execution>
-                <id>pack jruby-core-complete.jar</id>
-                <phase>package</phase>
-                <goals>
-                  <goal>shade</goal>
-                </goals>
-                <configuration>
-                  <shadedArtifactAttached>true</shadedArtifactAttached>
-                  <shadedClassifierName>complete</shadedClassifierName>
-                  <relocations>
-                    <relocation>
-                      <pattern>org.objectweb</pattern>
-                      <shadedPattern>org.jruby.org.objectweb</shadedPattern>
-                    </relocation>
-                  </relocations>
-                  <transformers>
-                    <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
-                      <mainClass>org.jruby.Main</mainClass>
-                    </transformer>
-                  </transformers>
                 </configuration>
               </execution>
             </executions>
@@ -732,28 +694,6 @@
                   </relocations>
                 </configuration>
               </execution>
-              <execution>
-                <id>pack jruby-core-complete.jar</id>
-                <phase>package</phase>
-                <goals>
-                  <goal>shade</goal>
-                </goals>
-                <configuration>
-                  <shadedArtifactAttached>true</shadedArtifactAttached>
-                  <shadedClassifierName>complete</shadedClassifierName>
-                  <relocations>
-                    <relocation>
-                      <pattern>org.objectweb</pattern>
-                      <shadedPattern>org.jruby.org.objectweb</shadedPattern>
-                    </relocation>
-                  </relocations>
-                  <transformers>
-                    <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
-                      <mainClass>org.jruby.Main</mainClass>
-                    </transformer>
-                  </transformers>
-                </configuration>
-              </execution>
             </executions>
           </plugin>
         </plugins>
@@ -787,28 +727,6 @@
                       <shadedPattern>org.jruby.org.objectweb</shadedPattern>
                     </relocation>
                   </relocations>
-                </configuration>
-              </execution>
-              <execution>
-                <id>pack jruby-core-complete.jar</id>
-                <phase>package</phase>
-                <goals>
-                  <goal>shade</goal>
-                </goals>
-                <configuration>
-                  <shadedArtifactAttached>true</shadedArtifactAttached>
-                  <shadedClassifierName>complete</shadedClassifierName>
-                  <relocations>
-                    <relocation>
-                      <pattern>org.objectweb</pattern>
-                      <shadedPattern>org.jruby.org.objectweb</shadedPattern>
-                    </relocation>
-                  </relocations>
-                  <transformers>
-                    <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
-                      <mainClass>org.jruby.Main</mainClass>
-                    </transformer>
-                  </transformers>
                 </configuration>
               </execution>
             </executions>
@@ -846,28 +764,6 @@
                   </relocations>
                 </configuration>
               </execution>
-              <execution>
-                <id>pack jruby-core-complete.jar</id>
-                <phase>package</phase>
-                <goals>
-                  <goal>shade</goal>
-                </goals>
-                <configuration>
-                  <shadedArtifactAttached>true</shadedArtifactAttached>
-                  <shadedClassifierName>complete</shadedClassifierName>
-                  <relocations>
-                    <relocation>
-                      <pattern>org.objectweb</pattern>
-                      <shadedPattern>org.jruby.org.objectweb</shadedPattern>
-                    </relocation>
-                  </relocations>
-                  <transformers>
-                    <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
-                      <mainClass>org.jruby.Main</mainClass>
-                    </transformer>
-                  </transformers>
-                </configuration>
-              </execution>
             </executions>
           </plugin>
         </plugins>
@@ -903,28 +799,6 @@
                   </relocations>
                 </configuration>
               </execution>
-              <execution>
-                <id>pack jruby-core-complete.jar</id>
-                <phase>package</phase>
-                <goals>
-                  <goal>shade</goal>
-                </goals>
-                <configuration>
-                  <shadedArtifactAttached>true</shadedArtifactAttached>
-                  <shadedClassifierName>complete</shadedClassifierName>
-                  <relocations>
-                    <relocation>
-                      <pattern>org.objectweb</pattern>
-                      <shadedPattern>org.jruby.org.objectweb</shadedPattern>
-                    </relocation>
-                  </relocations>
-                  <transformers>
-                    <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
-                      <mainClass>org.jruby.Main</mainClass>
-                    </transformer>
-                  </transformers>
-                </configuration>
-              </execution>
             </executions>
           </plugin>
         </plugins>
@@ -958,28 +832,6 @@
                       <shadedPattern>org.jruby.org.objectweb</shadedPattern>
                     </relocation>
                   </relocations>
-                </configuration>
-              </execution>
-              <execution>
-                <id>pack jruby-core-complete.jar</id>
-                <phase>package</phase>
-                <goals>
-                  <goal>shade</goal>
-                </goals>
-                <configuration>
-                  <shadedArtifactAttached>true</shadedArtifactAttached>
-                  <shadedClassifierName>complete</shadedClassifierName>
-                  <relocations>
-                    <relocation>
-                      <pattern>org.objectweb</pattern>
-                      <shadedPattern>org.jruby.org.objectweb</shadedPattern>
-                    </relocation>
-                  </relocations>
-                  <transformers>
-                    <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
-                      <mainClass>org.jruby.Main</mainClass>
-                    </transformer>
-                  </transformers>
                 </configuration>
               </execution>
             </executions>

@@ -75,142 +75,24 @@
         <artifactId>maven-shade-plugin</artifactId>
         <executions>
           <execution>
-            <id>pack jruby.jar</id>
+            <id>pack jruby-truffle-shaded.jar</id>
             <phase>package</phase>
             <goals>
               <goal>shade</goal>
             </goals>
             <configuration>
-              <relocations>
-                <relocation>
-                  <pattern>org.objectweb</pattern>
-                  <shadedPattern>org.jruby.org.objectweb</shadedPattern>
-                </relocation>
-              </relocations>
-              <outputFile>${jruby.basedir}/lib/jruby.jar</outputFile>
-              <transformers>
-                <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
-                  <mainClass>org.jruby.Main</mainClass>
-                </transformer>
-              </transformers>
+              <outputFile>${basedir}/../lib/jruby-truffle-shaded.jar</outputFile>
+              <artifactSet>
+                <includes>
+                  <include>com.oracle:truffle</include>
+                </includes>
+              </artifactSet>
+              <shadedArtifactAttached>true</shadedArtifactAttached>
+              <shadedClassifierName>shaded</shadedClassifierName>
             </configuration>
           </execution>
         </executions>
       </plugin>
     </plugins>
   </build>
-  <profiles>
-    <profile>
-      <id>dist</id>
-      <build>
-        <plugins>
-          <plugin>
-            <artifactId>maven-shade-plugin</artifactId>
-            <executions>
-              <execution>
-                <id>pack jruby-truffle-complete.jar</id>
-                <phase>verify</phase>
-                <goals>
-                  <goal>shade</goal>
-                </goals>
-                <configuration>
-                  <artifactSet>
-                    <includes>
-                      <include>com.oracle:truffle</include>
-                    </includes>
-                  </artifactSet>
-                  <shadedArtifactAttached>true</shadedArtifactAttached>
-                  <shadedClassifierName>complete</shadedClassifierName>
-                </configuration>
-              </execution>
-            </executions>
-          </plugin>
-        </plugins>
-      </build>
-    </profile>
-    <profile>
-      <id>jruby-jars</id>
-      <build>
-        <plugins>
-          <plugin>
-            <artifactId>maven-shade-plugin</artifactId>
-            <executions>
-              <execution>
-                <id>pack jruby-truffle-complete.jar</id>
-                <phase>verify</phase>
-                <goals>
-                  <goal>shade</goal>
-                </goals>
-                <configuration>
-                  <artifactSet>
-                    <includes>
-                      <include>com.oracle:truffle</include>
-                    </includes>
-                  </artifactSet>
-                  <shadedArtifactAttached>true</shadedArtifactAttached>
-                  <shadedClassifierName>complete</shadedClassifierName>
-                </configuration>
-              </execution>
-            </executions>
-          </plugin>
-        </plugins>
-      </build>
-    </profile>
-    <profile>
-      <id>all</id>
-      <build>
-        <plugins>
-          <plugin>
-            <artifactId>maven-shade-plugin</artifactId>
-            <executions>
-              <execution>
-                <id>pack jruby-truffle-complete.jar</id>
-                <phase>verify</phase>
-                <goals>
-                  <goal>shade</goal>
-                </goals>
-                <configuration>
-                  <artifactSet>
-                    <includes>
-                      <include>com.oracle:truffle</include>
-                    </includes>
-                  </artifactSet>
-                  <shadedArtifactAttached>true</shadedArtifactAttached>
-                  <shadedClassifierName>complete</shadedClassifierName>
-                </configuration>
-              </execution>
-            </executions>
-          </plugin>
-        </plugins>
-      </build>
-    </profile>
-    <profile>
-      <id>release</id>
-      <build>
-        <plugins>
-          <plugin>
-            <artifactId>maven-shade-plugin</artifactId>
-            <executions>
-              <execution>
-                <id>pack jruby-truffle-complete.jar</id>
-                <phase>verify</phase>
-                <goals>
-                  <goal>shade</goal>
-                </goals>
-                <configuration>
-                  <artifactSet>
-                    <includes>
-                      <include>com.oracle:truffle</include>
-                    </includes>
-                  </artifactSet>
-                  <shadedArtifactAttached>true</shadedArtifactAttached>
-                  <shadedClassifierName>complete</shadedClassifierName>
-                </configuration>
-              </execution>
-            </executions>
-          </plugin>
-        </plugins>
-      </build>
-    </profile>
-  </profiles>
 </project>

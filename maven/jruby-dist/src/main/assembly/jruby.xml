@@ -37,7 +37,6 @@
       <includes>
         <include>LICENSE*</include>
         <include>COPYING*</include>
-        <include>lib/jruby.jar</include>
         <include>samples/**/*</include>
         <include>docs/**/*</include>
         <include>tool/nailgun/*</include>

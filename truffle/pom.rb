@@ -37,29 +37,16 @@ project 'JRuby Truffle' do
 
   plugin :shade do
     execute_goals( 'shade',
-                   :id => 'pack jruby.jar',
+                   :id => 'pack jruby-truffle-shaded.jar',
                    :phase => 'package',
-                   'relocations' => [ { 'pattern' => 'org.objectweb',
-                                        'shadedPattern' => 'org.jruby.org.objectweb' } ],
-                   'outputFile' => '${jruby.basedir}/lib/jruby.jar',
-                   'transformers' => [ { '@implementation' => 'org.apache.maven.plugins.shade.resource.ManifestResourceTransformer',
-                                         'mainClass' => 'org.jruby.Main' } ] )
+                   :outputFile => "${basedir}/../lib/jruby-truffle-shaded.jar",
+                   :artifactSet => { :includes => [ 'com.oracle:truffle' ] },
+                   :shadedArtifactAttached =>  'true',
+                   :shadedClassifierName =>  'shaded' )
   end
 
   build do
     default_goal 'package'
   end
 
-  [ :dist, :'jruby-jars', :all, :release ].each do |name|
-    profile name do
-      plugin :shade do
-        execute_goals( 'shade',
-                       :id => 'pack jruby-truffle-complete.jar',
-                       :phase => 'verify',
-                       :artifactSet => { :includes => [ 'com.oracle:truffle' ] },
-                       :shadedArtifactAttached =>  'true',
-                       :shadedClassifierName =>  'complete' )
-      end
-    end
-  end
 end

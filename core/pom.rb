@@ -244,6 +244,18 @@ project 'JRuby Core' do
     end
   end
 
+  plugin :shade do
+    execute_goals( :shade,
+                   :id => 'pack jruby-core-shaded.jar',
+                   :phase => :package,
+                   :shadedArtifactAttached =>  true,
+                   :shadedClassifierName =>  :shaded,
+                   :outputFile => "${basedir}/../lib/jruby-core-shaded.jar",
+                   :relocations => [ { 'pattern' =>  'org.objectweb',
+                                        'shadedPattern' =>  'org.jruby.org.objectweb' } ],
+                   :transformers => [ { '@implementation' => 'org.apache.maven.plugins.shade.resource.ManifestResourceTransformer',
+                                         :mainClass => 'org.jruby.Main' } ] )
+  end
 
   [ :osgi, :dist, :'jruby-jars', :main, :all, :complete, :release, :jruby_complete_jar_extended ].each do |name|
     profile name do
@@ -259,15 +271,6 @@ project 'JRuby Core' do
                        },
                        'relocations' => [ { 'pattern' =>  'org.objectweb',
                                             'shadedPattern' =>  'org.jruby.org.objectweb' } ] )
-        execute_goals( 'shade',
-                       :id => 'pack jruby-core-complete.jar',
-                       :phase => 'package',
-                       'shadedArtifactAttached' =>  'true',
-                       'shadedClassifierName' =>  'complete',
-                       'relocations' => [ { 'pattern' =>  'org.objectweb',
-                                            'shadedPattern' =>  'org.jruby.org.objectweb' } ],
-                       'transformers' => [ { '@implementation' => 'org.apache.maven.plugins.shade.resource.ManifestResourceTransformer',
-                                             'mainClass' => 'org.jruby.Main' } ] )
       end
     end
   end
@@ -312,7 +315,7 @@ project 'JRuby Core' do
     end
 
     plugin 'org.codehaus.mojo:properties-maven-plugin:1.0-alpha-2' do
-      execute_goals( 'read-project-properties',
+        execute_goals( 'read-project-properties',
                      :id => 'properties',
                      :phase => 'initialize',
                      'files' => [ '${jruby.basedir}/build.properties' ],
@@ -329,6 +332,6 @@ project 'JRuby Core' do
 
     properties( 'tzdata.jar.version' => '${tzdata.version}',
                 'tzdata.scope' => 'runtime' )
-
+    
   end
 end

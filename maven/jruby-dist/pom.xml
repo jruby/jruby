@@ -14,6 +14,7 @@
     <tesla.dump.readonly>true</tesla.dump.readonly>
     <jruby.plugins.version>1.0.3</jruby.plugins.version>
     <main.basedir>${project.parent.parent.basedir}</main.basedir>
+    <lib.dir>${project.build.directory}/META-INF/jruby.home/lib</lib.dir>
     <tesla.dump.pom>pom.xml</tesla.dump.pom>
     <tesla.version>0.1.1</tesla.version>
   </properties>
@@ -59,6 +60,35 @@
                   <type>jar</type>
                   <overWrite>false</overWrite>
                   <outputDirectory>${project.build.directory}</outputDirectory>
+                </artifactItem>
+              </artifactItems>
+            </configuration>
+          </execution>
+          <execution>
+            <id>copy shaded jruby jar</id>
+            <phase>prepare-package</phase>
+            <goals>
+              <goal>copy</goal>
+            </goals>
+            <configuration>
+              <stripVersion>true</stripVersion>
+              <stripClassifier>true</stripClassifier>
+              <artifactItems>
+                <artifactItem>
+                  <groupId>org.jruby</groupId>
+                  <artifactId>jruby-core</artifactId>
+                  <version>${project.version}</version>
+                  <classifier>shaded</classifier>
+                  <type>jar</type>
+                  <outputDirectory>${lib.dir}</outputDirectory>
+                </artifactItem>
+                <artifactItem>
+                  <groupId>org.jruby</groupId>
+                  <artifactId>jruby-truffle</artifactId>
+                  <version>${project.version}</version>
+                  <classifier>shaded</classifier>
+                  <type>jar</type>
+                  <outputDirectory>${lib.dir}</outputDirectory>
                 </artifactItem>
               </artifactItems>
             </configuration>
