@@ -490,8 +490,9 @@ public abstract class StringNodes {
             return countSlow(frame, string, otherStrings);
         }
 
-        @CompilerDirectives.TruffleBoundary
         private int countSlow(VirtualFrame frame, RubyString string, Object[] args) {
+            notDesignedForCompilation();
+
             RubyString[] otherStrings = new RubyString[args.length];
 
             for (int i = 0; i < args.length; i++) {
