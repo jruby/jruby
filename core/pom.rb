@@ -299,28 +299,6 @@ project 'JRuby Core' do
 
   end
 
-  profile 'native' do
-
-    activation do
-      file( :missing => '../lib/jni' )
-    end
-
-    plugin :dependency do
-      execute_goals( 'unpack',
-                     :id => 'unzip native',
-                     :phase => 'process-classes',
-                     'excludes' =>  'META-INF,META-INF/*',
-                     'artifactItems' => [ { 'groupId' =>  'com.github.jnr',
-                                            'artifactId' =>  'jffi',
-                                            'version' =>  '${jffi.version}',
-                                            'type' =>  'jar',
-                                            'classifier' =>  'native',
-                                            'overWrite' =>  'false',
-                                            'outputDirectory' =>  '${jruby.basedir}/lib' } ] )
-    end
-
-  end
-
   profile 'test' do
 
     properties( 'maven.test.skip' => 'false' )

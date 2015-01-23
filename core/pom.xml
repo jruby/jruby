@@ -1020,44 +1020,6 @@
       </build>
     </profile>
     <profile>
-      <id>native</id>
-      <activation>
-        <file>
-          <missing>../lib/jni</missing>
-        </file>
-      </activation>
-      <build>
-        <plugins>
-          <plugin>
-            <artifactId>maven-dependency-plugin</artifactId>
-            <executions>
-              <execution>
-                <id>unzip native</id>
-                <phase>process-classes</phase>
-                <goals>
-                  <goal>unpack</goal>
-                </goals>
-                <configuration>
-                  <excludes>META-INF,META-INF/*</excludes>
-                  <artifactItems>
-                    <artifactItem>
-                      <groupId>com.github.jnr</groupId>
-                      <artifactId>jffi</artifactId>
-                      <version>${jffi.version}</version>
-                      <type>jar</type>
-                      <classifier>native</classifier>
-                      <overWrite>false</overWrite>
-                      <outputDirectory>${jruby.basedir}/lib</outputDirectory>
-                    </artifactItem>
-                  </artifactItems>
-                </configuration>
-              </execution>
-            </executions>
-          </plugin>
-        </plugins>
-      </build>
-    </profile>
-    <profile>
       <id>test</id>
       <properties>
         <maven.test.skip>false</maven.test.skip>

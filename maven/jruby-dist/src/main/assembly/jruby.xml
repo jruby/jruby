@@ -23,6 +23,13 @@
         <include>specifications/*</include>
         <include>gems/**/*</include>
       </includes>
+      <excludes>
+        <exclude>gems/*/spec</exclude>
+        <exclude>gems/*/specs</exclude>
+        <exclude>gems/*/test</exclude>
+        <exclude>gems/*/tests</exclude>
+        <exclude>gems/*/features</exclude>
+      </excludes>
     </fileSet>
     <fileSet>
       <directory>${project.parent.parent.basedir}</directory>
@@ -31,7 +38,6 @@
         <include>LICENSE*</include>
         <include>COPYING*</include>
         <include>lib/jruby.jar</include>
-        <include>lib/jni/**/*</include>
         <include>samples/**/*</include>
         <include>docs/**/*</include>
         <include>tool/nailgun/*</include>
