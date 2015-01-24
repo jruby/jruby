@@ -581,17 +581,21 @@ public abstract class FloatNodes {
     @CoreMethod(names = "ceil")
     public abstract static class CeilNode extends CoreMethodNode {
 
+        @Child private FixnumOrBignumNode fixnumOrBignum;
+
         public CeilNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
+            fixnumOrBignum = new FixnumOrBignumNode(context, sourceSection);
         }
 
         public CeilNode(CeilNode prev) {
             super(prev);
+            fixnumOrBignum = prev.fixnumOrBignum;
         }
 
         @Specialization
-        public double ceil(double n) {
-            return Math.ceil(n);
+        public Object ceil(double n) {
+            return fixnumOrBignum.fixnumOrBignum(Math.ceil(n));
         }
 
     }
