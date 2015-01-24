@@ -10,12 +10,32 @@
 
 # Recommended: function jt { ruby tool/jt.rb $@; }
 
+module Utilities
+
+  GRAAL_LOCATIONS = [
+    ENV['GRAAL_BIN'],
+    '../graalvm-jdk1.8.0/bin/java',         # This also seems like a sensible place to keep it
+    '../../graal/graalvm-jdk1.8.0/bin/java' # This is where I (CS) keep it
+  ]
+
+  def self.find_graal
+    GRAAL_LOCATIONS.each do |location|
+      if !location.nil? && File.executable?(location)
+        return location
+      end
+    end
+    # TODO(CS 24-Jan-15) download it?
+    raise "coudln't find graal"
+  end
+
+end
+
 module ShellUtils
   private
 
   def sh(*args)
     system(*args)
-    raise "failed" unless $? == 0
+    raise 'failed' unless $? == 0
   end
 
   def mvn(*args)
@@ -34,6 +54,9 @@ module Commands
     puts 'jt build                                     build'
     puts 'jt clean                                     clean'
     puts 'jt rebuild                                   clean and build'
+    puts 'jt run [options] args...                     run JRuby with -X+T and args'
+    puts '    --graal        use Graal (set GRAAL_BIN or it will try to automagically find it)'
+    puts '    --asm          show assembly (use with --graal)'
     puts 'jt test                                      run all specs'
     puts 'jt test fast                                 run all specs except sub-processes, GC, sleep, ...'
     puts 'jt test spec/ruby/language                   run specs in this directory'
@@ -61,6 +84,26 @@ module Commands
     build
   end
 
+  def run(*args)
+    env_vars = {}
+    jruby_args = []
+
+    while %w[--graal --asm].include? args.first
+      case args.shift
+      when '--graal'
+        env_vars["JAVACMD"] = Utilities.find_graal
+        jruby_args << '-J-server'
+      when '--asm'
+        jruby_args += %w[-J-XX:+UnlockDiagnosticVMOptions -J-XX:CompileCommand=print,*::callRoot]
+      end
+    end
+
+    env_vars['VERIFY_JRUBY'] = '1'
+    jruby_args += args
+
+    sh(env_vars, *%w[bin/jruby -J-cp truffle/target/jruby-truffle-9.0.0.0-SNAPSHOT.jar -X+T], *jruby_args)
+  end
+
   def test(*args)
     options = %w[--excl-tag fails]
     if args.first == 'fast'
@@ -84,7 +127,7 @@ module Commands
 
   def findbugs(report=nil)
     case report
-    when "report"
+    when 'report'
       sh 'tool/truffle-findbugs.sh', '--report' rescue nil
       sh 'open', 'truffle-findbugs-report.html' rescue nil
     when nil
@@ -98,7 +141,7 @@ end
 class JT
   include Commands
 
-  def run(args)
+  def main(args)
     args = args.dup
 
     if args.empty? or %w[-h -help --help].include? args.first
@@ -123,4 +166,4 @@ class JT
   end
 end
 
-JT.new.run(ARGV)
+JT.new.main(ARGV)
