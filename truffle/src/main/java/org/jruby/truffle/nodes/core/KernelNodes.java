@@ -17,6 +17,7 @@ import com.oracle.truffle.api.frame.*;
 import com.oracle.truffle.api.nodes.UnexpectedResultException;
 import com.oracle.truffle.api.source.SourceSection;
 
+import com.oracle.truffle.api.utilities.ConditionProfile;
 import org.jruby.common.IRubyWarnings;
 import org.jruby.runtime.Visibility;
 import org.jruby.truffle.nodes.RubyNode;
@@ -127,6 +128,8 @@ public abstract class KernelNodes {
         @Child private BasicObjectNodes.ReferenceEqualNode referenceEqualNode;
         @Child private CallDispatchHeadNode equalNode;
 
+        private final ConditionProfile sameProfile = ConditionProfile.createBinaryProfile();
+
         public SameOrEqualNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
         }
@@ -135,27 +138,33 @@ public abstract class KernelNodes {
             super(prev);
         }
 
-        protected boolean areSame(VirtualFrame frame, Object left, Object right) {
-            if (referenceEqualNode == null) {
-                CompilerDirectives.transferToInterpreterAndInvalidate();
-                referenceEqualNode = insert(BasicObjectNodesFactory.ReferenceEqualNodeFactory.create(getContext(), getSourceSection(), null, null));
-            }
-            return referenceEqualNode.executeReferenceEqual(frame, left, right);
-        }
-
-        protected boolean areEqual(VirtualFrame frame, Object left, Object right) {
-            if (equalNode == null) {
-                CompilerDirectives.transferToInterpreterAndInvalidate();
-                equalNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext(), false, false, null));
-            }
-            return equalNode.callBoolean(frame, left, "==", null, right);
-        }
-
         public abstract boolean executeSameOrEqual(VirtualFrame frame, Object a, Object b);
 
         @Specialization
         public boolean sameOrEqual(VirtualFrame frame, Object a, Object b) {
-            return areSame(frame, a, b) || areEqual(frame, a, b);
+            if (sameProfile.profile(areSame(frame, a, b))) {
+                return true;
+            } else {
+                return areEqual(frame, a, b);
+            }
+        }
+
+        private boolean areSame(VirtualFrame frame, Object left, Object right) {
+            if (referenceEqualNode == null) {
+                CompilerDirectives.transferToInterpreterAndInvalidate();
+                referenceEqualNode = insert(BasicObjectNodesFactory.ReferenceEqualNodeFactory.create(getContext(), getSourceSection(), null, null));
+            }
+
+            return referenceEqualNode.executeReferenceEqual(frame, left, right);
+        }
+
+        private boolean areEqual(VirtualFrame frame, Object left, Object right) {
+            if (equalNode == null) {
+                CompilerDirectives.transferToInterpreterAndInvalidate();
+                equalNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext(), false, false, null));
+            }
+
+            return equalNode.callBoolean(frame, left, "==", null, right);
         }
 
     }

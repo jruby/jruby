@@ -426,6 +426,8 @@ public abstract class FloatNodes {
     @CoreMethod(names = "==", required = 1)
     public abstract static class EqualNode extends CoreMethodNode {
 
+        @Child private CallDispatchHeadNode fallbackCallNode;
+
         public EqualNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
         }
@@ -455,9 +457,13 @@ public abstract class FloatNodes {
         }
 
         @Specialization(guards = "!isRubyBignum(arguments[1])")
-        public boolean less(@SuppressWarnings("unused") double a, RubyBasicObject other) {
-            // TODO (nirvdrum Dec. 1, 2014): This is a stub. There is one case where this should return 'true', but it's not a trivial fix.
-            return false;
+        public Object equal(VirtualFrame frame, double a, RubyBasicObject b) {
+            if (fallbackCallNode == null) {
+                CompilerDirectives.transferToInterpreter();
+                fallbackCallNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext(), true));
+            }
+
+            return fallbackCallNode.call(frame, a, "equal_fallback", null, b);
         }
     }
 
