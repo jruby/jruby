@@ -574,7 +574,9 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
                     break;
                 }
             } catch (Throwable t) {
-                extractToMethodToAvoidC2Crash(context, instr, t);
+                if (debug) {
+                    extractToMethodToAvoidC2Crash(context, instr, t);
+                }
 
                 ipc = instr.getRPC();
                 if (debug) {
