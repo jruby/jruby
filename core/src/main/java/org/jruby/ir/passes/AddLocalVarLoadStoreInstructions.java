@@ -32,7 +32,7 @@ public class AddLocalVarLoadStoreInstructions extends CompilerPass {
     public Object execute(IRScope s, Object... data) {
         StoreLocalVarPlacementProblem slvp = new StoreLocalVarPlacementProblem();
 
-        // No need to run this pass if we eliminated the dynamic scope!
+        // Only run if we are pushing a scope or we are reusing the parents scope.
         if (!s.getFlags().contains(IRFlags.DYNSCOPE_ELIMINATED) || s.getFlags().contains(IRFlags.REUSE_PARENT_DYNSCOPE)) {
             // Make sure flags are computed
             s.computeScopeFlags();

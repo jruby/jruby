@@ -47,7 +47,7 @@ module JITSpecUtils
       scope.setModule(currModule)
     end
 
-    method = oj.ir.IRBuilder.createIRBuilder(JRuby.runtime, JRuby.runtime.getIRManager()).buildRoot(node)
+    method = oj.ir.IRBuilder.build_root JRuby.runtime.getIRManager(), node
 
     method.prepareForCompilation
 

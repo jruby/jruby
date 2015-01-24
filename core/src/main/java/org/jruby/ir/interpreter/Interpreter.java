@@ -574,7 +574,9 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
                     break;
                 }
             } catch (Throwable t) {
-                extractToMethodToAvoidC2Crash(context, instr, t);
+                if (debug) {
+                    extractToMethodToAvoidC2Crash(context, instr, t);
+                }
 
                 ipc = instr.getRPC();
                 if (debug) {
@@ -733,13 +735,26 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
         Ruby runtime = context.runtime;
         IRScope containingIRScope = evalScope.getStaticScope().getEnclosingScope().getIRScope();
         RootNode rootNode = (RootNode) runtime.parseEval(src.convertToString().getByteList(), file, evalScope, lineNumber);
-        IREvalScript evalScript = IRBuilder.createIRBuilder(runtime, runtime.getIRManager()).buildEvalRoot(evalScope.getStaticScope(), containingIRScope, file, lineNumber, rootNode, evalType);
+        StaticScope staticScope = evalScope.getStaticScope();
+        // Top-level script!
+        IREvalScript script;
 
-        BeginEndInterpreterContext ic = (BeginEndInterpreterContext) evalScript.prepareForInterpretation();
+        if (evalType == EvalType.BINDING_EVAL) {
+            script = new IRBindingEvalScript(runtime.getIRManager(), containingIRScope, file, lineNumber, staticScope, evalType);
+        } else {
+            script = new IREvalScript(runtime.getIRManager(), containingIRScope, file, lineNumber, staticScope, evalType);
+        }
+
+        // We link IRScope to StaticScope because we may add additional variables (like %block).  During execution
+        // we end up growing dynamicscope potentially based on any changes made.
+        staticScope.setIRScope(script);
+
+        IRBuilder.topIRBuilder(runtime.getIRManager(), script).buildEvalRoot(rootNode);
+        BeginEndInterpreterContext ic = (BeginEndInterpreterContext) script.prepareForInterpretation();
 
         if (IRRuntimeHelpers.isDebug()) {
-            LOG.info("Graph:\n" + evalScript.cfg().toStringGraph());
-            LOG.info("CFG:\n" + evalScript.cfg().toStringInstrs());
+            LOG.info("Graph:\n" + script.cfg().toStringGraph());
+            LOG.info("CFG:\n" + script.cfg().toStringInstrs());
         }
 
         return ic;

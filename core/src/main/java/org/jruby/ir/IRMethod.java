@@ -2,7 +2,6 @@ package org.jruby.ir;
 
 import org.jcodings.specific.USASCIIEncoding;
 import org.jruby.ast.MethodDefNode;
-import org.jruby.ast.Node;
 import org.jruby.internal.runtime.methods.IRMethodArgs;
 import org.jruby.ir.instructions.Instr;
 import org.jruby.ir.instructions.ReceiveArgBase;
@@ -67,7 +66,7 @@ public class IRMethod extends IRScope {
     /** Run any necessary passes to get the IR ready for interpretation */
     public synchronized InterpreterContext prepareForInterpretation() {
         if (defn != null) {
-            IRBuilder.newIRBuilder(getManager()).defineMethodInner(defn, this, getLexicalParent());
+            IRBuilder.topIRBuilder(getManager(), this).defineMethodInner(defn, getLexicalParent());
 
             defn = null;
         }
