@@ -1879,12 +1879,12 @@ public class IRBuilder {
                 String argName = ((INameNode) kasgn).getName();
                 Variable av = getNewLocalVariable(argName, 0);
                 Label l = getNewLabel();
-                if (scope instanceof IRMethod) ((IRMethod) scope).addArgDesc(IRMethodArgs.ArgType.key, argName);
+                if (scope instanceof IRMethod) addKeyArgDesc(kasgn, argName);
                 addInstr(new ReceiveKeywordArgInstr(av, argName, required));
                 addInstr(BNEInstr.create(av, UndefinedValue.UNDEFINED, l)); // if 'av' is not undefined, we are done
 
                 // Required kwargs have no value and check_arity will throw if they are not provided.
-                if (kasgn.getValueNode().getNodeType() != NodeType.REQUIRED_KEYWORD_ARGUMENT_VALUE) {
+                if (!isRequiredKeywordArgumentValue(kasgn)) {
                     build(kasgn);
                 } else {
                     addInstr(new RaiseRequiredKeywordArgumentError(argName));
@@ -1904,6 +1904,18 @@ public class IRBuilder {
 
         // Block arg
         receiveBlockArg(argsNode);
+    }
+
+    private void addKeyArgDesc(AssignableNode kasgn, String argName) {
+        if (isRequiredKeywordArgumentValue(kasgn)) {
+            ((IRMethod) scope).addArgDesc(IRMethodArgs.ArgType.keyreq, argName);
+        } else {
+            ((IRMethod) scope).addArgDesc(IRMethodArgs.ArgType.key, argName);
+        }
+    }
+
+    private boolean isRequiredKeywordArgumentValue(AssignableNode kasgn) {
+        return (kasgn.getValueNode().getNodeType()) ==  NodeType.REQUIRED_KEYWORD_ARGUMENT_VALUE;
     }
 
     // This method is called to build arguments
