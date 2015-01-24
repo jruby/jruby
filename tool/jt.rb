@@ -56,6 +56,7 @@ module Commands
     puts 'jt rebuild                                   clean and build'
     puts 'jt run [options] args...                     run JRuby with -X+T and args'
     puts '    --graal        use Graal (set GRAAL_BIN or it will try to automagically find it)'
+    puts '    --asm          show assembly (use with --graal)'
     puts 'jt test                                      run all specs'
     puts 'jt test fast                                 run all specs except sub-processes, GC, sleep, ...'
     puts 'jt test spec/ruby/language                   run specs in this directory'
@@ -87,10 +88,14 @@ module Commands
     env_vars = {}
     jruby_args = []
 
-    if args.first == '--graal'
-      env_vars["JAVACMD"] = Utilities.find_graal
-      jruby_args << '-J-server'
-      args.shift
+    while %w[--graal --asm].include? args.first
+      case args.shift
+      when '--graal'
+        env_vars["JAVACMD"] = Utilities.find_graal
+        jruby_args << '-J-server'
+      when '--asm'
+        jruby_args += %w[-J-XX:+UnlockDiagnosticVMOptions -J-XX:CompileCommand=print,*::callRoot]
+      end
     end
 
     env_vars['VERIFY_JRUBY'] = '1'
