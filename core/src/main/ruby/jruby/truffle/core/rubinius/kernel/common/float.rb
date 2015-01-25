@@ -65,7 +65,11 @@ class Float < Numeric
       super
     end
   end
-  
+
   alias_method :quo, :/
+
+  def finite?
+    not (nan? or infinite?)
+  end
 
 end
