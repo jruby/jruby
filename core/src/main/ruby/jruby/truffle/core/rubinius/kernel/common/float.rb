@@ -58,6 +58,18 @@ class Float < Numeric
     raise PrimitiveFailure, "Float#negative primitive failed"
   end
 
+  def numerator
+    if nan?
+      NAN
+    elsif infinite? == 1
+      INFINITY
+    elsif infinite? == -1
+      -INFINITY
+    else
+      super
+    end
+  end
+
   def denominator
     if infinite? || nan?
       1
