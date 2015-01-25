@@ -57,7 +57,7 @@ class Float < Numeric
     Rubinius.primitive :float_negative
     raise PrimitiveFailure, "Float#negative primitive failed"
   end
-  
+
   def denominator
     if infinite? || nan?
       1
@@ -65,5 +65,7 @@ class Float < Numeric
       super
     end
   end
+  
+  alias_method :quo, :/
 
 end
