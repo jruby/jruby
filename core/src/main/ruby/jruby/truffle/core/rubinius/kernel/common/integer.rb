@@ -123,4 +123,50 @@ class Integer < Numeric
     Rational(self, 1)
   end
 
+  def round(ndigits=undefined)
+    return self if undefined.equal? ndigits
+
+    if ndigits.kind_of? Numeric
+      if ndigits > Fixnum::MAX or ndigits <= Fixnum::MIN
+        raise RangeError, "precision is outside of the range of Fixnum"
+      end
+    end
+
+    ndigits = Rubinius::Type.coerce_to ndigits, Integer, :to_int
+
+    if ndigits > 0
+      to_f
+    elsif ndigits == 0
+      self
+    else
+      ndigits = -ndigits
+
+      # We want to return 0 if 10 ** ndigits / 2 > self.abs, or, taking
+      # log_256 of both sides, if log_256(10 ** ndigits / 2) > self.size.
+      # We have log_256(10) > 0.415241 and log_256(2) = 0.125, so:
+      return 0 if 0.415241 * ndigits - 0.125 > size
+
+      f = 10 ** ndigits
+
+      if kind_of? Fixnum and f.kind_of? Fixnum
+        x = self < 0 ? -self : self
+        x = (x + f / 2) / f * f
+        x = -x if self < 0
+        return x
+      end
+
+      return 0 if f.kind_of? Float
+
+      h = f / 2
+      r = self % f
+      n = self - r
+
+      unless self < 0 ? r <= h : r < h
+        n += f
+      end
+
+      n
+    end
+  end
+
 end
