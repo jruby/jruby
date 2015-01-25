@@ -135,14 +135,13 @@ public abstract class DirNodes {
 
             String absoluteGlob;
 
-            if (!glob.startsWith("/")) {
+            if (!glob.startsWith("/") && !org.jruby.RubyFile.startsWithDriveLetterOnWindows(glob)) {
                 absoluteGlob = new File(".", glob).getAbsolutePath();
             } else {
                 absoluteGlob = glob;
             }
 
             // Get the first star
-
             final int firstStar = absoluteGlob.indexOf('*');
             assert firstStar >= 0;
 
