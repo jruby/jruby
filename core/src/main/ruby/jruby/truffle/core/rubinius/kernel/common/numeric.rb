@@ -135,4 +135,8 @@ class Numeric
   alias_method :angle, :arg
   alias_method :phase, :arg
 
+  def ceil
+    FloatValue(self).ceil
+  end
+
 end
