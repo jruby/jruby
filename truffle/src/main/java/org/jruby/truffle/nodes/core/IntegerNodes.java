@@ -27,55 +27,6 @@ import org.jruby.truffle.runtime.core.RubyString;
 @CoreClass(name = "Integer")
 public abstract class IntegerNodes {
 
-    @CoreMethod(names = "chr")
-    public abstract static class ChrNode extends CoreMethodNode {
-
-        public ChrNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
-        public ChrNode(ChrNode prev) {
-            super(prev);
-        }
-
-        @Specialization
-        public RubyString chr(int n) {
-            notDesignedForCompilation();
-
-            // TODO(CS): not sure about encoding here
-            return getContext().makeString((char) n);
-        }
-
-    }
-
-    @CoreMethod(names = "floor")
-    public abstract static class FloorNode extends CoreMethodNode {
-
-        public FloorNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
-        public FloorNode(FloorNode prev) {
-            super(prev);
-        }
-
-        @Specialization
-        public int floor(int n) {
-            return n;
-        }
-
-        @Specialization
-        public long floor(long n) {
-            return n;
-        }
-
-        @Specialization
-        public RubyBignum floor(RubyBignum n) {
-            return n;
-        }
-
-    }
-
     @CoreMethod(names = "times", needsBlock = true)
     public abstract static class TimesNode extends YieldingCoreMethodNode {
 

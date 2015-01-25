@@ -64,5 +64,29 @@ class Integer < Numeric
 
   alias_method :succ, :next
   alias_method :ceil, :to_i
+  alias_method :floor, :to_i
+
+  def chr(enc=undefined)
+    if self < 0 || (self & 0xffff_ffff) != self
+      raise RangeError, "#{self} is outside of the valid character range"
+    end
+
+    if undefined.equal? enc
+      if 0xff < self
+        enc = Encoding.default_internal
+        if enc.nil?
+          raise RangeError, "#{self} is outside of the valid character range"
+        end
+      elsif self < 0x80
+        enc = Encoding::US_ASCII
+      else
+        enc = Encoding::ASCII_8BIT
+      end
+    else
+      enc = Rubinius::Type.coerce_to_encoding enc
+    end
+
+    String.from_codepoint self, enc
+  end
 
 end

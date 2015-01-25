@@ -709,18 +709,27 @@ public class CoreLibrary {
         return new RubyException(edomClass, context.makeString(String.format("Numerical argument is out of domain - \"%s\"", method)), RubyCallStack.getBacktrace(currentNode));
     }
 
+    public RubyException rangeError(int code, RubyEncoding encoding, Node currentNode) {
+        CompilerAsserts.neverPartOfCompilation();
+        return rangeError(String.format("invalid codepoint %x in %s", code, encoding.getEncoding()), currentNode);
+    }
+
     public RubyException rangeError(String type, String value, String range, Node currentNode) {
         CompilerAsserts.neverPartOfCompilation();
-        return new RubyException(rangeErrorClass, context.makeString(String.format("%s %s out of range of %s", type, value, range)), RubyCallStack.getBacktrace(currentNode));
+        return rangeError(String.format("%s %s out of range of %s", type, value, range), currentNode);
     }
 
     public RubyException rangeError(RubyRange.IntegerFixnumRange range, Node currentNode) {
         CompilerAsserts.neverPartOfCompilation();
-        return new RubyException(rangeErrorClass, context.makeString(String.format("%d..%s%d out of range",
-                    range.getBegin(),
-                    range.doesExcludeEnd() ? "." : "",
-                    range.getEnd())),
-                RubyCallStack.getBacktrace(currentNode));
+        return rangeError(String.format("%d..%s%d out of range",
+                range.getBegin(),
+                range.doesExcludeEnd() ? "." : "",
+                range.getEnd()), currentNode);
+    }
+
+    public RubyException rangeError(String message, Node currentNode) {
+        CompilerAsserts.neverPartOfCompilation();
+        return new RubyException(rangeErrorClass, context.makeString(message), RubyCallStack.getBacktrace(currentNode));
     }
 
     public RubyException internalError(String message, Node currentNode) {

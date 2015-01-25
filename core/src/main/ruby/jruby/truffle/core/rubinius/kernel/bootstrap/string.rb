@@ -28,6 +28,11 @@
 
 class String
 
+  def self.from_codepoint(code, enc)
+    Rubinius.primitive :string_from_codepoint
+    raise PrimitiveFailure, "String.from_codepoint primitive failed"
+  end
+
   def find_string(pattern, start)
     Rubinius.primitive :string_index
     raise PrimitiveFailure, "String#find_string primitive failed"
