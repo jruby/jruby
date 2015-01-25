@@ -144,4 +144,8 @@ class Numeric
   end
   alias_method :conj, :conjugate
 
+  def floor
+    FloatValue(self).floor
+  end
+
 end
