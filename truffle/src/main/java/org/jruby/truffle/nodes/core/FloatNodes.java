@@ -287,22 +287,22 @@ public abstract class FloatNodes {
         }
 
         @Specialization
-        public double mod(@SuppressWarnings("unused") double a, @SuppressWarnings("unused") int b) {
+        public double mod(double a, int b) {
             throw new UnsupportedOperationException();
         }
 
         @Specialization
-        public double mod(@SuppressWarnings("unused") double a, @SuppressWarnings("unused") long b) {
+        public double mod(double a, long b) {
             throw new UnsupportedOperationException();
         }
 
         @Specialization
-        public double mod(@SuppressWarnings("unused") double a, @SuppressWarnings("unused") double b) {
+        public double mod(double a, double b) {
             throw new UnsupportedOperationException();
         }
 
         @Specialization
-        public double mod(@SuppressWarnings("unused") double a, @SuppressWarnings("unused") RubyBignum b) {
+        public double mod(double a, RubyBignum b) {
             throw new UnsupportedOperationException();
         }
 
@@ -311,32 +311,36 @@ public abstract class FloatNodes {
     @CoreMethod(names = "divmod", required = 1)
     public abstract static class DivModNode extends CoreMethodNode {
 
+        @Child private GeneralDivModNode divModNode;
+
         public DivModNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
+            divModNode = new GeneralDivModNode(context, sourceSection);
         }
 
         public DivModNode(DivModNode prev) {
             super(prev);
+            divModNode = prev.divModNode;
         }
 
         @Specialization
-        public RubyArray divMod(@SuppressWarnings("unused") double a, @SuppressWarnings("unused") int b) {
-            throw new UnsupportedOperationException();
+        public RubyArray divMod(double a, int b) {
+            return divModNode.execute(a, b);
         }
 
         @Specialization
-        public RubyArray divMod(@SuppressWarnings("unused") double a, @SuppressWarnings("unused") long b) {
-            throw new UnsupportedOperationException();
+        public RubyArray divMod(double a, long b) {
+            return divModNode.execute(a, b);
         }
 
         @Specialization
-        public RubyArray divMod(@SuppressWarnings("unused") double a, @SuppressWarnings("unused") double b) {
-            throw new UnsupportedOperationException();
+        public RubyArray divMod(double a, double b) {
+            return divModNode.execute(a, b);
         }
 
         @Specialization
-        public RubyArray divMod(@SuppressWarnings("unused") double a, @SuppressWarnings("unused") RubyBignum b) {
-            throw new UnsupportedOperationException();
+        public RubyArray divMod(double a, RubyBignum b) {
+            return divModNode.execute(a, b);
         }
 
     }
@@ -373,7 +377,7 @@ public abstract class FloatNodes {
         }
 
         @Specialization(guards = "!isRubyBignum(arguments[1])")
-        public boolean less(@SuppressWarnings("unused") double a, RubyBasicObject other) {
+        public boolean less(double a, RubyBasicObject other) {
             throw new RaiseException(new RubyException(
                     getContext().getCoreLibrary().getArgumentErrorClass(),
                     getContext().makeString(String.format("comparison of Float with %s failed", other.getLogicalClass().getName())),
@@ -414,7 +418,7 @@ public abstract class FloatNodes {
         }
 
         @Specialization(guards = "!isRubyBignum(arguments[1])")
-        public boolean less(@SuppressWarnings("unused") double a, RubyBasicObject other) {
+        public boolean less(double a, RubyBasicObject other) {
             throw new RaiseException(new RubyException(
                     getContext().getCoreLibrary().getArgumentErrorClass(),
                     getContext().makeString(String.format("comparison of Float with %s failed", other.getLogicalClass().getName())),
@@ -556,7 +560,7 @@ public abstract class FloatNodes {
         }
 
         @Specialization(guards = "!isRubyBignum(arguments[1])")
-        public boolean less(@SuppressWarnings("unused") double a, RubyBasicObject other) {
+        public boolean less(double a, RubyBasicObject other) {
             throw new RaiseException(new RubyException(
                     getContext().getCoreLibrary().getArgumentErrorClass(),
                     getContext().makeString(String.format("comparison of Float with %s failed", other.getLogicalClass().getName())),
@@ -597,7 +601,7 @@ public abstract class FloatNodes {
         }
 
         @Specialization(guards = "!isRubyBignum(arguments[1])")
-        public boolean less(@SuppressWarnings("unused") double a, RubyBasicObject other) {
+        public boolean less(double a, RubyBasicObject other) {
             throw new RaiseException(new RubyException(
                     getContext().getCoreLibrary().getArgumentErrorClass(),
                     getContext().makeString(String.format("comparison of Float with %s failed", other.getLogicalClass().getName())),
