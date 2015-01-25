@@ -139,4 +139,9 @@ class Numeric
     FloatValue(self).ceil
   end
 
+  def conjugate
+    self
+  end
+  alias_method :conj, :conjugate
+
 end
