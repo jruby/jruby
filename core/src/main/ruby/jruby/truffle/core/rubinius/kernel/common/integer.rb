@@ -63,5 +63,6 @@ class Integer < Numeric
   end
 
   alias_method :succ, :next
+  alias_method :ceil, :to_i
 
 end
