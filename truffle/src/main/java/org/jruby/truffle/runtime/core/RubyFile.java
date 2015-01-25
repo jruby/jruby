@@ -62,11 +62,7 @@ public class RubyFile extends RubyBasicObject {
          * implementation, but it looks quite tied to their data structures.
          */
 
-        try {
-            return new File(dir, fileName).getCanonicalPath();
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
+        return org.jruby.RubyFile.canonicalize(new File(dir, fileName).getAbsolutePath());
     }
 
     public static RubyFile open(RubyContext context, String fileName, String mode) {
