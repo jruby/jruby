@@ -1,1 +1,0 @@
-fails:Integer#integer? returns true for Integers

@@ -107,4 +107,8 @@ class Integer < Numeric
     end
   end
 
+  def integer?
+    true
+  end
+
 end
