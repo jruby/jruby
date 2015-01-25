@@ -267,7 +267,7 @@ public abstract class FloatNodes {
         public Object div(VirtualFrame frame, double a, Object b) {
             if (redoCoercedNode == null) {
                 CompilerDirectives.transferToInterpreter();
-                redoCoercedNode = DispatchHeadNodeFactory.createMethodCall(getContext(), true);
+                redoCoercedNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext(), true));
             }
 
             return redoCoercedNode.call(frame, a, "redo_coerced", null, getContext().getSymbolTable().getSymbol("/"), b);
