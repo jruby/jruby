@@ -178,4 +178,36 @@ class Numeric
   end
   alias_method :rectangular, :rect
 
+  def truncate
+    Float(self).truncate
+  end
+
+  def round
+    to_f.round
+  end
+
+  def polar
+    return abs, arg
+  end
+
+  # Delegate #to_int to #to_i in subclasses
+  def to_int
+    to_i
+  end
+
+  def integer?
+    false
+  end
+
+  def modulo(other)
+    self - other * self.div(other)
+  end
+  alias_method :%, :modulo
+
+  def quo(other)
+    Rubinius.privately do
+      Rational.convert(self, 1, false) / other
+    end
+  end
+
 end

@@ -1,7 +1,0 @@
-fails:Numeric#quo returns the result of self divided by the given Integer as a Rational
-fails:Numeric#quo returns the result of self divided by the given Float as a Float
-fails:Numeric#quo returns the result of self divided by the given Bignum as a Float
-fails:Numeric#quo raises a ZeroDivisionError when the given Integer is 0
-fails:Numeric#quo calls #to_r to convert the object to a Rational
-fails:Numeric#quo raises a TypeError of #to_r does not return a Rational
-fails:Numeric#quo raises a TypeError when given a non-Integer
