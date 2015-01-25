@@ -1,1 +1,0 @@
-fails:Float#floor returns the largest Integer less than or equal to self
