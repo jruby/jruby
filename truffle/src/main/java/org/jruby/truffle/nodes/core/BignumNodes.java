@@ -14,6 +14,7 @@ import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.utilities.BranchProfile;
 
+import com.oracle.truffle.api.utilities.ConditionProfile;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyArray;
 import org.jruby.truffle.runtime.core.RubyBignum;
@@ -352,6 +353,8 @@ public abstract class BignumNodes {
     @CoreMethod(names = "<=>", required = 1)
     public abstract static class CompareNode extends CoreMethodNode {
 
+        private final ConditionProfile negativeInfinityProfile = ConditionProfile.createBinaryProfile();
+
         public CompareNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
         }
@@ -372,7 +375,11 @@ public abstract class BignumNodes {
 
         @Specialization
         public int compare(RubyBignum a, double b) {
-            return Double.compare(a.doubleValue(), b);
+            if (negativeInfinityProfile.profile(Double.isInfinite(b) && b < 0)) {
+                return 1;
+            } else {
+                return Double.compare(a.doubleValue(), b);
+            }
         }
 
         @Specialization

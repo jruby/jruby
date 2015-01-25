@@ -478,10 +478,50 @@ public abstract class FloatNodes {
             super(prev);
         }
 
-        @Specialization
+        @Specialization(guards = "isNaN(arguments[0])")
+        public RubyNilClass compareFirstNaN(double a, Object b) {
+            return getContext().getCoreLibrary().getNilObject();
+        }
+
+        @Specialization(guards = "isNaN(arguments[1])")
+        public RubyNilClass compareSecondNaN(Object a, double b) {
+            return getContext().getCoreLibrary().getNilObject();
+        }
+
+        @Specialization(guards = {"!isNaN(arguments[0])"})
+        public int compare(double a, int b) {
+            return Double.compare(a, b);
+        }
+
+        @Specialization(guards = {"!isNaN(arguments[0])"})
+        public int compare(double a, long b) {
+            return Double.compare(a, b);
+        }
+
+        @Specialization(guards = "isInfinity(arguments[0])")
+        public int compareInfinity(double a, RubyBignum b) {
+            if (a < 0) {
+                return -1;
+            } else {
+                return +1;
+            }
+        }
+
+        @Specialization(guards = {"!isNaN(arguments[0])", "!isInfinity(arguments[0])"})
+        public int compare(double a, RubyBignum b) {
+            return Double.compare(a, b.doubleValue());
+        }
+
+        @Specialization(guards = {"!isNaN(arguments[0])", "!isNaN(arguments[1])"})
         public int compare(double a, double b) {
             return Double.compare(a, b);
         }
+
+        @Specialization(guards = {"!isNaN(arguments[0])", "!isRubyBignum(arguments[1])"})
+        public RubyNilClass compare(double a, RubyBasicObject b) {
+            return getContext().getCoreLibrary().getNilObject();
+        }
+
     }
 
     @CoreMethod(names = ">=", required = 1)
