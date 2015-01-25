@@ -236,7 +236,7 @@ public abstract class IntegerNodes {
 
     }
 
-    @CoreMethod(names = "upto", needsBlock = true, required = 1)
+    @CoreMethod(names = "upto", needsBlock = true, required = 1, unsupportedOperationBehavior = UnsupportedOperationBehavior.ARGUMENT_ERROR)
     public abstract static class UpToNode extends YieldingCoreMethodNode {
 
         private final BranchProfile breakProfile = BranchProfile.create();
@@ -284,6 +284,12 @@ public abstract class IntegerNodes {
             }
 
             return getContext().getCoreLibrary().getNilObject();
+        }
+
+        @Specialization
+        public Object upto(VirtualFrame frame, int from, double to, RubyProc block) {
+            notDesignedForCompilation();
+            return upto(frame, from, (int) Math.floor(to), block);
         }
 
         @Specialization
