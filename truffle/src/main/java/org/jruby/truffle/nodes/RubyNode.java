@@ -283,6 +283,14 @@ public abstract class RubyNode extends Node implements ProbeNode.Instrumentable 
         return (object instanceof TruffleObject) && !(isRubyBasicObject(object));
     }
 
+    public boolean isNaN(double value) {
+        return Double.isNaN(value);
+    }
+
+    public boolean isInfinity(double value) {
+        return Double.isInfinite(value);
+    }
+
     // Copied from RubyTypesGen
 
     @SuppressWarnings("static-method")

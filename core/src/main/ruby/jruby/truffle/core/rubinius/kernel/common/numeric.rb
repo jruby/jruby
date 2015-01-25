@@ -112,4 +112,12 @@ class Numeric
     true
   end
 
+  def numerator
+    to_r.numerator
+  end
+  
+  def denominator
+    to_r.denominator
+  end
+
 end

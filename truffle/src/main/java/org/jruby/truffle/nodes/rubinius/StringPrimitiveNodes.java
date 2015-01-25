@@ -59,8 +59,9 @@ public abstract class StringPrimitiveNodes {
         }
 
         @Specialization
-        public RubyString stringToF(RubyString string) {
-            throw new UnsupportedOperationException("string_to_f");
+        public double stringToF(RubyString string) {
+            notDesignedForCompilation();
+            return Double.parseDouble(string.toString());
         }
 
     }

@@ -11,5 +11,3 @@ fails:Float#to_s uses e format for a positive value with whole part having 18 si
 fails:Float#to_s uses e format for a negative value with whole part having 18 significant figures
 fails:Float#to_s uses non-e format for a positive value with whole part having 17 significant figures
 fails:Float#to_s uses non-e format for a negative value with whole part having 17 significant figures
-fails:Float#to_s returns a String in US-ASCII encoding when Encoding.default_internal is nil
-fails:Float#to_s returns a String in US-ASCII encoding when Encoding.default_internal is not nil

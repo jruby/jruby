@@ -47,8 +47,8 @@ public class GeneralDivModNode extends RubyNode {
         return divMod(a, b);
     }
 
-    public RubyArray execute(int a, BigInteger b) {
-        return divMod(BigInteger.valueOf(a), b);
+    public RubyArray execute(int a, RubyBignum b) {
+        return divMod(BigInteger.valueOf(a), b.bigIntegerValue());
     }
 
     public RubyArray execute(int a, double b) {
@@ -81,6 +81,22 @@ public class GeneralDivModNode extends RubyNode {
 
     public RubyArray execute(RubyBignum a, RubyBignum b) {
         return divMod(a.bigIntegerValue(), b.bigIntegerValue());
+    }
+
+    public RubyArray execute(double a, int b) {
+        return divMod(a, b);
+    }
+
+    public RubyArray execute(double a, long b) {
+        return divMod(a, b);
+    }
+
+    public RubyArray execute(double a, RubyBignum b) {
+        return divMod(a, b.doubleValue());
+    }
+
+    public RubyArray execute(double a, double b) {
+        return divMod(a, b);
     }
 
     /*
@@ -151,7 +167,9 @@ public class GeneralDivModNode extends RubyNode {
             mod += b;
         }
 
-        return new RubyArray(getContext().getCoreLibrary().getArrayClass(), new Object[]{div, mod}, 2);
+        return new RubyArray(getContext().getCoreLibrary().getArrayClass(), new Object[]{
+                fixnumOrBignumQuotient.fixnumOrBignum(div),
+                mod}, 2);
     }
 
     @CompilerDirectives.TruffleBoundary

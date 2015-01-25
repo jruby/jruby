@@ -1,1 +1,0 @@
-fails:Float#nan? returns true if self is not a valid IEEE floating-point number

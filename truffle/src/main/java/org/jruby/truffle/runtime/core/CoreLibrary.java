@@ -200,6 +200,9 @@ public class CoreLibrary {
         standardErrorClass = new RubyClass(context, objectClass, exceptionClass, "StandardError");
         standardErrorClass.setAllocator(new RubyException.ExceptionAllocator());
 
+        rangeErrorClass = new RubyClass(context, objectClass, standardErrorClass, "RangeError");
+        rangeErrorClass.setAllocator(new RubyException.ExceptionAllocator());
+
         RubyClass signalExceptionClass = new RubyClass(context, objectClass, exceptionClass, "SignalException");
         signalExceptionClass.setAllocator(new RubyException.ExceptionAllocator());
 
@@ -255,8 +258,6 @@ public class CoreLibrary {
         procClass.setAllocator(new RubyProc.ProcAllocator());
         processClass = new RubyClass(context, objectClass, objectClass, "Process");
         rangeClass = new RubyClass(context, objectClass, objectClass, "Range");
-        rangeErrorClass = new RubyClass(context, objectClass, standardErrorClass, "RangeError");
-        rangeErrorClass.setAllocator(new RubyException.ExceptionAllocator());
         rationalClass = new RubyClass(context, objectClass, numericClass, "Rational");
         regexpClass = new RubyClass(context, objectClass, objectClass, "Regexp");
         regexpClass.setAllocator(new RubyRegexp.RegexpAllocator());

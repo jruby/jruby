@@ -41,4 +41,60 @@ class Float < Numeric
     (f * (RADIX ** e)).to_r
   end
 
+  def arg
+    if nan?
+      self
+    elsif negative?
+      Math::PI
+    else
+      0
+    end
+  end
+  alias_method :angle, :arg
+  alias_method :phase, :arg
+
+  def negative?
+    Rubinius.primitive :float_negative
+    raise PrimitiveFailure, "Float#negative primitive failed"
+  end
+
+  def numerator
+    if nan?
+      NAN
+    elsif infinite? == 1
+      INFINITY
+    elsif infinite? == -1
+      -INFINITY
+    else
+      super
+    end
+  end
+
+  def denominator
+    if infinite? || nan?
+      1
+    else
+      super
+    end
+  end
+
+  alias_method :quo, :/
+  alias_method :modulo, :%
+
+  def finite?
+    not (nan? or infinite?)
+  end
+
+  def rationalize(eps=undefined)
+    if undefined.equal?(eps)
+      f, n = Math.frexp self
+      f = Math.ldexp(f, Float::MANT_DIG).to_i
+      n -= Float::MANT_DIG
+
+      Rational.new(2 * f, 1 << (1 - n)).rationalize(Rational.new(1, 1 << (1 - n)))
+    else
+      to_r.rationalize(eps)
+    end
+  end
+
 end

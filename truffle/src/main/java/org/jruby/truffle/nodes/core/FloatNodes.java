@@ -267,7 +267,7 @@ public abstract class FloatNodes {
         public Object div(VirtualFrame frame, double a, Object b) {
             if (redoCoercedNode == null) {
                 CompilerDirectives.transferToInterpreter();
-                redoCoercedNode = DispatchHeadNodeFactory.createMethodCall(getContext(), true);
+                redoCoercedNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext(), true));
             }
 
             return redoCoercedNode.call(frame, a, "redo_coerced", null, getContext().getSymbolTable().getSymbol("/"), b);
@@ -278,6 +278,8 @@ public abstract class FloatNodes {
     @CoreMethod(names = "%", required = 1)
     public abstract static class ModNode extends CoreMethodNode {
 
+        private ConditionProfile lessThanZeroProfile = ConditionProfile.createBinaryProfile();
+
         public ModNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
         }
@@ -287,23 +289,34 @@ public abstract class FloatNodes {
         }
 
         @Specialization
-        public double mod(@SuppressWarnings("unused") double a, @SuppressWarnings("unused") int b) {
-            throw new UnsupportedOperationException();
+        public double mod(double a, int b) {
+            return mod(a, (double) b);
         }
 
         @Specialization
-        public double mod(@SuppressWarnings("unused") double a, @SuppressWarnings("unused") long b) {
-            throw new UnsupportedOperationException();
+        public double mod(double a, long b) {
+            return mod(a, (double) b);
         }
 
         @Specialization
-        public double mod(@SuppressWarnings("unused") double a, @SuppressWarnings("unused") double b) {
-            throw new UnsupportedOperationException();
+        public double mod(double a, double b) {
+            if (b == 0) {
+                CompilerDirectives.transferToInterpreter();
+                throw new RaiseException(getContext().getCoreLibrary().zeroDivisionError(this));
+            }
+
+            double result = Math.IEEEremainder(a, b);
+
+            if (lessThanZeroProfile.profile(b * result < 0)) {
+                result += b;
+            }
+
+            return result;
         }
 
         @Specialization
-        public double mod(@SuppressWarnings("unused") double a, @SuppressWarnings("unused") RubyBignum b) {
-            throw new UnsupportedOperationException();
+        public double mod(double a, RubyBignum b) {
+            return mod(a, b.doubleValue());
         }
 
     }
@@ -311,32 +324,36 @@ public abstract class FloatNodes {
     @CoreMethod(names = "divmod", required = 1)
     public abstract static class DivModNode extends CoreMethodNode {
 
+        @Child private GeneralDivModNode divModNode;
+
         public DivModNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
+            divModNode = new GeneralDivModNode(context, sourceSection);
         }
 
         public DivModNode(DivModNode prev) {
             super(prev);
+            divModNode = prev.divModNode;
         }
 
         @Specialization
-        public RubyArray divMod(@SuppressWarnings("unused") double a, @SuppressWarnings("unused") int b) {
-            throw new UnsupportedOperationException();
+        public RubyArray divMod(double a, int b) {
+            return divModNode.execute(a, b);
         }
 
         @Specialization
-        public RubyArray divMod(@SuppressWarnings("unused") double a, @SuppressWarnings("unused") long b) {
-            throw new UnsupportedOperationException();
+        public RubyArray divMod(double a, long b) {
+            return divModNode.execute(a, b);
         }
 
         @Specialization
-        public RubyArray divMod(@SuppressWarnings("unused") double a, @SuppressWarnings("unused") double b) {
-            throw new UnsupportedOperationException();
+        public RubyArray divMod(double a, double b) {
+            return divModNode.execute(a, b);
         }
 
         @Specialization
-        public RubyArray divMod(@SuppressWarnings("unused") double a, @SuppressWarnings("unused") RubyBignum b) {
-            throw new UnsupportedOperationException();
+        public RubyArray divMod(double a, RubyBignum b) {
+            return divModNode.execute(a, b);
         }
 
     }
@@ -373,7 +390,7 @@ public abstract class FloatNodes {
         }
 
         @Specialization(guards = "!isRubyBignum(arguments[1])")
-        public boolean less(@SuppressWarnings("unused") double a, RubyBasicObject other) {
+        public boolean less(double a, RubyBasicObject other) {
             throw new RaiseException(new RubyException(
                     getContext().getCoreLibrary().getArgumentErrorClass(),
                     getContext().makeString(String.format("comparison of Float with %s failed", other.getLogicalClass().getName())),
@@ -414,7 +431,7 @@ public abstract class FloatNodes {
         }
 
         @Specialization(guards = "!isRubyBignum(arguments[1])")
-        public boolean less(@SuppressWarnings("unused") double a, RubyBasicObject other) {
+        public boolean less(double a, RubyBasicObject other) {
             throw new RaiseException(new RubyException(
                     getContext().getCoreLibrary().getArgumentErrorClass(),
                     getContext().makeString(String.format("comparison of Float with %s failed", other.getLogicalClass().getName())),
@@ -425,6 +442,8 @@ public abstract class FloatNodes {
 
     @CoreMethod(names = "==", required = 1)
     public abstract static class EqualNode extends CoreMethodNode {
+
+        @Child private CallDispatchHeadNode fallbackCallNode;
 
         public EqualNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -455,9 +474,13 @@ public abstract class FloatNodes {
         }
 
         @Specialization(guards = "!isRubyBignum(arguments[1])")
-        public boolean less(@SuppressWarnings("unused") double a, RubyBasicObject other) {
-            // TODO (nirvdrum Dec. 1, 2014): This is a stub. There is one case where this should return 'true', but it's not a trivial fix.
-            return false;
+        public Object equal(VirtualFrame frame, double a, RubyBasicObject b) {
+            if (fallbackCallNode == null) {
+                CompilerDirectives.transferToInterpreter();
+                fallbackCallNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext(), true));
+            }
+
+            return fallbackCallNode.call(frame, a, "equal_fallback", null, b);
         }
     }
 
@@ -472,10 +495,50 @@ public abstract class FloatNodes {
             super(prev);
         }
 
-        @Specialization
+        @Specialization(guards = "isNaN(arguments[0])")
+        public RubyNilClass compareFirstNaN(double a, Object b) {
+            return getContext().getCoreLibrary().getNilObject();
+        }
+
+        @Specialization(guards = "isNaN(arguments[1])")
+        public RubyNilClass compareSecondNaN(Object a, double b) {
+            return getContext().getCoreLibrary().getNilObject();
+        }
+
+        @Specialization(guards = {"!isNaN(arguments[0])"})
+        public int compare(double a, int b) {
+            return Double.compare(a, b);
+        }
+
+        @Specialization(guards = {"!isNaN(arguments[0])"})
+        public int compare(double a, long b) {
+            return Double.compare(a, b);
+        }
+
+        @Specialization(guards = "isInfinity(arguments[0])")
+        public int compareInfinity(double a, RubyBignum b) {
+            if (a < 0) {
+                return -1;
+            } else {
+                return +1;
+            }
+        }
+
+        @Specialization(guards = {"!isNaN(arguments[0])", "!isInfinity(arguments[0])"})
+        public int compare(double a, RubyBignum b) {
+            return Double.compare(a, b.doubleValue());
+        }
+
+        @Specialization(guards = {"!isNaN(arguments[0])", "!isNaN(arguments[1])"})
         public int compare(double a, double b) {
             return Double.compare(a, b);
         }
+
+        @Specialization(guards = {"!isNaN(arguments[0])", "!isRubyBignum(arguments[1])"})
+        public RubyNilClass compare(double a, RubyBasicObject b) {
+            return getContext().getCoreLibrary().getNilObject();
+        }
+
     }
 
     @CoreMethod(names = ">=", required = 1)
@@ -510,7 +573,7 @@ public abstract class FloatNodes {
         }
 
         @Specialization(guards = "!isRubyBignum(arguments[1])")
-        public boolean less(@SuppressWarnings("unused") double a, RubyBasicObject other) {
+        public boolean less(double a, RubyBasicObject other) {
             throw new RaiseException(new RubyException(
                     getContext().getCoreLibrary().getArgumentErrorClass(),
                     getContext().makeString(String.format("comparison of Float with %s failed", other.getLogicalClass().getName())),
@@ -551,7 +614,7 @@ public abstract class FloatNodes {
         }
 
         @Specialization(guards = "!isRubyBignum(arguments[1])")
-        public boolean less(@SuppressWarnings("unused") double a, RubyBasicObject other) {
+        public boolean less(double a, RubyBasicObject other) {
             throw new RaiseException(new RubyException(
                     getContext().getCoreLibrary().getArgumentErrorClass(),
                     getContext().makeString(String.format("comparison of Float with %s failed", other.getLogicalClass().getName())),
@@ -581,17 +644,21 @@ public abstract class FloatNodes {
     @CoreMethod(names = "ceil")
     public abstract static class CeilNode extends CoreMethodNode {
 
+        @Child private FixnumOrBignumNode fixnumOrBignum;
+
         public CeilNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
+            fixnumOrBignum = new FixnumOrBignumNode(context, sourceSection);
         }
 
         public CeilNode(CeilNode prev) {
             super(prev);
+            fixnumOrBignum = prev.fixnumOrBignum;
         }
 
         @Specialization
-        public double ceil(double n) {
-            return Math.ceil(n);
+        public Object ceil(double n) {
+            return fixnumOrBignum.fixnumOrBignum(Math.ceil(n));
         }
 
     }

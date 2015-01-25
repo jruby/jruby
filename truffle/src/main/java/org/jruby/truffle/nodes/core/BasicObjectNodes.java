@@ -22,6 +22,7 @@ import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.cast.BooleanCastNodeFactory;
 import org.jruby.truffle.nodes.dispatch.*;
 import org.jruby.truffle.nodes.yield.YieldDispatchHeadNode;
+import org.jruby.truffle.runtime.ObjectIDOperations;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.UndefinedPlaceholder;
 import org.jruby.truffle.runtime.control.RaiseException;
@@ -54,6 +55,52 @@ public abstract class BasicObjectNodes {
 
     }
 
+
+    @CoreMethod(names = "==", required = 1)
+    public abstract static class EqualNode extends BinaryCoreMethodNode {
+
+        public EqualNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public EqualNode(EqualNode prev) {
+            super(prev);
+        }
+
+        @Specialization public boolean equal(boolean a, boolean b) { return a == b; }
+        @Specialization public boolean equal(int a, int b) { return a == b; }
+        @Specialization public boolean equal(long a, long b) { return a == b; }
+        @Specialization public boolean equal(double a, double b) { return a == b; }
+
+        @Specialization public boolean equal(RubyBasicObject a, RubyBasicObject b) {
+            return a == b;
+        }
+
+        @Specialization(guards = {"isNotRubyBasicObject(left)", "isNotRubyBasicObject(right)", "notSameClass"})
+        public boolean equal(Object a, Object b) {
+            return false;
+        }
+
+        @Specialization(guards = "isNotRubyBasicObject(left)")
+        public boolean equal(Object a, RubyBasicObject b) {
+            return false;
+        }
+
+        @Specialization(guards = "isNotRubyBasicObject(right)")
+        public boolean equal(RubyBasicObject a, Object b) {
+            return false;
+        }
+
+        protected boolean isNotRubyBasicObject(Object value) {
+            return !(value instanceof RubyBasicObject);
+        }
+
+        protected boolean notSameClass(Object a, Object b) {
+            return a.getClass() != b.getClass();
+        }
+
+    }
+
     @CoreMethod(names = "!=", required = 1)
     public abstract static class NotEqualNode extends CoreMethodNode {
 
@@ -76,7 +123,81 @@ public abstract class BasicObjectNodes {
 
     }
 
-    @CoreMethod(names = {"equal?", "=="}, required = 1)
+    @CoreMethod(names = "__id__")
+    public abstract static class IDNode extends CoreMethodNode {
+
+        public IDNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public IDNode(IDNode prev) {
+            super(prev);
+        }
+
+        public abstract Object executeObjectID(VirtualFrame frame, Object value);
+
+        @Specialization
+        public int objectID(RubyNilClass nil) {
+            return ObjectIDOperations.NIL;
+        }
+
+        @Specialization(guards = "isTrue")
+        public int objectIDTrue(boolean value) {
+            return ObjectIDOperations.TRUE;
+        }
+
+        @Specialization(guards = "!isTrue")
+        public int objectIDFalse(boolean value) {
+            return ObjectIDOperations.FALSE;
+        }
+
+        @Specialization
+        public long objectID(int value) {
+            return ObjectIDOperations.smallFixnumToID(value);
+        }
+
+        @Specialization(rewriteOn = ArithmeticException.class)
+        public long objectIDSmallFixnumOverflow(long value) {
+            return ObjectIDOperations.smallFixnumToIDOverflow(value);
+        }
+
+        /* TODO: Ideally we would have this instead of the code below to speculate better. [GRAAL-903]
+        @Specialization(guards = "isSmallFixnum")
+        public long objectIDSmallFixnum(long value) {
+            return ObjectIDOperations.smallFixnumToID(value);
+        }
+
+        @Specialization(guards = "!isSmallFixnum")
+        public Object objectIDLargeFixnum(long value) {
+            return ObjectIDOperations.largeFixnumToID(getContext(), value);
+        } */
+
+        @Specialization
+        public Object objectID(long value) {
+            if (isSmallFixnum(value)) {
+                return ObjectIDOperations.smallFixnumToID(value);
+            } else {
+                return ObjectIDOperations.largeFixnumToID(getContext(), value);
+            }
+        }
+
+        @Specialization
+        public RubyBignum objectID(double value) {
+            return ObjectIDOperations.floatToID(getContext(), value);
+        }
+
+        @Specialization
+        public long objectID(RubyBasicObject object) {
+            return object.getObjectID();
+        }
+
+        protected boolean isSmallFixnum(long fixnum) {
+            return ObjectIDOperations.isSmallFixnum(fixnum);
+        }
+
+    }
+
+    @CoreMethod(names = "equal?", required = 1)
     public abstract static class ReferenceEqualNode extends BinaryCoreMethodNode {
 
         public ReferenceEqualNode(RubyContext context, SourceSection sourceSection) {
@@ -92,7 +213,7 @@ public abstract class BasicObjectNodes {
         @Specialization public boolean equal(boolean a, boolean b) { return a == b; }
         @Specialization public boolean equal(int a, int b) { return a == b; }
         @Specialization public boolean equal(long a, long b) { return a == b; }
-        @Specialization public boolean equal(double a, double b) { return a == b; }
+        @Specialization public boolean equal(double a, double b) { return Double.doubleToRawLongBits(a) == Double.doubleToRawLongBits(b); }
 
         @Specialization public boolean equal(RubyBasicObject a, RubyBasicObject b) {
             return a == b;
