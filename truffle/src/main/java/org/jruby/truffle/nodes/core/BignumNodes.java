@@ -11,12 +11,16 @@ package org.jruby.truffle.nodes.core;
 
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.dsl.Specialization;
+import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.utilities.BranchProfile;
 
 import com.oracle.truffle.api.utilities.ConditionProfile;
+import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
+import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyArray;
+import org.jruby.truffle.runtime.core.RubyBasicObject;
 import org.jruby.truffle.runtime.core.RubyBignum;
 import org.jruby.truffle.runtime.core.RubyString;
 
@@ -257,12 +261,17 @@ public abstract class BignumNodes {
     @CoreMethod(names = "<", required = 1)
     public abstract static class LessNode extends CoreMethodNode {
 
+        @Child private CallDispatchHeadNode rationalConvertNode;
+        @Child private CallDispatchHeadNode rationalLessNode;
+
         public LessNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
         }
 
         public LessNode(LessNode prev) {
             super(prev);
+            rationalConvertNode = prev.rationalConvertNode;
+            rationalLessNode = prev.rationalLessNode;
         }
 
         @Specialization
@@ -283,6 +292,19 @@ public abstract class BignumNodes {
         @Specialization
         public boolean less(RubyBignum a, RubyBignum b) {
             return a.compare(b) < 0;
+        }
+
+        @Specialization(guards = "isRational(arguments[1])")
+        public Object pow(VirtualFrame frame, Object a, RubyBasicObject b) {
+            if (rationalConvertNode == null) {
+                CompilerDirectives.transferToInterpreter();
+                rationalConvertNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext(), true));
+                rationalLessNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext()));
+            }
+
+            final Object aRational = rationalConvertNode.call(frame, getContext().getCoreLibrary().getRationalClass(), "convert", null, a, 1);
+
+            return rationalLessNode.call(frame, aRational, "<", null, b);
         }
     }
 

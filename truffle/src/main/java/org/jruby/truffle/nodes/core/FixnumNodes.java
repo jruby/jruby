@@ -1305,6 +1305,11 @@ public abstract class FixnumNodes {
             return a << b;
         }
 
+        @Specialization(guards = {"isPositive(arguments[1])", "canShiftIntoInt"})
+        public int leftShift(int a, long b) {
+            return a << b;
+        }
+
         @Specialization(guards = {"isPositive(arguments[1])", "canShiftIntoLong"})
         public long leftShiftToLong(int a, int b) {
             return leftShiftToLong((long) a, b);
@@ -1361,6 +1366,10 @@ public abstract class FixnumNodes {
             return Integer.numberOfLeadingZeros(a) - b > 0;
         }
 
+        static boolean canShiftIntoInt(int a, long b) {
+            return Integer.numberOfLeadingZeros(a) - b > 0;
+        }
+
         static boolean canShiftIntoLong(int a, int b) {
             return canShiftIntoLong((long) a, b);
         }
@@ -1370,6 +1379,10 @@ public abstract class FixnumNodes {
         }
 
         static boolean isPositive(int value) {
+            return value >= 0;
+        }
+
+        static boolean isPositive(long value) {
             return value >= 0;
         }
 

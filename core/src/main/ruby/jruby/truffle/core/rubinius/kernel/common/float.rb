@@ -85,4 +85,16 @@ class Float < Numeric
     not (nan? or infinite?)
   end
 
+  def rationalize(eps=undefined)
+    if undefined.equal?(eps)
+      f, n = Math.frexp self
+      f = Math.ldexp(f, Float::MANT_DIG).to_i
+      n -= Float::MANT_DIG
+
+      Rational.new(2 * f, 1 << (1 - n)).rationalize(Rational.new(1, 1 << (1 - n)))
+    else
+      to_r.rationalize(eps)
+    end
+  end
+
 end
