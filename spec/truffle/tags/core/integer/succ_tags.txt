@@ -1,6 +1,0 @@
-fails:Integer#succ returns the next larger positive Fixnum
-fails:Integer#succ returns the next larger negative Fixnum
-fails:Integer#succ returns the next larger positive Bignum
-fails:Integer#succ returns the next larger negative Bignum
-fails:Integer#succ overflows a Fixnum to a Bignum
-fails:Integer#succ underflows a Bignum to a Fixnum

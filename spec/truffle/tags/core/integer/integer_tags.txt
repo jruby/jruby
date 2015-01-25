@@ -1,2 +1,1 @@
-fails:Integer includes Comparable
 fails:Integer#integer? returns true for Integers
