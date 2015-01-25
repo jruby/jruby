@@ -124,4 +124,15 @@ class Numeric
     self * self
   end
 
+  def arg
+    if self < 0
+      Math::PI
+    else
+      0
+    end
+  end
+  
+  alias_method :angle, :arg
+  alias_method :phase, :arg
+
 end
