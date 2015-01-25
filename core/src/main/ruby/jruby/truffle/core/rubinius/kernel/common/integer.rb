@@ -89,4 +89,22 @@ class Integer < Numeric
     String.from_codepoint self, enc
   end
 
+  def lcm(other)
+    raise TypeError, "Expected Integer but got #{other.class}" unless other.kind_of?(Integer)
+    if self.zero? or other.zero?
+      0
+    else
+      (self.div(self.gcd(other)) * other).abs
+    end
+  end
+
+  def gcdlcm(other)
+    gcd = self.gcd(other)
+    if self.zero? or other.zero?
+      [gcd, 0]
+    else
+      [gcd, (self.div(gcd) * other).abs]
+    end
+  end
+
 end
