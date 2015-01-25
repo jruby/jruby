@@ -119,4 +119,8 @@ class Integer < Numeric
     self
   end
 
+  def rationalize(eps = nil)
+    Rational(self, 1)
+  end
+
 end
