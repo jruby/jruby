@@ -1749,6 +1749,17 @@ public abstract class ArrayNodes {
             }
         }
 
+        @Specialization(guards = "isFloat")
+        public Object firstFloat(RubyArray array) {
+            notDesignedForCompilation();
+
+            if (array.getSize() == 0) {
+                return getContext().getCoreLibrary().getNilObject();
+            } else {
+                return ((double[]) array.getStore())[0];
+            }
+        }
+
         @Specialization(guards = "isObject")
         public Object firstObject(RubyArray array) {
             notDesignedForCompilation();

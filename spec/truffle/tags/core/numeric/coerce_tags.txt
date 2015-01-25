@@ -1,2 +1,0 @@
-fails:Numeric#coerce returns [other.to_f, self.to_f] if self and other are instances of different classes
-fails:Numeric#coerce raises an ArgumentError when passed a String
