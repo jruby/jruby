@@ -1,2 +1,0 @@
-fails:Numeric#real returns self
-fails:Numeric#real raises an ArgumentError if given any arguments

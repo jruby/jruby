@@ -28,6 +28,14 @@
 
 class Numeric
 
+  def +@
+    self
+  end
+
+  def -@
+    0 - self
+  end
+
   def eql?(other)
     return false unless other.instance_of? self.class
     self == other
@@ -147,5 +155,22 @@ class Numeric
   def floor
     FloatValue(self).floor
   end
+
+  def i
+    Complex(0, self)
+  end
+
+  def to_c
+    Complex(self, 0)
+  end
+
+  def real
+    self
+  end
+
+  def imag
+    0
+  end
+  alias_method :imaginary, :imag
 
 end
