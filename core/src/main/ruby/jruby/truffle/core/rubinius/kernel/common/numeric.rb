@@ -173,4 +173,9 @@ class Numeric
   end
   alias_method :imaginary, :imag
 
+  def rect
+    [self, 0]
+  end
+  alias_method :rectangular, :rect
+
 end
