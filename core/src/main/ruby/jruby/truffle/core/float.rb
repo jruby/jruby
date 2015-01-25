@@ -39,7 +39,7 @@ class Float
   EPSILON    = 2.2204460492503131e-16
   RADIX      = 2
   ROUNDS     = 1
-  MIN        = 2.2250738585072014e-308
+  MIN        = 4.9E-324
   MAX        = 1.7976931348623157e+308
   MIN_EXP    = -1021
   MAX_EXP    = 1024
