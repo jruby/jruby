@@ -111,4 +111,8 @@ class Integer < Numeric
     true
   end
 
+  def ord
+    self
+  end
+
 end
