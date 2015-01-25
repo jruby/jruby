@@ -4,6 +4,12 @@ class MSpecScript
     ENV.key?('WINDIR') || ENV.key?('windir')
   end
 
+  def self.path_separator
+    # This is going to be used in a regexp, so we need to escape the backslash character in the regexp as well,
+    # thus the double-escape here.
+    windows? ? "\\\\" : '/'
+  end
+
   set :target, File.join(File.dirname(__FILE__), "spec-wrapper#{windows? ? '.bat' : ''}")
 
   set :language, [
@@ -117,9 +123,9 @@ class MSpecScript
   ]
 
   set :tags_patterns, [
-                        [%r(^.*/language/),     'spec/truffle/tags/language/'],
-                        [%r(^.*/core/),         'spec/truffle/tags/core/'],
-                        [%r(^.*/rubysl/),       'spec/truffle/tags/rubysl/'],
+                        [%r(^.*#{path_separator}language#{path_separator}),     'spec/truffle/tags/language/'],
+                        [%r(^.*#{path_separator}core#{path_separator}),         'spec/truffle/tags/core/'],
+                        [%r(^.*#{path_separator}rubysl#{path_separator}),       'spec/truffle/tags/rubysl/'],
                         [/_spec.rb$/,           '_tags.txt']
                       ]
 
