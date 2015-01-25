@@ -120,4 +120,8 @@ class Numeric
     to_r.denominator
   end
 
+  def abs2
+    self * self
+  end
+
 end
