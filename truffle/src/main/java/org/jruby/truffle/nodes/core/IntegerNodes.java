@@ -14,6 +14,7 @@ import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.utilities.BranchProfile;
+import org.jruby.truffle.nodes.methods.UnsupportedOperationBehavior;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.UndefinedPlaceholder;
 import org.jruby.truffle.runtime.control.BreakException;
@@ -26,6 +27,64 @@ import org.jruby.truffle.runtime.core.RubyString;
 
 @CoreClass(name = "Integer")
 public abstract class IntegerNodes {
+
+    @CoreMethod(names = "downto", needsBlock = true, required = 1, unsupportedOperationBehavior = UnsupportedOperationBehavior.ARGUMENT_ERROR)
+    public abstract static class DownToNode extends YieldingCoreMethodNode {
+
+        private final BranchProfile breakProfile = BranchProfile.create();
+        private final BranchProfile nextProfile = BranchProfile.create();
+        private final BranchProfile redoProfile = BranchProfile.create();
+
+        public DownToNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public DownToNode(DownToNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public Object downto(VirtualFrame frame, int from, int to, RubyProc block) {
+            int count = 0;
+
+            try {
+                outer:
+                for (int i = from; i >= to; i--) {
+                    while (true) {
+                        if (CompilerDirectives.inInterpreter()) {
+                            count++;
+                        }
+
+                        try {
+                            yield(frame, block, i);
+                            continue outer;
+                        } catch (BreakException e) {
+                            breakProfile.enter();
+                            return e.getResult();
+                        } catch (NextException e) {
+                            nextProfile.enter();
+                            continue outer;
+                        } catch (RedoException e) {
+                            redoProfile.enter();
+                        }
+                    }
+                }
+            } finally {
+                if (CompilerDirectives.inInterpreter()) {
+                    getRootNode().reportLoopCount(count);
+                }
+            }
+
+            return getContext().getCoreLibrary().getNilObject();
+        }
+
+        @Specialization
+        public Object downto(VirtualFrame frame, int from, double to, RubyProc block) {
+            notDesignedForCompilation();
+            return downto(frame, from, (int) Math.ceil(to), block);
+        }
+
+    }
 
     @CoreMethod(names = "times", needsBlock = true)
     public abstract static class TimesNode extends YieldingCoreMethodNode {

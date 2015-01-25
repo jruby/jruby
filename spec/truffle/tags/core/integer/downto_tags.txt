@@ -1,6 +1,1 @@
-fails:Integer#downto [stop] when self and stop are Fixnums does not yield when stop is greater than self
-fails:Integer#downto [stop] when self and stop are Fixnums yields once when stop equals self
-fails:Integer#downto [stop] when self and stop are Fixnums yields while decreasing self until it is less than stop
-fails:Integer#downto [stop] when self and stop are Fixnums yields while decreasing self until it less than ceil for a Float endpoint
-fails:Integer#downto [stop] when self and stop are Fixnums raises an ArgumentError for invalid endpoints
 fails:Integer#downto [stop] when self and stop are Fixnums returns an Enumerator
