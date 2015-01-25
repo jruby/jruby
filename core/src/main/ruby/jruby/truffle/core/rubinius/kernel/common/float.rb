@@ -67,6 +67,7 @@ class Float < Numeric
   end
 
   alias_method :quo, :/
+  alias_method :modulo, :%
 
   def finite?
     not (nan? or infinite?)

@@ -278,6 +278,8 @@ public abstract class FloatNodes {
     @CoreMethod(names = "%", required = 1)
     public abstract static class ModNode extends CoreMethodNode {
 
+        private ConditionProfile lessThanZeroProfile = ConditionProfile.createBinaryProfile();
+
         public ModNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
         }
@@ -288,22 +290,33 @@ public abstract class FloatNodes {
 
         @Specialization
         public double mod(double a, int b) {
-            throw new UnsupportedOperationException();
+            return mod(a, (double) b);
         }
 
         @Specialization
         public double mod(double a, long b) {
-            throw new UnsupportedOperationException();
+            return mod(a, (double) b);
         }
 
         @Specialization
         public double mod(double a, double b) {
-            throw new UnsupportedOperationException();
+            if (b == 0) {
+                CompilerDirectives.transferToInterpreter();
+                throw new RaiseException(getContext().getCoreLibrary().zeroDivisionError(this));
+            }
+
+            double result = Math.IEEEremainder(a, b);
+
+            if (lessThanZeroProfile.profile(b * result < 0)) {
+                result += b;
+            }
+
+            return result;
         }
 
         @Specialization
         public double mod(double a, RubyBignum b) {
-            throw new UnsupportedOperationException();
+            return mod(a, b.doubleValue());
         }
 
     }
