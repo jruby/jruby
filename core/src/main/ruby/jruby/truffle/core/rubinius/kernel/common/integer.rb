@@ -58,6 +58,10 @@ class Integer < Numeric
     self & 1 == 1
   end
 
+  def pred
+    self - 1
+  end
+
   def next
     self + 1
   end

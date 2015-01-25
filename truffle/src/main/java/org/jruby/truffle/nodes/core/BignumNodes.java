@@ -77,13 +77,13 @@ public abstract class BignumNodes {
         }
 
         @Specialization
-        public RubyBignum add(RubyBignum a, int b) {
-            return a.add(b);
+        public Object add(RubyBignum a, int b) {
+            return fixnumOrBignum(a.add(b));
         }
 
         @Specialization
-        public RubyBignum add(RubyBignum a, long b) {
-            return a.add(b);
+        public Object add(RubyBignum a, long b) {
+            return fixnumOrBignum(a.add(b));
         }
 
         @Specialization
