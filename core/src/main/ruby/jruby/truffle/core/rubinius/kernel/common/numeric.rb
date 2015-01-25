@@ -111,5 +111,9 @@ class Numeric
   def real?
     true
   end
+  
+  def denominator
+    to_r.denominator
+  end
 
 end

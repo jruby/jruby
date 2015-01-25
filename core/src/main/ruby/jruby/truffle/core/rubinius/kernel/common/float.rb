@@ -57,5 +57,13 @@ class Float < Numeric
     Rubinius.primitive :float_negative
     raise PrimitiveFailure, "Float#negative primitive failed"
   end
+  
+  def denominator
+    if infinite? || nan?
+      1
+    else
+      super
+    end
+  end
 
 end
