@@ -69,6 +69,7 @@ class Integer < Numeric
   alias_method :succ, :next
   alias_method :ceil, :to_i
   alias_method :floor, :to_i
+  alias_method :truncate, :to_i
 
   def chr(enc=undefined)
     if self < 0 || (self & 0xffff_ffff) != self
