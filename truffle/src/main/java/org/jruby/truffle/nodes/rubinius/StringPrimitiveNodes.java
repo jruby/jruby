@@ -100,6 +100,17 @@ public abstract class StringPrimitiveNodes {
                     new ByteList(bytes, encoding.getEncoding()));
         }
 
+        @Specialization
+        public RubyString stringFromCodepointSimple(long code, RubyEncoding encoding) {
+            notDesignedForCompilation();
+
+            if (code < Integer.MIN_VALUE || code > Integer.MAX_VALUE) {
+                throw new UnsupportedOperationException();
+            }
+
+            return stringFromCodepointSimple((int) code, encoding);
+        }
+
         protected boolean isSimple(int code, RubyEncoding encoding) {
             return encoding.getEncoding() == ASCIIEncoding.INSTANCE && code >= 0x00 && code <= 0xFF;
         }
