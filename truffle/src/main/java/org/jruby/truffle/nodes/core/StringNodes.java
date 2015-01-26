@@ -63,7 +63,7 @@ public abstract class StringNodes {
         public RubyString add(RubyString a, RubyString b) {
             notDesignedForCompilation();
 
-            return getContext().makeString(a.toString() + b.toString());
+            return (RubyString) getContext().toTruffle(getContext().toJRuby(a).op_plus(getContext().getRuntime().getCurrentContext(), getContext().toJRuby(b)));
         }
     }
 
@@ -963,7 +963,7 @@ public abstract class StringNodes {
         }
     }
 
-    @CoreMethod(names = "initialize", required = 1)
+    @CoreMethod(names = "initialize", optional = 1)
     public abstract static class InitializeNode extends CoreMethodNode {
 
         public InitializeNode(RubyContext context, SourceSection sourceSection) {

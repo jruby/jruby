@@ -149,14 +149,3 @@ class Module
   end
 
 end
-
-module Rubinius
-  module Type
-
-    def self.infect(host, source)
-      host
-    end
-
-  end
-
-end

@@ -1893,7 +1893,7 @@ public abstract class ArrayNodes {
 
     }
 
-    @CoreMethod(names = "initialize", needsBlock = true, required = 1, optional = 1)
+    @CoreMethod(names = "initialize", needsBlock = true, optional = 2)
     @ImportGuards(ArrayGuards.class)
     public abstract static class InitializeNode extends YieldingCoreMethodNode {
 
@@ -1907,6 +1907,11 @@ public abstract class ArrayNodes {
         public InitializeNode(InitializeNode prev) {
             super(prev);
             arrayBuilder = prev.arrayBuilder;
+        }
+
+        @Specialization
+        public RubyArray initialize(RubyArray array, UndefinedPlaceholder size, UndefinedPlaceholder defaultValue, UndefinedPlaceholder block) {
+            return initialize(array, 0, getContext().getCoreLibrary().getNilObject(), block);
         }
 
         @Specialization

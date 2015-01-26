@@ -12,14 +12,11 @@ fails:Marshal.restore returns an untainted object if source is untainted
 fails:Marshal.restore preserves taintedness of nested structure
 fails:Marshal.restore returns a trusted object if source is trusted
 fails:Marshal.restore returns an untrusted object if source is untrusted
-fails:Marshal.restore loads a nil
 fails:Marshal.restore loads a 1..2
 fails:Marshal.restore loads a 1...2
 fails:Marshal.restore loads a 'a'..'b'
 fails:Marshal.restore loads a Struct
 fails:Marshal.restore loads a Symbol
-fails:Marshal.restore loads a true
-fails:Marshal.restore loads a false
 fails:Marshal.restore loads a String empty
 fails:Marshal.restore loads a String small
 fails:Marshal.restore loads a String big
@@ -36,13 +33,6 @@ fails:Marshal.restore loads a Fixnum -2**16
 fails:Marshal.restore loads a Fixnum -2**8
 fails:Marshal.restore loads a Fixnum -123
 fails:Marshal.restore loads a Fixnum -124
-fails:Marshal.restore loads a Fixnum 0
-fails:Marshal.restore loads a Fixnum 5
-fails:Marshal.restore loads a Fixnum 122
-fails:Marshal.restore loads a Fixnum 123
-fails:Marshal.restore loads a Fixnum 2**8
-fails:Marshal.restore loads a Fixnum 2**16
-fails:Marshal.restore loads a Fixnum 2**24
 fails:Marshal.restore loads a Bignum 2**64
 fails:Marshal.restore loads a Bignum 2**90
 fails:Marshal.restore loads a Class String
@@ -53,17 +43,9 @@ fails:Marshal.restore loads a _dump object extended
 fails:Marshal.restore loads a marshal_dump object
 fails:Marshal.restore loads a Regexp
 fails:Marshal.restore loads a Regexp subclass /i
-fails:Marshal.restore loads a Float 0.0
-fails:Marshal.restore loads a Float -0.0
 fails:Marshal.restore loads a Float Infinity
 fails:Marshal.restore loads a Float -Infinity
-fails:Marshal.restore loads a Float 1.0
 fails:Marshal.restore loads a Float 8323434.342
-fails:Marshal.restore loads a Float 1.0799999999999912
-fails:Marshal.restore loads a Hash
-fails:Marshal.restore loads a Hash subclass
-fails:Marshal.restore loads a Array
-fails:Marshal.restore loads a Array subclass
 fails:Marshal.restore loads a Random
 fails:Marshal.restore raises an ArgumentError with full constant name when the dumped constant is missing
 fails:Marshal.restore when source is tainted returns a tainted object
@@ -110,7 +92,6 @@ fails:Marshal.restore for a Integer loads an Integer 4611686018427387903
 fails:Marshal.restore for a Integer loads an Integer -4611686018427387903
 fails:Marshal.restore for a Integer loads an Integer 2361183241434822606847
 fails:Marshal.restore for a Integer loads an Integer -2361183241434822606847
-fails:Marshal.restore for a Integer raises ArgumentError if the input is too short
 fails:Marshal.restore for a Integer roundtrips 4611686018427387903 from dump/load correctly
 fails:Marshal.restore for a Rational loads
 fails:Marshal.restore for a Complex loads

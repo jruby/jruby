@@ -12,14 +12,11 @@ fails:Marshal.load returns an untainted object if source is untainted
 fails:Marshal.load preserves taintedness of nested structure
 fails:Marshal.load returns a trusted object if source is trusted
 fails:Marshal.load returns an untrusted object if source is untrusted
-fails:Marshal.load loads a nil
 fails:Marshal.load loads a 1..2
 fails:Marshal.load loads a 1...2
 fails:Marshal.load loads a 'a'..'b'
 fails:Marshal.load loads a Struct
 fails:Marshal.load loads a Symbol
-fails:Marshal.load loads a true
-fails:Marshal.load loads a false
 fails:Marshal.load loads a String empty
 fails:Marshal.load loads a String small
 fails:Marshal.load loads a String big
@@ -36,13 +33,6 @@ fails:Marshal.load loads a Fixnum -2**16
 fails:Marshal.load loads a Fixnum -2**8
 fails:Marshal.load loads a Fixnum -123
 fails:Marshal.load loads a Fixnum -124
-fails:Marshal.load loads a Fixnum 0
-fails:Marshal.load loads a Fixnum 5
-fails:Marshal.load loads a Fixnum 122
-fails:Marshal.load loads a Fixnum 123
-fails:Marshal.load loads a Fixnum 2**8
-fails:Marshal.load loads a Fixnum 2**16
-fails:Marshal.load loads a Fixnum 2**24
 fails:Marshal.load loads a Bignum 2**64
 fails:Marshal.load loads a Bignum 2**90
 fails:Marshal.load loads a Class String
@@ -53,17 +43,9 @@ fails:Marshal.load loads a _dump object extended
 fails:Marshal.load loads a marshal_dump object
 fails:Marshal.load loads a Regexp
 fails:Marshal.load loads a Regexp subclass /i
-fails:Marshal.load loads a Float 0.0
-fails:Marshal.load loads a Float -0.0
 fails:Marshal.load loads a Float Infinity
 fails:Marshal.load loads a Float -Infinity
-fails:Marshal.load loads a Float 1.0
 fails:Marshal.load loads a Float 8323434.342
-fails:Marshal.load loads a Float 1.0799999999999912
-fails:Marshal.load loads a Hash
-fails:Marshal.load loads a Hash subclass
-fails:Marshal.load loads a Array
-fails:Marshal.load loads a Array subclass
 fails:Marshal.load loads a Random
 fails:Marshal.load raises an ArgumentError with full constant name when the dumped constant is missing
 fails:Marshal.load when source is tainted returns a tainted object
@@ -110,7 +92,6 @@ fails:Marshal.load for a Integer loads an Integer 4611686018427387903
 fails:Marshal.load for a Integer loads an Integer -4611686018427387903
 fails:Marshal.load for a Integer loads an Integer 2361183241434822606847
 fails:Marshal.load for a Integer loads an Integer -2361183241434822606847
-fails:Marshal.load for a Integer raises ArgumentError if the input is too short
 fails:Marshal.load for a Integer roundtrips 4611686018427387903 from dump/load correctly
 fails:Marshal.load for a Rational loads
 fails:Marshal.load for a Complex loads

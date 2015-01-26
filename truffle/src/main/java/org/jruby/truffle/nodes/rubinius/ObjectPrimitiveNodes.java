@@ -110,8 +110,10 @@ public abstract class ObjectPrimitiveNodes {
         }
 
         @Specialization
-        public Object objectInfect(Object object) {
-            throw new UnsupportedOperationException("object_infect");
+        public Object objectInfect(Object host, Object source) {
+            notDesignedForCompilation();
+            // TODO(CS 26-Jan-15) infect
+            return host;
         }
 
     }
