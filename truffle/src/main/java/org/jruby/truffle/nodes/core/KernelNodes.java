@@ -1030,7 +1030,7 @@ public abstract class KernelNodes {
 
     }
 
-    @CoreMethod(names = "instance_variable_set", required = 2)
+    @CoreMethod(names = {"instance_variable_set", "__instance_variable_set__"}, required = 2)
     public abstract static class InstanceVariableSetNode extends CoreMethodNode {
 
         public InstanceVariableSetNode(RubyContext context, SourceSection sourceSection) {
@@ -1061,7 +1061,7 @@ public abstract class KernelNodes {
 
     }
 
-    @CoreMethod(names = "instance_variables")
+    @CoreMethod(names = {"instance_variables", "__instance_variables__"})
     public abstract static class InstanceVariablesNode extends CoreMethodNode {
 
         public InstanceVariablesNode(RubyContext context, SourceSection sourceSection) {
@@ -1169,7 +1169,7 @@ public abstract class KernelNodes {
             super(prev);
         }
 
-        public abstract boolean executeIsA(VirtualFrame frame, Object self, RubyClass rubyClass);
+        public abstract boolean executeIsA(VirtualFrame frame, Object self, RubyModule rubyClass);
 
         @Specialization
         public boolean isA(RubyBasicObject self, RubyNilClass nil) {
@@ -1178,7 +1178,7 @@ public abstract class KernelNodes {
 
         @TruffleBoundary
         @Specialization
-        public boolean isA(Object self, RubyClass rubyClass) {
+        public boolean isA(Object self, RubyModule rubyClass) {
             notDesignedForCompilation();
             // TODO(CS): fast path
             return ModuleOperations.assignableTo(getContext().getCoreLibrary().getMetaClass(self), rubyClass);

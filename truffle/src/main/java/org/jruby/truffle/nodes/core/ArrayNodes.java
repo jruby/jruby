@@ -2959,7 +2959,7 @@ public abstract class ArrayNodes {
 
     }
 
-    @CoreMethod(names = {"push", "<<"}, argumentsAsArray = true)
+    @CoreMethod(names = {"push", "<<", "__append__"}, argumentsAsArray = true)
     public abstract static class PushNode extends ArrayCoreMethodNode {
 
         private final BranchProfile extendBranch = BranchProfile.create();

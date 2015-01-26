@@ -12,11 +12,60 @@ package org.jruby.truffle.nodes.rubinius;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.runtime.core.RubyArray;
+
+import java.util.Locale;
 
 /**
  * Rubinius primitives associated with the Ruby {@code Float} class.
  */
 public abstract class FloatPrimitiveNodes {
+
+    @RubiniusPrimitive(name = "float_dtoa")
+    public static abstract class FloatDToAPrimitiveNode extends RubiniusPrimitiveNode {
+
+        public FloatDToAPrimitiveNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public FloatDToAPrimitiveNode(FloatDToAPrimitiveNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public RubyArray dToA(double value) {
+            notDesignedForCompilation();
+
+            String string = String.format(Locale.ENGLISH, "%.9f", value);
+
+            if (string.toLowerCase().contains("e")) {
+                throw new UnsupportedOperationException();
+            }
+
+            string = string.replace("-", "");
+
+            final int decimal;
+
+            if (string.startsWith("0.")) {
+                string = string.replace("0.", "");
+                decimal = 0;
+            } else {
+                decimal = string.indexOf('.');
+
+                if (decimal == -1) {
+                    throw new UnsupportedOperationException();
+                }
+
+                string.replace(".", "");
+            }
+
+            final int sign = value < 0 ? 1 : 0;
+
+            return new RubyArray(getContext().getCoreLibrary().getArrayClass(),
+                    new Object[]{getContext().makeString(string), decimal, sign, string.length()}, 4);
+        }
+
+    }
 
     @RubiniusPrimitive(name = "float_negative")
     public static abstract class FloatNegativePrimitiveNode extends RubiniusPrimitiveNode {

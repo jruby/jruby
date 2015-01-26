@@ -422,6 +422,28 @@ public abstract class HashNodes {
 
     }
 
+    @CoreMethod(names = "default_proc")
+    public abstract static class DefaultProcNode extends HashCoreMethodNode {
+
+        public DefaultProcNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public DefaultProcNode(DefaultProcNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public Object defaultProc(RubyHash hash) {
+            if (hash.getDefaultBlock() == null) {
+                return getContext().getCoreLibrary().getNilObject();
+            } else {
+                return hash.getDefaultBlock();
+            }
+        }
+
+    }
+
     @CoreMethod(names = "delete", required = 1)
     public abstract static class DeleteNode extends HashCoreMethodNode {
 

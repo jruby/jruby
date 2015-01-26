@@ -13,6 +13,7 @@ import org.jruby.truffle.runtime.RubyContext;
 
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.source.SourceSection;
+import org.jruby.truffle.runtime.core.*;
 
 /**
  * Rubinius primitives associated with the Ruby {@code Encoding} class..
@@ -31,8 +32,28 @@ public abstract class EncodingPrimitiveNodes {
         }
 
         @Specialization
-        public Object encodingGetObjectEncoding(Object object) {
-            throw new UnsupportedOperationException("encoding_get_object_encoding");
+        public RubyEncoding encodingGetObjectEncoding(RubyString string) {
+            notDesignedForCompilation();
+
+            return RubyEncoding.getEncoding(string.getBytes().getEncoding());
+        }
+
+        @Specialization
+        public RubyEncoding encodingGetObjectEncoding(RubySymbol symbol) {
+            notDesignedForCompilation();
+
+            return RubyEncoding.getEncoding(symbol.getSymbolBytes().getEncoding());
+        }
+
+        @Specialization
+        public RubyEncoding encodingGetObjectEncoding(RubyEncoding encoding) {
+            return encoding;
+        }
+
+        @Specialization(guards = {"!isRubyString", "!isRubySymbol", "!isRubyEncoding"})
+        public RubyNilClass encodingGetObjectEncoding(RubyBasicObject object) {
+            // TODO(CS, 26 Jan 15) something to do with __encoding__ here?
+            return getContext().getCoreLibrary().getNilObject();
         }
 
     }

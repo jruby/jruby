@@ -7,7 +7,6 @@ fails:Marshal.restore loads an array containing objects having marshal_dump meth
 fails:Marshal.restore loads an Array with proc
 fails:Marshal.restore assigns classes to nested subclasses of Array correctly
 fails:Marshal.restore loads subclasses of Array with overridden << and push correctly
-fails:Marshal.restore raises a TypeError with bad Marshal version
 fails:Marshal.restore raises EOFError on loading an empty file
 fails:Marshal.restore returns an untainted object if source is untainted
 fails:Marshal.restore preserves taintedness of nested structure

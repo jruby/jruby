@@ -20,6 +20,7 @@ import org.jruby.truffle.nodes.objects.ClassNode;
 import org.jruby.truffle.nodes.objects.ClassNodeFactory;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyClass;
+import org.jruby.truffle.runtime.core.RubyModule;
 import org.jruby.truffle.runtime.core.RubyNilClass;
 import org.jruby.truffle.runtime.core.RubyThread;
 
@@ -128,7 +129,7 @@ public abstract class VMPrimitiveNodes {
         }
 
         @Specialization
-        public boolean vmObjectKindOf(VirtualFrame frame, Object object, RubyClass rubyClass) {
+        public boolean vmObjectKindOf(VirtualFrame frame, Object object, RubyModule rubyClass) {
             return isANode.executeIsA(frame, object, rubyClass);
         }
 

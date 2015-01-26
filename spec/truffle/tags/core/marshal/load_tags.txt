@@ -7,7 +7,6 @@ fails:Marshal.load loads an array containing objects having marshal_dump method,
 fails:Marshal.load loads an Array with proc
 fails:Marshal.load assigns classes to nested subclasses of Array correctly
 fails:Marshal.load loads subclasses of Array with overridden << and push correctly
-fails:Marshal.load raises a TypeError with bad Marshal version
 fails:Marshal.load raises EOFError on loading an empty file
 fails:Marshal.load returns an untainted object if source is untainted
 fails:Marshal.load preserves taintedness of nested structure

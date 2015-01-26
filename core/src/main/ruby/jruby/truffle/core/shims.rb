@@ -131,3 +131,32 @@ class Regexp
     end
   end
 end
+
+module Rubinius
+
+  L64 = true
+
+  def extended_modules(object)
+    []
+  end
+
+end
+
+class Module
+
+  def extended_modules(object)
+    []
+  end
+
+end
+
+module Rubinius
+  module Type
+
+    def self.infect(host, source)
+      host
+    end
+
+  end
+
+end
