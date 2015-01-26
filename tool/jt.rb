@@ -8,7 +8,9 @@
 
 # A workflow tool for JRuby+Truffle development
 
-# Recommended: function jt { ruby tool/jt.rb $@; }
+# Recommended: function jt { ruby PATH/TO/jruby/tool/jt.rb $@; }
+
+JRUBY_DIR = File.expand_path('../..', __FILE__)
 
 module Utilities
 
@@ -16,7 +18,7 @@ module Utilities
     ENV['GRAAL_BIN'],
     '../graalvm-jdk1.8.0/bin/java',         # This also seems like a sensible place to keep it
     '../../graal/graalvm-jdk1.8.0/bin/java' # This is where I (CS) keep it
-  ].compact
+  ].compact.map { |path| File.expand_path(path, JRUBY_DIR) }
 
   def self.find_graal
     not_found = -> {
@@ -34,8 +36,10 @@ module ShellUtils
   private
 
   def sh(*args)
-    system(*args)
-    raise 'failed' unless $? == 0
+    Dir.chdir(JRUBY_DIR) do
+      system(*args)
+      raise 'failed' unless $? == 0
+    end
   end
 
   def mvn(*args)
@@ -86,7 +90,7 @@ module Commands
 
   def run(*args)
     env_vars = {}
-    jruby_args = []
+    jruby_args = %w[-J-cp truffle/target/jruby-truffle-9.0.0.0-SNAPSHOT.jar -X+T]
 
     { '--asm' => '--graal' }.each_pair do |arg, dep|
       args.unshift dep if args.include?(arg)
@@ -103,7 +107,7 @@ module Commands
 
     env_vars['VERIFY_JRUBY'] = '1'
 
-    sh(env_vars, *%w[bin/jruby -J-cp truffle/target/jruby-truffle-9.0.0.0-SNAPSHOT.jar -X+T], *jruby_args, *args)
+    exec(env_vars, "#{JRUBY_DIR}/bin/jruby", *jruby_args, *args)
   end
 
   def test(*args)
