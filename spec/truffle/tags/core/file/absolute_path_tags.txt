@@ -1,4 +1,3 @@
-fails:File.absolute_path returns the argument if it's an absolute pathname
 fails:File.absolute_path resolves paths relative to the current working directory
 fails:File.absolute_path does not expand '~' to a home directory.
 fails:File.absolute_path does not expand '~user' to a home directory.

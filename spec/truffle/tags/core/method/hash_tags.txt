@@ -1,3 +1,2 @@
-fails:Method#hash needs to be reviewed for spec completeness
 fails:Method#hash returns the same value for user methods that are eql?
 fails:Method#hash returns the same value for builtin methods that are eql?

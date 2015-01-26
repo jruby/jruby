@@ -1,5 +1,4 @@
 fails:String#concat converts the given argument to a String using to_str
-fails:String#concat raises a TypeError if the given argument can't be converted to a String
 fails:String#concat raises a RuntimeError when self is frozen
 fails:String#concat taints self if other is tainted
 fails:String#concat untrusts self if other is untrusted
@@ -7,7 +6,6 @@ fails:String#concat with Integer concatencates the argument interpreted as a cod
 fails:String#concat with Integer returns a ASCII-8BIT string if self is US-ASCII and the argument is between 128-255 (inclusive)
 fails:String#concat with Integer raises RangeError if the argument is an invalid codepoint for self's encoding
 fails:String#concat with Integer raises RangeError if the argument is negative
-fails:String#concat with Integer doesn't call to_int on its argument
 fails:String#concat with Integer raises a RuntimeError when self is frozen
 fails:String#concat when self is in an ASCII-incompatible encoding incompatible with the argument's encoding uses the argument's encoding if self is empty
 fails:String#concat when self is in an ASCII-incompatible encoding incompatible with the argument's encoding raises Encoding::CompatibilityError if neither are empty

@@ -1,2 +1,1 @@
 fails:IO includes File::Constants
-fails:IO includes Enumerable

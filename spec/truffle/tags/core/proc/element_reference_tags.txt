@@ -1,4 +1,0 @@
-fails:Proc#[] can receive block arguments
-fails:Proc#call on a Proc created with Proc.new replaces missing arguments with nil
-fails:Proc#call on a Proc created with Proc.new silently ignores extra arguments
-fails:Proc#call on a Proc created with Proc.new auto-explodes a single Array argument

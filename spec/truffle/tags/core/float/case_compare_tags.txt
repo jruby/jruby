@@ -1,2 +1,0 @@
-fails:Float#=== returns true if self has the same value as other
-fails:Float#=== calls 'other == self' if coercion fails
