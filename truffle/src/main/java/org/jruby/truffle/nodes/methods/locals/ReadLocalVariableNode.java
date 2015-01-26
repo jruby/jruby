@@ -53,9 +53,14 @@ public abstract class ReadLocalVariableNode extends FrameSlotNode implements Rea
         return getFloat(frame);
     }
 
-    @Specialization
-    public Object doObject(VirtualFrame frame) {
+    @Specialization(rewriteOn = {FrameSlotTypeException.class})
+    public Object doObject(VirtualFrame frame) throws FrameSlotTypeException {
         return getObject(frame);
+    }
+
+    @Specialization
+    public Object doValue(VirtualFrame frame) {
+        return getValue(frame);
     }
 
     @Override
@@ -69,7 +74,7 @@ public abstract class ReadLocalVariableNode extends FrameSlotNode implements Rea
     public Object isDefined(VirtualFrame frame) {
         // TODO(CS): copy and paste of ReadLevelVariableNode
         if (BodyTranslator.FRAME_LOCAL_GLOBAL_VARIABLES.contains(frameSlot.getIdentifier())) {
-            if (ALWAYS_DEFINED_GLOBALS.contains(frameSlot.getIdentifier()) || doObject(frame) != getContext().getCoreLibrary().getNilObject()) {
+            if (ALWAYS_DEFINED_GLOBALS.contains(frameSlot.getIdentifier()) || doValue(frame) != getContext().getCoreLibrary().getNilObject()) {
                 return getContext().makeString("global-variable");
             } else {
                 return getContext().getCoreLibrary().getNilObject();

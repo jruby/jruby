@@ -58,10 +58,16 @@ public abstract class ReadLevelVariableNode extends FrameSlotNode implements Rea
         return getFloat(levelFrame);
     }
 
-    @Specialization
-    public Object doObject(VirtualFrame frame) {
+    @Specialization(rewriteOn = {FrameSlotTypeException.class})
+    public Object doObject(VirtualFrame frame) throws FrameSlotTypeException {
         MaterializedFrame levelFrame = RubyArguments.getDeclarationFrame(frame, varLevel);
         return getObject(levelFrame);
+    }
+
+    @Specialization
+    public Object doValue(VirtualFrame frame) {
+        MaterializedFrame levelFrame = RubyArguments.getDeclarationFrame(frame, varLevel);
+        return getValue(levelFrame);
     }
 
     @Override
@@ -73,7 +79,7 @@ public abstract class ReadLevelVariableNode extends FrameSlotNode implements Rea
     public Object isDefined(VirtualFrame frame) {
         // TODO(CS): copy and paste of ReadLocalVariableNode
         if (BodyTranslator.FRAME_LOCAL_GLOBAL_VARIABLES.contains(frameSlot.getIdentifier())) {
-            if (ReadLocalVariableNode.ALWAYS_DEFINED_GLOBALS.contains(frameSlot.getIdentifier()) || doObject(frame) != getContext().getCoreLibrary().getNilObject()) {
+            if (ReadLocalVariableNode.ALWAYS_DEFINED_GLOBALS.contains(frameSlot.getIdentifier()) || doValue(frame) != getContext().getCoreLibrary().getNilObject()) {
                 return getContext().makeString("global-variable");
             } else {
                 return getContext().getCoreLibrary().getNilObject();

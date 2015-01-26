@@ -73,12 +73,12 @@ public abstract class FrameSlotNode extends RubyNode {
         return frame.getDouble(frameSlot);
     }
 
-    protected final Object getObject(Frame frame) {
-        try {
-            return frame.getObject(frameSlot);
-        } catch (FrameSlotTypeException e) {
-            throw new IllegalStateException();
-        }
+    protected final Object getObject(Frame frame) throws FrameSlotTypeException {
+        return frame.getObject(frameSlot);
+    }
+
+    protected final Object getValue(Frame frame) {
+        return frame.getValue(frameSlot);
     }
 
     protected final boolean isBooleanKind() {
