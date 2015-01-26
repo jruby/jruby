@@ -63,7 +63,12 @@ class MSpecScript
 
   set :rubysl, [
     "spec/truffle/spec/rubysl/rubysl-erb/spec",
-    "spec/truffle/spec/rubysl/rubysl-set/spec"
+    "spec/truffle/spec/rubysl/rubysl-set/spec",
+
+    # Can't load these - so tags aren't enough to exclude them. The problem is
+    # either fixtures or 'before' blocks.
+
+    "^spec/truffle/spec/rubysl/rubysl-erb/spec"
   ]
 
   set :tags_patterns, [
