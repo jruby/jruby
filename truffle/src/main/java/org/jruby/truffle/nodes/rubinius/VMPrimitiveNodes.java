@@ -19,10 +19,7 @@ import org.jruby.truffle.nodes.core.KernelNodesFactory;
 import org.jruby.truffle.nodes.objects.ClassNode;
 import org.jruby.truffle.nodes.objects.ClassNodeFactory;
 import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.core.RubyClass;
-import org.jruby.truffle.runtime.core.RubyModule;
-import org.jruby.truffle.runtime.core.RubyNilClass;
-import org.jruby.truffle.runtime.core.RubyThread;
+import org.jruby.truffle.runtime.core.*;
 
 /**
  * Rubinius primitives associated with the VM.
@@ -67,8 +64,9 @@ public abstract class VMPrimitiveNodes {
         }
 
         @Specialization
-        public Object vmGetModuleName(Object object) {
-            throw new UnsupportedOperationException("vm_get_module_name");
+        public RubyString vmGetModuleName(RubyModule module) {
+            notDesignedForCompilation();
+            return getContext().makeString(module.getName());
         }
 
     }
@@ -210,7 +208,8 @@ public abstract class VMPrimitiveNodes {
 
         @Specialization
         public Object vmSingletonClassObject(Object object) {
-            throw new UnsupportedOperationException("vm_singleton_class_object");
+            notDesignedForCompilation();
+            return object instanceof RubyClass && ((RubyClass) object).isSingleton();
         }
 
     }

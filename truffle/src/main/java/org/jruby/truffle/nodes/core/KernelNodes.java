@@ -800,9 +800,22 @@ public abstract class KernelNodes {
         }
 
         @Specialization
-        public boolean isFrozen(RubyBasicObject self) {
-            notDesignedForCompilation();
+        public boolean isFrozen(int self) {
+            return true;
+        }
 
+        @Specialization
+        public boolean isFrozen(long self) {
+            return true;
+        }
+
+        @Specialization
+        public boolean isFrozen(double self) {
+            return true;
+        }
+
+        @Specialization
+        public boolean isFrozen(RubyBasicObject self) {
             return self.isFrozen();
         }
 

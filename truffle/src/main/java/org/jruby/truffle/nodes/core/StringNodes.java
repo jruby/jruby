@@ -370,6 +370,35 @@ public abstract class StringNodes {
         }
     }
 
+    @CoreMethod(names = "ascii_only?")
+    public abstract static class ASCIIOnlyNode extends CoreMethodNode {
+
+        public ASCIIOnlyNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public ASCIIOnlyNode(ASCIIOnlyNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public boolean asciiOnly(RubyString string) {
+            notDesignedForCompilation();
+
+            if (!string.getBytes().getEncoding().isAsciiCompatible()) {
+                return false;
+            }
+
+            for (byte b : string.getBytes().unsafeBytes()) {
+                if ((b & 0x80) != 0) {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+    }
+
     @CoreMethod(names = "b")
     public abstract static class BNode extends CoreMethodNode {
 
