@@ -1,1 +1,0 @@
-fails:Integer#floor returns self

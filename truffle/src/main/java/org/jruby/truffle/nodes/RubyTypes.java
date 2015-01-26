@@ -16,6 +16,7 @@ import org.jruby.truffle.nodes.dispatch.DispatchAction;
 import org.jruby.truffle.runtime.LexicalScope;
 import org.jruby.truffle.runtime.UndefinedPlaceholder;
 import org.jruby.truffle.runtime.core.*;
+import org.jruby.truffle.runtime.rubinius.RubiniusByteArray;
 
 /**
  * The list of types and type conversions that the AST interpreter knows about and can specialise
@@ -63,6 +64,7 @@ import org.jruby.truffle.runtime.core.*;
                 RubyEncodingConverter.class, //
                 RubyMethod.class, //
                 RubyUnboundMethod.class, //
+                RubiniusByteArray.class, //
                 RubyBasicObject.class, //
                 TruffleObject.class, //
                 ThreadLocal.class, //

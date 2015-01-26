@@ -8,7 +8,6 @@ import org.jruby.ir.interpreter.BeginEndInterpreterContext;
 import org.jruby.ir.interpreter.InterpreterContext;
 import org.jruby.ir.operands.Label;
 import org.jruby.ir.operands.LocalVariable;
-import org.jruby.ir.operands.Operand;
 import org.jruby.parser.StaticScope;
 
 public class IREvalScript extends IRClosure {
@@ -48,11 +47,6 @@ public class IREvalScript extends IRClosure {
     @Override
     public IRScopeType getScopeType() {
         return IRScopeType.EVAL_SCRIPT;
-    }
-
-    @Override
-    public Operand[] getBlockArgs() {
-        return new Operand[0];
     }
 
     public boolean isModuleOrInstanceEval() {

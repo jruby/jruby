@@ -108,13 +108,14 @@ public abstract class EncodingNodes {
         }
 
         @Specialization
-        public RubyEncoding defaultInternal() {
+        public Object defaultInternal() {
             notDesignedForCompilation();
 
             Encoding encoding = getContext().getRuntime().getDefaultInternalEncoding();
 
             if (encoding == null) {
-                encoding = UTF8Encoding.INSTANCE;
+                return getContext().getCoreLibrary().getNilObject();
+                //encoding = UTF8Encoding.INSTANCE;
             }
 
             return RubyEncoding.getEncoding(encoding);

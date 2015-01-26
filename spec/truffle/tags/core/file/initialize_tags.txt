@@ -1,3 +1,2 @@
-fails:File#initialize needs to be reviewed for spec completeness
 fails:File#initialize accepts encoding options in mode parameter
 fails:File#initialize accepts encoding options as a hash parameter

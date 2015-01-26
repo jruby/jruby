@@ -114,6 +114,7 @@ public class CoreLibrary {
     @CompilerDirectives.CompilationFinal private RubyClass encodingCompatibilityErrorClass;
     @CompilerDirectives.CompilationFinal private RubyClass methodClass;
     @CompilerDirectives.CompilationFinal private RubyClass unboundMethodClass;
+    @CompilerDirectives.CompilationFinal private RubyClass byteArrayClass;
 
     @CompilerDirectives.CompilationFinal private RubyArray argv;
     @CompilerDirectives.CompilationFinal private RubyBasicObject globalVariablesObject;
@@ -211,6 +212,8 @@ public class CoreLibrary {
 
         ioClass = new RubyClass(context, objectClass, objectClass, "IO");
 
+        final RubyModule rubiniusModule = new RubyModule(context, objectClass, "Rubinius");
+
         argumentErrorClass = new RubyClass(context, objectClass, standardErrorClass, "ArgumentError");
         argumentErrorClass.setAllocator(new RubyException.ExceptionAllocator());
         arrayClass = new RubyClass(context, objectClass, objectClass, "Array");
@@ -293,9 +296,9 @@ public class CoreLibrary {
         encodingConverterClass.setAllocator(new RubyEncodingConverter.EncodingConverterAllocator());
         methodClass = new RubyClass(context, objectClass, objectClass, "Method");
         unboundMethodClass = new RubyClass(context, objectClass, objectClass, "UnboundMethod");
-
         encodingCompatibilityErrorClass = new RubyClass(context, encodingClass, standardErrorClass, "CompatibilityError");
         encodingCompatibilityErrorClass.setAllocator(new RubyException.ExceptionAllocator());
+        byteArrayClass = new RubyClass(context, rubiniusModule, objectClass, "ByteArray");
 
         // Includes
 
@@ -709,18 +712,27 @@ public class CoreLibrary {
         return new RubyException(edomClass, context.makeString(String.format("Numerical argument is out of domain - \"%s\"", method)), RubyCallStack.getBacktrace(currentNode));
     }
 
+    public RubyException rangeError(int code, RubyEncoding encoding, Node currentNode) {
+        CompilerAsserts.neverPartOfCompilation();
+        return rangeError(String.format("invalid codepoint %x in %s", code, encoding.getEncoding()), currentNode);
+    }
+
     public RubyException rangeError(String type, String value, String range, Node currentNode) {
         CompilerAsserts.neverPartOfCompilation();
-        return new RubyException(rangeErrorClass, context.makeString(String.format("%s %s out of range of %s", type, value, range)), RubyCallStack.getBacktrace(currentNode));
+        return rangeError(String.format("%s %s out of range of %s", type, value, range), currentNode);
     }
 
     public RubyException rangeError(RubyRange.IntegerFixnumRange range, Node currentNode) {
         CompilerAsserts.neverPartOfCompilation();
-        return new RubyException(rangeErrorClass, context.makeString(String.format("%d..%s%d out of range",
-                    range.getBegin(),
-                    range.doesExcludeEnd() ? "." : "",
-                    range.getEnd())),
-                RubyCallStack.getBacktrace(currentNode));
+        return rangeError(String.format("%d..%s%d out of range",
+                range.getBegin(),
+                range.doesExcludeEnd() ? "." : "",
+                range.getEnd()), currentNode);
+    }
+
+    public RubyException rangeError(String message, Node currentNode) {
+        CompilerAsserts.neverPartOfCompilation();
+        return new RubyException(rangeErrorClass, context.makeString(message), RubyCallStack.getBacktrace(currentNode));
     }
 
     public RubyException internalError(String message, Node currentNode) {
@@ -957,5 +969,9 @@ public class CoreLibrary {
 
     public RubyClass getComplexClass() {
         return complexClass;
+    }
+
+    public RubyClass getByteArrayClass() {
+        return byteArrayClass;
     }
 }

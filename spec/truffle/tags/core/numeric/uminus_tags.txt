@@ -1,4 +1,1 @@
-fails:Numeric#-@ returns the same value with opposite sign (integers)
-fails:Numeric#-@ returns the same value with opposite sign (floats)
-fails:Numeric#-@ returns the same value with opposite sign (two complement)
 fails:Numeric#-@ with a Numeric subclass calls #coerce(0) on self, then subtracts the second element of the result from the first

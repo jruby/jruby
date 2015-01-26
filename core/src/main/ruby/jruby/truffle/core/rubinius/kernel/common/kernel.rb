@@ -53,6 +53,29 @@ module Kernel
   module_function :Float
 
   ##
+  # MRI uses a macro named NUM2DBL which has essentially the same semantics as
+  # Float(), with the difference that it raises a TypeError and not a
+  # ArgumentError. It is only used in a few places (in MRI and Rubinius).
+  #--
+  # If we can, we should probably get rid of this.
+
+  def FloatValue(obj)
+    exception = TypeError.new 'no implicit conversion to float'
+
+    case obj
+    when String
+      raise exception
+    else
+      begin
+        Rubinius::Type.coerce_object_to_float obj
+      rescue
+        raise exception
+      end
+    end
+  end
+  private :FloatValue
+
+  ##
   # MRI uses a macro named StringValue which has essentially the same
   # semantics as obj.coerce_to(String, :to_str), but rather than using that
   # long construction everywhere, we define a private method similar to
@@ -81,5 +104,7 @@ module Kernel
     Rubinius.primitive :object_id
     raise PrimitiveFailure, "Kernel#object_id primitive failed"
   end
+
+
 
 end

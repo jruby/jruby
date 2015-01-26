@@ -30,6 +30,7 @@ import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.UndefinedPlaceholder;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.*;
+import org.jruby.truffle.runtime.rubinius.RubiniusByteArray;
 import org.jruby.truffle.runtime.util.ArrayUtils;
 import org.jruby.util.ByteList;
 import org.jruby.util.Pack;
@@ -62,7 +63,7 @@ public abstract class StringNodes {
         public RubyString add(RubyString a, RubyString b) {
             notDesignedForCompilation();
 
-            return getContext().makeString(a.toString() + b.toString());
+            return (RubyString) getContext().toTruffle(getContext().toJRuby(a).op_plus(getContext().getRuntime().getCurrentContext(), getContext().toJRuby(b)));
         }
     }
 
@@ -369,6 +370,35 @@ public abstract class StringNodes {
         }
     }
 
+    @CoreMethod(names = "ascii_only?")
+    public abstract static class ASCIIOnlyNode extends CoreMethodNode {
+
+        public ASCIIOnlyNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public ASCIIOnlyNode(ASCIIOnlyNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public boolean asciiOnly(RubyString string) {
+            notDesignedForCompilation();
+
+            if (!string.getBytes().getEncoding().isAsciiCompatible()) {
+                return false;
+            }
+
+            for (byte b : string.getBytes().unsafeBytes()) {
+                if ((b & 0x80) != 0) {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+    }
+
     @CoreMethod(names = "b")
     public abstract static class BNode extends CoreMethodNode {
 
@@ -407,14 +437,61 @@ public abstract class StringNodes {
             final int[] store = new int[bytes.length];
 
             for (int n = 0; n < store.length; n++) {
-                store[n] = toUnsignedInt(bytes[n]);
+                store[n] = ((int) bytes[n]) & 0xFF;
             }
 
             return new RubyArray(getContext().getCoreLibrary().getArrayClass(), store, bytes.length);
         }
 
-        public static int toUnsignedInt(byte x) {
-            return ((int) x) & 0xff;
+    }
+
+    @CoreMethod(names = "bytesize")
+    public abstract static class ByteSizeNode extends CoreMethodNode {
+
+        public ByteSizeNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public ByteSizeNode(ByteSizeNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public int byteSize(RubyString string) {
+            return string.getBytes().length();
+        }
+
+    }
+
+    @CoreMethod(names = "byteslice", required = 1, optional = 1)
+    public abstract static class ByteSliceNode extends CoreMethodNode {
+
+        public ByteSliceNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public ByteSliceNode(ByteSliceNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public Object byteSlice(RubyString string, int index, UndefinedPlaceholder undefined) {
+            return byteSlice(string, index, 1);
+        }
+
+        @Specialization
+        public Object byteSlice(RubyString string, int index, int length) {
+            final ByteList bytes = string.getBytes();
+
+            final int normalisedIndex = string.normaliseIndex(index);
+
+            if (normalisedIndex > bytes.length() || normalisedIndex + length > bytes.length()) {
+                return getContext().getCoreLibrary().getNilObject();
+            }
+
+            final byte[] copiedBytes = Arrays.copyOfRange(bytes.getUnsafeBytes(), index, index + 1);
+
+            return new RubyString(getContext().getCoreLibrary().getStringClass(), new ByteList(copiedBytes, string.getBytes().getEncoding()));
         }
 
     }
@@ -523,6 +600,23 @@ public abstract class StringNodes {
             }
 
             return string.count(otherStrings);
+        }
+    }
+
+    @CoreMethod(names = "data")
+    public abstract static class DataNode extends CoreMethodNode {
+
+        public DataNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public DataNode(DataNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public RubiniusByteArray data(RubyString string) {
+            return new RubiniusByteArray(getContext().getCoreLibrary().getByteArrayClass(), string.getBytes());
         }
     }
 
@@ -870,7 +964,7 @@ public abstract class StringNodes {
         }
     }
 
-    @CoreMethod(names = "initialize", required = 1)
+    @CoreMethod(names = "initialize", optional = 1)
     public abstract static class InitializeNode extends CoreMethodNode {
 
         public InitializeNode(RubyContext context, SourceSection sourceSection) {

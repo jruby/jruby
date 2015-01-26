@@ -119,7 +119,6 @@ public abstract class FixnumNodes {
         public Object add(VirtualFrame frame, int a, RubyBasicObject b) {
             if (rationalAdd == null) {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
-
                 rationalAdd = insert(DispatchHeadNodeFactory.createMethodCall(getContext()));
             }
 
@@ -172,12 +171,17 @@ public abstract class FixnumNodes {
     @CoreMethod(names = "-", required = 1)
     public abstract static class SubNode extends BignumNodes.BignumCoreMethodNode {
 
+        @Child private CallDispatchHeadNode rationalConvertNode;
+        @Child private CallDispatchHeadNode rationalSubNode;
+
         public SubNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
         }
 
         public SubNode(SubNode prev) {
             super(prev);
+            rationalConvertNode = prev.rationalConvertNode;
+            rationalSubNode = prev.rationalSubNode;
         }
 
         @Specialization(rewriteOn = ArithmeticException.class)
@@ -208,6 +212,19 @@ public abstract class FixnumNodes {
         @Specialization
         public double sub(int a, double b) {
             return a - b;
+        }
+
+        @Specialization(guards = "isRational(arguments[1])")
+        public Object sub(VirtualFrame frame, int a, RubyBasicObject b) {
+            if (rationalConvertNode == null) {
+                CompilerDirectives.transferToInterpreter();
+                rationalConvertNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext(), true));
+                rationalSubNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext()));
+            }
+
+            final Object aComplex = rationalConvertNode.call(frame, getContext().getCoreLibrary().getRationalClass(), "convert", null, a, 1);
+
+            return rationalSubNode.call(frame, aComplex, "-", null, b);
         }
 
         @Specialization(rewriteOn = ArithmeticException.class)

@@ -1,4 +1,0 @@
-fails:Bignum#odd? returns true if self is odd and positive
-fails:Bignum#odd? returns true if self is odd and negative
-fails:Bignum#odd? returns false if self is even and positive
-fails:Bignum#odd? returns false if self is even and negative

@@ -1,6 +1,0 @@
-fails:Numeric#<=> returns 0 if self equals other
-fails:Numeric#<=> returns nil if self does not equal other
-fails:Numeric#<=> with subclasses of Numeric is called when instances are compared with #<
-fails:Numeric#<=> with subclasses of Numeric is called when instances are compared with #<=
-fails:Numeric#<=> with subclasses of Numeric is called when instances are compared with #>
-fails:Numeric#<=> with subclasses of Numeric is called when instances are compared with #>=

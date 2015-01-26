@@ -1,1 +1,0 @@
-fails:Time#wday returns an integer representing the day of the week, 0..6, with Sunday being 0

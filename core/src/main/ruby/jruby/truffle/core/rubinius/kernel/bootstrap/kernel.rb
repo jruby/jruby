@@ -35,8 +35,10 @@
 # Only part of Rubinius' kernel.rb
 
 module Kernel
+  
   alias_method :eql?, :equal?
 
   # Truffle: no extra indirection for Kernel#send.
   alias_method :send, :__send__ # from BasicObject
+
 end

@@ -131,3 +131,21 @@ class Regexp
     end
   end
 end
+
+module Rubinius
+
+  L64 = true
+
+  def extended_modules(object)
+    []
+  end
+
+end
+
+class Module
+
+  def extended_modules(object)
+    []
+  end
+
+end

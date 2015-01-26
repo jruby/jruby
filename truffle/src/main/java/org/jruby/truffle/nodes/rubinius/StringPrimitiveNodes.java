@@ -9,11 +9,16 @@
  */
 package org.jruby.truffle.nodes.rubinius;
 
+import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.utilities.ConditionProfile;
+import org.jcodings.exception.EncodingException;
+import org.jcodings.specific.ASCIIEncoding;
 import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.*;
+import org.jruby.util.ByteList;
 import org.jruby.util.StringSupport;
 
 /**
@@ -47,6 +52,71 @@ public abstract class StringPrimitiveNodes {
 
     }
 
+    @RubiniusPrimitive(name = "string_from_codepoint", needsSelf = false)
+    public static abstract class StringFromCodepointPrimitiveNode extends RubiniusPrimitiveNode {
+
+        public StringFromCodepointPrimitiveNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public StringFromCodepointPrimitiveNode(StringFromCodepointPrimitiveNode prev) {
+            super(prev);
+        }
+
+        @Specialization(guards = "isSimple")
+        public RubyString stringFromCodepointSimple(int code, RubyEncoding encoding) {
+            return new RubyString(
+                    getContext().getCoreLibrary().getStringClass(),
+                    new ByteList(new byte[]{(byte) code}, encoding.getEncoding()));
+        }
+
+        @Specialization(guards = "!isSimple")
+        public RubyString stringFromCodepoint(int code, RubyEncoding encoding) {
+            notDesignedForCompilation();
+
+            final int length;
+
+            try {
+                length = encoding.getEncoding().codeToMbcLength(code);
+            } catch (EncodingException e) {
+                throw new RaiseException(getContext().getCoreLibrary().rangeError(code, encoding, this));
+            }
+
+            if (length <= 0) {
+                CompilerDirectives.transferToInterpreter();
+                throw new RaiseException(getContext().getCoreLibrary().rangeError(code, encoding, this));
+            }
+
+            final byte[] bytes = new byte[length];
+
+            try {
+                encoding.getEncoding().codeToMbc(code, bytes, 0);
+            } catch (EncodingException e) {
+                throw new RaiseException(getContext().getCoreLibrary().rangeError(code, encoding, this));
+            }
+
+            return new RubyString(
+                    getContext().getCoreLibrary().getStringClass(),
+                    new ByteList(bytes, encoding.getEncoding()));
+        }
+
+        @Specialization
+        public RubyString stringFromCodepointSimple(long code, RubyEncoding encoding) {
+            notDesignedForCompilation();
+
+            if (code < Integer.MIN_VALUE || code > Integer.MAX_VALUE) {
+                throw new UnsupportedOperationException();
+            }
+
+            return stringFromCodepointSimple((int) code, encoding);
+        }
+
+        protected boolean isSimple(int code, RubyEncoding encoding) {
+            return encoding.getEncoding() == ASCIIEncoding.INSTANCE && code >= 0x00 && code <= 0xFF;
+        }
+
+    }
+
     @RubiniusPrimitive(name = "string_to_f", needsSelf = false)
     public static abstract class StringToFPrimitiveNode extends RubiniusPrimitiveNode {
 
@@ -59,9 +129,14 @@ public abstract class StringPrimitiveNodes {
         }
 
         @Specialization
-        public double stringToF(RubyString string) {
+        public Object stringToF(RubyString string) {
             notDesignedForCompilation();
-            return Double.parseDouble(string.toString());
+
+            try {
+                return Double.parseDouble(string.toString());
+            } catch (NumberFormatException e) {
+                return null;
+            }
         }
 
     }

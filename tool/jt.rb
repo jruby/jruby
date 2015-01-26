@@ -8,7 +8,9 @@
 
 # A workflow tool for JRuby+Truffle development
 
-# Recommended: function jt { ruby tool/jt.rb $@; }
+# Recommended: function jt { ruby PATH/TO/jruby/tool/jt.rb $@; }
+
+JRUBY_DIR = File.expand_path('../..', __FILE__)
 
 module Utilities
 
@@ -16,16 +18,16 @@ module Utilities
     ENV['GRAAL_BIN'],
     '../graalvm-jdk1.8.0/bin/java',         # This also seems like a sensible place to keep it
     '../../graal/graalvm-jdk1.8.0/bin/java' # This is where I (CS) keep it
-  ]
+  ].compact.map { |path| File.expand_path(path, JRUBY_DIR) }
 
   def self.find_graal
-    GRAAL_LOCATIONS.each do |location|
-      if !location.nil? && File.executable?(location)
-        return location
-      end
+    not_found = -> {
+      # TODO(CS 24-Jan-15) download it?
+      raise "coudln't find graal"
+    }
+    GRAAL_LOCATIONS.find(not_found) do |location|
+      File.executable?(location)
     end
-    # TODO(CS 24-Jan-15) download it?
-    raise "coudln't find graal"
   end
 
 end
@@ -34,8 +36,10 @@ module ShellUtils
   private
 
   def sh(*args)
-    system(*args)
-    raise 'failed' unless $? == 0
+    Dir.chdir(JRUBY_DIR) do
+      system(*args)
+      raise 'failed' unless $? == 0
+    end
   end
 
   def mvn(*args)
@@ -56,7 +60,7 @@ module Commands
     puts 'jt rebuild                                   clean and build'
     puts 'jt run [options] args...                     run JRuby with -X+T and args'
     puts '    --graal        use Graal (set GRAAL_BIN or it will try to automagically find it)'
-    puts '    --asm          show assembly (use with --graal)'
+    puts '    --asm          show assembly (implies --graal)'
     puts 'jt test                                      run all specs'
     puts 'jt test fast                                 run all specs except sub-processes, GC, sleep, ...'
     puts 'jt test spec/ruby/language                   run specs in this directory'
@@ -86,22 +90,24 @@ module Commands
 
   def run(*args)
     env_vars = {}
-    jruby_args = []
+    jruby_args = %w[-J-cp truffle/target/jruby-truffle-9.0.0.0-SNAPSHOT.jar -X+T]
 
-    while %w[--graal --asm].include? args.first
-      case args.shift
-      when '--graal'
-        env_vars["JAVACMD"] = Utilities.find_graal
-        jruby_args << '-J-server'
-      when '--asm'
-        jruby_args += %w[-J-XX:+UnlockDiagnosticVMOptions -J-XX:CompileCommand=print,*::callRoot]
-      end
+    { '--asm' => '--graal' }.each_pair do |arg, dep|
+      args.unshift dep if args.include?(arg)
+    end
+
+    if args.delete('--graal')
+      env_vars["JAVACMD"] = Utilities.find_graal
+      jruby_args << '-J-server'
+    end
+
+    if args.delete('--asm')
+      jruby_args += %w[-J-XX:+UnlockDiagnosticVMOptions -J-XX:CompileCommand=print,*::callRoot]
     end
 
     env_vars['VERIFY_JRUBY'] = '1'
-    jruby_args += args
 
-    sh(env_vars, *%w[bin/jruby -J-cp truffle/target/jruby-truffle-9.0.0.0-SNAPSHOT.jar -X+T], *jruby_args)
+    exec(env_vars, "#{JRUBY_DIR}/bin/jruby", *jruby_args, *args)
   end
 
   def test(*args)

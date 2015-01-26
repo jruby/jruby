@@ -171,7 +171,7 @@ public abstract class SymbolNodes {
 
     }
 
-    @CoreMethod(names = "to_s")
+    @CoreMethod(names = { "to_s", "id2name" })
     public abstract static class ToSNode extends CoreMethodNode {
 
         public ToSNode(RubyContext context, SourceSection sourceSection) {

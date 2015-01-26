@@ -28,6 +28,7 @@ import org.jruby.truffle.runtime.LexicalScope;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.UndefinedPlaceholder;
 import org.jruby.truffle.runtime.core.*;
+import org.jruby.truffle.runtime.rubinius.RubiniusByteArray;
 
 import java.math.BigInteger;
 
@@ -196,6 +197,10 @@ public abstract class RubyNode extends Node implements ProbeNode.Instrumentable 
 
     public RubyUnboundMethod executeRubyUnboundMethod(VirtualFrame frame) throws UnexpectedResultException {
         return RubyTypesGen.RUBYTYPES.expectRubyUnboundMethod(execute(frame));
+    }
+
+    public RubiniusByteArray executeRubiniusByteArray(VirtualFrame frame) throws UnexpectedResultException {
+        return RubyTypesGen.RUBYTYPES.expectRubiniusByteArray(execute(frame));
     }
 
     public void executeVoid(VirtualFrame frame) {

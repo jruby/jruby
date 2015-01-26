@@ -18,6 +18,7 @@ import org.jruby.truffle.runtime.RubyCallStack;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.backtrace.Backtrace;
 import org.jruby.truffle.runtime.core.RubyArray;
+import org.jruby.truffle.runtime.core.RubyHash;
 import org.jruby.truffle.runtime.core.RubyNilClass;
 import org.jruby.truffle.runtime.core.RubyString;
 
@@ -107,6 +108,35 @@ public abstract class TruffleDebugNodes {
 
     }
 
+    @CoreMethod(names = "dump_string", onSingleton = true, required = 1)
+    public abstract static class DumpStringNode extends CoreMethodNode {
+
+        public DumpStringNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public DumpStringNode(DumpStringNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public RubyString dumpString(RubyString string) {
+            notDesignedForCompilation();
+
+            final StringBuilder builder = new StringBuilder();
+            builder.append("\"");
+
+            for (byte b : string.getBytes().unsafeBytes()) {
+                builder.append(String.format("\\x%02x", b));
+            }
+
+            builder.append("\"");
+
+            return getContext().makeString(builder.toString());
+        }
+
+    }
+
     @CoreMethod(names = "storage_class", onSingleton = true, required = 1)
     public abstract static class StorageClassNode extends CoreMethodNode {
 
@@ -119,13 +149,24 @@ public abstract class TruffleDebugNodes {
         }
 
         @Specialization
-        public RubyString javaClassOf(RubyArray array) {
+        public RubyString storageClass(RubyArray array) {
             notDesignedForCompilation();
 
             if (array.getStore() == null) {
                 return getContext().makeString("null");
             } else {
                 return getContext().makeString(array.getStore().getClass().getName());
+            }
+        }
+
+        @Specialization
+        public RubyString storageClass(RubyHash hash) {
+            notDesignedForCompilation();
+
+            if (hash.getStore() == null) {
+                return getContext().makeString("null");
+            } else {
+                return getContext().makeString(hash.getStore().getClass().getName());
             }
         }
 

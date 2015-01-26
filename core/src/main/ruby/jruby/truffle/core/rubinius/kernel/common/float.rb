@@ -97,4 +97,9 @@ class Float < Numeric
     end
   end
 
+  def dtoa
+    Rubinius.primitive :float_dtoa
+    raise PrimitiveFailure, "Fload#dtoa primitive failed"
+  end
+
 end

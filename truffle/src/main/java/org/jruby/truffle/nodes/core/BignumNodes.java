@@ -77,13 +77,13 @@ public abstract class BignumNodes {
         }
 
         @Specialization
-        public RubyBignum add(RubyBignum a, int b) {
-            return a.add(b);
+        public Object add(RubyBignum a, int b) {
+            return fixnumOrBignum(a.add(b));
         }
 
         @Specialization
-        public RubyBignum add(RubyBignum a, long b) {
-            return a.add(b);
+        public Object add(RubyBignum a, long b) {
+            return fixnumOrBignum(a.add(b));
         }
 
         @Specialization
@@ -688,6 +688,24 @@ public abstract class BignumNodes {
         @Specialization
         public int hash(RubyBignum self) {
             return self.bigIntegerValue().hashCode();
+        }
+
+    }
+
+    @CoreMethod(names = "size")
+    public abstract static class SizeNode extends CoreMethodNode {
+
+        public SizeNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public SizeNode(SizeNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public int size(RubyBignum value) {
+            return value.bigIntegerValue().bitLength();
         }
 
     }

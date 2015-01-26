@@ -880,6 +880,17 @@ public class BodyTranslator extends Translator {
         // Unqualified constant access, as in CONST
         final SourceSection sourceSection = translate(node.getPosition());
 
+        /*
+         * Constants of the form Rubinius::Foo in the Rubinius kernel code always seem to get resolved, even if
+         * Rubinius is not defined, such as in BasicObject. We get around this by translating Rubinius to be
+         * ::Rubinius. Note that this isn't quite what Rubinius does, as they say that Rubinius isn't defined, but
+         * we will because we'll translate that to ::Rubinius. But it is a simpler translation.
+         */
+
+        if (node.getName().equals("Rubinius") && sourceSection.getSource().getPath().startsWith("core:/jruby/truffle/core/rubinius/kernel")) {
+            return new org.jruby.ast.Colon3Node(node.getPosition(), node.getName()).accept(this);
+        }
+
         final LexicalScope lexicalScope = environment.getLexicalScope();
         final RubyNode moduleNode = new LexicalScopeNode(context, sourceSection, lexicalScope);
         return new ReadConstantNode(context, sourceSection, node.getName(), moduleNode, lexicalScope);

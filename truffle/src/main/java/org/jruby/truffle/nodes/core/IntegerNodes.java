@@ -14,6 +14,7 @@ import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.utilities.BranchProfile;
+import org.jruby.truffle.nodes.methods.UnsupportedOperationBehavior;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.UndefinedPlaceholder;
 import org.jruby.truffle.runtime.control.BreakException;
@@ -27,51 +28,60 @@ import org.jruby.truffle.runtime.core.RubyString;
 @CoreClass(name = "Integer")
 public abstract class IntegerNodes {
 
-    @CoreMethod(names = "chr")
-    public abstract static class ChrNode extends CoreMethodNode {
+    @CoreMethod(names = "downto", needsBlock = true, required = 1, unsupportedOperationBehavior = UnsupportedOperationBehavior.ARGUMENT_ERROR)
+    public abstract static class DownToNode extends YieldingCoreMethodNode {
 
-        public ChrNode(RubyContext context, SourceSection sourceSection) {
+        private final BranchProfile breakProfile = BranchProfile.create();
+        private final BranchProfile nextProfile = BranchProfile.create();
+        private final BranchProfile redoProfile = BranchProfile.create();
+
+        public DownToNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
         }
 
-        public ChrNode(ChrNode prev) {
+        public DownToNode(DownToNode prev) {
             super(prev);
         }
 
         @Specialization
-        public RubyString chr(int n) {
+        public Object downto(VirtualFrame frame, int from, int to, RubyProc block) {
+            int count = 0;
+
+            try {
+                outer:
+                for (int i = from; i >= to; i--) {
+                    while (true) {
+                        if (CompilerDirectives.inInterpreter()) {
+                            count++;
+                        }
+
+                        try {
+                            yield(frame, block, i);
+                            continue outer;
+                        } catch (BreakException e) {
+                            breakProfile.enter();
+                            return e.getResult();
+                        } catch (NextException e) {
+                            nextProfile.enter();
+                            continue outer;
+                        } catch (RedoException e) {
+                            redoProfile.enter();
+                        }
+                    }
+                }
+            } finally {
+                if (CompilerDirectives.inInterpreter()) {
+                    getRootNode().reportLoopCount(count);
+                }
+            }
+
+            return getContext().getCoreLibrary().getNilObject();
+        }
+
+        @Specialization
+        public Object downto(VirtualFrame frame, int from, double to, RubyProc block) {
             notDesignedForCompilation();
-
-            // TODO(CS): not sure about encoding here
-            return getContext().makeString((char) n);
-        }
-
-    }
-
-    @CoreMethod(names = "floor")
-    public abstract static class FloorNode extends CoreMethodNode {
-
-        public FloorNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
-        public FloorNode(FloorNode prev) {
-            super(prev);
-        }
-
-        @Specialization
-        public int floor(int n) {
-            return n;
-        }
-
-        @Specialization
-        public long floor(long n) {
-            return n;
-        }
-
-        @Specialization
-        public RubyBignum floor(RubyBignum n) {
-            return n;
+            return downto(frame, from, (int) Math.ceil(to), block);
         }
 
     }
@@ -226,7 +236,7 @@ public abstract class IntegerNodes {
 
     }
 
-    @CoreMethod(names = "upto", needsBlock = true, required = 1)
+    @CoreMethod(names = "upto", needsBlock = true, required = 1, unsupportedOperationBehavior = UnsupportedOperationBehavior.ARGUMENT_ERROR)
     public abstract static class UpToNode extends YieldingCoreMethodNode {
 
         private final BranchProfile breakProfile = BranchProfile.create();
@@ -274,6 +284,12 @@ public abstract class IntegerNodes {
             }
 
             return getContext().getCoreLibrary().getNilObject();
+        }
+
+        @Specialization
+        public Object upto(VirtualFrame frame, int from, double to, RubyProc block) {
+            notDesignedForCompilation();
+            return upto(frame, from, (int) Math.floor(to), block);
         }
 
         @Specialization

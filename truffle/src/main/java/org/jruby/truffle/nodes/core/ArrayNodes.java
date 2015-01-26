@@ -1749,6 +1749,17 @@ public abstract class ArrayNodes {
             }
         }
 
+        @Specialization(guards = "isFloat")
+        public Object firstFloat(RubyArray array) {
+            notDesignedForCompilation();
+
+            if (array.getSize() == 0) {
+                return getContext().getCoreLibrary().getNilObject();
+            } else {
+                return ((double[]) array.getStore())[0];
+            }
+        }
+
         @Specialization(guards = "isObject")
         public Object firstObject(RubyArray array) {
             notDesignedForCompilation();
@@ -1882,7 +1893,7 @@ public abstract class ArrayNodes {
 
     }
 
-    @CoreMethod(names = "initialize", needsBlock = true, required = 1, optional = 1)
+    @CoreMethod(names = "initialize", needsBlock = true, optional = 2)
     @ImportGuards(ArrayGuards.class)
     public abstract static class InitializeNode extends YieldingCoreMethodNode {
 
@@ -1896,6 +1907,11 @@ public abstract class ArrayNodes {
         public InitializeNode(InitializeNode prev) {
             super(prev);
             arrayBuilder = prev.arrayBuilder;
+        }
+
+        @Specialization
+        public RubyArray initialize(RubyArray array, UndefinedPlaceholder size, UndefinedPlaceholder defaultValue, UndefinedPlaceholder block) {
+            return initialize(array, 0, getContext().getCoreLibrary().getNilObject(), block);
         }
 
         @Specialization
@@ -2948,7 +2964,7 @@ public abstract class ArrayNodes {
 
     }
 
-    @CoreMethod(names = {"push", "<<"}, argumentsAsArray = true)
+    @CoreMethod(names = {"push", "<<", "__append__"}, argumentsAsArray = true)
     public abstract static class PushNode extends ArrayCoreMethodNode {
 
         private final BranchProfile extendBranch = BranchProfile.create();
