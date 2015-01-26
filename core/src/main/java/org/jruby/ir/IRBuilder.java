@@ -3399,7 +3399,6 @@ public class IRBuilder {
     }
 
     private Operand buildZSuperIfNest(final Operand block) {
-        final IRScope s = scope;
         // If we are in a block, we cannot make any assumptions about what args
         // the super instr is going to get -- if there were no 'define_method'
         // for defining methods, we could guarantee that the super is going to
@@ -3419,9 +3418,9 @@ public class IRBuilder {
 
                 Label allDoneLabel = getNewLabel();
 
-                IRScope superScope = s;
                 int depthFromSuper = 0;
                 Label next = null;
+                IRScope superScope = scope;
 
                 // Loop and generate a block for each possible value of depthFromSuper
                 Variable zsuperResult = createTemporaryVariable();
@@ -3430,7 +3429,7 @@ public class IRBuilder {
                     if (next != null) addInstr(new LabelInstr(next));
                     next = getNewLabel();
                     addInstr(BNEInstr.create(new Fixnum(depthFromSuper), scopeDepth, next));
-                    Operand[] args = adjustVariableDepth(((IRClosure)superScope).getBlockArgs(), depthFromSuper);
+                    Operand[] args = adjustVariableDepth(superScope.getCallArgs(), depthFromSuper);
                     addInstr(new ZSuperInstr(zsuperResult, buildSelf(), args,  block));
                     addInstr(new JumpInstr(allDoneLabel));
 
@@ -3443,7 +3442,7 @@ public class IRBuilder {
 
                 // If we hit a method, this is known to always succeed
                 if (superScope instanceof IRMethod) {
-                    Operand[] args = adjustVariableDepth(((IRMethod)superScope).getCallArgs(), depthFromSuper);
+                    Operand[] args = adjustVariableDepth(superScope.getCallArgs(), depthFromSuper);
                     addInstr(new ZSuperInstr(zsuperResult, buildSelf(), args, block));
                 } //else {
                 // FIXME: Do or don't ... there is no try
@@ -3467,7 +3466,7 @@ public class IRBuilder {
 
         // Enebo:ZSuper in for (or nested for) can be statically resolved like method but it needs to fixup depth.
         if (scope instanceof IRMethod) {
-            return buildSuperInstr(block, ((IRMethod) scope).getCallArgs());
+            return buildSuperInstr(block, scope.getCallArgs());
         } else {
             return buildZSuperIfNest(block);
         }

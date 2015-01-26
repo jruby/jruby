@@ -1,6 +1,5 @@
 package org.jruby.ir;
 
-import org.jcodings.specific.USASCIIEncoding;
 import org.jruby.ir.instructions.*;
 import org.jruby.ir.interpreter.ClosureInterpreterContext;
 import org.jruby.ir.interpreter.InterpreterContext;
@@ -14,11 +13,7 @@ import org.jruby.runtime.BlockBody;
 import org.jruby.runtime.IRBlockBody;
 import org.jruby.runtime.InterpretedIRBlockBody;
 import org.jruby.runtime.Signature;
-import org.jruby.util.KeyValuePair;
 import org.objectweb.asm.Handle;
-
-import java.util.ArrayList;
-import java.util.List;
 
 // Closures are contexts/scopes for the purpose of IR building.  They are self-contained and accumulate instructions
 // that don't merge into the flow of the containing scope.  They are manipulated as an unit.
@@ -32,10 +27,6 @@ public class IRClosure extends IRScope {
     private int nestingDepth;      // How many nesting levels within a method is this closure nested in?
 
     private boolean isBeginEndBlock;
-
-    // Block parameters
-    private List<Operand> blockArgs;
-    private List<KeyValuePair<Operand, Operand>> keywordArgs;
 
     /** The parameter names, for Proc#parameters */
     private String[] parameterList;
@@ -83,8 +74,7 @@ public class IRClosure extends IRScope {
         } else {
             this.body = new InterpretedIRBlockBody(this, c.body.getSignature());
         }
-        this.blockArgs = new ArrayList<>();
-        this.keywordArgs = new ArrayList<>();
+
         this.signature = c.signature;
     }
 
@@ -98,8 +88,6 @@ public class IRClosure extends IRScope {
 
     public IRClosure(IRManager manager, IRScope lexicalParent, int lineNumber, StaticScope staticScope, Signature signature, int argumentType, String prefix, boolean isBeginEndBlock) {
         this(manager, lexicalParent, lexicalParent.getFileName(), lineNumber, staticScope, prefix);
-        this.blockArgs = new ArrayList<>();
-        this.keywordArgs = new ArrayList<>();
         this.argumentType = argumentType;
         this.signature = signature;
         lexicalParent.addClosure(this);
@@ -132,9 +120,8 @@ public class IRClosure extends IRScope {
 
     public void setParameterList(String[] parameterList) {
         this.parameterList = parameterList;
-        if (!getManager().isDryRun()) {
-            ((InterpretedIRBlockBody)this.body).setParameterList(parameterList);
-        }
+
+        if (!getManager().isDryRun()) this.body.setParameterList(parameterList);
     }
 
     public String[] getParameterList() {
@@ -184,39 +171,6 @@ public class IRClosure extends IRScope {
     @Override
     public boolean isFlipScope() {
         return false;
-    }
-
-    @Override
-    public void addInstr(Instr i) {
-        // Accumulate block arguments
-        if (i instanceof ReceiveKeywordRestArgInstr) {
-            // Always add the keyword rest arg to the beginning
-            keywordArgs.add(0, new KeyValuePair<Operand, Operand>(Symbol.KW_REST_ARG_DUMMY, ((ReceiveArgBase) i).getResult()));
-        } else if (i instanceof ReceiveKeywordArgInstr) {
-            ReceiveKeywordArgInstr rkai = (ReceiveKeywordArgInstr)i;
-            // FIXME: This lost encoding information when name was converted to string earlier in IRBuilder
-            keywordArgs.add(new KeyValuePair<Operand, Operand>(new Symbol(rkai.argName, USASCIIEncoding.INSTANCE), rkai.getResult()));
-        } else if (i instanceof ReceiveRestArgInstr) {
-            blockArgs.add(new Splat(((ReceiveRestArgInstr)i).getResult()));
-        } else if (i instanceof ReceiveArgBase) {
-            blockArgs.add(((ReceiveArgBase) i).getResult());
-        }
-
-        super.addInstr(i);
-    }
-
-    public Operand[] getBlockArgs() {
-        if (receivesKeywordArgs()) {
-            int i = 0;
-            Operand[] args = new Operand[blockArgs.size() + 1];
-            for (Operand arg: blockArgs) {
-                args[i++] = arg;
-            }
-            args[i] = new Hash(keywordArgs, true);
-            return args;
-        } else {
-            return blockArgs.toArray(new Operand[blockArgs.size()]);
-        }
     }
 
     public String toStringBody() {
