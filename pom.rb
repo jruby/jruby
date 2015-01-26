@@ -40,11 +40,6 @@ project 'JRuby', 'https://github.com/jruby/jruby' do
     releases 'false'
     snapshots 'true'
   end
-  repository( 'http://lafo.ssw.uni-linz.ac.at/nexus/content/repositories/releases/',
-              :id => 'truffle' ) do
-    releases 'true'
-    snapshots 'false'
-  end
 
   source_control( :url => 'https://github.com/jruby/jruby',
                   :connection => 'scm:git:git@jruby.org:jruby.git',
