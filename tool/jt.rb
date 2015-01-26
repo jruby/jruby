@@ -16,16 +16,16 @@ module Utilities
     ENV['GRAAL_BIN'],
     '../graalvm-jdk1.8.0/bin/java',         # This also seems like a sensible place to keep it
     '../../graal/graalvm-jdk1.8.0/bin/java' # This is where I (CS) keep it
-  ]
+  ].compact
 
   def self.find_graal
-    GRAAL_LOCATIONS.each do |location|
-      if !location.nil? && File.executable?(location)
-        return location
-      end
+    not_found = -> {
+      # TODO(CS 24-Jan-15) download it?
+      raise "coudln't find graal"
+    }
+    GRAAL_LOCATIONS.find(not_found) do |location|
+      File.executable?(location)
     end
-    # TODO(CS 24-Jan-15) download it?
-    raise "coudln't find graal"
   end
 
 end
@@ -99,9 +99,8 @@ module Commands
     end
 
     env_vars['VERIFY_JRUBY'] = '1'
-    jruby_args += args
 
-    sh(env_vars, *%w[bin/jruby -J-cp truffle/target/jruby-truffle-9.0.0.0-SNAPSHOT.jar -X+T], *jruby_args)
+    sh(env_vars, *%w[bin/jruby -J-cp truffle/target/jruby-truffle-9.0.0.0-SNAPSHOT.jar -X+T], *jruby_args, *args)
   end
 
   def test(*args)
