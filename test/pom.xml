@@ -341,6 +341,7 @@
                       <arg value="test/mri/ruby/test_path.rb" />
                       <arg value="test/mri/ruby/test_pipe.rb" />
                       <arg value="test/mri/ruby/test_primitive.rb" />
+                      <arg value="test/mri/ruby/test_process.rb" />
                       <arg value="test/mri/ruby/test_rand.rb" />
                       <arg value="test/mri/ruby/test_range.rb" />
                       <arg value="test/mri/ruby/test_rational.rb" />
