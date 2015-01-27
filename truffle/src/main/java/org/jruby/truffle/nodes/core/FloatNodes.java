@@ -440,7 +440,7 @@ public abstract class FloatNodes {
         }
     }
 
-    @CoreMethod(names = "==", required = 1)
+    @CoreMethod(names = { "==", "===" }, required = 1)
     public abstract static class EqualNode extends CoreMethodNode {
 
         @Child private CallDispatchHeadNode fallbackCallNode;
