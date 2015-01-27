@@ -60,6 +60,7 @@ import org.jruby.runtime.CallType;
 import org.jruby.runtime.Helpers;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
+import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.backtrace.RubyStackTraceElement;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.load.IAutoloadMethod;
@@ -76,6 +77,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.Map;
 
 import static org.jruby.RubyEnumerator.enumeratorizeWithSize;
@@ -762,13 +764,21 @@ public class RubyKernel {
     @JRubyMethod(name = "local_variables", module = true, visibility = PRIVATE)
     public static RubyArray local_variables19(ThreadContext context, IRubyObject recv) {
         final Ruby runtime = context.runtime;
-        RubyArray localVariables = runtime.newArray();
+        HashSet<String> encounteredLocalVariables = new HashSet<String>();
+        RubyArray allLocalVariables = runtime.newArray();
+        DynamicScope currentScope = context.getCurrentScope();
 
-        for (String name: context.getCurrentScope().getAllNamesInScope()) {
-            if (IdUtil.isLocal(name)) localVariables.append(runtime.newSymbol(name));
+        while (currentScope != null) {
+            for (String name : currentScope.getStaticScope().getVariables()) {
+                if (IdUtil.isLocal(name) && !encounteredLocalVariables.contains(name)) {
+                    allLocalVariables.push(runtime.newSymbol(name));
+                    encounteredLocalVariables.add(name);
+                }
+            }
+            currentScope = currentScope.getParentScope();
         }
 
-        return localVariables;
+        return allLocalVariables;
     }
     
     public static RubyBinding binding(ThreadContext context, IRubyObject recv, Block block) {
