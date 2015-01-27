@@ -19,6 +19,7 @@
       <groupId>org.jruby</groupId>
       <artifactId>jruby-core</artifactId>
       <version>${project.version}</version>
+      <scope>provided</scope>
     </dependency>
     <dependency>
       <groupId>com.oracle</groupId>
@@ -75,18 +76,12 @@
         <artifactId>maven-shade-plugin</artifactId>
         <executions>
           <execution>
-            <id>create lib/jruby-truffle.jar</id>
+            <id>pack lib/jruby-truffle.jar</id>
             <phase>package</phase>
             <goals>
               <goal>shade</goal>
             </goals>
             <configuration>
-              <artifactSet>
-                <includes>
-                  <include>com.oracle:truffle</include>
-                  <include>com.oracle:truffle-dsl-processor</include>
-                </includes>
-              </artifactSet>
               <outputFile>${jruby.basedir}/lib/jruby-truffle.jar</outputFile>
             </configuration>
           </execution>

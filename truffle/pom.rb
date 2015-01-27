@@ -10,7 +10,7 @@ project 'JRuby Truffle' do
 
               'jruby.basedir' => '${basedir}/..' )
 
-  jar 'org.jruby:jruby-core', '${project.version}'
+  jar 'org.jruby:jruby-core', '${project.version}', :scope => 'provided'
 
   jar 'com.oracle:truffle:0.6'
   jar 'com.oracle:truffle-dsl-processor:0.6', :scope => 'provided'
@@ -37,13 +37,9 @@ project 'JRuby Truffle' do
 
   plugin :shade do
     execute_goals( 'shade',
-                   :id => 'pack jruby.jar',
+                   :id => 'create lib/jruby-truffle.jar',
                    :phase => 'package',
-                   'relocations' => [ { 'pattern' => 'org.objectweb',
-                                        'shadedPattern' => 'org.jruby.org.objectweb' } ],
-                   'outputFile' => '${jruby.basedir}/lib/jruby.jar',
-                   'transformers' => [ { '@implementation' => 'org.apache.maven.plugins.shade.resource.ManifestResourceTransformer',
-                                         'mainClass' => 'org.jruby.Main' } ] )
+                   'outputFile' => '${jruby.basedir}/lib/jruby-truffle.jar' )
   end
 
   build do
