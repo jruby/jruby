@@ -34,32 +34,6 @@ public abstract class RubyCallStack {
         return method.getDeclaringModule();
     }
 
-    public static InternalMethod getCurrentMethod() {
-        CompilerAsserts.neverPartOfCompilation();
-
-        final FrameInstance currentFrame = Truffle.getRuntime().getCurrentFrame();
-        final MethodLike method = getMethod(currentFrame);
-
-        if (method instanceof InternalMethod) {
-            return (InternalMethod) method;
-        }
-
-        return Truffle.getRuntime().iterateFrames(new FrameInstanceVisitor<InternalMethod>() {
-
-            @Override
-            public InternalMethod visitFrame(FrameInstance frameInstance) {
-                final MethodLike maybeMethod = getMethod(frameInstance);
-
-                if (maybeMethod instanceof InternalMethod) {
-                    return (InternalMethod) maybeMethod;
-                } else {
-                    return null;
-                }
-            }
-
-        });
-    }
-
     public static InternalMethod getCallingMethod() {
         CompilerAsserts.neverPartOfCompilation();
 
