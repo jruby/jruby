@@ -175,25 +175,21 @@ public abstract class ThreadNodes {
     @CoreMethod(names = "pass", onSingleton = true)
     public abstract static class PassNode extends CoreMethodNode {
 
+        @Child ThreadPassNode threadPassNode;
+
         public PassNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
+            threadPassNode = new ThreadPassNode(context, sourceSection);
         }
 
         public PassNode(PassNode prev) {
             super(prev);
+            threadPassNode = prev.threadPassNode;
         }
 
         @Specialization
-        public RubyNilClass pass() {
-            final RubyThread runningThread = getContext().getThreadManager().leaveGlobalLock();
-
-            try {
-                Thread.yield();
-            } finally {
-                getContext().getThreadManager().enterGlobalLock(runningThread);
-            }
-
-            return getContext().getCoreLibrary().getNilObject();
+        public RubyNilClass pass(VirtualFrame frame) {
+            return threadPassNode.executeRubyNilClass(frame);
         }
 
     }
