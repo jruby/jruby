@@ -26,18 +26,18 @@ import java.net.InetSocketAddress;
 public class StackServerManager {
 
     private final RubyContext context;
-    private final int socket;
+    private final int port;
 
-    public StackServerManager(RubyContext context, int socket) {
+    public StackServerManager(RubyContext context, int port) {
         this.context = context;
-        this.socket = socket;
+        this.port = port;
     }
 
     public void start() {
         final HttpServer server;
 
         try {
-            server = HttpServer.create(new InetSocketAddress(socket), 0);
+            server = HttpServer.create(new InetSocketAddress(port), 0);
         } catch (IOException e) {
             e.printStackTrace();
             return;
