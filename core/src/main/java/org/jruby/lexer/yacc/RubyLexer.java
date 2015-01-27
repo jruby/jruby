@@ -260,7 +260,7 @@ public class RubyLexer {
     
     public enum LexState {
         EXPR_BEG, EXPR_END, EXPR_ARG, EXPR_CMDARG, EXPR_ENDARG, EXPR_MID,
-        EXPR_FNAME, EXPR_DOT, EXPR_CLASS, EXPR_VALUE, EXPR_ENDFN
+        EXPR_FNAME, EXPR_DOT, EXPR_CLASS, EXPR_VALUE, EXPR_ENDFN, EXPR_LABELARG
     }
     
     public static Keyword getKeyword(String str) {
@@ -329,6 +329,7 @@ public class RubyLexer {
     private int braceNest = 0;
 
     private int leftParenBegin = 0;
+    public boolean inKwarg = false;
 
     public int incrementParenNest() {
         parenNest++;
@@ -510,7 +511,8 @@ public class RubyLexer {
 
     private boolean isBEG() {
         return lex_state == LexState.EXPR_BEG || lex_state == LexState.EXPR_MID ||
-                lex_state == LexState.EXPR_CLASS || (lex_state == LexState.EXPR_VALUE);
+                lex_state == LexState.EXPR_CLASS || lex_state == LexState.EXPR_VALUE ||
+                lex_state == LexState.EXPR_LABELARG;
     }
     
     private boolean isEND() {
@@ -1159,6 +1161,13 @@ public class RubyLexer {
                 switch (lex_state) {
                 case EXPR_BEG: case EXPR_FNAME: case EXPR_DOT:
                 case EXPR_CLASS: case EXPR_VALUE:
+                    continue loop;
+                case EXPR_LABELARG:
+                    if (inKwarg) {
+                        commandStart = true;
+                        setState(LexState.EXPR_BEG);
+                        return '\n';
+                    }
                     continue loop;
                 }
 
@@ -1816,7 +1825,7 @@ public class RubyLexer {
         if (isLabelPossible(commandState)) {
             int c2 = src.read();
             if (c2 == ':' && !src.peek(':')) {
-                setState(LexState.EXPR_BEG);
+                setState(LexState.EXPR_LABELARG);
                 yaccValue = tempVal;
                 return Tokens.tLABEL;
             }
