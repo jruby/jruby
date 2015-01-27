@@ -1026,6 +1026,7 @@ public abstract class IRScope implements ParseResult {
 
         // We have two paths.  eval and non-eval.
         if (instrList == null) {  // CFG already made.  eval has zsuper and we walk back to some executing method/script
+            // FIXME: Need to verify this can never re-order recvs in a way to swap order to zsuper
             for (BasicBlock bb: getCFG().getBasicBlocks()) {
                 for (Instr instr: bb.getInstrs()) {
                     extractCallOperands(callArgs, keywordArgs, instr);
