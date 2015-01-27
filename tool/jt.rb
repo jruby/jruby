@@ -91,7 +91,7 @@ module Commands
 
   def run(*args)
     env_vars = {}
-    jruby_args = %w[-J-cp truffle/target/jruby-truffle-9.0.0.0-SNAPSHOT.jar -X+T]
+    jruby_args = %w[-X+T]
 
     { '--asm' => '--graal' }.each_pair do |arg, dep|
       args.unshift dep if args.include?(arg)
@@ -105,8 +105,6 @@ module Commands
     if args.delete('--asm')
       jruby_args += %w[-J-XX:+UnlockDiagnosticVMOptions -J-XX:CompileCommand=print,*::callRoot]
     end
-
-    env_vars['VERIFY_JRUBY'] = '1'
 
     exec(env_vars, "#{JRUBY_DIR}/bin/jruby", *jruby_args, *args)
   end
