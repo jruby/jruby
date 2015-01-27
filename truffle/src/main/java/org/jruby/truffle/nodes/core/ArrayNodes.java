@@ -996,7 +996,7 @@ public abstract class ArrayNodes {
             return value;
         }
 
-        @Specialization(guards = {"isObject", "!isRubyArray(arguments[3])"})
+        @Specialization(guards = { "isObject", "!isRubyArray(arguments[3])", "!isUndefinedPlaceholder(arguments[3])" })
         public Object setObject(RubyArray array, int start, int length, Object value) {
             notDesignedForCompilation();
 
@@ -1011,7 +1011,7 @@ public abstract class ArrayNodes {
                 // We don't care of length in this case
                 return setObject(array, start, value, UndefinedPlaceholder.INSTANCE);
             } else {
-                throw  new UnsupportedOperationException();
+                throw new UnsupportedOperationException();
             }
         }
 
