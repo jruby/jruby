@@ -1228,6 +1228,28 @@ public class RubyInstanceConfig {
     }
 
     /**
+     * Set whether to use the self-first jruby classloader.
+     *
+     * @see Options#SELF_FIRST_CLASS_LOADER
+     *
+     * @param b new value indicating whether self-first classloader is used
+     */
+    public void setSelfFirstClassLoader(boolean b) {
+        _selfFirstClassLoader = b;
+    }
+
+    /**
+     * Get whether to use the self-first jruby classloader.
+     *
+     * @see Options#SELF_FIRST_CLASS_LOADER
+     *
+     * @return true if self-first classloader is used; false otherwise.
+     */
+    public boolean isSelfFirstClassLoader() {
+        return _selfFirstClassLoader;
+    }
+
+    /**
      * @see Options#CLI_STRIP_HEADER
      */
     public void setXFlag(boolean xFlag) {
@@ -1472,6 +1494,7 @@ public class RubyInstanceConfig {
      * Whether native code is enabled for this configuration.
      */
     private boolean _nativeEnabled = NATIVE_ENABLED;
+    private boolean _selfFirstClassLoader = SELF_FIRST_CLASS_LOADER;
 
     private TraceType traceType =
             TraceType.traceTypeFor(Options.BACKTRACE_STYLE.load());
@@ -1674,6 +1697,7 @@ public class RubyInstanceConfig {
      * Set with the <tt>jruby.native.enabled</tt> system property.
      */
     public static final boolean NATIVE_ENABLED = Options.NATIVE_ENABLED.load();
+    public static final boolean SELF_FIRST_CLASS_LOADER = Options.SELF_FIRST_CLASS_LOADER.load();
 
     @Deprecated
     public final static boolean CEXT_ENABLED = false;
