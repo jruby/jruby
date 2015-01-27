@@ -904,7 +904,7 @@ public final class Ruby implements Constantizable {
              */
 
             try {
-                Class<?> clazz = getClass().getClassLoader().loadClass("org.jruby.truffle.TruffleBridgeImpl");
+                Class<?> clazz = getJRubyClassLoader().loadClass("org.jruby.truffle.TruffleBridgeImpl");
                 Constructor<?> con = clazz.getConstructor(Ruby.class);
                 truffleBridge = (TruffleBridge) con.newInstance(this);
                 truffleBridge.init();
