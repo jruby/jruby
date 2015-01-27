@@ -3622,7 +3622,7 @@ public abstract class ArrayNodes {
                 store[j] = x;
             }
 
-            return array;
+            return new RubyArray(getContext().getCoreLibrary().getArrayClass(), store, size);
         }
 
         @Specialization(guards = "isObject")
