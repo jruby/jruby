@@ -11,7 +11,6 @@ package org.jruby.truffle.nodes.core;
 
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.core.RubyNilClass;
 import org.jruby.truffle.runtime.core.RubyThread;
 
 import com.oracle.truffle.api.frame.VirtualFrame;
@@ -28,7 +27,7 @@ public class ThreadPassNode extends RubyNode {
     }
 
     @Override
-    public RubyNilClass executeRubyNilClass(VirtualFrame frame) {
+    public void executeVoid(VirtualFrame frame) {
         final RubyThread runningThread = getContext().getThreadManager().leaveGlobalLock();
 
         try {
@@ -36,13 +35,12 @@ public class ThreadPassNode extends RubyNode {
         } finally {
             getContext().getThreadManager().enterGlobalLock(runningThread);
         }
-
-        return getContext().getCoreLibrary().getNilObject();
     }
 
     @Override
     public Object execute(VirtualFrame frame) {
-        return executeRubyNilClass(frame);
+        executeVoid(frame);
+        return null;
     }
 
 }

@@ -189,7 +189,8 @@ public abstract class ThreadNodes {
 
         @Specialization
         public RubyNilClass pass(VirtualFrame frame) {
-            return threadPassNode.executeRubyNilClass(frame);
+            threadPassNode.executeVoid(frame);
+            return getContext().getCoreLibrary().getNilObject();
         }
 
     }
