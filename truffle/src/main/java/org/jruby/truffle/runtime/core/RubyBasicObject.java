@@ -14,12 +14,13 @@ import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.CompilerDirectives.CompilationFinal;
 import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.object.DynamicObject;
+import com.oracle.truffle.api.object.HiddenKey;
 import com.oracle.truffle.api.object.Layout;
 import com.oracle.truffle.api.object.Property;
 import com.oracle.truffle.api.object.Shape;
+
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.objects.Allocator;
-import org.jruby.truffle.runtime.InternalName;
 import org.jruby.truffle.runtime.ModuleOperations;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.RubyOperations;
@@ -33,8 +34,8 @@ import java.util.Map;
  */
 public class RubyBasicObject {
 
-    public static final InternalName OBJECT_ID_IDENTIFIER = new InternalName("object_id");
-    public static final InternalName TAINTED_IDENTIFIER = new InternalName("tainted?");
+    public static final HiddenKey OBJECT_ID_IDENTIFIER = new HiddenKey("object_id");
+    public static final HiddenKey TAINTED_IDENTIFIER = new HiddenKey("tainted?");
 
     public static final Layout LAYOUT = Layout.createLayout(Layout.INT_TO_LONG);
 
