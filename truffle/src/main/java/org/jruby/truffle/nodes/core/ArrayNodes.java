@@ -3520,6 +3520,7 @@ public abstract class ArrayNodes {
         @Specialization(guards = {"isIntegerFixnum", "isSmall"})
         public RubyArray sortVeryShortIntegerFixnum(VirtualFrame frame, RubyArray array, UndefinedPlaceholder block) {
             final int[] store = (int[]) array.getStore();
+            final int[] newStore = new int[store.length];
 
             final int size = array.getSize();
 
@@ -3536,10 +3537,11 @@ public abstract class ArrayNodes {
                             }
                         }
                     }
+                    newStore[i] = store[i];
                 }
             }
 
-            return array;
+            return new RubyArray(getContext().getCoreLibrary().getArrayClass(), newStore, size);
         }
 
         @Specialization(guards = "isIntegerFixnum")
@@ -3556,6 +3558,7 @@ public abstract class ArrayNodes {
         @Specialization(guards = {"isLongFixnum", "isSmall"})
         public RubyArray sortVeryShortLongFixnum(VirtualFrame frame, RubyArray array, UndefinedPlaceholder block) {
             final long[] store = (long[]) array.getStore();
+            final long[] newStore = new long[store.length];
 
             final int size = array.getSize();
 
@@ -3572,10 +3575,11 @@ public abstract class ArrayNodes {
                             }
                         }
                     }
+                    newStore[i] = store[i];
                 }
             }
 
-            return array;
+            return new RubyArray(getContext().getCoreLibrary().getArrayClass(), newStore, size);
         }
 
         @Specialization(guards = "isLongFixnum")
@@ -3600,7 +3604,8 @@ public abstract class ArrayNodes {
 
         @Specialization(guards = {"isObject", "isSmall"})
         public RubyArray sortVeryShortObject(VirtualFrame frame, RubyArray array, UndefinedPlaceholder block) {
-            final Object[] store = (Object[]) array.getStore();
+            final Object[] oldStore = (Object[]) array.getStore();
+            final Object[] store = Arrays.copyOf(oldStore, oldStore.length);
 
             // Insertion sort
 
