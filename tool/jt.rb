@@ -65,6 +65,7 @@ module Commands
     puts 'jt test fast                                 run all specs except sub-processes, GC, sleep, ...'
     puts 'jt test spec/ruby/language                   run specs in this directory'
     puts 'jt test spec/ruby/language/while_spec.rb     run specs in this file'
+    puts 'jt test pe                                   run partial evaluation tests'
     puts 'jt tag spec/ruby/language                    tag failing specs in this directory'
     puts 'jt tag spec/ruby/language/while_spec.rb      tag failing specs in this file'
     puts 'jt untag spec/ruby/language                  untag passing specs in this directory'
@@ -111,6 +112,8 @@ module Commands
   end
 
   def test(*args)
+    return test_pe if args == ['pe']
+
     options = %w[--excl-tag fails]
     if args.first == 'fast'
       args.shift
@@ -119,6 +122,16 @@ module Commands
     args = [':language', ':core'] if args.empty?
     mspec 'run', *options, *args
   end
+
+  def test_pe
+    run(*%w[
+            --graal
+            -J-G:+TruffleCompilationExceptionsAreThrown
+            -Xtruffle.proc.binding=false
+            -Xtruffle.debug.enable_assert_constant=true
+            test/truffle/pe/pe.rb])
+  end
+  private :test_pe
 
   def tag(path, *args)
     mspec 'tag', '--add', 'fails', '--fail', path, *args
