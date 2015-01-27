@@ -57,7 +57,6 @@ public class RubyCallNode extends RubyNode {
         this(context, section, methodName, receiver, block, isSplatted, false, false, arguments);
     }
 
-
     public RubyCallNode(RubyContext context, SourceSection section, String methodName, RubyNode receiver, RubyNode block, boolean isSplatted, boolean ignoreVisibility, boolean rubiniusPrimitive, RubyNode... arguments) {
         this(context, section, methodName, receiver, block, isSplatted, false, ignoreVisibility, rubiniusPrimitive, arguments);
     }

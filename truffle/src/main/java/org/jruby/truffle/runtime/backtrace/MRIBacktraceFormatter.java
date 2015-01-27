@@ -29,7 +29,9 @@ public class MRIBacktraceFormatter implements BacktraceFormatter {
             final ArrayList<String> lines = new ArrayList<>();
 
             if (activations.isEmpty()) {
-                lines.add(String.format("%s (%s)", exception.getMessage(), exception.getLogicalClass().getName()));
+                if (exception != null) {
+                    lines.add(String.format("%s (%s)", exception.getMessage(), exception.getLogicalClass().getName()));
+                }
             } else {
                 lines.add(formatInLine(activations, exception));
 

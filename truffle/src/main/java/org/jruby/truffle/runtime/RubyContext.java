@@ -31,6 +31,7 @@ import org.jruby.truffle.runtime.subsystems.*;
 import org.jruby.truffle.translator.NodeWrapper;
 import org.jruby.truffle.translator.TranslatorDriver;
 import org.jruby.util.ByteList;
+import org.jruby.util.cli.Options;
 
 import java.io.File;
 import java.io.IOException;
@@ -116,6 +117,10 @@ public class RubyContext extends ExecutionContext {
         rootLexicalScope = new LexicalScope(null, coreLibrary.getObjectClass());
 
         rubiniusPrimitiveManager = RubiniusPrimitiveManager.create();
+
+        if (Options.TRUFFLE_STACK_SERVER_PORT.load() != 0) {
+            new StackServerManager(this, Options.TRUFFLE_STACK_SERVER_PORT.load()).start();
+        }
     }
 
     public Shape getEmptyShape() {

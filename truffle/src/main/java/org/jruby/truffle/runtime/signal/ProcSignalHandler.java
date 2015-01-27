@@ -31,7 +31,7 @@ public class ProcSignalHandler implements SignalHandler {
     @Override
     public void handle(Signal signal) {
         final ThreadManager threadManager = context.getThreadManager();
-        context.getSafepointManager().pauseAllThreadsAndExecuteSignalHandler(new Consumer<RubyThread>() {
+        context.getSafepointManager().pauseAllThreadsAndExecuteFromNonRubyThread(new Consumer<RubyThread>() {
 
             public void accept(RubyThread currentThread) {
                 if (currentThread == threadManager.getRootThread()) {

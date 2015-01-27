@@ -131,7 +131,7 @@ public class SafepointManager {
         }
     }
 
-    public void pauseAllThreadsAndExecuteSignalHandler(final Consumer<RubyThread> action) {
+    public void pauseAllThreadsAndExecuteFromNonRubyThread(final Consumer<RubyThread> action) {
         CompilerDirectives.transferToInterpreter();
 
         lock.lock();
