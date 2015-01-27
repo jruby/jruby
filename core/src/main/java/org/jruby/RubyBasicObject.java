@@ -1024,15 +1024,6 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
         return getRuntime().newFixnum(getObjectId());
     }
 
-    /** rb_obj_itself
-     *
-     * Identity method for the object.
-     */
-    @JRubyMethod
-    public IRubyObject itself() {
-        return this;
-    }
-
     /**
      * The logic here is to use the special objectId accessor slot from the
      * parent as a lazy store for an object ID. IDs are generated atomically,
