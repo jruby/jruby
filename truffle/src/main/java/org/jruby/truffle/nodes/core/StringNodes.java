@@ -521,7 +521,7 @@ public abstract class StringNodes {
 
     }
 
-    @CoreMethod(names = "chomp!")
+    @CoreMethod(names = "chomp!", optional = 1)
     public abstract static class ChompBangNode extends CoreMethodNode {
 
         public ChompBangNode(RubyContext context, SourceSection sourceSection) {
@@ -533,10 +533,18 @@ public abstract class StringNodes {
         }
 
         @Specialization
-        public RubyString chompBang(RubyString string) {
+        public RubyString chompBang(RubyString string, UndefinedPlaceholder undefined) {
             notDesignedForCompilation();
 
             string.set(StringNodesHelper.chomp(string));
+            return string;
+        }
+
+        @Specialization
+        public RubyString chompBangWithString(RubyString string, RubyString stringToChomp) {
+            notDesignedForCompilation();
+
+            string.set(StringNodesHelper.chompWithString(string, stringToChomp));
             return string;
         }
     }

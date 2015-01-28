@@ -225,7 +225,8 @@ public class RubyParser {
 %type <Node> call_args opt_ensure paren_args superclass
 %type <Node> command_args var_ref opt_paren_args block_call block_command
 %type <Node> f_opt undef_list string_dvar backref
-%type <ArgsNode> f_args f_arglist f_larglist block_param block_param_def opt_block_param 
+%type <ArgsNode> f_args f_larglist block_param block_param_def opt_block_param
+%type <Object> f_arglist
 %type <Node> mrhs mlhs_item mlhs_node arg_value case_body exc_list aref_args
    // ENEBO: missing block_var == for_var, opt_block_var
 %type <Node> lhs none args
@@ -1479,7 +1480,7 @@ primary         : literal
                     Node body = $5;
                     if (body == null) body = NilImplicitNode.NIL;
 
-                    $$ = new DefnNode($1, new ArgumentNode($1, $2), $4, support.getCurrentScope(), body);
+                    $$ = new DefnNode($1, new ArgumentNode($1, $2), (ArgsNode) $4, support.getCurrentScope(), body);
                     support.popCurrentScope();
                     support.setInDef(false);
                 }
@@ -1493,7 +1494,7 @@ primary         : literal
                     Node body = $8;
                     if (body == null) body = NilImplicitNode.NIL;
 
-                    $$ = new DefsNode($1, $2, new ArgumentNode($1, $5), $7, support.getCurrentScope(), body);
+                    $$ = new DefsNode($1, $2, new ArgumentNode($1, $5), (ArgsNode) $7, support.getCurrentScope(), body);
                     support.popCurrentScope();
                     support.setInSingle(support.getInSingle() - 1);
                 }
@@ -2185,8 +2186,12 @@ f_arglist       : tLPAREN2 f_args rparen {
                     lexer.setState(LexState.EXPR_BEG);
                     lexer.commandStart = true;
                 }
-                | f_args term {
-                    $$ = $1;
+                | {
+                   $$ = lexer.inKwarg;
+                   lexer.inKwarg = true;
+                } f_args term {
+                   lexer.inKwarg = $<Boolean>1;
+                    $$ = $2;
                     lexer.setState(LexState.EXPR_BEG);
                     lexer.commandStart = true;
                 }

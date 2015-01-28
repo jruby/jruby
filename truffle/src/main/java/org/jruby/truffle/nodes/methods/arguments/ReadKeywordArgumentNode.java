@@ -35,7 +35,7 @@ public class ReadKeywordArgumentNode extends RubyNode {
     public Object execute(VirtualFrame frame) {
         notDesignedForCompilation();
 
-        final RubyHash hash = getKeywordsHash(frame);
+        final RubyHash hash = RubyArguments.getUserKeywordsHash(frame.getArguments(), minimum);
 
         if (hash == null) {
             return defaultValue.execute(frame);
@@ -55,20 +55,6 @@ public class ReadKeywordArgumentNode extends RubyNode {
         }
 
         return value;
-    }
-
-    private RubyHash getKeywordsHash(VirtualFrame frame) {
-        if (RubyArguments.getUserArgumentsCount(frame.getArguments()) <= minimum) {
-            return null;
-        }
-
-        final Object lastArgument = RubyArguments.getUserArgument(frame.getArguments(), RubyArguments.getUserArgumentsCount(frame.getArguments()) - 1);
-
-        if (lastArgument instanceof RubyHash) {
-            return (RubyHash) lastArgument;
-        }
-
-        return null;
     }
 
 }

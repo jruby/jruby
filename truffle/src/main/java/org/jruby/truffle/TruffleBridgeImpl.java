@@ -27,6 +27,7 @@ import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyArray;
 import org.jruby.truffle.runtime.core.RubyClass;
 import org.jruby.truffle.runtime.rubinius.RubiniusByteArray;
+import org.jruby.truffle.runtime.util.FileUtils;
 import org.jruby.truffle.translator.NodeWrapper;
 import org.jruby.truffle.translator.TranslatorDriver;
 import org.jruby.util.cli.Options;
@@ -169,13 +170,7 @@ public class TruffleBridgeImpl implements TruffleBridge {
             // Assume UTF-8 for the moment
             source = Source.fromBytes(runtime.getInstanceConfig().inlineScript(), "-e", new BytesDecoder.UTF8BytesDecoder());
         } else {
-            final byte[] bytes;
-
-            try {
-                bytes = Files.readAllBytes(Paths.get(inputFile));
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
+            final byte[] bytes = FileUtils.readAllBytesInterruptedly(truffleContext, inputFile);
 
             // Assume UTF-8 for the moment
             source = Source.fromBytes(bytes, inputFile, new BytesDecoder.UTF8BytesDecoder());

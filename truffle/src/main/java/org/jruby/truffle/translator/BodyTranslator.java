@@ -1959,7 +1959,21 @@ public class BodyTranslator extends Translator {
     @Override
     public RubyNode visitNewlineNode(org.jruby.ast.NewlineNode node) {
         final RubyNode child = node.getNextNode().accept(this);
-        return new TraceNode(context, child.getSourceSection(), child);
+
+        RubyNode translated = new TraceNode(context, child.getSourceSection(), child);
+
+        if (Options.TRUFFLE_PASSALOT.load() > 0) {
+            if (Options.TRUFFLE_PASSALOT.load() > Math.random() * 100) {
+
+                translated = SequenceNode.sequence(
+                        translated.getContext(),
+                        translated.getSourceSection(),
+                        new ThreadPassNode(translated.getContext(), translated.getSourceSection()),
+                        translated);
+            }
+        }
+
+        return translated;
     }
 
     @Override

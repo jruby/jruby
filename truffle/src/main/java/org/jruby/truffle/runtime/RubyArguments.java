@@ -13,6 +13,7 @@ import com.oracle.truffle.api.frame.MaterializedFrame;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.ExplodeLoop;
 
+import org.jruby.truffle.runtime.core.RubyHash;
 import org.jruby.truffle.runtime.core.RubyProc;
 import org.jruby.truffle.runtime.methods.MethodLike;
 import org.jruby.truffle.runtime.util.ArrayUtils;
@@ -83,6 +84,22 @@ public final class RubyArguments {
 
     public static Object getUserArgument(Object[] internalArguments, int index) {
         return internalArguments[RUNTIME_ARGUMENT_COUNT + index];
+    }
+
+    public static RubyHash getUserKeywordsHash(Object[] internalArguments, int minArgumentCount) {
+        final int argumentCount = getUserArgumentsCount(internalArguments);
+
+        if (argumentCount <= minArgumentCount) {
+            return null;
+        }
+
+        final Object lastArgument = getUserArgument(internalArguments, argumentCount - 1);
+
+        if (lastArgument instanceof RubyHash) {
+            return (RubyHash) lastArgument;
+        }
+
+        return null;
     }
 
     public static MaterializedFrame getDeclarationFrame(Object[] arguments) {

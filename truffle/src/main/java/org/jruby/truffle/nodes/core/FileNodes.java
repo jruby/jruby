@@ -13,14 +13,20 @@ import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.SourceSection;
+
 import jnr.posix.FileStat;
+
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.UndefinedPlaceholder;
 import org.jruby.truffle.runtime.core.*;
+import org.jruby.truffle.runtime.subsystems.ThreadManager.BlockingActionWithoutGlobalLock;
+import org.jruby.truffle.runtime.util.FileUtils;
 import org.jruby.util.ByteList;
 
 import java.io.*;
+import java.nio.channels.ClosedByInterruptException;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 
 @CoreClass(name = "File")
@@ -352,7 +358,7 @@ public abstract class FileNodes {
 
     }
 
-    @CoreMethod(names = "read", isModuleFunction = true, needsSelf = false, required = 1)
+    @CoreMethod(names = "read", onSingleton = true, needsSelf = false, required = 1)
     public abstract static class ReadFunctionNode extends CoreMethodNode {
 
         public ReadFunctionNode(RubyContext context, SourceSection sourceSection) {
@@ -364,15 +370,11 @@ public abstract class FileNodes {
         }
 
         @Specialization
-        public RubyString read(RubyString path) {
+        public RubyString read(RubyString file) {
             notDesignedForCompilation();
 
-            try {
-                return new RubyString(getContext().getCoreLibrary().getStringClass(),
-                        new ByteList(Files.readAllBytes(Paths.get(path.toString()))));
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
+            return new RubyString(getContext().getCoreLibrary().getStringClass(),
+                    new ByteList(FileUtils.readAllBytesInterruptedly(getContext(), file.toString())));
         }
 
     }

@@ -28,9 +28,11 @@ import org.jruby.truffle.nodes.rubinius.RubiniusPrimitiveManager;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.*;
 import org.jruby.truffle.runtime.subsystems.*;
+import org.jruby.truffle.runtime.util.FileUtils;
 import org.jruby.truffle.translator.NodeWrapper;
 import org.jruby.truffle.translator.TranslatorDriver;
 import org.jruby.util.ByteList;
+import org.jruby.util.cli.Options;
 
 import java.io.File;
 import java.io.IOException;
@@ -116,6 +118,10 @@ public class RubyContext extends ExecutionContext {
         rootLexicalScope = new LexicalScope(null, coreLibrary.getObjectClass());
 
         rubiniusPrimitiveManager = RubiniusPrimitiveManager.create();
+
+        if (Options.TRUFFLE_STACK_SERVER_PORT.load() != 0) {
+            new StackServerManager(this, Options.TRUFFLE_STACK_SERVER_PORT.load()).start();
+        }
     }
 
     public Shape getEmptyShape() {
@@ -151,13 +157,7 @@ public class RubyContext extends ExecutionContext {
     }
 
     private void loadFileAbsolute(String fileName, RubyNode currentNode) {
-        final byte[] bytes;
-
-        try {
-            bytes = Files.readAllBytes(Paths.get(fileName));
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
+        final byte[] bytes = FileUtils.readAllBytesInterruptedly(this, fileName);
 
         // Assume UTF-8 for the moment
         final Source source = Source.fromBytes(bytes, fileName, new BytesDecoder.UTF8BytesDecoder());

@@ -141,6 +141,7 @@ import org.jruby.threading.DaemonThreadFactory;
 import org.jruby.util.ByteList;
 import org.jruby.util.DefinedMessage;
 import org.jruby.util.JRubyClassLoader;
+import org.jruby.util.SelfFirstJRubyClassLoader;
 import org.jruby.util.IOInputStream;
 import org.jruby.util.IOOutputStream;
 import org.jruby.util.ClassDefininngJRubyClassLoader;
@@ -904,7 +905,7 @@ public final class Ruby implements Constantizable {
              */
 
             try {
-                Class<?> clazz = getClass().getClassLoader().loadClass("org.jruby.truffle.TruffleBridgeImpl");
+                Class<?> clazz = getJRubyClassLoader().loadClass("org.jruby.truffle.TruffleBridgeImpl");
                 Constructor<?> con = clazz.getConstructor(Ruby.class);
                 truffleBridge = (TruffleBridge) con.newInstance(this);
                 truffleBridge.init();
@@ -2582,7 +2583,12 @@ public final class Ruby implements Constantizable {
     public synchronized JRubyClassLoader getJRubyClassLoader() {
         // FIXME: Get rid of laziness and handle restricted access elsewhere
         if (!Ruby.isSecurityRestricted() && jrubyClassLoader == null) {
-            jrubyClassLoader = new JRubyClassLoader(config.getLoader());
+            if (config.isSelfFirstClassLoader()){
+                jrubyClassLoader = new SelfFirstJRubyClassLoader(config.getLoader());
+            }
+            else {
+                jrubyClassLoader = new JRubyClassLoader(config.getLoader());
+            }
 
             // if jit code cache is used, we need to add the cache directory to the classpath
             // so the previously generated class files can be reused.
