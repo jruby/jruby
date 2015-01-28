@@ -24,7 +24,6 @@ import org.jruby.truffle.runtime.core.*;
 public class TraceNode extends RubyNode {
 
     private final RubyContext context;
-    @Child private RubyNode child;
 
     @CompilerDirectives.CompilationFinal private Assumption traceAssumption;
     @CompilerDirectives.CompilationFinal private RubyProc traceFunc;
@@ -34,9 +33,8 @@ public class TraceNode extends RubyNode {
     private final RubyString file;
     private final int line;
 
-    public TraceNode(RubyContext context, SourceSection sourceSection, RubyNode child) {
+    public TraceNode(RubyContext context, SourceSection sourceSection) {
         super(context, sourceSection);
-        this.child = child;
         this.context = context;
         traceAssumption = context.getTraceManager().getTraceAssumption();
         traceFunc = null;
@@ -48,15 +46,13 @@ public class TraceNode extends RubyNode {
 
     @Override
     public Object execute(VirtualFrame frame) {
-        trace(frame);
-        return child.execute(frame);
+        throw new UnsupportedOperationException();
     }
 
 
     @Override
     public void executeVoid(VirtualFrame frame) {
         trace(frame);
-        child.executeVoid(frame);
     }
 
     public void trace(VirtualFrame frame) {
@@ -95,8 +91,4 @@ public class TraceNode extends RubyNode {
         }
     }
 
-    @Override
-    public Object isDefined(VirtualFrame frame) {
-        return child.isDefined(frame);
-    }
 }
