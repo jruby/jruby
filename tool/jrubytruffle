@@ -1,5 +1,0 @@
-#!/bin/bash
-
-# Temporary measure while bin/jruby -X+T is broken
-
-VERIFY_JRUBY=1 bin/jruby -J-cp truffle/target/jruby-truffle-9.0.0.0-SNAPSHOT.jar $@
