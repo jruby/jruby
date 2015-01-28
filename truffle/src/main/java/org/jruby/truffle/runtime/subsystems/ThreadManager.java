@@ -124,6 +124,7 @@ public class ThreadManager {
     }
 
     public RubyThread getCurrentThread() {
+        assert globalLock.isHeldByCurrentThread() : "getCurrentThread() is only correct if holding the global lock";
         return currentThread;
     }
 

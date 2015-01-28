@@ -7,11 +7,11 @@
 # GNU Lesser General Public License version 2.1
 
 module RbConfig
-  CONFIG = {
-    :ruby_install_name => "rubytruffle",
-    :RUBY_INSTALL_NAME => "rubytruffle",
-    :host_os => "unknown",
-    :exeext => "",
-    :EXEEXT => "rubytruffle",
-  }
+CONFIG = {
+  'ruby_install_name' => 'rubytruffle',
+  'RUBY_INSTALL_NAME' => 'rubytruffle',
+  'host_os' => File::ALT_SEPARATOR.nil? ? 'unknown' : 'mswin32',
+  'exeext' => '',
+  'EXEEXT' => 'rubytruffle',
+}
 end

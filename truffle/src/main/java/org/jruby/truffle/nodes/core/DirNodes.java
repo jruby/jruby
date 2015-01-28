@@ -133,6 +133,7 @@ public abstract class DirNodes {
              * satisfies MSpec, but it will likely break for anyone else.
              */
 
+            final RubyArray array = new RubyArray(context.getCoreLibrary().getArrayClass());
             String absoluteGlob;
 
             if (!glob.startsWith("/") && !org.jruby.RubyFile.startsWithDriveLetterOnWindows(glob)) {
@@ -143,13 +144,18 @@ public abstract class DirNodes {
 
             // Get the first star
             final int firstStar = absoluteGlob.indexOf('*');
-            assert firstStar >= 0;
+
+            // If there's no star, there's nothing to glob.  Return an empty result set.
+            if (firstStar == -1) {
+                return array;
+            }
 
             // Walk back from that to the first / before that star
 
             int prefixLength = firstStar;
 
             while (prefixLength > 0 && absoluteGlob.charAt(prefixLength) == File.separatorChar) {
+                System.out.println(String.format("char: %s; separator: %s", absoluteGlob.charAt(prefixLength), File.separatorChar));
                 prefixLength--;
             }
 
@@ -157,8 +163,6 @@ public abstract class DirNodes {
 
             // Glob patterns must always use '/', even on Windows.
             final PathMatcher matcher = FileSystems.getDefault().getPathMatcher("glob:" + absoluteGlob.substring(prefixLength).replace('\\', '/'));
-
-            final RubyArray array = new RubyArray(context.getCoreLibrary().getArrayClass());
 
             try {
                 Files.walkFileTree(FileSystems.getDefault().getPath(prefix), new SimpleFileVisitor<Path>() {

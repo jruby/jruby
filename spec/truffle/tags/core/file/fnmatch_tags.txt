@@ -64,3 +64,5 @@ fails:File.fnmatch? accepts an object that has a #to_path method
 fails:File.fnmatch? raises a TypeError if the first and second arguments are not string-like
 fails:File.fnmatch? raises a TypeError if the third argument is not an Integer
 fails:File.fnmatch? does not raise a TypeError if the third argument can be coerced to an Integer
+fails(windows):File.fnmatch matches case sensitive characters on platfroms with case insensitive paths, when flags include FNM_SYSCASE
+fails(windows):File.fnmatch? matches case sensitive characters on platfroms with case insensitive paths, when flags include FNM_SYSCASE

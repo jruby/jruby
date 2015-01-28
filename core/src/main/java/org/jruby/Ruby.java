@@ -904,14 +904,22 @@ public final class Ruby implements Constantizable {
              * explanation when the classes are not found.
              */
 
+            final Class<?> clazz;
+
             try {
-                Class<?> clazz = getJRubyClassLoader().loadClass("org.jruby.truffle.TruffleBridgeImpl");
-                Constructor<?> con = clazz.getConstructor(Ruby.class);
-                truffleBridge = (TruffleBridge) con.newInstance(this);
-                truffleBridge.init();
+                clazz = getJRubyClassLoader().loadClass("org.jruby.truffle.TruffleBridgeImpl");
             } catch (Exception e) {
                 throw new UnsupportedOperationException("Support for Truffle has been removed from this distribution", e);
             }
+
+            try {
+                Constructor<?> con = clazz.getConstructor(Ruby.class);
+                truffleBridge = (TruffleBridge) con.newInstance(this);
+            } catch (Exception e) {
+                throw new UnsupportedOperationException("Error while calling the constructor of Truffle Bridge", e);
+            }
+
+            truffleBridge.init();
         }
 
         return truffleBridge;

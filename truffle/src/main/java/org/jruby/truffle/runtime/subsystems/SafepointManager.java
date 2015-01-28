@@ -22,7 +22,6 @@ import org.jruby.truffle.runtime.util.Consumer;
 
 import java.util.concurrent.BrokenBarrierException;
 import java.util.concurrent.CyclicBarrier;
-import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
 public class SafepointManager {
@@ -30,7 +29,7 @@ public class SafepointManager {
     private final RubyContext context;
 
     @CompilerDirectives.CompilationFinal private Assumption assumption = Truffle.getRuntime().createAssumption();
-    private final Lock lock = new ReentrantLock();
+    private final ReentrantLock lock = new ReentrantLock();
     private CyclicBarrier barrier;
     private int liveThreads = 1;
     private Consumer<RubyThread> action;
@@ -51,12 +50,12 @@ public class SafepointManager {
         }
     }
 
-    public void leaveThread(RubyThread thread) {
+    public void leaveThread() {
         CompilerAsserts.neverPartOfCompilation();
 
         // Leave only when there is no more running safepoint action.
         while (!lock.tryLock()) {
-            pollWithoutGlobalLock(thread);
+            poll(false);
         }
         // SafepointManager lock acquired
         try {
@@ -66,123 +65,108 @@ public class SafepointManager {
         }
     }
 
-    private void pollWithoutGlobalLock(RubyThread thread) {
-        try {
-            assumption.check();
-        } catch (InvalidAssumptionException e) {
-            assumptionInvalidated(thread);
-        }
-    }
-
     public void poll() {
+        poll(true);
+    }
+
+    private void poll(boolean holdsGlobalLock) {
         try {
             assumption.check();
         } catch (InvalidAssumptionException e) {
-            assumptionInvalidated(context.getThreadManager().getCurrentThread());
+            assumptionInvalidated(holdsGlobalLock);
         }
     }
 
-    private void assumptionInvalidated(RubyThread thread) {
-        // wait other threads to reach their safepoint
-        waitOnBarrier();
-
-        // wait the assumption to be renewed
-        waitOnBarrier();
+    private void assumptionInvalidated(boolean holdsGlobalLock) {
+        RubyThread thread = null;
+        if (holdsGlobalLock) {
+            thread = context.getThreadManager().leaveGlobalLock();
+        }
 
         try {
-            if (thread.getStatus() != Status.ABORTING) {
-                action.accept(thread);
+            // clear the interrupted status which may have been set by interruptAllThreads().
+            Thread.interrupted();
+
+            // wait other threads to reach their safepoint
+            waitOnBarrier();
+
+            if (lock.isHeldByCurrentThread()) {
+                assumption = Truffle.getRuntime().createAssumption();
             }
-        } finally {
-            // wait other threads to finish their action
-            waitOnBarrier();
-        }
-    }
 
-    public void pauseAllThreadsAndExecute(final Consumer<RubyThread> action) {
-        CompilerDirectives.transferToInterpreter();
-
-        lock.lock();
-        try {
-            SafepointManager.this.action = action;
-
-            barrier = new CyclicBarrier(liveThreads);
-
-            assumption.invalidate();
-
-            context.getThreadManager().interruptAllThreads();
-
-            // wait for all threads to reach their safepoint
-            waitOnBarrier();
-
-            assumption = Truffle.getRuntime().createAssumption();
-
-            // wait for all threads to see the new assumption
+            // wait the assumption to be renewed
             waitOnBarrier();
 
             try {
-                action.accept(context.getThreadManager().getCurrentThread());
+                if (holdsGlobalLock && thread.getStatus() != Status.ABORTING) {
+                    runAction(thread);
+                }
             } finally {
-                // wait for all threads to execute the action
+                // wait other threads to finish their action
                 waitOnBarrier();
             }
         } finally {
-            lock.unlock();
+            if (holdsGlobalLock) {
+                context.getThreadManager().enterGlobalLock(thread);
+            }
         }
     }
 
-    public void pauseAllThreadsAndExecuteFromNonRubyThread(final Consumer<RubyThread> action) {
+    private void runAction(RubyThread thread) {
+        context.getThreadManager().enterGlobalLock(thread);
+        try {
+            action.accept(thread);
+        } finally {
+            context.getThreadManager().leaveGlobalLock();
+        }
+    }
+
+    public void pauseAllThreadsAndExecute(Consumer<RubyThread> action) {
+        pauseAllThreadsAndExecute(true, true, action);
+    }
+
+    public void pauseAllThreadsAndExecuteFromNonRubyThread(Consumer<RubyThread> action) {
+        pauseAllThreadsAndExecute(false, false, action);
+    }
+
+    private void pauseAllThreadsAndExecute(boolean isRubyThread, boolean holdsGlobalLock, Consumer<RubyThread> action) {
         CompilerDirectives.transferToInterpreter();
 
+        assert !lock.isHeldByCurrentThread() : "reentering pauseAllThreadsAndExecute";
         lock.lock();
         try {
-            // The current (Java) thread is not a Ruby thread, so we do not touch the global lock.
+            this.action = action;
 
-            SafepointManager.this.action = action;
+            barrier = new CyclicBarrier(isRubyThread ? liveThreads : liveThreads + 1);
 
-            barrier = new CyclicBarrier(liveThreads + 1);
-
+            /* this is a potential cause for race conditions,
+             * but we need to invalidate first so the interrupted threads
+             * see the invalidation in poll() in their catch(InterruptedException) clause
+             * and wait on the barrier instead of retrying their blocking action. */
             assumption.invalidate();
-
             context.getThreadManager().interruptAllThreads();
 
-            // wait for all threads to reach their safepoint
-            waitOnBarrierNoGlobalLock();
-
-            assumption = Truffle.getRuntime().createAssumption();
-
-            // wait for all threads to see the new assumption
-            waitOnBarrierNoGlobalLock();
-
-            // wait for all Ruby threads to execute the action
-            waitOnBarrierNoGlobalLock();
+            assumptionInvalidated(isRubyThread && holdsGlobalLock);
         } finally {
             lock.unlock();
         }
     }
 
     private void waitOnBarrier() {
-        final RubyThread runningThread = context.getThreadManager().leaveGlobalLock();
-
-        // clear the interrupted status which may have been set by interruptAllThreads().
-        Thread.interrupted();
-
-        try {
-            waitOnBarrierNoGlobalLock();
-        } finally {
-            context.getThreadManager().enterGlobalLock(runningThread);
-        }
-    }
-
-    private void waitOnBarrierNoGlobalLock() {
         while (true) {
             try {
                 barrier.await();
                 break;
-            } catch (BrokenBarrierException e) {
-                throw new RuntimeException(e);
-            } catch (InterruptedException e) {
-                throw new RuntimeException("Should not be interrupted while waiting on the safepoint barrier", e);
+            } catch (BrokenBarrierException | InterruptedException e) {
+                // System.err.println("Safepoint barrier interrupted for thread " + Thread.currentThread());
+                if (lock.isHeldByCurrentThread()) {
+                    barrier.reset();
+                } else {
+                    // wait for the lock holder to repair the barrier
+                    while (barrier.isBroken()) {
+                        Thread.yield();
+                    }
+                }
             }
         }
     }
