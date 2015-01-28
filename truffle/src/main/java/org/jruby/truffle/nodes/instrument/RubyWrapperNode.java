@@ -39,11 +39,6 @@ public final class RubyWrapperNode extends RubyNode implements WrapperNode {
         return "Wrapper node for Ruby";
     }
 
-    @Override
-    public RubyNode getNonWrapperNode() {
-        return child;
-    }
-
     public void insertProbe(ProbeNode newProbeNode) {
         this.probeNode = insert(newProbeNode);
     }
@@ -54,6 +49,11 @@ public final class RubyWrapperNode extends RubyNode implements WrapperNode {
         } catch (IllegalStateException e) {
             throw new UnsupportedOperationException("A lite-Probed wrapper has no explicit Probe");
         }
+    }
+
+    @Override
+    public boolean isInstrumentable() {
+        return false;
     }
 
     public RubyNode getChild() {
@@ -232,13 +232,4 @@ public final class RubyWrapperNode extends RubyNode implements WrapperNode {
         }
     }
 
-    @Override
-    public Probe probe() {
-        throw new UnsupportedOperationException("Cannot call probe() on a wrapper.");
-    }
-
-    @Override
-    public void probeLite(TruffleEventReceiver eventReceiver) {
-        throw new UnsupportedOperationException("Cannot call probeLite() on a wrapper.");
-    }
 }

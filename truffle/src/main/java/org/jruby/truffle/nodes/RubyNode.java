@@ -39,7 +39,7 @@ import java.math.BigInteger;
  */
 @TypeSystemReference(RubyTypes.class)
 @GenerateNodeFactory
-public abstract class RubyNode extends Node implements ProbeNode.Instrumentable {
+public abstract class RubyNode extends Node {
 
     private final RubyContext context;
 
@@ -51,6 +51,16 @@ public abstract class RubyNode extends Node implements ProbeNode.Instrumentable 
 
     public RubyNode(RubyNode prev) {
         this(prev.context, prev.getSourceSection());
+    }
+
+    @Override
+    public boolean isInstrumentable() {
+        return true;
+    }
+
+    @Override
+    public ProbeNode.WrapperNode createWrapperNode() {
+        return new RubyWrapperNode(this);
     }
 
     public abstract Object execute(VirtualFrame frame);
@@ -233,50 +243,6 @@ public abstract class RubyNode extends Node implements ProbeNode.Instrumentable 
 
     public RubyBignum bignum(BigInteger value) {
         return new RubyBignum(getContext().getCoreLibrary().getBignumClass(), value);
-    }
-
-    public RubyNode getNonWrapperNode() {
-        return this;
-    }
-
-    public Probe probe() {
-        final Node parent = getParent();
-
-        if (parent == null) {
-            throw new IllegalStateException("Cannot call probe() on a node without a parent.");
-        }
-
-        if (parent instanceof RubyWrapperNode) {
-            return ((RubyWrapperNode) parent).getProbe();
-        }
-
-        // Create a new wrapper/probe with this node as its child.
-        final RubyWrapperNode wrapper = new RubyWrapperNode(this);
-
-        // Connect it to a Probe
-        final Probe probe = ProbeNode.insertProbe(wrapper);
-
-        // Replace this node in the AST with the wrapper
-        this.replace(wrapper);
-
-        return probe;
-    }
-
-    public void probeLite(TruffleEventReceiver eventReceiver) {
-        final Node parent = getParent();
-
-        if (parent == null) {
-            throw new IllegalStateException("Cannot call probeLite() on a node without a parent");
-        }
-
-        if (parent instanceof RubyWrapperNode) {
-            throw new IllegalStateException("Cannot call probeLite() on a node that already has a wrapper.");
-        }
-
-        final RubyWrapperNode wrapper = new RubyWrapperNode(this);
-        ProbeNode.insertProbeLite(wrapper, eventReceiver);
-
-        this.replace(wrapper);
     }
 
     public boolean isRational(RubyBasicObject o) {
