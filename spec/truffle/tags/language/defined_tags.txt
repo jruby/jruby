@@ -1,0 +1,1 @@
+fails:The defined? keyword for an expression returns 'assignment' for assigning multiple variables
