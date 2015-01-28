@@ -137,6 +137,26 @@ public abstract class TruffleDebugNodes {
 
     }
 
+    @CoreMethod(names = "source_attribution_tree", onSingleton = true)
+    public abstract static class SourceAttributionTreeNode extends CoreMethodNode {
+
+        public SourceAttributionTreeNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public SourceAttributionTreeNode(SourceAttributionTreeNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public RubyString sourceAttributionTree() {
+            notDesignedForCompilation();
+
+            return getContext().makeString(NodeUtil.printSourceAttributionTree(Truffle.getRuntime().getCallerFrame().getCallNode().getRootNode()));
+        }
+
+    }
+
     @CoreMethod(names = "storage_class", onSingleton = true, required = 1)
     public abstract static class StorageClassNode extends CoreMethodNode {
 
