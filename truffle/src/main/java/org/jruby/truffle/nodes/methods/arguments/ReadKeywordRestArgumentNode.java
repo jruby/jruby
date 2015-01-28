@@ -36,7 +36,7 @@ public class ReadKeywordRestArgumentNode extends RubyNode {
     public Object execute(VirtualFrame frame) {
         notDesignedForCompilation();
 
-        final RubyHash hash = getKeywordsHash(frame);
+        final RubyHash hash = RubyArguments.getUserKeywordsHash(frame.getArguments(), minimum);
 
         if (hash == null) {
             return new RubyHash(getContext().getCoreLibrary().getHashClass(), null, null, null, 0, null);
@@ -55,22 +55,6 @@ public class ReadKeywordRestArgumentNode extends RubyNode {
         }
 
         return HashOperations.verySlowFromEntries(getContext(), entries);
-    }
-
-    private RubyHash getKeywordsHash(VirtualFrame frame) {
-        // TODO(CS): duplicated in ReadKeywordArgumentNode
-
-        if (RubyArguments.getUserArgumentsCount(frame.getArguments()) <= minimum) {
-            return null;
-        }
-
-        final Object lastArgument = RubyArguments.getUserArgument(frame.getArguments(), RubyArguments.getUserArgumentsCount(frame.getArguments()) - 1);
-
-        if (lastArgument instanceof RubyHash) {
-            return (RubyHash) lastArgument;
-        }
-
-        return null;
     }
 
 }
