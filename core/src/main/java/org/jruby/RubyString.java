@@ -2783,17 +2783,10 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
         Ruby runtime = context.runtime;
         frozenCheck();
 
-        final Regex pattern, prepared;
-        final RubyRegexp regexp;
-        if (arg0 instanceof RubyRegexp) {
-            regexp = (RubyRegexp)arg0;
-            pattern = regexp.getPattern();
-            prepared = regexp.preparePattern(this);
-        } else {
-            regexp = null;
-            pattern = getStringPattern19(runtime, arg0);
-            prepared = RubyRegexp.preparePattern(runtime, pattern, this);
-        }
+        RubyRegexp regexp = arg0 instanceof RubyRegexp ? (RubyRegexp) arg0 :
+                RubyRegexp.newRegexp(runtime, RubyRegexp.quote19(getStringForPattern(arg0).getByteList(), false), new RegexpOptions());
+        Regex pattern = regexp.getPattern();
+        Regex prepared = regexp.preparePattern(this);
 
         if (block.isGiven()) return subBangIter19(runtime, context, pattern, prepared, null, block, regexp);
         throw context.runtime.newArgumentError(1, 2);
@@ -2805,17 +2798,10 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
         IRubyObject hash = TypeConverter.convertToTypeWithCheck(arg1, runtime.getHash(), "to_hash");
         frozenCheck();
 
-        final Regex pattern, prepared;
-        final RubyRegexp regexp;
-        if (arg0 instanceof RubyRegexp) {
-            regexp = (RubyRegexp)arg0;
-            pattern = regexp.getPattern();
-            prepared = regexp.preparePattern(this);
-        } else {
-            regexp = null;
-            pattern = getStringPattern19(runtime, arg0);
-            prepared = RubyRegexp.preparePattern(runtime, pattern, this);
-        }
+        RubyRegexp regexp = arg0 instanceof RubyRegexp ? (RubyRegexp) arg0 :
+            RubyRegexp.newRegexp(runtime, RubyRegexp.quote19(getStringForPattern(arg0).getByteList(), false), new RegexpOptions());
+        Regex pattern = regexp.getPattern();
+        Regex prepared = regexp.preparePattern(this);
 
         if (hash.isNil()) {
             return subBangNoIter19(runtime, context, pattern, prepared, arg1.convertToString(), regexp);
