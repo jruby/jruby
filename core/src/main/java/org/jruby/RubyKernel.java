@@ -1948,6 +1948,11 @@ public class RubyKernel {
         return ((RubyBasicObject)self).instance_of_p(context, type);
     }
 
+    @JRubyMethod(name = "itself")
+    public static IRubyObject itself(IRubyObject self) {
+        return self;
+    }
+
     @JRubyMethod(name = {"kind_of?", "is_a?"}, required = 1)
     public static RubyBoolean kind_of_p(ThreadContext context, IRubyObject self, IRubyObject type) {
         return ((RubyBasicObject)self).kind_of_p(context, type);
@@ -1956,6 +1961,11 @@ public class RubyKernel {
     @JRubyMethod(name = "methods", optional = 1)
     public static IRubyObject methods19(ThreadContext context, IRubyObject self, IRubyObject[] args) {
         return ((RubyBasicObject)self).methods19(context, args);
+    }
+
+    @JRubyMethod(name = "object_id")
+    public static IRubyObject object_id(IRubyObject self) {
+        return self.id();
     }
 
     @JRubyMethod(name = "public_methods", optional = 1)
