@@ -8,10 +8,6 @@
 
 module RbConfig
 CONFIG = {
-  'MAJOR' => RUBY_VERSION.split('.')[0],
-  'MINOR' => RUBY_VERSION.split('.')[1],
-  'TEENY' => RUBY_VERSION.split('.')[2],
-  'ruby_version' => "#{RUBY_VERSION.split('.')[0]}.#{RUBY_VERSION.split('.')[1]}.0",
   'ruby_install_name' => 'rubytruffle',
   'RUBY_INSTALL_NAME' => 'rubytruffle',
   'host_os' => File::ALT_SEPARATOR.nil? ? 'unknown' : 'mswin32',
