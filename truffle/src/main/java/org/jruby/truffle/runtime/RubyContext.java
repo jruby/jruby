@@ -11,10 +11,12 @@ package org.jruby.truffle.runtime;
 
 import com.oracle.truffle.api.*;
 import com.oracle.truffle.api.frame.MaterializedFrame;
+import com.oracle.truffle.api.instrument.Probe;
 import com.oracle.truffle.api.object.Shape;
 import com.oracle.truffle.api.source.BytesDecoder;
 import com.oracle.truffle.api.source.Source;
 
+import com.oracle.truffle.api.tools.CoverageTracker;
 import org.jcodings.Encoding;
 import org.jcodings.specific.UTF8Encoding;
 import org.jruby.Ruby;
@@ -23,6 +25,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.truffle.TruffleHooks;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.RubyRootNode;
+import org.jruby.truffle.nodes.instrument.RubyDefaultASTProber;
 import org.jruby.truffle.nodes.methods.SetMethodDeclarationContext;
 import org.jruby.truffle.nodes.rubinius.RubiniusPrimitiveManager;
 import org.jruby.truffle.runtime.control.RaiseException;
@@ -65,6 +68,7 @@ public class RubyContext extends ExecutionContext {
     private final LexicalScope rootLexicalScope;
     private final CompilerOptions compilerOptions;
     private final RubiniusPrimitiveManager rubiniusPrimitiveManager;
+    private final CoverageTracker coverageTracker;
 
     private final AtomicLong nextObjectID = new AtomicLong(ObjectIDOperations.FIRST_OBJECT_ID);
 
@@ -89,6 +93,11 @@ public class RubyContext extends ExecutionContext {
         if (compilerOptions.supportsOption("MinInliningMaxCallerSize")) {
             compilerOptions.setOption("MinInliningMaxCallerSize", 5000);
         }
+
+        // TODO(CS, 28-Jan-15) this is global
+        // TODO(CS, 28-Jan-15) maybe not do this for core?
+        Probe.registerASTProber(new RubyDefaultASTProber());
+        coverageTracker = new CoverageTracker();
 
         safepointManager = new SafepointManager(this);
 
@@ -423,4 +432,7 @@ public class RubyContext extends ExecutionContext {
         return rubiniusPrimitiveManager;
     }
 
+    public CoverageTracker getCoverageTracker() {
+        return coverageTracker;
+    }
 }

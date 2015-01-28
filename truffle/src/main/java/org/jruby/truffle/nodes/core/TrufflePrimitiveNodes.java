@@ -14,7 +14,9 @@ import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.FrameInstance;
 import com.oracle.truffle.api.frame.FrameInstanceVisitor;
 import com.oracle.truffle.api.frame.MaterializedFrame;
+import com.oracle.truffle.api.source.Source;
 import com.oracle.truffle.api.source.SourceSection;
+import com.oracle.truffle.api.tools.CoverageTracker;
 import org.jruby.RubyGC;
 import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
@@ -28,6 +30,7 @@ import org.jruby.util.Memo;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Map;
 
 @CoreClass(name = "Truffle::Primitive")
 public abstract class TrufflePrimitiveNodes {
@@ -89,16 +92,29 @@ public abstract class TrufflePrimitiveNodes {
 
         @Specialization
         public RubyHash coverageResult() {
-            // TODO(CS, 18-Jan-15) Implement
-
             final Collection<KeyValue> keyValues = new ArrayList<>();
 
-            for (String file : new String[]{"example.rb"}) {
-                final Object[] array = new Object[]{getContext().getCoreLibrary().getNilObject(), 1, 2, 3};
-                keyValues.add(new KeyValue(getContext().makeString(file), new RubyArray(getContext().getCoreLibrary().getArrayClass(), array, array.length)));
+            for (Map.Entry<Source, Long[]> source : getContext().getCoverageTracker().getCounts().entrySet()) {
+                final Object[] store = lineCountsStore(source.getValue());
+                final RubyArray array = new RubyArray(getContext().getCoreLibrary().getArrayClass(), store, store.length);
+                keyValues.add(new KeyValue(getContext().makeString(source.getKey().getPath()), array));
             }
 
             return HashOperations.verySlowFromEntries(getContext(), keyValues);
+        }
+
+        private Object[] lineCountsStore(Long[] array) {
+            final Object[] store = new Object[array.length];
+
+            for (int n = 0; n < array.length; n++) {
+                if (array[n] == null) {
+                    store[n] = getContext().getCoreLibrary().getNilObject();
+                } else {
+                    store[n] = array[n];
+                }
+            }
+
+            return store;
         }
 
     }
@@ -116,8 +132,7 @@ public abstract class TrufflePrimitiveNodes {
 
         @Specialization
         public RubyNilClass coverageStart() {
-            // TODO(CS, 18-Jan-15) Implement
-
+            getContext().getCoverageTracker().install();
             return getContext().getCoreLibrary().getNilObject();
         }
 

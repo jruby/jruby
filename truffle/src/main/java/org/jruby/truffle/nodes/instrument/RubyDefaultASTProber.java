@@ -23,6 +23,7 @@ public class RubyDefaultASTProber implements NodeVisitor, ASTProber {
 
             if (rubyNode.isAtNewline()) {
                 // Identify statements using "newline" nodes created by the JRuby parser.
+                System.err.println("probing at " + rubyNode.getSourceSection().getShortDescription());
                 rubyNode.probe().tagAs(StandardSyntaxTag.STATEMENT, null);
             }
         }

@@ -43,6 +43,13 @@ public abstract class RubyNode extends Node {
 
     private final RubyContext context;
 
+    // This field is a hack, used to transmit the information
+    // supplied by the JRuby parser in the form of a special
+    // node in the parse tree. The right thing to do is to
+    // add a special information node when the AST is constructed,
+    // which can then be removed.
+    private boolean atNewline = false;
+
     public RubyNode(RubyContext context, SourceSection sourceSection) {
         super(sourceSection);
         assert context != null;
@@ -64,6 +71,20 @@ public abstract class RubyNode extends Node {
     }
 
     public abstract Object execute(VirtualFrame frame);
+
+    /**
+     * Records that this node was wrapped by the JRuby parser with a "newline" node.
+     */
+    public void setAtNewline() {
+        atNewline = true;
+    }
+
+    /**
+     * Was this ndoe wrapped by a JRuby parser "newline" node?
+     */
+    public boolean isAtNewline() {
+        return atNewline;
+    }
 
     /**
      * Ruby's parallel semantic path.
