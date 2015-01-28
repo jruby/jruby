@@ -1970,7 +1970,9 @@ public class BodyTranslator extends Translator {
 
         lineSequence.add(new TraceNode(context, sourceSection));
         lineSequence.add(node.getNextNode().accept(this));
-        
+
+        lineSequence.get(0).setAtNewline();
+
         return SequenceNode.sequence(context, sourceSection, lineSequence);
     }
 
