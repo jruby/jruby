@@ -2035,15 +2035,6 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
         return respond;
     }
 
-    /** rb_obj_id_obsolete
-     *
-     * Old id version. This one is bound to the "id" name and will emit a deprecation warning.
-     */
-    public IRubyObject id_deprecated() {
-        getRuntime().getWarnings().warn(ID.DEPRECATED_METHOD, "Object#id will be deprecated; use Object#object_id");
-        return id();
-    }
-
     /** rb_obj_id
      *
      * Will return the hash code of this object. In comparison to MRI,
