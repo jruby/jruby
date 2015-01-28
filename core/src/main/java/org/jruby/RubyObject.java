@@ -321,6 +321,16 @@ public class RubyObject extends RubyBasicObject {
         System.out.println(obj.toString());
     }
 
+    /** rb_obj_id
+     *
+     * Return the internal id of an object.
+     */
+    @JRubyMethod(name = "object_id")
+    @Override
+    public IRubyObject id() {
+        return super.id();
+    }
+
     /** rb_obj_itself
      *
      * Identity method for the object.
