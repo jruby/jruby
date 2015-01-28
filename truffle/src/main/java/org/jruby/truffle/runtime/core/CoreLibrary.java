@@ -364,9 +364,21 @@ public class CoreLibrary {
         argv = new RubyArray(arrayClass);
         objectClass.setConstant(null, "ARGV", argv);
 
-        fileClass.setConstant(null, "SEPARATOR", RubyString.fromJavaString(stringClass, File.separator));
-        fileClass.setConstant(null, "Separator", RubyString.fromJavaString(stringClass, File.separator));
-        fileClass.setConstant(null, "ALT_SEPARATOR", nilObject);
+        final RubyString separator = RubyString.fromJavaString(stringClass, "/");
+        separator.freeze();
+
+        fileClass.setConstant(null, "SEPARATOR", separator);
+        fileClass.setConstant(null, "Separator", separator);
+
+        if (File.separatorChar == '\\') {
+            final RubyString altSeparator = RubyString.fromJavaString(stringClass, "\\");
+            altSeparator.freeze();
+
+            fileClass.setConstant(null, "ALT_SEPARATOR", altSeparator);
+        } else {
+            fileClass.setConstant(null, "ALT_SEPARATOR", nilObject);
+        }
+
         fileClass.setConstant(null, "PATH_SEPARATOR", RubyString.fromJavaString(stringClass, File.pathSeparator));
         fileClass.setConstant(null, "FNM_SYSCASE", 0);
 
