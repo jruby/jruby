@@ -269,9 +269,9 @@ class TestKernel < Test::Unit::TestCase
   def test_local_variables
     if RbConfig::CONFIG['ruby_install_name'] == 'jruby'
       a = lambda do
-        assert_equal [:a, :b], local_variables
+        assert_equal [:b, :a], local_variables
         b = 1
-        assert_equal [:a, :b], local_variables
+        assert_equal [:b, :a], local_variables
       end
       a.call
     else
