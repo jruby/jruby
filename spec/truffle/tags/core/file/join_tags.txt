@@ -11,3 +11,7 @@ fails:File.join calls #to_str
 fails:File.join doesn't mutate the object when calling #to_str
 fails:File.join calls #to_path
 fails(windows):File.join respects given separator if only one part has a boundary separator
+fails(windows bug):File.join joins parts using File::SEPARATOR if there are no boundary separators
+fails(windows bug):File.join supports any number of arguments
+fails(windows bug):File.join flattens nested arrays
+fails(windows bug):File.join inserts the separator in between empty strings and arrays
