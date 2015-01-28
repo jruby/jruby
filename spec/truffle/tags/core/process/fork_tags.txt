@@ -1,3 +1,4 @@
 fails:Process.fork returns nil for the child process
 fails:Process.fork runs a block in a child process
 fails:Process.fork marks threads from the parent as killed
+fails(windows):Process.fork raises a NotImplementedError when called
