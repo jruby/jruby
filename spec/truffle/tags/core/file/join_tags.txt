@@ -10,3 +10,4 @@ fails:File.join raises a TypeError exception when args are nil
 fails:File.join calls #to_str
 fails:File.join doesn't mutate the object when calling #to_str
 fails:File.join calls #to_path
+fails(windows):File.join respects given separator if only one part has a boundary separator
