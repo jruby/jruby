@@ -193,7 +193,7 @@ public class LoadArgumentsTranslator extends Translator {
         excludedKeywords.add(name);
 
         final RubyNode readNode = new ReadKeywordArgumentNode(context, sourceSection, required, name, defaultValue);
-        final FrameSlot slot = methodBodyTranslator.getEnvironment().getFrameDescriptor().findFrameSlot(name);
+        final FrameSlot slot = methodBodyTranslator.getEnvironment().getFrameDescriptor().findOrAddFrameSlot(name);
 
         return WriteLocalVariableNodeFactory.create(context, sourceSection, slot, readNode);
     }
