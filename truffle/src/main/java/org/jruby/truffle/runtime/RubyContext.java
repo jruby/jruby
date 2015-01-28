@@ -28,6 +28,7 @@ import org.jruby.truffle.nodes.rubinius.RubiniusPrimitiveManager;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.*;
 import org.jruby.truffle.runtime.subsystems.*;
+import org.jruby.truffle.runtime.util.FileUtils;
 import org.jruby.truffle.translator.NodeWrapper;
 import org.jruby.truffle.translator.TranslatorDriver;
 import org.jruby.util.ByteList;
@@ -156,13 +157,7 @@ public class RubyContext extends ExecutionContext {
     }
 
     private void loadFileAbsolute(String fileName, RubyNode currentNode) {
-        final byte[] bytes;
-
-        try {
-            bytes = Files.readAllBytes(Paths.get(fileName));
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
+        final byte[] bytes = FileUtils.readAllBytesInterruptedly(this, fileName);
 
         // Assume UTF-8 for the moment
         final Source source = Source.fromBytes(bytes, fileName, new BytesDecoder.UTF8BytesDecoder());
