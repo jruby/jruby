@@ -8,3 +8,7 @@ fails:IO#close_on_exec= returns nil
 fails:IO#close_on_exec? returns true by default
 fails:IO#close_on_exec? returns true if set
 fails:IO#close_on_exec? raises IOError if called on a closed IO
+fails(windows):IO#close_on_exec= returns false from #respond_to?
+fails(windows):IO#close_on_exec= raises a NotImplementedError when called
+fails(windows):IO#close_on_exec? returns false from #respond_to?
+fails(windows):IO#close_on_exec? raises a NotImplementedError when called

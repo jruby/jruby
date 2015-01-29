@@ -92,3 +92,5 @@ fails:IO#read with internal encoding specified by encoding: option when passed n
 fails:IO#read with internal encoding specified by encoding: option when passed nil for limit sets the buffer's encoding to the internal encoding
 fails:IO#read with large data reads all the data at once
 fails:IO#read with large data reads only the requested number of bytes
+fails(windows):IO#read on Windows normalizes line endings in text mode
+fails(windows):IO#read on Windows does not normalize line endings in binary mode

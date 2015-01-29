@@ -119,6 +119,12 @@ class Hash
     end
   end
 
+  def value?(value)
+    values.any? { |v| v == value }
+  end
+
+  alias_method :has_value?, :value?
+
 end
 
 class Regexp

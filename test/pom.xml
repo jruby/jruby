@@ -34,9 +34,16 @@
       <version>2.0.7</version>
       <scope>test</scope>
     </dependency>
+    <!-- FIXME: only depend on lib, ideally -->
     <dependency>
       <groupId>org.jruby</groupId>
       <artifactId>jruby-core</artifactId>
+      <version>${project.version}</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.jruby</groupId>
+      <artifactId>jruby-truffle</artifactId>
       <version>${project.version}</version>
       <scope>test</scope>
     </dependency>
