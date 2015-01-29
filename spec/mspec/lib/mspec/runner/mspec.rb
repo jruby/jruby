@@ -315,16 +315,17 @@ module MSpec
   # Writes +tag+ to the tag file if it does not already exist.
   # Returns +true+ if the tag is written, +false+ otherwise.
   def self.write_tag(tag)
-    string = tag.to_s
+    tags = read_tags([tag.tag])
+    tags.each do |t|
+      if t.tag == tag.tag and t.description == tag.description
+        return false
+      end
+    end
+
     file = tags_file
     path = File.dirname file
     FileUtils.mkdir_p path unless File.exist? path
-    if File.exist? file
-      File.open(file, "rb") do |f|
-        f.each_line { |line| return false if line.chomp == string }
-      end
-    end
-    File.open(file, "ab") { |f| f.puts string }
+    File.open(file, "ab") { |f| f.puts tag.to_s }
     return true
   end
 
