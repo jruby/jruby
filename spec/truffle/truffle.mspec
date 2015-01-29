@@ -42,6 +42,7 @@ class MSpecScript
     "^spec/ruby/core/marshal/float_spec.rb",
     "^spec/ruby/core/marshal/load_spec.rb",
     "^spec/ruby/core/marshal/restore_spec.rb",
+    "^spec/ruby/core/method/source_location_spec.rb",   # Windows
     "^spec/ruby/core/numeric/denominator_spec.rb",
     "^spec/ruby/core/numeric/numerator_spec.rb",
     "^spec/ruby/core/numeric/to_c_spec.rb",
