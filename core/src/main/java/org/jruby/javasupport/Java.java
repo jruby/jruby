@@ -1062,37 +1062,36 @@ public class Java implements Library {
         }
     }
 
-    private static void memoizePackageOrClass(final RubyModule parentPackage, final String name, final IRubyObject value) {
+    private static void memoizePackageOrClass(final RubyModule parentPackage,
+        final String name, final RubyModule packageOrClass) {
         final RubyClass singleton = parentPackage.getSingletonClass();
-        singleton.addMethod(name, new MemoizedAccessor(singleton, parentPackage, value));
+        singleton.addMethod(name, new JavaAccessor(singleton, packageOrClass, parentPackage));
     }
 
-    private static class MemoizedAccessor extends org.jruby.internal.runtime.methods.JavaMethod {
+    private static class JavaAccessor extends org.jruby.internal.runtime.methods.JavaMethod {
 
+        private final RubyModule packageOrClass;
         private final RubyModule parentPackage;
-        private final IRubyObject value;
 
-        MemoizedAccessor(final RubyClass singleton, final RubyModule parentPackage, final IRubyObject value) {
+        JavaAccessor(final RubyClass singleton, final RubyModule packageOrClass, final RubyModule parentPackage) {
             super(singleton, PUBLIC);
-            this.parentPackage = parentPackage; this.value = value;
+            this.parentPackage = parentPackage; this.packageOrClass = packageOrClass;
         }
 
         @Override
         public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args, Block block) {
-            if (args.length != 0) {
+            if ( args.length != 0 ) {
+                IRubyObject packageName = parentPackage.callMethod("package_name");
                 throw context.runtime.newArgumentError(
-                        "Java package `"
-                                + parentPackage.callMethod("package_name")
-                                + "' does not have a method `"
-                                + name
-                                + "'");
+                    "Java package `" + packageName + "' does not have a method `" + name + "'"
+                );
             }
             return call(context, self, clazz, name);
         }
 
         @Override
         public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name) {
-            return value;
+            return this.packageOrClass;
         }
 
         @Override
