@@ -1494,7 +1494,7 @@ public class RubyInstanceConfig {
      * Whether native code is enabled for this configuration.
      */
     private boolean _nativeEnabled = NATIVE_ENABLED;
-    private boolean _selfFirstClassLoader = SELF_FIRST_CLASS_LOADER;
+    private boolean _selfFirstClassLoader = Options.SELF_FIRST_CLASS_LOADER.load();
 
     private TraceType traceType =
             TraceType.traceTypeFor(Options.BACKTRACE_STYLE.load());
@@ -1697,7 +1697,6 @@ public class RubyInstanceConfig {
      * Set with the <tt>jruby.native.enabled</tt> system property.
      */
     public static final boolean NATIVE_ENABLED = Options.NATIVE_ENABLED.load();
-    public static final boolean SELF_FIRST_CLASS_LOADER = Options.SELF_FIRST_CLASS_LOADER.load();
 
     @Deprecated
     public final static boolean CEXT_ENABLED = false;

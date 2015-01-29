@@ -1858,4 +1858,31 @@ public class ScriptingContainer implements EmbedRubyInstanceConfigAdapter {
         // singleton containers share global runtime, and should not tear it down
         if (scope != LocalContextScope.SINGLETON) terminate();
     }
+
+    /**
+     * Force dynamically-loaded Java classes to load first from the classloader provided by
+     * JRuby before searching parent classloaders. This can be used to isolated dependency
+     * in different runtimes from each other and from parent classloaders. The default
+     * behavior is to defer to parent classloaders if they can provide the requested
+     * classes.
+     *
+     * Note that if different versions of a  library are loaded by both a parent
+     * classloader and the JRuby classloader, those classess would be incompatible
+     * with each other and with other library objects from the opposing classloader.
+     *
+     * @param selfFirstClassloader set whether prefer the JRuby classloader when dynamically loading classes
+     * @since JRuby 9.0.0.0
+     */
+    public void setSelfFirstClassloader(boolean selfFirstClassloader) {
+        getProvider().getRubyInstanceConfig().setSelfFirstClassLoader(selfFirstClassloader);
+    }
+
+    /**
+     * Retrieve the self-first classloader setting.
+     *
+     * @see ScriptingContainer#setSelfFirstClassloader(boolean)
+     */
+    public boolean getSelfFirstClassloader() {
+        return getProvider().getRubyInstanceConfig().isSelfFirstClassLoader();
+    }
 }
