@@ -145,8 +145,11 @@ public abstract class DirNodes {
             // Get the first star
             final int firstStar = absoluteGlob.indexOf('*');
 
-            // If there's no star, there's nothing to glob.  Return an empty result set.
+            // If there's no star, it behaves similarly to [glob if File.exist?(glob)].compact
             if (firstStar == -1) {
+                if (new File(glob).exists()) {
+                    array.slowPush(context.makeString(glob));
+                }
                 return array;
             }
 
