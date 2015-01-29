@@ -35,10 +35,16 @@ end
 module ShellUtils
   private
 
+  def raw_sh(*args)
+    unless system(*args)
+      $stderr.puts "FAILED (#{$?}): #{args * ' '}"
+      exit $?.exitstatus
+    end
+  end
+
   def sh(*args)
     Dir.chdir(JRUBY_DIR) do
-      system(*args)
-      raise 'failed' unless $? == 0
+      raw_sh(*args)
     end
   end
 
@@ -106,7 +112,7 @@ module Commands
       jruby_args += %w[-J-XX:+UnlockDiagnosticVMOptions -J-XX:CompileCommand=print,*::callRoot]
     end
 
-    exec(env_vars, "#{JRUBY_DIR}/bin/jruby", *jruby_args, *args)
+    raw_sh(env_vars, "#{JRUBY_DIR}/bin/jruby", *jruby_args, *args)
   end
 
   def test(*args)
