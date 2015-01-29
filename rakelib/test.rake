@@ -95,21 +95,21 @@ namespace :test do
     :ir_int => ["-X-CIR"],
     :all => [:int, :jit, :aot]
   }
+
+  def files_in_file(filename)
+    files = []
+    File.readlines(filename).each do |line|
+      filename = "test/#{line.chomp}.rb"
+      files << filename if File.exist? filename
+    end
+    files
+  end
   
   permute_tests(:mri19, compile_flags) do |t|
-    files = []
-    File.open('test/mri.1.9.index') do |f|
-      f.lines.each do |line|
-        filename = "test/#{line.chomp}.rb"
-        next unless File.exist? filename
-        files << filename
-      end
-    end
-    t.test_files = files
     t.verbose = true
+    t.test_files = files_in_file 'test/mri.1.9.index'
     ENV['EXCLUDE_DIR'] = 'test/externals/ruby1.9/excludes'
-    t.ruby_opts << '-J-ea'
-    t.ruby_opts << '--1.9'
+    t.ruby_opts << '-J-ea' << '--1.9'
     t.ruby_opts << '-I test/externals/ruby1.9'
     t.ruby_opts << '-I test/externals/ruby1.9/ruby'
     t.ruby_opts << '-r ./test/ruby19_env.rb'
@@ -117,114 +117,48 @@ namespace :test do
   end
   
   permute_tests(:mri, compile_flags) do |t|
-    files = []
-    File.open('test/mri.1.8.index') do |f|
-      f.lines.each do |line|
-        filename = "test/#{line.chomp}.rb"
-        next unless File.exist? filename
-        files << filename
-      end
-    end
-    t.test_files = files
     t.verbose = true
-    t.ruby_opts << '-J-ea'
-    t.ruby_opts << '--1.8'
+    t.test_files = files_in_file 'test/mri.1.8.index'
+    t.ruby_opts << '-J-ea' << '--1.8'
   end
 
   permute_tests(:jruby19, compile_flags, 'test:compile') do |t|
-    files = []
-    File.open('test/jruby.1.9.index') do |f|
-      f.lines.each do |line|
-        filename = "test/#{line.chomp}.rb"
-        next unless File.exist? filename
-        files << filename
-      end
-    end
-    t.test_files = files
     t.verbose = true
-    t.ruby_opts << '-J-ea'
+    t.test_files = files_in_file 'test/mri.1.9.index'
+    t.ruby_opts << '-J-ea' << '--1.9'
     t.ruby_opts << '-J-cp test:test/target/test-classes:core/target/test-classes'
-    t.ruby_opts << '--1.9'
   end
 
   permute_tests(:jruby, compile_flags, 'test:compile') do |t|
-    files = []
-    File.open('test/jruby.1.8.index') do |f|
-      f.lines.each do |line|
-        filename = "test/#{line.chomp}.rb"
-        next unless File.exist? filename
-        files << filename
-      end
-    end
-    t.test_files = files
     t.verbose = true
-    t.ruby_opts << '-J-ea'
+    t.test_files = files_in_file 'test/mri.1.8.index'
+    t.ruby_opts << '-J-ea' << '--1.8'
     t.ruby_opts << '-J-cp test:test/target/test-classes:core/target/test-classes'
-    t.ruby_opts << '--1.8'
   end
 
   permute_tests(:rubicon19, compile_flags) do |t|
-    files = []
-    File.open('test/rubicon.1.9.index') do |f|
-      f.lines.each do |line|
-        filename = "test/#{line.chomp}.rb"
-        next unless File.exist? filename
-        files << filename
-      end
-    end
-    t.test_files = files
     t.verbose = true
-    t.ruby_opts << '-J-ea'
-    t.ruby_opts << '--1.9'
-    t.ruby_opts << '-X+O'
+    t.test_files = files_in_file 'test/rubicon.1.9.index'
+    t.ruby_opts << '-J-ea' << '--1.9' << '-X+O'
   end
 
   permute_tests(:rubicon, compile_flags) do |t|
-    files = []
-    File.open('test/rubicon.1.8.index') do |f|
-      f.lines.each do |line|
-        filename = "test/#{line.chomp}.rb"
-        next unless File.exist? filename
-        files << filename
-      end
-    end
-    t.test_files = files
     t.verbose = true
-    t.ruby_opts << '-J-ea'
-    t.ruby_opts << '--1.8'
-    t.ruby_opts << '-X+O'
+    t.test_files = files_in_file 'test/rubicon.1.8.index'
+    t.ruby_opts << '-J-ea' << '--1.8' << '-X+O'
   end
 
   permute_tests(:slow, compile_flags) do |t|
-    files = []
-    File.open('test/slow.index') do |f|
-      f.lines.each do |line|
-        filename = "test/#{line.chomp}.rb"
-        next unless File.exist? filename
-        files << filename
-      end
-    end
-    t.test_files = files
     t.verbose = true
-    t.ruby_opts << '-J-ea'
+    t.test_files = files_in_file 'test/slow.index'
+    t.ruby_opts << '-J-ea' << '--1.8'
     t.ruby_opts << '-J-cp target/test-classes'
-    t.ruby_opts << '--1.8'
   end
 
   permute_tests(:objectspace, compile_flags) do |t|
-    files = []
-    File.open('test/objectspace.index') do |f|
-      f.lines.each do |line|
-        filename = "test/#{line.chomp}.rb"
-        next unless File.exist? filename
-        files << filename
-      end
-    end
-    t.test_files = files
     t.verbose = true
-    t.ruby_opts << '-J-ea'
-    t.ruby_opts << '--1.8'
-    t.ruby_opts << '-X+O'
+    t.test_files = files_in_file 'test/objectspace.index'
+    t.ruby_opts << '-J-ea' << '--1.8' << '-X+O'
   end
   
   def junit(options)
