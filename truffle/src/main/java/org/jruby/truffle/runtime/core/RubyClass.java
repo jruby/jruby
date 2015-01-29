@@ -12,9 +12,11 @@ package org.jruby.truffle.runtime.core;
 import com.oracle.truffle.api.CompilerAsserts;
 import com.oracle.truffle.api.CompilerDirectives.CompilationFinal;
 import com.oracle.truffle.api.nodes.Node;
+
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.objects.Allocator;
 import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.runtime.subsystems.ObjectSpaceManager.ObjectGraphVisitor;
 
 import java.util.Collections;
 import java.util.Set;
@@ -147,6 +149,14 @@ public class RubyClass extends RubyModule {
 
     public Allocator getAllocator() {
         return allocator;
+    }
+
+    @Override
+    public void visitObjectGraph(ObjectGraphVisitor visitor) {
+        // MRI consider all singleton classes as internal objects.
+        if (!isSingleton) {
+            super.visitObjectGraph(visitor);
+        }
     }
 
     public static class ClassAllocator implements Allocator {
