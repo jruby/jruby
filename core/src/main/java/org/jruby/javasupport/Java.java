@@ -33,10 +33,6 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.javasupport;
 
-import org.jruby.java.util.BlankSlateWrapper;
-import org.jruby.java.util.SystemPropertiesMap;
-import org.jruby.java.proxies.JavaInterfaceTemplate;
-import org.jruby.java.addons.KernelJavaAddons;
 import java.io.IOException;
 import java.lang.reflect.Constructor;
 import java.util.ArrayList;
@@ -79,13 +75,13 @@ import org.jruby.runtime.ThreadContext;
 import static org.jruby.runtime.Visibility.*;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.load.Library;
-import org.jruby.util.*;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyModule;
 import org.jruby.internal.runtime.methods.JavaMethod.JavaMethodN;
 import org.jruby.internal.runtime.methods.JavaMethod.JavaMethodZero;
 import org.jruby.java.addons.ArrayJavaAddons;
 import org.jruby.java.addons.IOJavaAddons;
+import org.jruby.java.addons.KernelJavaAddons;
 import org.jruby.java.addons.StringJavaAddons;
 import org.jruby.java.codegen.RealClassGenerator;
 import org.jruby.java.dispatch.CallableSelector;
@@ -97,10 +93,18 @@ import org.jruby.java.proxies.ArrayJavaProxyCreator;
 import org.jruby.java.proxies.ConcreteJavaProxy;
 import org.jruby.java.proxies.MapJavaProxy;
 import org.jruby.java.proxies.InterfaceJavaProxy;
+import org.jruby.java.proxies.JavaInterfaceTemplate;
 import org.jruby.java.proxies.JavaProxy;
 import org.jruby.java.proxies.RubyObjectHolderProxy;
+import org.jruby.java.util.BlankSlateWrapper;
+import org.jruby.java.util.SystemPropertiesMap;
 import org.jruby.javasupport.proxy.JavaProxyClassFactory;
+import org.jruby.util.ByteList;
 import org.jruby.util.ClassCache.OneShotClassLoader;
+import org.jruby.util.ClassDefiningClassLoader;
+import org.jruby.util.ClassProvider;
+import org.jruby.util.CodegenUtils;
+import org.jruby.util.IdUtil;
 import org.jruby.util.cli.Options;
 
 @JRubyModule(name = "Java")
@@ -219,7 +223,7 @@ public class Java implements Library {
      * @param runtime
      * @param nameClassMap
      */
-    private static void addNameClassMappings(Ruby runtime, Map<String, JavaClass> nameClassMap) {
+    private static void addNameClassMappings(final Ruby runtime, final Map<String, JavaClass> nameClassMap) {
         JavaClass booleanPrimClass = JavaClass.get(runtime, Boolean.TYPE);
         JavaClass booleanClass = JavaClass.get(runtime, Boolean.class);
         nameClassMap.put("boolean", booleanPrimClass);
@@ -669,7 +673,7 @@ public class Java implements Library {
             String newNameStr = newName.asJavaString();
             RubyArray argTypesAry = argTypes.convertToArray();
             Class[] argTypesClasses = (Class[])argTypesAry.toArray(new Class[argTypesAry.size()]);
-            Ruby runtime = context.runtime;
+            final Ruby runtime = context.runtime;
             RubyClass rubyClass;
 
             if (proxyClass instanceof RubyClass) {
@@ -688,7 +692,7 @@ public class Java implements Library {
                 rubyClass.addMethod(newNameStr, invoker);
             }
 
-            return runtime.getNil();
+            return context.nil;
         }
     }
 
@@ -751,7 +755,7 @@ public class Java implements Library {
             throw runtime.newTypeError(subclass, runtime.getClassClass());
         }
         RubyClass rubySubclass = (RubyClass)subclass;
-        rubySubclass.getInstanceVariables().setInstanceVariable("@java_proxy_class", runtime.getNil());
+        rubySubclass.getInstanceVariables().setInstanceVariable("@java_proxy_class", context.nil);
 
         // Subclasses of Java classes can safely use ivars, so we set this to silence warnings
         rubySubclass.setCacheProxy(true);
@@ -763,7 +767,7 @@ public class Java implements Library {
             public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name) {
                 IRubyObject javaInterfaces = self.getInstanceVariables().getInstanceVariable("@java_interfaces");
                 if (javaInterfaces != null) return javaInterfaces.dup();
-                return context.runtime.getNil();
+                return context.nil;
             }
         });
 
@@ -810,7 +814,7 @@ public class Java implements Library {
             }
         });
 
-        return runtime.getNil();
+        return context.nil;
     }
 
     // package scheme 2: separate module for each full package name, constructed
@@ -1101,11 +1105,11 @@ public class Java implements Library {
 
     }
 
-    public static IRubyObject get_top_level_proxy_or_package(ThreadContext context, IRubyObject recv, IRubyObject sym) {
-        Ruby runtime = context.runtime;
-        RubyModule result = getTopLevelProxyOrPackage(context, runtime, sym.asJavaString());
-
-        return result != null ? result : runtime.getNil();
+    public static IRubyObject get_top_level_proxy_or_package(final ThreadContext context,
+        final IRubyObject self, final IRubyObject sym) {
+        final Ruby runtime = context.runtime;
+        final RubyModule result = getTopLevelProxyOrPackage(context, runtime, sym.asJavaString());
+        return result != null ? result : context.nil;
     }
 
     public static IRubyObject wrap(Ruby runtime, IRubyObject java_object) {
@@ -1278,7 +1282,7 @@ public class Java implements Library {
                 clazz.addMethod("initialize", new JavaMethodZero(clazz, PRIVATE) {
                     @Override
                     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name) {
-                        return context.runtime.getNil();
+                        return context.nil;
                     }
                 });
             }
