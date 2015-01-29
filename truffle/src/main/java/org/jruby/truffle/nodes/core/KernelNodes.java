@@ -542,6 +542,14 @@ public abstract class KernelNodes {
         }
 
         @Specialization
+        public Object eval(VirtualFrame frame, RubyString source, RubyNilClass noBinding, RubyString filename, int lineNumber) {
+            notDesignedForCompilation();
+
+            // TODO (nirvdrum Dec. 29, 2014) Do something with the supplied filename.
+            return eval(frame, source, UndefinedPlaceholder.INSTANCE, UndefinedPlaceholder.INSTANCE, UndefinedPlaceholder.INSTANCE);
+        }
+
+        @Specialization
         public Object eval(RubyString source, RubyBinding binding, UndefinedPlaceholder filename, UndefinedPlaceholder lineNumber) {
             notDesignedForCompilation();
 
