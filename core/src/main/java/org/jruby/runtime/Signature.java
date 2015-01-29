@@ -47,10 +47,15 @@ public class Signature {
         //       permit more than required args to be passed to a lambda, so we do not consider
         //       it a "true" rest arg for arity-checking purposes below in checkArity.
         if (rest != Rest.NONE || opt != 0) {
-            arity = Arity.createArity(-(pre + post + 1));
+            arity = Arity.createArity(-(pre + post + 1 + getRequiredKeywordCount()));
         } else {
-            arity = Arity.fixed(pre + post);
+            arity = Arity.fixed(pre + post + getRequiredKeywordCount());
         }
+    }
+
+    private int getRequiredKeywordCount() {
+        if (kwargs) return 1;
+        return 0;
     }
 
     public int pre() { return pre; }
