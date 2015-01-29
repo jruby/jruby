@@ -124,14 +124,14 @@ namespace :test do
 
   permute_tests(:jruby19, compile_flags, 'test:compile') do |t|
     t.verbose = true
-    t.test_files = files_in_file 'test/mri.1.9.index'
+    t.test_files = files_in_file 'test/jruby.1.9.index'
     t.ruby_opts << '-J-ea' << '--1.9'
     t.ruby_opts << '-J-cp test:test/target/test-classes:core/target/test-classes'
   end
 
   permute_tests(:jruby, compile_flags, 'test:compile') do |t|
     t.verbose = true
-    t.test_files = files_in_file 'test/mri.1.8.index'
+    t.test_files = files_in_file 'test/jruby.1.8.index'
     t.ruby_opts << '-J-ea' << '--1.8'
     t.ruby_opts << '-J-cp test:test/target/test-classes:core/target/test-classes'
   end
