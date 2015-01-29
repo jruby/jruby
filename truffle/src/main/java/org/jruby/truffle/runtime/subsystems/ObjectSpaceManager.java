@@ -196,8 +196,6 @@ public class ObjectSpaceManager {
     public Map<Long, RubyBasicObject> collectLiveObjects() {
         RubyNode.notDesignedForCompilation();
 
-        // TODO(CS): probably a race condition here if multiple threads try to collect at the same time
-
         liveObjects = new HashMap<>();
 
         visitor = new ObjectGraphVisitor() {
