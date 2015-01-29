@@ -293,7 +293,7 @@ module MSpec
         f.each_line do |line|
           line.chomp!
           next if line.empty?
-          tag = SpecTag.new line.chomp
+          tag = SpecTag.new line
           tags << tag if keys.include? tag.tag
         end
       end
