@@ -129,8 +129,6 @@ class Gem::Package::TarReader::Entry
     ret
   end
 
-  alias readpartial read # :nodoc:
-
   ##
   # Rewinds to the beginning of the tar file entry
 

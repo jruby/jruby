@@ -1,5 +1,6 @@
 require 'rubygems'
 require 'rubygems/user_interaction'
+require 'pathname'
 
 ##
 # Cleans up after a partially-failed uninstall or for an invalid
@@ -23,16 +24,12 @@ class Gem::Doctor
     ['build_info',     '.info'],
     ['cache',          '.gem'],
     ['doc',            ''],
-    ['extensions',     ''],
     ['gems',           ''],
   ]
 
-  missing =
-    Gem::REPOSITORY_SUBDIRECTORIES.sort -
+  raise 'Update REPOSITORY_EXTENSION_MAP' unless
+    Gem::REPOSITORY_SUBDIRECTORIES.sort ==
       REPOSITORY_EXTENSION_MAP.map { |(k,_)| k }.sort
-
-  raise "Update REPOSITORY_EXTENSION_MAP, missing: #{missing.join ', '}" unless
-    missing.empty?
 
   ##
   # Creates a new Gem::Doctor that will clean up +gem_repository+.  Only one
@@ -41,7 +38,7 @@ class Gem::Doctor
   # If +dry_run+ is true no files or directories will be removed.
 
   def initialize gem_repository, dry_run = false
-    @gem_repository = gem_repository
+    @gem_repository = Pathname(gem_repository)
     @dry_run        = dry_run
 
     @installed_specs = nil
@@ -99,29 +96,26 @@ class Gem::Doctor
   # Removes files in +sub_directory+ with +extension+
 
   def doctor_child sub_directory, extension # :nodoc:
-    directory = File.join(@gem_repository, sub_directory)
+    directory = @gem_repository + sub_directory
 
-    Dir.entries(directory).sort.each do |ent|
-      next if ent == "." || ent == ".."
+    directory.children.sort.each do |child|
+      next unless child.exist?
 
-      child = File.join(directory, ent)
-      next unless File.exist?(child)
-
-      basename = File.basename(child, extension)
+      basename = child.basename(extension).to_s
       next if installed_specs.include? basename
       next if /^rubygems-\d/ =~ basename
       next if 'specifications' == sub_directory and 'default' == basename
 
-      type = File.directory?(child) ? 'directory' : 'file'
+      type = child.directory? ? 'directory' : 'file'
 
       action = if @dry_run then
                  'Extra'
                else
-                 FileUtils.rm_r(child)
+                 child.rmtree
                  'Removed'
                end
 
-      say "#{action} #{type} #{sub_directory}/#{File.basename(child)}"
+      say "#{action} #{type} #{sub_directory}/#{child.basename}"
     end
   rescue Errno::ENOENT
     # ignore

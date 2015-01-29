@@ -8,8 +8,7 @@ class Gem::Commands::ContentsCommand < Gem::Command
 
   def initialize
     super 'contents', 'Display the contents of the installed gems',
-          :specdirs => [], :lib_only => false, :prefix => true,
-          :show_install_dir => false
+          :specdirs => [], :lib_only => false, :prefix => true
 
     add_version_option
 
@@ -31,11 +30,6 @@ class Gem::Commands::ContentsCommand < Gem::Command
     add_option(      '--[no-]prefix',
                "Don't include installed path prefix") do |prefix, options|
       options[:prefix] = prefix
-    end
-
-    add_option(      '--[no-]show-install-dir',
-               'Show only the gem install dir') do |show, options|
-      options[:show_install_dir] = show
     end
 
     @path_kind = nil
@@ -71,12 +65,7 @@ prefix or only the files that are requireable.
     names = gem_names
 
     names.each do |name|
-      found =
-        if options[:show_install_dir] then
-          gem_install_dir name
-        else
-          gem_contents name
-        end
+      found = gem_contents name
 
       terminate_interaction 1 unless found or names.length > 1
     end
@@ -102,14 +91,14 @@ prefix or only the files that are requireable.
   end
 
   def files_in_default_gem spec
-    spec.files.map do |file|
+    spec.files.sort.map do |file|
       case file
       when /\A#{spec.bindir}\//
-        [RbConfig::CONFIG['bindir'], $POSTMATCH]
+        [Gem::ConfigMap[:bindir], $POSTMATCH]
       when /\.so\z/
-        [RbConfig::CONFIG['archdir'], file]
+        [Gem::ConfigMap[:archdir], file]
       else
-        [RbConfig::CONFIG['rubylibdir'], file]
+        [Gem::ConfigMap[:rubylibdir], file]
       end
     end
   end
@@ -126,16 +115,6 @@ prefix or only the files that are requireable.
     true
   end
 
-  def gem_install_dir name
-    spec = spec_for name
-
-    return false unless spec
-
-    say spec.gem_dir
-
-    true
-  end
-
   def gem_names # :nodoc:
     if options[:all] then
       Gem::Specification.map(&:name)
@@ -146,6 +125,7 @@ prefix or only the files that are requireable.
 
   def path_description spec_dirs # :nodoc:
     if spec_dirs.empty? then
+      spec_dirs = Gem::Specification.dirs
       "default gem paths"
     else
       "specified path"

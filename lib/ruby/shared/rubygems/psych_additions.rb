@@ -4,6 +4,6 @@
 # blows up.
 
 module Psych # :nodoc:
-  class PrivateType # :nodoc:
+  class PrivateType
   end
 end

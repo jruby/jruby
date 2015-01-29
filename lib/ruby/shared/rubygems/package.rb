@@ -54,12 +54,10 @@ class Gem::Package
   class FormatError < Error
     attr_reader :path
 
-    def initialize message, source = nil
-      if source
-        @path = source.path
+    def initialize message, path = nil
+      @path = path
 
-        message << " in #{path}" if path
-      end
+      message << " in #{path}" if path
 
       super message
     end
@@ -81,7 +79,6 @@ class Gem::Package
   # Raised when a tar file is corrupt
 
   class TarInvalidError < Error; end
-
 
   attr_accessor :build_time # :nodoc:
 
@@ -117,26 +114,19 @@ class Gem::Package
   end
 
   ##
-  # Creates a new Gem::Package for the file at +gem+. +gem+ can also be
-  # provided as an IO object.
+  # Creates a new Gem::Package for the file at +gem+.
   #
   # If +gem+ is an existing file in the old format a Gem::Package::Old will be
   # returned.
 
   def self.new gem
-    gem = if gem.is_a?(Gem::Package::Source)
-            gem
-          elsif gem.respond_to? :read
-            Gem::Package::IOSource.new gem
-          else
-            Gem::Package::FileSource.new gem
-          end
+    return super unless Gem::Package == self
+    return super unless File.exist? gem
 
-    return super(gem) unless Gem::Package == self
-    return super unless gem.present?
+    start = File.read gem, 20
 
-    return super unless gem.start
-    return super unless gem.start.include? 'MD5SUM ='
+    return super unless start
+    return super unless start.include? 'MD5SUM ='
 
     Gem::Package::Old.new gem
   end
@@ -237,7 +227,7 @@ class Gem::Package
 
     setup_signer
 
-    @gem.with_write_io do |gem_io|
+    open @gem, 'wb' do |gem_io|
       Gem::Package::TarWriter.new gem_io do |gem|
         add_metadata gem
         add_contents gem
@@ -265,7 +255,7 @@ EOM
 
     @contents = []
 
-    @gem.with_read_io do |io|
+    open @gem, 'rb' do |io|
       gem_tar = Gem::Package::TarReader.new io
 
       gem_tar.each do |entry|
@@ -322,7 +312,7 @@ EOM
 
     FileUtils.mkdir_p destination_dir
 
-    @gem.with_read_io do |io|
+    open @gem, 'rb' do |io|
       reader = Gem::Package::TarReader.new io
 
       reader.each do |entry|
@@ -355,22 +345,13 @@ EOM
 
         FileUtils.rm_rf destination
 
-        mkdir_options = {}
-        mkdir_options[:mode] = entry.header.mode if entry.directory?
-        mkdir =
-          if entry.directory? then
-            destination
-          else
-            File.dirname destination
-          end
-
-        FileUtils.mkdir_p mkdir, mkdir_options
+        FileUtils.mkdir_p File.dirname destination
 
         open destination, 'wb', entry.header.mode do |out|
           out.write entry.read
-        end if entry.file?
+        end
 
-        verbose destination
+        say destination if Gem.configuration.really_verbose
       end
     end
   end
@@ -500,7 +481,7 @@ EOM
     @files     = []
     @spec      = nil
 
-    @gem.with_read_io do |io|
+    open @gem, 'rb' do |io|
       Gem::Package::TarReader.new io do |reader|
         read_checksums reader
 
@@ -602,9 +583,6 @@ EOM
 end
 
 require 'rubygems/package/digest_io'
-require 'rubygems/package/source'
-require 'rubygems/package/file_source'
-require 'rubygems/package/io_source'
 require 'rubygems/package/old'
 require 'rubygems/package/tar_header'
 require 'rubygems/package/tar_reader'

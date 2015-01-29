@@ -3,10 +3,13 @@
 # all the normal settings that control where to look
 # for installed gems.
 
-class Gem::Resolver::CurrentSet < Gem::Resolver::Set
+class Gem::DependencyResolver::CurrentSet
 
   def find_all req
     req.dependency.matching_specs
+  end
+
+  def prefetch gems
   end
 
 end
