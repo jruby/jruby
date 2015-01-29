@@ -239,6 +239,7 @@ public abstract class IRScope implements ParseResult {
     }
 
     protected void addChildScope(IRScope scope) {
+        if (lexicalChildren == null) lexicalChildren = new ArrayList<>();
         lexicalChildren.add(scope);
     }
 
