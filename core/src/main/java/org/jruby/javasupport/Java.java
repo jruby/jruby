@@ -450,29 +450,26 @@ public class Java implements Library {
         return getProxyClass(runtime, javaClass.javaClass());
     }
 
-    public static RubyModule getProxyClass(Ruby runtime, Class c) {
-        return runtime.getJavaSupport().getProxyClassFromCache(c);
+    public static RubyModule getProxyClass(final Ruby runtime, final Class<?> clazz) {
+        return runtime.getJavaSupport().getProxyClassFromCache(clazz);
     }
 
-    public static RubyModule createProxyClassForClass(Ruby runtime, final Class c) {
+    public static RubyModule createProxyClassForClass(final Ruby runtime, final Class<?> clazz) {
+        final JavaSupport javaSupport = runtime.getJavaSupport();
+        final JavaClass javaClass = javaSupport.getJavaClassFromCache(clazz);
+
+        if ( clazz.isInterface() ) return Java.getInterfaceModule(runtime, javaClass);
+
         RubyModule proxyClass;
-        JavaClass javaClass = runtime.getJavaSupport().getJavaClassFromCache(c);
-
-        if (c.isInterface()) {
-            return Java.getInterfaceModule(runtime, javaClass);
-        }
-
         javaClass.lockProxy();
         try {
-            if ((proxyClass = javaClass.getProxyClass()) == null) {
+            if ( ( proxyClass = javaClass.getProxyClass() ) == null ) {
 
-                if (c.isArray()) {
-                    proxyClass = Java.createProxyClass(runtime,
-                            runtime.getJavaSupport().getArrayProxyClass(),
-                            javaClass, true);
+                if ( clazz.isArray() ) {
+                    proxyClass = createProxyClass(runtime, javaSupport.getArrayProxyClass(), javaClass, true);
 
                     // FIXME: Organizationally this might be nicer in a specialized class
-                    if (c.getComponentType() == byte.class) {
+                    if (clazz.getComponentType() == byte.class) {
                         final Encoding ascii8bit = runtime.getEncodingService().getAscii8bitEncoding();
 
                         // All bytes can be considered raw strings and forced to particular codings if not 8bitascii
@@ -484,79 +481,79 @@ public class Java implements Library {
                             }
                         });
                     }
-                } else if (c.isPrimitive()) {
-                    proxyClass = createProxyClass(runtime,
-                            runtime.getJavaSupport().getConcreteProxyClass(),
-                            javaClass, true);
-
-                } else if (c == Object.class) {
+                }
+                else if ( clazz.isPrimitive() ) {
+                    proxyClass = createProxyClass(runtime, javaSupport.getConcreteProxyClass(), javaClass, true);
+                }
+                else if ( clazz == Object.class ) {
                     // java.lang.Object is added at root of java proxy classes
-                    proxyClass = createProxyClass(runtime,
-                            runtime.getJavaSupport().getConcreteProxyClass(),
-                            javaClass, true);
+                    proxyClass = createProxyClass(runtime, javaSupport.getConcreteProxyClass(), javaClass, true);
                     if (NEW_STYLE_EXTENSION) {
                         proxyClass.getMetaClass().defineAnnotatedMethods(Java.NewStyleExtensionInherited.class);
                     } else {
                         proxyClass.getMetaClass().defineAnnotatedMethods(Java.OldStyleExtensionInherited.class);
                     }
                     addToJavaPackageModule(proxyClass, javaClass);
-
-                } else {
+                }
+                else {
                     // other java proxy classes added under their superclass' java proxy
-                    proxyClass = createProxyClass(runtime,
-                        (RubyClass) getProxyClass(runtime, c.getSuperclass()),
-                        javaClass, false);
+                    RubyClass superProxyClass = (RubyClass) getProxyClass(runtime, clazz.getSuperclass());
+                    proxyClass = createProxyClass(runtime, superProxyClass, javaClass, false);
                     // include interface modules into the proxy class
-                    Class<?>[] interfaces = c.getInterfaces();
+                    final Class<?>[] interfaces = clazz.getInterfaces();
                     for (int i = interfaces.length; --i >= 0;) {
-                        JavaClass ifc = JavaClass.get(runtime, interfaces[i]);
+                        JavaClass ifaceClass = JavaClass.get(runtime, interfaces[i]);
                         // java.util.Map type object has its own proxy, but following
                         // is needed. Unless kind_of?(is_a?) test will fail.
                         //if (interfaces[i] != java.util.Map.class) {
-                            proxyClass.includeModule(getInterfaceModule(runtime, ifc));
+                            proxyClass.includeModule(getInterfaceModule(runtime, ifaceClass));
                         //}
                     }
-                    if (Modifier.isPublic(c.getModifiers())) {
+                    if ( Modifier.isPublic(clazz.getModifiers()) ) {
                         addToJavaPackageModule(proxyClass, javaClass);
                     }
                 }
 
                 // JRUBY-1000, fail early when attempting to subclass a final Java class;
                 // solved here by adding an exception-throwing "inherited"
-                if (Modifier.isFinal(c.getModifiers())) {
+                if ( Modifier.isFinal(clazz.getModifiers()) ) {
+                    final String clazzName = clazz.getCanonicalName();
                     proxyClass.getMetaClass().addMethod("inherited", new org.jruby.internal.runtime.methods.JavaMethod(proxyClass, PUBLIC) {
                         @Override
                         public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args, Block block) {
-                            throw context.runtime.newTypeError("can not extend final Java class: " + c.getCanonicalName());
+                            throw context.runtime.newTypeError("can not extend final Java class: " + clazzName);
                         }
                     });
                 }
             }
-        } finally {
+        }
+        finally {
             javaClass.unlockProxy();
         }
 
         return proxyClass;
     }
 
-    public static IRubyObject get_proxy_class(IRubyObject recv, IRubyObject java_class_object) {
-        Ruby runtime = recv.getRuntime();
-        JavaClass javaClass;
-        if (java_class_object instanceof RubyString) {
-            javaClass = JavaClass.for_name(recv, java_class_object);
-        } else if (java_class_object instanceof JavaClass) {
+    public static IRubyObject get_proxy_class(final IRubyObject self, final IRubyObject java_class_object) {
+        final Ruby runtime = self.getRuntime();
+        final JavaClass javaClass;
+        if ( java_class_object instanceof RubyString ) {
+            javaClass = JavaClass.for_name(self, java_class_object);
+        }
+        else if ( java_class_object instanceof JavaClass ) {
             javaClass = (JavaClass) java_class_object;
-        } else {
+        }
+        else {
             throw runtime.newTypeError(java_class_object, runtime.getJavaSupport().getJavaClassClass());
         }
         return getProxyClass(runtime, javaClass);
     }
 
-    private static RubyClass createProxyClass(Ruby runtime, RubyClass baseType,
-            JavaClass javaClass, boolean invokeInherited) {
+    private static RubyClass createProxyClass(final Ruby runtime,
+        final RubyClass baseType, final JavaClass javaClass, boolean invokeInherited) {
         // JRUBY-2938 the proxy class might already exist
         RubyClass proxyClass = javaClass.getProxyClass();
-        if (proxyClass != null) return proxyClass;
+        if ( proxyClass != null ) return proxyClass;
 
         // this needs to be split, since conditional calling #inherited doesn't fit standard ruby semantics
         RubyClass.checkInheritable(baseType);
@@ -564,21 +561,23 @@ public class Java implements Library {
         proxyClass = RubyClass.newClass(runtime, superClass);
         proxyClass.makeMetaClass(superClass.getMetaClass());
 
-        if (Map.class.isAssignableFrom(javaClass.javaClass())) {
-            proxyClass.setAllocator(runtime.getJavaSupport().getMapJavaProxyClass().getAllocator());
-            proxyClass.defineAnnotatedMethods(MapJavaProxy.class);
-            proxyClass.includeModule(runtime.getEnumerable());
-        } else {
-            proxyClass.setAllocator(superClass.getAllocator());
+        if ( Map.class.isAssignableFrom( javaClass.javaClass() ) ) {
+            proxyClass.setAllocator( runtime.getJavaSupport().getMapJavaProxyClass().getAllocator() );
+            proxyClass.defineAnnotatedMethods( MapJavaProxy.class );
+            proxyClass.includeModule( runtime.getEnumerable() );
         }
-        if (invokeInherited) {
-            proxyClass.inherit(superClass);
+        else {
+            proxyClass.setAllocator( superClass.getAllocator() );
         }
-        proxyClass.callMethod(runtime.getCurrentContext(), "java_class=", javaClass);
-        javaClass.setupProxy(proxyClass);
 
+        if ( invokeInherited ) proxyClass.inherit(superClass);
+
+        proxyClass.callMethod(runtime.getCurrentContext(), "java_class=", javaClass);
         // add java_method for unbound use
         proxyClass.defineAnnotatedMethods(JavaProxyClassMethods.class);
+
+        javaClass.setupProxy(proxyClass);
+
         return proxyClass;
     }
 
