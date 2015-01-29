@@ -92,6 +92,10 @@ public abstract class TrufflePrimitiveNodes {
 
         @Specialization
         public RubyHash coverageResult() {
+            if (getContext().getCoverageTracker() == null) {
+                throw new UnsupportedOperationException("coverage is disabled");
+            }
+
             final Collection<KeyValue> keyValues = new ArrayList<>();
 
             for (Map.Entry<Source, Long[]> source : getContext().getCoverageTracker().getCounts().entrySet()) {
@@ -132,6 +136,10 @@ public abstract class TrufflePrimitiveNodes {
 
         @Specialization
         public RubyNilClass coverageStart() {
+            if (getContext().getCoverageTracker() == null) {
+                throw new UnsupportedOperationException("coverage is disabled");
+            }
+
             getContext().getCoverageTracker().install();
             return getContext().getCoreLibrary().getNilObject();
         }

@@ -96,8 +96,12 @@ public class RubyContext extends ExecutionContext {
 
         // TODO(CS, 28-Jan-15) this is global
         // TODO(CS, 28-Jan-15) maybe not do this for core?
-        Probe.registerASTProber(new RubyDefaultASTProber());
-        coverageTracker = new CoverageTracker();
+        if (Options.TRUFFLE_COVERAGE.load()) {
+            Probe.registerASTProber(new RubyDefaultASTProber());
+            coverageTracker = new CoverageTracker();
+        } else {
+            coverageTracker = null;
+        }
 
         safepointManager = new SafepointManager(this);
 
