@@ -184,80 +184,6 @@ public abstract class RegexpNodes {
 
     }
 
-    @CoreMethod(names = "initialize", required = 1, optional = 1, lowerFixnumParameters = 2)
-    public abstract static class InitializeNode extends CoreMethodNode {
-
-        private ConditionProfile booleanOptionsProfile = ConditionProfile.createBinaryProfile();
-
-        public InitializeNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
-        public InitializeNode(InitializeNode prev) {
-            super(prev);
-        }
-
-        @Specialization
-        public RubyRegexp initialize(RubyRegexp regexp, RubyString string, UndefinedPlaceholder options) {
-            notDesignedForCompilation();
-
-            regexp.initialize(this, string.getBytes(), Option.DEFAULT);
-            return regexp;
-        }
-
-        @Specialization
-        public RubyRegexp initialize(RubyRegexp regexp, RubyString string, RubyNilClass options) {
-            notDesignedForCompilation();
-
-            return initialize(regexp, string, UndefinedPlaceholder.INSTANCE);
-        }
-
-        @Specialization
-        public RubyRegexp initialize(RubyRegexp regexp, RubyString string, boolean options) {
-            notDesignedForCompilation();
-
-            if (booleanOptionsProfile.profile(options)) {
-                return initialize(regexp, string, Option.IGNORECASE);
-            } else {
-                return initialize(regexp, string, UndefinedPlaceholder.INSTANCE);
-            }
-        }
-
-        @Specialization
-        public RubyRegexp initialize(RubyRegexp regexp, RubyString string, int options) {
-            notDesignedForCompilation();
-
-            regexp.initialize(this, string.getBytes(), options);
-            return regexp;
-        }
-
-        @Specialization(guards = { "!isRubyNilClass(arguments[2])", "!isUndefinedPlaceholder(arguments[2])" })
-        public RubyRegexp initialize(RubyRegexp regexp, RubyString string, Object options) {
-            notDesignedForCompilation();
-
-            return initialize(regexp, string, Option.IGNORECASE);
-        }
-
-        @Specialization
-        public RubyRegexp initialize(RubyRegexp regexp, RubyRegexp from, UndefinedPlaceholder options) {
-            notDesignedForCompilation();
-
-            regexp.initialize(this, from.getSource(), from.getRegex().getOptions()); // TODO: is copying needed?
-            return regexp;
-        }
-
-        @Specialization(guards = "!isUndefinedPlaceholder(arguments[2])")
-        public RubyRegexp initialize(RubyRegexp regexp, RubyRegexp from, Object options) {
-            notDesignedForCompilation();
-
-            if (Options.PARSER_WARN_FLAGS_IGNORED.load()) {
-                getContext().getWarnings().warn("flags ignored");
-            }
-
-            return initialize(regexp, from, UndefinedPlaceholder.INSTANCE);
-        }
-    }
-
     @CoreMethod(names = "initialize_copy", visibility = Visibility.PRIVATE, required = 1)
     public abstract static class InitializeCopyNode extends CoreMethodNode {
 
@@ -390,7 +316,7 @@ public abstract class RegexpNodes {
 
         @Specialization
         public RubyString source(RubyRegexp regexp) {
-            return getContext().makeString(regexp.getSource().toString());
+            return getContext().makeString(regexp.getSource().dup());
         }
 
     }
