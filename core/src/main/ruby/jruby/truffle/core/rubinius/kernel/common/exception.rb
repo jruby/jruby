@@ -1,4 +1,4 @@
-# Copyright (c) 2007-2014, Evan Phoenix and contributors
+ # Copyright (c) 2007-2014, Evan Phoenix and contributors
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -24,36 +24,12 @@
 # OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-# Only part of Rubinius' array.rb
+# Only part of Rubinius' exception.rb
 
-class Array
+class StopIteration < IndexError
+end
 
-  def values_at(*args)
-    out = []
-
-    args.each do |elem|
-      # Cannot use #[] because of subtly different errors
-      if elem.kind_of? Range
-        finish = Rubinius::Type.coerce_to_collection_index elem.last
-        start = Rubinius::Type.coerce_to_collection_index elem.first
-
-        start += @total if start < 0
-        next if start < 0
-
-        finish += @total if finish < 0
-        finish -= 1 if elem.exclude_end?
-
-        next if finish < start
-
-        start.upto(finish) { |i| out << at(i) }
-
-      else
-        i = Rubinius::Type.coerce_to_collection_index elem
-        out << at(i)
-      end
-    end
-
-    out
-  end
-
+class StopIteration
+  attr_accessor :result
+  private :result=
 end
