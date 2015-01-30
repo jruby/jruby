@@ -94,13 +94,11 @@ public class RubyFiber extends RubyBasicObject {
                 fiberManager.registerFiber(finalFiber);
 
                 try {
-                    try {
-                        final Object arg = finalFiber.waitForResume();
-                        final Object result = finalBlock.rootCall(arg);
-                        finalFiber.lastResumedByFiber.resume(finalFiber, result);
-                    } catch (FiberExitException e) {
-                        // Naturally exit the thread on catching this
-                    }
+                    final Object arg = finalFiber.waitForResume();
+                    final Object result = finalBlock.rootCall(arg);
+                    finalFiber.lastResumedByFiber.resume(finalFiber, result);
+                } catch (FiberExitException e) {
+                    // Naturally exit the thread on catching this
                 } finally {
                     fiberManager.unregisterFiber(finalFiber);
                 }
@@ -119,6 +117,7 @@ public class RubyFiber extends RubyBasicObject {
         FiberMessage message = getContext().getThreadManager().runUntilResult(new BlockingActionWithoutGlobalLock<FiberMessage>() {
             @Override
             public FiberMessage block() throws InterruptedException {
+                // TODO (CS 30-Jan-15) this timeout isn't ideal - we already handle interrupts for safepoints
                 return messageQueue.poll(1, TimeUnit.SECONDS);
             }
         });

@@ -28,17 +28,6 @@ import java.util.concurrent.CountDownLatch;
  */
 public class RubyThread extends RubyBasicObject {
 
-    public Object getValue() {
-        return value;
-    }
-
-    public RubyException getException() {
-        return exception;
-    }
-
-    public void shutdown() {
-    }
-
     private final ThreadManager manager;
 
     private final CountDownLatch finished = new CountDownLatch(1);
@@ -141,6 +130,17 @@ public class RubyThread extends RubyBasicObject {
 
     public RubyBasicObject getThreadLocals() {
         return threadLocals;
+    }
+
+    public Object getValue() {
+        return value;
+    }
+
+    public RubyException getException() {
+        return exception;
+    }
+
+    public void shutdown() {
     }
 
     public static class ThreadAllocator implements Allocator {
