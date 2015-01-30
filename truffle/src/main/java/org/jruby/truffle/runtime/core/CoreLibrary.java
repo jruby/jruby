@@ -234,6 +234,7 @@ public class CoreLibrary {
         enumerableModule = new RubyModule(context, objectClass, "Enumerable");
         falseClass = new RubyClass(context, objectClass, objectClass, "FalseClass");
         fiberClass = new RubyClass(context, objectClass, objectClass, "Fiber");
+        fiberClass.setAllocator(new RubyFiber.FiberAllocator());
         fileClass = new RubyClass(context, objectClass, ioClass, "File");
         fixnumClass = new RubyClass(context, objectClass, integerClass, "Fixnum");
         floatClass = new RubyClass(context, objectClass, numericClass, "Float");
