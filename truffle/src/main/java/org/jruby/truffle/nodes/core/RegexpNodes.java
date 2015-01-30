@@ -198,15 +198,15 @@ public abstract class RegexpNodes {
         }
 
         @Specialization
-        public RubyRegexp initialize(RubyRegexp regexp, RubyString string, @SuppressWarnings("unused") UndefinedPlaceholder options) {
+        public RubyRegexp initialize(RubyRegexp regexp, RubyString string, UndefinedPlaceholder options) {
             notDesignedForCompilation();
 
-            regexp.initialize(this, string.getBytes());
+            regexp.initialize(this, string.getBytes(), Option.DEFAULT);
             return regexp;
         }
 
         @Specialization
-        public RubyRegexp initialize(RubyRegexp regexp, RubyString string, @SuppressWarnings("unused") RubyNilClass options) {
+        public RubyRegexp initialize(RubyRegexp regexp, RubyString string, RubyNilClass options) {
             notDesignedForCompilation();
 
             return initialize(regexp, string, UndefinedPlaceholder.INSTANCE);
@@ -231,23 +231,23 @@ public abstract class RegexpNodes {
             return regexp;
         }
 
-        @Specialization(guards = "!isRubyNilClass(arguments[2])")
-        public RubyRegexp initialize(RubyRegexp regexp, RubyString string, @SuppressWarnings("unused") Object options) {
+        @Specialization(guards = { "!isRubyNilClass(arguments[2])", "!isUndefinedPlaceholder(arguments[2])" })
+        public RubyRegexp initialize(RubyRegexp regexp, RubyString string, Object options) {
             notDesignedForCompilation();
 
             return initialize(regexp, string, Option.IGNORECASE);
         }
 
         @Specialization
-        public RubyRegexp initialize(RubyRegexp regexp, RubyRegexp from, @SuppressWarnings("unused") UndefinedPlaceholder options) {
+        public RubyRegexp initialize(RubyRegexp regexp, RubyRegexp from, UndefinedPlaceholder options) {
             notDesignedForCompilation();
 
             regexp.initialize(this, from.getSource(), from.getRegex().getOptions()); // TODO: is copying needed?
             return regexp;
         }
 
-        @Specialization
-        public RubyRegexp initialize(RubyRegexp regexp, RubyRegexp from, @SuppressWarnings("unused") Object options) {
+        @Specialization(guards = "!isUndefinedPlaceholder(arguments[2])")
+        public RubyRegexp initialize(RubyRegexp regexp, RubyRegexp from, Object options) {
             notDesignedForCompilation();
 
             if (Options.PARSER_WARN_FLAGS_IGNORED.load()) {
@@ -277,7 +277,7 @@ public abstract class RegexpNodes {
                 return self;
             }
 
-            self.initialize(this, from.getSource()); // TODO: is copying needed?
+            self.initialize(this, from.getSource(), from.getRegex().getOptions()); // TODO: is copying needed?
 
             return self;
         }

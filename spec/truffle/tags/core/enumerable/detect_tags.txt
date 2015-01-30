@@ -1,3 +1,1 @@
 fails:Enumerable#detect passes through the values yielded by #each_with_index
-fails:Enumerable#detect returns an enumerator when no block given
-fails:Enumerable#detect passes the ifnone proc to the enumerator

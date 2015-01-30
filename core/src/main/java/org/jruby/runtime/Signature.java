@@ -10,6 +10,7 @@ import org.jruby.ast.PostExeNode;
 import org.jruby.ast.PreExeNode;
 import org.jruby.ast.StarNode;
 import org.jruby.ast.UnnamedRestArgNode;
+import org.jruby.ast.RequiredKeywordArgumentValueNode;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.TypeConverter;
 
@@ -35,6 +36,8 @@ public class Signature {
     private final boolean kwargs;
     private final Arity arity;
 
+    private boolean requiredKwargs;
+
     public Signature(int pre, int opt, int post, Rest rest, boolean kwargs) {
         this.pre = pre;
         this.opt = opt;
@@ -47,10 +50,34 @@ public class Signature {
         //       permit more than required args to be passed to a lambda, so we do not consider
         //       it a "true" rest arg for arity-checking purposes below in checkArity.
         if (rest != Rest.NONE || opt != 0) {
-            arity = Arity.createArity(-(pre + post + 1));
+            arity = Arity.createArity(-(required() + 1));
         } else {
-            arity = Arity.fixed(pre + post);
+            arity = Arity.fixed(required() + getRequiredKeywordCount());
         }
+    }
+
+    public Signature(int pre, int opt, int post, Rest rest, boolean kwargs, boolean requiredKwargs) {
+        this.pre = pre;
+        this.opt = opt;
+        this.post = post;
+        this.rest = rest;
+        this.kwargs = kwargs;
+        this.requiredKwargs = requiredKwargs;
+
+        // NOTE: Some logic to *assign* variables still uses Arity, which treats Rest.ANON (the
+        //       |a,| form) as a rest arg for destructuring purposes. However ANON does *not*
+        //       permit more than required args to be passed to a lambda, so we do not consider
+        //       it a "true" rest arg for arity-checking purposes below in checkArity.
+        if (rest != Rest.NONE || opt != 0) {
+            arity = Arity.createArity(-(required() + 1));
+        } else {
+            arity = Arity.fixed(required() + getRequiredKeywordCount());
+        }
+    }
+
+    private int getRequiredKeywordCount() {
+        if (requiredKwargs) return 1;
+        return 0;
     }
 
     public int pre() { return pre; }
@@ -102,6 +129,46 @@ public class Signature {
         return new Signature(pre, opt, post, rest, kwargs);
     }
 
+    public static Signature from(int pre, int opt, int post, Rest rest, boolean kwargs, boolean requiredKwargs) {
+        if (opt == 0 && post == 0 && !kwargs) {
+            switch (pre) {
+                case 0:
+                    switch (rest) {
+                        case NONE:
+                            return Signature.NO_ARGUMENTS;
+                        case NORM:
+                            return Signature.OPTIONAL;
+                    }
+                    break;
+                case 1:
+                    switch (rest) {
+                        case NONE:
+                            return Signature.ONE_ARGUMENT;
+                        case NORM:
+                            return Signature.ONE_REQUIRED;
+                    }
+                    break;
+                case 2:
+                    switch (rest) {
+                        case NONE:
+                            return Signature.TWO_ARGUMENTS;
+                        case NORM:
+                            return Signature.TWO_REQUIRED;
+                    }
+                    break;
+                case 3:
+                    switch (rest) {
+                        case NONE:
+                            return Signature.THREE_ARGUMENTS;
+                        case NORM:
+                            return Signature.THREE_REQUIRED;
+                    }
+                    break;
+            }
+        }
+        return new Signature(pre, opt, post, rest, kwargs, requiredKwargs);
+    }
+
     public static Signature from(IterNode iter) {
         if (iter instanceof ForNode) return from((ForNode)iter);
         if (iter instanceof PreExeNode) return from((PreExeNode)iter);
@@ -118,7 +185,25 @@ public class Signature {
             rest = restFromArg(restArg);
         }
 
-        return Signature.from(args.getPreCount(), args.getOptionalArgsCount(), args.getPostCount(), rest, args.hasKwargs());
+       return Signature.from(args.getPreCount(), args.getOptionalArgsCount(), args.getPostCount(), rest, args.hasKwargs(), hasRequiredKeywordArg(args));
+    }
+
+    private static boolean hasRequiredKeywordArg(ArgsNode args) {
+        if (args.getKeywords() == null) return false;
+
+        for (Node keyWordNode : args.getKeywords().childNodes()) {
+            for (Node asgnNode : keyWordNode.childNodes()) {
+                if (isRequiredKeywordArgumentValueNode(asgnNode)) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+
+    private static boolean isRequiredKeywordArgumentValueNode(Node asgnNode) {
+        return asgnNode.childNodes().get(0) instanceof RequiredKeywordArgumentValueNode;
     }
 
     private static Rest restFromArg(Node restArg) {

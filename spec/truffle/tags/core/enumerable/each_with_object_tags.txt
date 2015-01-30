@@ -1,1 +1,0 @@
-fails:Enumerable#each_with_object returns an enumerator if no block

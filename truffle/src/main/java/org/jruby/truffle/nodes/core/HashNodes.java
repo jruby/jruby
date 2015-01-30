@@ -1077,7 +1077,7 @@ public abstract class HashNodes {
             }
         }
 
-        @Specialization
+        @Specialization(guards = "!isUndefinedPlaceholder(arguments[1])")
         public Object defaultElement(VirtualFrame frame, RubyHash hash, Object key) {
             Object ret = hash.getDefaultValue();
 

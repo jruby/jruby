@@ -12,9 +12,13 @@ module Rubinius
     false
   end
 
-  module Fiber
+  class Fiber < ::Fiber
 
     ENABLED = true
+
+    def initialize(size, &block)
+      super &block
+    end
 
   end
 

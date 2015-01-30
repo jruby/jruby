@@ -1,4 +1,2 @@
 fails:Enumerable#find calls the ifnone proc when there are no elements
 fails:Enumerable#find passes through the values yielded by #each_with_index
-fails:Enumerable#find returns an enumerator when no block given
-fails:Enumerable#find passes the ifnone proc to the enumerator

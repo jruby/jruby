@@ -1566,28 +1566,28 @@ public abstract class KernelNodes {
         }
 
         @Specialization
-        public Object raise(VirtualFrame frame, UndefinedPlaceholder undefined1, UndefinedPlaceholder undefined2, Object undefined3) {
+        public Object raise(VirtualFrame frame, UndefinedPlaceholder undefined1, UndefinedPlaceholder undefined2, UndefinedPlaceholder undefined3) {
             notDesignedForCompilation();
 
             return raise(frame, getContext().getCoreLibrary().getRuntimeErrorClass(), getContext().makeString("re-raised - don't have the current exception yet!"), undefined1);
         }
 
         @Specialization
-        public Object raise(VirtualFrame frame, RubyString message, UndefinedPlaceholder undefined1, Object undefined2) {
+        public Object raise(VirtualFrame frame, RubyString message, UndefinedPlaceholder undefined1, UndefinedPlaceholder undefined2) {
             notDesignedForCompilation();
 
             return raise(frame, getContext().getCoreLibrary().getRuntimeErrorClass(), message, undefined1);
         }
 
         @Specialization
-        public Object raise(VirtualFrame frame, RubyClass exceptionClass, UndefinedPlaceholder undefined1, Object undefined2) {
+        public Object raise(VirtualFrame frame, RubyClass exceptionClass, UndefinedPlaceholder undefined1, UndefinedPlaceholder undefined2) {
             notDesignedForCompilation();
 
             return raise(frame, exceptionClass, getContext().makeString(""), undefined1);
         }
 
         @Specialization
-        public Object raise(VirtualFrame frame, RubyClass exceptionClass, RubyString message, Object undefined1) {
+        public Object raise(VirtualFrame frame, RubyClass exceptionClass, RubyString message, UndefinedPlaceholder undefined1) {
             notDesignedForCompilation();
 
             final Object exception = exceptionClass.allocate(this);
@@ -1602,7 +1602,7 @@ public abstract class KernelNodes {
         }
 
         @Specialization
-        public Object raise(RubyException exception, UndefinedPlaceholder undefined1, Object undefined2) {
+        public Object raise(RubyException exception, UndefinedPlaceholder undefined1, UndefinedPlaceholder undefined2) {
             throw new RaiseException(exception);
         }
 
@@ -2158,10 +2158,10 @@ public abstract class KernelNodes {
 
         @Specialization
         public Object doThrow(Object tag, UndefinedPlaceholder value) {
-            return doThrow(tag, (Object) value);
+            return doThrow(tag, getContext().getCoreLibrary().getNilObject());
         }
 
-        @Specialization
+        @Specialization(guards = "!isUndefinedPlaceholder(arguments[1])")
         public Object doThrow(Object tag, Object value) {
             notDesignedForCompilation();
 
@@ -2172,11 +2172,7 @@ public abstract class KernelNodes {
                         RubyCallStack.getBacktrace(this)));
             }
 
-            if (value instanceof UndefinedPlaceholder) {
-                throw new ThrowException(tag, getContext().getCoreLibrary().getNilObject());
-            } else {
-                throw new ThrowException(tag, value);
-            }
+            throw new ThrowException(tag, value);
         }
 
     }

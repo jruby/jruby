@@ -1373,6 +1373,8 @@ public abstract class ArrayNodes {
     @ImportGuards(ArrayGuards.class)
     public abstract static class EachNode extends YieldingCoreMethodNode {
 
+        @Child private CallDispatchHeadNode toEnumNode;
+
         private final BranchProfile breakProfile = BranchProfile.create();
         private final BranchProfile nextProfile = BranchProfile.create();
         private final BranchProfile redoProfile = BranchProfile.create();
@@ -1383,6 +1385,17 @@ public abstract class ArrayNodes {
 
         public EachNode(EachNode prev) {
             super(prev);
+            toEnumNode = prev.toEnumNode;
+        }
+
+        @Specialization
+        public Object eachEnumerator(VirtualFrame frame, RubyArray array, UndefinedPlaceholder block) {
+            if (toEnumNode == null) {
+                CompilerDirectives.transferToInterpreter();
+                toEnumNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext()));
+            }
+
+            return toEnumNode.call(frame, array, "to_enum", null, getContext().getCoreLibrary().getEachSymbol());
         }
 
         @Specialization(guards = "isNull")
@@ -1951,7 +1964,7 @@ public abstract class ArrayNodes {
             return array;
         }
 
-        @Specialization
+        @Specialization(guards = "!isUndefinedPlaceholder(arguments[2])")
         public RubyArray initialize(RubyArray array, int size, Object defaultValue, UndefinedPlaceholder block) {
             final Object[] store = new Object[size];
             Arrays.fill(store, defaultValue);
