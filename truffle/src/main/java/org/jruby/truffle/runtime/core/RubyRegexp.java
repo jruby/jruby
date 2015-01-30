@@ -62,10 +62,6 @@ public class RubyRegexp extends RubyBasicObject {
         source = setSource;
     }
 
-    public void initialize(RubyNode currentNode, ByteList setSource) {
-        initialize(currentNode, setSource, Option.DEFAULT);
-    }
-
     public void initialize(Regex setRegex, ByteList setSource) {
         regex = setRegex;
         source = setSource;

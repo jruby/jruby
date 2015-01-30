@@ -201,7 +201,7 @@ public abstract class RegexpNodes {
         public RubyRegexp initialize(RubyRegexp regexp, RubyString string, UndefinedPlaceholder options) {
             notDesignedForCompilation();
 
-            regexp.initialize(this, string.getBytes());
+            regexp.initialize(this, string.getBytes(), Option.DEFAULT);
             return regexp;
         }
 
@@ -277,7 +277,7 @@ public abstract class RegexpNodes {
                 return self;
             }
 
-            self.initialize(this, from.getSource()); // TODO: is copying needed?
+            self.initialize(this, from.getSource(), from.getRegex().getOptions()); // TODO: is copying needed?
 
             return self;
         }
