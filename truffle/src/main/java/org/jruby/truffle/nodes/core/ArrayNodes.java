@@ -1964,7 +1964,7 @@ public abstract class ArrayNodes {
             return array;
         }
 
-        @Specialization
+        @Specialization(guards = "!isUndefinedPlaceholder(arguments[2])")
         public RubyArray initialize(RubyArray array, int size, Object defaultValue, UndefinedPlaceholder block) {
             final Object[] store = new Object[size];
             Arrays.fill(store, defaultValue);

@@ -231,7 +231,7 @@ public abstract class RegexpNodes {
             return regexp;
         }
 
-        @Specialization(guards = "!isRubyNilClass(arguments[2])")
+        @Specialization(guards = { "!isRubyNilClass(arguments[2])", "!isUndefinedPlaceholder(arguments[2])" })
         public RubyRegexp initialize(RubyRegexp regexp, RubyString string, Object options) {
             notDesignedForCompilation();
 
@@ -246,7 +246,7 @@ public abstract class RegexpNodes {
             return regexp;
         }
 
-        @Specialization
+        @Specialization(guards = "!isUndefinedPlaceholder(arguments[2])")
         public RubyRegexp initialize(RubyRegexp regexp, RubyRegexp from, Object options) {
             notDesignedForCompilation();
 

@@ -2155,10 +2155,10 @@ public abstract class KernelNodes {
 
         @Specialization
         public Object doThrow(Object tag, UndefinedPlaceholder value) {
-            return doThrow(tag, (Object) value);
+            return doThrow(tag, getContext().getCoreLibrary().getNilObject());
         }
 
-        @Specialization
+        @Specialization(guards = "!isUndefinedPlaceholder(arguments[1])")
         public Object doThrow(Object tag, Object value) {
             notDesignedForCompilation();
 
@@ -2169,11 +2169,7 @@ public abstract class KernelNodes {
                         RubyCallStack.getBacktrace(this)));
             }
 
-            if (value instanceof UndefinedPlaceholder) {
-                throw new ThrowException(tag, getContext().getCoreLibrary().getNilObject());
-            } else {
-                throw new ThrowException(tag, value);
-            }
+            throw new ThrowException(tag, value);
         }
 
     }
