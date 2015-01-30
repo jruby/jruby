@@ -1,3 +1,1 @@
-fails:Enumerable#drop_while returns no/all elements for {true/false} block
-fails:Enumerable#drop_while accepts returns other than true/false
 fails:Enumerable#drop_while will only go through what's needed

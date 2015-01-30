@@ -1,5 +1,2 @@
 fails:Enumerable#each_cons tries to convert n to an Integer using #to_int
-fails:Enumerable#each_cons works when n is >= full length
 fails:Enumerable#each_cons yields only as much as needed
-fails:Enumerable#each_cons returns an enumerator if no block
-fails:Enumerable#each_cons gathers whole arrays as elements when each yields multiple
