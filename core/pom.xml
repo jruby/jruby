@@ -532,7 +532,7 @@
         <artifactId>maven-shade-plugin</artifactId>
         <executions>
           <execution>
-            <id>pack lib/jruby.jar</id>
+            <id>create lib/jruby.jar</id>
             <phase>package</phase>
             <goals>
               <goal>shade</goal>

@@ -235,6 +235,7 @@ project 'JRuby Integration Tests' do
                           '<arg value="-Xparser.warn.shadowing_local=false" />' +
                           '<arg value="-Xparser.warn.regex_condition=false" />' +
                           '<arg value="-Xparser.warn.argument_prefix=false" />' +
+                          '<arg value="-Xparser.warn.ambiguous_argument=false" />' +
                           '<arg value="-J-ea" />' +
                           '<arg value="-J-Xmx1G" />' +
                           '<arg value="spec/mspec/bin/mspec" />' +
@@ -257,6 +258,8 @@ project 'JRuby Integration Tests' do
                           #'<arg value="-Xparser.warn.regex_condition=false" />' +
                           #'<arg value="-T" />' +
                           #'<arg value="-Xparser.warn.argument_prefix=false" />' +
+                          #'<arg value="-T" />' +
+                          #'<arg value="-Xparser.warn.ambiguous_argument=false" />' +
                           #'<arg value="-T" />' +
                           #'<arg value="-J-ea" />' +
                           '<arg value="--config" />' +
@@ -286,6 +289,7 @@ project 'JRuby Integration Tests' do
                           '<arg value="-Xparser.warn.shadowing_local=false" />' +
                           '<arg value="-Xparser.warn.regex_condition=false" />' +
                           '<arg value="-Xparser.warn.argument_prefix=false" />' +
+                          '<arg value="-Xparser.warn.ambiguous_argument=false" />' +
                           '<arg value="-J-ea" />' +
                           '<arg value="-J-Xmx1G" />' +
                           '<arg value="spec/mspec/bin/mspec" />' +
@@ -308,6 +312,8 @@ project 'JRuby Integration Tests' do
                           #'<arg value="-Xparser.warn.regex_condition=false" />' +
                           #'<arg value="-T" />' +
                           #'<arg value="-Xparser.warn.argument_prefix=false" />' +
+                          #'<arg value="-T" />' +
+                          #'<arg value="-Xparser.warn.ambiguous_argument=false" />' +
                           #'<arg value="-T" />' +
                           #'<arg value="-J-ea" />' +
                           '<arg value="--config" />' +
