@@ -32,6 +32,7 @@ require_relative 'core/rubinius/kernel/bootstrap/true'
 require_relative 'core/rubinius/kernel/bootstrap/type'
 
 # Load common (ordered according to Rubinius' load_order.txt)
+require_relative 'core/rubinius/kernel/common/enumerator'
 require_relative 'core/rubinius/kernel/common/enumerable'
 require_relative 'core/rubinius/kernel/common/undefined'
 require_relative 'core/rubinius/kernel/common/type'

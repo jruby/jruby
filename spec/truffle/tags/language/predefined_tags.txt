@@ -4,3 +4,8 @@ slow:The predefined global constant STDERR has the encodings set by #set_encodin
 slow:The predefined global constant STDIN retains the encoding set by #set_encoding when Encoding.default_external is changed
 slow:The predefined global constant STDIN has the encodings set by #set_encoding
 slow:The predefined global constant STDOUT has the encodings set by #set_encoding
+fails(windows bug):Execution variable $: does not include '.' when the taint check level > 1
+fails(windows bug):The predefined global constant STDIN has the encodings set by #set_encoding
+fails(windows bug):The predefined global constant STDIN retains the encoding set by #set_encoding when Encoding.default_external is changed
+fails(windows bug):The predefined global constant STDOUT has the encodings set by #set_encoding
+fails(windows bug):The predefined global constant STDERR has the encodings set by #set_encoding

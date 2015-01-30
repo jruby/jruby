@@ -5,4 +5,6 @@
   -Xparser.warn.shadowing_local=false ^
   -Xparser.warn.regex_condition=false ^
   -Xparser.warn.argument_prefix=false ^
+  -Xparser.warn.ambiguous_argument=false ^
+  -Xparser.warn.flags_ignored=false ^
   -J-ea -J-Xmx2G %*

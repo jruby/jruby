@@ -573,7 +573,7 @@ public abstract class HashNodes {
                 }
             } finally {
                 if (CompilerDirectives.inInterpreter()) {
-                    ((RubyRootNode) getRootNode()).reportLoopCount(count);
+                    getRootNode().reportLoopCount(count);
                 }
             }
 
@@ -897,7 +897,7 @@ public abstract class HashNodes {
                 }
             } finally {
                 if (CompilerDirectives.inInterpreter()) {
-                    ((RubyRootNode) getRootNode()).reportLoopCount(count);
+                    getRootNode().reportLoopCount(count);
                 }
             }
 

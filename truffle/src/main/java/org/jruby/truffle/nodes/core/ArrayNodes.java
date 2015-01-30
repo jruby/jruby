@@ -1420,7 +1420,7 @@ public abstract class ArrayNodes {
                 }
             } finally {
                 if (CompilerDirectives.inInterpreter()) {
-                    ((RubyRootNode) getRootNode()).reportLoopCount(count);
+                    getRootNode().reportLoopCount(count);
                 }
             }
 
@@ -1457,7 +1457,7 @@ public abstract class ArrayNodes {
                 }
             } finally {
                 if (CompilerDirectives.inInterpreter()) {
-                    ((RubyRootNode) getRootNode()).reportLoopCount(count);
+                    getRootNode().reportLoopCount(count);
                 }
             }
 
@@ -1494,7 +1494,7 @@ public abstract class ArrayNodes {
                 }
             } finally {
                 if (CompilerDirectives.inInterpreter()) {
-                    ((RubyRootNode) getRootNode()).reportLoopCount(count);
+                    getRootNode().reportLoopCount(count);
                 }
             }
 
@@ -1531,7 +1531,7 @@ public abstract class ArrayNodes {
                 }
             } finally {
                 if (CompilerDirectives.inInterpreter()) {
-                    ((RubyRootNode) getRootNode()).reportLoopCount(count);
+                    getRootNode().reportLoopCount(count);
                 }
             }
 
@@ -1591,7 +1591,7 @@ public abstract class ArrayNodes {
                 }
             } finally {
                 if (CompilerDirectives.inInterpreter()) {
-                    ((RubyRootNode) getRootNode()).reportLoopCount(count);
+                    getRootNode().reportLoopCount(count);
                 }
             }
 
@@ -2084,7 +2084,7 @@ public abstract class ArrayNodes {
                 }
             } finally {
                 if (CompilerDirectives.inInterpreter()) {
-                    ((RubyRootNode) getRootNode()).reportLoopCount(count);
+                    getRootNode().reportLoopCount(count);
                 }
             }
 
@@ -2328,7 +2328,7 @@ public abstract class ArrayNodes {
                 }
             } finally {
                 if (CompilerDirectives.inInterpreter()) {
-                    ((RubyRootNode) getRootNode()).reportLoopCount(count);
+                    getRootNode().reportLoopCount(count);
                 }
             }
 
@@ -2353,7 +2353,7 @@ public abstract class ArrayNodes {
                 }
             } finally {
                 if (CompilerDirectives.inInterpreter()) {
-                    ((RubyRootNode) getRootNode()).reportLoopCount(count);
+                    getRootNode().reportLoopCount(count);
                 }
             }
 
@@ -2403,7 +2403,7 @@ public abstract class ArrayNodes {
                 }
             } finally {
                 if (CompilerDirectives.inInterpreter()) {
-                    ((RubyRootNode) getRootNode()).reportLoopCount(count);
+                    getRootNode().reportLoopCount(count);
                 }
             }
 
@@ -2427,6 +2427,11 @@ public abstract class ArrayNodes {
             arrayBuilder = prev.arrayBuilder;
         }
 
+        @Specialization(guards = "isNull")
+        public RubyArray mapInPlaceNull(RubyArray array, RubyProc block) {
+            return array;
+        }
+
         @Specialization(guards = "isIntegerFixnum")
         public RubyArray mapInPlaceFixnumInteger(VirtualFrame frame, RubyArray array, RubyProc block) {
             final int[] store = (int[]) array.getStore();
@@ -2445,7 +2450,7 @@ public abstract class ArrayNodes {
                 }
             } finally {
                 if (CompilerDirectives.inInterpreter()) {
-                    ((RubyRootNode) getRootNode()).reportLoopCount(count);
+                    getRootNode().reportLoopCount(count);
                 }
             }
 
@@ -2472,7 +2477,7 @@ public abstract class ArrayNodes {
                 }
             } finally {
                 if (CompilerDirectives.inInterpreter()) {
-                    ((RubyRootNode) getRootNode()).reportLoopCount(count);
+                    getRootNode().reportLoopCount(count);
                 }
             }
 
@@ -3228,7 +3233,7 @@ public abstract class ArrayNodes {
                 }
             } finally {
                 if (CompilerDirectives.inInterpreter()) {
-                    ((RubyRootNode) getRootNode()).reportLoopCount(count);
+                    getRootNode().reportLoopCount(count);
                 }
             }
 
@@ -3261,7 +3266,7 @@ public abstract class ArrayNodes {
                 }
             } finally {
                 if (CompilerDirectives.inInterpreter()) {
-                    ((RubyRootNode) getRootNode()).reportLoopCount(count);
+                    getRootNode().reportLoopCount(count);
                 }
             }
 
@@ -3411,7 +3416,7 @@ public abstract class ArrayNodes {
                 }
             } finally {
                 if (CompilerDirectives.inInterpreter()) {
-                    ((RubyRootNode) getRootNode()).reportLoopCount(count);
+                    getRootNode().reportLoopCount(count);
                 }
             }
 
@@ -3444,7 +3449,7 @@ public abstract class ArrayNodes {
                 }
             } finally {
                 if (CompilerDirectives.inInterpreter()) {
-                    ((RubyRootNode) getRootNode()).reportLoopCount(count);
+                    getRootNode().reportLoopCount(count);
                 }
             }
 

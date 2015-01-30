@@ -27,6 +27,7 @@ import org.jruby.truffle.runtime.core.RubyRegexp;
 import org.jruby.truffle.runtime.core.RubyString;
 import org.jruby.truffle.runtime.core.RubySymbol;
 import org.jruby.util.ByteList;
+import org.jruby.util.cli.Options;
 
 import static org.jruby.util.StringSupport.CR_7BIT;
 
@@ -249,7 +250,9 @@ public abstract class RegexpNodes {
         public RubyRegexp initialize(RubyRegexp regexp, RubyRegexp from, @SuppressWarnings("unused") Object options) {
             notDesignedForCompilation();
 
-            getContext().getWarnings().warn("flags ignored");
+            if (Options.PARSER_WARN_FLAGS_IGNORED.load()) {
+                getContext().getWarnings().warn("flags ignored");
+            }
 
             return initialize(regexp, from, UndefinedPlaceholder.INSTANCE);
         }

@@ -52,6 +52,26 @@ public abstract class FileNodes {
 
     }
 
+    @CoreMethod(names = "basename", onSingleton = true, required = 1)
+    public abstract static class BasenameNode extends CoreMethodNode {
+
+        public BasenameNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public BasenameNode(BasenameNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public RubyString basename(RubyString path) {
+            notDesignedForCompilation();
+
+            return getContext().makeString(new File(path.toString()).getName());
+        }
+
+    }
+
     @CoreMethod(names = "close")
     public abstract static class CloseNode extends CoreMethodNode {
 

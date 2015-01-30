@@ -34,16 +34,9 @@
       <version>2.0.7</version>
       <scope>test</scope>
     </dependency>
-    <!-- FIXME: only depend on lib, ideally -->
     <dependency>
       <groupId>org.jruby</groupId>
       <artifactId>jruby-core</artifactId>
-      <version>${project.version}</version>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>org.jruby</groupId>
-      <artifactId>jruby-truffle</artifactId>
       <version>${project.version}</version>
       <scope>test</scope>
     </dependency>
@@ -731,6 +724,8 @@
                       <arg value="-Xparser.warn.shadowing_local=false" />
                       <arg value="-Xparser.warn.regex_condition=false" />
                       <arg value="-Xparser.warn.argument_prefix=false" />
+                      <arg value="-Xparser.warn.ambiguous_argument=false" />
+                      <arg value="-Xparser.warn.flags_ignored=false" />
                       <arg value="-J-ea" />
                       <arg value="-J-Xmx1G" />
                       <arg value="spec/mspec/bin/mspec" />
@@ -774,6 +769,8 @@
                       <arg value="-Xparser.warn.shadowing_local=false" />
                       <arg value="-Xparser.warn.regex_condition=false" />
                       <arg value="-Xparser.warn.argument_prefix=false" />
+                      <arg value="-Xparser.warn.ambiguous_argument=false" />
+                      <arg value="-Xparser.warn.flags_ignored=false" />
                       <arg value="-J-ea" />
                       <arg value="-J-Xmx1G" />
                       <arg value="spec/mspec/bin/mspec" />

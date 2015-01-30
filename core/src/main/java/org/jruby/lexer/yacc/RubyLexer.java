@@ -819,7 +819,9 @@ public class RubyLexer {
     }
     
     private void arg_ambiguous() {
-        if (warnings.isVerbose()) warnings.warning(ID.AMBIGUOUS_ARGUMENT, getPosition(), "Ambiguous first argument; make sure.");
+        if (warnings.isVerbose() && Options.PARSER_WARN_AMBIGUOUS_ARGUMENTS.load()) {
+            warnings.warning(ID.AMBIGUOUS_ARGUMENT, getPosition(), "Ambiguous first argument; make sure.");
+        }
     }
 
 
