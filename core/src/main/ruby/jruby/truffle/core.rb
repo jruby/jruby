@@ -15,7 +15,6 @@ require_relative 'core/rubinius/api/kernel/common/type'
 require_relative 'core/rubinius/api/shims/rubinius'
 require_relative 'core/rubinius/api/shims/lookuptable'
 require_relative 'core/rubinius/api/shims/thread'
-require_relative 'core/rubinius/api/shims/enumerator'
 require_relative 'core/rubinius/api/shims/undefined'
 require_relative 'core/rubinius/api/shims/metrics'
 

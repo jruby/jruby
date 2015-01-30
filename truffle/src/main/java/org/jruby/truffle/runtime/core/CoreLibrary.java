@@ -125,6 +125,8 @@ public class CoreLibrary {
     private ArrayNodes.MinBlock arrayMinBlock;
     private ArrayNodes.MaxBlock arrayMaxBlock;
 
+    @CompilerDirectives.CompilationFinal private RubySymbol eachSymbol;
+
     public CoreLibrary(RubyContext context) {
         this.context = context;
     }
@@ -387,6 +389,10 @@ public class CoreLibrary {
         Object value = context.getRuntime().warningsEnabled() ? context.getRuntime().isVerbose() : nilObject;
         RubyNode.notDesignedForCompilation();
         globalVariablesObject.getOperations().setInstanceVariable(globalVariablesObject, "$VERBOSE", value);
+
+        // Common symbols
+
+        eachSymbol = getContext().getSymbolTable().getSymbol("each");
     }
 
     public void initializeAfterMethodsAdded() {
@@ -985,5 +991,9 @@ public class CoreLibrary {
 
     public RubyClass getByteArrayClass() {
         return byteArrayClass;
+    }
+
+    public RubySymbol getEachSymbol() {
+        return eachSymbol;
     }
 }
