@@ -38,6 +38,7 @@ import org.jruby.truffle.nodes.control.RetryNode;
 import org.jruby.truffle.nodes.control.ReturnNode;
 import org.jruby.truffle.nodes.control.WhileNode;
 import org.jruby.truffle.nodes.core.*;
+import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.nodes.globals.*;
 import org.jruby.truffle.nodes.literal.*;
 import org.jruby.truffle.nodes.methods.*;
@@ -55,6 +56,7 @@ import org.jruby.truffle.runtime.LexicalScope;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.*;
 import org.jruby.truffle.runtime.methods.SharedMethodInfo;
+import org.jruby.util.ByteList;
 import org.jruby.util.KeyValuePair;
 import org.jruby.util.cli.Options;
 
@@ -375,6 +377,8 @@ public class BodyTranslator extends Translator {
                 return translateRubiniusPrivately(sourceSection, node);
             } else if (node.getName().equals("single_block_arg")) {
                 return translateRubiniusSingleBlockArg(sourceSection, node);
+            } else if (node.getName().equals("check_frozen")) {
+                return translateRubiniusCheckFrozen(sourceSection);
             }
         }
 
@@ -505,6 +509,34 @@ public class BodyTranslator extends Translator {
 
     public RubyNode translateRubiniusSingleBlockArg(SourceSection sourceSection, CallNode node) {
         return new RubiniusSingleBlockArgNode(context, sourceSection);
+    }
+
+    private RubyNode translateRubiniusCheckFrozen(SourceSection sourceSection) {
+        /*
+         * Translate
+         *
+         *   Rubinius.check_frozen
+         *
+         * into
+         *
+         *   raise RuntimeError.new("can't modify frozen ClassName") if frozen?
+         *
+         * TODO(CS, 30-Jan-15) usual questions about monkey patching of the methods we're using
+         */
+
+        final RubyNode frozen = new RubyCallNode(context, sourceSection, "frozen?", new SelfNode(context, sourceSection), null, false);
+
+        final RubyNode constructException = new RubyCallNode(context, sourceSection, "new",
+                new ObjectLiteralNode(context, sourceSection, context.getCoreLibrary().getRuntimeErrorClass()),
+                null, false,
+                new StringLiteralNode(context, sourceSection, ByteList.create("can't modify frozen TODO")));
+
+        final RubyNode raise = new RubyCallNode(context, sourceSection, "raise", new SelfNode(context, sourceSection), null, false, constructException);
+
+        return new IfNode(context, sourceSection,
+                frozen,
+                raise,
+                new NilLiteralNode(context, sourceSection));
     }
 
     /**
