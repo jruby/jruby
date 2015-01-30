@@ -12,6 +12,12 @@ module Rubinius
     false
   end
 
+  module Fiber
+
+    ENABLED = true
+
+  end
+
 end
 
 class PrimitiveFailure < StandardError
