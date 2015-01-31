@@ -732,21 +732,8 @@ public final class Ruby implements Constantizable {
         ScriptAndCode scriptAndCode = null;
         boolean compile = getInstanceConfig().getCompileMode().shouldPrecompileCLI();
         if (compile || config.isShowBytecode()) {
-            // IR JIT does not handle all scripts yet, so let those that fail run in interpreter instead
-            // FIXME: restore error once JIT should handle everything
-            try {
-                scriptAndCode = tryCompile(scriptNode, new ClassDefininngJRubyClassLoader(getJRubyClassLoader()));
-                if (scriptAndCode != null && Options.JIT_LOGGING.load()) {
-                    LOG.info("done compiling target script: " + scriptNode.getPosition().getFile());
-                }
-            } catch (Exception e) {
-                if (Options.JIT_LOGGING.load()) {
-                    LOG.error("failed to compile target script '" + scriptNode.getPosition().getFile() + "'");
-                    if (Options.JIT_LOGGING_VERBOSE.load()) {
-                        e.printStackTrace();
-                    }
-                }
-            }
+            scriptAndCode = precompileCLI(scriptNode);
+
         }
 
         if (scriptAndCode != null) {
@@ -764,6 +751,27 @@ public final class Ruby implements Constantizable {
 
             return runInterpreter(scriptNode);
         }
+    }
+
+    private ScriptAndCode precompileCLI(Node scriptNode) {
+        ScriptAndCode scriptAndCode = null;
+
+        // IR JIT does not handle all scripts yet, so let those that fail run in interpreter instead
+        // FIXME: restore error once JIT should handle everything
+        try {
+            scriptAndCode = tryCompile(scriptNode, new ClassDefininngJRubyClassLoader(getJRubyClassLoader()));
+            if (scriptAndCode != null && Options.JIT_LOGGING.load()) {
+                LOG.info("done compiling target script: " + scriptNode.getPosition().getFile());
+            }
+        } catch (Exception e) {
+            if (Options.JIT_LOGGING.load()) {
+                LOG.error("failed to compile target script '" + scriptNode.getPosition().getFile() + "'");
+                if (Options.JIT_LOGGING_VERBOSE.load()) {
+                    e.printStackTrace();
+                }
+            }
+        }
+        return scriptAndCode;
     }
 
     /**
@@ -898,28 +906,36 @@ public final class Ruby implements Constantizable {
 
     public synchronized TruffleBridge getTruffleBridge() {
         if (truffleBridge == null) {
-            /*
-             * It's possible to remove Truffle classes from the JRuby distribution, so we provide a sensible
-             * explanation when the classes are not found.
-             */
-
-            final Class<?> clazz;
-
-            try {
-                clazz = getJRubyClassLoader().loadClass("org.jruby.truffle.TruffleBridgeImpl");
-            } catch (Exception e) {
-                throw new UnsupportedOperationException("Support for Truffle has been removed from this distribution", e);
-            }
-
-            try {
-                Constructor<?> con = clazz.getConstructor(Ruby.class);
-                truffleBridge = (TruffleBridge) con.newInstance(this);
-            } catch (Exception e) {
-                throw new UnsupportedOperationException("Error while calling the constructor of Truffle Bridge", e);
-            }
-
-            truffleBridge.init();
+            truffleBridge = loadTruffleBridge();
         }
+
+        return truffleBridge;
+    }
+
+    private TruffleBridge loadTruffleBridge() {
+        /*
+         * It's possible to remove Truffle classes from the JRuby distribution, so we provide a sensible
+         * explanation when the classes are not found.
+         */
+
+        final Class<?> clazz;
+
+        try {
+            clazz = getJRubyClassLoader().loadClass("org.jruby.truffle.TruffleBridgeImpl");
+        } catch (Exception e) {
+            throw new UnsupportedOperationException("Support for Truffle has been removed from this distribution", e);
+        }
+
+        final TruffleBridge truffleBridge;
+
+        try {
+            Constructor<?> con = clazz.getConstructor(Ruby.class);
+            truffleBridge = (TruffleBridge) con.newInstance(this);
+        } catch (Exception e) {
+            throw new UnsupportedOperationException("Error while calling the constructor of Truffle Bridge", e);
+        }
+
+        truffleBridge.init();
 
         return truffleBridge;
     }
