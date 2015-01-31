@@ -1304,7 +1304,7 @@ public class JavaClass extends JavaObject {
         return ((JavaClass) proxyClass.callMethod(context, "java_class")).javaClass();
     }
 
-    private static Map<String, Class> PRIMITIVE_TO_CLASS = new HashMap<String,Class>();
+    private static final Map<String, Class> PRIMITIVE_TO_CLASS = new HashMap<String,Class>();
 
     static {
         PRIMITIVE_TO_CLASS.put("byte", byte.class);
@@ -1315,6 +1315,10 @@ public class JavaClass extends JavaObject {
         PRIMITIVE_TO_CLASS.put("long", long.class);
         PRIMITIVE_TO_CLASS.put("float", float.class);
         PRIMITIVE_TO_CLASS.put("double", double.class);
+    }
+
+    static boolean isJavaPrimitive(final String name) {
+        return PRIMITIVE_TO_CLASS.containsKey(name);
     }
 
     public static synchronized JavaClass forNameVerbose(Ruby runtime, String className) {

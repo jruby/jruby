@@ -326,14 +326,6 @@ public class Java implements Library {
 
     }
 
-    private static final Map<String, Boolean> JAVA_PRIMITIVES = new HashMap<String, Boolean>();
-    static {
-        String[] primitives = {"boolean", "byte", "char", "short", "int", "long", "float", "double"};
-        for (String primitive : primitives) {
-            JAVA_PRIMITIVES.put(primitive, Boolean.TRUE);
-        }
-    }
-
     public static IRubyObject create_proxy_class(
             IRubyObject self,
             IRubyObject name,
@@ -989,7 +981,7 @@ public class Java implements Library {
     private static void checkJavaReservedNames(final Ruby runtime, final String name,
         final boolean allowPrimitives) {
         // TODO: should check against all Java reserved names here, not just primitives
-        if ( ! allowPrimitives && JAVA_PRIMITIVES.containsKey(name) ) {
+        if ( ! allowPrimitives && JavaClass.isJavaPrimitive(name) ) {
             throw runtime.newArgumentError("illegal package name component: " + name);
         }
     }
