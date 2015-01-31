@@ -45,14 +45,13 @@ import org.jruby.ast.CallNode;
 import org.jruby.ast.FCallNode;
 import org.jruby.ast.GlobalAsgnNode;
 import org.jruby.ast.GlobalVarNode;
-import org.jruby.ast.NewlineNode;
 import org.jruby.ast.VCallNode;
 import org.jruby.ast.WhileNode;
 import org.jruby.compiler.Constantizable;
 import org.jruby.compiler.NotCompilableException;
-import org.jruby.ext.jruby.JRubyLibrary;
 import org.jruby.ext.thread.ThreadLibrary;
 import org.jruby.ir.IRScriptBody;
+import org.jruby.javasupport.JavaSupport;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.parser.StaticScope;
 import org.objectweb.asm.util.TraceClassVisitor;
@@ -98,7 +97,7 @@ import org.jruby.ir.interpreter.Interpreter;
 import org.jruby.ir.persistence.IRReader;
 import org.jruby.ir.persistence.IRReaderFile;
 import org.jruby.ir.persistence.util.IRFileExpert;
-import org.jruby.javasupport.JavaSupport;
+import org.jruby.javasupport.JavaSupportImpl;
 import org.jruby.javasupport.proxy.JavaProxyClassFactory;
 import org.jruby.management.BeanManager;
 import org.jruby.management.BeanManagerFactory;
@@ -1196,7 +1195,7 @@ public final class Ruby implements Constantizable {
         // Construct key services
         loadService = config.createLoadService(this);
         posix = POSIXFactory.getPOSIX(new JRubyPOSIXHandler(this), config.isNativeEnabled());
-        javaSupport = new JavaSupport(this);
+        javaSupport = new JavaSupportImpl(this);
 
         executor = new ThreadPoolExecutor(
                 RubyInstanceConfig.POOL_MIN,
