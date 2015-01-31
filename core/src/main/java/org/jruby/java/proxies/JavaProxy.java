@@ -393,36 +393,34 @@ public class JavaProxy extends RubyObject {
 
     @JRubyMethod
     public IRubyObject marshal_dump() {
-        if (Serializable.class.isAssignableFrom(object.getClass())) {
-            try {
-                ByteArrayOutputStream baos = new ByteArrayOutputStream();
-                ObjectOutputStream oos = new ObjectOutputStream(baos);
-
-                oos.writeObject(object);
-
-                return getRuntime().newString(new ByteList(baos.toByteArray()));
-            } catch (IOException ioe) {
-                throw getRuntime().newTypeError("Java type is not serializable: " + ioe.getMessage());
-            }
-        } else {
+        if ( ! Serializable.class.isAssignableFrom(object.getClass()) ) {
             throw getRuntime().newTypeError("Java type is not serializable, cannot be marshaled " + getJavaClass());
+        }
+        try {
+            ByteArrayOutputStream bytes = new ByteArrayOutputStream();
+            new ObjectOutputStream(bytes).writeObject(object);
+            return getRuntime().newString(new ByteList(bytes.toByteArray(), false));
+        }
+        catch (IOException ex) {
+            throw getRuntime().newTypeError("Java type is not serializable: " + ex.getMessage());
         }
     }
 
     @JRubyMethod
-    public IRubyObject marshal_load(ThreadContext context, IRubyObject str) {
+    public IRubyObject marshal_load(final ThreadContext context, final IRubyObject str) {
         try {
             ByteList byteList = str.convertToString().getByteList();
-            ByteArrayInputStream bais = new ByteArrayInputStream(byteList.getUnsafeBytes(), byteList.getBegin(), byteList.getRealSize());
-            ObjectInputStream ois = new JRubyObjectInputStream(context.runtime, bais);
+            ByteArrayInputStream bytes = new ByteArrayInputStream(byteList.getUnsafeBytes(), byteList.getBegin(), byteList.getRealSize());
 
-            object = ois.readObject();
+            this.object = new JRubyObjectInputStream(context.runtime, bytes).readObject();
 
             return this;
-        } catch (IOException ioe) {
-            throw context.runtime.newIOErrorFromException(ioe);
-        } catch (ClassNotFoundException cnfe) {
-            throw context.runtime.newTypeError("Class not found unmarshaling Java type: " + cnfe.getLocalizedMessage());
+        }
+        catch (IOException ex) {
+            throw context.runtime.newIOErrorFromException(ex);
+        }
+        catch (ClassNotFoundException ex) {
+            throw context.runtime.newTypeError("Class not found unmarshaling Java type: " + ex.getLocalizedMessage());
         }
     }
 
