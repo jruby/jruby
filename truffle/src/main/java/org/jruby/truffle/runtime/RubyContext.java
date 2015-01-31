@@ -423,4 +423,8 @@ public class RubyContext extends ExecutionContext {
         return rubiniusPrimitiveManager;
     }
 
+    public boolean isSubstrate() {
+        return false;
+    }
+
 }

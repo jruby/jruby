@@ -49,7 +49,7 @@ public abstract class TruffleNodes {
 
         @Specialization
         public boolean substrate() {
-            return false;
+            return getContext().isSubstrate();
         }
 
     }
