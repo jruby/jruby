@@ -9,7 +9,18 @@
  */
 package org.jruby.truffle.runtime.methods;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+
 import com.oracle.truffle.api.source.SourceSection;
+
+import org.jruby.ast.ArgsNode;
+import org.jruby.ast.AssignableNode;
+import org.jruby.ast.DAsgnNode;
+import org.jruby.ast.KeywordArgNode;
+import org.jruby.ast.LocalAsgnNode;
+import org.jruby.ast.Node;
 import org.jruby.truffle.runtime.LexicalScope;
 
 /**
@@ -24,7 +35,8 @@ public class SharedMethodInfo {
     private final boolean isBlock;
     private final org.jruby.ast.Node parseTree;
     private final boolean alwaysSplit;
-
+    private final List<String> keywordArguments;
+    
     public SharedMethodInfo(SourceSection sourceSection, LexicalScope lexicalScope, String name, boolean isBlock, org.jruby.ast.Node parseTree, boolean alwaysSplit) {
         assert sourceSection != null;
         assert name != null;
@@ -35,8 +47,41 @@ public class SharedMethodInfo {
         this.isBlock = isBlock;
         this.parseTree = parseTree;
         this.alwaysSplit = alwaysSplit;
+        keywordArguments = null;
     }
+    
+    public SharedMethodInfo(SourceSection sourceSection, LexicalScope lexicalScope, String name, boolean isBlock, org.jruby.ast.Node parseTree, boolean alwaysSplit, ArgsNode argsNode) {
+        assert sourceSection != null;
+        assert name != null;
 
+        this.sourceSection = sourceSection;
+        this.lexicalScope = lexicalScope;
+        this.name = name;
+        this.isBlock = isBlock;
+        this.parseTree = parseTree;
+        this.alwaysSplit = alwaysSplit;
+        
+    	if (argsNode.hasKwargs()) {
+    		keywordArguments = new ArrayList<String>();
+    		for (Node node : argsNode.getKeywords().childNodes()) {
+    			final KeywordArgNode kwarg = (KeywordArgNode) node;
+    			final AssignableNode assignableNode = kwarg.getAssignable();
+    			
+    			if (assignableNode instanceof LocalAsgnNode) {
+    				keywordArguments.add(((LocalAsgnNode) assignableNode).getName());
+    			} else if (assignableNode instanceof DAsgnNode) {
+    				keywordArguments.add(((DAsgnNode) assignableNode).getName());
+    			} else {
+    				throw new UnsupportedOperationException("unsupported keyword arg " + node);
+    			}
+    		}
+    		
+    		Collections.sort(keywordArguments);
+    	} else {
+    		keywordArguments = null;
+    	}
+    }
+    
     public SourceSection getSourceSection() {
         return sourceSection;
     }
@@ -76,4 +121,7 @@ public class SharedMethodInfo {
         return builder.toString();
     }
 
+    public List<String> getKeywordArguments() {
+    	return keywordArguments;
+    }
 }

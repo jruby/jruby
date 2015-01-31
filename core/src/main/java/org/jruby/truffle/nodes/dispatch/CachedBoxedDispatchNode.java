@@ -9,6 +9,8 @@
  */
 package org.jruby.truffle.nodes.dispatch;
 
+import java.util.List;
+
 import com.oracle.truffle.api.Assumption;
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.Truffle;
@@ -17,6 +19,10 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.DirectCallNode;
 import com.oracle.truffle.api.nodes.IndirectCallNode;
 import com.oracle.truffle.api.nodes.InvalidAssumptionException;
+
+import org.jruby.truffle.nodes.RubyNode;
+import org.jruby.truffle.nodes.literal.HashLiteralNode;
+import org.jruby.truffle.nodes.literal.StringLiteralNode;
 import org.jruby.truffle.runtime.DebugOperations;
 import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
@@ -32,10 +38,12 @@ public class CachedBoxedDispatchNode extends CachedDispatchNode {
 
     private final Object value;
 
+    private RubyNode[] argumentNodes = null;
+    
     private final InternalMethod method;
     @Child private DirectCallNode callNode;
     @Child private IndirectCallNode indirectCallNode;
-
+    
     public CachedBoxedDispatchNode(
             RubyContext context,
             Object cachedName,
@@ -56,7 +64,7 @@ public class CachedBoxedDispatchNode extends CachedDispatchNode {
                 indirect,
                 dispatchAction);
     }
-
+    
     /**
      * Allows to give the assumption, which is different than the expectedClass assumption for constant lookup.
      */
@@ -90,6 +98,32 @@ public class CachedBoxedDispatchNode extends CachedDispatchNode {
                 }
             }
         }
+        
+        if (getHeadNode().getArgumentNodes() != null && method.getSharedMethodInfo().getKeywordArguments() != null && 
+        		getHeadNode().getArgumentNodes()[getHeadNode().getArgumentNodes().length - 1] instanceof HashLiteralNode) {
+        	List<String> kwargs = method.getSharedMethodInfo().getKeywordArguments();
+        	
+        	argumentNodes = new RubyNode[getHeadNode().getArgumentNodes().length + kwargs.size() + 1];
+        	int i;
+        	
+        	for (i = 0; i < getHeadNode().getArgumentNodes().length - 1; ++i) {
+        		argumentNodes[i] = getHeadNode().getArgumentNodes()[i];
+        	}
+        	
+        	argumentNodes[i++] = new MarkerNode();
+        	HashLiteralNode hashNode = (HashLiteralNode) getHeadNode().getArgumentNodes()[getHeadNode().getArgumentNodes().length - 1];
+        	
+        	for (String kwarg : kwargs) {
+        		argumentNodes[i] = new MissingKwargNode();
+        		for (int j = 0; j < hashNode.getKeyValues().length; j += 2) {
+        			String label = ((StringLiteralNode) hashNode.getKeyValues()[j]).executeString(null);
+        			
+        			if (label.equals(kwarg)) {
+        				argumentNodes[i++] = hashNode.getKeyValues()[j + 1];
+        			}
+        		}
+        	}
+        }
     }
 
     @Override
@@ -122,6 +156,19 @@ public class CachedBoxedDispatchNode extends CachedDispatchNode {
                     "class modified");
         }
 
+        Object[] arguments;
+        if (argumentNodes == null) {
+        	arguments = CompilerDirectives.unsafeCast(argumentsObjects, Object[].class, true);
+        } else {
+        	arguments = new Object[argumentNodes.length];
+        	
+        	for (int i = 0; i < argumentNodes.length; ++i) {
+        		arguments[i] = argumentNodes[i].execute(frame);
+        	}
+        	
+        	// TODO: handle isSplatted
+        }
+        
         switch (getDispatchAction()) {
             case CALL_METHOD: {
                 if (isIndirect()) {
@@ -133,7 +180,7 @@ public class CachedBoxedDispatchNode extends CachedDispatchNode {
                                     method.getDeclarationFrame(),
                                     receiverObject,
                                     CompilerDirectives.unsafeCast(blockObject, RubyProc.class, true, false),
-                                    CompilerDirectives.unsafeCast(argumentsObjects, Object[].class, true)));
+                                    arguments));
                 } else {
                     return callNode.call(
                             frame,
@@ -142,7 +189,7 @@ public class CachedBoxedDispatchNode extends CachedDispatchNode {
                                     method.getDeclarationFrame(),
                                     receiverObject,
                                     CompilerDirectives.unsafeCast(blockObject, RubyProc.class, true, false),
-                                    CompilerDirectives.unsafeCast(argumentsObjects, Object[].class, true)));
+                                    arguments));
                 }
             }
 

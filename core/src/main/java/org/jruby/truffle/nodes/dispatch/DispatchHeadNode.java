@@ -12,6 +12,8 @@ package org.jruby.truffle.nodes.dispatch;
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.Node;
+
+import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.LexicalScope;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
@@ -26,6 +28,8 @@ public class DispatchHeadNode extends Node {
     protected final LexicalScope lexicalScope;
     protected final DispatchAction dispatchAction;
 
+    private final RubyNode[] argumentNodes;
+    
     @Child private DispatchNode first;
 
     public DispatchHeadNode(
@@ -34,13 +38,15 @@ public class DispatchHeadNode extends Node {
             boolean indirect,
             MissingBehavior missingBehavior,
             LexicalScope lexicalScope,
-            DispatchAction dispatchAction) {
+            DispatchAction dispatchAction,
+            RubyNode[] argumentNodes) {
         this.context = context;
         this.ignoreVisibility = ignoreVisibility;
         this.indirect = indirect;
         this.missingBehavior = missingBehavior;
         this.lexicalScope = lexicalScope;
         this.dispatchAction = dispatchAction;
+        this.argumentNodes = argumentNodes;
         first = new UnresolvedDispatchNode(context, ignoreVisibility, indirect, missingBehavior, dispatchAction);
     }
 
@@ -80,4 +86,7 @@ public class DispatchHeadNode extends Node {
         first.replace(new UncachedDispatchNode(context, ignoreVisibility, dispatchAction));
     }
 
+    public RubyNode[] getArgumentNodes() {
+    	return argumentNodes;
+    }
 }

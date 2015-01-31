@@ -1137,7 +1137,7 @@ public abstract class KernelNodes {
         public IntegerNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
             toIntRespondTo = new DoesRespondDispatchHeadNode(context, false, false, MissingBehavior.CALL_METHOD_MISSING, null);
-            toInt = new CallDispatchHeadNode(context, false, false, MissingBehavior.CALL_METHOD_MISSING, null);
+            toInt = new CallDispatchHeadNode(context, false, false, MissingBehavior.CALL_METHOD_MISSING, null, null);
         }
 
         public IntegerNode(IntegerNode prev) {
