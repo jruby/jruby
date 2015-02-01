@@ -52,6 +52,7 @@ import org.jruby.compiler.NotCompilableException;
 import org.jruby.ext.thread.ThreadLibrary;
 import org.jruby.ir.IRScriptBody;
 import org.jruby.javasupport.JavaSupport;
+import org.jruby.javasupport.JavaSupportImpl;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.parser.StaticScope;
 import org.objectweb.asm.util.TraceClassVisitor;
@@ -97,7 +98,6 @@ import org.jruby.ir.interpreter.Interpreter;
 import org.jruby.ir.persistence.IRReader;
 import org.jruby.ir.persistence.IRReaderFile;
 import org.jruby.ir.persistence.util.IRFileExpert;
-import org.jruby.javasupport.JavaSupportImpl;
 import org.jruby.javasupport.proxy.JavaProxyClassFactory;
 import org.jruby.management.BeanManager;
 import org.jruby.management.BeanManagerFactory;
@@ -362,6 +362,10 @@ public final class Ruby implements Constantizable {
      */
     public static boolean isGlobalRuntimeReady() {
         return globalRuntime != null;
+    }
+
+    public static boolean isSubstrateVM() {
+        return false;
     }
 
     /**
@@ -733,7 +737,6 @@ public final class Ruby implements Constantizable {
         boolean compile = getInstanceConfig().getCompileMode().shouldPrecompileCLI();
         if (compile || config.isShowBytecode()) {
             scriptAndCode = precompileCLI(scriptNode);
-
         }
 
         if (scriptAndCode != null) {
@@ -1211,7 +1214,7 @@ public final class Ruby implements Constantizable {
         // Construct key services
         loadService = config.createLoadService(this);
         posix = POSIXFactory.getPOSIX(new JRubyPOSIXHandler(this), config.isNativeEnabled());
-        javaSupport = new JavaSupportImpl(this);
+        javaSupport = loadJavaSupport();
 
         executor = new ThreadPoolExecutor(
                 RubyInstanceConfig.POOL_MIN,
@@ -1272,13 +1275,7 @@ public final class Ruby implements Constantizable {
 
         // load JRuby internals, which loads Java support
         // if we can't use reflection, 'jruby' and 'java' won't work; no load.
-        boolean reflectionWorks;
-        try {
-            ClassLoader.class.getDeclaredMethod("getResourceAsStream", String.class);
-            reflectionWorks = true;
-        } catch (Exception e) {
-            reflectionWorks = false;
-        }
+        boolean reflectionWorks = doesReflectionWork();
 
         if (!RubyInstanceConfig.DEBUG_PARSER && reflectionWorks
                 && getInstanceConfig().getCompileMode() != CompileMode.TRUFFLE) {
@@ -1309,7 +1306,7 @@ public final class Ruby implements Constantizable {
         }
 
         if (config.getLoadGemfile()) {
-            loadService.loadFromClassLoader(getClassLoader(), "jruby/bundler/startup.rb", false);
+            loadBundler();
         }
 
         setNetworkStack();
@@ -1320,6 +1317,23 @@ public final class Ruby implements Constantizable {
         // Require in all libraries specified on command line
         for (String scriptName : config.getRequiredLibraries()) {
             topSelf.callMethod(getCurrentContext(), "require", RubyString.newString(this, scriptName));
+        }
+    }
+
+    public JavaSupport loadJavaSupport() {
+        return new JavaSupportImpl(this);
+    }
+
+    private void loadBundler() {
+        loadService.loadFromClassLoader(getClassLoader(), "jruby/bundler/startup.rb", false);
+    }
+
+    private boolean doesReflectionWork() {
+        try {
+            ClassLoader.class.getDeclaredMethod("getResourceAsStream", String.class);
+            return true;
+        } catch (Exception e) {
+            return false;
         }
     }
 
@@ -3284,9 +3298,7 @@ public final class Ruby implements Constantizable {
 
         getSelectorPool().cleanup();
 
-        if (getJRubyClassLoader() != null) {
-            getJRubyClassLoader().tearDown(isDebug());
-        }
+        tearDownClassLoader();
 
         if (config.isProfilingEntireRun()) {
             // not using logging because it's formatted
@@ -3308,6 +3320,12 @@ public final class Ruby implements Constantizable {
                     globalRuntime = null;
                 }
             }
+        }
+    }
+
+    private void tearDownClassLoader() {
+        if (getJRubyClassLoader() != null) {
+            getJRubyClassLoader().tearDown(isDebug());
         }
     }
 

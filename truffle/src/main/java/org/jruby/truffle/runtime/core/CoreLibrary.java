@@ -37,6 +37,7 @@ import org.jruby.util.cli.OutputStrings;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
@@ -424,18 +425,26 @@ public class CoreLibrary {
         final Source source;
 
         try {
-            final LoadServiceResource resource = context.getRuntime().getLoadService().getClassPathResource(context.getRuntime().getJRubyClassLoader(), fileName);
-
-            if (resource == null) {
-                throw new RuntimeException("couldn't load Truffle core library " + fileName);
-            }
-
-            source = Source.fromReader(new InputStreamReader(resource.getInputStream(), StandardCharsets.UTF_8), "core:/" + fileName);
+            source = Source.fromReader(new InputStreamReader(getRubyCoreInputStream(fileName), StandardCharsets.UTF_8), "core:/" + fileName);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
 
         context.load(source, null, NodeWrapper.IDENTITY);
+    }
+
+    public InputStream getRubyCoreInputStream(String fileName) {
+        final LoadServiceResource resource = context.getRuntime().getLoadService().getClassPathResource(context.getRuntime().getJRubyClassLoader(), fileName);
+
+        if (resource == null) {
+            throw new RuntimeException("couldn't load Truffle core library " + fileName);
+        }
+
+        try {
+            return resource.getInputStream();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     public void initializeEncodingConstants() {
