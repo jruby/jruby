@@ -91,6 +91,7 @@ public class RubyFiber extends RubyBasicObject {
 
             @Override
             public void run() {
+                finalFiber.getContext().getSafepointManager().enterThread();
                 fiberManager.registerFiber(finalFiber);
 
                 try {
@@ -101,6 +102,7 @@ public class RubyFiber extends RubyBasicObject {
                     // Naturally exit the thread on catching this
                 } finally {
                     fiberManager.unregisterFiber(finalFiber);
+                    finalFiber.getContext().getSafepointManager().leaveThread();
                 }
             }
 

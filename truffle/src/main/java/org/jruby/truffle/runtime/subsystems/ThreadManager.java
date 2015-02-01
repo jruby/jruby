@@ -29,12 +29,12 @@ public class ThreadManager {
     private final RubyThread rootThread;
     private RubyThread currentThread;
 
-    private final Set<RubyThread> runningThreads = Collections.newSetFromMap(new ConcurrentHashMap<RubyThread, Boolean>());
+    private final Set<RubyThread> runningRubyThreads = Collections.newSetFromMap(new ConcurrentHashMap<RubyThread, Boolean>());
 
     public ThreadManager(RubyContext context) {
         rootThread = new RubyThread(context.getCoreLibrary().getThreadClass(), this);
         rootThread.setRootThread(Thread.currentThread());
-        runningThreads.add(rootThread);
+        runningRubyThreads.add(rootThread);
         enterGlobalLock(rootThread);
     }
 
@@ -128,22 +128,16 @@ public class ThreadManager {
         return currentThread;
     }
 
-    public void interruptAllThreads() {
-        for (RubyThread thread : runningThreads) {
-            thread.interrupt();
-        }
-    }
-
     public synchronized void registerThread(RubyThread thread) {
-        runningThreads.add(thread);
+        runningRubyThreads.add(thread);
     }
 
     public synchronized void unregisterThread(RubyThread thread) {
-        runningThreads.remove(thread);
+        runningRubyThreads.remove(thread);
     }
 
     public void shutdown() {
-        for (RubyThread thread : runningThreads) {
+        for (RubyThread thread : runningRubyThreads) {
             thread.shutdown();
         }
     }

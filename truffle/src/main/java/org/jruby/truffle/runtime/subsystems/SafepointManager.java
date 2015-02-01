@@ -20,7 +20,10 @@ import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyThread;
 import org.jruby.truffle.runtime.util.Consumer;
 
+import java.util.Collections;
+import java.util.Set;
 import java.util.concurrent.BrokenBarrierException;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CyclicBarrier;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -28,14 +31,16 @@ public class SafepointManager {
 
     private final RubyContext context;
 
+    private final Set<Thread> runningThreads = Collections.newSetFromMap(new ConcurrentHashMap<Thread, Boolean>());
+
     @CompilerDirectives.CompilationFinal private Assumption assumption = Truffle.getRuntime().createAssumption();
     private final ReentrantLock lock = new ReentrantLock();
     private CyclicBarrier barrier;
-    private int liveThreads = 1;
     private Consumer<RubyThread> action;
 
     public SafepointManager(RubyContext context) {
         this.context = context;
+        runningThreads.add(Thread.currentThread());
     }
 
     public void enterThread() {
@@ -44,7 +49,7 @@ public class SafepointManager {
         // Waits for lock to become available
         lock.lock();
         try {
-            liveThreads++;
+            runningThreads.add(Thread.currentThread());
         } finally {
             lock.unlock();
         }
@@ -59,7 +64,7 @@ public class SafepointManager {
         }
         // SafepointManager lock acquired
         try {
-            liveThreads--;
+            runningThreads.remove(Thread.currentThread());
         } finally {
             lock.unlock();
         }
@@ -137,14 +142,14 @@ public class SafepointManager {
         try {
             this.action = action;
 
-            barrier = new CyclicBarrier(isRubyThread ? liveThreads : liveThreads + 1);
+            barrier = new CyclicBarrier(isRubyThread ? runningThreads.size() : runningThreads.size() + 1);
 
             /* this is a potential cause for race conditions,
              * but we need to invalidate first so the interrupted threads
              * see the invalidation in poll() in their catch(InterruptedException) clause
              * and wait on the barrier instead of retrying their blocking action. */
             assumption.invalidate();
-            context.getThreadManager().interruptAllThreads();
+            interruptAllThreads();
 
             assumptionInvalidated(isRubyThread && holdsGlobalLock);
         } finally {
@@ -169,6 +174,20 @@ public class SafepointManager {
                 }
             }
         }
+    }
+
+    public void interruptAllThreads() {
+        for (Thread thread : runningThreads) {
+            thread.interrupt();
+        }
+    }
+
+    public synchronized void registerThread(Thread thread) {
+        runningThreads.add(thread);
+    }
+
+    public synchronized void unregisterThread(Thread thread) {
+        runningThreads.remove(thread);
     }
 
 }
