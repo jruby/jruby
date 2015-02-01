@@ -1407,13 +1407,7 @@ public class RubyInstanceConfig {
     }
     
     private static ClassLoader setupLoader() {
-        final ClassLoader thisLoader = RubyInstanceConfig.class.getClassLoader();
-
-        if (thisLoader == null) {
-            return null;
-        } else {
-            return Thread.currentThread().getContextClassLoader();
-        }
+        return RubyInstanceConfig.class.getClassLoader();
     }
 
     ////////////////////////////////////////////////////////////////////////////
