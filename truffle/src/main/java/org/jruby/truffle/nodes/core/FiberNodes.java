@@ -12,6 +12,7 @@ package org.jruby.truffle.nodes.core;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.RubyFiber;
 import org.jruby.truffle.runtime.core.RubyNilClass;
 import org.jruby.truffle.runtime.core.RubyProc;
@@ -33,6 +34,10 @@ public abstract class FiberNodes {
         @Specialization
         public Object resume(RubyFiber fiberBeingResumed, Object[] args) {
             notDesignedForCompilation();
+
+            if (!fiberBeingResumed.isAlive()) {
+                throw new RaiseException(getContext().getCoreLibrary().fiberErrorDeadFiberCalled(this));
+            }
 
             final RubyFiber sendingFiber = getContext().getFiberManager().getCurrentFiber();
 
@@ -80,7 +85,7 @@ public abstract class FiberNodes {
             notDesignedForCompilation();
 
             final RubyFiber yieldingFiber = getContext().getFiberManager().getCurrentFiber();
-            final RubyFiber fiberYieldedTo = yieldingFiber.lastResumedByFiber;
+            final RubyFiber fiberYieldedTo = yieldingFiber.getLastResumedByFiber();
 
             fiberYieldedTo.resume(yieldingFiber, args);
 

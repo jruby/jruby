@@ -116,6 +116,7 @@ public class CoreLibrary {
     @CompilerDirectives.CompilationFinal private RubyClass methodClass;
     @CompilerDirectives.CompilationFinal private RubyClass unboundMethodClass;
     @CompilerDirectives.CompilationFinal private RubyClass byteArrayClass;
+    @CompilerDirectives.CompilationFinal private RubyClass fiberErrorClass;
 
     @CompilerDirectives.CompilationFinal private RubyArray argv;
     @CompilerDirectives.CompilationFinal private RubyBasicObject globalVariablesObject;
@@ -303,6 +304,8 @@ public class CoreLibrary {
         encodingCompatibilityErrorClass = new RubyClass(context, encodingClass, standardErrorClass, "CompatibilityError");
         encodingCompatibilityErrorClass.setAllocator(new RubyException.ExceptionAllocator());
         byteArrayClass = new RubyClass(context, rubiniusModule, objectClass, "ByteArray");
+        fiberErrorClass = new RubyClass(context, objectClass, exceptionClass, "FiberError");
+        fiberErrorClass.setAllocator(new RubyException.ExceptionAllocator());
 
         // Includes
 
@@ -781,6 +784,16 @@ public class CoreLibrary {
     public RubyException encodingCompatibilityError(String message, Node currentNode) {
         CompilerAsserts.neverPartOfCompilation();
         return new RubyException(encodingCompatibilityErrorClass, context.makeString(message), RubyCallStack.getBacktrace(currentNode));
+    }
+
+    public RubyException fiberError(String message, Node currentNode) {
+        CompilerAsserts.neverPartOfCompilation();
+        return new RubyException(fiberErrorClass, context.makeString(message), RubyCallStack.getBacktrace(currentNode));
+    }
+
+    public RubyException fiberErrorDeadFiberCalled(Node currentNode) {
+        CompilerAsserts.neverPartOfCompilation();
+        return fiberError("dead fiber called", currentNode);
     }
 
     public RubyContext getContext() {

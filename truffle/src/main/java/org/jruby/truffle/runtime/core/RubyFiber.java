@@ -73,7 +73,8 @@ public class RubyFiber extends RubyBasicObject {
     private final ThreadManager threadManager;
 
     private BlockingQueue<FiberMessage> messageQueue = new ArrayBlockingQueue<>(1);
-    public RubyFiber lastResumedByFiber = null;
+    private RubyFiber lastResumedByFiber = null;
+    private boolean alive;
 
     public RubyFiber(RubyClass rubyClass, FiberManager fiberManager, ThreadManager threadManager) {
         super(rubyClass);
@@ -91,6 +92,8 @@ public class RubyFiber extends RubyBasicObject {
 
             @Override
             public void run() {
+                alive = true;
+
                 finalFiber.getContext().getSafepointManager().enterThread();
                 fiberManager.registerFiber(finalFiber);
 
@@ -101,6 +104,7 @@ public class RubyFiber extends RubyBasicObject {
                 } catch (FiberExitException e) {
                     // Naturally exit the thread on catching this
                 } finally {
+                    alive = false;
                     fiberManager.unregisterFiber(finalFiber);
                     finalFiber.getContext().getSafepointManager().leaveThread();
                 }
@@ -165,6 +169,14 @@ public class RubyFiber extends RubyBasicObject {
         RubyNode.notDesignedForCompilation();
 
         messageQueue.add(new FiberExitMessage());
+    }
+
+    public boolean isAlive() {
+        return alive;
+    }
+
+    public RubyFiber getLastResumedByFiber() {
+        return lastResumedByFiber;
     }
 
     public static class FiberAllocator implements Allocator {
