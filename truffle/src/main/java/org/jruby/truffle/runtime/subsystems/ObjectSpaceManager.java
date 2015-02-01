@@ -100,7 +100,7 @@ public class ObjectSpaceManager {
                     runFinalizers();
                 }
 
-            });
+            }, "finalizer");
         }
     }
 

@@ -88,7 +88,7 @@ public class RubyFiber extends RubyBasicObject {
         final RubyFiber finalFiber = this;
         final RubyProc finalBlock = block;
 
-        new Thread(new Runnable() {
+        final Thread thread = new Thread(new Runnable() {
 
             @Override
             public void run() {
@@ -110,7 +110,9 @@ public class RubyFiber extends RubyBasicObject {
                 }
             }
 
-        }).start();
+        });
+        thread.setName("Ruby Fiber@" + block.getSharedMethodInfo().getSourceSection().getShortDescription());
+        thread.start();
     }
 
     /**
