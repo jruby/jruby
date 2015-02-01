@@ -26,7 +26,7 @@ public class FileUtils {
 
         final Path path = Paths.get(file.toString());
 
-        return context.getThreadManager().runUntilResult(new BlockingActionWithoutGlobalLock<byte[]>() {
+        return context.getThreadManager().runUntilResult(true, new BlockingActionWithoutGlobalLock<byte[]>() {
             @Override
             public byte[] block() throws InterruptedException {
                 try {

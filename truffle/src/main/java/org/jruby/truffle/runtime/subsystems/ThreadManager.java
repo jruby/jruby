@@ -82,15 +82,17 @@ public class ThreadManager {
      * The action might be {@link Thread#interrupted()}, for instance by
      * the {@link SafepointManager}, in which case it will be run again.
      *
+     *
+     * @param holdsGIL
      * @param action must not touch any Ruby state
      * @return the first non-null return value from {@code action}
      */
     @CompilerDirectives.TruffleBoundary
-    public <T> T runUntilResult(BlockingActionWithoutGlobalLock<T> action) {
+    public <T> T runUntilResult(boolean holdsGIL, BlockingActionWithoutGlobalLock<T> action) {
         T result = null;
 
         do {
-            result = runOnce(action);
+            result = runOnce(holdsGIL, action);
         } while (result == null);
 
         return result;
@@ -101,20 +103,31 @@ public class ThreadManager {
      * The action might be {@link Thread#interrupted()}, for instance by
      * the {@link SafepointManager}, in which case null will be returned.
      *
+     *
+     * @param holdsGIL
      * @param action must not touch any Ruby state
      * @return the return value from {@code action} or null if interrupted
      */
     @CompilerDirectives.TruffleBoundary
-    public <T> T runOnce(BlockingActionWithoutGlobalLock<T> action) {
+    public <T> T runOnce(boolean holdsGIL, BlockingActionWithoutGlobalLock<T> action) {
         T result = null;
-        final RubyThread runningThread = leaveGlobalLock();
+
+        final RubyThread runningThread;
+
+        if (holdsGIL) {
+            runningThread = leaveGlobalLock();
+        } else {
+            runningThread = null;
+        }
 
         try {
             try {
                 result = action.block();
             } finally {
-                // We need to enter the global lock before anything else!
-                enterGlobalLock(runningThread);
+                if (holdsGIL) {
+                    // We need to enter the global lock before anything else!
+                    enterGlobalLock(runningThread);
+                }
             }
         } catch (InterruptedException e) {
             // We were interrupted, possibly by the SafepointManager.

@@ -116,7 +116,7 @@ public class RubyFiber extends RubyBasicObject {
     public Object waitForResume() {
         RubyNode.notDesignedForCompilation();
 
-        FiberMessage message = getContext().getThreadManager().runUntilResult(new BlockingActionWithoutGlobalLock<FiberMessage>() {
+        FiberMessage message = getContext().getThreadManager().runUntilResult(false, new BlockingActionWithoutGlobalLock<FiberMessage>() {
             @Override
             public FiberMessage block() throws InterruptedException {
                 // TODO (CS 30-Jan-15) this timeout isn't ideal - we already handle interrupts for safepoints
