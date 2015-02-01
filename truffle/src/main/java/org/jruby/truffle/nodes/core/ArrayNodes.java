@@ -72,6 +72,11 @@ public abstract class ArrayNodes {
             super(prev);
         }
 
+        @Specialization(guards = {"isNull", "isOtherNull"})
+        public RubyArray addNull(RubyArray a, RubyArray b) {
+            return new RubyArray(getContext().getCoreLibrary().getArrayClass(), null, 0);
+        }
+
         @Specialization(guards = {"isObject", "isOtherNull"})
         public RubyArray addObjectNull(RubyArray a, RubyArray b) {
             return new RubyArray(getContext().getCoreLibrary().getArrayClass(), Arrays.copyOf((Object[]) a.getStore(), a.getSize()), a.getSize());
