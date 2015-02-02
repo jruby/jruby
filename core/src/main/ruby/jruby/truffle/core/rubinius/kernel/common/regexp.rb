@@ -116,6 +116,10 @@ class Regexp
     initialize other.source, other.options
   end
 
+  def encoding
+    source.encoding
+  end
+
 end
 
 class MatchData

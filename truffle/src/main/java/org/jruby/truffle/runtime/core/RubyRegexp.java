@@ -41,8 +41,6 @@ public class RubyRegexp extends RubyBasicObject {
     @CompilationFinal private Regex regex;
     @CompilationFinal private ByteList source;
 
-    private RubyEncoding encoding;
-
     public RubyRegexp(RubyClass regexpClass) {
         super(regexpClass);
     }
@@ -399,18 +397,6 @@ public class RubyRegexp extends RubyBasicObject {
         } catch (SyntaxException e) {
             throw new org.jruby.truffle.runtime.control.RaiseException(context.getCoreLibrary().regexpError(e.getMessage(), currentNode));
         }
-    }
-
-    public void forceEncoding(RubyEncoding encoding) {
-        this.encoding = encoding;
-    }
-
-    public RubyEncoding getEncoding() {
-        if (encoding == null) {
-            encoding = RubyEncoding.getEncoding(regex.getEncoding());
-        }
-
-        return encoding;
     }
 
     public static class RegexpAllocator implements Allocator {

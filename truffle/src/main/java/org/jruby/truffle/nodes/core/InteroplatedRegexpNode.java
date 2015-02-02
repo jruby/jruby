@@ -51,12 +51,10 @@ public class InteroplatedRegexpNode extends RubyNode {
         final RubyRegexp regexp = new RubyRegexp(this, getContext().getCoreLibrary().getRegexpClass(), preprocessed.getByteList(), options.toOptions());
 
         if (options.isEncodingNone()) {
-            // This isn't quite right - we shouldn't be looking up by name, we need a real reference to this constants
-
             if (!BodyTranslator.all7Bit(preprocessed.getByteList().bytes())) {
-                regexp.forceEncoding((RubyEncoding) getContext().getCoreLibrary().getEncodingClass().getConstants().get("ASCII_8BIT").getValue());
+                regexp.getSource().setEncoding(getContext().getRuntime().getEncodingService().getAscii8bitEncoding());
             } else {
-                regexp.forceEncoding((RubyEncoding) getContext().getCoreLibrary().getEncodingClass().getConstants().get("US_ASCII").getValue());
+                regexp.getSource().setEncoding(getContext().getRuntime().getEncodingService().getUSAsciiEncoding());
             }
         }
 

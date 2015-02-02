@@ -2262,20 +2262,17 @@ public class BodyTranslator extends Translator {
 
         final RubyRegexp regexp = new RubyRegexp(context.getCoreLibrary().getRegexpClass(), regex, node.getValue());
 
+        // This isn't quite right - we shouldn't be looking up by name, we need a real reference to this constants
         if (node.getOptions().isEncodingNone()) {
-            // This isn't quite right - we shouldn't be looking up by name, we need a real reference to this constants
-
             if (!all7Bit(node.getValue().bytes())) {
-                regexp.forceEncoding((RubyEncoding) context.getCoreLibrary().getEncodingClass().getConstants().get("ASCII_8BIT").getValue());
+                regexp.getSource().setEncoding(context.getRuntime().getEncodingService().getAscii8bitEncoding());
             } else {
-                regexp.forceEncoding((RubyEncoding) context.getCoreLibrary().getEncodingClass().getConstants().get("US_ASCII").getValue());
+                regexp.getSource().setEncoding(context.getRuntime().getEncodingService().getUSAsciiEncoding());
             }
         } else if (node.getOptions().getKCode().getKCode().equals("SJIS")) {
-            regexp.forceEncoding((RubyEncoding) context.getCoreLibrary().getEncodingClass().getConstants().get("Windows_31J").getValue());
+            regexp.getSource().setEncoding(((RubyEncoding) context.getCoreLibrary().getEncodingClass().getConstants().get("Windows_31J").getValue()).getEncoding());
         } else if (node.getOptions().getKCode().getKCode().equals("UTF8")) {
-            regexp.forceEncoding((RubyEncoding) context.getCoreLibrary().getEncodingClass().getConstants().get("UTF_8").getValue());
-        } else {
-            regexp.forceEncoding(RubyEncoding.getEncoding(node.getEncoding()));
+            regexp.getSource().setEncoding(((RubyEncoding) context.getCoreLibrary().getEncodingClass().getConstants().get("UTF_8").getValue()).getEncoding());
         }
 
         final ObjectLiteralNode literalNode = new ObjectLiteralNode(context, translate(node.getPosition()), regexp);

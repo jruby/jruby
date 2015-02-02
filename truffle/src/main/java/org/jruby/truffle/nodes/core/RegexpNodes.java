@@ -9,27 +9,22 @@
  */
 package org.jruby.truffle.nodes.core;
 
+import static org.jruby.util.StringSupport.CR_7BIT;
+
+import org.jruby.truffle.nodes.RubyNode;
+import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.runtime.control.RaiseException;
+import org.jruby.truffle.runtime.core.RubyBasicObject;
+import org.jruby.truffle.runtime.core.RubyRegexp;
+import org.jruby.truffle.runtime.core.RubyString;
+import org.jruby.truffle.runtime.core.RubySymbol;
+import org.jruby.util.ByteList;
+
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.utilities.ConditionProfile;
-import org.joni.Option;
-import org.jruby.runtime.Visibility;
-import org.jruby.truffle.nodes.RubyNode;
-import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.UndefinedPlaceholder;
-import org.jruby.truffle.runtime.control.RaiseException;
-import org.jruby.truffle.runtime.core.RubyBasicObject;
-import org.jruby.truffle.runtime.core.RubyEncoding;
-import org.jruby.truffle.runtime.core.RubyNilClass;
-import org.jruby.truffle.runtime.core.RubyRegexp;
-import org.jruby.truffle.runtime.core.RubyString;
-import org.jruby.truffle.runtime.core.RubySymbol;
-import org.jruby.util.ByteList;
-import org.jruby.util.cli.Options;
-
-import static org.jruby.util.StringSupport.CR_7BIT;
 
 @CoreClass(name = "Regexp")
 public abstract class RegexpNodes {
@@ -142,24 +137,6 @@ public abstract class RegexpNodes {
             }
         }
 
-    }
-
-    @CoreMethod(names = "encoding")
-    public abstract static class EncodingNode extends CoreMethodNode {
-
-        public EncodingNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
-        public EncodingNode(EncodingNode prev) {
-            super(prev);
-        }
-
-        @Specialization
-        public RubyEncoding encoding(RubyRegexp regexp) {
-            notDesignedForCompilation();
-            return regexp.getEncoding();
-        }
     }
 
     @CoreMethod(names = "escape", onSingleton = true, required = 1)
