@@ -184,32 +184,6 @@ public abstract class RegexpNodes {
 
     }
 
-    @CoreMethod(names = "initialize_copy", visibility = Visibility.PRIVATE, required = 1)
-    public abstract static class InitializeCopyNode extends CoreMethodNode {
-
-        public InitializeCopyNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
-        public InitializeCopyNode(InitializeCopyNode prev) {
-            super(prev);
-        }
-
-        @Specialization
-        public Object initializeCopy(RubyRegexp self, RubyRegexp from) {
-            notDesignedForCompilation();
-
-            if (self == from) {
-                return self;
-            }
-
-            self.initialize(this, from.getSource(), from.getRegex().getOptions()); // TODO: is copying needed?
-
-            return self;
-        }
-
-    }
-
     @CoreMethod(names = "inspect")
     public abstract static class InspectNode extends CoreMethodNode {
 

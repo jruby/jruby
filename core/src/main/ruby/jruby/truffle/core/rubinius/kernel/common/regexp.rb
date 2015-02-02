@@ -112,6 +112,10 @@ class Regexp
     compile pattern, opts
   end
 
+  def initialize_copy(other)
+    initialize other.source, other.options
+  end
+
 end
 
 class MatchData
