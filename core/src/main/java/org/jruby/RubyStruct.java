@@ -544,23 +544,30 @@ public class RubyStruct extends RubyObject {
     */
     private IRubyObject inspectStruct(final ThreadContext context) {
         RubyArray member = __member__();
-        ByteList buffer = new ByteList("#<struct ".getBytes());
+        RubyString buffer = RubyString.newString(getRuntime(), new ByteList("#<struct ".getBytes()));
 
         if (is1_8() || getMetaClass().getRealClass().getBaseName() != null) {
-            buffer.append(getMetaClass().getRealClass().getRealClass().getName().getBytes());
-            buffer.append(' ');
+            String className = getMetaClass().getRealClass().getRealClass().getName();
+            buffer.append(RubyString.newString(getRuntime(), new ByteList(className.getBytes())));
+            buffer.cat(' ');
         }
 
         for (int i = 0,k=member.getLength(); i < k; i++) {
-            if (i > 0) buffer.append(',').append(' ');
+            if (i > 0) buffer.cat(',').cat(' ');
             // FIXME: MRI has special case for constants here
-            buffer.append(RubyString.objAsString(context, member.eltInternal(i)).getByteList());
-            buffer.append('=');
-            buffer.append(inspect(context, values[i]).getByteList());
+            if (is1_8()) {
+                buffer.cat(RubyString.objAsString(context, member.eltInternal(i)));
+                buffer.cat('=');
+                buffer.cat(inspect(context, values[i]));
+            } else {
+                buffer.cat19(RubyString.objAsString(context, member.eltInternal(i)));
+                buffer.cat('=');
+                buffer.cat19(inspect(context, values[i]));
+            }
         }
 
-        buffer.append('>');
-        return getRuntime().newString(buffer); // OBJ_INFECT
+        buffer.cat('>');
+        return buffer.dup(); // OBJ_INFECT
     }
 
     private boolean is1_8() {
