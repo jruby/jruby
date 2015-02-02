@@ -45,14 +45,14 @@ import org.jruby.ast.CallNode;
 import org.jruby.ast.FCallNode;
 import org.jruby.ast.GlobalAsgnNode;
 import org.jruby.ast.GlobalVarNode;
-import org.jruby.ast.NewlineNode;
 import org.jruby.ast.VCallNode;
 import org.jruby.ast.WhileNode;
 import org.jruby.compiler.Constantizable;
 import org.jruby.compiler.NotCompilableException;
-import org.jruby.ext.jruby.JRubyLibrary;
 import org.jruby.ext.thread.ThreadLibrary;
 import org.jruby.ir.IRScriptBody;
+import org.jruby.javasupport.JavaSupport;
+import org.jruby.javasupport.JavaSupportImpl;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.parser.StaticScope;
 import org.objectweb.asm.util.TraceClassVisitor;
@@ -98,7 +98,6 @@ import org.jruby.ir.interpreter.Interpreter;
 import org.jruby.ir.persistence.IRReader;
 import org.jruby.ir.persistence.IRReaderFile;
 import org.jruby.ir.persistence.util.IRFileExpert;
-import org.jruby.javasupport.JavaSupport;
 import org.jruby.javasupport.proxy.JavaProxyClassFactory;
 import org.jruby.management.BeanManager;
 import org.jruby.management.BeanManagerFactory;
@@ -363,6 +362,10 @@ public final class Ruby implements Constantizable {
      */
     public static boolean isGlobalRuntimeReady() {
         return globalRuntime != null;
+    }
+
+    public static boolean isSubstrateVM() {
+        return false;
     }
 
     /**
@@ -733,21 +736,7 @@ public final class Ruby implements Constantizable {
         ScriptAndCode scriptAndCode = null;
         boolean compile = getInstanceConfig().getCompileMode().shouldPrecompileCLI();
         if (compile || config.isShowBytecode()) {
-            // IR JIT does not handle all scripts yet, so let those that fail run in interpreter instead
-            // FIXME: restore error once JIT should handle everything
-            try {
-                scriptAndCode = tryCompile(scriptNode, new ClassDefininngJRubyClassLoader(getJRubyClassLoader()));
-                if (scriptAndCode != null && Options.JIT_LOGGING.load()) {
-                    LOG.info("done compiling target script: " + scriptNode.getPosition().getFile());
-                }
-            } catch (Exception e) {
-                if (Options.JIT_LOGGING.load()) {
-                    LOG.error("failed to compile target script '" + scriptNode.getPosition().getFile() + "'");
-                    if (Options.JIT_LOGGING_VERBOSE.load()) {
-                        e.printStackTrace();
-                    }
-                }
-            }
+            scriptAndCode = precompileCLI(scriptNode);
         }
 
         if (scriptAndCode != null) {
@@ -765,6 +754,27 @@ public final class Ruby implements Constantizable {
 
             return runInterpreter(scriptNode);
         }
+    }
+
+    private ScriptAndCode precompileCLI(Node scriptNode) {
+        ScriptAndCode scriptAndCode = null;
+
+        // IR JIT does not handle all scripts yet, so let those that fail run in interpreter instead
+        // FIXME: restore error once JIT should handle everything
+        try {
+            scriptAndCode = tryCompile(scriptNode, new ClassDefininngJRubyClassLoader(getJRubyClassLoader()));
+            if (scriptAndCode != null && Options.JIT_LOGGING.load()) {
+                LOG.info("done compiling target script: " + scriptNode.getPosition().getFile());
+            }
+        } catch (Exception e) {
+            if (Options.JIT_LOGGING.load()) {
+                LOG.error("failed to compile target script '" + scriptNode.getPosition().getFile() + "'");
+                if (Options.JIT_LOGGING_VERBOSE.load()) {
+                    e.printStackTrace();
+                }
+            }
+        }
+        return scriptAndCode;
     }
 
     /**
@@ -899,28 +909,36 @@ public final class Ruby implements Constantizable {
 
     public synchronized TruffleBridge getTruffleBridge() {
         if (truffleBridge == null) {
-            /*
-             * It's possible to remove Truffle classes from the JRuby distribution, so we provide a sensible
-             * explanation when the classes are not found.
-             */
-
-            final Class<?> clazz;
-
-            try {
-                clazz = getJRubyClassLoader().loadClass("org.jruby.truffle.TruffleBridgeImpl");
-            } catch (Exception e) {
-                throw new UnsupportedOperationException("Support for Truffle has been removed from this distribution", e);
-            }
-
-            try {
-                Constructor<?> con = clazz.getConstructor(Ruby.class);
-                truffleBridge = (TruffleBridge) con.newInstance(this);
-            } catch (Exception e) {
-                throw new UnsupportedOperationException("Error while calling the constructor of Truffle Bridge", e);
-            }
-
-            truffleBridge.init();
+            truffleBridge = loadTruffleBridge();
         }
+
+        return truffleBridge;
+    }
+
+    private TruffleBridge loadTruffleBridge() {
+        /*
+         * It's possible to remove Truffle classes from the JRuby distribution, so we provide a sensible
+         * explanation when the classes are not found.
+         */
+
+        final Class<?> clazz;
+
+        try {
+            clazz = getJRubyClassLoader().loadClass("org.jruby.truffle.TruffleBridgeImpl");
+        } catch (Exception e) {
+            throw new UnsupportedOperationException("Support for Truffle has been removed from this distribution", e);
+        }
+
+        final TruffleBridge truffleBridge;
+
+        try {
+            Constructor<?> con = clazz.getConstructor(Ruby.class);
+            truffleBridge = (TruffleBridge) con.newInstance(this);
+        } catch (Exception e) {
+            throw new UnsupportedOperationException("Error while calling the constructor of Truffle Bridge", e);
+        }
+
+        truffleBridge.init();
 
         return truffleBridge;
     }
@@ -1196,7 +1214,7 @@ public final class Ruby implements Constantizable {
         // Construct key services
         loadService = config.createLoadService(this);
         posix = POSIXFactory.getPOSIX(new JRubyPOSIXHandler(this), config.isNativeEnabled());
-        javaSupport = new JavaSupport(this);
+        javaSupport = loadJavaSupport();
 
         executor = new ThreadPoolExecutor(
                 RubyInstanceConfig.POOL_MIN,
@@ -1257,13 +1275,7 @@ public final class Ruby implements Constantizable {
 
         // load JRuby internals, which loads Java support
         // if we can't use reflection, 'jruby' and 'java' won't work; no load.
-        boolean reflectionWorks;
-        try {
-            ClassLoader.class.getDeclaredMethod("getResourceAsStream", String.class);
-            reflectionWorks = true;
-        } catch (Exception e) {
-            reflectionWorks = false;
-        }
+        boolean reflectionWorks = doesReflectionWork();
 
         if (!RubyInstanceConfig.DEBUG_PARSER && reflectionWorks
                 && getInstanceConfig().getCompileMode() != CompileMode.TRUFFLE) {
@@ -1294,7 +1306,7 @@ public final class Ruby implements Constantizable {
         }
 
         if (config.getLoadGemfile()) {
-            loadService.loadFromClassLoader(getClassLoader(), "jruby/bundler/startup.rb", false);
+            loadBundler();
         }
 
         setNetworkStack();
@@ -1305,6 +1317,23 @@ public final class Ruby implements Constantizable {
         // Require in all libraries specified on command line
         for (String scriptName : config.getRequiredLibraries()) {
             topSelf.callMethod(getCurrentContext(), "require", RubyString.newString(this, scriptName));
+        }
+    }
+
+    public JavaSupport loadJavaSupport() {
+        return new JavaSupportImpl(this);
+    }
+
+    private void loadBundler() {
+        loadService.loadFromClassLoader(getClassLoader(), "jruby/bundler/startup.rb", false);
+    }
+
+    private boolean doesReflectionWork() {
+        try {
+            ClassLoader.class.getDeclaredMethod("getResourceAsStream", String.class);
+            return true;
+        } catch (Exception e) {
+            return false;
         }
     }
 
@@ -3269,9 +3298,7 @@ public final class Ruby implements Constantizable {
 
         getSelectorPool().cleanup();
 
-        if (getJRubyClassLoader() != null) {
-            getJRubyClassLoader().tearDown(isDebug());
-        }
+        tearDownClassLoader();
 
         if (config.isProfilingEntireRun()) {
             // not using logging because it's formatted
@@ -3293,6 +3320,12 @@ public final class Ruby implements Constantizable {
                     globalRuntime = null;
                 }
             }
+        }
+    }
+
+    private void tearDownClassLoader() {
+        if (getJRubyClassLoader() != null) {
+            getJRubyClassLoader().tearDown(isDebug());
         }
     }
 

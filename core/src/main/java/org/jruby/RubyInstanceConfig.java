@@ -390,7 +390,7 @@ public class RubyInstanceConfig {
                 if (script.startsWith("file:") && script.indexOf(".jar!/") != -1) {
                     stream = new URL("jar:" + script).openStream();
                 } else if (script.startsWith("classpath:")) {
-                    stream = Ruby.getClassLoader().getResourceAsStream(script.substring("classpath:".length()));
+                    stream = getScriptSourceFromJar(script);
                 } else {
                     File file = JRubyFile.create(getCurrentDirectory(), getScriptFileName());
                     if (isXFlag()) {
@@ -412,6 +412,10 @@ public class RubyInstanceConfig {
             }
             throw new MainExitException(1, "Error opening script file: " + e.getMessage());
         }
+    }
+
+    private InputStream getScriptSourceFromJar(String script) {
+        return Ruby.getClassLoader().getResourceAsStream(script.substring("classpath:".length()));
     }
 
     private static InputStream findScript(File file) throws IOException {
@@ -1401,6 +1405,10 @@ public class RubyInstanceConfig {
     public void setProfilingService( String service )  {
         this.profilingService = service;
     }
+    
+    private static ClassLoader setupLoader() {
+        return RubyInstanceConfig.class.getClassLoader();
+    }
 
     ////////////////////////////////////////////////////////////////////////////
     // Configuration fields.
@@ -1446,7 +1454,7 @@ public class RubyInstanceConfig {
     private ProfileOutput profileOutput = new ProfileOutput(System.err);
     private String profilingService;
 
-    private ClassLoader thisLoader = RubyInstanceConfig.class.getClassLoader();
+    private ClassLoader thisLoader = setupLoader();
     // thisLoader can be null for example when jruby comes from the boot-classLoader
     private ClassLoader loader = thisLoader == null ? Thread.currentThread().getContextClassLoader() : thisLoader;
 

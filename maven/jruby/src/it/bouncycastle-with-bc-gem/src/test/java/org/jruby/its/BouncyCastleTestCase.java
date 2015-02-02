@@ -25,8 +25,8 @@ public class BouncyCastleTestCase {
     public void ruby(){
         ScriptingContainer container = new ScriptingContainer();
         container.setSelfFirstClassloader(true);
-        Object result = container.parse( "gem 'bouncy-castle-java', '1.5.0146.1'; require 'bouncy-castle-java'; Java::OrgBouncycastleJceProvider::BouncyCastleProvider.new.info").run();
-        assertEquals( "BouncyCastle Security Provider v1.46", result.toString() );
+        Object result = container.parse( "gem 'bouncy-castle-java'; require 'bouncy-castle-java'; Java::OrgBouncycastleJceProvider::BouncyCastleProvider.new.info").run();
+        assertEquals( "BouncyCastle Security Provider v1.47", result.toString() );
 
         result = container.parse("JRuby.runtime.jruby_class_loader").run();
         assertEquals("org.jruby.util.SelfFirstJRubyClassLoader", result.toString().replaceFirst("@.*$", ""));

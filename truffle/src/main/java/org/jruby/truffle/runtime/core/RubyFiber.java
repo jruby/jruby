@@ -14,6 +14,9 @@ import com.oracle.truffle.api.nodes.ControlFlowException;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.objects.Allocator;
 import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.runtime.control.BreakException;
+import org.jruby.truffle.runtime.control.RaiseException;
+import org.jruby.truffle.runtime.control.ReturnException;
 import org.jruby.truffle.runtime.subsystems.FiberManager;
 import org.jruby.truffle.runtime.subsystems.ThreadManager;
 import org.jruby.truffle.runtime.subsystems.ThreadManager.BlockingActionWithoutGlobalLock;
@@ -63,6 +66,26 @@ public class RubyFiber extends RubyBasicObject {
     private static class FiberExitMessage implements FiberMessage {
     }
 
+    private static class FiberExceptionMessage implements FiberMessage {
+
+        public RubyThread thread;
+        public RubyException exception;
+
+        public FiberExceptionMessage(RubyThread thread, RubyException exception) {
+            this.thread = thread;
+            this.exception = exception;
+        }
+
+        public RubyThread getThread() {
+            return thread;
+        }
+
+        public RubyException getException() {
+            return exception;
+        }
+
+    }
+
     public static class FiberExitException extends ControlFlowException {
 
         private static final long serialVersionUID = 1522270454305076317L;
@@ -72,13 +95,16 @@ public class RubyFiber extends RubyBasicObject {
     private final FiberManager fiberManager;
     private final ThreadManager threadManager;
 
+    private boolean topLevel;
     private BlockingQueue<FiberMessage> messageQueue = new ArrayBlockingQueue<>(1);
-    public RubyFiber lastResumedByFiber = null;
+    private RubyFiber lastResumedByFiber = null;
+    private boolean alive = true;
 
-    public RubyFiber(RubyClass rubyClass, FiberManager fiberManager, ThreadManager threadManager) {
+    public RubyFiber(RubyClass rubyClass, FiberManager fiberManager, ThreadManager threadManager, boolean topLevel) {
         super(rubyClass);
         this.fiberManager = fiberManager;
         this.threadManager = threadManager;
+        this.topLevel = topLevel;
     }
 
     public void initialize(RubyProc block) {
@@ -87,10 +113,11 @@ public class RubyFiber extends RubyBasicObject {
         final RubyFiber finalFiber = this;
         final RubyProc finalBlock = block;
 
-        new Thread(new Runnable() {
+        final Thread thread = new Thread(new Runnable() {
 
             @Override
             public void run() {
+                finalFiber.getContext().getSafepointManager().enterThread();
                 fiberManager.registerFiber(finalFiber);
 
                 try {
@@ -99,12 +126,22 @@ public class RubyFiber extends RubyBasicObject {
                     finalFiber.lastResumedByFiber.resume(finalFiber, result);
                 } catch (FiberExitException e) {
                     // Naturally exit the thread on catching this
+                } catch (ReturnException e) {
+                    final RubyThread runningThread = threadManager.leaveGlobalLock();
+                    finalFiber.lastResumedByFiber.messageQueue.add(new FiberExceptionMessage(runningThread, finalFiber.getContext().getCoreLibrary().unexpectedReturn(null)));
+                } catch (RaiseException e) {
+                    final RubyThread runningThread = threadManager.leaveGlobalLock();
+                    finalFiber.lastResumedByFiber.messageQueue.add(new FiberExceptionMessage(runningThread, e.getRubyException()));
                 } finally {
+                    alive = false;
                     fiberManager.unregisterFiber(finalFiber);
+                    finalFiber.getContext().getSafepointManager().leaveThread();
                 }
             }
 
-        }).start();
+        });
+        thread.setName("Ruby Fiber@" + block.getSharedMethodInfo().getSourceSection().getShortDescription());
+        thread.start();
     }
 
     /**
@@ -114,7 +151,7 @@ public class RubyFiber extends RubyBasicObject {
     public Object waitForResume() {
         RubyNode.notDesignedForCompilation();
 
-        FiberMessage message = getContext().getThreadManager().runUntilResult(new BlockingActionWithoutGlobalLock<FiberMessage>() {
+        FiberMessage message = getContext().getThreadManager().runUntilResult(false, new BlockingActionWithoutGlobalLock<FiberMessage>() {
             @Override
             public FiberMessage block() throws InterruptedException {
                 // TODO (CS 30-Jan-15) this timeout isn't ideal - we already handle interrupts for safepoints
@@ -122,18 +159,21 @@ public class RubyFiber extends RubyBasicObject {
             }
         });
 
-        if (message instanceof FiberExitMessage) {
-            throw new FiberExitException();
-        }
-
-        final FiberResumeMessage resumeMessage = (FiberResumeMessage) message;
-
-        threadManager.enterGlobalLock(resumeMessage.getThread());
-
         fiberManager.setCurrentFiber(this);
 
-        lastResumedByFiber = resumeMessage.getSendingFiber();
-        return resumeMessage.getArg();
+        if (message instanceof FiberExitMessage) {
+            // TODO CS 2-Feb-15 what do we do about entering the global lock here?
+            throw new FiberExitException();
+        } else if (message instanceof FiberExceptionMessage) {
+            threadManager.enterGlobalLock(((FiberExceptionMessage) message).getThread());
+            throw new RaiseException(((FiberExceptionMessage) message).getException());
+        } else if (message instanceof FiberResumeMessage) {
+            threadManager.enterGlobalLock(((FiberResumeMessage) message).getThread());
+            lastResumedByFiber = ((FiberResumeMessage) message).getSendingFiber();
+            return ((FiberResumeMessage) message).getArg();
+        } else {
+            throw new UnsupportedOperationException();
+        }
     }
 
     /**
@@ -143,6 +183,8 @@ public class RubyFiber extends RubyBasicObject {
      */
     public void resume(RubyFiber sendingFiber, Object... args) {
         RubyNode.notDesignedForCompilation();
+
+        // TODO CS 2-Feb-15 move this logic into the node where we can specialise?
 
         Object arg;
 
@@ -165,11 +207,25 @@ public class RubyFiber extends RubyBasicObject {
         messageQueue.add(new FiberExitMessage());
     }
 
+    public boolean isAlive() {
+        // TODO CS 2-Feb-15 race conditions (but everything in JRuby+Truffle is currently a race condition)
+        // TODO CS 2-Feb-15 should just be alive?
+        return alive || !messageQueue.isEmpty();
+    }
+
+    public RubyFiber getLastResumedByFiber() {
+        return lastResumedByFiber;
+    }
+
+    public boolean isTopLevel() {
+        return topLevel;
+    }
+
     public static class FiberAllocator implements Allocator {
 
         @Override
         public RubyBasicObject allocate(RubyContext context, RubyClass rubyClass, RubyNode currentNode) {
-            return new RubyFiber(rubyClass, context.getFiberManager(), context.getThreadManager());
+            return new RubyFiber(rubyClass, context.getFiberManager(), context.getThreadManager(), false);
         }
 
     }

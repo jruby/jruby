@@ -24,17 +24,20 @@ import java.util.concurrent.locks.ReentrantLock;
  */
 public class ThreadManager {
 
+    private final RubyContext context;
+
     private final ReentrantLock globalLock = new ReentrantLock();
 
     private final RubyThread rootThread;
     private RubyThread currentThread;
 
-    private final Set<RubyThread> runningThreads = Collections.newSetFromMap(new ConcurrentHashMap<RubyThread, Boolean>());
+    private final Set<RubyThread> runningRubyThreads = Collections.newSetFromMap(new ConcurrentHashMap<RubyThread, Boolean>());
 
     public ThreadManager(RubyContext context) {
+        this.context = context;
         rootThread = new RubyThread(context.getCoreLibrary().getThreadClass(), this);
         rootThread.setRootThread(Thread.currentThread());
-        runningThreads.add(rootThread);
+        runningRubyThreads.add(rootThread);
         enterGlobalLock(rootThread);
     }
 
@@ -82,15 +85,17 @@ public class ThreadManager {
      * The action might be {@link Thread#interrupted()}, for instance by
      * the {@link SafepointManager}, in which case it will be run again.
      *
+     *
+     * @param holdsGIL
      * @param action must not touch any Ruby state
      * @return the first non-null return value from {@code action}
      */
     @CompilerDirectives.TruffleBoundary
-    public <T> T runUntilResult(BlockingActionWithoutGlobalLock<T> action) {
+    public <T> T runUntilResult(boolean holdsGIL, BlockingActionWithoutGlobalLock<T> action) {
         T result = null;
 
         do {
-            result = runOnce(action);
+            result = runOnce(holdsGIL, action);
         } while (result == null);
 
         return result;
@@ -101,24 +106,35 @@ public class ThreadManager {
      * The action might be {@link Thread#interrupted()}, for instance by
      * the {@link SafepointManager}, in which case null will be returned.
      *
+     *
+     * @param holdsGIL
      * @param action must not touch any Ruby state
      * @return the return value from {@code action} or null if interrupted
      */
     @CompilerDirectives.TruffleBoundary
-    public <T> T runOnce(BlockingActionWithoutGlobalLock<T> action) {
+    public <T> T runOnce(boolean holdsGIL, BlockingActionWithoutGlobalLock<T> action) {
         T result = null;
-        final RubyThread runningThread = leaveGlobalLock();
+
+        final RubyThread runningThread;
+
+        if (holdsGIL) {
+            runningThread = leaveGlobalLock();
+        } else {
+            runningThread = null;
+        }
 
         try {
             try {
                 result = action.block();
             } finally {
-                // We need to enter the global lock before anything else!
-                enterGlobalLock(runningThread);
+                if (holdsGIL) {
+                    // We need to enter the global lock before anything else!
+                    enterGlobalLock(runningThread);
+                }
             }
         } catch (InterruptedException e) {
             // We were interrupted, possibly by the SafepointManager.
-            runningThread.getContext().getSafepointManager().poll();
+            context.getSafepointManager().poll(holdsGIL);
         }
         return result;
     }
@@ -128,22 +144,16 @@ public class ThreadManager {
         return currentThread;
     }
 
-    public void interruptAllThreads() {
-        for (RubyThread thread : runningThreads) {
-            thread.interrupt();
-        }
-    }
-
     public synchronized void registerThread(RubyThread thread) {
-        runningThreads.add(thread);
+        runningRubyThreads.add(thread);
     }
 
     public synchronized void unregisterThread(RubyThread thread) {
-        runningThreads.remove(thread);
+        runningRubyThreads.remove(thread);
     }
 
     public void shutdown() {
-        for (RubyThread thread : runningThreads) {
+        for (RubyThread thread : runningRubyThreads) {
             thread.shutdown();
         }
     }

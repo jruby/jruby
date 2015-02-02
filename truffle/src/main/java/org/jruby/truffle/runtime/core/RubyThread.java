@@ -60,10 +60,10 @@ public class RubyThread extends RubyBasicObject {
                 value = finalBlock.rootCall();
             }
 
-        });
+        }, block.getSharedMethodInfo().getSourceSection().getShortDescription());
     }
 
-    public void initialize(final RubyContext context, final RubyNode currentNode, Runnable runnable) {
+    public void initialize(final RubyContext context, final RubyNode currentNode, Runnable runnable, String name) {
         final RubyThread finalThread = this;
         final Runnable finalRunnable = runnable;
 
@@ -95,6 +95,7 @@ public class RubyThread extends RubyBasicObject {
             }
 
         });
+        thread.setName("Ruby Thread@" + name);
         thread.setDaemon(true);
         thread.start();
     }
@@ -104,7 +105,7 @@ public class RubyThread extends RubyBasicObject {
     }
 
     public void join() {
-        getContext().getThreadManager().runUntilResult(new BlockingActionWithoutGlobalLock<Boolean>() {
+        getContext().getThreadManager().runUntilResult(true, new BlockingActionWithoutGlobalLock<Boolean>() {
             @Override
             public Boolean block() throws InterruptedException {
                 finished.await();
