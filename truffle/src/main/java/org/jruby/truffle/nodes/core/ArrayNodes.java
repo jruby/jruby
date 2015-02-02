@@ -1807,7 +1807,7 @@ public abstract class ArrayNodes {
             notDesignedForCompilation();
             final List<Object> flattened = new ArrayList<>();
             flatten(flattened, array.slowToArray());
-            return new RubyArray(getContext().getCoreLibrary().getArrayClass(), flattened.toArray(), array.getSize());
+            return new RubyArray(getContext().getCoreLibrary().getArrayClass(), flattened.toArray(), flattened.size());
         }
 
         private void flatten(List<Object> flattened, Object[] store) {

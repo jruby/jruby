@@ -1,0 +1,1 @@
+fails(windows):Process::Status#exited? for a terminated child always returns true

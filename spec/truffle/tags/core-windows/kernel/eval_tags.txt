@@ -1,0 +1,2 @@
+fails(windows bug):Kernel#eval does not share locals across eval scopes
+fails(windows bug):Kernel#eval raises a LocalJumpError if there is no lambda-style closure in the chain

@@ -45,5 +45,3 @@ fails:IO.readlines when passed name, separator, limit, options calls #to_hash to
 fails:IO.readlines encodes lines using the default external encoding
 fails:IO.readlines encodes lines using the default internal encoding, when set
 fails:IO.readlines ignores the default internal encoding if the external encoding is ASCII-8BIT
-fails(windows bug):IO.readlines does not change $_
-fails(windows bug):IO.readlines raises TypeError if the first parameter is nil

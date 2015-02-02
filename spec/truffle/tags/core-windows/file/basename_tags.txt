@@ -1,0 +1,4 @@
+fails(windows):File.basename returns the basename for windows
+fails(windows):File.basename returns basename windows unc
+fails(windows):File.basename returns basename windows forward slash
+fails(windows):File.basename returns basename with windows suffix

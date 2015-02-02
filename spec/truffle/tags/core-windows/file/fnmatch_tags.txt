@@ -1,0 +1,2 @@
+fails(windows):File.fnmatch matches case sensitive characters on platfroms with case insensitive paths, when flags include FNM_SYSCASE
+fails(windows):File.fnmatch? matches case sensitive characters on platfroms with case insensitive paths, when flags include FNM_SYSCASE

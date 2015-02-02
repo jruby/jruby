@@ -1,0 +1,2 @@
+fails(windows bug):IO.readlines does not change $_
+fails(windows bug):IO.readlines raises TypeError if the first parameter is nil

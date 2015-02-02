@@ -1,0 +1,1 @@
+fails(windows - Encoding.aliases):Encoding.find needs to be reviewed for spec completeness

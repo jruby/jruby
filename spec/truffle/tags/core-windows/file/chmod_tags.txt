@@ -1,0 +1,4 @@
+fails(windows):File#chmod with '0444' makes file readable and executable but not writable
+fails(windows):File#chmod with '0644' makes file readable and writable and also executable
+fails(windows):File.chmod with '0444' makes file readable and executable but not writable
+fails(windows):File.chmod with '0644' makes file readable and writable and also executable
