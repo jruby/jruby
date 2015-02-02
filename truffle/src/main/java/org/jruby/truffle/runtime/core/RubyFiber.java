@@ -120,6 +120,7 @@ public class RubyFiber extends RubyBasicObject {
 
         name = "Ruby Fiber@" + block.getSharedMethodInfo().getSourceSection().getShortDescription();
 
+        final RubyThread rubyThread = threadManager.getCurrentThread();
         final RubyFiber finalFiber = this;
         final RubyProc finalBlock = block;
 
@@ -127,8 +128,9 @@ public class RubyFiber extends RubyBasicObject {
 
             @Override
             public void run() {
-                finalFiber.getContext().getSafepointManager().enterThread();
                 fiberManager.registerFiber(finalFiber);
+                finalFiber.getContext().getSafepointManager().enterThread();
+                threadManager.enterGlobalLock(rubyThread);
 
                 try {
                     final Object arg = finalFiber.waitForResume();
@@ -137,15 +139,14 @@ public class RubyFiber extends RubyBasicObject {
                 } catch (FiberExitException e) {
                     // Naturally exit the thread on catching this
                 } catch (ReturnException e) {
-                    final RubyThread runningThread = threadManager.leaveGlobalLock();
-                    finalFiber.lastResumedByFiber.messageQueue.add(new FiberExceptionMessage(runningThread, finalFiber.getContext().getCoreLibrary().unexpectedReturn(null)));
+                    finalFiber.lastResumedByFiber.messageQueue.add(new FiberExceptionMessage(rubyThread, finalFiber.getContext().getCoreLibrary().unexpectedReturn(null)));
                 } catch (RaiseException e) {
-                    final RubyThread runningThread = threadManager.leaveGlobalLock();
-                    finalFiber.lastResumedByFiber.messageQueue.add(new FiberExceptionMessage(runningThread, e.getRubyException()));
+                    finalFiber.lastResumedByFiber.messageQueue.add(new FiberExceptionMessage(rubyThread, e.getRubyException()));
                 } finally {
                     alive = false;
-                    fiberManager.unregisterFiber(finalFiber);
+                    threadManager.leaveGlobalLock();
                     finalFiber.getContext().getSafepointManager().leaveThread();
+                    fiberManager.unregisterFiber(finalFiber);
                 }
             }
 
@@ -156,12 +157,14 @@ public class RubyFiber extends RubyBasicObject {
 
     /**
      * Send the Java thread that represents this fiber to sleep until it receives a resume or exit
-     * message. On entry, assumes that the GIL is not held. On exit, holding the GIL.
+     * message.
      */
     public Object waitForResume() {
         RubyNode.notDesignedForCompilation();
 
-        FiberMessage message = getContext().getThreadManager().runUntilResult(new BlockingActionWithoutGlobalLock<FiberMessage>() {
+        final FiberMessage message;
+
+        message = getContext().getThreadManager().runUntilResult(new BlockingActionWithoutGlobalLock<FiberMessage>() {
             @Override
             public FiberMessage block() throws InterruptedException {
                 // TODO (CS 30-Jan-15) this timeout isn't ideal - we already handle interrupts for safepoints
@@ -175,13 +178,11 @@ public class RubyFiber extends RubyBasicObject {
             // TODO CS 2-Feb-15 what do we do about entering the global lock here?
             throw new FiberExitException();
         } else if (message instanceof FiberExceptionMessage) {
-            threadManager.enterGlobalLock(((FiberExceptionMessage) message).getThread());
             throw new RaiseException(((FiberExceptionMessage) message).getException());
         } else if (message instanceof FiberResumeMessage) {
             if (!((FiberResumeMessage) message).isYield()) {
                 lastResumedByFiber = ((FiberResumeMessage) message).getSendingFiber();
             }
-            threadManager.enterGlobalLock(((FiberResumeMessage) message).getThread());
             return ((FiberResumeMessage) message).getArg();
         } else {
             throw new UnsupportedOperationException();
@@ -191,7 +192,7 @@ public class RubyFiber extends RubyBasicObject {
     /**
      * Send a message to a fiber by posting into a message queue. Doesn't explicitly notify the Java
      * thread (although the queue implementation may) and doesn't wait for the message to be
-     * received. On entry, assumes the the GIL is held. On exit, not holding the GIL.
+     * received.
      */
     public void resume(boolean yield, RubyFiber sendingFiber, Object... args) {
         RubyNode.notDesignedForCompilation();
@@ -208,9 +209,7 @@ public class RubyFiber extends RubyBasicObject {
             arg = RubyArray.fromObjects(getContext().getCoreLibrary().getArrayClass(), args);
         }
 
-        final RubyThread runningThread = threadManager.leaveGlobalLock();
-
-        messageQueue.add(new FiberResumeMessage(yield, runningThread, sendingFiber, arg));
+        messageQueue.add(new FiberResumeMessage(yield, threadManager.getCurrentThread(), sendingFiber, arg));
     }
 
     public void shutdown() {

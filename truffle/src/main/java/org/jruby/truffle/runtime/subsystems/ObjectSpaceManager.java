@@ -226,7 +226,10 @@ public class ObjectSpaceManager {
     }
 
     public void visitCallStack(final ObjectGraphVisitor visitor) {
-        visitFrameInstance(Truffle.getRuntime().getCurrentFrame(), visitor);
+        FrameInstance currentFrame = Truffle.getRuntime().getCurrentFrame();
+        if (currentFrame != null) {
+            visitFrameInstance(currentFrame, visitor);
+        }
 
         Truffle.getRuntime().iterateFrames(new FrameInstanceVisitor<Object>() {
             @Override
