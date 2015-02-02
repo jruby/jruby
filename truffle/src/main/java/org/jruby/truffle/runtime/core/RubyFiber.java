@@ -139,9 +139,9 @@ public class RubyFiber extends RubyBasicObject {
                 } catch (FiberExitException e) {
                     // Naturally exit the thread on catching this
                 } catch (ReturnException e) {
-                    finalFiber.lastResumedByFiber.messageQueue.add(new FiberExceptionMessage(rubyThread, finalFiber.getContext().getCoreLibrary().unexpectedReturn(null)));
+                    finalFiber.lastResumedByFiber.sendMessage(new FiberExceptionMessage(rubyThread, finalFiber.getContext().getCoreLibrary().unexpectedReturn(null)));
                 } catch (RaiseException e) {
-                    finalFiber.lastResumedByFiber.messageQueue.add(new FiberExceptionMessage(rubyThread, e.getRubyException()));
+                    finalFiber.lastResumedByFiber.sendMessage(new FiberExceptionMessage(rubyThread, e.getRubyException()));
                 } finally {
                     alive = false;
                     threadManager.leaveGlobalLock();
@@ -153,6 +153,10 @@ public class RubyFiber extends RubyBasicObject {
         });
         thread.setName(name);
         thread.start();
+    }
+
+    private void sendMessage(FiberMessage message) {
+        messageQueue.add(message);
     }
 
     /**
@@ -209,13 +213,13 @@ public class RubyFiber extends RubyBasicObject {
             arg = RubyArray.fromObjects(getContext().getCoreLibrary().getArrayClass(), args);
         }
 
-        messageQueue.add(new FiberResumeMessage(yield, threadManager.getCurrentThread(), sendingFiber, arg));
+        this.sendMessage(new FiberResumeMessage(yield, threadManager.getCurrentThread(), sendingFiber, arg));
     }
 
     public void shutdown() {
         RubyNode.notDesignedForCompilation();
 
-        messageQueue.add(new FiberExitMessage());
+        this.sendMessage(new FiberExitMessage());
     }
 
     public boolean isAlive() {
