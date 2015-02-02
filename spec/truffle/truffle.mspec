@@ -104,7 +104,7 @@ class MSpecScript
 
   MSpec.enable_feature :encoding
   MSpec.enable_feature :fiber
-  MSpec.enable_feature :fork
+  MSpec.disable_feature :fork
   MSpec.enable_feature :generator
 
   set :files, get(:language) + get(:core) + get(:rubysl)

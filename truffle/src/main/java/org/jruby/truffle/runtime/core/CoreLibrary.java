@@ -791,9 +791,14 @@ public class CoreLibrary {
         return new RubyException(fiberErrorClass, context.makeString(message), RubyCallStack.getBacktrace(currentNode));
     }
 
-    public RubyException fiberErrorDeadFiberCalled(Node currentNode) {
+    public RubyException deadFiberCalledError(Node currentNode) {
         CompilerAsserts.neverPartOfCompilation();
         return fiberError("dead fiber called", currentNode);
+    }
+
+    public RubyException yieldFromRootFiberError(Node currentNode) {
+        CompilerAsserts.neverPartOfCompilation();
+        return fiberError("can't yield from root fiber", currentNode);
     }
 
     public RubyContext getContext() {

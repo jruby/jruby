@@ -11,6 +11,7 @@ package org.jruby.truffle.nodes.core;
 
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.source.SourceSection;
+import org.jruby.truffle.nodes.methods.UnsupportedOperationBehavior;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.RubyFiber;
@@ -36,7 +37,7 @@ public abstract class FiberNodes {
             notDesignedForCompilation();
 
             if (!fiberBeingResumed.isAlive()) {
-                throw new RaiseException(getContext().getCoreLibrary().fiberErrorDeadFiberCalled(this));
+                throw new RaiseException(getContext().getCoreLibrary().deadFiberCalledError(this));
             }
 
             final RubyFiber sendingFiber = getContext().getFiberManager().getCurrentFiber();
@@ -48,7 +49,7 @@ public abstract class FiberNodes {
 
     }
 
-    @CoreMethod(names = "initialize", needsBlock = true)
+    @CoreMethod(names = "initialize", needsBlock = true, unsupportedOperationBehavior = UnsupportedOperationBehavior.ARGUMENT_ERROR)
     public abstract static class InitializeNode extends CoreMethodNode {
 
         public InitializeNode(RubyContext context, SourceSection sourceSection) {
@@ -86,6 +87,10 @@ public abstract class FiberNodes {
 
             final RubyFiber yieldingFiber = getContext().getFiberManager().getCurrentFiber();
             final RubyFiber fiberYieldedTo = yieldingFiber.getLastResumedByFiber();
+
+            if (yieldingFiber.isTopLevel() || fiberYieldedTo == null) {
+                throw new RaiseException(getContext().getCoreLibrary().yieldFromRootFiberError(this));
+            }
 
             fiberYieldedTo.resume(yieldingFiber, args);
 

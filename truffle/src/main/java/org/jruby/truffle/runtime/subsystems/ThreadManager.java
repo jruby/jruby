@@ -24,6 +24,8 @@ import java.util.concurrent.locks.ReentrantLock;
  */
 public class ThreadManager {
 
+    private final RubyContext context;
+
     private final ReentrantLock globalLock = new ReentrantLock();
 
     private final RubyThread rootThread;
@@ -32,6 +34,7 @@ public class ThreadManager {
     private final Set<RubyThread> runningRubyThreads = Collections.newSetFromMap(new ConcurrentHashMap<RubyThread, Boolean>());
 
     public ThreadManager(RubyContext context) {
+        this.context = context;
         rootThread = new RubyThread(context.getCoreLibrary().getThreadClass(), this);
         rootThread.setRootThread(Thread.currentThread());
         runningRubyThreads.add(rootThread);
@@ -131,7 +134,7 @@ public class ThreadManager {
             }
         } catch (InterruptedException e) {
             // We were interrupted, possibly by the SafepointManager.
-            runningThread.getContext().getSafepointManager().poll();
+            context.getSafepointManager().poll(holdsGIL);
         }
         return result;
     }

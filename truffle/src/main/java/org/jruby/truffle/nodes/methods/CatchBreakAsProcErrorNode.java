@@ -33,7 +33,7 @@ public class CatchBreakAsProcErrorNode extends RubyNode {
             return body.execute(frame);
         } catch (BreakException e) {
             CompilerDirectives.transferToInterpreter();
-            throw new RaiseException(getContext().getCoreLibrary().loadError("break from proc-closure", this));
+            throw new RaiseException(getContext().getCoreLibrary().localJumpError("break from proc-closure", this));
         }
     }
 

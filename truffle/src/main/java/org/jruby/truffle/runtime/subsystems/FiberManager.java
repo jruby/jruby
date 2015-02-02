@@ -27,7 +27,7 @@ public class FiberManager {
     private final Set<RubyFiber> runningFibers = Collections.newSetFromMap(new ConcurrentHashMap<RubyFiber, Boolean>());
 
     public FiberManager(RubyContext context) {
-        rootFiber = new RubyFiber(context.getCoreLibrary().getFiberClass(), this, context.getThreadManager());
+        rootFiber = new RubyFiber(context.getCoreLibrary().getFiberClass(), this, context.getThreadManager(), true);
         currentFiber = rootFiber;
     }
 
