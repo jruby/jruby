@@ -9,9 +9,13 @@
  */
 package org.jruby.truffle.nodes.core;
 
+import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.nodes.methods.UnsupportedOperationBehavior;
+
+import org.jruby.truffle.nodes.RubyNode;
+import org.jruby.truffle.nodes.core.FiberNodesFactory.ResumeNodeFactory;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.RubyFiber;
@@ -38,6 +42,11 @@ public abstract class FiberNodes {
 
             if (!fiberBeingResumed.isAlive()) {
                 throw new RaiseException(getContext().getCoreLibrary().deadFiberCalledError(this));
+            }
+
+            if (fiberBeingResumed.getRubyThread() != getContext().getThreadManager().getCurrentThread()) {
+                CompilerDirectives.transferToInterpreter();
+                throw new RaiseException(getContext().getCoreLibrary().fiberError("fiber called across threads", this));
             }
 
             final RubyFiber sendingFiber = getContext().getFiberManager().getCurrentFiber();
@@ -73,12 +82,16 @@ public abstract class FiberNodes {
     @CoreMethod(names = "yield", onSingleton = true, argumentsAsArray = true)
     public abstract static class YieldNode extends CoreMethodNode {
 
+        @Child ResumeNode resumeNode;
+
         public YieldNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
+            resumeNode = ResumeNodeFactory.create(context, sourceSection, new RubyNode[] { null, null });
         }
 
         public YieldNode(YieldNode prev) {
             super(prev);
+            resumeNode = prev.resumeNode;
         }
 
         @Specialization
