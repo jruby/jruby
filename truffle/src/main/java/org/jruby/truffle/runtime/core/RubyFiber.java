@@ -95,6 +95,7 @@ public class RubyFiber extends RubyBasicObject {
     private final FiberManager fiberManager;
     private final ThreadManager threadManager;
 
+    private String name;
     private boolean topLevel;
     private BlockingQueue<FiberMessage> messageQueue = new ArrayBlockingQueue<>(1);
     private RubyFiber lastResumedByFiber = null;
@@ -109,6 +110,8 @@ public class RubyFiber extends RubyBasicObject {
 
     public void initialize(RubyProc block) {
         RubyNode.notDesignedForCompilation();
+
+        name = "Ruby Fiber@" + block.getSharedMethodInfo().getSourceSection().getShortDescription();
 
         final RubyFiber finalFiber = this;
         final RubyProc finalBlock = block;
@@ -140,7 +143,7 @@ public class RubyFiber extends RubyBasicObject {
             }
 
         });
-        thread.setName("Ruby Fiber@" + block.getSharedMethodInfo().getSourceSection().getShortDescription());
+        thread.setName(name);
         thread.start();
     }
 
@@ -219,6 +222,10 @@ public class RubyFiber extends RubyBasicObject {
 
     public boolean isTopLevel() {
         return topLevel;
+    }
+
+    public String getName() {
+        return name;
     }
 
     public static class FiberAllocator implements Allocator {

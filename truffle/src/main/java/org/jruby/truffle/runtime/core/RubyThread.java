@@ -30,6 +30,8 @@ public class RubyThread extends RubyBasicObject {
 
     private final ThreadManager manager;
 
+    private String name;
+
     private final CountDownLatch finished = new CountDownLatch(1);
 
     private volatile Thread thread;
@@ -67,6 +69,8 @@ public class RubyThread extends RubyBasicObject {
         final RubyThread finalThread = this;
         final Runnable finalRunnable = runnable;
 
+        name = "Ruby Thread@" + name;
+
         thread = new Thread(new Runnable() {
             @Override
             public void run() {
@@ -95,7 +99,7 @@ public class RubyThread extends RubyBasicObject {
             }
 
         });
-        thread.setName("Ruby Thread@" + name);
+        thread.setName(name);
         thread.setDaemon(true);
         thread.start();
     }
@@ -142,6 +146,10 @@ public class RubyThread extends RubyBasicObject {
     }
 
     public void shutdown() {
+    }
+
+    public String getName() {
+        return name;
     }
 
     public static class ThreadAllocator implements Allocator {
