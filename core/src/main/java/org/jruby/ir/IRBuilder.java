@@ -1665,9 +1665,6 @@ public class IRBuilder {
         // Build IR for arguments (including the block arg)
         receiveMethodArgs(defNode.getArgsNode());
 
-        // Thread poll on entry to method
-        addInstr(new ThreadPollInstr());
-
         // Build IR for body
         Operand rv = build(defNode.getBodyNode());
 
@@ -2355,7 +2352,6 @@ public class IRBuilder {
         if (varNode != null && varNode.getNodeType() != null) receiveBlockArgs(forNode);
 
         addCurrentScopeAndModule();                                // %current_scope/%current_module
-        addInstr(new ThreadPollInstr());                           // Thread poll on entry of closure
         addInstr(new LabelInstr(((IRClosure) scope).startLabel));  // Start label -- used by redo!
 
         // Build closure body and return the result of the closure
@@ -2498,7 +2494,6 @@ public class IRBuilder {
         if (iterNode.getVarNode().getNodeType() != null) receiveBlockArgs(iterNode);
 
         addCurrentScopeAndModule();                                // %current_scope/%current_module
-        addInstr(new ThreadPollInstr());                           // Thread poll on entry of closure
         addInstr(new LabelInstr(((IRClosure) scope).startLabel));  // start label -- used by redo!
 
         // Build closure body and return the result of the closure
