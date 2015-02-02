@@ -332,7 +332,7 @@ public abstract class BasicObjectNodes {
                 throw new RaiseException(
                         getContext().getCoreLibrary().noMethodError(
                                 name.toString(),
-                                getContext().getCoreLibrary().getLogicalClass(self).getName(),
+                                getContext().getCoreLibrary().getLogicalClass(self),
                                 this));
             }
         }

@@ -703,14 +703,14 @@ public class CoreLibrary {
         return new RubyException(context.getCoreLibrary().getNoMethodErrorClass(), context.makeString(message), RubyCallStack.getBacktrace(currentNode));
     }
 
-    public RubyException noMethodError(String name, String object, Node currentNode) {
+    public RubyException noMethodError(String name, RubyModule module, Node currentNode) {
         CompilerAsserts.neverPartOfCompilation();
-        return noMethodError(String.format("undefined method `%s' for %s", name, object), currentNode);
+        return noMethodError(String.format("undefined method `%s' for %s", name, module.getName()), currentNode);
     }
 
-    public RubyException privateMethodError(String name, String object, Node currentNode) {
+    public RubyException privateMethodError(String name, RubyModule module, Node currentNode) {
         CompilerAsserts.neverPartOfCompilation();
-        return noMethodError(String.format("private method `%s' called for %s", name, object), currentNode);
+        return noMethodError(String.format("private method `%s' called for %s", name, module.toString()), currentNode);
     }
 
     public RubyException loadError(String message, Node currentNode) {
