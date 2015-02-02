@@ -135,7 +135,7 @@ public class RubyFiber extends RubyBasicObject {
                 try {
                     final Object arg = finalFiber.waitForResume();
                     final Object result = finalBlock.rootCall(arg);
-                    finalFiber.lastResumedByFiber.resume(true, finalFiber, result);
+                    finalFiber.resume(finalFiber.lastResumedByFiber, true, result);
                 } catch (FiberExitException e) {
                     // Naturally exit the thread on catching this
                 } catch (ReturnException e) {
@@ -194,11 +194,11 @@ public class RubyFiber extends RubyBasicObject {
     }
 
     /**
-     * Send a message to a fiber by posting into a message queue. Doesn't explicitly notify the Java
+     * Send a resume message to a fiber by posting into its message queue. Doesn't explicitly notify the Java
      * thread (although the queue implementation may) and doesn't wait for the message to be
      * received.
      */
-    public void resume(boolean yield, RubyFiber sendingFiber, Object... args) {
+    public void resume(RubyFiber fiber, boolean yield, Object... args) {
         RubyNode.notDesignedForCompilation();
 
         // TODO CS 2-Feb-15 move this logic into the node where we can specialise?
@@ -213,7 +213,7 @@ public class RubyFiber extends RubyBasicObject {
             arg = RubyArray.fromObjects(getContext().getCoreLibrary().getArrayClass(), args);
         }
 
-        this.sendMessage(new FiberResumeMessage(yield, threadManager.getCurrentThread(), sendingFiber, arg));
+        fiber.sendMessage(new FiberResumeMessage(yield, threadManager.getCurrentThread(), this, arg));
     }
 
     public void shutdown() {

@@ -42,7 +42,7 @@ public abstract class FiberNodes {
 
             final RubyFiber sendingFiber = getContext().getFiberManager().getCurrentFiber();
 
-            fiberBeingResumed.resume(false, sendingFiber, args);
+            sendingFiber.resume(fiberBeingResumed, false, args);
 
             return sendingFiber.waitForResume();
         }
@@ -92,7 +92,7 @@ public abstract class FiberNodes {
                 throw new RaiseException(getContext().getCoreLibrary().yieldFromRootFiberError(this));
             }
 
-            fiberYieldedTo.resume(true, yieldingFiber, args);
+            yieldingFiber.resume(fiberYieldedTo, true, args);
 
             return yieldingFiber.waitForResume();
         }
