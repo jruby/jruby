@@ -1,1 +1,0 @@
-fails:Fiber#resume returns control to the calling Fiber if called from one

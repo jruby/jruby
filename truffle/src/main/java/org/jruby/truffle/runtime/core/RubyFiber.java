@@ -39,14 +39,20 @@ public class RubyFiber extends RubyBasicObject {
 
     private static class FiberResumeMessage implements FiberMessage {
 
+        private final boolean yield;
         private final RubyThread thread;
         private final RubyFiber sendingFiber;
         private final Object arg;
 
-        public FiberResumeMessage(RubyThread thread, RubyFiber sendingFiber, Object arg) {
+        public FiberResumeMessage(boolean yield, RubyThread thread, RubyFiber sendingFiber, Object arg) {
+            this.yield = yield;
             this.thread = thread;
             this.sendingFiber = sendingFiber;
             this.arg = arg;
+        }
+
+        public boolean isYield() {
+            return yield;
         }
 
         public RubyThread getThread() {
@@ -101,10 +107,11 @@ public class RubyFiber extends RubyBasicObject {
     private RubyFiber lastResumedByFiber = null;
     private boolean alive = true;
 
-    public RubyFiber(RubyClass rubyClass, FiberManager fiberManager, ThreadManager threadManager, boolean topLevel) {
+    public RubyFiber(RubyClass rubyClass, FiberManager fiberManager, ThreadManager threadManager, String name, boolean topLevel) {
         super(rubyClass);
         this.fiberManager = fiberManager;
         this.threadManager = threadManager;
+        this.name = name;
         this.topLevel = topLevel;
     }
 
@@ -126,7 +133,7 @@ public class RubyFiber extends RubyBasicObject {
                 try {
                     final Object arg = finalFiber.waitForResume();
                     final Object result = finalBlock.rootCall(arg);
-                    finalFiber.lastResumedByFiber.resume(finalFiber, result);
+                    finalFiber.lastResumedByFiber.resume(true, finalFiber, result);
                 } catch (FiberExitException e) {
                     // Naturally exit the thread on catching this
                 } catch (ReturnException e) {
@@ -171,8 +178,10 @@ public class RubyFiber extends RubyBasicObject {
             threadManager.enterGlobalLock(((FiberExceptionMessage) message).getThread());
             throw new RaiseException(((FiberExceptionMessage) message).getException());
         } else if (message instanceof FiberResumeMessage) {
+            if (!((FiberResumeMessage) message).isYield()) {
+                lastResumedByFiber = ((FiberResumeMessage) message).getSendingFiber();
+            }
             threadManager.enterGlobalLock(((FiberResumeMessage) message).getThread());
-            lastResumedByFiber = ((FiberResumeMessage) message).getSendingFiber();
             return ((FiberResumeMessage) message).getArg();
         } else {
             throw new UnsupportedOperationException();
@@ -184,7 +193,7 @@ public class RubyFiber extends RubyBasicObject {
      * thread (although the queue implementation may) and doesn't wait for the message to be
      * received. On entry, assumes the the GIL is held. On exit, not holding the GIL.
      */
-    public void resume(RubyFiber sendingFiber, Object... args) {
+    public void resume(boolean yield, RubyFiber sendingFiber, Object... args) {
         RubyNode.notDesignedForCompilation();
 
         // TODO CS 2-Feb-15 move this logic into the node where we can specialise?
@@ -201,7 +210,7 @@ public class RubyFiber extends RubyBasicObject {
 
         final RubyThread runningThread = threadManager.leaveGlobalLock();
 
-        messageQueue.add(new FiberResumeMessage(runningThread, sendingFiber, arg));
+        messageQueue.add(new FiberResumeMessage(yield, runningThread, sendingFiber, arg));
     }
 
     public void shutdown() {
@@ -232,7 +241,7 @@ public class RubyFiber extends RubyBasicObject {
 
         @Override
         public RubyBasicObject allocate(RubyContext context, RubyClass rubyClass, RubyNode currentNode) {
-            return new RubyFiber(rubyClass, context.getFiberManager(), context.getThreadManager(), false);
+            return new RubyFiber(rubyClass, context.getFiberManager(), context.getThreadManager(), null, false);
         }
 
     }
