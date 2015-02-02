@@ -103,7 +103,7 @@ public class RubyFiber extends RubyBasicObject {
 
     private String name;
     private boolean topLevel;
-    private BlockingQueue<FiberMessage> messageQueue = new ArrayBlockingQueue<>(1);
+    private final BlockingQueue<FiberMessage> messageQueue = new ArrayBlockingQueue<>(1);
     private RubyFiber lastResumedByFiber = null;
     private boolean alive = true;
 
@@ -139,9 +139,9 @@ public class RubyFiber extends RubyBasicObject {
                 } catch (FiberExitException e) {
                     // Naturally exit the thread on catching this
                 } catch (ReturnException e) {
-                    finalFiber.lastResumedByFiber.sendMessage(new FiberExceptionMessage(rubyThread, finalFiber.getContext().getCoreLibrary().unexpectedReturn(null)));
+                    sendMessageTo(finalFiber.lastResumedByFiber, new FiberExceptionMessage(rubyThread, finalFiber.getContext().getCoreLibrary().unexpectedReturn(null)));
                 } catch (RaiseException e) {
-                    finalFiber.lastResumedByFiber.sendMessage(new FiberExceptionMessage(rubyThread, e.getRubyException()));
+                    sendMessageTo(finalFiber.lastResumedByFiber, new FiberExceptionMessage(rubyThread, e.getRubyException()));
                 } finally {
                     alive = false;
                     threadManager.leaveGlobalLock();
@@ -155,8 +155,8 @@ public class RubyFiber extends RubyBasicObject {
         thread.start();
     }
 
-    private void sendMessage(FiberMessage message) {
-        messageQueue.add(message);
+    private void sendMessageTo(RubyFiber fiber, FiberMessage message) {
+        fiber.messageQueue.add(message);
     }
 
     /**
@@ -213,13 +213,13 @@ public class RubyFiber extends RubyBasicObject {
             arg = RubyArray.fromObjects(getContext().getCoreLibrary().getArrayClass(), args);
         }
 
-        fiber.sendMessage(new FiberResumeMessage(yield, threadManager.getCurrentThread(), this, arg));
+        sendMessageTo(fiber, new FiberResumeMessage(yield, threadManager.getCurrentThread(), this, arg));
     }
 
     public void shutdown() {
         RubyNode.notDesignedForCompilation();
 
-        this.sendMessage(new FiberExitMessage());
+        sendMessageTo(this, new FiberExitMessage());
     }
 
     public boolean isAlive() {
