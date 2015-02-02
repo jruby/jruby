@@ -116,6 +116,14 @@ class Regexp
     initialize other.source, other.options
   end
 
+  def eql?(other)
+    return false unless other.kind_of?(Regexp)
+    return false unless source == other.source
+    (options & ~NOENCODING) == (other.options & ~NOENCODING)
+  end
+
+  alias_method :==, :eql?
+
   def encoding
     source.encoding
   end

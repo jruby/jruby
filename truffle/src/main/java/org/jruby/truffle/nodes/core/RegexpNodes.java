@@ -70,26 +70,6 @@ public abstract class RegexpNodes {
         }
     }
 
-    @CoreMethod(names = "==", required = 1)
-    public abstract static class EqualNode extends CoreMethodNode {
-
-        public EqualNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
-        public EqualNode(EqualNode prev) {
-            super(prev);
-        }
-
-        @Specialization
-        public boolean equal(RubyRegexp a, RubyRegexp b) {
-            notDesignedForCompilation();
-
-            return ((org.jruby.RubyString) org.jruby.RubyRegexp.newRegexp(getContext().getRuntime(), a.getSource(), a.getRegex().getOptions()).to_s()).getByteList().equals(((org.jruby.RubyString) org.jruby.RubyRegexp.newRegexp(getContext().getRuntime(), b.getSource(), b.getRegex().getOptions()).to_s()).getByteList());
-        }
-
-    }
-
     @CoreMethod(names = "===", required = 1)
     public abstract static class CaseEqualNode extends CoreMethodNode {
 
