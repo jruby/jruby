@@ -36,9 +36,15 @@ module ShellUtils
   private
 
   def raw_sh(*args)
-    unless system(*args)
-      $stderr.puts "FAILED (#{$?}): #{args * ' '}"
-      exit $?.exitstatus
+    begin
+      result = system(*args)
+    rescue Interrupt
+      abort # Ignore Ctrl+C
+    else
+      unless result
+        $stderr.puts "FAILED (#{$?}): #{args * ' '}"
+        exit $?.exitstatus
+      end
     end
   end
 
