@@ -18,7 +18,7 @@
  * Copyright (C) 2004 Thomas E Enebo <enebo@acm.org>
  * Copyright (C) 2004 Stefan Matthias Aust <sma@3plus4.de>
  * Copyright (C) 2004 David Corbin <dcorbin@users.sourceforge.net>
- * 
+ *
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
  * or the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
@@ -40,6 +40,7 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.Serializable;
 import org.jruby.Ruby;
+import org.jruby.RubyBoolean;
 import org.jruby.RubyClass;
 import org.jruby.RubyFixnum;
 import org.jruby.RubyModule;
@@ -63,7 +64,8 @@ import org.jruby.util.JRubyObjectInputStream;
 @JRubyClass(name="Java::JavaObject")
 public class JavaObject extends RubyObject {
 
-    private static Object NULL_LOCK = new Object();
+    private static final Object NULL_LOCK = new Object();
+    
     private final VariableAccessor objectAccessor;
 
     protected JavaObject(Ruby runtime, RubyClass rubyClass, Object value) {
@@ -86,11 +88,12 @@ public class JavaObject extends RubyObject {
         this(runtime, runtime.getJavaSupport().getJavaObjectClass(), value);
     }
 
-    public static JavaObject wrap(Ruby runtime, Object value) {
-        if (value != null) {
-            if (value instanceof Class) {
+    public static JavaObject wrap(final Ruby runtime, final Object value) {
+        if ( value != null ) {
+            if ( value instanceof Class ) {
                 return JavaClass.get(runtime, (Class<?>) value);
-            } else if (value.getClass().isArray()) {
+            }
+            if ( value.getClass().isArray() ) {
                 return new JavaArray(runtime, value);
             }
         }
@@ -98,13 +101,13 @@ public class JavaObject extends RubyObject {
     }
 
     @JRubyMethod(meta = true)
-    public static IRubyObject wrap(ThreadContext context, IRubyObject self, IRubyObject object) {
-        Ruby runtime = context.runtime;
-        Object obj = getWrappedObject(object, NEVER);
+    public static IRubyObject wrap(final ThreadContext context,
+        final IRubyObject self, final IRubyObject object) {
+        final Object objectValue = unwrapObject(object, NEVER);
 
-        if (obj == NEVER) return runtime.getNil();
+        if ( objectValue == NEVER ) return context.nil;
 
-        return wrap(runtime, obj);
+        return wrap(context.runtime, objectValue);
     }
 
     @Override
@@ -135,27 +138,25 @@ public class JavaObject extends RubyObject {
     }
 
     @Override
-    public boolean equals(Object other) {
-        Object myValue = getValue();
-        Object otherValue = other;
-        if (other instanceof IRubyObject) {
-            otherValue = getWrappedObject((IRubyObject)other, NEVER);
+    public boolean equals(final Object other) {
+        final Object otherValue;
+        if ( other instanceof IRubyObject ) {
+            otherValue = unwrapObject((IRubyObject) other, NEVER);
+        }
+        else {
+            otherValue = other;
         }
 
-        if (otherValue == NEVER) {
-            // not a wrapped object
-            return false;
-        }
-        return myValue == otherValue;
+        if ( otherValue == NEVER ) return false;
+
+        return getValue() == otherValue; // TODO seems weird why not equals ?!
     }
 
     @Override
     public int hashCode() {
-        Object dataStruct = dataGetStruct();
-        if (dataStruct != null) {
-            return dataStruct.hashCode();
-        }
-        return 0;
+        final Object value = dataGetStruct();
+        if ( value == null ) return 0;
+        return value.hashCode();
     }
 
     @JRubyMethod
@@ -183,61 +184,54 @@ public class JavaObject extends RubyObject {
     }
 
     @JRubyMethod(name = {"==", "eql?"}, required = 1)
-    public IRubyObject op_equal(IRubyObject other) {
-        Object myValue = getValue();
-        return opEqualShared(myValue, other);
+    public IRubyObject op_equal(final IRubyObject other) {
+        return equals(getRuntime(), getValue(), other);
     }
 
-    public static IRubyObject op_equal(JavaProxy self, IRubyObject other) {
-        Object myValue = self.getObject();
-        return opEqualShared(myValue, other);
+    public static RubyBoolean op_equal(JavaProxy self, IRubyObject other) {
+        return equals(self.getRuntime(), self.getObject(), other);
     }
 
-    private static IRubyObject opEqualShared(Object myValue, IRubyObject other) {
-        Ruby runtime = other.getRuntime();
-        Object otherValue = getWrappedObject(other, NEVER);
+    private static RubyBoolean equals(final Ruby runtime,
+        final Object thisValue, final IRubyObject other) {
 
-        if (other == NEVER) {
-            // not a wrapped object
+        final Object otherValue = unwrapObject(other, NEVER);
+
+        if ( otherValue == NEVER ) { // not a wrapped object
             return runtime.getFalse();
         }
 
-        if (myValue == null && otherValue == null) {
-            return runtime.getTrue();
+        if ( thisValue == null ) {
+            return runtime.newBoolean(otherValue == null);
         }
 
-        return runtime.newBoolean(myValue.equals(otherValue));
+        return runtime.newBoolean(thisValue.equals(otherValue));
     }
 
     @JRubyMethod(name = "equal?", required = 1)
-    public IRubyObject same(IRubyObject other) {
-        Ruby runtime = getRuntime();
-        Object myValue = getValue();
-        Object otherValue = getWrappedObject(other, NEVER);
+    public IRubyObject same(final IRubyObject other) {
+        final Ruby runtime = getRuntime();
+        final Object thisValue = getValue();
+        final Object otherValue = unwrapObject(other, NEVER);
 
-        if (other == NEVER) {
-            // not a wrapped object
+        if ( otherValue == NEVER ) { // not a wrapped object
             return runtime.getFalse();
         }
 
-        if (myValue == null && otherValue == null) {
-            return getRuntime().getTrue();
-        }
+        if ( ! (other instanceof JavaObject) ) return runtime.getFalse();
 
-        if (!(other instanceof JavaObject)) return runtime.getFalse();
-
-        boolean isSame = getValue() == ((JavaObject) other).getValue();
-        return isSame ? getRuntime().getTrue() : getRuntime().getFalse();
+        return runtime.newBoolean(thisValue == otherValue);
     }
 
-    private static Object getWrappedObject(IRubyObject other, Object def) {
-        if (other instanceof JavaObject) {
-            return ((JavaObject)other).getValue();
-        } else if (other instanceof JavaProxy) {
-            return ((JavaProxy)other).getObject();
-        } else {
-            return def;
+    private static Object unwrapObject(
+        final IRubyObject wrapped, final Object defaultValue) {
+        if ( wrapped instanceof JavaObject ) {
+            return ((JavaObject) wrapped).getValue();
         }
+        if ( wrapped instanceof JavaProxy ) {
+            return ((JavaProxy) wrapped).getObject();
+        }
+        return defaultValue;
     }
 
     @JRubyMethod
@@ -246,7 +240,7 @@ public class JavaObject extends RubyObject {
     }
 
     @JRubyMethod
-    public IRubyObject java_class() {
+    public JavaClass java_class() {
         return JavaClass.get(getRuntime(), getJavaClass());
     }
 
@@ -267,13 +261,13 @@ public class JavaObject extends RubyObject {
             return block.yield(context, null);
         }
     }
-    
+
     public static IRubyObject ruby_synchronized(ThreadContext context, Object lock, Block block) {
         synchronized (lock != null ? lock : NULL_LOCK) {
             return block.yield(context, null);
         }
     }
-    
+
     @JRubyMethod
     public IRubyObject marshal_dump() {
         if (Serializable.class.isAssignableFrom(getJavaClass())) {
@@ -310,17 +304,15 @@ public class JavaObject extends RubyObject {
     }
 
     @Override
-    public Object toJava(Class cls) {
-        if (getValue() == null) {
-            // THIS SHOULD NEVER HAPPEN, but it DOES
-            return getValue();
+    @SuppressWarnings("unchecked")
+    public Object toJava(final Class target) {
+        final Object value = getValue();
+        if ( value == null ) return null;
+
+        if ( target.isAssignableFrom( value.getClass() ) ) {
+            return value;
         }
-        
-        if (cls.isAssignableFrom(getValue().getClass())) {
-            return getValue();
-        }
-        
-        return super.toJava(cls);
+        return super.toJava(target);
     }
 
     private static final ObjectAllocator JAVA_OBJECT_ALLOCATOR = new ObjectAllocator() {

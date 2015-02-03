@@ -293,7 +293,7 @@ class TestJavaExtension < Test::Unit::TestCase
     begin
       assert_equal "Ruby overrides java!", a.call_protected
     rescue Exception => e
-      flunk "Exception raised: #{$!}"
+      flunk "Exception raised: #{e}"
     end
   end
 
@@ -302,5 +302,33 @@ class TestJavaExtension < Test::Unit::TestCase
     map = java.util.HashMap.new(hash)
     assert_equal hash.to_a.sort, map.to_a.sort
   end
+
+  def test_java_object_wrapper
+    wrapped1 = Java::JavaObject.wrap object = java.lang.StringBuilder.new
+    assert wrapped1.is_a? Java::JavaObject
+    assert_equal object, wrapped1
+
+    wrapped2 = Java::JavaObject.wrap java.lang.StringBuilder.new
+    assert_not_equal object, wrapped2
+    assert ! wrapped1.equal?(wrapped2)
+
+    wrapped3 = Java::JavaObject.wrap object
+    assert_equal wrapped1, wrapped3
+    assert wrapped1.equal?(wrapped3)
+
+    cal1 = java.util.Calendar.getInstance
+    cal1.setTime Java::JavaUtil::Date.new 0
+    cal2 = java.util.Calendar.getInstance
+    cal2.setTime Java::JavaUtil::Date.new 0
+
+    assert ! cal1.equal?(cal2)
+
+    wrapped1 = Java::JavaObject.wrap cal1
+    wrapped2 = Java::JavaObject.wrap cal2
+    assert wrapped2 == wrapped1
+    assert wrapped1.eql? wrapped2
+    assert ! wrapped1.equal?(wrapped2)
+  end
+
 end
 
