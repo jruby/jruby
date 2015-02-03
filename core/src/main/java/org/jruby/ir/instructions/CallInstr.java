@@ -19,24 +19,24 @@ public class CallInstr extends CallBase implements ResultInstr {
     protected Variable result;
 
     public static CallInstr create(Variable result, String name, Operand receiver, Operand[] args, Operand closure) {
+        return create(CallType.NORMAL, result, name, receiver, args, closure);
+    }
+
+    public static CallInstr create(CallType callType, Variable result, String name, Operand receiver, Operand[] args, Operand closure) {
         if (!containsArgSplat(args)) {
             boolean hasClosure = closure != null;
 
             if (args.length == 0 && !hasClosure) {
-                return new ZeroOperandArgNoBlockCallInstr(result, name, receiver, args);
+                return new ZeroOperandArgNoBlockCallInstr(callType, result, name, receiver, args);
             } else if (args.length == 1) {
-                if (hasClosure) return new OneOperandArgBlockCallInstr(result, name, receiver, args, closure);
-                if (isAllFixnums(args)) return new OneFixnumArgNoBlockCallInstr(result, name, receiver, args);
-                if (isAllFloats(args)) return new OneFloatArgNoBlockCallInstr(result, name, receiver, args);
+                if (hasClosure) return new OneOperandArgBlockCallInstr(callType, result, name, receiver, args, closure);
+                if (isAllFixnums(args)) return new OneFixnumArgNoBlockCallInstr(callType, result, name, receiver, args);
+                if (isAllFloats(args)) return new OneFloatArgNoBlockCallInstr(callType, result, name, receiver, args);
 
-                return new OneOperandArgNoBlockCallInstr(result, name, receiver, args);
+                return new OneOperandArgNoBlockCallInstr(callType, result, name, receiver, args);
             }
         }
 
-        return new CallInstr(CallType.NORMAL, result, name, receiver, args, closure);
-    }
-
-    public static CallInstr create(CallType callType, Variable result, String name, Operand receiver, Operand[] args, Operand closure) {
         return new CallInstr(callType, result, name, receiver, args, closure);
     }
 

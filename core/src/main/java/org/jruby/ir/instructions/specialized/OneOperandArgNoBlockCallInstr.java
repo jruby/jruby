@@ -14,14 +14,14 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
 public class OneOperandArgNoBlockCallInstr extends CallInstr {
-    public OneOperandArgNoBlockCallInstr(Variable result, String name, Operand receiver, Operand[] args) {
-        super(Operation.CALL_1O, CallType.NORMAL, result, name, receiver, args, null);
+    public OneOperandArgNoBlockCallInstr(CallType callType, Variable result, String name, Operand receiver, Operand[] args) {
+        super(Operation.CALL_1O, callType, result, name, receiver, args, null);
     }
 
     @Override
     public Instr clone(CloneInfo ii) {
-        return new OneOperandArgNoBlockCallInstr(ii.getRenamedVariable(result), getName(), getReceiver().cloneForInlining(ii),
-                cloneCallArgs(ii));
+        return new OneOperandArgNoBlockCallInstr(getCallType(), ii.getRenamedVariable(result), getName(),
+                getReceiver().cloneForInlining(ii), cloneCallArgs(ii));
     }
 
     @Override
