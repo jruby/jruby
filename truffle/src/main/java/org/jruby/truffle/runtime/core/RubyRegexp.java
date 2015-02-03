@@ -137,7 +137,7 @@ public class RubyRegexp extends RubyBasicObject {
         final RubyString post = new RubyString(context.getCoreLibrary().getStringClass(), bytes.makeShared(region.end[0], bytes.length() - region.end[0]).dup());
         final RubyString global = new RubyString(context.getCoreLibrary().getStringClass(), bytes.makeShared(region.beg[0], region.end[0] - region.beg[0]).dup());
 
-        final RubyMatchData matchObject =  new RubyMatchData(context.getCoreLibrary().getMatchDataClass(), region, values, pre, post, global);
+        final RubyMatchData matchObject = new RubyMatchData(context.getCoreLibrary().getMatchDataClass(), regex, region, values, pre, post, global);
 
         if (operator) {
             if (values.length > 0) {

@@ -13,11 +13,13 @@ import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.utilities.ConditionProfile;
+import org.joni.exception.ValueException;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.RubyArray;
 import org.jruby.truffle.runtime.core.RubyMatchData;
 import org.jruby.truffle.runtime.core.RubyString;
+import org.jruby.truffle.runtime.core.RubySymbol;
 import org.jruby.util.ByteList;
 
 @CoreClass(name = "MatchData")
@@ -42,6 +44,39 @@ public abstract class MatchDataNodes {
                 return getContext().getCoreLibrary().getNilObject();
             } else {
                 return matchData.getValues()[index];
+            }
+        }
+
+        @Specialization
+        public Object getIndex(RubyMatchData matchData, RubySymbol index) {
+            notDesignedForCompilation();
+
+            try {
+                final int i = matchData.getBackrefNumber(index.getSymbolBytes());
+
+                return getIndex(matchData, i);
+            } catch (final ValueException e) {
+                CompilerDirectives.transferToInterpreter();
+
+                throw new RaiseException(
+                    getContext().getCoreLibrary().indexError(String.format("undefined group name reference: %s", index.toString()), this));
+            }
+        }
+
+        @Specialization
+        public Object getIndex(RubyMatchData matchData, RubyString index) {
+            notDesignedForCompilation();
+
+            try {
+                final int i = matchData.getBackrefNumber(index.getByteList());
+
+                return getIndex(matchData, i);
+            }
+            catch (final ValueException e) {
+                CompilerDirectives.transferToInterpreter();
+
+                throw new RaiseException(
+                        getContext().getCoreLibrary().indexError(String.format("undefined group name reference: %s", index.toString()), this));
             }
         }
 
