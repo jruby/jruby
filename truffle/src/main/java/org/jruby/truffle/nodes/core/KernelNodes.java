@@ -1966,7 +1966,7 @@ public abstract class KernelNodes {
 
     }
 
-    @CoreMethod(names = "sprintf", isModuleFunction = true, argumentsAsArray = true)
+    @CoreMethod(names = { "sprintf", "format" }, isModuleFunction = true, argumentsAsArray = true)
     public abstract static class SPrintfNode extends CoreMethodNode {
 
         public SPrintfNode(RubyContext context, SourceSection sourceSection) {
