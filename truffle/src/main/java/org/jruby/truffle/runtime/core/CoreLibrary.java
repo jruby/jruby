@@ -266,6 +266,7 @@ public class CoreLibrary {
         procClass.setAllocator(new RubyProc.ProcAllocator());
         processClass = new RubyClass(context, objectClass, objectClass, "Process");
         rangeClass = new RubyClass(context, objectClass, objectClass, "Range");
+        rangeClass.setAllocator(new RubyRange.RangeAllocator());
         rationalClass = new RubyClass(context, objectClass, numericClass, "Rational");
         regexpClass = new RubyClass(context, objectClass, objectClass, "Regexp");
         regexpClass.setAllocator(new RubyRegexp.RegexpAllocator());

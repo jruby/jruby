@@ -60,6 +60,7 @@ require_relative 'core/rubinius/kernel/common/complex'
 require_relative 'core/rubinius/kernel/common/gc'
 
 # Load JRuby+Truffle classes
+require_relative 'core/array'
 require_relative 'core/fixnum'
 require_relative 'core/float'
 require_relative 'core/hash'
