@@ -176,7 +176,7 @@ public class SafepointManager {
         }
     }
 
-    public void interruptAllThreads() {
+    private void interruptAllThreads() {
         for (Thread thread : runningThreads) {
             thread.interrupt();
         }

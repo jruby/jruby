@@ -39,12 +39,12 @@ public class RubyFiber extends RubyBasicObject {
 
         private final boolean yield;
         private final RubyFiber sendingFiber;
-        private final Object arg;
+        private final Object[] args;
 
-        public FiberResumeMessage(boolean yield, RubyFiber sendingFiber, Object arg) {
+        public FiberResumeMessage(boolean yield, RubyFiber sendingFiber, Object[] args) {
             this.yield = yield;
             this.sendingFiber = sendingFiber;
-            this.arg = arg;
+            this.args = args;
         }
 
         public boolean isYield() {
@@ -55,8 +55,8 @@ public class RubyFiber extends RubyBasicObject {
             return sendingFiber;
         }
 
-        public Object getArg() {
-            return arg;
+        public Object[] getArgs() {
+            return args;
         }
 
     }
@@ -120,8 +120,8 @@ public class RubyFiber extends RubyBasicObject {
                 threadManager.enterGlobalLock(rubyThread);
 
                 try {
-                    final Object arg = finalFiber.waitForResume();
-                    final Object result = finalBlock.rootCall(arg);
+                    final Object[] args = finalFiber.waitForResume();
+                    final Object result = finalBlock.rootCall(args);
                     finalFiber.resume(finalFiber.lastResumedByFiber, true, result);
                 } catch (FiberExitException e) {
                     // Naturally exit the thread on catching this
@@ -154,12 +154,10 @@ public class RubyFiber extends RubyBasicObject {
      * Send the Java thread that represents this fiber to sleep until it receives a resume or exit
      * message.
      */
-    public Object waitForResume() {
+    private Object[] waitForResume() {
         RubyNode.notDesignedForCompilation();
 
-        final FiberMessage message;
-
-        message = getContext().getThreadManager().runUntilResult(new BlockingActionWithoutGlobalLock<FiberMessage>() {
+        final FiberMessage message = getContext().getThreadManager().runUntilResult(new BlockingActionWithoutGlobalLock<FiberMessage>() {
             @Override
             public FiberMessage block() throws InterruptedException {
                 // TODO (CS 30-Jan-15) this timeout isn't ideal - we already handle interrupts for safepoints
@@ -170,7 +168,6 @@ public class RubyFiber extends RubyBasicObject {
         fiberManager.setCurrentFiber(this);
 
         if (message instanceof FiberExitMessage) {
-            // TODO CS 2-Feb-15 what do we do about entering the global lock here?
             throw new FiberExitException();
         } else if (message instanceof FiberExceptionMessage) {
             throw new RaiseException(((FiberExceptionMessage) message).getException());
@@ -180,7 +177,7 @@ public class RubyFiber extends RubyBasicObject {
             if (!(resumeMessage.isYield())) {
                 lastResumedByFiber = resumeMessage.getSendingFiber();
             }
-            return resumeMessage.getArg();
+            return resumeMessage.getArgs();
         } else {
             throw new UnsupportedOperationException();
         }
@@ -191,23 +188,16 @@ public class RubyFiber extends RubyBasicObject {
      * thread (although the queue implementation may) and doesn't wait for the message to be
      * received.
      */
-    public void resume(RubyFiber fiber, boolean yield, Object... args) {
+    private void resume(RubyFiber fiber, boolean yield, Object... args) {
         RubyNode.notDesignedForCompilation();
 
-        // TODO CS 2-Feb-15 move this logic into the node where we can specialise?
-        assert fiber.getRubyThread() == this.getRubyThread();
+        sendMessageTo(fiber, new FiberResumeMessage(yield, this, args));
+    }
 
-        Object arg;
+    public Object[] transferControlTo(RubyFiber fiber, boolean yield, Object[] args) {
+        resume(fiber, yield, args);
 
-        if (args.length == 0) {
-            arg = getContext().getCoreLibrary().getNilObject();
-        } else if (args.length == 1) {
-            arg = args[0];
-        } else {
-            arg = RubyArray.fromObjects(getContext().getCoreLibrary().getArrayClass(), args);
-        }
-
-        sendMessageTo(fiber, new FiberResumeMessage(yield, this, arg));
+        return waitForResume();
     }
 
     public void shutdown() {
