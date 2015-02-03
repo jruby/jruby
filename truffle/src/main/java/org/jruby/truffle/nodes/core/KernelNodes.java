@@ -1244,7 +1244,12 @@ public abstract class KernelNodes {
         public boolean load(RubyString file) {
             notDesignedForCompilation();
 
-            getContext().loadFile(file.toString(), this);
+            try {
+                getContext().loadFile(file.toString(), this);
+            } catch (Throwable t) {
+                throw new RaiseException(getContext().getCoreLibrary().loadErrorCannotLoad(file.toString(), this));
+            }
+
             return true;
         }
     }
