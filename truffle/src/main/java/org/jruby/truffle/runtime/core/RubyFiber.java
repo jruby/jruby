@@ -23,7 +23,6 @@ import org.jruby.truffle.runtime.subsystems.ThreadManager.BlockingActionWithoutG
 
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.TimeUnit;
 
 /**
  * Represents the Ruby {@code Fiber} class. The current implementation uses Java threads and message
@@ -160,8 +159,7 @@ public class RubyFiber extends RubyBasicObject {
         final FiberMessage message = getContext().getThreadManager().runUntilResult(new BlockingActionWithoutGlobalLock<FiberMessage>() {
             @Override
             public FiberMessage block() throws InterruptedException {
-                // TODO (CS 30-Jan-15) this timeout isn't ideal - we already handle interrupts for safepoints
-                return messageQueue.poll(1, TimeUnit.SECONDS);
+                return messageQueue.take();
             }
         });
 
