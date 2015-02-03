@@ -69,6 +69,36 @@ import org.jruby.runtime.opto.ConstantCache;
 public class InterpreterEngine {
 
     public IRubyObject interpret(ThreadContext context, IRubyObject self,
+                                 InterpreterContext interpreterContext, RubyModule implClass,
+                                 String name, Block block, Block.Type blockType) {
+        return interpret(context, self, interpreterContext, implClass, name, IRubyObject.NULL_ARRAY , block, blockType);
+    }
+
+    public IRubyObject interpret(ThreadContext context, IRubyObject self,
+                                 InterpreterContext interpreterContext, RubyModule implClass,
+                                 String name, IRubyObject arg1, Block block, Block.Type blockType) {
+        return interpret(context, self, interpreterContext, implClass, name, new IRubyObject[] {arg1}, block, blockType);
+    }
+
+    public IRubyObject interpret(ThreadContext context, IRubyObject self,
+                                 InterpreterContext interpreterContext, RubyModule implClass,
+                                 String name, IRubyObject arg1, IRubyObject arg2, Block block, Block.Type blockType) {
+        return interpret(context, self, interpreterContext, implClass, name, new IRubyObject[] {arg1, arg2}, block, blockType);
+    }
+
+    public IRubyObject interpret(ThreadContext context, IRubyObject self,
+                                 InterpreterContext interpreterContext, RubyModule implClass,
+                                 String name, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3, Block block, Block.Type blockType) {
+        return interpret(context, self, interpreterContext, implClass, name, new IRubyObject[] {arg1, arg2, arg3}, block, blockType);
+    }
+
+    public IRubyObject interpret(ThreadContext context, IRubyObject self,
+                                 InterpreterContext interpreterContext, RubyModule implClass,
+                                 String name, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3, IRubyObject arg4, Block block, Block.Type blockType) {
+        return interpret(context, self, interpreterContext, implClass, name, new IRubyObject[] {arg1, arg2, arg3, arg4}, block, blockType);
+    }
+
+    public IRubyObject interpret(ThreadContext context, IRubyObject self,
                                          InterpreterContext interpreterContext, RubyModule implClass,
                                          String name, IRubyObject[] args, Block block, Block.Type blockType) {
         Instr[]   instrs    = interpreterContext.getInstructions();
