@@ -147,6 +147,17 @@ class TestJavaExtension < Test::Unit::TestCase
     assert_equal BLUE, color.color
   end
 
+  def test_java_class_name
+    assert_equal 'Java::OrgJrubyJavasupportTest::Color', Color.name
+
+    assert_equal 'org.jruby.javasupport.test.Color', Color.java_class.name
+
+    assert_equal 'Java::JavaLang::Runnable', java.lang.Runnable.name
+    assert_equal 'java.lang.Runnable', Java::JavaLang::Runnable.java_class.name
+
+    assert_equal 'Java::JavaLang::String', JString.name
+  end
+
   include_package 'org.jruby.javasupport.test'
   include_package 'java.lang'
 
@@ -192,7 +203,7 @@ class TestJavaExtension < Test::Unit::TestCase
         result = obj.synchronized { "foo" }
     }
     assert_equal("foo", result)
-    
+
     begin
       obj.wait 1
     rescue java.lang.IllegalMonitorStateException
@@ -200,13 +211,13 @@ class TestJavaExtension < Test::Unit::TestCase
     else
       assert false, "java.lang.IllegalMonitorStateException was not thrown"
     end
-    
+
     assert_nothing_raised {
         obj.synchronized { obj.wait 1 }
     }
   end
 
-  
+
   def test_java_interface_impl_with_block
     ran = false
     SimpleExecutor::WrappedByMethodCall.new.execute(Runnable.impl {ran = true})
@@ -279,7 +290,7 @@ class TestJavaExtension < Test::Unit::TestCase
       flunk "Exception raised: #{$!}"
     end
   end
-  
+
   def test_map_interface_to_array
     hash = {"one"=>"two","three"=>"four"}
     map = java.util.HashMap.new(hash)
