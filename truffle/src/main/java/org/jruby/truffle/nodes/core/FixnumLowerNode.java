@@ -109,8 +109,7 @@ public class FixnumLowerNode extends RubyNode {
             return value;
         }
 
-        throw new RaiseException(getContext().getCoreLibrary().typeErrorCantConvertInto(
-                value, getContext().getCoreLibrary().getIntegerClass(), this));
+        return value;
     }
 
     @Override
