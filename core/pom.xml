@@ -211,11 +211,6 @@
       <scope>provided</scope>
     </dependency>
     <dependency>
-      <groupId>org.yaml</groupId>
-      <artifactId>snakeyaml</artifactId>
-      <version>1.14</version>
-    </dependency>
-    <dependency>
       <groupId>org.jruby</groupId>
       <artifactId>joda-timezones</artifactId>
       <version>${tzdata.version}</version>
