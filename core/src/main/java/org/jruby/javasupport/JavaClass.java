@@ -757,17 +757,39 @@ public class JavaClass extends JavaObject {
         proxy.setJavaProxy(true);
         proxy.getSingletonClass().setJavaProxy(true);
 
-        // set the Java class name and package
-        proxy.setBaseName(javaClass.getSimpleName());
-
         // set parent to either package module or outer class
-        RubyModule parent;
-        if (javaClass.getEnclosingClass() != null) {
-            parent = Java.getProxyClass(getRuntime(), javaClass.getEnclosingClass());
+        final RubyModule parent;
+        final Class<?> enclosingClass = javaClass.getEnclosingClass();
+        if ( enclosingClass != null ) {
+            parent = Java.getProxyClass(getRuntime(), enclosingClass);
         } else {
             parent = Java.getJavaPackageModule(getRuntime(), javaClass.getPackage());
         }
         proxy.setParent(parent);
+
+        // set the Java class name and package
+        if ( javaClass.isAnonymousClass() ) {
+            String baseName = ""; // javaClass.getSimpleName() returns "" for anonymous
+            if ( enclosingClass != null ) {
+                // instead of an empty name anonymous classes will have a "conforming"
+                // although not valid (by Ruby semantics) RubyClass name e.g. :
+                // 'Java::JavaUtilConcurrent::TimeUnit::1' for $1 anonymous enum class
+                // NOTE: if this turns out suitable shall do the same for method etc.
+                final String className = javaClass.getName();
+                final int length = className.length();
+                final int offset = enclosingClass.getName().length();
+                if ( length > offset && className.charAt(offset) != '$' ) {
+                    baseName = className.substring( offset );
+                }
+                else if ( length > offset + 1 ) { // skip '$'
+                    baseName = className.substring( offset + 1 );
+                }
+            }
+            proxy.setBaseName( baseName );
+        }
+        else {
+            proxy.setBaseName( javaClass.getSimpleName() );
+        }
 
         // FIXME: bit of a kludge here (non-interface classes assigned to both
         // class and module fields). simplifies proxy extender code, will go away
@@ -976,37 +998,36 @@ public class JavaClass extends JavaObject {
         }
     }
 
-    private static String fixScalaNames(String name) {
+    private static String fixScalaNames(final String name) {
         String s = name;
         for (Map.Entry<String, String> entry : SCALA_OPERATORS.entrySet()) {
             s = s.replaceAll(entry.getKey(), entry.getValue());
         }
-
         return s;
     }
 
     private static final Map<String, String> SCALA_OPERATORS;
     static {
-        Map<String, String> tmp = new HashMap();
-        tmp.put("\\$plus", "+");
-        tmp.put("\\$minus", "-");
-        tmp.put("\\$colon", ":");
-        tmp.put("\\$div", "/");
-        tmp.put("\\$eq", "=");
-        tmp.put("\\$less", "<");
-        tmp.put("\\$greater", ">");
-        tmp.put("\\$bslash", "\\\\");
-        tmp.put("\\$hash", "#");
-        tmp.put("\\$times", "*");
-        tmp.put("\\$bang", "!");
-        tmp.put("\\$at", "@");
-        tmp.put("\\$percent", "%");
-        tmp.put("\\$up", "^");
-        tmp.put("\\$amp", "&");
-        tmp.put("\\$tilde", "~");
-        tmp.put("\\$qmark", "?");
-        tmp.put("\\$bar", "|");
-        SCALA_OPERATORS = Collections.unmodifiableMap(tmp);
+        HashMap<String, String> scalaOperators = new HashMap<String, String>();
+        scalaOperators.put("\\$plus", "+");
+        scalaOperators.put("\\$minus", "-");
+        scalaOperators.put("\\$colon", ":");
+        scalaOperators.put("\\$div", "/");
+        scalaOperators.put("\\$eq", "=");
+        scalaOperators.put("\\$less", "<");
+        scalaOperators.put("\\$greater", ">");
+        scalaOperators.put("\\$bslash", "\\\\");
+        scalaOperators.put("\\$hash", "#");
+        scalaOperators.put("\\$times", "*");
+        scalaOperators.put("\\$bang", "!");
+        scalaOperators.put("\\$at", "@");
+        scalaOperators.put("\\$percent", "%");
+        scalaOperators.put("\\$up", "^");
+        scalaOperators.put("\\$amp", "&");
+        scalaOperators.put("\\$tilde", "~");
+        scalaOperators.put("\\$qmark", "?");
+        scalaOperators.put("\\$bar", "|");
+        SCALA_OPERATORS = Collections.unmodifiableMap(scalaOperators);
     }
 
     private void setupClassMethods(Class<?> javaClass, InitializerState state) {
@@ -1295,7 +1316,7 @@ public class JavaClass extends JavaObject {
 
     public static synchronized JavaClass forNameVerbose(Ruby runtime, String className) {
         Class <?> klass = null;
-        if (className.indexOf(".") == -1 && Character.isLowerCase(className.charAt(0))) {
+        if (className.indexOf('.') == -1 && Character.isLowerCase(className.charAt(0))) {
             // one word type name that starts lower-case...it may be a primitive type
             klass = PRIMITIVE_TO_CLASS.get(className);
         }

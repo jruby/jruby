@@ -2,8 +2,6 @@ require 'java'
 require 'test/unit'
 
 class TestJavaExtension < Test::Unit::TestCase
-  import org.jruby.test.Worker
-  import org.jruby.test.Abstract
 
   class TestParent < org.jruby.test.Parent
     attr_accessor :result
@@ -11,6 +9,8 @@ class TestJavaExtension < Test::Unit::TestCase
       @result = "TEST PARENT: #{a}"
     end
   end
+
+  java_import org.jruby.test.Worker
 
   def test_overriding_method_in_java_superclass
     w = Worker.new
@@ -22,7 +22,6 @@ class TestJavaExtension < Test::Unit::TestCase
   import java.util.HashMap
   import java.util.ArrayList
   import java.util.HashSet
-  import java.lang.Short
 
   def test_set
     set = HashSet.new
@@ -30,16 +29,17 @@ class TestJavaExtension < Test::Unit::TestCase
     set.add(2)
 
     newSet = []
-    set.each {|x| newSet << x }
+    set.each { |x| newSet << x }
 
     assert newSet.include?(1)
     assert newSet.include?(2)
   end
 
   def test_comparable
-    one = Short.new(1)
-    two = Short.new(2)
-    three = Short.new(3)
+    short = Java::JavaLang::Short
+    one = short.new(1)
+    two = short.new(2)
+    three = short.new(3)
     list = [three, two, one]
     list = list.sort
     assert_equal([one, two, three], list)
@@ -156,6 +156,12 @@ class TestJavaExtension < Test::Unit::TestCase
     assert_equal 'java.lang.Runnable', Java::JavaLang::Runnable.java_class.name
 
     assert_equal 'Java::JavaLang::String', JString.name
+
+    assert_equal 'Java::JavaLang::Thread::State', Java::java.lang.Thread::State.name
+    # an enum class with custom code for each constant :
+    assert_equal 'Java::JavaUtilConcurrent::TimeUnit::1', java.util.concurrent.TimeUnit::NANOSECONDS.class.name
+    assert_equal 'Java::JavaUtilConcurrent::TimeUnit::2', java.util.concurrent.TimeUnit::MICROSECONDS.class.name
+    assert java.util.concurrent.TimeUnit::MICROSECONDS.is_a?(java.util.concurrent.TimeUnit)
   end
 
   include_package 'org.jruby.javasupport.test'
