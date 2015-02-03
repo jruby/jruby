@@ -21,6 +21,8 @@ import com.oracle.truffle.api.utilities.ConditionProfile;
 import org.jruby.common.IRubyWarnings;
 import org.jruby.runtime.Visibility;
 import org.jruby.truffle.nodes.RubyNode;
+import org.jruby.truffle.nodes.cast.BooleanCastNode;
+import org.jruby.truffle.nodes.cast.BooleanCastNodeFactory;
 import org.jruby.truffle.nodes.control.WhileNode;
 import org.jruby.truffle.nodes.core.KernelNodesFactory.SameOrEqualNodeFactory;
 import org.jruby.truffle.nodes.dispatch.*;
@@ -665,7 +667,7 @@ public abstract class KernelNodes {
                 throw new RuntimeException(e);
             }
 
-            int exitCode = context.getThreadManager().runUntilResult(true, new BlockingActionWithoutGlobalLock<Integer>() {
+            int exitCode = context.getThreadManager().runUntilResult(new BlockingActionWithoutGlobalLock<Integer>() {
                 @Override
                 public Integer block() throws InterruptedException {
                     return process.waitFor();
@@ -847,7 +849,7 @@ public abstract class KernelNodes {
 
             final BufferedReader reader = new BufferedReader(new InputStreamReader(in));
 
-            final String line = getContext().getThreadManager().runOnce(true, new BlockingActionWithoutGlobalLock<String>() {
+            final String line = getContext().getThreadManager().runOnce(new BlockingActionWithoutGlobalLock<String>() {
                 @Override
                 public String block() throws InterruptedException {
                     return gets(reader);
@@ -1949,7 +1951,7 @@ public abstract class KernelNodes {
         private double doSleep(final double duration) {
             final long start = System.nanoTime();
 
-            getContext().getThreadManager().runOnce(true, new BlockingActionWithoutGlobalLock<Boolean>() {
+            getContext().getThreadManager().runOnce(new BlockingActionWithoutGlobalLock<Boolean>() {
                 @Override
                 public Boolean block() throws InterruptedException {
                     Thread.sleep((long) (duration * 1000));
