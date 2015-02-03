@@ -21,7 +21,7 @@
  * Copyright (C) 2007 Miguel Covarrubias <mlcovarrubias@gmail.com>
  * Copyright (C) 2007 William N Dortch <bill.dortch@gmail.com>
  * Copyright (C) 2011 David Pollak <feeder.of.the.bears@gmail.com>
- * 
+ *
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
  * or the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
@@ -133,7 +133,7 @@ public class JavaClass extends JavaObject {
                 //this is a core class, bail
                 return;
             }
-            
+
             Class<?> companionClass = cl.loadClass(javaClass.getName() + "$");
             Field field = companionClass.getField("MODULE$");
             Object singleton = field.get(null);
@@ -187,12 +187,12 @@ public class JavaClass extends JavaObject {
                     }
                 }
             }
-            
+
         } catch (Exception e) {
             // ignore... there's no companion object
         }
     }
-    
+
     /**
      * Assigned names only override based priority of an assigned type, the type must be less than
      * or equal to the assigned type. For example, field name (FIELD) in a subclass will override
@@ -211,11 +211,11 @@ public class JavaClass extends JavaObject {
         public boolean asImportantAs(AssignedName other) {
             return other != null && other.type.value == value;
         }
-        
+
         public boolean lessImportantThan(AssignedName other) {
             return other != null && other.type.value < value;
         }
-        
+
         public boolean moreImportantThan(AssignedName other) {
             return other == null || other.type.value > value;
         }
@@ -224,7 +224,7 @@ public class JavaClass extends JavaObject {
     private static class AssignedName {
         String name;
         Priority type;
-        
+
         AssignedName () {}
         AssignedName(String name, Priority type) {
             this.name = name;
@@ -378,7 +378,7 @@ public class JavaClass extends JavaObject {
     private static class ConstructorInvokerInstaller extends MethodInstaller {
         private boolean haveLocalConstructor;
         protected List<Constructor> constructors;
-        
+
         ConstructorInvokerInstaller(String name) {
             super(name,STATIC_METHOD);
         }
@@ -396,7 +396,7 @@ public class JavaClass extends JavaObject {
             constructors.add(ctor);
             haveLocalConstructor |= javaClass == ctor.getDeclaringClass();
         }
-        
+
         void install(final RubyModule proxy) {
             if (haveLocalConstructor) {
                 DynamicMethod method = new ConstructorInvoker(proxy, constructors);
@@ -490,9 +490,9 @@ public class JavaClass extends JavaObject {
                 Character.isUpperCase(field.getName().charAt(0));
         }
     }
-    
+
     private final RubyModule JAVA_UTILITIES = getRuntime().getJavaSupport().getJavaUtilitiesModule();
-    
+
     private Map<String, AssignedName> staticAssignedNames;
     private Map<String, AssignedName> instanceAssignedNames;
     private Map<String, NamedInstaller> staticInstallers;
@@ -501,7 +501,7 @@ public class JavaClass extends JavaObject {
     private List<ConstantField> constantFields;
     // caching constructors, as they're accessed for each new instance
     private volatile RubyArray constructors;
-    
+
     private volatile ArrayList<IRubyObject> proxyExtenders;
 
     // proxy module for interfaces
@@ -517,47 +517,59 @@ public class JavaClass extends JavaObject {
     // defined by a class is of the same type as that class).
     private RubyModule unfinishedProxyModule;
     private RubyClass unfinishedProxyClass;
-    
+
     private final ReentrantLock proxyLock = new ReentrantLock();
 
     private final Initializer initializer;
-    
+
     public RubyModule getProxyModule() {
         // allow proxy to be read without synchronization. if proxy
         // is under construction, only the building thread can see it.
-        RubyModule proxy;
-        if ((proxy = proxyModule) != null) {
-            // proxy is complete, return it
-            return proxy;
-        } else if (proxyLock.isHeldByCurrentThread()) {
+        RubyModule proxy = proxyModule;
+        if ( proxy != null ) return proxy; // proxy is complete, return it
+
+        ReentrantLock lock = this.proxyLock;
+        if ( lock != null && lock.isHeldByCurrentThread() ) {
             // proxy is under construction, building thread can
             // safely read non-volatile value
-            return unfinishedProxyModule; 
+            return unfinishedProxyModule;
         }
         return null;
     }
-    
+
     public RubyClass getProxyClass() {
         // allow proxy to be read without synchronization. if proxy
         // is under construction, only the building thread can see it.
-        RubyClass proxy;
-        if ((proxy = proxyClass) != null) {
-            // proxy is complete, return it
-            return proxy;
-        } else if (proxyLock.isHeldByCurrentThread()) {
+        RubyClass proxy = proxyClass;
+        if ( proxy != null ) return proxy; // proxy is complete, return it
+
+        ReentrantLock lock = this.proxyLock;
+        if ( lock != null && lock.isHeldByCurrentThread() ) {
             // proxy is under construction, building thread can
             // safely read non-volatile value
-            return unfinishedProxyClass; 
+            return unfinishedProxyClass;
         }
         return null;
     }
-    
-    public void lockProxy() {
+
+    final void lockProxy() {
         proxyLock.lock();
     }
-    
-    public void unlockProxy() {
+
+    final void unlockProxy() {
         proxyLock.unlock();
+    }
+
+    private void setProxyClass(final RubyClass proxyClass) {
+        //assert this.proxyLock != null;
+        this.proxyClass = proxyClass;
+        //this.unfinishedProxyClass = null;
+    }
+
+    private void setProxyModule(final RubyModule proxyModule) {
+        //assert this.proxyLock != null;
+        this.proxyModule = proxyModule;
+        //this.unfinishedProxyModule = null;
     }
 
     private Map<String, AssignedName> getStaticAssignedNames() {
@@ -566,18 +578,20 @@ public class JavaClass extends JavaObject {
     private Map<String, AssignedName> getInstanceAssignedNames() {
         return instanceAssignedNames;
     }
-    
-    public JavaClass(Ruby runtime, Class<?> javaClass) {
-        super(runtime, (RubyClass) runtime.getJavaSupport().getJavaClassClass(), javaClass);
-        if (javaClass.isInterface()) {
+
+    JavaClass(final Ruby runtime, final Class<?> javaClass) {
+        super(runtime, runtime.getJavaSupport().getJavaClassClass(), javaClass);
+        if ( javaClass.isInterface() ) {
             initializer = new InterfaceInitializer(javaClass);
-        } else if (!(javaClass.isArray() || javaClass.isPrimitive())) {
+        }
+        else if ( ! ( javaClass.isArray() || javaClass.isPrimitive() ) ) {
             initializer = new ClassInitializer(javaClass);
-        } else {
+        }
+        else {
             initializer = DUMMY_INITIALIZER;
         }
     }
-    
+
     @Override
     public boolean equals(Object other) {
         return other instanceof JavaClass &&
@@ -600,7 +614,7 @@ public class JavaClass extends JavaObject {
         public InterfaceInitializer(Class<?> javaClass) {
             this.javaClass = javaClass;
         }
-        
+
         public synchronized void initialize() {
             if (hasRun) return;
             hasRun = true;
@@ -618,7 +632,7 @@ public class JavaClass extends JavaObject {
             }
 
             setupInterfaceMethods(javaClass, state);
-            
+
             // Add in any Scala singleton methods
             handleScalaSingletons(javaClass, state);
 
@@ -646,7 +660,7 @@ public class JavaClass extends JavaObject {
         public synchronized void initialize() {
             if (hasRun) return;
             hasRun = true;
-            
+
             Class<?> superclass = javaClass.getSuperclass();
 
             InitializerState state = new InitializerState(getRuntime(), superclass);
@@ -689,20 +703,22 @@ public class JavaClass extends JavaObject {
             // anything useful we could do here?
         }
     };
-    
-    public void setupProxy(final RubyClass proxy) {
+
+    void setupProxyClass(final RubyClass proxy) {
         assert proxyLock.isHeldByCurrentThread();
-        
+
+        setJavaClassFor(proxy);
+
         initializer.initialize();
 
         proxy.addMethod("__jsend!", new org.jruby.internal.runtime.methods.JavaMethod.JavaMethodNBlock(proxy, PUBLIC) {
             @Override
             public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args, Block block) {
                 String callName = args[0].asJavaString();
-                
+
                 DynamicMethod method = self.getMetaClass().searchMethod(callName);
                 int v = method.getArity().getValue();
-                
+
                 IRubyObject[] newArgs = new IRubyObject[args.length - 1];
                 System.arraycopy(args, 1, newArgs, 0, newArgs.length);
 
@@ -714,21 +730,21 @@ public class JavaClass extends JavaObject {
                 }
             }
         });
-        
+
         final Class<?> javaClass = javaClass();
-        if (javaClass.isInterface()) {
+        if ( javaClass.isInterface() ) {
             setupInterfaceProxy(proxy);
             return;
         }
 
         proxy.setReifiedClass(javaClass);
-        
+
         assert this.proxyClass == null;
         this.unfinishedProxyClass = proxy;
-        if (javaClass.isArray() || javaClass.isPrimitive()) {
+
+        if ( javaClass.isArray() || javaClass.isPrimitive() ) {
             // see note below re: 2-field kludge
-            this.proxyClass = proxy;
-            this.proxyModule = proxy;
+            setProxyClass( proxy ); setProxyModule( proxy );
             return;
         }
 
@@ -736,7 +752,7 @@ public class JavaClass extends JavaObject {
         installClassMethods(proxy);
         installClassConstructors(proxy);
         installClassClasses(javaClass, proxy);
-        
+
         // flag the class as a Java class proxy.
         proxy.setJavaProxy(true);
         proxy.getSingletonClass().setJavaProxy(true);
@@ -756,13 +772,12 @@ public class JavaClass extends JavaObject {
         // FIXME: bit of a kludge here (non-interface classes assigned to both
         // class and module fields). simplifies proxy extender code, will go away
         // when JI is overhauled (and proxy extenders are deprecated).
-        this.proxyClass = proxy;
-        this.proxyModule = proxy;
+        setProxyClass( proxy ); setProxyModule( proxy );
 
         applyProxyExtenders();
 
         // TODO: we can probably release our references to the constantFields
-        // array and static/instance callback hashes at this point. 
+        // array and static/instance callback hashes at this point.
     }
 
     private static void assignAliases(MethodInstaller installer, Map<String, AssignedName> assignedNames) {
@@ -827,7 +842,7 @@ public class JavaClass extends JavaObject {
             }
         }
     }
-    
+
     private static void addUnassignedAlias(String name, Map<String, AssignedName> assignedNames,
             MethodInstaller installer) {
         if (name == null) return;
@@ -852,7 +867,7 @@ public class JavaClass extends JavaObject {
 
                 // no non-public inner classes
                 if (!Modifier.isPublic(clazz.getModifiers())) continue;
-                
+
                 String simpleName = getSimpleName(clazz);
                 if (simpleName.length() == 0) continue;
 
@@ -911,7 +926,7 @@ public class JavaClass extends JavaObject {
         // TODO: protected methods.  this is going to require a rework
         // of some of the mechanism.
         Constructor[] clsConstructors = getConstructors(javaClass);
-        
+
         // create constructorInstaller; if there are no constructors, it will disable construction
         constructorInstaller = new ConstructorInvokerInstaller("__jcreate!");
 
@@ -922,7 +937,7 @@ public class JavaClass extends JavaObject {
             constructorInstaller.addConstructor(ctor, javaClass);
         }
     }
-    
+
     private void addField(Map <String, NamedInstaller> callbacks, Map<String, AssignedName> names,
             Field field, boolean isFinal, boolean isStatic) {
         String name = field.getName();
@@ -939,10 +954,10 @@ public class JavaClass extends JavaObject {
                 new InstanceFieldSetterInstaller(setName, field));
         }
     }
-    
+
     private void setupClassFields(Class<?> javaClass, InitializerState state) {
         Field[] fields = getFields(javaClass);
-        
+
         for (int i = fields.length; --i >= 0;) {
             Field field = fields[i];
             if (javaClass != field.getDeclaringClass()) continue;
@@ -1132,7 +1147,7 @@ public class JavaClass extends JavaObject {
         }
         invoker.addMethod(method, javaClass);
     }
-    
+
     private void installSingletonMethods(Map<String, NamedInstaller> methodCallbacks, Class<?> javaClass, Object singleton, Method method, String name) {
         MethodInstaller invoker = (MethodInstaller) methodCallbacks.get(name);
         if (invoker == null) {
@@ -1141,27 +1156,30 @@ public class JavaClass extends JavaObject {
         }
         invoker.addMethod(method, javaClass);
     }
-    
+
     // old (quasi-deprecated) interface class
     private void setupInterfaceProxy(final RubyClass proxy) {
         assert javaClass().isInterface();
         assert proxyLock.isHeldByCurrentThread();
         assert this.proxyClass == null;
-        
+
         initializer.initialize();
-        this.proxyClass = proxy;
-        // nothing else to here - the module version will be
-        // included in the class.
+
+        setProxyClass( proxy ); // this.proxyClass = proxy
+        // nothing else to here - the module version will be included in the class.
     }
-    
-    public void setupInterfaceModule(final RubyModule module) {
+
+    void setupProxyModule(final RubyModule module) {
         assert javaClass().isInterface();
         assert proxyLock.isHeldByCurrentThread();
         assert this.proxyModule == null;
-        
+
+        setJavaClassFor(module);
+
         initializer.initialize();
-        
+
         this.unfinishedProxyModule = module;
+
         Class<?> javaClass = javaClass();
         for (ConstantField field: constantFields) {
             field.install(module);
@@ -1171,59 +1189,71 @@ public class JavaClass extends JavaObject {
         }
 
         installClassClasses(javaClass, module);
-        
+
         // flag the class as a Java class proxy.
         module.setJavaProxy(true);
         module.getSingletonClass().setJavaProxy(true);
-        
-        this.proxyModule = module;
+
+        setProxyModule( module ); // this.proxyModule = proxy
+
         applyProxyExtenders();
     }
 
+    private void setJavaClassFor(final RubyModule proxyModule) {
+        proxyModule.setInstanceVariable("@java_class", this);
+    }
+
+    private void setJavaClassFor(final RubyClass proxyClass) {
+        proxyClass.callMethod(getRuntime().getCurrentContext(), "java_class=", this);
+    }
+
     public void addProxyExtender(final IRubyObject extender) {
+        if ( ! extender.respondsTo("extend_proxy") ) {
+            throw getRuntime().newTypeError("proxy extender must have an extend_proxy method");
+        }
         lockProxy();
         try {
-            if (!extender.respondsTo("extend_proxy")) {
-                throw getRuntime().newTypeError("proxy extender must have an extend_proxy method");
-            }
-            if (proxyModule == null) {
+            if ( proxyModule == null ) {
                 if (proxyExtenders == null) {
                     proxyExtenders = new ArrayList<IRubyObject>();
                 }
                 proxyExtenders.add(extender);
-            } else {
-                getRuntime().getWarnings().warn(ID.PROXY_EXTENDED_LATE, " proxy extender added after proxy class created for " + this);
-                extendProxy(extender);
             }
-        } finally {
-            unlockProxy();
+            else {
+                final Ruby runtime = getRuntime();
+                runtime.getWarnings().warn(ID.PROXY_EXTENDED_LATE, " proxy extender added after proxy class created for " + this);
+                extendProxy(runtime.getCurrentContext(), extender);
+            }
         }
+        finally { unlockProxy(); }
+
     }
-    
+
     private void applyProxyExtenders() {
-        ArrayList<IRubyObject> extenders;
-        if ((extenders = proxyExtenders) != null) {
+        final ArrayList<IRubyObject> extenders = proxyExtenders;
+        if ( extenders != null ) {
+            final ThreadContext context = getRuntime().getCurrentContext();
             for (IRubyObject extender : extenders) {
-                extendProxy(extender);
+                extendProxy(context, extender);
             }
             proxyExtenders = null;
         }
     }
 
-    private void extendProxy(IRubyObject extender) {
-        extender.callMethod(getRuntime().getCurrentContext(), "extend_proxy", proxyModule);
+    private void extendProxy(final ThreadContext context, final IRubyObject extender) {
+        extender.callMethod(context, "extend_proxy", proxyModule);
     }
-    
+
     @JRubyMethod(required = 1)
-    public IRubyObject extend_proxy(IRubyObject extender) {
+    public IRubyObject extend_proxy(final ThreadContext context, IRubyObject extender) {
         addProxyExtender(extender);
         return getRuntime().getNil();
     }
-    
+
     public static JavaClass get(Ruby runtime, Class<?> klass) {
         return runtime.getJavaSupport().getJavaClassFromCache(klass);
     }
-    
+
     public static RubyArray getRubyArray(Ruby runtime, Class<?>[] classes) {
         IRubyObject[] javaClasses = new IRubyObject[classes.length];
         for (int i = classes.length; --i >= 0; ) {
@@ -1238,10 +1268,10 @@ public class JavaClass extends JavaObject {
         // you be able to?
         // TODO: NOT_ALLOCATABLE_ALLOCATOR is probably ok here, since we don't intend for people to monkey with
         // this type and it can't be marshalled. Confirm. JRUBY-415
-        RubyClass result = javaModule.defineClassUnder("JavaClass", javaModule.getClass("JavaObject"), ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR); 
-        
+        RubyClass result = javaModule.defineClassUnder("JavaClass", javaModule.getClass("JavaObject"), ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
+
         result.includeModule(runtime.getModule("Comparable"));
-        
+
         result.defineAnnotatedMethods(JavaClass.class);
 
         result.getMetaClass().undefineMethod("new");
@@ -1262,7 +1292,7 @@ public class JavaClass extends JavaObject {
         PRIMITIVE_TO_CLASS.put("float", float.class);
         PRIMITIVE_TO_CLASS.put("double", double.class);
     }
-    
+
     public static synchronized JavaClass forNameVerbose(Ruby runtime, String className) {
         Class <?> klass = null;
         if (className.indexOf(".") == -1 && Character.isLowerCase(className.charAt(0))) {
@@ -1275,7 +1305,7 @@ public class JavaClass extends JavaObject {
         }
         return JavaClass.get(runtime, klass);
     }
-    
+
     public static synchronized JavaClass forNameQuiet(Ruby runtime, String className) {
         Class klass = runtime.getJavaSupport().loadJavaClassQuiet(className);
         return JavaClass.get(runtime, klass);
@@ -1325,32 +1355,32 @@ public class JavaClass extends JavaObject {
     public RubyBoolean array_p() {
         return getRuntime().newBoolean(javaClass().isArray());
     }
-    
+
     @JRubyMethod(name = "enum?")
     public RubyBoolean enum_p() {
         return getRuntime().newBoolean(javaClass().isEnum());
     }
-    
+
     @JRubyMethod(name = "annotation?")
     public RubyBoolean annotation_p() {
         return getRuntime().newBoolean(javaClass().isAnnotation());
     }
-    
+
     @JRubyMethod(name = "anonymous_class?")
     public RubyBoolean anonymous_class_p() {
         return getRuntime().newBoolean(javaClass().isAnonymousClass());
     }
-    
+
     @JRubyMethod(name = "local_class?")
     public RubyBoolean local_class_p() {
         return getRuntime().newBoolean(javaClass().isLocalClass());
     }
-    
+
     @JRubyMethod(name = "member_class?")
     public RubyBoolean member_class_p() {
         return getRuntime().newBoolean(javaClass().isMemberClass());
     }
-    
+
     @JRubyMethod(name = "synthetic?")
     public IRubyObject synthetic_p() {
         return getRuntime().newBoolean(javaClass().isSynthetic());
@@ -1375,7 +1405,7 @@ public class JavaClass extends JavaObject {
         }
         return getRuntime().getNil();
     }
-    
+
     @JRubyMethod(name = "package")
     public IRubyObject get_package() {
         return Java.getInstance(getRuntime(), javaClass().getPackage());
@@ -1390,7 +1420,7 @@ public class JavaClass extends JavaObject {
     public IRubyObject protection_domain() {
         return Java.getInstance(getRuntime(), javaClass().getProtectionDomain());
     }
-    
+
     @JRubyMethod(required = 1)
     public IRubyObject resource(IRubyObject name) {
         return Java.getInstance(getRuntime(), javaClass().getResource(name.asJavaString()));
@@ -1400,7 +1430,7 @@ public class JavaClass extends JavaObject {
     public IRubyObject resource_as_stream(IRubyObject name) {
         return Java.getInstance(getRuntime(), javaClass().getResourceAsStream(name.asJavaString()));
     }
-    
+
     @JRubyMethod(required = 1)
     public IRubyObject resource_as_string(IRubyObject name) {
         InputStream in = javaClass().getResourceAsStream(name.asJavaString());
@@ -1419,7 +1449,7 @@ public class JavaClass extends JavaObject {
         }
         return getRuntime().newString(new ByteList(out.toByteArray(), false));
     }
-    
+
     @SuppressWarnings("unchecked")
     @JRubyMethod(required = 1)
     public IRubyObject annotation(IRubyObject annoClass) {
@@ -1428,7 +1458,7 @@ public class JavaClass extends JavaObject {
         }
         return Java.getInstance(getRuntime(), javaClass().getAnnotation(((JavaClass)annoClass).javaClass()));
     }
-    
+
     @JRubyMethod
     public IRubyObject annotations() {
         // note: intentionally returning the actual array returned from Java, rather
@@ -1436,23 +1466,23 @@ public class JavaClass extends JavaObject {
         // return the actual class, rather than a JavaClass wrapper.
         return Java.getInstance(getRuntime(), javaClass().getAnnotations());
     }
-    
+
     @JRubyMethod(name = "annotations?")
     public RubyBoolean annotations_p() {
         return getRuntime().newBoolean(javaClass().getAnnotations().length > 0);
     }
-    
+
     @JRubyMethod
     public IRubyObject declared_annotations() {
         // see note above re: return type
         return Java.getInstance(getRuntime(), javaClass().getDeclaredAnnotations());
     }
-    
+
     @JRubyMethod(name = "declared_annotations?")
     public RubyBoolean declared_annotations_p() {
         return getRuntime().newBoolean(javaClass().getDeclaredAnnotations().length > 0);
     }
-    
+
     @SuppressWarnings("unchecked")
     @JRubyMethod(name = "annotation_present?", required = 1)
     public IRubyObject annotation_present_p(IRubyObject annoClass) {
@@ -1461,7 +1491,7 @@ public class JavaClass extends JavaObject {
         }
         return getRuntime().newBoolean(javaClass().isAnnotationPresent(((JavaClass)annoClass).javaClass()));
     }
-    
+
     @JRubyMethod
     public IRubyObject modifiers() {
         return getRuntime().newFixnum(javaClass().getModifiers());
@@ -1480,7 +1510,7 @@ public class JavaClass extends JavaObject {
     public IRubyObject enclosing_class() {
         return Java.getInstance(getRuntime(), javaClass().getEnclosingClass());
     }
-    
+
     @JRubyMethod
     public IRubyObject enclosing_constructor() {
         Constructor<?> ctor = javaClass().getEnclosingConstructor();
@@ -1508,27 +1538,27 @@ public class JavaClass extends JavaObject {
     public IRubyObject generic_interfaces() {
         return Java.getInstance(getRuntime(), javaClass().getGenericInterfaces());
     }
-    
+
     @JRubyMethod
     public IRubyObject generic_superclass() {
         return Java.getInstance(getRuntime(), javaClass().getGenericSuperclass());
     }
-    
+
     @JRubyMethod
     public IRubyObject type_parameters() {
         return Java.getInstance(getRuntime(), javaClass().getTypeParameters());
     }
-    
+
     @JRubyMethod
     public IRubyObject signers() {
         return Java.getInstance(getRuntime(), javaClass().getSigners());
     }
-    
+
     private static String getSimpleName(Class<?> clazz) {
  		if (clazz.isArray()) {
  			return getSimpleName(clazz.getComponentType()) + "[]";
  		}
- 
+
  		String className = clazz.getName();
  		int len = className.length();
         int i = className.lastIndexOf('$');
@@ -1538,7 +1568,7 @@ public class JavaClass extends JavaObject {
  			} while (i < len && Character.isDigit(className.charAt(i)));
  			return className.substring(i);
  		}
- 
+
  		return className.substring(className.lastIndexOf('.') + 1);
  	}
 
@@ -1661,7 +1691,7 @@ public class JavaClass extends JavaObject {
         throw getRuntime().newNameError("undefined method '" + methodName + "' for class '" + javaClass().getName() + "'",
                 methodName);
     }
-    
+
     public static JavaCallable getMatchingCallable(Ruby runtime, Class<?> javaClass, String methodName, Class<?>[] argumentTypes) {
         if ("<init>".equals(methodName)) {
             return JavaConstructor.getMatchingConstructor(runtime, javaClass, argumentTypes);
@@ -1697,7 +1727,7 @@ public class JavaClass extends JavaObject {
         if ((ctors = constructors) != null) return ctors;
         return constructors = buildConstructors(javaClass().getConstructors());
     }
-    
+
     @JRubyMethod
     public RubyArray classes() {
         return JavaClass.getRubyArray(getRuntime(), javaClass().getClasses());
@@ -1788,7 +1818,7 @@ public class JavaClass extends JavaObject {
     public JavaClass array_class() {
         return JavaClass.get(getRuntime(), Array.newInstance(javaClass(), 0).getClass());
     }
-   
+
     @JRubyMethod(required = 1)
     public JavaObject new_array(IRubyObject lengthArgument) {
         if (lengthArgument instanceof RubyInteger) {
@@ -1818,20 +1848,20 @@ public class JavaClass extends JavaObject {
             " - must be Integer or Array of Integer");
         }
     }
-   
+
     public IRubyObject emptyJavaArray(ThreadContext context) {
         return ArrayUtils.emptyJavaArrayDirect(context, javaClass());
     }
-   
+
     public IRubyObject javaArraySubarray(ThreadContext context, JavaArray fromArray, int index, int size) {
         return ArrayUtils.javaArraySubarrayDirect(context, getValue(), index, size);
     }
-   
+
     /**
      * Contatenate two Java arrays into a new one. The component type of the
      * additional array must be assignable to the component type of the
      * original array.
-     * 
+     *
      * @param context
      * @param original
      * @param additional
@@ -1840,10 +1870,10 @@ public class JavaClass extends JavaObject {
     public IRubyObject concatArrays(ThreadContext context, JavaArray original, JavaArray additional) {
         return ArrayUtils.concatArraysDirect(context, original.getValue(), additional.getValue());
     }
-   
+
     /**
      * The slow version for when concatenating a Java array of a different type.
-     * 
+     *
      * @param context
      * @param original
      * @param additional
@@ -1858,9 +1888,9 @@ public class JavaClass extends JavaObject {
         if (!(fromArray instanceof RubyArray)) {
             throw runtime.newTypeError(fromArray, runtime.getArray());
         }
-        
+
         Object newArray = javaArrayFromRubyArrayDirect(context, fromArray);
-        
+
         return new ArrayJavaProxy(runtime, Java.getProxyClassForObject(runtime, newArray), newArray, JavaUtil.getJavaConverter(javaClass()));
     }
 
@@ -1871,7 +1901,7 @@ public class JavaClass extends JavaObject {
         }
         RubyArray rubyArray = (RubyArray)fromArray;
         Object newArray = Array.newInstance(javaClass(), rubyArray.size());
-        
+
         if (javaClass().isArray()) {
             // if it's an array of arrays, recurse with the component type
             for (int i = 0; i < rubyArray.size(); i++) {
@@ -1882,7 +1912,7 @@ public class JavaClass extends JavaObject {
         } else {
             ArrayUtils.copyDataToJavaArrayDirect(context, rubyArray, newArray);
         }
-        
+
         return newArray;
     }
 
@@ -1928,7 +1958,7 @@ public class JavaClass extends JavaObject {
         Class<?> javaClass = javaClass();
         Ruby runtime = context.runtime;
         String stringName = name.asJavaString();
-        
+
         try {
             return new JavaField(runtime, javaClass.getDeclaredField(stringName));
         } catch (NoSuchFieldException nsfe) {
@@ -1941,7 +1971,7 @@ public class JavaClass extends JavaObject {
             throw undefinedFieldError(runtime, javaClass.getName(), stringName);
         }
     }
-    
+
     public static RaiseException undefinedFieldError(Ruby runtime, String javaClassName, String name) {
         return runtime.newNameError("undefined field '" + name + "' for class '" + javaClassName + "'", name);
     }
@@ -2005,13 +2035,13 @@ public class JavaClass extends JavaObject {
         }
         return JavaClass.get(getRuntime(), javaClass().getComponentType());
     }
-    
+
     private static Constructor[] getConstructors(Class<?> javaClass) {
         try {
             return javaClass.getConstructors();
         } catch (SecurityException e) {
             return new Constructor[] {};
-        }        
+        }
     }
 
     private static Class<?>[] getDeclaredClasses(Class<?> javaClass) {
@@ -2027,7 +2057,7 @@ public class JavaClass extends JavaObject {
             return new Class<?>[] {};
         }
     }
-    
+
     private static Class<?>[] getClasses(Class<?> javaClass) {
         try {
             return javaClass.getClasses();
@@ -2051,7 +2081,7 @@ public class JavaClass extends JavaObject {
             return new Field[] {};
         }
     }
-    
+
     private static boolean methodsAreEquivalent(Method child, Method parent) {
         return parent.getDeclaringClass().isAssignableFrom(child.getDeclaringClass())
                 && child.getReturnType() == parent.getReturnType()
@@ -2061,7 +2091,7 @@ public class JavaClass extends JavaObject {
                 && Modifier.isStatic(child.getModifiers()) == Modifier.isStatic(parent.getModifiers())
                 && Arrays.equals(child.getParameterTypes(), parent.getParameterTypes());
     }
-    
+
     private static int addNewMethods(HashMap<String, List<Method>> nameMethods, Method[] methods, boolean includeStatic, boolean removeDuplicate) {
         int added = 0;
         Methods: for (Method m : methods) {
@@ -2113,13 +2143,13 @@ public class JavaClass extends JavaObject {
         }
         return added;
     }
-    
+
     public static Method[] getMethods(Class<?> javaClass) {
         HashMap<String, List<Method>> nameMethods = new HashMap<String, List<Method>>(30);
 
         // to better size the final ArrayList below
         int total = 0;
-        
+
         // we scan all superclasses, but avoid adding superclass methods with
         // same name+signature as subclass methods (see JRUBY-3130)
         for (Class c = javaClass; c != null; c = c.getSuperclass()) {
@@ -2146,14 +2176,14 @@ public class JavaClass extends JavaObject {
                 }
             }
         }
-        
+
         // now only bind the ones that remain
         ArrayList<Method> finalList = new ArrayList<Method>(total);
 
         for (Map.Entry<String, List<Method>> entry : nameMethods.entrySet()) {
             finalList.addAll(entry.getValue());
         }
-        
+
         return finalList.toArray(new Method[finalList.size()]);
     }
 
