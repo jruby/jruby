@@ -274,27 +274,41 @@ module MSpec
   #
   #   path/to/spec/class/method_spec.rb => path/to/spec/tags/class/method_tags.txt
   #
+  # More than one replacement can be specified, and files will be
+  # found that match any of the replacements.
+  #
   # See also +register_tags_patterns+.
-  def self.tags_file
+  def self.tags_files
     patterns = retrieve(:tags_patterns) ||
                [[%r(spec/), 'spec/tags/'], [/_spec.rb$/, '_tags.txt']]
-    patterns.inject(retrieve(:file).dup) do |file, pattern|
-      file.gsub(*pattern)
+    files = [retrieve(:file).dup]
+    patterns.each do |pattern, *replacements|
+      files = files.map { |file|
+        if pattern === file
+          replacements.map do |replacement|
+            file.gsub(pattern, replacement)
+          end
+        else
+          [file]
+        end
+      }.flatten
     end
+    files
   end
 
   # Returns a list of tags matching any tag string in +keys+ based
   # on the return value of <tt>keys.include?("tag_name")</tt>
   def self.read_tags(keys)
     tags = []
-    file = tags_file
-    if File.exist? file
-      File.open(file, "rb") do |f|
-        f.each_line do |line|
-          line.chomp!
-          next if line.empty?
-          tag = SpecTag.new line
-          tags << tag if keys.include? tag.tag
+    tags_files.each do |file|
+      if File.exist? file
+        File.open(file, "rb") do |f|
+          f.each_line do |line|
+            line.chomp!
+            next if line.empty?
+            tag = SpecTag.new line
+            tags << tag if keys.include? tag.tag
+          end
         end
       end
     end
@@ -304,7 +318,7 @@ module MSpec
   # Writes each tag in +tags+ to the tag file. Overwrites the
   # tag file if it exists.
   def self.write_tags(tags)
-    file = tags_file
+    file = tags_files[0]
     path = File.dirname file
     FileUtils.mkdir_p path unless File.exist? path
     File.open(file, "wb") do |f|
@@ -322,7 +336,7 @@ module MSpec
       end
     end
 
-    file = tags_file
+    file = tags_files[0]
     path = File.dirname file
     FileUtils.mkdir_p path unless File.exist? path
     File.open(file, "ab") { |f| f.puts tag.to_s }

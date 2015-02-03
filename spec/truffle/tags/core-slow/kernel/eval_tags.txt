@@ -1,0 +1,2 @@
+slow:Kernel#eval raises a LocalJumpError if there is no lambda-style closure in the chain
+slow:Kernel#eval does not share locals across eval scopes

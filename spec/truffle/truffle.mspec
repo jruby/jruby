@@ -95,12 +95,21 @@ class MSpecScript
     "^spec/truffle/spec/rubysl/rubysl-erb/spec"
   ]
 
-  set :tags_patterns, [
-                        [%r(^.*#{path_separator}language#{path_separator}),     'spec/truffle/tags/language/'],
-                        [%r(^.*#{path_separator}core#{path_separator}),         'spec/truffle/tags/core/'],
-                        [%r(^.*#{path_separator}rubysl#{path_separator}),       'spec/truffle/tags/rubysl/'],
-                        [/_spec.rb$/,           '_tags.txt']
-                      ]
+  set :tags_patterns,
+  [
+    [%r(^.*#{path_separator}language#{path_separator}),
+        'spec/truffle/tags/language/',
+        'spec/truffle/tags/language-slow/',
+        'spec/truffle/tags/language-windows/'],
+    [%r(^.*#{path_separator}core#{path_separator}),
+        'spec/truffle/tags/core/',
+        'spec/truffle/tags/core-slow/',
+        'spec/truffle/tags/core-windows/'],
+    [%r(^.*#{path_separator}rubysl#{path_separator}),
+        'spec/truffle/tags/rubysl/'],
+    [/_spec.rb$/,
+        '_tags.txt']
+  ]
 
   MSpec.enable_feature :encoding
   MSpec.enable_feature :fiber

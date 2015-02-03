@@ -1,0 +1,1 @@
+fails(windows bug):File::Stat#file? raises an ArgumentError if not passed one argument

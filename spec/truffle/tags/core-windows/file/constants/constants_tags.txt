@@ -1,0 +1,1 @@
+fails(windows):File::Constants::BINARY is defined

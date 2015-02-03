@@ -1,0 +1,1 @@
+fails(windows bug):Encoding#dummy? returns true for dummy encodings

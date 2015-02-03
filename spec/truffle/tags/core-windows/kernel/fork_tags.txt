@@ -1,0 +1,4 @@
+fails(windows):Kernel#fork returns false from #respond_to?
+fails(windows):Kernel#fork raises a NotImplementedError when called
+fails(windows):Kernel.fork returns false from #respond_to?
+fails(windows):Kernel.fork raises a NotImplementedError when called

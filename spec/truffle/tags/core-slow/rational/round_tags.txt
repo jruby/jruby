@@ -1,0 +1,1 @@
+slow:Rational#round with a precision > 0 doesn't fail when rounding to an absurdly large positive precision

@@ -1,0 +1,3 @@
+fails(windows bug):File.size? returns the size of the file if it exists and is not empty
+fails(windows bug):File.size? returns nil if file_name doesn't exist or has 0 size
+fails(windows bug):File.size? returns nil if file_name is empty

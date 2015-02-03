@@ -1,0 +1,1 @@
+fails(windows):Process.spawn raises an ArgumentError if given :pgroup option

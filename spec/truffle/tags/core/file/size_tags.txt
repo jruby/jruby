@@ -17,6 +17,3 @@ fails:File#size returns the file's current size even if modified
 fails:File#size raises an IOError on a closed file
 fails:File#size follows symlinks if necessary
 fails:File#size for an empty file returns 0
-fails(windows bug):File.size? returns the size of the file if it exists and is not empty
-fails(windows bug):File.size? returns nil if file_name doesn't exist or has 0 size
-fails(windows bug):File.size? returns nil if file_name is empty

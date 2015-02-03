@@ -1,0 +1,1 @@
+fails(windows bug):Class.inherited is invoked only once per subclass
