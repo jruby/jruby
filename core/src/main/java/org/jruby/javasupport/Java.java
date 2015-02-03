@@ -18,7 +18,7 @@
  * Copyright (C) 2004-2005 Thomas E Enebo <enebo@acm.org>
  * Copyright (C) 2006 Kresten Krab Thorup <krab@gnu.org>
  * Copyright (C) 2007 William N Dortch <bill.dortch@gmail.com>
- * 
+ *
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
  * or the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
@@ -63,7 +63,6 @@ import org.jruby.RubyArray;
 import org.jruby.RubyBasicObject;
 import org.jruby.RubyClass;
 import org.jruby.RubyClassPathVariable;
-import org.jruby.RubyException;
 import org.jruby.RubyInstanceConfig;
 import org.jruby.RubyMethod;
 import org.jruby.RubyModule;
@@ -109,21 +108,22 @@ public class Java implements Library {
     public static final boolean NEW_STYLE_EXTENSION = Options.JI_NEWSTYLEEXTENSION.load();
     public static final boolean OBJECT_PROXY_CACHE = Options.JI_OBJECTPROXYCACHE.load();
 
-    public void load(Ruby runtime, boolean wrap) throws IOException {
+    @Override
+    public void load(final Ruby runtime, boolean wrap) throws IOException {
         createJavaModule(runtime);
 
         RubyModule jpmt = runtime.defineModule("JavaPackageModuleTemplate");
         jpmt.getSingletonClass().setSuperClass(new BlankSlateWrapper(runtime, jpmt.getMetaClass().getSuperClass(), runtime.getKernel()));
 
         runtime.getLoadService().require("jruby/java");
-        
+
         // rewite ArrayJavaProxy superclass to point at Object, so it inherits Object behaviors
         RubyClass ajp = runtime.getClass("ArrayJavaProxy");
         ajp.setSuperClass(runtime.getJavaSupport().getObjectJavaClass().getProxyClass());
         ajp.includeModule(runtime.getEnumerable());
-        
+
         RubyClassPathVariable.createClassPathVariable(runtime);
-        
+
         runtime.setJavaProxyClassFactory(JavaProxyClassFactory.createFactory());
 
         // modify ENV_JAVA to be a read/write version
@@ -136,10 +136,10 @@ public class Java implements Library {
                         systemProps));
     }
 
-    public static RubyModule createJavaModule(Ruby runtime) {
+    public static RubyModule createJavaModule(final Ruby runtime) {
         ThreadContext context = runtime.getCurrentContext();
         RubyModule javaModule = runtime.defineModule("Java");
-        
+
         javaModule.defineAnnotatedMethods(Java.class);
 
         JavaObject.createJavaObjectClass(runtime, javaModule);
@@ -148,10 +148,10 @@ public class Java implements Library {
         JavaMethod.createJavaMethodClass(runtime, javaModule);
         JavaConstructor.createJavaConstructorClass(runtime, javaModule);
         JavaField.createJavaFieldClass(runtime, javaModule);
-        
+
         // set of utility methods for Java-based proxy objects
         JavaProxyMethods.createJavaProxyMethods(context);
-        
+
         // the proxy (wrapper) type hierarchy
         JavaProxy.createJavaProxy(context);
         ArrayJavaProxyCreator.createArrayJavaProxyCreator(context);
@@ -169,11 +169,11 @@ public class Java implements Library {
         JavaInterfaceTemplate.createJavaInterfaceTemplateModule(context);
 
         RubyModule javaUtils = runtime.defineModule("JavaUtilities");
-        
+
         javaUtils.defineAnnotatedMethods(JavaUtilities.class);
 
         JavaArrayUtilities.createJavaArrayUtilitiesModule(runtime);
-        
+
         // Now attach Java-related extras to core classes
         runtime.getArray().defineAnnotatedMethods(ArrayJavaAddons.class);
         runtime.getKernel().defineAnnotatedMethods(KernelJavaAddons.class);
@@ -183,10 +183,10 @@ public class Java implements Library {
         if (runtime.getObject().isConstantDefined("StringIO")) {
             ((RubyClass)runtime.getObject().getConstant("StringIO")).defineAnnotatedMethods(IOJavaAddons.AnyIO.class);
         }
-        
+
         // add all name-to-class mappings
         addNameClassMappings(runtime, runtime.getJavaSupport().getNameClassMap());
-        
+
         // add some base Java classes everyone will need
         runtime.getJavaSupport().setObjectJavaClass(JavaClass.get(runtime, Object.class));
 
@@ -206,16 +206,16 @@ public class Java implements Library {
             if (!(arg0 instanceof RubyClass)) {
                 throw recv.getRuntime().newTypeError(arg0, recv.getRuntime().getClassClass());
             }
-            
+
             JavaInterfaceTemplate.addRealImplClassNew((RubyClass)arg0);
             return recv.getRuntime().getNil();
         }
     };
-    
+
     /**
      * This populates the master map from short-cut names to JavaClass instances for
      * a number of core Java types.
-     * 
+     *
      * @param runtime
      * @param nameClassMap
      */
@@ -225,67 +225,67 @@ public class Java implements Library {
         nameClassMap.put("boolean", booleanPrimClass);
         nameClassMap.put("Boolean", booleanClass);
         nameClassMap.put("java.lang.Boolean", booleanClass);
-        
+
         JavaClass bytePrimClass = JavaClass.get(runtime, Byte.TYPE);
         JavaClass byteClass = JavaClass.get(runtime, Byte.class);
         nameClassMap.put("byte", bytePrimClass);
         nameClassMap.put("Byte", byteClass);
         nameClassMap.put("java.lang.Byte", byteClass);
-        
+
         JavaClass shortPrimClass = JavaClass.get(runtime, Short.TYPE);
         JavaClass shortClass = JavaClass.get(runtime, Short.class);
         nameClassMap.put("short", shortPrimClass);
         nameClassMap.put("Short", shortClass);
         nameClassMap.put("java.lang.Short", shortClass);
-        
+
         JavaClass charPrimClass = JavaClass.get(runtime, Character.TYPE);
         JavaClass charClass = JavaClass.get(runtime, Character.class);
         nameClassMap.put("char", charPrimClass);
         nameClassMap.put("Character", charClass);
         nameClassMap.put("Char", charClass);
         nameClassMap.put("java.lang.Character", charClass);
-        
+
         JavaClass intPrimClass = JavaClass.get(runtime, Integer.TYPE);
         JavaClass intClass = JavaClass.get(runtime, Integer.class);
         nameClassMap.put("int", intPrimClass);
         nameClassMap.put("Integer", intClass);
         nameClassMap.put("Int", intClass);
         nameClassMap.put("java.lang.Integer", intClass);
-        
+
         JavaClass longPrimClass = JavaClass.get(runtime, Long.TYPE);
         JavaClass longClass = JavaClass.get(runtime, Long.class);
         nameClassMap.put("long", longPrimClass);
         nameClassMap.put("Long", longClass);
         nameClassMap.put("java.lang.Long", longClass);
-        
+
         JavaClass floatPrimClass = JavaClass.get(runtime, Float.TYPE);
         JavaClass floatClass = JavaClass.get(runtime, Float.class);
         nameClassMap.put("float", floatPrimClass);
         nameClassMap.put("Float", floatClass);
         nameClassMap.put("java.lang.Float", floatClass);
-        
+
         JavaClass doublePrimClass = JavaClass.get(runtime, Double.TYPE);
         JavaClass doubleClass = JavaClass.get(runtime, Double.class);
         nameClassMap.put("double", doublePrimClass);
         nameClassMap.put("Double", doubleClass);
         nameClassMap.put("java.lang.Double", doubleClass);
-        
+
         JavaClass bigintClass = JavaClass.get(runtime, BigInteger.class);
         nameClassMap.put("big_int", bigintClass);
         nameClassMap.put("big_integer", bigintClass);
         nameClassMap.put("BigInteger", bigintClass);
         nameClassMap.put("java.math.BigInteger", bigintClass);
-        
+
         JavaClass bigdecimalClass = JavaClass.get(runtime, BigDecimal.class);
         nameClassMap.put("big_decimal", bigdecimalClass);
         nameClassMap.put("BigDecimal", bigdecimalClass);
         nameClassMap.put("java.math.BigDecimal", bigdecimalClass);
-        
+
         JavaClass objectClass = JavaClass.get(runtime, Object.class);
         nameClassMap.put("object", objectClass);
         nameClassMap.put("Object", objectClass);
         nameClassMap.put("java.lang.Object", objectClass);
-        
+
         JavaClass stringClass = JavaClass.get(runtime, String.class);
         nameClassMap.put("string", stringClass);
         nameClassMap.put("String", stringClass);
@@ -351,7 +351,7 @@ public class Java implements Library {
                 && existing != proxyClass) {
             runtime.getWarnings().warn("replacing " + existing + " with " + proxyClass + " in constant '" + constName + " on class/module " + m);
         }
-        
+
         return ((RubyModule) module).setConstantQuiet(constant.asJavaString(), get_proxy_class(recv, javaClass));
     }
 
@@ -370,14 +370,14 @@ public class Java implements Library {
     public static IRubyObject getInstance(Ruby runtime, Object rawJavaObject) {
         return getInstance(runtime, rawJavaObject, false);
     }
-    
+
     /**
      * Returns a new proxy instance of a type corresponding to rawJavaObject's class,
      * or the cached proxy if we've already seen this object.  Note that primitives
      * and strings are <em>not</em> coerced to corresponding Ruby types; use
      * JavaUtil.convertJavaToUsableRubyObject to get coerced types or proxies as
      * appropriate.
-     * 
+     *
      * @param runtime the JRuby runtime
      * @param rawJavaObject the object to get a wrapper for
      * @param forceCache whether to force the use of the proxy cache
@@ -449,15 +449,15 @@ public class Java implements Library {
     public static RubyModule getProxyClass(Ruby runtime, Class c) {
         return runtime.getJavaSupport().getProxyClassFromCache(c);
     }
-    
+
     public static RubyModule createProxyClassForClass(Ruby runtime, final Class c) {
         RubyModule proxyClass;
         JavaClass javaClass = runtime.getJavaSupport().getJavaClassFromCache(c);
-        
+
         if (c.isInterface()) {
             return Java.getInterfaceModule(runtime, javaClass);
         }
-        
+
         javaClass.lockProxy();
         try {
             if ((proxyClass = javaClass.getProxyClass()) == null) {
@@ -470,7 +470,7 @@ public class Java implements Library {
                     // FIXME: Organizationally this might be nicer in a specialized class
                     if (c.getComponentType() == byte.class) {
                         final Encoding ascii8bit = runtime.getEncodingService().getAscii8bitEncoding();
-                        
+
                         // All bytes can be considered raw strings and forced to particular codings if not 8bitascii
                         proxyClass.addMethod("to_s", new JavaMethodZero(proxyClass, PUBLIC) {
                             @Override
@@ -479,7 +479,7 @@ public class Java implements Library {
                                 return RubyString.newStringLight(context.runtime, bytes);
                             }
                         });
-                    }   
+                    }
                 } else if (c.isPrimitive()) {
                     proxyClass = createProxyClass(runtime,
                             runtime.getJavaSupport().getConcreteProxyClass(),
@@ -531,7 +531,7 @@ public class Java implements Library {
         } finally {
             javaClass.unlockProxy();
         }
-        
+
         return proxyClass;
     }
 
@@ -556,7 +556,7 @@ public class Java implements Library {
 
         // this needs to be split, since conditional calling #inherited doesn't fit standard ruby semantics
         RubyClass.checkInheritable(baseType);
-        RubyClass superClass = (RubyClass) baseType;
+        final RubyClass superClass = baseType;
         proxyClass = RubyClass.newClass(runtime, superClass);
         proxyClass.makeMetaClass(superClass.getMetaClass());
 
@@ -695,7 +695,7 @@ public class Java implements Library {
     private static IRubyObject getRubyMethod(ThreadContext context, IRubyObject proxyClass, String name, Class... argTypesClasses) {
         Ruby runtime = context.runtime;
         RubyClass rubyClass;
-        
+
         if (proxyClass instanceof RubyClass) {
             rubyClass = (RubyClass)proxyClass;
         } else {
@@ -704,7 +704,7 @@ public class Java implements Library {
 
         Method jmethod = getMethodFromClass(runtime, proxyClass, name, argTypesClasses);
         String prettyName = name + CodegenUtils.prettyParams(argTypesClasses);
-        
+
         if (Modifier.isStatic(jmethod.getModifiers())) {
             MethodInvoker invoker = new StaticMethodInvoker(rubyClass, jmethod);
             return RubyMethod.newMethod(rubyClass, prettyName, rubyClass, name, invoker, proxyClass);
@@ -714,12 +714,12 @@ public class Java implements Library {
         }
     }
 
-    public static Method getMethodFromClass(Ruby runtime, IRubyObject proxyClass, String name, Class... argTypes) {
-        Class jclass = (Class)((JavaClass)proxyClass.callMethod(runtime.getCurrentContext(), "java_class")).getValue();
-
+    public static Method getMethodFromClass(Ruby runtime, IRubyObject proxyClass, String name, Class<?>... argTypes) {
+        Class<?> jclass = (Class)((JavaClass) proxyClass.callMethod(runtime.getCurrentContext(), "java_class")).getValue();
         try {
             return jclass.getMethod(name, argTypes);
-        } catch (NoSuchMethodException nsme) {
+        }
+        catch (NoSuchMethodException nsme) {
             String prettyName = name + CodegenUtils.prettyParams(argTypes);
             String errorName = jclass.getName() + "." + prettyName;
             throw runtime.newNameError("Java method not found: " + errorName, name);
@@ -776,7 +776,7 @@ public class Java implements Library {
                     proxyClass = JavaProxyClass.get_with_class(self, self.getMetaClass());
                     self.getMetaClass().getInstanceVariables().setInstanceVariable("@java_proxy_class", proxyClass);
                 }
-                
+
                 JavaProxyClass realProxyClass = (JavaProxyClass)proxyClass;
                 RubyArray constructors = realProxyClass.constructors();
                 ArrayList<JavaProxyConstructor> forArity = new ArrayList<JavaProxyConstructor>();
@@ -786,7 +786,7 @@ public class Java implements Library {
                         forArity.add(constructor);
                     }
                 }
-                
+
                 if (forArity.size() == 0) {
                     throw runtime.newArgumentError("wrong number of arguments for constructor");
                 }
@@ -804,7 +804,7 @@ public class Java implements Library {
                 for (int i = 0; i < args.length; i++) {
                     newArgs[i] = args[i].toJava(parameterTypes[i]);
                 }
-                
+
                 JavaObject newObject = matching.newInstance(self, newArgs);
                 return JavaUtilities.set_java_object(self, self, newObject);
             }
@@ -813,8 +813,8 @@ public class Java implements Library {
         return runtime.getNil();
     }
 
-    // package scheme 2: separate module for each full package name, constructed 
-    // from the camel-cased package segments: Java::JavaLang::Object, 
+    // package scheme 2: separate module for each full package name, constructed
+    // from the camel-cased package segments: Java::JavaLang::Object,
     private static void addToJavaPackageModule(RubyModule proxyClass, JavaClass javaClass) {
         Ruby runtime = proxyClass.getRuntime();
         Class<?> clazz = javaClass.javaClass();
@@ -840,7 +840,7 @@ public class Java implements Library {
             parentModule = getJavaPackageModule(runtime, packageString);
             className = parentModule == null ? fullName : fullName.substring(endPackage + 1);
         }
-        
+
         if (parentModule != null && IdUtil.isConstant(className)) {
             if (parentModule.getConstantAt(className) == null) {
                 parentModule.setConstant(className, proxyClass);
@@ -924,37 +924,31 @@ public class Java implements Library {
         return module == null ? runtime.getNil() : module;
     }
 
-    private static RubyModule getProxyOrPackageUnderPackage(ThreadContext context, final Ruby runtime,
-            RubyModule parentPackage, String sym) {
+    private static RubyModule getProxyOrPackageUnderPackage(final ThreadContext context,
+            final Ruby runtime, final RubyModule parentPackage, final String sym) {
         IRubyObject packageNameObj = parentPackage.getInstanceVariable("@package_name");
         if (packageNameObj == null) {
             throw runtime.newArgumentError("invalid package module");
         }
-        String packageName = packageNameObj.asJavaString();
+        final String packageName = packageNameObj.asJavaString();
         final String name = sym.trim().intern();
         if (name.length() == 0) {
             throw runtime.newArgumentError("empty class or package name");
         }
-        String fullName = packageName + name;
+        final String fullName = packageName + name;
         if (!Character.isUpperCase(name.charAt(0))) {
             // filter out any Java primitive names
             // TODO: should check against all Java reserved names here, not just primitives
             if (JAVA_PRIMITIVES.containsKey(name)) {
                 throw runtime.newArgumentError("illegal package name component: " + name);
             }
-            
+
             // this covers the rare case of lower-case class names (and thus will
             // fail 99.999% of the time). fortunately, we'll only do this once per
             // package name. (and seriously, folks, look into best practices...)
-            IRubyObject previousErrorInfo = Helpers.getErrorInfo(runtime);
-            try {
-                return getProxyClass(runtime, runtime.getJavaSupport().loadJavaClassQuiet(fullName));
-            } catch (RaiseException re) { /* expected */
-                RubyException rubyEx = re.getException();
-                if (rubyEx.kind_of_p(context, runtime.getStandardError()).isTrue()) {
-                    Helpers.setErrorInfo(runtime, previousErrorInfo);
-                }
-            } catch (Exception e) { /* expected */ }
+            final IRubyObject previousErrorInfo = Helpers.getErrorInfo(runtime);
+            RubyModule proxyClass = getProxyClassOrNull(runtime, fullName, previousErrorInfo);
+            if ( proxyClass != null ) return proxyClass; /* else expected - not a class */
 
             // Haven't found a class, continue on as though it were a package
             final RubyModule packageModule = getJavaPackageModule(runtime, fullName);
@@ -965,18 +959,19 @@ public class Java implements Library {
 
             // save package in singletonized parent, so we don't come back here
             memoizePackageOrClass(parentPackage, name, packageModule);
-            
+
             return packageModule;
         } else {
             try {
                 // First char is upper case, so assume it's a class name
                 final RubyModule javaModule = getProxyClass(runtime, JavaClass.forNameVerbose(runtime, fullName));
-                
+
                 // save class in singletonized parent, so we don't come back here
                 memoizePackageOrClass(parentPackage, name, javaModule);
 
                 return javaModule;
-            } catch (Exception e) {
+            }
+            catch (Exception e) {
                 if (runtime.getInstanceConfig().getAllowUppercasePackageNames()) {
                     // but for those not hip to conventions and best practices,
                     // we'll try as a package
@@ -989,53 +984,55 @@ public class Java implements Library {
         }
     }
 
-    public static IRubyObject get_proxy_or_package_under_package(
-            ThreadContext context,
-            IRubyObject recv,
-            IRubyObject parentPackage,
-            IRubyObject sym) {
-        Ruby runtime = recv.getRuntime();
-        if (!(parentPackage instanceof RubyModule)) {
-            throw runtime.newTypeError(parentPackage, runtime.getModule());
+    private static RubyModule getProxyClassOrNull(final Ruby runtime,
+        final String fullName, final IRubyObject errorInfo) {
+        try {
+            return getProxyClass(runtime, runtime.getJavaSupport().loadJavaClassQuiet(fullName));
         }
-        RubyModule result;
-        if ((result = getProxyOrPackageUnderPackage(context, runtime,
-                (RubyModule) parentPackage, sym.asJavaString())) != null) {
-            return result;
+        catch (RaiseException ex) {
+            if ( runtime.getStandardError().isInstance( ex.getException() ) ) {
+                if ( errorInfo != null ) Helpers.setErrorInfo(runtime, errorInfo);
+            }
+            return null;
         }
-        return runtime.getNil();
+        catch (RuntimeException ex) { return null; }
     }
 
-    private static RubyModule getTopLevelProxyOrPackage(ThreadContext context, final Ruby runtime, String sym) {
+    public static IRubyObject get_proxy_or_package_under_package(final ThreadContext context,
+        final IRubyObject self, final IRubyObject parentPackage, final IRubyObject sym) {
+        final Ruby runtime = context.runtime;
+        if ( ! (parentPackage instanceof RubyModule) ) {
+            throw runtime.newTypeError(parentPackage, runtime.getModule());
+        }
+        final RubyModule result = getProxyOrPackageUnderPackage(context, runtime, (RubyModule) parentPackage, sym.asJavaString());
+        if ( result != null) return result;
+        return context.nil;
+    }
+
+    private static RubyModule getTopLevelProxyOrPackage(final ThreadContext context,
+        final Ruby runtime, String sym) {
         final String name = sym.trim().intern();
         if (name.length() == 0) {
             throw runtime.newArgumentError("empty class or package name");
         }
         if (Character.isLowerCase(name.charAt(0))) {
             // this covers primitives and (unlikely) lower-case class names
-            try {
-                return getProxyClass(runtime, runtime.getJavaSupport().loadJavaClassQuiet(name));
-            } catch (RaiseException re) { /* not primitive or lc class */
-                RubyException rubyEx = re.getException();
-                if (rubyEx.kind_of_p(context, runtime.getStandardError()).isTrue()) {
-                    Helpers.setErrorInfo(runtime, runtime.getNil());
-                }
-            } catch (Exception e) { /* not primitive or lc class */ }
+            RubyModule proxyClass = getProxyClassOrNull(runtime, name, context.nil);
+            if ( proxyClass != null ) return proxyClass; /* else not primitive or lc class */
 
             // TODO: check for Java reserved names and raise exception if encountered
 
             final RubyModule packageModule = getJavaPackageModule(runtime, name);
             // TODO: decompose getJavaPackageModule so we don't parse fullName
-            if (packageModule == null) {
-                return null;
-            }
+            if (packageModule == null) return null;
+
             RubyModule javaModule = runtime.getJavaSupport().getJavaModule();
-            if (javaModule.getMetaClass().isMethodBound(name, false)) {
+            if ( javaModule.getMetaClass().isMethodBound(name, false) ) {
                 return packageModule;
             }
 
             memoizePackageOrClass(javaModule, name, packageModule);
-            
+
             return packageModule;
         } else {
             RubyModule javaModule = null;
@@ -1066,29 +1063,43 @@ public class Java implements Library {
     }
 
     private static void memoizePackageOrClass(final RubyModule parentPackage, final String name, final IRubyObject value) {
-        RubyClass singleton = parentPackage.getSingletonClass();
-        singleton.addMethod(name, new org.jruby.internal.runtime.methods.JavaMethod(singleton, PUBLIC) {
-            public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args, Block block) {
-                if (args.length != 0) {
-                    throw context.runtime.newArgumentError(
-                            "Java package `"
-                                    + parentPackage.callMethod("package_name")
-                                    + "' does not have a method `"
-                                    + name
-                                    + "'");
-                }
-                return call(context, self, clazz, name);
-            }
+        final RubyClass singleton = parentPackage.getSingletonClass();
+        singleton.addMethod(name, new MemoizedAccessor(singleton, parentPackage, value));
+    }
 
-            public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name) {
-                return value;
-            }
+    private static class MemoizedAccessor extends org.jruby.internal.runtime.methods.JavaMethod {
 
-            @Override
-            public Arity getArity() {
-                return Arity.noArguments();
+        private final RubyModule parentPackage;
+        private final IRubyObject value;
+
+        MemoizedAccessor(final RubyClass singleton, final RubyModule parentPackage, final IRubyObject value) {
+            super(singleton, PUBLIC);
+            this.parentPackage = parentPackage; this.value = value;
+        }
+
+        @Override
+        public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args, Block block) {
+            if (args.length != 0) {
+                throw context.runtime.newArgumentError(
+                        "Java package `"
+                                + parentPackage.callMethod("package_name")
+                                + "' does not have a method `"
+                                + name
+                                + "'");
             }
-        });
+            return call(context, self, clazz, name);
+        }
+
+        @Override
+        public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name) {
+            return value;
+        }
+
+        @Override
+        public Arity getArity() {
+            return Arity.noArguments();
+        }
+
     }
 
     public static IRubyObject get_top_level_proxy_or_package(ThreadContext context, IRubyObject recv, IRubyObject sym) {
@@ -1101,7 +1112,7 @@ public class Java implements Library {
     public static IRubyObject wrap(Ruby runtime, IRubyObject java_object) {
         return getInstance(runtime, ((JavaObject) java_object).getValue());
     }
-    
+
     /**
      * High-level object conversion utility function 'java_to_primitive' is the low-level version
      */
@@ -1176,7 +1187,7 @@ public class Java implements Library {
                 classLoader = new OneShotClassLoader(runtime.getJRubyClassLoader());
             }
             String implClassName = "org.jruby.gen.InterfaceImpl" + Math.abs(interfacesHashCode);
-            Class proxyImplClass;
+            Class<?> proxyImplClass;
             try {
                 proxyImplClass = Class.forName(implClassName, true, runtime.getJRubyClassLoader());
             } catch (ClassNotFoundException cnfe) {
@@ -1184,7 +1195,7 @@ public class Java implements Library {
             }
 
             try {
-                Constructor proxyConstructor = proxyImplClass.getConstructor(IRubyObject.class);
+                Constructor<?> proxyConstructor = proxyImplClass.getConstructor(IRubyObject.class);
                 return JavaObject.wrap(runtime, proxyConstructor.newInstance(wrapper));
             } catch (NoSuchMethodException nsme) {
                 throw runtime.newTypeError("Exception instantiating generated interface impl:\n" + nsme);
@@ -1197,7 +1208,8 @@ public class Java implements Library {
             }
         } else {
             Object proxyObject = Proxy.newProxyInstance(runtime.getJRubyClassLoader(), interfaces, new InvocationHandler() {
-                private Map parameterTypeCache = new ConcurrentHashMap();
+
+                private final Map<Method, Class[]> parameterTypeCache = new ConcurrentHashMap<Method, Class[]>();
 
                 public Object invoke(Object proxy, Method method, Object[] nargs) throws Throwable {
                     String methodName = method.getName();
@@ -1209,7 +1221,7 @@ public class Java implements Library {
                     } else if (methodName.equals("hashCode") && length == 0) {
                         return Integer.valueOf(proxy.getClass().hashCode());
                     } else if (methodName.equals("equals") && length == 1) {
-                        Class[] parameterTypes = (Class[]) parameterTypeCache.get(method);
+                        Class[] parameterTypes = parameterTypeCache.get(method);
                         if (parameterTypes == null) {
                             parameterTypes = method.getParameterTypes();
                             parameterTypeCache.put(method, parameterTypes);
@@ -1224,7 +1236,8 @@ public class Java implements Library {
                     IRubyObject[] rubyArgs = JavaUtil.convertJavaArrayToRuby(runtime, nargs);
                     try {
                         return Helpers.invoke(runtime.getCurrentContext(), wrapper, methodName, rubyArgs).toJava(method.getReturnType());
-                    } catch (RuntimeException e) { e.printStackTrace(); throw e; }
+                    }
+                    catch (RuntimeException e) { e.printStackTrace(); throw e; }
                 }
             });
             return JavaObject.wrap(runtime, proxyObject);
@@ -1240,7 +1253,7 @@ public class Java implements Library {
         int interfacesHashCode = interfacesHashCode(interfaces);
         // normal new class implementing interfaces
         interfacesHashCode = 31 * interfacesHashCode + clazz.hashCode();
-        
+
         String implClassName;
         if (clazz.getBaseName() == null) {
             // no-name class, generate a bogus name for it
@@ -1258,7 +1271,7 @@ public class Java implements Library {
                 superClass = RubyObject.class;
             }
             proxyImplClass = RealClassGenerator.createRealImplClass(superClass, interfaces, clazz, runtime, implClassName);
-            
+
             // add a default initialize if one does not already exist and this is a Java-hierarchy class
             if (NEW_STYLE_EXTENSION &&
                     !(RubyBasicObject.class.isAssignableFrom(proxyImplClass) || clazz.getMethods().containsKey("initialize"))
@@ -1277,7 +1290,7 @@ public class Java implements Library {
         return proxyImplClass;
     }
 
-    public static Constructor getRealClassConstructor(Ruby runtime, Class proxyImplClass) {
+    public static Constructor getRealClassConstructor(final Ruby runtime, Class<?> proxyImplClass) {
         try {
             return proxyImplClass.getConstructor(Ruby.class, RubyClass.class);
         } catch (NoSuchMethodException nsme) {
@@ -1297,13 +1310,13 @@ public class Java implements Library {
             throw runtime.newTypeError("Exception instantiating generated interface impl:\n" + iae);
         }
     }
-    
+
     public static IRubyObject allocateProxy(Object javaObject, RubyClass clazz) {
         // Arrays are never stored in OPC
         if (clazz.getSuperClass() == clazz.getRuntime().getJavaSupport().getArrayProxyClass()) {
             return new ArrayJavaProxy(clazz.getRuntime(), clazz, javaObject, JavaUtil.getJavaConverter(javaObject.getClass().getComponentType()));
         }
-        
+
         IRubyObject proxy = clazz.allocate();
         if (proxy instanceof JavaProxy) {
             ((JavaProxy)proxy).setObject(javaObject);
@@ -1319,15 +1332,15 @@ public class Java implements Library {
         return allocateProxy(object, getProxyClassForObject(runtime, object));
     }
 
+    @SuppressWarnings("unchecked")
     public static Class[] getInterfacesFromRubyClass(RubyClass klass) {
         Set<Class> interfaces = new HashSet<Class>();
         // walk all superclasses aggregating interfaces
         while (klass != null) {
             IRubyObject maybeInterfaces = klass.getInstanceVariables().getInstanceVariable("@java_interfaces");
             if (maybeInterfaces instanceof RubyArray) {
-                RubyArray moreInterfaces = (RubyArray)maybeInterfaces;
-                if (!moreInterfaces.isFrozen()) moreInterfaces.setFrozen(true);
-
+                final RubyArray moreInterfaces = (RubyArray) maybeInterfaces;
+                if ( ! moreInterfaces.isFrozen() ) moreInterfaces.setFrozen(true);
                 interfaces.addAll(moreInterfaces);
             }
             klass = klass.getSuperClass();
@@ -1335,7 +1348,7 @@ public class Java implements Library {
 
         return interfaces.toArray(new Class[interfaces.size()]);
     }
-    
+
     private static int interfacesHashCode(Class[] a) {
         if (a == null) {
             return 0;
