@@ -1220,12 +1220,8 @@ public class JavaClass extends JavaObject {
         applyProxyExtenders();
     }
 
-    private void setJavaClassFor(final RubyModule proxyModule) {
-        proxyModule.setInstanceVariable("@java_class", this);
-    }
-
-    private void setJavaClassFor(final RubyClass proxyClass) {
-        proxyClass.callMethod(getRuntime().getCurrentContext(), "java_class=", this);
+    private void setJavaClassFor(final RubyModule proxy) {
+        proxy.setInstanceVariable("@java_class", this);
     }
 
     public void addProxyExtender(final IRubyObject extender) {
@@ -1247,7 +1243,6 @@ public class JavaClass extends JavaObject {
             }
         }
         finally { unlockProxy(); }
-
     }
 
     private void applyProxyExtenders() {
