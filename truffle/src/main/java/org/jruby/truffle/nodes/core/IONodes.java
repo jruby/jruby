@@ -31,43 +31,6 @@ import java.util.List;
 @CoreClass(name = "IO")
 public abstract class IONodes {
 
-    @CoreMethod(names = "open", onSingleton = true, needsBlock = true, required = 2)
-    public abstract static class OpenNode extends YieldingCoreMethodNode {
-
-        public OpenNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
-        public OpenNode(OpenNode prev) {
-            super(prev);
-        }
-
-        @Specialization
-        public Object open(VirtualFrame frame, RubyString fileName, RubyString mode, UndefinedPlaceholder block) {
-            notDesignedForCompilation();
-
-            return RubyFile.open(getContext(), fileName.toString(), mode.toString());
-        }
-
-        @Specialization
-        public Object open(VirtualFrame frame, RubyString fileName, RubyString mode, RubyProc block) {
-            notDesignedForCompilation();
-
-            final RubyFile file = RubyFile.open(getContext(), fileName.toString(), mode.toString());
-
-            if (block != null) {
-                try {
-                    yield(frame, block, file);
-                } finally {
-                    file.close();
-                }
-            }
-
-            return file;
-        }
-
-    }
-
     @CoreMethod(names = "readlines", onSingleton = true, required = 1)
     public abstract static class ReadLinesNode extends CoreMethodNode {
 
