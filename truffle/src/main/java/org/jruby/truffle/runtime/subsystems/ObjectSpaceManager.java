@@ -66,6 +66,7 @@ public class ObjectSpaceManager {
     private final Map<RubyBasicObject, FinalizerReference> finalizerReferences = new WeakHashMap<>();
     private final ReferenceQueue<RubyBasicObject> finalizerQueue = new ReferenceQueue<>();
     private RubyThread finalizerThread;
+    private Thread finalizerJavaThread;
     private boolean stop;
 
     public ObjectSpaceManager(RubyContext context) {
@@ -97,6 +98,7 @@ public class ObjectSpaceManager {
 
                 @Override
                 public void run() {
+                    finalizerJavaThread = Thread.currentThread();
                     runFinalizers();
                 }
 
@@ -171,7 +173,7 @@ public class ObjectSpaceManager {
         try {
             // Tell the finalizer thread to stop and wait for it to do so
             stop = true;
-            finalizerThread.interrupt();
+            finalizerJavaThread.interrupt();
             finalizerThread.join();
 
             // Run any finalizers for objects that are still live
