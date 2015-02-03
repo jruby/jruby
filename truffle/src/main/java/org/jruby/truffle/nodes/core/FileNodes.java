@@ -359,7 +359,7 @@ public abstract class FileNodes {
         }
 
         @Specialization
-        public Object open(VirtualFrame frame, RubyString fileName, RubyString mode, UndefinedPlaceholder block) {
+        public Object open(RubyString fileName, RubyString mode, UndefinedPlaceholder block) {
             notDesignedForCompilation();
 
             return RubyFile.open(getContext(), fileName.toString(), mode.toString());
