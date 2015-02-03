@@ -1296,6 +1296,14 @@ public class JavaClass extends JavaObject {
         return result;
     }
 
+    public Class javaClass() {
+        return (Class) getValue();
+    }
+
+    static Class resolveJavaClass(final ThreadContext context, final IRubyObject proxyClass) {
+        return ((JavaClass) proxyClass.callMethod(context, "java_class")).javaClass();
+    }
+
     private static Map<String, Class> PRIMITIVE_TO_CLASS = new HashMap<String,Class>();
 
     static {
@@ -1351,10 +1359,6 @@ public class JavaClass extends JavaObject {
     @JRubyMethod(name = "private?")
     public RubyBoolean private_p() {
         return getRuntime().newBoolean(Modifier.isPrivate(javaClass().getModifiers()));
-    }
-
-    public Class javaClass() {
-        return (Class) getValue();
     }
 
     @JRubyMethod(name = "final?")

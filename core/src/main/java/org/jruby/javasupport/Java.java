@@ -468,7 +468,7 @@ public class Java implements Library {
                     proxyClass = createProxyClass(runtime, javaSupport.getArrayProxyClass(), javaClass, true);
 
                     // FIXME: Organizationally this might be nicer in a specialized class
-                    if (clazz.getComponentType() == byte.class) {
+                    if ( clazz.getComponentType() == byte.class ) {
                         final Encoding ascii8bit = runtime.getEncodingService().getAscii8bitEncoding();
 
                         // All bytes can be considered raw strings and forced to particular codings if not 8bitascii
@@ -658,79 +658,75 @@ public class Java implements Library {
         }
 
         @JRubyMethod(meta = true, visibility = PRIVATE)
-        public static IRubyObject java_alias(ThreadContext context, IRubyObject proxyClass, IRubyObject newName, IRubyObject rubyName) {
-            return java_alias(context, proxyClass, newName, rubyName, context.runtime.newEmptyArray());
+        public static IRubyObject java_alias(ThreadContext context, IRubyObject clazz, IRubyObject newName, IRubyObject rubyName) {
+            return java_alias(context, clazz, newName, rubyName, context.runtime.newEmptyArray());
         }
 
         @JRubyMethod(meta = true, visibility = PRIVATE)
-        public static IRubyObject java_alias(ThreadContext context, IRubyObject proxyClass, IRubyObject newName, IRubyObject rubyName, IRubyObject argTypes) {
+        public static IRubyObject java_alias(ThreadContext context, IRubyObject clazz, IRubyObject newName, IRubyObject rubyName, IRubyObject argTypes) {
+            final Ruby runtime = context.runtime;
+            if ( ! ( clazz instanceof RubyClass ) ) {
+                throw runtime.newTypeError(clazz, runtime.getModule());
+            }
+            final RubyClass proxyClass = (RubyClass) clazz;
+
             String name = rubyName.asJavaString();
             String newNameStr = newName.asJavaString();
             RubyArray argTypesAry = argTypes.convertToArray();
-            Class[] argTypesClasses = (Class[])argTypesAry.toArray(new Class[argTypesAry.size()]);
-            final Ruby runtime = context.runtime;
-            RubyClass rubyClass;
+            Class<?>[] argTypesClasses = (Class[]) argTypesAry.toArray(new Class[argTypesAry.size()]);
 
-            if (proxyClass instanceof RubyClass) {
-                rubyClass = (RubyClass)proxyClass;
-            } else {
-                throw runtime.newTypeError(proxyClass, runtime.getModule());
-            }
+            final Method method = getMethodFromClass(context, clazz, name, argTypesClasses);
+            final MethodInvoker invoker;
 
-            Method method = getMethodFromClass(runtime, proxyClass, name, argTypesClasses);
-            MethodInvoker invoker = getMethodInvokerForMethod(rubyClass, method);
-
-            if (Modifier.isStatic(method.getModifiers())) {
+            if ( Modifier.isStatic( method.getModifiers() ) ) {
+                invoker = new StaticMethodInvoker(proxyClass.getMetaClass(), method);
                 // add alias to meta
-                rubyClass.getSingletonClass().addMethod(newNameStr, invoker);
-            } else {
-                rubyClass.addMethod(newNameStr, invoker);
+                proxyClass.getSingletonClass().addMethod(newNameStr, invoker);
+            }
+            else {
+                invoker = new InstanceMethodInvoker(proxyClass, method);
+                proxyClass.addMethod(newNameStr, invoker);
             }
 
             return context.nil;
         }
     }
 
-    private static IRubyObject getRubyMethod(ThreadContext context, IRubyObject proxyClass, String name, Class... argTypesClasses) {
-        Ruby runtime = context.runtime;
-        RubyClass rubyClass;
+    private static IRubyObject getRubyMethod(ThreadContext context, IRubyObject clazz, String name, Class... argTypesClasses) {
+        final Ruby runtime = context.runtime;
+        if ( ! ( clazz instanceof RubyClass ) ) {
+            throw runtime.newTypeError(clazz, runtime.getModule());
+        }
+        final RubyClass proxyClass = (RubyClass) clazz;
 
-        if (proxyClass instanceof RubyClass) {
-            rubyClass = (RubyClass)proxyClass;
-        } else {
-            throw runtime.newTypeError(proxyClass, runtime.getModule());
+        final Method method = getMethodFromClass(context, clazz, name, argTypesClasses);
+        final String prettyName = name + CodegenUtils.prettyParams(argTypesClasses);
+
+        if ( Modifier.isStatic( method.getModifiers() ) ) {
+            MethodInvoker invoker = new StaticMethodInvoker(proxyClass, method);
+            return RubyMethod.newMethod(proxyClass, prettyName, proxyClass, name, invoker, clazz);
         }
 
-        Method jmethod = getMethodFromClass(runtime, proxyClass, name, argTypesClasses);
-        String prettyName = name + CodegenUtils.prettyParams(argTypesClasses);
-
-        if (Modifier.isStatic(jmethod.getModifiers())) {
-            MethodInvoker invoker = new StaticMethodInvoker(rubyClass, jmethod);
-            return RubyMethod.newMethod(rubyClass, prettyName, rubyClass, name, invoker, proxyClass);
-        } else {
-            MethodInvoker invoker = new InstanceMethodInvoker(rubyClass, jmethod);
-            return RubyUnboundMethod.newUnboundMethod(rubyClass, prettyName, rubyClass, name, invoker);
-        }
+        MethodInvoker invoker = new InstanceMethodInvoker(proxyClass, method);
+        return RubyUnboundMethod.newUnboundMethod(proxyClass, prettyName, proxyClass, name, invoker);
     }
 
-    public static Method getMethodFromClass(Ruby runtime, IRubyObject proxyClass, String name, Class<?>... argTypes) {
-        Class<?> jclass = (Class)((JavaClass) proxyClass.callMethod(runtime.getCurrentContext(), "java_class")).getValue();
+    private static Method getMethodFromClass(final ThreadContext context, final IRubyObject proxyClass,
+        final String name, final Class... argTypes) {
+        final Class<?> clazz = JavaClass.resolveJavaClass(context, proxyClass);
         try {
-            return jclass.getMethod(name, argTypes);
+            return clazz.getMethod(name, argTypes);
         }
         catch (NoSuchMethodException nsme) {
             String prettyName = name + CodegenUtils.prettyParams(argTypes);
-            String errorName = jclass.getName() + "." + prettyName;
-            throw runtime.newNameError("Java method not found: " + errorName, name);
+            String errorName = clazz.getName() + '.' + prettyName;
+            throw context.runtime.newNameError("Java method not found: " + errorName, name);
         }
     }
 
-    private static MethodInvoker getMethodInvokerForMethod(RubyClass metaClass, Method method) {
-        if (Modifier.isStatic(method.getModifiers())) {
-            return new StaticMethodInvoker(metaClass.getMetaClass(), method);
-        } else {
-            return new InstanceMethodInvoker(metaClass, method);
-        }
+    public static Method getMethodFromClass(final Ruby runtime, final IRubyObject proxyClass,
+        final String name, final Class... argTypes) {
+        return getMethodFromClass(runtime.getCurrentContext(), proxyClass, name, argTypes);
     }
 
     public static IRubyObject concrete_proxy_inherited(IRubyObject recv, IRubyObject subclass) {
@@ -879,7 +875,7 @@ public class Java implements Library {
     }
 
     private static RubyModule createPackageModule(final Ruby runtime,
-        final RubyModule parent, final String name, final String packageString) {
+        final RubyModule parentModule, final String name, final String packageString) {
 
         final RubyModule packageModule = (RubyModule) runtime.getJavaSupport().getPackageModuleTemplate().dup();
 
@@ -890,9 +886,15 @@ public class Java implements Library {
         // package module syntax.
         packageModule.addClassProvider(JAVA_PACKAGE_CLASS_PROVIDER);
 
-        parent.const_set(runtime.newSymbol(name), packageModule);
-        MetaClass metaClass = (MetaClass) packageModule.getMetaClass();
-        metaClass.setAttached(packageModule);
+        synchronized (parentModule) { // guard initializing in multiple threads
+            final IRubyObject packageAlreadySet = parentModule.fetchConstant(name);
+            if ( packageAlreadySet != null ) {
+                return (RubyModule) packageAlreadySet;
+            }
+            parentModule.setConstant(name.intern(), packageModule);
+            MetaClass metaClass = (MetaClass) packageModule.getMetaClass();
+            metaClass.setAttached(packageModule);
+        }
         return packageModule;
     }
 
@@ -904,12 +906,10 @@ public class Java implements Library {
         if ( packageModule instanceof RubyModule ) return (RubyModule) packageModule;
 
         final String packageName;
-        if ( "Default".equals(name) ) {
-            packageName = "";
-        }
+        if ( "Default".equals(name) ) packageName = "";
         else {
-            Matcher m = CAMEL_CASE_PACKAGE_SPLITTER.matcher(name);
-            packageName = m.replaceAll("$1.$2").toLowerCase();
+            Matcher match = CAMEL_CASE_PACKAGE_SPLITTER.matcher(name);
+            packageName = match.replaceAll("$1.$2").toLowerCase();
         }
         return createPackageModule(runtime, javaModule, name, packageName);
     }
@@ -918,8 +918,9 @@ public class Java implements Library {
         return getPackageModule(self.getRuntime(), name.asJavaString());
     }
 
-    public static IRubyObject get_package_module_dot_format(IRubyObject recv, IRubyObject dottedName) {
-        Ruby runtime = recv.getRuntime();
+    public static IRubyObject get_package_module_dot_format(final IRubyObject self,
+        final IRubyObject dottedName) {
+        final Ruby runtime = self.getRuntime();
         RubyModule module = getJavaPackageModule(runtime, dottedName.asJavaString());
         return module == null ? runtime.getNil() : module;
     }
