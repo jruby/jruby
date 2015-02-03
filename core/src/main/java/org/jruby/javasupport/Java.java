@@ -421,9 +421,8 @@ public class Java implements Library {
                 addToJavaPackageModule(interfaceModule, javaClass);
             }
         }
-        finally {
-            javaClass.unlockProxy();
-        }
+        finally { javaClass.unlockProxy(); }
+
         return interfaceModule;
     }
 
@@ -459,7 +458,9 @@ public class Java implements Library {
 
         if ( clazz.isInterface() ) return Java.getInterfaceModule(runtime, javaClass);
 
-        RubyModule proxyClass;
+        RubyModule proxyClass = javaClass.getProxyClass();
+        if ( proxyClass != null ) return proxyClass;
+
         javaClass.lockProxy();
         try {
             if ( ( proxyClass = javaClass.getProxyClass() ) == null ) {
@@ -500,7 +501,7 @@ public class Java implements Library {
                     proxyClass = createProxyClass(runtime, superProxyClass, javaClass, false);
                     // include interface modules into the proxy class
                     final Class<?>[] interfaces = clazz.getInterfaces();
-                    for (int i = interfaces.length; --i >= 0;) {
+                    for ( int i = interfaces.length; --i >= 0; ) {
                         JavaClass ifaceClass = JavaClass.get(runtime, interfaces[i]);
                         // java.util.Map type object has its own proxy, but following
                         // is needed. Unless kind_of?(is_a?) test will fail.
@@ -526,14 +527,12 @@ public class Java implements Library {
                 }
             }
         }
-        finally {
-            javaClass.unlockProxy();
-        }
+        finally { javaClass.unlockProxy(); }
 
         return proxyClass;
     }
 
-    public static IRubyObject get_proxy_class(final IRubyObject self, final IRubyObject java_class_object) {
+    public static RubyModule get_proxy_class(final IRubyObject self, final IRubyObject java_class_object) {
         final Ruby runtime = self.getRuntime();
         final JavaClass javaClass;
         if ( java_class_object instanceof RubyString ) {
@@ -558,7 +557,7 @@ public class Java implements Library {
         RubyClass.checkInheritable(baseType);
         final RubyClass superClass = baseType;
         proxyClass = RubyClass.newClass(runtime, superClass);
-        proxyClass.makeMetaClass(superClass.getMetaClass());
+        proxyClass.makeMetaClass( superClass.getMetaClass() );
 
         if ( Map.class.isAssignableFrom( javaClass.javaClass() ) ) {
             proxyClass.setAllocator( runtime.getJavaSupport().getMapJavaProxyClass().getAllocator() );
@@ -568,12 +567,12 @@ public class Java implements Library {
         else {
             proxyClass.setAllocator( superClass.getAllocator() );
         }
+        proxyClass.defineAnnotatedMethods( JavaProxyClassMethods.class );
 
         if ( invokeInherited ) proxyClass.inherit(superClass);
 
         proxyClass.callMethod(runtime.getCurrentContext(), "java_class=", javaClass);
         // add java_method for unbound use
-        proxyClass.defineAnnotatedMethods(JavaProxyClassMethods.class);
 
         javaClass.setupProxy(proxyClass);
 
