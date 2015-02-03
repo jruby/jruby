@@ -455,6 +455,26 @@ public abstract class FileNodes {
 
     }
 
+    @CoreMethod(names = "readable?", onSingleton = true, needsSelf = false, required = 1)
+    public abstract static class ReadableQueryNode extends CoreMethodNode {
+
+        public ReadableQueryNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public ReadableQueryNode(ReadableQueryNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public boolean isReadable(RubyString file) {
+            notDesignedForCompilation();
+
+            return new File(file.toString()).canRead();
+        }
+
+    }
+
     @CoreMethod(names = "size?", onSingleton = true, required = 1)
     public abstract static class SizeNode extends CoreMethodNode {
 
