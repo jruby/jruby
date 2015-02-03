@@ -12,7 +12,7 @@ package org.jruby.truffle.runtime.subsystems;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
-import org.jruby.truffle.runtime.DebugOperations;
+
 import org.jruby.truffle.runtime.RubyCallStack;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.backtrace.Backtrace;
@@ -23,6 +23,7 @@ import java.io.IOException;
 import java.io.PrintStream;
 import java.net.InetSocketAddress;
 
+@SuppressWarnings("restriction")
 public class StackServerManager {
 
     private final RubyContext context;
