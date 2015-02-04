@@ -830,61 +830,63 @@ public abstract class StringNodes {
 
     }
 
-    @CoreMethod(names = "gsub", required = 1, optional = 1, needsBlock = true)
-    public abstract static class GsubNode extends RegexpNodes.EscapingYieldingNode {
+    @CoreMethod(names = "gsub!", required = 1, optional = 1, needsBlock = true)
+    public abstract static class GsubBangNode extends RegexpNodes.EscapingYieldingNode {
 
         @Child private CallDispatchHeadNode toS;
 
-        public GsubNode(RubyContext context, SourceSection sourceSection) {
+        public GsubBangNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
             toS = DispatchHeadNodeFactory.createMethodCall(context);
         }
 
-        public GsubNode(GsubNode prev) {
+        public GsubBangNode(GsubBangNode prev) {
             super(prev);
             toS = prev.toS;
         }
 
         @Specialization
-        public RubyString gsub(VirtualFrame frame, RubyString string, RubyString regexpString, RubyString replacement, UndefinedPlaceholder block) {
+        public RubyString gsubBang(VirtualFrame frame, RubyString string, RubyString regexpString, RubyString replacement, UndefinedPlaceholder block) {
             notDesignedForCompilation();
 
             final RubyRegexp regexp = new RubyRegexp(this, getContext().getCoreLibrary().getRegexpClass(), escape(frame, regexpString).getBytes(), Option.DEFAULT);
-            return gsub(string, regexp, replacement, block);
+            return gsubBang(string, regexp, replacement, block);
         }
 
         @Specialization
-        public RubyString gsub(RubyString string, RubyRegexp regexp, RubyString replacement, @SuppressWarnings("unused") UndefinedPlaceholder block) {
+        public RubyString gsubBang(RubyString string, RubyRegexp regexp, RubyString replacement, @SuppressWarnings("unused") UndefinedPlaceholder block) {
             notDesignedForCompilation();
 
-            return regexp.gsub(string, replacement.toString());
+            string.set(regexp.gsub(string, replacement.toString()).getBytes());
+            return string;
         }
 
         @Specialization
-        public RubyString gsub(VirtualFrame frame, RubyString string, RubyString regexpString, RubyString replacement, RubyProc block) {
-            notDesignedForCompilation();
-
-            final RubyRegexp regexp = new RubyRegexp(this, getContext().getCoreLibrary().getRegexpClass(), escape(frame, regexpString).getBytes(), Option.DEFAULT);
-            return gsub(string, regexp, replacement, block);
-        }
-
-        @Specialization
-        public RubyString gsub(RubyString string, RubyRegexp regexp, RubyString replacement, @SuppressWarnings("unused") RubyProc block) {
-            notDesignedForCompilation();
-
-            return regexp.gsub(string, replacement.toString());
-        }
-
-        @Specialization
-        public RubyString gsub(VirtualFrame frame, RubyString string, RubyString regexpString, @SuppressWarnings("unused") UndefinedPlaceholder replacement, RubyProc block) {
+        public RubyString gsubBang(VirtualFrame frame, RubyString string, RubyString regexpString, RubyString replacement, RubyProc block) {
             notDesignedForCompilation();
 
             final RubyRegexp regexp = new RubyRegexp(this, getContext().getCoreLibrary().getRegexpClass(), escape(frame, regexpString).getBytes(), Option.DEFAULT);
-            return gsub(frame, string, regexp, replacement, block);
+            return gsubBang(string, regexp, replacement, block);
         }
 
         @Specialization
-        public RubyString gsub(VirtualFrame frame, RubyString string, RubyRegexp regexp, @SuppressWarnings("unused") UndefinedPlaceholder replacement, RubyProc block) {
+        public RubyString gsubBang(RubyString string, RubyRegexp regexp, RubyString replacement, @SuppressWarnings("unused") RubyProc block) {
+            notDesignedForCompilation();
+
+            string.set(regexp.gsub(string, replacement.toString()).getBytes());
+            return string;
+        }
+
+        @Specialization
+        public RubyString gsubBang(VirtualFrame frame, RubyString string, RubyString regexpString, @SuppressWarnings("unused") UndefinedPlaceholder replacement, RubyProc block) {
+            notDesignedForCompilation();
+
+            final RubyRegexp regexp = new RubyRegexp(this, getContext().getCoreLibrary().getRegexpClass(), escape(frame, regexpString).getBytes(), Option.DEFAULT);
+            return gsubBang(frame, string, regexp, replacement, block);
+        }
+
+        @Specialization
+        public RubyString gsubBang(VirtualFrame frame, RubyString string, RubyRegexp regexp, @SuppressWarnings("unused") UndefinedPlaceholder replacement, RubyProc block) {
             notDesignedForCompilation();
 
             final RubyContext context = getContext();
@@ -930,7 +932,8 @@ public abstract class StringNodes {
                 end = StringSupport.positionEndForScan(string.getBytes(), matcher, encoding, p, range);
             }
 
-            return context.makeString(builder.toString());
+            string.set(context.makeString(builder.toString()).getBytes());
+            return string;
         }
     }
 

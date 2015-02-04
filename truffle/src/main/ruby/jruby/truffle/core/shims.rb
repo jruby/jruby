@@ -155,3 +155,9 @@ class Module
   end
 
 end
+
+class String
+  def gsub(*args)
+    dup.gsub!(*args)
+  end
+end
