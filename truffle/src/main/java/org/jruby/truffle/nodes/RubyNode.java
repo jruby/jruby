@@ -471,4 +471,8 @@ public abstract class RubyNode extends Node implements ProbeNode.Instrumentable 
         return value == getContext().getCoreLibrary().getNilObject();
     }
 
+    public boolean isRubiniusUndefined(Object value) {
+        return value == getContext().getCoreLibrary().getRubiniusUndefined();
+    }
+
 }

@@ -123,6 +123,7 @@ public class CoreLibrary {
     @CompilerDirectives.CompilationFinal private RubyBasicObject mainObject;
     @CompilerDirectives.CompilationFinal private RubyNilClass nilObject;
     @CompilerDirectives.CompilationFinal private RubyHash envHash;
+    @CompilerDirectives.CompilationFinal private RubyBasicObject rubiniusUndefined;
 
     private ArrayNodes.MinBlock arrayMinBlock;
     private ArrayNodes.MaxBlock arrayMaxBlock;
@@ -217,6 +218,8 @@ public class CoreLibrary {
         ioClass = new RubyClass(context, objectClass, objectClass, "IO");
 
         final RubyModule rubiniusModule = new RubyModule(context, objectClass, "Rubinius");
+        rubiniusUndefined = new RubyBasicObject(objectClass);
+        rubiniusModule.setConstant(null, "UNDEFINED", rubiniusUndefined);
 
         argumentErrorClass = new RubyClass(context, objectClass, standardErrorClass, "ArgumentError");
         argumentErrorClass.setAllocator(new RubyException.ExceptionAllocator());
@@ -1020,6 +1023,10 @@ public class CoreLibrary {
 
     public RubyClass getByteArrayClass() {
         return byteArrayClass;
+    }
+
+    public RubyBasicObject getRubiniusUndefined() {
+        return rubiniusUndefined;
     }
 
     public RubySymbol getEachSymbol() {
