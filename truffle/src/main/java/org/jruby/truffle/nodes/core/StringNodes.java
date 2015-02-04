@@ -673,6 +673,47 @@ public abstract class StringNodes {
         }
     }
 
+    @CoreMethod(names = "each_char", needsBlock = true)
+    public abstract static class EachCharNode extends YieldingCoreMethodNode {
+
+        @Child private CallDispatchHeadNode toEnumNode;
+
+        public EachCharNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public EachCharNode(EachCharNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public Object eachChar(VirtualFrame frame, RubyString string, @SuppressWarnings("unused") UndefinedPlaceholder block) {
+            notDesignedForCompilation();
+
+            if (toEnumNode == null) {
+                CompilerDirectives.transferToInterpreter();
+                toEnumNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext()));
+            }
+
+            return toEnumNode.call(frame, string, "to_enum", null, getContext().newSymbol("each_char"));
+        }
+
+        @Specialization
+        public RubyString eachChar(VirtualFrame frame, RubyString string, RubyProc block) {
+            notDesignedForCompilation();
+
+            // TODO (nirvdrum 04-Feb-15): This needs to support Ruby's encoding and code range semantics.  For now, this hack will suffice for very simple Strings.
+            final String javaString = string.toString();
+
+            for (int i = 0; i < javaString.length(); i++) {
+                yield(frame, block, getContext().makeString(javaString.charAt(i)));
+            }
+
+            return string;
+        }
+
+    }
+
     @CoreMethod(names = "each_line")
     public abstract static class EachLineNode extends YieldingCoreMethodNode {
 
