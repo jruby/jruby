@@ -65,7 +65,6 @@ import org.jruby.RubyModule;
 import org.jruby.RubyObject;
 import org.jruby.RubyString;
 import org.jruby.RubyUnboundMethod;
-import org.jruby.exceptions.RaiseException;
 import org.jruby.javasupport.proxy.JavaProxyClass;
 import org.jruby.javasupport.proxy.JavaProxyConstructor;
 import org.jruby.runtime.Helpers;
@@ -948,8 +947,7 @@ public class Java implements Library {
             // this covers the rare case of lower-case class names (and thus will
             // fail 99.999% of the time). fortunately, we'll only do this once per
             // package name. (and seriously, folks, look into best practices...)
-            final IRubyObject previousErrorInfo = Helpers.getErrorInfo(runtime);
-            RubyModule proxyClass = getProxyClassOrNull(runtime, fullName, previousErrorInfo);
+            RubyModule proxyClass = getProxyClassOrNull(runtime, fullName, false);
             if ( proxyClass != null ) return proxyClass; /* else expected - not a class */
 
             // Haven't found a class, continue on as though it were a package
@@ -986,18 +984,27 @@ public class Java implements Library {
         }
     }
 
-    private static RubyModule getProxyClassOrNull(final Ruby runtime,
-        final String fullName, final IRubyObject errorInfo) {
-        try {
-            return getProxyClass(runtime, runtime.getJavaSupport().loadJavaClassQuiet(fullName));
+    private static RubyModule getProxyClassOrNull(final Ruby runtime, final String className,
+        final boolean initJavaClass) {
+        final Class<?> clazz;
+        try { // loadJavaClass here to handle things like LinkageError through
+            clazz = runtime.getJavaSupport().loadJavaClass(className);
         }
-        catch (RaiseException ex) {
-            if ( runtime.getStandardError().isInstance( ex.getException() ) ) {
-                if ( errorInfo != null ) Helpers.setErrorInfo(runtime, errorInfo);
-            }
-            return null;
+        catch (ExceptionInInitializerError ex) {
+            throw runtime.newNameError("cannot initialize Java class " + className, className, ex, false);
         }
-        catch (RuntimeException ex) { return null; }
+        catch (LinkageError ex) {
+            throw runtime.newNameError("cannot link Java class " + className, className, ex, false);
+        }
+        catch (SecurityException ex) {
+            throw runtime.newSecurityError(ex.getLocalizedMessage());
+        }
+        catch (ClassNotFoundException ex) { return null; }
+
+        if ( initJavaClass ) {
+            return getProxyClass(runtime, JavaClass.get(runtime, clazz));
+        }
+        return getProxyClass(runtime, clazz);
     }
 
     public static IRubyObject get_proxy_or_package_under_package(final ThreadContext context,
@@ -1011,21 +1018,21 @@ public class Java implements Library {
     }
 
     private static RubyModule getTopLevelProxyOrPackage(final ThreadContext context,
-        final Ruby runtime, String sym) {
-        final String name = sym.trim().intern();
-        if (name.length() == 0) {
+        final Ruby runtime, final String name) {
+        if ( name.length() == 0 ) {
             throw runtime.newArgumentError("empty class or package name");
         }
-        if (Character.isLowerCase(name.charAt(0))) {
+        // name = name.trim().intern();
+        if ( Character.isLowerCase(name.charAt(0)) ) {
             // this covers primitives and (unlikely) lower-case class names
-            RubyModule proxyClass = getProxyClassOrNull(runtime, name, context.nil);
-            if ( proxyClass != null ) return proxyClass; /* else not primitive or lc class */
+            RubyModule proxyClass = getProxyClassOrNull(runtime, name, false);
+            if ( proxyClass != null ) return proxyClass; /* else not primitive or l-c class */
 
             // TODO: check for Java reserved names and raise exception if encountered
 
             final RubyModule packageModule = getJavaPackageModule(runtime, name);
             // TODO: decompose getJavaPackageModule so we don't parse fullName
-            if (packageModule == null) return null;
+            if ( packageModule == null ) return null;
 
             RubyModule javaModule = runtime.getJavaSupport().getJavaModule();
             if ( javaModule.getMetaClass().isMethodBound(name, false) ) {
@@ -1035,19 +1042,9 @@ public class Java implements Library {
             memoizePackageOrClass(javaModule, name, packageModule);
 
             return packageModule;
-        } else {
-            RubyModule javaModule = null;
-            try {
-                // we do loadJavaClass here to handle things like LinkageError through
-                Class cls = runtime.getJavaSupport().loadJavaClass(name);
-                javaModule = getProxyClass(runtime, JavaClass.get(runtime, cls));
-            } catch (ExceptionInInitializerError eiie) {
-                throw runtime.newNameError("cannot initialize Java class " + name, name, eiie, false);
-            } catch (LinkageError le) {
-                throw runtime.newNameError("cannot link Java class " + name, name, le, false);
-            } catch (SecurityException se) {
-                throw runtime.newSecurityError(se.getLocalizedMessage());
-            } catch (ClassNotFoundException e) { /* not a class */ }
+        }
+        else {
+            RubyModule javaModule = getProxyClassOrNull(runtime, name, true);
 
             // upper-case package name
             // TODO: top-level upper-case package was supported in the previous (Ruby-based)
@@ -1103,9 +1100,9 @@ public class Java implements Library {
     }
 
     public static IRubyObject get_top_level_proxy_or_package(final ThreadContext context,
-        final IRubyObject self, final IRubyObject sym) {
+        final IRubyObject self, final IRubyObject name) {
         final Ruby runtime = context.runtime;
-        final RubyModule result = getTopLevelProxyOrPackage(context, runtime, sym.asJavaString());
+        final RubyModule result = getTopLevelProxyOrPackage(context, runtime, name.asJavaString());
         return result != null ? result : context.nil;
     }
 
