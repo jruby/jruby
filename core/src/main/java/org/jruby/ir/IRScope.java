@@ -566,6 +566,8 @@ public abstract class IRScope implements ParseResult {
         // stymied by escaped bindings. We can also eliminate
         // dynscopes for these scopes.
         if (!isUnsafeScope() && !flags.contains(REQUIRES_DYNSCOPE)) {
+            if (flags.contains(RECEIVES_CLOSURE_ARG))
+                (new OptimizeDelegationPass()).run(this);
             (new DeadCodeElimination()).run(this);
             (new OptimizeDynScopesPass()).run(this);
         }
