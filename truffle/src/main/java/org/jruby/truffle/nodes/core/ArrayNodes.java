@@ -661,10 +661,14 @@ public abstract class ArrayNodes {
             fallbackNode = prev.fallbackNode;
         }
 
+        // Simple indexing
+
         @Specialization
         public Object index(RubyArray array, int index, UndefinedPlaceholder undefined) {
             return atNode.executeAt(array, index);
         }
+
+        // Slice with two fixnums
 
         @Specialization(guards = "isIntegerFixnum")
         public Object sliceIntegerFixnum(RubyArray array, int start, int length) {
@@ -721,6 +725,8 @@ public abstract class ArrayNodes {
                 return new RubyArray(array.getLogicalClass(), ArrayUtils.extractRange((Object[]) array.getStore(), normalisedIndex, end), end - normalisedIndex);
             }
         }
+
+        // Slice with a range
 
         @Specialization(guards = "isIntegerFixnum")
         public Object sliceIntegerFixnum(RubyArray array, RubyRange.IntegerFixnumRange range, UndefinedPlaceholder undefined) {
@@ -802,6 +808,8 @@ public abstract class ArrayNodes {
             }
         }
 
+        // Fallbacks
+
         @Specialization(guards = {"!isInteger(arguments[1])", "!isIntegerFixnumRange(arguments[1])"})
         public Object sliceFallback(VirtualFrame frame, RubyArray array, Object a, UndefinedPlaceholder undefined) {
             notDesignedForCompilation();
@@ -860,6 +868,8 @@ public abstract class ArrayNodes {
             super(prev);
         }
 
+        // Set a simple index in an empty array
+
         @Specialization(guards = "isNull")
         public Object setNullIntegerFixnum(RubyArray array, int index, int value, UndefinedPlaceholder unused) {
             if (index == 0) {
@@ -896,6 +906,8 @@ public abstract class ArrayNodes {
 
             return value;
         }
+
+        // Set a simple index in an existing array
 
         @Specialization(guards = "isIntegerFixnum")
         public int setIntegerFixnum(RubyArray array, int index, int value, UndefinedPlaceholder unused) {
@@ -1106,6 +1118,8 @@ public abstract class ArrayNodes {
             return value;
         }
 
+        // Set a slice of the array to a particular value
+
         @Specialization(guards = { "isObject", "!isRubyArray(arguments[3])", "!isUndefinedPlaceholder(arguments[3])" })
         public Object setObject(RubyArray array, int start, int length, Object value) {
             notDesignedForCompilation();
@@ -1124,6 +1138,8 @@ public abstract class ArrayNodes {
                 throw new UnsupportedOperationException();
             }
         }
+
+        // Set a slice of the array to another array
 
         @Specialization(guards = "isIntegerFixnum")
         public RubyArray setIntegerFixnumRange(RubyArray array, RubyRange.IntegerFixnumRange range, RubyArray other, UndefinedPlaceholder unused) {
