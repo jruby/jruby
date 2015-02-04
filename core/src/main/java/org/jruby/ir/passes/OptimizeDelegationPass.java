@@ -50,15 +50,16 @@ public class OptimizeDelegationPass extends CompilerPass {
 
     private static void optimizeDelegatedVars(IRScope s) {
         for (BasicBlock bb: s.cfg().getBasicBlocks()) {
-            DelegatedImplicitClosureTracker tracker = new DelegatedImplicitClosureTracker(s);
+            Map<Operand, Operand> unusedExplicitBlocks = new HashMap<Operand, Operand>();
 
             for (Instr i: bb.getInstrs()) {
                 if (i instanceof ReifyClosureInstr) {
-                    tracker.addUnusedExplicitBlock((ReifyClosureInstr) i);
+                    ReifyClosureInstr ri = (ReifyClosureInstr) i;
+                    unusedExplicitBlocks.put(ri.getResult(), ri.getSource());
                 } else {
-                    Iterator<Variable> it = tracker.iterator();
+                    Iterator<Operand> it = unusedExplicitBlocks.keySet().iterator();
                     while (it.hasNext()) {
-                        Variable explicitBlock = it.next();
+                        Variable explicitBlock = (Variable) it.next();
                         if (usesVariableAsNonClosureArg(i, explicitBlock)) {
                             it.remove();
                         }
@@ -66,8 +67,19 @@ public class OptimizeDelegationPass extends CompilerPass {
                 }
             }
 
-            for (Instr i: bb.getInstrs()) {
-                tracker.renameVarsOnInstr(i);
+            ListIterator<Instr> instrs = bb.getInstrs().listIterator();
+            while (instrs.hasNext()) {
+                Instr i = instrs.next();
+                if (i instanceof ReifyClosureInstr) {
+                    ReifyClosureInstr ri = (ReifyClosureInstr) i;
+                    Variable procVar = ri.getResult();
+                    Operand blockVar = unusedExplicitBlocks.get(procVar);
+
+                    if (blockVar != null) {
+                        ri.markDead();
+                        instrs.set(new CopyInstr(procVar, blockVar));
+                    }
+                }
             }
         }
     }
@@ -82,63 +94,5 @@ public class OptimizeDelegationPass extends CompilerPass {
                 return true;
         }
         return false;
-    }
-
-    private static class DelegatedImplicitClosureTracker {
-        private final IRScope scope;
-        private final Map<Operand, Operand> unusedExplicitBlocks;
-        private final Map<Operand, Operand> procToNewTempRename;
-        private final Map<Operand, Operand> blockToNewTempRename;
-
-        public DelegatedImplicitClosureTracker(IRScope scope) {
-            this.scope = scope;
-            unusedExplicitBlocks = new HashMap<Operand, Operand>();
-            procToNewTempRename = new HashMap<Operand, Operand>();
-            blockToNewTempRename = new HashMap<Operand, Operand>();
-        }
-
-        public void addUnusedExplicitBlock(ReifyClosureInstr i) {
-            Operand proc = i.getResult();
-            Operand block = i.getSource();
-            Operand newTemp = scope.createTemporaryVariable();
-
-            unusedExplicitBlocks.put(proc, block);
-            procToNewTempRename.put(proc, newTemp);
-            blockToNewTempRename.put(block, newTemp);
-        }
-
-        public Iterator<Variable> iterator() {
-            final Iterator<Map.Entry<Operand, Operand>> it = unusedExplicitBlocks.entrySet().iterator();
-
-            return new Iterator<Variable>() {
-                private Variable currentProc;
-                private Operand currentBlock;
-
-                public boolean hasNext() {
-                    return it.hasNext();
-                }
-
-                public Variable next() {
-                    Map.Entry<Operand, Operand> e = it.next();
-                    currentProc = (Variable) e.getKey();
-                    currentBlock = e.getValue();
-                    return currentProc;
-                }
-
-                public void remove() {
-                    procToNewTempRename.remove(currentProc);
-                    blockToNewTempRename.remove(currentBlock);
-                    it.remove();
-                }
-            };
-        }
-
-        public void renameVarsOnInstr(Instr i) {
-            if (i instanceof ClosureAcceptingInstr) {
-                i.renameVars(procToNewTempRename);
-            } else if (i instanceof LoadImplicitClosureInstr) {
-                i.renameVars(blockToNewTempRename);
-            }
-        }
     }
 }
