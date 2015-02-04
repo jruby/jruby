@@ -145,7 +145,7 @@ public class JavaClass extends JavaObject {
                     if (DEBUG_SCALA) {
                         LOG.debug("Companion object method {} for {}", name, companionClass);
                     }
-                    if (name.indexOf("$") >= 0) {
+                    if (name.indexOf('$') >= 0) {
                         name = fixScalaNames(name);
                     }
                     if (!Modifier.isStatic(method.getModifiers())) {
@@ -491,8 +491,6 @@ public class JavaClass extends JavaObject {
         }
     }
 
-    private final RubyModule JAVA_UTILITIES = getRuntime().getJavaSupport().getJavaUtilitiesModule();
-
     private Map<String, AssignedName> staticAssignedNames;
     private Map<String, AssignedName> instanceAssignedNames;
     private Map<String, NamedInstaller> staticInstallers;
@@ -595,7 +593,7 @@ public class JavaClass extends JavaObject {
     @Override
     public boolean equals(Object other) {
         return other instanceof JavaClass &&
-            this.getValue() == ((JavaClass)other).getValue();
+            this.getValue() == ((JavaClass) other).getValue();
     }
 
     @Override
@@ -883,33 +881,34 @@ public class JavaClass extends JavaObject {
         // setup constants for public inner classes
         Class<?>[] classes = getDeclaredClasses(javaClass);
 
-        for (int i = classes.length; --i >= 0; ) {
-            if (javaClass == classes[i].getDeclaringClass()) {
-                Class<?> clazz = classes[i];
+        final Ruby runtime = getRuntime();
 
-                // no non-public inner classes
-                if (!Modifier.isPublic(clazz.getModifiers())) continue;
+        for ( int i = classes.length; --i >= 0; ) {
+            final Class<?> clazz = classes[i];
+            if ( javaClass != clazz.getDeclaringClass() ) continue;
 
-                String simpleName = getSimpleName(clazz);
-                if (simpleName.length() == 0) continue;
+            // no non-public inner classes
+            if ( ! Modifier.isPublic(clazz.getModifiers()) ) continue;
 
-                final IRubyObject innerProxy = Java.get_proxy_class(JAVA_UTILITIES,get(getRuntime(),clazz));
+            final String simpleName = getSimpleName(clazz);
+            if ( simpleName.length() == 0 ) continue;
 
-                if (IdUtil.isConstant(simpleName)) {
-                    if (proxy.getConstantAt(simpleName) == null) {
-                        proxy.const_set(getRuntime().newString(simpleName), innerProxy);
-                    }
-                } else {
-                    // lower-case name
-                    if (!proxy.respondsTo(simpleName)) {
-                        // define a class method
-                        proxy.getSingletonClass().addMethod(simpleName, new JavaMethodZero(proxy.getSingletonClass(), Visibility.PUBLIC) {
-                            @Override
-                            public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name) {
-                                return innerProxy;
-                            }
-                        });
-                    }
+            final RubyModule innerProxy = Java.getProxyClass(runtime, get(runtime, clazz));
+
+            if ( IdUtil.isConstant(simpleName) ) {
+                if (proxy.getConstantAt(simpleName) == null) {
+                    proxy.const_set(getRuntime().newString(simpleName), innerProxy);
+                }
+            }
+            else { // lower-case name
+                if ( ! proxy.respondsTo(simpleName) ) {
+                    // define a class method
+                    proxy.getSingletonClass().addMethod(simpleName, new JavaMethodZero(proxy.getSingletonClass(), Visibility.PUBLIC) {
+                        @Override
+                        public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name) {
+                            return innerProxy;
+                        }
+                    });
                 }
             }
         }
@@ -1266,7 +1265,7 @@ public class JavaClass extends JavaObject {
         return getRuntime().getNil();
     }
 
-    public static JavaClass get(Ruby runtime, Class<?> klass) {
+    public static JavaClass get(final Ruby runtime, final Class<?> klass) {
         return runtime.getJavaSupport().getJavaClassFromCache(klass);
     }
 
