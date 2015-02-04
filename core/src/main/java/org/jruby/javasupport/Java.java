@@ -188,7 +188,7 @@ public class Java implements Library {
         addNameClassMappings(runtime, runtime.getJavaSupport().getNameClassMap());
 
         // add some base Java classes everyone will need
-        runtime.getJavaSupport().setObjectJavaClass(JavaClass.get(runtime, Object.class));
+        runtime.getJavaSupport().setObjectJavaClass( JavaClass.get(runtime, Object.class) );
 
         return javaModule;
     }
@@ -292,36 +292,39 @@ public class Java implements Library {
         nameClassMap.put("java.lang.String", stringClass);
     }
 
-    private static final ClassProvider JAVA_PACKAGE_CLASS_PROVIDER = new ClassProvider() {
+    private static class JavaPackageClassProvider implements ClassProvider {
+
+        static final JavaPackageClassProvider INSTANCE = new JavaPackageClassProvider();
 
         public RubyClass defineClassUnder(RubyModule pkg, String name, RubyClass superClazz) {
             // shouldn't happen, but if a superclass is specified, it's not ours
-            if (superClazz != null) {
-                return null;
-            }
-            IRubyObject packageName;
+            if ( superClazz != null ) return null;
+
+            String packageName = getPackageName(pkg);
             // again, shouldn't happen. TODO: might want to throw exception instead.
-            if ((packageName = pkg.getInstanceVariables().getInstanceVariable("@package_name")) == null) {
-                return null;
-            }
-            Ruby runtime = pkg.getRuntime();
-            return (RubyClass) get_proxy_class(
-                    runtime.getJavaSupport().getJavaUtilitiesModule(),
-                    JavaClass.forNameVerbose(runtime, packageName.asJavaString() + name));
+            if ( packageName == null ) return null;
+
+            final Ruby runtime = pkg.getRuntime();
+            JavaClass javaClass = JavaClass.forNameVerbose(runtime, packageName + name);
+            return (RubyClass) get_proxy_class(runtime.getJavaSupport().getJavaUtilitiesModule(), javaClass);
         }
 
         public RubyModule defineModuleUnder(RubyModule pkg, String name) {
-            IRubyObject packageName;
+            String packageName = getPackageName(pkg);
             // again, shouldn't happen. TODO: might want to throw exception instead.
-            if ((packageName = pkg.getInstanceVariables().getInstanceVariable("@package_name")) == null) {
-                return null;
-            }
-            Ruby runtime = pkg.getRuntime();
-            return (RubyModule) get_interface_module(
-                    runtime,
-                    JavaClass.forNameVerbose(runtime, packageName.asJavaString() + name));
+            if ( packageName == null ) return null;
+
+            final Ruby runtime = pkg.getRuntime();
+            JavaClass javaClass = JavaClass.forNameVerbose(runtime, packageName + name);
+            return get_interface_module(runtime, javaClass);
         }
-    };
+
+        private static String getPackageName(final RubyModule pkg) {
+            final IRubyObject package_name = pkg.getInstanceVariables().getInstanceVariable("@package_name");
+            return package_name == null ? null : package_name.asJavaString();
+        }
+
+    }
 
     private static final Map<String, Boolean> JAVA_PRIMITIVES = new HashMap<String, Boolean>();
     static {
@@ -882,7 +885,7 @@ public class Java implements Library {
 
         // this is where we'll get connected when classes are opened using
         // package module syntax.
-        packageModule.addClassProvider(JAVA_PACKAGE_CLASS_PROVIDER);
+        packageModule.addClassProvider( JavaPackageClassProvider.INSTANCE );
 
         synchronized (parentModule) { // guard initializing in multiple threads
             final IRubyObject packageAlreadySet = parentModule.fetchConstant(name);
