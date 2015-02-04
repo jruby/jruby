@@ -154,10 +154,37 @@ class Module
     []
   end
 
+  def trap(signal)
+  end
+
+end
+
+class File
+  def gets
+    read.split("\n").first
+  end
+
+  def rewind
+  end
+
+  def set_encoding(encoding, internal_encoding)
+  end
 end
 
 class String
   def gsub(*args)
     dup.gsub!(*args)
+  end
+end
+
+class Array
+  def rindex(obj)
+    index = nil
+
+    each_with_index do |e, i|
+      index = i if e == obj
+    end
+
+    index
   end
 end
