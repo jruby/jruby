@@ -1,4 +1,0 @@
-fails:Mutex#try_lock when unlocked returns true
-fails:Mutex#try_lock when unlocked locks the mutex
-fails:Mutex#try_lock when locked by the current thread returns false
-fails:Mutex#try_lock when locked by another thread returns false

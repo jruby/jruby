@@ -11,6 +11,7 @@ package org.jruby.truffle.runtime.subsystems;
 
 import com.oracle.truffle.api.CompilerDirectives;
 
+import org.jruby.RubyThread.Status;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyThread;
 
@@ -111,11 +112,13 @@ public class ThreadManager {
     public <T> T runOnce(BlockingActionWithoutGlobalLock<T> action) {
         T result = null;
         final RubyThread runningThread = leaveGlobalLock();
+        runningThread.setStatus(Status.SLEEP);
 
         try {
             try {
                 result = action.block();
             } finally {
+                runningThread.setStatus(Status.RUN);
                 // We need to enter the global lock before anything else!
                 enterGlobalLock(runningThread);
             }

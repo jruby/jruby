@@ -117,6 +117,7 @@ public class CoreLibrary {
     @CompilerDirectives.CompilationFinal private RubyClass unboundMethodClass;
     @CompilerDirectives.CompilationFinal private RubyClass byteArrayClass;
     @CompilerDirectives.CompilationFinal private RubyClass fiberErrorClass;
+    @CompilerDirectives.CompilationFinal private RubyClass threadErrorClass;
 
     @CompilerDirectives.CompilationFinal private RubyArray argv;
     @CompilerDirectives.CompilationFinal private RubyBasicObject globalVariablesObject;
@@ -259,6 +260,8 @@ public class CoreLibrary {
         localJumpErrorClass.setAllocator(new RubyException.ExceptionAllocator());
         matchDataClass = new RubyClass(context, objectClass, objectClass, "MatchData");
         mathModule = new RubyModule(context, objectClass, "Math");
+        RubyClass mutexClass = new RubyClass(context, objectClass, objectClass, "Mutex");
+        mutexClass.setAllocator(new RubyMutex.MutexAllocator());
         nameErrorClass = new RubyClass(context, objectClass, standardErrorClass, "NameError");
         nameErrorClass.setAllocator(new RubyException.ExceptionAllocator());
         nilClass = new RubyClass(context, objectClass, objectClass, "NilClass");
@@ -310,6 +313,8 @@ public class CoreLibrary {
         byteArrayClass = new RubyClass(context, rubiniusModule, objectClass, "ByteArray");
         fiberErrorClass = new RubyClass(context, objectClass, exceptionClass, "FiberError");
         fiberErrorClass.setAllocator(new RubyException.ExceptionAllocator());
+        threadErrorClass = new RubyClass(context, objectClass, exceptionClass, "ThreadError");
+        threadErrorClass.setAllocator(new RubyException.ExceptionAllocator());
 
         // Includes
 
@@ -803,6 +808,11 @@ public class CoreLibrary {
     public RubyException yieldFromRootFiberError(Node currentNode) {
         CompilerAsserts.neverPartOfCompilation();
         return fiberError("can't yield from root fiber", currentNode);
+    }
+
+    public RubyException threadError(String message, Node currentNode) {
+        CompilerAsserts.neverPartOfCompilation();
+        return new RubyException(threadErrorClass, context.makeString(message), RubyCallStack.getBacktrace(currentNode));
     }
 
     public RubyContext getContext() {

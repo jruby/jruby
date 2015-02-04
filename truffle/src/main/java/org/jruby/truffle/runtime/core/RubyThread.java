@@ -35,7 +35,7 @@ public class RubyThread extends RubyBasicObject {
     private final CountDownLatch finished = new CountDownLatch(1);
 
     private volatile Thread thread;
-    private Status status = Status.RUN;
+    private volatile Status status = Status.RUN;
 
     private RubyException exception;
     private Object value;
@@ -131,6 +131,10 @@ public class RubyThread extends RubyBasicObject {
 
     public Status getStatus() {
         return status;
+    }
+
+    public void setStatus(Status status) {
+        this.status = status;
     }
 
     public RubyBasicObject getThreadLocals() {

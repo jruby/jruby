@@ -52,6 +52,7 @@ require_relative 'core/rubinius/kernel/common/object_space'
 require_relative 'core/rubinius/kernel/common/string'
 require_relative 'core/rubinius/kernel/common/struct'
 require_relative 'core/rubinius/kernel/common/regexp'
+require_relative 'core/rubinius/kernel/common/mutex'
 require_relative 'core/rubinius/kernel/common/time'
 require_relative 'core/rubinius/kernel/common/true'
 
