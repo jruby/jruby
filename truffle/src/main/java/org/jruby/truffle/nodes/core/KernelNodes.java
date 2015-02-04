@@ -851,7 +851,7 @@ public abstract class KernelNodes {
 
             final BufferedReader reader = new BufferedReader(new InputStreamReader(in));
 
-            final String line = getContext().getThreadManager().runOnce(new BlockingActionWithoutGlobalLock<String>() {
+            final String line = getContext().getThreadManager().runUntilResult(new BlockingActionWithoutGlobalLock<String>() {
                 @Override
                 public String block() throws InterruptedException {
                     return gets(reader);
