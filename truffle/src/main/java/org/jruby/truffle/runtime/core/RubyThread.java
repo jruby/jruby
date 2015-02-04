@@ -19,7 +19,10 @@ import org.jruby.truffle.runtime.control.ThreadExitException;
 import org.jruby.truffle.runtime.subsystems.ThreadManager;
 import org.jruby.truffle.runtime.subsystems.ThreadManager.BlockingActionWithoutGlobalLock;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.locks.Lock;
 
 /**
  * Represents the Ruby {@code Thread} class. Implemented using Java threads, but note that there is
@@ -41,6 +44,8 @@ public class RubyThread extends RubyBasicObject {
     private Object value;
 
     private RubyBasicObject threadLocals;
+
+    private List<Lock> ownedLocks = new ArrayList<Lock>();
 
     public RubyThread(RubyClass rubyClass, ThreadManager manager) {
         super(rubyClass);
@@ -95,6 +100,7 @@ public class RubyThread extends RubyBasicObject {
                     finalThread.finished.countDown();
                     status = Status.DEAD;
                     thread = null;
+                    releaseOwnedLocks();
                 }
             }
 
@@ -126,6 +132,23 @@ public class RubyThread extends RubyBasicObject {
         Thread t = thread;
         if (t != null) {
             t.interrupt();
+        }
+    }
+
+    public void acquiredLock(Lock lock) {
+        ownedLocks.add(lock);
+    }
+
+    public void releasedLock(Lock lock) {
+        RubyNode.notDesignedForCompilation();
+
+        // TODO: this is O(ownedLocks.length).
+        ownedLocks.remove(lock);
+    }
+
+    protected void releaseOwnedLocks() {
+        for (Lock lock : ownedLocks) {
+            lock.unlock();
         }
     }
 

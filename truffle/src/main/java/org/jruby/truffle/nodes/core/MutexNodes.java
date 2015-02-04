@@ -14,6 +14,7 @@ import java.util.concurrent.locks.ReentrantLock;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.RubyMutex;
+import org.jruby.truffle.runtime.core.RubyThread;
 import org.jruby.truffle.runtime.subsystems.ThreadManager.BlockingActionWithoutGlobalLock;
 
 import com.oracle.truffle.api.CompilerDirectives;
@@ -43,10 +44,13 @@ public abstract class MutexNodes {
                 throw new RaiseException(getContext().getCoreLibrary().threadError("deadlock; recursive locking", this));
             }
 
+            final RubyThread thread = getContext().getThreadManager().getCurrentThread();
+
             getContext().getThreadManager().runUntilResult(new BlockingActionWithoutGlobalLock<Boolean>() {
                 @Override
                 public Boolean block() throws InterruptedException {
                     lock.lockInterruptibly();
+                    thread.acquiredLock(lock);
                     return SUCCESS;
                 }
             });
@@ -115,7 +119,13 @@ public abstract class MutexNodes {
                 return false;
             }
 
-            return lock.tryLock();
+            if (lock.tryLock()) {
+                RubyThread thread = getContext().getThreadManager().getCurrentThread();
+                thread.acquiredLock(lock);
+                return true;
+            } else {
+                return false;
+            }
         }
 
     }
@@ -134,9 +144,11 @@ public abstract class MutexNodes {
         @Specialization
         public RubyMutex unlock(RubyMutex mutex) {
             final ReentrantLock lock = mutex.getReentrantLock();
+            final RubyThread thread = getContext().getThreadManager().getCurrentThread();
 
             try {
                 lock.unlock();
+                thread.releasedLock(lock);
             } catch (IllegalMonitorStateException e) {
                 throw new RaiseException(getContext().getCoreLibrary().threadError("Attempt to unlock a mutex which is not locked", this));
             }
