@@ -1427,7 +1427,7 @@ public abstract class StringNodes {
         public RubyArray split(RubyString string, RubyRegexp sep) {
             notDesignedForCompilation();
 
-            return RubyArray.fromObjects(getContext().getCoreLibrary().getArrayClass(), (Object[]) sep.split(string.toString()));
+            return RubyArray.fromObjects(getContext().getCoreLibrary().getArrayClass(), (Object[]) sep.split(string));
         }
 
         @Specialization
