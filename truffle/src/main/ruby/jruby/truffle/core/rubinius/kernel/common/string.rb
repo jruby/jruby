@@ -32,4 +32,14 @@ class String
     !!find_string(StringValue(needle), 0)
   end
 
+  def chars
+    if block_given?
+      each_char do |char|
+        yield char
+      end
+    else
+      each_char.to_a
+    end
+  end
+
 end
