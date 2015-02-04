@@ -25,8 +25,8 @@ public class ReceiveOptArgInstr extends ReceiveArgBase implements FixedArityInst
     }
 
     @Override
-    public String toString() {
-        return (isDead() ? "[DEAD]" : "") + getResult() + " = " + getOperation() + "(" + requiredArgs + "," + preArgs + "," + argIndex + ")";
+    public String[] toStringNonOperandArgs() {
+        return new String[] {"index:" + getArgIndex(), "req: " + requiredArgs, "pre: " + preArgs};
     }
 
     public int getPreArgs() {

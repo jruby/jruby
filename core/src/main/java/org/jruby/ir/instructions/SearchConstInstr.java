@@ -55,8 +55,8 @@ public class SearchConstInstr extends ResultBaseInstr implements FixedArityInstr
     }
 
     @Override
-    public String toString() {
-        return super.toString() + "(" + constName + ", " + getStartingScope() + ", no-private-consts=" + noPrivateConsts + ")";
+    public String[] toStringNonOperandArgs() {
+        return new String[] {"name: " + constName, "no_priv: " + noPrivateConsts};
     }
 
     public ConstantCache getConstantCache() {

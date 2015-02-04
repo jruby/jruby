@@ -30,8 +30,8 @@ public class OptArgMultipleAsgnInstr extends MultipleAsgnBase implements FixedAr
     }
 
     @Override
-    public String toString() {
-        return super.toString() + "(" + getArray() + "," + index + "," + minArgsLength + ")";
+    public String[] toStringNonOperandArgs() {
+        return new String[] { "index: " + index, "min_length: " + minArgsLength};
     }
 
     @Override

@@ -1,5 +1,6 @@
 package org.jruby.ir.instructions;
 
+import java.util.Arrays;
 import org.jcodings.specific.USASCIIEncoding;
 import org.jruby.RubyModule;
 import org.jruby.ir.IRVisitor;
@@ -34,8 +35,13 @@ public class ConstMissingInstr extends CallInstr implements FixedArityInstr {
     }
 
     @Override
-    public String toString() {
-        return getOperation() + "(" + getReceiver() + "," + missingConst  + ")";
+    public String[] toStringNonOperandArgs() {
+        String[] base = super.toStringNonOperandArgs();
+        String[] args = Arrays.copyOf(base, base.length + 1);
+
+        args[args.length - 1] = "missing: " + missingConst;
+
+        return  args;
     }
 
     @Override

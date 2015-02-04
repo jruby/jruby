@@ -43,6 +43,11 @@ public class DefineClassInstr extends ResultBaseInstr implements FixedArityInstr
     }
 
     @Override
+    public String[] toStringNonOperandArgs() {
+        return new String[] {"name: " + newIRClassBody.getName() };
+    }
+
+    @Override
     public Object interpret(ThreadContext context, StaticScope currScope, DynamicScope currDynScope, IRubyObject self, Object[] temp) {
         Object container = getContainer().retrieve(context, self, currScope, currDynScope, temp);
         Object superClass = getSuperClass().retrieve(context, self, currScope, currDynScope, temp);

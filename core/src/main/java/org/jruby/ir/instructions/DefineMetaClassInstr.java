@@ -42,8 +42,8 @@ public class DefineMetaClassInstr extends ResultBaseInstr implements FixedArityI
     }
 
     @Override
-    public String toString() {
-        return super.toString() + "(" + metaClassBody.getName() + ", " + getObject() + ", " + metaClassBody.getFileName() + ")";
+    public String[] toStringNonOperandArgs() {
+        return new String[] {"name: " + metaClassBody.getName() };
     }
 
     @Override

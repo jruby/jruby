@@ -2,8 +2,6 @@ package org.jruby.ir.instructions;
 
 import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Operation;
-import org.jruby.ir.operands.Fixnum;
-import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.Variable;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.ir.transformations.inlining.CloneInfo;
@@ -25,13 +23,8 @@ public class ReceiveRestArgInstr extends ReceiveArgBase implements FixedArityIns
     }
 
     @Override
-    public String toString() {
-        return (isDead() ? "[DEAD]" : "") + getResult() + " = " + getOperation() + "(" + required + ", " + argIndex + ")";
-    }
-
-    @Override
-    public Operand[] getOperands() {
-        return new Operand[] { new Fixnum(required), new Fixnum(argIndex) };
+    public String[] toStringNonOperandArgs() {
+        return new String[] { "index: " + getArgIndex(), "req: " + required };
     }
 
     @Override

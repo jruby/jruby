@@ -40,8 +40,8 @@ public class BuildDynRegExpInstr extends ResultBaseInstr {
     }
 
     @Override
-    public String toString() {
-        return getOperation() + "(" + java.util.Arrays.toString(getPieces()) + "," + options + ")";
+    public String[] toStringNonOperandArgs() {
+        return new String[] {"options: " + options};
     }
 
     @Override
@@ -62,7 +62,7 @@ public class BuildDynRegExpInstr extends ResultBaseInstr {
     public Object interpret(ThreadContext context, StaticScope currScope, DynamicScope currDynScope, IRubyObject self, Object[] temp) {
         // FIXME (from RegexpNode.java): 1.9 should care about internal or external encoding and not kcode.
         // If we have a constant regexp string or if the regexp patterns asks for caching, cache the regexp
-        if ((rubyRegexp == null) || !options.isOnce() || context.runtime.getKCode() != rubyRegexp.getKCode()) {
+        if (rubyRegexp == null || !options.isOnce() || context.runtime.getKCode() != rubyRegexp.getKCode()) {
             RubyString[] pieces  = retrievePieces(context, self, currScope, currDynScope, temp);
             RubyString   pattern = RubyRegexp.preprocessDRegexp(context.runtime, pieces, options);
             RubyRegexp re = RubyRegexp.newDRegexp(context.runtime, pattern, options);

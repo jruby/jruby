@@ -14,8 +14,6 @@ import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
-import java.util.Arrays;
-
 import static org.jruby.ir.IRFlags.REQUIRES_FRAME;
 
 public class RuntimeHelperCall extends ResultBaseInstr {
@@ -67,8 +65,8 @@ public class RuntimeHelperCall extends ResultBaseInstr {
     }
 
     @Override
-    public String toString() {
-        return (getResult() == null ? "" : (getResult() + " = ")) + getOperation()  + "(" + helperMethod + ", " + Arrays.toString(getArgs()) + ")";
+    public String[] toStringNonOperandArgs() {
+        return new String[] { "method: " + helperMethod};
     }
 
     public IRubyObject callHelper(ThreadContext context, StaticScope currScope, DynamicScope currDynScope, IRubyObject self, Object[] temp, Block.Type blockType) {

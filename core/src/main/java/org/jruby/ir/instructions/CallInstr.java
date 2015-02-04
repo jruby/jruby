@@ -78,11 +78,6 @@ public class CallInstr extends CallBase implements ResultInstr {
     }
 
     @Override
-    public String toString() {
-        return "" + result + " = " + super.toString();
-    }
-
-    @Override
     public void visit(IRVisitor visitor) {
         visitor.CallInstr(this);
     }

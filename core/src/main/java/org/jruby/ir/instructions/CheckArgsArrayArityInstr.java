@@ -29,8 +29,8 @@ public class CheckArgsArrayArityInstr extends Instr implements FixedArityInstr {
     }
 
     @Override
-    public String toString() {
-        return getOperation() + "(" + getArgsArray() + ", " +  required + ", " + opt + ", " + rest + ")";
+    public String[] toStringNonOperandArgs() {
+        return new String[] {"req: " + required, "opt: " + opt, "*r: " + rest};
     }
 
     @Override

@@ -56,6 +56,11 @@ public class BreakInstr extends Instr implements FixedArityInstr {
     }
 
     @Override
+    public String[] toStringNonOperandArgs() {
+        return new String[] {"scope_name: " + scopeName};
+    }
+
+    @Override
     public Instr clone(CloneInfo info) {
         if (info instanceof SimpleCloneInfo) return new BreakInstr(getReturnValue().cloneForInlining(info), scopeName);
 

@@ -34,8 +34,8 @@ public class ReqdArgMultipleAsgnInstr extends MultipleAsgnBase implements FixedA
     public int getPostArgsCount() { return postArgsCount; }
 
     @Override
-    public String toString() {
-        return getOperation() + "(" + getArray() + ", " + index + ", " + preArgsCount + ", " + postArgsCount + ")";
+    public String[] toStringNonOperandArgs() {
+        return new String[] { "index: " + index, "pre: " + preArgsCount, "post: " + postArgsCount};
     }
 
     @Override

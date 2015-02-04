@@ -22,8 +22,8 @@ public class NonlocalReturnInstr extends ReturnBase implements FixedArityInstr {
     }
 
     @Override
-    public String toString() {
-        return getOperation() + "(" + getReturnValue() + ", <" + methodName + ">" + ")";
+    public String[] toStringNonOperandArgs() {
+        return new String[] { "name: " + methodName };
     }
 
     public boolean computeScopeFlags(IRScope scope) {

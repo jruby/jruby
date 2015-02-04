@@ -32,6 +32,11 @@ public class CheckForLJEInstr extends Instr {
         visitor.CheckForLJEInstr(this);
     }
 
+    @Override
+    public String[] toStringNonOperandArgs() {
+        return new String[] { "maybe_lambda: " + maybeLambda};
+    }
+
     public void check(ThreadContext context, DynamicScope dynamicScope, Block.Type blockType) {
         IRRuntimeHelpers.checkForLJE(context, dynamicScope, maybeLambda, blockType);
     }

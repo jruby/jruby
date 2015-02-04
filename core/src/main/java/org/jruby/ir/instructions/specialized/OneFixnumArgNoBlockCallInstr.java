@@ -31,11 +31,6 @@ public class OneFixnumArgNoBlockCallInstr extends CallInstr {
                 cloneCallArgs(ii));
     }
 
-    @Override
-    public String toString() {
-        return super.toString() + "{1F}";
-    }
-
     public long getFixnumArg() {
         return fixNum;
     }

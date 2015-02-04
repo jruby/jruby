@@ -15,10 +15,6 @@ public class LabelInstr extends Instr implements FixedArityInstr {
         return (Label) operands[0];
     }
 
-    public String toString() {
-        return getLabel() + ":";
-    }
-
     @Override
     public Instr clone(CloneInfo ii) {
         return new LabelInstr(ii.getRenamedLabel(getLabel()));

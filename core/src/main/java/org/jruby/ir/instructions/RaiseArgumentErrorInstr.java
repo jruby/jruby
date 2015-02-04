@@ -33,8 +33,8 @@ public class RaiseArgumentErrorInstr extends Instr implements FixedArityInstr {
     }
 
     @Override
-    public String toString() {
-        return super.toString() + "(" + required + ", " + opt + ", " + rest + ")";
+    public String[] toStringNonOperandArgs() {
+        return new String[] { "req: " + required, "o: " + opt, "*r: " + rest};
     }
 
     public int getRequired() {

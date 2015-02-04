@@ -33,8 +33,8 @@ public class DefineModuleInstr extends ResultBaseInstr implements FixedArityInst
     }
 
     @Override
-    public String toString() {
-        return super.toString() + "(" + newIRModuleBody.getName() + ", " + getContainer() + ", " + newIRModuleBody.getFileName() + ")";
+    public String[] toStringNonOperandArgs() {
+        return new String[] { "name: " + newIRModuleBody.getName() };
     }
 
     @Override

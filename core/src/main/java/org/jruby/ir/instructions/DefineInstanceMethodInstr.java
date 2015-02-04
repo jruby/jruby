@@ -19,8 +19,8 @@ public class DefineInstanceMethodInstr extends Instr implements FixedArityInstr 
     }
 
     @Override
-    public String toString() {
-        return getOperation() + "(" + method.getName() + ", " + method.getFileName() + ")";
+    public String[] toStringNonOperandArgs() {
+        return new String[] {"name: " + method.getName() };
     }
 
     @Override

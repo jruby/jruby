@@ -26,7 +26,7 @@ public abstract class PutInstr extends Instr implements FixedArityInstr {
     }
 
     @Override
-    public String toString() {
-        return getOperation() + "(" + getTarget() + (ref == null ? "" : ", " + ref) + ") = " + getValue();
+    public String[] toStringNonOperandArgs() {
+        return new String[] {"name: " + ref};
     }
 }
