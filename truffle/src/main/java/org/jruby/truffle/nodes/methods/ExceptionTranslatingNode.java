@@ -134,8 +134,12 @@ public class ExceptionTranslatingNode extends RubyNode {
     }
 
     public RubyException translate(Throwable throwable) {
-        if (Options.TRUFFLE_EXCEPTIONS_PRINT_JAVA.load()) {
-            throwable.printStackTrace();
+        try {
+            if (Options.TRUFFLE_EXCEPTIONS_PRINT_JAVA.load()) {
+                throwable.printStackTrace();
+            }
+        } catch (NullPointerException e) {
+
         }
 
         if (Options.TRUFFLE_PANIC_ON_JAVA_ASSERT.load() && throwable instanceof AssertionError) {

@@ -74,7 +74,7 @@ public class SafepointManager {
         poll(true);
     }
 
-    public void poll(boolean holdsGlobalLock) {
+    private void poll(boolean holdsGlobalLock) {
         try {
             assumption.check();
         } catch (InvalidAssumptionException e) {
@@ -176,7 +176,7 @@ public class SafepointManager {
         }
     }
 
-    public void interruptAllThreads() {
+    private void interruptAllThreads() {
         for (Thread thread : runningThreads) {
             thread.interrupt();
         }

@@ -646,6 +646,7 @@ public abstract class ArrayNodes {
     public abstract static class IndexNode extends ArrayCoreMethodNode {
 
         @Child protected AtNode atNode;
+        @Child protected CallDispatchHeadNode fallbackNode;
 
         private final BranchProfile outOfBounds = BranchProfile.create();
 
@@ -657,6 +658,7 @@ public abstract class ArrayNodes {
         public IndexNode(IndexNode prev) {
             super(prev);
             atNode = prev.atNode;
+            fallbackNode = prev.fallbackNode;
         }
 
         @Specialization
@@ -674,7 +676,7 @@ public abstract class ArrayNodes {
             } else {
                 final int end = Math.min(array.getSize(), normalisedIndex + length);
 
-                return new RubyArray(getContext().getCoreLibrary().getArrayClass(), ArrayUtils.extractRange((int[]) array.getStore(), normalisedIndex, end), end - normalisedIndex);
+                return new RubyArray(array.getLogicalClass(), ArrayUtils.extractRange((int[]) array.getStore(), normalisedIndex, end), end - normalisedIndex);
             }
         }
 
@@ -688,7 +690,7 @@ public abstract class ArrayNodes {
             } else {
                 final int end = Math.min(array.getSize(), normalisedIndex + length);
 
-                return new RubyArray(getContext().getCoreLibrary().getArrayClass(), ArrayUtils.extractRange((long[]) array.getStore(), normalisedIndex, end), end - normalisedIndex);
+                return new RubyArray(array.getLogicalClass(), ArrayUtils.extractRange((long[]) array.getStore(), normalisedIndex, end), end - normalisedIndex);
             }
         }
 
@@ -702,7 +704,7 @@ public abstract class ArrayNodes {
             } else {
                 final int end = Math.min(array.getSize(), normalisedIndex + length);
 
-                return new RubyArray(getContext().getCoreLibrary().getArrayClass(), ArrayUtils.extractRange((double[]) array.getStore(), normalisedIndex, end), end - normalisedIndex);
+                return new RubyArray(array.getLogicalClass(), ArrayUtils.extractRange((double[]) array.getStore(), normalisedIndex, end), end - normalisedIndex);
             }
         }
 
@@ -716,7 +718,67 @@ public abstract class ArrayNodes {
             } else {
                 final int end = Math.min(array.getSize(), normalisedIndex + length);
 
-                return new RubyArray(getContext().getCoreLibrary().getArrayClass(), ArrayUtils.extractRange((Object[]) array.getStore(), normalisedIndex, end), end - normalisedIndex);
+                return new RubyArray(array.getLogicalClass(), ArrayUtils.extractRange((Object[]) array.getStore(), normalisedIndex, end), end - normalisedIndex);
+            }
+        }
+
+        @Specialization(guards = "isIntegerFixnum")
+        public Object sliceIntegerFixnum(RubyArray array, RubyRange.IntegerFixnumRange range, UndefinedPlaceholder undefined) {
+            notDesignedForCompilation();
+
+            final int normalisedIndex = array.normaliseIndex(range.getBegin());
+
+            if (normalisedIndex < 0 || normalisedIndex > array.getSize()) {
+                return getContext().getCoreLibrary().getNilObject();
+            } else {
+                final int end = array.normaliseIndex(range.getEnd());
+                final int excludingEnd = array.clampExclusiveIndex(range.doesExcludeEnd() ? end : end + 1);
+
+                if (excludingEnd <= normalisedIndex) {
+                    return new RubyArray(array.getLogicalClass(), null, 0);
+                }
+
+                return new RubyArray(array.getLogicalClass(), ArrayUtils.extractRange((int[]) array.getStore(), normalisedIndex, excludingEnd), excludingEnd - normalisedIndex);
+            }
+        }
+
+        @Specialization(guards = "isLongFixnum")
+        public Object sliceLongFixnum(RubyArray array, RubyRange.IntegerFixnumRange range, UndefinedPlaceholder undefined) {
+            notDesignedForCompilation();
+
+            final int normalisedIndex = array.normaliseIndex(range.getBegin());
+
+            if (normalisedIndex < 0 || normalisedIndex > array.getSize()) {
+                return getContext().getCoreLibrary().getNilObject();
+            } else {
+                final int end = array.normaliseIndex(range.getEnd());
+                final int excludingEnd = array.clampExclusiveIndex(range.doesExcludeEnd() ? end : end + 1);
+
+                if (excludingEnd <= normalisedIndex) {
+                    return new RubyArray(array.getLogicalClass(), null, 0);
+                }
+
+                return new RubyArray(array.getLogicalClass(), ArrayUtils.extractRange((long[]) array.getStore(), normalisedIndex, excludingEnd), excludingEnd - normalisedIndex);
+            }
+        }
+
+        @Specialization(guards = "isFloat")
+        public Object sliceFloat(RubyArray array, RubyRange.IntegerFixnumRange range, UndefinedPlaceholder undefined) {
+            notDesignedForCompilation();
+
+            final int normalisedIndex = array.normaliseIndex(range.getBegin());
+
+            if (normalisedIndex < 0 || normalisedIndex > array.getSize()) {
+                return getContext().getCoreLibrary().getNilObject();
+            } else {
+                final int end = array.normaliseIndex(range.getEnd());
+                final int excludingEnd = array.clampExclusiveIndex(range.doesExcludeEnd() ? end : end + 1);
+
+                if (excludingEnd <= normalisedIndex) {
+                    return new RubyArray(array.getLogicalClass(), null, 0);
+                }
+
+                return new RubyArray(array.getLogicalClass(), ArrayUtils.extractRange((double[]) array.getStore(), normalisedIndex, excludingEnd), excludingEnd - normalisedIndex);
             }
         }
 
@@ -726,14 +788,57 @@ public abstract class ArrayNodes {
 
             final int normalisedIndex = array.normaliseIndex(range.getBegin());
 
-            if (normalisedIndex < 0 || normalisedIndex >= array.getSize()) {
+            if (normalisedIndex < 0 || normalisedIndex > array.getSize()) {
                 return getContext().getCoreLibrary().getNilObject();
             } else {
                 final int end = array.normaliseIndex(range.getEnd());
-                final int excludingEnd = array.clampExclusiveIndex(range.doesExcludeEnd() ? end : end+1);
+                final int excludingEnd = array.clampExclusiveIndex(range.doesExcludeEnd() ? end : end + 1);
 
-                return new RubyArray(getContext().getCoreLibrary().getArrayClass(), ArrayUtils.extractRange((Object[]) array.getStore(), normalisedIndex, excludingEnd), excludingEnd - normalisedIndex);
+                if (excludingEnd <= normalisedIndex) {
+                    return new RubyArray(array.getLogicalClass(), null, 0);
+                }
+
+                return new RubyArray(array.getLogicalClass(), ArrayUtils.extractRange((Object[]) array.getStore(), normalisedIndex, excludingEnd), excludingEnd - normalisedIndex);
             }
+        }
+
+        @Specialization(guards = {"!isInteger(arguments[1])", "!isIntegerFixnumRange(arguments[1])"})
+        public Object sliceFallback(VirtualFrame frame, RubyArray array, Object a, UndefinedPlaceholder undefined) {
+            notDesignedForCompilation();
+
+            if (fallbackNode == null) {
+                CompilerDirectives.transferToInterpreter();
+                fallbackNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext()));
+            }
+
+            return fallbackNode.call(frame, array, "element_reference_fallback", null,
+                    getContext().makeString(getName()), RubyArray.fromObjects(getContext().getCoreLibrary().getArrayClass(), a));
+        }
+
+        @Specialization(guards = {"!isInteger(arguments[1])", "!isIntegerFixnumRange(arguments[1])", "!isUndefinedPlaceholder(arguments[2])"})
+        public Object sliceFallback1(VirtualFrame frame, RubyArray array, Object a, Object b) {
+            notDesignedForCompilation();
+
+            if (fallbackNode == null) {
+                CompilerDirectives.transferToInterpreter();
+                fallbackNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext()));
+            }
+
+            return fallbackNode.call(frame, array, "element_reference_fallback", null,
+                    getContext().makeString(getName()), RubyArray.fromObjects(getContext().getCoreLibrary().getArrayClass(), a, b));
+        }
+
+        @Specialization(guards = {"!isInteger(arguments[2])", "!isIntegerFixnumRange(arguments[2])", "!isUndefinedPlaceholder(arguments[2])"})
+        public Object sliceFallback2(VirtualFrame frame, RubyArray array, Object a, Object b) {
+            notDesignedForCompilation();
+
+            if (fallbackNode == null) {
+                CompilerDirectives.transferToInterpreter();
+                fallbackNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext()));
+            }
+
+            return fallbackNode.call(frame, array, "element_reference_fallback", null,
+                    getContext().makeString(getName()), RubyArray.fromObjects(getContext().getCoreLibrary().getArrayClass(), a, b));
         }
 
     }

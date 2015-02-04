@@ -36,9 +36,15 @@ module ShellUtils
   private
 
   def raw_sh(*args)
-    unless system(*args)
-      $stderr.puts "FAILED (#{$?}): #{args * ' '}"
-      exit $?.exitstatus
+    begin
+      result = system(*args)
+    rescue Interrupt
+      abort # Ignore Ctrl+C
+    else
+      unless result
+        $stderr.puts "FAILED (#{$?}): #{args * ' '}"
+        exit $?.exitstatus
+      end
     end
   end
 
@@ -143,7 +149,7 @@ module Commands
 
   def untag(path, *args)
     puts
-    puts "WARNING: untag is currently not very reliable - run `jt test #{path}` after and manually annotate any new failures"
+    puts "WARNING: untag is currently not very reliable - run `jt test #{path} #{args * ' '}` after and manually annotate any new failures"
     puts
     mspec 'tag', '--del', 'fails', '--pass', path, *args
   end

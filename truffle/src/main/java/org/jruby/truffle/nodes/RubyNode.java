@@ -175,6 +175,10 @@ public abstract class RubyNode extends Node {
         return RubyTypesGen.RUBYTYPES.expectRubyModule(execute(frame));
     }
 
+    public RubyMutex executeRubyMutex(VirtualFrame frame) throws UnexpectedResultException {
+        return RubyTypesGen.RUBYTYPES.expectRubyMutex(execute(frame));
+    }
+
     public RubyNilClass executeRubyNilClass(VirtualFrame frame) throws UnexpectedResultException {
         return RubyTypesGen.RUBYTYPES.expectRubyNilClass(execute(frame));
     }
@@ -467,6 +471,10 @@ public abstract class RubyNode extends Node {
 
     public boolean isRubyNilObject(Object value) {
         return value == getContext().getCoreLibrary().getNilObject();
+    }
+
+    public boolean isRubiniusUndefined(Object value) {
+        return value == getContext().getCoreLibrary().getRubiniusUndefined();
     }
 
 }

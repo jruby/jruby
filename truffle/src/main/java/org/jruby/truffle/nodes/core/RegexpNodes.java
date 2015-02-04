@@ -9,27 +9,22 @@
  */
 package org.jruby.truffle.nodes.core;
 
+import static org.jruby.util.StringSupport.CR_7BIT;
+
+import org.jruby.truffle.nodes.RubyNode;
+import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.runtime.control.RaiseException;
+import org.jruby.truffle.runtime.core.RubyBasicObject;
+import org.jruby.truffle.runtime.core.RubyRegexp;
+import org.jruby.truffle.runtime.core.RubyString;
+import org.jruby.truffle.runtime.core.RubySymbol;
+import org.jruby.util.ByteList;
+
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.utilities.ConditionProfile;
-import org.joni.Option;
-import org.jruby.runtime.Visibility;
-import org.jruby.truffle.nodes.RubyNode;
-import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.UndefinedPlaceholder;
-import org.jruby.truffle.runtime.control.RaiseException;
-import org.jruby.truffle.runtime.core.RubyBasicObject;
-import org.jruby.truffle.runtime.core.RubyEncoding;
-import org.jruby.truffle.runtime.core.RubyNilClass;
-import org.jruby.truffle.runtime.core.RubyRegexp;
-import org.jruby.truffle.runtime.core.RubyString;
-import org.jruby.truffle.runtime.core.RubySymbol;
-import org.jruby.util.ByteList;
-import org.jruby.util.cli.Options;
-
-import static org.jruby.util.StringSupport.CR_7BIT;
 
 @CoreClass(name = "Regexp")
 public abstract class RegexpNodes {
@@ -73,26 +68,6 @@ public abstract class RegexpNodes {
             }
             return escapeNode.executeEscape(frame, string);
         }
-    }
-
-    @CoreMethod(names = "==", required = 1)
-    public abstract static class EqualNode extends CoreMethodNode {
-
-        public EqualNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
-        public EqualNode(EqualNode prev) {
-            super(prev);
-        }
-
-        @Specialization
-        public boolean equal(RubyRegexp a, RubyRegexp b) {
-            notDesignedForCompilation();
-
-            return ((org.jruby.RubyString) org.jruby.RubyRegexp.newRegexp(getContext().getRuntime(), a.getSource(), a.getRegex().getOptions()).to_s()).getByteList().equals(((org.jruby.RubyString) org.jruby.RubyRegexp.newRegexp(getContext().getRuntime(), b.getSource(), b.getRegex().getOptions()).to_s()).getByteList());
-        }
-
     }
 
     @CoreMethod(names = "===", required = 1)
@@ -144,24 +119,6 @@ public abstract class RegexpNodes {
 
     }
 
-    @CoreMethod(names = "encoding")
-    public abstract static class EncodingNode extends CoreMethodNode {
-
-        public EncodingNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
-        public EncodingNode(EncodingNode prev) {
-            super(prev);
-        }
-
-        @Specialization
-        public RubyEncoding encoding(RubyRegexp regexp) {
-            notDesignedForCompilation();
-            return regexp.getEncoding();
-        }
-    }
-
     @CoreMethod(names = "escape", onSingleton = true, required = 1)
     public abstract static class EscapeNode extends CoreMethodNode {
 
@@ -180,106 +137,6 @@ public abstract class RegexpNodes {
             notDesignedForCompilation();
 
             return getContext().makeString(org.jruby.RubyRegexp.quote19(new ByteList(pattern.getBytes()), true).toString());
-        }
-
-    }
-
-    @CoreMethod(names = "initialize", required = 1, optional = 1, lowerFixnumParameters = 2)
-    public abstract static class InitializeNode extends CoreMethodNode {
-
-        private ConditionProfile booleanOptionsProfile = ConditionProfile.createBinaryProfile();
-
-        public InitializeNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
-        public InitializeNode(InitializeNode prev) {
-            super(prev);
-        }
-
-        @Specialization
-        public RubyRegexp initialize(RubyRegexp regexp, RubyString string, UndefinedPlaceholder options) {
-            notDesignedForCompilation();
-
-            regexp.initialize(this, string.getBytes(), Option.DEFAULT);
-            return regexp;
-        }
-
-        @Specialization
-        public RubyRegexp initialize(RubyRegexp regexp, RubyString string, RubyNilClass options) {
-            notDesignedForCompilation();
-
-            return initialize(regexp, string, UndefinedPlaceholder.INSTANCE);
-        }
-
-        @Specialization
-        public RubyRegexp initialize(RubyRegexp regexp, RubyString string, boolean options) {
-            notDesignedForCompilation();
-
-            if (booleanOptionsProfile.profile(options)) {
-                return initialize(regexp, string, Option.IGNORECASE);
-            } else {
-                return initialize(regexp, string, UndefinedPlaceholder.INSTANCE);
-            }
-        }
-
-        @Specialization
-        public RubyRegexp initialize(RubyRegexp regexp, RubyString string, int options) {
-            notDesignedForCompilation();
-
-            regexp.initialize(this, string.getBytes(), options);
-            return regexp;
-        }
-
-        @Specialization(guards = { "!isRubyNilClass(arguments[2])", "!isUndefinedPlaceholder(arguments[2])" })
-        public RubyRegexp initialize(RubyRegexp regexp, RubyString string, Object options) {
-            notDesignedForCompilation();
-
-            return initialize(regexp, string, Option.IGNORECASE);
-        }
-
-        @Specialization
-        public RubyRegexp initialize(RubyRegexp regexp, RubyRegexp from, UndefinedPlaceholder options) {
-            notDesignedForCompilation();
-
-            regexp.initialize(this, from.getSource(), from.getRegex().getOptions()); // TODO: is copying needed?
-            return regexp;
-        }
-
-        @Specialization(guards = "!isUndefinedPlaceholder(arguments[2])")
-        public RubyRegexp initialize(RubyRegexp regexp, RubyRegexp from, Object options) {
-            notDesignedForCompilation();
-
-            if (Options.PARSER_WARN_FLAGS_IGNORED.load()) {
-                getContext().getWarnings().warn("flags ignored");
-            }
-
-            return initialize(regexp, from, UndefinedPlaceholder.INSTANCE);
-        }
-    }
-
-    @CoreMethod(names = "initialize_copy", visibility = Visibility.PRIVATE, required = 1)
-    public abstract static class InitializeCopyNode extends CoreMethodNode {
-
-        public InitializeCopyNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
-        public InitializeCopyNode(InitializeCopyNode prev) {
-            super(prev);
-        }
-
-        @Specialization
-        public Object initializeCopy(RubyRegexp self, RubyRegexp from) {
-            notDesignedForCompilation();
-
-            if (self == from) {
-                return self;
-            }
-
-            self.initialize(this, from.getSource(), from.getRegex().getOptions()); // TODO: is copying needed?
-
-            return self;
         }
 
     }
@@ -390,7 +247,7 @@ public abstract class RegexpNodes {
 
         @Specialization
         public RubyString source(RubyRegexp regexp) {
-            return getContext().makeString(regexp.getSource().toString());
+            return getContext().makeString(regexp.getSource().dup());
         }
 
     }

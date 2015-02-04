@@ -216,6 +216,11 @@ public abstract class ThreadNodes {
         }
 
         @Specialization
+        public RubyNilClass raise(VirtualFrame frame, RubyThread thread, RubyClass exceptionClass, UndefinedPlaceholder message) {
+            return raise(frame, thread, exceptionClass, getContext().makeString(""));
+        }
+
+        @Specialization
         public RubyNilClass raise(VirtualFrame frame, final RubyThread thread, RubyClass exceptionClass, RubyString message) {
             final Object exception = exceptionClass.allocate(this);
             initialize.call(frame, exception, "initialize", null, message);
@@ -243,6 +248,28 @@ public abstract class ThreadNodes {
 
     }
 
+    @CoreMethod(names = "run")
+    public abstract static class RunNode extends CoreMethodNode {
+
+        public RunNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public RunNode(RunNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public RubyThread run(final RubyThread thread) {
+            notDesignedForCompilation();
+
+            thread.interrupt();
+
+            return thread;
+        }
+
+    }
+
     @CoreMethod(names = "status")
     public abstract static class StatusNode extends CoreMethodNode {
 
@@ -257,6 +284,15 @@ public abstract class ThreadNodes {
         @Specialization
         public Object status(RubyThread self) {
             notDesignedForCompilation();
+
+            // TODO: slightly hackish
+            if (self.getStatus() == Status.DEAD) {
+                if (self.getException() != null) {
+                    return getContext().getCoreLibrary().getNilObject();
+                } else {
+                    return false;
+                }
+            }
 
             return new RubyString(getContext().getCoreLibrary().getStringClass(), self.getStatus().bytes);
         }
@@ -309,6 +345,29 @@ public abstract class ThreadNodes {
             } else {
                 return self.getValue();
             }
+        }
+
+    }
+
+    @CoreMethod(names = "wakeup")
+    public abstract static class WakeupNode extends CoreMethodNode {
+
+        public WakeupNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public WakeupNode(WakeupNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public RubyThread wakeup(final RubyThread thread) {
+            notDesignedForCompilation();
+
+            // TODO: should only interrupt sleep
+            thread.interrupt();
+
+            return thread;
         }
 
     }

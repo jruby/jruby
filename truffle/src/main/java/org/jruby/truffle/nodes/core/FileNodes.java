@@ -52,7 +52,7 @@ public abstract class FileNodes {
 
     }
 
-    @CoreMethod(names = "basename", onSingleton = true, required = 1)
+    @CoreMethod(names = "basename", onSingleton = true, required = 1, optional = 1)
     public abstract static class BasenameNode extends CoreMethodNode {
 
         public BasenameNode(RubyContext context, SourceSection sourceSection) {
@@ -64,12 +64,30 @@ public abstract class FileNodes {
         }
 
         @Specialization
-        public RubyString basename(RubyString path) {
+        public RubyString basename(RubyString path, @SuppressWarnings("unused") UndefinedPlaceholder extension) {
             notDesignedForCompilation();
 
             return getContext().makeString(new File(path.toString()).getName());
         }
 
+        @Specialization
+        public RubyString basename(RubyString path, RubyString extension) {
+            notDesignedForCompilation();
+
+            final String extensionAsString = extension.toString();
+            final String name = new File(path.toString()).getName();
+            final String basename;
+
+            if (extensionAsString.equals(".*") && name.indexOf('.') != -1) {
+                basename = name.substring(0, name.lastIndexOf('.'));
+            } else if (name.endsWith(extensionAsString)) {
+                basename = name.substring(0, name.lastIndexOf(extensionAsString));
+            } else {
+                basename = name;
+            }
+
+            return getContext().makeString(basename);
+        }
     }
 
     @CoreMethod(names = "close")
@@ -329,6 +347,43 @@ public abstract class FileNodes {
         }
     }
 
+    @CoreMethod(names = "open", onSingleton = true, needsBlock = true, required = 2)
+    public abstract static class OpenNode extends YieldingCoreMethodNode {
+
+        public OpenNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public OpenNode(OpenNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public Object open(RubyString fileName, RubyString mode, UndefinedPlaceholder block) {
+            notDesignedForCompilation();
+
+            return RubyFile.open(getContext(), fileName.toString(), mode.toString());
+        }
+
+        @Specialization
+        public Object open(VirtualFrame frame, RubyString fileName, RubyString mode, RubyProc block) {
+            notDesignedForCompilation();
+
+            final RubyFile file = RubyFile.open(getContext(), fileName.toString(), mode.toString());
+
+            if (block != null) {
+                try {
+                    yield(frame, block, file);
+                } finally {
+                    file.close();
+                }
+            }
+
+            return file;
+        }
+
+    }
+
     @CoreMethod(names = "path", onSingleton = true, required = 1)
     public abstract static class PathNode extends CoreMethodNode {
 
@@ -433,6 +488,26 @@ public abstract class FileNodes {
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
+        }
+
+    }
+
+    @CoreMethod(names = "readable?", onSingleton = true, needsSelf = false, required = 1)
+    public abstract static class ReadableQueryNode extends CoreMethodNode {
+
+        public ReadableQueryNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public ReadableQueryNode(ReadableQueryNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public boolean isReadable(RubyString file) {
+            notDesignedForCompilation();
+
+            return new File(file.toString()).canRead();
         }
 
     }

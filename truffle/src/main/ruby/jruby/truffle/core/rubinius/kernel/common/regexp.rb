@@ -33,6 +33,15 @@ class Regexp
   MULTILINE          = 4
   FIXEDENCODING      = 16
   NOENCODING         = 32
+  DONT_CAPTURE_GROUP = 128
+  CAPTURE_GROUP      = 256
+  OPTION_MASK = IGNORECASE | EXTENDED | MULTILINE | FIXEDENCODING | NOENCODING | DONT_CAPTURE_GROUP | CAPTURE_GROUP
+
+  KCODE_NONE = (1 << 9)
+  KCODE_EUC  = (2 << 9)
+  KCODE_SJIS = (3 << 9)
+  KCODE_UTF8 = (4 << 9)
+  KCODE_MASK = KCODE_NONE | KCODE_EUC | KCODE_SJIS | KCODE_UTF8
 
   def self.convert(pattern)
     return pattern if pattern.kind_of? Regexp
@@ -83,6 +92,40 @@ class Regexp
     end
 
     Regexp.new(str)
+  end
+
+  def initialize(pattern, opts=nil, lang=nil)
+    if pattern.kind_of?(Regexp)
+      opts = pattern.options
+      pattern = pattern.source
+    elsif opts.kind_of?(Fixnum)
+      opts = opts & (OPTION_MASK | KCODE_MASK) if opts > 0
+    elsif opts
+      opts = IGNORECASE
+    else
+      opts = 0
+    end
+
+    code = lang[0] if lang
+    opts |= NOENCODING if code == ?n or code == ?N
+
+    compile pattern, opts
+  end
+
+  def initialize_copy(other)
+    initialize other.source, other.options
+  end
+
+  def eql?(other)
+    return false unless other.kind_of?(Regexp)
+    return false unless source == other.source
+    (options & ~NOENCODING) == (other.options & ~NOENCODING)
+  end
+
+  alias_method :==, :eql?
+
+  def encoding
+    source.encoding
   end
 
 end

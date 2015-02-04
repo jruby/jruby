@@ -135,7 +135,7 @@ public class ObjectSpaceManager {
 
             // Leave the global lock and wait on the finalizer queue
 
-            finalizerReference = context.getThreadManager().runOnce(true, new BlockingActionWithoutGlobalLock<FinalizerReference>() {
+            finalizerReference = context.getThreadManager().runOnce(new BlockingActionWithoutGlobalLock<FinalizerReference>() {
                 @Override
                 public FinalizerReference block() throws InterruptedException {
                     return (FinalizerReference) finalizerQueue.remove();
@@ -226,7 +226,10 @@ public class ObjectSpaceManager {
     }
 
     public void visitCallStack(final ObjectGraphVisitor visitor) {
-        visitFrameInstance(Truffle.getRuntime().getCurrentFrame(), visitor);
+        FrameInstance currentFrame = Truffle.getRuntime().getCurrentFrame();
+        if (currentFrame != null) {
+            visitFrameInstance(currentFrame, visitor);
+        }
 
         Truffle.getRuntime().iterateFrames(new FrameInstanceVisitor<Object>() {
             @Override

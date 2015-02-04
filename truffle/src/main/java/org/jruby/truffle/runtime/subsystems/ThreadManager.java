@@ -11,6 +11,7 @@ package org.jruby.truffle.runtime.subsystems;
 
 import com.oracle.truffle.api.CompilerDirectives;
 
+import org.jruby.RubyThread.Status;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyThread;
 
@@ -85,17 +86,15 @@ public class ThreadManager {
      * The action might be {@link Thread#interrupted()}, for instance by
      * the {@link SafepointManager}, in which case it will be run again.
      *
-     *
-     * @param holdsGIL
      * @param action must not touch any Ruby state
      * @return the first non-null return value from {@code action}
      */
     @CompilerDirectives.TruffleBoundary
-    public <T> T runUntilResult(boolean holdsGIL, BlockingActionWithoutGlobalLock<T> action) {
+    public <T> T runUntilResult(BlockingActionWithoutGlobalLock<T> action) {
         T result = null;
 
         do {
-            result = runOnce(holdsGIL, action);
+            result = runOnce(action);
         } while (result == null);
 
         return result;
@@ -106,35 +105,26 @@ public class ThreadManager {
      * The action might be {@link Thread#interrupted()}, for instance by
      * the {@link SafepointManager}, in which case null will be returned.
      *
-     *
-     * @param holdsGIL
      * @param action must not touch any Ruby state
      * @return the return value from {@code action} or null if interrupted
      */
     @CompilerDirectives.TruffleBoundary
-    public <T> T runOnce(boolean holdsGIL, BlockingActionWithoutGlobalLock<T> action) {
+    public <T> T runOnce(BlockingActionWithoutGlobalLock<T> action) {
         T result = null;
-
-        final RubyThread runningThread;
-
-        if (holdsGIL) {
-            runningThread = leaveGlobalLock();
-        } else {
-            runningThread = null;
-        }
+        final RubyThread runningThread = leaveGlobalLock();
+        runningThread.setStatus(Status.SLEEP);
 
         try {
             try {
                 result = action.block();
             } finally {
-                if (holdsGIL) {
-                    // We need to enter the global lock before anything else!
-                    enterGlobalLock(runningThread);
-                }
+                runningThread.setStatus(Status.RUN);
+                // We need to enter the global lock before anything else!
+                enterGlobalLock(runningThread);
             }
         } catch (InterruptedException e) {
             // We were interrupted, possibly by the SafepointManager.
-            context.getSafepointManager().poll(holdsGIL);
+            context.getSafepointManager().poll();
         }
         return result;
     }

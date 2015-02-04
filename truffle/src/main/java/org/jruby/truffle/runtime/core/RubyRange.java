@@ -9,30 +9,30 @@
  */
 package org.jruby.truffle.runtime.core;
 
+import org.jruby.truffle.nodes.RubyNode;
+import org.jruby.truffle.nodes.objects.Allocator;
+import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.subsystems.ObjectSpaceManager;
 
 public abstract class RubyRange extends RubyBasicObject {
 
-    protected final boolean excludeEnd;
-
-    public RubyRange(RubyClass rangeClass, boolean excludeEnd) {
+    public RubyRange(RubyClass rangeClass) {
         super(rangeClass);
-        this.excludeEnd = excludeEnd;
     }
 
-    public boolean doesExcludeEnd() {
-        return excludeEnd;
-    }
+    public abstract boolean doesExcludeEnd();
 
     public static class IntegerFixnumRange extends RubyRange {
 
+        private final boolean excludeEnd;
         private final int begin;
         private final int end;
 
         public IntegerFixnumRange(RubyClass rangeClass, int begin, int end, boolean excludeEnd) {
-            super(rangeClass, excludeEnd);
+            super(rangeClass);
             this.begin = begin;
             this.end = end;
+            this.excludeEnd = excludeEnd;
         }
 
         public final int getBegin() {
@@ -41,6 +41,11 @@ public abstract class RubyRange extends RubyBasicObject {
 
         public final int getEnd() {
             return end;
+        }
+
+        @Override
+        public boolean doesExcludeEnd() {
+            return excludeEnd;
         }
 
         public final int getExclusiveEnd() {
@@ -55,13 +60,15 @@ public abstract class RubyRange extends RubyBasicObject {
 
     public static class LongFixnumRange extends RubyRange {
 
+        private final boolean excludeEnd;
         private final long begin;
         private final long end;
 
         public LongFixnumRange(RubyClass rangeClass, long begin, long end, boolean excludeEnd) {
-            super(rangeClass, excludeEnd);
+            super(rangeClass);
             this.begin = begin;
             this.end = end;
+            this.excludeEnd = excludeEnd;
         }
 
         public final long getBegin() {
@@ -70,6 +77,11 @@ public abstract class RubyRange extends RubyBasicObject {
 
         public final long getEnd() {
             return end;
+        }
+
+        @Override
+        public boolean doesExcludeEnd() {
+            return excludeEnd;
         }
 
         public final long getExclusiveEnd() {
@@ -84,17 +96,30 @@ public abstract class RubyRange extends RubyBasicObject {
 
     public static class ObjectRange extends RubyRange {
 
-        private final Object begin;
-        private final Object end;
+        private boolean excludeEnd;
+        private Object begin;
+        private Object end;
 
         public ObjectRange(RubyClass rangeClass, Object begin, Object end, boolean excludeEnd) {
-            super(rangeClass, excludeEnd);
+            super(rangeClass);
             this.begin = begin;
             this.end = end;
+            this.excludeEnd = excludeEnd;
+        }
+
+        public void initialize(Object begin, Object end, boolean excludeEnd) {
+            this.begin = begin;
+            this.end = end;
+            this.excludeEnd = excludeEnd;
         }
 
         public Object getBegin() {
             return begin;
+        }
+
+        @Override
+        public boolean doesExcludeEnd() {
+            return excludeEnd;
         }
 
         public Object getEnd() {
@@ -110,6 +135,15 @@ public abstract class RubyRange extends RubyBasicObject {
             if (end instanceof RubyBasicObject) {
                 ((RubyBasicObject) end).visitObjectGraph(visitor);
             }
+        }
+
+    }
+
+    public static class RangeAllocator implements Allocator {
+
+        @Override
+        public RubyBasicObject allocate(RubyContext context, RubyClass rubyClass, RubyNode currentNode) {
+            return new RubyRange.ObjectRange(rubyClass, context.getCoreLibrary().getNilObject(), context.getCoreLibrary().getNilObject(), false);
         }
 
     }

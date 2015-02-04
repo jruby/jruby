@@ -88,7 +88,7 @@ public abstract class DispatchNode extends RubyNode {
         // Check for methods that are explicitly undefined
 
         if (method.isUndefined()) {
-            throw new RaiseException(getContext().getCoreLibrary().noMethodError(name, receiver.toString(), this));
+            throw new RaiseException(getContext().getCoreLibrary().noMethodError(name, getContext().getCoreLibrary().getLogicalClass(receiver), this));
         }
 
         // Check visibility
@@ -97,7 +97,7 @@ public abstract class DispatchNode extends RubyNode {
             final DispatchAction dispatchAction = getHeadNode().getDispatchAction();
 
             if (dispatchAction == DispatchAction.CALL_METHOD) {
-                throw new RaiseException(getContext().getCoreLibrary().privateMethodError(name, receiver.toString(), this));
+                throw new RaiseException(getContext().getCoreLibrary().privateMethodError(name, getContext().getCoreLibrary().getLogicalClass(receiver), this));
             } else if (dispatchAction == DispatchAction.RESPOND_TO_METHOD) {
                 return null;
             } else {

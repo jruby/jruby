@@ -9,10 +9,12 @@
  */
 package org.jruby.truffle.runtime.core;
 
+import org.joni.Regex;
 import org.joni.Region;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.subsystems.ObjectSpaceManager;
 import org.jruby.truffle.runtime.util.ArrayUtils;
+import org.jruby.util.ByteList;
 
 import java.util.Arrays;
 
@@ -21,14 +23,16 @@ import java.util.Arrays;
  */
 public class RubyMatchData extends RubyBasicObject {
 
-    private Region region;
+    private final Regex regex;
+    private final Region region;
     private final Object[] values;
     private final RubyString pre;
     private final RubyString post;
     private final RubyString global;
 
-    public RubyMatchData(RubyClass rubyClass, Region region, Object[] values, RubyString pre, RubyString post, RubyString global) {
+    public RubyMatchData(RubyClass rubyClass, Regex regex, Region region, Object[] values, RubyString pre, RubyString post, RubyString global) {
         super(rubyClass);
+        this.regex = regex;
         this.region = region;
         this.values = values;
         this.pre = pre;
@@ -88,6 +92,10 @@ public class RubyMatchData extends RubyBasicObject {
 
     public int getNumberOfRegions() {
         return region.numRegs;
+    }
+
+    public int getBackrefNumber(ByteList value) {
+        return regex.nameToBackrefNumber(value.getUnsafeBytes(), value.getBegin(), value.getBegin() + value.getRealSize(), region);
     }
 
     @Override

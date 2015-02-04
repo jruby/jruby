@@ -28,6 +28,12 @@
 
 class Array
 
+  def self.[](*args)
+    ary = allocate
+    ary.replace args
+    ary
+  end
+
   def values_at(*args)
     out = []
 

@@ -16,11 +16,13 @@ import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.*;
 import com.oracle.truffle.api.nodes.UnexpectedResultException;
 import com.oracle.truffle.api.source.SourceSection;
-
 import com.oracle.truffle.api.utilities.ConditionProfile;
+
 import org.jruby.common.IRubyWarnings;
 import org.jruby.runtime.Visibility;
 import org.jruby.truffle.nodes.RubyNode;
+import org.jruby.truffle.nodes.cast.BooleanCastNode;
+import org.jruby.truffle.nodes.cast.BooleanCastNodeFactory;
 import org.jruby.truffle.nodes.control.WhileNode;
 import org.jruby.truffle.nodes.core.KernelNodesFactory.SameOrEqualNodeFactory;
 import org.jruby.truffle.nodes.dispatch.*;
@@ -669,7 +671,7 @@ public abstract class KernelNodes {
                 throw new RuntimeException(e);
             }
 
-            int exitCode = context.getThreadManager().runUntilResult(true, new BlockingActionWithoutGlobalLock<Integer>() {
+            int exitCode = context.getThreadManager().runUntilResult(new BlockingActionWithoutGlobalLock<Integer>() {
                 @Override
                 public Integer block() throws InterruptedException {
                     return process.waitFor();
@@ -851,7 +853,7 @@ public abstract class KernelNodes {
 
             final BufferedReader reader = new BufferedReader(new InputStreamReader(in));
 
-            final String line = getContext().getThreadManager().runOnce(true, new BlockingActionWithoutGlobalLock<String>() {
+            final String line = getContext().getThreadManager().runOnce(new BlockingActionWithoutGlobalLock<String>() {
                 @Override
                 public String block() throws InterruptedException {
                     return gets(reader);
@@ -1245,7 +1247,12 @@ public abstract class KernelNodes {
         public boolean load(RubyString file) {
             notDesignedForCompilation();
 
-            getContext().loadFile(file.toString(), this);
+            try {
+                getContext().loadFile(file.toString(), this);
+            } catch (Throwable t) {
+                throw new RaiseException(getContext().getCoreLibrary().loadErrorCannotLoad(file.toString(), this));
+            }
+
             return true;
         }
     }
@@ -1920,6 +1927,8 @@ public abstract class KernelNodes {
     @CoreMethod(names = "sleep", isModuleFunction = true, optional = 1)
     public abstract static class SleepNode extends CoreMethodNode {
 
+        @Child CallDispatchHeadNode floatNode;
+
         public SleepNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
         }
@@ -1929,45 +1938,73 @@ public abstract class KernelNodes {
         }
 
         @Specialization
-        public double sleep(UndefinedPlaceholder duration) {
-            return doSleep(0);
+        public long sleep(UndefinedPlaceholder duration) {
+            // TODO: this should actually be "forever".
+            return doSleepMillis(Long.MAX_VALUE);
+        }
+
+        @Specialization(guards = "isRubiniusUndefined")
+        public long sleep(RubyBasicObject duration) {
+            return sleep(UndefinedPlaceholder.INSTANCE);
         }
 
         @Specialization
-        public double sleep(int duration) {
-            return doSleep(duration);
+        public long sleep(int duration) {
+            return doSleepMillis(duration * 1000);
         }
 
         @Specialization
-        public double sleep(long duration) {
-            return doSleep(duration);
+        public long sleep(long duration) {
+            return doSleepMillis(duration * 1000);
         }
 
         @Specialization
-        public double sleep(double duration) {
-            return doSleep(duration);
+        public long sleep(double duration) {
+            return doSleepMillis((long) (duration * 1000));
+        }
+
+        @Specialization(guards = "isRational")
+        public long sleep(VirtualFrame frame, RubyBasicObject duration) {
+            if (floatNode == null) {
+                CompilerDirectives.transferToInterpreterAndInvalidate();
+                floatNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext()));
+            }
+
+            try {
+                return sleep(floatNode.callFloat(frame, duration, "to_f", null));
+            } catch (UseMethodMissingException e) {
+                throw new RaiseException(getContext().getCoreLibrary().typeErrorCantConvertInto(
+                        getContext().getCoreLibrary().getLogicalClass(duration).getName(),
+                        getContext().getCoreLibrary().getFloatClass().getName(),
+                        this));
+            }
+
         }
 
         @TruffleBoundary
-        private double doSleep(final double duration) {
-            final long start = System.nanoTime();
+        private long doSleepMillis(final long durationInMillis) {
+            if (durationInMillis < 0) {
+                throw new RaiseException(getContext().getCoreLibrary().argumentError("time interval must be positive", this));
+            }
 
-            getContext().getThreadManager().runOnce(true, new BlockingActionWithoutGlobalLock<Boolean>() {
+            final long start = System.currentTimeMillis();
+
+            getContext().getThreadManager().runOnce(new BlockingActionWithoutGlobalLock<Boolean>() {
                 @Override
                 public Boolean block() throws InterruptedException {
-                    Thread.sleep((long) (duration * 1000));
+                    Thread.sleep(durationInMillis);
                     return SUCCESS;
                 }
             });
 
-            final long end = System.nanoTime();
+            final long end = System.currentTimeMillis();
 
-            return (end - start) / 1e9;
+            return (end - start) / 1000;
         }
 
     }
 
-    @CoreMethod(names = "sprintf", isModuleFunction = true, argumentsAsArray = true)
+    @CoreMethod(names = { "sprintf", "format" }, isModuleFunction = true, argumentsAsArray = true)
     public abstract static class SPrintfNode extends CoreMethodNode {
 
         public SPrintfNode(RubyContext context, SourceSection sourceSection) {

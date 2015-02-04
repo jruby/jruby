@@ -117,12 +117,14 @@ public class CoreLibrary {
     @CompilerDirectives.CompilationFinal private RubyClass unboundMethodClass;
     @CompilerDirectives.CompilationFinal private RubyClass byteArrayClass;
     @CompilerDirectives.CompilationFinal private RubyClass fiberErrorClass;
+    @CompilerDirectives.CompilationFinal private RubyClass threadErrorClass;
 
     @CompilerDirectives.CompilationFinal private RubyArray argv;
     @CompilerDirectives.CompilationFinal private RubyBasicObject globalVariablesObject;
     @CompilerDirectives.CompilationFinal private RubyBasicObject mainObject;
     @CompilerDirectives.CompilationFinal private RubyNilClass nilObject;
     @CompilerDirectives.CompilationFinal private RubyHash envHash;
+    @CompilerDirectives.CompilationFinal private RubyBasicObject rubiniusUndefined;
 
     private ArrayNodes.MinBlock arrayMinBlock;
     private ArrayNodes.MaxBlock arrayMaxBlock;
@@ -217,6 +219,8 @@ public class CoreLibrary {
         ioClass = new RubyClass(context, objectClass, objectClass, "IO");
 
         final RubyModule rubiniusModule = new RubyModule(context, objectClass, "Rubinius");
+        rubiniusUndefined = new RubyBasicObject(objectClass);
+        rubiniusModule.setConstant(null, "UNDEFINED", rubiniusUndefined);
 
         argumentErrorClass = new RubyClass(context, objectClass, standardErrorClass, "ArgumentError");
         argumentErrorClass.setAllocator(new RubyException.ExceptionAllocator());
@@ -256,6 +260,8 @@ public class CoreLibrary {
         localJumpErrorClass.setAllocator(new RubyException.ExceptionAllocator());
         matchDataClass = new RubyClass(context, objectClass, objectClass, "MatchData");
         mathModule = new RubyModule(context, objectClass, "Math");
+        RubyClass mutexClass = new RubyClass(context, objectClass, objectClass, "Mutex");
+        mutexClass.setAllocator(new RubyMutex.MutexAllocator());
         nameErrorClass = new RubyClass(context, objectClass, standardErrorClass, "NameError");
         nameErrorClass.setAllocator(new RubyException.ExceptionAllocator());
         nilClass = new RubyClass(context, objectClass, objectClass, "NilClass");
@@ -266,6 +272,7 @@ public class CoreLibrary {
         procClass.setAllocator(new RubyProc.ProcAllocator());
         processClass = new RubyClass(context, objectClass, objectClass, "Process");
         rangeClass = new RubyClass(context, objectClass, objectClass, "Range");
+        rangeClass.setAllocator(new RubyRange.RangeAllocator());
         rationalClass = new RubyClass(context, objectClass, numericClass, "Rational");
         regexpClass = new RubyClass(context, objectClass, objectClass, "Regexp");
         regexpClass.setAllocator(new RubyRegexp.RegexpAllocator());
@@ -306,6 +313,8 @@ public class CoreLibrary {
         byteArrayClass = new RubyClass(context, rubiniusModule, objectClass, "ByteArray");
         fiberErrorClass = new RubyClass(context, objectClass, exceptionClass, "FiberError");
         fiberErrorClass.setAllocator(new RubyException.ExceptionAllocator());
+        threadErrorClass = new RubyClass(context, objectClass, exceptionClass, "ThreadError");
+        threadErrorClass.setAllocator(new RubyException.ExceptionAllocator());
 
         // Includes
 
@@ -437,7 +446,7 @@ public class CoreLibrary {
     }
 
     public InputStream getRubyCoreInputStream(String fileName) {
-        final LoadServiceResource resource = context.getRuntime().getLoadService().getClassPathResource(context.getRuntime().getJRubyClassLoader(), fileName);
+        final LoadServiceResource resource = context.getRuntime().getLoadService().getClassPathResource(getClass().getClassLoader(), fileName);
 
         if (resource == null) {
             throw new RuntimeException("couldn't load Truffle core library " + fileName);
@@ -703,14 +712,14 @@ public class CoreLibrary {
         return new RubyException(context.getCoreLibrary().getNoMethodErrorClass(), context.makeString(message), RubyCallStack.getBacktrace(currentNode));
     }
 
-    public RubyException noMethodError(String name, String object, Node currentNode) {
+    public RubyException noMethodError(String name, RubyModule module, Node currentNode) {
         CompilerAsserts.neverPartOfCompilation();
-        return noMethodError(String.format("undefined method `%s' for %s", name, object), currentNode);
+        return noMethodError(String.format("undefined method `%s' for %s", name, module.getName()), currentNode);
     }
 
-    public RubyException privateMethodError(String name, String object, Node currentNode) {
+    public RubyException privateMethodError(String name, RubyModule module, Node currentNode) {
         CompilerAsserts.neverPartOfCompilation();
-        return noMethodError(String.format("private method `%s' called for %s", name, object), currentNode);
+        return noMethodError(String.format("private method `%s' called for %s", name, module.toString()), currentNode);
     }
 
     public RubyException loadError(String message, Node currentNode) {
@@ -799,6 +808,11 @@ public class CoreLibrary {
     public RubyException yieldFromRootFiberError(Node currentNode) {
         CompilerAsserts.neverPartOfCompilation();
         return fiberError("can't yield from root fiber", currentNode);
+    }
+
+    public RubyException threadError(String message, Node currentNode) {
+        CompilerAsserts.neverPartOfCompilation();
+        return new RubyException(threadErrorClass, context.makeString(message), RubyCallStack.getBacktrace(currentNode));
     }
 
     public RubyContext getContext() {
@@ -1019,6 +1033,10 @@ public class CoreLibrary {
 
     public RubyClass getByteArrayClass() {
         return byteArrayClass;
+    }
+
+    public RubyBasicObject getRubiniusUndefined() {
+        return rubiniusUndefined;
     }
 
     public RubySymbol getEachSymbol() {

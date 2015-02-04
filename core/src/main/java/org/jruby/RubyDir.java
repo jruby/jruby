@@ -514,7 +514,9 @@ public class RubyDir extends RubyObject {
         Ruby runtime = getRuntime();
         StringBuilder part = new StringBuilder();
         String cname = getMetaClass().getRealClass().getName();
-        part.append("#<").append(cname).append(":").append(path.asJavaString()).append(">");
+        part.append("#<").append(cname).append(":");
+        if (path != null) { part.append(path.asJavaString()); }
+        part.append(">");
 
         return runtime.newString(part.toString());
     }
@@ -550,7 +552,7 @@ public class RubyDir extends RubyObject {
 
     @JRubyMethod(name = {"path", "to_path"})
     public IRubyObject path(ThreadContext context) {
-        return path.strDup(context.runtime);
+        return path == null ? context.runtime.getNil() : path.strDup(context.runtime);
     }
     
     @JRubyMethod

@@ -6,12 +6,6 @@
 # GNU General Public License version 2
 # GNU Lesser General Public License version 2.1
 
-module Rubinius
-
-  UNDEFINED = Object.new
-
-end
-
 module Kernel
 
   # TODO(CS): this seems very vulnerable to name conflicts

@@ -1447,48 +1447,21 @@ public abstract class ModuleNodes {
         }
 
         @Specialization
-        public RubyModule undefMethod(RubyClass rubyClass, RubyString name) {
-            notDesignedForCompilation();
-
-            final InternalMethod method = ModuleOperations.lookupMethod(rubyClass, name.toString());
-            if (method == null) {
-                throw new RaiseException(getContext().getCoreLibrary().noMethodError(name.toString(), rubyClass.toString(), this));
-            }
-            rubyClass.undefMethod(this, method);
-            return rubyClass;
-        }
-
-        @Specialization
-        public RubyModule undefMethod(RubyClass rubyClass, RubySymbol name) {
-            notDesignedForCompilation();
-
-            final InternalMethod method = ModuleOperations.lookupMethod(rubyClass, name.toString());
-            if (method == null) {
-                throw new RaiseException(getContext().getCoreLibrary().noMethodError(name.toString(), rubyClass.toString(), this));
-            }
-            rubyClass.undefMethod(this, method);
-            return rubyClass;
-        }
-
-        @Specialization
         public RubyModule undefMethod(RubyModule module, RubyString name) {
-            notDesignedForCompilation();
-
-            final InternalMethod method = ModuleOperations.lookupMethod(module, name.toString());
-            if (method == null) {
-                throw new RaiseException(getContext().getCoreLibrary().noMethodError(name.toString(), module.toString(), this));
-            }
-            module.undefMethod(this, method);
-            return module;
+            return undefMethod(module, name.toString());
         }
 
         @Specialization
         public RubyModule undefMethod(RubyModule module, RubySymbol name) {
+            return undefMethod(module, name.toString());
+        }
+
+        private RubyModule undefMethod(RubyModule module, String name) {
             notDesignedForCompilation();
 
-            final InternalMethod method = ModuleOperations.lookupMethod(module, name.toString());
+            final InternalMethod method = ModuleOperations.lookupMethod(module, name);
             if (method == null) {
-                throw new RaiseException(getContext().getCoreLibrary().noMethodError(name.toString(), module.toString(), this));
+                throw new RaiseException(getContext().getCoreLibrary().noMethodError(name, module, this));
             }
             module.undefMethod(this, method);
             return module;
