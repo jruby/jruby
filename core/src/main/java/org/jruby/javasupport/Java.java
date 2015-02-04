@@ -925,10 +925,9 @@ public class Java implements Library {
     }
 
     private static RubyModule getProxyOrPackageUnderPackage(final ThreadContext context,
-        final RubyModule parentPackage, String name, final boolean cacheMethod) {
+        final RubyModule parentPackage, final String name, final boolean cacheMethod) {
         final Ruby runtime = context.runtime;
 
-        name = name.trim();
         if ( name.length() == 0 ) {
             throw runtime.newArgumentError("empty class or package name");
         }
@@ -1033,9 +1032,8 @@ public class Java implements Library {
     }
 
     private static RubyModule getTopLevelProxyOrPackage(final Ruby runtime,
-        String name, final boolean cacheMethod) {
+        final String name, final boolean cacheMethod) {
 
-        name = name.trim();
         if ( name.length() == 0 ) {
             throw runtime.newArgumentError("empty class or package name");
         }
