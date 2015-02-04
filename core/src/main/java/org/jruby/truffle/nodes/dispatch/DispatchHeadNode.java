@@ -58,6 +58,7 @@ public class DispatchHeadNode extends Node {
             Object methodName,
             Object blockObject,
             Object argumentsObjects) {
+        
         return first.executeDispatch(
                 frame,
                 receiverObject,

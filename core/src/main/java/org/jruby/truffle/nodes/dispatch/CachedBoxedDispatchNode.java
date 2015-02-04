@@ -103,7 +103,7 @@ public class CachedBoxedDispatchNode extends CachedDispatchNode {
         	result[i++] = new MarkerNode(context, null);
         }
         else {
-        	result = null;
+        	result = argumentNodes;
         }
         
         return result;
@@ -130,7 +130,7 @@ public class CachedBoxedDispatchNode extends CachedDispatchNode {
         this.next = next;
         this.value = value;
         this.method = method;
-
+        
         if (method != null) {
             if (indirect) {
                 indirectCallNode = Truffle.getRuntime().createIndirectCallNode();

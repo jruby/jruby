@@ -69,7 +69,7 @@ public class RubyCallNode extends RubyNode {
 
         this.arguments = arguments;
         this.isVCall = isVCall;
-
+        
         dispatchHead = DispatchHeadNodeFactory.createMethodCall(context, ignoreVisibility, false, MissingBehavior.CALL_METHOD_MISSING, arguments, isSplatted);
         respondToMissing = DispatchHeadNodeFactory.createMethodCall(context, true, MissingBehavior.RETURN_MISSING);
         respondToMissingCast = BooleanCastNodeFactory.create(context, section, null);
