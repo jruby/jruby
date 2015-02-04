@@ -1933,40 +1933,50 @@ public abstract class KernelNodes {
         }
 
         @Specialization
-        public double sleep(UndefinedPlaceholder duration) {
-            return doSleep(0);
+        public long sleep(UndefinedPlaceholder duration) {
+            // TODO: this should actually be "forever".
+            return doSleepMillis(Long.MAX_VALUE);
+        }
+
+        @Specialization(guards = "isRubiniusUndefined")
+        public long sleep(RubyBasicObject duration) {
+            return sleep(UndefinedPlaceholder.INSTANCE);
         }
 
         @Specialization
-        public double sleep(int duration) {
-            return doSleep(duration);
+        public long sleep(int duration) {
+            return doSleepMillis(duration * 1000);
         }
 
         @Specialization
-        public double sleep(long duration) {
-            return doSleep(duration);
+        public long sleep(long duration) {
+            return doSleepMillis(duration * 1000);
         }
 
         @Specialization
-        public double sleep(double duration) {
-            return doSleep(duration);
+        public long sleep(double duration) {
+            return doSleepMillis((long) (duration * 1000));
         }
 
         @TruffleBoundary
-        private double doSleep(final double duration) {
-            final long start = System.nanoTime();
+        private long doSleepMillis(final long durationInMillis) {
+            if (durationInMillis < 0) {
+                throw new RaiseException(getContext().getCoreLibrary().argumentError("time interval must be positive", this));
+            }
+
+            final long start = System.currentTimeMillis();
 
             getContext().getThreadManager().runOnce(new BlockingActionWithoutGlobalLock<Boolean>() {
                 @Override
                 public Boolean block() throws InterruptedException {
-                    Thread.sleep((long) (duration * 1000));
+                    Thread.sleep(durationInMillis);
                     return SUCCESS;
                 }
             });
 
-            final long end = System.nanoTime();
+            final long end = System.currentTimeMillis();
 
-            return (end - start) / 1e9;
+            return (end - start) / 1000;
         }
 
     }
