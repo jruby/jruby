@@ -177,18 +177,6 @@ public class JavaProxy extends RubyObject {
         return this;
     }
 
-    private static Class<?> getJavaClass(ThreadContext context, RubyModule module) {
-        try {
-            final IRubyObject javaClass = Helpers.invoke(context, module, "java_class");
-            return ! ( javaClass instanceof JavaClass ) ? null : ((JavaClass) javaClass).javaClass();
-        }
-        catch (RuntimeException e) {
-            // clear $! since our "java_class" invoke above may have failed and set it
-            context.setErrorInfo(context.nil);
-            return null;
-        }
-    }
-
     /**
      * Create a name/newname map of fields to be exposed as methods.
      */
@@ -264,7 +252,7 @@ public class JavaProxy extends RubyObject {
         final Map<String, String> fieldMap = getFieldListFromArgs(args);
 
         for (RubyModule module = topModule; module != null; module = module.getSuperClass()) {
-            final Class<?> javaClass = getJavaClass(context, module);
+            final Class<?> javaClass = JavaClass.getJavaClassIfProxy(context, module);
             // Hit a non-java proxy class (included Modules can be a cause of this...skip)
             if ( javaClass == null ) continue;
 

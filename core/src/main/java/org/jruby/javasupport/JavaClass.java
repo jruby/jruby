@@ -1300,8 +1300,22 @@ public class JavaClass extends JavaObject {
         return (Class) getValue();
     }
 
-    static Class resolveJavaClass(final ThreadContext context, final IRubyObject proxyClass) {
-        return ((JavaClass) proxyClass.callMethod(context, "java_class")).javaClass();
+    public static Class<?> getJavaClass(final ThreadContext context, final RubyModule proxy) {
+        final IRubyObject javaClass = Helpers.invoke(context, proxy, "java_class");
+        return ((JavaClass) javaClass).javaClass();
+    }
+
+    public static Class<?> getJavaClassIfProxy(final ThreadContext context, final RubyModule proxy) {
+        final IRubyObject javaClass;
+        try {
+            javaClass = Helpers.invoke(context, proxy, "java_class");
+        }
+        catch (RuntimeException e) {
+            // clear $! since our "java_class" invoke above may have failed and set it
+            context.setErrorInfo(context.nil);
+            return null;
+        }
+        return ( javaClass instanceof JavaClass ) ? ((JavaClass) javaClass).javaClass() : null;
     }
 
     private static final Map<String, Class> PRIMITIVE_TO_CLASS = new HashMap<String,Class>();

@@ -708,7 +708,7 @@ public class Java implements Library {
 
     private static Method getMethodFromClass(final ThreadContext context, final IRubyObject proxyClass,
         final String name, final Class... argTypes) {
-        final Class<?> clazz = JavaClass.resolveJavaClass(context, proxyClass);
+        final Class<?> clazz = JavaClass.getJavaClass(context, (RubyModule) proxyClass);
         try {
             return clazz.getMethod(name, argTypes);
         }
