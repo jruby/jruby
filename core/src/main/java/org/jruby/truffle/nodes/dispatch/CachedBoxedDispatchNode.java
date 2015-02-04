@@ -22,6 +22,7 @@ import com.oracle.truffle.api.nodes.InvalidAssumptionException;
 import com.oracle.truffle.api.nodes.UnexpectedResultException;
 
 import org.jruby.truffle.nodes.RubyNode;
+import org.jruby.truffle.nodes.literal.FixnumLiteralNode;
 import org.jruby.truffle.nodes.literal.HashLiteralNode;
 import org.jruby.truffle.nodes.literal.ObjectLiteralNode;
 import org.jruby.truffle.nodes.literal.StringLiteralNode;

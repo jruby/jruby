@@ -49,7 +49,7 @@ public final class RubyArguments {
     }
     
     public static boolean isKwOptimized(Object[] arguments) {
-    	return MarkerNode.isMarker(arguments[arguments.length - 1]);
+    	return arguments[arguments.length - 1] instanceof MarkerNode.Marker;
     }
     
     public static MethodLike getMethod(Object[] arguments) {

@@ -24,7 +24,10 @@ public class MarkerNode extends RubyNode {
 
 	@Override
 	public Object execute(VirtualFrame frame) {
-		return instance;
+		return new Marker();
 	}
 
+	public static class Marker {
+		
+	}
 }

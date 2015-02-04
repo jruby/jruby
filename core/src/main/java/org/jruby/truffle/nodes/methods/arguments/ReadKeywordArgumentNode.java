@@ -48,7 +48,6 @@ public class ReadKeywordArgumentNode extends RubyNode {
     	}
     }
 
-    @TruffleBoundary
     public Object lookupKeywordInHash(VirtualFrame frame) {
         notDesignedForCompilation();
 
