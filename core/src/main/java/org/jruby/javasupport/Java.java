@@ -1034,7 +1034,7 @@ public class Java implements Library {
 
     private static RubyModule getTopLevelProxyOrPackage(final Ruby runtime,
         String name, final boolean cacheMethod) {
-        
+
         name = name.trim();
         if ( name.length() == 0 ) {
             throw runtime.newArgumentError("empty class or package name");
@@ -1122,6 +1122,28 @@ public class Java implements Library {
             return Arity.noArguments();
         }
 
+    }
+
+    @JRubyMethod(meta = true)
+    public static IRubyObject const_missing(final ThreadContext context,
+        final IRubyObject self, final IRubyObject name) {
+        final Ruby runtime = context.runtime;
+        final String constName = name.asJavaString();
+        // it's fine to not add the "cached" method here - when users sticking to
+        // constant access won't pay the "penalty" for adding dynamic methods ...
+        final RubyModule packageOrClass = getTopLevelProxyOrPackage(runtime, constName, false);
+        if ( packageOrClass != null ) {
+            final RubyModule javaModule = (RubyModule) self;
+            // NOTE: if it's a package createPackageModule already set the constant
+            // ... but in case it's a (top-level) Java class name we still need to:
+            synchronized (javaModule) {
+                final IRubyObject alreadySet = javaModule.fetchConstant(constName);
+                if ( alreadySet != null ) return (RubyModule) alreadySet;
+                javaModule.setConstant(constName, packageOrClass);
+            }
+            return packageOrClass;
+        }
+        return context.nil; // TODO compatibility - should be throwing instead, right !?
     }
 
     public static IRubyObject get_top_level_proxy_or_package(final ThreadContext context,

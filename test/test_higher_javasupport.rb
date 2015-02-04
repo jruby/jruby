@@ -700,6 +700,7 @@ CLASSDEF
     $! = nil
     undo = javax.swing.undo
     assert_nil($!)
+    assert undo
   end
 
   # JRUBY-2106
@@ -840,7 +841,7 @@ CLASSDEF
     end
   end
 
-  def test_no_warnings_on_concurrent_initialization
+  def test_no_warnings_on_concurrent_package_const_initialization
     stderr = $stderr; require 'stringio'
     begin
       $stderr = StringIO.new
@@ -852,6 +853,26 @@ CLASSDEF
 
       # expect no already initialized constant warning written e.g.
       # file:/.../jruby.jar!/jruby/java/java_module.rb:4 warning: already initialized constant JavaTextSpi
+      assert ! $stderr.string.index('already initialized constant'), $stderr.string
+    ensure
+      $stderr = stderr
+    end
+  end
+
+  def test_no_warnings_on_concurrent_class_const_initialization
+    Java.send :remove_const, :DefaultPackageClass if Java.const_defined? :DefaultPackageClass
+    
+    stderr = $stderr; require 'stringio'
+    begin
+      $stderr = StringIO.new
+      threads = (0..10).map do
+        Thread.new { Java::DefaultPackageClass }
+      end
+
+      threads.each { |thread| thread.join }
+
+      # expect no already initialized constant warning written e.g.
+      # ... warning: already initialized constant DefaultPackageClass
       assert ! $stderr.string.index('already initialized constant'), $stderr.string
     ensure
       $stderr = stderr
