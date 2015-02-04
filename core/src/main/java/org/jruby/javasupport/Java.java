@@ -76,6 +76,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.load.Library;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyModule;
+import org.jruby.exceptions.RaiseException;
 import org.jruby.internal.runtime.methods.JavaMethod.JavaMethodN;
 import org.jruby.internal.runtime.methods.JavaMethod.JavaMethodZero;
 import org.jruby.java.addons.ArrayJavaAddons;
@@ -924,7 +925,7 @@ public class Java implements Library {
     }
 
     private static RubyModule getProxyOrPackageUnderPackage(final ThreadContext context,
-        final RubyModule parentPackage, String name) {
+        final RubyModule parentPackage, String name, final boolean cacheMethod) {
         final Ruby runtime = context.runtime;
 
         name = name.trim();
@@ -935,51 +936,67 @@ public class Java implements Library {
         IRubyObject package_name = parentPackage.getInstanceVariable("@package_name");
         if ( package_name == null ) throw runtime.newArgumentError("invalid package module");
 
-        final String fullName = package_name.asJavaString() + name;
+        final String parentPackageName = package_name.asJavaString();
+        final String fullName = parentPackageName + name;
 
-        if ( ! Character.isUpperCase(name.charAt(0)) ) {
-            // filter out any Java primitive names
-            // TODO: should check against all Java reserved names here, not just primitives
-            if (JAVA_PRIMITIVES.containsKey(name)) {
-                throw runtime.newArgumentError("illegal package name component: " + name);
-            }
+        final RubyModule result;
+
+        if ( ! Character.isUpperCase( name.charAt(0) ) ) {
+            checkJavaReservedNames(runtime, name, false); // fails on primitives
 
             // this covers the rare case of lower-case class names (and thus will
             // fail 99.999% of the time). fortunately, we'll only do this once per
             // package name. (and seriously, folks, look into best practices...)
-            RubyModule proxyClass = getProxyClassOrNull(runtime, fullName, false);
-            if ( proxyClass != null ) return proxyClass; /* else expected - not a class */
-
-            // Haven't found a class, continue on as though it were a package
-            final RubyModule packageModule = getJavaPackageModule(runtime, fullName);
-            // TODO: decompose getJavaPackageModule so we don't parse fullName
-            if (packageModule == null) {
-                return null;
+            RubyModule proxyClass = getProxyClassOrNull(runtime, fullName);
+            if ( proxyClass != null ) result = proxyClass; /* else not primitive or l-c class */
+            else {
+                // Haven't found a class, continue on as though it were a package
+                final RubyModule packageModule = getJavaPackageModule(runtime, fullName);
+                // TODO: decompose getJavaPackageModule so we don't parse fullName
+                if ( packageModule == null ) return null;
+                result = packageModule;
             }
-
-            // save package in singletonized parent, so we don't come back here
-            memoizePackageOrClass(parentPackage, name, packageModule);
-
-            return packageModule;
-        } else {
-            try {
-                // First char is upper case, so assume it's a class name
-                final RubyModule javaModule = getProxyClass(runtime, JavaClass.forNameVerbose(runtime, fullName));
-
-                // save class in singletonized parent, so we don't come back here
-                memoizePackageOrClass(parentPackage, name, javaModule);
-
-                return javaModule;
-            }
-            catch (Exception e) {
-                if (runtime.getInstanceConfig().getAllowUppercasePackageNames()) {
-                    // but for those not hip to conventions and best practices,
-                    // we'll try as a package
-                    return getJavaPackageModule(runtime, fullName);
+        }
+        else {
+            try { // First char is upper case, so assume it's a class name
+                final RubyModule javaClass = getProxyClassOrNull(runtime, fullName);
+                if ( javaClass != null ) result = javaClass;
+                else {
+                    if ( allowUppercasePackageNames(runtime) ) {
+                        // for those not hip to conventions and best practices,
+                        // we'll try as a package
+                        result = getJavaPackageModule(runtime, fullName);
+                        // NOTE result = getPackageModule(runtime, name);
+                    }
+                    throw runtime.newNameError("missing class name (`" + fullName + "')", fullName);
                 }
+            }
+            catch (RuntimeException e) {
+                if ( e instanceof RaiseException ) throw e;
                 throw runtime.newNameError("missing class or uppercase package name (`" + fullName + "'), caused by " + e.getMessage(), fullName);
             }
         }
+
+        // saves class in singletonized parent, so we don't come back here :
+        if ( cacheMethod ) bindJavaPackageOrClassMethod(parentPackage, name, result);
+
+        return result;
+    }
+
+    private static boolean allowUppercasePackageNames(final Ruby runtime) {
+        return runtime.getInstanceConfig().getAllowUppercasePackageNames();
+    }
+
+    private static void checkJavaReservedNames(final Ruby runtime, final String name,
+        final boolean allowPrimitives) {
+        // TODO: should check against all Java reserved names here, not just primitives
+        if ( ! allowPrimitives && JAVA_PRIMITIVES.containsKey(name) ) {
+            throw runtime.newArgumentError("illegal package name component: " + name);
+        }
+    }
+
+    private static RubyModule getProxyClassOrNull(final Ruby runtime, final String className) {
+        return getProxyClassOrNull(runtime, className, true);
     }
 
     private static RubyModule getProxyClassOrNull(final Ruby runtime, final String className,
@@ -1006,64 +1023,72 @@ public class Java implements Library {
     }
 
     public static IRubyObject get_proxy_or_package_under_package(final ThreadContext context,
-        final IRubyObject self, final IRubyObject parentPackage, final IRubyObject sym) {
+        final IRubyObject self, final IRubyObject parentPackage, final IRubyObject name) {
         final Ruby runtime = context.runtime;
         if ( ! ( parentPackage instanceof RubyModule ) ) {
             throw runtime.newTypeError(parentPackage, runtime.getModule());
         }
-        final RubyModule result = getProxyOrPackageUnderPackage(context, (RubyModule) parentPackage, sym.asJavaString());
+        final RubyModule result = getProxyOrPackageUnderPackage(context, (RubyModule) parentPackage, name.asJavaString(), true);
         return result != null ? result : context.nil;
     }
 
-    private static RubyModule getTopLevelProxyOrPackage(final ThreadContext context, String name) {
-        final Ruby runtime = context.runtime;
-
+    private static RubyModule getTopLevelProxyOrPackage(final Ruby runtime,
+        String name, final boolean cacheMethod) {
+        
         name = name.trim();
         if ( name.length() == 0 ) {
             throw runtime.newArgumentError("empty class or package name");
         }
 
-        if ( Character.isLowerCase(name.charAt(0)) ) {
+        final RubyModule result;
+
+        if ( Character.isLowerCase( name.charAt(0) ) ) {
             // this covers primitives and (unlikely) lower-case class names
-            RubyModule proxyClass = getProxyClassOrNull(runtime, name, false);
-            if ( proxyClass != null ) return proxyClass; /* else not primitive or l-c class */
+            RubyModule proxyClass = getProxyClassOrNull(runtime, name);
+            if ( proxyClass != null ) result = proxyClass; /* else not primitive or l-c class */
+            else {
+                checkJavaReservedNames(runtime, name, true);
 
-            // TODO: check for Java reserved names and raise exception if encountered
+                final RubyModule packageModule = getJavaPackageModule(runtime, name);
+                // TODO: decompose getJavaPackageModule so we don't parse fullName
+                if ( packageModule == null ) return null;
 
-            final RubyModule packageModule = getJavaPackageModule(runtime, name);
-            // TODO: decompose getJavaPackageModule so we don't parse fullName
-            if ( packageModule == null ) return null;
-
-            RubyModule javaModule = runtime.getJavaSupport().getJavaModule();
-            if ( javaModule.getMetaClass().isMethodBound(name, false) ) {
-                return packageModule;
+                result = packageModule;
             }
-
-            memoizePackageOrClass(javaModule, name, packageModule);
-
-            return packageModule;
         }
         else {
-            RubyModule javaModule = getProxyClassOrNull(runtime, name, true);
-
-            // upper-case package name
-            // TODO: top-level upper-case package was supported in the previous (Ruby-based)
-            // implementation, so leaving as is.  see note at #getProxyOrPackageUnderPackage
-            // re: future approach below the top-level.
-            if (javaModule == null) {
-                javaModule = getPackageModule(runtime, name);
+            RubyModule javaClass = getProxyClassOrNull(runtime, name);
+            if ( javaClass != null ) result = javaClass;
+            else {
+                // upper-case package name
+                // TODO: top-level upper-case package was supported in the previous (Ruby-based)
+                // implementation, so leaving as is.  see note at #getProxyOrPackageUnderPackage
+                // re: future approach below the top-level.
+                result = getPackageModule(runtime, name);
             }
-
-            memoizePackageOrClass(runtime.getJavaSupport().getJavaModule(), name, javaModule);
-
-            return javaModule;
         }
+
+        if ( cacheMethod ) bindJavaPackageOrClassMethod(runtime, name, result);
+
+        return result;
     }
 
-    private static void memoizePackageOrClass(final RubyModule parentPackage,
+    private static boolean bindJavaPackageOrClassMethod(final Ruby runtime, final String name,
+        final RubyModule packageOrClass) {
+        final RubyModule javaPackage = runtime.getJavaSupport().getJavaModule();
+        return bindJavaPackageOrClassMethod(javaPackage, name, packageOrClass);
+    }
+
+    private static boolean bindJavaPackageOrClassMethod(final RubyModule parentPackage,
         final String name, final RubyModule packageOrClass) {
+
+        if ( parentPackage.getMetaClass().isMethodBound(name, false) ) {
+            return false;
+        }
+
         final RubyClass singleton = parentPackage.getSingletonClass();
         singleton.addMethod(name.intern(), new JavaAccessor(singleton, packageOrClass, parentPackage));
+        return true;
     }
 
     private static class JavaAccessor extends org.jruby.internal.runtime.methods.JavaMethod {
@@ -1101,7 +1126,7 @@ public class Java implements Library {
 
     public static IRubyObject get_top_level_proxy_or_package(final ThreadContext context,
         final IRubyObject self, final IRubyObject name) {
-        final RubyModule result = getTopLevelProxyOrPackage(context, name.asJavaString());
+        final RubyModule result = getTopLevelProxyOrPackage(context.runtime, name.asJavaString(), true);
         return result != null ? result : context.nil;
     }
 
