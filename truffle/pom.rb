@@ -44,6 +44,11 @@ project 'JRuby Truffle' do
 
   build do
     default_goal 'package'
+
+    resource do
+      directory 'src/main/ruby'
+      includes '**/*rb'
+    end
   end
 
   [ :dist, :'jruby-jars', :all, :release ].each do |name|

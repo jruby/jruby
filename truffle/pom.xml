@@ -35,6 +35,14 @@
   </dependencies>
   <build>
     <defaultGoal>package</defaultGoal>
+    <resources>
+      <resource>
+        <directory>src/main/ruby</directory>
+        <includes>
+          <include>**/*rb</include>
+        </includes>
+      </resource>
+    </resources>
     <plugins>
       <plugin>
         <artifactId>maven-compiler-plugin</artifactId>

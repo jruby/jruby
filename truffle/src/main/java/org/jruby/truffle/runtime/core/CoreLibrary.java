@@ -446,7 +446,7 @@ public class CoreLibrary {
     }
 
     public InputStream getRubyCoreInputStream(String fileName) {
-        final LoadServiceResource resource = context.getRuntime().getLoadService().getClassPathResource(context.getRuntime().getJRubyClassLoader(), fileName);
+        final LoadServiceResource resource = context.getRuntime().getLoadService().getClassPathResource(getClass().getClassLoader(), fileName);
 
         if (resource == null) {
             throw new RuntimeException("couldn't load Truffle core library " + fileName);
