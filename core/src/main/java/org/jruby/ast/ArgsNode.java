@@ -149,6 +149,14 @@ public class ArgsNode extends Node {
         return hasKwargs;
     }
 
+    public int countKeywords() {
+    	if (hasKwargs) {
+    		return keywords.size();
+    	} else {
+    		return 0;
+    	}
+    }
+    
     protected boolean hasMasgnArgs() {
         if (preCount > 0) for (Node node : pre.childNodes()) {
             if (node instanceof AssignableNode) return true;

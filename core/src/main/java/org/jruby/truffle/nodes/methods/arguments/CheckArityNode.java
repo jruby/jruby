@@ -43,8 +43,14 @@ public class CheckArityNode extends RubyNode {
 
     @Override
     public void executeVoid(VirtualFrame frame) {
-        final int given = RubyArguments.getUserArgumentsCount(frame.getArguments());
+        final int given;
 
+        if (RubyArguments.isKwOptimized(frame.getArguments())) {
+        	given = RubyArguments.getUserArgumentsCount(frame.getArguments()) - arity.getCountKeywords() - 2;
+        } else {
+        	given = RubyArguments.getUserArgumentsCount(frame.getArguments());
+        }
+        
         if (!checkArity(frame, given)) {
             CompilerDirectives.transferToInterpreter();
             throw new RaiseException(getContext().getCoreLibrary().argumentError(given, arity.getRequired(), this));

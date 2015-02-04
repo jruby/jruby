@@ -45,7 +45,7 @@ public final class RubyArguments {
     }
 
     public static Object getOptimizedKeywordArgument(Object[] arguments, int index) {
-    	return arguments[arguments.length - 1 - index];
+    	return arguments[arguments.length - 1 + index];
     }
     
     public static boolean isKwOptimized(Object[] arguments) {

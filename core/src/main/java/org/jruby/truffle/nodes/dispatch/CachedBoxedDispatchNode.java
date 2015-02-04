@@ -23,6 +23,7 @@ import com.oracle.truffle.api.nodes.UnexpectedResultException;
 
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.literal.HashLiteralNode;
+import org.jruby.truffle.nodes.literal.ObjectLiteralNode;
 import org.jruby.truffle.nodes.literal.StringLiteralNode;
 import org.jruby.truffle.nodes.methods.MarkerNode;
 import org.jruby.truffle.nodes.methods.arguments.MissingKeywordArgumentNode;
@@ -102,34 +103,29 @@ public class CachedBoxedDispatchNode extends CachedDispatchNode {
             }
         }
         
-        if (getHeadNode().getArgumentNodes() != null && method.getSharedMethodInfo().getKeywordArguments() != null && 
-        		getHeadNode().getArgumentNodes()[getHeadNode().getArgumentNodes().length - 1] instanceof HashLiteralNode) {
+        if (next.getHeadNode().getArgumentNodes() != null && method.getSharedMethodInfo().getKeywordArguments() != null && 
+        		next.getHeadNode().getArgumentNodes()[next.getHeadNode().getArgumentNodes().length - 1] instanceof HashLiteralNode) {
         	List<String> kwargs = method.getSharedMethodInfo().getKeywordArguments();
         	
-        	argumentNodes = new RubyNode[getHeadNode().getArgumentNodes().length + kwargs.size() + 1];
+        	argumentNodes = new RubyNode[next.getHeadNode().getArgumentNodes().length + kwargs.size() + 1];
         	int i;
         	
-        	for (i = 0; i < getHeadNode().getArgumentNodes().length - 1; ++i) {
-        		argumentNodes[i] = getHeadNode().getArgumentNodes()[i];
+        	for (i = 0; i < next.getHeadNode().getArgumentNodes().length - 1; ++i) {
+        		argumentNodes[i] = next.getHeadNode().getArgumentNodes()[i];
         	}
         	
         	argumentNodes[i++] = new MarkerNode(context, null);
-        	HashLiteralNode hashNode = (HashLiteralNode) getHeadNode().getArgumentNodes()[getHeadNode().getArgumentNodes().length - 1];
+        	HashLiteralNode hashNode = (HashLiteralNode) next.getHeadNode().getArgumentNodes()[next.getHeadNode().getArgumentNodes().length - 1];
         	
         	for (String kwarg : kwargs) {
         		argumentNodes[i] = new MissingKeywordArgumentNode(context, null, kwarg);
         		for (int j = 0; j < hashNode.getKeyValues().length; j += 2) {
         			String label;
-					try {
-						label = ((StringLiteralNode) hashNode.getKeyValues()[j]).executeString(null);
+					label = ((ObjectLiteralNode) hashNode.getKeyValues()[j]).execute(null).toString();
         			
-	        			if (label.equals(kwarg)) {
-	        				argumentNodes[i++] = hashNode.getKeyValues()[j + 1];
-	        			}
-					} catch (UnexpectedResultException e) {
-						// TODO: throw proper exception
-						throw new RuntimeException("invalid object layout");
-					}
+        			if (label.equals(kwarg)) {
+        				argumentNodes[i++] = hashNode.getKeyValues()[j + 1];
+        			}
         		}
         	}
         	
