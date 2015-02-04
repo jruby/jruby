@@ -29,7 +29,7 @@ public class RespondToNode extends RubyNode {
         super(context, sourceSection);
         this.methodName = methodName;
         this.child = child;
-        dispatch = new DoesRespondDispatchHeadNode(context, false, false, MissingBehavior.RETURN_MISSING, null);
+        dispatch = new DoesRespondDispatchHeadNode(context, false, false, MissingBehavior.RETURN_MISSING, null, null, false);
     }
 
     public boolean executeBoolean(VirtualFrame frame) {

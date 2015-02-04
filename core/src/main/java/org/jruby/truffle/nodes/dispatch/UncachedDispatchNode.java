@@ -15,6 +15,8 @@ import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.IndirectCallNode;
 import com.oracle.truffle.api.utilities.BranchProfile;
+
+import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.conversion.ToJavaStringNode;
 import org.jruby.truffle.nodes.conversion.ToJavaStringNodeFactory;
 import org.jruby.truffle.nodes.conversion.ToSymbolNode;
@@ -39,8 +41,8 @@ public class UncachedDispatchNode extends DispatchNode {
     private final BranchProfile constantMissingProfile = BranchProfile.create();
     private final BranchProfile methodMissingProfile = BranchProfile.create();
 
-    public UncachedDispatchNode(RubyContext context, boolean ignoreVisibility, DispatchAction dispatchAction) {
-        super(context, dispatchAction);
+    public UncachedDispatchNode(RubyContext context, boolean ignoreVisibility, DispatchAction dispatchAction, RubyNode[] argumentNodes, boolean isSplatted) {
+        super(context, dispatchAction, argumentNodes, isSplatted);
         this.ignoreVisibility = ignoreVisibility;
         callNode = Truffle.getRuntime().createIndirectCallNode();
         toSymbolNode = ToSymbolNodeFactory.create(context, null, null);
@@ -101,7 +103,7 @@ public class UncachedDispatchNode extends DispatchNode {
                                     method.getDeclarationFrame(),
                                     receiverObject,
                                     (RubyProc) blockObject,
-                                    CompilerDirectives.unsafeCast(argumentsObjects, Object[].class, true)));
+                                    CompilerDirectives.unsafeCast(executeArguments(frame, argumentsObjects), Object[].class, true)));
                 } else if (dispatchAction == DispatchAction.RESPOND_TO_METHOD) {
                     return true;
                 } else {
@@ -124,7 +126,7 @@ public class UncachedDispatchNode extends DispatchNode {
             }
 
             if (dispatchAction == DispatchAction.CALL_METHOD) {
-                final Object[] argumentsObjectsArray = CompilerDirectives.unsafeCast(argumentsObjects, Object[].class, true);
+                final Object[] argumentsObjectsArray = CompilerDirectives.unsafeCast(executeArguments(frame, argumentsObjects), Object[].class, true);
 
                 final Object[] modifiedArgumentsObjects = new Object[1 + argumentsObjectsArray.length];
 

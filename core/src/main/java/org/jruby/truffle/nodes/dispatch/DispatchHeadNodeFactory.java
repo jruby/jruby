@@ -22,7 +22,8 @@ public class DispatchHeadNodeFactory {
                 false,
                 MissingBehavior.CALL_METHOD_MISSING,
                 null,
-                null);
+                null,
+                false);
     }
 
     public static CallDispatchHeadNode createMethodCall(RubyContext context, boolean ignoreVisibility) {
@@ -32,7 +33,8 @@ public class DispatchHeadNodeFactory {
                 false,
                 MissingBehavior.CALL_METHOD_MISSING,
                 null,
-                null);
+                null,
+                false);
     }
 
     public static CallDispatchHeadNode createMethodCall(RubyContext context, MissingBehavior missingBehavior) {
@@ -42,7 +44,8 @@ public class DispatchHeadNodeFactory {
                 false,
                 missingBehavior,
                 null,
-                null);
+                null,
+                false);
     }
 
     public static CallDispatchHeadNode createMethodCall(RubyContext context, boolean ignoreVisibility, MissingBehavior missingBehavior) {
@@ -52,7 +55,8 @@ public class DispatchHeadNodeFactory {
                 false,
                 missingBehavior,
                 null,
-                null);
+                null,
+                false);
     }
 
     public static CallDispatchHeadNode createMethodCall(RubyContext context, boolean ignoreVisibility, boolean indirect, MissingBehavior missingBehavior) {
@@ -62,17 +66,19 @@ public class DispatchHeadNodeFactory {
                 indirect,
                 missingBehavior,
                 null,
-                null);
+                null,
+                false);
     }
 
-    public static CallDispatchHeadNode createMethodCall(RubyContext context, boolean ignoreVisibility, boolean indirect, MissingBehavior missingBehavior, RubyNode[] arguments) {
+    public static CallDispatchHeadNode createMethodCall(RubyContext context, boolean ignoreVisibility, boolean indirect, MissingBehavior missingBehavior, RubyNode[] arguments, boolean isSplatted) {
         return new CallDispatchHeadNode(
                 context,
                 ignoreVisibility,
                 indirect,
                 missingBehavior,
                 null,
-                arguments);
+                arguments,
+                isSplatted);
     }
     
     public static CallDispatchHeadNode createMethodCallOnSelf(RubyContext context) {
@@ -82,7 +88,8 @@ public class DispatchHeadNodeFactory {
                 false,
                 MissingBehavior.CALL_METHOD_MISSING,
                 null,
-                null);
+                null,
+                false);
     }
 
 }

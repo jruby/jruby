@@ -27,8 +27,8 @@ public class DispatchHeadNode extends Node {
     protected final MissingBehavior missingBehavior;
     protected final LexicalScope lexicalScope;
     protected final DispatchAction dispatchAction;
-
-    private final RubyNode[] argumentNodes;
+    protected final boolean isSplatted;
+    protected final RubyNode[] argumentNodes;
     
     @Child private DispatchNode first;
 
@@ -39,7 +39,8 @@ public class DispatchHeadNode extends Node {
             MissingBehavior missingBehavior,
             LexicalScope lexicalScope,
             DispatchAction dispatchAction,
-            RubyNode[] argumentNodes) {
+            RubyNode[] argumentNodes,
+            boolean isSplatted) {
         this.context = context;
         this.ignoreVisibility = ignoreVisibility;
         this.indirect = indirect;
@@ -47,7 +48,8 @@ public class DispatchHeadNode extends Node {
         this.lexicalScope = lexicalScope;
         this.dispatchAction = dispatchAction;
         this.argumentNodes = argumentNodes;
-        first = new UnresolvedDispatchNode(context, ignoreVisibility, indirect, missingBehavior, dispatchAction);
+        this.isSplatted = isSplatted;
+        first = new UnresolvedDispatchNode(context, ignoreVisibility, indirect, missingBehavior, dispatchAction, argumentNodes, isSplatted);
     }
 
     public Object dispatch(
@@ -66,7 +68,7 @@ public class DispatchHeadNode extends Node {
 
     public void reset(String reason) {
         first.replace(new UnresolvedDispatchNode(
-                context, ignoreVisibility, indirect, missingBehavior, dispatchAction), reason);
+                context, ignoreVisibility, indirect, missingBehavior, dispatchAction, argumentNodes, isSplatted), reason);
     }
 
     public DispatchNode getFirstDispatchNode() {
@@ -83,7 +85,7 @@ public class DispatchHeadNode extends Node {
 
     public void forceUncached() {
         adoptChildren();
-        first.replace(new UncachedDispatchNode(context, ignoreVisibility, dispatchAction));
+        first.replace(new UncachedDispatchNode(context, ignoreVisibility, dispatchAction, argumentNodes, isSplatted));
     }
 
     public RubyNode[] getArgumentNodes() {

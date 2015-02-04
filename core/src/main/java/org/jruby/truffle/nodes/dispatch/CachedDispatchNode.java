@@ -32,8 +32,10 @@ public abstract class CachedDispatchNode extends DispatchNode {
             Object cachedName,
             DispatchNode next,
             boolean indirect,
-            DispatchAction dispatchAction) {
-        super(context, dispatchAction);
+            DispatchAction dispatchAction,
+            RubyNode[] argumentNodes,
+            boolean isSplatted) {
+        super(context, dispatchAction, argumentNodes, isSplatted);
 
         assert (cachedName instanceof String) || (cachedName instanceof RubySymbol) || (cachedName instanceof RubyString);
         this.cachedName = cachedName;
