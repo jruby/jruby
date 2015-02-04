@@ -1971,9 +1971,7 @@ public abstract class KernelNodes {
                 return sleep(floatNode.callFloat(frame, duration, "to_f", null));
             } catch (UseMethodMissingException e) {
                 throw new RaiseException(getContext().getCoreLibrary().typeErrorCantConvertInto(
-                        getContext().getCoreLibrary().getLogicalClass(duration).getName(),
-                        getContext().getCoreLibrary().getFloatClass().getName(),
-                        this));
+                        duration, getContext().getCoreLibrary().getFloatClass(), this));
             }
 
         }

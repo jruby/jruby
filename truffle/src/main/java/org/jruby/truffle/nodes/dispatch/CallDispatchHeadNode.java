@@ -72,17 +72,8 @@ public class CallDispatchHeadNode extends DispatchHeadNode {
         }
 
         CompilerDirectives.transferToInterpreter();
-
-        final String message = String.format("%s (%s#%s gives %s)",
-                context.getCoreLibrary().getFloatClass().getName(),
-                context.getCoreLibrary().getLogicalClass(receiverObject).getName(),
-                methodName,
-                context.getCoreLibrary().getLogicalClass(value).getName());
-
         throw new RaiseException(context.getCoreLibrary().typeErrorCantConvertTo(
-                context.getCoreLibrary().getLogicalClass(receiverObject).getName(),
-                message,
-                this));
+                receiverObject, context.getCoreLibrary().getFloatClass(), (String) methodName, value, this));
     }
 
     public long callLongFixnum(
@@ -106,17 +97,8 @@ public class CallDispatchHeadNode extends DispatchHeadNode {
         }
 
         CompilerDirectives.transferToInterpreter();
-
-        final String message = String.format("%s (%s#%s gives %s)",
-                context.getCoreLibrary().getFloatClass().getName(),
-                context.getCoreLibrary().getLogicalClass(receiverObject).getName(),
-                methodName,
-                context.getCoreLibrary().getLogicalClass(value).getName());
-
         throw new RaiseException(context.getCoreLibrary().typeErrorCantConvertTo(
-                context.getCoreLibrary().getLogicalClass(receiverObject).getName(),
-                message,
-                this));
+                receiverObject, context.getCoreLibrary().getFixnumClass(), (String) methodName, value, this));
     }
 
 }

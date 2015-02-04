@@ -424,17 +424,13 @@ public abstract class MathNodes {
                     return frexp(floatNode.callFloat(frame, a, "to_f", null));
                 } catch (UseMethodMissingException e) {
                     throw new RaiseException(getContext().getCoreLibrary().typeErrorCantConvertInto(
-                            getContext().getCoreLibrary().getLogicalClass(a).getName(),
-                            getContext().getCoreLibrary().getFloatClass().getName(),
-                            this));
+                            a, getContext().getCoreLibrary().getFloatClass(), this));
                 }
             } else {
                 CompilerDirectives.transferToInterpreter();
 
                 throw new RaiseException(getContext().getCoreLibrary().typeErrorCantConvertInto(
-                        getContext().getCoreLibrary().getLogicalClass(a).getName(),
-                        getContext().getCoreLibrary().getFloatClass().getName(),
-                        this));
+                        a, getContext().getCoreLibrary().getFloatClass(), this));
             }
         }
 
@@ -610,17 +606,13 @@ public abstract class MathNodes {
                             integerBNode.callLongFixnum(frame, b, "to_int", null));
                 } catch (UseMethodMissingException e) {
                     throw new RaiseException(getContext().getCoreLibrary().typeErrorCantConvertInto(
-                            getContext().getCoreLibrary().getLogicalClass(a).getName(),
-                            getContext().getCoreLibrary().getIntegerClass().getName(),
-                            this));
+                            a, getContext().getCoreLibrary().getIntegerClass(), this));
                 }
             } else {
                 CompilerDirectives.transferToInterpreter();
 
                 throw new RaiseException(getContext().getCoreLibrary().typeErrorCantConvertInto(
-                        getContext().getCoreLibrary().getLogicalClass(a).getName(),
-                        getContext().getCoreLibrary().getFloatClass().getName(),
-                        this));
+                        a, getContext().getCoreLibrary().getFloatClass(), this));
             }
         }
 
@@ -682,17 +674,13 @@ public abstract class MathNodes {
                     return lgamma(floatNode.callFloat(frame, a, "to_f", null));
                 } catch (UseMethodMissingException e) {
                     throw new RaiseException(getContext().getCoreLibrary().typeErrorCantConvertInto(
-                            getContext().getCoreLibrary().getLogicalClass(a).getName(),
-                            getContext().getCoreLibrary().getFloatClass().getName(),
-                            this));
+                            a, getContext().getCoreLibrary().getFloatClass(), this));
                 }
             } else {
                 CompilerDirectives.transferToInterpreter();
 
                 throw new RaiseException(getContext().getCoreLibrary().typeErrorCantConvertInto(
-                        getContext().getCoreLibrary().getLogicalClass(a).getName(),
-                        getContext().getCoreLibrary().getFloatClass().getName(),
-                        this));
+                        a, getContext().getCoreLibrary().getFloatClass(), this));
             }
         }
 
@@ -737,17 +725,13 @@ public abstract class MathNodes {
                             floatANode.callFloat(frame, a, "to_f", null));
                 } catch (UseMethodMissingException e) {
                     throw new RaiseException(getContext().getCoreLibrary().typeErrorCantConvertInto(
-                            getContext().getCoreLibrary().getLogicalClass(a).getName(),
-                            getContext().getCoreLibrary().getFloatClass().getName(),
-                            this));
+                            a, getContext().getCoreLibrary().getFloatClass(), this));
                 }
             } else {
                 CompilerDirectives.transferToInterpreter();
 
                 throw new RaiseException(getContext().getCoreLibrary().typeErrorCantConvertInto(
-                        getContext().getCoreLibrary().getLogicalClass(a).getName(),
-                        getContext().getCoreLibrary().getFloatClass().getName(),
-                        this));
+                        a, getContext().getCoreLibrary().getFloatClass(), this));
             }
         }
 
@@ -960,17 +944,13 @@ public abstract class MathNodes {
                     return doFunction(floatNode.callFloat(frame, a, "to_f", null));
                 } catch (UseMethodMissingException e) {
                     throw new RaiseException(getContext().getCoreLibrary().typeErrorCantConvertInto(
-                            getContext().getCoreLibrary().getLogicalClass(a).getName(),
-                            getContext().getCoreLibrary().getFloatClass().getName(),
-                            this));
+                            a, getContext().getCoreLibrary().getFloatClass(), this));
                 }
             } else {
                 CompilerDirectives.transferToInterpreter();
 
                 throw new RaiseException(getContext().getCoreLibrary().typeErrorCantConvertInto(
-                        getContext().getCoreLibrary().getLogicalClass(a).getName(),
-                        getContext().getCoreLibrary().getFloatClass().getName(),
-                        this));
+                        a, getContext().getCoreLibrary().getFloatClass(), this));
             }
         }
 
@@ -1091,17 +1071,13 @@ public abstract class MathNodes {
                             floatBNode.callFloat(frame, b, "to_f", null));
                 } catch (UseMethodMissingException e) {
                     throw new RaiseException(getContext().getCoreLibrary().typeErrorCantConvertInto(
-                            getContext().getCoreLibrary().getLogicalClass(a).getName(),
-                            getContext().getCoreLibrary().getFloatClass().getName(),
-                            this));
+                            a, getContext().getCoreLibrary().getFloatClass(), this));
                 }
             } else {
                 CompilerDirectives.transferToInterpreter();
 
                 throw new RaiseException(getContext().getCoreLibrary().typeErrorCantConvertInto(
-                        getContext().getCoreLibrary().getLogicalClass(a).getName(),
-                        getContext().getCoreLibrary().getFloatClass().getName(),
-                        this));
+                        a, getContext().getCoreLibrary().getFloatClass(), this));
             }
         }
 
