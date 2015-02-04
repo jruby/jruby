@@ -16,8 +16,8 @@ import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.*;
 import com.oracle.truffle.api.nodes.UnexpectedResultException;
 import com.oracle.truffle.api.source.SourceSection;
-
 import com.oracle.truffle.api.utilities.ConditionProfile;
+
 import org.jruby.common.IRubyWarnings;
 import org.jruby.runtime.Visibility;
 import org.jruby.truffle.nodes.RubyNode;
@@ -1924,6 +1924,8 @@ public abstract class KernelNodes {
     @CoreMethod(names = "sleep", isModuleFunction = true, optional = 1)
     public abstract static class SleepNode extends CoreMethodNode {
 
+        @Child CallDispatchHeadNode floatNode;
+
         public SleepNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
         }
@@ -1956,6 +1958,24 @@ public abstract class KernelNodes {
         @Specialization
         public long sleep(double duration) {
             return doSleepMillis((long) (duration * 1000));
+        }
+
+        @Specialization(guards = "isRational")
+        public long sleep(VirtualFrame frame, RubyBasicObject duration) {
+            if (floatNode == null) {
+                CompilerDirectives.transferToInterpreterAndInvalidate();
+                floatNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext()));
+            }
+
+            try {
+                return sleep(floatNode.callFloat(frame, duration, "to_f", null));
+            } catch (UseMethodMissingException e) {
+                throw new RaiseException(getContext().getCoreLibrary().typeErrorCantConvertInto(
+                        getContext().getCoreLibrary().getLogicalClass(duration).getName(),
+                        getContext().getCoreLibrary().getFloatClass().getName(),
+                        this));
+            }
+
         }
 
         @TruffleBoundary

@@ -1,6 +1,5 @@
 fails:Kernel#sleep pauses execution for approximately the duration requested
 fails:Kernel#sleep returns the rounded number of seconds asleep
 fails:Kernel#sleep raises a TypeError when passed a non-numeric duration
-fails:Kernel#sleep accepts a Rational
 slow:Kernel#sleep accepts a Float
 slow:Kernel#sleep accepts a Rational
