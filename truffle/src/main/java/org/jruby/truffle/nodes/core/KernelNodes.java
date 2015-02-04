@@ -23,6 +23,8 @@ import org.jruby.runtime.Visibility;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.cast.BooleanCastNode;
 import org.jruby.truffle.nodes.cast.BooleanCastNodeFactory;
+import org.jruby.truffle.nodes.cast.NumericToFloatNode;
+import org.jruby.truffle.nodes.cast.NumericToFloatNodeFactory;
 import org.jruby.truffle.nodes.control.WhileNode;
 import org.jruby.truffle.nodes.core.KernelNodesFactory.SameOrEqualNodeFactory;
 import org.jruby.truffle.nodes.dispatch.*;
@@ -1924,7 +1926,7 @@ public abstract class KernelNodes {
     @CoreMethod(names = "sleep", isModuleFunction = true, optional = 1)
     public abstract static class SleepNode extends CoreMethodNode {
 
-        @Child CallDispatchHeadNode floatNode;
+        @Child NumericToFloatNode floatCastNode;
 
         public SleepNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -1938,11 +1940,6 @@ public abstract class KernelNodes {
         public long sleep(UndefinedPlaceholder duration) {
             // TODO: this should actually be "forever".
             return doSleepMillis(Long.MAX_VALUE);
-        }
-
-        @Specialization(guards = "isRubiniusUndefined")
-        public long sleep(RubyBasicObject duration) {
-            return sleep(UndefinedPlaceholder.INSTANCE);
         }
 
         @Specialization
@@ -1960,20 +1957,18 @@ public abstract class KernelNodes {
             return doSleepMillis((long) (duration * 1000));
         }
 
-        @Specialization(guards = "isRational")
+        @Specialization(guards = "isRubiniusUndefined")
+        public long sleep(RubyBasicObject duration) {
+            return sleep(UndefinedPlaceholder.INSTANCE);
+        }
+
+        @Specialization(guards = "!isRubiniusUndefined")
         public long sleep(VirtualFrame frame, RubyBasicObject duration) {
-            if (floatNode == null) {
+            if (floatCastNode == null) {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
-                floatNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext()));
+                floatCastNode = insert(NumericToFloatNodeFactory.create(getContext(), getSourceSection(), "to_f", null));
             }
-
-            try {
-                return sleep(floatNode.callFloat(frame, duration, "to_f", null));
-            } catch (UseMethodMissingException e) {
-                throw new RaiseException(getContext().getCoreLibrary().typeErrorCantConvertInto(
-                        duration, getContext().getCoreLibrary().getFloatClass(), this));
-            }
-
+            return sleep(floatCastNode.executeFloat(frame, duration));
         }
 
         @TruffleBoundary
