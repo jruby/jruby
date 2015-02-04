@@ -276,7 +276,7 @@ public class RubyGlobal {
     }
 
     private static Channel prepareStdioChannel(Ruby runtime, STDIO stdio, Object stream) {
-        if (runtime.getPosix().isNative() && stdio.isJVMDefault(stream)) {
+        if (runtime.getPosix().isNative() && stdio.isJVMDefault(stream) && !Platform.IS_WINDOWS) {
             // use real native channel for stdio
             return new NativeDeviceChannel(stdio.fileno());
         } else {

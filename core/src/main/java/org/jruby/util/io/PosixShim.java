@@ -252,7 +252,7 @@ public class PosixShim {
             Pipe pipe = Pipe.open();
             Channel source = pipe.source(), sink = pipe.sink();
 
-            if (posix.isNative()) {
+            if (posix.isNative() && !Platform.IS_WINDOWS) {
                 // set cloexec if possible
                 int read = FilenoUtil.filenoFrom(source);
                 int write = FilenoUtil.filenoFrom(sink);

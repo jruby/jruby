@@ -1,5 +1,0 @@
-fails:Regexp#eql? is true if self and other have the same pattern
-fails:Regexp#eql? is true if self and other have the same character set code
-fails:Regexp#eql? is true if other has the same #casefold? values
-fails:Regexp#eql? is true if self does not specify /n option and other does
-fails:Regexp#eql? is true if self specifies /n option and other does not

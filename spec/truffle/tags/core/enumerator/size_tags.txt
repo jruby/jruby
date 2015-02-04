@@ -1,3 +1,0 @@
-fails:Enumerator#size returns same value if set size is an Integer
-fails:Enumerator#size returns nil if set size is nil
-fails:Enumerator#size returns returning value from size.call if set size is a Proc

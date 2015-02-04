@@ -1,2 +1,0 @@
-fails:Module.allocate returns an instance of Module
-fails:Module.allocate returns a fully-formed instance of Module

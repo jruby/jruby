@@ -1,2 +1,0 @@
-fails:Numeric#modulo returns self - other * self.div(other)
-fails:Numeric#% returns self - other * self.div(other)

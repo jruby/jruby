@@ -1,7 +1,3 @@
-fails:Enumerator::Lazy#reject returns a new instance of Enumerator::Lazy
-fails:Enumerator::Lazy#reject sets nil to size
 fails:Enumerator::Lazy#reject calls the block with a gathered array when yield with multiple arguments
-fails:Enumerator::Lazy#reject raises an ArgumentError when not given a block
 fails:Enumerator::Lazy#reject when the returned lazy enumerator is evaluated by Enumerable#first stops after specified times
-fails:Enumerator::Lazy#reject on a nested Lazy sets nil to size
 fails:Enumerator::Lazy#reject on a nested Lazy when the returned lazy enumerator is evaluated by Enumerable#first stops after specified times

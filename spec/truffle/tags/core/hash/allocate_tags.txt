@@ -1,2 +1,0 @@
-fails:Hash.allocate returns an instance of Hash
-fails:Hash.allocate returns a fully-formed instance of Hash

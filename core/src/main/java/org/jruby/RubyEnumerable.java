@@ -969,18 +969,8 @@ public class RubyEnumerable {
     }
 
     @JRubyMethod
-    public static IRubyObject enum_with_index(ThreadContext context, IRubyObject self, Block block) {
-        return block.isGiven() ? each_with_indexCommon(context, self, block) : enumeratorize(context.runtime, self, "enum_with_index");
-    }
-
-    @JRubyMethod
     public static IRubyObject each_with_object(ThreadContext context, IRubyObject self, IRubyObject arg, Block block) {
         return block.isGiven() ? each_with_objectCommon19(context, self, block, arg) : enumeratorizeWithSize(context, self, "each_with_object", new IRubyObject[] { arg }, enumSizeFn(context, self));
-    }
-
-    @JRubyMethod
-    public static IRubyObject with_object(ThreadContext context, IRubyObject self, final IRubyObject arg, final Block block) {
-        return block.isGiven() ? each_with_objectCommon19(context, self, block, arg) : enumeratorize(context.runtime, self, "with_object", arg);
     }
 
     @JRubyMethod(rest = true)
@@ -1461,7 +1451,6 @@ public class RubyEnumerable {
     
     @JRubyMethod(name = "any?")
     public static IRubyObject any_p(ThreadContext context, IRubyObject self, final Block block) {
-        if (self instanceof RubyArray) return ((RubyArray) self).any_p(context, block);
         return any_pCommon(context, self, block, block.arity());
     }
     

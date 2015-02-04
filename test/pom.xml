@@ -341,6 +341,7 @@
                       <arg value="test/mri/ruby/test_path.rb" />
                       <arg value="test/mri/ruby/test_pipe.rb" />
                       <arg value="test/mri/ruby/test_primitive.rb" />
+                      <arg value="test/mri/ruby/test_process.rb" />
                       <arg value="test/mri/ruby/test_rand.rb" />
                       <arg value="test/mri/ruby/test_range.rb" />
                       <arg value="test/mri/ruby/test_rational.rb" />
@@ -433,6 +434,9 @@
                       <arg value="test/mri/fileutils/test_fileutils.rb" />
                       <arg value="test/mri/fileutils/test_nowrite.rb" />
                       <arg value="test/mri/fileutils/test_verbose.rb" />
+                      <arg value="test/mri/io/wait/test_io_wait.rb" />
+                      <arg value="test/mri/io/nonblock/test_flush.rb" />
+                      <arg value="test/mri/io/console/test_io_console.rb" />
                       <arg value="test/mri/json/test_json.rb" />
                       <arg value="test/mri/json/test_json_addition.rb" />
                       <arg value="test/mri/json/test_json_encoding.rb" />
@@ -517,6 +521,7 @@
                       <arg value="-rtest/mri_test_env" />
                       <arg value="lib/ruby/stdlib/rake/rake_test_loader.rb" />
                       <arg value="test/jruby/test_globals.rb" />
+                      <arg value="test/jruby/test_addrinfo.rb" />
                       <arg value="test/jruby/test_argf.rb" />
                       <arg value="test/jruby/test_array.rb" />
                       <arg value="test/jruby/test_autoload.rb" />
@@ -546,6 +551,7 @@
                       <arg value="test/jruby/test_frame_self.rb" />
                       <arg value="test/jruby/test_hash.rb" />
                       <arg value="test/jruby/test_higher_javasupport.rb" />
+                      <arg value="test/jruby/test_ifaddr.rb" />
                       <arg value="test/jruby/test_included_in_object_space.rb" />
                       <arg value="test/jruby/test_integer_overflows.rb" />
                       <arg value="test/jruby/test_ivar_table_integrity.rb" />
@@ -718,6 +724,8 @@
                       <arg value="-Xparser.warn.shadowing_local=false" />
                       <arg value="-Xparser.warn.regex_condition=false" />
                       <arg value="-Xparser.warn.argument_prefix=false" />
+                      <arg value="-Xparser.warn.ambiguous_argument=false" />
+                      <arg value="-Xparser.warn.flags_ignored=false" />
                       <arg value="-J-ea" />
                       <arg value="-J-Xmx1G" />
                       <arg value="spec/mspec/bin/mspec" />
@@ -761,6 +769,8 @@
                       <arg value="-Xparser.warn.shadowing_local=false" />
                       <arg value="-Xparser.warn.regex_condition=false" />
                       <arg value="-Xparser.warn.argument_prefix=false" />
+                      <arg value="-Xparser.warn.ambiguous_argument=false" />
+                      <arg value="-Xparser.warn.flags_ignored=false" />
                       <arg value="-J-ea" />
                       <arg value="-J-Xmx1G" />
                       <arg value="spec/mspec/bin/mspec" />

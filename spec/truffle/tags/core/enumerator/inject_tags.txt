@@ -1,14 +1,2 @@
-fails:Enumerator#inject yields each element of self to the given block
-fails:Enumerator#inject calls #each on the object given in the constructor by default
-fails:Enumerator#inject calls #each on the underlying object until it's exhausted
-fails:Enumerator#inject calls the method given in the constructor instead of #each
-fails:Enumerator#inject calls the method given in the constructor until it's exhausted
-fails:Enumerator#inject raises a NoMethodError if the object doesn't respond to #each
-fails:Enumerator#inject returns self if not given arguments and not given a block
-fails:Enumerator#inject returns the same value from receiver.each if block is given
-fails:Enumerator#inject passes given arguments at initialized to receiver.each
 fails:Enumerator#inject requires multiple arguments
-fails:Enumerator#inject appends given arguments to receiver.each
-fails:Enumerator#inject returns the same value from receiver.each if block and arguments are given
-fails:Enumerator#inject returns new Enumerator if given arguments but not given a block
 fails:Enumerator#inject works when chained against each_with_index

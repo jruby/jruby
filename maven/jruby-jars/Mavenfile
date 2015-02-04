@@ -5,11 +5,11 @@ gemspec
 
 version = File.read( File.join( basedir, '..', '..', 'VERSION' ) ).strip
 
+# maven does treats prereleased version as snapshot - undo it here
+ruby_version = model.version.sub( /-SNAPSHOT/, '' )
+self.version nil
+
 inherit "org.jruby:jruby-artifacts:#{version}"
-
-ruby_version = model.version
-
-model.version = nil
 
 name "JRuby Jars Gem"
 
@@ -38,12 +38,16 @@ properties( 'tesla.dump.pom' => 'pom.xml',
   end
 
 execute 'copy jruby.jar', 'prepare-package' do |ctx|
-  FileUtils.cp( File.join( ctx.project.properties[ 'jruby_home' ],
+  source = File.expand_path( ctx.project.properties[ 'jruby_home' ].to_pathname )
+  # TODO somehow the lib/jruby.jar gets moved away to avoid conflicts
+  FileUtils.cp( Dir[ File.join( source, "core/target/jruby-core-#{version}-complete.jar" ) ].first,
+                File.join( ctx.project.basedir.to_pathname, 
                            'lib',
-                           'jruby.jar' ),
-                File.join( ctx.project.basedir.to_s, 
+                           "jruby-core-#{ctx.project.version}-complete.jar" ) )
+  FileUtils.cp( Dir[ File.join( source, "truffle/target/jruby-truffle-#{version}-complete.jar" ) ].first,
+                File.join( ctx.project.basedir.to_pathname, 
                            'lib',
-                           "jruby-core-#{ctx.project.version}.jar" ) )
+                           "jruby-truffle-#{ctx.project.version}-complete.jar" ) )
 end
 
 # do not push the gem during deploy phase

@@ -190,7 +190,7 @@ if RbConfig::CONFIG['host_os'].downcase =~ /darwin|openbsd|freebsd|netbsd|linux/
       nil
     end
   end
-else
+elsif RbConfig::CONFIG['host_os'] !~ /(mswin)|(win32)|(ming)/
   result = begin
     old_stderr = $stderr.dup
     $stderr.reopen('/dev/null')
@@ -204,7 +204,7 @@ else
 end
 
 if !result || RbConfig::CONFIG['host_os'] =~ /(mswin)|(win32)|(ming)/
-  warn "io/console not supported; tty will not be manipulated"
+  warn "io/console not supported; tty will not be manipulated" if $VERBOSE
 
   # Windows version is always stubbed for now
   class IO

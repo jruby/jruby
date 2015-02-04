@@ -5,13 +5,12 @@
   <parent>
     <groupId>org.jruby</groupId>
     <artifactId>jruby-parent</artifactId>
-    <version>9.0.0.0.dev-SNAPSHOT</version>
+    <version>9.0.0.0.pre1</version>
   </parent>
   <artifactId>jruby-ext</artifactId>
   <packaging>pom</packaging>
   <name>JRuby Ext</name>
   <modules>
-    <module>readline</module>
     <module>ripper</module>
   </modules>
   <properties>

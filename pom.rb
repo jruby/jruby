@@ -40,11 +40,6 @@ project 'JRuby', 'https://github.com/jruby/jruby' do
     releases 'false'
     snapshots 'true'
   end
-  repository( 'http://lafo.ssw.uni-linz.ac.at/nexus/content/repositories/releases/',
-              :id => 'truffle' ) do
-    releases 'true'
-    snapshots 'false'
-  end
 
   source_control( :url => 'https://github.com/jruby/jruby',
                   :connection => 'scm:git:git@jruby.org:jruby.git',
@@ -93,7 +88,7 @@ project 'JRuby', 'https://github.com/jruby/jruby' do
     properties 'jruby.home' => '${basedir}/..'
   end
 
-  modules [ 'core', 'lib' ]
+  modules [ 'truffle', 'core', 'lib' ]
 
   plugin_management do
     jar( 'junit:junit:4.11',
@@ -172,16 +167,7 @@ project 'JRuby', 'https://github.com/jruby/jruby' do
 
 
   build do
-    default_goal 'package'
-  end
-
-  profile 'ext' do
-
-    modules [ 'ext' ]
-
-    build do
-      default_goal 'install'
-    end
+    default_goal 'install'
   end
 
   profile 'test' do
@@ -241,16 +227,23 @@ project 'JRuby', 'https://github.com/jruby/jruby' do
     end
   end
 
+  profile 'jruby_complete_jar_extended' do
+
+    modules [ 'test', 'maven' ]
+
+    build do
+      default_goal 'install'
+    end
+  end
+
   all_modules = [ 'test', 'maven' ]
 
-  [ 'all', 'jruby_complete_jar_extended' ].each do |name|
-    profile name do
+  profile 'all' do
 
-      modules all_modules
+    modules all_modules
 
-      build do
-        default_goal 'install'
-      end
+    build do
+      default_goal 'install'
     end
   end
 

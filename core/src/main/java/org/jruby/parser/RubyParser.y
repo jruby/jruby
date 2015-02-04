@@ -213,7 +213,8 @@ public class RubyParser {
 %token <RegexpNode>  tREGEXP_END
 %type <RestArgNode> f_rest_arg 
 %type <Node> singleton strings string string1 xstring regexp
-%type <Node> string_contents xstring_contents string_content method_call
+%type <Node> string_contents xstring_contents method_call
+%type <Object> string_content
 %type <Node> regexp_contents
 %type <Node> words qwords word literal numeric simple_numeric dsym cpath command_asgn command_call
 %type <Node> mrhs_arg
@@ -224,7 +225,8 @@ public class RubyParser {
 %type <Node> call_args opt_ensure paren_args superclass
 %type <Node> command_args var_ref opt_paren_args block_call block_command
 %type <Node> f_opt undef_list string_dvar backref
-%type <ArgsNode> f_args f_arglist f_larglist block_param block_param_def opt_block_param 
+%type <ArgsNode> f_args f_larglist block_param block_param_def opt_block_param
+%type <Object> f_arglist
 %type <Node> mrhs mlhs_item mlhs_node arg_value case_body exc_list aref_args
    // ENEBO: missing block_var == for_var, opt_block_var
 %type <Node> lhs none args
@@ -264,6 +266,7 @@ public class RubyParser {
 %token <String> tSTRING_DEND
 %type <String> kwrest_mark, f_kwrest, f_label
 %type <FCallNode> fcall
+%token <String> tLABEL_END, tSTRING_DEND
 
 /*
  *    precedence table
@@ -1477,7 +1480,7 @@ primary         : literal
                     Node body = $5;
                     if (body == null) body = NilImplicitNode.NIL;
 
-                    $$ = new DefnNode($1, new ArgumentNode($1, $2), $4, support.getCurrentScope(), body);
+                    $$ = new DefnNode($1, new ArgumentNode($1, $2), (ArgsNode) $4, support.getCurrentScope(), body);
                     support.popCurrentScope();
                     support.setInDef(false);
                 }
@@ -1491,7 +1494,7 @@ primary         : literal
                     Node body = $8;
                     if (body == null) body = NilImplicitNode.NIL;
 
-                    $$ = new DefsNode($1, $2, new ArgumentNode($1, $5), $7, support.getCurrentScope(), body);
+                    $$ = new DefsNode($1, $2, new ArgumentNode($1, $5), (ArgsNode) $7, support.getCurrentScope(), body);
                     support.popCurrentScope();
                     support.setInSingle(support.getInSingle() - 1);
                 }
@@ -1909,9 +1912,11 @@ word_list       : /* none */ {
                      $$ = $1.add($2 instanceof EvStrNode ? new DStrNode($1.getPosition(), lexer.getEncoding()).add($2) : $2);
                 }
 
-word            : string_content
+word            : string_content {
+                     $$ = $<Node>1;
+                }
                 | word string_content {
-                     $$ = support.literal_concat(support.getPosition($1), $1, $2);
+                     $$ = support.literal_concat(support.getPosition($1), $1, $<Node>2);
                 }
 
 symbols         : tSYMBOLS_BEG ' ' tSTRING_END {
@@ -1963,14 +1968,14 @@ string_contents : /* none */ {
                     $$ = lexer.createStrNode(lexer.getPosition(), aChar, 0);
                 }
                 | string_contents string_content {
-                    $$ = support.literal_concat($1.getPosition(), $1, $2);
+                    $$ = support.literal_concat($1.getPosition(), $1, $<Node>2);
                 }
 
 xstring_contents: /* none */ {
                     $$ = null;
                 }
                 | xstring_contents string_content {
-                    $$ = support.literal_concat(support.getPosition($1), $1, $2);
+                    $$ = support.literal_concat(support.getPosition($1), $1, $<Node>2);
                 }
 
 regexp_contents :  /* none */ {
@@ -1978,7 +1983,7 @@ regexp_contents :  /* none */ {
                 }
                 | regexp_contents string_content {
     // FIXME: mri is different here.
-                    $$ = support.literal_concat(support.getPosition($1), $1, $2);
+                    $$ = support.literal_concat(support.getPosition($1), $1, $<Node>2);
                 }
 
 string_content  : tSTRING_CONTENT {
@@ -1994,16 +1999,19 @@ string_content  : tSTRING_CONTENT {
                 }
                 | tSTRING_DBEG {
                    $$ = lexer.getStrTerm();
+                   lexer.setStrTerm(null);
                    lexer.getConditionState().stop();
                    lexer.getCmdArgumentState().stop();
-                   lexer.setStrTerm(null);
+                } {
+                   $$ = lexer.getState();
                    lexer.setState(LexState.EXPR_BEG);
                 } compstmt tRCURLY {
                    lexer.getConditionState().restart();
                    lexer.getCmdArgumentState().restart();
                    lexer.setStrTerm($<StrTerm>2);
+                   lexer.setState($<LexState>3);
 
-                   $$ = support.newEvStrNode(support.getPosition($3), $3);
+                   $$ = support.newEvStrNode(support.getPosition($4), $4);
                 }
 
 string_dvar     : tGVAR {
@@ -2178,8 +2186,12 @@ f_arglist       : tLPAREN2 f_args rparen {
                     lexer.setState(LexState.EXPR_BEG);
                     lexer.commandStart = true;
                 }
-                | f_args term {
-                    $$ = $1;
+                | {
+                   $$ = lexer.inKwarg;
+                   lexer.inKwarg = true;
+                } f_args term {
+                   lexer.inKwarg = $<Boolean>1;
+                    $$ = $2;
                     lexer.setState(LexState.EXPR_BEG);
                     lexer.commandStart = true;
                 }
@@ -2446,6 +2458,19 @@ assoc           : arg_value tASSOC arg_value {
                     SymbolNode label = new SymbolNode(support.getPosition($2), new ByteList($1.getBytes(), lexer.getEncoding()));
                     $$ = new KeyValuePair<Node,Node>(label, $2);
                 }
+                | tSTRING_BEG string_contents tLABEL_END arg_value {
+                    if ($2 instanceof StrNode) {
+                        DStrNode dnode = new DStrNode(support.getPosition($2), lexer.getEncoding());
+                        dnode.add($2);
+                        $$ = new KeyValuePair<Node,Node>(new DSymbolNode(support.getPosition($2), dnode), $4);
+                    } else if ($2 instanceof DStrNode) {
+                        $$ = new KeyValuePair<Node,Node>(new DSymbolNode(support.getPosition($2), $<DStrNode>2), $4);
+                    } else {
+                        support.compile_error("Uknown type for assoc in strings: " + $2);
+                    }
+
+                }
+
                 | tDSTAR arg_value {
                     $$ = new KeyValuePair<Node,Node>(null, $2);
                 }

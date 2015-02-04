@@ -260,7 +260,7 @@ public class RubyLexer {
     
     public enum LexState {
         EXPR_BEG, EXPR_END, EXPR_ARG, EXPR_CMDARG, EXPR_ENDARG, EXPR_MID,
-        EXPR_FNAME, EXPR_DOT, EXPR_CLASS, EXPR_VALUE, EXPR_ENDFN
+        EXPR_FNAME, EXPR_DOT, EXPR_CLASS, EXPR_VALUE, EXPR_ENDFN, EXPR_LABELARG
     }
     
     public static Keyword getKeyword(String str) {
@@ -326,13 +326,23 @@ public class RubyLexer {
 
     // Count of nested parentheses
     private int parenNest = 0;
+    private int braceNest = 0;
 
     private int leftParenBegin = 0;
+    public boolean inKwarg = false;
 
     public int incrementParenNest() {
         parenNest++;
 
         return parenNest;
+    }
+
+    public int getBraceNest() {
+        return braceNest;
+    }
+
+    public void setBraceNest(int nest) {
+        braceNest = nest;
     }
 
     public int getLeftParenBegin() {
@@ -356,6 +366,8 @@ public class RubyLexer {
         resetStacks();
         lex_strterm = null;
         commandStart = true;
+        parenNest = 0;
+        braceNest = 0;
     }
 
     public int nextToken() throws IOException {
@@ -469,6 +481,10 @@ public class RubyLexer {
         }
     }
 
+    public LexState getState() {
+        return lex_state;
+    }
+
     public void setState(LexState state) {
         this.lex_state = state;
 //        printState();
@@ -495,7 +511,8 @@ public class RubyLexer {
 
     private boolean isBEG() {
         return lex_state == LexState.EXPR_BEG || lex_state == LexState.EXPR_MID ||
-                lex_state == LexState.EXPR_CLASS || (lex_state == LexState.EXPR_VALUE);
+                lex_state == LexState.EXPR_CLASS || lex_state == LexState.EXPR_VALUE ||
+                lex_state == LexState.EXPR_LABELARG;
     }
     
     private boolean isEND() {
@@ -802,7 +819,9 @@ public class RubyLexer {
     }
     
     private void arg_ambiguous() {
-        if (warnings.isVerbose()) warnings.warning(ID.AMBIGUOUS_ARGUMENT, getPosition(), "Ambiguous first argument; make sure.");
+        if (warnings.isVerbose() && Options.PARSER_WARN_AMBIGUOUS_ARGUMENTS.load()) {
+            warnings.warning(ID.AMBIGUOUS_ARGUMENT, getPosition(), "Ambiguous first argument; make sure.");
+        }
     }
 
 
@@ -1094,7 +1113,21 @@ public class RubyLexer {
         
         if (lex_strterm != null) {
             int tok = lex_strterm.parseString(this, src);
-            if (tok == Tokens.tSTRING_END || tok == Tokens.tREGEXP_END) {
+
+            if (tok == Tokens.tSTRING_END && (yaccValue.equals("\"") || yaccValue.equals("'"))) {
+                if (((lex_state == LexState.EXPR_BEG || lex_state == LexState.EXPR_ENDFN) && !conditionState.isInState() ||
+                        isARG()) && src.peek(':')) {
+                    int c1 = src.read();
+                    if (src.peek(':')) { // "mod"::SOMETHING (hack MRI does not do this)
+                        src.unread(c1);
+                    } else {
+                        src.read();
+                        tok = Tokens.tLABEL_END;
+                    }
+                }
+            }
+
+            if (tok == Tokens.tSTRING_END || tok == Tokens.tREGEXP_END || tok == Tokens.tLABEL_END) {
                 lex_strterm = null;
                 setState(LexState.EXPR_END);
             }
@@ -1130,6 +1163,13 @@ public class RubyLexer {
                 switch (lex_state) {
                 case EXPR_BEG: case EXPR_FNAME: case EXPR_DOT:
                 case EXPR_CLASS: case EXPR_VALUE:
+                    continue loop;
+                case EXPR_LABELARG:
+                    if (inKwarg) {
+                        commandStart = true;
+                        setState(LexState.EXPR_BEG);
+                        return '\n';
+                    }
                     continue loop;
                 }
 
@@ -1787,7 +1827,7 @@ public class RubyLexer {
         if (isLabelPossible(commandState)) {
             int c2 = src.read();
             if (c2 == ':' && !src.peek(':')) {
-                setState(LexState.EXPR_BEG);
+                setState(LexState.EXPR_LABELARG);
                 yaccValue = tempVal;
                 return Tokens.tLABEL;
             }
@@ -1861,6 +1901,8 @@ public class RubyLexer {
     }
     
     private int leftCurly() {
+        braceNest++;
+        //System.out.println("lcurly: " + braceNest);
         if (leftParenBegin > 0 && leftParenBegin == parenNest) {
             setState(LexState.EXPR_BEG);
             leftParenBegin = 0;
@@ -2182,7 +2224,10 @@ public class RubyLexer {
         cmdArgumentState.restart();
         setState(LexState.EXPR_ENDARG);
         yaccValue = "}";
-        return Tokens.tRCURLY;
+        //System.out.println("braceNest: " + braceNest);
+        int tok = /*braceNest != 0 ? Tokens.tSTRING_DEND : */ Tokens.tRCURLY;
+        braceNest--;
+        return tok;
     }
 
     private int rightParen() {

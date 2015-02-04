@@ -1,4 +1,5 @@
 require 'win32/importer'
+require 'Win32API'
 
 module Win32
 
@@ -167,7 +168,7 @@ For detail, see the MSDN[http://msdn.microsoft.com/library/en-us/sysinfo/base/pr
     # Error
     #
     class Error < ::StandardError
-      FormatMessageA = Win32API.new('kernel32.dll', 'FormatMessageA', 'LPLLPLP', 'L')
+      FormatMessageW = Win32API.new('kernel32.dll', 'FormatMessageW', 'LPLLPLP', 'L')
       def initialize(code)
         @code = code
         buff = WCHAR_NUL * 1024
@@ -227,6 +228,12 @@ For detail, see the MSDN[http://msdn.microsoft.com/library/en-us/sysinfo/base/pr
         %w/RegEnumKeyExA    LLPPLLLP     L/,
         %w/RegQueryValueExA LPLPPP       L/,
         %w/RegSetValueExA   LPLLPL       L/,
+        %w/RegOpenKeyExW    LPLLP        L/,
+        %w/RegCreateKeyExW  LPLLLLPPP    L/,
+        %w/RegEnumValueW    LLPPPPPP     L/,
+        %w/RegEnumKeyExW    LLPPLLLP     L/,
+        %w/RegQueryValueExW LPLPPP       L/,
+        %w/RegSetValueExW   LPLLPL       L/,
         %w/RegDeleteValue   LP           L/,
         %w/RegDeleteKey     LP           L/,
         %w/RegFlushKey      L            L/,
@@ -273,7 +280,7 @@ For detail, see the MSDN[http://msdn.microsoft.com/library/en-us/sysinfo/base/pr
       end
 
       def make_wstr(str)
-        str.encode(WCHAR)
+        str.encode(WCHAR) + 0.chr.encode(WCHAR)
       end
 
       def OpenKey(hkey, name, opt, desired)

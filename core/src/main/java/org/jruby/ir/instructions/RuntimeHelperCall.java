@@ -23,7 +23,7 @@ public class RuntimeHelperCall extends ResultBaseInstr {
         HANDLE_PROPAGATE_BREAK, HANDLE_NONLOCAL_RETURN, HANDLE_BREAK_AND_RETURNS_IN_LAMBDA,
         IS_DEFINED_BACKREF, IS_DEFINED_NTH_REF, IS_DEFINED_GLOBAL, IS_DEFINED_INSTANCE_VAR,
         IS_DEFINED_CLASS_VAR, IS_DEFINED_SUPER, IS_DEFINED_METHOD, IS_DEFINED_CALL,
-        IS_DEFINED_CONSTANT_OR_METHOD, MERGE_KWARGS(), CHECK_FOR_LJE
+        IS_DEFINED_CONSTANT_OR_METHOD, MERGE_KWARGS
     }
 
     Methods    helperMethod;
@@ -81,9 +81,6 @@ public class RuntimeHelperCall extends ResultBaseInstr {
                 return IRRuntimeHelpers.isDefinedNthRef(context, (int) ((Fixnum) operands[0]).getValue());
             case IS_DEFINED_GLOBAL:
                 return IRRuntimeHelpers.isDefinedGlobal(context, ((StringLiteral) operands[0]).getString());
-            case CHECK_FOR_LJE:
-                IRRuntimeHelpers.checkForLJE(context, currDynScope, ((Boolean)operands[0]).isTrue(), blockType);
-                return null;
         }
 
         Object arg1 = operands[0].retrieve(context, self, currScope, currDynScope, temp);

@@ -1,5 +1,4 @@
 fails:File::Constants matches mode constants
-fails:File::Constants the separator constant
 fails:File::Constants the open mode constants
 fails:File::Constants lock mode constants
 fails:File::Constants File::RDONLY
@@ -14,6 +13,3 @@ fails:File::Constants File::LOCK_EX
 fails:File::Constants File::LOCK_NB
 fails:File::Constants File::LOCK_SH
 fails:File::Constants File::LOCK_UN
-fails:File::Constants File::SEPARATOR
-fails:File::Constants File::Separator
-fails:File::Constants File::PATH_SEPARATOR

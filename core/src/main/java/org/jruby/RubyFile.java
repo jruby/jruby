@@ -55,7 +55,6 @@ import java.nio.file.attribute.FileTime;
 import java.nio.file.attribute.PosixFileAttributeView;
 import java.util.ArrayList;
 import java.util.Enumeration;
-import java.util.concurrent.TimeUnit;
 import java.util.jar.JarFile;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -153,6 +152,9 @@ public class RubyFile extends RubyIO implements EncodingCapable {
             }
             /* do not block on open or for data to become available */
             constants.setConstant("NONBLOCK", runtime.newFixnum(OpenFlags.O_NONBLOCK.intValue()));
+        } else if (Platform.IS_WINDOWS) {
+            // FIXME: Should NONBLOCK exist for Windows fcntl flags?
+            constants.setConstant("NONBLOCK", runtime.newFixnum(1));
         }
         /* truncate size to 0 */
         constants.setConstant("TRUNC", runtime.newFixnum(OpenFlags.O_TRUNC.intValue()));
@@ -405,37 +407,6 @@ public class RubyFile extends RubyIO implements EncodingCapable {
             // ignore, just fall back on ctime
         }
         return null;
-    }
-
-    @JRubyMethod(required = 1)
-    public IRubyObject lchmod(ThreadContext context, IRubyObject arg) {
-        int mode = (int) arg.convertToInteger().getLongValue();
-
-        if (!new File(getPath()).exists()) {
-            throw context.runtime.newErrnoENOENTError(getPath());
-        }
-
-        return context.runtime.newFixnum(context.runtime.getPosix().lchmod(getPath(), mode));
-    }
-
-    // TODO: this method is not present in MRI!
-    @JRubyMethod(required = 2)
-    public IRubyObject lchown(ThreadContext context, IRubyObject arg1, IRubyObject arg2) {
-        int owner = -1;
-        if (!arg1.isNil()) {
-            owner = RubyNumeric.num2int(arg1);
-        }
-
-        int group = -1;
-        if (!arg2.isNil()) {
-            group = RubyNumeric.num2int(arg2);
-        }
-
-        if (!new File(getPath()).exists()) {
-            throw context.runtime.newErrnoENOENTError(getPath());
-        }
-
-        return context.runtime.newFixnum(context.runtime.getPosix().lchown(getPath(), owner, group));
     }
 
     @JRubyMethod
@@ -1140,7 +1111,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         Ruby runtime = context.runtime;
         POSIX posix = runtime.getPosix();
 
-        if (!posix.isNative()) return delete(context, recv, args);
+        if (!posix.isNative() || Platform.IS_WINDOWS) return delete(context, recv, args);
 
         for (int i = 0; i < args.length; i++) {
             RubyString filename = get_path(context, args[i]);

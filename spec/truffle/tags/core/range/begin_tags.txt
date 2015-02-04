@@ -1,1 +1,0 @@
-fails:Range#begin returns the first element of self

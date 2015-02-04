@@ -2,5 +2,3 @@ fails:File.chown returns the number of files processed
 fails:File.chown raises an error for a non existent path
 fails:File.chown accepts an object that has a #to_path method
 fails:File#chown returns 0
-fails:File.chown needs to be reviewed for spec completeness
-fails:File#chown needs to be reviewed for spec completeness

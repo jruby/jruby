@@ -89,6 +89,7 @@
     </mailingList>
   </mailingLists>
   <modules>
+    <module>truffle</module>
     <module>core</module>
     <module>lib</module>
   </modules>
@@ -163,16 +164,6 @@
       <id>sonatype</id>
       <url>https://oss.sonatype.org/content/repositories/snapshots/</url>
     </repository>
-    <repository>
-      <releases>
-        <enabled>true</enabled>
-      </releases>
-      <snapshots>
-        <enabled>false</enabled>
-      </snapshots>
-      <id>truffle</id>
-      <url>http://lafo.ssw.uni-linz.ac.at/nexus/content/repositories/releases/</url>
-    </repository>
   </repositories>
   <pluginRepositories>
     <pluginRepository>
@@ -187,7 +178,7 @@
     </pluginRepository>
   </pluginRepositories>
   <build>
-    <defaultGoal>package</defaultGoal>
+    <defaultGoal>install</defaultGoal>
     <pluginManagement>
       <plugins>
         <plugin>
@@ -526,15 +517,6 @@
   </reporting>
   <profiles>
     <profile>
-      <id>ext</id>
-      <build>
-        <defaultGoal>install</defaultGoal>
-      </build>
-      <modules>
-        <module>ext</module>
-      </modules>
-    </profile>
-    <profile>
       <id>test</id>
       <modules>
         <module>test</module>
@@ -736,7 +718,7 @@
       </properties>
     </profile>
     <profile>
-      <id>all</id>
+      <id>jruby_complete_jar_extended</id>
       <build>
         <defaultGoal>install</defaultGoal>
       </build>
@@ -746,7 +728,7 @@
       </modules>
     </profile>
     <profile>
-      <id>jruby_complete_jar_extended</id>
+      <id>all</id>
       <build>
         <defaultGoal>install</defaultGoal>
       </build>

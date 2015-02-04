@@ -144,6 +144,9 @@ public class RubyModule extends RubyObject {
     }
 
     public void checkValidBindTargetFrom(ThreadContext context, RubyModule originModule) throws RaiseException {
+        // Module methods can always be transplanted
+        if (originModule.isModule()) return;
+
         if (!this.hasModuleInHierarchy(originModule)) {
             if (originModule instanceof MetaClass) {
                 throw context.runtime.newTypeError("can't bind singleton method to a different class");
@@ -2129,6 +2132,11 @@ public class RubyModule extends RubyObject {
         return newMethod(null, symbol.asJavaString(), false, null);
     }
 
+    @JRubyMethod(name = "public_instance_method", required = 1)
+    public IRubyObject public_instance_method(IRubyObject symbol) {
+        return newMethod(null, symbol.asJavaString(), false, PUBLIC);
+    }
+
     /** rb_class_protected_instance_methods
      *
      */
@@ -2792,11 +2800,33 @@ public class RubyModule extends RubyObject {
 
     @JRubyMethod(name = "const_defined?", required = 1, optional = 1)
     public RubyBoolean const_defined_p19(ThreadContext context, IRubyObject[] args) {
-        IRubyObject symbol = args[0];
+        Ruby runtime = context.runtime;
+        String fullName = args[0].asJavaString();
+        String symbol = fullName;
         boolean inherit = args.length == 1 || (!args[1].isNil() && args[1].isTrue());
 
-        // Note: includes part of fix for JRUBY-1339
-        return context.runtime.newBoolean(fastIsConstantDefined19(validateConstant(symbol).intern(), inherit));
+        // symbol form does not allow ::
+        if (args[0] instanceof RubySymbol && symbol.indexOf("::") != -1) {
+            throw runtime.newNameError("wrong constant name", symbol);
+        }
+
+        RubyModule mod = this;
+
+        if (symbol.startsWith("::")) mod = runtime.getObject();
+
+        int sep;
+        while((sep = symbol.indexOf("::")) != -1) {
+            String segment = symbol.substring(0, sep);
+            symbol = symbol.substring(sep + 2);
+            IRubyObject obj = mod.getConstantNoConstMissing(validateConstant(segment, args[0]), inherit, inherit);
+            if(obj instanceof RubyModule) {
+                mod = (RubyModule)obj;
+            } else {
+                throw runtime.newTypeError(segment + " does not refer to class/module");
+            }
+        }
+
+        return runtime.newBoolean(mod.getConstantNoConstMissing(validateConstant(symbol, args[0]), inherit, inherit) != null);
     }
 
     /** rb_mod_const_get
@@ -2812,11 +2842,20 @@ public class RubyModule extends RubyObject {
 
     @JRubyMethod(name = "const_get", required = 1, optional = 1)
     public IRubyObject const_get_2_0(ThreadContext context, IRubyObject[] args) {
+        Ruby runtime = context.runtime;
         String fullName = args[0].asJavaString();
         String symbol = fullName;
         boolean inherit = args.length == 1 || (!args[1].isNil() && args[1].isTrue());
 
+        // symbol form does not allow ::
+        if (args[0] instanceof RubySymbol && symbol.indexOf("::") != -1) {
+            throw context.runtime.newNameError("wrong constant name", symbol);
+        }
+
         RubyModule mod = this;
+
+        if (symbol.startsWith("::")) mod = runtime.getObject();
+
         int sep;
         while((sep = symbol.indexOf("::")) != -1) {
             String segment = symbol.substring(0, sep);
@@ -2825,7 +2864,7 @@ public class RubyModule extends RubyObject {
             if(obj instanceof RubyModule) {
                 mod = (RubyModule)obj;
             } else {
-                throw context.runtime.newTypeError(segment + " does not refer to class/module");
+                throw runtime.newTypeError(segment + " does not refer to class/module");
             }
         }
 

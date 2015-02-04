@@ -151,6 +151,7 @@ public enum Operation {
     BACKTICK_STRING(OpFlags.f_can_raise_exception),
     CHECK_ARGS_ARRAY_ARITY(OpFlags.f_can_raise_exception),
     CHECK_ARITY(OpFlags.f_is_book_keeping_op | OpFlags.f_can_raise_exception),
+    CHECK_FOR_LJE(OpFlags.f_has_side_effect | OpFlags.f_can_raise_exception),
     CLASS_VAR_MODULE(0),
     COPY(0),
     GET_ENCODING(0),
@@ -163,7 +164,7 @@ public enum Operation {
     RESCUE_EQQ(OpFlags.f_can_raise_exception), // a === call used in rescue
     RUNTIME_HELPER(OpFlags.f_has_side_effect | OpFlags.f_can_raise_exception),
     SET_CAPTURED_VAR(OpFlags.f_can_raise_exception),
-    THREAD_POLL(OpFlags.f_is_book_keeping_op | OpFlags.f_has_side_effect),
+    THREAD_POLL(OpFlags.f_is_book_keeping_op | OpFlags.f_has_side_effect | OpFlags.f_can_raise_exception),
     THROW(OpFlags.f_has_side_effect | OpFlags.f_can_raise_exception | OpFlags.f_is_exception),
     // FIXME: TO_ARY is marked side-effecting since it can allocate new objects
     // Clarify semantics of 'f_has_side_effect' better
@@ -196,7 +197,7 @@ public enum Operation {
     IXOR(OpFlags.f_is_int_op),
     ISHL(OpFlags.f_is_int_op),
     ISHR(OpFlags.f_is_int_op),
-    IEQ(OpFlags.f_is_float_op),
+    IEQ(OpFlags.f_is_int_op),
     FADD(OpFlags.f_is_float_op),
     FSUB(OpFlags.f_is_float_op),
     FMUL(OpFlags.f_is_float_op),

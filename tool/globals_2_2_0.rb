@@ -86,5 +86,7 @@ EXT_FILES = {
   'ext/ripper/lib/ripper' => 'ripper',
   'ext/ripper/lib/ripper.rb' => 'ripper.rb',
   'ext/socket/lib/socket.rb' => 'socket.rb',
-  'ext/win32/lib/win32' => 'win32'
+  'ext/win32/lib/win32' => 'win32',
+  'ext/fiddle/lib/fiddle.rb' => 'fiddle.rb',
+  'ext/fiddle/lib/fiddle' => 'fiddle'
 }

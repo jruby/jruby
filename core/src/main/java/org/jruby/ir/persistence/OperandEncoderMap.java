@@ -86,7 +86,8 @@ class OperandEncoderMap extends IRVisitor {
     @Override public void ObjectClass(ObjectClass objectclass) {} // No data
 
     @Override public void Regexp(Regexp regexp) {
-        encode(regexp.getRegexp());
+        // FIXME: This is wrong
+        encoder.encode(new String(regexp.getSource().bytes(), regexp.getSource().getEncoding().getCharset()));
         encoder.encode(regexp.options.isEncodingNone());
         encoder.encode(regexp.options.toEmbeddedOptions());
     }

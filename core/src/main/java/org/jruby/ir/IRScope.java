@@ -1,5 +1,6 @@
 package org.jruby.ir;
 
+import org.jcodings.specific.USASCIIEncoding;
 import org.jruby.ParseResult;
 import org.jruby.RubyInstanceConfig;
 import org.jruby.RubyModule;
@@ -8,6 +9,7 @@ import org.jruby.ir.instructions.*;
 import org.jruby.ir.interpreter.InterpreterContext;
 import org.jruby.ir.operands.*;
 import org.jruby.ir.operands.Float;
+import org.jruby.ir.operands.Boolean;
 import org.jruby.ir.passes.*;
 import org.jruby.ir.persistence.IRReaderDecoder;
 import org.jruby.ir.representations.BasicBlock;
@@ -16,6 +18,7 @@ import org.jruby.ir.representations.CFGLinearizer;
 import org.jruby.ir.transformations.inlining.CFGInliner;
 import org.jruby.ir.transformations.inlining.SimpleCloneInfo;
 import org.jruby.parser.StaticScope;
+import org.jruby.util.KeyValuePair;
 import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
 
@@ -236,6 +239,7 @@ public abstract class IRScope implements ParseResult {
     }
 
     protected void addChildScope(IRScope scope) {
+        if (lexicalChildren == null) lexicalChildren = new ArrayList<>();
         lexicalChildren.add(scope);
     }
 
@@ -875,9 +879,8 @@ public abstract class IRScope implements ParseResult {
                 return new TemporaryFixnumVariable(fixnumVariableIndex);
             }
             case BOOLEAN: {
-                // Shares var index with locals
-                temporaryVariableIndex++;
-                return new TemporaryBooleanVariable(temporaryVariableIndex);
+                booleanVariableIndex++;
+                return new TemporaryBooleanVariable(booleanVariableIndex);
             }
             case LOCAL: {
                 temporaryVariableIndex++;
@@ -909,7 +912,7 @@ public abstract class IRScope implements ParseResult {
             varType = TemporaryVariableType.FLOAT;
         } else if (type == Fixnum.class) {
             varType = TemporaryVariableType.FIXNUM;
-        } else if (type == UnboxedBoolean.class) {
+        } else if (type == Boolean.class) {
             varType = TemporaryVariableType.BOOLEAN;
         } else {
             varType = TemporaryVariableType.LOCAL;
@@ -1009,6 +1012,64 @@ public abstract class IRScope implements ParseResult {
         }
 
         return false;
+    }
+
+    /**
+     * Extract all call arguments from the specified scope (only useful for Closures and Methods) so that
+     * we can convert zsupers to supers with explicit arguments.
+     *
+     * Note: This is fairly expensive because we walk entire scope when we could potentially stop earlier
+     * if we knew when recv_* were done.
+     */
+    public Operand[] getCallArgs() {
+        List<Operand> callArgs = new ArrayList<>(5);
+        List<KeyValuePair<Operand, Operand>> keywordArgs = new ArrayList<>(3);
+
+        // We have two paths.  eval and non-eval.
+        if (instrList == null) {  // CFG already made.  eval has zsuper and we walk back to some executing method/script
+            // FIXME: Need to verify this can never re-order recvs in a way to swap order to zsuper
+            for (BasicBlock bb: getCFG().getBasicBlocks()) {
+                for (Instr instr: bb.getInstrs()) {
+                    extractCallOperands(callArgs, keywordArgs, instr);
+                }
+            }
+        } else {                  // common zsuper case.  non-eval and at build time entirely.
+            for (Instr instr : getInstrs()) {
+                extractCallOperands(callArgs, keywordArgs, instr);
+            }
+        }
+
+        return getCallOperands(callArgs, keywordArgs);
+    }
+
+
+    private void extractCallOperands(List<Operand> callArgs, List<KeyValuePair<Operand, Operand>> keywordArgs, Instr instr) {
+        if (instr instanceof ReceiveKeywordRestArgInstr) {
+            // Always add the keyword rest arg to the beginning
+            keywordArgs.add(0, new KeyValuePair<Operand, Operand>(Symbol.KW_REST_ARG_DUMMY, ((ReceiveArgBase) instr).getResult()));
+        } else if (instr instanceof ReceiveKeywordArgInstr) {
+            ReceiveKeywordArgInstr rkai = (ReceiveKeywordArgInstr) instr;
+            // FIXME: This lost encoding information when name was converted to string earlier in IRBuilder
+            keywordArgs.add(new KeyValuePair<Operand, Operand>(new Symbol(rkai.argName, USASCIIEncoding.INSTANCE), rkai.getResult()));
+        } else if (instr instanceof ReceiveRestArgInstr) {
+            callArgs.add(new Splat(((ReceiveRestArgInstr) instr).getResult()));
+        } else if (instr instanceof ReceiveArgBase) {
+            callArgs.add(((ReceiveArgBase) instr).getResult());
+        }
+    }
+
+    private Operand[] getCallOperands(List<Operand> callArgs, List<KeyValuePair<Operand, Operand>> keywordArgs) {
+        if (receivesKeywordArgs()) {
+            int i = 0;
+            Operand[] args = new Operand[callArgs.size() + 1];
+            for (Operand arg: callArgs) {
+                args[i++] = arg;
+            }
+            args[i] = new Hash(keywordArgs, true);
+            return args;
+        }
+
+        return callArgs.toArray(new Operand[callArgs.size()]);
     }
 
     public void setDataFlowSolution(String name, DataFlowProblem p) {

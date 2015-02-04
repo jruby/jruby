@@ -128,30 +128,8 @@
     <components />
   </files>
   <launchers>
-    <launcher name="irb (1.8.7)" id="259" external="false" excludeFromMenu="false" menuName="" icnsFile="" pngIcon16File="./icon16.png" pngIcon32File="./icon32.png" macServiceDependencies="" swtApp="false" fileset="">
-      <executable name="irb (1.8.7)" type="1" iconSet="true" iconFile="" executableDir="" redirectStderr="true" stderrFile="error.log" stderrMode="overwrite" redirectStdout="false" stdoutFile="output.log" stdoutMode="overwrite" failOnStderrOutput="true" executableMode="1" changeWorkingDirectory="true" workingDirectory="." singleInstance="false" serviceStartType="2" serviceDependencies="" serviceDescription="" jreLocation="" executionLevel="asInvoker" checkConsoleParameter="false" globalSingleInstance="false">
-        <versionInfo include="false" fileVersion="" fileDescription="" legalCopyright="" internalName="" productName="" />
-      </executable>
-      <splashScreen show="false" autoOff="true" alwaysOnTop="true" width="0" height="0" bitmapFile="./jruby-logo.png" java6SplashScreen="false">
-        <text>
-          <statusLine x="20" y="20" text="Loading irb..." font="Arial" fontSize="8" fontColor="0,0,0" fontWeight="500" />
-          <versionLine x="20" y="40" text="version ${compiler:sys.version}" font="Arial" fontSize="8" fontColor="0,0,0" fontWeight="500" />
-        </text>
-      </splashScreen>
-      <java mainClass="org.jruby.Main" vmParameters="&quot;-Djruby.home=${launcher:sys.launcherDirectory}&quot;" arguments="--1.8 &quot;${launcher:sys.launcherDirectory}/bin/jirb_swing&quot;" allowVMPassthroughParameters="true" preferredVM="" bundleRuntime="true">
-        <classPath>
-          <archive location="lib/jruby.jar" failOnError="false" />
-        </classPath>
-        <nativeLibraryDirectories />
-      </java>
-      <includedFiles />
-      <unextractableFiles />
-      <customScript mode="1" file="">
-        <scriptLines />
-      </customScript>
-    </launcher>
-    <launcher name="irb (1.9.3)" id="260" external="false" excludeFromMenu="false" menuName="" icnsFile="" pngIcon16File="./icon16.png" pngIcon32File="./icon32.png" macServiceDependencies="" swtApp="false" fileset="">
-      <executable name="irb (1.9.3)" type="1" iconSet="true" iconFile="" executableDir="" redirectStderr="true" stderrFile="error.log" stderrMode="overwrite" redirectStdout="false" stdoutFile="output.log" stdoutMode="overwrite" failOnStderrOutput="true" executableMode="1" changeWorkingDirectory="true" workingDirectory="." singleInstance="false" serviceStartType="2" serviceDependencies="" serviceDescription="" jreLocation="" executionLevel="asInvoker" checkConsoleParameter="false" globalSingleInstance="false">
+    <launcher name="irb (2.2)" id="261" external="false" excludeFromMenu="false" menuName="" icnsFile="" pngIcon16File="./icon16.png" pngIcon32File="./icon32.png" macServiceDependencies="" swtApp="false" fileset="">
+      <executable name="irb (2.2)" type="1" iconSet="true" iconFile="" executableDir="" redirectStderr="true" stderrFile="error.log" stderrMode="overwrite" redirectStdout="false" stdoutFile="output.log" stdoutMode="overwrite" failOnStderrOutput="true" executableMode="1" changeWorkingDirectory="true" workingDirectory="." singleInstance="false" serviceStartType="2" serviceDependencies="" serviceDescription="" jreLocation="" executionLevel="asInvoker" checkConsoleParameter="false" globalSingleInstance="false">
         <versionInfo include="false" fileVersion="" fileDescription="" legalCopyright="" internalName="" productName="" />
       </executable>
       <splashScreen show="false" autoOff="true" alwaysOnTop="true" width="0" height="0" bitmapFile="./jruby-logo.png" java6SplashScreen="false">
@@ -161,28 +139,6 @@
         </text>
       </splashScreen>
       <java mainClass="org.jruby.Main" vmParameters="&quot;-Djruby.home=${launcher:sys.launcherDirectory}&quot;" arguments="&quot;${launcher:sys.launcherDirectory}/bin/jirb_swing&quot;" allowVMPassthroughParameters="true" preferredVM="" bundleRuntime="true">
-        <classPath>
-          <archive location="lib/jruby.jar" failOnError="false" />
-        </classPath>
-        <nativeLibraryDirectories />
-      </java>
-      <includedFiles />
-      <unextractableFiles />
-      <customScript mode="1" file="">
-        <scriptLines />
-      </customScript>
-    </launcher>
-    <launcher name="irb (2.0.0)" id="261" external="false" excludeFromMenu="false" menuName="" icnsFile="" pngIcon16File="./icon16.png" pngIcon32File="./icon32.png" macServiceDependencies="" swtApp="false" fileset="">
-      <executable name="irb (2.0.0)" type="1" iconSet="true" iconFile="" executableDir="" redirectStderr="true" stderrFile="error.log" stderrMode="overwrite" redirectStdout="false" stdoutFile="output.log" stdoutMode="overwrite" failOnStderrOutput="true" executableMode="1" changeWorkingDirectory="true" workingDirectory="." singleInstance="false" serviceStartType="2" serviceDependencies="" serviceDescription="" jreLocation="" executionLevel="asInvoker" checkConsoleParameter="false" globalSingleInstance="false">
-        <versionInfo include="false" fileVersion="" fileDescription="" legalCopyright="" internalName="" productName="" />
-      </executable>
-      <splashScreen show="false" autoOff="true" alwaysOnTop="true" width="0" height="0" bitmapFile="./jruby-logo.png" java6SplashScreen="false">
-        <text>
-          <statusLine x="20" y="20" text="Loading irb..." font="Arial" fontSize="8" fontColor="0,0,0" fontWeight="500" />
-          <versionLine x="20" y="40" text="version ${compiler:sys.version}" font="Arial" fontSize="8" fontColor="0,0,0" fontWeight="500" />
-        </text>
-      </splashScreen>
-      <java mainClass="org.jruby.Main" vmParameters="&quot;-Djruby.home=${launcher:sys.launcherDirectory}&quot;" arguments="--2.0 &quot;${launcher:sys.launcherDirectory}/bin/jirb_swing&quot;" allowVMPassthroughParameters="true" preferredVM="" bundleRuntime="true">
         <classPath>
           <archive location="lib/jruby.jar" failOnError="false" />
         </classPath>
@@ -727,7 +683,7 @@
       </exclude>
       <variables />
     </win32>
-    <win32 name="Windows w/ JRE" id="21" mediaFileName="${compiler:sys.shortName}_${compiler:sys.platform}jre_${compiler:sys.version}" installDir="jruby-${compiler:sys.version}" overridePrincipalLanguage="false" requires64bit="false" jreBitType="32" runPostProcessor="false" postProcessor="" failOnPostProcessorError="false" includedJRE="windows-x86-1.7.0_07" manualJREEntry="false" bundleType="1" jreURL="" jreFtpURL="" jreShared="false" directDownload="false" customInstallBaseDir="c:" createUninstallIcon="true" contentFilesType="1" downloadURL="" runAsAdmin="false">
+    <win32 name="Windows w/ JRE" id="21" mediaFileName="${compiler:sys.shortName}_${compiler:sys.platform}jre_${compiler:sys.version}" installDir="jruby-${compiler:sys.version}" overridePrincipalLanguage="false" requires64bit="false" jreBitType="32" runPostProcessor="false" postProcessor="" failOnPostProcessorError="false" includedJRE="windows-x86-1.7.0_51" manualJREEntry="false" bundleType="1" jreURL="" jreFtpURL="" jreShared="false" directDownload="false" customInstallBaseDir="c:" createUninstallIcon="true" contentFilesType="1" downloadURL="" runAsAdmin="false">
       <excludedLaunchers />
       <excludedComponents />
       <excludedBeans>
@@ -739,7 +695,7 @@
       </exclude>
       <variables />
     </win32>
-    <win32 name="Windows 64-bit w/ JRE" id="198" mediaFileName="${compiler:sys.shortName}_${compiler:sys.platform}_x64_jre_${compiler:sys.version}" installDir="jruby-${compiler:sys.version}" overridePrincipalLanguage="false" requires64bit="true" jreBitType="64" runPostProcessor="false" postProcessor="" failOnPostProcessorError="false" includedJRE="windows-amd64-1.7.0_07" manualJREEntry="false" bundleType="1" jreURL="" jreFtpURL="" jreShared="false" directDownload="false" customInstallBaseDir="c:" createUninstallIcon="true" contentFilesType="1" downloadURL="" runAsAdmin="false">
+    <win32 name="Windows 64-bit w/ JRE" id="198" mediaFileName="${compiler:sys.shortName}_${compiler:sys.platform}_x64_jre_${compiler:sys.version}" installDir="jruby-${compiler:sys.version}" overridePrincipalLanguage="false" requires64bit="true" jreBitType="64" runPostProcessor="false" postProcessor="" failOnPostProcessorError="false" includedJRE="windows-amd64-1.7.0_51" manualJREEntry="false" bundleType="1" jreURL="" jreFtpURL="" jreShared="false" directDownload="false" customInstallBaseDir="c:" createUninstallIcon="true" contentFilesType="1" downloadURL="" runAsAdmin="false">
       <excludedLaunchers />
       <excludedComponents />
       <excludedBeans>

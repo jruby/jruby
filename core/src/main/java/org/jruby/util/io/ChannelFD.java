@@ -5,6 +5,7 @@ import jnr.enxio.channels.NativeSelectableChannel;
 import jnr.posix.FileStat;
 import jnr.posix.POSIX;
 import org.jruby.Ruby;
+import org.jruby.platform.Platform;
 
 import java.io.Closeable;
 import java.io.IOException;
@@ -47,7 +48,7 @@ public class ChannelFD implements Closeable {
     }
 
     public ChannelFD dup() {
-        if (realFileno != -1) {
+        if (realFileno != -1 && !Platform.IS_WINDOWS) {
             // real file descriptors, so we can dup directly
             // TODO: investigate how badly this might damage JVM streams (prediction: not badly)
             return new ChannelFD(new NativeDeviceChannel(posix.dup(realFileno)), posix, filenoUtil);

@@ -1,0 +1,2 @@
+fails(windows bug):The __FILE__ pseudo-variable equals the absolute path of a file loaded by an absolute path
+fails(windows bug):The __FILE__ pseudo-variable equals the absolute path of a file loaded by a relative path

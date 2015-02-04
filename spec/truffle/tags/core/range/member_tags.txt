@@ -1,11 +1,8 @@
 fails:Range#member? returns true if other is an element of self
 fails:Range#member? compares values using <=>
-fails:Range#member? raises an ArgumentError without exactly one argument
 fails:Range#member? returns true if argument is equal to the first value of the range
 fails:Range#member? returns true if argument is equal to the last value of the range
 fails:Range#member? returns true if argument is less than the last value of the range and greater than the first value
-fails:Range#member? returns true if argument is sole element in the range
-fails:Range#member? returns false if range is empty
 fails:Range#member? returns false if the range does not contain the argument
 fails:Range#member? on string elements returns true if other is matched by element.succ
 fails:Range#member? on string elements returns false if other is not matched by element.succ

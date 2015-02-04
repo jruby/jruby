@@ -42,7 +42,7 @@
     <parser.dir>core/src/main/java/org/jruby/parser</parser.dir>
     <jruby.basedir>${basedir}/..</jruby.basedir>
     <rubyspec.dir>${spec.dir}/ruby</rubyspec.dir>
-    <version.ruby.revision>48765</version.ruby.revision>
+    <version.ruby.revision>49005</version.ruby.revision>
     <jruby.test.memory>3G</jruby.test.memory>
     <mspec.dir>${spec.dir}/mspec</mspec.dir>
     <build.date>${maven.build.timestamp}</build.date>
@@ -192,17 +192,6 @@
       <groupId>com.martiansoftware</groupId>
       <artifactId>nailgun-server</artifactId>
       <version>0.9.1</version>
-    </dependency>
-    <dependency>
-      <groupId>com.oracle</groupId>
-      <artifactId>truffle</artifactId>
-      <version>0.6</version>
-    </dependency>
-    <dependency>
-      <groupId>com.oracle</groupId>
-      <artifactId>truffle-dsl-processor</artifactId>
-      <version>0.6</version>
-      <scope>provided</scope>
     </dependency>
     <dependency>
       <groupId>junit</groupId>
@@ -435,7 +424,6 @@
             <configuration>
               <annotationProcessors>
                 <annotationProcessor>org.jruby.anno.AnnotationBinder</annotationProcessor>
-                <annotationProcessor>com.oracle.truffle.dsl.processor.TruffleProcessor</annotationProcessor>
               </annotationProcessors>
               <generatedSourcesDirectory>target/generated-sources</generatedSourcesDirectory>
               <compilerArgs>
@@ -521,10 +509,30 @@
         </executions>
       </plugin>
       <plugin>
+        <artifactId>maven-surefire-plugin</artifactId>
+        <configuration>
+          <forkCount>1</forkCount>
+          <reuseForks>false</reuseForks>
+          <systemProperties>
+            <jruby.compat.version>1.9</jruby.compat.version>
+            <jruby.home>${basedir}/..</jruby.home>
+          </systemProperties>
+          <argLine>-Xmx${jruby.test.memory} -XX:MaxPermSize=${jruby.test.memory.permgen} -Dfile.encoding=UTF-8 -Djava.awt.headless=true</argLine>
+          <includes>
+            <include>org/jruby/test/MainTestSuite.java</include>
+            <include>org/jruby/embed/**/*Test*.java</include>
+            <include>org/jruby/util/**/*Test*.java</include>
+          </includes>
+          <additionalClasspathElements>
+            <additionalClasspathElement>${basedir}/src/test/ruby</additionalClasspathElement>
+          </additionalClasspathElements>
+        </configuration>
+      </plugin>
+      <plugin>
         <artifactId>maven-shade-plugin</artifactId>
         <executions>
           <execution>
-            <id>pack jruby.jar</id>
+            <id>create lib/jruby.jar</id>
             <phase>package</phase>
             <goals>
               <goal>shade</goal>
@@ -546,26 +554,6 @@
           </execution>
         </executions>
       </plugin>
-      <plugin>
-        <artifactId>maven-surefire-plugin</artifactId>
-        <configuration>
-          <forkCount>1</forkCount>
-          <reuseForks>false</reuseForks>
-          <systemProperties>
-            <jruby.compat.version>1.9</jruby.compat.version>
-            <jruby.home>${basedir}/..</jruby.home>
-          </systemProperties>
-          <argLine>-Xmx${jruby.test.memory} -XX:MaxPermSize=${jruby.test.memory.permgen} -Dfile.encoding=UTF-8 -Djava.awt.headless=true</argLine>
-          <includes>
-            <include>org/jruby/test/MainTestSuite.java</include>
-            <include>org/jruby/embed/**/*Test*.java</include>
-            <include>org/jruby/util/**/*Test*.java</include>
-          </includes>
-          <additionalClasspathElements>
-            <additionalClasspathElement>${basedir}/src/test/ruby</additionalClasspathElement>
-          </additionalClasspathElements>
-        </configuration>
-      </plugin>
     </plugins>
   </build>
   <profiles>
@@ -578,7 +566,7 @@
             <executions>
               <execution>
                 <id>pack jruby-core-noasm.jar</id>
-                <phase>verify</phase>
+                <phase>package</phase>
                 <goals>
                   <goal>shade</goal>
                 </goals>
@@ -601,7 +589,7 @@
               </execution>
               <execution>
                 <id>pack jruby-core-complete.jar</id>
-                <phase>verify</phase>
+                <phase>package</phase>
                 <goals>
                   <goal>shade</goal>
                 </goals>
@@ -635,7 +623,7 @@
             <executions>
               <execution>
                 <id>pack jruby-core-noasm.jar</id>
-                <phase>verify</phase>
+                <phase>package</phase>
                 <goals>
                   <goal>shade</goal>
                 </goals>
@@ -658,7 +646,7 @@
               </execution>
               <execution>
                 <id>pack jruby-core-complete.jar</id>
-                <phase>verify</phase>
+                <phase>package</phase>
                 <goals>
                   <goal>shade</goal>
                 </goals>
@@ -692,7 +680,7 @@
             <executions>
               <execution>
                 <id>pack jruby-core-noasm.jar</id>
-                <phase>verify</phase>
+                <phase>package</phase>
                 <goals>
                   <goal>shade</goal>
                 </goals>
@@ -715,7 +703,7 @@
               </execution>
               <execution>
                 <id>pack jruby-core-complete.jar</id>
-                <phase>verify</phase>
+                <phase>package</phase>
                 <goals>
                   <goal>shade</goal>
                 </goals>
@@ -749,7 +737,7 @@
             <executions>
               <execution>
                 <id>pack jruby-core-noasm.jar</id>
-                <phase>verify</phase>
+                <phase>package</phase>
                 <goals>
                   <goal>shade</goal>
                 </goals>
@@ -772,7 +760,7 @@
               </execution>
               <execution>
                 <id>pack jruby-core-complete.jar</id>
-                <phase>verify</phase>
+                <phase>package</phase>
                 <goals>
                   <goal>shade</goal>
                 </goals>
@@ -806,7 +794,7 @@
             <executions>
               <execution>
                 <id>pack jruby-core-noasm.jar</id>
-                <phase>verify</phase>
+                <phase>package</phase>
                 <goals>
                   <goal>shade</goal>
                 </goals>
@@ -829,7 +817,7 @@
               </execution>
               <execution>
                 <id>pack jruby-core-complete.jar</id>
-                <phase>verify</phase>
+                <phase>package</phase>
                 <goals>
                   <goal>shade</goal>
                 </goals>
@@ -863,7 +851,7 @@
             <executions>
               <execution>
                 <id>pack jruby-core-noasm.jar</id>
-                <phase>verify</phase>
+                <phase>package</phase>
                 <goals>
                   <goal>shade</goal>
                 </goals>
@@ -886,7 +874,7 @@
               </execution>
               <execution>
                 <id>pack jruby-core-complete.jar</id>
-                <phase>verify</phase>
+                <phase>package</phase>
                 <goals>
                   <goal>shade</goal>
                 </goals>
@@ -920,7 +908,7 @@
             <executions>
               <execution>
                 <id>pack jruby-core-noasm.jar</id>
-                <phase>verify</phase>
+                <phase>package</phase>
                 <goals>
                   <goal>shade</goal>
                 </goals>
@@ -943,7 +931,7 @@
               </execution>
               <execution>
                 <id>pack jruby-core-complete.jar</id>
-                <phase>verify</phase>
+                <phase>package</phase>
                 <goals>
                   <goal>shade</goal>
                 </goals>
@@ -977,7 +965,7 @@
             <executions>
               <execution>
                 <id>pack jruby-core-noasm.jar</id>
-                <phase>verify</phase>
+                <phase>package</phase>
                 <goals>
                   <goal>shade</goal>
                 </goals>
@@ -1000,7 +988,7 @@
               </execution>
               <execution>
                 <id>pack jruby-core-complete.jar</id>
-                <phase>verify</phase>
+                <phase>package</phase>
                 <goals>
                   <goal>shade</goal>
                 </goals>

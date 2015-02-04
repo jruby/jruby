@@ -1,1 +1,0 @@
-fails:Enumerable#inject without inject arguments(legacy rubycon)

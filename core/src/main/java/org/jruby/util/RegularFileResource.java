@@ -17,6 +17,7 @@ import java.nio.channels.FileChannel;
 
 import org.jruby.ext.fcntl.FcntlLibrary;
 import org.jruby.RubyFile;
+import org.jruby.platform.Platform;
 import org.jruby.util.io.ModeFlags;
 import org.jruby.util.io.PosixShim;
 
@@ -154,7 +155,7 @@ class RegularFileResource extends AbstractFileResource {
 
     @Override
     public Channel openChannel(ModeFlags flags, int perm) throws ResourceException {
-        if (posix.isNative()) {
+        if (posix.isNative() && !Platform.IS_WINDOWS) {
             int fd = posix.open(absolutePath(), flags.getFlags(), perm);
             if (fd < 0) {
                 Errno errno = Errno.valueOf(posix.errno());

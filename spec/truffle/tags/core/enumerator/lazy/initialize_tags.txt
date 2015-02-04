@@ -1,10 +1,1 @@
-fails:Enumerator::Lazy#initialize is a private method
-fails:Enumerator::Lazy#initialize returns self
-fails:Enumerator::Lazy#initialize sets nil to size if not given a size
-fails:Enumerator::Lazy#initialize sets nil to size if given size is nil
-fails:Enumerator::Lazy#initialize sets given size to own size if the given size is Float::INFINITY
-fails:Enumerator::Lazy#initialize sets given size to own size if the given size is a Fixnum
-fails:Enumerator::Lazy#initialize sets given size to own size if the given size is a Proc
-fails:Enumerator::Lazy#initialize raises an ArgumentError when block is not given
-fails:Enumerator::Lazy#initialize when the returned lazy enumerator is evaluated by Enumerable#first stops after specified times
 fails:Enumerator::Lazy#initialize on frozen instance raises a RuntimeError

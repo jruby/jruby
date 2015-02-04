@@ -441,12 +441,14 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
 
         case RUNTIME_HELPER: {
             RuntimeHelperCall rhc = (RuntimeHelperCall)instr;
-            result = rhc.callHelper(context, currScope, currDynScope, self, temp, blockType);
-            if (rhc.getResult() != null) {
-                setResult(temp, currDynScope, rhc.getResult(), result);
-            }
+            setResult(temp, currDynScope, rhc.getResult(),
+                    rhc.callHelper(context, currScope, currDynScope, self, temp, blockType));
             break;
         }
+
+        case CHECK_FOR_LJE:
+            ((CheckForLJEInstr) instr).check(context, currDynScope, blockType);
+            break;
 
         case BOX_FLOAT: {
             RubyFloat f = context.runtime.newFloat(getFloatArg(floats, ((BoxFloatInstr)instr).getValue()));
@@ -503,18 +505,19 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
     private static IRubyObject interpret(ThreadContext context, IRubyObject self,
             InterpreterContext interpreterContext, RubyModule implClass,
             String name, IRubyObject[] args, Block block, Block.Type blockType) {
-        Instr[] instrs = interpreterContext.getInstructions();
-        Object[] temp           = interpreterContext.allocateTemporaryVariables();
-        double[] floats         = interpreterContext.allocateTemporaryFloatVariables();
-        long[]   fixnums        = interpreterContext.allocateTemporaryFixnumVariables();
-        boolean[]   booleans    = interpreterContext.allocateTemporaryBooleanVariables();
-        int      n              = instrs.length;
-        int      ipc            = 0;
-        Object   exception      = null;
+        Instr[]   instrs    = interpreterContext.getInstructions();
+        Object[]  temp      = interpreterContext.allocateTemporaryVariables();
+        double[]  floats    = interpreterContext.allocateTemporaryFloatVariables();
+        long[]    fixnums   = interpreterContext.allocateTemporaryFixnumVariables();
+        boolean[] booleans  = interpreterContext.allocateTemporaryBooleanVariables();
+        int       n         = instrs.length;
+        int       ipc       = 0;
+        Object    exception = null;
+
+        StaticScope  currScope = interpreterContext.getStaticScope();
         DynamicScope currDynScope = context.getCurrentScope();
-        StaticScope currScope = interpreterContext.getStaticScope();
-        IRScope scope = currScope.getIRScope();
-        boolean acceptsKeywordArgument = interpreterContext.receivesKeywordArguments();
+        IRScope      scope = currScope.getIRScope();
+        boolean      acceptsKeywordArgument = interpreterContext.receivesKeywordArguments();
 
         // Init profiling this scope
         boolean debug   = IRRuntimeHelpers.isDebug();
@@ -573,7 +576,9 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
                     break;
                 }
             } catch (Throwable t) {
-                extractToMethodToAvoidC2Crash(context, instr, t);
+                if (debug) {
+                    extractToMethodToAvoidC2Crash(context, instr, t);
+                }
 
                 ipc = instr.getRPC();
                 if (debug) {
@@ -732,13 +737,26 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
         Ruby runtime = context.runtime;
         IRScope containingIRScope = evalScope.getStaticScope().getEnclosingScope().getIRScope();
         RootNode rootNode = (RootNode) runtime.parseEval(src.convertToString().getByteList(), file, evalScope, lineNumber);
-        IREvalScript evalScript = IRBuilder.createIRBuilder(runtime, runtime.getIRManager()).buildEvalRoot(evalScope.getStaticScope(), containingIRScope, file, lineNumber, rootNode, evalType);
+        StaticScope staticScope = evalScope.getStaticScope();
+        // Top-level script!
+        IREvalScript script;
 
-        BeginEndInterpreterContext ic = (BeginEndInterpreterContext) evalScript.prepareForInterpretation();
+        if (evalType == EvalType.BINDING_EVAL) {
+            script = new IRBindingEvalScript(runtime.getIRManager(), containingIRScope, file, lineNumber, staticScope, evalType);
+        } else {
+            script = new IREvalScript(runtime.getIRManager(), containingIRScope, file, lineNumber, staticScope, evalType);
+        }
+
+        // We link IRScope to StaticScope because we may add additional variables (like %block).  During execution
+        // we end up growing dynamicscope potentially based on any changes made.
+        staticScope.setIRScope(script);
+
+        IRBuilder.topIRBuilder(runtime.getIRManager(), script).buildEvalRoot(rootNode);
+        BeginEndInterpreterContext ic = (BeginEndInterpreterContext) script.prepareForInterpretation();
 
         if (IRRuntimeHelpers.isDebug()) {
-            LOG.info("Graph:\n" + evalScript.cfg().toStringGraph());
-            LOG.info("CFG:\n" + evalScript.cfg().toStringInstrs());
+            LOG.info("Graph:\n" + script.cfg().toStringGraph());
+            LOG.info("CFG:\n" + script.cfg().toStringInstrs());
         }
 
         return ic;

@@ -1018,19 +1018,10 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      *
      * Return the internal id of an object.
      */
-    @JRubyMethod(name = {"object_id", "__id__"})
+    @JRubyMethod(name = "__id__")
     @Override
     public IRubyObject id() {
         return getRuntime().newFixnum(getObjectId());
-    }
-
-    /** rb_obj_itself
-     *
-     * Identity method for the object.
-     */
-    @JRubyMethod
-    public IRubyObject itself() {
-        return this;
     }
 
     /**
@@ -2042,15 +2033,6 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
             respond = getRuntime().newBoolean(respond.isTrue());
         }
         return respond;
-    }
-
-    /** rb_obj_id_obsolete
-     *
-     * Old id version. This one is bound to the "id" name and will emit a deprecation warning.
-     */
-    public IRubyObject id_deprecated() {
-        getRuntime().getWarnings().warn(ID.DEPRECATED_METHOD, "Object#id will be deprecated; use Object#object_id");
-        return id();
     }
 
     /** rb_obj_id

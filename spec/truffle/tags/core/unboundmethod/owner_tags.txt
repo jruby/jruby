@@ -1,4 +1,0 @@
-fails:UnboundMethod#owner returns the owner of the method
-fails:UnboundMethod#owner returns the name even when aliased
-fails:UnboundMethod#owner returns the class/module it was defined in
-fails:UnboundMethod#owner returns the new owner for aliased methods

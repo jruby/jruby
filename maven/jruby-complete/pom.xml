@@ -49,6 +49,12 @@
     </dependency>
     <dependency>
       <groupId>org.jruby</groupId>
+      <artifactId>jruby-truffle</artifactId>
+      <version>${project.version}</version>
+      <scope>provided</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.jruby</groupId>
       <artifactId>jruby-stdlib</artifactId>
       <version>${project.version}</version>
       <scope>provided</scope>

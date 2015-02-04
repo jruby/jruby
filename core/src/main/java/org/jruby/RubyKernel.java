@@ -60,6 +60,7 @@ import org.jruby.runtime.CallType;
 import org.jruby.runtime.Helpers;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
+import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.backtrace.RubyStackTraceElement;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.load.IAutoloadMethod;
@@ -76,6 +77,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.Map;
 
 import static org.jruby.RubyEnumerator.enumeratorizeWithSize;
@@ -762,13 +764,21 @@ public class RubyKernel {
     @JRubyMethod(name = "local_variables", module = true, visibility = PRIVATE)
     public static RubyArray local_variables19(ThreadContext context, IRubyObject recv) {
         final Ruby runtime = context.runtime;
-        RubyArray localVariables = runtime.newArray();
+        HashSet<String> encounteredLocalVariables = new HashSet<String>();
+        RubyArray allLocalVariables = runtime.newArray();
+        DynamicScope currentScope = context.getCurrentScope();
 
-        for (String name: context.getCurrentScope().getAllNamesInScope()) {
-            if (IdUtil.isLocal(name)) localVariables.append(runtime.newSymbol(name));
+        while (currentScope != null) {
+            for (String name : currentScope.getStaticScope().getVariables()) {
+                if (IdUtil.isLocal(name) && !encounteredLocalVariables.contains(name)) {
+                    allLocalVariables.push(runtime.newSymbol(name));
+                    encounteredLocalVariables.add(name);
+                }
+            }
+            currentScope = currentScope.getParentScope();
         }
 
-        return localVariables;
+        return allLocalVariables;
     }
     
     public static RubyBinding binding(ThreadContext context, IRubyObject recv, Block block) {
@@ -1037,13 +1047,6 @@ public class RubyKernel {
             }
         }
     };
-
-
-    @JRubyMethod(module = true, visibility = PRIVATE)
-    public static IRubyObject callcc(ThreadContext context, IRubyObject recv, Block block) {
-        RubyContinuation continuation = new RubyContinuation(context.runtime);
-        return continuation.enter(context, continuation, block);
-    }
 
     public static IRubyObject caller(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
         return caller20(context, recv, args, block);
@@ -1441,7 +1444,7 @@ public class RubyKernel {
     public static IRubyObject backquote(ThreadContext context, IRubyObject recv, IRubyObject str) {
         Ruby runtime = context.runtime;
 
-        if (runtime.getPosix().isNative()) {
+        if (runtime.getPosix().isNative() && !Platform.IS_WINDOWS) {
             IRubyObject port;
             IRubyObject result;
             OpenFile fptr;
@@ -1538,7 +1541,7 @@ public class RubyKernel {
     public static IRubyObject system19(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
         Ruby runtime = context.runtime;
 
-        if (runtime.getPosix().isNative()) {
+        if (runtime.getPosix().isNative() && !Platform.IS_WINDOWS) {
             // MRI: rb_f_system
             long pid;
             int[] status = new int[1];
@@ -1627,7 +1630,7 @@ public class RubyKernel {
     /* Actual exec definition which calls this internal version is specified 
      * in /core/src/main/ruby/jruby/kernel/kernel.rb.
      */
-    @JRubyMethod(required = 4, module = true, visibility = PRIVATE)
+    @JRubyMethod(required = 4, visibility = PRIVATE)
     public static IRubyObject _exec_internal(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
         Ruby runtime = context.runtime;
         
@@ -1945,6 +1948,11 @@ public class RubyKernel {
         return ((RubyBasicObject)self).instance_of_p(context, type);
     }
 
+    @JRubyMethod(name = "itself")
+    public static IRubyObject itself(IRubyObject self) {
+        return self;
+    }
+
     @JRubyMethod(name = {"kind_of?", "is_a?"}, required = 1)
     public static RubyBoolean kind_of_p(ThreadContext context, IRubyObject self, IRubyObject type) {
         return ((RubyBasicObject)self).kind_of_p(context, type);
@@ -1953,6 +1961,11 @@ public class RubyKernel {
     @JRubyMethod(name = "methods", optional = 1)
     public static IRubyObject methods19(ThreadContext context, IRubyObject self, IRubyObject[] args) {
         return ((RubyBasicObject)self).methods19(context, args);
+    }
+
+    @JRubyMethod(name = "object_id")
+    public static IRubyObject object_id(IRubyObject self) {
+        return self.id();
     }
 
     @JRubyMethod(name = "public_methods", optional = 1)
