@@ -74,7 +74,7 @@ public class CachedBoxedDispatchNode extends CachedDispatchNode {
     public static RubyNode[] expandedArgumentNodes(RubyContext context, InternalMethod method, RubyNode[] argumentNodes) {
     	final RubyNode[] result;
     	
-        if (method.getSharedMethodInfo().getKeywordArguments() != null && 
+        if (method != null && method.getSharedMethodInfo().getKeywordArguments() != null && 
         		argumentNodes[argumentNodes.length - 1] instanceof HashLiteralNode) {
         	List<String> kwargs = method.getSharedMethodInfo().getKeywordArguments();
         	
@@ -188,6 +188,7 @@ public class CachedBoxedDispatchNode extends CachedDispatchNode {
                                     CompilerDirectives.unsafeCast(blockObject, RubyProc.class, true, false),
                                     CompilerDirectives.unsafeCast(executeArguments(frame, argumentsObjects), Object[].class, true)));
                 } else {
+                	Object args = executeArguments(frame, argumentsObjects);
                     return callNode.call(
                             frame,
                             RubyArguments.pack(
@@ -195,7 +196,7 @@ public class CachedBoxedDispatchNode extends CachedDispatchNode {
                                     method.getDeclarationFrame(),
                                     receiverObject,
                                     CompilerDirectives.unsafeCast(blockObject, RubyProc.class, true, false),
-                                    CompilerDirectives.unsafeCast(executeArguments(frame, argumentsObjects), Object[].class, true)));
+                                    CompilerDirectives.unsafeCast(args, Object[].class, true)));
                 }
             }
 
