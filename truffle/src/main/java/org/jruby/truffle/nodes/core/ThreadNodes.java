@@ -349,4 +349,27 @@ public abstract class ThreadNodes {
 
     }
 
+    @CoreMethod(names = "wakeup")
+    public abstract static class WakeupNode extends CoreMethodNode {
+
+        public WakeupNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public WakeupNode(WakeupNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public RubyThread wakeup(final RubyThread thread) {
+            notDesignedForCompilation();
+
+            // TODO: should only interrupt sleep
+            thread.interrupt();
+
+            return thread;
+        }
+
+    }
+
 }
