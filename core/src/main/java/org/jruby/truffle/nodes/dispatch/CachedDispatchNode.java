@@ -50,6 +50,11 @@ public abstract class CachedDispatchNode extends DispatchNode {
             throw new UnsupportedOperationException();
         }
 
+        // TODO: delete
+        if (argumentNodes == null) {
+        	int x = 0;
+        }
+        
         this.indirect = indirect;
 
         this.next = next;
