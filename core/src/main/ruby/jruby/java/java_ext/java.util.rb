@@ -2,9 +2,9 @@
 module java::util::Collection
   include Enumerable
   def each
-    iter = iterator
-    while iter.hasNext
-      yield(iter.next)
+    i = iterator
+    while i.hasNext
+      yield i.next
     end
   end
   def <<(a); add(a); self; end
@@ -19,10 +19,10 @@ module java::util::Collection
     nw
   end
   def length
-    self.size
+    size
   end
   def join(*args)
-    self.to_a.join(*args)
+    to_a.join(*args)
   end
   def to_a
     # JRUBY-3910: conversion is faster by going directly to java array
@@ -36,7 +36,7 @@ module java::util::Enumeration
   include Enumerable
 
   def each
-    while (has_more_elements)
+    while has_more_elements
       yield next_element
     end
   end
@@ -46,7 +46,7 @@ module java::util::Iterator
   include Enumerable
 
   def each
-    while (has_next)
+    while has_next
       yield self.next
     end
   end
