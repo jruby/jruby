@@ -34,7 +34,7 @@ public class RubyCallNode extends RubyNode {
 
     @Child private RubyNode receiver;
     @Child private ProcOrNullNode block;
-    private final RubyNode[] arguments;
+    @Children private final RubyNode[] arguments;
 
     private final boolean isVCall;
 

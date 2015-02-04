@@ -28,7 +28,7 @@ public class DispatchHeadNode extends Node {
     protected final LexicalScope lexicalScope;
     protected final DispatchAction dispatchAction;
     protected final boolean isSplatted;
-    protected final RubyNode[] argumentNodes;
+    @Child protected final RubyNode[] argumentNodes;
     
     @Child private DispatchNode first;
 
