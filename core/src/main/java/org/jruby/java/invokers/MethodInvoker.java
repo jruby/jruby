@@ -19,27 +19,34 @@ public abstract class MethodInvoker extends RubyToJavaInvoker {
         trySetAccessible(getAccessibleObjects());
     }
 
+    @Override
     protected JavaCallable createCallable(Ruby ruby, Member member) {
         return JavaMethod.create(ruby, (Method)member);
     }
 
+    @Override
     protected JavaCallable[] createCallableArray(JavaCallable callable) {
         return new JavaMethod[] {(JavaMethod)callable};
     }
 
+    @Override
     protected JavaCallable[] createCallableArray(int size) {
         return new JavaMethod[size];
     }
 
+    @Override
     protected JavaCallable[][] createCallableArrayArray(int size) {
         return new JavaMethod[size][];
     }
 
+    @Override
     protected Class[] getMemberParameterTypes(Member member) {
-        return ((Method)member).getParameterTypes();
+        return ((Method) member).getParameterTypes();
     }
 
+    @Override
     protected boolean isMemberVarArgs(Member member) {
-        return ((Method)member).isVarArgs();
+        return ((Method) member).isVarArgs();
     }
+
 }

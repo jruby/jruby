@@ -1,19 +1,20 @@
 package org.jruby.util.collections;
 
 import java.util.concurrent.ConcurrentHashMap;
-import org.jruby.Ruby;
 
 /**
  * A simple Map-based cache of proxies.
  */
 public class MapBasedClassValue<T> extends ClassValue<T> {
+    
     public MapBasedClassValue(ClassValueCalculator<T> calculator) {
         super(calculator);
     }
 
+    @Override
     public T get(Class cls) {
         T obj = cache.get(cls);
-        
+
         if (obj == null) {
             T newObj = calculator.computeValue(cls);
             obj = cache.putIfAbsent(cls, newObj);
@@ -21,10 +22,10 @@ public class MapBasedClassValue<T> extends ClassValue<T> {
                 obj = newObj;
             }
         }
-        
+
         return obj;
     }
-    
+
     // There's not a compelling reason to keep JavaClass instances in a weak map
     // (any proxies created are [were] kept in a non-weak map, so in most cases they will
     // stick around anyway), and some good reasons not to (JavaClass creation is
