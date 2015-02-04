@@ -9,8 +9,12 @@
  */
 package org.jruby.truffle.nodes.methods.arguments;
 
+import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.SourceSection;
+import com.oracle.truffle.api.utilities.BranchProfile;
+import com.oracle.truffle.api.utilities.ValueProfile;
+
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
@@ -23,6 +27,8 @@ public class ReadKeywordArgumentNode extends RubyNode {
     private final int minimum;
     private final String name;
     private final int kwIndex;
+    private final ValueProfile argumentValueProfile = ValueProfile.createPrimitiveProfile();
+    
     @Child private RubyNode defaultValue;
 
     public ReadKeywordArgumentNode(RubyContext context, SourceSection sourceSection, int minimum, String name, RubyNode defaultValue, int kwIndex) {
@@ -36,12 +42,13 @@ public class ReadKeywordArgumentNode extends RubyNode {
     @Override
     public Object execute(VirtualFrame frame) {
     	if (RubyArguments.isKwOptimized(frame.getArguments())) {
-    		return RubyArguments.getOptimizedKeywordArgument(frame.getArguments(), kwIndex);
+    		return argumentValueProfile.profile(RubyArguments.getOptimizedKeywordArgument(frame.getArguments(), kwIndex));
     	} else {
     		return lookupKeywordInHash(frame);
     	}
     }
 
+    @TruffleBoundary
     public Object lookupKeywordInHash(VirtualFrame frame) {
         notDesignedForCompilation();
 
