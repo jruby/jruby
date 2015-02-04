@@ -97,10 +97,10 @@ public class RubyThread extends RubyBasicObject {
                     context.getSafepointManager().leaveThread();
                     finalThread.manager.unregisterThread(finalThread);
 
-                    finalThread.finished.countDown();
                     status = Status.DEAD;
                     thread = null;
                     releaseOwnedLocks();
+                    finalThread.finished.countDown();
                 }
             }
 
