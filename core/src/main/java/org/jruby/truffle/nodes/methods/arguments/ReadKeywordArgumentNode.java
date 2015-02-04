@@ -22,17 +22,27 @@ public class ReadKeywordArgumentNode extends RubyNode {
 
     private final int minimum;
     private final String name;
+    private final int kwIndex;
     @Child private RubyNode defaultValue;
 
-    public ReadKeywordArgumentNode(RubyContext context, SourceSection sourceSection, int minimum, String name, RubyNode defaultValue) {
+    public ReadKeywordArgumentNode(RubyContext context, SourceSection sourceSection, int minimum, String name, RubyNode defaultValue, int kwIndex) {
         super(context, sourceSection);
         this.minimum = minimum;
         this.name = name;
         this.defaultValue = defaultValue;
+        this.kwIndex = kwIndex;
     }
 
     @Override
     public Object execute(VirtualFrame frame) {
+    	if (RubyArguments.isKwOptimized(frame.getArguments())) {
+    		return RubyArguments.getOptimizedKeywordArgument(frame.getArguments(), kwIndex);
+    	} else {
+    		return lookupKeywordInHash(frame);
+    	}
+    }
+
+    public Object lookupKeywordInHash(VirtualFrame frame) {
         notDesignedForCompilation();
 
         final RubyHash hash = getKeywordsHash(frame);
@@ -56,7 +66,7 @@ public class ReadKeywordArgumentNode extends RubyNode {
 
         return value;
     }
-
+    
     private RubyHash getKeywordsHash(VirtualFrame frame) {
         if (RubyArguments.getUserArgumentsCount(frame.getArguments()) <= minimum) {
             return null;

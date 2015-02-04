@@ -36,6 +36,7 @@ public class SharedMethodInfo {
     private final org.jruby.ast.Node parseTree;
     private final boolean alwaysSplit;
     private final List<String> keywordArguments;
+    private final int countKwArgs;
     
     public SharedMethodInfo(SourceSection sourceSection, LexicalScope lexicalScope, String name, boolean isBlock, org.jruby.ast.Node parseTree, boolean alwaysSplit) {
         assert sourceSection != null;
@@ -48,6 +49,7 @@ public class SharedMethodInfo {
         this.parseTree = parseTree;
         this.alwaysSplit = alwaysSplit;
         keywordArguments = null;
+        countKwArgs = 0;
     }
     
     public SharedMethodInfo(SourceSection sourceSection, LexicalScope lexicalScope, String name, boolean isBlock, org.jruby.ast.Node parseTree, boolean alwaysSplit, ArgsNode argsNode) {
@@ -75,10 +77,10 @@ public class SharedMethodInfo {
     				throw new UnsupportedOperationException("unsupported keyword arg " + node);
     			}
     		}
-    		
-    		Collections.sort(keywordArguments);
+    		countKwArgs = keywordArguments.size();
     	} else {
     		keywordArguments = null;
+    		countKwArgs = 0;
     	}
     }
     

@@ -13,11 +13,13 @@ import com.oracle.truffle.api.frame.MaterializedFrame;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.ExplodeLoop;
 
+import org.jruby.truffle.nodes.methods.MarkerNode;
 import org.jruby.truffle.runtime.core.RubyProc;
 import org.jruby.truffle.runtime.methods.MethodLike;
 import org.jruby.truffle.runtime.util.ArrayUtils;
 
 import java.util.Arrays;
+import java.util.List;
 
 /**
  * Pack and unpack Ruby method arguments to and from an array of objects.
@@ -42,6 +44,14 @@ public final class RubyArguments {
         return packed;
     }
 
+    public static Object getOptimizedKeywordArgument(Object[] arguments, int index) {
+    	return arguments[arguments.length - 1 - index];
+    }
+    
+    public static boolean isKwOptimized(Object[] arguments) {
+    	return MarkerNode.isMarker(arguments[arguments.length - 1]);
+    }
+    
     public static MethodLike getMethod(Object[] arguments) {
         return (MethodLike) arguments[METHOD_INDEX];
     }

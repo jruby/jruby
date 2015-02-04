@@ -19,10 +19,13 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.DirectCallNode;
 import com.oracle.truffle.api.nodes.IndirectCallNode;
 import com.oracle.truffle.api.nodes.InvalidAssumptionException;
+import com.oracle.truffle.api.nodes.UnexpectedResultException;
 
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.literal.HashLiteralNode;
 import org.jruby.truffle.nodes.literal.StringLiteralNode;
+import org.jruby.truffle.nodes.methods.MarkerNode;
+import org.jruby.truffle.nodes.methods.arguments.MissingKeywordArgumentNode;
 import org.jruby.truffle.runtime.DebugOperations;
 import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
@@ -110,19 +113,27 @@ public class CachedBoxedDispatchNode extends CachedDispatchNode {
         		argumentNodes[i] = getHeadNode().getArgumentNodes()[i];
         	}
         	
-        	argumentNodes[i++] = new MarkerNode();
+        	argumentNodes[i++] = new MarkerNode(context, null);
         	HashLiteralNode hashNode = (HashLiteralNode) getHeadNode().getArgumentNodes()[getHeadNode().getArgumentNodes().length - 1];
         	
         	for (String kwarg : kwargs) {
-        		argumentNodes[i] = new MissingKwargNode();
+        		argumentNodes[i] = new MissingKeywordArgumentNode(context, null, kwarg);
         		for (int j = 0; j < hashNode.getKeyValues().length; j += 2) {
-        			String label = ((StringLiteralNode) hashNode.getKeyValues()[j]).executeString(null);
+        			String label;
+					try {
+						label = ((StringLiteralNode) hashNode.getKeyValues()[j]).executeString(null);
         			
-        			if (label.equals(kwarg)) {
-        				argumentNodes[i++] = hashNode.getKeyValues()[j + 1];
-        			}
+	        			if (label.equals(kwarg)) {
+	        				argumentNodes[i++] = hashNode.getKeyValues()[j + 1];
+	        			}
+					} catch (UnexpectedResultException e) {
+						// TODO: throw proper exception
+						throw new RuntimeException("invalid object layout");
+					}
         		}
         	}
+        	
+        	argumentNodes[i++] = new MarkerNode(context, null);
         }
     }
 
