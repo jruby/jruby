@@ -516,7 +516,7 @@ public class InterpreterEngine {
         }
     }
 
-    private static void setResult(Object[] temp, DynamicScope currDynScope, Variable resultVar, Object result) {
+    protected static void setResult(Object[] temp, DynamicScope currDynScope, Variable resultVar, Object result) {
         if (resultVar instanceof TemporaryVariable) {
             // Unboxed Java primitives (float/double/int/long) don't come here because result is an Object
             // So, it is safe to use offset directly without any correction as long as IRScope uses
@@ -531,13 +531,13 @@ public class InterpreterEngine {
         }
     }
 
-    private static void setResult(Object[] temp, DynamicScope currDynScope, Instr instr, Object result) {
+    protected static void setResult(Object[] temp, DynamicScope currDynScope, Instr instr, Object result) {
         if (instr instanceof ResultInstr) {
             setResult(temp, currDynScope, ((ResultInstr) instr).getResult(), result);
         }
     }
 
-    private static Object retrieveOp(Operand r, ThreadContext context, IRubyObject self, DynamicScope currDynScope, StaticScope currScope, Object[] temp) {
+    protected static Object retrieveOp(Operand r, ThreadContext context, IRubyObject self, DynamicScope currDynScope, StaticScope currScope, Object[] temp) {
         Object res;
         if (r instanceof Self) {
             return self;

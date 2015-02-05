@@ -35,7 +35,6 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
     public static final Logger LOG = LoggerFactory.getLogger("Interpreter");
     private static final IRubyObject[] EMPTY_ARGS = new IRubyObject[]{};
     static int interpInstrsCount = 0;
-    private static InterpreterEngine engine = new InterpreterEngine();
 
     // we do not need instances of Interpreter
     // FIXME: Should we make it real singleton and get rid of static methods?
@@ -116,7 +115,7 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
            InterpreterContext ic, RubyModule clazz, String name) {
         try {
             ThreadContext.pushBacktrace(context, name, ic.getFileName(), context.getLine());
-            return engine.interpret(context, self, ic, clazz, name, IRubyObject.NULL_ARRAY, Block.NULL_BLOCK, null);
+            return ic.engine.interpret(context, self, ic, clazz, name, IRubyObject.NULL_ARRAY, Block.NULL_BLOCK, null);
         } finally {
             ThreadContext.popBacktrace(context);
         }
@@ -126,7 +125,7 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
            InterpreterContext ic, RubyModule clazz, IRubyObject[] args, String name, Block block, Block.Type blockType) {
         try {
             ThreadContext.pushBacktrace(context, name, ic.getFileName(), context.getLine());
-            return engine.interpret(context, self, ic, clazz, name, args, block, blockType);
+            return ic.engine.interpret(context, self, ic, clazz, name, args, block, blockType);
         } finally {
             ThreadContext.popBacktrace(context);
         }
@@ -136,7 +135,7 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
             InterpreterContext ic, IRubyObject[] args, String name, Block block, Block.Type blockType) {
         try {
             ThreadContext.pushBacktrace(context, name, ic.getFileName(), context.getLine());
-            return engine.interpret(context, self, ic, null, name, args, block, blockType);
+            return ic.engine.interpret(context, self, ic, null, name, args, block, blockType);
         } finally {
             ThreadContext.popBacktrace(context);
         }
@@ -151,7 +150,7 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
         try {
             if (!isSynthetic) ThreadContext.pushBacktrace(context, name, ic.getFileName(), context.getLine());
 
-            return engine.interpret(context, self, ic, method.getImplementationClass().getMethodLocation(), name, block, null);
+            return ic.engine.interpret(context, self, ic, method.getImplementationClass().getMethodLocation(), name, block, null);
         } finally {
             if (!isSynthetic) ThreadContext.popBacktrace(context);
         }
@@ -166,7 +165,7 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
         try {
             if (!isSynthetic) ThreadContext.pushBacktrace(context, name, ic.getFileName(), context.getLine());
 
-            return engine.interpret(context, self, ic, method.getImplementationClass().getMethodLocation(), name, arg1, block, null);
+            return ic.engine.interpret(context, self, ic, method.getImplementationClass().getMethodLocation(), name, arg1, block, null);
         } finally {
             if (!isSynthetic) ThreadContext.popBacktrace(context);
         }
@@ -181,7 +180,7 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
         try {
             if (!isSynthetic) ThreadContext.pushBacktrace(context, name, ic.getFileName(), context.getLine());
 
-            return engine.interpret(context, self, ic, method.getImplementationClass().getMethodLocation(), name, arg1, arg2, block, null);
+            return ic.engine.interpret(context, self, ic, method.getImplementationClass().getMethodLocation(), name, arg1, arg2, block, null);
         } finally {
             if (!isSynthetic) ThreadContext.popBacktrace(context);
         }
@@ -196,7 +195,7 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
         try {
             if (!isSynthetic) ThreadContext.pushBacktrace(context, name, ic.getFileName(), context.getLine());
 
-            return engine.interpret(context, self, ic, method.getImplementationClass().getMethodLocation(), name, arg1, arg2, arg3, block, null);
+            return ic.engine.interpret(context, self, ic, method.getImplementationClass().getMethodLocation(), name, arg1, arg2, arg3, block, null);
         } finally {
             if (!isSynthetic) ThreadContext.popBacktrace(context);
         }
@@ -211,7 +210,7 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
         try {
             if (!isSynthetic) ThreadContext.pushBacktrace(context, name, ic.getFileName(), context.getLine());
 
-            return engine.interpret(context, self, ic, method.getImplementationClass().getMethodLocation(), name, args, block, null);
+            return ic.engine.interpret(context, self, ic, method.getImplementationClass().getMethodLocation(), name, args, block, null);
         } finally {
             if (!isSynthetic) ThreadContext.popBacktrace(context);
         }
