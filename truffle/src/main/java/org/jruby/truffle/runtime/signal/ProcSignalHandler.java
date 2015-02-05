@@ -43,7 +43,4 @@ public class ProcSignalHandler implements SignalHandler {
 
     }
 
-    public RubyProc getProc() {
-        return proc;
-    }
 }
