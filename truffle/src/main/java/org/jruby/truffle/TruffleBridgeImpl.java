@@ -21,21 +21,16 @@ import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.TopLevelRaiseHandler;
 import org.jruby.truffle.nodes.control.SequenceNode;
 import org.jruby.truffle.nodes.core.*;
-import org.jruby.truffle.nodes.methods.SetMethodDeclarationContext;
 import org.jruby.truffle.nodes.rubinius.ByteArrayNodesFactory;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyArray;
 import org.jruby.truffle.runtime.core.RubyClass;
-import org.jruby.truffle.runtime.rubinius.RubiniusByteArray;
 import org.jruby.truffle.runtime.util.FileUtils;
 import org.jruby.truffle.translator.NodeWrapper;
 import org.jruby.truffle.translator.TranslatorDriver;
 import org.jruby.util.cli.Options;
 
 import java.io.File;
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -68,7 +63,6 @@ public class TruffleBridgeImpl implements TruffleBridge {
         CoreMethodNodeManager.addCoreMethodNodes(rubyObjectClass, BindingNodesFactory.getFactories());
         CoreMethodNodeManager.addCoreMethodNodes(rubyObjectClass, BignumNodesFactory.getFactories());
         CoreMethodNodeManager.addCoreMethodNodes(rubyObjectClass, ClassNodesFactory.getFactories());
-        CoreMethodNodeManager.addCoreMethodNodes(rubyObjectClass, ComparableNodesFactory.getFactories());
         CoreMethodNodeManager.addCoreMethodNodes(rubyObjectClass, DirNodesFactory.getFactories());
         CoreMethodNodeManager.addCoreMethodNodes(rubyObjectClass, ExceptionNodesFactory.getFactories());
         CoreMethodNodeManager.addCoreMethodNodes(rubyObjectClass, FalseClassNodesFactory.getFactories());

@@ -99,7 +99,6 @@ public class CoreLibrary {
     @CompilerDirectives.CompilationFinal private RubyClass trueClass;
     @CompilerDirectives.CompilationFinal private RubyClass typeErrorClass;
     @CompilerDirectives.CompilationFinal private RubyClass zeroDivisionErrorClass;
-    @CompilerDirectives.CompilationFinal private RubyModule comparableModule;
     @CompilerDirectives.CompilationFinal private RubyModule configModule;
     @CompilerDirectives.CompilationFinal private RubyModule enumerableModule;
     @CompilerDirectives.CompilationFinal private RubyModule errnoModule;
@@ -229,7 +228,7 @@ public class CoreLibrary {
         bignumClass = new RubyClass(context, objectClass, integerClass, "Bignum");
         bignumClass.setAllocator(new RubyBignum.BignumAllocator());
         bindingClass = new RubyClass(context, objectClass, objectClass, "Binding");
-        comparableModule = new RubyModule(context, objectClass, "Comparable");
+        RubyModule comparableModule = new RubyModule(context, objectClass, "Comparable");
         complexClass = new RubyClass(context, objectClass, numericClass, "Complex");
         configModule = new RubyModule(context, objectClass, "Config");
         continuationClass = new RubyClass(context, objectClass, objectClass, "Continuation");
