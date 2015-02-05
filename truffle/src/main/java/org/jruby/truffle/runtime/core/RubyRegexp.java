@@ -270,27 +270,58 @@ public class RubyRegexp extends RubyBasicObject {
     }
 
     @CompilerDirectives.TruffleBoundary
-    public RubyString[] split(String string) {
+    public RubyString[] split(final RubyString string, final boolean useLimit, final int limit) {
         final RubyContext context = getContext();
 
-        final byte[] stringBytes = string.getBytes(StandardCharsets.UTF_8);
-        final Matcher matcher = regex.matcher(stringBytes);
+        final ByteList bytes = string.getBytes();
+        final byte[] byteArray = bytes.bytes();
+        final int begin = bytes.getBegin();
+        final int len = bytes.getRealSize();
+        final int range = begin + len;
+        final Encoding encoding = string.getBytes().getEncoding();
+        final Matcher matcher = regex.matcher(byteArray);
 
         final ArrayList<RubyString> strings = new ArrayList<>();
 
-        int p = 0;
+        int end, beg = 0;
+        int i = 1;
+        boolean lastNull = false;
+        int start = begin;
 
-        while (true) {
-            final int match = matcher.search(p, stringBytes.length, Option.DEFAULT);
+        if (useLimit && limit == 1) {
+            strings.add(string);
 
-            if (match == -1) {
-                strings.add(context.makeString(StandardCharsets.UTF_8.decode(ByteBuffer.wrap(stringBytes, p, stringBytes.length - p)).toString()));
-                break;
-            } else {
-                strings.add(context.makeString(StandardCharsets.UTF_8.decode(ByteBuffer.wrap(stringBytes, p, matcher.getBegin() - p)).toString()));
+        } else {
+            while ((end = matcher.search(start, range, Option.NONE)) >= 0) {
+                if (start == end + begin && matcher.getBegin() == matcher.getEnd()) {
+                    if (len == 0) {
+                        strings.add(context.makeString(""));
+                        break;
+
+                    } else if (lastNull) {
+                        final int substringLength = StringSupport.length(encoding, byteArray, begin + beg, range);
+                        strings.add(context.makeString(bytes.makeShared(beg, substringLength).dup()));
+                        beg = start - begin;
+
+                    } else {
+                        start += start == range ? 1 : StringSupport.length(encoding, byteArray, start, range);
+                        lastNull = true;
+                        continue;
+                    }
+                } else {
+                    strings.add(context.makeString(bytes.makeShared(beg, end - beg).dup()));
+                    beg = matcher.getEnd();
+                    start = begin + beg;
+                }
+                lastNull = false;
+
+                //if (captures) populateCapturesForSplit(runtime, result, matcher, true);
+                if (useLimit && limit <= ++i) break;
             }
 
-            p = matcher.getEnd();
+            if (len > 0 && (useLimit || len > beg || limit < 0)) {
+                strings.add(context.makeString(bytes.makeShared(beg, len - beg).dup()));
+            }
         }
 
         return strings.toArray(new RubyString[strings.size()]);

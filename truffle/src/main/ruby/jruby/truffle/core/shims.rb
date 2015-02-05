@@ -155,3 +155,38 @@ class Module
   end
 
 end
+
+class String
+  def gsub(*args)
+    dup.gsub!(*args)
+  end
+end
+
+class Array
+  def rindex(obj)
+    index = nil
+
+    each_with_index do |e, i|
+      index = i if e == obj
+    end
+
+    index
+  end
+end
+
+module Kernel
+  def inspect
+    ivars = instance_variables
+
+    return to_s if ivars.empty?
+
+    prefix = "#<#{self.class}:0x#{self.object_id.to_s(16)}"
+
+    parts = []
+    ivars.each do |var|
+      parts << "#{var}=#{instance_variable_get(var).inspect}"
+    end
+
+    "#{prefix} #{parts.join(', ')}>"
+  end
+end

@@ -627,24 +627,16 @@ public class CoreLibrary {
         return typeError(String.format("%s#%s should return %s", object, method, expectedType), currentNode);
     }
 
-    public RubyException typeErrorCantConvertTo(String from, String to, Node currentNode) {
+    public RubyException typeErrorCantConvertTo(Object from, RubyClass to, String methodUsed, Object result, Node currentNode) {
         CompilerAsserts.neverPartOfCompilation();
-        return typeError(String.format("can't convert %s to %s", from, to), currentNode);
-    }
-
-    public RubyException typeErrorCantConvertTo(String from, String to, String methodUsed, String given, Node currentNode) {
-        CompilerAsserts.neverPartOfCompilation();
-        return typeError(String.format("can't convert %s to %s (%s#%s gives %s)", from, to, from, methodUsed, given), currentNode);
-    }
-
-    public RubyException typeErrorCantConvertInto(String from, String to, Node currentNode) {
-        CompilerAsserts.neverPartOfCompilation();
-        return typeError(String.format("can't convert %s into %s", from, to), currentNode);
+        String fromClass = getLogicalClass(from).getName();
+        return typeError(String.format("can't convert %s to %s (%s#%s gives %s)",
+                fromClass, to.getName(), fromClass, methodUsed, getLogicalClass(result).toString()), currentNode);
     }
 
     public RubyException typeErrorCantConvertInto(Object from, RubyClass to, Node currentNode) {
         CompilerAsserts.neverPartOfCompilation();
-        return typeErrorCantConvertInto(getLogicalClass(from).getName(), to.getName(), currentNode);
+        return typeError(String.format("can't convert %s into %s", getLogicalClass(from).getName(), to.getName()), currentNode);
     }
 
     public RubyException typeErrorIsNotA(String value, String expectedType, Node currentNode) {

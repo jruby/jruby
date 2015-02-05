@@ -112,11 +112,7 @@ public abstract class SplatCastNode extends RubyNode {
                 return RubyArray.fromObject(getContext().getCoreLibrary().getArrayClass(), object);
             } else {
                 throw new RaiseException(getContext().getCoreLibrary().typeErrorCantConvertTo(
-                        getContext().getCoreLibrary().getLogicalClass(object).getName(),
-                        "Array",
-                        method,
-                        getContext().getCoreLibrary().getLogicalClass(array).getName(),
-                        this)
+                        object, getContext().getCoreLibrary().getArrayClass(), method, array, this)
                 );
             }
         }

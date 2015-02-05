@@ -661,10 +661,14 @@ public abstract class ArrayNodes {
             fallbackNode = prev.fallbackNode;
         }
 
+        // Simple indexing
+
         @Specialization
         public Object index(VirtualFrame frame, RubyArray array, int index, UndefinedPlaceholder undefined) {
             return atNode.executeAt(frame, array, index);
         }
+
+        // Slice with two fixnums
 
         @Specialization(guards = "isIntegerFixnum")
         public Object sliceIntegerFixnum(RubyArray array, int start, int length) {
@@ -721,6 +725,8 @@ public abstract class ArrayNodes {
                 return new RubyArray(array.getLogicalClass(), ArrayUtils.extractRange((Object[]) array.getStore(), normalisedIndex, end), end - normalisedIndex);
             }
         }
+
+        // Slice with a range
 
         @Specialization(guards = "isIntegerFixnum")
         public Object sliceIntegerFixnum(RubyArray array, RubyRange.IntegerFixnumRange range, UndefinedPlaceholder undefined) {
@@ -802,6 +808,8 @@ public abstract class ArrayNodes {
             }
         }
 
+        // Fallbacks
+
         @Specialization(guards = {"!isInteger(arguments[1])", "!isIntegerFixnumRange(arguments[1])"})
         public Object sliceFallback(VirtualFrame frame, RubyArray array, Object a, UndefinedPlaceholder undefined) {
             notDesignedForCompilation();
@@ -860,42 +868,79 @@ public abstract class ArrayNodes {
             super(prev);
         }
 
+        // Set a simple index in an empty array
+
         @Specialization(guards = "isNull")
-        public Object setNullIntegerFixnum(RubyArray array, int index, int value, UndefinedPlaceholder unused) {
+        public Object setNull(RubyArray array, int index, int value, UndefinedPlaceholder unused) {
             if (index == 0) {
                 array.setStore(new int[]{value}, 1);
             } else {
-                CompilerDirectives.transferToInterpreter();
-                throw new UnsupportedOperationException();
+                beyondBranch.enter();
+                final Object[] newStore = new Object[index + 1];
+                for (int n = 0; n < index; n++) {
+                    newStore[n] = getContext().getCoreLibrary().getNilObject();
+                }
+                newStore[index] = value;
+                array.setStore(newStore, newStore.length);
             }
 
             return value;
         }
 
         @Specialization(guards = "isNull")
-        public Object setNullLongFixnum(RubyArray array, int index, long value, UndefinedPlaceholder unused) {
+        public Object setNull(RubyArray array, int index, long value, UndefinedPlaceholder unused) {
             if (index == 0) {
                 array.setStore(new long[]{value}, 1);
             } else {
-                CompilerDirectives.transferToInterpreter();
-                throw new UnsupportedOperationException();
+                beyondBranch.enter();
+                final Object[] newStore = new Object[index + 1];
+                for (int n = 0; n < index; n++) {
+                    newStore[n] = getContext().getCoreLibrary().getNilObject();
+                }
+                newStore[index] = value;
+                array.setStore(newStore, newStore.length);
             }
 
             return value;
         }
 
         @Specialization(guards = "isNull")
-        public Object setNullObject(RubyArray array, int index, Object value, UndefinedPlaceholder unused) {
+        public Object setNull(RubyArray array, int index, double value, UndefinedPlaceholder unused) {
+            if (index == 0) {
+                array.setStore(new double[]{value}, 1);
+            } else {
+                beyondBranch.enter();
+                final Object[] newStore = new Object[index + 1];
+                for (int n = 0; n < index; n++) {
+                    newStore[n] = getContext().getCoreLibrary().getNilObject();
+                }
+                newStore[index] = value;
+                array.setStore(newStore, newStore.length);
+            }
+
+            return value;
+        }
+
+        @Specialization(guards = "isNull")
+        public Object setNull(RubyArray array, int index, Object value, UndefinedPlaceholder unused) {
             notDesignedForCompilation();
 
             if (index == 0) {
                 array.slowPush(value);
             } else {
-                throw new UnsupportedOperationException();
+                beyondBranch.enter();
+                final Object[] newStore = new Object[index + 1];
+                for (int n = 0; n < index; n++) {
+                    newStore[n] = getContext().getCoreLibrary().getNilObject();
+                }
+                newStore[index] = value;
+                array.setStore(newStore, newStore.length);
             }
 
             return value;
         }
+
+        // Set a simple index in an existing array
 
         @Specialization(guards = "isIntegerFixnum")
         public int setIntegerFixnum(RubyArray array, int index, int value, UndefinedPlaceholder unused) {
@@ -921,7 +966,15 @@ public abstract class ArrayNodes {
                     array.setSize(array.getSize() + 1);
                 } else if (normalisedIndex > array.getSize()) {
                     beyondBranch.enter();
-                    throw new UnsupportedOperationException();
+                    final Object[] newStore = new Object[index + 1];
+                    for (int n = 0; n < array.getSize(); n++) {
+                        newStore[n] = store[n];
+                    }
+                    for (int n = array.getSize(); n < index; n++) {
+                        newStore[n] = getContext().getCoreLibrary().getNilObject();
+                    }
+                    newStore[index] = value;
+                    array.setStore(newStore, newStore.length);
                 }
             } else {
                 store[normalisedIndex] = value;
@@ -960,45 +1013,21 @@ public abstract class ArrayNodes {
                     array.setSize(array.getSize() + 1);
                 } else if (normalisedIndex > array.getSize()) {
                     beyondBranch.enter();
-                    throw new UnsupportedOperationException();
+                    final Object[] newStore = new Object[index + 1];
+                    for (int n = 0; n < array.getSize(); n++) {
+                        newStore[n] = store[n];
+                    }
+                    for (int n = array.getSize(); n < index; n++) {
+                        newStore[n] = getContext().getCoreLibrary().getNilObject();
+                    }
+                    newStore[index] = value;
+                    array.setStore(newStore, newStore.length);
                 }
             } else {
                 store[normalisedIndex] = value;
             }
 
             return value;
-        }
-
-        @Specialization(guards = "isIntegerFixnum")
-        public RubyArray setIntegerFixnum(RubyArray array, int start, int length, RubyArray value) {
-            notDesignedForCompilation();
-
-            if (length < 0) {
-                CompilerDirectives.transferToInterpreter();
-                throw new RaiseException(getContext().getCoreLibrary().indexNegativeLength(length, this));
-            }
-
-            if (value.getSize() == 0) {
-                final int begin = array.normaliseIndex(start);
-                final int exclusiveEnd = begin + length;
-                int[] store = (int[]) array.getStore();
-
-                if (begin < 0) {
-                    tooSmallBranch.enter();
-                    CompilerDirectives.transferToInterpreter();
-                    throw new RaiseException(getContext().getCoreLibrary().indexTooSmallError("array", start, array.getSize(), this));
-                } else if (exclusiveEnd > array.getSize()) {
-                    throw new UnsupportedOperationException();
-                }
-
-                // TODO: This is a moving overlapping memory, should we use sth else instead?
-                System.arraycopy(store, exclusiveEnd, store, begin, array.getSize() - exclusiveEnd);
-                array.setSize(array.getSize() - length);
-
-                return value;
-            } else {
-                throw new UnsupportedOperationException();
-            }
         }
 
         @Specialization(guards = "isLongFixnum")
@@ -1031,7 +1060,15 @@ public abstract class ArrayNodes {
                     array.setSize(array.getSize() + 1);
                 } else if (normalisedIndex > array.getSize()) {
                     beyondBranch.enter();
-                    throw new UnsupportedOperationException();
+                    final Object[] newStore = new Object[index + 1];
+                    for (int n = 0; n < array.getSize(); n++) {
+                        newStore[n] = store[n];
+                    }
+                    for (int n = array.getSize(); n < index; n++) {
+                        newStore[n] = getContext().getCoreLibrary().getNilObject();
+                    }
+                    newStore[index] = value;
+                    array.setStore(newStore, newStore.length);
                 }
             } else {
                 store[normalisedIndex] = value;
@@ -1064,7 +1101,15 @@ public abstract class ArrayNodes {
                     array.setSize(array.getSize() + 1);
                 } else if (normalisedIndex > array.getSize()) {
                     beyondBranch.enter();
-                    throw new UnsupportedOperationException();
+                    final Object[] newStore = new Object[index + 1];
+                    for (int n = 0; n < array.getSize(); n++) {
+                        newStore[n] = store[n];
+                    }
+                    for (int n = array.getSize(); n < index; n++) {
+                        newStore[n] = getContext().getCoreLibrary().getNilObject();
+                    }
+                    newStore[index] = value;
+                    array.setStore(newStore, newStore.length);
                 }
             } else {
                 store[normalisedIndex] = value;
@@ -1097,7 +1142,15 @@ public abstract class ArrayNodes {
                     array.setSize(array.getSize() + 1);
                 } else if (normalisedIndex > array.getSize()) {
                     beyondBranch.enter();
-                    throw new UnsupportedOperationException();
+                    final Object[] newStore = new Object[index + 1];
+                    for (int n = 0; n < array.getSize(); n++) {
+                        newStore[n] = store[n];
+                    }
+                    for (int n = array.getSize(); n < index; n++) {
+                        newStore[n] = getContext().getCoreLibrary().getNilObject();
+                    }
+                    newStore[index] = value;
+                    array.setStore(newStore, newStore.length);
                 }
             } else {
                 store[normalisedIndex] = value;
@@ -1105,6 +1158,8 @@ public abstract class ArrayNodes {
 
             return value;
         }
+
+        // Set a slice of the array to a particular value
 
         @Specialization(guards = { "isObject", "!isRubyArray(arguments[3])", "!isUndefinedPlaceholder(arguments[3])" })
         public Object setObject(RubyArray array, int start, int length, Object value) {
@@ -1120,6 +1175,40 @@ public abstract class ArrayNodes {
             if (begin >= array.getSize()) {
                 // We don't care of length in this case
                 return setObject(array, start, value, UndefinedPlaceholder.INSTANCE);
+            } else {
+                throw new UnsupportedOperationException();
+            }
+        }
+
+        // Set a slice of the array to another array
+
+        @Specialization(guards = "isIntegerFixnum")
+        public RubyArray setIntegerFixnum(RubyArray array, int start, int length, RubyArray value) {
+            notDesignedForCompilation();
+
+            if (length < 0) {
+                CompilerDirectives.transferToInterpreter();
+                throw new RaiseException(getContext().getCoreLibrary().indexNegativeLength(length, this));
+            }
+
+            if (value.getSize() == 0) {
+                final int begin = array.normaliseIndex(start);
+                final int exclusiveEnd = begin + length;
+                int[] store = (int[]) array.getStore();
+
+                if (begin < 0) {
+                    tooSmallBranch.enter();
+                    CompilerDirectives.transferToInterpreter();
+                    throw new RaiseException(getContext().getCoreLibrary().indexTooSmallError("array", start, array.getSize(), this));
+                } else if (exclusiveEnd > array.getSize()) {
+                    throw new UnsupportedOperationException();
+                }
+
+                // TODO: This is a moving overlapping memory, should we use sth else instead?
+                System.arraycopy(store, exclusiveEnd, store, begin, array.getSize() - exclusiveEnd);
+                array.setSize(array.getSize() - length);
+
+                return value;
             } else {
                 throw new UnsupportedOperationException();
             }

@@ -12,12 +12,15 @@ package org.jruby.truffle.nodes.core;
 import com.oracle.truffle.api.Truffle;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.source.SourceSection;
+
 import org.jruby.common.IRubyWarnings;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.UndefinedPlaceholder;
 import org.jruby.truffle.runtime.core.RubyProc;
 import org.jruby.truffle.runtime.core.RubyString;
+import org.jruby.truffle.runtime.core.RubySymbol;
 import org.jruby.truffle.runtime.signal.ProcSignalHandler;
+
 import sun.misc.Signal;
 import sun.misc.SignalHandler;
 
@@ -36,10 +39,30 @@ public abstract class SignalNodes {
         }
 
         @Specialization
-        public Object trap(RubyString signalName, UndefinedPlaceholder command, final RubyProc block) {
+        public Object trap(RubySymbol signalName, UndefinedPlaceholder command, RubyProc block) {
+            return trap(signalName.toString(), block);
+        }
+
+        @Specialization
+        public Object trap(RubyString signalName, UndefinedPlaceholder command, RubyProc block) {
+            return trap(signalName.toString(), block);
+        }
+
+        @Specialization
+        public Object trap(RubySymbol signalName, RubyProc proc, UndefinedPlaceholder block) {
+            return trap(signalName.toString(), proc);
+        }
+
+        @Specialization
+        public Object trap(RubyString signalName, RubyProc proc, UndefinedPlaceholder block) {
+            return trap(signalName.toString(), proc);
+        }
+
+        @SuppressWarnings("restriction")
+        private Object trap(String signalName, RubyProc block) {
             notDesignedForCompilation();
 
-            final Signal signal = new Signal(signalName.toString());
+            final Signal signal = new Signal(signalName);
 
             final SignalHandler newHandler = new ProcSignalHandler(getContext(), block);
             final SignalHandler oldHandler = Signal.handle(signal, newHandler);
@@ -52,7 +75,16 @@ public abstract class SignalNodes {
         }
 
         @Specialization
+        public Object trap(RubySymbol signalName, RubyString command, UndefinedPlaceholder block) {
+            return trap(signalName.toString(), command, block);
+        }
+
+        @Specialization
         public Object trap(RubyString signalName, RubyString command, UndefinedPlaceholder block) {
+            return trap(signalName.toString(), command, block);
+        }
+
+        private Object trap(String signalName, RubyString command, UndefinedPlaceholder block) {
             notDesignedForCompilation();
             getContext().getRuntime().getWarnings().warn(IRubyWarnings.ID.TRUFFLE, Truffle.getRuntime().getCallerFrame().getCallNode().getEncapsulatingSourceSection().getSource().getName(), Truffle.getRuntime().getCallerFrame().getCallNode().getEncapsulatingSourceSection().getStartLine(), "Signal#trap with a string command not implemented yet");
             return getContext().getCoreLibrary().getNilObject();

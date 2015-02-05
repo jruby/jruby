@@ -23,6 +23,8 @@ import org.jruby.runtime.Visibility;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.cast.BooleanCastNode;
 import org.jruby.truffle.nodes.cast.BooleanCastNodeFactory;
+import org.jruby.truffle.nodes.cast.NumericToFloatNode;
+import org.jruby.truffle.nodes.cast.NumericToFloatNodeFactory;
 import org.jruby.truffle.nodes.control.WhileNode;
 import org.jruby.truffle.nodes.core.KernelNodesFactory.SameOrEqualNodeFactory;
 import org.jruby.truffle.nodes.dispatch.*;
@@ -853,7 +855,7 @@ public abstract class KernelNodes {
 
             final BufferedReader reader = new BufferedReader(new InputStreamReader(in));
 
-            final String line = getContext().getThreadManager().runOnce(new BlockingActionWithoutGlobalLock<String>() {
+            final String line = getContext().getThreadManager().runUntilResult(new BlockingActionWithoutGlobalLock<String>() {
                 @Override
                 public String block() throws InterruptedException {
                     return gets(reader);
@@ -878,7 +880,7 @@ public abstract class KernelNodes {
         @TruffleBoundary
         private static String gets(BufferedReader reader) throws InterruptedException {
             try {
-                return reader.readLine();
+                return reader.readLine() + "\n";
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
@@ -1249,8 +1251,15 @@ public abstract class KernelNodes {
 
             try {
                 getContext().loadFile(file.toString(), this);
-            } catch (Throwable t) {
-                throw new RaiseException(getContext().getCoreLibrary().loadErrorCannotLoad(file.toString(), this));
+            } catch (RuntimeException e) {
+                // TODO (nirvdrum 05-Feb-15) This is ugly, but checked exceptions are wrapped up the call stack. We need to revisit this.
+                if (e.getCause() instanceof java.io.IOException) {
+                    CompilerDirectives.transferToInterpreter();
+
+                    throw new RaiseException(getContext().getCoreLibrary().loadErrorCannotLoad(file.toString(), this));
+                } else {
+                    throw e;
+                }
             }
 
             return true;
@@ -1927,7 +1936,7 @@ public abstract class KernelNodes {
     @CoreMethod(names = "sleep", isModuleFunction = true, optional = 1)
     public abstract static class SleepNode extends CoreMethodNode {
 
-        @Child CallDispatchHeadNode floatNode;
+        @Child NumericToFloatNode floatCastNode;
 
         public SleepNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -1941,11 +1950,6 @@ public abstract class KernelNodes {
         public long sleep(UndefinedPlaceholder duration) {
             // TODO: this should actually be "forever".
             return doSleepMillis(Long.MAX_VALUE);
-        }
-
-        @Specialization(guards = "isRubiniusUndefined")
-        public long sleep(RubyBasicObject duration) {
-            return sleep(UndefinedPlaceholder.INSTANCE);
         }
 
         @Specialization
@@ -1963,22 +1967,18 @@ public abstract class KernelNodes {
             return doSleepMillis((long) (duration * 1000));
         }
 
-        @Specialization(guards = "isRational")
+        @Specialization(guards = "isRubiniusUndefined")
+        public long sleep(RubyBasicObject duration) {
+            return sleep(UndefinedPlaceholder.INSTANCE);
+        }
+
+        @Specialization(guards = "!isRubiniusUndefined")
         public long sleep(VirtualFrame frame, RubyBasicObject duration) {
-            if (floatNode == null) {
+            if (floatCastNode == null) {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
-                floatNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext()));
+                floatCastNode = insert(NumericToFloatNodeFactory.create(getContext(), getSourceSection(), "to_f", null));
             }
-
-            try {
-                return sleep(floatNode.callFloat(frame, duration, "to_f", null));
-            } catch (UseMethodMissingException e) {
-                throw new RaiseException(getContext().getCoreLibrary().typeErrorCantConvertInto(
-                        getContext().getCoreLibrary().getLogicalClass(duration).getName(),
-                        getContext().getCoreLibrary().getFloatClass().getName(),
-                        this));
-            }
-
+            return sleep(floatCastNode.executeFloat(frame, duration));
         }
 
         @TruffleBoundary
@@ -2241,7 +2241,7 @@ public abstract class KernelNodes {
 
     }
 
-    @CoreMethod(names = {"to_s", "inspect"})
+    @CoreMethod(names = { "to_s", "inspect" })
     public abstract static class ToSNode extends CoreMethodNode {
 
         @Child private ClassNode classNode;
