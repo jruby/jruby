@@ -20,6 +20,10 @@ import org.jruby.truffle.nodes.objects.ClassNode;
 import org.jruby.truffle.nodes.objects.ClassNodeFactory;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.*;
+import org.jruby.truffle.runtime.signal.ProcSignalHandler;
+import org.jruby.truffle.runtime.signal.SignalOperations;
+
+import sun.misc.Signal;
 
 /**
  * Rubinius primitives associated with the VM.
@@ -210,6 +214,48 @@ public abstract class VMPrimitiveNodes {
         public Object vmSingletonClassObject(Object object) {
             notDesignedForCompilation();
             return object instanceof RubyClass && ((RubyClass) object).isSingleton();
+        }
+
+    }
+
+    @SuppressWarnings("restriction")
+    @RubiniusPrimitive(name = "vm_watch_signal", needsSelf = false)
+    public static abstract class VMWatchSignalPrimitiveNode extends RubiniusPrimitiveNode {
+
+        public VMWatchSignalPrimitiveNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public VMWatchSignalPrimitiveNode(VMWatchSignalPrimitiveNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public boolean watchSignal(RubyString signalName, RubyString action) {
+            if (!action.toString().equals("DEFAULT")) {
+                throw new UnsupportedOperationException();
+            }
+
+            Signal signal = new Signal(signalName.toString());
+
+            SignalOperations.watchDefaultForSignal(signal);
+            return true;
+        }
+
+        @Specialization
+        public boolean watchSignal(RubyString signalName, RubyNilClass ignore) {
+            Signal signal = new Signal(signalName.toString());
+
+            SignalOperations.watchSignal(signal, SignalOperations.IGNORE_HANDLER);
+            return true;
+        }
+
+        @Specialization
+        public boolean watchSignal(RubyString signalName, RubyProc proc) {
+            Signal signal = new Signal(signalName.toString());
+
+            SignalOperations.watchSignal(signal, new ProcSignalHandler(getContext(), proc));
+            return true;
         }
 
     }
