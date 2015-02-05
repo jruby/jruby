@@ -128,37 +128,42 @@ public class Options {
     public static final Option<Boolean> IR_WRITING_DEBUG     = bool(IR, "ir.writing.debug", false, "Debug writing JRuby IR file.");
     public static final Option<String>  IR_INLINE_COMPILER_PASSES = string(IR, "ir.inline_passes", "Specify comma delimeted list of passes to run after inlining a method.");
 
-    public static final Option<Boolean> TRUFFLE_LOAD_CORE = bool(TRUFFLE, "truffle.load_core", true, "Load the Truffle core library.");
     public static final Option<Boolean> TRUFFLE_PRINT_RUNTIME = bool(TRUFFLE, "truffle.printRuntime", false, "Print the name of the Truffle runtime on startup.");
     public static final Option<Boolean> TRUFFLE_RUNTIME_VERSION_CHECK = bool(TRUFFLE, "truffle.runtime.version_check", true, "Check the version of Truffle supplied by the JVM before starting.");
-    public static final Option<Boolean> TRUFFLE_PROC_BINDING = bool(TRUFFLE, "truffle.proc.binding", true, "Enable Proc#binding.");
-    public static final Option<Boolean> TRUFFLE_EXCEPTIONS_PRINT_JAVA = bool(TRUFFLE, "truffle.exceptions.print_java", false, "Print Java exceptions at the point of translating them to Ruby exceptions.");
+
+    public static final Option<Integer> TRUFFLE_DISPATCH_POLYMORPHIC_MAX = integer(TRUFFLE, "truffle.dispatch.polymorphic.max", 8, "Maximum size of a polymorphic call site cache.");
     public static final Option<Integer> TRUFFLE_ARRAYS_UNINITIALIZED_SIZE = integer(TRUFFLE, "truffle.arrays.uninitialized_size", 32, "How large an array to allocate when we have no other information to go on.");
     public static final Option<Boolean> TRUFFLE_ARRAYS_OPTIMISTIC_LONG = bool(TRUFFLE, "truffle.arrays.optimistic.long", true, "If we allocate an int[] for an Array and it has been converted to a long[], directly allocate a long[] next time.");
     public static final Option<Integer> TRUFFLE_ARRAYS_SMALL = integer(TRUFFLE, "truffle.arrays.small", 3, "Maximum size of an Array to consider small for optimisations.");
     public static final Option<Integer> TRUFFLE_HASHES_SMALL = integer(TRUFFLE, "truffle.hashes.small", 3, "Maximum size of a Hash to consider small for optimisations.");
-    public static final Option<Boolean> TRUFFLE_ALLOW_SIMPLE_SOURCE_SECTIONS = bool(TRUFFLE, "truffle.allow_simple_source_sections", false, "Allow simple source sections.");
-    public static final Option<TruffleBridge.BacktraceFormatter> TRUFFLE_BACKTRACE_DISPLAY_FORMAT = enumeration(TRUFFLE, "truffle.backtrace.display_format", TruffleBridge.BacktraceFormatter.class, TruffleBridge.BacktraceFormatter.MRI, "How to format backtraces displayed to the user.");
-    public static final Option<TruffleBridge.BacktraceFormatter> TRUFFLE_BACKTRACE_DEBUG_FORMAT = enumeration(TRUFFLE, "truffle.backtrace.debug_format", TruffleBridge.BacktraceFormatter.class, TruffleBridge.BacktraceFormatter.DEBUG, "How to format backtraces displayed using TruffleDebug.dump_call_stack.");
-    public static final Option<TruffleBridge.BacktraceFormatter> TRUFFLE_BACKTRACE_EXCEPTION_FORMAT = enumeration(TRUFFLE, "truffle.backtrace.exception_format", TruffleBridge.BacktraceFormatter.class, TruffleBridge.BacktraceFormatter.MRI, "How to format backtraces in Exception objects.");
-    public static final Option<TruffleBridge.BacktraceFormatter> TRUFFLE_BACKTRACE_PANIC_FORMAT = enumeration(TRUFFLE, "truffle.backtrace.panic_format", TruffleBridge.BacktraceFormatter.class, TruffleBridge.BacktraceFormatter.IMPL_DEBUG, "How to format backtraces in panics.");
-    public static final Option<Integer> TRUFFLE_BACKTRACE_MAX_VALUE_LENGTH = integer(TRUFFLE, "truffle.backtrace.max_value_length", 20, "Max length for values when displayed in a backtrace.");
-    public static final Option<Boolean> TRUFFLE_BACKTRACE_GENERATE = bool(TRUFFLE, "truffle.backtrace.generate", true, "Generate backtraces on exceptions.");
-    public static final Option<Integer> TRUFFLE_DISPATCH_POLYMORPHIC_MAX = integer(TRUFFLE, "truffle.dispatch.polymorphic.max", 8, "Maximum size of a polymorphic call site cache.");
-    public static final Option<Boolean> TRUFFLE_DEBUG_ENABLE_ASSERT_CONSTANT = bool(TRUFFLE, "truffle.debug.enable_assert_constant", false, "Enable special 'truffle_assert_constant' form.");
+
+    public static final Option<Boolean> TRUFFLE_LOAD_CORE = bool(TRUFFLE, "truffle.load_core", true, "Load the Truffle core library.");
+    public static final Option<Boolean> TRUFFLE_PROC_BINDING = bool(TRUFFLE, "truffle.proc.binding", true, "Enable Proc#binding.");
+
+    public static final Option<Integer> TRUFFLE_PASSALOT = integer(TRUFFLE, "truffle.passalot", 0, "Probabilty between 0 and 100 to randomly insert Thread.pass at a given line.");
+    public static final Option<Integer> TRUFFLE_STACK_SERVER_PORT = integer(TRUFFLE, "truffle.stack_server_port", 0, "Port number to run an HTTP server on that returns stack traces");
+    public static final Option<String> TRUFFLE_TRANSLATOR_PRINT_AST = string(TRUFFLE, "truffle.translator.print_asts", "", "Comma delimited list of method names to print the AST of after translation.");
+    public static final Option<String> TRUFFLE_TRANSLATOR_PRINT_FULL_AST = string(TRUFFLE, "truffle.translator.print_full_asts", "", "Comma delimited list of method names to print the full AST of after translation.");
+    public static final Option<String> TRUFFLE_TRANSLATOR_PRINT_PARSE_TREE = string(TRUFFLE, "truffle.translator.print_parse_trees", "", "Comma delimited list of method names to print the JRuby parse tree of before translation.");
     public static final Option<Boolean> TRUFFLE_PANIC_ON_JAVA_ASSERT = bool(TRUFFLE, "truffle.debug.panic_on_java_assert", false, "Panic as soon as a Java assertion failure is found.");
+    public static final Option<Boolean> TRUFFLE_DEBUG_ENABLE_ASSERT_CONSTANT = bool(TRUFFLE, "truffle.debug.enable_assert_constant", false, "Enable special 'truffle_assert_constant' form.");
+    public static final Option<Boolean> TRUFFLE_EXCEPTIONS_PRINT_JAVA = bool(TRUFFLE, "truffle.exceptions.print_java", false, "Print Java exceptions at the point of translating them to Ruby exceptions.");
+    public static final Option<Boolean> TRUFFLE_ALLOW_SIMPLE_SOURCE_SECTIONS = bool(TRUFFLE, "truffle.allow_simple_source_sections", false, "Allow simple source sections.");
+
     public static final Option<Boolean> TRUFFLE_INLINER_ALWAYS_CLONE_YIELD = bool(TRUFFLE, "truffle.inliner.always_clone_yield", true, "Always clone yield call targets.");
     public static final Option<Boolean> TRUFFLE_INLINER_ALWAYS_INLINE_YIELD = bool(TRUFFLE, "truffle.inliner.always_inline_yield", true, "Always inline yield call targets.");
     public static final Option<Boolean> TRUFFLE_DISPATCH_METAPROGRAMMING_ALWAYS_UNCACHED = bool(TRUFFLE, "truffle.dispatch.metaprogramming_always_uncached", false, "Always use uncached dispatch for the metaprogramming methods #__send__, #send and #respond_to?, and for any call site that has to use #method_missing or #const_missing.");
     public static final Option<Boolean> TRUFFLE_DISPATCH_METAPROGRAMMING_ALWAYS_INDIRECT = bool(TRUFFLE, "truffle.dispatch.metaprogramming_always_indirect", false, "Always use indirect calls for the metaprogramming methods #__send__ and #send, and for any call site that has to use #method_missing or #const_missing.");
     public static final Option<Boolean> TRUFFLE_DISPATCH_METHODMISSING_ALWAYS_CLONED = bool(TRUFFLE, "truffle.call.method_missing_always_cloned", true, "Always clone #method_missing call targets.");
     public static final Option<Boolean> TRUFFLE_DISPATCH_METHODMISSING_ALWAYS_INLINED = bool(TRUFFLE, "truffle.call.method_missing_always_inlined", true, "Always inline #method_missing call targets.");
-    public static final Option<String> TRUFFLE_TRANSLATOR_PRINT_AST = string(TRUFFLE, "truffle.translator.print_asts", "", "Comma delimited list of method names to print the AST of after translation.");
-    public static final Option<String> TRUFFLE_TRANSLATOR_PRINT_FULL_AST = string(TRUFFLE, "truffle.translator.print_full_asts", "", "Comma delimited list of method names to print the full AST of after translation.");
-    public static final Option<String> TRUFFLE_TRANSLATOR_PRINT_PARSE_TREE = string(TRUFFLE, "truffle.translator.print_parse_trees", "", "Comma delimited list of method names to print the JRuby parse tree of before translation.");
-    public static final Option<Integer> TRUFFLE_PASSALOT = integer(TRUFFLE, "truffle.passalot", 0, "Probabilty between 0 and 100 to randomly insert Thread.pass at a given line.");
-    public static final Option<Integer> TRUFFLE_STACK_SERVER_PORT = integer(TRUFFLE, "truffle.stack_server_port", 0, "Port number to run an HTTP server on that returns stack traces");
 
+    public static final Option<TruffleBridge.BacktraceFormatter> TRUFFLE_BACKTRACE_DISPLAY_FORMAT = enumeration(TRUFFLE, "truffle.backtrace.display_format", TruffleBridge.BacktraceFormatter.class, TruffleBridge.BacktraceFormatter.MRI, "How to format backtraces displayed to the user.");
+    public static final Option<TruffleBridge.BacktraceFormatter> TRUFFLE_BACKTRACE_DEBUG_FORMAT = enumeration(TRUFFLE, "truffle.backtrace.debug_format", TruffleBridge.BacktraceFormatter.class, TruffleBridge.BacktraceFormatter.DEBUG, "How to format backtraces displayed using TruffleDebug.dump_call_stack.");
+    public static final Option<TruffleBridge.BacktraceFormatter> TRUFFLE_BACKTRACE_EXCEPTION_FORMAT = enumeration(TRUFFLE, "truffle.backtrace.exception_format", TruffleBridge.BacktraceFormatter.class, TruffleBridge.BacktraceFormatter.MRI, "How to format backtraces in Exception objects.");
+    public static final Option<TruffleBridge.BacktraceFormatter> TRUFFLE_BACKTRACE_PANIC_FORMAT = enumeration(TRUFFLE, "truffle.backtrace.panic_format", TruffleBridge.BacktraceFormatter.class, TruffleBridge.BacktraceFormatter.IMPL_DEBUG, "How to format backtraces in panics.");
+    public static final Option<Integer> TRUFFLE_BACKTRACE_MAX_VALUE_LENGTH = integer(TRUFFLE, "truffle.backtrace.max_value_length", 20, "Max length for values when displayed in a backtrace.");
+    public static final Option<Boolean> TRUFFLE_BACKTRACE_GENERATE = bool(TRUFFLE, "truffle.backtrace.generate", true, "Generate backtraces on exceptions.");
+    
     public static final Option<Boolean> NATIVE_ENABLED = bool(NATIVE, "native.enabled", true, "Enable/disable native code, including POSIX features and C exts.");
     public static final Option<Boolean> NATIVE_VERBOSE = bool(NATIVE, "native.verbose", false, "Enable verbose logging of native extension loading.");
     public static final Option<Boolean> FFI_COMPILE_DUMP = bool(NATIVE, "ffi.compile.dump", false, "Dump bytecode-generated FFI stubs to console.");
