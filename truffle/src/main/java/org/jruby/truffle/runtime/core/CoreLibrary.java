@@ -247,6 +247,8 @@ public class CoreLibrary {
 
         // The rest
 
+        encodingCompatibilityErrorClass = new RubyClass(context, encodingClass, standardErrorClass, "CompatibilityError");
+
         encodingConverterClass = new RubyClass(context, encodingClass, objectClass, "Converter");
         encodingConverterClass.setAllocator(new RubyEncodingConverter.EncodingConverterAllocator());
 
@@ -364,7 +366,6 @@ public class CoreLibrary {
         // StandardError
         standardErrorClass = defineClass(exceptionClass, "StandardError");
         argumentErrorClass = defineClass(standardErrorClass, "ArgumentError");
-        encodingCompatibilityErrorClass = new RubyClass(context, encodingClass, standardErrorClass, "CompatibilityError");
         loadErrorClass = defineClass(standardErrorClass, "LoadError");
         localJumpErrorClass = defineClass(standardErrorClass, "LocalJumpError");
         regexpErrorClass = defineClass(standardErrorClass, "RegexpError");
