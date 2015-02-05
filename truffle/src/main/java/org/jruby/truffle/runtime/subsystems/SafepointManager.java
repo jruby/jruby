@@ -126,14 +126,19 @@ public class SafepointManager {
     }
 
     public void pauseAllThreadsAndExecute(Consumer<RubyThread> action) {
-        pauseAllThreadsAndExecute(true, true, action);
+        pauseAllThreadsAndExecute(true, action);
     }
 
     public void pauseAllThreadsAndExecuteFromNonRubyThread(Consumer<RubyThread> action) {
-        pauseAllThreadsAndExecute(false, false, action);
+        enterThread();
+        try {
+            pauseAllThreadsAndExecute(false, action);
+        } finally {
+            leaveThread();
+        }
     }
 
-    private void pauseAllThreadsAndExecute(boolean isRubyThread, boolean holdsGlobalLock, Consumer<RubyThread> action) {
+    private void pauseAllThreadsAndExecute(boolean holdsGlobalLock, Consumer<RubyThread> action) {
         CompilerDirectives.transferToInterpreter();
 
         assert !lock.isHeldByCurrentThread() : "reentering pauseAllThreadsAndExecute";
@@ -141,7 +146,7 @@ public class SafepointManager {
         try {
             this.action = action;
 
-            barrier = new CyclicBarrier(isRubyThread ? runningThreads.size() : runningThreads.size() + 1);
+            barrier = new CyclicBarrier(runningThreads.size());
 
             /* this is a potential cause for race conditions,
              * but we need to invalidate first so the interrupted threads
@@ -150,7 +155,7 @@ public class SafepointManager {
             assumption.invalidate();
             interruptAllThreads();
 
-            assumptionInvalidated(isRubyThread && holdsGlobalLock);
+            assumptionInvalidated(holdsGlobalLock);
         } finally {
             lock.unlock();
         }
