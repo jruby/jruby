@@ -85,7 +85,10 @@ public class RubySignal {
     @JRubyMethod(meta = true)
     public static IRubyObject list(ThreadContext context, IRubyObject recv) {
         Ruby runtime = recv.getRuntime();
-        RubyHash names = RubyHash.newHash(runtime, RubySignal.list(), runtime.getNil());
+        RubyHash names = RubyHash.newHash(runtime);
+        for (Map.Entry<String, Integer> sig : RubySignal.list().entrySet()) {
+            names.op_aset(context, runtime.newString(sig.getKey()), runtime.newFixnum(sig.getValue()));
+        }
         names.op_aset(context, runtime.newString("EXIT"), runtime.newFixnum(0));
         return names;
     }
