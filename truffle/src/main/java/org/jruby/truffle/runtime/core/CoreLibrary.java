@@ -174,7 +174,10 @@ public class CoreLibrary {
         classClass.setAllocator(new RubyClass.ClassAllocator());
 
         basicObjectClass = RubyClass.createBootClass(context, "BasicObject");
+        basicObjectClass.setAllocator(new RubyBasicObject.BasicObjectAllocator());
+
         objectClass = RubyClass.createBootClass(context, "Object");
+        objectClass.setAllocator(basicObjectClass.getAllocator());
 
         moduleClass = new RubyClass(context, null, null, "Module", false);
         moduleClass.setAllocator(new RubyModule.ModuleAllocator());
@@ -207,7 +210,7 @@ public class CoreLibrary {
         bignumClass = defineClass(integerClass, "Bignum", new RubyBignum.BignumAllocator());
         rationalClass = defineClass(numericClass, "Rational");
 
-        ioClass = defineClass("IO", new RubyBasicObject.BasicObjectAllocator());
+        ioClass = defineClass("IO");
         fileClass = defineClass(ioClass, "File");
 
         // Classes defined in Object
