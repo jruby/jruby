@@ -206,6 +206,9 @@ public class CoreLibrary {
         standardErrorClass = new RubyClass(context, objectClass, exceptionClass, "StandardError");
         standardErrorClass.setAllocator(new RubyException.ExceptionAllocator());
 
+        RubyClass scriptErrorClass = new RubyClass(context, objectClass, exceptionClass, "ScriptError");
+        scriptErrorClass.setAllocator(new RubyException.ExceptionAllocator());
+
         rangeErrorClass = new RubyClass(context, objectClass, standardErrorClass, "RangeError");
         rangeErrorClass.setAllocator(new RubyException.ExceptionAllocator());
 
@@ -285,7 +288,7 @@ public class CoreLibrary {
         stringClass = new RubyClass(context, objectClass, objectClass, "String");
         stringClass.setAllocator(new RubyString.StringAllocator());
         symbolClass = new RubyClass(context, objectClass, objectClass, "Symbol");
-        syntaxErrorClass = new RubyClass(context, objectClass, standardErrorClass, "SyntaxError");
+        syntaxErrorClass = new RubyClass(context, objectClass, scriptErrorClass, "SyntaxError");
         syntaxErrorClass.setAllocator(new RubyException.ExceptionAllocator());
         systemCallErrorClass = new RubyClass(context, objectClass, standardErrorClass, "SystemCallError");
         systemCallErrorClass.setAllocator(new RubyException.ExceptionAllocator());
