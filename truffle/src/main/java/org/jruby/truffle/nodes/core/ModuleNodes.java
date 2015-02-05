@@ -14,6 +14,7 @@ import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.Truffle;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
+import com.oracle.truffle.api.nodes.Node.Child;
 import com.oracle.truffle.api.source.Source;
 import com.oracle.truffle.api.source.SourceSection;
 
@@ -24,6 +25,7 @@ import org.jruby.truffle.nodes.RubyRootNode;
 import org.jruby.truffle.nodes.cast.BooleanCastNode;
 import org.jruby.truffle.nodes.cast.BooleanCastNodeFactory;
 import org.jruby.truffle.nodes.control.SequenceNode;
+import org.jruby.truffle.nodes.core.KernelNodes.BindingNode;
 import org.jruby.truffle.nodes.dispatch.*;
 import org.jruby.truffle.nodes.methods.SetMethodDeclarationContext;
 import org.jruby.truffle.nodes.methods.arguments.CheckArityNode;
@@ -270,7 +272,7 @@ public abstract class ModuleNodes {
         public static void attrReader(RubyNode currentNode, RubyContext context, SourceSection sourceSection, RubyModule module, String name) {
             CompilerDirectives.transferToInterpreter();
 
-            final CheckArityNode checkArity = new CheckArityNode(context, sourceSection, new Arity(0, 0, false, false));
+            final CheckArityNode checkArity = new CheckArityNode(context, sourceSection, new Arity(0, 0, false, false, 0));
 
             final SelfNode self = new SelfNode(context, sourceSection);
             final ReadInstanceVariableNode readInstanceVariable = new ReadInstanceVariableNode(context, sourceSection, "@" + name, self, false);
@@ -322,7 +324,7 @@ public abstract class ModuleNodes {
         public static void attrWriter(RubyNode currentNode, RubyContext context, SourceSection sourceSection, RubyModule module, String name) {
             CompilerDirectives.transferToInterpreter();
 
-            final CheckArityNode checkArity = new CheckArityNode(context, sourceSection, new Arity(1, 0, false, false));
+            final CheckArityNode checkArity = new CheckArityNode(context, sourceSection, new Arity(1, 0, false, false, 0));
 
             final SelfNode self = new SelfNode(context, sourceSection);
             final ReadPreArgumentNode readArgument = new ReadPreArgumentNode(context, sourceSection, 0, MissingArgumentBehaviour.RUNTIME_ERROR);
@@ -384,6 +386,7 @@ public abstract class ModuleNodes {
     public abstract static class ClassEvalNode extends CoreMethodNode {
 
         @Child private YieldDispatchHeadNode yield;
+        @Child private BindingNode bindingNode;
 
         public ClassEvalNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -393,6 +396,14 @@ public abstract class ModuleNodes {
         public ClassEvalNode(ClassEvalNode prev) {
             super(prev);
             yield = prev.yield;
+        }
+
+        protected RubyBinding getCallerBinding(VirtualFrame frame) {
+            if (bindingNode == null) {
+                CompilerDirectives.transferToInterpreterAndInvalidate();
+                bindingNode = insert(KernelNodesFactory.BindingNodeFactory.create(getContext(), getSourceSection(), new RubyNode[] {}));
+            }
+            return bindingNode.executeRubyBinding(frame);
         }
 
         @Specialization
@@ -420,7 +431,9 @@ public abstract class ModuleNodes {
         }
 
         private Object classEvalSource(VirtualFrame frame, RubyModule module, Source source, Encoding encoding) {
-            return getContext().execute(getContext(), source, encoding, TranslatorDriver.ParserContext.MODULE, module, frame.materialize(), this, new NodeWrapper() {
+            RubyBinding binding = getCallerBinding(frame);
+
+            return getContext().execute(getContext(), source, encoding, TranslatorDriver.ParserContext.MODULE, module, binding.getFrame(), this, new NodeWrapper() {
                 @Override
                 public RubyNode wrap(RubyNode node) {
                     return new SetMethodDeclarationContext(node.getContext(), node.getSourceSection(), "class_eval", node);
@@ -624,7 +637,7 @@ public abstract class ModuleNodes {
 
         public ConstGetNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            dispatch = new DispatchHeadNode(context, false, false, MissingBehavior.CALL_CONST_MISSING, null, DispatchAction.READ_CONSTANT);
+            dispatch = new DispatchHeadNode(context, false, false, MissingBehavior.CALL_CONST_MISSING, null, DispatchAction.READ_CONSTANT, null, false);
         }
 
         public ConstGetNode(ConstGetNode prev) {
@@ -1434,48 +1447,21 @@ public abstract class ModuleNodes {
         }
 
         @Specialization
-        public RubyModule undefMethod(RubyClass rubyClass, RubyString name) {
-            notDesignedForCompilation();
-
-            final InternalMethod method = ModuleOperations.lookupMethod(rubyClass, name.toString());
-            if (method == null) {
-                throw new RaiseException(getContext().getCoreLibrary().noMethodError(name.toString(), rubyClass.toString(), this));
-            }
-            rubyClass.undefMethod(this, method);
-            return rubyClass;
-        }
-
-        @Specialization
-        public RubyModule undefMethod(RubyClass rubyClass, RubySymbol name) {
-            notDesignedForCompilation();
-
-            final InternalMethod method = ModuleOperations.lookupMethod(rubyClass, name.toString());
-            if (method == null) {
-                throw new RaiseException(getContext().getCoreLibrary().noMethodError(name.toString(), rubyClass.toString(), this));
-            }
-            rubyClass.undefMethod(this, method);
-            return rubyClass;
-        }
-
-        @Specialization
         public RubyModule undefMethod(RubyModule module, RubyString name) {
-            notDesignedForCompilation();
-
-            final InternalMethod method = ModuleOperations.lookupMethod(module, name.toString());
-            if (method == null) {
-                throw new RaiseException(getContext().getCoreLibrary().noMethodError(name.toString(), module.toString(), this));
-            }
-            module.undefMethod(this, method);
-            return module;
+            return undefMethod(module, name.toString());
         }
 
         @Specialization
         public RubyModule undefMethod(RubyModule module, RubySymbol name) {
+            return undefMethod(module, name.toString());
+        }
+
+        private RubyModule undefMethod(RubyModule module, String name) {
             notDesignedForCompilation();
 
-            final InternalMethod method = ModuleOperations.lookupMethod(module, name.toString());
+            final InternalMethod method = ModuleOperations.lookupMethod(module, name);
             if (method == null) {
-                throw new RaiseException(getContext().getCoreLibrary().noMethodError(name.toString(), module.toString(), this));
+                throw new RaiseException(getContext().getCoreLibrary().noMethodError(name, module, this));
             }
             module.undefMethod(this, method);
             return module;

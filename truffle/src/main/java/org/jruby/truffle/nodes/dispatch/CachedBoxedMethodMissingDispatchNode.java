@@ -17,6 +17,8 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.DirectCallNode;
 import com.oracle.truffle.api.nodes.IndirectCallNode;
 import com.oracle.truffle.api.nodes.InvalidAssumptionException;
+
+import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
@@ -41,8 +43,10 @@ public class CachedBoxedMethodMissingDispatchNode extends CachedDispatchNode {
             RubyClass expectedClass,
             InternalMethod method,
             boolean indirect,
-            DispatchAction dispatchAction) {
-        super(context, cachedName, next, indirect, dispatchAction);
+            DispatchAction dispatchAction,
+            RubyNode[] argumentNodes,
+            boolean isSplatted) {
+        super(context, cachedName, next, indirect, dispatchAction, argumentNodes, isSplatted);
 
         this.expectedClass = expectedClass;
         unmodifiedAssumption = expectedClass.getUnmodifiedAssumption();
@@ -107,7 +111,7 @@ public class CachedBoxedMethodMissingDispatchNode extends CachedDispatchNode {
             case CALL_METHOD: {
                 // When calling #method_missing we need to prepend the symbol
 
-                final Object[] argumentsObjectsArray = CompilerDirectives.unsafeCast(argumentsObjects, Object[].class, true);
+                final Object[] argumentsObjectsArray = CompilerDirectives.unsafeCast(executeArguments(frame, argumentsObjects), Object[].class, true);
                 final Object[] modifiedArgumentsObjects = new Object[1 + argumentsObjectsArray.length];
                 modifiedArgumentsObjects[0] = getCachedNameAsSymbol();
                 RubyArguments.arraycopy(argumentsObjectsArray, 0, modifiedArgumentsObjects, 1, argumentsObjectsArray.length);

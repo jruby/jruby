@@ -9,9 +9,17 @@
  */
 package org.jruby.truffle.nodes.core;
 
+import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.source.SourceSection;
+
+import org.jruby.truffle.nodes.methods.UnsupportedOperationBehavior;
+import org.jruby.truffle.nodes.RubyNode;
+import org.jruby.truffle.nodes.cast.SingleValueCastNode;
+import org.jruby.truffle.nodes.cast.SingleValueCastNodeFactory;
+import org.jruby.truffle.nodes.core.FiberNodesFactory.FiberTransferNodeFactory;
 import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.RubyFiber;
 import org.jruby.truffle.runtime.core.RubyNilClass;
 import org.jruby.truffle.runtime.core.RubyProc;
@@ -19,31 +27,49 @@ import org.jruby.truffle.runtime.core.RubyProc;
 @CoreClass(name = "Fiber")
 public abstract class FiberNodes {
 
-    @CoreMethod(names = "resume", argumentsAsArray = true)
-    public abstract static class ResumeNode extends CoreMethodNode {
+    public abstract static class FiberTransferNode extends CoreMethodNode {
 
-        public ResumeNode(RubyContext context, SourceSection sourceSection) {
+        @Child SingleValueCastNode singleValueCastNode;
+
+        public FiberTransferNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
         }
 
-        public ResumeNode(ResumeNode prev) {
+        public FiberTransferNode(FiberTransferNode prev) {
             super(prev);
         }
 
+        protected Object singleValue(Object[] args) {
+            if (singleValueCastNode == null) {
+                CompilerDirectives.transferToInterpreterAndInvalidate();
+                singleValueCastNode = insert(SingleValueCastNodeFactory.create(getContext(), getSourceSection(), null));
+            }
+            return singleValueCastNode.executeSingleValue(args);
+        }
+
+        public abstract Object executeTransferControlTo(RubyFiber fiber, boolean isYield, Object[] args);
+
         @Specialization
-        public Object resume(RubyFiber fiberBeingResumed, Object[] args) {
+        protected Object transfer(RubyFiber fiber, boolean isYield, Object[] args) {
             notDesignedForCompilation();
+
+            if (!fiber.isAlive()) {
+                throw new RaiseException(getContext().getCoreLibrary().deadFiberCalledError(this));
+            }
+
+            if (fiber.getRubyThread() != getContext().getThreadManager().getCurrentThread()) {
+                CompilerDirectives.transferToInterpreter();
+                throw new RaiseException(getContext().getCoreLibrary().fiberError("fiber called across threads", this));
+            }
 
             final RubyFiber sendingFiber = getContext().getFiberManager().getCurrentFiber();
 
-            fiberBeingResumed.resume(sendingFiber, args);
-
-            return sendingFiber.waitForResume();
+            return singleValue(sendingFiber.transferControlTo(fiber, isYield, args));
         }
 
     }
 
-    @CoreMethod(names = "initialize", needsBlock = true)
+    @CoreMethod(names = "initialize", needsBlock = true, unsupportedOperationBehavior = UnsupportedOperationBehavior.ARGUMENT_ERROR)
     public abstract static class InitializeNode extends CoreMethodNode {
 
         public InitializeNode(RubyContext context, SourceSection sourceSection) {
@@ -64,27 +90,53 @@ public abstract class FiberNodes {
 
     }
 
+    @CoreMethod(names = "resume", argumentsAsArray = true)
+    public abstract static class ResumeNode extends CoreMethodNode {
+
+        @Child FiberTransferNode fiberTransferNode;
+
+        public ResumeNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+            fiberTransferNode = FiberTransferNodeFactory.create(context, sourceSection, new RubyNode[] { null, null, null });
+        }
+
+        public ResumeNode(ResumeNode prev) {
+            super(prev);
+            fiberTransferNode = prev.fiberTransferNode;
+        }
+
+        @Specialization
+        public Object resume(RubyFiber fiberBeingResumed, Object[] args) {
+            return fiberTransferNode.executeTransferControlTo(fiberBeingResumed, false, args);
+        }
+
+    }
+
     @CoreMethod(names = "yield", onSingleton = true, argumentsAsArray = true)
     public abstract static class YieldNode extends CoreMethodNode {
 
+        @Child FiberTransferNode fiberTransferNode;
+
         public YieldNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
+            fiberTransferNode = FiberTransferNodeFactory.create(context, sourceSection, new RubyNode[] { null, null, null });
         }
 
         public YieldNode(YieldNode prev) {
             super(prev);
+            fiberTransferNode = prev.fiberTransferNode;
         }
 
         @Specialization
         public Object yield(Object[] args) {
-            notDesignedForCompilation();
-
             final RubyFiber yieldingFiber = getContext().getFiberManager().getCurrentFiber();
-            final RubyFiber fiberYieldedTo = yieldingFiber.lastResumedByFiber;
+            final RubyFiber fiberYieldedTo = yieldingFiber.getLastResumedByFiber();
 
-            fiberYieldedTo.resume(yieldingFiber, args);
+            if (yieldingFiber.isTopLevel() || fiberYieldedTo == null) {
+                throw new RaiseException(getContext().getCoreLibrary().yieldFromRootFiberError(this));
+            }
 
-            return yieldingFiber.waitForResume();
+            return fiberTransferNode.executeTransferControlTo(fiberYieldedTo, true, args);
         }
 
     }

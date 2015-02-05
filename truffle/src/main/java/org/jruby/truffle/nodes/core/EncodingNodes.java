@@ -23,12 +23,59 @@ import org.jruby.runtime.encoding.EncodingService;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyArray;
 import org.jruby.truffle.runtime.core.RubyEncoding;
+import org.jruby.truffle.runtime.core.RubyHash;
 import org.jruby.truffle.runtime.core.RubyNilClass;
 import org.jruby.truffle.runtime.core.RubyString;
+import org.jruby.truffle.runtime.hash.HashOperations;
+import org.jruby.truffle.runtime.hash.KeyValue;
 import org.jruby.util.ByteList;
+
+import java.util.ArrayList;
+import java.util.List;
 
 @CoreClass(name = "Encoding")
 public abstract class EncodingNodes {
+
+    @CoreMethod(names = "aliases", needsSelf = false, onSingleton = true, required = 0)
+    public abstract static class AliasesNode extends CoreMethodNode {
+
+        public AliasesNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public AliasesNode(AliasesNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public RubyHash aliases() {
+            notDesignedForCompilation();
+
+            final List<KeyValue> aliases = new ArrayList<>();
+
+            final Hash.HashEntryIterator i = getContext().getRuntime().getEncodingService().getAliases().entryIterator();
+            while (i.hasNext()) {
+                final CaseInsensitiveBytesHash.CaseInsensitiveBytesHashEntry<EncodingDB.Entry> e =
+                        ((CaseInsensitiveBytesHash.CaseInsensitiveBytesHashEntry<EncodingDB.Entry>)i.next());
+
+                final RubyString alias = getContext().makeString(new ByteList(e.bytes, e.p, e.end - e.p));
+                alias.freeze();
+
+                final RubyString name = getContext().makeString(RubyEncoding.getEncoding(e.value.getIndex()).getName());
+                name.freeze();
+
+                aliases.add(new KeyValue(alias, name));
+            }
+
+            aliases.add(new KeyValue(getContext().makeString("external"),
+                    getContext().makeString(new ByteList(getContext().getRuntime().getDefaultExternalEncoding().getName()))));
+
+            aliases.add(new KeyValue(getContext().makeString("locale"),
+                    getContext().makeString(new ByteList(getContext().getRuntime().getEncodingService().getLocaleEncoding().getName()))));
+
+            return HashOperations.verySlowFromEntries(getContext(), aliases);
+        }
+    }
 
     @CoreMethod(names = "compatible?", needsSelf = false, onSingleton = true, required = 2)
     public abstract static class CompatibleQueryNode extends CoreMethodNode {

@@ -875,6 +875,15 @@ public class JVMVisitor extends IRVisitor {
     }
 
     @Override
+    public void CheckForLJEInstr(CheckForLJEInstr checkForljeinstr) {
+        jvmMethod().loadContext();
+        jvmLoadLocal(DYNAMIC_SCOPE);
+        jvmAdapter().ldc(checkForljeinstr.maybeLambda());
+        jvmMethod().loadBlockType();
+        jvmAdapter().invokestatic(p(IRRuntimeHelpers.class), "checkForLJE", sig(void.class, ThreadContext.class, DynamicScope.class, boolean.class, Block.Type.class));
+    }
+
+        @Override
     public void ClassSuperInstr(ClassSuperInstr classsuperinstr) {
         String name = classsuperinstr.getName();
         Operand[] args = classsuperinstr.getCallArgs();
@@ -1724,13 +1733,6 @@ public class JVMVisitor extends IRVisitor {
                 visit(runtimehelpercall.getArgs()[1]);
                 jvmAdapter().invokestatic(p(IRRuntimeHelpers.class), "mergeKeywordArguments", sig(IRubyObject.class, ThreadContext.class, IRubyObject.class, IRubyObject.class));
                 jvmStoreLocal(runtimehelpercall.getResult());
-                break;
-            case CHECK_FOR_LJE:
-                jvmMethod().loadContext();
-                jvmLoadLocal(DYNAMIC_SCOPE);
-                jvmAdapter().ldc(((Boolean)runtimehelpercall.getArgs()[0]).isTrue());
-                jvmMethod().loadBlockType();
-                jvmAdapter().invokestatic(p(IRRuntimeHelpers.class), "checkForLJE", sig(void.class, ThreadContext.class, DynamicScope.class, boolean.class, Block.Type.class));
                 break;
             default:
                 throw new NotCompilableException("Unknown IR runtime helper method: " + runtimehelpercall.getHelperMethod() + "; INSTR: " + this);

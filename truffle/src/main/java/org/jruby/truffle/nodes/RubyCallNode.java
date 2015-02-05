@@ -36,17 +36,9 @@ public class RubyCallNode extends RubyNode {
     @Child private ProcOrNullNode block;
     @Children private final RubyNode[] arguments;
 
-    private final boolean isSplatted;
     private final boolean isVCall;
 
     @Child private CallDispatchHeadNode dispatchHead;
-
-    private final BranchProfile splatNotArrayProfile = BranchProfile.create();
-
-    @CompilerDirectives.CompilationFinal private boolean seenNullInUnsplat = false;
-    @CompilerDirectives.CompilationFinal private boolean seenIntegerFixnumInUnsplat = false;
-    @CompilerDirectives.CompilationFinal private boolean seenLongFixnumInUnsplat = false;
-    @CompilerDirectives.CompilationFinal private boolean seenObjectInUnsplat = false;
 
     @Child private CallDispatchHeadNode respondToMissing;
     @Child private BooleanCastNode respondToMissingCast;
@@ -75,10 +67,9 @@ public class RubyCallNode extends RubyNode {
         }
 
         this.arguments = arguments;
-        this.isSplatted = isSplatted;
         this.isVCall = isVCall;
-
-        dispatchHead = DispatchHeadNodeFactory.createMethodCall(context, ignoreVisibility, false, MissingBehavior.CALL_METHOD_MISSING);
+        
+        dispatchHead = DispatchHeadNodeFactory.createMethodCall(context, ignoreVisibility, false, MissingBehavior.CALL_METHOD_MISSING, arguments, isSplatted);
         respondToMissing = DispatchHeadNodeFactory.createMethodCall(context, true, MissingBehavior.RETURN_MISSING);
         respondToMissingCast = BooleanCastNodeFactory.create(context, section, null);
 
@@ -88,10 +79,9 @@ public class RubyCallNode extends RubyNode {
     @Override
     public Object execute(VirtualFrame frame) {
         final Object receiverObject = receiver.execute(frame);
-        final Object[] argumentsObjects = executeArguments(frame);
         final RubyProc blockObject = executeBlock(frame);
-
-        return dispatchHead.call(frame, receiverObject, methodName, blockObject, argumentsObjects);
+        
+        return dispatchHead.call(frame, receiverObject, methodName, blockObject, (Object[]) null);
     }
 
     private RubyProc executeBlock(VirtualFrame frame) {
@@ -100,63 +90,6 @@ public class RubyCallNode extends RubyNode {
         } else {
             return null;
         }
-    }
-
-    @ExplodeLoop
-    private Object[] executeArguments(VirtualFrame frame) {
-        final Object[] argumentsObjects = new Object[arguments.length];
-
-        for (int i = 0; i < arguments.length; i++) {
-            argumentsObjects[i] = arguments[i].execute(frame);
-        }
-
-        if (isSplatted) {
-            return splat(argumentsObjects[0]);
-        } else {
-            return argumentsObjects;
-        }
-    }
-
-    private Object[] splat(Object argument) {
-        // TODO(CS): what happens if isn't just one argument, or it isn't an Array?
-
-        if (!(argument instanceof RubyArray)) {
-            splatNotArrayProfile.enter();
-            notDesignedForCompilation();
-            throw new UnsupportedOperationException();
-        }
-
-        final RubyArray array = (RubyArray) argument;
-        final int size = array.getSize();
-        final Object store = array.getStore();
-
-        if (seenNullInUnsplat && store == null) {
-            return new Object[]{};
-        } else if (seenIntegerFixnumInUnsplat && store instanceof int[]) {
-            return ArrayUtils.boxUntil((int[]) store, size);
-        } else if (seenLongFixnumInUnsplat && store instanceof long[]) {
-            return ArrayUtils.boxUntil((long[]) store, size);
-        } else if (seenObjectInUnsplat && store instanceof Object[]) {
-            return ArrayUtils.extractRange((Object[]) store, 0, size);
-        }
-
-        CompilerDirectives.transferToInterpreterAndInvalidate();
-
-        if (store == null) {
-            seenNullInUnsplat = true;
-            return new Object[]{};
-        } else if (store instanceof int[]) {
-            seenIntegerFixnumInUnsplat = true;
-            return ArrayUtils.boxUntil((int[]) store, size);
-        } else if (store instanceof long[]) {
-            seenLongFixnumInUnsplat = true;
-            return ArrayUtils.boxUntil((long[]) store, size);
-        } else if (store instanceof Object[]) {
-            seenObjectInUnsplat = true;
-            return ArrayUtils.extractRange((Object[]) store, 0, size);
-        }
-
-        throw new UnsupportedOperationException();
     }
 
     @Override

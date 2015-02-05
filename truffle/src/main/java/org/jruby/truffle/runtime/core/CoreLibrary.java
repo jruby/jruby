@@ -37,6 +37,7 @@ import org.jruby.util.cli.OutputStrings;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
@@ -115,15 +116,20 @@ public class CoreLibrary {
     @CompilerDirectives.CompilationFinal private RubyClass methodClass;
     @CompilerDirectives.CompilationFinal private RubyClass unboundMethodClass;
     @CompilerDirectives.CompilationFinal private RubyClass byteArrayClass;
+    @CompilerDirectives.CompilationFinal private RubyClass fiberErrorClass;
+    @CompilerDirectives.CompilationFinal private RubyClass threadErrorClass;
 
     @CompilerDirectives.CompilationFinal private RubyArray argv;
     @CompilerDirectives.CompilationFinal private RubyBasicObject globalVariablesObject;
     @CompilerDirectives.CompilationFinal private RubyBasicObject mainObject;
     @CompilerDirectives.CompilationFinal private RubyNilClass nilObject;
     @CompilerDirectives.CompilationFinal private RubyHash envHash;
+    @CompilerDirectives.CompilationFinal private RubyBasicObject rubiniusUndefined;
 
     private ArrayNodes.MinBlock arrayMinBlock;
     private ArrayNodes.MaxBlock arrayMaxBlock;
+
+    @CompilerDirectives.CompilationFinal private RubySymbol eachSymbol;
 
     public CoreLibrary(RubyContext context) {
         this.context = context;
@@ -213,6 +219,8 @@ public class CoreLibrary {
         ioClass = new RubyClass(context, objectClass, objectClass, "IO");
 
         final RubyModule rubiniusModule = new RubyModule(context, objectClass, "Rubinius");
+        rubiniusUndefined = new RubyBasicObject(objectClass);
+        rubiniusModule.setConstant(null, "UNDEFINED", rubiniusUndefined);
 
         argumentErrorClass = new RubyClass(context, objectClass, standardErrorClass, "ArgumentError");
         argumentErrorClass.setAllocator(new RubyException.ExceptionAllocator());
@@ -232,6 +240,7 @@ public class CoreLibrary {
         enumerableModule = new RubyModule(context, objectClass, "Enumerable");
         falseClass = new RubyClass(context, objectClass, objectClass, "FalseClass");
         fiberClass = new RubyClass(context, objectClass, objectClass, "Fiber");
+        fiberClass.setAllocator(new RubyFiber.FiberAllocator());
         fileClass = new RubyClass(context, objectClass, ioClass, "File");
         fixnumClass = new RubyClass(context, objectClass, integerClass, "Fixnum");
         floatClass = new RubyClass(context, objectClass, numericClass, "Float");
@@ -251,6 +260,8 @@ public class CoreLibrary {
         localJumpErrorClass.setAllocator(new RubyException.ExceptionAllocator());
         matchDataClass = new RubyClass(context, objectClass, objectClass, "MatchData");
         mathModule = new RubyModule(context, objectClass, "Math");
+        RubyClass mutexClass = new RubyClass(context, objectClass, objectClass, "Mutex");
+        mutexClass.setAllocator(new RubyMutex.MutexAllocator());
         nameErrorClass = new RubyClass(context, objectClass, standardErrorClass, "NameError");
         nameErrorClass.setAllocator(new RubyException.ExceptionAllocator());
         nilClass = new RubyClass(context, objectClass, objectClass, "NilClass");
@@ -261,6 +272,7 @@ public class CoreLibrary {
         procClass.setAllocator(new RubyProc.ProcAllocator());
         processClass = new RubyClass(context, objectClass, objectClass, "Process");
         rangeClass = new RubyClass(context, objectClass, objectClass, "Range");
+        rangeClass.setAllocator(new RubyRange.RangeAllocator());
         rationalClass = new RubyClass(context, objectClass, numericClass, "Rational");
         regexpClass = new RubyClass(context, objectClass, objectClass, "Regexp");
         regexpClass.setAllocator(new RubyRegexp.RegexpAllocator());
@@ -299,6 +311,10 @@ public class CoreLibrary {
         encodingCompatibilityErrorClass = new RubyClass(context, encodingClass, standardErrorClass, "CompatibilityError");
         encodingCompatibilityErrorClass.setAllocator(new RubyException.ExceptionAllocator());
         byteArrayClass = new RubyClass(context, rubiniusModule, objectClass, "ByteArray");
+        fiberErrorClass = new RubyClass(context, objectClass, exceptionClass, "FiberError");
+        fiberErrorClass.setAllocator(new RubyException.ExceptionAllocator());
+        threadErrorClass = new RubyClass(context, objectClass, exceptionClass, "ThreadError");
+        threadErrorClass.setAllocator(new RubyException.ExceptionAllocator());
 
         // Includes
 
@@ -364,9 +380,21 @@ public class CoreLibrary {
         argv = new RubyArray(arrayClass);
         objectClass.setConstant(null, "ARGV", argv);
 
-        fileClass.setConstant(null, "SEPARATOR", RubyString.fromJavaString(stringClass, File.separator));
-        fileClass.setConstant(null, "Separator", RubyString.fromJavaString(stringClass, File.separator));
-        fileClass.setConstant(null, "ALT_SEPARATOR", nilObject);
+        final RubyString separator = RubyString.fromJavaString(stringClass, "/");
+        separator.freeze();
+
+        fileClass.setConstant(null, "SEPARATOR", separator);
+        fileClass.setConstant(null, "Separator", separator);
+
+        if (File.separatorChar == '\\') {
+            final RubyString altSeparator = RubyString.fromJavaString(stringClass, "\\");
+            altSeparator.freeze();
+
+            fileClass.setConstant(null, "ALT_SEPARATOR", altSeparator);
+        } else {
+            fileClass.setConstant(null, "ALT_SEPARATOR", nilObject);
+        }
+
         fileClass.setConstant(null, "PATH_SEPARATOR", RubyString.fromJavaString(stringClass, File.pathSeparator));
         fileClass.setConstant(null, "FNM_SYSCASE", 0);
 
@@ -375,6 +403,10 @@ public class CoreLibrary {
         Object value = context.getRuntime().warningsEnabled() ? context.getRuntime().isVerbose() : nilObject;
         RubyNode.notDesignedForCompilation();
         globalVariablesObject.getOperations().setInstanceVariable(globalVariablesObject, "$VERBOSE", value);
+
+        // Common symbols
+
+        eachSymbol = getContext().getSymbolTable().getSymbol("each");
     }
 
     public void initializeAfterMethodsAdded() {
@@ -405,18 +437,26 @@ public class CoreLibrary {
         final Source source;
 
         try {
-            final LoadServiceResource resource = context.getRuntime().getLoadService().getClassPathResource(context.getRuntime().getJRubyClassLoader(), fileName);
-
-            if (resource == null) {
-                throw new RuntimeException("couldn't load Truffle core library " + fileName);
-            }
-
-            source = Source.fromReader(new InputStreamReader(resource.getInputStream(), StandardCharsets.UTF_8), "core:/" + fileName);
+            source = Source.fromReader(new InputStreamReader(getRubyCoreInputStream(fileName), StandardCharsets.UTF_8), "core:/" + fileName);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
 
         context.load(source, null, NodeWrapper.IDENTITY);
+    }
+
+    public InputStream getRubyCoreInputStream(String fileName) {
+        final LoadServiceResource resource = context.getRuntime().getLoadService().getClassPathResource(getClass().getClassLoader(), fileName);
+
+        if (resource == null) {
+            throw new RuntimeException("couldn't load Truffle core library " + fileName);
+        }
+
+        try {
+            return resource.getInputStream();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     public void initializeEncodingConstants() {
@@ -587,24 +627,16 @@ public class CoreLibrary {
         return typeError(String.format("%s#%s should return %s", object, method, expectedType), currentNode);
     }
 
-    public RubyException typeErrorCantConvertTo(String from, String to, Node currentNode) {
+    public RubyException typeErrorCantConvertTo(Object from, RubyClass to, String methodUsed, Object result, Node currentNode) {
         CompilerAsserts.neverPartOfCompilation();
-        return typeError(String.format("can't convert %s to %s", from, to), currentNode);
-    }
-
-    public RubyException typeErrorCantConvertTo(String from, String to, String methodUsed, String given, Node currentNode) {
-        CompilerAsserts.neverPartOfCompilation();
-        return typeError(String.format("can't convert %s to %s (%s#%s gives %s)", from, to, from, methodUsed, given), currentNode);
-    }
-
-    public RubyException typeErrorCantConvertInto(String from, String to, Node currentNode) {
-        CompilerAsserts.neverPartOfCompilation();
-        return typeError(String.format("can't convert %s into %s", from, to), currentNode);
+        String fromClass = getLogicalClass(from).getName();
+        return typeError(String.format("can't convert %s to %s (%s#%s gives %s)",
+                fromClass, to.getName(), fromClass, methodUsed, getLogicalClass(result).toString()), currentNode);
     }
 
     public RubyException typeErrorCantConvertInto(Object from, RubyClass to, Node currentNode) {
         CompilerAsserts.neverPartOfCompilation();
-        return typeErrorCantConvertInto(getLogicalClass(from).getName(), to.getName(), currentNode);
+        return typeError(String.format("can't convert %s into %s", getLogicalClass(from).getName(), to.getName()), currentNode);
     }
 
     public RubyException typeErrorIsNotA(String value, String expectedType, Node currentNode) {
@@ -672,14 +704,14 @@ public class CoreLibrary {
         return new RubyException(context.getCoreLibrary().getNoMethodErrorClass(), context.makeString(message), RubyCallStack.getBacktrace(currentNode));
     }
 
-    public RubyException noMethodError(String name, String object, Node currentNode) {
+    public RubyException noMethodError(String name, RubyModule module, Node currentNode) {
         CompilerAsserts.neverPartOfCompilation();
-        return noMethodError(String.format("undefined method `%s' for %s", name, object), currentNode);
+        return noMethodError(String.format("undefined method `%s' for %s", name, module.getName()), currentNode);
     }
 
-    public RubyException privateMethodError(String name, String object, Node currentNode) {
+    public RubyException privateMethodError(String name, RubyModule module, Node currentNode) {
         CompilerAsserts.neverPartOfCompilation();
-        return noMethodError(String.format("private method `%s' called for %s", name, object), currentNode);
+        return noMethodError(String.format("private method `%s' called for %s", name, module.toString()), currentNode);
     }
 
     public RubyException loadError(String message, Node currentNode) {
@@ -753,6 +785,26 @@ public class CoreLibrary {
     public RubyException encodingCompatibilityError(String message, Node currentNode) {
         CompilerAsserts.neverPartOfCompilation();
         return new RubyException(encodingCompatibilityErrorClass, context.makeString(message), RubyCallStack.getBacktrace(currentNode));
+    }
+
+    public RubyException fiberError(String message, Node currentNode) {
+        CompilerAsserts.neverPartOfCompilation();
+        return new RubyException(fiberErrorClass, context.makeString(message), RubyCallStack.getBacktrace(currentNode));
+    }
+
+    public RubyException deadFiberCalledError(Node currentNode) {
+        CompilerAsserts.neverPartOfCompilation();
+        return fiberError("dead fiber called", currentNode);
+    }
+
+    public RubyException yieldFromRootFiberError(Node currentNode) {
+        CompilerAsserts.neverPartOfCompilation();
+        return fiberError("can't yield from root fiber", currentNode);
+    }
+
+    public RubyException threadError(String message, Node currentNode) {
+        CompilerAsserts.neverPartOfCompilation();
+        return new RubyException(threadErrorClass, context.makeString(message), RubyCallStack.getBacktrace(currentNode));
     }
 
     public RubyContext getContext() {
@@ -973,5 +1025,13 @@ public class CoreLibrary {
 
     public RubyClass getByteArrayClass() {
         return byteArrayClass;
+    }
+
+    public RubyBasicObject getRubiniusUndefined() {
+        return rubiniusUndefined;
+    }
+
+    public RubySymbol getEachSymbol() {
+        return eachSymbol;
     }
 }

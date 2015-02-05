@@ -38,6 +38,7 @@ import org.jruby.truffle.nodes.control.RetryNode;
 import org.jruby.truffle.nodes.control.ReturnNode;
 import org.jruby.truffle.nodes.control.WhileNode;
 import org.jruby.truffle.nodes.core.*;
+import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.nodes.globals.*;
 import org.jruby.truffle.nodes.literal.*;
 import org.jruby.truffle.nodes.methods.*;
@@ -55,6 +56,7 @@ import org.jruby.truffle.runtime.LexicalScope;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.*;
 import org.jruby.truffle.runtime.methods.SharedMethodInfo;
+import org.jruby.util.ByteList;
 import org.jruby.util.KeyValuePair;
 import org.jruby.util.cli.Options;
 
@@ -375,6 +377,8 @@ public class BodyTranslator extends Translator {
                 return translateRubiniusPrivately(sourceSection, node);
             } else if (node.getName().equals("single_block_arg")) {
                 return translateRubiniusSingleBlockArg(sourceSection, node);
+            } else if (node.getName().equals("check_frozen")) {
+                return translateRubiniusCheckFrozen(sourceSection);
             }
         }
 
@@ -505,6 +509,34 @@ public class BodyTranslator extends Translator {
 
     public RubyNode translateRubiniusSingleBlockArg(SourceSection sourceSection, CallNode node) {
         return new RubiniusSingleBlockArgNode(context, sourceSection);
+    }
+
+    private RubyNode translateRubiniusCheckFrozen(SourceSection sourceSection) {
+        /*
+         * Translate
+         *
+         *   Rubinius.check_frozen
+         *
+         * into
+         *
+         *   raise RuntimeError.new("can't modify frozen ClassName") if frozen?
+         *
+         * TODO(CS, 30-Jan-15) usual questions about monkey patching of the methods we're using
+         */
+
+        final RubyNode frozen = new RubyCallNode(context, sourceSection, "frozen?", new SelfNode(context, sourceSection), null, false);
+
+        final RubyNode constructException = new RubyCallNode(context, sourceSection, "new",
+                new ObjectLiteralNode(context, sourceSection, context.getCoreLibrary().getRuntimeErrorClass()),
+                null, false,
+                new StringLiteralNode(context, sourceSection, ByteList.create("can't modify frozen TODO")));
+
+        final RubyNode raise = new RubyCallNode(context, sourceSection, "raise", new SelfNode(context, sourceSection), null, false, constructException);
+
+        return new IfNode(context, sourceSection,
+                frozen,
+                raise,
+                new NilLiteralNode(context, sourceSection));
     }
 
     /**
@@ -1024,7 +1056,7 @@ public class BodyTranslator extends Translator {
     }
 
     protected RubyNode translateMethodDefinition(SourceSection sourceSection, RubyNode classNode, String methodName, org.jruby.ast.Node parseTree, org.jruby.ast.ArgsNode argsNode, org.jruby.ast.Node bodyNode) {
-        final SharedMethodInfo sharedMethodInfo = new SharedMethodInfo(sourceSection, environment.getLexicalScope(), methodName, false, parseTree, false);
+        final SharedMethodInfo sharedMethodInfo = new SharedMethodInfo(sourceSection, environment.getLexicalScope(), methodName, false, parseTree, false, argsNode);
 
         final TranslatorEnvironment newEnvironment = new TranslatorEnvironment(
                 context, environment, environment.getParser(), environment.getParser().allocateReturnID(), true, true, sharedMethodInfo, methodName, false);
@@ -1958,22 +1990,20 @@ public class BodyTranslator extends Translator {
 
     @Override
     public RubyNode visitNewlineNode(org.jruby.ast.NewlineNode node) {
-        final RubyNode child = node.getNextNode().accept(this);
+        final SourceSection sourceSection = translate(node.getPosition());
 
-        RubyNode translated = new TraceNode(context, child.getSourceSection(), child);
+        final List<RubyNode> lineSequence = new ArrayList<>();
 
         if (Options.TRUFFLE_PASSALOT.load() > 0) {
             if (Options.TRUFFLE_PASSALOT.load() > Math.random() * 100) {
-
-                translated = SequenceNode.sequence(
-                        translated.getContext(),
-                        translated.getSourceSection(),
-                        new ThreadPassNode(translated.getContext(), translated.getSourceSection()),
-                        translated);
+                lineSequence.add(new ThreadPassNode(context, sourceSection));
             }
         }
 
-        return translated;
+        lineSequence.add(new TraceNode(context, sourceSection));
+        lineSequence.add(node.getNextNode().accept(this));
+
+        return SequenceNode.sequence(context, sourceSection, lineSequence);
     }
 
     @Override
@@ -2232,20 +2262,17 @@ public class BodyTranslator extends Translator {
 
         final RubyRegexp regexp = new RubyRegexp(context.getCoreLibrary().getRegexpClass(), regex, node.getValue());
 
+        // This isn't quite right - we shouldn't be looking up by name, we need a real reference to this constants
         if (node.getOptions().isEncodingNone()) {
-            // This isn't quite right - we shouldn't be looking up by name, we need a real reference to this constants
-
             if (!all7Bit(node.getValue().bytes())) {
-                regexp.forceEncoding((RubyEncoding) context.getCoreLibrary().getEncodingClass().getConstants().get("ASCII_8BIT").getValue());
+                regexp.getSource().setEncoding(context.getRuntime().getEncodingService().getAscii8bitEncoding());
             } else {
-                regexp.forceEncoding((RubyEncoding) context.getCoreLibrary().getEncodingClass().getConstants().get("US_ASCII").getValue());
+                regexp.getSource().setEncoding(context.getRuntime().getEncodingService().getUSAsciiEncoding());
             }
         } else if (node.getOptions().getKCode().getKCode().equals("SJIS")) {
-            regexp.forceEncoding((RubyEncoding) context.getCoreLibrary().getEncodingClass().getConstants().get("Windows_31J").getValue());
+            regexp.getSource().setEncoding(((RubyEncoding) context.getCoreLibrary().getEncodingClass().getConstants().get("Windows_31J").getValue()).getEncoding());
         } else if (node.getOptions().getKCode().getKCode().equals("UTF8")) {
-            regexp.forceEncoding((RubyEncoding) context.getCoreLibrary().getEncodingClass().getConstants().get("UTF_8").getValue());
-        } else {
-            regexp.forceEncoding(RubyEncoding.getEncoding(node.getEncoding()));
+            regexp.getSource().setEncoding(((RubyEncoding) context.getCoreLibrary().getEncodingClass().getConstants().get("UTF_8").getValue()).getEncoding());
         }
 
         final ObjectLiteralNode literalNode = new ObjectLiteralNode(context, translate(node.getPosition()), regexp);

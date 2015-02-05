@@ -1405,7 +1405,7 @@ public abstract class StringNodes {
         }
     }
 
-    @CoreMethod(names = "split", optional = 1)
+    @CoreMethod(names = "split", optional = 2, lowerFixnumParameters = 2)
     public abstract static class SplitNode extends CoreMethodNode {
 
         public SplitNode(RubyContext context, SourceSection sourceSection) {
@@ -1417,21 +1417,28 @@ public abstract class StringNodes {
         }
 
         @Specialization
-        public RubyArray split(RubyString string, RubyString sep) {
+        public RubyArray split(RubyString string, RubyString sep, @SuppressWarnings("unused") UndefinedPlaceholder limit) {
             notDesignedForCompilation();
 
             return splitHelper(string, sep.toString());
         }
 
         @Specialization
-        public RubyArray split(RubyString string, RubyRegexp sep) {
+        public RubyArray split(RubyString string, RubyRegexp sep, @SuppressWarnings("unused") UndefinedPlaceholder limit) {
             notDesignedForCompilation();
 
-            return RubyArray.fromObjects(getContext().getCoreLibrary().getArrayClass(), (Object[]) sep.split(string.toString()));
+            return RubyArray.fromObjects(getContext().getCoreLibrary().getArrayClass(), (Object[]) sep.split(string, false, 0));
         }
 
         @Specialization
-        public RubyArray split(RubyString string, UndefinedPlaceholder sep) {
+        public RubyArray split(RubyString string, RubyRegexp sep, int limit) {
+            notDesignedForCompilation();
+
+            return RubyArray.fromObjects(getContext().getCoreLibrary().getArrayClass(), (Object[]) sep.split(string, limit > 0, limit));
+        }
+
+        @Specialization
+        public RubyArray split(RubyString string, @SuppressWarnings("unused") UndefinedPlaceholder sep, @SuppressWarnings("unused") UndefinedPlaceholder limit) {
             notDesignedForCompilation();
 
             return splitHelper(string, " ");

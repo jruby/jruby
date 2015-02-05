@@ -19,7 +19,10 @@ import org.jruby.truffle.runtime.control.ThreadExitException;
 import org.jruby.truffle.runtime.subsystems.ThreadManager;
 import org.jruby.truffle.runtime.subsystems.ThreadManager.BlockingActionWithoutGlobalLock;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.locks.Lock;
 
 /**
  * Represents the Ruby {@code Thread} class. Implemented using Java threads, but note that there is
@@ -28,28 +31,21 @@ import java.util.concurrent.CountDownLatch;
  */
 public class RubyThread extends RubyBasicObject {
 
-    public Object getValue() {
-        return value;
-    }
-
-    public RubyException getException() {
-        return exception;
-    }
-
-    public void shutdown() {
-    }
-
     private final ThreadManager manager;
+
+    private String name;
 
     private final CountDownLatch finished = new CountDownLatch(1);
 
     private volatile Thread thread;
-    private Status status = Status.RUN;
+    private volatile Status status = Status.RUN;
 
     private RubyException exception;
     private Object value;
 
     private RubyBasicObject threadLocals;
+
+    private List<Lock> ownedLocks = new ArrayList<Lock>();
 
     public RubyThread(RubyClass rubyClass, ThreadManager manager) {
         super(rubyClass);
@@ -71,12 +67,14 @@ public class RubyThread extends RubyBasicObject {
                 value = finalBlock.rootCall();
             }
 
-        });
+        }, block.getSharedMethodInfo().getSourceSection().getShortDescription());
     }
 
-    public void initialize(final RubyContext context, final RubyNode currentNode, Runnable runnable) {
+    public void initialize(final RubyContext context, final RubyNode currentNode, Runnable runnable, String name) {
         final RubyThread finalThread = this;
         final Runnable finalRunnable = runnable;
+
+        name = "Ruby Thread@" + name;
 
         thread = new Thread(new Runnable() {
             @Override
@@ -96,16 +94,18 @@ public class RubyThread extends RubyBasicObject {
                 } finally {
                     status = Status.ABORTING;
                     context.getThreadManager().leaveGlobalLock();
-                    context.getSafepointManager().leaveThread(finalThread);
+                    context.getSafepointManager().leaveThread();
                     finalThread.manager.unregisterThread(finalThread);
 
-                    finalThread.finished.countDown();
                     status = Status.DEAD;
                     thread = null;
+                    releaseOwnedLocks();
+                    finalThread.finished.countDown();
                 }
             }
 
         });
+        thread.setName(name);
         thread.setDaemon(true);
         thread.start();
     }
@@ -135,12 +135,48 @@ public class RubyThread extends RubyBasicObject {
         }
     }
 
+    public void acquiredLock(Lock lock) {
+        ownedLocks.add(lock);
+    }
+
+    public void releasedLock(Lock lock) {
+        RubyNode.notDesignedForCompilation();
+
+        // TODO: this is O(ownedLocks.length).
+        ownedLocks.remove(lock);
+    }
+
+    protected void releaseOwnedLocks() {
+        for (Lock lock : ownedLocks) {
+            lock.unlock();
+        }
+    }
+
     public Status getStatus() {
         return status;
     }
 
+    public void setStatus(Status status) {
+        this.status = status;
+    }
+
     public RubyBasicObject getThreadLocals() {
         return threadLocals;
+    }
+
+    public Object getValue() {
+        return value;
+    }
+
+    public RubyException getException() {
+        return exception;
+    }
+
+    public void shutdown() {
+    }
+
+    public String getName() {
+        return name;
     }
 
     public static class ThreadAllocator implements Allocator {

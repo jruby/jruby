@@ -1,1 +1,0 @@
-fails:Enumerable#reduce without inject arguments(legacy rubycon)

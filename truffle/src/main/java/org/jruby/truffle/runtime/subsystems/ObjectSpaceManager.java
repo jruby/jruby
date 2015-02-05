@@ -9,13 +9,15 @@
  */
 package org.jruby.truffle.runtime.subsystems;
 
-import com.oracle.truffle.api.Truffle;
-import com.oracle.truffle.api.frame.Frame;
-import com.oracle.truffle.api.frame.FrameInstance;
-import com.oracle.truffle.api.frame.FrameInstanceVisitor;
-import com.oracle.truffle.api.frame.FrameSlot;
+import java.lang.ref.ReferenceQueue;
+import java.lang.ref.WeakReference;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.WeakHashMap;
 
-import org.jruby.runtime.Visibility;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
@@ -24,10 +26,11 @@ import org.jruby.truffle.runtime.core.RubyThread;
 import org.jruby.truffle.runtime.subsystems.ThreadManager.BlockingActionWithoutGlobalLock;
 import org.jruby.truffle.runtime.util.Consumer;
 
-import java.lang.ref.ReferenceQueue;
-import java.lang.ref.WeakReference;
-import java.util.*;
-import java.util.concurrent.CountDownLatch;
+import com.oracle.truffle.api.Truffle;
+import com.oracle.truffle.api.frame.Frame;
+import com.oracle.truffle.api.frame.FrameInstance;
+import com.oracle.truffle.api.frame.FrameInstanceVisitor;
+import com.oracle.truffle.api.frame.FrameSlot;
 
 /**
  * Supports the Ruby {@code ObjectSpace} module. Object IDs are lazily allocated {@code long}
@@ -97,7 +100,7 @@ public class ObjectSpaceManager {
                     runFinalizers();
                 }
 
-            });
+            }, "finalizer");
         }
     }
 
@@ -193,8 +196,6 @@ public class ObjectSpaceManager {
     public Map<Long, RubyBasicObject> collectLiveObjects() {
         RubyNode.notDesignedForCompilation();
 
-        // TODO(CS): probably a race condition here if multiple threads try to collect at the same time
-
         liveObjects = new HashMap<>();
 
         visitor = new ObjectGraphVisitor() {
@@ -225,7 +226,10 @@ public class ObjectSpaceManager {
     }
 
     public void visitCallStack(final ObjectGraphVisitor visitor) {
-        visitFrameInstance(Truffle.getRuntime().getCurrentFrame(), visitor);
+        FrameInstance currentFrame = Truffle.getRuntime().getCurrentFrame();
+        if (currentFrame != null) {
+            visitFrameInstance(currentFrame, visitor);
+        }
 
         Truffle.getRuntime().iterateFrames(new FrameInstanceVisitor<Object>() {
             @Override
@@ -247,10 +251,8 @@ public class ObjectSpaceManager {
 
         for (FrameSlot slot : frame.getFrameDescriptor().getSlots()) {
             Object value = frame.getValue(slot);
-            if (!(value instanceof Visibility)) { // TODO(cs): Better condition for hidden local variables
-                if (value instanceof RubyBasicObject) {
-                    ((RubyBasicObject) value).visitObjectGraph(visitor);
-                }
+            if (value instanceof RubyBasicObject) {
+                ((RubyBasicObject) value).visitObjectGraph(visitor);
             }
         }
     }

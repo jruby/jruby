@@ -1,2 +1,1 @@
 fails:Symbol#encoding for ASCII symbols is US-ASCII
-fails:Symbol#encoding for ASCII symbols is US-ASCII after converting to string

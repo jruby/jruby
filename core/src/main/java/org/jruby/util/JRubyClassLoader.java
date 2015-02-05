@@ -120,28 +120,6 @@ public class JRubyClassLoader extends ClassDefininngJRubyClassLoader {
         indexJarContents(url);
     }
 
-    @Override
-    public Class<?> loadClass(String name, boolean resolve) throws ClassNotFoundException {
-        synchronized (getClassLoadingLock(name)) {
-            Class<?> c = findLoadedClass(name);
-            if (c == null) {
-                try {
-                    c = findClass(name);
-                } catch (ClassNotFoundException e) {
-                    return super.loadClass(name, resolve);
-                }
-            }
-            return c;
-        }
-    }
-    public URL getResource( String name ) {
-        URL resource = findResource(name);
-        if (resource == null) {
-            resource = super.getResource(name);
-        }
-        return resource;
-    }
-
     /**
      * Called when the parent runtime is torn down.
      */

@@ -1,3 +1,0 @@
-fails:Enumerable#each_slice works when n is >= full length
-fails:Enumerable#each_slice returns an enumerator if no block
-fails:Enumerable#each_slice gathers whole arrays as elements when each yields multiple

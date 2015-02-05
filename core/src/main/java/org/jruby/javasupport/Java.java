@@ -37,7 +37,7 @@ import org.jruby.java.util.BlankSlateWrapper;
 import org.jruby.java.util.SystemPropertiesMap;
 import org.jruby.java.proxies.JavaInterfaceTemplate;
 import org.jruby.java.addons.KernelJavaAddons;
-import java.io.IOException;
+
 import java.lang.reflect.Constructor;
 import java.util.ArrayList;
 import java.util.HashMap;

@@ -641,8 +641,9 @@ public class ArgumentProcessor {
         } catch (Exception e) {
             // keep going, try PATH
         }
-        if(Ruby.getClassLoader().getResourceAsStream("bin/" + scriptName) != null){
-            return "classpath:bin/" + scriptName;
+        String resolved = resolveScriptUsingClassLoader(scriptName);
+        if (resolved != null) {
+            return resolved;
         }
         try {
             Object pathObj = config.getEnvironment().get("PATH");
@@ -665,6 +666,14 @@ public class ArgumentProcessor {
             config.getError().println("warning: could not resolve -S script on filesystem: " + scriptName);
         }
         return null;
+    }
+
+    public String resolveScriptUsingClassLoader(String scriptName) {
+        if(Ruby.getClassLoader().getResourceAsStream("bin/" + scriptName) != null){
+            return "classpath:bin/" + scriptName;
+        } else {
+            return null;
+        }
     }
 
     private String grabValue(String errorMessage) {

@@ -441,12 +441,14 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
 
         case RUNTIME_HELPER: {
             RuntimeHelperCall rhc = (RuntimeHelperCall)instr;
-            result = rhc.callHelper(context, currScope, currDynScope, self, temp, blockType);
-            if (rhc.getResult() != null) {
-                setResult(temp, currDynScope, rhc.getResult(), result);
-            }
+            setResult(temp, currDynScope, rhc.getResult(),
+                    rhc.callHelper(context, currScope, currDynScope, self, temp, blockType));
             break;
         }
+
+        case CHECK_FOR_LJE:
+            ((CheckForLJEInstr) instr).check(context, currDynScope, blockType);
+            break;
 
         case BOX_FLOAT: {
             RubyFloat f = context.runtime.newFloat(getFloatArg(floats, ((BoxFloatInstr)instr).getValue()));

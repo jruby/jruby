@@ -11,6 +11,8 @@ package org.jruby.truffle.nodes.dispatch;
 
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.frame.VirtualFrame;
+
+import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.cast.BooleanCastNode;
 import org.jruby.truffle.nodes.cast.BooleanCastNodeFactory;
 import org.jruby.truffle.runtime.LexicalScope;
@@ -22,8 +24,8 @@ public class CallDispatchHeadNode extends DispatchHeadNode {
 
     @Child private BooleanCastNode booleanCastNode;
 
-    public CallDispatchHeadNode(RubyContext context, boolean ignoreVisibility, boolean indirect, MissingBehavior missingBehavior, LexicalScope lexicalScope) {
-        super(context, ignoreVisibility, indirect, missingBehavior, lexicalScope, DispatchAction.CALL_METHOD);
+    public CallDispatchHeadNode(RubyContext context, boolean ignoreVisibility, boolean indirect, MissingBehavior missingBehavior, LexicalScope lexicalScope, RubyNode[] argumentNodes, boolean isSplatted) {
+        super(context, ignoreVisibility, indirect, missingBehavior, lexicalScope, DispatchAction.CALL_METHOD, argumentNodes, isSplatted);
     }
 
     public Object call(
@@ -72,17 +74,8 @@ public class CallDispatchHeadNode extends DispatchHeadNode {
         }
 
         CompilerDirectives.transferToInterpreter();
-
-        final String message = String.format("%s (%s#%s gives %s)",
-                context.getCoreLibrary().getFloatClass().getName(),
-                context.getCoreLibrary().getLogicalClass(receiverObject).getName(),
-                methodName,
-                context.getCoreLibrary().getLogicalClass(value).getName());
-
         throw new RaiseException(context.getCoreLibrary().typeErrorCantConvertTo(
-                context.getCoreLibrary().getLogicalClass(receiverObject).getName(),
-                message,
-                this));
+                receiverObject, context.getCoreLibrary().getFloatClass(), (String) methodName, value, this));
     }
 
     public long callLongFixnum(
@@ -106,17 +99,8 @@ public class CallDispatchHeadNode extends DispatchHeadNode {
         }
 
         CompilerDirectives.transferToInterpreter();
-
-        final String message = String.format("%s (%s#%s gives %s)",
-                context.getCoreLibrary().getFloatClass().getName(),
-                context.getCoreLibrary().getLogicalClass(receiverObject).getName(),
-                methodName,
-                context.getCoreLibrary().getLogicalClass(value).getName());
-
         throw new RaiseException(context.getCoreLibrary().typeErrorCantConvertTo(
-                context.getCoreLibrary().getLogicalClass(receiverObject).getName(),
-                message,
-                this));
+                receiverObject, context.getCoreLibrary().getFixnumClass(), (String) methodName, value, this));
     }
 
 }

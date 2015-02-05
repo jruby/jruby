@@ -16,13 +16,15 @@ import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.*;
 import com.oracle.truffle.api.nodes.UnexpectedResultException;
 import com.oracle.truffle.api.source.SourceSection;
-
 import com.oracle.truffle.api.utilities.ConditionProfile;
+
 import org.jruby.common.IRubyWarnings;
 import org.jruby.runtime.Visibility;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.cast.BooleanCastNode;
 import org.jruby.truffle.nodes.cast.BooleanCastNodeFactory;
+import org.jruby.truffle.nodes.cast.NumericToFloatNode;
+import org.jruby.truffle.nodes.cast.NumericToFloatNodeFactory;
 import org.jruby.truffle.nodes.control.WhileNode;
 import org.jruby.truffle.nodes.core.KernelNodesFactory.SameOrEqualNodeFactory;
 import org.jruby.truffle.nodes.dispatch.*;
@@ -542,6 +544,14 @@ public abstract class KernelNodes {
         }
 
         @Specialization
+        public Object eval(VirtualFrame frame, RubyString source, RubyNilClass noBinding, RubyString filename, int lineNumber) {
+            notDesignedForCompilation();
+
+            // TODO (nirvdrum Dec. 29, 2014) Do something with the supplied filename.
+            return eval(frame, source, UndefinedPlaceholder.INSTANCE, UndefinedPlaceholder.INSTANCE, UndefinedPlaceholder.INSTANCE);
+        }
+
+        @Specialization
         public Object eval(RubyString source, RubyBinding binding, UndefinedPlaceholder filename, UndefinedPlaceholder lineNumber) {
             notDesignedForCompilation();
 
@@ -841,7 +851,7 @@ public abstract class KernelNodes {
 
             final BufferedReader reader = new BufferedReader(new InputStreamReader(in));
 
-            final String line = getContext().getThreadManager().runOnce(new BlockingActionWithoutGlobalLock<String>() {
+            final String line = getContext().getThreadManager().runUntilResult(new BlockingActionWithoutGlobalLock<String>() {
                 @Override
                 public String block() throws InterruptedException {
                     return gets(reader);
@@ -1114,8 +1124,8 @@ public abstract class KernelNodes {
 
         public IntegerNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            toIntRespondTo = new DoesRespondDispatchHeadNode(context, false, false, MissingBehavior.CALL_METHOD_MISSING, null);
-            toInt = new CallDispatchHeadNode(context, false, false, MissingBehavior.CALL_METHOD_MISSING, null);
+            toIntRespondTo = new DoesRespondDispatchHeadNode(context, false, false, MissingBehavior.CALL_METHOD_MISSING, null, null, false);
+            toInt = new CallDispatchHeadNode(context, false, false, MissingBehavior.CALL_METHOD_MISSING, null, null, false);
         }
 
         public IntegerNode(IntegerNode prev) {
@@ -1236,7 +1246,12 @@ public abstract class KernelNodes {
         public boolean load(RubyString file) {
             notDesignedForCompilation();
 
-            getContext().loadFile(file.toString(), this);
+            try {
+                getContext().loadFile(file.toString(), this);
+            } catch (Throwable t) {
+                throw new RaiseException(getContext().getCoreLibrary().loadErrorCannotLoad(file.toString(), this));
+            }
+
             return true;
         }
     }
@@ -1555,28 +1570,28 @@ public abstract class KernelNodes {
         }
 
         @Specialization
-        public Object raise(VirtualFrame frame, UndefinedPlaceholder undefined1, UndefinedPlaceholder undefined2, Object undefined3) {
+        public Object raise(VirtualFrame frame, UndefinedPlaceholder undefined1, UndefinedPlaceholder undefined2, UndefinedPlaceholder undefined3) {
             notDesignedForCompilation();
 
             return raise(frame, getContext().getCoreLibrary().getRuntimeErrorClass(), getContext().makeString("re-raised - don't have the current exception yet!"), undefined1);
         }
 
         @Specialization
-        public Object raise(VirtualFrame frame, RubyString message, UndefinedPlaceholder undefined1, Object undefined2) {
+        public Object raise(VirtualFrame frame, RubyString message, UndefinedPlaceholder undefined1, UndefinedPlaceholder undefined2) {
             notDesignedForCompilation();
 
             return raise(frame, getContext().getCoreLibrary().getRuntimeErrorClass(), message, undefined1);
         }
 
         @Specialization
-        public Object raise(VirtualFrame frame, RubyClass exceptionClass, UndefinedPlaceholder undefined1, Object undefined2) {
+        public Object raise(VirtualFrame frame, RubyClass exceptionClass, UndefinedPlaceholder undefined1, UndefinedPlaceholder undefined2) {
             notDesignedForCompilation();
 
             return raise(frame, exceptionClass, getContext().makeString(""), undefined1);
         }
 
         @Specialization
-        public Object raise(VirtualFrame frame, RubyClass exceptionClass, RubyString message, Object undefined1) {
+        public Object raise(VirtualFrame frame, RubyClass exceptionClass, RubyString message, UndefinedPlaceholder undefined1) {
             notDesignedForCompilation();
 
             final Object exception = exceptionClass.allocate(this);
@@ -1591,7 +1606,7 @@ public abstract class KernelNodes {
         }
 
         @Specialization
-        public Object raise(RubyException exception, UndefinedPlaceholder undefined1, Object undefined2) {
+        public Object raise(RubyException exception, UndefinedPlaceholder undefined1, UndefinedPlaceholder undefined2) {
             throw new RaiseException(exception);
         }
 
@@ -1713,8 +1728,8 @@ public abstract class KernelNodes {
         public RespondToNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
 
-            dispatch = new DoesRespondDispatchHeadNode(context, false, false, MissingBehavior.RETURN_MISSING, null);
-            dispatchIgnoreVisibility = new DoesRespondDispatchHeadNode(context, true, false, MissingBehavior.RETURN_MISSING, null);
+            dispatch = new DoesRespondDispatchHeadNode(context, false, false, MissingBehavior.RETURN_MISSING, null, null, false);
+            dispatchIgnoreVisibility = new DoesRespondDispatchHeadNode(context, true, false, MissingBehavior.RETURN_MISSING, null, null, false);
 
             if (Options.TRUFFLE_DISPATCH_METAPROGRAMMING_ALWAYS_UNCACHED.load()) {
                 dispatch.forceUncached();
@@ -1911,6 +1926,8 @@ public abstract class KernelNodes {
     @CoreMethod(names = "sleep", isModuleFunction = true, optional = 1)
     public abstract static class SleepNode extends CoreMethodNode {
 
+        @Child NumericToFloatNode floatCastNode;
+
         public SleepNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
         }
@@ -1920,45 +1937,64 @@ public abstract class KernelNodes {
         }
 
         @Specialization
-        public double sleep(UndefinedPlaceholder duration) {
-            return doSleep(0);
+        public long sleep(UndefinedPlaceholder duration) {
+            // TODO: this should actually be "forever".
+            return doSleepMillis(Long.MAX_VALUE);
         }
 
         @Specialization
-        public double sleep(int duration) {
-            return doSleep(duration);
+        public long sleep(int duration) {
+            return doSleepMillis(duration * 1000);
         }
 
         @Specialization
-        public double sleep(long duration) {
-            return doSleep(duration);
+        public long sleep(long duration) {
+            return doSleepMillis(duration * 1000);
         }
 
         @Specialization
-        public double sleep(double duration) {
-            return doSleep(duration);
+        public long sleep(double duration) {
+            return doSleepMillis((long) (duration * 1000));
+        }
+
+        @Specialization(guards = "isRubiniusUndefined")
+        public long sleep(RubyBasicObject duration) {
+            return sleep(UndefinedPlaceholder.INSTANCE);
+        }
+
+        @Specialization(guards = "!isRubiniusUndefined")
+        public long sleep(VirtualFrame frame, RubyBasicObject duration) {
+            if (floatCastNode == null) {
+                CompilerDirectives.transferToInterpreterAndInvalidate();
+                floatCastNode = insert(NumericToFloatNodeFactory.create(getContext(), getSourceSection(), "to_f", null));
+            }
+            return sleep(floatCastNode.executeFloat(frame, duration));
         }
 
         @TruffleBoundary
-        private double doSleep(final double duration) {
-            final long start = System.nanoTime();
+        private long doSleepMillis(final long durationInMillis) {
+            if (durationInMillis < 0) {
+                throw new RaiseException(getContext().getCoreLibrary().argumentError("time interval must be positive", this));
+            }
+
+            final long start = System.currentTimeMillis();
 
             getContext().getThreadManager().runOnce(new BlockingActionWithoutGlobalLock<Boolean>() {
                 @Override
                 public Boolean block() throws InterruptedException {
-                    Thread.sleep((long) (duration * 1000));
+                    Thread.sleep(durationInMillis);
                     return SUCCESS;
                 }
             });
 
-            final long end = System.nanoTime();
+            final long end = System.currentTimeMillis();
 
-            return (end - start) / 1e9;
+            return (end - start) / 1000;
         }
 
     }
 
-    @CoreMethod(names = "sprintf", isModuleFunction = true, argumentsAsArray = true)
+    @CoreMethod(names = { "sprintf", "format" }, isModuleFunction = true, argumentsAsArray = true)
     public abstract static class SPrintfNode extends CoreMethodNode {
 
         public SPrintfNode(RubyContext context, SourceSection sourceSection) {
@@ -2147,10 +2183,10 @@ public abstract class KernelNodes {
 
         @Specialization
         public Object doThrow(Object tag, UndefinedPlaceholder value) {
-            return doThrow(tag, (Object) value);
+            return doThrow(tag, getContext().getCoreLibrary().getNilObject());
         }
 
-        @Specialization
+        @Specialization(guards = "!isUndefinedPlaceholder(arguments[1])")
         public Object doThrow(Object tag, Object value) {
             notDesignedForCompilation();
 
@@ -2161,11 +2197,7 @@ public abstract class KernelNodes {
                         RubyCallStack.getBacktrace(this)));
             }
 
-            if (value instanceof UndefinedPlaceholder) {
-                throw new ThrowException(tag, getContext().getCoreLibrary().getNilObject());
-            } else {
-                throw new ThrowException(tag, value);
-            }
+            throw new ThrowException(tag, value);
         }
 
     }

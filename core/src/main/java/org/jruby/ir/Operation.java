@@ -151,6 +151,7 @@ public enum Operation {
     BACKTICK_STRING(OpFlags.f_can_raise_exception),
     CHECK_ARGS_ARRAY_ARITY(OpFlags.f_can_raise_exception),
     CHECK_ARITY(OpFlags.f_is_book_keeping_op | OpFlags.f_can_raise_exception),
+    CHECK_FOR_LJE(OpFlags.f_has_side_effect | OpFlags.f_can_raise_exception),
     CLASS_VAR_MODULE(0),
     COPY(0),
     GET_ENCODING(0),

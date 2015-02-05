@@ -43,15 +43,23 @@ public class CheckArityNode extends RubyNode {
 
     @Override
     public void executeVoid(VirtualFrame frame) {
-        final int given = RubyArguments.getUserArgumentsCount(frame.getArguments());
+        final Object[] frameArguments = frame.getArguments();
+        final int given = RubyArguments.getUserArgumentsCount(frameArguments);
+        final RubyHash keywordArguments;
 
-        if (!checkArity(frame, given)) {
+        if (arity.hasKeywords()) {
+            keywordArguments = RubyArguments.getUserKeywordsHash(frameArguments, arity.getRequired());
+        } else {
+            keywordArguments = null;
+        }
+
+        if (!checkArity(frame, given, keywordArguments)) {
             CompilerDirectives.transferToInterpreter();
             throw new RaiseException(getContext().getCoreLibrary().argumentError(given, arity.getRequired(), this));
         }
 
-        if (!keywordsRest && arity.hasKeywords() && getKeywordsHash(frame) != null) {
-            for (KeyValue keyValue : HashOperations.verySlowToKeyValues(getKeywordsHash(frame))) {
+        if (!keywordsRest && keywordArguments != null) {
+            for (KeyValue keyValue : HashOperations.verySlowToKeyValues(keywordArguments)) {
                 if (!keywordAllowed(keyValue.getKey().toString())) {
                     throw new RaiseException(getContext().getCoreLibrary().argumentError("unknown keyword: " + keyValue.getKey().toString(), this));
                 }
@@ -59,8 +67,8 @@ public class CheckArityNode extends RubyNode {
         }
     }
 
-    private boolean checkArity(VirtualFrame frame, int given) {
-        if (arity.hasKeywords() && getKeywordsHash(frame) != null) {
+    private boolean checkArity(VirtualFrame frame, int given, RubyHash keywordArguments) {
+        if (keywordArguments != null) {
             given -= 1;
         }
 
@@ -87,22 +95,6 @@ public class CheckArityNode extends RubyNode {
     public Object execute(VirtualFrame frame) {
         executeVoid(frame);
         return getContext().getCoreLibrary().getNilObject();
-    }
-
-    private RubyHash getKeywordsHash(VirtualFrame frame) {
-        // TODO(CS): duplicated in ReadKeywordArgumentNode
-
-        if (RubyArguments.getUserArgumentsCount(frame.getArguments()) <= arity.getRequired()) {
-            return null;
-        }
-
-        final Object lastArgument = RubyArguments.getUserArgument(frame.getArguments(), RubyArguments.getUserArgumentsCount(frame.getArguments()) - 1);
-
-        if (lastArgument instanceof RubyHash) {
-            return (RubyHash) lastArgument;
-        }
-
-        return null;
     }
 
 }

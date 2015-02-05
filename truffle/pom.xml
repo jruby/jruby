@@ -19,6 +19,7 @@
       <groupId>org.jruby</groupId>
       <artifactId>jruby-core</artifactId>
       <version>${project.version}</version>
+      <scope>provided</scope>
     </dependency>
     <dependency>
       <groupId>com.oracle</groupId>
@@ -34,6 +35,14 @@
   </dependencies>
   <build>
     <defaultGoal>package</defaultGoal>
+    <resources>
+      <resource>
+        <directory>src/main/ruby</directory>
+        <includes>
+          <include>**/*rb</include>
+        </includes>
+      </resource>
+    </resources>
     <plugins>
       <plugin>
         <artifactId>maven-compiler-plugin</artifactId>
@@ -75,24 +84,13 @@
         <artifactId>maven-shade-plugin</artifactId>
         <executions>
           <execution>
-            <id>pack jruby.jar</id>
+            <id>create lib/jruby-truffle.jar</id>
             <phase>package</phase>
             <goals>
               <goal>shade</goal>
             </goals>
             <configuration>
-              <relocations>
-                <relocation>
-                  <pattern>org.objectweb</pattern>
-                  <shadedPattern>org.jruby.org.objectweb</shadedPattern>
-                </relocation>
-              </relocations>
-              <outputFile>${jruby.basedir}/lib/jruby.jar</outputFile>
-              <transformers>
-                <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
-                  <mainClass>org.jruby.Main</mainClass>
-                </transformer>
-              </transformers>
+              <outputFile>${jruby.basedir}/lib/jruby-truffle.jar</outputFile>
             </configuration>
           </execution>
         </executions>

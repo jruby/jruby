@@ -1,1 +1,2 @@
 fails(inherited):Encoding#dummy? returns true for dummy encodings
+fails(windows bug):Encoding#dummy? returns true for dummy encodings
