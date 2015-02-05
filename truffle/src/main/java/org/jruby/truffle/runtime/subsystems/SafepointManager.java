@@ -103,7 +103,7 @@ public class SafepointManager {
 
             try {
                 if (holdsGlobalLock && thread.getStatus() != Status.ABORTING) {
-                    runAction(thread);
+                    action.accept(thread);
                 }
             } finally {
                 // wait other threads to finish their action
@@ -113,15 +113,6 @@ public class SafepointManager {
             if (holdsGlobalLock) {
                 context.getThreadManager().enterGlobalLock(thread);
             }
-        }
-    }
-
-    private void runAction(RubyThread thread) {
-        context.getThreadManager().enterGlobalLock(thread);
-        try {
-            action.accept(thread);
-        } finally {
-            context.getThreadManager().leaveGlobalLock();
         }
     }
 

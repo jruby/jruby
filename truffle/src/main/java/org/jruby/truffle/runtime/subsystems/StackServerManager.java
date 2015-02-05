@@ -56,8 +56,9 @@ public class StackServerManager {
                 context.getSafepointManager().pauseAllThreadsAndExecuteFromNonRubyThread(new Consumer<RubyThread>() {
 
                     @Override
-                    public void accept(RubyThread thread) {
+                    public synchronized void accept(RubyThread thread) {
                         try {
+                            stream.println(Thread.currentThread().getName());
                             for (String line : Backtrace.DISPLAY_FORMATTER.format(context, null,
                                     RubyCallStack.getBacktrace(null))) {
                                 stream.println(line);
