@@ -44,4 +44,8 @@ public class SignalOperations {
         }
     }
 
+    public static void raise(Signal signal) {
+        Signal.raise(signal);
+    }
+
 }

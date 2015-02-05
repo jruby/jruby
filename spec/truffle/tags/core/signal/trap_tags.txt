@@ -1,3 +1,2 @@
-fails:Signal.trap accepts a block in place of a proc/command argument
 fails:Signal.trap the special EXIT signal code accepts the EXIT code
 fails:Signal.trap the special EXIT signal code runs the proc before at_exit handlers
