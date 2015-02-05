@@ -158,6 +158,7 @@ public class Options {
     public static final Option<Boolean> TRUFFLE_DISPATCH_METHODMISSING_ALWAYS_INLINED = bool(TRUFFLE, "truffle.call.method_missing_always_inlined", true, "Always inline #method_missing call targets.");
 
     public static final Option<Boolean> TRUFFLE_RANDOMIZE_STORAGE_ARRAY = bool(TRUFFLE, "truffle.randomize_storage.array", false, "Randomize Array storage strategy.");
+    public static final Option<Integer> TRUFFLE_RANDOMIZE_SEED = integer(TRUFFLE, "truffle.randomize.seed", 0, "Seed for any randomization.");
 
     public static final Option<TruffleBridge.BacktraceFormatter> TRUFFLE_BACKTRACE_DISPLAY_FORMAT = enumeration(TRUFFLE, "truffle.backtrace.display_format", TruffleBridge.BacktraceFormatter.class, TruffleBridge.BacktraceFormatter.MRI, "How to format backtraces displayed to the user.");
     public static final Option<TruffleBridge.BacktraceFormatter> TRUFFLE_BACKTRACE_DEBUG_FORMAT = enumeration(TRUFFLE, "truffle.backtrace.debug_format", TruffleBridge.BacktraceFormatter.class, TruffleBridge.BacktraceFormatter.DEBUG, "How to format backtraces displayed using TruffleDebug.dump_call_stack.");

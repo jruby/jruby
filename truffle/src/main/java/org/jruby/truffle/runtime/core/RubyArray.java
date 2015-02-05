@@ -30,7 +30,7 @@ public final class RubyArray extends RubyBasicObject {
     public static final int ARRAYS_SMALL = Options.TRUFFLE_ARRAYS_SMALL.load();
 
     private static final boolean RANDOMIZE_STORAGE_ARRAY = Options.TRUFFLE_RANDOMIZE_STORAGE_ARRAY.load();
-    private static final Random random = new Random(0);
+    private static final Random random = new Random(Options.TRUFFLE_RANDOMIZE_SEED.load());
 
     private final ArrayAllocationSite allocationSite;
     private Object store;
