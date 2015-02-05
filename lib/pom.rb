@@ -87,6 +87,8 @@ project 'JRuby Lib Setup' do
   # this is not an artifact for maven central
   plugin :deploy, :skip => true
 
+  plugin :invoker, :skipInstallation => true
+
   gem 'ruby-maven', '3.1.1.0.8', :scope => :provided
 
   execute :install_gems, :'package' do |ctx|

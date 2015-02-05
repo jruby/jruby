@@ -124,6 +124,12 @@
         </configuration>
       </plugin>
       <plugin>
+        <artifactId>maven-invoker-plugin</artifactId>
+        <configuration>
+          <skipInstallation>true</skipInstallation>
+        </configuration>
+      </plugin>
+      <plugin>
         <groupId>io.tesla.polyglot</groupId>
         <artifactId>tesla-polyglot-maven-plugin</artifactId>
         <version>${tesla.version}</version>
