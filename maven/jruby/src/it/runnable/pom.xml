@@ -9,7 +9,7 @@
   <properties>
     <tesla.dump.readOnly>true</tesla.dump.readOnly>
     <jruby.version>@project.version@</jruby.version>
-    <jruby.plugins.version>1.0.7</jruby.plugins.version>
+    <jruby.plugins.version>1.0.8</jruby.plugins.version>
     <project.build.sourceEncoding>utf-8</project.build.sourceEncoding>
     <tesla.dump.pom>pom.xml</tesla.dump.pom>
     <tesla.version>0.1.1</tesla.version>
@@ -104,6 +104,7 @@
           </execution>
         </executions>
         <configuration>
+	  <jrubyVersion>1.7.19</jrubyVersion>
           <includeRubygemsInResources>true</includeRubygemsInResources>
         </configuration>
       </plugin>
