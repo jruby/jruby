@@ -207,13 +207,17 @@ public class RubyContext extends ExecutionContext {
         return execute(this, source, code.getEncoding(), TranslatorDriver.ParserContext.TOP_LEVEL, self, null, currentNode, NodeWrapper.IDENTITY);
     }
 
-    public Object eval(ByteList code, RubyBinding binding, RubyNode currentNode) {
+    public Object eval(ByteList code, RubyBinding binding, boolean ownScopeForAssignments, RubyNode currentNode) {
         final Source source = Source.fromText(code, "(eval)");
-        return execute(this, source, code.getEncoding(), TranslatorDriver.ParserContext.TOP_LEVEL, binding.getSelf(), binding.getFrame(), currentNode, NodeWrapper.IDENTITY);
+        return execute(this, source, code.getEncoding(), TranslatorDriver.ParserContext.TOP_LEVEL, binding.getSelf(), binding.getFrame(), ownScopeForAssignments, currentNode, NodeWrapper.IDENTITY);
     }
 
     public Object execute(RubyContext context, Source source, Encoding defaultEncoding, TranslatorDriver.ParserContext parserContext, Object self, MaterializedFrame parentFrame, RubyNode currentNode, NodeWrapper wrapper) {
-        final RubyRootNode rootNode = translator.parse(context, source, defaultEncoding, parserContext, parentFrame, currentNode, wrapper);
+        return execute(context, source, defaultEncoding, parserContext, self, parentFrame, true, currentNode, wrapper);
+    }
+
+    public Object execute(RubyContext context, Source source, Encoding defaultEncoding, TranslatorDriver.ParserContext parserContext, Object self, MaterializedFrame parentFrame, boolean ownScopeForAssignments, RubyNode currentNode, NodeWrapper wrapper) {
+        final RubyRootNode rootNode = translator.parse(context, source, defaultEncoding, parserContext, parentFrame, ownScopeForAssignments, currentNode, wrapper);
         final CallTarget callTarget = Truffle.getRuntime().createCallTarget(rootNode);
 
         // TODO(CS): we really need a method here - it's causing problems elsewhere
