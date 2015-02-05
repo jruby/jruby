@@ -12,12 +12,11 @@ package org.jruby.truffle.runtime.signal;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyProc;
 import org.jruby.truffle.runtime.core.RubyThread;
-import org.jruby.truffle.runtime.subsystems.ThreadManager;
-import org.jruby.truffle.runtime.util.Consumer;
 
 import sun.misc.Signal;
 import sun.misc.SignalHandler;
 
+@SuppressWarnings("restriction")
 public class ProcSignalHandler implements SignalHandler {
 
     private final RubyContext context;
@@ -30,17 +29,14 @@ public class ProcSignalHandler implements SignalHandler {
 
     @Override
     public void handle(Signal signal) {
-        final ThreadManager threadManager = context.getThreadManager();
-        context.getSafepointManager().pauseAllThreadsAndExecuteFromNonRubyThread(new Consumer<RubyThread>() {
+        RubyThread rubyThread = new RubyThread(context.getCoreLibrary().getThreadClass(), context.getThreadManager());
 
-            public void accept(RubyThread currentThread) {
-                if (currentThread == threadManager.getRootThread()) {
-                    proc.rootCall();
-                }
+        rubyThread.run(context, null, Thread.currentThread().getName(), new Runnable() {
+            @Override
+            public void run() {
+                proc.rootCall();
             }
-
         });
-
     }
 
 }

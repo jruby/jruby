@@ -57,57 +57,53 @@ public class RubyThread extends RubyBasicObject {
         status = Status.ABORTING;
     }
 
-    public void initialize(RubyContext context, RubyNode currentNode, RubyProc block) {
-        final RubyProc finalBlock = block;
-
-        initialize(context, currentNode, new Runnable() {
-
+    public void initialize(RubyContext context, RubyNode currentNode, final RubyProc block) {
+        String info = block.getSharedMethodInfo().getSourceSection().getShortDescription();
+        initialize(context, currentNode, info, new Runnable() {
             @Override
             public void run() {
-                value = finalBlock.rootCall();
+                value = block.rootCall();
             }
-
-        }, block.getSharedMethodInfo().getSourceSection().getShortDescription());
+        });
     }
 
-    public void initialize(final RubyContext context, final RubyNode currentNode, Runnable runnable, String name) {
-        final RubyThread finalThread = this;
-        final Runnable finalRunnable = runnable;
-
-        name = "Ruby Thread@" + name;
-
-        thread = new Thread(new Runnable() {
+    public void initialize(final RubyContext context, final RubyNode currentNode, final String info, final Runnable task) {
+        new Thread(new Runnable() {
             @Override
             public void run() {
-                finalThread.manager.registerThread(finalThread);
-                context.getSafepointManager().enterThread();
-                finalThread.manager.enterGlobalLock(finalThread);
-
-                try {
-                    finalRunnable.run();
-                } catch (ThreadExitException e) {
-                    return;
-                } catch (RaiseException e) {
-                    exception = e.getRubyException();
-                } catch (ReturnException e) {
-                    exception = getContext().getCoreLibrary().unexpectedReturn(currentNode);
-                } finally {
-                    status = Status.ABORTING;
-                    context.getThreadManager().leaveGlobalLock();
-                    context.getSafepointManager().leaveThread();
-                    finalThread.manager.unregisterThread(finalThread);
-
-                    status = Status.DEAD;
-                    thread = null;
-                    releaseOwnedLocks();
-                    finalThread.finished.countDown();
-                }
+                RubyThread.this.run(context, currentNode, info, task);
             }
+        }).start();
+    }
 
-        });
+    public void run(final RubyContext context, RubyNode currentNode, String info, Runnable task) {
+        name = "Ruby Thread@" + info;
+        thread = Thread.currentThread();
         thread.setName(name);
-        thread.setDaemon(true);
-        thread.start();
+
+        manager.registerThread(this);
+        context.getSafepointManager().enterThread();
+        manager.enterGlobalLock(this);
+
+        try {
+            task.run();
+        } catch (ThreadExitException e) {
+            return;
+        } catch (RaiseException e) {
+            exception = e.getRubyException();
+        } catch (ReturnException e) {
+            exception = getContext().getCoreLibrary().unexpectedReturn(currentNode);
+        } finally {
+            status = Status.ABORTING;
+            context.getThreadManager().leaveGlobalLock();
+            context.getSafepointManager().leaveThread();
+            manager.unregisterThread(this);
+
+            status = Status.DEAD;
+            thread = null;
+            releaseOwnedLocks();
+            finished.countDown();
+        }
     }
 
     public void setRootThread(Thread thread) {

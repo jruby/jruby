@@ -93,14 +93,12 @@ public class ObjectSpaceManager {
 
             finalizerThread = new RubyThread(context.getCoreLibrary().getThreadClass(), context.getThreadManager());
             finalizerThread.ignoreSafepointActions();
-            finalizerThread.initialize(context, null, new Runnable() {
-
+            finalizerThread.initialize(context, null, "finalizer", new Runnable() {
                 @Override
                 public void run() {
                     runFinalizers();
                 }
-
-            }, "finalizer");
+            });
         }
     }
 
