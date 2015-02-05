@@ -60,6 +60,7 @@ public class RubyClass extends RubyModule {
 
         if (superclass != null) {
             unsafeSetSuperclass(superclass);
+            allocator = superclass.allocator;
         }
     }
 
