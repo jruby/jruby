@@ -68,15 +68,15 @@ public class RubySignal {
                 continue;
 
             // replace CLD with CHLD value
-            int longValue = s.intValue();
+            int signo = s.intValue();
             if (s == Signal.SIGCLD)
-                longValue = Signal.SIGCHLD.intValue();
+                signo = Signal.SIGCHLD.intValue();
 
             // omit unsupported signals
-            if (longValue >= 20000)
+            if (signo >= 20000)
                 continue;
 
-            signals.put(s.description().substring("SIG".length()), longValue);
+            signals.put(s.description().substring("SIG".length()), signo);
         }
 
         return signals;
