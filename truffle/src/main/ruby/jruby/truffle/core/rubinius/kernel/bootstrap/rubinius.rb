@@ -24,22 +24,11 @@
 # OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-# Only part of Rubinius' string.rb
+# Only part of Rubinius' rubinius.rb
 
-class String
-
-  def include?(needle)
-    !!find_string(StringValue(needle), 0)
+module Rubinius
+  def self.watch_signal(sig, ignored)
+    Rubinius.primitive :vm_watch_signal
+    raise PrimitiveFailure, "Rubinius.vm_watch_signal primitive failed" # Truffle: simplified failure
   end
-
-  def chars
-    if block_given?
-      each_char do |char|
-        yield char
-      end
-    else
-      each_char.to_a
-    end
-  end
-
 end

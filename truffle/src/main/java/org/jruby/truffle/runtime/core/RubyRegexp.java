@@ -324,6 +324,13 @@ public class RubyRegexp extends RubyBasicObject {
             }
         }
 
+        // Suppress trailing empty fields if not using a limit and the supplied limit isn't negative.
+        if (!useLimit && limit == 0) {
+            while (! strings.isEmpty() && (strings.get(strings.size() - 1).length() == 0)) {
+                strings.remove(strings.size() - 1);
+            }
+        }
+
         return strings.toArray(new RubyString[strings.size()]);
     }
 

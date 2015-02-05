@@ -24,22 +24,21 @@
 # OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-# Only part of Rubinius' string.rb
+# Only part of Rubinius's proc.rb
 
-class String
+class Proc
 
-  def include?(needle)
-    !!find_string(StringValue(needle), 0)
-  end
+  def to_s
+    file, line = source_location
 
-  def chars
-    if block_given?
-      each_char do |char|
-        yield char
-      end
+    l = " (lambda)" if lambda?
+    if file and line
+      "#<#{self.class}:0x#{self.object_id.to_s(16)}@#{file}:#{line}#{l}>"
     else
-      each_char.to_a
+      "#<#{self.class}:0x#{self.object_id.to_s(16)}#{l}>"
     end
   end
+
+  alias_method :inspect, :to_s
 
 end

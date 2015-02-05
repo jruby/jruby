@@ -13,6 +13,7 @@ import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.MaterializedFrame;
 import com.oracle.truffle.api.frame.VirtualFrame;
+import com.oracle.truffle.api.source.NullSourceSection;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.ast.ArgsNode;
 import org.jruby.runtime.Helpers;
@@ -24,6 +25,7 @@ import org.jruby.truffle.runtime.core.RubyArray;
 import org.jruby.truffle.runtime.core.RubyBinding;
 import org.jruby.truffle.runtime.core.RubyNilClass;
 import org.jruby.truffle.runtime.core.RubyProc;
+import org.jruby.truffle.runtime.core.RubyString;
 
 @CoreClass(name = "Proc")
 public abstract class ProcNodes {
@@ -161,6 +163,34 @@ public abstract class ProcNodes {
 
             return (RubyArray) getContext().toTruffle(Helpers.parameterListToParameters(getContext().getRuntime(),
                     parameters, proc.getType() == RubyProc.Type.LAMBDA));
+        }
+
+    }
+
+    @CoreMethod(names = "source_location")
+    public abstract static class SourceLocationNode extends CoreMethodNode {
+
+        public SourceLocationNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public SourceLocationNode(SourceLocationNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public Object sourceLocation(RubyProc proc) {
+            notDesignedForCompilation();
+
+            SourceSection sourceSection = proc.getSharedMethodInfo().getSourceSection();
+
+            if (sourceSection instanceof NullSourceSection) {
+                return getContext().getCoreLibrary().getNilObject();
+            } else {
+                RubyString file = getContext().makeString(sourceSection.getSource().getName());
+                return RubyArray.fromObjects(getContext().getCoreLibrary().getArrayClass(),
+                        file, sourceSection.getStartLine());
+            }
         }
 
     }

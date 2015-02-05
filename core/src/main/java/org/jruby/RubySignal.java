@@ -28,11 +28,11 @@
 package org.jruby;
 
 import jnr.constants.platform.Signal;
+
 import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyModule;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
-
 import org.jruby.util.SignalFacade;
 import org.jruby.util.NoFunctionalitySignalFacade;
 
@@ -58,23 +58,34 @@ public class RubySignal {
         //registerThreadDumpSignalHandler(runtime);
     }
     
+    public static Map<String, Integer> list() {
+        Map<String, Integer> signals = new HashMap<String, Integer>();
+
+        for (Signal s : Signal.values()) {
+            if (!s.description().startsWith("SIG"))
+                continue;
+            if (!RUBY_18_SIGNALS.contains(s.description().substring(3)))
+                continue;
+
+            // replace CLD with CHLD value
+            int longValue = s.intValue();
+            if (s == Signal.SIGCLD)
+                longValue = Signal.SIGCHLD.intValue();
+
+            // omit unsupported signals
+            if (longValue >= 20000)
+                continue;
+
+            signals.put(s.description().substring("SIG".length()), longValue);
+        }
+
+        return signals;
+    }
+
     @JRubyMethod(meta = true)
     public static IRubyObject list(ThreadContext context, IRubyObject recv) {
         Ruby runtime = recv.getRuntime();
-        RubyHash names = RubyHash.newHash(runtime);
-        for (Signal s : Signal.values()) {
-            if (!s.description().startsWith("SIG")) continue;
-            if (!RUBY_18_SIGNALS.contains(s.description().substring(3))) continue;
-
-            // replace CLD with CHLD value
-            long longValue = s.longValue();
-            if (s == Signal.SIGCLD) longValue = Signal.SIGCHLD.longValue();
-
-            // omit unsupported signals
-            if (longValue >= 20000) continue;
-
-            names.op_aset(context, runtime.newString(s.description().substring("SIG".length())), runtime.newFixnum(longValue));
-        }
+        RubyHash names = RubyHash.newHash(runtime, RubySignal.list(), runtime.getNil());
         names.op_aset(context, runtime.newString("EXIT"), runtime.newFixnum(0));
         return names;
     }

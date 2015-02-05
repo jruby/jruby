@@ -876,7 +876,7 @@ public abstract class KernelNodes {
         @TruffleBoundary
         private static String gets(BufferedReader reader) throws InterruptedException {
             try {
-                return reader.readLine();
+                return reader.readLine() + "\n";
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
@@ -1248,8 +1248,15 @@ public abstract class KernelNodes {
 
             try {
                 getContext().loadFile(file.toString(), this);
-            } catch (Throwable t) {
-                throw new RaiseException(getContext().getCoreLibrary().loadErrorCannotLoad(file.toString(), this));
+            } catch (RuntimeException e) {
+                // TODO (nirvdrum 05-Feb-15) This is ugly, but checked exceptions are wrapped up the call stack. We need to revisit this.
+                if (e.getCause() instanceof java.io.IOException) {
+                    CompilerDirectives.transferToInterpreter();
+
+                    throw new RaiseException(getContext().getCoreLibrary().loadErrorCannotLoad(file.toString(), this));
+                } else {
+                    throw e;
+                }
             }
 
             return true;
@@ -2231,7 +2238,7 @@ public abstract class KernelNodes {
 
     }
 
-    @CoreMethod(names = {"to_s", "inspect"})
+    @CoreMethod(names = { "to_s", "inspect" })
     public abstract static class ToSNode extends CoreMethodNode {
 
         @Child private ClassNode classNode;
