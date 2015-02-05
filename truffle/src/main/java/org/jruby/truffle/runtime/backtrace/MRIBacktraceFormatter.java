@@ -120,7 +120,7 @@ public class MRIBacktraceFormatter implements BacktraceFormatter {
     }
 
     private static SourceSection nextUserSourceSection(List<Activation> activations, int n) {
-        while (true) {
+        while (n < activations.size()) {
             SourceSection sourceSection = activations.get(n).getCallNode().getEncapsulatingSourceSection();
 
             if (!(sourceSection instanceof CoreSourceSection)) {
@@ -129,6 +129,7 @@ public class MRIBacktraceFormatter implements BacktraceFormatter {
 
             n++;
         }
+        return null;
     }
 
 }
