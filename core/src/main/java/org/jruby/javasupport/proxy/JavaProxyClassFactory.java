@@ -63,74 +63,71 @@ import org.objectweb.asm.commons.GeneratorAdapter;
 public class JavaProxyClassFactory {
     private static final Logger LOG = LoggerFactory.getLogger("JavaProxyClassFactory");
 
-    private static final Type JAVA_LANG_CLASS_TYPE = Type.getType(Class.class);
+    static final Type[] EMPTY_TYPE_ARRAY = new Type[0];
 
-    private static final Type[] EMPTY_TYPE_ARR = new Type[0];
+    static final Type JAVA_LANG_CLASS_TYPE = Type.getType(Class.class);
 
-    private static final org.objectweb.asm.commons.Method HELPER_GET_PROXY_CLASS_METHOD = org.objectweb.asm.commons.Method
-            .getMethod(JavaProxyClass.class.getName()
-                    + " initProxyClass(java.lang.Class)");
-
-    private static final org.objectweb.asm.commons.Method CLASS_FORNAME_METHOD = org.objectweb.asm.commons.Method
-            .getMethod("java.lang.Class forName(java.lang.String)");
+    private static final org.objectweb.asm.commons.Method forName = org.objectweb.asm.commons.Method
+        .getMethod("java.lang.Class forName(java.lang.String)");
 
     private static final String INVOCATION_HANDLER_FIELD_NAME = "__handler";
 
     private static final String PROXY_CLASS_FIELD_NAME = "__proxy_class";
 
-    private static final Type INVOCATION_HANDLER_TYPE = Type.getType(JavaProxyInvocationHandler.class);
-
     private static final Type PROXY_METHOD_TYPE = Type.getType(JavaProxyMethod.class);
 
     private static final Type PROXY_CLASS_TYPE = Type.getType(JavaProxyClass.class);
 
-    private static final org.objectweb.asm.commons.Method INVOCATION_HANDLER_INVOKE_METHOD = org.objectweb.asm.commons.Method
-            .getMethod("java.lang.Object invoke(java.lang.Object, "
-                    + PROXY_METHOD_TYPE.getClassName()
-                    + ", java.lang.Object[])");
+    private static final Type INVOCATION_HANDLER_TYPE = Type.getType(JavaProxyInvocationHandler.class);
 
-    private static final Type PROXY_HELPER_TYPE = Type
-            .getType(InternalJavaProxyHelper.class);
+    // public Object invoke(Object receiver, JavaProxyMethod method, Object[] args)
+    private static final org.objectweb.asm.commons.Method invoke = org.objectweb.asm.commons.Method
+        .getMethod("java.lang.Object invoke(java.lang.Object, " + PROXY_METHOD_TYPE.getClassName() + ", java.lang.Object[])");
 
-    private static final org.objectweb.asm.commons.Method PROXY_HELPER_GET_METHOD = org.objectweb.asm.commons.Method
-            .getMethod(PROXY_METHOD_TYPE.getClassName() + " initProxyMethod("
-                    + JavaProxyClass.class.getName()
-                    + ",java.lang.String,java.lang.String,boolean)");
+    private static final Type INTERNAL_PROXY_HELPER_TYPE = Type.getType(InternalJavaProxyHelper.class);
 
-    private static final Type JAVA_PROXY_TYPE = Type.getType(InternalJavaProxy.class);
+    // public static JavaProxyClass initProxyClass(Class)
+    private static final org.objectweb.asm.commons.Method initProxyClass = org.objectweb.asm.commons.Method
+        .getMethod(JavaProxyClass.class.getName() + " initProxyClass(java.lang.Class)");
+
+    // public static JavaProxyMethod initProxyMethod(JavaProxyClass proxyClass, String name, String desc, boolean hasSuper)
+    private static final org.objectweb.asm.commons.Method initProxyMethod = org.objectweb.asm.commons.Method
+        .getMethod(PROXY_METHOD_TYPE.getClassName() + " initProxyMethod("
+                    + JavaProxyClass.class.getName() + ",java.lang.String,java.lang.String,boolean)");
 
     private static final Type JAVA_PROXY_TYPE = Type.getType(InternalJavaProxy.class);
 
     private static final AtomicInteger counter = new AtomicInteger(0);
 
-    public static final String PROXY_CLASS_FACTORY = Options.JI_PROXYCLASSFACTORY.load();
-
     private static int nextId() { return counter.incrementAndGet(); }
 
     public static JavaProxyClassFactory createFactory() {
+        final String factoryClassName = Options.JI_PROXYCLASSFACTORY.load();
+
         JavaProxyClassFactory factory = null;
-        if (PROXY_CLASS_FACTORY != null) {
+        if ( factoryClassName != null ) {
             try {
-                Class clazz = Class.forName(PROXY_CLASS_FACTORY);
+                Class clazz = Class.forName(factoryClassName);
                 Object instance = clazz.newInstance();
-                if (instance instanceof JavaProxyClassFactory) {
+                if ( instance instanceof JavaProxyClassFactory ) {
                     factory = (JavaProxyClassFactory) instance;
                     LOG.info("Created proxy class factory: " + factory);
                 } else {
                     LOG.error("Invalid proxy class factory: " + instance);
                 }
-            } catch (ClassNotFoundException e) {
+            }
+            catch (ClassNotFoundException e) {
                 LOG.error("ClassNotFoundException creating proxy class factory: " + e);
-            } catch (InstantiationException e) {
+            }
+            catch (InstantiationException e) {
                 LOG.error("InstantiationException creating proxy class factory: " + e);
-            } catch (IllegalAccessException e) {
+            }
+            catch (IllegalAccessException e) {
                 LOG.error("IllegalAccessException creating proxy class factory: " + e);
             }
         }
 
-        if (factory == null) factory = new JavaProxyClassFactory();
-
-        return factory;
+        return factory != null ? factory : new JavaProxyClassFactory();
     }
 
     public JavaProxyClass newProxyClass(final Ruby runtime, ClassLoader loader,
@@ -226,10 +223,10 @@ public class JavaProxyClassFactory {
                     final Method method = ClassLoader.class.getDeclaredMethod("defineClass", parameterTypes);
                     method.setAccessible(true);
                     return method;
-                } catch (Exception e) {
-                    // should not happen!
-                    e.printStackTrace();
-                    return null;
+                }
+                catch (Exception e) {
+                    LOG.error("could not use ClassLoader.defineClass method", e);
+                    return null; // should not happen!
                 }
             }
         });
@@ -298,8 +295,8 @@ public class JavaProxyClassFactory {
         // make getter for handler
         GeneratorAdapter gh = new GeneratorAdapter(Opcodes.ACC_PUBLIC,
                 new org.objectweb.asm.commons.Method("___getInvocationHandler",
-                        INVOCATION_HANDLER_TYPE, EMPTY_TYPE_ARR), null,
-                EMPTY_TYPE_ARR, cw);
+                        INVOCATION_HANDLER_TYPE, EMPTY_TYPE_ARRAY), null,
+                EMPTY_TYPE_ARRAY, cw);
 
         gh.loadThis();
         gh.getField(selfType, INVOCATION_HANDLER_FIELD_NAME, INVOCATION_HANDLER_TYPE);
@@ -311,8 +308,8 @@ public class JavaProxyClassFactory {
         // make getter for proxy class
         GeneratorAdapter gpc = new GeneratorAdapter(Opcodes.ACC_PUBLIC,
                 new org.objectweb.asm.commons.Method("___getProxyClass",
-                        PROXY_CLASS_TYPE, EMPTY_TYPE_ARR), null,
-                EMPTY_TYPE_ARR, cw);
+                        PROXY_CLASS_TYPE, EMPTY_TYPE_ARRAY), null,
+                EMPTY_TYPE_ARRAY, cw);
         gpc.getStatic(selfType, PROXY_CLASS_FIELD_NAME, PROXY_CLASS_TYPE);
         gpc.returnValue();
         gpc.endMethod();
@@ -332,12 +329,12 @@ public class JavaProxyClassFactory {
 
     private GeneratorAdapter createClassInitializer(Type selfType, ClassVisitor cw) {
         GeneratorAdapter clazzInit = new GeneratorAdapter(Opcodes.ACC_PRIVATE | Opcodes.ACC_STATIC,
-                new org.objectweb.asm.commons.Method("<clinit>", Type.VOID_TYPE, EMPTY_TYPE_ARR),
-                null, EMPTY_TYPE_ARR, cw);
+                new org.objectweb.asm.commons.Method("<clinit>", Type.VOID_TYPE, EMPTY_TYPE_ARRAY),
+                null, EMPTY_TYPE_ARRAY, cw);
 
         clazzInit.visitLdcInsn(selfType.getClassName());
-        clazzInit.invokeStatic(JAVA_LANG_CLASS_TYPE, CLASS_FORNAME_METHOD);
-        clazzInit.invokeStatic(PROXY_HELPER_TYPE, HELPER_GET_PROXY_CLASS_METHOD);
+        clazzInit.invokeStatic(JAVA_LANG_CLASS_TYPE, forName);
+        clazzInit.invokeStatic(INTERNAL_PROXY_HELPER_TYPE, initProxyClass);
         clazzInit.dup();
         clazzInit.putStatic(selfType, PROXY_CLASS_FIELD_NAME, PROXY_CLASS_TYPE);
 
@@ -362,7 +359,7 @@ public class JavaProxyClassFactory {
         clazzInit.push(m.getName());
         clazzInit.push(m.getDescriptor());
         clazzInit.push(md.isImplemented());
-        clazzInit.invokeStatic(PROXY_HELPER_TYPE, PROXY_HELPER_GET_METHOD);
+        clazzInit.invokeStatic(INTERNAL_PROXY_HELPER_TYPE, initProxyMethod);
         clazzInit.putStatic(selfType, field_name, PROXY_METHOD_TYPE);
 
         org.objectweb.asm.commons.Method sm = new org.objectweb.asm.commons.Method(
@@ -399,8 +396,7 @@ public class JavaProxyClassFactory {
 
         if (m.getArgumentTypes().length == 0) {
             // load static empty array
-            ga.getStatic(JAVA_PROXY_TYPE, "NO_ARGS", Type
-                    .getType(Object[].class));
+            ga.getStatic(JAVA_PROXY_TYPE, "NO_ARGS", Type.getType(Object[].class));
         } else {
             // box arguments
             ga.loadArgArray();
@@ -408,8 +404,7 @@ public class JavaProxyClassFactory {
 
         Label before = ga.mark();
 
-        ga.invokeInterface(INVOCATION_HANDLER_TYPE,
-                INVOCATION_HANDLER_INVOKE_METHOD);
+        ga.invokeInterface(INVOCATION_HANDLER_TYPE, invoke);
 
         Label after = ga.mark();
 
@@ -447,8 +442,7 @@ public class JavaProxyClassFactory {
         // construct the super-proxy method
         //
         if (md.isImplemented()) {
-            GeneratorAdapter ga2 = new GeneratorAdapter(Opcodes.ACC_PUBLIC, sm,
-                    null, ex, cw);
+            GeneratorAdapter ga2 = new GeneratorAdapter(Opcodes.ACC_PUBLIC, sm, null, ex, cw);
 
             ga2.loadThis();
             ga2.loadArgs();
