@@ -66,7 +66,7 @@ public class StackServerManager {
 
                             stream.println();
                         } catch (Throwable e) {
-                            e.printStackTrace();
+                            e.printStackTrace(stream);
                         }
                     }
 
