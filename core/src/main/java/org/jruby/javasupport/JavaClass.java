@@ -252,36 +252,39 @@ public class JavaClass extends JavaObject {
         INSTANCE_RESERVED_NAMES.put("initialize", new AssignedName("initialize", Priority.RESERVED));
     }
 
+
     private static abstract class NamedInstaller {
         static final int STATIC_FIELD = 1;
         static final int STATIC_METHOD = 2;
         static final int INSTANCE_FIELD = 3;
         static final int INSTANCE_METHOD = 4;
         static final int CONSTRUCTOR = 5;
-        String name;
-        int type;
+
+        final String name;
+        final int type;
+
         Visibility visibility = Visibility.PUBLIC;
-        NamedInstaller () {}
-        NamedInstaller (String name, int type) {
+
+        NamedInstaller(String name, int type) {
             this.name = name;
             this.type = type;
         }
+
         abstract void install(RubyModule proxy);
+
         // small hack to save a cast later on
-        boolean hasLocalMethod() {
-            return true;
-        }
-        boolean isPublic() {
-            return visibility == Visibility.PUBLIC;
-        }
-        boolean isProtected() {
-            return visibility == Visibility.PROTECTED;
-        }
+        boolean hasLocalMethod() { return true; }
+
+        boolean isPublic() { return visibility == Visibility.PUBLIC; }
+
+        //boolean isProtected() { return visibility == Visibility.PROTECTED; }
+
     }
 
     private static abstract class FieldInstaller extends NamedInstaller {
-        Field field;
-        FieldInstaller(){}
+
+        final Field field;
+
         FieldInstaller(String name, int type, Field field) {
             super(name,type);
             this.field = field;
@@ -289,120 +292,112 @@ public class JavaClass extends JavaObject {
     }
 
     private static class StaticFieldGetterInstaller extends FieldInstaller {
-        StaticFieldGetterInstaller(){}
+
         StaticFieldGetterInstaller(String name, Field field) {
-            super(name,STATIC_FIELD,field);
+            super(name, STATIC_FIELD, field);
         }
-        void install(RubyModule proxy) {
-            if (Modifier.isPublic(field.getModifiers())) {
+
+        @Override void install(final RubyModule proxy) {
+            if ( Modifier.isPublic( field.getModifiers() ) ) {
                 proxy.getSingletonClass().addMethod(name, new StaticFieldGetter(name, proxy, field));
             }
         }
     }
 
     private static class StaticFieldSetterInstaller extends FieldInstaller {
-        StaticFieldSetterInstaller(){}
+
         StaticFieldSetterInstaller(String name, Field field) {
-            super(name,STATIC_FIELD,field);
+            super(name, STATIC_FIELD, field);
         }
-        void install(RubyModule proxy) {
-            if (Modifier.isPublic(field.getModifiers())) {
+
+        @Override void install(final RubyModule proxy) {
+            if ( Modifier.isPublic( field.getModifiers() ) ) {
                 proxy.getSingletonClass().addMethod(name, new StaticFieldSetter(name, proxy, field));
             }
         }
     }
 
     private static class InstanceFieldGetterInstaller extends FieldInstaller {
-        InstanceFieldGetterInstaller(){}
+
         InstanceFieldGetterInstaller(String name, Field field) {
-            super(name,INSTANCE_FIELD,field);
+            super(name, INSTANCE_FIELD, field);
         }
-        void install(RubyModule proxy) {
-            if (Modifier.isPublic(field.getModifiers())) {
+
+        @Override void install(final RubyModule proxy) {
+            if ( Modifier.isPublic( field.getModifiers() ) ) {
                 proxy.addMethod(name, new InstanceFieldGetter(name, proxy, field));
             }
         }
     }
 
     private static class InstanceFieldSetterInstaller extends FieldInstaller {
-        InstanceFieldSetterInstaller(){}
+
         InstanceFieldSetterInstaller(String name, Field field) {
-            super(name,INSTANCE_FIELD,field);
+            super(name, INSTANCE_FIELD, field);
         }
-        void install(RubyModule proxy) {
-            if (Modifier.isPublic(field.getModifiers())) {
+
+        @Override void install(final RubyModule proxy) {
+            if ( Modifier.isPublic( field.getModifiers() ) ) {
                 proxy.addMethod(name, new InstanceFieldSetter(name, proxy, field));
             }
         }
     }
 
     private static abstract class MethodInstaller extends NamedInstaller {
-        private boolean haveLocalMethod;
-        protected List<Method> methods;
+
+        protected final List<Method> methods = new ArrayList<Method>(4);
         protected List<String> aliases;
-        MethodInstaller(){}
-        MethodInstaller(String name, int type) {
-            super(name,type);
+        private boolean localMethod;
+
+        MethodInstaller(String name, int type) { super(name, type); }
+
+        // called only by initializing thread; no synchronization required
+        void addMethod(final Method method, final Class<?> clazz) {
+            this.methods.add(method);
+            localMethod |=
+                clazz == method.getDeclaringClass() ||
+                method.getDeclaringClass().isInterface();
         }
 
         // called only by initializing thread; no synchronization required
-        void addMethod(Method method, Class<?> javaClass) {
-            if (methods == null) {
-                methods = new ArrayList<Method>(4);
-            }
-            methods.add(method);
-            haveLocalMethod |= javaClass == method.getDeclaringClass() ||
-                    method.getDeclaringClass().isInterface();
-        }
-
-        // called only by initializing thread; no synchronization required
-        void addAlias(String alias) {
+        void addAlias(final String alias) {
+            List<String> aliases = this.aliases;
             if (aliases == null) {
-                aliases = new ArrayList<String>(4);
+                aliases = this.aliases = new ArrayList<String>(4);
             }
-            if (!aliases.contains(alias)) {
-                aliases.add(alias);
-            }
+            if ( ! aliases.contains(alias) ) aliases.add(alias);
         }
 
         @Override
-        boolean hasLocalMethod () {
-            return haveLocalMethod;
-        }
+        boolean hasLocalMethod () { return localMethod; }
 
-        void setLocalMethod(boolean b) {
-            haveLocalMethod = b;
-        }
+        void setLocalMethod(boolean flag) { localMethod = flag; }
+
     }
 
     private static class ConstructorInvokerInstaller extends MethodInstaller {
-        private boolean haveLocalConstructor;
-        protected List<Constructor> constructors;
 
-        ConstructorInvokerInstaller(String name) {
-            super(name,STATIC_METHOD);
-        }
+        protected final List<Constructor> constructors = new ArrayList<Constructor>(4);
+        private boolean localConstructor;
+
+        ConstructorInvokerInstaller(String name) { super(name, STATIC_METHOD); }
 
         // called only by initializing thread; no synchronization required
-        void addConstructor(Constructor ctor, Class<?> javaClass) {
-            if (constructors == null) {
-                constructors = new ArrayList<Constructor>(4);
-            }
-            if (!Ruby.isSecurityRestricted()) {
+        void addConstructor(final Constructor ctor, final Class<?> clazz) {
+            if ( ! Ruby.isSecurityRestricted() ) {
                 try {
                     ctor.setAccessible(true);
                 } catch(SecurityException e) {}
             }
-            constructors.add(ctor);
-            haveLocalConstructor |= javaClass == ctor.getDeclaringClass();
+            this.constructors.add(ctor);
+            localConstructor |= clazz == ctor.getDeclaringClass();
         }
 
-        void install(final RubyModule proxy) {
-            if (haveLocalConstructor) {
-                DynamicMethod method = new ConstructorInvoker(proxy, constructors);
-                proxy.addMethod(name, method);
-            } else {
-                // if there's no constructor, we must prevent construction
+        @Override void install(final RubyModule proxy) {
+            if ( localConstructor ) {
+                proxy.addMethod(name, new ConstructorInvoker(proxy, constructors));
+            }
+            else { // if there's no constructor, we must prevent construction
                 proxy.addMethod(name, new org.jruby.internal.runtime.methods.JavaMethod(proxy, PUBLIC) {
                     @Override
                     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args, Block block) {
@@ -414,81 +409,85 @@ public class JavaClass extends JavaObject {
     }
 
     private static class StaticMethodInvokerInstaller extends MethodInstaller {
-        StaticMethodInvokerInstaller(String name) {
-            super(name,STATIC_METHOD);
-        }
 
-        void install(RubyModule proxy) {
-            if (hasLocalMethod()) {
-                RubyClass singleton = proxy.getSingletonClass();
-                DynamicMethod method = new StaticMethodInvoker(singleton, methods);
-                singleton.addMethod(name, method);
-                if (aliases != null && isPublic() ) {
-                    singleton.defineAliases(aliases, this.name);
-                    aliases = null;
+        StaticMethodInvokerInstaller(String name) { super(name, STATIC_METHOD); }
+
+        @Override void install(final RubyModule proxy) {
+            if ( hasLocalMethod() ) {
+                final RubyClass singletonClass = proxy.getSingletonClass();
+                DynamicMethod method = new StaticMethodInvoker(singletonClass, methods);
+                singletonClass.addMethod(name, method);
+                if ( aliases != null && isPublic() ) {
+                    singletonClass.defineAliases(aliases, name);
+                    //aliases = null;
                 }
             }
         }
     }
 
     private static class SingletonMethodInvokerInstaller extends StaticMethodInvokerInstaller {
-        private Object singleton;
+
+        final Object singleton;
 
         SingletonMethodInvokerInstaller(String name, Object singleton) {
             super(name);
             this.singleton = singleton;
         }
 
-        void install(RubyModule proxy) {
+        @Override void install(final RubyModule proxy) {
             // we don't check haveLocalMethod() here because it's not local and we know
             // that we always want to go ahead and install it
-            RubyClass rubySingleton = proxy.getSingletonClass();
-            DynamicMethod method = new SingletonMethodInvoker(this.singleton, rubySingleton, methods);
-            rubySingleton.addMethod(name, method);
-            if (aliases != null && isPublic()) {
-                rubySingleton.defineAliases(aliases, this.name);
-                aliases = null;
+            final RubyClass singletonClass = proxy.getSingletonClass();
+            DynamicMethod method = new SingletonMethodInvoker(this.singleton, singletonClass, methods);
+            singletonClass.addMethod(name, method);
+            if ( aliases != null && isPublic() ) {
+                singletonClass.defineAliases(aliases, name);
+                //aliases = null;
             }
         }
     }
 
     private static class InstanceMethodInvokerInstaller extends MethodInstaller {
-        InstanceMethodInvokerInstaller(String name) {
-            super(name,INSTANCE_METHOD);
-        }
-        void install(RubyModule proxy) {
-            if (hasLocalMethod()) {
-                DynamicMethod method = new InstanceMethodInvoker(proxy, methods);
-                proxy.addMethod(name, method);
-                if (aliases != null && isPublic()) {
+
+        InstanceMethodInvokerInstaller(String name) { super(name, INSTANCE_METHOD); }
+
+        @Override void install(final RubyModule proxy) {
+            if ( hasLocalMethod() ) {
+                proxy.addMethod(name, new InstanceMethodInvoker(proxy, methods));
+                if ( aliases != null && isPublic() ) {
                     proxy.defineAliases(aliases, this.name);
-                    aliases = null;
+                    //aliases = null;
                 }
             }
         }
     }
 
     private static class ConstantField {
-        static final int CONSTANT = Modifier.FINAL | Modifier.PUBLIC | Modifier.STATIC;
+
         final Field field;
-        ConstantField(Field field) {
-            this.field = field;
-        }
+
+        ConstantField(Field field) { this.field = field; }
+
         void install(final RubyModule proxy) {
-            if (proxy.getConstantAt(field.getName()) == null) {
-                // TODO: catch exception if constant is already set by other
-                // thread
+            final String name = field.getName();
+            if ( proxy.getConstantAt(name) == null ) {
                 try {
-                    proxy.setConstant(field.getName(), JavaUtil.convertJavaToUsableRubyObject(proxy.getRuntime(), field.get(null)));
-                } catch (IllegalAccessException iae) {
+                    final Object value = field.get(null);
+                    proxy.setConstant(name, JavaUtil.convertJavaToUsableRubyObject(proxy.getRuntime(), value));
+                }
+                catch (IllegalAccessException iae) {
                     // if we can't read it, we don't set it
                 }
             }
         }
+
+        private static final int CONSTANT = Modifier.FINAL | Modifier.PUBLIC | Modifier.STATIC;
+
         static boolean isConstant(final Field field) {
             return (field.getModifiers() & CONSTANT) == CONSTANT &&
-                Character.isUpperCase(field.getName().charAt(0));
+                Character.isUpperCase( field.getName().charAt(0) );
         }
+
     }
 
     private Map<String, AssignedName> staticAssignedNames;
@@ -586,7 +585,7 @@ public class JavaClass extends JavaObject {
             initializer = new ClassInitializer(javaClass);
         }
         else {
-            initializer = DUMMY_INITIALIZER;
+            initializer = Initializer.DUMMY;
         }
     }
 
@@ -602,31 +601,43 @@ public class JavaClass extends JavaObject {
     }
 
     private interface Initializer {
+
         public void initialize();
+
+        static final Initializer DUMMY = new Initializer() {
+            public void initialize() { /* dummy impl */ }
+        };
+
     }
 
     private class InterfaceInitializer implements Initializer {
-        private volatile boolean hasRun = false;
+
         private final Class javaClass;
 
         public InterfaceInitializer(Class<?> javaClass) {
             this.javaClass = javaClass;
         }
 
-        public synchronized void initialize() {
-            if (hasRun) return;
-            hasRun = true;
+        //private volatile boolean hasRun = false;
+
+        public void initialize() {
+            //if ( hasRun ) return; hasRun = true;
 
             InitializerState state = new InitializerState(getRuntime(), null);
             Field[] fields = getDeclaredFields(javaClass);
 
             for (int i = fields.length; --i >= 0; ) {
-                Field field = fields[i];
-                if (javaClass != field.getDeclaringClass()) continue;
-                if (ConstantField.isConstant(field)) state.constantFields.add(new ConstantField(field));
+                final Field field = fields[i];
+                if ( javaClass != field.getDeclaringClass() ) continue;
 
-                int modifiers = field.getModifiers();
-                if (Modifier.isStatic(modifiers)) addField(state.staticCallbacks, state.staticNames, field, Modifier.isFinal(modifiers), true);
+                if ( ConstantField.isConstant(field) ) {
+                    state.constantFields.add(new ConstantField(field));
+                }
+
+                final int mod = field.getModifiers();
+                if ( Modifier.isStatic(mod) ) {
+                    addField(state.staticCallbacks, state.staticNames, field, Modifier.isFinal(mod), true);
+                }
             }
 
             setupInterfaceMethods(javaClass, state);
@@ -636,8 +647,9 @@ public class JavaClass extends JavaObject {
 
             // Now add all aliases for the static methods (fields) as appropriate
             for (Map.Entry<String, NamedInstaller> entry : state.staticCallbacks.entrySet()) {
-                if (entry.getValue().type == NamedInstaller.STATIC_METHOD && entry.getValue().hasLocalMethod()) {
-                    assignAliases((MethodInstaller)entry.getValue(), state.staticNames);
+                final NamedInstaller installer = entry.getValue();
+                if (installer.type == NamedInstaller.STATIC_METHOD && installer.hasLocalMethod()) {
+                    assignAliases((MethodInstaller) installer, state.staticNames);
                 }
             }
 
@@ -645,19 +657,21 @@ public class JavaClass extends JavaObject {
             JavaClass.this.staticInstallers = Collections.unmodifiableMap(state.staticCallbacks);
             JavaClass.this.constantFields = Collections.unmodifiableList(state.constantFields);
         }
-    };
+
+    }
 
     private class ClassInitializer implements Initializer {
-        private volatile boolean hasRun = false;
+
         private final Class javaClass;
 
         public ClassInitializer(Class<?> javaClass) {
             this.javaClass = javaClass;
         }
 
-        public synchronized void initialize() {
-            if (hasRun) return;
-            hasRun = true;
+        //private volatile boolean hasRun = false;
+
+        public void initialize() {
+            //if ( hasRun ) return; hasRun = true;
 
             Class<?> superclass = javaClass.getSuperclass();
 
@@ -673,34 +687,31 @@ public class JavaClass extends JavaObject {
             JavaClass.this.instanceInstallers = Collections.unmodifiableMap(state.instanceCallbacks);
             JavaClass.this.constantFields = Collections.unmodifiableList(state.constantFields);
         }
+
     }
 
     private static class InitializerState {
-        public final Map<String, AssignedName> staticNames;
-        public final Map<String, AssignedName> instanceNames;
-        public final Map<String, NamedInstaller> staticCallbacks = new HashMap<String, NamedInstaller>();
-        public final Map<String, NamedInstaller> instanceCallbacks = new HashMap<String, NamedInstaller>();
-        public final List<ConstantField> constantFields = new ArrayList<ConstantField>();
 
-        public InitializerState(Ruby runtime, Class superclass) {
-            if (superclass == null) {
+        final Map<String, AssignedName> staticNames;
+        final Map<String, AssignedName> instanceNames;
+        final Map<String, NamedInstaller> staticCallbacks = new HashMap<String, NamedInstaller>();
+        final Map<String, NamedInstaller> instanceCallbacks = new HashMap<String, NamedInstaller>();
+        final List<ConstantField> constantFields = new ArrayList<ConstantField>();
+
+        InitializerState(final Ruby runtime, final Class superClass) {
+            if (superClass == null) {
                 staticNames = new HashMap<String, AssignedName>();
                 instanceNames = new HashMap<String, AssignedName>();
             } else {
-                JavaClass superJavaClass = get(runtime,superclass);
+                JavaClass superJavaClass = get(runtime,superClass);
                 staticNames = new HashMap<String, AssignedName>(superJavaClass.getStaticAssignedNames());
                 instanceNames = new HashMap<String, AssignedName>(superJavaClass.getInstanceAssignedNames());
             }
             staticNames.putAll(STATIC_RESERVED_NAMES);
             instanceNames.putAll(INSTANCE_RESERVED_NAMES);
         }
-    }
 
-    private static final Initializer DUMMY_INITIALIZER = new Initializer() {
-        public synchronized void initialize() {
-            // anything useful we could do here?
-        }
-    };
+    }
 
     void setupProxyClass(final RubyClass proxy) {
         assert proxyLock.isHeldByCurrentThread();
