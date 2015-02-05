@@ -23,6 +23,7 @@ import org.jruby.lexer.yacc.InvalidSourcePosition;
 import org.jruby.truffle.nodes.*;
 import org.jruby.truffle.nodes.DefinedNode;
 import org.jruby.truffle.nodes.ForNode;
+import org.jruby.truffle.nodes.array.ArrayReadNode;
 import org.jruby.truffle.nodes.cast.*;
 import org.jruby.truffle.nodes.cast.LambdaNode;
 import org.jruby.truffle.nodes.control.AndNode;
@@ -1801,7 +1802,7 @@ public class BodyTranslator extends Translator {
              */
 
             for (int n = 0; n < preArray.size(); n++) {
-                final ArrayIndexNode assignedValue = ArrayIndexNodeFactory.create(context, sourceSection, n, environment.findLocalVarNode(tempName, sourceSection));
+                final RubyNode assignedValue = ArrayReadNode.create(context, sourceSection, environment.findLocalVarNode(tempName, sourceSection), n);
 
                 sequence.add(translateDummyAssignment(preArray.get(n), assignedValue));
             }
@@ -1920,7 +1921,7 @@ public class BodyTranslator extends Translator {
             }
 
             for (int n = 0; n < postArray.size(); n++) {
-                final ArrayIndexNode assignedValue = ArrayIndexNodeFactory.create(context, sourceSection, -(postArray.size() - n), environment.findLocalVarNode(tempName, sourceSection));
+                final RubyNode assignedValue = ArrayReadNode.create(context, sourceSection, environment.findLocalVarNode(tempName, sourceSection), -(postArray.size() - n));
 
                 sequence.add(translateDummyAssignment(postArray.get(n), assignedValue));
             }
