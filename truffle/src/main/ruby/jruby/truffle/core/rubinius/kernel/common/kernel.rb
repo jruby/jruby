@@ -105,6 +105,9 @@ module Kernel
     raise PrimitiveFailure, "Kernel#object_id primitive failed"
   end
 
-
+  def trap(sig, prc=nil, &block)
+    Signal.trap(sig, prc, &block)
+  end
+  module_function :trap
 
 end

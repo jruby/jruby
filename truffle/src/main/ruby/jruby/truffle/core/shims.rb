@@ -154,9 +154,6 @@ class Module
     []
   end
 
-  def trap(signal)
-  end
-
 end
 
 class File
