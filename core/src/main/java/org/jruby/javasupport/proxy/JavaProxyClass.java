@@ -81,6 +81,9 @@ import org.jruby.runtime.builtin.IRubyObject;
  */
 public class JavaProxyClass extends JavaProxyReflectionObject {
     static ThreadLocal<Ruby> runtimeTLS = new ThreadLocal<Ruby>();
+
+    static final Class[] EMPTY_CLASS_ARRAY = new Class[0];
+
     private final Class proxyClass;
     private final ArrayList<JavaProxyMethod> methods = new ArrayList<JavaProxyMethod>();
     private final HashMap<String, List<JavaProxyMethod>> methodMap = new HashMap<String, List<JavaProxyMethod>>();
@@ -133,11 +136,12 @@ public class JavaProxyClass extends JavaProxyReflectionObject {
             JavaProxyInvocationHandler handler) throws IllegalArgumentException,
             InstantiationException, IllegalAccessException, InvocationTargetException,
             SecurityException, NoSuchMethodException {
-        JavaProxyClass jpc = getProxyClass(runtime, superClass, interfaces);
-        JavaProxyConstructor cons = jpc.getConstructor(constructorParameters == null ?
-                new Class[0] : constructorParameters);
 
-        return cons.newInstance(constructorArgs, handler);
+        JavaProxyClass proxyClass = getProxyClass(runtime, superClass, interfaces);
+        JavaProxyConstructor constructor = proxyClass.getConstructor(
+            constructorParameters == null ? EMPTY_CLASS_ARRAY : constructorParameters
+        );
+        return constructor.newInstance(constructorArgs, handler);
 
     }
 
@@ -173,7 +177,8 @@ public class JavaProxyClass extends JavaProxyReflectionObject {
         System.arraycopy(args, 0, realArgs, 0, args.length);
         realArgs[args.length] = JavaProxyInvocationHandler.class;
 
-        Constructor constructor = proxyClass.getConstructor(realArgs);
+        @SuppressWarnings("unchecked")
+        Constructor<?> constructor = proxyClass.getConstructor(realArgs);
         return new JavaProxyConstructor(getRuntime(), this, constructor);
     }
 
@@ -184,7 +189,7 @@ public class JavaProxyClass extends JavaProxyReflectionObject {
     public JavaProxyMethod getMethod(String name, Class[] parameterTypes) {
         List<JavaProxyMethod> methods = methodMap.get(name);
         if (methods != null) {
-            for (int i = methods.size(); --i >= 0; ) {
+            for ( int i = methods.size(); --i >= 0; ) {
                 ProxyMethodImpl jpm = (ProxyMethodImpl) methods.get(i);
                 if (jpm.matches(name, parameterTypes)) return jpm;
             }
@@ -204,53 +209,58 @@ public class JavaProxyClass extends JavaProxyReflectionObject {
 
     @JRubyClass(name="JavaProxy::JavaProxyMethod")
     public static class ProxyMethodImpl extends JavaProxyReflectionObject
-            implements JavaProxyMethod {
-        private final Method m;
+        implements JavaProxyMethod {
 
-        private Object state;
-
-        private final Method sm;
+        private final Method method;
+        private final Method superMethod;
         private final Class[] parameterTypes;
 
         private final JavaProxyClass clazz;
 
-        public ProxyMethodImpl(Ruby runtime, JavaProxyClass clazz, Method m,
-                Method sm) {
-            super(runtime, runtime.getJavaSupport().getJavaModule()
-                    .getClass("JavaProxyMethod"));
-            this.m = m;
-            this.parameterTypes = m.getParameterTypes();
-            this.sm = sm;
+        private Object state;
+
+        public ProxyMethodImpl(Ruby runtime, final JavaProxyClass clazz,
+            final Method method, final Method superMethod) {
+            super(runtime, getJavaProxyMethod(runtime));
+            this.method = method;
+            this.parameterTypes = method.getParameterTypes();
+            this.superMethod = superMethod;
             this.clazz = clazz;
         }
 
-        public boolean equals(Object other) {
-            return other instanceof ProxyMethodImpl &&
-                this.m == ((ProxyMethodImpl)other).m;
+        private static RubyClass getJavaProxyMethod(final Ruby runtime) {
+            return runtime.getJavaSupport().getJavaModule().getClass("JavaProxyMethod");
         }
 
+        @Override
+        public boolean equals(Object other) {
+            return other instanceof ProxyMethodImpl &&
+                this.method == ((ProxyMethodImpl)other).method;
+        }
+
+        @Override
         public int hashCode() {
-            return m.hashCode();
+            return method.hashCode();
         }
 
         public Method getMethod() {
-            return m;
+            return method;
         }
 
         public Method getSuperMethod() {
-            return sm;
+            return superMethod;
         }
 
         public int getModifiers() {
-            return m.getModifiers();
+            return method.getModifiers();
         }
 
         public String getName() {
-            return m.getName();
+            return method.getName();
         }
 
         public Class<?>[] getExceptionTypes() {
-            return m.getExceptionTypes();
+            return method.getExceptionTypes();
         }
 
         public Class<?>[] getParameterTypes() {
@@ -258,54 +268,55 @@ public class JavaProxyClass extends JavaProxyReflectionObject {
         }
 
         public boolean isVarArgs() {
-            return m.isVarArgs();
+            return method.isVarArgs();
+        }
+
+        public boolean hasSuperImplementation() {
+            return superMethod != null;
+        }
+
+        public Object invoke(Object proxy, Object[] args) throws IllegalArgumentException,
+            IllegalAccessException, InvocationTargetException, NoSuchMethodException {
+
+            if ( ! hasSuperImplementation() ) throw new NoSuchMethodException();
+
+            return superMethod.invoke(proxy, args);
         }
 
         public Object getState() {
             return state;
         }
 
-        public boolean hasSuperImplementation() {
-            return sm != null;
-        }
-
-        public Object invoke(Object proxy, Object[] args) throws IllegalArgumentException,
-            IllegalAccessException, InvocationTargetException, NoSuchMethodException {
-
-            if (!hasSuperImplementation()) throw new NoSuchMethodException();
-
-            return sm.invoke(proxy, args);
-        }
-
         public void setState(Object state) {
             this.state = state;
         }
 
+        @Override
         public String toString() {
-            return m.toString();
+            return method.toString();
         }
 
         public Object defaultResult() {
-            Class rt = m.getReturnType();
+            final Class returnType = method.getReturnType();
 
-            if (rt == Void.TYPE) return null;
-            if (rt == Boolean.TYPE) return Boolean.FALSE;
-            if (rt == Byte.TYPE) return Byte.valueOf((byte) 0);
-            if (rt == Short.TYPE) return Short.valueOf((short) 0);
-            if (rt == Integer.TYPE) return Integer.valueOf(0);
-            if (rt == Long.TYPE) return Long.valueOf(0L);
-            if (rt == Float.TYPE) return new Float(0.0f);
-            if (rt == Double.TYPE) return new Double(0.0);
+            if (returnType == Void.TYPE) return null;
+            if (returnType == Boolean.TYPE) return Boolean.FALSE;
+            if (returnType == Byte.TYPE) return Byte.valueOf((byte) 0);
+            if (returnType == Short.TYPE) return Short.valueOf((short) 0);
+            if (returnType == Integer.TYPE) return Integer.valueOf(0);
+            if (returnType == Long.TYPE) return Long.valueOf(0L);
+            if (returnType == Float.TYPE) return new Float(0.0f);
+            if (returnType == Double.TYPE) return new Double(0.0);
 
             return null;
         }
 
         public boolean matches(String name, Class[] parameterTypes) {
-            return m.getName().equals(name) && Arrays.equals(this.parameterTypes, parameterTypes);
+            return method.getName().equals(name) && Arrays.equals(this.parameterTypes, parameterTypes);
         }
 
         public Class getReturnType() {
-            return m.getReturnType();
+            return method.getReturnType();
         }
 
         public static RubyClass createJavaProxyMethodClass(Ruby runtime, RubyModule javaProxyModule) {
@@ -347,6 +358,7 @@ public class JavaProxyClass extends JavaProxyReflectionObject {
             return getDeclaringClass().nameOnInspection() + "/" + getName();
         }
 
+        @Override
         @JRubyMethod
         public IRubyObject inspect() {
             StringBuilder result = new StringBuilder();
@@ -364,39 +376,42 @@ public class JavaProxyClass extends JavaProxyReflectionObject {
         }
 
         @JRubyMethod(name = "invoke", rest = true)
-        public IRubyObject do_invoke(IRubyObject[] nargs) {
-            if (nargs.length != 1 + getArity()) {
-                throw getRuntime().newArgumentError(nargs.length, 1 + getArity());
+        public IRubyObject do_invoke(final IRubyObject[] args) {
+            final Ruby runtime=  getRuntime();
+            if ( args.length != 1 + getArity() ) {
+                throw runtime.newArgumentError(args.length, 1 + getArity());
             }
 
-            IRubyObject invokee = nargs[0];
-            if (!(invokee instanceof JavaObject)) {
-                throw getRuntime().newTypeError("invokee not a java object");
+            final IRubyObject invokee = args[0];
+            if ( ! ( invokee instanceof JavaObject ) ) {
+                throw runtime.newTypeError("invokee not a java object");
             }
+
             Object receiver_value = ((JavaObject) invokee).getValue();
-            Object[] arguments = new Object[nargs.length - 1];
-            System.arraycopy(nargs, 1, arguments, 0, arguments.length);
 
-            Class[] parameterTypes = getParameterTypes();
+            final Object[] arguments = new Object[ args.length - 1 ];
+
+            final Class[] parameterTypes = getParameterTypes();
             for (int i = 0; i < arguments.length; i++) {
-                arguments[i] =
-                    ((IRubyObject) arguments[i]).toJava(parameterTypes[i]);
+                arguments[i] = args[i + 1].toJava( parameterTypes[i] );
             }
 
             try {
-                Object javaResult = sm.invoke(receiver_value, arguments);
-                return JavaUtil.convertJavaToRuby(getRuntime(), javaResult, getReturnType());
-            } catch (IllegalArgumentException e) {
-                throw getRuntime().newTypeError("expected " + argument_types().inspect());
-            } catch (IllegalAccessException iae) {
-                throw getRuntime().newTypeError("illegal access on '" + sm.getName() + "': " +
-                        iae.getMessage());
-            } catch (InvocationTargetException ite) {
-                if (getRuntime().getDebug().isTrue()) ite.getTargetException().printStackTrace();
-                getRuntime().getJavaSupport().handleNativeException(ite.getTargetException(), sm);
-                // This point is only reached if there was an exception handler
-                // installed.
-                return getRuntime().getNil();
+                Object javaResult = superMethod.invoke(receiver_value, arguments);
+                return JavaUtil.convertJavaToRuby(runtime, javaResult, getReturnType());
+            }
+            catch (IllegalArgumentException ex) {
+                throw runtime.newTypeError("expected " + argument_types().inspect());
+            }
+            catch (IllegalAccessException ex) {
+                throw runtime.newTypeError("illegal access on '" + superMethod.getName() + "': " +
+                        ex.getMessage());
+            }
+            catch (InvocationTargetException ex) {
+                if ( runtime.getDebug().isTrue() ) ex.getTargetException().printStackTrace();
+
+                runtime.getJavaSupport().handleNativeException(ex.getTargetException(), superMethod);
+                return runtime.getNil(); // only reached if there was an exception handler installed
             }
         }
 
@@ -406,38 +421,44 @@ public class JavaProxyClass extends JavaProxyReflectionObject {
 
     }
 
-    JavaProxyMethod initMethod(String name, String desc, boolean hasSuper) {
-        Class proxy = proxyClass;
+    @SuppressWarnings("unchecked")
+    JavaProxyMethod initMethod(final String name,
+        final String desc, final boolean hasSuper) {
+        final Class proxy = this.proxyClass;
         try {
-            Class[] parms = parse(proxy.getClassLoader(), desc);
-            Method m = proxy.getDeclaredMethod(name, parms);
-            Method sm = null;
-            if (hasSuper) {
-                sm = proxy.getDeclaredMethod("__super$" + name, parms);
+            Class[] paramTypes = parse(proxy.getClassLoader(), desc);
+            Method method = proxy.getDeclaredMethod(name, paramTypes);
+            Method superMethod = null;
+            if ( hasSuper ) {
+                superMethod = proxy.getDeclaredMethod("__super$" + name, paramTypes);
             }
 
-            JavaProxyMethod jpm = new ProxyMethodImpl(getRuntime(), this, m, sm);
-            methods.add(jpm);
-            List<JavaProxyMethod> methodsWithName = methodMap.get(name);
+            JavaProxyMethod proxyMethod = new ProxyMethodImpl(getRuntime(), this, method, superMethod);
+            methods.add(proxyMethod);
+
+            List<JavaProxyMethod> methodsWithName = this.methodMap.get(name);
             if (methodsWithName == null) {
                 methodsWithName = new ArrayList<JavaProxyMethod>(2);
-                methodMap.put(name,methodsWithName);
+                methodMap.put(name, methodsWithName);
             }
-            methodsWithName.add(jpm);
+            methodsWithName.add(proxyMethod);
 
-            return jpm;
-        } catch (ClassNotFoundException e) {
+            return proxyMethod;
+        }
+        catch (ClassNotFoundException e) {
             throw new InternalError(e.getMessage());
-        } catch (SecurityException e) {
+        }
+        catch (SecurityException e) {
             throw new InternalError(e.getMessage());
-        } catch (NoSuchMethodException e) {
+        }
+        catch (NoSuchMethodException e) {
             throw new InternalError(e.getMessage());
         }
     }
 
     private static Class[] parse(final ClassLoader loader, String desc)
             throws ClassNotFoundException {
-        List<Class> al = new ArrayList<Class>();
+        final List<Class> types = new ArrayList<Class>();
         int idx = 1;
         while (desc.charAt(idx) != ')') {
 
@@ -456,10 +477,10 @@ public class JavaProxyClass extends JavaProxyReflectionObject {
                 idx = semi;
                 try {
                     type = AccessController.doPrivileged(new PrivilegedExceptionAction<Class>() {
-                                public Class run() throws ClassNotFoundException {
-                                    return Class.forName(name.replace('/', '.'), false, loader);
-                                }
-                            });
+                        public Class run() throws ClassNotFoundException {
+                            return Class.forName(name.replace('/', '.'), false, loader);
+                        }
+                    });
                 } catch (PrivilegedActionException e) {
                     throw (ClassNotFoundException) e.getException();
                 }
@@ -483,42 +504,45 @@ public class JavaProxyClass extends JavaProxyReflectionObject {
                 type = Array.newInstance(type, new int[arr]).getClass();
             }
 
-            al.add(type);
+            types.add(type);
         }
 
-        return (Class[]) al.toArray(new Class[al.size()]);
+        return types.toArray(new Class[types.size()]);
     }
 
     //
     // Ruby-level methods
     //
 
-    public static RubyClass createJavaProxyClassClass(Ruby runtime, RubyModule javaModule) {
-        RubyClass result = javaModule.defineClassUnder("JavaProxyClass",
-                runtime.getObject(),ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
+    public static RubyClass createJavaProxyClassClass(final Ruby runtime,
+        final RubyModule Java) {
+        RubyClass javaProxyClass = Java.defineClassUnder("JavaProxyClass",
+            runtime.getObject(), ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR
+        );
 
-        JavaProxyReflectionObject.registerRubyMethods(runtime, result);
-
-        result.defineAnnotatedMethods(JavaProxyClass.class);
-
-        return result;
+        JavaProxyReflectionObject.registerRubyMethods(runtime, javaProxyClass);
+        javaProxyClass.defineAnnotatedMethods(JavaProxyClass.class);
+        return javaProxyClass;
     }
 
     @JRubyMethod(meta = true)
-    public static RubyObject get(IRubyObject recv, IRubyObject obj) {
-        if (!(obj instanceof JavaClass)) {
-            throw recv.getRuntime().newTypeError(obj, recv.getRuntime().getJavaSupport().getJavaClassClass());
+    public static RubyObject get(IRubyObject self, IRubyObject obj) {
+        final Ruby runtime = self.getRuntime();
+        if ( ! ( obj instanceof JavaClass ) ) {
+            throw runtime.newTypeError(obj, runtime.getJavaSupport().getJavaClassClass());
         }
-        JavaClass type = (JavaClass)obj;
 
+        final JavaClass type = (JavaClass) obj;
         try {
-            return getProxyClass(recv.getRuntime(), (Class) type.getValue(), new Class[0]);
-        } catch (Error e) {
-            RaiseException ex = recv.getRuntime().newArgumentError("unable to create proxy class for " + type.getValue());
+            return getProxyClass(runtime, type.javaClass(), EMPTY_CLASS_ARRAY);
+        }
+        catch (Error e) {
+            RaiseException ex = runtime.newArgumentError("unable to create proxy class for " + type.getValue());
             ex.initCause(e);
             throw ex;
-        } catch (InvocationTargetException e) {
-            RaiseException ex = recv.getRuntime().newArgumentError("unable to create proxy class for " + type.getValue());
+        }
+        catch (InvocationTargetException e) {
+            RaiseException ex = runtime.newArgumentError("unable to create proxy class for " + type.getValue());
             ex.initCause(e);
             throw ex;
         }
@@ -545,7 +569,7 @@ public class JavaProxyClass extends JavaProxyReflectionObject {
 
     @JRubyMethod(meta = true)
     public static RubyObject get_with_class(IRubyObject recv, IRubyObject obj) {
-        Ruby runtime = recv.getRuntime();
+        final Ruby runtime = recv.getRuntime();
 
         if (!(obj instanceof RubyClass)) {
             throw runtime.newTypeError(obj, runtime.getClassClass());
@@ -688,14 +712,16 @@ public class JavaProxyClass extends JavaProxyReflectionObject {
         }
 
         try {
-            return getProxyClass(recv.getRuntime(), javaClass.javaClass(), interfaces, names);
-        } catch (Error e) {
-            RaiseException ex = recv.getRuntime().newArgumentError("unable to create proxy class for " + javaClass.getValue() + " : " + e.getMessage());
+            return getProxyClass(runtime, javaClass.javaClass(), interfaces, names);
+        }
+        catch (Error e) {
+            RaiseException ex = runtime.newArgumentError("unable to create proxy class for " + javaClass.getValue() + " : " + e.getMessage());
             //e.printStackTrace();
             ex.initCause(e);
             throw ex;
-        } catch (InvocationTargetException e) {
-            RaiseException ex = recv.getRuntime().newArgumentError("unable to create proxy class for " + javaClass.getValue() + " : " + e.getMessage());
+        }
+        catch (InvocationTargetException e) {
+            RaiseException ex = runtime.newArgumentError("unable to create proxy class for " + javaClass.getValue() + " : " + e.getMessage());
             //e.printStackTrace();
             ex.initCause(e);
             throw ex;
