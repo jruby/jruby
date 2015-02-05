@@ -20,10 +20,9 @@ import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyThread;
 import org.jruby.truffle.runtime.util.Consumer;
 
-import java.util.Collections;
+import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.BrokenBarrierException;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CyclicBarrier;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -31,7 +30,7 @@ public class SafepointManager {
 
     private final RubyContext context;
 
-    private final Set<Thread> runningThreads = Collections.newSetFromMap(new ConcurrentHashMap<Thread, Boolean>());
+    private final Set<Thread> runningThreads = new HashSet<Thread>();
 
     @CompilerDirectives.CompilationFinal private Assumption assumption = Truffle.getRuntime().createAssumption();
     private final ReentrantLock lock = new ReentrantLock();
@@ -180,14 +179,6 @@ public class SafepointManager {
         for (Thread thread : runningThreads) {
             thread.interrupt();
         }
-    }
-
-    public synchronized void registerThread(Thread thread) {
-        runningThreads.add(thread);
-    }
-
-    public synchronized void unregisterThread(Thread thread) {
-        runningThreads.remove(thread);
     }
 
 }
