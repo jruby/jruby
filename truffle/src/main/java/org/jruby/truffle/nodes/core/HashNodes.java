@@ -475,12 +475,13 @@ public abstract class HashNodes {
             final Object[] store = (Object[]) hash.getStore();
             final int size = hash.getSize();
 
-            for (int n = 0; n < HashOperations.SMALL_HASH_SIZE * 2; n += 2) {
-                if (n < size && eqlNode.callBoolean(frame, store[n], "eql?", null, key)) {
-                    final Object value = store[n + 1];
+            for (int n = 0; n < HashOperations.SMALL_HASH_SIZE; n++) {
+                if (n < size && eqlNode.callBoolean(frame, store[n * 2], "eql?", null, key)) {
+                    final Object value = store[n * 2 + 1];
 
                     // Move the later values down
-                    System.arraycopy(store, n + 2, store, n, HashOperations.SMALL_HASH_SIZE * 2 - n - 2);
+                    int k = n * 2; // position of the key
+                    System.arraycopy(store, k + 2, store, k, (size - n - 1) * 2);
 
                     hash.setSize(size - 1);
 
@@ -785,8 +786,8 @@ public abstract class HashNodes {
             final int size = hash.getSize();
             final Object[] store = (Object[]) hash.getStore();
 
-            for (int n = 0; n < store.length; n += 2) {
-                if (n < size && eqlNode.callBoolean(frame, store[n], "eql?", null, key)) {
+            for (int n = 0; n < HashOperations.SMALL_HASH_SIZE; n++) {
+                if (n < size && eqlNode.callBoolean(frame, store[n * 2], "eql?", null, key)) {
                     return true;
                 }
             }
