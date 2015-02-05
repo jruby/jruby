@@ -336,7 +336,7 @@ public class CoreLibrary {
     }
 
     private RubyClass defineClass(String name) {
-        return defineClass(objectClass, name, new RubyBasicObject.BasicObjectAllocator());
+        return defineClass(objectClass, name, objectClass.getAllocator());
     }
 
     private RubyClass defineClass(String name, Allocator allocator) {
@@ -344,7 +344,7 @@ public class CoreLibrary {
     }
 
     private RubyClass defineClass(RubyClass superclass, String name) {
-        return defineClass(superclass, name, new RubyBasicObject.BasicObjectAllocator());
+        return new RubyClass(context, objectClass, superclass, name);
     }
 
     private RubyClass defineClass(RubyClass superclass, String name, Allocator allocator) {
