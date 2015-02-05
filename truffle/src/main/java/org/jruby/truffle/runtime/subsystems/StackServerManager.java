@@ -56,15 +56,20 @@ public class StackServerManager {
                 context.getSafepointManager().pauseAllThreadsAndExecuteFromNonRubyThread(new Consumer<RubyThread>() {
 
                     @Override
-                    public synchronized void accept(RubyThread thread) {
+                    public void accept(RubyThread thread) {
                         try {
-                            stream.println(Thread.currentThread().getName());
-                            for (String line : Backtrace.DISPLAY_FORMATTER.format(context, null,
-                                    RubyCallStack.getBacktrace(null))) {
-                                stream.println(line);
-                            }
+                            Backtrace backtrace = RubyCallStack.getBacktrace(null);
 
-                            stream.println();
+                            synchronized (stream) {
+                                // Not thread-safe so keep the formatting synchronized for now.
+                                String[] lines = Backtrace.DISPLAY_FORMATTER.format(context, null, backtrace);
+
+                                stream.println(Thread.currentThread().getName());
+                                for (String line : lines) {
+                                    stream.println(line);
+                                }
+                                stream.println();
+                            }
                         } catch (Throwable e) {
                             e.printStackTrace(stream);
                         }
