@@ -23,3 +23,4 @@ fails:String#split with Regexp taints an empty string if self is tainted
 fails:String#split with Regexp retains the encoding of the source string
 fails:String#split with Regexp splits a string on each character for a multibyte encoding and empty split
 fails:String#split with Regexp returns an ArgumentError if an invalid UTF-8 string is supplied
+fails:String#split with Regexp doesn't taints the resulting strings if the Regexp is tainted
