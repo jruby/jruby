@@ -20,13 +20,26 @@ module Utilities
     '../../graal/graalvm-jdk1.8.0/bin/java' # This is where I (CS) keep it
   ].compact.map { |path| File.expand_path(path, JRUBY_DIR) }
 
+  BENCH_LOCATIONS = [
+    ENV['BENCH_DIR'],
+    '../bench9000'
+  ].compact.map { |path| File.expand_path(path, JRUBY_DIR) }
+
   def self.find_graal
     not_found = -> {
-      # TODO(CS 24-Jan-15) download it?
-      raise "coudln't find graal"
+      raise "couldn't find graal - download it from http://lafo.ssw.uni-linz.ac.at/graalvm/ and extract it into the parent directory"
     }
     GRAAL_LOCATIONS.find(not_found) do |location|
       File.executable?(location)
+    end
+  end
+
+  def self.find_bench
+    not_found = -> {
+      raise "couldn't find bench9000 - clone it from https://github.com/jruby/bench9000.git into the parent directory"
+    }
+    BENCH_LOCATIONS.find(not_found) do |location|
+      Dir.exist?(location)
     end
   end
 
@@ -82,6 +95,10 @@ module Commands
     puts 'jt tag spec/ruby/language/while_spec.rb      tag failing specs in this file'
     puts 'jt untag spec/ruby/language                  untag passing specs in this directory'
     puts 'jt untag spec/ruby/language/while_spec.rb    untag passing specs in this file'
+    puts 'jt bench reference [benchmarks]              run a set of benchmarks and record a reference point'
+    puts 'jt bench compare [benchmarks]                run a set of benchmarks and compare against a reference point'
+    puts '    benchmarks can be any benchmarks of group of benchmarks supported'
+    puts '    by bench9000, eg all, classic, chunky, 3, 5, 10, 15 - default is 5'
     puts 'jt findbugs                                  run findbugs'
     puts 'jt findbugs report                           run findbugs and generate an HTML report'
     puts
@@ -152,6 +169,25 @@ module Commands
     puts "WARNING: untag is currently not very reliable - run `jt test #{path} #{args * ' '}` after and manually annotate any new failures"
     puts
     mspec 'tag', '--del', 'fails', '--pass', path, *args
+  end
+
+  def bench(command, *args)
+    bench_dir = Utilities.find_bench
+    env_vars = {
+      "JRUBY_9000_DEV_DIR" => JRUBY_DIR,
+      "GRAAL_BIN" => Utilities.find_graal,
+    }
+    args << "5" if args.empty?
+    bench_args = ["-I#{bench_dir}/lib", "#{bench_dir}/bin/bench"]
+    case command
+    when 'reference'
+      bench_args += ['reference', 'jruby-9000-dev-truffle-graal', '--show-commands']
+    when 'compare'
+      bench_args += ['compare-reference', 'jruby-9000-dev-truffle-graal']
+    else
+      raise ArgumentError, command
+    end
+    raw_sh env_vars, "ruby", *bench_args, *args
   end
 
   def findbugs(report=nil)
