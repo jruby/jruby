@@ -2231,7 +2231,7 @@ public abstract class KernelNodes {
 
     }
 
-    @CoreMethod(names = "to_s")
+    @CoreMethod(names = { "to_s", "inspect" })
     public abstract static class ToSNode extends CoreMethodNode {
 
         @Child private ClassNode classNode;
