@@ -963,7 +963,7 @@ public abstract class ArrayNodes {
                     }
 
                     store[normalisedIndex] = value;
-                    array.setSize(array.getSize() + 1);
+                    array.setStore(store, array.getSize() + 1);
                 } else if (normalisedIndex > array.getSize()) {
                     beyondBranch.enter();
                     final Object[] newStore = new Object[index + 1];
@@ -1010,7 +1010,7 @@ public abstract class ArrayNodes {
                     }
 
                     store[normalisedIndex] = value;
-                    array.setSize(array.getSize() + 1);
+                    array.setStore(store, array.getSize() + 1);
                 } else if (normalisedIndex > array.getSize()) {
                     beyondBranch.enter();
                     final Object[] newStore = new Object[index + 1];
@@ -1057,7 +1057,7 @@ public abstract class ArrayNodes {
                     }
 
                     store[normalisedIndex] = value;
-                    array.setSize(array.getSize() + 1);
+                    array.setStore(store, array.getSize() + 1);
                 } else if (normalisedIndex > array.getSize()) {
                     beyondBranch.enter();
                     final Object[] newStore = new Object[index + 1];
@@ -1098,7 +1098,7 @@ public abstract class ArrayNodes {
                     }
 
                     store[normalisedIndex] = value;
-                    array.setSize(array.getSize() + 1);
+                    array.setStore(store, array.getSize() + 1);
                 } else if (normalisedIndex > array.getSize()) {
                     beyondBranch.enter();
                     final Object[] newStore = new Object[index + 1];
@@ -1139,7 +1139,7 @@ public abstract class ArrayNodes {
                     }
 
                     store[normalisedIndex] = value;
-                    array.setSize(array.getSize() + 1);
+                    array.setStore(store, array.getSize() + 1);
                 } else if (normalisedIndex > array.getSize()) {
                     beyondBranch.enter();
                     final Object[] newStore = new Object[index + 1];
@@ -1206,7 +1206,7 @@ public abstract class ArrayNodes {
 
                 // TODO: This is a moving overlapping memory, should we use sth else instead?
                 System.arraycopy(store, exclusiveEnd, store, begin, array.getSize() - exclusiveEnd);
-                array.setSize(array.getSize() - length);
+                array.setStore(store, array.getSize() - length);
 
                 return value;
             } else {
@@ -1320,7 +1320,7 @@ public abstract class ArrayNodes {
         @Specialization
         public RubyArray clear(RubyArray array) {
             notDesignedForCompilation();
-            array.setSize(0);
+            array.setStore(null, 0);
             return array;
         }
 
@@ -1384,9 +1384,8 @@ public abstract class ArrayNodes {
             notDesignedForCompilation();
 
             // TODO(CS): is there already space in array?
-            array.setStore(Arrays.copyOf((int[]) array.getStore(), array.getSize() + other.getSize()), array.getSize());
             System.arraycopy(other.getStore(), 0, array.getStore(), array.getSize(), other.getSize());
-            array.setSize(array.getSize() + other.getSize());
+            array.setStore(Arrays.copyOf((int[]) array.getStore(), array.getSize() + other.getSize()), array.getSize() + other.getSize());
             return array;
         }
 
@@ -1395,9 +1394,8 @@ public abstract class ArrayNodes {
             notDesignedForCompilation();
 
             // TODO(CS): is there already space in array?
-            array.setStore(Arrays.copyOf((long[]) array.getStore(), array.getSize() + other.getSize()), array.getSize());
             System.arraycopy(other.getStore(), 0, array.getStore(), array.getSize(), other.getSize());
-            array.setSize(array.getSize() + other.getSize());
+            array.setStore(Arrays.copyOf((long[]) array.getStore(), array.getSize() + other.getSize()), array.getSize() + other.getSize());
             return array;
         }
 
@@ -1406,9 +1404,8 @@ public abstract class ArrayNodes {
             notDesignedForCompilation();
 
             // TODO(CS): is there already space in array?
-            array.setStore(Arrays.copyOf((double[]) array.getStore(), array.getSize() + other.getSize()), array.getSize());
             System.arraycopy(other.getStore(), 0, array.getStore(), array.getSize(), other.getSize());
-            array.setSize(array.getSize() + other.getSize());
+            array.setStore(Arrays.copyOf((double[]) array.getStore(), array.getSize() + other.getSize()), array.getSize() + other.getSize());
             return array;
         }
 
@@ -1417,9 +1414,8 @@ public abstract class ArrayNodes {
             notDesignedForCompilation();
 
             // TODO(CS): is there already space in array?
-            array.setStore(Arrays.copyOf((Object[]) array.getStore(), array.getSize() + other.getSize()), array.getSize());
             System.arraycopy(other.getStore(), 0, array.getStore(), array.getSize(), other.getSize());
-            array.setSize(array.getSize() + other.getSize());
+            array.setStore(Arrays.copyOf((Object[]) array.getStore(), array.getSize() + other.getSize()), array.getSize() + other.getSize());
             return array;
         }
 
@@ -1476,7 +1472,7 @@ public abstract class ArrayNodes {
                 i++;
             }
 
-            array.setSize(i);
+            array.setStore(store, i);
             return found;
         }
 
@@ -1503,7 +1499,7 @@ public abstract class ArrayNodes {
                 i++;
             }
 
-            array.setSize(i);
+            array.setStore(store, i);
             return found;
         }
 
@@ -1535,7 +1531,7 @@ public abstract class ArrayNodes {
                 final int[] store = (int[]) array.getStore();
                 final int value = store[normalisedIndex];
                 System.arraycopy(store, normalisedIndex + 1, store, normalisedIndex, array.getSize() - normalisedIndex - 1);
-                array.setSize(array.getSize() - 1);
+                array.setStore(store, array.getSize() - 1);
                 return value;
             }
         }
@@ -1561,7 +1557,7 @@ public abstract class ArrayNodes {
                 final int[] store = (int[]) array.getStore();
                 final int value = store[normalisedIndex];
                 System.arraycopy(store, normalisedIndex + 1, store, normalisedIndex, array.getSize() - normalisedIndex - 1);
-                array.setSize(array.getSize() - 1);
+                array.setStore(store, array.getSize() - 1);
                 return value;
             }
         }
@@ -2363,7 +2359,7 @@ public abstract class ArrayNodes {
             final Object[] store = new Object[index + 1];
             Arrays.fill(store, getContext().getCoreLibrary().getNilObject());
             store[index] = value;
-            array.setSize(array.getSize() + 1);
+            array.setStore(store, array.getSize() + 1);
             return array;
         }
 
@@ -2381,7 +2377,7 @@ public abstract class ArrayNodes {
             } else {
                 System.arraycopy(store, normalisedIndex, store, normalisedIndex + 1, array.getSize() - normalisedIndex);
                 store[normalisedIndex] = value;
-                array.setSize(array.getSize() + 1);
+                array.setStore(store, array.getSize() + 1);
             }
 
             return array;
@@ -3075,8 +3071,9 @@ public abstract class ArrayNodes {
             if (CompilerDirectives.injectBranchProbability(CompilerDirectives.UNLIKELY_PROBABILITY, array.getSize() == 0)) {
                 throw new UnexpectedResultException(getContext().getCoreLibrary().getNilObject());
             } else {
-                final int value = ((int[]) array.getStore())[array.getSize() - 1];
-                array.setSize(array.getSize() - 1);
+                final int[] store = ((int[]) array.getStore());
+                final int value = store[array.getSize() - 1];
+                array.setStore(store, array.getSize() - 1);
                 return value;
             }
         }
@@ -3086,8 +3083,9 @@ public abstract class ArrayNodes {
             if (CompilerDirectives.injectBranchProbability(CompilerDirectives.UNLIKELY_PROBABILITY, array.getSize() == 0)) {
                 return getContext().getCoreLibrary().getNilObject();
             } else {
-                final int value = ((int[]) array.getStore())[array.getSize() - 1];
-                array.setSize(array.getSize() - 1);
+                final int[] store = ((int[]) array.getStore());
+                final int value = store[array.getSize() - 1];
+                array.setStore(store, array.getSize() - 1);
                 return value;
             }
         }
@@ -3097,8 +3095,9 @@ public abstract class ArrayNodes {
             if (CompilerDirectives.injectBranchProbability(CompilerDirectives.UNLIKELY_PROBABILITY, array.getSize() == 0)) {
                 throw new UnexpectedResultException(getContext().getCoreLibrary().getNilObject());
             } else {
-                final long value = ((long[]) array.getStore())[array.getSize() - 1];
-                array.setSize(array.getSize() - 1);
+                final long[] store = ((long[]) array.getStore());
+                final long value = store[array.getSize() - 1];
+                array.setStore(store, array.getSize() - 1);
                 return value;
             }
         }
@@ -3108,8 +3107,9 @@ public abstract class ArrayNodes {
             if (CompilerDirectives.injectBranchProbability(CompilerDirectives.UNLIKELY_PROBABILITY, array.getSize() == 0)) {
                 return getContext().getCoreLibrary().getNilObject();
             } else {
-                final long value = ((long[]) array.getStore())[array.getSize() - 1];
-                array.setSize(array.getSize() - 1);
+                final long[] store = ((long[]) array.getStore());
+                final long value = store[array.getSize() - 1];
+                array.setStore(store, array.getSize() - 1);
                 return value;
             }
         }
@@ -3119,8 +3119,9 @@ public abstract class ArrayNodes {
             if (CompilerDirectives.injectBranchProbability(CompilerDirectives.UNLIKELY_PROBABILITY, array.getSize() == 0)) {
                 throw new UnexpectedResultException(getContext().getCoreLibrary().getNilObject());
             } else {
-                final double value = ((double[]) array.getStore())[array.getSize() - 1];
-                array.setSize(array.getSize() - 1);
+                final double[] store = ((double[]) array.getStore());
+                final double value = store[array.getSize() - 1];
+                array.setStore(store, array.getSize() - 1);
                 return value;
             }
         }
@@ -3130,8 +3131,9 @@ public abstract class ArrayNodes {
             if (CompilerDirectives.injectBranchProbability(CompilerDirectives.UNLIKELY_PROBABILITY, array.getSize() == 0)) {
                 return getContext().getCoreLibrary().getNilObject();
             } else {
-                final double value = ((double[]) array.getStore())[array.getSize() - 1];
-                array.setSize(array.getSize() - 1);
+                final double[] store = ((double[]) array.getStore());
+                final double value = store[array.getSize() - 1];
+                array.setStore(store, array.getSize() - 1);
                 return value;
             }
         }
@@ -3141,8 +3143,9 @@ public abstract class ArrayNodes {
             if (CompilerDirectives.injectBranchProbability(CompilerDirectives.UNLIKELY_PROBABILITY, array.getSize() == 0)) {
                 return getContext().getCoreLibrary().getNilObject();
             } else {
-                final Object value = ((Object[]) array.getStore())[array.getSize() - 1];
-                array.setSize(array.getSize() - 1);
+                final Object[] store = ((Object[]) array.getStore());
+                final Object value = store[array.getSize() - 1];
+                array.setStore(store, array.getSize() - 1);
                 return value;
             }
         }
@@ -3222,11 +3225,10 @@ public abstract class ArrayNodes {
             if (store.length < newSize) {
                 extendBranch.enter();
                 store = Arrays.copyOf(store, ArrayUtils.capacity(store.length, newSize));
-                array.setStore(store, array.getSize());
             }
 
             store[oldSize] = (int) values[0];
-            array.setSize(newSize);
+            array.setStore(store, newSize);
             return array;
         }
 
@@ -3245,13 +3247,11 @@ public abstract class ArrayNodes {
                 store = ArrayUtils.box(oldStore);
             }
 
-            array.setStore(store, oldSize);
-
             for (int n = 0; n < values.length; n++) {
                 store[oldSize + n] = values[n];
             }
 
-            array.setSize(newSize);
+            array.setStore(store, newSize);
             return array;
         }
 
@@ -3265,11 +3265,10 @@ public abstract class ArrayNodes {
             if (store.length < newSize) {
                 extendBranch.enter();
                 store = Arrays.copyOf(store, ArrayUtils.capacity(store.length, newSize));
-                array.setStore(store, array.getSize());
             }
 
             store[oldSize] = (long) (int) values[0];
-            array.setSize(newSize);
+            array.setStore(store, newSize);
             return array;
         }
 
@@ -3283,11 +3282,10 @@ public abstract class ArrayNodes {
             if (store.length < newSize) {
                 extendBranch.enter();
                 store = Arrays.copyOf(store, ArrayUtils.capacity(store.length, newSize));
-                array.setStore(store, array.getSize());
             }
 
             store[oldSize] = (long) values[0];
-            array.setSize(newSize);
+            array.setStore(store, newSize);
             return array;
         }
 
@@ -3301,14 +3299,13 @@ public abstract class ArrayNodes {
             if (store.length < newSize) {
                 extendBranch.enter();
                 store = Arrays.copyOf(store, ArrayUtils.capacity(store.length, newSize));
-                array.setStore(store, oldSize);
             }
 
             for (int n = 0; n < values.length; n++) {
                 store[oldSize + n] = values[n];
             }
 
-            array.setSize(newSize);
+            array.setStore(store, newSize);
             return array;
         }
 
@@ -3355,7 +3352,7 @@ public abstract class ArrayNodes {
             }
 
             store[oldSize] = value;
-            array.setSize(newSize);
+            array.setStore(store, newSize);
             return array;
         }
 
@@ -3392,7 +3389,7 @@ public abstract class ArrayNodes {
             }
 
             store[oldSize] = value;
-            array.setSize(newSize);
+            array.setStore(store, newSize);
             return array;
         }
 
@@ -3522,7 +3519,7 @@ public abstract class ArrayNodes {
                 i++;
             }
 
-            array.setSize(i);
+            array.setStore(store, i);
             return array;
         }
 
@@ -3543,7 +3540,7 @@ public abstract class ArrayNodes {
         public RubyArray replace(RubyArray array, RubyArray other) {
             notDesignedForCompilation();
 
-            array.setSize(0);
+            array.setStore(null, 0);
             return array;
         }
 
