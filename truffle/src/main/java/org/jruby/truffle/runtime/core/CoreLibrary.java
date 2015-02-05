@@ -55,7 +55,6 @@ public class CoreLibrary {
     @CompilerDirectives.CompilationFinal private RubyClass bignumClass;
     @CompilerDirectives.CompilationFinal private RubyClass bindingClass;
     @CompilerDirectives.CompilationFinal private RubyClass classClass;
-    @CompilerDirectives.CompilationFinal private RubyClass continuationClass;
     @CompilerDirectives.CompilationFinal private RubyClass complexClass;
     @CompilerDirectives.CompilationFinal private RubyClass dirClass;
     @CompilerDirectives.CompilationFinal private RubyClass encodingClass;
@@ -202,24 +201,24 @@ public class CoreLibrary {
 
         numericClass = defineClass("Numeric");
         complexClass = defineClass(numericClass, "Complex");
+        floatClass = defineClass(numericClass, "Float");
         integerClass = defineClass(numericClass, "Integer");
         fixnumClass = defineClass(integerClass, "Fixnum");
         bignumClass = defineClass(integerClass, "Bignum", new RubyBignum.BignumAllocator());
         rationalClass = defineClass(numericClass, "Rational");
 
+        ioClass = defineClass("IO", new RubyBasicObject.BasicObjectAllocator());
+        fileClass = defineClass(ioClass, "File");
+
         // Classes defined in Object
 
         arrayClass = defineClass("Array", new RubyArray.ArrayAllocator());
         bindingClass = defineClass("Binding");
-        continuationClass = defineClass("Continuation");
         dirClass = defineClass("Dir");
         encodingClass = defineClass("Encoding", new RubyEncoding.EncodingAllocator());
         falseClass = defineClass("FalseClass");
         fiberClass = defineClass("Fiber", new RubyFiber.FiberAllocator());
-        fileClass = defineClass(ioClass, "File");
-        floatClass = defineClass(numericClass, "Float");
         hashClass = defineClass("Hash", new RubyHash.HashAllocator());
-        ioClass = defineClass("IO", new RubyBasicObject.BasicObjectAllocator());
         matchDataClass = defineClass("MatchData");
         methodClass = defineClass("Method");
         defineClass("Mutex", new RubyMutex.MutexAllocator());
@@ -228,7 +227,6 @@ public class CoreLibrary {
         processClass = defineClass("Process");
         rangeClass = defineClass("Range", new RubyRange.RangeAllocator());
         regexpClass = defineClass("Regexp", new RubyRegexp.RegexpAllocator());
-        signalModule = new RubyModule(context, objectClass, "Signal");
         stringClass = defineClass("String", new RubyString.StringAllocator());
         symbolClass = defineClass("Symbol");
         threadClass = defineClass("Thread", new RubyThread.ThreadAllocator());
@@ -240,12 +238,12 @@ public class CoreLibrary {
 
         RubyModule comparableModule = new RubyModule(context, objectClass, "Comparable");
         configModule = new RubyModule(context, objectClass, "Config");
-        errnoModule = new RubyModule(context, objectClass, "Errno");
         enumerableModule = new RubyModule(context, objectClass, "Enumerable");
         gcModule = new RubyModule(context, objectClass, "GC");
         kernelModule = new RubyModule(context, objectClass, "Kernel");
         mathModule = new RubyModule(context, objectClass, "Math");
         objectSpaceModule = new RubyModule(context, objectClass, "ObjectSpace");
+        signalModule = new RubyModule(context, objectClass, "Signal");
 
         // The rest
 
@@ -389,6 +387,7 @@ public class CoreLibrary {
 
         // StandardError > SystemCallError
         systemCallErrorClass = defineClass(standardErrorClass, "SystemCallError");
+        errnoModule = new RubyModule(context, objectClass, "Errno");
         new RubyClass(context, errnoModule, systemCallErrorClass, "EACCES");
         edomClass = new RubyClass(context, errnoModule, systemCallErrorClass, "EDOM");
         new RubyClass(context, errnoModule, systemCallErrorClass, "EEXIST");
@@ -832,10 +831,6 @@ public class CoreLibrary {
 
     public RubyClass getClassClass() {
         return classClass;
-    }
-
-    public RubyClass getContinuationClass() {
-        return continuationClass;
     }
 
     public RubyClass getExceptionClass() { return exceptionClass; }
