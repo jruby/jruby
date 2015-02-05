@@ -20,6 +20,7 @@ import org.jruby.truffle.runtime.util.ArrayUtils;
 import org.jruby.util.cli.Options;
 
 import java.util.Arrays;
+import java.util.Random;
 
 /**
  * Implements the Ruby {@code Array} class.
@@ -27,6 +28,9 @@ import java.util.Arrays;
 public final class RubyArray extends RubyBasicObject {
 
     public static final int ARRAYS_SMALL = Options.TRUFFLE_ARRAYS_SMALL.load();
+
+    private static final boolean RANDOMIZE_STORAGE_ARRAY = Options.TRUFFLE_RANDOMIZE_STORAGE_ARRAY.load();
+    private static final Random random = new Random(0);
 
     private final ArrayAllocationSite allocationSite;
     private Object store;
@@ -65,14 +69,14 @@ public final class RubyArray extends RubyBasicObject {
     }
 
     public static RubyArray fromObjects(RubyClass arrayClass, Object... objects) {
+        return new RubyArray(arrayClass, storeFromObjects(objects), objects.length);
+    }
+
+    private static Object storeFromObjects(Object... objects) {
         RubyNode.notDesignedForCompilation();
 
         if (objects.length == 0) {
-            return new RubyArray(arrayClass);
-        }
-
-        if (objects.length == 1) {
-            return fromObject(arrayClass, objects[0]);
+            return null;
         }
 
         boolean canUseInteger = true;
@@ -109,7 +113,7 @@ public final class RubyArray extends RubyBasicObject {
                 }
             }
 
-            return new RubyArray(arrayClass, store, objects.length);
+            return store;
         } else if (canUseLong) {
             final long[] store = new long[objects.length];
 
@@ -124,7 +128,7 @@ public final class RubyArray extends RubyBasicObject {
                 }
             }
 
-            return new RubyArray(arrayClass, store, objects.length);
+            return store;
         } else if (canUseDouble) {
             final double[] store = new double[objects.length];
 
@@ -132,9 +136,9 @@ public final class RubyArray extends RubyBasicObject {
                 store[n] = CoreLibrary.toDouble(objects[n]);
             }
 
-            return new RubyArray(arrayClass, store, objects.length);
+            return store;
         } else {
-            return new RubyArray(arrayClass, objects, objects.length);
+            return objects;
         }
     }
 
@@ -207,8 +211,50 @@ public final class RubyArray extends RubyBasicObject {
 
     public void setStore(Object store, int size) {
         assert verifyStore(store, size);
+
+        if (RANDOMIZE_STORAGE_ARRAY) {
+            store = randomizeStorageStrategy(store);
+        }
+
         this.store = store;
         this.size = size;
+    }
+
+    @CompilerDirectives.TruffleBoundary
+    private static Object randomizeStorageStrategy(Object store) {
+        // Convert to the canonical store type first
+
+        final Object[] boxedStore = ArrayUtils.box(store);
+        final Object canonicalStore = storeFromObjects(boxedStore);
+
+        // Then promote it at random
+
+        if (canonicalStore instanceof int[]) {
+            switch (random.nextInt(3)) {
+                case 0:
+                    return boxedStore;
+                case 1:
+                    ArrayUtils.longCopyOf((int[]) canonicalStore);
+                case 2:
+                    return canonicalStore;
+                default:
+                    throw new IllegalStateException();
+            }
+        } else if (canonicalStore instanceof long[]) {
+            if (random.nextBoolean()) {
+                return boxedStore;
+            } else {
+                return canonicalStore;
+            }
+        } else if (canonicalStore instanceof double[]) {
+            if (random.nextBoolean()) {
+                return boxedStore;
+            } else {
+                return canonicalStore;
+            }
+        } else {
+            return canonicalStore;
+        }
     }
 
     public int getSize() {
@@ -231,6 +277,7 @@ public final class RubyArray extends RubyBasicObject {
         assert !(store instanceof int[]) || size <= ((int[]) store).length;
         assert !(store instanceof long[]) || size <= ((long[]) store).length;
         assert !(store instanceof double[]) || size <= ((double[]) store).length;
+
         return true;
     }
 
