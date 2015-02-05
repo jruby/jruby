@@ -44,11 +44,14 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import org.jruby.Ruby;
 import org.jruby.util.cli.Options;
 import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
+import static org.jruby.javasupport.proxy.JavaProxyClass.EMPTY_CLASS_ARRAY;
+
 import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.FieldVisitor;
@@ -75,8 +78,6 @@ public class JavaProxyClassFactory {
 
     private static final String PROXY_CLASS_FIELD_NAME = "__proxy_class";
 
-    private static final Class[] EMPTY_CLASS_ARRAY = new Class[0];
-
     private static final Type INVOCATION_HANDLER_TYPE = Type.getType(JavaProxyInvocationHandler.class);
 
     private static final Type PROXY_METHOD_TYPE = Type.getType(JavaProxyMethod.class);
@@ -98,13 +99,13 @@ public class JavaProxyClassFactory {
 
     private static final Type JAVA_PROXY_TYPE = Type.getType(InternalJavaProxy.class);
 
-    private static int counter;
+    private static final Type JAVA_PROXY_TYPE = Type.getType(InternalJavaProxy.class);
+
+    private static final AtomicInteger counter = new AtomicInteger(0);
 
     public static final String PROXY_CLASS_FACTORY = Options.JI_PROXYCLASSFACTORY.load();
 
-    private static synchronized int nextId() {
-        return counter++;
-    }
+    private static int nextId() { return counter.incrementAndGet(); }
 
     public static JavaProxyClassFactory createFactory() {
         JavaProxyClassFactory factory = null;
