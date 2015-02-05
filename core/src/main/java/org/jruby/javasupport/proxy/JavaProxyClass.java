@@ -93,14 +93,16 @@ public class JavaProxyClass extends JavaProxyReflectionObject {
     JavaProxyClass(Class proxyClass) {
         super(getThreadLocalRuntime(), getThreadLocalRuntime().getModule("Java").getClass("JavaProxyClass"));
         this.proxyClass = proxyClass;
-        this.constructors = buildRubyArray(getConstructors());
+        this.constructors = buildRubyArray( getConstructors() );
     }
 
+    @Override
     public boolean equals(Object other) {
         return other instanceof JavaProxyClass &&
-            this.proxyClass == ((JavaProxyClass)other).proxyClass;
+            this.proxyClass == ((JavaProxyClass) other).proxyClass;
     }
 
+    @Override
     public int hashCode() {
         return proxyClass.hashCode();
     }
@@ -234,8 +236,9 @@ public class JavaProxyClass extends JavaProxyReflectionObject {
 
         @Override
         public boolean equals(Object other) {
-            return other instanceof ProxyMethodImpl &&
-                this.method == ((ProxyMethodImpl)other).method;
+            if ( ! ( other instanceof ProxyMethodImpl ) ) return false;
+            final ProxyMethodImpl that = (ProxyMethodImpl) other;
+            return this.method == that.method || this.method.equals( that.method );
         }
 
         @Override
