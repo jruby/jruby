@@ -156,18 +156,6 @@ class Module
 
 end
 
-class File
-  def gets
-    read.split("\n").first
-  end
-
-  def rewind
-  end
-
-  def set_encoding(encoding, internal_encoding)
-  end
-end
-
 class String
   def gsub(*args)
     dup.gsub!(*args)
