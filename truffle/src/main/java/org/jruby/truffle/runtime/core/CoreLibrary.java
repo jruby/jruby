@@ -324,6 +324,9 @@ public class CoreLibrary {
         initializeGlobalVariables();
         initializeConstants();
         initializeEncodingConstants();
+
+        // Common symbols
+        eachSymbol = getContext().getSymbolTable().getSymbol("each");
     }
 
     private void initializeGlobalVariables() {
@@ -412,10 +415,6 @@ public class CoreLibrary {
     }
 
     public void initializeAfterMethodsAdded() {
-        // Common symbols
-
-        eachSymbol = getContext().getSymbolTable().getSymbol("each");
-
         // Load Ruby core
 
         if (Options.TRUFFLE_LOAD_CORE.load()) {
