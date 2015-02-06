@@ -479,12 +479,9 @@ public class JavaClass extends JavaObject {
 
     }
 
-    private Map<String, AssignedName> staticAssignedNames;
-    private Map<String, AssignedName> instanceAssignedNames;
-    private Map<String, NamedInstaller> staticInstallers;
-    private Map<String, NamedInstaller> instanceInstallers;
-    private ConstructorInvokerInstaller constructorInstaller;
-    private List<ConstantField> constantFields;
+    private volatile Map<String, AssignedName> staticAssignedNames;
+    private volatile Map<String, AssignedName> instanceAssignedNames;
+
     // caching constructors, as they're accessed for each new instance
     private volatile RubyArray constructors;
 
@@ -556,12 +553,13 @@ public class JavaClass extends JavaObject {
         //this.unfinishedProxyModule = null;
     }
 
-    private Map<String, AssignedName> getStaticAssignedNames() {
-        return staticAssignedNames;
-    }
-    private Map<String, AssignedName> getInstanceAssignedNames() {
-        return instanceAssignedNames;
-    }
+    //private Map<String, AssignedName> getStaticAssignedNames() {
+    //    return Collections.unmodifiableMap(staticAssignedNames);
+    //}
+
+    //private Map<String, AssignedName> getInstanceAssignedNames() {
+    //    return Collections.unmodifiableMap(instanceAssignedNames);
+    //}
 
     JavaClass(final Ruby runtime, final Class<?> javaClass) {
         super(runtime, runtime.getJavaSupport().getJavaClassClass(), javaClass);
@@ -578,13 +576,34 @@ public class JavaClass extends JavaObject {
         return javaClass().hashCode();
     }
 
-    private interface Initializer {
+    private static interface Initializer {
 
-        public void initialize();
+        State initialize() ;
 
-        static final Initializer DUMMY = new Initializer() {
-            public void initialize() { /* dummy impl */ }
-        };
+        static class State {
+
+            final Map<String, AssignedName> staticNames;
+            final Map<String, AssignedName> instanceNames;
+            final Map<String, NamedInstaller> staticInstallers = new HashMap<String, NamedInstaller>();
+            final Map<String, NamedInstaller> instanceInstallers = new HashMap<String, NamedInstaller>();
+            final List<ConstantField> constantFields = new ArrayList<ConstantField>();
+
+            ConstructorInvokerInstaller constructorInstaller;
+
+            State(final Ruby runtime, final Class superClass) {
+                if (superClass == null) {
+                    staticNames = new HashMap<String, AssignedName>();
+                    instanceNames = new HashMap<String, AssignedName>();
+                } else {
+                    JavaClass superJavaClass = get(runtime,superClass);
+                    staticNames = new HashMap<String, AssignedName>(superJavaClass.staticAssignedNames);
+                    instanceNames = new HashMap<String, AssignedName>(superJavaClass.instanceAssignedNames);
+                }
+                staticNames.putAll(STATIC_RESERVED_NAMES);
+                instanceNames.putAll(INSTANCE_RESERVED_NAMES);
+            }
+
+        }
 
     }
 
@@ -592,12 +611,12 @@ public class JavaClass extends JavaObject {
 
         private final Class javaClass;
 
-        public InterfaceInitializer(Class<?> javaClass) {
+        InterfaceInitializer(Class<?> javaClass) {
             this.javaClass = javaClass;
         }
 
-        public void initialize() {
-            InitializerState state = new InitializerState(getRuntime(), null);
+        public State initialize() {
+            final State state = new State(getRuntime(), null);
             Field[] fields = getDeclaredFields(javaClass);
 
             for (int i = fields.length; --i >= 0; ) {
@@ -610,7 +629,7 @@ public class JavaClass extends JavaObject {
 
                 final int mod = field.getModifiers();
                 if ( Modifier.isStatic(mod) ) {
-                    addField(state.staticCallbacks, state.staticNames, field, Modifier.isFinal(mod), true);
+                    addField(state.staticInstallers, state.staticNames, field, Modifier.isFinal(mod), true);
                 }
             }
 
@@ -620,7 +639,7 @@ public class JavaClass extends JavaObject {
             handleScalaSingletons(javaClass, state);
 
             // Now add all aliases for the static methods (fields) as appropriate
-            for (Map.Entry<String, NamedInstaller> entry : state.staticCallbacks.entrySet()) {
+            for (Map.Entry<String, NamedInstaller> entry : state.staticInstallers.entrySet()) {
                 final NamedInstaller installer = entry.getValue();
                 if (installer.type == NamedInstaller.STATIC_METHOD && installer.hasLocalMethod()) {
                     assignAliases((MethodInstaller) installer, state.staticNames);
@@ -628,8 +647,9 @@ public class JavaClass extends JavaObject {
             }
 
             JavaClass.this.staticAssignedNames = Collections.unmodifiableMap(state.staticNames);
-            JavaClass.this.staticInstallers = Collections.unmodifiableMap(state.staticCallbacks);
-            JavaClass.this.constantFields = Collections.unmodifiableList(state.constantFields);
+            JavaClass.this.instanceAssignedNames = Collections.emptyMap();
+
+            return state;
         }
 
     }
@@ -638,61 +658,35 @@ public class JavaClass extends JavaObject {
 
         private final Class javaClass;
 
-        public ClassInitializer(Class<?> javaClass) {
+        ClassInitializer(Class<?> javaClass) {
             this.javaClass = javaClass;
         }
 
-        public void initialize() {
+        public State initialize() {
             Class<?> superclass = javaClass.getSuperclass();
 
-            InitializerState state = new InitializerState(getRuntime(), superclass);
+            final State state = new State(getRuntime(), superclass);
 
             setupClassFields(javaClass, state);
             setupClassMethods(javaClass, state);
-            setupClassConstructors(javaClass);
+            setupClassConstructors(javaClass, state);
 
             JavaClass.this.staticAssignedNames = Collections.unmodifiableMap(state.staticNames);
             JavaClass.this.instanceAssignedNames = Collections.unmodifiableMap(state.instanceNames);
-            JavaClass.this.staticInstallers = Collections.unmodifiableMap(state.staticCallbacks);
-            JavaClass.this.instanceInstallers = Collections.unmodifiableMap(state.instanceCallbacks);
-            JavaClass.this.constantFields = Collections.unmodifiableList(state.constantFields);
+
+            return state;
         }
 
     }
 
-    private static class InitializerState {
-
-        final Map<String, AssignedName> staticNames;
-        final Map<String, AssignedName> instanceNames;
-        final Map<String, NamedInstaller> staticCallbacks = new HashMap<String, NamedInstaller>();
-        final Map<String, NamedInstaller> instanceCallbacks = new HashMap<String, NamedInstaller>();
-        final List<ConstantField> constantFields = new ArrayList<ConstantField>();
-
-        InitializerState(final Ruby runtime, final Class superClass) {
-            if (superClass == null) {
-                staticNames = new HashMap<String, AssignedName>();
-                instanceNames = new HashMap<String, AssignedName>();
-            } else {
-                JavaClass superJavaClass = get(runtime,superClass);
-                staticNames = new HashMap<String, AssignedName>(superJavaClass.getStaticAssignedNames());
-                instanceNames = new HashMap<String, AssignedName>(superJavaClass.getInstanceAssignedNames());
-            }
-            staticNames.putAll(STATIC_RESERVED_NAMES);
-            instanceNames.putAll(INSTANCE_RESERVED_NAMES);
-        }
-
-    }
-
-    private void doInitializeFieldsFromJavaClass(final Class<?> javaClass) {
-        final Initializer initializer;
+    private Initializer.State doInitializeClassOrInterface(final Class<?> javaClass) {
         if ( javaClass.isInterface() ) {
-            initializer = new InterfaceInitializer(javaClass);
+            return new InterfaceInitializer(javaClass).initialize();
         }
-        else if ( ! ( javaClass.isArray() || javaClass.isPrimitive() ) ) {
-            initializer = new ClassInitializer(javaClass);
+        if ( ! ( javaClass.isArray() || javaClass.isPrimitive() ) ) {
+            return new ClassInitializer(javaClass).initialize();
         }
-        else initializer = Initializer.DUMMY;
-        initializer.initialize();
+        return null;
     }
 
     void setupProxyClass(final RubyClass proxy) {
@@ -702,7 +696,7 @@ public class JavaClass extends JavaObject {
 
         final Class<?> javaClass = javaClass();
 
-        doInitializeFieldsFromJavaClass(javaClass);
+        final Initializer.State state = doInitializeClassOrInterface(javaClass);
 
         proxy.addMethod("__jsend!", new org.jruby.internal.runtime.methods.JavaMethod.JavaMethodNBlock(proxy, PUBLIC) {
             @Override
@@ -778,9 +772,9 @@ public class JavaClass extends JavaObject {
             proxy.setBaseName( javaClass.getSimpleName() );
         }
 
-        installClassFields(proxy);
-        installClassMethods(proxy);
-        installClassConstructors(proxy);
+        installClassFields(proxy, state);
+        installClassMethods(proxy, state);
+        installClassConstructors(proxy, state);
         installClassClasses(javaClass, proxy);
 
         // FIXME: bit of a kludge here (non-interface classes assigned to both
@@ -871,11 +865,11 @@ public class JavaClass extends JavaObject {
         }
     }
 
-    private void installClassClasses(final Class<?> javaClass, final RubyModule proxy) {
+    private static void installClassClasses(final Class<?> javaClass, final RubyModule proxy) {
         // setup constants for public inner classes
         Class<?>[] classes = getDeclaredClasses(javaClass);
 
-        final Ruby runtime = getRuntime();
+        final Ruby runtime = proxy.getRuntime();
 
         for ( int i = classes.length; --i >= 0; ) {
             final Class<?> clazz = classes[i];
@@ -891,7 +885,7 @@ public class JavaClass extends JavaObject {
 
             if ( IdUtil.isConstant(simpleName) ) {
                 if (proxy.getConstantAt(simpleName) == null) {
-                    proxy.const_set(getRuntime().newString(simpleName), innerProxy);
+                    proxy.const_set(runtime.newString(simpleName), innerProxy);
                 }
             }
             else { // lower-case name
@@ -908,60 +902,59 @@ public class JavaClass extends JavaObject {
         }
     }
 
-    private void installClassConstructors(final RubyModule proxy) {
-        if (constructorInstaller != null) {
-            constructorInstaller.install(proxy);
-            constructorInstaller = null;
-        }
+    private void installClassConstructors(final RubyModule proxy, final Initializer.State state) {
+        if ( state.constructorInstaller != null ) state.constructorInstaller.install(proxy);
     }
 
-    private void installClassFields(final RubyModule proxy) {
-        assert constantFields != null;
-        for (ConstantField field : constantFields) {
+    private static void installClassFields(final RubyModule proxy, final Initializer.State state) {
+        //assert state.constantFields != null;
+        for (ConstantField field : state.constantFields) {
             field.install(proxy);
         }
-        constantFields = null;
     }
 
-    private void installClassMethods(final RubyClass proxy) {
-        installClassMethods( (RubyModule) proxy );
-
-        assert instanceInstallers != null;
-        for (NamedInstaller installer : instanceInstallers.values()) {
-            installer.install(proxy);
+    private static void installClassMethods(final RubyClass proxy, final Initializer.State state) {
+        installClassMethods( (RubyModule) proxy, state );
+        //assert state.instanceInstallers != null;
+        for ( Map.Entry<String, NamedInstaller> entry : state.instanceInstallers.entrySet() ) {
+            entry.getValue().install(proxy);
         }
-        instanceInstallers = null;
     }
 
-    private void installClassMethods(final RubyModule proxy) {
-        assert staticInstallers != null;
-        for (NamedInstaller installer : staticInstallers.values()) {
-            installer.install(proxy);
+    private static void installClassMethods(final RubyModule proxy, final Initializer.State state) {
+        //assert state.staticInstallers != null;
+        for ( Map.Entry<String, NamedInstaller> entry : state.staticInstallers.entrySet() ) {
+            entry.getValue().install(proxy);
         }
-        staticInstallers = null;
     }
 
-    private void setupClassConstructors(Class<?> javaClass) {
+    private void setupClassConstructors(final Class<?> javaClass, final Initializer.State state) {
         // TODO: protected methods.  this is going to require a rework
         // of some of the mechanism.
-        Constructor[] clsConstructors = getConstructors(javaClass);
+        final Constructor[] constructors = getConstructors(javaClass);
 
         // create constructorInstaller; if there are no constructors, it will disable construction
-        constructorInstaller = new ConstructorInvokerInstaller("__jcreate!");
+        ConstructorInvokerInstaller constructorInstaller = new ConstructorInvokerInstaller("__jcreate!");
 
-        for (int i = clsConstructors.length; --i >= 0;) {
+        for ( int i = constructors.length; --i >= 0; ) {
             // we need to collect all methods, though we'll only
             // install the ones that are named in this class
-            Constructor ctor = clsConstructors[i];
-            constructorInstaller.addConstructor(ctor, javaClass);
+            constructorInstaller.addConstructor(constructors[i], javaClass);
         }
+
+        state.constructorInstaller = constructorInstaller;
     }
 
-    private void addField(Map <String, NamedInstaller> callbacks, Map<String, AssignedName> names,
-            Field field, boolean isFinal, boolean isStatic) {
-        String name = field.getName();
+    private static void addField(
+            final Map <String, NamedInstaller> callbacks,
+            final Map<String, AssignedName> names,
+            final Field field,
+            final boolean isFinal,
+            final boolean isStatic) {
 
-        if (Priority.FIELD.lessImportantThan(names.get(name))) return;
+        final String name = field.getName();
+
+        if ( Priority.FIELD.lessImportantThan( names.get(name) ) ) return;
 
         names.put(name, new AssignedName(name, Priority.FIELD));
         callbacks.put(name, isStatic ? new StaticFieldGetterInstaller(name, field) :
@@ -974,7 +967,7 @@ public class JavaClass extends JavaObject {
         }
     }
 
-    private void setupClassFields(Class<?> javaClass, InitializerState state) {
+    private static void setupClassFields(Class<?> javaClass, Initializer.State state) {
         Field[] fields = getFields(javaClass);
 
         for (int i = fields.length; --i >= 0;) {
@@ -988,9 +981,9 @@ public class JavaClass extends JavaObject {
 
             int modifiers = field.getModifiers();
             if (Modifier.isStatic(modifiers)) {
-                addField(state.staticCallbacks, state.staticNames, field, Modifier.isFinal(modifiers), true);
+                addField(state.staticInstallers, state.staticNames, field, Modifier.isFinal(modifiers), true);
             } else {
-                addField(state.instanceCallbacks, state.instanceNames, field, Modifier.isFinal(modifiers), false);
+                addField(state.instanceInstallers, state.instanceNames, field, Modifier.isFinal(modifiers), false);
             }
         }
     }
@@ -1027,7 +1020,7 @@ public class JavaClass extends JavaObject {
         SCALA_OPERATORS = Collections.unmodifiableMap(scalaOperators);
     }
 
-    private void setupClassMethods(Class<?> javaClass, InitializerState state) {
+    private void setupClassMethods(Class<?> javaClass, Initializer.State state) {
         // TODO: protected methods.  this is going to require a rework of some of the mechanism.
         Method[] methods = getMethods(javaClass);
 
@@ -1052,12 +1045,12 @@ public class JavaClass extends JavaObject {
         assignInstanceAliases(state);
     }
 
-    private void prepareInstanceMethod(Class<?> javaClass, InitializerState state, Method method, String name) {
+    private void prepareInstanceMethod(Class<?> javaClass, Initializer.State state, Method method, String name) {
         AssignedName assignedName = state.instanceNames.get(name);
 
         // For JRUBY-4505, restore __method methods for reserved names
         if (INSTANCE_RESERVED_NAMES.containsKey(method.getName())) {
-            installInstanceMethods(state.instanceCallbacks, javaClass, method, name + METHOD_MANGLE);
+            setupInstanceMethods(state.instanceInstallers, javaClass, method, name + METHOD_MANGLE);
             return;
         }
 
@@ -1066,16 +1059,16 @@ public class JavaClass extends JavaObject {
         } else {
             if (Priority.METHOD.lessImportantThan(assignedName)) return;
             if (!Priority.METHOD.asImportantAs(assignedName)) {
-                state.instanceCallbacks.remove(name);
-                state.instanceCallbacks.remove(name + '=');
+                state.instanceInstallers.remove(name);
+                state.instanceInstallers.remove(name + '=');
                 state.instanceNames.put(name, new AssignedName(name, Priority.METHOD));
             }
         }
-        installInstanceMethods(state.instanceCallbacks, javaClass, method, name);
+        setupInstanceMethods(state.instanceInstallers, javaClass, method, name);
     }
 
-    private void assignInstanceAliases(InitializerState state) {
-        for (Map.Entry<String, NamedInstaller> entry : state.instanceCallbacks.entrySet()) {
+    private void assignInstanceAliases(Initializer.State state) {
+        for (Map.Entry<String, NamedInstaller> entry : state.instanceInstallers.entrySet()) {
             if (entry.getValue().type == NamedInstaller.INSTANCE_METHOD) {
                 MethodInstaller methodInstaller = (MethodInstaller)entry.getValue();
 
@@ -1097,7 +1090,7 @@ public class JavaClass extends JavaObject {
         }
     }
 
-    private void setupInterfaceMethods(Class<?> javaClass, InitializerState state) {
+    private static void setupInterfaceMethods(Class<?> javaClass, Initializer.State state) {
         // TODO: protected methods.  this is going to require a rework of some of the mechanism.
         Method[] methods = getMethods(javaClass);
 
@@ -1115,8 +1108,8 @@ public class JavaClass extends JavaObject {
         assignStaticAliases(state);
     }
 
-    private void assignStaticAliases(InitializerState state) {
-        for (Map.Entry<String, NamedInstaller> entry : state.staticCallbacks.entrySet()) {
+    private static void assignStaticAliases(final Initializer.State state) {
+        for (Map.Entry<String, NamedInstaller> entry : state.staticInstallers.entrySet()) {
             // no aliases for __method methods
             if (entry.getKey().endsWith("__method")) continue;
 
@@ -1126,12 +1119,12 @@ public class JavaClass extends JavaObject {
         }
     }
 
-    private void prepareStaticMethod(Class<?> javaClass, InitializerState state, Method method, String name) {
+    private static void prepareStaticMethod(Class<?> javaClass, Initializer.State state, Method method, String name) {
         AssignedName assignedName = state.staticNames.get(name);
 
         // For JRUBY-4505, restore __method methods for reserved names
         if (STATIC_RESERVED_NAMES.containsKey(method.getName())) {
-            installStaticMethods(state.staticCallbacks, javaClass, method, name + METHOD_MANGLE);
+            setupStaticMethods(state.staticInstallers, javaClass, method, name + METHOD_MANGLE);
             return;
         }
 
@@ -1140,15 +1133,15 @@ public class JavaClass extends JavaObject {
         } else {
             if (Priority.METHOD.lessImportantThan(assignedName)) return;
             if (!Priority.METHOD.asImportantAs(assignedName)) {
-                state.staticCallbacks.remove(name);
-                state.staticCallbacks.remove(name + '=');
+                state.staticInstallers.remove(name);
+                state.staticInstallers.remove(name + '=');
                 state.staticNames.put(name, new AssignedName(name, Priority.METHOD));
             }
         }
-        installStaticMethods(state.staticCallbacks, javaClass, method, name);
+        setupStaticMethods(state.staticInstallers, javaClass, method, name);
     }
 
-    private void installInstanceMethods(Map<String, NamedInstaller> methodCallbacks, Class<?> javaClass, Method method, String name) {
+    private static void setupInstanceMethods(Map<String, NamedInstaller> methodCallbacks, Class<?> javaClass, Method method, String name) {
         MethodInstaller invoker = (MethodInstaller) methodCallbacks.get(name);
         if (invoker == null) {
             invoker = new InstanceMethodInvokerInstaller(name);
@@ -1157,7 +1150,7 @@ public class JavaClass extends JavaObject {
         invoker.addMethod(method, javaClass);
     }
 
-    private void installStaticMethods(Map<String, NamedInstaller> methodCallbacks, Class<?> javaClass, Method method, String name) {
+    private static void setupStaticMethods(Map<String, NamedInstaller> methodCallbacks, Class<?> javaClass, Method method, String name) {
         MethodInstaller invoker = (MethodInstaller) methodCallbacks.get(name);
         if (invoker == null) {
             invoker = new StaticMethodInvokerInstaller(name);
@@ -1166,7 +1159,7 @@ public class JavaClass extends JavaObject {
         invoker.addMethod(method, javaClass);
     }
 
-    private void installSingletonMethods(Map<String, NamedInstaller> methodCallbacks, Class<?> javaClass, Object singleton, Method method, String name) {
+    private static void setupSingletonMethods(Map<String, NamedInstaller> methodCallbacks, Class<?> javaClass, Object singleton, Method method, String name) {
         MethodInstaller invoker = (MethodInstaller) methodCallbacks.get(name);
         if (invoker == null) {
             invoker = new SingletonMethodInvokerInstaller(name, singleton);
@@ -1183,7 +1176,7 @@ public class JavaClass extends JavaObject {
         final Class<?> javaClass = javaClass();
         assert javaClass.isInterface();
 
-        doInitializeFieldsFromJavaClass(javaClass);
+        doInitializeClassOrInterface(javaClass);
 
         setProxyClass( proxy ); // this.proxyClass = proxy
         // nothing else to here - the module version will be included in the class.
@@ -1198,7 +1191,7 @@ public class JavaClass extends JavaObject {
         final Class<?> javaClass = javaClass();
         assert javaClass.isInterface();
 
-        doInitializeFieldsFromJavaClass(javaClass);
+        final Initializer.State state = doInitializeClassOrInterface(javaClass);
 
         this.unfinishedProxyModule = module;
 
@@ -1206,8 +1199,8 @@ public class JavaClass extends JavaObject {
         module.setJavaProxy(true);
         module.getSingletonClass().setJavaProxy(true);
 
-        installClassFields(module);
-        installClassMethods(module);
+        installClassFields(module, state);
+        installClassMethods(module, state);
         installClassClasses(javaClass, module);
 
         setProxyModule( module ); // this.proxyModule = proxy
@@ -2080,7 +2073,7 @@ public class JavaClass extends JavaObject {
 
     @JRubyMethod
     public JavaClass component_type() {
-        if (! javaClass().isArray()) {
+        if ( ! javaClass().isArray() ) {
             throw getRuntime().newTypeError("not a java array-class");
         }
         return JavaClass.get(getRuntime(), javaClass().getComponentType());
@@ -2089,37 +2082,36 @@ public class JavaClass extends JavaObject {
     private static Constructor[] getConstructors(Class<?> javaClass) {
         try {
             return javaClass.getConstructors();
-        } catch (SecurityException e) {
-            return new Constructor[] {};
         }
+        catch (SecurityException e) { return new Constructor[0]; }
     }
 
     private static Class<?>[] getDeclaredClasses(Class<?> javaClass) {
         try {
             return javaClass.getDeclaredClasses();
-        } catch (SecurityException e) {
-            return new Class<?>[] {};
-        } catch (NoClassDefFoundError cnfe) {
+        }
+        catch (SecurityException e) { return new Class<?>[0]; }
+        catch (NoClassDefFoundError cnfe) {
             // This is a Scala-specific hack, since Scala uses peculiar
             // naming conventions and class attributes that confuse Java's
             // reflection logic and cause a blow up in getDeclaredClasses.
             // See http://lampsvn.epfl.ch/trac/scala/ticket/2749
-            return new Class<?>[] {};
+            return new Class<?>[0];
         }
     }
 
     private static Class<?>[] getClasses(Class<?> javaClass) {
         try {
             return javaClass.getClasses();
-        } catch (SecurityException e) {
-            return new Class<?>[] {};
         }
+        catch (SecurityException e) { return new Class<?>[0]; }
     }
 
     public static Field[] getDeclaredFields(Class<?> javaClass) {
         try {
             return javaClass.getDeclaredFields();
-        } catch (SecurityException e) {
+        }
+        catch (SecurityException e) {
             return getFields(javaClass);
         }
     }
@@ -2127,9 +2119,8 @@ public class JavaClass extends JavaObject {
     public static Field[] getFields(Class<?> javaClass) {
         try {
             return javaClass.getFields();
-        } catch (SecurityException e) {
-            return new Field[] {};
         }
+        catch (SecurityException e) { return new Field[0]; }
     }
 
     private static boolean methodsAreEquivalent(Method child, Method parent) {
