@@ -436,7 +436,7 @@ public abstract class ModuleNodes {
             return getContext().execute(getContext(), source, encoding, TranslatorDriver.ParserContext.MODULE, module, binding.getFrame(), this, new NodeWrapper() {
                 @Override
                 public RubyNode wrap(RubyNode node) {
-                    return new SetMethodDeclarationContext(node.getContext(), node.getSourceSection(), "class_eval", node);
+                    return new SetMethodDeclarationContext(node.getContext(), node.getSourceSection(), Visibility.PUBLIC, "class_eval", node);
                 }
             });
         }

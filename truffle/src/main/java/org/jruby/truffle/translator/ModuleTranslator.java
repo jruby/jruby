@@ -13,6 +13,7 @@ import com.oracle.truffle.api.Truffle;
 import com.oracle.truffle.api.source.Source;
 import com.oracle.truffle.api.source.SourceSection;
 
+import org.jruby.runtime.Visibility;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.RubyRootNode;
 import org.jruby.truffle.nodes.control.SequenceNode;
@@ -61,7 +62,7 @@ class ModuleTranslator extends BodyTranslator {
 
         body = new CatchReturnPlaceholderNode(context, sourceSection, body, environment.getReturnID());
 
-        body = new SetMethodDeclarationContext(context, sourceSection, name, body);
+        body = new SetMethodDeclarationContext(context, sourceSection, Visibility.PUBLIC, name, body);
 
         final RubyRootNode rootNode = new RubyRootNode(context, sourceSection, environment.getFrameDescriptor(), environment.getSharedMethodInfo(), body);
 
