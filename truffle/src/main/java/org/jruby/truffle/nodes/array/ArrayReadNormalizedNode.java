@@ -47,7 +47,7 @@ public abstract class ArrayReadNormalizedNode extends RubyNode {
     }
 
     @Specialization(
-            guards={"isNormalisedInBounds", "isIntegerArray"}
+            guards={"isNormalisedInBounds", "isIntArray"}
     )
     public int readIntegerInBounds(RubyArray array, int index) {
         return ((int[]) array.getStore())[index];
