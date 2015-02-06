@@ -943,6 +943,8 @@ public class CoreLibrary {
         return timeClass;
     }
 
+    public RubyClass getTypeErrorClass() { return typeErrorClass; }
+
     public RubyClass getTrueClass() {
         return trueClass;
     }

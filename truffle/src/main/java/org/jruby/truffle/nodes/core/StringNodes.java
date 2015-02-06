@@ -122,6 +122,8 @@ public abstract class StringNodes {
     @CoreMethod(names = "<=>", required = 1)
     public abstract static class CompareNode extends CoreMethodNode {
 
+        @Child private ToStrNode toStrNode;
+
         public CompareNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
         }
@@ -143,6 +145,28 @@ public abstract class StringNodes {
             }
 
             return 0;
+        }
+
+        @Specialization(guards = "!isRubyString(arguments[1])")
+        public Object compare(VirtualFrame frame, RubyString a, Object b) {
+            notDesignedForCompilation();
+
+            if (toStrNode == null) {
+                CompilerDirectives.transferToInterpreter();
+                toStrNode = insert(ToStrNodeFactory.create(getContext(), getSourceSection(), null));
+            }
+
+            try {
+                final RubyString coerced = toStrNode.executeRubyString(frame, b);
+
+                return compare(a, coerced);
+            } catch (RaiseException e) {
+                if (e.getRubyException().getClass().equals(getContext().getCoreLibrary().getTypeErrorClass())) {
+                    return getContext().getCoreLibrary().getNilObject();
+                } else {
+                    throw e;
+                }
+            }
         }
     }
 
