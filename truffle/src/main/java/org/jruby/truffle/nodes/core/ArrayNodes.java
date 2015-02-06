@@ -138,6 +138,54 @@ public abstract class ArrayNodes {
             return new RubyArray(getContext().getCoreLibrary().getArrayClass(), Arrays.copyOf((Object[]) b.getStore(), size), size);
         }
 
+        @Specialization(guards = "isIntegerFixnum")
+        public RubyArray addEmptyIntegerFixnum(RubyArray a, RubyArray b) {
+            // TODO CS 5-Feb-15 hack to get things working with empty int[] store
+
+            if (a.getSize() != 0) {
+                throw new UnsupportedOperationException();
+            }
+
+            final int size = b.getSize();
+            return new RubyArray(getContext().getCoreLibrary().getArrayClass(), ArrayUtils.box(b.getStore()), size);
+        }
+
+        @Specialization(guards = "isLongFixnum")
+        public RubyArray addEmptyLongFixnum(RubyArray a, RubyArray b) {
+            // TODO CS 5-Feb-15 hack to get things working with empty long[] store
+
+            if (a.getSize() != 0) {
+                throw new UnsupportedOperationException();
+            }
+
+            final int size = b.getSize();
+            return new RubyArray(getContext().getCoreLibrary().getArrayClass(), ArrayUtils.box(b.getStore()), size);
+        }
+
+        @Specialization(guards = "isFloat")
+        public RubyArray addEmptyDouble(RubyArray a, RubyArray b) {
+            // TODO CS 5-Feb-15 hack to get things working with empty double[] store
+
+            if (a.getSize() != 0) {
+                throw new UnsupportedOperationException();
+            }
+
+            final int size = b.getSize();
+            return new RubyArray(getContext().getCoreLibrary().getArrayClass(), ArrayUtils.box(b.getStore()), size);
+        }
+
+        @Specialization(guards = "isObject")
+        public RubyArray addEmptyObject(RubyArray a, RubyArray b) {
+            // TODO CS 5-Feb-15 hack to get things working with empty Object[] store
+
+            if (a.getSize() != 0) {
+                throw new UnsupportedOperationException();
+            }
+
+            final int size = b.getSize();
+            return new RubyArray(getContext().getCoreLibrary().getArrayClass(), ArrayUtils.box(b.getStore()), size);
+        }
+
     }
 
     @CoreMethod(names = "-", required = 1)
@@ -2019,6 +2067,23 @@ public abstract class ArrayNodes {
             return false;
         }
 
+        @Specialization(guards = "isFloat")
+        public boolean includeFloat(VirtualFrame frame, RubyArray array, Object value) {
+            final double[] store = (double[]) array.getStore();
+
+            for (int n = 0; n < array.getSize(); n++) {
+                final Object stored = store[n];
+
+                notDesignedForCompilation();
+
+                if (equalNode.executeSameOrEqual(frame, stored, value)) {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
         @Specialization(guards = "isObject")
         public boolean includeObject(VirtualFrame frame, RubyArray array, Object value) {
             final Object[] store = (Object[]) array.getStore();
@@ -3221,6 +3286,30 @@ public abstract class ArrayNodes {
 
             store[oldSize] = (long) values[0];
             array.setStore(store, newSize);
+            return array;
+        }
+
+        @Specialization(guards = "isLongFixnum")
+        public RubyArray pushLongFixnum(RubyArray array, Object... values) {
+            // TODO CS 5-Feb-15 hack to get things working with empty long[] store
+
+            if (array.getSize() != 0) {
+                throw new UnsupportedOperationException();
+            }
+
+            array.setStore(values, values.length);
+            return array;
+        }
+
+        @Specialization(guards = "isFloat")
+        public RubyArray pushFloat(RubyArray array, Object... values) {
+            // TODO CS 5-Feb-15 hack to get things working with empty double[] store
+
+            if (array.getSize() != 0) {
+                throw new UnsupportedOperationException();
+            }
+
+            array.setStore(values, values.length);
             return array;
         }
 

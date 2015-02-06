@@ -223,6 +223,25 @@ public final class RubyArray extends RubyBasicObject {
 
     @CompilerDirectives.TruffleBoundary
     private static Object randomizeStorageStrategy(Object store, int size) {
+        // Use any type for empty arrays
+
+        if (size == 0) {
+            switch (random.nextInt(5)) {
+                case 0:
+                    return null;
+                case 1:
+                    return new int[]{};
+                case 2:
+                    return new long[]{};
+                case 3:
+                    return new double[]{};
+                case 4:
+                    return new Object[]{};
+                default:
+                    throw new IllegalStateException();
+            }
+        }
+
         // Convert to the canonical store type first
 
         final Object[] boxedStore = ArrayUtils.box(store);
@@ -272,7 +291,7 @@ public final class RubyArray extends RubyBasicObject {
 
             return canonicalStore;
         } else {
-            return canonicalStore;
+            throw new UnsupportedOperationException();
         }
     }
 
