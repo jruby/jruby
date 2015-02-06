@@ -37,12 +37,12 @@ public abstract class ToStrNode extends RubyNode {
     }
 
     @Specialization
-    public RubyString doRubyString(RubyString string) {
+    public RubyString coerceRubyString(RubyString string) {
         return string;
     }
 
     @Specialization(guards = "!isRubyString")
-    public RubyString doObject(VirtualFrame frame, Object object) {
+    public RubyString coerceObject(VirtualFrame frame, Object object) {
         notDesignedForCompilation();
 
         final Object coerced;
