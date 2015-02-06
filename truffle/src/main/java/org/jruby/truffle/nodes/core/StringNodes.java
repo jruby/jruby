@@ -501,6 +501,8 @@ public abstract class StringNodes {
     @CoreMethod(names = "chomp!", optional = 1)
     public abstract static class ChompBangNode extends CoreMethodNode {
 
+        @Child private ToStrNode toStrNode;
+
         public ChompBangNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
         }
@@ -517,11 +519,16 @@ public abstract class StringNodes {
             return string;
         }
 
-        @Specialization
-        public RubyString chompBangWithString(RubyString string, RubyString stringToChomp) {
+        @Specialization(guards = "!isUndefinedPlaceholder(arguments[1])")
+        public RubyString chompBangWithString(VirtualFrame frame, RubyString string, Object stringToChomp) {
             notDesignedForCompilation();
 
-            string.set(StringNodesHelper.chompWithString(string, stringToChomp));
+            if (toStrNode == null) {
+                CompilerDirectives.transferToInterpreter();
+                toStrNode = insert(ToStrNodeFactory.create(getContext(), getSourceSection(), null));
+            }
+
+            string.set(StringNodesHelper.chompWithString(string, toStrNode.executeRubyString(frame, stringToChomp)));
             return string;
         }
     }
