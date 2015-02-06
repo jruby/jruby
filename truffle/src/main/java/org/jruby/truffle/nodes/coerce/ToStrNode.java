@@ -55,9 +55,7 @@ public abstract class ToStrNode extends RubyNode {
                 CompilerDirectives.transferToInterpreter();
 
                 throw new RaiseException(
-                        getContext().getCoreLibrary().typeError(
-                                String.format("no implicit conversion of %s into String", getContext().getCoreLibrary().getLogicalClass(object).getName()),
-                                this));
+                        getContext().getCoreLibrary().typeErrorNoImplicitConversion(object, "String", this));
             } else {
                 throw e;
             }
@@ -68,15 +66,8 @@ public abstract class ToStrNode extends RubyNode {
         } else {
             CompilerDirectives.transferToInterpreter();
 
-            final String uncoercedClassName = getContext().getCoreLibrary().getLogicalClass(object).getName();
-
             throw new RaiseException(
-                    getContext().getCoreLibrary().typeError(
-                            String.format("can't convert %s to String (%s#to_str gives %s)",
-                                    uncoercedClassName,
-                                    uncoercedClassName,
-                                    getContext().getCoreLibrary().getLogicalClass(coerced).getName()),
-                            this));
+                    getContext().getCoreLibrary().typeErrorBadCoercion(object, "String", "to_str", coerced, this));
         }
     }
 
