@@ -36,13 +36,6 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.javasupport;
 
-import org.jruby.java.invokers.StaticFieldGetter;
-import org.jruby.java.invokers.StaticMethodInvoker;
-import org.jruby.java.invokers.SingletonMethodInvoker;
-import org.jruby.java.invokers.InstanceFieldGetter;
-import org.jruby.java.invokers.InstanceFieldSetter;
-import org.jruby.java.invokers.InstanceMethodInvoker;
-import org.jruby.java.invokers.StaticFieldSetter;
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
 import java.io.IOException;
@@ -76,8 +69,15 @@ import org.jruby.common.IRubyWarnings.ID;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.internal.runtime.methods.JavaMethod.JavaMethodZero;
-import org.jruby.java.proxies.ArrayJavaProxy;
 import org.jruby.java.invokers.ConstructorInvoker;
+import org.jruby.java.invokers.SingletonMethodInvoker;
+import org.jruby.java.invokers.InstanceFieldGetter;
+import org.jruby.java.invokers.InstanceFieldSetter;
+import org.jruby.java.invokers.InstanceMethodInvoker;
+import org.jruby.java.invokers.StaticFieldGetter;
+import org.jruby.java.invokers.StaticFieldSetter;
+import org.jruby.java.invokers.StaticMethodInvoker;
+import org.jruby.java.proxies.ArrayJavaProxy;
 import org.jruby.java.proxies.ConcreteJavaProxy;
 import org.jruby.java.util.ArrayUtils;
 import org.jruby.runtime.Helpers;
@@ -125,71 +125,60 @@ public class JavaClass extends JavaObject {
         CAN_SET_ACCESSIBLE = canSetAccessible;
     }
 
-    private void handleScalaSingletons(Class<?> javaClass, InitializerState state) {
+    private static void handleScalaSingletons(final Class<?> javaClass, final Initializer.State state) {
         // check for Scala companion object
         try {
-            ClassLoader cl = javaClass.getClassLoader();
-            if (cl == null) {
-                //this is a core class, bail
-                return;
-            }
+            final ClassLoader loader = javaClass.getClassLoader();
+            if ( loader == null ) return; //this is a core class, bail
 
-            Class<?> companionClass = cl.loadClass(javaClass.getName() + "$");
-            Field field = companionClass.getField("MODULE$");
-            Object singleton = field.get(null);
-            if (singleton != null) {
-                Method[] sMethods = getMethods(companionClass);
-                for (int j = sMethods.length - 1; j >= 0; j--) {
-                    Method method = sMethods[j];
-                    String name = method.getName();
-                    if (DEBUG_SCALA) {
-                        LOG.debug("Companion object method {} for {}", name, companionClass);
+            Class<?> companionClass = loader.loadClass(javaClass.getName() + '$');
+            final Field field = companionClass.getField("MODULE$");
+            final Object singleton = field.get(null);
+            if ( singleton == null ) return;
+
+            final Method[] scalaMethods = getMethods(companionClass);
+            for ( int j = scalaMethods.length - 1; j >= 0; j-- ) {
+                final Method method = scalaMethods[j];
+                String name = method.getName();
+
+                if (DEBUG_SCALA) LOG.debug("Companion object method {} for {}", name, companionClass);
+
+                if ( name.indexOf('$') >= 0 ) name = fixScalaNames(name);
+
+                if ( ! Modifier.isStatic( method.getModifiers() ) ) {
+                    AssignedName assignedName = state.staticNames.get(name);
+                    // For JRUBY-4505, restore __method methods for reserved names
+                    if (INSTANCE_RESERVED_NAMES.containsKey(method.getName())) {
+                        if (DEBUG_SCALA) LOG.debug("in reserved " + name);
+                        setupSingletonMethods(state.staticInstallers, javaClass, singleton, method, name + METHOD_MANGLE);
+                        continue;
                     }
-                    if (name.indexOf('$') >= 0) {
-                        name = fixScalaNames(name);
-                    }
-                    if (!Modifier.isStatic(method.getModifiers())) {
-                        AssignedName assignedName = state.staticNames.get(name);
-                        // For JRUBY-4505, restore __method methods for reserved names
-                        if (INSTANCE_RESERVED_NAMES.containsKey(method.getName())) {
-                            if (DEBUG_SCALA) {
-                                LOG.debug("in reserved " + name);
-                            }
-                            installSingletonMethods(state.staticCallbacks, javaClass, singleton, method, name + METHOD_MANGLE);
+                    if (assignedName == null) {
+                        state.staticNames.put(name, new AssignedName(name, Priority.METHOD));
+                        if (DEBUG_SCALA) LOG.debug("Assigned name is null");
+                    } else {
+                        if (Priority.METHOD.lessImportantThan(assignedName)) {
+                            if (DEBUG_SCALA) LOG.debug("Less important");
                             continue;
                         }
-                        if (assignedName == null) {
+                        if (!Priority.METHOD.asImportantAs(assignedName)) {
+                            state.staticInstallers.remove(name);
+                            state.staticInstallers.remove(name + '=');
                             state.staticNames.put(name, new AssignedName(name, Priority.METHOD));
-                            if (DEBUG_SCALA) {
-                                LOG.debug("Assigned name is null");
-                            }
-                        } else {
-                            if (Priority.METHOD.lessImportantThan(assignedName)) {
-                                if (DEBUG_SCALA) {
-                                    LOG.debug("Less important");
-                                }
-                                continue;
-                            }
-                            if (!Priority.METHOD.asImportantAs(assignedName)) {
-                                state.staticCallbacks.remove(name);
-                                state.staticCallbacks.remove(name + '=');
-                                state.staticNames.put(name, new AssignedName(name, Priority.METHOD));
-                            }
-                        }
-                        if (DEBUG_SCALA) {
-                            LOG.debug("Installing {} {} {}", name, method, singleton);
-                        }
-                        installSingletonMethods(state.staticCallbacks, javaClass, singleton, method, name);
-                    } else {
-                        if (DEBUG_SCALA) {
-                            LOG.debug("Method {} is sadly static", method);
                         }
                     }
+                    if (DEBUG_SCALA) LOG.debug("Installing {} {} {}", name, method, singleton);
+                    setupSingletonMethods(state.staticInstallers, javaClass, singleton, method, name);
+                }
+                else {
+                    if (DEBUG_SCALA) LOG.debug("Method {} is sadly static", method);
                 }
             }
-
-        } catch (Exception e) {
-            // ignore... there's no companion object
+        }
+        catch (ClassNotFoundException e) { /* there's no companion object */ }
+        catch (NoSuchFieldException e) { /* no MODULE$ field in companion */ }
+        catch (Exception e) {
+            if (DEBUG_SCALA) LOG.debug("Failed with {}", e);
         }
     }
 
