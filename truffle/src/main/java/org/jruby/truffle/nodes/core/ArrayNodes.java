@@ -26,15 +26,14 @@ import org.jruby.runtime.Visibility;
 import org.jruby.truffle.nodes.CoreSourceSection;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.RubyRootNode;
-import org.jruby.truffle.nodes.array.ArrayReadNode;
-import org.jruby.truffle.nodes.array.ArrayReadNodeFactory;
+import org.jruby.truffle.nodes.array.ArrayReadDenormalizedNode;
+import org.jruby.truffle.nodes.array.ArrayReadDenormalizedNodeFactory;
 import org.jruby.truffle.nodes.dispatch.*;
 import org.jruby.truffle.nodes.methods.arguments.MissingArgumentBehaviour;
 import org.jruby.truffle.nodes.methods.arguments.ReadPreArgumentNode;
 import org.jruby.truffle.nodes.methods.locals.ReadLevelVariableNodeFactory;
 import org.jruby.truffle.nodes.yield.YieldDispatchHeadNode;
 import org.jruby.truffle.runtime.*;
-import org.jruby.truffle.nodes.core.ArrayNodesFactory.AtNodeFactory;
 import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.UndefinedPlaceholder;
@@ -598,7 +597,7 @@ public abstract class ArrayNodes {
     @CoreMethod(names = "at", required = 1, lowerFixnumParameters = 0)
     public abstract static class AtNode extends ArrayCoreMethodNode {
 
-        @Child private ArrayReadNode readNode;
+        @Child private ArrayReadDenormalizedNode readNode;
 
         public AtNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -613,7 +612,7 @@ public abstract class ArrayNodes {
         public Object at(VirtualFrame frame, RubyArray array, int index) {
             if (readNode == null) {
                 CompilerDirectives.transferToInterpreter();
-                readNode = insert(ArrayReadNodeFactory.create(getContext(), getSourceSection(), null, null));
+                readNode = insert(ArrayReadDenormalizedNodeFactory.create(getContext(), getSourceSection(), null, null));
             }
 
             return readNode.executeRead(frame, array, index);
@@ -624,7 +623,7 @@ public abstract class ArrayNodes {
     @CoreMethod(names = { "[]", "slice" }, required = 1, optional = 1, lowerFixnumParameters = { 0, 1 })
     public abstract static class IndexNode extends ArrayCoreMethodNode {
 
-        @Child protected ArrayReadNode readNode;
+        @Child protected ArrayReadDenormalizedNode readNode;
         @Child protected CallDispatchHeadNode fallbackNode;
 
         private final BranchProfile outOfBounds = BranchProfile.create();
@@ -645,7 +644,7 @@ public abstract class ArrayNodes {
         public Object index(VirtualFrame frame, RubyArray array, int index, UndefinedPlaceholder undefined) {
             if (readNode == null) {
                 CompilerDirectives.transferToInterpreter();
-                readNode = insert(ArrayReadNodeFactory.create(getContext(), getSourceSection(), null, null));
+                readNode = insert(ArrayReadDenormalizedNodeFactory.create(getContext(), getSourceSection(), null, null));
             }
 
             return readNode.executeRead(frame, array, index);
