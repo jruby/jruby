@@ -106,6 +106,7 @@ public class CoreLibrary {
     private final RubyModule kernelModule;
     private final RubyModule mathModule;
     private final RubyModule objectSpaceModule;
+    private final RubyModule rubiniusModule;
     private final RubyModule signalModule;
     private final RubyModule truffleModule;
     private final RubyModule truffleDebugModule;
@@ -282,10 +283,10 @@ public class CoreLibrary {
         truffleDebugModule = defineModule(truffleModule, "Debug");
         defineModule(truffleModule, "Primitive");
 
-        RubyModule rubiniusModule = defineModule("Rubinius");
-        rubiniusUndefined = new RubyBasicObject(objectClass);
-        rubiniusModule.setConstant(null, "UNDEFINED", rubiniusUndefined);
+        rubiniusModule = defineModule("Rubinius");
         byteArrayClass = new RubyClass(context, rubiniusModule, objectClass, "ByteArray");
+
+        // Include the core modules
 
         includeModules(comparableModule);
 
@@ -294,19 +295,41 @@ public class CoreLibrary {
         mainObject = new RubyBasicObject(objectClass);
         nilObject = new RubyNilClass(nilClass);
         argv = new RubyArray(arrayClass);
+        rubiniusUndefined = new RubyBasicObject(objectClass);
 
-        initializeConstants();
-
-        globalVariablesObject = initializeGlobalVariables();
+        globalVariablesObject = new RubyBasicObject(objectClass);
 
         arrayMinBlock = new ArrayNodes.MinBlock(context);
         arrayMaxBlock = new ArrayNodes.MaxBlock(context);
     }
 
-    private RubyBasicObject initializeGlobalVariables() {
+    private void includeModules(RubyModule comparableModule) {
+        objectClass.include(null, kernelModule);
+
+        numericClass.include(null, comparableModule);
+        stringClass.include(null, comparableModule);
+        symbolClass.include(null, comparableModule);
+
+        arrayClass.include(null, enumerableModule);
+        dirClass.include(null, enumerableModule);
+        hashClass.include(null, enumerableModule);
+        ioClass.include(null, enumerableModule);
+        rangeClass.include(null, enumerableModule);
+    }
+
+    /**
+     * Initializations which may access {@link RubyContext#getCoreLibrary()}.
+     */
+    public void initialize() {
+        initializeGlobalVariables();
+        initializeConstants();
+        initializeEncodingConstants();
+    }
+
+    private void initializeGlobalVariables() {
         RubyNode.notDesignedForCompilation();
 
-        RubyBasicObject globals = new RubyBasicObject(objectClass);
+        RubyBasicObject globals = globalVariablesObject;
 
         globals.getOperations().setInstanceVariable(globals, "$LOAD_PATH", new RubyArray(arrayClass));
         globals.getOperations().setInstanceVariable(globals, "$LOADED_FEATURES", new RubyArray(arrayClass));
@@ -324,22 +347,6 @@ public class CoreLibrary {
 
         // TODO (nirvdrum 05-Feb-15) We need to support the $-0 alias as well.
         globals.getOperations().setInstanceVariable(globals, "$/", defaultRecordSeparator);
-
-        return globals;
-    }
-
-    private void includeModules(RubyModule comparableModule) {
-        objectClass.include(null, kernelModule);
-
-        numericClass.include(null, comparableModule);
-        stringClass.include(null, comparableModule);
-        symbolClass.include(null, comparableModule);
-
-        arrayClass.include(null, enumerableModule);
-        dirClass.include(null, enumerableModule);
-        hashClass.include(null, enumerableModule);
-        ioClass.include(null, enumerableModule);
-        rangeClass.include(null, enumerableModule);
     }
 
     private void initializeConstants() {
@@ -356,6 +363,8 @@ public class CoreLibrary {
         mathModule.setConstant(null, "DomainError", edomClass);
 
         objectClass.setConstant(null, "ARGV", argv);
+
+        rubiniusModule.setConstant(null, "UNDEFINED", rubiniusUndefined);
 
         final RubyString separator = RubyString.fromJavaString(stringClass, "/");
         separator.freeze();
@@ -374,8 +383,6 @@ public class CoreLibrary {
 
         fileClass.setConstant(null, "PATH_SEPARATOR", RubyString.fromJavaString(stringClass, File.pathSeparator));
         fileClass.setConstant(null, "FNM_SYSCASE", 0);
-
-        initializeEncodingConstants();
     }
 
     private RubyClass defineClass(String name) {
