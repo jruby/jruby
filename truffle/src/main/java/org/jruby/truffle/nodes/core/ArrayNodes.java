@@ -1941,24 +1941,6 @@ public abstract class ArrayNodes {
 
     }
 
-    @CoreMethod(names = "hash")
-    public abstract static class HashNode extends CoreMethodNode {
-
-        public HashNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
-        public HashNode(HashNode prev) {
-            super(prev);
-        }
-
-        @Specialization
-        public long hashNumber(RubyArray array) {
-            return array.hashCode();
-        }
-
-    }
-
     @CoreMethod(names = "include?", required = 1)
     public abstract static class IncludeNode extends ArrayCoreMethodNode {
 

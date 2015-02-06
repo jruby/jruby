@@ -83,4 +83,55 @@ class Array
     Array.new self[0, n]
   end
 
+  def hash
+    hash_val = size
+    mask = Fixnum::MAX >> 1
+
+    # This is duplicated and manually inlined code from Thread for performance
+    # reasons. Before refactoring it, please benchmark it and compare your
+    # refactoring against the original.
+
+    id = object_id
+    objects = Thread.current.recursive_objects
+
+    # If there is already an our version running...
+    if objects.key? :__detect_outermost_recursion__
+
+      # If we've seen self, unwind back to the outer version
+      if objects.key? id
+        raise Thread::InnerRecursionDetected
+      end
+
+      # .. or compute the hash value like normal
+      begin
+        objects[id] = true
+
+        each { |x| hash_val = ((hash_val & mask) << 1) ^ x.hash }
+      ensure
+        objects.delete id
+      end
+
+      return hash_val
+    else
+      # Otherwise, we're the outermost version of this code..
+      begin
+        objects[:__detect_outermost_recursion__] = true
+        objects[id] = true
+
+        each { |x| hash_val = ((hash_val & mask) << 1) ^ x.hash }
+
+        # An inner version will raise to return back here, indicating that
+        # the whole structure is recursive. In which case, abondon most of
+        # the work and return a simple hash value.
+      rescue Thread::InnerRecursionDetected
+        return size
+      ensure
+        objects.delete :__detect_outermost_recursion__
+        objects.delete id
+      end
+    end
+
+    return hash_val
+  end
+
 end
