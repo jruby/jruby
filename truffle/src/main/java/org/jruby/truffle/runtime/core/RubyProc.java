@@ -19,7 +19,6 @@ import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.methods.MethodLike;
 import org.jruby.truffle.runtime.methods.SharedMethodInfo;
 import org.jruby.truffle.runtime.subsystems.ObjectSpaceManager;
-import org.jruby.util.cli.Options;
 
 /**
  * Represents the Ruby {@code Proc} class.
