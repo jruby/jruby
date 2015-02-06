@@ -434,6 +434,21 @@ public class Java implements Library {
         return getInterfaceModule(runtime, javaClass);
     }
 
+    public static RubyModule get_proxy_class(final IRubyObject self, final IRubyObject java_class_object) {
+        final Ruby runtime = self.getRuntime();
+        final JavaClass javaClass;
+        if ( java_class_object instanceof RubyString ) {
+            javaClass = JavaClass.for_name(self, java_class_object);
+        }
+        else if ( java_class_object instanceof JavaClass ) {
+            javaClass = (JavaClass) java_class_object;
+        }
+        else {
+            throw runtime.newTypeError(java_class_object, runtime.getJavaSupport().getJavaClassClass());
+        }
+        return getProxyClass(runtime, javaClass);
+    }
+
     public static RubyClass getProxyClassForObject(Ruby runtime, Object object) {
         return (RubyClass) getProxyClass(runtime, object.getClass());
     }
@@ -524,21 +539,6 @@ public class Java implements Library {
         finally { javaClass.unlockProxy(); }
 
         return proxyClass;
-    }
-
-    public static RubyModule get_proxy_class(final IRubyObject self, final IRubyObject java_class_object) {
-        final Ruby runtime = self.getRuntime();
-        final JavaClass javaClass;
-        if ( java_class_object instanceof RubyString ) {
-            javaClass = JavaClass.for_name(self, java_class_object);
-        }
-        else if ( java_class_object instanceof JavaClass ) {
-            javaClass = (JavaClass) java_class_object;
-        }
-        else {
-            throw runtime.newTypeError(java_class_object, runtime.getJavaSupport().getJavaClassClass());
-        }
-        return getProxyClass(runtime, javaClass);
     }
 
     private static RubyClass createProxyClass(final Ruby runtime,
@@ -981,7 +981,7 @@ public class Java implements Library {
     private static void checkJavaReservedNames(final Ruby runtime, final String name,
         final boolean allowPrimitives) {
         // TODO: should check against all Java reserved names here, not just primitives
-        if ( ! allowPrimitives && JavaClass.isJavaPrimitive(name) ) {
+        if ( ! allowPrimitives && JavaClass.isPrimitiveName(name) ) {
             throw runtime.newArgumentError("illegal package name component: " + name);
         }
     }

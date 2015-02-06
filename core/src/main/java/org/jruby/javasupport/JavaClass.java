@@ -1340,7 +1340,7 @@ public class JavaClass extends JavaObject {
         PRIMITIVE_TO_CLASS.put("double", double.class);
     }
 
-    static boolean isJavaPrimitive(final String name) {
+    static boolean isPrimitiveName(final String name) {
         return PRIMITIVE_TO_CLASS.containsKey(name);
     }
 
@@ -2047,6 +2047,8 @@ public class JavaClass extends JavaObject {
         return getRuntime().newBoolean(isPrimitive());
     }
 
+    boolean isPrimitive() { return javaClass().isPrimitive(); }
+
     @JRubyMethod(name = "assignable_from?", required = 1)
     public RubyBoolean assignable_from_p(IRubyObject other) {
         if (! (other instanceof JavaClass)) {
@@ -2083,10 +2085,6 @@ public class JavaClass extends JavaObject {
             }
         }
         return false;
-    }
-
-    private boolean isPrimitive() {
-        return javaClass().isPrimitive();
     }
 
     @JRubyMethod
