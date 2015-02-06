@@ -897,8 +897,7 @@ public abstract class ArrayNodes {
 
         @Specialization
         public RubyArray clear(RubyArray array) {
-            notDesignedForCompilation();
-            array.setStore(null, 0);
+            array.setStore(array.getStore(), 0);
             return array;
         }
 
