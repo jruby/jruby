@@ -47,6 +47,16 @@ class String
     str.chomp!(separator) || str
   end
 
+  def lines(sep=$/)
+    if block_given?
+      each_line(sep) do |line|
+        yield line
+      end
+    else
+      each_line(sep).to_a
+    end
+  end
+
   def start_with?(*prefixes)
     prefixes.each do |original_prefix|
       prefix = Rubinius::Type.check_convert_type original_prefix, String, :to_str
