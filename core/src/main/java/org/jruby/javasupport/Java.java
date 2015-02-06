@@ -548,7 +548,7 @@ public class Java implements Library {
         if ( proxyClass != null ) return proxyClass;
 
         // this needs to be split, since conditional calling #inherited doesn't fit standard ruby semantics
-        RubyClass.checkInheritable(baseType);
+
         final RubyClass superClass = baseType;
         proxyClass = RubyClass.newClass(runtime, superClass);
         proxyClass.makeMetaClass( superClass.getMetaClass() );
