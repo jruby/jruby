@@ -10,6 +10,8 @@
 package org.jruby.truffle.nodes.core;
 
 import com.oracle.truffle.api.CompilerDirectives;
+import com.oracle.truffle.api.dsl.CreateCast;
+import com.oracle.truffle.api.dsl.NodeChild;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.utilities.ConditionProfile;
@@ -20,6 +22,8 @@ import org.jcodings.specific.UTF8Encoding;
 import org.jcodings.util.CaseInsensitiveBytesHash;
 import org.jcodings.util.Hash;
 import org.jruby.runtime.encoding.EncodingService;
+import org.jruby.truffle.nodes.RubyNode;
+import org.jruby.truffle.nodes.coerce.ToStrNodeFactory;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyArray;
 import org.jruby.truffle.runtime.core.RubyEncoding;
@@ -224,7 +228,8 @@ public abstract class EncodingNodes {
     }
 
     @CoreMethod(names = "find", onSingleton = true, required = 1)
-    public abstract static class FindNode extends CoreMethodNode {
+    @NodeChild(value = "name")
+    public abstract static class FindNode extends RubyNode {
 
         public FindNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -232,6 +237,10 @@ public abstract class EncodingNodes {
 
         public FindNode(FindNode prev) {
             super(prev);
+        }
+
+        @CreateCast("name") public RubyNode coerceNameToString(RubyNode name) {
+            return ToStrNodeFactory.create(getContext(), getSourceSection(), name);
         }
 
         @Specialization
