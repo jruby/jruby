@@ -26,6 +26,9 @@
 
 # Only part of Rubinius' array.rb
 
+# Rubinius uses the instance variable @total to store the size. We replace this
+# in the translator with a call to size.
+
 class Array
 
   def self.[](*args)
@@ -148,6 +151,93 @@ class Array
 
     n = size if n > size
     Array.new self[-n..-1]
+  end
+
+  def permutation(num=undefined, &block)
+    return to_enum(:permutation, num) unless block_given?
+
+    if undefined.equal? num
+      num = @total
+    else
+      num = Rubinius::Type.coerce_to_collection_index num
+    end
+
+    if num < 0 || @total < num
+      # no permutations, yield nothing
+    elsif num == 0
+      # exactly one permutation: the zero-length array
+      yield []
+    elsif num == 1
+      # this is a special, easy case
+      each { |val| yield [val] }
+    else
+      # this is the general case
+      perm = Array.new(num)
+      used = Array.new(@total, false)
+
+      if block
+        # offensive (both definitions) copy.
+        offensive = dup
+        Rubinius.privately do
+          offensive.__permute__(num, perm, 0, used, &block)
+        end
+      else
+        __permute__(num, perm, 0, used, &block)
+      end
+    end
+
+    self
+  end
+
+  def __permute__(num, perm, index, used, &block)
+    # Recursively compute permutations of r elements of the set [0..n-1].
+    # When we have a complete permutation of array indexes, copy the values
+    # at those indexes into a new array and yield that array.
+    #
+    # num: the number of elements in each permutation
+    # perm: the array (of size num) that we're filling in
+    # index: what index we're filling in now
+    # used: an array of booleans: whether a given index is already used
+    #
+    # Note: not as efficient as could be for big num.
+    @total.times do |i|
+      unless used[i]
+        perm[index] = i
+        if index < num-1
+          used[i] = true
+          __permute__(num, perm, index+1, used, &block)
+          used[i] = false
+        else
+          yield values_at(*perm)
+        end
+      end
+    end
+  end
+  private :__permute__
+
+  def <=>(other)
+    other = Rubinius::Type.check_convert_type other, Array, :to_ary
+    return 0 if equal? other
+    return nil if other.nil?
+
+    total = Rubinius::Mirror::Array.reflect(other).total
+
+    Thread.detect_recursion self, other do
+      i = 0
+      count = total < @total ? total : @total
+
+      while i < count
+        order = self[i] <=> other[i]
+        return order unless order == 0
+
+        i += 1
+      end
+    end
+
+    # subtle: if we are recursing on that pair, then let's
+    # no go any further down into that pair;
+    # any difference will be found elsewhere if need be
+    @total <=> total
   end
 
 end

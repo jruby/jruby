@@ -2892,68 +2892,6 @@ public abstract class ArrayNodes {
 
     }
 
-    @CoreMethod(names = "permutation", required = 1)
-    public abstract static class PermutationNode extends ArrayCoreMethodNode {
-
-        public PermutationNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
-        public PermutationNode(PermutationNode prev) {
-            super(prev);
-        }
-
-        @Specialization
-        public RubyArray permutation(RubyArray array, int n) {
-            notDesignedForCompilation();
-
-            final List<RubyArray> permutations = new ArrayList<>();
-            permutationCommon(n, false, array.slowToArray(), permutations);
-            return new RubyArray(getContext().getCoreLibrary().getArrayClass(), permutations.toArray(), permutations.size());
-        }
-
-        // Apdapted from JRuby's RubyArray - see attribution there
-
-        private void permutationCommon(int r, boolean repeat, Object[] values, List<RubyArray> permutations) {
-            if (r == 0) {
-                permutations.add(new RubyArray(getContext().getCoreLibrary().getArrayClass(), null, 0));
-            } else if (r == 1) {
-                for (int i = 0; i < values.length; i++) {
-                    permutations.add(new RubyArray(getContext().getCoreLibrary().getArrayClass(), values[i], 1));
-                }
-            } else if (r >= 0) {
-                int n = values.length;
-                permute(n, r,
-                        new int[r], 0,
-                        new boolean[n],
-                        repeat,
-                        values, permutations);
-            }
-        }
-
-        private void permute(int n, int r, int[]p, int index, boolean[]used, boolean repeat, Object[] values, List<RubyArray> permutations) {
-            for (int i = 0; i < n; i++) {
-                if (repeat || !used[i]) {
-                    p[index] = i;
-                    if (index < r - 1) {
-                        used[i] = true;
-                        permute(n, r, p, index + 1, used, repeat, values, permutations);
-                        used[i] = false;
-                    } else {
-                        Object[] result = new Object[r];
-
-                        for (int j = 0; j < r; j++) {
-                            result[j] = values[p[j]];
-                        }
-
-                        permutations.add(new RubyArray(getContext().getCoreLibrary().getArrayClass(), result, r));
-                    }
-                }
-            }
-        }
-
-    }
-
     @CoreMethod(names = "pop")
     public abstract static class PopNode extends ArrayCoreMethodNode {
 

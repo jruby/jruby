@@ -1492,7 +1492,23 @@ public class BodyTranslator extends Translator {
     @Override
     public RubyNode visitInstVarNode(org.jruby.ast.InstVarNode node) {
         final SourceSection sourceSection = translate(node.getPosition());
+
+        // TODO CS 6-Feb-15 - this appears to be the name *with* sigil - need to clarify this
+
         final String nameWithoutSigil = node.getName();
+
+        /*
+         * Rubinius uses the instance variable @total to store the size of an array. In order to use code that
+         * expects that we'll replace it statically with a call to Array#size.
+         */
+
+        if (sourceSection.getSource().getPath().equals("core:/jruby/truffle/core/rubinius/kernel/common/array.rb") && nameWithoutSigil.equals("@total")) {
+            return new RubyCallNode(context, sourceSection,
+                    "size",
+                    new SelfNode(context, sourceSection),
+                    null,
+                    false);
+        }
 
         final RubyNode receiver = new SelfNode(context, sourceSection);
 
