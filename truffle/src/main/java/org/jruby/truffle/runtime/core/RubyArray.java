@@ -300,6 +300,8 @@ public final class RubyArray extends RubyBasicObject {
     }
 
     private boolean verifyStore(Object store, int size) {
+        assert size >= 0;
+
         assert store == null
                 || store instanceof Object[]
                 || store instanceof int[]

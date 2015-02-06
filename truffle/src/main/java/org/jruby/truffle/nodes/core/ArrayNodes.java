@@ -28,6 +28,8 @@ import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.RubyRootNode;
 import org.jruby.truffle.nodes.array.ArrayReadDenormalizedNode;
 import org.jruby.truffle.nodes.array.ArrayReadDenormalizedNodeFactory;
+import org.jruby.truffle.nodes.array.ArrayReadSliceDenormalizedNode;
+import org.jruby.truffle.nodes.array.ArrayReadSliceDenormalizedNodeFactory;
 import org.jruby.truffle.nodes.dispatch.*;
 import org.jruby.truffle.nodes.methods.arguments.MissingArgumentBehaviour;
 import org.jruby.truffle.nodes.methods.arguments.ReadPreArgumentNode;
@@ -265,6 +267,8 @@ public abstract class ArrayNodes {
     public abstract static class IndexNode extends ArrayCoreMethodNode {
 
         @Child protected ArrayReadDenormalizedNode readNode;
+        @Child protected ArrayReadSliceDenormalizedNode readSliceNode;
+
         @Child protected CallDispatchHeadNode fallbackNode;
 
         private final BranchProfile outOfBounds = BranchProfile.create();
@@ -276,10 +280,9 @@ public abstract class ArrayNodes {
         public IndexNode(IndexNode prev) {
             super(prev);
             readNode = prev.readNode;
+            readSliceNode = prev.readSliceNode;
             fallbackNode = prev.fallbackNode;
         }
-
-        // Simple indexing
 
         @Specialization
         public Object index(VirtualFrame frame, RubyArray array, int index, UndefinedPlaceholder undefined) {
@@ -291,62 +294,18 @@ public abstract class ArrayNodes {
             return readNode.executeRead(frame, array, index);
         }
 
-        // Slice with two fixnums
-
-        @Specialization(guards = "isIntegerFixnum")
-        public Object sliceIntegerFixnum(RubyArray array, int start, int length) {
-            final int normalizedIndex = array.normalizeIndex(start);
-
-            if (normalizedIndex < 0 || normalizedIndex > array.getSize() || length < 0) {
-                outOfBounds.enter();
+        @Specialization
+        public Object slice(VirtualFrame frame, RubyArray array, int start, int length) {
+            if (length < 0) {
                 return getContext().getCoreLibrary().getNilObject();
-            } else {
-                final int end = Math.min(array.getSize(), normalizedIndex + length);
-
-                return new RubyArray(array.getLogicalClass(), ArrayUtils.extractRange((int[]) array.getStore(), normalizedIndex, end), end - normalizedIndex);
             }
-        }
 
-        @Specialization(guards = "isLongFixnum")
-        public Object sliceLongFixnum(RubyArray array, int start, int length) {
-            final int normalizedIndex = array.normalizeIndex(start);
-
-            if (normalizedIndex < 0 || normalizedIndex > array.getSize() || length < 0) {
-                outOfBounds.enter();
-                return getContext().getCoreLibrary().getNilObject();
-            } else {
-                final int end = Math.min(array.getSize(), normalizedIndex + length);
-
-                return new RubyArray(array.getLogicalClass(), ArrayUtils.extractRange((long[]) array.getStore(), normalizedIndex, end), end - normalizedIndex);
+            if (readSliceNode == null) {
+                CompilerDirectives.transferToInterpreter();
+                readSliceNode = insert(ArrayReadSliceDenormalizedNodeFactory.create(getContext(), getSourceSection(), null, null, null));
             }
-        }
 
-        @Specialization(guards = "isFloat")
-        public Object sliceFloat(RubyArray array, int start, int length) {
-            final int normalizedIndex = array.normalizeIndex(start);
-
-            if (normalizedIndex < 0 || normalizedIndex > array.getSize() || length < 0) {
-                outOfBounds.enter();
-                return getContext().getCoreLibrary().getNilObject();
-            } else {
-                final int end = Math.min(array.getSize(), normalizedIndex + length);
-
-                return new RubyArray(array.getLogicalClass(), ArrayUtils.extractRange((double[]) array.getStore(), normalizedIndex, end), end - normalizedIndex);
-            }
-        }
-
-        @Specialization(guards = "isObject")
-        public Object sliceObject(RubyArray array, int start, int length) {
-            final int normalizedIndex = array.normalizeIndex(start);
-
-            if (normalizedIndex < 0 || normalizedIndex > array.getSize() || length < 0) {
-                outOfBounds.enter();
-                return getContext().getCoreLibrary().getNilObject();
-            } else {
-                final int end = Math.min(array.getSize(), normalizedIndex + length);
-
-                return new RubyArray(array.getLogicalClass(), ArrayUtils.extractRange((Object[]) array.getStore(), normalizedIndex, end), end - normalizedIndex);
-            }
+            return readSliceNode.executeReadSlice(frame, array, start, length);
         }
 
         // Slice with a range

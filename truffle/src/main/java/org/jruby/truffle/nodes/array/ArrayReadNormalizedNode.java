@@ -39,6 +39,8 @@ public abstract class ArrayReadNormalizedNode extends RubyNode {
 
     public abstract Object executeRead(VirtualFrame frame, RubyArray array, int index);
 
+    // Anything from a null array is nil
+
     @Specialization(
             guards="isNullArray"
     )
@@ -46,10 +48,12 @@ public abstract class ArrayReadNormalizedNode extends RubyNode {
         return getContext().getCoreLibrary().getNilObject();
     }
 
+    // Read within the bounds of an array with actual storage
+
     @Specialization(
             guards={"isInBounds", "isIntArray"}
     )
-    public int readIntegerInBounds(RubyArray array, int index) {
+    public int readIntInBounds(RubyArray array, int index) {
         return ((int[]) array.getStore())[index];
     }
 
@@ -74,11 +78,19 @@ public abstract class ArrayReadNormalizedNode extends RubyNode {
         return ((Object[]) array.getStore())[index];
     }
 
+    // Reading out of bounds is nil of any array is nil - cannot contain isNullArray
+
     @Specialization(
             guards="!isInBounds"
     )
     public RubyNilClass readOutOfBounds(RubyArray array, int index) {
         return getContext().getCoreLibrary().getNilObject();
+    }
+
+    // Guards
+
+    public static boolean isInBounds(RubyArray array, int index) {
+        return index >= 0 && index < array.getSize();
     }
 
 }
