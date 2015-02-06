@@ -24,6 +24,7 @@ import org.jruby.truffle.nodes.*;
 import org.jruby.truffle.nodes.DefinedNode;
 import org.jruby.truffle.nodes.ForNode;
 import org.jruby.truffle.nodes.array.ArrayReadNode;
+import org.jruby.truffle.nodes.array.PrimitiveArrayNodeFactory;
 import org.jruby.truffle.nodes.cast.*;
 import org.jruby.truffle.nodes.cast.LambdaNode;
 import org.jruby.truffle.nodes.control.AndNode;
@@ -1802,7 +1803,7 @@ public class BodyTranslator extends Translator {
              */
 
             for (int n = 0; n < preArray.size(); n++) {
-                final RubyNode assignedValue = ArrayReadNode.create(context, sourceSection, environment.findLocalVarNode(tempName, sourceSection), n);
+                final RubyNode assignedValue = PrimitiveArrayNodeFactory.read(context, sourceSection, environment.findLocalVarNode(tempName, sourceSection), n);
 
                 sequence.add(translateDummyAssignment(preArray.get(n), assignedValue));
             }
@@ -1921,7 +1922,7 @@ public class BodyTranslator extends Translator {
             }
 
             for (int n = 0; n < postArray.size(); n++) {
-                final RubyNode assignedValue = ArrayReadNode.create(context, sourceSection, environment.findLocalVarNode(tempName, sourceSection), -(postArray.size() - n));
+                final RubyNode assignedValue = PrimitiveArrayNodeFactory.read(context, sourceSection, environment.findLocalVarNode(tempName, sourceSection), -(postArray.size() - n));
 
                 sequence.add(translateDummyAssignment(postArray.get(n), assignedValue));
             }

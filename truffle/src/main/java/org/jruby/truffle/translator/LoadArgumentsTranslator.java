@@ -19,6 +19,7 @@ import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.truffle.nodes.ReadNode;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.array.ArrayReadNode;
+import org.jruby.truffle.nodes.array.PrimitiveArrayNodeFactory;
 import org.jruby.truffle.nodes.cast.ArrayCastNodeFactory;
 import org.jruby.truffle.nodes.control.IfNode;
 import org.jruby.truffle.nodes.control.SequenceNode;
@@ -208,7 +209,7 @@ public class LoadArgumentsTranslator extends Translator {
 
     private RubyNode readArgument(SourceSection sourceSection) {
         if (useArray()) {
-            return ArrayReadNode.create(context, sourceSection, loadArray(sourceSection), index);
+            return PrimitiveArrayNodeFactory.read(context, sourceSection, loadArray(sourceSection), index);
         } else {
             if (state == State.PRE) {
                 return new ReadPreArgumentNode(context, sourceSection, index, isBlock ? MissingArgumentBehaviour.NIL : MissingArgumentBehaviour.RUNTIME_ERROR);
@@ -277,7 +278,7 @@ public class LoadArgumentsTranslator extends Translator {
                 // Multiple assignment
 
                 if (useArray()) {
-                    readNode = ArrayReadNode.create(context, sourceSection, loadArray(sourceSection), index);
+                    readNode = PrimitiveArrayNodeFactory.read(context, sourceSection, loadArray(sourceSection), index);
                 } else {
                     readNode = readArgument(sourceSection);
                 }

@@ -13,11 +13,11 @@ import com.oracle.truffle.api.dsl.ImportGuards;
 import com.oracle.truffle.api.dsl.NodeChild;
 import com.oracle.truffle.api.dsl.NodeChildren;
 import com.oracle.truffle.api.dsl.Specialization;
+import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.UnexpectedResultException;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.core.ArrayGuards;
-import org.jruby.truffle.nodes.literal.FixnumLiteralNode;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyArray;
 import org.jruby.truffle.runtime.core.RubyNilClass;
@@ -34,10 +34,6 @@ import org.jruby.truffle.runtime.core.RubyNilClass;
 @ImportGuards(ArrayGuards.class)
 public abstract class ArrayReadNode extends RubyNode {
 
-    public static ArrayReadNode create(RubyContext context, SourceSection sourceSection, RubyNode array, int index) {
-        return ArrayReadNodeFactory.create(context, sourceSection, array, new FixnumLiteralNode.IntegerFixnumLiteralNode(context, sourceSection, index));
-    }
-
     public ArrayReadNode(RubyContext context, SourceSection sourceSection) {
         super(context, sourceSection);
     }
@@ -45,6 +41,8 @@ public abstract class ArrayReadNode extends RubyNode {
     public ArrayReadNode(ArrayReadNode prev) {
         super(prev);
     }
+
+    public abstract Object executeRead(VirtualFrame frame, RubyArray array, int index);
 
     @Specialization(
             guards="isNullArray"
