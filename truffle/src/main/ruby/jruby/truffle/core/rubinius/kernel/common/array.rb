@@ -251,4 +251,11 @@ class Array
     array
   end
 
+  def |(other)
+    other = Rubinius::Type.coerce_to other, Array, :to_ary
+
+    im = Rubinius::IdentityMap.from self, other
+    im.to_array
+  end
+
 end
