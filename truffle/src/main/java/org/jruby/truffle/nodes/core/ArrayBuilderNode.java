@@ -440,6 +440,36 @@ public abstract class ArrayBuilderNode extends Node {
 
             CompilerDirectives.transferToInterpreterAndInvalidate();
 
+            if (otherStore instanceof int[]) {
+                // TODO CS 5-Feb-15 hack to get things working with empty int[] store
+
+                if (((int[]) otherStore).length > 0) {
+                    throw new UnsupportedOperationException();
+                }
+
+                return store;
+            }
+
+            if (otherStore instanceof long[]) {
+                // TODO CS 5-Feb-15 hack to get things working with empty long[] store
+
+                if (((long[]) otherStore).length > 0) {
+                    throw new UnsupportedOperationException();
+                }
+
+                return store;
+            }
+
+            if (otherStore instanceof double[]) {
+                // TODO CS 5-Feb-15 hack to get things working with empty double[] store
+
+                if (((double[]) otherStore).length > 0) {
+                    throw new UnsupportedOperationException();
+                }
+
+                return store;
+            }
+
             if (otherStore instanceof Object[]) {
                 hasAppendedObjectArray = true;
                 System.arraycopy(otherStore, 0, store, index, array.getSize());

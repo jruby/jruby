@@ -46,6 +46,7 @@ public class RubyCallNode extends RubyNode {
     @CompilerDirectives.CompilationFinal private boolean seenNullInUnsplat = false;
     @CompilerDirectives.CompilationFinal private boolean seenIntegerFixnumInUnsplat = false;
     @CompilerDirectives.CompilationFinal private boolean seenLongFixnumInUnsplat = false;
+    @CompilerDirectives.CompilationFinal private boolean seenFloatInUnsplat = false;
     @CompilerDirectives.CompilationFinal private boolean seenObjectInUnsplat = false;
 
     @Child private CallDispatchHeadNode respondToMissing;
@@ -136,6 +137,8 @@ public class RubyCallNode extends RubyNode {
             return ArrayUtils.boxUntil((int[]) store, size);
         } else if (seenLongFixnumInUnsplat && store instanceof long[]) {
             return ArrayUtils.boxUntil((long[]) store, size);
+        } else if (seenFloatInUnsplat && store instanceof double[]) {
+            return ArrayUtils.boxUntil((double[]) store, size);
         } else if (seenObjectInUnsplat && store instanceof Object[]) {
             return ArrayUtils.extractRange((Object[]) store, 0, size);
         }
@@ -151,6 +154,9 @@ public class RubyCallNode extends RubyNode {
         } else if (store instanceof long[]) {
             seenLongFixnumInUnsplat = true;
             return ArrayUtils.boxUntil((long[]) store, size);
+        } else if (store instanceof double[]) {
+            seenFloatInUnsplat = true;
+            return ArrayUtils.boxUntil((double[]) store, size);
         } else if (store instanceof Object[]) {
             seenObjectInUnsplat = true;
             return ArrayUtils.extractRange((Object[]) store, 0, size);
