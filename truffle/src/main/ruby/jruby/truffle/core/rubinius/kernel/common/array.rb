@@ -309,4 +309,68 @@ class Array
     @total == 0
   end
 
+  # Helper to recurse through flattening since the method
+  # is not allowed to recurse itself. Detects recursive structures.
+  def recursively_flatten(array, out, max_levels = -1)
+    modified = false
+
+    # Strict equality since < 0 means 'infinite'
+    if max_levels == 0
+      out.concat(array)
+      return false
+    end
+
+    max_levels -= 1
+    recursion = Thread.detect_recursion(array) do
+      m = Rubinius::Mirror::Array.reflect array
+
+      i = m.start
+      total = i + m.total
+      tuple = m.tuple
+
+      while i < total
+        o = tuple.at i
+
+        if ary = Rubinius::Type.check_convert_type(o, Array, :to_ary)
+          modified = true
+          recursively_flatten(ary, out, max_levels)
+        else
+          out << o
+        end
+
+        i += 1
+      end
+    end
+
+    raise ArgumentError, "tried to flatten recursive array" if recursion
+    modified
+  end
+
+  private :recursively_flatten
+
+  def flatten(level=-1)
+    level = Rubinius::Type.coerce_to_collection_index level
+    return self.dup if level == 0
+
+    out = new_reserved size
+    recursively_flatten(self, out, level)
+    Rubinius::Type.infect(out, self)
+    out
+  end
+
+  def flatten!(level=-1)
+    Rubinius.check_frozen
+
+    level = Rubinius::Type.coerce_to_collection_index level
+    return nil if level == 0
+
+    out = new_reserved size
+    if recursively_flatten(self, out, level)
+      replace(out)
+      return self
+    end
+
+    nil
+  end
+
 end

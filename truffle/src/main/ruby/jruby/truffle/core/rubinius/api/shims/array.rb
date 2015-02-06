@@ -33,3 +33,12 @@ module Rubinius
     end
   end
 end
+
+class Array
+
+  def new_reserved(count)
+    # TODO CS 6-Feb-15 do we want to reserve space or allow the runtime to optimise for us?
+    []
+  end
+
+end

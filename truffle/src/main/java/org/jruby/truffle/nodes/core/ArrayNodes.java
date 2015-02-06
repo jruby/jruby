@@ -1385,37 +1385,6 @@ public abstract class ArrayNodes {
 
     }
 
-    @CoreMethod(names = "flatten")
-    public abstract static class FlattenNode extends ArrayCoreMethodNode {
-
-        public FlattenNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
-        public FlattenNode(FlattenNode prev) {
-            super(prev);
-        }
-
-        @Specialization
-        public RubyArray flatten(RubyArray array) {
-            notDesignedForCompilation();
-            final List<Object> flattened = new ArrayList<>();
-            flatten(flattened, array.slowToArray());
-            return new RubyArray(getContext().getCoreLibrary().getArrayClass(), flattened.toArray(), array.getSize());
-        }
-
-        private void flatten(List<Object> flattened, Object[] store) {
-            for (Object value : store) {
-                if (value instanceof RubyArray) {
-                    flatten(flattened, ((RubyArray) value).slowToArray());
-                } else {
-                    flattened.add(value);
-                }
-            }
-        }
-
-    }
-
     @CoreMethod(names = "include?", required = 1)
     public abstract static class IncludeNode extends ArrayCoreMethodNode {
 
