@@ -23,6 +23,8 @@ import org.joni.Option;
 import org.joni.Region;
 import org.jruby.runtime.Visibility;
 import org.jruby.truffle.nodes.RubyNode;
+import org.jruby.truffle.nodes.coerce.ToStrNode;
+import org.jruby.truffle.nodes.coerce.ToStrNodeFactory;
 import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNode;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
@@ -552,11 +554,11 @@ public abstract class StringNodes {
     @CoreMethod(names = "count", argumentsAsArray = true)
     public abstract static class CountNode extends CoreMethodNode {
 
-        @Child private CallDispatchHeadNode toStr;
+        @Child private ToStrNode toStr;
 
         public CountNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            toStr = DispatchHeadNodeFactory.createMethodCall(context);
+            toStr = ToStrNodeFactory.create(context, sourceSection, null);
         }
 
         public CountNode(CountNode prev) {
@@ -580,30 +582,7 @@ public abstract class StringNodes {
             RubyString[] otherStrings = new RubyString[args.length];
 
             for (int i = 0; i < args.length; i++) {
-                if (args[i] instanceof RubyString) {
-                    otherStrings[i] = (RubyString) args[i];
-                } else {
-                    Object coerced;
-
-                    try {
-                        coerced = toStr.call(frame, args[i], "to_str", null);
-                    } catch (RaiseException e) {
-                        if (e.getRubyException().getLogicalClass() == getContext().getCoreLibrary().getNoMethodErrorClass()) {
-                            throw new RaiseException(
-                                    getContext().getCoreLibrary().typeErrorNoImplicitConversion(args[i], "String", this));
-                        } else {
-                            throw e;
-                        }
-                    }
-
-                    if (coerced instanceof RubyString) {
-                        otherStrings[i] = (RubyString) coerced;
-                    } else {
-                        throw new RaiseException(
-                                getContext().getCoreLibrary().typeErrorBadCoercion(args[i], "String", "to_str", coerced, this));
-
-                    }
-                }
+                otherStrings[i] = toStr.executeRubyString(frame, args[i]);
             }
 
             return string.count(otherStrings);
