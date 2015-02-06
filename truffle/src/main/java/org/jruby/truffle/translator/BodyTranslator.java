@@ -1499,15 +1499,22 @@ public class BodyTranslator extends Translator {
 
         /*
          * Rubinius uses the instance variable @total to store the size of an array. In order to use code that
-         * expects that we'll replace it statically with a call to Array#size.
+         * expects that we'll replace it statically with a call to Array#size. We also replace @tuple with
+         * self, and @start to be 0.
          */
 
-        if (sourceSection.getSource().getPath().equals("core:/jruby/truffle/core/rubinius/kernel/common/array.rb") && nameWithoutSigil.equals("@total")) {
-            return new RubyCallNode(context, sourceSection,
-                    "size",
-                    new SelfNode(context, sourceSection),
-                    null,
-                    false);
+        if (sourceSection.getSource().getPath().equals("core:/jruby/truffle/core/rubinius/kernel/common/array.rb")) {
+            if (nameWithoutSigil.equals("@total")) {
+                return new RubyCallNode(context, sourceSection,
+                        "size",
+                        new SelfNode(context, sourceSection),
+                        null,
+                        false);
+            } else if (nameWithoutSigil.equals("@tuple")) {
+                return new SelfNode(context, sourceSection);
+            } else if (nameWithoutSigil.equals("@start")) {
+                return new FixnumLiteralNode.IntegerFixnumLiteralNode(context, sourceSection, 0);
+            }
         }
 
         final RubyNode receiver = new SelfNode(context, sourceSection);

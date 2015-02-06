@@ -27,7 +27,8 @@
 # Only part of Rubinius' array.rb
 
 # Rubinius uses the instance variable @total to store the size. We replace this
-# in the translator with a call to size.
+# in the translator with a call to size. We also replace the instance variable
+# @tuple to be self, and @start to be 0.
 
 class Array
 
@@ -256,6 +257,52 @@ class Array
 
     im = Rubinius::IdentityMap.from self, other
     im.to_array
+  end
+
+  def ==(other)
+    return true if equal?(other)
+    unless other.kind_of? Array
+      return false unless other.respond_to? :to_ary
+      return other == self
+    end
+
+    return false unless size == other.size
+
+    Thread.detect_recursion self, other do
+      m = Rubinius::Mirror::Array.reflect other
+
+      md = @tuple
+      od = m.tuple
+
+      i = @start
+      j = m.start
+
+      total = i + @total
+
+      while i < total
+        return false unless md[i] == od[j]
+        i += 1
+        j += 1
+      end
+    end
+
+    true
+  end
+
+  def eql?(other)
+    return true if equal? other
+    return false unless other.kind_of?(Array)
+    return false if @total != other.size
+
+    Thread.detect_recursion self, other do
+      i = 0
+      each do |x|
+        return false unless x.eql? other[i]
+        i += 1
+      end
+    end
+
+    true
   end
 
 end

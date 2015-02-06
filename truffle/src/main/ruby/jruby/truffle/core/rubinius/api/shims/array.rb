@@ -22,6 +22,14 @@ module Rubinius
         @array.size
       end
 
+      def tuple
+        @array
+      end
+
+      def start
+        0
+      end
+
     end
   end
 end
