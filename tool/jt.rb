@@ -154,7 +154,6 @@ module Commands
     run(*%w[
             --graal
             -J-G:+TruffleCompilationExceptionsAreThrown
-            -Xtruffle.proc.binding=false
             -Xtruffle.debug.enable_assert_constant=true
             test/truffle/pe/pe.rb])
   end
