@@ -1,9 +1,6 @@
 fails:String#chomp when passed no argument removes one trailing carrige return, newline pair
 fails:String#chomp when passed no argument taints the result if self is tainted
-fails:String#chomp when passed nil does not modify the String
-fails:String#chomp when passed nil returns a copy of the String
 fails:String#chomp when passed nil taints the result if self is tainted
-fails:String#chomp when passed nil returns an empty String when self is empty
 fails:String#chomp when passed '' removes a final newline
 fails:String#chomp when passed '' removes a final carriage return, newline
 fails:String#chomp when passed '' removes more than one trailing newlines
@@ -18,10 +15,7 @@ fails:String#chomp! raises a RuntimeError on a frozen instance when it would not
 fails:String#chomp! when passed no argument returns nil if self is not modified
 fails:String#chomp! when passed no argument removes one trailing newline
 fails:String#chomp! when passed no argument removes one trailing carrige return, newline pair
-fails:String#chomp! when passed no argument returns nil when self is empty
 fails:String#chomp! when passed no argument removes trailing characters that match $/ when it has been assigned a value
-fails:String#chomp! when passed nil returns nil
-fails:String#chomp! when passed nil returns nil when self is empty
 fails:String#chomp! when passed '' removes a final newline
 fails:String#chomp! when passed '' removes a final carriage return, newline
 fails:String#chomp! when passed '' does not remove a final carriage return

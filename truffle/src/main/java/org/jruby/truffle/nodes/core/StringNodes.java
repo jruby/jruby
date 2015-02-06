@@ -512,14 +512,23 @@ public abstract class StringNodes {
         }
 
         @Specialization
-        public RubyString chompBang(RubyString string, UndefinedPlaceholder undefined) {
+        public Object chompBang(RubyString string, UndefinedPlaceholder undefined) {
             notDesignedForCompilation();
+
+            if (string.length() == 0) {
+                return getContext().getCoreLibrary().getNilObject();
+            }
 
             string.set(StringNodesHelper.chomp(string));
             return string;
         }
 
-        @Specialization(guards = "!isUndefinedPlaceholder(arguments[1])")
+        @Specialization
+        public RubyNilClass chompBangWithNil(RubyString string, RubyNilClass stringToChomp) {
+            return getContext().getCoreLibrary().getNilObject();
+        }
+
+        @Specialization(guards = { "!isUndefinedPlaceholder(arguments[1])", "!isRubyNilClass(arguments[1])" })
         public RubyString chompBangWithString(VirtualFrame frame, RubyString string, Object stringToChomp) {
             notDesignedForCompilation();
 
