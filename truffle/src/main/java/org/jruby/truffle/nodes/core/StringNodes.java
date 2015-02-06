@@ -796,6 +796,8 @@ public abstract class StringNodes {
     @CoreMethod(names = "encode", required = 1)
     public abstract static class EncodeNode extends CoreMethodNode {
 
+        @Child private ToStrNode toStrNode;
+
         public EncodeNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
         }
@@ -824,6 +826,18 @@ public abstract class StringNodes {
             final org.jruby.RubyString jrubyTranscoded = (org.jruby.RubyString) jrubyString.encode(getContext().getRuntime().getCurrentContext(), jrubyEncodingString);
 
             return getContext().toTruffle(jrubyTranscoded);
+        }
+
+        @Specialization(guards = { "!isRubyString(arguments[1])", "!isRubyEncoding(arguments[1])" })
+        public RubyString encode(VirtualFrame frame, RubyString string, Object encoding) {
+            notDesignedForCompilation();
+
+            if (toStrNode == null) {
+                CompilerDirectives.transferToInterpreter();
+                toStrNode = insert(ToStrNodeFactory.create(getContext(), getSourceSection(), null));
+            }
+
+            return encode(string, toStrNode.executeRubyString(frame, encoding));
         }
     }
 
