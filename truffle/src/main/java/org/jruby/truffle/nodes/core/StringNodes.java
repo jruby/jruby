@@ -194,7 +194,8 @@ public abstract class StringNodes {
 
         @Specialization
         public RubyString concat(RubyString string, RubyString other) {
-            notDesignedForCompilation();
+            // TODO (nirvdrum 06-Feb-15) This shouldn't be designed for compilation because we don't support all the String semantics yet, but a bench9000 benchmark has it on a hot path, so commenting out for now.
+            //notDesignedForCompilation();
 
             if (string.isFrozen()) {
                 CompilerDirectives.transferToInterpreter();
@@ -741,7 +742,7 @@ public abstract class StringNodes {
 
     }
 
-    @CoreMethod(names = "each_line")
+    @CoreMethod(names = "each_line", optional = 1)
     public abstract static class EachLineNode extends YieldingCoreMethodNode {
 
         public EachLineNode(RubyContext context, SourceSection sourceSection) {
@@ -753,31 +754,41 @@ public abstract class StringNodes {
         }
 
         @Specialization
-        public RubyArray eachLine(RubyString string) {
+        public RubyArray eachLine(RubyString string, @SuppressWarnings("unused") UndefinedPlaceholder separator) {
+            notDesignedForCompilation();
+
+            final RubyBasicObject globals = getContext().getCoreLibrary().getGlobalVariablesObject();
+            final RubyString recordSeparator = (RubyString) globals.getInstanceVariable("$/");
+            return eachLine(string, recordSeparator);
+        }
+
+        @Specialization
+        public RubyArray eachLine(RubyString string, RubyString separator) {
             notDesignedForCompilation();
 
             final List<Object> lines = new ArrayList<>();
 
             String str = string.toString();
+            String sep = separator.toString();
+
             int start = 0;
 
             while (start < str.length()) {
-                int end = str.indexOf('\n', start);
+                int end = str.indexOf(sep, start);
 
                 if (end == -1) {
                     lines.add(getContext().makeString(str.substring(start)));
                     break;
                 }
 
-                String line = str.substring(start, end+1);
-                start = end+1;
+                String line = str.substring(start, end + sep.length());
+                start = end + sep.length();
 
                 lines.add(getContext().makeString(line));
             }
 
             return RubyArray.fromObjects(getContext().getCoreLibrary().getArrayClass(), lines.toArray(new Object[lines.size()]));
         }
-
     }
 
     @CoreMethod(names = "empty?")
