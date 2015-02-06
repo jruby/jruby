@@ -261,32 +261,6 @@ public abstract class ArrayNodes {
 
     }
 
-    @CoreMethod(names = "at", required = 1, lowerFixnumParameters = 0)
-    public abstract static class AtNode extends ArrayCoreMethodNode {
-
-        @Child private ArrayReadDenormalizedNode readNode;
-
-        public AtNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
-        public AtNode(AtNode prev) {
-            super(prev);
-            readNode = prev.readNode;
-        }
-
-        @Specialization
-        public Object at(VirtualFrame frame, RubyArray array, int index) {
-            if (readNode == null) {
-                CompilerDirectives.transferToInterpreter();
-                readNode = insert(ArrayReadDenormalizedNodeFactory.create(getContext(), getSourceSection(), null, null));
-            }
-
-            return readNode.executeRead(frame, array, index);
-        }
-
-    }
-
     @CoreMethod(names = { "[]", "slice" }, required = 1, optional = 1, lowerFixnumParameters = { 0, 1 })
     public abstract static class IndexNode extends ArrayCoreMethodNode {
 
@@ -880,6 +854,32 @@ public abstract class ArrayNodes {
             }
 
             return other;
+        }
+
+    }
+
+    @CoreMethod(names = "at", required = 1, lowerFixnumParameters = 0)
+    public abstract static class AtNode extends ArrayCoreMethodNode {
+
+        @Child private ArrayReadDenormalizedNode readNode;
+
+        public AtNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public AtNode(AtNode prev) {
+            super(prev);
+            readNode = prev.readNode;
+        }
+
+        @Specialization
+        public Object at(VirtualFrame frame, RubyArray array, int index) {
+            if (readNode == null) {
+                CompilerDirectives.transferToInterpreter();
+                readNode = insert(ArrayReadDenormalizedNodeFactory.create(getContext(), getSourceSection(), null, null));
+            }
+
+            return readNode.executeRead(frame, array, index);
         }
 
     }
