@@ -229,7 +229,7 @@ public abstract class EncodingNodes {
             return encoding;
         }
 
-        @Specialization
+        @Specialization(guards = { "!isRubyEncoding", "!isRubyNilClass" })
         public RubyString defaultInternal(VirtualFrame frame, Object encoding) {
             notDesignedForCompilation();
 
