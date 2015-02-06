@@ -109,8 +109,28 @@ public abstract class VMPrimitiveNodes {
         }
 
         @Specialization
-        public Object vmObjectEqual(Object a, Object b) {
-            throw new UnsupportedOperationException("vm_object_equal");
+        public Object vmObjectEqual(boolean a, boolean b) {
+            return a == b;
+        }
+
+        @Specialization
+        public Object vmObjectEqual(int a, int b) {
+            return a == b;
+        }
+
+        @Specialization
+        public Object vmObjectEqual(long a, long b) {
+            return a == b;
+        }
+
+        @Specialization
+        public Object vmObjectEqual(double a, double b) {
+            return a == b;
+        }
+
+        @Specialization
+        public Object vmObjectEqual(RubyBasicObject a, RubyBasicObject b) {
+            return a == b;
         }
 
     }

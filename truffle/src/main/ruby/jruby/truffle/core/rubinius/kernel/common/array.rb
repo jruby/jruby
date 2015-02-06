@@ -240,4 +240,15 @@ class Array
     @total <=> total
   end
 
+  def -(other)
+    other = Rubinius::Type.coerce_to other, Array, :to_ary
+
+    array = []
+    im = Rubinius::IdentityMap.from other
+
+    each { |x| array << x unless im.include? x }
+
+    array
+  end
+
 end
