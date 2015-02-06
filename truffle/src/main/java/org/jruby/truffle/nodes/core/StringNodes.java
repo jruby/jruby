@@ -317,16 +317,20 @@ public abstract class StringNodes {
     @CoreMethod(names = "[]=", required = 2, lowerFixnumParameters = 0)
     public abstract static class ElementSetNode extends CoreMethodNode {
 
+        @Child private ToStrNode toStrNode;
+
         public ElementSetNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
+            toStrNode = ToStrNodeFactory.create(context, sourceSection, null);
         }
 
         public ElementSetNode(ElementSetNode prev) {
             super(prev);
+            toStrNode = prev.toStrNode;
         }
 
         @Specialization
-        public RubyString elementSet(RubyString string, int index, RubyString replacement) {
+        public RubyString elementSet(VirtualFrame frame, RubyString string, int index, Object replacement) {
             notDesignedForCompilation();
 
             if (string.isFrozen()) {
@@ -350,13 +354,14 @@ public abstract class StringNodes {
                 throw new RaiseException(getContext().getCoreLibrary().indexError(String.format("index %d out of string", index), this));
             }
 
-            StringSupport.replaceInternal19(index, 1, string, replacement);
+            final RubyString coerced = toStrNode.executeRubyString(frame, replacement);
+            StringSupport.replaceInternal19(index, 1, string, coerced);
 
-            return replacement;
+            return coerced;
         }
 
         @Specialization
-        public RubyString elementSet(RubyString string, RubyRange.IntegerFixnumRange range, RubyString replacement) {
+        public RubyString elementSet(VirtualFrame frame, RubyString string, RubyRange.IntegerFixnumRange range, Object replacement) {
             notDesignedForCompilation();
 
             if (string.isFrozen()) {
@@ -400,9 +405,10 @@ public abstract class StringNodes {
                 length = 0;
             }
 
-            StringSupport.replaceInternal19(begin, length, string, replacement);
+            final RubyString coerced = toStrNode.executeRubyString(frame, replacement);
+            StringSupport.replaceInternal19(begin, length, string, coerced);
 
-            return replacement;
+            return coerced;
         }
     }
 
