@@ -694,9 +694,8 @@ public class JavaClass extends JavaObject {
 
     }
 
-    private void doInitializeFieldsFromJavaClass() {
+    private void doInitializeFieldsFromJavaClass(final Class<?> javaClass) {
         final Initializer initializer;
-        final Class<?> javaClass = javaClass();
         if ( javaClass.isInterface() ) {
             initializer = new InterfaceInitializer(javaClass);
         }
@@ -712,7 +711,9 @@ public class JavaClass extends JavaObject {
 
         setJavaClassFor(proxy);
 
-        doInitializeFieldsFromJavaClass();
+        final Class<?> javaClass = javaClass();
+
+        doInitializeFieldsFromJavaClass(javaClass);
 
         proxy.addMethod("__jsend!", new org.jruby.internal.runtime.methods.JavaMethod.JavaMethodNBlock(proxy, PUBLIC) {
             @Override
@@ -734,7 +735,6 @@ public class JavaClass extends JavaObject {
             }
         });
 
-        final Class<?> javaClass = javaClass();
         if ( javaClass.isInterface() ) {
             setupInterfaceProxy(proxy);
             return;
@@ -750,11 +750,6 @@ public class JavaClass extends JavaObject {
             setProxyClass( proxy ); setProxyModule( proxy );
             return;
         }
-
-        installClassFields(proxy);
-        installClassMethods(proxy);
-        installClassConstructors(proxy);
-        installClassClasses(javaClass, proxy);
 
         // flag the class as a Java class proxy.
         proxy.setJavaProxy(true);
@@ -793,6 +788,11 @@ public class JavaClass extends JavaObject {
         else {
             proxy.setBaseName( javaClass.getSimpleName() );
         }
+
+        installClassFields(proxy);
+        installClassMethods(proxy);
+        installClassConstructors(proxy);
+        installClassClasses(javaClass, proxy);
 
         // FIXME: bit of a kludge here (non-interface classes assigned to both
         // class and module fields). simplifies proxy extender code, will go away
@@ -919,14 +919,14 @@ public class JavaClass extends JavaObject {
         }
     }
 
-    private synchronized void installClassConstructors(final RubyClass proxy) {
+    private void installClassConstructors(final RubyModule proxy) {
         if (constructorInstaller != null) {
             constructorInstaller.install(proxy);
             constructorInstaller = null;
         }
     }
 
-    private synchronized void installClassFields(final RubyClass proxy) {
+    private void installClassFields(final RubyModule proxy) {
         assert constantFields != null;
         for (ConstantField field : constantFields) {
             field.install(proxy);
@@ -934,18 +934,22 @@ public class JavaClass extends JavaObject {
         constantFields = null;
     }
 
-    private synchronized void installClassMethods(final RubyClass proxy) {
-        assert staticInstallers != null;
-        for (NamedInstaller installer : staticInstallers.values()) {
-            installer.install(proxy);
-        }
-        staticInstallers = null;
+    private void installClassMethods(final RubyClass proxy) {
+        installClassMethods( (RubyModule) proxy );
 
         assert instanceInstallers != null;
         for (NamedInstaller installer : instanceInstallers.values()) {
             installer.install(proxy);
         }
         instanceInstallers = null;
+    }
+
+    private void installClassMethods(final RubyModule proxy) {
+        assert staticInstallers != null;
+        for (NamedInstaller installer : staticInstallers.values()) {
+            installer.install(proxy);
+        }
+        staticInstallers = null;
     }
 
     private void setupClassConstructors(Class<?> javaClass) {
@@ -1184,40 +1188,38 @@ public class JavaClass extends JavaObject {
 
     // old (quasi-deprecated) interface class
     private void setupInterfaceProxy(final RubyClass proxy) {
-        assert javaClass().isInterface();
         assert proxyLock.isHeldByCurrentThread();
         assert this.proxyClass == null;
 
-        doInitializeFieldsFromJavaClass();
+        final Class<?> javaClass = javaClass();
+        assert javaClass.isInterface();
+
+        doInitializeFieldsFromJavaClass(javaClass);
 
         setProxyClass( proxy ); // this.proxyClass = proxy
         // nothing else to here - the module version will be included in the class.
     }
 
     void setupProxyModule(final RubyModule module) {
-        assert javaClass().isInterface();
         assert proxyLock.isHeldByCurrentThread();
         assert this.proxyModule == null;
 
         setJavaClassFor(module);
 
-        doInitializeFieldsFromJavaClass();
+        final Class<?> javaClass = javaClass();
+        assert javaClass.isInterface();
+
+        doInitializeFieldsFromJavaClass(javaClass);
 
         this.unfinishedProxyModule = module;
-
-        Class<?> javaClass = javaClass();
-        for (ConstantField field: constantFields) {
-            field.install(module);
-        }
-        for (NamedInstaller installer : staticInstallers.values()) {
-            installer.install(module);
-        }
-
-        installClassClasses(javaClass, module);
 
         // flag the class as a Java class proxy.
         module.setJavaProxy(true);
         module.getSingletonClass().setJavaProxy(true);
+
+        installClassFields(module);
+        installClassMethods(module);
+        installClassClasses(javaClass, module);
 
         setProxyModule( module ); // this.proxyModule = proxy
 
