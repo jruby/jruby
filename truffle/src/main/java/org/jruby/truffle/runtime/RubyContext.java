@@ -203,9 +203,14 @@ public class RubyContext extends ExecutionContext {
         return execute(this, source, code.getEncoding(), TranslatorDriver.ParserContext.TOP_LEVEL, coreLibrary.getMainObject(), null, currentNode, NodeWrapper.IDENTITY);
     }
 
-    public Object eval(ByteList code, Object self, RubyNode currentNode) {
+    public Object instanceEval(ByteList code, Object self, RubyNode currentNode) {
         final Source source = Source.fromText(code, "(eval)");
-        return execute(this, source, code.getEncoding(), TranslatorDriver.ParserContext.TOP_LEVEL, self, null, currentNode, NodeWrapper.IDENTITY);
+        return execute(this, source, code.getEncoding(), TranslatorDriver.ParserContext.TOP_LEVEL, self, null, currentNode, new NodeWrapper() {
+            @Override
+            public RubyNode wrap(RubyNode node) {
+                return new SetMethodDeclarationContext(node.getContext(), node.getSourceSection(), Visibility.PUBLIC, "instance_eval", node);
+            }
+        });
     }
 
     public Object eval(ByteList code, RubyBinding binding, boolean ownScopeForAssignments, RubyNode currentNode) {
