@@ -1,0 +1,1 @@
+fails:String#start_with? works for multibyte strings

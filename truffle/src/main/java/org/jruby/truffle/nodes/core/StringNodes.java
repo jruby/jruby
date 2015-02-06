@@ -1542,37 +1542,6 @@ public abstract class StringNodes {
         }
     }
 
-    @CoreMethod(names = "start_with?", argumentsAsArray = true)
-    public abstract static class StartWithNode extends CoreMethodNode {
-
-        @Child private ToStrNode toStrNode;
-
-        public StartWithNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-            toStrNode = insert(ToStrNodeFactory.create(getContext(), getSourceSection(), null));
-        }
-
-        public StartWithNode(StartWithNode prev) {
-            super(prev);
-            toStrNode = prev.toStrNode;
-        }
-
-        @Specialization
-        public boolean startWith(VirtualFrame frame, RubyString string, Object... prefixes) {
-            notDesignedForCompilation();
-
-            for (Object prefix : prefixes) {
-                final RubyString coerced = toStrNode.executeRubyString(frame, prefix);
-
-                if (string.toString().startsWith(coerced.toString())) {
-                    return  true;
-                }
-            }
-
-            return false;
-        }
-    }
-
     @CoreMethod(names = "sub", required = 2)
     public abstract static class SubNode extends RegexpNodes.EscapingNode {
 

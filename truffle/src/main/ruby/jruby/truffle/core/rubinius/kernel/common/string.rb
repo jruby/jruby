@@ -47,4 +47,15 @@ class String
     str.chomp!(separator) || str
   end
 
+  def start_with?(*prefixes)
+    prefixes.each do |original_prefix|
+      prefix = Rubinius::Type.check_convert_type original_prefix, String, :to_str
+      unless prefix
+        raise TypeError, "no implicit conversion of #{original_prefix.class} into String"
+      end
+      return true if self[0, prefix.length] == prefix
+    end
+    false
+  end
+
 end
