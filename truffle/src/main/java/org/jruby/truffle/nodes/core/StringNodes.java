@@ -10,6 +10,9 @@
 package org.jruby.truffle.nodes.core;
 
 import com.oracle.truffle.api.CompilerDirectives;
+import com.oracle.truffle.api.dsl.CreateCast;
+import com.oracle.truffle.api.dsl.NodeChild;
+import com.oracle.truffle.api.dsl.NodeChildren;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.UnexpectedResultException;
@@ -171,7 +174,11 @@ public abstract class StringNodes {
     }
 
     @CoreMethod(names = { "<<", "concat" }, required = 1)
-    public abstract static class ConcatNode extends CoreMethodNode {
+    @NodeChildren({
+            @NodeChild(value = "string"),
+            @NodeChild(value = "other")
+    })
+    public abstract static class ConcatNode extends RubyNode {
 
         public ConcatNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -179,6 +186,10 @@ public abstract class StringNodes {
 
         public ConcatNode(ConcatNode prev) {
             super(prev);
+        }
+
+        @CreateCast("other") public RubyNode coerceOtherToString(RubyNode other) {
+            return ToStrNodeFactory.create(getContext(), getSourceSection(), other);
         }
 
         @Specialization
@@ -1076,7 +1087,7 @@ public abstract class StringNodes {
 
         public InsertNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            concatNode = StringNodesFactory.ConcatNodeFactory.create(context, sourceSection, new RubyNode[]{});
+            concatNode = StringNodesFactory.ConcatNodeFactory.create(context, sourceSection, null, null);
             getIndexNode = StringNodesFactory.GetIndexNodeFactory.create(context, sourceSection, new RubyNode[]{});
         }
 
