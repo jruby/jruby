@@ -2401,30 +2401,6 @@ public abstract class ArrayNodes {
 
     }
 
-    @CoreMethod(names = "last")
-    public abstract static class LastNode extends ArrayCoreMethodNode {
-
-        public LastNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
-        public LastNode(LastNode prev) {
-            super(prev);
-        }
-
-        @Specialization
-        public Object last(RubyArray array) {
-            notDesignedForCompilation();
-
-            if (array.getSize() == 0) {
-                return getContext().getCoreLibrary().getNilObject();
-            } else {
-                return array.slowToArray()[array.getSize() - 1];
-            }
-        }
-
-    }
-
     @CoreMethod(names = {"map", "collect"}, needsBlock = true)
     @ImportGuards(ArrayGuards.class)
     public abstract static class MapNode extends YieldingCoreMethodNode {

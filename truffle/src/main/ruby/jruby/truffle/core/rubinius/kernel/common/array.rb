@@ -134,4 +134,20 @@ class Array
     return hash_val
   end
 
+  def last(n=undefined)
+    if undefined.equal?(n)
+      return at(-1)
+    elsif size < 1
+      return []
+    end
+
+    n = Rubinius::Type.coerce_to_collection_index n
+    return [] if n == 0
+
+    raise ArgumentError, "count must be positive" if n < 0
+
+    n = size if n > size
+    Array.new self[-n..-1]
+  end
+
 end
