@@ -296,12 +296,18 @@ public class CoreLibrary {
 
         // Create the globals object
 
+        final RubyString defaultRecordSeparator = context.makeString(Options.CLI_RECORD_SEPARATOR.load());
+        defaultRecordSeparator.freeze();
+
         globalVariablesObject = new RubyBasicObject(objectClass);
         globalVariablesObject.getOperations().setInstanceVariable(globalVariablesObject, "$LOAD_PATH", new RubyArray(arrayClass));
         globalVariablesObject.getOperations().setInstanceVariable(globalVariablesObject, "$LOADED_FEATURES", new RubyArray(arrayClass));
         globalVariablesObject.getOperations().setInstanceVariable(globalVariablesObject, "$:", globalVariablesObject.getInstanceVariable("$LOAD_PATH"));
         globalVariablesObject.getOperations().setInstanceVariable(globalVariablesObject, "$\"", globalVariablesObject.getInstanceVariable("$LOADED_FEATURES"));
         globalVariablesObject.getOperations().setInstanceVariable(globalVariablesObject, "$,", nilObject);
+
+        // TODO (nirvdrum 05-Feb-15) We need to support the $-0 alias as well.
+        globalVariablesObject.getOperations().setInstanceVariable(globalVariablesObject, "$/", defaultRecordSeparator);
 
         initializeEncodingConstants();
 
