@@ -586,7 +586,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         return runtime.newFixnum(count);
     }
     
-    @JRubyMethod(required = 3, rest = true, meta = true)
+    @JRubyMethod(required = 2, rest = true, meta = true)
     public static IRubyObject chown(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
         Ruby runtime = context.runtime;
 
