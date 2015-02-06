@@ -134,7 +134,15 @@ public abstract class StringNodes {
         public int compare(RubyString a, RubyString b) {
             notDesignedForCompilation();
 
-            return a.toString().compareTo(b.toString());
+            final int result = a.toString().compareTo(b.toString());
+
+            if (result < 0) {
+                return -1;
+            } else if (result > 0) {
+                return 1;
+            }
+
+            return 0;
         }
     }
 
