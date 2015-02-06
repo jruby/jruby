@@ -57,10 +57,6 @@ public class FeatureManager {
                     return true;
                 }
 
-                if (feature.equals("thread")) {
-                    return true;
-                }
-
                 if (feature.equals("time")) {
                     return true;
                 }
