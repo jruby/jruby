@@ -498,31 +498,6 @@ public abstract class StringNodes {
 
     }
 
-    @CoreMethod(names = "chomp", optional=1)
-    public abstract static class ChompNode extends CoreMethodNode {
-
-        public ChompNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
-        public ChompNode(ChompNode prev) {
-            super(prev);
-        }
-
-        @Specialization
-        public RubyString chomp(RubyString string, UndefinedPlaceholder undefined) {
-            notDesignedForCompilation();
-            return string.getContext().makeString(StringNodesHelper.chomp(string));
-        }
-
-        @Specialization
-        public RubyString chompWithString(RubyString string, RubyString stringToChomp) {
-            notDesignedForCompilation();
-            return getContext().makeString(StringNodesHelper.chompWithString(string, stringToChomp));
-        }
-
-    }
-
     @CoreMethod(names = "chomp!", optional = 1)
     public abstract static class ChompBangNode extends CoreMethodNode {
 

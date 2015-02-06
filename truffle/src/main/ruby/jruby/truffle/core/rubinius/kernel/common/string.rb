@@ -42,4 +42,9 @@ class String
     end
   end
 
+  def chomp(separator=$/)
+    str = dup
+    str.chomp!(separator) || str
+  end
+
 end
