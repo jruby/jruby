@@ -194,7 +194,8 @@ public abstract class StringNodes {
 
         @Specialization
         public RubyString concat(RubyString string, RubyString other) {
-            notDesignedForCompilation();
+            // TODO (nirvdrum 06-Feb-15) This shouldn't be designed for compilation because we don't support all the String semantics yet, but a bench9000 benchmark has it on a hot path, so commenting out for now.
+            //notDesignedForCompilation();
 
             if (string.isFrozen()) {
                 CompilerDirectives.transferToInterpreter();
