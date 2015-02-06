@@ -66,28 +66,34 @@ public class AddMethodNode extends RubyNode {
         return getContext().newSymbol(method.getName());
     }
 
-    private Visibility getVisibility(VirtualFrame frame, String name) {
+    private static Visibility getVisibility(Frame frame, String name) {
         notDesignedForCompilation();
 
         if (name.equals("initialize") || name.equals("initialize_copy") || name.equals("initialize_clone") || name.equals("initialize_dup") || name.equals("respond_to_missing?")) {
             return Visibility.PRIVATE;
         } else {
-            // Ignore scopes who do not have a visibility slot.
-            Visibility currentFrameVisibility = findVisibility(frame);
-            if (currentFrameVisibility != null) {
-                return currentFrameVisibility;
+            return getVisibility(frame);
+        }
+    }
+
+    private static Visibility getVisibility(Frame frame) {
+        notDesignedForCompilation();
+
+        // Ignore scopes who do not have a visibility slot.
+        Visibility currentFrameVisibility = findVisibility(frame);
+        if (currentFrameVisibility != null) {
+            return currentFrameVisibility;
+        }
+
+        return Truffle.getRuntime().iterateFrames(new FrameInstanceVisitor<Visibility>() {
+
+            @Override
+            public Visibility visitFrame(FrameInstance frameInstance) {
+                Frame frame = frameInstance.getFrame(FrameAccess.READ_ONLY, true);
+                return findVisibility(frame);
             }
 
-            return Truffle.getRuntime().iterateFrames(new FrameInstanceVisitor<Visibility>() {
-
-                @Override
-                public Visibility visitFrame(FrameInstance frameInstance) {
-                    Frame frame = frameInstance.getFrame(FrameAccess.READ_ONLY, true);
-                    return findVisibility(frame);
-                }
-
-            });
-        }
+        });
     }
 
     private static Visibility findVisibility(Frame frame) {

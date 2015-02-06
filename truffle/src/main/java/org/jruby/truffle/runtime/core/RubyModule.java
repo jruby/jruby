@@ -16,11 +16,13 @@ import com.oracle.truffle.api.Truffle;
 import com.oracle.truffle.api.frame.Frame;
 import com.oracle.truffle.api.frame.FrameInstance;
 import com.oracle.truffle.api.frame.FrameSlot;
+import com.oracle.truffle.api.frame.FrameSlotKind;
 import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.utilities.CyclicAssumption;
 
 import org.jruby.runtime.Visibility;
 import org.jruby.truffle.nodes.RubyNode;
+import org.jruby.truffle.nodes.methods.AddMethodNode;
 import org.jruby.truffle.nodes.objects.Allocator;
 import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.control.RaiseException;
@@ -365,8 +367,8 @@ public class RubyModule extends RubyBasicObject implements ModuleChain {
         assert callerFrame != null;
         assert callerFrame.getFrameDescriptor() != null;
 
-        final FrameSlot visibilitySlot = callerFrame.getFrameDescriptor().findFrameSlot(VISIBILITY_FRAME_SLOT_ID);
-        assert visibilitySlot != null : "no visibility slot";
+        final FrameSlot visibilitySlot = callerFrame.getFrameDescriptor().findOrAddFrameSlot(
+                RubyModule.VISIBILITY_FRAME_SLOT_ID, "visibility for frame", FrameSlotKind.Object);
 
         callerFrame.setObject(visibilitySlot, visibility);
     }
