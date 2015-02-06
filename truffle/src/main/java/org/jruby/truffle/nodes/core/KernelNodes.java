@@ -12,6 +12,9 @@ package org.jruby.truffle.nodes.core;
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.Truffle;
+import com.oracle.truffle.api.dsl.CreateCast;
+import com.oracle.truffle.api.dsl.NodeChild;
+import com.oracle.truffle.api.dsl.NodeChildren;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.*;
 import com.oracle.truffle.api.nodes.UnexpectedResultException;
@@ -25,6 +28,8 @@ import org.jruby.truffle.nodes.cast.BooleanCastNode;
 import org.jruby.truffle.nodes.cast.BooleanCastNodeFactory;
 import org.jruby.truffle.nodes.cast.NumericToFloatNode;
 import org.jruby.truffle.nodes.cast.NumericToFloatNodeFactory;
+import org.jruby.truffle.nodes.coerce.ToStrNode;
+import org.jruby.truffle.nodes.coerce.ToStrNodeFactory;
 import org.jruby.truffle.nodes.control.WhileNode;
 import org.jruby.truffle.nodes.core.KernelNodesFactory.SameOrEqualNodeFactory;
 import org.jruby.truffle.nodes.dispatch.*;
@@ -513,19 +518,27 @@ public abstract class KernelNodes {
     }
 
     @CoreMethod(names = "eval", isModuleFunction = true, required = 1, optional = 3)
-    public abstract static class EvalNode extends CoreMethodNode {
+    @NodeChildren({
+            @NodeChild(value = "source", type = RubyNode.class),
+            @NodeChild(value = "binding", type = RubyNode.class),
+            @NodeChild(value = "filename", type = RubyNode.class),
+            @NodeChild(value = "lineNumber", type = RubyNode.class)
+    })
+    public abstract static class EvalNode extends RubyNode {
 
         @Child private CallDispatchHeadNode toStr;
         @Child private BindingNode bindingNode;
 
         public EvalNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            toStr = DispatchHeadNodeFactory.createMethodCall(context);
         }
 
         public EvalNode(EvalNode prev) {
             super(prev);
-            toStr = prev.toStr;
+        }
+
+        @CreateCast("source") public RubyNode coerceSourceToString(RubyNode source) {
+            return ToStrNodeFactory.create(getContext(), getSourceSection(), source);
         }
 
         protected RubyBinding getCallerBinding(VirtualFrame frame) {
@@ -574,56 +587,13 @@ public abstract class KernelNodes {
             return getContext().eval(source.getBytes(), binding, false, this);
         }
 
-        @Specialization(guards = "!isRubyString(arguments[0])")
-        public Object eval(VirtualFrame frame, RubyBasicObject object, UndefinedPlaceholder binding, UndefinedPlaceholder filename, UndefinedPlaceholder lineNumber) {
-            notDesignedForCompilation();
-
-            return evalCoerced(frame, object, getCallerBinding(frame), true, filename, lineNumber);
-        }
-
-        @Specialization(guards = "!isRubyString(arguments[0])")
-        public Object eval(VirtualFrame frame, RubyBasicObject object, RubyBinding binding, UndefinedPlaceholder filename, UndefinedPlaceholder lineNumber) {
-            notDesignedForCompilation();
-
-            return evalCoerced(frame, object, binding, false, filename, lineNumber);
-        }
-
-        @Specialization(guards = "!isRubyBinding(arguments[1])")
-        public Object eval(RubyBasicObject source, RubyBasicObject badBinding, UndefinedPlaceholder filename, UndefinedPlaceholder lineNumber) {
+        @Specialization(guards = "!isRubyBinding(binding)")
+        public Object eval(RubyString source, RubyBasicObject badBinding, UndefinedPlaceholder filename, UndefinedPlaceholder lineNumber) {
             throw new RaiseException(
                     getContext().getCoreLibrary().typeError(
                             String.format("wrong argument type %s (expected binding)",
                                     badBinding.getLogicalClass().getName()),
                             this));
-        }
-
-        private Object evalCoerced(VirtualFrame frame, RubyBasicObject object, RubyBinding binding, boolean ownScopeForAssignments, UndefinedPlaceholder filename, UndefinedPlaceholder lineNumber) {
-            Object coerced;
-
-            try {
-                coerced = toStr.call(frame, object, "to_str", null);
-            } catch (RaiseException e) {
-                if (e.getRubyException().getLogicalClass() == getContext().getCoreLibrary().getNoMethodErrorClass()) {
-                    throw new RaiseException(
-                            getContext().getCoreLibrary().typeError(
-                                    String.format("no implicit conversion of %s into String", object.getLogicalClass().getName()),
-                                    this));
-                } else {
-                    throw e;
-                }
-            }
-
-            if (coerced instanceof RubyString) {
-                return getContext().eval(((RubyString) coerced).getBytes(), binding, ownScopeForAssignments, this);
-            } else {
-                throw new RaiseException(
-                        getContext().getCoreLibrary().typeError(
-                                String.format("can't convert %s to String (%s#to_str gives %s)",
-                                        object.getLogicalClass().getName(),
-                                        object.getLogicalClass().getName(),
-                                        getContext().getCoreLibrary().getLogicalClass(coerced).getName()),
-                                this));
-            }
         }
     }
 
