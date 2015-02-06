@@ -138,7 +138,6 @@ public class Options {
     public static final Option<Integer> TRUFFLE_HASHES_SMALL = integer(TRUFFLE, "truffle.hashes.small", 3, "Maximum size of a Hash to consider small for optimisations.");
 
     public static final Option<Boolean> TRUFFLE_LOAD_CORE = bool(TRUFFLE, "truffle.load_core", true, "Load the Truffle core library.");
-    public static final Option<Boolean> TRUFFLE_PROC_BINDING = bool(TRUFFLE, "truffle.proc.binding", true, "Enable Proc#binding.");
 
     public static final Option<Integer> TRUFFLE_PASSALOT = integer(TRUFFLE, "truffle.passalot", 0, "Probabilty between 0 and 100 to randomly insert Thread.pass at a given line.");
     public static final Option<Integer> TRUFFLE_STACK_SERVER_PORT = integer(TRUFFLE, "truffle.stack_server_port", 0, "Port number to run an HTTP server on that returns stack traces");

@@ -345,7 +345,6 @@ project 'JRuby Integration Tests' do
                           '<arg value="-J-server" />' +
                           '<arg value="-J-G:+TruffleCompilationExceptionsAreThrown" />' +
                           '<arg value="-X+T" />' +
-                          '<arg value="-Xtruffle.proc.binding=false" />' +
                           '<arg value="-Xtruffle.debug.enable_assert_constant=true" />' +
                           '<arg value="test/truffle/pe/pe.rb" />' +
                         '</exec>' +

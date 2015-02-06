@@ -26,8 +26,6 @@ import org.jruby.util.cli.Options;
  */
 public class RubyProc extends RubyBasicObject implements MethodLike {
 
-    public static final boolean PROC_BINDING = Options.TRUFFLE_PROC_BINDING.load();
-
     public static enum Type {
         BLOCK, PROC, LAMBDA
     }

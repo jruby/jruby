@@ -45,7 +45,7 @@ public class TranslatorEnvironment {
     private final boolean neverAssignInParentScope;
 
     protected final TranslatorEnvironment parent;
-    private boolean needsDeclarationFrame = RubyProc.PROC_BINDING;
+    private boolean needsDeclarationFrame = true;
     private final SharedMethodInfo sharedMethodInfo;
 
     private final String namedMethodName;
