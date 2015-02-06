@@ -10,6 +10,7 @@
 
 package org.jruby.truffle.nodes.coerce;
 
+import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.dsl.NodeChild;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
@@ -51,6 +52,8 @@ public abstract class ToStrNode extends RubyNode {
             coerced = toStr.call(frame, object, "to_str", null);
         } catch (RaiseException e) {
             if (e.getRubyException().getLogicalClass() == getContext().getCoreLibrary().getNoMethodErrorClass()) {
+                CompilerDirectives.transferToInterpreter();
+
                 throw new RaiseException(
                         getContext().getCoreLibrary().typeError(
                                 String.format("no implicit conversion of %s into String", getContext().getCoreLibrary().getLogicalClass(object).getName()),
@@ -63,6 +66,8 @@ public abstract class ToStrNode extends RubyNode {
         if (coerced instanceof RubyString) {
             return (RubyString) coerced;
         } else {
+            CompilerDirectives.transferToInterpreter();
+
             final String uncoercedClassName = getContext().getCoreLibrary().getLogicalClass(object).getName();
 
             throw new RaiseException(
