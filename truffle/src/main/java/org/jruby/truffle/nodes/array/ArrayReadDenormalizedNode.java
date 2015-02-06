@@ -45,7 +45,7 @@ public abstract class ArrayReadDenormalizedNode extends RubyNode {
             readNode = insert(ArrayReadNormalizedNodeFactory.create(getContext(), getSourceSection(), null, null));
         }
 
-        final int normalizedIndex = array.normaliseIndex(index);
+        final int normalizedIndex = array.normalizeIndex(index);
 
         return readNode.executeRead(frame, array, normalizedIndex);
     }

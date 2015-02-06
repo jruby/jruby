@@ -95,7 +95,7 @@ public class ArrayGuards {
         return array.getStore() instanceof Object[];
     }
 
-    public static boolean isNormalisedInBounds(RubyArray array, int index) {
+    public static boolean isNormalizedInBounds(RubyArray array, int index) {
         return index >= 0 && index < array.getSize();
     }
 

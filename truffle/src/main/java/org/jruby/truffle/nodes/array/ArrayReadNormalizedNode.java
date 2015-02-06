@@ -47,35 +47,35 @@ public abstract class ArrayReadNormalizedNode extends RubyNode {
     }
 
     @Specialization(
-            guards={"isNormalisedInBounds", "isIntArray"}
+            guards={"isNormalizedInBounds", "isIntArray"}
     )
     public int readIntegerInBounds(RubyArray array, int index) {
         return ((int[]) array.getStore())[index];
     }
 
     @Specialization(
-            guards={"isNormalisedInBounds", "isLongArray"}
+            guards={"isNormalizedInBounds", "isLongArray"}
     )
     public long readLongInBounds(RubyArray array, int index) {
         return ((long[]) array.getStore())[index];
     }
 
     @Specialization(
-            guards={"isNormalisedInBounds", "isDoubleArray"}
+            guards={"isNormalizedInBounds", "isDoubleArray"}
     )
     public double readDoubleInBounds(RubyArray array, int index) {
         return ((double[]) array.getStore())[index];
     }
 
     @Specialization(
-            guards={"isNormalisedInBounds", "isObjectArray"}
+            guards={"isNormalizedInBounds", "isObjectArray"}
     )
     public Object readObjectInBounds(RubyArray array, int index) {
         return ((Object[]) array.getStore())[index];
     }
 
     @Specialization(
-            guards="!isNormalisedInBounds"
+            guards="!isNormalizedInBounds"
     )
     public RubyNilClass readOutOfBounds(RubyArray array, int index) {
         return getContext().getCoreLibrary().getNilObject();

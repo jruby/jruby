@@ -17,7 +17,7 @@ import org.jruby.truffle.runtime.RubyContext;
 public abstract class PrimitiveArrayNodeFactory {
 
     /**
-     * Create a node to read from an array with a constant denormalised index.
+     * Create a node to read from an array with a constant denormalized index.
      */
     public static RubyNode read(RubyContext context, SourceSection sourceSection, RubyNode array, int index) {
         final RubyNode literalIndex = new FixnumLiteralNode.IntegerFixnumLiteralNode(context, sourceSection, index);

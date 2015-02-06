@@ -202,26 +202,26 @@ public abstract class StringNodes {
 
         @Specialization(rewriteOn = UnexpectedResultException.class)
         public RubyString getIndexInBounds(RubyString string, int index, UndefinedPlaceholder undefined) throws UnexpectedResultException {
-            final int normalisedIndex = string.normaliseIndex(index);
+            final int normalizedIndex = string.normalizeIndex(index);
             final ByteList bytes = string.getBytes();
 
-            if (normalisedIndex < 0 || normalisedIndex >= bytes.length()) {
+            if (normalizedIndex < 0 || normalizedIndex >= bytes.length()) {
                 throw new UnexpectedResultException(getContext().getCoreLibrary().getNilObject());
             } else {
-                return getContext().makeString(bytes.charAt(normalisedIndex));
+                return getContext().makeString(bytes.charAt(normalizedIndex));
             }
         }
 
         @Specialization(contains = "getIndexInBounds")
         public Object getIndex(RubyString string, int index, UndefinedPlaceholder undefined) {
-            int normalisedIndex = string.normaliseIndex(index);
+            int normalizedIndex = string.normalizeIndex(index);
             final ByteList bytes = string.getBytes();
 
-            if (normalisedIndex < 0 || normalisedIndex >= bytes.length()) {
+            if (normalizedIndex < 0 || normalizedIndex >= bytes.length()) {
                 outOfBounds.enter();
                 return getContext().getCoreLibrary().getNilObject();
             } else {
-                return getContext().makeString(bytes.charAt(normalisedIndex));
+                return getContext().makeString(bytes.charAt(normalizedIndex));
             }
         }
 
@@ -230,13 +230,13 @@ public abstract class StringNodes {
             notDesignedForCompilation();
 
             final String javaString = string.toString();
-            final int begin = string.normaliseIndex(range.getBegin());
+            final int begin = string.normalizeIndex(range.getBegin());
 
             if (begin < 0 || begin > javaString.length()) {
                 outOfBounds.enter();
                 return getContext().getCoreLibrary().getNilObject();
             } else {
-                final int end = string.normaliseIndex(range.getEnd());
+                final int end = string.normalizeIndex(range.getEnd());
                 final int excludingEnd = string.clampExclusiveIndex(range.doesExcludeEnd() ? end : end+1);
 
                 return getContext().makeString(javaString.substring(begin, excludingEnd));
@@ -247,7 +247,7 @@ public abstract class StringNodes {
         public Object slice(RubyString string, int start, int length) {
             // TODO(CS): not sure if this is right - encoding
             final ByteList bytes = string.getBytes();
-            final int begin = string.normaliseIndex(start);
+            final int begin = string.normalizeIndex(start);
 
             if (begin < 0 || begin > bytes.length() || length < 0) {
                 outOfBounds.enter();
@@ -483,9 +483,9 @@ public abstract class StringNodes {
         public Object byteSlice(RubyString string, int index, int length) {
             final ByteList bytes = string.getBytes();
 
-            final int normalisedIndex = string.normaliseIndex(index);
+            final int normalizedIndex = string.normalizeIndex(index);
 
-            if (normalisedIndex > bytes.length() || normalisedIndex + length > bytes.length()) {
+            if (normalizedIndex > bytes.length() || normalizedIndex + length > bytes.length()) {
                 return getContext().getCoreLibrary().getNilObject();
             }
 
