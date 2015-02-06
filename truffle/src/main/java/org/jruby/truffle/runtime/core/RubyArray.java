@@ -20,6 +20,7 @@ import org.jruby.truffle.runtime.util.ArrayUtils;
 import org.jruby.util.cli.Options;
 
 import java.util.Arrays;
+import java.util.Random;
 
 /**
  * Implements the Ruby {@code Array} class.
@@ -27,6 +28,9 @@ import java.util.Arrays;
 public final class RubyArray extends RubyBasicObject {
 
     public static final int ARRAYS_SMALL = Options.TRUFFLE_ARRAYS_SMALL.load();
+
+    private static final boolean RANDOMIZE_STORAGE_ARRAY = Options.TRUFFLE_RANDOMIZE_STORAGE_ARRAY.load();
+    private static final Random random = new Random(Options.TRUFFLE_RANDOMIZE_SEED.load());
 
     private final ArrayAllocationSite allocationSite;
     private Object store;
@@ -65,14 +69,14 @@ public final class RubyArray extends RubyBasicObject {
     }
 
     public static RubyArray fromObjects(RubyClass arrayClass, Object... objects) {
+        return new RubyArray(arrayClass, storeFromObjects(objects), objects.length);
+    }
+
+    private static Object storeFromObjects(Object... objects) {
         RubyNode.notDesignedForCompilation();
 
         if (objects.length == 0) {
-            return new RubyArray(arrayClass);
-        }
-
-        if (objects.length == 1) {
-            return fromObject(arrayClass, objects[0]);
+            return null;
         }
 
         boolean canUseInteger = true;
@@ -109,7 +113,7 @@ public final class RubyArray extends RubyBasicObject {
                 }
             }
 
-            return new RubyArray(arrayClass, store, objects.length);
+            return store;
         } else if (canUseLong) {
             final long[] store = new long[objects.length];
 
@@ -124,7 +128,7 @@ public final class RubyArray extends RubyBasicObject {
                 }
             }
 
-            return new RubyArray(arrayClass, store, objects.length);
+            return store;
         } else if (canUseDouble) {
             final double[] store = new double[objects.length];
 
@@ -132,9 +136,9 @@ public final class RubyArray extends RubyBasicObject {
                 store[n] = CoreLibrary.toDouble(objects[n]);
             }
 
-            return new RubyArray(arrayClass, store, objects.length);
+            return store;
         } else {
-            return new RubyArray(arrayClass, objects, objects.length);
+            return objects;
         }
     }
 
@@ -207,17 +211,92 @@ public final class RubyArray extends RubyBasicObject {
 
     public void setStore(Object store, int size) {
         assert verifyStore(store, size);
+
+        if (RANDOMIZE_STORAGE_ARRAY) {
+            store = randomizeStorageStrategy(store, size);
+            assert verifyStore(store, size);
+        }
+
         this.store = store;
         this.size = size;
     }
 
-    public int getSize() {
-        return size;
+    @CompilerDirectives.TruffleBoundary
+    private static Object randomizeStorageStrategy(Object store, int size) {
+        // Use any type for empty arrays
+
+        if (size == 0) {
+            switch (random.nextInt(5)) {
+                case 0:
+                    return null;
+                case 1:
+                    return new int[]{};
+                case 2:
+                    return new long[]{};
+                case 3:
+                    return new double[]{};
+                case 4:
+                    return new Object[]{};
+                default:
+                    throw new IllegalStateException();
+            }
+        }
+
+        // Convert to the canonical store type first
+
+        final Object[] boxedStore = ArrayUtils.box(store);
+        final Object canonicalStore = storeFromObjects(boxedStore);
+
+        // Then promote it at random
+
+        if (canonicalStore instanceof int[]) {
+            if (((int[]) canonicalStore).length == 0 && random.nextBoolean()) {
+                return null;
+            }
+
+            switch (random.nextInt(3)) {
+                case 0:
+                    return boxedStore;
+                case 1:
+                    ArrayUtils.longCopyOf((int[]) canonicalStore);
+                case 2:
+                    return canonicalStore;
+                default:
+                    throw new IllegalStateException();
+            }
+        } else if (canonicalStore instanceof long[]) {
+            if (((long[]) canonicalStore).length == 0 && random.nextBoolean()) {
+                return null;
+            }
+
+            if (random.nextBoolean()) {
+                return boxedStore;
+            } else {
+                return canonicalStore;
+            }
+        } else if (canonicalStore instanceof double[]) {
+            if (((double[]) canonicalStore).length == 0 && random.nextBoolean()) {
+                return null;
+            }
+
+            if (random.nextBoolean()) {
+                return boxedStore;
+            } else {
+                return canonicalStore;
+            }
+        } else if (canonicalStore instanceof Object[]) {
+            if (((Object[]) canonicalStore).length == 0 && random.nextBoolean()) {
+                return null;
+            }
+
+            return canonicalStore;
+        } else {
+            throw new UnsupportedOperationException();
+        }
     }
 
-    public void setSize(int size) {
-        assert verifyStore(this.store, size);
-        this.size = size;
+    public int getSize() {
+        return size;
     }
 
     private boolean verifyStore(Object store, int size) {
@@ -231,6 +310,13 @@ public final class RubyArray extends RubyBasicObject {
         assert !(store instanceof int[]) || size <= ((int[]) store).length;
         assert !(store instanceof long[]) || size <= ((long[]) store).length;
         assert !(store instanceof double[]) || size <= ((double[]) store).length;
+
+        if (store instanceof Object[]) {
+            for (int n = 0; n < size; n++) {
+                assert ((Object[]) store)[n] != null : String.format("array of size %s had null at %d", size, n);
+            }
+        }
+
         return true;
     }
 

@@ -73,4 +73,30 @@ public class ArrayGuards {
         return a.getStore() instanceof Object[] && b.getStore() instanceof Object[];
     }
 
+    // New names
+
+    public static boolean isNullArray(RubyArray array) {
+        return array.getStore() == null;
+    }
+
+    public static boolean isIntegerArray(RubyArray array) {
+        return array.getStore() instanceof int[];
+    }
+
+    public static boolean isLongArray(RubyArray array) {
+        return array.getStore() instanceof long[];
+    }
+
+    public static boolean isDoubleArray(RubyArray array) {
+        return array.getStore() instanceof double[];
+    }
+
+    public static boolean isObjectArray(RubyArray array) {
+        return array.getStore() instanceof Object[];
+    }
+
+    public static boolean isNormalisedInBounds(RubyArray array, int index) {
+        return index >= 0 && index < array.getSize();
+    }
+
 }

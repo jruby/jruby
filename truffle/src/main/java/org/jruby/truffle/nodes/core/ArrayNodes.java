@@ -26,13 +26,14 @@ import org.jruby.runtime.Visibility;
 import org.jruby.truffle.nodes.CoreSourceSection;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.RubyRootNode;
+import org.jruby.truffle.nodes.array.ArrayReadDenormalizedNode;
+import org.jruby.truffle.nodes.array.ArrayReadDenormalizedNodeFactory;
 import org.jruby.truffle.nodes.dispatch.*;
 import org.jruby.truffle.nodes.methods.arguments.MissingArgumentBehaviour;
 import org.jruby.truffle.nodes.methods.arguments.ReadPreArgumentNode;
 import org.jruby.truffle.nodes.methods.locals.ReadLevelVariableNodeFactory;
 import org.jruby.truffle.nodes.yield.YieldDispatchHeadNode;
 import org.jruby.truffle.runtime.*;
-import org.jruby.truffle.nodes.core.ArrayNodesFactory.AtNodeFactory;
 import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.UndefinedPlaceholder;
@@ -134,6 +135,54 @@ public abstract class ArrayNodes {
         public RubyArray addNullObject(RubyArray a, RubyArray b) {
             final int size = b.getSize();
             return new RubyArray(getContext().getCoreLibrary().getArrayClass(), Arrays.copyOf((Object[]) b.getStore(), size), size);
+        }
+
+        @Specialization(guards = "isIntegerFixnum")
+        public RubyArray addEmptyIntegerFixnum(RubyArray a, RubyArray b) {
+            // TODO CS 5-Feb-15 hack to get things working with empty int[] store
+
+            if (a.getSize() != 0) {
+                throw new UnsupportedOperationException();
+            }
+
+            final int size = b.getSize();
+            return new RubyArray(getContext().getCoreLibrary().getArrayClass(), ArrayUtils.box(b.getStore()), size);
+        }
+
+        @Specialization(guards = "isLongFixnum")
+        public RubyArray addEmptyLongFixnum(RubyArray a, RubyArray b) {
+            // TODO CS 5-Feb-15 hack to get things working with empty long[] store
+
+            if (a.getSize() != 0) {
+                throw new UnsupportedOperationException();
+            }
+
+            final int size = b.getSize();
+            return new RubyArray(getContext().getCoreLibrary().getArrayClass(), ArrayUtils.box(b.getStore()), size);
+        }
+
+        @Specialization(guards = "isFloat")
+        public RubyArray addEmptyDouble(RubyArray a, RubyArray b) {
+            // TODO CS 5-Feb-15 hack to get things working with empty double[] store
+
+            if (a.getSize() != 0) {
+                throw new UnsupportedOperationException();
+            }
+
+            final int size = b.getSize();
+            return new RubyArray(getContext().getCoreLibrary().getArrayClass(), ArrayUtils.box(b.getStore()), size);
+        }
+
+        @Specialization(guards = "isObject")
+        public RubyArray addEmptyObject(RubyArray a, RubyArray b) {
+            // TODO CS 5-Feb-15 hack to get things working with empty Object[] store
+
+            if (a.getSize() != 0) {
+                throw new UnsupportedOperationException();
+            }
+
+            final int size = b.getSize();
+            return new RubyArray(getContext().getCoreLibrary().getArrayClass(), ArrayUtils.box(b.getStore()), size);
         }
 
     }
@@ -548,96 +597,25 @@ public abstract class ArrayNodes {
     @CoreMethod(names = "at", required = 1, lowerFixnumParameters = 0)
     public abstract static class AtNode extends ArrayCoreMethodNode {
 
+        @Child private ArrayReadDenormalizedNode readNode;
+
         public AtNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
         }
 
         public AtNode(AtNode prev) {
             super(prev);
+            readNode = prev.readNode;
         }
 
-        public abstract Object executeAt(VirtualFrame frame, RubyArray array, int index);
-
-        @Specialization(guards = "isNull")
-        public RubyNilClass getNull(RubyArray array, int index) {
-            return getContext().getCoreLibrary().getNilObject();
-        }
-
-        @Specialization(guards = "isIntegerFixnum", rewriteOn = UnexpectedResultException.class)
-        public int getIntegerFixnumInBounds(RubyArray array, int index) throws UnexpectedResultException {
-            int normalisedIndex = array.normaliseIndex(index);
-
-            if (normalisedIndex < 0 || normalisedIndex >= array.getSize()) {
-                throw new UnexpectedResultException(getContext().getCoreLibrary().getNilObject());
-            } else {
-                return ((int[]) array.getStore())[normalisedIndex];
+        @Specialization
+        public Object at(VirtualFrame frame, RubyArray array, int index) {
+            if (readNode == null) {
+                CompilerDirectives.transferToInterpreter();
+                readNode = insert(ArrayReadDenormalizedNodeFactory.create(getContext(), getSourceSection(), null, null));
             }
-        }
 
-        @Specialization(contains = "getIntegerFixnumInBounds", guards = "isIntegerFixnum")
-        public Object getIntegerFixnum(RubyArray array, int index) {
-            int normalisedIndex = array.normaliseIndex(index);
-
-            if (normalisedIndex < 0 || normalisedIndex >= array.getSize()) {
-                return getContext().getCoreLibrary().getNilObject();
-            } else {
-                return ((int[]) array.getStore())[normalisedIndex];
-            }
-        }
-
-        @Specialization(guards = "isLongFixnum", rewriteOn = UnexpectedResultException.class)
-        public long getLongFixnumInBounds(RubyArray array, int index) throws UnexpectedResultException {
-            int normalisedIndex = array.normaliseIndex(index);
-
-            if (normalisedIndex < 0 || normalisedIndex >= array.getSize()) {
-                throw new UnexpectedResultException(getContext().getCoreLibrary().getNilObject());
-            } else {
-                return ((long[]) array.getStore())[normalisedIndex];
-            }
-        }
-
-        @Specialization(contains = "getLongFixnumInBounds", guards = "isLongFixnum")
-        public Object getLongFixnum(RubyArray array, int index) {
-            int normalisedIndex = array.normaliseIndex(index);
-
-            if (normalisedIndex < 0 || normalisedIndex >= array.getSize()) {
-                return getContext().getCoreLibrary().getNilObject();
-            } else {
-                return ((long[]) array.getStore())[normalisedIndex];
-            }
-        }
-
-        @Specialization(guards = "isFloat", rewriteOn = UnexpectedResultException.class)
-        public double getFloatInBounds(RubyArray array, int index) throws UnexpectedResultException {
-            int normalisedIndex = array.normaliseIndex(index);
-
-            if (normalisedIndex < 0 || normalisedIndex >= array.getSize()) {
-                throw new UnexpectedResultException(getContext().getCoreLibrary().getNilObject());
-            } else {
-                return ((double[]) array.getStore())[normalisedIndex];
-            }
-        }
-
-        @Specialization(contains = "getFloatInBounds", guards = "isFloat")
-        public Object getFloat(RubyArray array, int index) {
-            int normalisedIndex = array.normaliseIndex(index);
-
-            if (normalisedIndex < 0 || normalisedIndex >= array.getSize()) {
-                return getContext().getCoreLibrary().getNilObject();
-            } else {
-                return ((double[]) array.getStore())[normalisedIndex];
-            }
-        }
-
-        @Specialization(guards = "isObject")
-        public Object getObject(RubyArray array, int index) {
-            int normalisedIndex = array.normaliseIndex(index);
-
-            if (normalisedIndex < 0 || normalisedIndex >= array.getSize()) {
-                return getContext().getCoreLibrary().getNilObject();
-            } else {
-                return ((Object[]) array.getStore())[normalisedIndex];
-            }
+            return readNode.executeRead(frame, array, index);
         }
 
     }
@@ -645,19 +623,18 @@ public abstract class ArrayNodes {
     @CoreMethod(names = { "[]", "slice" }, required = 1, optional = 1, lowerFixnumParameters = { 0, 1 })
     public abstract static class IndexNode extends ArrayCoreMethodNode {
 
-        @Child protected AtNode atNode;
+        @Child protected ArrayReadDenormalizedNode readNode;
         @Child protected CallDispatchHeadNode fallbackNode;
 
         private final BranchProfile outOfBounds = BranchProfile.create();
 
         public IndexNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            atNode = AtNodeFactory.create(context, sourceSection, new RubyNode[] { null, null });
         }
 
         public IndexNode(IndexNode prev) {
             super(prev);
-            atNode = prev.atNode;
+            readNode = prev.readNode;
             fallbackNode = prev.fallbackNode;
         }
 
@@ -665,7 +642,12 @@ public abstract class ArrayNodes {
 
         @Specialization
         public Object index(VirtualFrame frame, RubyArray array, int index, UndefinedPlaceholder undefined) {
-            return atNode.executeAt(frame, array, index);
+            if (readNode == null) {
+                CompilerDirectives.transferToInterpreter();
+                readNode = insert(ArrayReadDenormalizedNodeFactory.create(getContext(), getSourceSection(), null, null));
+            }
+
+            return readNode.executeRead(frame, array, index);
         }
 
         // Slice with two fixnums
@@ -963,7 +945,7 @@ public abstract class ArrayNodes {
                     }
 
                     store[normalisedIndex] = value;
-                    array.setSize(array.getSize() + 1);
+                    array.setStore(store, array.getSize() + 1);
                 } else if (normalisedIndex > array.getSize()) {
                     beyondBranch.enter();
                     final Object[] newStore = new Object[index + 1];
@@ -1010,7 +992,7 @@ public abstract class ArrayNodes {
                     }
 
                     store[normalisedIndex] = value;
-                    array.setSize(array.getSize() + 1);
+                    array.setStore(store, array.getSize() + 1);
                 } else if (normalisedIndex > array.getSize()) {
                     beyondBranch.enter();
                     final Object[] newStore = new Object[index + 1];
@@ -1057,7 +1039,7 @@ public abstract class ArrayNodes {
                     }
 
                     store[normalisedIndex] = value;
-                    array.setSize(array.getSize() + 1);
+                    array.setStore(store, array.getSize() + 1);
                 } else if (normalisedIndex > array.getSize()) {
                     beyondBranch.enter();
                     final Object[] newStore = new Object[index + 1];
@@ -1098,7 +1080,7 @@ public abstract class ArrayNodes {
                     }
 
                     store[normalisedIndex] = value;
-                    array.setSize(array.getSize() + 1);
+                    array.setStore(store, array.getSize() + 1);
                 } else if (normalisedIndex > array.getSize()) {
                     beyondBranch.enter();
                     final Object[] newStore = new Object[index + 1];
@@ -1139,7 +1121,7 @@ public abstract class ArrayNodes {
                     }
 
                     store[normalisedIndex] = value;
-                    array.setSize(array.getSize() + 1);
+                    array.setStore(store, array.getSize() + 1);
                 } else if (normalisedIndex > array.getSize()) {
                     beyondBranch.enter();
                     final Object[] newStore = new Object[index + 1];
@@ -1206,7 +1188,7 @@ public abstract class ArrayNodes {
 
                 // TODO: This is a moving overlapping memory, should we use sth else instead?
                 System.arraycopy(store, exclusiveEnd, store, begin, array.getSize() - exclusiveEnd);
-                array.setSize(array.getSize() - length);
+                array.setStore(store, array.getSize() - length);
 
                 return value;
             } else {
@@ -1320,7 +1302,7 @@ public abstract class ArrayNodes {
         @Specialization
         public RubyArray clear(RubyArray array) {
             notDesignedForCompilation();
-            array.setSize(0);
+            array.setStore(null, 0);
             return array;
         }
 
@@ -1384,9 +1366,8 @@ public abstract class ArrayNodes {
             notDesignedForCompilation();
 
             // TODO(CS): is there already space in array?
-            array.setStore(Arrays.copyOf((int[]) array.getStore(), array.getSize() + other.getSize()), array.getSize());
             System.arraycopy(other.getStore(), 0, array.getStore(), array.getSize(), other.getSize());
-            array.setSize(array.getSize() + other.getSize());
+            array.setStore(Arrays.copyOf((int[]) array.getStore(), array.getSize() + other.getSize()), array.getSize() + other.getSize());
             return array;
         }
 
@@ -1395,9 +1376,8 @@ public abstract class ArrayNodes {
             notDesignedForCompilation();
 
             // TODO(CS): is there already space in array?
-            array.setStore(Arrays.copyOf((long[]) array.getStore(), array.getSize() + other.getSize()), array.getSize());
             System.arraycopy(other.getStore(), 0, array.getStore(), array.getSize(), other.getSize());
-            array.setSize(array.getSize() + other.getSize());
+            array.setStore(Arrays.copyOf((long[]) array.getStore(), array.getSize() + other.getSize()), array.getSize() + other.getSize());
             return array;
         }
 
@@ -1406,9 +1386,8 @@ public abstract class ArrayNodes {
             notDesignedForCompilation();
 
             // TODO(CS): is there already space in array?
-            array.setStore(Arrays.copyOf((double[]) array.getStore(), array.getSize() + other.getSize()), array.getSize());
             System.arraycopy(other.getStore(), 0, array.getStore(), array.getSize(), other.getSize());
-            array.setSize(array.getSize() + other.getSize());
+            array.setStore(Arrays.copyOf((double[]) array.getStore(), array.getSize() + other.getSize()), array.getSize() + other.getSize());
             return array;
         }
 
@@ -1417,9 +1396,8 @@ public abstract class ArrayNodes {
             notDesignedForCompilation();
 
             // TODO(CS): is there already space in array?
-            array.setStore(Arrays.copyOf((Object[]) array.getStore(), array.getSize() + other.getSize()), array.getSize());
             System.arraycopy(other.getStore(), 0, array.getStore(), array.getSize(), other.getSize());
-            array.setSize(array.getSize() + other.getSize());
+            array.setStore(Arrays.copyOf((Object[]) array.getStore(), array.getSize() + other.getSize()), array.getSize() + other.getSize());
             return array;
         }
 
@@ -1476,7 +1454,7 @@ public abstract class ArrayNodes {
                 i++;
             }
 
-            array.setSize(i);
+            array.setStore(store, i);
             return found;
         }
 
@@ -1503,7 +1481,7 @@ public abstract class ArrayNodes {
                 i++;
             }
 
-            array.setSize(i);
+            array.setStore(store, i);
             return found;
         }
 
@@ -1535,7 +1513,7 @@ public abstract class ArrayNodes {
                 final int[] store = (int[]) array.getStore();
                 final int value = store[normalisedIndex];
                 System.arraycopy(store, normalisedIndex + 1, store, normalisedIndex, array.getSize() - normalisedIndex - 1);
-                array.setSize(array.getSize() - 1);
+                array.setStore(store, array.getSize() - 1);
                 return value;
             }
         }
@@ -1561,7 +1539,7 @@ public abstract class ArrayNodes {
                 final int[] store = (int[]) array.getStore();
                 final int value = store[normalisedIndex];
                 System.arraycopy(store, normalisedIndex + 1, store, normalisedIndex, array.getSize() - normalisedIndex - 1);
-                array.setSize(array.getSize() - 1);
+                array.setStore(store, array.getSize() - 1);
                 return value;
             }
         }
@@ -2088,6 +2066,23 @@ public abstract class ArrayNodes {
             return false;
         }
 
+        @Specialization(guards = "isFloat")
+        public boolean includeFloat(VirtualFrame frame, RubyArray array, Object value) {
+            final double[] store = (double[]) array.getStore();
+
+            for (int n = 0; n < array.getSize(); n++) {
+                final Object stored = store[n];
+
+                notDesignedForCompilation();
+
+                if (equalNode.executeSameOrEqual(frame, stored, value)) {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
         @Specialization(guards = "isObject")
         public boolean includeObject(VirtualFrame frame, RubyArray array, Object value) {
             final Object[] store = (Object[]) array.getStore();
@@ -2363,7 +2358,7 @@ public abstract class ArrayNodes {
             final Object[] store = new Object[index + 1];
             Arrays.fill(store, getContext().getCoreLibrary().getNilObject());
             store[index] = value;
-            array.setSize(array.getSize() + 1);
+            array.setStore(store, array.getSize() + 1);
             return array;
         }
 
@@ -2381,7 +2376,7 @@ public abstract class ArrayNodes {
             } else {
                 System.arraycopy(store, normalisedIndex, store, normalisedIndex + 1, array.getSize() - normalisedIndex);
                 store[normalisedIndex] = value;
-                array.setSize(array.getSize() + 1);
+                array.setStore(store, array.getSize() + 1);
             }
 
             return array;
@@ -3075,8 +3070,9 @@ public abstract class ArrayNodes {
             if (CompilerDirectives.injectBranchProbability(CompilerDirectives.UNLIKELY_PROBABILITY, array.getSize() == 0)) {
                 throw new UnexpectedResultException(getContext().getCoreLibrary().getNilObject());
             } else {
-                final int value = ((int[]) array.getStore())[array.getSize() - 1];
-                array.setSize(array.getSize() - 1);
+                final int[] store = ((int[]) array.getStore());
+                final int value = store[array.getSize() - 1];
+                array.setStore(store, array.getSize() - 1);
                 return value;
             }
         }
@@ -3086,8 +3082,9 @@ public abstract class ArrayNodes {
             if (CompilerDirectives.injectBranchProbability(CompilerDirectives.UNLIKELY_PROBABILITY, array.getSize() == 0)) {
                 return getContext().getCoreLibrary().getNilObject();
             } else {
-                final int value = ((int[]) array.getStore())[array.getSize() - 1];
-                array.setSize(array.getSize() - 1);
+                final int[] store = ((int[]) array.getStore());
+                final int value = store[array.getSize() - 1];
+                array.setStore(store, array.getSize() - 1);
                 return value;
             }
         }
@@ -3097,8 +3094,9 @@ public abstract class ArrayNodes {
             if (CompilerDirectives.injectBranchProbability(CompilerDirectives.UNLIKELY_PROBABILITY, array.getSize() == 0)) {
                 throw new UnexpectedResultException(getContext().getCoreLibrary().getNilObject());
             } else {
-                final long value = ((long[]) array.getStore())[array.getSize() - 1];
-                array.setSize(array.getSize() - 1);
+                final long[] store = ((long[]) array.getStore());
+                final long value = store[array.getSize() - 1];
+                array.setStore(store, array.getSize() - 1);
                 return value;
             }
         }
@@ -3108,8 +3106,9 @@ public abstract class ArrayNodes {
             if (CompilerDirectives.injectBranchProbability(CompilerDirectives.UNLIKELY_PROBABILITY, array.getSize() == 0)) {
                 return getContext().getCoreLibrary().getNilObject();
             } else {
-                final long value = ((long[]) array.getStore())[array.getSize() - 1];
-                array.setSize(array.getSize() - 1);
+                final long[] store = ((long[]) array.getStore());
+                final long value = store[array.getSize() - 1];
+                array.setStore(store, array.getSize() - 1);
                 return value;
             }
         }
@@ -3119,8 +3118,9 @@ public abstract class ArrayNodes {
             if (CompilerDirectives.injectBranchProbability(CompilerDirectives.UNLIKELY_PROBABILITY, array.getSize() == 0)) {
                 throw new UnexpectedResultException(getContext().getCoreLibrary().getNilObject());
             } else {
-                final double value = ((double[]) array.getStore())[array.getSize() - 1];
-                array.setSize(array.getSize() - 1);
+                final double[] store = ((double[]) array.getStore());
+                final double value = store[array.getSize() - 1];
+                array.setStore(store, array.getSize() - 1);
                 return value;
             }
         }
@@ -3130,8 +3130,9 @@ public abstract class ArrayNodes {
             if (CompilerDirectives.injectBranchProbability(CompilerDirectives.UNLIKELY_PROBABILITY, array.getSize() == 0)) {
                 return getContext().getCoreLibrary().getNilObject();
             } else {
-                final double value = ((double[]) array.getStore())[array.getSize() - 1];
-                array.setSize(array.getSize() - 1);
+                final double[] store = ((double[]) array.getStore());
+                final double value = store[array.getSize() - 1];
+                array.setStore(store, array.getSize() - 1);
                 return value;
             }
         }
@@ -3141,8 +3142,9 @@ public abstract class ArrayNodes {
             if (CompilerDirectives.injectBranchProbability(CompilerDirectives.UNLIKELY_PROBABILITY, array.getSize() == 0)) {
                 return getContext().getCoreLibrary().getNilObject();
             } else {
-                final Object value = ((Object[]) array.getStore())[array.getSize() - 1];
-                array.setSize(array.getSize() - 1);
+                final Object[] store = ((Object[]) array.getStore());
+                final Object value = store[array.getSize() - 1];
+                array.setStore(store, array.getSize() - 1);
                 return value;
             }
         }
@@ -3222,11 +3224,10 @@ public abstract class ArrayNodes {
             if (store.length < newSize) {
                 extendBranch.enter();
                 store = Arrays.copyOf(store, ArrayUtils.capacity(store.length, newSize));
-                array.setStore(store, array.getSize());
             }
 
             store[oldSize] = (int) values[0];
-            array.setSize(newSize);
+            array.setStore(store, newSize);
             return array;
         }
 
@@ -3245,13 +3246,11 @@ public abstract class ArrayNodes {
                 store = ArrayUtils.box(oldStore);
             }
 
-            array.setStore(store, oldSize);
-
             for (int n = 0; n < values.length; n++) {
                 store[oldSize + n] = values[n];
             }
 
-            array.setSize(newSize);
+            array.setStore(store, newSize);
             return array;
         }
 
@@ -3265,11 +3264,10 @@ public abstract class ArrayNodes {
             if (store.length < newSize) {
                 extendBranch.enter();
                 store = Arrays.copyOf(store, ArrayUtils.capacity(store.length, newSize));
-                array.setStore(store, array.getSize());
             }
 
             store[oldSize] = (long) (int) values[0];
-            array.setSize(newSize);
+            array.setStore(store, newSize);
             return array;
         }
 
@@ -3283,11 +3281,34 @@ public abstract class ArrayNodes {
             if (store.length < newSize) {
                 extendBranch.enter();
                 store = Arrays.copyOf(store, ArrayUtils.capacity(store.length, newSize));
-                array.setStore(store, array.getSize());
             }
 
             store[oldSize] = (long) values[0];
-            array.setSize(newSize);
+            array.setStore(store, newSize);
+            return array;
+        }
+
+        @Specialization(guards = "isLongFixnum")
+        public RubyArray pushLongFixnum(RubyArray array, Object... values) {
+            // TODO CS 5-Feb-15 hack to get things working with empty long[] store
+
+            if (array.getSize() != 0) {
+                throw new UnsupportedOperationException();
+            }
+
+            array.setStore(values, values.length);
+            return array;
+        }
+
+        @Specialization(guards = "isFloat")
+        public RubyArray pushFloat(RubyArray array, Object... values) {
+            // TODO CS 5-Feb-15 hack to get things working with empty double[] store
+
+            if (array.getSize() != 0) {
+                throw new UnsupportedOperationException();
+            }
+
+            array.setStore(values, values.length);
             return array;
         }
 
@@ -3301,14 +3322,13 @@ public abstract class ArrayNodes {
             if (store.length < newSize) {
                 extendBranch.enter();
                 store = Arrays.copyOf(store, ArrayUtils.capacity(store.length, newSize));
-                array.setStore(store, oldSize);
             }
 
             for (int n = 0; n < values.length; n++) {
                 store[oldSize + n] = values[n];
             }
 
-            array.setSize(newSize);
+            array.setStore(store, newSize);
             return array;
         }
 
@@ -3355,7 +3375,7 @@ public abstract class ArrayNodes {
             }
 
             store[oldSize] = value;
-            array.setSize(newSize);
+            array.setStore(store, newSize);
             return array;
         }
 
@@ -3392,7 +3412,7 @@ public abstract class ArrayNodes {
             }
 
             store[oldSize] = value;
-            array.setSize(newSize);
+            array.setStore(store, newSize);
             return array;
         }
 
@@ -3522,7 +3542,7 @@ public abstract class ArrayNodes {
                 i++;
             }
 
-            array.setSize(i);
+            array.setStore(store, i);
             return array;
         }
 
@@ -3543,7 +3563,7 @@ public abstract class ArrayNodes {
         public RubyArray replace(RubyArray array, RubyArray other) {
             notDesignedForCompilation();
 
-            array.setSize(0);
+            array.setStore(null, 0);
             return array;
         }
 

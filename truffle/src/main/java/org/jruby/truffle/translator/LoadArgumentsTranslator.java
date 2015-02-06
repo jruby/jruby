@@ -18,11 +18,10 @@ import org.jruby.ast.types.INameNode;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.truffle.nodes.ReadNode;
 import org.jruby.truffle.nodes.RubyNode;
+import org.jruby.truffle.nodes.array.PrimitiveArrayNodeFactory;
 import org.jruby.truffle.nodes.cast.ArrayCastNodeFactory;
-import org.jruby.truffle.nodes.cast.BooleanCastNodeFactory;
 import org.jruby.truffle.nodes.control.IfNode;
 import org.jruby.truffle.nodes.control.SequenceNode;
-import org.jruby.truffle.nodes.core.ArrayIndexNodeFactory;
 import org.jruby.truffle.nodes.core.ArraySliceNodeFactory;
 import org.jruby.truffle.nodes.literal.ArrayLiteralNode;
 import org.jruby.truffle.nodes.literal.NilLiteralNode;
@@ -209,7 +208,7 @@ public class LoadArgumentsTranslator extends Translator {
 
     private RubyNode readArgument(SourceSection sourceSection) {
         if (useArray()) {
-            return ArrayIndexNodeFactory.create(context, sourceSection, index, loadArray(sourceSection));
+            return PrimitiveArrayNodeFactory.read(context, sourceSection, loadArray(sourceSection), index);
         } else {
             if (state == State.PRE) {
                 return new ReadPreArgumentNode(context, sourceSection, index, isBlock ? MissingArgumentBehaviour.NIL : MissingArgumentBehaviour.RUNTIME_ERROR);
@@ -278,7 +277,7 @@ public class LoadArgumentsTranslator extends Translator {
                 // Multiple assignment
 
                 if (useArray()) {
-                    readNode = ArrayIndexNodeFactory.create(context, sourceSection, index, loadArray(sourceSection));
+                    readNode = PrimitiveArrayNodeFactory.read(context, sourceSection, loadArray(sourceSection), index);
                 } else {
                     readNode = readArgument(sourceSection);
                 }

@@ -1,2 +1,0 @@
-fails:Comparable#<= returns false if calling #<=> on self returns any Integer greater than 0
-fails:Comparable#<= raises an ArgumentError if calling #<=> on self returns nil

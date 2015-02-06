@@ -50,7 +50,7 @@ public class ExceptionTranslatingNode extends RubyNode {
     public Object execute(VirtualFrame frame) {
         try {
             return child.execute(frame);
-        } catch (TruffleFatalException | ThreadExitException exception) {
+        } catch (StackOverflowError | TruffleFatalException | ThreadExitException exception) {
             throw exception;
         } catch (ControlFlowException exception) {
             controlProfile.enter();

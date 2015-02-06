@@ -544,7 +544,7 @@ public abstract class KernelNodes {
         public Object eval(VirtualFrame frame, RubyString source, UndefinedPlaceholder binding, UndefinedPlaceholder filename, UndefinedPlaceholder lineNumber) {
             notDesignedForCompilation();
 
-            return eval(source, getCallerBinding(frame), filename, lineNumber);
+            return getContext().eval(source.getBytes(), getCallerBinding(frame), true, this);
         }
 
         @Specialization
@@ -559,7 +559,7 @@ public abstract class KernelNodes {
         public Object eval(RubyString source, RubyBinding binding, UndefinedPlaceholder filename, UndefinedPlaceholder lineNumber) {
             notDesignedForCompilation();
 
-            return getContext().eval(source.getBytes(), binding, this);
+            return getContext().eval(source.getBytes(), binding, false, this);
         }
 
         @Specialization
@@ -567,7 +567,7 @@ public abstract class KernelNodes {
             notDesignedForCompilation();
 
             // TODO (nirvdrum Dec. 29, 2014) Do something with the supplied filename.
-            return getContext().eval(source.getBytes(), binding, this);
+            return getContext().eval(source.getBytes(), binding, false, this);
         }
 
         @Specialization
@@ -575,20 +575,33 @@ public abstract class KernelNodes {
             notDesignedForCompilation();
 
             // TODO (nirvdrum Dec. 29, 2014) Do something with the supplied filename and lineNumber.
-            return getContext().eval(source.getBytes(), binding, this);
+            return getContext().eval(source.getBytes(), binding, false, this);
         }
 
         @Specialization(guards = "!isRubyString(arguments[0])")
         public Object eval(VirtualFrame frame, RubyBasicObject object, UndefinedPlaceholder binding, UndefinedPlaceholder filename, UndefinedPlaceholder lineNumber) {
             notDesignedForCompilation();
 
-            return eval(frame, object, getCallerBinding(frame), filename, lineNumber);
+            return evalCoerced(frame, object, getCallerBinding(frame), true, filename, lineNumber);
         }
 
         @Specialization(guards = "!isRubyString(arguments[0])")
         public Object eval(VirtualFrame frame, RubyBasicObject object, RubyBinding binding, UndefinedPlaceholder filename, UndefinedPlaceholder lineNumber) {
             notDesignedForCompilation();
 
+            return evalCoerced(frame, object, binding, false, filename, lineNumber);
+        }
+
+        @Specialization(guards = "!isRubyBinding(arguments[1])")
+        public Object eval(RubyBasicObject source, RubyBasicObject badBinding, UndefinedPlaceholder filename, UndefinedPlaceholder lineNumber) {
+            throw new RaiseException(
+                    getContext().getCoreLibrary().typeError(
+                            String.format("wrong argument type %s (expected binding)",
+                                    badBinding.getLogicalClass().getName()),
+                            this));
+        }
+
+        private Object evalCoerced(VirtualFrame frame, RubyBasicObject object, RubyBinding binding, boolean ownScopeForAssignments, UndefinedPlaceholder filename, UndefinedPlaceholder lineNumber) {
             Object coerced;
 
             try {
@@ -605,7 +618,7 @@ public abstract class KernelNodes {
             }
 
             if (coerced instanceof RubyString) {
-                return getContext().eval(((RubyString) coerced).getBytes(), binding, this);
+                return getContext().eval(((RubyString) coerced).getBytes(), binding, ownScopeForAssignments, this);
             } else {
                 throw new RaiseException(
                         getContext().getCoreLibrary().typeError(
@@ -615,15 +628,6 @@ public abstract class KernelNodes {
                                         getContext().getCoreLibrary().getLogicalClass(coerced).getName()),
                                 this));
             }
-        }
-
-        @Specialization(guards = "!isRubyBinding(arguments[1])")
-        public Object eval(RubyBasicObject source, RubyBasicObject badBinding, UndefinedPlaceholder filename, UndefinedPlaceholder lineNumber) {
-            throw new RaiseException(
-                    getContext().getCoreLibrary().typeError(
-                            String.format("wrong argument type %s (expected binding)",
-                                    badBinding.getLogicalClass().getName()),
-                            this));
         }
     }
 

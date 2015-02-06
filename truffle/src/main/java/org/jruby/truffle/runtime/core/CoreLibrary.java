@@ -23,6 +23,7 @@ import org.jruby.runtime.load.LoadServiceResource;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.core.ArrayNodes;
 import org.jruby.truffle.nodes.methods.SetMethodDeclarationContext;
+import org.jruby.truffle.nodes.objects.Allocator;
 import org.jruby.truffle.runtime.RubyCallStack;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.backtrace.Backtrace;
@@ -54,7 +55,6 @@ public class CoreLibrary {
     @CompilerDirectives.CompilationFinal private RubyClass bignumClass;
     @CompilerDirectives.CompilationFinal private RubyClass bindingClass;
     @CompilerDirectives.CompilationFinal private RubyClass classClass;
-    @CompilerDirectives.CompilationFinal private RubyClass continuationClass;
     @CompilerDirectives.CompilationFinal private RubyClass complexClass;
     @CompilerDirectives.CompilationFinal private RubyClass dirClass;
     @CompilerDirectives.CompilationFinal private RubyClass encodingClass;
@@ -99,7 +99,6 @@ public class CoreLibrary {
     @CompilerDirectives.CompilationFinal private RubyClass trueClass;
     @CompilerDirectives.CompilationFinal private RubyClass typeErrorClass;
     @CompilerDirectives.CompilationFinal private RubyClass zeroDivisionErrorClass;
-    @CompilerDirectives.CompilationFinal private RubyModule comparableModule;
     @CompilerDirectives.CompilationFinal private RubyModule configModule;
     @CompilerDirectives.CompilationFinal private RubyModule enumerableModule;
     @CompilerDirectives.CompilationFinal private RubyModule errnoModule;
@@ -175,7 +174,10 @@ public class CoreLibrary {
         classClass.setAllocator(new RubyClass.ClassAllocator());
 
         basicObjectClass = RubyClass.createBootClass(context, "BasicObject");
+        basicObjectClass.setAllocator(new RubyBasicObject.BasicObjectAllocator());
+
         objectClass = RubyClass.createBootClass(context, "Object");
+        objectClass.setAllocator(basicObjectClass.getAllocator());
 
         moduleClass = new RubyClass(context, null, null, "Module", false);
         moduleClass.setAllocator(new RubyModule.ModuleAllocator());
@@ -196,125 +198,71 @@ public class CoreLibrary {
 
         basicObjectClass.setConstant(null, "BasicObject", basicObjectClass);
 
-        // Create all other classes and modules
+        // Create classes and modules
 
-        numericClass = new RubyClass(context, objectClass, objectClass, "Numeric");
-        integerClass = new RubyClass(context, objectClass, numericClass, "Integer");
+        createExceptionClasses();
 
-        exceptionClass = new RubyClass(context, objectClass, objectClass, "Exception");
-        exceptionClass.setAllocator(new RubyException.ExceptionAllocator());
+        numericClass = defineClass("Numeric");
+        complexClass = defineClass(numericClass, "Complex");
+        floatClass = defineClass(numericClass, "Float");
+        integerClass = defineClass(numericClass, "Integer");
+        fixnumClass = defineClass(integerClass, "Fixnum");
+        bignumClass = defineClass(integerClass, "Bignum", new RubyBignum.BignumAllocator());
+        rationalClass = defineClass(numericClass, "Rational");
 
-        standardErrorClass = new RubyClass(context, objectClass, exceptionClass, "StandardError");
-        standardErrorClass.setAllocator(new RubyException.ExceptionAllocator());
+        ioClass = defineClass("IO");
+        fileClass = defineClass(ioClass, "File");
 
-        rangeErrorClass = new RubyClass(context, objectClass, standardErrorClass, "RangeError");
-        rangeErrorClass.setAllocator(new RubyException.ExceptionAllocator());
+        // Classes defined in Object
 
-        RubyClass signalExceptionClass = new RubyClass(context, objectClass, exceptionClass, "SignalException");
-        signalExceptionClass.setAllocator(new RubyException.ExceptionAllocator());
+        arrayClass = defineClass("Array", new RubyArray.ArrayAllocator());
+        bindingClass = defineClass("Binding");
+        dirClass = defineClass("Dir");
+        encodingClass = defineClass("Encoding", new RubyEncoding.EncodingAllocator());
+        falseClass = defineClass("FalseClass");
+        fiberClass = defineClass("Fiber", new RubyFiber.FiberAllocator());
+        hashClass = defineClass("Hash", new RubyHash.HashAllocator());
+        matchDataClass = defineClass("MatchData");
+        methodClass = defineClass("Method");
+        defineClass("Mutex", new RubyMutex.MutexAllocator());
+        nilClass = defineClass("NilClass");
+        procClass = defineClass("Proc", new RubyProc.ProcAllocator());
+        processClass = defineClass("Process");
+        rangeClass = defineClass("Range", new RubyRange.RangeAllocator());
+        regexpClass = defineClass("Regexp", new RubyRegexp.RegexpAllocator());
+        stringClass = defineClass("String", new RubyString.StringAllocator());
+        symbolClass = defineClass("Symbol");
+        threadClass = defineClass("Thread", new RubyThread.ThreadAllocator());
+        timeClass = defineClass("Time", new RubyTime.TimeAllocator());
+        trueClass = defineClass("TrueClass");
+        unboundMethodClass = defineClass("UnboundMethod");
 
-        RubyClass interruptClass = new RubyClass(context, objectClass, signalExceptionClass, "Interrupt");
-        interruptClass.setAllocator(new RubyException.ExceptionAllocator());
+        // Modules
 
-        ioClass = new RubyClass(context, objectClass, objectClass, "IO");
+        RubyModule comparableModule = new RubyModule(context, objectClass, "Comparable");
+        configModule = new RubyModule(context, objectClass, "Config");
+        enumerableModule = new RubyModule(context, objectClass, "Enumerable");
+        gcModule = new RubyModule(context, objectClass, "GC");
+        kernelModule = new RubyModule(context, objectClass, "Kernel");
+        mathModule = new RubyModule(context, objectClass, "Math");
+        objectSpaceModule = new RubyModule(context, objectClass, "ObjectSpace");
+        signalModule = new RubyModule(context, objectClass, "Signal");
+
+        // The rest
+
+        encodingCompatibilityErrorClass = new RubyClass(context, encodingClass, standardErrorClass, "CompatibilityError");
+
+        encodingConverterClass = new RubyClass(context, encodingClass, objectClass, "Converter");
+        encodingConverterClass.setAllocator(new RubyEncodingConverter.EncodingConverterAllocator());
+
+        truffleModule = new RubyModule(context, objectClass, "Truffle");
+        truffleDebugModule = new RubyModule(context, truffleModule, "Debug");
+        new RubyModule(context, truffleModule, "Primitive");
 
         final RubyModule rubiniusModule = new RubyModule(context, objectClass, "Rubinius");
         rubiniusUndefined = new RubyBasicObject(objectClass);
         rubiniusModule.setConstant(null, "UNDEFINED", rubiniusUndefined);
-
-        argumentErrorClass = new RubyClass(context, objectClass, standardErrorClass, "ArgumentError");
-        argumentErrorClass.setAllocator(new RubyException.ExceptionAllocator());
-        arrayClass = new RubyClass(context, objectClass, objectClass, "Array");
-        arrayClass.setAllocator(new RubyArray.ArrayAllocator());
-        bignumClass = new RubyClass(context, objectClass, integerClass, "Bignum");
-        bignumClass.setAllocator(new RubyBignum.BignumAllocator());
-        bindingClass = new RubyClass(context, objectClass, objectClass, "Binding");
-        comparableModule = new RubyModule(context, objectClass, "Comparable");
-        complexClass = new RubyClass(context, objectClass, numericClass, "Complex");
-        configModule = new RubyModule(context, objectClass, "Config");
-        continuationClass = new RubyClass(context, objectClass, objectClass, "Continuation");
-        dirClass = new RubyClass(context, objectClass, objectClass, "Dir");
-        encodingClass = new RubyClass(context, objectClass, objectClass, "Encoding");
-        encodingClass.setAllocator(new RubyEncoding.EncodingAllocator());
-        errnoModule = new RubyModule(context, objectClass, "Errno");
-        enumerableModule = new RubyModule(context, objectClass, "Enumerable");
-        falseClass = new RubyClass(context, objectClass, objectClass, "FalseClass");
-        fiberClass = new RubyClass(context, objectClass, objectClass, "Fiber");
-        fiberClass.setAllocator(new RubyFiber.FiberAllocator());
-        fileClass = new RubyClass(context, objectClass, ioClass, "File");
-        fixnumClass = new RubyClass(context, objectClass, integerClass, "Fixnum");
-        floatClass = new RubyClass(context, objectClass, numericClass, "Float");
-        floatDomainErrorClass = new RubyClass(context, objectClass, rangeErrorClass, "FloatDomainError");
-        floatDomainErrorClass.setAllocator(new RubyException.ExceptionAllocator());
-        gcModule = new RubyModule(context, objectClass, "GC");
-        hashClass = new RubyClass(context, objectClass, objectClass, "Hash");
-        hashClass.setAllocator(new RubyHash.HashAllocator());
-        indexErrorClass = new RubyClass(context, objectClass, standardErrorClass, "IndexError");
-        indexErrorClass.setAllocator(new RubyException.ExceptionAllocator());
-        kernelModule = new RubyModule(context, objectClass, "Kernel");
-        keyErrorClass = new RubyClass(context, objectClass, indexErrorClass, "KeyError");
-        keyErrorClass.setAllocator(new RubyException.ExceptionAllocator());
-        loadErrorClass = new RubyClass(context, objectClass, standardErrorClass, "LoadError");
-        loadErrorClass.setAllocator(new RubyException.ExceptionAllocator());
-        localJumpErrorClass = new RubyClass(context, objectClass, standardErrorClass, "LocalJumpError");
-        localJumpErrorClass.setAllocator(new RubyException.ExceptionAllocator());
-        matchDataClass = new RubyClass(context, objectClass, objectClass, "MatchData");
-        mathModule = new RubyModule(context, objectClass, "Math");
-        RubyClass mutexClass = new RubyClass(context, objectClass, objectClass, "Mutex");
-        mutexClass.setAllocator(new RubyMutex.MutexAllocator());
-        nameErrorClass = new RubyClass(context, objectClass, standardErrorClass, "NameError");
-        nameErrorClass.setAllocator(new RubyException.ExceptionAllocator());
-        nilClass = new RubyClass(context, objectClass, objectClass, "NilClass");
-        noMethodErrorClass = new RubyClass(context, objectClass, nameErrorClass, "NoMethodError");
-        noMethodErrorClass.setAllocator(new RubyException.ExceptionAllocator());
-        objectSpaceModule = new RubyModule(context, objectClass, "ObjectSpace");
-        procClass = new RubyClass(context, objectClass, objectClass, "Proc");
-        procClass.setAllocator(new RubyProc.ProcAllocator());
-        processClass = new RubyClass(context, objectClass, objectClass, "Process");
-        rangeClass = new RubyClass(context, objectClass, objectClass, "Range");
-        rangeClass.setAllocator(new RubyRange.RangeAllocator());
-        rationalClass = new RubyClass(context, objectClass, numericClass, "Rational");
-        regexpClass = new RubyClass(context, objectClass, objectClass, "Regexp");
-        regexpClass.setAllocator(new RubyRegexp.RegexpAllocator());
-        regexpErrorClass = new RubyClass(context, objectClass, standardErrorClass, "RegexpError");
-        regexpErrorClass.setAllocator(new RubyException.ExceptionAllocator());
-        rubyTruffleErrorClass = new RubyClass(context, objectClass, standardErrorClass, "RubyTruffleError");
-        rubyTruffleErrorClass.setAllocator(new RubyException.ExceptionAllocator());
-        runtimeErrorClass = new RubyClass(context, objectClass, standardErrorClass, "RuntimeError");
-        runtimeErrorClass.setAllocator(new RubyException.ExceptionAllocator());
-        signalModule = new RubyModule(context, objectClass, "Signal");
-        stringClass = new RubyClass(context, objectClass, objectClass, "String");
-        stringClass.setAllocator(new RubyString.StringAllocator());
-        symbolClass = new RubyClass(context, objectClass, objectClass, "Symbol");
-        syntaxErrorClass = new RubyClass(context, objectClass, standardErrorClass, "SyntaxError");
-        syntaxErrorClass.setAllocator(new RubyException.ExceptionAllocator());
-        systemCallErrorClass = new RubyClass(context, objectClass, standardErrorClass, "SystemCallError");
-        systemCallErrorClass.setAllocator(new RubyException.ExceptionAllocator());
-        systemExitClass = new RubyClass(context, objectClass, exceptionClass, "SystemExit");
-        systemExitClass.setAllocator(new RubyException.ExceptionAllocator());
-        threadClass = new RubyClass(context, objectClass, objectClass, "Thread");
-        threadClass.setAllocator(new RubyThread.ThreadAllocator());
-        timeClass = new RubyClass(context, objectClass, objectClass, "Time");
-        timeClass.setAllocator(new RubyTime.TimeAllocator());
-        trueClass = new RubyClass(context, objectClass, objectClass, "TrueClass");
-        truffleModule = new RubyModule(context, objectClass, "Truffle");
-        truffleDebugModule = new RubyModule(context, truffleModule, "Debug");
-        new RubyModule(context, truffleModule, "Primitive");
-        typeErrorClass = new RubyClass(context, objectClass, standardErrorClass, "TypeError");
-        typeErrorClass.setAllocator(new RubyException.ExceptionAllocator());
-        zeroDivisionErrorClass = new RubyClass(context, objectClass, standardErrorClass, "ZeroDivisionError");
-        zeroDivisionErrorClass.setAllocator(new RubyException.ExceptionAllocator());
-        encodingConverterClass = new RubyClass(context, encodingClass, objectClass, "Converter");
-        encodingConverterClass.setAllocator(new RubyEncodingConverter.EncodingConverterAllocator());
-        methodClass = new RubyClass(context, objectClass, objectClass, "Method");
-        unboundMethodClass = new RubyClass(context, objectClass, objectClass, "UnboundMethod");
-        encodingCompatibilityErrorClass = new RubyClass(context, encodingClass, standardErrorClass, "CompatibilityError");
-        encodingCompatibilityErrorClass.setAllocator(new RubyException.ExceptionAllocator());
         byteArrayClass = new RubyClass(context, rubiniusModule, objectClass, "ByteArray");
-        fiberErrorClass = new RubyClass(context, objectClass, exceptionClass, "FiberError");
-        fiberErrorClass.setAllocator(new RubyException.ExceptionAllocator());
-        threadErrorClass = new RubyClass(context, objectClass, exceptionClass, "ThreadError");
-        threadErrorClass.setAllocator(new RubyException.ExceptionAllocator());
 
         // Includes
 
@@ -337,23 +285,6 @@ public class CoreLibrary {
         objectClass.setConstant(null, "RUBY_ENGINE", RubyString.fromJavaString(stringClass, Constants.ENGINE + "+truffle"));
         objectClass.setConstant(null, "RUBY_PLATFORM", RubyString.fromJavaString(stringClass, Constants.PLATFORM));
 
-        edomClass = new RubyClass(context, errnoModule, systemCallErrorClass, "EDOM");
-        edomClass.setAllocator(new RubyException.ExceptionAllocator());
-
-        RubyClass tempClass;
-
-        tempClass = new RubyClass(context, errnoModule, systemCallErrorClass, "ENOENT");
-        tempClass.setAllocator(new RubyException.ExceptionAllocator());
-        tempClass = new RubyClass(context, errnoModule, systemCallErrorClass, "EPERM");
-        tempClass.setAllocator(new RubyException.ExceptionAllocator());
-        tempClass = new RubyClass(context, errnoModule, systemCallErrorClass, "ENOTEMPTY");
-        tempClass.setAllocator(new RubyException.ExceptionAllocator());
-        tempClass = new RubyClass(context, errnoModule, systemCallErrorClass, "EEXIST");
-        tempClass.setAllocator(new RubyException.ExceptionAllocator());
-        tempClass = new RubyClass(context, errnoModule, systemCallErrorClass, "EXDEV");
-        tempClass.setAllocator(new RubyException.ExceptionAllocator());
-        tempClass = new RubyClass(context, errnoModule, systemCallErrorClass, "EACCES");
-        tempClass.setAllocator(new RubyException.ExceptionAllocator());
 
         // TODO(cs): this should be a separate exception
         mathModule.setConstant(null, "DomainError", edomClass);
@@ -407,6 +338,81 @@ public class CoreLibrary {
         // Common symbols
 
         eachSymbol = getContext().getSymbolTable().getSymbol("each");
+    }
+
+    private RubyClass defineClass(String name) {
+        return defineClass(objectClass, name, objectClass.getAllocator());
+    }
+
+    private RubyClass defineClass(String name, Allocator allocator) {
+        return defineClass(objectClass, name, allocator);
+    }
+
+    private RubyClass defineClass(RubyClass superclass, String name) {
+        return new RubyClass(context, objectClass, superclass, name);
+    }
+
+    private RubyClass defineClass(RubyClass superclass, String name, Allocator allocator) {
+        RubyClass rubyClass = new RubyClass(context, objectClass, superclass, name);
+        rubyClass.setAllocator(allocator);
+        return rubyClass;
+    }
+
+    private void createExceptionClasses() {
+        // Exception
+        exceptionClass = defineClass("Exception");
+        exceptionClass.setAllocator(new RubyException.ExceptionAllocator());
+
+        // FiberError
+        fiberErrorClass = defineClass(exceptionClass, "FiberError");
+
+        // StandardError
+        standardErrorClass = defineClass(exceptionClass, "StandardError");
+        argumentErrorClass = defineClass(standardErrorClass, "ArgumentError");
+        loadErrorClass = defineClass(standardErrorClass, "LoadError");
+        localJumpErrorClass = defineClass(standardErrorClass, "LocalJumpError");
+        regexpErrorClass = defineClass(standardErrorClass, "RegexpError");
+        rubyTruffleErrorClass = defineClass(standardErrorClass, "RubyTruffleError");
+        runtimeErrorClass = defineClass(standardErrorClass, "RuntimeError");
+        typeErrorClass = defineClass(standardErrorClass, "TypeError");
+        zeroDivisionErrorClass = defineClass(standardErrorClass, "ZeroDivisionError");
+
+        // StandardError > RangeError
+        rangeErrorClass = defineClass(standardErrorClass, "RangeError");
+        floatDomainErrorClass = defineClass(rangeErrorClass, "FloatDomainError");
+
+        // StandardError > IndexError
+        indexErrorClass = defineClass(standardErrorClass, "IndexError");
+        keyErrorClass = defineClass(indexErrorClass, "KeyError");
+
+        // StandardError > NameError
+        nameErrorClass = defineClass(standardErrorClass, "NameError");
+        noMethodErrorClass = defineClass(nameErrorClass, "NoMethodError");
+
+        // StandardError > SystemCallError
+        systemCallErrorClass = defineClass(standardErrorClass, "SystemCallError");
+        errnoModule = new RubyModule(context, objectClass, "Errno");
+        new RubyClass(context, errnoModule, systemCallErrorClass, "EACCES");
+        edomClass = new RubyClass(context, errnoModule, systemCallErrorClass, "EDOM");
+        new RubyClass(context, errnoModule, systemCallErrorClass, "EEXIST");
+        new RubyClass(context, errnoModule, systemCallErrorClass, "ENOENT");
+        new RubyClass(context, errnoModule, systemCallErrorClass, "ENOTEMPTY");
+        new RubyClass(context, errnoModule, systemCallErrorClass, "EPERM");
+        new RubyClass(context, errnoModule, systemCallErrorClass, "EXDEV");
+
+        // ScriptError
+        RubyClass scriptErrorClass = defineClass(exceptionClass, "ScriptError");
+        syntaxErrorClass = defineClass(scriptErrorClass, "SyntaxError");
+
+        // SignalException
+        RubyClass signalExceptionClass = defineClass(exceptionClass, "SignalException");
+        defineClass(signalExceptionClass, "Interrupt");
+
+        // SystemExit
+        systemExitClass = defineClass(exceptionClass, "SystemExit");
+
+        // ThreadError
+        threadErrorClass = defineClass(exceptionClass, "ThreadError");
     }
 
     public void initializeAfterMethodsAdded() {
@@ -829,10 +835,6 @@ public class CoreLibrary {
 
     public RubyClass getClassClass() {
         return classClass;
-    }
-
-    public RubyClass getContinuationClass() {
-        return continuationClass;
     }
 
     public RubyClass getExceptionClass() { return exceptionClass; }

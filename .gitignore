@@ -71,6 +71,7 @@ tool/nailgun/Makefile
 tool/nailgun/config.log
 tool/nailgun/config.status
 tool/nailgun/ng
+reference.txt
 
 # binaries
 !bin/gem

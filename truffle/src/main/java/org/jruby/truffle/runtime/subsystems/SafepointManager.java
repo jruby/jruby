@@ -20,10 +20,9 @@ import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyThread;
 import org.jruby.truffle.runtime.util.Consumer;
 
-import java.util.Collections;
+import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.BrokenBarrierException;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CyclicBarrier;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -31,7 +30,7 @@ public class SafepointManager {
 
     private final RubyContext context;
 
-    private final Set<Thread> runningThreads = Collections.newSetFromMap(new ConcurrentHashMap<Thread, Boolean>());
+    private final Set<Thread> runningThreads = new HashSet<Thread>();
 
     @CompilerDirectives.CompilationFinal private Assumption assumption = Truffle.getRuntime().createAssumption();
     private final ReentrantLock lock = new ReentrantLock();
@@ -104,7 +103,7 @@ public class SafepointManager {
 
             try {
                 if (holdsGlobalLock && thread.getStatus() != Status.ABORTING) {
-                    runAction(thread);
+                    action.accept(thread);
                 }
             } finally {
                 // wait other threads to finish their action
@@ -117,24 +116,20 @@ public class SafepointManager {
         }
     }
 
-    private void runAction(RubyThread thread) {
-        context.getThreadManager().enterGlobalLock(thread);
-        try {
-            action.accept(thread);
-        } finally {
-            context.getThreadManager().leaveGlobalLock();
-        }
-    }
-
     public void pauseAllThreadsAndExecute(Consumer<RubyThread> action) {
-        pauseAllThreadsAndExecute(true, true, action);
+        pauseAllThreadsAndExecute(true, action);
     }
 
     public void pauseAllThreadsAndExecuteFromNonRubyThread(Consumer<RubyThread> action) {
-        pauseAllThreadsAndExecute(false, false, action);
+        enterThread();
+        try {
+            pauseAllThreadsAndExecute(false, action);
+        } finally {
+            leaveThread();
+        }
     }
 
-    private void pauseAllThreadsAndExecute(boolean isRubyThread, boolean holdsGlobalLock, Consumer<RubyThread> action) {
+    private void pauseAllThreadsAndExecute(boolean holdsGlobalLock, Consumer<RubyThread> action) {
         CompilerDirectives.transferToInterpreter();
 
         assert !lock.isHeldByCurrentThread() : "reentering pauseAllThreadsAndExecute";
@@ -142,7 +137,7 @@ public class SafepointManager {
         try {
             this.action = action;
 
-            barrier = new CyclicBarrier(isRubyThread ? runningThreads.size() : runningThreads.size() + 1);
+            barrier = new CyclicBarrier(runningThreads.size());
 
             /* this is a potential cause for race conditions,
              * but we need to invalidate first so the interrupted threads
@@ -151,7 +146,7 @@ public class SafepointManager {
             assumption.invalidate();
             interruptAllThreads();
 
-            assumptionInvalidated(isRubyThread && holdsGlobalLock);
+            assumptionInvalidated(holdsGlobalLock);
         } finally {
             lock.unlock();
         }
@@ -180,14 +175,6 @@ public class SafepointManager {
         for (Thread thread : runningThreads) {
             thread.interrupt();
         }
-    }
-
-    public synchronized void registerThread(Thread thread) {
-        runningThreads.add(thread);
-    }
-
-    public synchronized void unregisterThread(Thread thread) {
-        runningThreads.remove(thread);
     }
 
 }

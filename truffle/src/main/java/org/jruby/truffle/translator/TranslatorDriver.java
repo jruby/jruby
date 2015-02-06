@@ -66,7 +66,7 @@ public class TranslatorDriver {
         return translator.compileFunctionNode(null, "(unknown)", argsNode, bodyNode, sharedMethod);
     }
 
-    public RubyRootNode parse(RubyContext context, Source source, Encoding defaultEncoding, ParserContext parserContext, MaterializedFrame parentFrame, RubyNode currentNode, NodeWrapper wrapper) {
+    public RubyRootNode parse(RubyContext context, Source source, Encoding defaultEncoding, ParserContext parserContext, MaterializedFrame parentFrame, boolean ownScopeForAssignments, RubyNode currentNode, NodeWrapper wrapper) {
         // Set up the JRuby parser
 
         final org.jruby.parser.Parser parser = new org.jruby.parser.Parser(context.getRuntime());
@@ -113,14 +113,14 @@ public class TranslatorDriver {
             throw new RaiseException(new RubyException(context.getCoreLibrary().getSyntaxErrorClass(), context.makeString(message), RubyCallStack.getBacktrace(currentNode)));
         }
 
-        return parse(currentNode, context, source, parserContext, parentFrame, node, wrapper);
+        return parse(currentNode, context, source, parserContext, parentFrame, ownScopeForAssignments, node, wrapper);
     }
 
-    public RubyRootNode parse(RubyNode currentNode, RubyContext context, Source source, ParserContext parserContext, MaterializedFrame parentFrame, org.jruby.ast.RootNode rootNode, NodeWrapper wrapper) {
+    public RubyRootNode parse(RubyNode currentNode, RubyContext context, Source source, ParserContext parserContext, MaterializedFrame parentFrame, boolean ownScopeForAssignments, org.jruby.ast.RootNode rootNode, NodeWrapper wrapper) {
         final SourceSection sourceSection = source.createSection("<main>", 0, source.getCode().length());
         final SharedMethodInfo sharedMethodInfo = new SharedMethodInfo(sourceSection, context.getRootLexicalScope(), "<main>", false, rootNode, false);
 
-        final TranslatorEnvironment environment = new TranslatorEnvironment(context, environmentForFrame(context, parentFrame), this, allocateReturnID(), true, false, sharedMethodInfo, sharedMethodInfo.getName(), false);
+        final TranslatorEnvironment environment = new TranslatorEnvironment(context, environmentForFrame(context, parentFrame), this, allocateReturnID(), ownScopeForAssignments, false, sharedMethodInfo, sharedMethodInfo.getName(), false);
 
         // Get the DATA constant
 

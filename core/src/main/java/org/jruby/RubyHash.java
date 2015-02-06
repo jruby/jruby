@@ -1892,25 +1892,29 @@ public class RubyHash extends RubyObject implements Map {
 
     private IRubyObject any_p_i(ThreadContext context, Block block) {
         iteratorEntry();
-        for (RubyHashEntry entry = head.nextAdded; entry != head; entry = entry.nextAdded) {
-            IRubyObject newAssoc = RubyArray.newArray(context.runtime, entry.key, entry.value);
-            if (block.yield(context, newAssoc).isTrue())
-                return context.getRuntime().getTrue();
+        try {
+            for (RubyHashEntry entry = head.nextAdded; entry != head; entry = entry.nextAdded) {
+                IRubyObject newAssoc = RubyArray.newArray(context.runtime, entry.key, entry.value);
+                if (block.yield(context, newAssoc).isTrue())
+                    return context.getRuntime().getTrue();
+            }
+            return context.getRuntime().getFalse();
+        } finally {
+            iteratorExit();
         }
-        iteratorExit();
-
-        return context.getRuntime().getFalse();
     }
 
     private IRubyObject any_p_i_fast(ThreadContext context, Block block) {
         iteratorEntry();
-        for (RubyHashEntry entry = head.nextAdded; entry != head; entry = entry.nextAdded) {
-            if (block.yieldSpecific(context, entry.key, entry.value).isTrue())
-                return context.getRuntime().getTrue();
+        try {
+            for (RubyHashEntry entry = head.nextAdded; entry != head; entry = entry.nextAdded) {
+                if (block.yieldSpecific(context, entry.key, entry.value).isTrue())
+                    return context.getRuntime().getTrue();
+            }
+            return context.getRuntime().getFalse();
+        } finally {
+            iteratorExit();
         }
-        iteratorExit();
-
-        return context.getRuntime().getFalse();
     }
 
     /**
