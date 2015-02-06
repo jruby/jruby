@@ -52,11 +52,6 @@ public class FeatureManager {
                     return true;
                 }
 
-                if (feature.equals("enumerator")) {
-                    context.getWarnings().warn("enumerator not yet implemented");
-                    return true;
-                }
-
                 if (feature.equals("rbconfig")) {
                     // Kernel#rbconfig is always there
                     return true;
