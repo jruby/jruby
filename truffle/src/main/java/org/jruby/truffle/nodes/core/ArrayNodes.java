@@ -1910,59 +1910,6 @@ public abstract class ArrayNodes {
         }
     }
 
-    @CoreMethod(names = "first")
-    public abstract static class FirstNode extends ArrayCoreMethodNode {
-
-        public FirstNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
-        public FirstNode(FirstNode prev) {
-            super(prev);
-        }
-
-        @Specialization(guards = "isNull")
-        public RubyNilClass firstNull(RubyArray array) {
-            notDesignedForCompilation();
-
-            return getContext().getCoreLibrary().getNilObject();
-        }
-
-        @Specialization(guards = "isIntegerFixnum")
-        public Object firstIntegerFixnum(RubyArray array) {
-            notDesignedForCompilation();
-
-            if (array.getSize() == 0) {
-                return getContext().getCoreLibrary().getNilObject();
-            } else {
-                return ((int[]) array.getStore())[0];
-            }
-        }
-
-        @Specialization(guards = "isFloat")
-        public Object firstFloat(RubyArray array) {
-            notDesignedForCompilation();
-
-            if (array.getSize() == 0) {
-                return getContext().getCoreLibrary().getNilObject();
-            } else {
-                return ((double[]) array.getStore())[0];
-            }
-        }
-
-        @Specialization(guards = "isObject")
-        public Object firstObject(RubyArray array) {
-            notDesignedForCompilation();
-
-            if (array.getSize() == 0) {
-                return getContext().getCoreLibrary().getNilObject();
-            } else {
-                return ((Object[]) array.getStore())[0];
-            }
-        }
-
-    }
-
     @CoreMethod(names = "flatten")
     public abstract static class FlattenNode extends ArrayCoreMethodNode {
 

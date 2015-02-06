@@ -74,4 +74,13 @@ class Array
     out
   end
 
+  def first(n = undefined)
+    return at(0) if undefined.equal?(n)
+
+    n = Rubinius::Type.coerce_to_collection_index n
+    raise ArgumentError, "Size must be positive" if n < 0
+
+    Array.new self[0, n]
+  end
+
 end
