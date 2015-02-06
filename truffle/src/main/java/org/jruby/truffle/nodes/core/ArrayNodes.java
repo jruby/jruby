@@ -1385,24 +1385,6 @@ public abstract class ArrayNodes {
 
     }
 
-    @CoreMethod(names = "empty?")
-    public abstract static class EmptyNode extends ArrayCoreMethodNode {
-
-        public EmptyNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
-        public EmptyNode(EmptyNode prev) {
-            super(prev);
-        }
-
-        @Specialization
-        public boolean isEmpty(RubyArray array) {
-            return array.getSize() == 0;
-        }
-
-    }
-
     @CoreMethod(names = "find", needsBlock = true)
     @ImportGuards(ArrayGuards.class)
     public abstract static class FindNode extends YieldingCoreMethodNode {

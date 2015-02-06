@@ -305,4 +305,8 @@ class Array
     true
   end
 
+  def empty?
+    @total == 0
+  end
+
 end
