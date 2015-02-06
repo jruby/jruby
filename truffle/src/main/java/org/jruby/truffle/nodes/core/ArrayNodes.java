@@ -26,13 +26,14 @@ import org.jruby.runtime.Visibility;
 import org.jruby.truffle.nodes.CoreSourceSection;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.RubyRootNode;
+import org.jruby.truffle.nodes.array.ArrayReadDenormalizedNode;
+import org.jruby.truffle.nodes.array.ArrayReadDenormalizedNodeFactory;
 import org.jruby.truffle.nodes.dispatch.*;
 import org.jruby.truffle.nodes.methods.arguments.MissingArgumentBehaviour;
 import org.jruby.truffle.nodes.methods.arguments.ReadPreArgumentNode;
 import org.jruby.truffle.nodes.methods.locals.ReadLevelVariableNodeFactory;
 import org.jruby.truffle.nodes.yield.YieldDispatchHeadNode;
 import org.jruby.truffle.runtime.*;
-import org.jruby.truffle.nodes.core.ArrayNodesFactory.AtNodeFactory;
 import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.UndefinedPlaceholder;
@@ -596,96 +597,25 @@ public abstract class ArrayNodes {
     @CoreMethod(names = "at", required = 1, lowerFixnumParameters = 0)
     public abstract static class AtNode extends ArrayCoreMethodNode {
 
+        @Child private ArrayReadDenormalizedNode readNode;
+
         public AtNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
         }
 
         public AtNode(AtNode prev) {
             super(prev);
+            readNode = prev.readNode;
         }
 
-        public abstract Object executeAt(RubyArray array, int index);
-
-        @Specialization(guards = "isNull")
-        public RubyNilClass getNull(RubyArray array, int index) {
-            return getContext().getCoreLibrary().getNilObject();
-        }
-
-        @Specialization(guards = "isIntegerFixnum", rewriteOn = UnexpectedResultException.class)
-        public int getIntegerFixnumInBounds(RubyArray array, int index) throws UnexpectedResultException {
-            int normalisedIndex = array.normaliseIndex(index);
-
-            if (normalisedIndex < 0 || normalisedIndex >= array.getSize()) {
-                throw new UnexpectedResultException(getContext().getCoreLibrary().getNilObject());
-            } else {
-                return ((int[]) array.getStore())[normalisedIndex];
+        @Specialization
+        public Object at(VirtualFrame frame, RubyArray array, int index) {
+            if (readNode == null) {
+                CompilerDirectives.transferToInterpreter();
+                readNode = insert(ArrayReadDenormalizedNodeFactory.create(getContext(), getSourceSection(), null, null));
             }
-        }
 
-        @Specialization(contains = "getIntegerFixnumInBounds", guards = "isIntegerFixnum")
-        public Object getIntegerFixnum(RubyArray array, int index) {
-            int normalisedIndex = array.normaliseIndex(index);
-
-            if (normalisedIndex < 0 || normalisedIndex >= array.getSize()) {
-                return getContext().getCoreLibrary().getNilObject();
-            } else {
-                return ((int[]) array.getStore())[normalisedIndex];
-            }
-        }
-
-        @Specialization(guards = "isLongFixnum", rewriteOn = UnexpectedResultException.class)
-        public long getLongFixnumInBounds(RubyArray array, int index) throws UnexpectedResultException {
-            int normalisedIndex = array.normaliseIndex(index);
-
-            if (normalisedIndex < 0 || normalisedIndex >= array.getSize()) {
-                throw new UnexpectedResultException(getContext().getCoreLibrary().getNilObject());
-            } else {
-                return ((long[]) array.getStore())[normalisedIndex];
-            }
-        }
-
-        @Specialization(contains = "getLongFixnumInBounds", guards = "isLongFixnum")
-        public Object getLongFixnum(RubyArray array, int index) {
-            int normalisedIndex = array.normaliseIndex(index);
-
-            if (normalisedIndex < 0 || normalisedIndex >= array.getSize()) {
-                return getContext().getCoreLibrary().getNilObject();
-            } else {
-                return ((long[]) array.getStore())[normalisedIndex];
-            }
-        }
-
-        @Specialization(guards = "isFloat", rewriteOn = UnexpectedResultException.class)
-        public double getFloatInBounds(RubyArray array, int index) throws UnexpectedResultException {
-            int normalisedIndex = array.normaliseIndex(index);
-
-            if (normalisedIndex < 0 || normalisedIndex >= array.getSize()) {
-                throw new UnexpectedResultException(getContext().getCoreLibrary().getNilObject());
-            } else {
-                return ((double[]) array.getStore())[normalisedIndex];
-            }
-        }
-
-        @Specialization(contains = "getFloatInBounds", guards = "isFloat")
-        public Object getFloat(RubyArray array, int index) {
-            int normalisedIndex = array.normaliseIndex(index);
-
-            if (normalisedIndex < 0 || normalisedIndex >= array.getSize()) {
-                return getContext().getCoreLibrary().getNilObject();
-            } else {
-                return ((double[]) array.getStore())[normalisedIndex];
-            }
-        }
-
-        @Specialization(guards = "isObject")
-        public Object getObject(RubyArray array, int index) {
-            int normalisedIndex = array.normaliseIndex(index);
-
-            if (normalisedIndex < 0 || normalisedIndex >= array.getSize()) {
-                return getContext().getCoreLibrary().getNilObject();
-            } else {
-                return ((Object[]) array.getStore())[normalisedIndex];
-            }
+            return readNode.executeRead(frame, array, index);
         }
 
     }
@@ -693,27 +623,31 @@ public abstract class ArrayNodes {
     @CoreMethod(names = { "[]", "slice" }, required = 1, optional = 1, lowerFixnumParameters = { 0, 1 })
     public abstract static class IndexNode extends ArrayCoreMethodNode {
 
-        @Child protected AtNode atNode;
+        @Child protected ArrayReadDenormalizedNode readNode;
         @Child protected CallDispatchHeadNode fallbackNode;
 
         private final BranchProfile outOfBounds = BranchProfile.create();
 
         public IndexNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            atNode = AtNodeFactory.create(context, sourceSection, new RubyNode[] { null, null });
         }
 
         public IndexNode(IndexNode prev) {
             super(prev);
-            atNode = prev.atNode;
+            readNode = prev.readNode;
             fallbackNode = prev.fallbackNode;
         }
 
         // Simple indexing
 
         @Specialization
-        public Object index(RubyArray array, int index, UndefinedPlaceholder undefined) {
-            return atNode.executeAt(array, index);
+        public Object index(VirtualFrame frame, RubyArray array, int index, UndefinedPlaceholder undefined) {
+            if (readNode == null) {
+                CompilerDirectives.transferToInterpreter();
+                readNode = insert(ArrayReadDenormalizedNodeFactory.create(getContext(), getSourceSection(), null, null));
+            }
+
+            return readNode.executeRead(frame, array, index);
         }
 
         // Slice with two fixnums
