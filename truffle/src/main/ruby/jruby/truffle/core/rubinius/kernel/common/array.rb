@@ -373,4 +373,12 @@ class Array
     nil
   end
 
+  def to_a
+    if self.instance_of? Array
+      self
+    else
+      Array.new(self)
+    end
+  end
+
 end

@@ -3245,24 +3245,6 @@ public abstract class ArrayNodes {
 
     }
 
-    @CoreMethod(names = "to_a")
-    public abstract static class ToANode extends CoreMethodNode {
-
-        public ToANode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
-        public ToANode(ToANode prev) {
-            super(prev);
-        }
-
-        @Specialization
-        public RubyArray toA(RubyArray array) {
-            return array;
-        }
-
-    }
-
     @CoreMethod(names = "uniq")
     public abstract static class UniqNode extends CoreMethodNode {
 
