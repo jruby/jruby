@@ -198,11 +198,6 @@ public class RubyContext extends ExecutionContext {
         return symbolTable.getSymbol(name);
     }
 
-    public Object eval(ByteList code, RubyNode currentNode) {
-        final Source source = Source.fromText(code, "(eval)");
-        return execute(this, source, code.getEncoding(), TranslatorDriver.ParserContext.TOP_LEVEL, coreLibrary.getMainObject(), null, currentNode, NodeWrapper.IDENTITY);
-    }
-
     public Object instanceEval(ByteList code, Object self, RubyNode currentNode) {
         final Source source = Source.fromText(code, "(eval)");
         return execute(this, source, code.getEncoding(), TranslatorDriver.ParserContext.TOP_LEVEL, self, null, currentNode, new NodeWrapper() {
