@@ -49,9 +49,9 @@ public class OptimizeDelegationPass extends CompilerPass {
     }
 
     private static void optimizeDelegatedVars(IRScope s) {
-        for (BasicBlock bb: s.cfg().getBasicBlocks()) {
-            Map<Operand, Operand> unusedExplicitBlocks = new HashMap<Operand, Operand>();
+        Map<Operand, Operand> unusedExplicitBlocks = new HashMap<Operand, Operand>();
 
+        for (BasicBlock bb: s.cfg().getBasicBlocks()) {
             for (Instr i: bb.getInstrs()) {
                 if (i instanceof ReifyClosureInstr) {
                     ReifyClosureInstr ri = (ReifyClosureInstr) i;
@@ -66,7 +66,9 @@ public class OptimizeDelegationPass extends CompilerPass {
                     }
                 }
             }
+        }
 
+        for (BasicBlock bb: s.cfg().getBasicBlocks()) {
             ListIterator<Instr> instrs = bb.getInstrs().listIterator();
             while (instrs.hasNext()) {
                 Instr i = instrs.next();
