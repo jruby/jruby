@@ -37,6 +37,10 @@ public abstract class HashLiteralNode extends RubyNode {
         freezeNode = DispatchHeadNodeFactory.createMethodCall(context);
     }
 
+    public RubyNode[] getKeyValues() {
+    	return keyValues;
+    }
+    
     public static HashLiteralNode create(RubyContext context, SourceSection sourceSection, RubyNode[] keyValues) {
         if (keyValues.length == 0) {
             return new EmptyHashLiteralNode(context, sourceSection);

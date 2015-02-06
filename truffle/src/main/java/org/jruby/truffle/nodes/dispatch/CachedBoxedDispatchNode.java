@@ -9,6 +9,8 @@
  */
 package org.jruby.truffle.nodes.dispatch;
 
+import java.util.List;
+
 import com.oracle.truffle.api.Assumption;
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.Truffle;
@@ -17,6 +19,15 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.DirectCallNode;
 import com.oracle.truffle.api.nodes.IndirectCallNode;
 import com.oracle.truffle.api.nodes.InvalidAssumptionException;
+import com.oracle.truffle.api.nodes.UnexpectedResultException;
+
+import org.jruby.truffle.nodes.RubyNode;
+import org.jruby.truffle.nodes.literal.FixnumLiteralNode;
+import org.jruby.truffle.nodes.literal.HashLiteralNode;
+import org.jruby.truffle.nodes.literal.ObjectLiteralNode;
+import org.jruby.truffle.nodes.literal.StringLiteralNode;
+import org.jruby.truffle.nodes.methods.MarkerNode;
+import org.jruby.truffle.nodes.methods.arguments.MissingKeywordArgumentNode;
 import org.jruby.truffle.runtime.DebugOperations;
 import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
@@ -31,11 +42,11 @@ public class CachedBoxedDispatchNode extends CachedDispatchNode {
     private final Assumption unmodifiedAssumption;
 
     private final Object value;
-
+    
     private final InternalMethod method;
     @Child private DirectCallNode callNode;
     @Child private IndirectCallNode indirectCallNode;
-
+    
     public CachedBoxedDispatchNode(
             RubyContext context,
             Object cachedName,
@@ -44,7 +55,9 @@ public class CachedBoxedDispatchNode extends CachedDispatchNode {
             Object value,
             InternalMethod method,
             boolean indirect,
-            DispatchAction dispatchAction) {
+            DispatchAction dispatchAction,
+            RubyNode[] argumentNodes,
+            boolean isSplatted) {
         this(
                 context,
                 cachedName,
@@ -54,9 +67,48 @@ public class CachedBoxedDispatchNode extends CachedDispatchNode {
                 value,
                 method,
                 indirect,
-                dispatchAction);
+                dispatchAction,
+                argumentNodes,
+                isSplatted);
     }
-
+    
+    public static RubyNode[] expandedArgumentNodes(RubyContext context, InternalMethod method, RubyNode[] argumentNodes) {
+    	final RubyNode[] result;
+    	
+        if (method != null && method.getSharedMethodInfo().getKeywordArguments() != null && 
+        		argumentNodes[argumentNodes.length - 1] instanceof HashLiteralNode) {
+        	List<String> kwargs = method.getSharedMethodInfo().getKeywordArguments();
+        	
+        	result = new RubyNode[argumentNodes.length + kwargs.size() + 1];
+        	int i;
+        	
+        	for (i = 0; i < argumentNodes.length - 1; ++i) {
+        		result[i] = argumentNodes[i];
+        	}
+        	
+        	result[i++] = new MarkerNode(context, null);
+        	HashLiteralNode hashNode = (HashLiteralNode) argumentNodes[argumentNodes.length - 1];
+        	
+        	for (String kwarg : kwargs) {
+        		result[i] = new MissingKeywordArgumentNode(context, null, kwarg);
+        		for (int j = 0; j < hashNode.getKeyValues().length; j += 2) {
+        			String label;
+					label = ((ObjectLiteralNode) hashNode.getKeyValues()[j]).execute(null).toString();
+        			
+        			if (label.equals(kwarg)) {
+        				result[i++] = hashNode.getKeyValues()[j + 1];
+        			}
+        		}
+        	}
+        	
+        	result[i++] = new MarkerNode(context, null);
+        }
+        else {
+        	result = argumentNodes;
+        }
+        
+        return result;
+    }
     /**
      * Allows to give the assumption, which is different than the expectedClass assumption for constant lookup.
      */
@@ -69,15 +121,17 @@ public class CachedBoxedDispatchNode extends CachedDispatchNode {
             Object value,
             InternalMethod method,
             boolean indirect,
-            DispatchAction dispatchAction) {
-        super(context, cachedName, next, indirect, dispatchAction);
+            DispatchAction dispatchAction,
+            RubyNode[] argumentNodes,
+            boolean isSplatted) {
+        super(context, cachedName, next, indirect, dispatchAction, expandedArgumentNodes(context, method, argumentNodes), isSplatted);
 
         this.expectedClass = expectedClass;
         this.unmodifiedAssumption = unmodifiedAssumption;
         this.next = next;
         this.value = value;
         this.method = method;
-
+        
         if (method != null) {
             if (indirect) {
                 indirectCallNode = Truffle.getRuntime().createIndirectCallNode();
@@ -121,7 +175,7 @@ public class CachedBoxedDispatchNode extends CachedDispatchNode {
                     argumentsObjects,
                     "class modified");
         }
-
+        
         switch (getDispatchAction()) {
             case CALL_METHOD: {
                 if (isIndirect()) {
@@ -133,8 +187,9 @@ public class CachedBoxedDispatchNode extends CachedDispatchNode {
                                     method.getDeclarationFrame(),
                                     receiverObject,
                                     CompilerDirectives.unsafeCast(blockObject, RubyProc.class, true, false),
-                                    CompilerDirectives.unsafeCast(argumentsObjects, Object[].class, true)));
+                                    CompilerDirectives.unsafeCast(executeArguments(frame, argumentsObjects), Object[].class, true)));
                 } else {
+                	Object args = executeArguments(frame, argumentsObjects);
                     return callNode.call(
                             frame,
                             RubyArguments.pack(
@@ -142,7 +197,7 @@ public class CachedBoxedDispatchNode extends CachedDispatchNode {
                                     method.getDeclarationFrame(),
                                     receiverObject,
                                     CompilerDirectives.unsafeCast(blockObject, RubyProc.class, true, false),
-                                    CompilerDirectives.unsafeCast(argumentsObjects, Object[].class, true)));
+                                    CompilerDirectives.unsafeCast(args, Object[].class, true)));
                 }
             }
 

@@ -10,16 +10,19 @@
 package org.jruby.truffle.nodes.dispatch;
 
 import com.oracle.truffle.api.utilities.BranchProfile;
+
+import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyString;
 import org.jruby.truffle.runtime.core.RubySymbol;
+import org.jruby.truffle.runtime.methods.InternalMethod;
 
 public abstract class CachedDispatchNode extends DispatchNode {
 
     private final Object cachedName;
     private final RubySymbol cachedNameAsSymbol;
     private final boolean indirect;
-
+    
     @Child protected DispatchNode next;
 
     private final BranchProfile moreThanReferenceCompare = BranchProfile.create();
@@ -29,8 +32,10 @@ public abstract class CachedDispatchNode extends DispatchNode {
             Object cachedName,
             DispatchNode next,
             boolean indirect,
-            DispatchAction dispatchAction) {
-        super(context, dispatchAction);
+            DispatchAction dispatchAction,
+            RubyNode[] argumentNodes,
+            boolean isSplatted) {
+        super(context, dispatchAction, argumentNodes, isSplatted);
 
         assert (cachedName instanceof String) || (cachedName instanceof RubySymbol) || (cachedName instanceof RubyString);
         this.cachedName = cachedName;
@@ -44,7 +49,7 @@ public abstract class CachedDispatchNode extends DispatchNode {
         } else {
             throw new UnsupportedOperationException();
         }
-
+        
         this.indirect = indirect;
 
         this.next = next;
@@ -85,4 +90,8 @@ public abstract class CachedDispatchNode extends DispatchNode {
         return indirect;
     }
 
+    protected RubyNode[] argumentsWithDecodedKwargsHash(RubyNode[] arguments, InternalMethod method) {
+    	return null;
+    }
+    
 }
