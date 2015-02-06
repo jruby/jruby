@@ -106,10 +106,6 @@ public class RubyModule extends RubyBasicObject implements ModuleChain {
      */
     private final Set<RubyModule> lexicalDependents = Collections.newSetFromMap(new WeakHashMap<RubyModule, Boolean>());
 
-    public RubyModule(RubyContext context, RubyModule lexicalParent, String name) {
-        this(context, lexicalParent, name, null);
-    }
-
     public RubyModule(RubyContext context, RubyModule lexicalParent, String name, RubyNode currentNode) {
         this(context, context.getCoreLibrary().getModuleClass(), lexicalParent, name, currentNode);
     }
@@ -129,7 +125,11 @@ public class RubyModule extends RubyBasicObject implements ModuleChain {
             lexicalParent.setConstant(currentNode, name, this);
             lexicalParent.addLexicalDependent(this);
 
-            if (lexicalParent != context.getCoreLibrary().getObjectClass()) {
+            // Tricky, we need to compare with the Object class, but we only have a Module at hand.
+            RubyClass classClass = lexicalParent.getLogicalClass();
+            RubyClass objectClass = classClass.getSuperClass().getSuperClass();
+
+            if (lexicalParent != objectClass) {
                 name = lexicalParent.getName() + "::" + name;
             }
         }
@@ -532,7 +532,7 @@ public class RubyModule extends RubyBasicObject implements ModuleChain {
 
         @Override
         public RubyBasicObject allocate(RubyContext context, RubyClass rubyClass, RubyNode currentNode) {
-            return new RubyModule(context, null, null);
+            return new RubyModule(context, null, null, currentNode);
         }
 
     }

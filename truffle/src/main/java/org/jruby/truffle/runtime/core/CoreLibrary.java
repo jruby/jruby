@@ -49,137 +49,105 @@ public class CoreLibrary {
 
     private final RubyContext context;
 
-    @CompilerDirectives.CompilationFinal private RubyClass argumentErrorClass;
-    @CompilerDirectives.CompilationFinal private RubyClass arrayClass;
-    @CompilerDirectives.CompilationFinal private RubyClass basicObjectClass;
-    @CompilerDirectives.CompilationFinal private RubyClass bignumClass;
-    @CompilerDirectives.CompilationFinal private RubyClass bindingClass;
-    @CompilerDirectives.CompilationFinal private RubyClass classClass;
-    @CompilerDirectives.CompilationFinal private RubyClass complexClass;
-    @CompilerDirectives.CompilationFinal private RubyClass dirClass;
-    @CompilerDirectives.CompilationFinal private RubyClass encodingClass;
-    @CompilerDirectives.CompilationFinal private RubyClass exceptionClass;
-    @CompilerDirectives.CompilationFinal private RubyClass falseClass;
-    @CompilerDirectives.CompilationFinal private RubyClass fiberClass;
-    @CompilerDirectives.CompilationFinal private RubyClass fileClass;
-    @CompilerDirectives.CompilationFinal private RubyClass fixnumClass;
-    @CompilerDirectives.CompilationFinal private RubyClass floatClass;
-    @CompilerDirectives.CompilationFinal private RubyClass floatDomainErrorClass;
-    @CompilerDirectives.CompilationFinal private RubyClass hashClass;
-    @CompilerDirectives.CompilationFinal private RubyClass integerClass;
-    @CompilerDirectives.CompilationFinal private RubyClass indexErrorClass;
-    @CompilerDirectives.CompilationFinal private RubyClass ioClass;
-    @CompilerDirectives.CompilationFinal private RubyClass keyErrorClass;
-    @CompilerDirectives.CompilationFinal private RubyClass loadErrorClass;
-    @CompilerDirectives.CompilationFinal private RubyClass localJumpErrorClass;
-    @CompilerDirectives.CompilationFinal private RubyClass matchDataClass;
-    @CompilerDirectives.CompilationFinal private RubyClass moduleClass;
-    @CompilerDirectives.CompilationFinal private RubyClass nameErrorClass;
-    @CompilerDirectives.CompilationFinal private RubyClass nilClass;
-    @CompilerDirectives.CompilationFinal private RubyClass noMethodErrorClass;
-    @CompilerDirectives.CompilationFinal private RubyClass numericClass;
-    @CompilerDirectives.CompilationFinal private RubyClass objectClass;
-    @CompilerDirectives.CompilationFinal private RubyClass procClass;
-    @CompilerDirectives.CompilationFinal private RubyClass processClass;
-    @CompilerDirectives.CompilationFinal private RubyClass rangeClass;
-    @CompilerDirectives.CompilationFinal private RubyClass rangeErrorClass;
-    @CompilerDirectives.CompilationFinal private RubyClass rationalClass;
-    @CompilerDirectives.CompilationFinal private RubyClass regexpClass;
-    @CompilerDirectives.CompilationFinal private RubyClass regexpErrorClass;
-    @CompilerDirectives.CompilationFinal private RubyClass rubyTruffleErrorClass;
-    @CompilerDirectives.CompilationFinal private RubyClass runtimeErrorClass;
-    @CompilerDirectives.CompilationFinal private RubyClass standardErrorClass;
-    @CompilerDirectives.CompilationFinal private RubyClass stringClass;
-    @CompilerDirectives.CompilationFinal private RubyClass symbolClass;
-    @CompilerDirectives.CompilationFinal private RubyClass syntaxErrorClass;
-    @CompilerDirectives.CompilationFinal private RubyClass systemCallErrorClass;
-    @CompilerDirectives.CompilationFinal private RubyClass systemExitClass;
-    @CompilerDirectives.CompilationFinal private RubyClass threadClass;
-    @CompilerDirectives.CompilationFinal private RubyClass timeClass;
-    @CompilerDirectives.CompilationFinal private RubyClass trueClass;
-    @CompilerDirectives.CompilationFinal private RubyClass typeErrorClass;
-    @CompilerDirectives.CompilationFinal private RubyClass zeroDivisionErrorClass;
-    @CompilerDirectives.CompilationFinal private RubyModule configModule;
-    @CompilerDirectives.CompilationFinal private RubyModule enumerableModule;
-    @CompilerDirectives.CompilationFinal private RubyModule errnoModule;
-    @CompilerDirectives.CompilationFinal private RubyModule gcModule;
-    @CompilerDirectives.CompilationFinal private RubyModule kernelModule;
-    @CompilerDirectives.CompilationFinal private RubyModule mathModule;
-    @CompilerDirectives.CompilationFinal private RubyModule objectSpaceModule;
-    @CompilerDirectives.CompilationFinal private RubyModule signalModule;
-    @CompilerDirectives.CompilationFinal private RubyModule truffleModule;
-    @CompilerDirectives.CompilationFinal private RubyModule truffleDebugModule;
-    @CompilerDirectives.CompilationFinal private RubyClass edomClass;
-    @CompilerDirectives.CompilationFinal private RubyClass encodingConverterClass;
-    @CompilerDirectives.CompilationFinal private RubyClass encodingCompatibilityErrorClass;
-    @CompilerDirectives.CompilationFinal private RubyClass methodClass;
-    @CompilerDirectives.CompilationFinal private RubyClass unboundMethodClass;
-    @CompilerDirectives.CompilationFinal private RubyClass byteArrayClass;
-    @CompilerDirectives.CompilationFinal private RubyClass fiberErrorClass;
-    @CompilerDirectives.CompilationFinal private RubyClass threadErrorClass;
+    private final RubyClass argumentErrorClass;
+    private final RubyClass arrayClass;
+    private final RubyClass basicObjectClass;
+    private final RubyClass bignumClass;
+    private final RubyClass bindingClass;
+    private final RubyClass classClass;
+    private final RubyClass complexClass;
+    private final RubyClass dirClass;
+    private final RubyClass encodingClass;
+    private final RubyClass exceptionClass;
+    private final RubyClass falseClass;
+    private final RubyClass fiberClass;
+    private final RubyClass fileClass;
+    private final RubyClass fixnumClass;
+    private final RubyClass floatClass;
+    private final RubyClass floatDomainErrorClass;
+    private final RubyClass hashClass;
+    private final RubyClass integerClass;
+    private final RubyClass indexErrorClass;
+    private final RubyClass ioClass;
+    private final RubyClass keyErrorClass;
+    private final RubyClass loadErrorClass;
+    private final RubyClass localJumpErrorClass;
+    private final RubyClass matchDataClass;
+    private final RubyClass moduleClass;
+    private final RubyClass nameErrorClass;
+    private final RubyClass nilClass;
+    private final RubyClass noMethodErrorClass;
+    private final RubyClass numericClass;
+    private final RubyClass objectClass;
+    private final RubyClass procClass;
+    private final RubyClass processClass;
+    private final RubyClass rangeClass;
+    private final RubyClass rangeErrorClass;
+    private final RubyClass rationalClass;
+    private final RubyClass regexpClass;
+    private final RubyClass regexpErrorClass;
+    private final RubyClass rubyTruffleErrorClass;
+    private final RubyClass runtimeErrorClass;
+    private final RubyClass standardErrorClass;
+    private final RubyClass stringClass;
+    private final RubyClass symbolClass;
+    private final RubyClass syntaxErrorClass;
+    private final RubyClass systemCallErrorClass;
+    private final RubyClass systemExitClass;
+    private final RubyClass threadClass;
+    private final RubyClass timeClass;
+    private final RubyClass trueClass;
+    private final RubyClass typeErrorClass;
+    private final RubyClass zeroDivisionErrorClass;
+    private final RubyModule configModule;
+    private final RubyModule enumerableModule;
+    private final RubyModule errnoModule;
+    private final RubyModule gcModule;
+    private final RubyModule kernelModule;
+    private final RubyModule mathModule;
+    private final RubyModule objectSpaceModule;
+    private final RubyModule signalModule;
+    private final RubyModule truffleModule;
+    private final RubyModule truffleDebugModule;
+    private final RubyClass edomClass;
+    private final RubyClass encodingConverterClass;
+    private final RubyClass encodingCompatibilityErrorClass;
+    private final RubyClass methodClass;
+    private final RubyClass unboundMethodClass;
+    private final RubyClass byteArrayClass;
+    private final RubyClass fiberErrorClass;
+    private final RubyClass threadErrorClass;
 
-    @CompilerDirectives.CompilationFinal private RubyArray argv;
-    @CompilerDirectives.CompilationFinal private RubyBasicObject globalVariablesObject;
-    @CompilerDirectives.CompilationFinal private RubyBasicObject mainObject;
-    @CompilerDirectives.CompilationFinal private RubyNilClass nilObject;
-    @CompilerDirectives.CompilationFinal private RubyHash envHash;
-    @CompilerDirectives.CompilationFinal private RubyBasicObject rubiniusUndefined;
+    private final RubyArray argv;
+    private final RubyBasicObject globalVariablesObject;
+    private final RubyBasicObject mainObject;
+    private final RubyNilClass nilObject;
+    private RubyBasicObject rubiniusUndefined;
 
-    private ArrayNodes.MinBlock arrayMinBlock;
-    private ArrayNodes.MaxBlock arrayMaxBlock;
+    private final ArrayNodes.MinBlock arrayMinBlock;
+    private final ArrayNodes.MaxBlock arrayMaxBlock;
 
     @CompilerDirectives.CompilationFinal private RubySymbol eachSymbol;
+    @CompilerDirectives.CompilationFinal private RubyHash envHash;
 
     public CoreLibrary(RubyContext context) {
         this.context = context;
-    }
 
-    /**
-     * Convert a value to a {@code Float}, without doing any lookup.
-     */
-    public static double toDouble(Object value) {
-        RubyNode.notDesignedForCompilation();
+        // Nothing in this constructor can use RubyContext.getCoreLibrary() as we are building it!
+        // Therefore, only initialize the core classes and modules here.
 
-        assert value != null;
-
-        if (value instanceof RubyNilClass) {
-            return 0;
-        }
-
-        if (value instanceof Integer) {
-            return (int) value;
-        }
-
-        if (value instanceof RubyBignum) {
-            return ((RubyBignum) value).doubleValue();
-        }
-
-        if (value instanceof Double) {
-            return (double) value;
-        }
-
-        CompilerDirectives.transferToInterpreter();
-
-        throw new UnsupportedOperationException();
-    }
-
-    public static boolean fitsIntoInteger(long value) {
-        return value >= Integer.MIN_VALUE && value <= Integer.MAX_VALUE;
-    }
-
-    public void initialize() {
         // Create the cyclic classes and modules
 
-        classClass = new RubyClass(context, null, null, "Class", false);
+        classClass = new RubyClass(context, null, null, null, "Class", false);
         classClass.setAllocator(new RubyClass.ClassAllocator());
 
-        basicObjectClass = RubyClass.createBootClass(context, "BasicObject");
+        basicObjectClass = RubyClass.createBootClass(context, classClass, "BasicObject");
         basicObjectClass.setAllocator(new RubyBasicObject.BasicObjectAllocator());
 
-        objectClass = RubyClass.createBootClass(context, "Object");
+        objectClass = RubyClass.createBootClass(context, classClass, "Object");
         objectClass.setAllocator(basicObjectClass.getAllocator());
 
-        moduleClass = new RubyClass(context, null, null, "Module", false);
+        moduleClass = new RubyClass(context, classClass, null, null, "Module", false);
         moduleClass.setAllocator(new RubyModule.ModuleAllocator());
 
         // Close the cycles
@@ -198,9 +166,64 @@ public class CoreLibrary {
 
         basicObjectClass.setConstant(null, "BasicObject", basicObjectClass);
 
-        // Create classes and modules
+        // Create Exception classes 
 
-        createExceptionClasses();
+        // Exception
+        exceptionClass = defineClass("Exception");
+        exceptionClass.setAllocator(new RubyException.ExceptionAllocator());
+
+        // FiberError
+        fiberErrorClass = defineClass(exceptionClass, "FiberError");
+
+        // StandardError
+        standardErrorClass = defineClass(exceptionClass, "StandardError");
+        argumentErrorClass = defineClass(standardErrorClass, "ArgumentError");
+        loadErrorClass = defineClass(standardErrorClass, "LoadError");
+        localJumpErrorClass = defineClass(standardErrorClass, "LocalJumpError");
+        regexpErrorClass = defineClass(standardErrorClass, "RegexpError");
+        rubyTruffleErrorClass = defineClass(standardErrorClass, "RubyTruffleError");
+        runtimeErrorClass = defineClass(standardErrorClass, "RuntimeError");
+        typeErrorClass = defineClass(standardErrorClass, "TypeError");
+        zeroDivisionErrorClass = defineClass(standardErrorClass, "ZeroDivisionError");
+
+        // StandardError > RangeError
+        rangeErrorClass = defineClass(standardErrorClass, "RangeError");
+        floatDomainErrorClass = defineClass(rangeErrorClass, "FloatDomainError");
+
+        // StandardError > IndexError
+        indexErrorClass = defineClass(standardErrorClass, "IndexError");
+        keyErrorClass = defineClass(indexErrorClass, "KeyError");
+
+        // StandardError > NameError
+        nameErrorClass = defineClass(standardErrorClass, "NameError");
+        noMethodErrorClass = defineClass(nameErrorClass, "NoMethodError");
+
+        // StandardError > SystemCallError
+        systemCallErrorClass = defineClass(standardErrorClass, "SystemCallError");
+        errnoModule = defineModule("Errno");
+        new RubyClass(context, errnoModule, systemCallErrorClass, "EACCES");
+        edomClass = new RubyClass(context, errnoModule, systemCallErrorClass, "EDOM");
+        new RubyClass(context, errnoModule, systemCallErrorClass, "EEXIST");
+        new RubyClass(context, errnoModule, systemCallErrorClass, "ENOENT");
+        new RubyClass(context, errnoModule, systemCallErrorClass, "ENOTEMPTY");
+        new RubyClass(context, errnoModule, systemCallErrorClass, "EPERM");
+        new RubyClass(context, errnoModule, systemCallErrorClass, "EXDEV");
+
+        // ScriptError
+        RubyClass scriptErrorClass = defineClass(exceptionClass, "ScriptError");
+        syntaxErrorClass = defineClass(scriptErrorClass, "SyntaxError");
+
+        // SignalException
+        RubyClass signalExceptionClass = defineClass(exceptionClass, "SignalException");
+        defineClass(signalExceptionClass, "Interrupt");
+
+        // SystemExit
+        systemExitClass = defineClass(exceptionClass, "SystemExit");
+
+        // ThreadError
+        threadErrorClass = defineClass(exceptionClass, "ThreadError");
+
+        // Create core classes and modules
 
         numericClass = defineClass("Numeric");
         complexClass = defineClass(numericClass, "Complex");
@@ -239,14 +262,14 @@ public class CoreLibrary {
 
         // Modules
 
-        RubyModule comparableModule = new RubyModule(context, objectClass, "Comparable");
-        configModule = new RubyModule(context, objectClass, "Config");
-        enumerableModule = new RubyModule(context, objectClass, "Enumerable");
-        gcModule = new RubyModule(context, objectClass, "GC");
-        kernelModule = new RubyModule(context, objectClass, "Kernel");
-        mathModule = new RubyModule(context, objectClass, "Math");
-        objectSpaceModule = new RubyModule(context, objectClass, "ObjectSpace");
-        signalModule = new RubyModule(context, objectClass, "Signal");
+        RubyModule comparableModule = defineModule("Comparable");
+        configModule = defineModule("Config");
+        enumerableModule = defineModule("Enumerable");
+        gcModule = defineModule("GC");
+        kernelModule = defineModule("Kernel");
+        mathModule = defineModule("Math");
+        objectSpaceModule = defineModule("ObjectSpace");
+        signalModule = defineModule("Signal");
 
         // The rest
 
@@ -255,17 +278,57 @@ public class CoreLibrary {
         encodingConverterClass = new RubyClass(context, encodingClass, objectClass, "Converter");
         encodingConverterClass.setAllocator(new RubyEncodingConverter.EncodingConverterAllocator());
 
-        truffleModule = new RubyModule(context, objectClass, "Truffle");
-        truffleDebugModule = new RubyModule(context, truffleModule, "Debug");
-        new RubyModule(context, truffleModule, "Primitive");
+        truffleModule = defineModule("Truffle");
+        truffleDebugModule = defineModule(truffleModule, "Debug");
+        defineModule(truffleModule, "Primitive");
 
-        final RubyModule rubiniusModule = new RubyModule(context, objectClass, "Rubinius");
+        RubyModule rubiniusModule = defineModule("Rubinius");
         rubiniusUndefined = new RubyBasicObject(objectClass);
         rubiniusModule.setConstant(null, "UNDEFINED", rubiniusUndefined);
         byteArrayClass = new RubyClass(context, rubiniusModule, objectClass, "ByteArray");
 
-        // Includes
+        includeModules(comparableModule);
 
+        // Create some key objects
+
+        mainObject = new RubyBasicObject(objectClass);
+        nilObject = new RubyNilClass(nilClass);
+        argv = new RubyArray(arrayClass);
+
+        initializeConstants();
+
+        globalVariablesObject = initializeGlobalVariables();
+
+        arrayMinBlock = new ArrayNodes.MinBlock(context);
+        arrayMaxBlock = new ArrayNodes.MaxBlock(context);
+    }
+
+    private RubyBasicObject initializeGlobalVariables() {
+        RubyNode.notDesignedForCompilation();
+
+        RubyBasicObject globals = new RubyBasicObject(objectClass);
+
+        globals.getOperations().setInstanceVariable(globals, "$LOAD_PATH", new RubyArray(arrayClass));
+        globals.getOperations().setInstanceVariable(globals, "$LOADED_FEATURES", new RubyArray(arrayClass));
+        globals.getOperations().setInstanceVariable(globals, "$:", globals.getInstanceVariable("$LOAD_PATH"));
+        globals.getOperations().setInstanceVariable(globals, "$\"", globals.getInstanceVariable("$LOADED_FEATURES"));
+        globals.getOperations().setInstanceVariable(globals, "$,", nilObject);
+
+        globals.getOperations().setInstanceVariable(globals, "$DEBUG", context.getRuntime().isDebug());
+
+        Object value = context.getRuntime().warningsEnabled() ? context.getRuntime().isVerbose() : nilObject;
+        globals.getOperations().setInstanceVariable(globals, "$VERBOSE", value);
+
+        final RubyString defaultRecordSeparator = RubyString.fromJavaString(stringClass, Options.CLI_RECORD_SEPARATOR.load());
+        defaultRecordSeparator.freeze();
+
+        // TODO (nirvdrum 05-Feb-15) We need to support the $-0 alias as well.
+        globals.getOperations().setInstanceVariable(globals, "$/", defaultRecordSeparator);
+
+        return globals;
+    }
+
+    private void includeModules(RubyModule comparableModule) {
         objectClass.include(null, kernelModule);
 
         numericClass.include(null, comparableModule);
@@ -277,44 +340,21 @@ public class CoreLibrary {
         hashClass.include(null, enumerableModule);
         ioClass.include(null, enumerableModule);
         rangeClass.include(null, enumerableModule);
+    }
 
+    private void initializeConstants() {
         // Set constants
 
         objectClass.setConstant(null, "RUBY_VERSION", RubyString.fromJavaString(stringClass, Constants.RUBY_VERSION));
         objectClass.setConstant(null, "RUBY_PATCHLEVEL", Constants.RUBY_PATCHLEVEL);
         objectClass.setConstant(null, "RUBY_ENGINE", RubyString.fromJavaString(stringClass, Constants.ENGINE + "+truffle"));
         objectClass.setConstant(null, "RUBY_PLATFORM", RubyString.fromJavaString(stringClass, Constants.PLATFORM));
-
+        objectClass.setConstant(null, "RUBY_RELEASE_DATE", RubyString.fromJavaString(stringClass, Constants.COMPILE_DATE));
+        objectClass.setConstant(null, "RUBY_DESCRIPTION", RubyString.fromJavaString(stringClass, OutputStrings.getVersionString()));
 
         // TODO(cs): this should be a separate exception
         mathModule.setConstant(null, "DomainError", edomClass);
 
-        // Create some key objects
-
-        mainObject = new RubyBasicObject(objectClass);
-        nilObject = new RubyNilClass(nilClass);
-
-        // Create the globals object
-
-        final RubyString defaultRecordSeparator = context.makeString(Options.CLI_RECORD_SEPARATOR.load());
-        defaultRecordSeparator.freeze();
-
-        globalVariablesObject = new RubyBasicObject(objectClass);
-        globalVariablesObject.getOperations().setInstanceVariable(globalVariablesObject, "$LOAD_PATH", new RubyArray(arrayClass));
-        globalVariablesObject.getOperations().setInstanceVariable(globalVariablesObject, "$LOADED_FEATURES", new RubyArray(arrayClass));
-        globalVariablesObject.getOperations().setInstanceVariable(globalVariablesObject, "$:", globalVariablesObject.getInstanceVariable("$LOAD_PATH"));
-        globalVariablesObject.getOperations().setInstanceVariable(globalVariablesObject, "$\"", globalVariablesObject.getInstanceVariable("$LOADED_FEATURES"));
-        globalVariablesObject.getOperations().setInstanceVariable(globalVariablesObject, "$,", nilObject);
-
-        // TODO (nirvdrum 05-Feb-15) We need to support the $-0 alias as well.
-        globalVariablesObject.getOperations().setInstanceVariable(globalVariablesObject, "$/", defaultRecordSeparator);
-
-        initializeEncodingConstants();
-
-        arrayMinBlock = new ArrayNodes.MinBlock(context);
-        arrayMaxBlock = new ArrayNodes.MaxBlock(context);
-
-        argv = new RubyArray(arrayClass);
         objectClass.setConstant(null, "ARGV", argv);
 
         final RubyString separator = RubyString.fromJavaString(stringClass, "/");
@@ -335,15 +375,7 @@ public class CoreLibrary {
         fileClass.setConstant(null, "PATH_SEPARATOR", RubyString.fromJavaString(stringClass, File.pathSeparator));
         fileClass.setConstant(null, "FNM_SYSCASE", 0);
 
-        RubyNode.notDesignedForCompilation();
-        globalVariablesObject.getOperations().setInstanceVariable(globalVariablesObject, "$DEBUG", context.getRuntime().isDebug());
-        Object value = context.getRuntime().warningsEnabled() ? context.getRuntime().isVerbose() : nilObject;
-        RubyNode.notDesignedForCompilation();
-        globalVariablesObject.getOperations().setInstanceVariable(globalVariablesObject, "$VERBOSE", value);
-
-        // Common symbols
-
-        eachSymbol = getContext().getSymbolTable().getSymbol("each");
+        initializeEncodingConstants();
     }
 
     private RubyClass defineClass(String name) {
@@ -364,66 +396,20 @@ public class CoreLibrary {
         return rubyClass;
     }
 
-    private void createExceptionClasses() {
-        // Exception
-        exceptionClass = defineClass("Exception");
-        exceptionClass.setAllocator(new RubyException.ExceptionAllocator());
+    private RubyModule defineModule(String name) {
+        return defineModule(objectClass, name);
+    }
 
-        // FiberError
-        fiberErrorClass = defineClass(exceptionClass, "FiberError");
-
-        // StandardError
-        standardErrorClass = defineClass(exceptionClass, "StandardError");
-        argumentErrorClass = defineClass(standardErrorClass, "ArgumentError");
-        loadErrorClass = defineClass(standardErrorClass, "LoadError");
-        localJumpErrorClass = defineClass(standardErrorClass, "LocalJumpError");
-        regexpErrorClass = defineClass(standardErrorClass, "RegexpError");
-        rubyTruffleErrorClass = defineClass(standardErrorClass, "RubyTruffleError");
-        runtimeErrorClass = defineClass(standardErrorClass, "RuntimeError");
-        typeErrorClass = defineClass(standardErrorClass, "TypeError");
-        zeroDivisionErrorClass = defineClass(standardErrorClass, "ZeroDivisionError");
-
-        // StandardError > RangeError
-        rangeErrorClass = defineClass(standardErrorClass, "RangeError");
-        floatDomainErrorClass = defineClass(rangeErrorClass, "FloatDomainError");
-
-        // StandardError > IndexError
-        indexErrorClass = defineClass(standardErrorClass, "IndexError");
-        keyErrorClass = defineClass(indexErrorClass, "KeyError");
-
-        // StandardError > NameError
-        nameErrorClass = defineClass(standardErrorClass, "NameError");
-        noMethodErrorClass = defineClass(nameErrorClass, "NoMethodError");
-
-        // StandardError > SystemCallError
-        systemCallErrorClass = defineClass(standardErrorClass, "SystemCallError");
-        errnoModule = new RubyModule(context, objectClass, "Errno");
-        new RubyClass(context, errnoModule, systemCallErrorClass, "EACCES");
-        edomClass = new RubyClass(context, errnoModule, systemCallErrorClass, "EDOM");
-        new RubyClass(context, errnoModule, systemCallErrorClass, "EEXIST");
-        new RubyClass(context, errnoModule, systemCallErrorClass, "ENOENT");
-        new RubyClass(context, errnoModule, systemCallErrorClass, "ENOTEMPTY");
-        new RubyClass(context, errnoModule, systemCallErrorClass, "EPERM");
-        new RubyClass(context, errnoModule, systemCallErrorClass, "EXDEV");
-
-        // ScriptError
-        RubyClass scriptErrorClass = defineClass(exceptionClass, "ScriptError");
-        syntaxErrorClass = defineClass(scriptErrorClass, "SyntaxError");
-
-        // SignalException
-        RubyClass signalExceptionClass = defineClass(exceptionClass, "SignalException");
-        defineClass(signalExceptionClass, "Interrupt");
-
-        // SystemExit
-        systemExitClass = defineClass(exceptionClass, "SystemExit");
-
-        // ThreadError
-        threadErrorClass = defineClass(exceptionClass, "ThreadError");
+    private RubyModule defineModule(RubyModule lexicalParent, String name) {
+        return new RubyModule(context, moduleClass, lexicalParent, name, null);
     }
 
     public void initializeAfterMethodsAdded() {
-        objectClass.setConstant(null, "RUBY_RELEASE_DATE", context.makeString(Constants.COMPILE_DATE));
-        objectClass.setConstant(null, "RUBY_DESCRIPTION", context.makeString(OutputStrings.getVersionString()));
+        // Common symbols
+
+        eachSymbol = getContext().getSymbolTable().getSymbol("each");
+
+        // Load Ruby core
 
         if (Options.TRUFFLE_LOAD_CORE.load()) {
             try {
@@ -477,7 +463,7 @@ public class CoreLibrary {
             public void defineEncoding(EncodingDB.Entry encodingEntry, byte[] name, int p, int end) {
                 Encoding e = encodingEntry.getEncoding();
 
-                RubyEncoding re = RubyEncoding.newEncoding(getContext(), e, name, p, end, encodingEntry.isDummy());
+                RubyEncoding re = RubyEncoding.newEncoding(encodingClass, e, name, p, end, encodingEntry.isDummy());
                 RubyEncoding.storeEncoding(encodingEntry.getIndex(), re);
             }
 
@@ -547,6 +533,39 @@ public class CoreLibrary {
         } else {
             throw new UnsupportedOperationException(String.format("Don't know how to get the logical class for %s", object.getClass()));
         }
+    }
+
+    /**
+     * Convert a value to a {@code Float}, without doing any lookup.
+     */
+    public static double toDouble(Object value) {
+        RubyNode.notDesignedForCompilation();
+
+        assert value != null;
+
+        if (value instanceof RubyNilClass) {
+            return 0;
+        }
+
+        if (value instanceof Integer) {
+            return (int) value;
+        }
+
+        if (value instanceof RubyBignum) {
+            return ((RubyBignum) value).doubleValue();
+        }
+
+        if (value instanceof Double) {
+            return (double) value;
+        }
+
+        CompilerDirectives.transferToInterpreter();
+
+        throw new UnsupportedOperationException();
+    }
+
+    public static boolean fitsIntoInteger(long value) {
+        return value >= Integer.MIN_VALUE && value <= Integer.MAX_VALUE;
     }
 
     public RubyException runtimeError(String message, Node currentNode) {

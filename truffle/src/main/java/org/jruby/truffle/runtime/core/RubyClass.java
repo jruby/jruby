@@ -38,12 +38,12 @@ public class RubyClass extends RubyModule {
      * This constructor supports initialization and solves boot-order problems and should not
      * normally be used from outside this class.
      */
-    public static RubyClass createBootClass(RubyContext context, String name) {
-        return new RubyClass(context, null, null, name, false);
+    public static RubyClass createBootClass(RubyContext context, RubyClass classClass, String name) {
+        return new RubyClass(context, classClass, null, null, name, false);
     }
 
     public RubyClass(RubyContext context, RubyModule lexicalParent, RubyClass superclass, String name) {
-        this(context, lexicalParent, superclass, name, false);
+        this(context, superclass.getLogicalClass(), lexicalParent, superclass, name, false);
         // Always create a class singleton class for normal classes for consistency.
         ensureSingletonConsistency();
     }
@@ -51,11 +51,11 @@ public class RubyClass extends RubyModule {
     protected static RubyClass createSingletonClassOfObject(RubyContext context, RubyClass superclass, String name) {
         // We also need to create the singleton class of a singleton class for proper lookup and consistency.
         // See rb_singleton_class() documentation in MRI.
-        return new RubyClass(context, null, superclass, name, true).ensureSingletonConsistency();
+        return new RubyClass(context, superclass.getLogicalClass(), null, superclass, name, true).ensureSingletonConsistency();
     }
 
-    protected RubyClass(RubyContext context, RubyModule lexicalParent, RubyClass superclass, String name, boolean isSingleton) {
-        super(context, context.getCoreLibrary().getClassClass(), lexicalParent, name, null);
+    protected RubyClass(RubyContext context, RubyClass classClass, RubyModule lexicalParent, RubyClass superclass, String name, boolean isSingleton) {
+        super(context, classClass, lexicalParent, name, null);
         this.isSingleton = isSingleton;
 
         if (superclass != null) {
@@ -108,7 +108,7 @@ public class RubyClass extends RubyModule {
         }
 
         metaClass = new RubyClass(getContext(),
-                null, singletonSuperclass, String.format("#<Class:%s>", getName()), true);
+                getLogicalClass(), null, singletonSuperclass, String.format("#<Class:%s>", getName()), true);
 
         return metaClass;
     }
@@ -164,7 +164,7 @@ public class RubyClass extends RubyModule {
 
         @Override
         public RubyBasicObject allocate(RubyContext context, RubyClass rubyClass, RubyNode currentNode) {
-            return new RubyClass(context, null, null, null, false);
+            return new RubyClass(context, context.getCoreLibrary().getClassClass(), null, null, null, false);
         }
 
     }

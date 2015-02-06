@@ -103,9 +103,7 @@ public class RubyContext extends ExecutionContext {
 
         emptyShape = RubyBasicObject.LAYOUT.createShape(new RubyOperations(this));
 
-        // See note in CoreLibrary#initialize to see why we need to break this into two statements
         coreLibrary = new CoreLibrary(this);
-        coreLibrary.initialize();
 
         featureManager = new FeatureManager(this);
         traceManager = new TraceManager();
