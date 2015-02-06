@@ -194,6 +194,14 @@ public abstract class StringNodes {
 
         @Specialization
         public RubyString concat(RubyString string, RubyString other) {
+            notDesignedForCompilation();
+
+            if (string.isFrozen()) {
+                CompilerDirectives.transferToInterpreter();
+
+                throw new RaiseException(getContext().getCoreLibrary().frozenError("String", this));
+            }
+
             string.getBytes().append(other.getBytes());
             return string;
         }
