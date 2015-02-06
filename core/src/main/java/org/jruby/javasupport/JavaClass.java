@@ -517,8 +517,6 @@ public class JavaClass extends JavaObject {
 
     private final ReentrantLock proxyLock = new ReentrantLock();
 
-    private final Initializer initializer;
-
     public RubyModule getProxyModule() {
         // allow proxy to be read without synchronization. if proxy
         // is under construction, only the building thread can see it.
@@ -578,15 +576,6 @@ public class JavaClass extends JavaObject {
 
     JavaClass(final Ruby runtime, final Class<?> javaClass) {
         super(runtime, runtime.getJavaSupport().getJavaClassClass(), javaClass);
-        if ( javaClass.isInterface() ) {
-            initializer = new InterfaceInitializer(javaClass);
-        }
-        else if ( ! ( javaClass.isArray() || javaClass.isPrimitive() ) ) {
-            initializer = new ClassInitializer(javaClass);
-        }
-        else {
-            initializer = Initializer.DUMMY;
-        }
     }
 
     @Override
@@ -618,11 +607,7 @@ public class JavaClass extends JavaObject {
             this.javaClass = javaClass;
         }
 
-        //private volatile boolean hasRun = false;
-
         public void initialize() {
-            //if ( hasRun ) return; hasRun = true;
-
             InitializerState state = new InitializerState(getRuntime(), null);
             Field[] fields = getDeclaredFields(javaClass);
 
@@ -668,11 +653,7 @@ public class JavaClass extends JavaObject {
             this.javaClass = javaClass;
         }
 
-        //private volatile boolean hasRun = false;
-
         public void initialize() {
-            //if ( hasRun ) return; hasRun = true;
-
             Class<?> superclass = javaClass.getSuperclass();
 
             InitializerState state = new InitializerState(getRuntime(), superclass);
@@ -713,12 +694,25 @@ public class JavaClass extends JavaObject {
 
     }
 
+    private void doInitializeFieldsFromJavaClass() {
+        final Initializer initializer;
+        final Class<?> javaClass = javaClass();
+        if ( javaClass.isInterface() ) {
+            initializer = new InterfaceInitializer(javaClass);
+        }
+        else if ( ! ( javaClass.isArray() || javaClass.isPrimitive() ) ) {
+            initializer = new ClassInitializer(javaClass);
+        }
+        else initializer = Initializer.DUMMY;
+        initializer.initialize();
+    }
+
     void setupProxyClass(final RubyClass proxy) {
         assert proxyLock.isHeldByCurrentThread();
 
         setJavaClassFor(proxy);
 
-        initializer.initialize();
+        doInitializeFieldsFromJavaClass();
 
         proxy.addMethod("__jsend!", new org.jruby.internal.runtime.methods.JavaMethod.JavaMethodNBlock(proxy, PUBLIC) {
             @Override
@@ -1194,7 +1188,7 @@ public class JavaClass extends JavaObject {
         assert proxyLock.isHeldByCurrentThread();
         assert this.proxyClass == null;
 
-        initializer.initialize();
+        doInitializeFieldsFromJavaClass();
 
         setProxyClass( proxy ); // this.proxyClass = proxy
         // nothing else to here - the module version will be included in the class.
@@ -1207,7 +1201,7 @@ public class JavaClass extends JavaObject {
 
         setJavaClassFor(module);
 
-        initializer.initialize();
+        doInitializeFieldsFromJavaClass();
 
         this.unfinishedProxyModule = module;
 
