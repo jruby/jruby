@@ -782,7 +782,7 @@ public class IRBuilder {
     public Operand buildArray(Node node) {
         List<Operand> elts = new ArrayList<>();
         for (Node e: node.childNodes())
-            elts.add(build(e));
+            elts.add(copyAndReturnValue(build(e)));
 
         return copyAndReturnValue(new Array(elts));
     }
