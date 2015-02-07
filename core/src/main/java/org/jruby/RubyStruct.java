@@ -51,6 +51,8 @@ import org.jruby.runtime.marshal.UnmarshalStream;
 import org.jruby.util.ByteList;
 import org.jruby.util.IdUtil;
 
+import java.util.concurrent.Callable;
+
 import static org.jruby.RubyEnumerator.enumeratorizeWithSize;
 import static org.jruby.runtime.Helpers.invokedynamic;
 import static org.jruby.runtime.Visibility.PRIVATE;
@@ -553,7 +555,6 @@ public class RubyStruct extends RubyObject {
 
         if (recur || first != '#') {
             buffer.append(cpath.getBytes());
-            buffer.append(' ');
         }
 
         if (recur) {
@@ -564,6 +565,8 @@ public class RubyStruct extends RubyObject {
         for (int i = 0,k=member.getLength(); i < k; i++) {
             if (i > 0) {
                 buffer.append(',').append(' ');
+            } else if (first != '#') {
+                buffer.append(' ');
             }
             RubySymbol slot = (RubySymbol)member.eltInternal(i);
             String name = slot.toString();
@@ -583,14 +586,18 @@ public class RubyStruct extends RubyObject {
     @JRubyMethod(name = {"inspect", "to_s"})
     public IRubyObject inspect(final ThreadContext context) {
         final Ruby runtime = context.runtime;
-
+        final RubyStruct struct = this;
         // recursion guard
-        return runtime.execRecursiveOuter(new Ruby.RecursiveFunction() {
-            @Override
-            public IRubyObject call(IRubyObject obj, boolean recur) {
-                return inspectStruct(context, recur);
+        return runtime.recursiveListOperation(new Callable<IRubyObject>() {
+            public IRubyObject call() {
+                return runtime.execRecursive(new Ruby.RecursiveFunction() {
+                    @Override
+                    public IRubyObject call(IRubyObject obj, boolean recur) {
+                        return inspectStruct(context, recur);
+                    }
+                }, struct);
             }
-        }, this);
+        });
     }
 
     @JRubyMethod(name = {"to_a", "values"})
