@@ -1650,7 +1650,7 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
         final int size = RubyNumeric.num2int(arg);
         final Ruby runtime = context.runtime;
         if (size <= 0) throw runtime.newArgumentError("invalid slice size");
-        return block.isGiven() ? eachSlice(context, size, block) : enumeratorize(context.runtime, this, "each_slice", arg);
+        return block.isGiven() ? eachSlice(context, size, block) : RubyEnumerator.enumeratorizeWithSize(context, this, "each_slice", arg, arg);
     }
 
     /** rb_ary_each_index

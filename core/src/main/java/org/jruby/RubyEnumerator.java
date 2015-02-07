@@ -98,9 +98,22 @@ public class RubyEnumerator extends RubyObject {
         initialize(runtime.getNil(), RubyString.newEmptyString(runtime), IRubyObject.NULL_ARRAY);
     }
 
+    private RubyEnumerator(Ruby runtime, RubyClass type, IRubyObject object, IRubyObject method, IRubyObject[]args, IRubyObject size) {
+        super(runtime, type);
+        initialize20(object, method, args, size);
+    }
+
     private RubyEnumerator(Ruby runtime, RubyClass type, IRubyObject object, IRubyObject method, IRubyObject[]args) {
         super(runtime, type);
         initialize(object, method, args);
+    }
+
+    /**
+     * Transform object into an Enumerator with the given size
+     */
+    static IRubyObject enumeratorizeWithSize(ThreadContext context, IRubyObject object, String method,IRubyObject arg, IRubyObject size) {
+        Ruby runtime = context.runtime;
+        return new RubyEnumerator(runtime, runtime.getEnumerator(), object, runtime.fastNewSymbol(method), new IRubyObject[] { arg }, size);
     }
 
     public static IRubyObject enumeratorize(Ruby runtime, IRubyObject object, String method) {
