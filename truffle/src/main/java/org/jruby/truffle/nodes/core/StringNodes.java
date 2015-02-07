@@ -745,31 +745,35 @@ public abstract class StringNodes {
     @CoreMethod(names = "each_line", optional = 1)
     public abstract static class EachLineNode extends YieldingCoreMethodNode {
 
+        @Child private ToStrNode toStrNode;
+
         public EachLineNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
+            toStrNode = ToStrNodeFactory.create(context, sourceSection, null);
         }
 
         public EachLineNode(EachLineNode prev) {
             super(prev);
+            toStrNode = prev.toStrNode;
         }
 
         @Specialization
-        public RubyArray eachLine(RubyString string, @SuppressWarnings("unused") UndefinedPlaceholder separator) {
+        public RubyArray eachLine(VirtualFrame frame, RubyString string, @SuppressWarnings("unused") UndefinedPlaceholder separator) {
             notDesignedForCompilation();
 
             final RubyBasicObject globals = getContext().getCoreLibrary().getGlobalVariablesObject();
             final RubyString recordSeparator = (RubyString) globals.getInstanceVariable("$/");
-            return eachLine(string, recordSeparator);
+            return eachLine(frame, string, recordSeparator);
         }
 
         @Specialization
-        public RubyArray eachLine(RubyString string, RubyString separator) {
+        public RubyArray eachLine(VirtualFrame frame, RubyString string, Object separator) {
             notDesignedForCompilation();
 
             final List<Object> lines = new ArrayList<>();
 
             String str = string.toString();
-            String sep = separator.toString();
+            String sep = toStrNode.executeRubyString(frame, separator).toString();
 
             int start = 0;
 
