@@ -38,13 +38,13 @@ class Array
     ary
   end
 
-  # Modified implementation until we support Rubinius::IdentityMap.
   def &(other)
     other = Rubinius::Type.coerce_to other, Array, :to_ary
 
     array = []
+    im = Rubinius::IdentityMap.from other
 
-    each { |x| array << x if other.include? x }
+    each { |x| array << x if im.delete x }
 
     array
   end
