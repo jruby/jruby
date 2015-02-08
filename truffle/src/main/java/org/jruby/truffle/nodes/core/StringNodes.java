@@ -766,7 +766,7 @@ public abstract class StringNodes {
             return eachLine(frame, string, recordSeparator);
         }
 
-        @Specialization
+        @Specialization(guards = "!isUndefinedPlaceholder(arguments[1])")
         public RubyArray eachLine(VirtualFrame frame, RubyString string, Object separator) {
             notDesignedForCompilation();
 
