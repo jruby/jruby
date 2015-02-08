@@ -47,7 +47,7 @@ module Utilities
   end
 
   def self.jruby_version
-    File.read('VERSION').strip
+    File.read("#{JRUBY_DIR}/VERSION").strip
   end
 
 end
