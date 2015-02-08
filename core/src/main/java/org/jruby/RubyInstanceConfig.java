@@ -1407,7 +1407,15 @@ public class RubyInstanceConfig {
     }
     
     private static ClassLoader setupLoader() {
-        return RubyInstanceConfig.class.getClassLoader();
+        ClassLoader loader = RubyInstanceConfig.class.getClassLoader();
+
+        // loader can be null for example when jruby comes from the boot-classLoader
+
+        if (loader == null) {
+            loader = Thread.currentThread().getContextClassLoader();
+        }
+
+        return loader;
     }
 
     ////////////////////////////////////////////////////////////////////////////
@@ -1454,9 +1462,11 @@ public class RubyInstanceConfig {
     private ProfileOutput profileOutput = new ProfileOutput(System.err);
     private String profilingService;
 
-    private ClassLoader thisLoader = setupLoader();
-    // thisLoader can be null for example when jruby comes from the boot-classLoader
-    private ClassLoader loader = thisLoader == null ? Thread.currentThread().getContextClassLoader() : thisLoader;
+    private ClassLoader loader = setupLoader();
+
+    public ClassLoader getCurrentThreadClassLoader() {
+        return Thread.currentThread().getContextClassLoader();
+    }
 
     // from CommandlineParser
     private List<String> loadPaths = new ArrayList<String>();
