@@ -10,6 +10,9 @@
 
 # Recommended: function jt { ruby PATH/TO/jruby/tool/jt.rb $@; }
 
+require 'fileutils'
+require 'digest/sha1'
+
 JRUBY_DIR = File.expand_path('../..', __FILE__)
 
 module Utilities
@@ -41,6 +44,10 @@ module Utilities
     BENCH_LOCATIONS.find(not_found) do |location|
       Dir.exist?(location)
     end
+  end
+
+  def self.jruby_version
+    File.read('VERSION').strip
   end
 
 end
@@ -101,6 +108,7 @@ module Commands
     puts '    by bench9000, eg all, classic, chunky, 3, 5, 10, 15 - default is 5'
     puts 'jt findbugs                                  run findbugs'
     puts 'jt findbugs report                           run findbugs and generate an HTML report'
+    puts 'jt install ..../graal/mx/suite.py            install a JRuby distribution into an mx suite'
     puts
     puts 'you can also put build or rebuild in front of any command'
   end
@@ -192,12 +200,34 @@ module Commands
   def findbugs(report=nil)
     case report
     when 'report'
-      sh 'tool/truffle-findbugs.sh', '--report' rescue nil
-      sh 'open', 'truffle-findbugs-report.html' rescue nil
+      sh 'tool/truffle-findbugs.sh', '--report'
+      sh 'open', 'truffle-findbugs-report.html'
     when nil
       sh 'tool/truffle-findbugs.sh'
     else
       raise ArgumentError, report
+    end
+  end
+
+  def install(arg)
+    case arg
+    when /.*suite.*\.py$/
+      suite_file = arg
+      mvn '-Pcomplete'
+      sh 'tool/remove-bundled-truffle.sh'
+      jar_name = "jruby-complete-no-truffle-#{Utilities.jruby_version}.jar"
+      source_jar_name = "maven/jruby-complete/target/#{jar_name}"
+      shasum = Digest::SHA1.hexdigest File.read(source_jar_name)
+      shasum_jar_name = "jruby-complete-no-truffle-#{Utilities.jruby_version}-#{shasum}.jar"
+      FileUtils.cp source_jar_name, "#{File.expand_path('../..', suite_file)}/lib/#{shasum_jar_name}"
+      suite_lines = File.readlines(suite_file)
+      line_index = suite_lines.find_index { |line| line.start_with? '      "path" : "lib/jruby-complete-no-truffle' }
+      suite_lines[line_index] = "      \"path\" : \"lib/#{shasum_jar_name}\",\n"
+      suite_lines[line_index + 1] = "      \#\"urls\" : [\"http://lafo.ssw.uni-linz.ac.at/truffle/ruby/#{shasum_jar_name}\"],\n"
+      suite_lines[line_index + 2] = "      \"sha1\" : \"#{shasum}\"\n"
+      File.write(suite_file, suite_lines.join())
+    else
+      raise ArgumentError, kind
     end
   end
 end
