@@ -16,11 +16,13 @@ import com.oracle.truffle.api.Truffle;
 import com.oracle.truffle.api.frame.Frame;
 import com.oracle.truffle.api.frame.FrameInstance;
 import com.oracle.truffle.api.frame.FrameSlot;
+import com.oracle.truffle.api.frame.FrameSlotKind;
 import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.utilities.CyclicAssumption;
 
 import org.jruby.runtime.Visibility;
 import org.jruby.truffle.nodes.RubyNode;
+import org.jruby.truffle.nodes.methods.AddMethodNode;
 import org.jruby.truffle.nodes.objects.Allocator;
 import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.control.RaiseException;
@@ -104,10 +106,6 @@ public class RubyModule extends RubyBasicObject implements ModuleChain {
      */
     private final Set<RubyModule> lexicalDependents = Collections.newSetFromMap(new WeakHashMap<RubyModule, Boolean>());
 
-    public RubyModule(RubyContext context, RubyModule lexicalParent, String name) {
-        this(context, lexicalParent, name, null);
-    }
-
     public RubyModule(RubyContext context, RubyModule lexicalParent, String name, RubyNode currentNode) {
         this(context, context.getCoreLibrary().getModuleClass(), lexicalParent, name, currentNode);
     }
@@ -127,7 +125,11 @@ public class RubyModule extends RubyBasicObject implements ModuleChain {
             lexicalParent.setConstant(currentNode, name, this);
             lexicalParent.addLexicalDependent(this);
 
-            if (lexicalParent != context.getCoreLibrary().getObjectClass()) {
+            // Tricky, we need to compare with the Object class, but we only have a Module at hand.
+            RubyClass classClass = lexicalParent.getLogicalClass();
+            RubyClass objectClass = classClass.getSuperClass().getSuperClass();
+
+            if (lexicalParent != objectClass) {
                 name = lexicalParent.getName() + "::" + name;
             }
         }
@@ -365,8 +367,8 @@ public class RubyModule extends RubyBasicObject implements ModuleChain {
         assert callerFrame != null;
         assert callerFrame.getFrameDescriptor() != null;
 
-        final FrameSlot visibilitySlot = callerFrame.getFrameDescriptor().findFrameSlot(VISIBILITY_FRAME_SLOT_ID);
-        assert visibilitySlot != null : "no visibility slot";
+        final FrameSlot visibilitySlot = callerFrame.getFrameDescriptor().findOrAddFrameSlot(
+                RubyModule.VISIBILITY_FRAME_SLOT_ID, "visibility for frame", FrameSlotKind.Object);
 
         callerFrame.setObject(visibilitySlot, visibility);
     }
@@ -530,7 +532,7 @@ public class RubyModule extends RubyBasicObject implements ModuleChain {
 
         @Override
         public RubyBasicObject allocate(RubyContext context, RubyClass rubyClass, RubyNode currentNode) {
-            return new RubyModule(context, null, null);
+            return new RubyModule(context, null, null, currentNode);
         }
 
     }

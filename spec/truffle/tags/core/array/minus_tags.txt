@@ -1,5 +1,1 @@
-fails:Array#- tries to convert the passed arguments to Arrays using #to_ary
-fails:Array#- does not return subclass instance for Array subclasses
-fails:Array#- does not call to_ary on array subclasses
-fails:Array#- removes an item identified as equivalent via #hash and #eql?
-fails:Array#- doesn't remove an item with the same hash but not #eql?
+fails:Array#- properly handles recursive arrays

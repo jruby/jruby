@@ -21,33 +21,34 @@ import org.jruby.truffle.runtime.core.RubyArray;
 
 @NodeChildren({
         @NodeChild(value="array", type=RubyNode.class),
-        @NodeChild(value="index", type=RubyNode.class)
+        @NodeChild(value="index", type=RubyNode.class),
+        @NodeChild(value="length", type=RubyNode.class)
 })
-public abstract class ArrayReadDenormalizedNode extends RubyNode {
+public abstract class ArrayReadSliceDenormalizedNode extends RubyNode {
 
-    @Child private ArrayReadNormalizedNode readNode;
+    @Child private ArrayReadSliceNormalizedNode readNode;
 
-    public ArrayReadDenormalizedNode(RubyContext context, SourceSection sourceSection) {
+    public ArrayReadSliceDenormalizedNode(RubyContext context, SourceSection sourceSection) {
         super(context, sourceSection);
     }
 
-    public ArrayReadDenormalizedNode(ArrayReadDenormalizedNode prev) {
+    public ArrayReadSliceDenormalizedNode(ArrayReadSliceDenormalizedNode prev) {
         super(prev);
         readNode = prev.readNode;
     }
 
-    public abstract Object executeRead(VirtualFrame frame, RubyArray array, int index);
+    public abstract Object executeReadSlice(VirtualFrame frame, RubyArray array, int index, int length);
 
     @Specialization
-    public Object read(VirtualFrame frame, RubyArray array, int index) {
+    public Object read(VirtualFrame frame, RubyArray array, int index, int length) {
         if (readNode == null) {
             CompilerDirectives.transferToInterpreter();
-            readNode = insert(ArrayReadNormalizedNodeFactory.create(getContext(), getSourceSection(), null, null));
+            readNode = insert(ArrayReadSliceNormalizedNodeFactory.create(getContext(), getSourceSection(), null, null, null));
         }
 
         final int normalizedIndex = array.normalizeIndex(index);
 
-        return readNode.executeRead(frame, array, normalizedIndex);
+        return readNode.executeReadSlice(frame, array, normalizedIndex, length);
     }
 
 }

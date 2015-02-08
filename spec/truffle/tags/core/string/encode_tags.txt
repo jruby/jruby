@@ -1,7 +1,6 @@
 fails:String#encode when passed no options transcodes to Encoding.default_internal when set
 fails:String#encode when passed no options transcodes a 7-bit String despite no generic converting being available
 fails:String#encode when passed no options raises an Encoding::ConverterNotFoundError when no conversion is possible
-fails:String#encode when passed to encoding calls #to_str to convert the object to an Encoding
 fails:String#encode when passed to encoding transcodes a 7-bit String despite no generic converting being available
 fails:String#encode when passed to encoding raises an Encoding::ConverterNotFoundError when no conversion is possible
 fails:String#encode when passed to encoding raises an Encoding::ConverterNotFoundError for an invalid encoding

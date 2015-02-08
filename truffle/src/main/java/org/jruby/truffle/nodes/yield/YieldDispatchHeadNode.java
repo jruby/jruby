@@ -38,16 +38,17 @@ public class YieldDispatchHeadNode extends Node {
         return dispatch.dispatchWithModifiedBlock(frame, block, modifiedBlock, argumentsObjects);
     }
 
-    public Object dispatchWithModifiedSelf(VirtualFrame frame, RubyProc block, Object self, Object... argumentsObjects) {
+    public Object dispatchWithModifiedSelf(VirtualFrame currentFrame, RubyProc block, Object self, Object... argumentsObjects) {
         // TODO: assumes this also changes the default definee.
 
+        Frame frame = block.getDeclarationFrame();
         FrameSlot slot = frame.getFrameDescriptor().findOrAddFrameSlot(RubyModule.VISIBILITY_FRAME_SLOT_ID, "dynamic visibility for def", FrameSlotKind.Object);
         Object oldVisibility = frame.getValue(slot);
 
         try {
             frame.setObject(slot, Visibility.PUBLIC);
 
-            return dispatch.dispatchWithModifiedSelf(frame, block, self, argumentsObjects);
+            return dispatch.dispatchWithModifiedSelf(currentFrame, block, self, argumentsObjects);
         } finally {
             frame.setObject(slot, oldVisibility);
         }

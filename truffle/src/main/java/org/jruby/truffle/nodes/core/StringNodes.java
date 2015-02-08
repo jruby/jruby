@@ -10,6 +10,9 @@
 package org.jruby.truffle.nodes.core;
 
 import com.oracle.truffle.api.CompilerDirectives;
+import com.oracle.truffle.api.dsl.CreateCast;
+import com.oracle.truffle.api.dsl.NodeChild;
+import com.oracle.truffle.api.dsl.NodeChildren;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.UnexpectedResultException;
@@ -23,6 +26,8 @@ import org.joni.Option;
 import org.joni.Region;
 import org.jruby.runtime.Visibility;
 import org.jruby.truffle.nodes.RubyNode;
+import org.jruby.truffle.nodes.coerce.ToStrNode;
+import org.jruby.truffle.nodes.coerce.ToStrNodeFactory;
 import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNode;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
@@ -120,6 +125,8 @@ public abstract class StringNodes {
     @CoreMethod(names = "<=>", required = 1)
     public abstract static class CompareNode extends CoreMethodNode {
 
+        @Child private ToStrNode toStrNode;
+
         public CompareNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
         }
@@ -132,12 +139,46 @@ public abstract class StringNodes {
         public int compare(RubyString a, RubyString b) {
             notDesignedForCompilation();
 
-            return a.toString().compareTo(b.toString());
+            final int result = a.toString().compareTo(b.toString());
+
+            if (result < 0) {
+                return -1;
+            } else if (result > 0) {
+                return 1;
+            }
+
+            return 0;
+        }
+
+        @Specialization(guards = "!isRubyString(arguments[1])")
+        public Object compare(VirtualFrame frame, RubyString a, Object b) {
+            notDesignedForCompilation();
+
+            if (toStrNode == null) {
+                CompilerDirectives.transferToInterpreter();
+                toStrNode = insert(ToStrNodeFactory.create(getContext(), getSourceSection(), null));
+            }
+
+            try {
+                final RubyString coerced = toStrNode.executeRubyString(frame, b);
+
+                return compare(a, coerced);
+            } catch (RaiseException e) {
+                if (e.getRubyException().getClass().equals(getContext().getCoreLibrary().getTypeErrorClass())) {
+                    return getContext().getCoreLibrary().getNilObject();
+                } else {
+                    throw e;
+                }
+            }
         }
     }
 
     @CoreMethod(names = { "<<", "concat" }, required = 1)
-    public abstract static class ConcatNode extends CoreMethodNode {
+    @NodeChildren({
+            @NodeChild(value = "string"),
+            @NodeChild(value = "other")
+    })
+    public abstract static class ConcatNode extends RubyNode {
 
         public ConcatNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -147,8 +188,21 @@ public abstract class StringNodes {
             super(prev);
         }
 
+        @CreateCast("other") public RubyNode coerceOtherToString(RubyNode other) {
+            return ToStrNodeFactory.create(getContext(), getSourceSection(), other);
+        }
+
         @Specialization
         public RubyString concat(RubyString string, RubyString other) {
+            // TODO (nirvdrum 06-Feb-15) This shouldn't be designed for compilation because we don't support all the String semantics yet, but a bench9000 benchmark has it on a hot path, so commenting out for now.
+            //notDesignedForCompilation();
+
+            if (string.isFrozen()) {
+                CompilerDirectives.transferToInterpreter();
+
+                throw new RaiseException(getContext().getCoreLibrary().frozenError("String", this));
+            }
+
             string.getBytes().append(other.getBytes());
             return string;
         }
@@ -202,26 +256,26 @@ public abstract class StringNodes {
 
         @Specialization(rewriteOn = UnexpectedResultException.class)
         public RubyString getIndexInBounds(RubyString string, int index, UndefinedPlaceholder undefined) throws UnexpectedResultException {
-            final int normalisedIndex = string.normaliseIndex(index);
+            final int normalizedIndex = string.normalizeIndex(index);
             final ByteList bytes = string.getBytes();
 
-            if (normalisedIndex < 0 || normalisedIndex >= bytes.length()) {
+            if (normalizedIndex < 0 || normalizedIndex >= bytes.length()) {
                 throw new UnexpectedResultException(getContext().getCoreLibrary().getNilObject());
             } else {
-                return getContext().makeString(bytes.charAt(normalisedIndex));
+                return getContext().makeString(bytes.charAt(normalizedIndex));
             }
         }
 
         @Specialization(contains = "getIndexInBounds")
         public Object getIndex(RubyString string, int index, UndefinedPlaceholder undefined) {
-            int normalisedIndex = string.normaliseIndex(index);
+            int normalizedIndex = string.normalizeIndex(index);
             final ByteList bytes = string.getBytes();
 
-            if (normalisedIndex < 0 || normalisedIndex >= bytes.length()) {
+            if (normalizedIndex < 0 || normalizedIndex >= bytes.length()) {
                 outOfBounds.enter();
                 return getContext().getCoreLibrary().getNilObject();
             } else {
-                return getContext().makeString(bytes.charAt(normalisedIndex));
+                return getContext().makeString(bytes.charAt(normalizedIndex));
             }
         }
 
@@ -230,13 +284,13 @@ public abstract class StringNodes {
             notDesignedForCompilation();
 
             final String javaString = string.toString();
-            final int begin = string.normaliseIndex(range.getBegin());
+            final int begin = string.normalizeIndex(range.getBegin());
 
             if (begin < 0 || begin > javaString.length()) {
                 outOfBounds.enter();
                 return getContext().getCoreLibrary().getNilObject();
             } else {
-                final int end = string.normaliseIndex(range.getEnd());
+                final int end = string.normalizeIndex(range.getEnd());
                 final int excludingEnd = string.clampExclusiveIndex(range.doesExcludeEnd() ? end : end+1);
 
                 return getContext().makeString(javaString.substring(begin, excludingEnd));
@@ -247,7 +301,7 @@ public abstract class StringNodes {
         public Object slice(RubyString string, int start, int length) {
             // TODO(CS): not sure if this is right - encoding
             final ByteList bytes = string.getBytes();
-            final int begin = string.normaliseIndex(start);
+            final int begin = string.normalizeIndex(start);
 
             if (begin < 0 || begin > bytes.length() || length < 0) {
                 outOfBounds.enter();
@@ -264,16 +318,20 @@ public abstract class StringNodes {
     @CoreMethod(names = "[]=", required = 2, lowerFixnumParameters = 0)
     public abstract static class ElementSetNode extends CoreMethodNode {
 
+        @Child private ToStrNode toStrNode;
+
         public ElementSetNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
+            toStrNode = ToStrNodeFactory.create(context, sourceSection, null);
         }
 
         public ElementSetNode(ElementSetNode prev) {
             super(prev);
+            toStrNode = prev.toStrNode;
         }
 
         @Specialization
-        public RubyString elementSet(RubyString string, int index, RubyString replacement) {
+        public RubyString elementSet(VirtualFrame frame, RubyString string, int index, Object replacement) {
             notDesignedForCompilation();
 
             if (string.isFrozen()) {
@@ -297,13 +355,14 @@ public abstract class StringNodes {
                 throw new RaiseException(getContext().getCoreLibrary().indexError(String.format("index %d out of string", index), this));
             }
 
-            StringSupport.replaceInternal19(index, 1, string, replacement);
+            final RubyString coerced = toStrNode.executeRubyString(frame, replacement);
+            StringSupport.replaceInternal19(index, 1, string, coerced);
 
-            return replacement;
+            return coerced;
         }
 
         @Specialization
-        public RubyString elementSet(RubyString string, RubyRange.IntegerFixnumRange range, RubyString replacement) {
+        public RubyString elementSet(VirtualFrame frame, RubyString string, RubyRange.IntegerFixnumRange range, Object replacement) {
             notDesignedForCompilation();
 
             if (string.isFrozen()) {
@@ -347,9 +406,10 @@ public abstract class StringNodes {
                 length = 0;
             }
 
-            StringSupport.replaceInternal19(begin, length, string, replacement);
+            final RubyString coerced = toStrNode.executeRubyString(frame, replacement);
+            StringSupport.replaceInternal19(begin, length, string, coerced);
 
-            return replacement;
+            return coerced;
         }
     }
 
@@ -483,9 +543,9 @@ public abstract class StringNodes {
         public Object byteSlice(RubyString string, int index, int length) {
             final ByteList bytes = string.getBytes();
 
-            final int normalisedIndex = string.normaliseIndex(index);
+            final int normalizedIndex = string.normalizeIndex(index);
 
-            if (normalisedIndex > bytes.length() || normalisedIndex + length > bytes.length()) {
+            if (normalizedIndex > bytes.length() || normalizedIndex + length > bytes.length()) {
                 return getContext().getCoreLibrary().getNilObject();
             }
 
@@ -496,33 +556,10 @@ public abstract class StringNodes {
 
     }
 
-    @CoreMethod(names = "chomp", optional=1)
-    public abstract static class ChompNode extends CoreMethodNode {
-
-        public ChompNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
-        public ChompNode(ChompNode prev) {
-            super(prev);
-        }
-
-        @Specialization
-        public RubyString chomp(RubyString string, UndefinedPlaceholder undefined) {
-            notDesignedForCompilation();
-            return string.getContext().makeString(StringNodesHelper.chomp(string));
-        }
-
-        @Specialization
-        public RubyString chompWithString(RubyString string, RubyString stringToChomp) {
-            notDesignedForCompilation();
-            return getContext().makeString(StringNodesHelper.chompWithString(string, stringToChomp));
-        }
-
-    }
-
     @CoreMethod(names = "chomp!", optional = 1)
     public abstract static class ChompBangNode extends CoreMethodNode {
+
+        @Child private ToStrNode toStrNode;
 
         public ChompBangNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -533,18 +570,32 @@ public abstract class StringNodes {
         }
 
         @Specialization
-        public RubyString chompBang(RubyString string, UndefinedPlaceholder undefined) {
+        public Object chompBang(RubyString string, UndefinedPlaceholder undefined) {
             notDesignedForCompilation();
+
+            if (string.length() == 0) {
+                return getContext().getCoreLibrary().getNilObject();
+            }
 
             string.set(StringNodesHelper.chomp(string));
             return string;
         }
 
         @Specialization
-        public RubyString chompBangWithString(RubyString string, RubyString stringToChomp) {
+        public RubyNilClass chompBangWithNil(RubyString string, RubyNilClass stringToChomp) {
+            return getContext().getCoreLibrary().getNilObject();
+        }
+
+        @Specialization(guards = { "!isUndefinedPlaceholder(arguments[1])", "!isRubyNilClass(arguments[1])" })
+        public RubyString chompBangWithString(VirtualFrame frame, RubyString string, Object stringToChomp) {
             notDesignedForCompilation();
 
-            string.set(StringNodesHelper.chompWithString(string, stringToChomp));
+            if (toStrNode == null) {
+                CompilerDirectives.transferToInterpreter();
+                toStrNode = insert(ToStrNodeFactory.create(getContext(), getSourceSection(), null));
+            }
+
+            string.set(StringNodesHelper.chompWithString(string, toStrNode.executeRubyString(frame, stringToChomp)));
             return string;
         }
     }
@@ -552,11 +603,11 @@ public abstract class StringNodes {
     @CoreMethod(names = "count", argumentsAsArray = true)
     public abstract static class CountNode extends CoreMethodNode {
 
-        @Child private CallDispatchHeadNode toStr;
+        @Child private ToStrNode toStr;
 
         public CountNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            toStr = DispatchHeadNodeFactory.createMethodCall(context);
+            toStr = ToStrNodeFactory.create(context, sourceSection, null);
         }
 
         public CountNode(CountNode prev) {
@@ -581,30 +632,7 @@ public abstract class StringNodes {
             RubyString[] otherStrings = new RubyString[args.length];
 
             for (int i = 0; i < args.length; i++) {
-                if (args[i] instanceof RubyString) {
-                    otherStrings[i] = (RubyString) args[i];
-                } else {
-                    Object coerced;
-
-                    try {
-                        coerced = toStr.call(frame, args[i], "to_str", null);
-                    } catch (RaiseException e) {
-                        if (e.getRubyException().getLogicalClass() == getContext().getCoreLibrary().getNoMethodErrorClass()) {
-                            throw new RaiseException(
-                                    getContext().getCoreLibrary().typeErrorNoImplicitConversion(args[i], "String", this));
-                        } else {
-                            throw e;
-                        }
-                    }
-
-                    if (coerced instanceof RubyString) {
-                        otherStrings[i] = (RubyString) coerced;
-                    } else {
-                        throw new RaiseException(
-                                getContext().getCoreLibrary().typeErrorBadCoercion(args[i], "String", "to_str", coerced, this));
-
-                    }
-                }
+                otherStrings[i] = toStr.executeRubyString(frame, args[i]);
             }
 
             return string.count(otherStrings);
@@ -715,43 +743,57 @@ public abstract class StringNodes {
 
     }
 
-    @CoreMethod(names = "each_line")
+    @CoreMethod(names = "each_line", optional = 1)
     public abstract static class EachLineNode extends YieldingCoreMethodNode {
+
+        @Child private ToStrNode toStrNode;
 
         public EachLineNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
+            toStrNode = ToStrNodeFactory.create(context, sourceSection, null);
         }
 
         public EachLineNode(EachLineNode prev) {
             super(prev);
+            toStrNode = prev.toStrNode;
         }
 
         @Specialization
-        public RubyArray eachLine(RubyString string) {
+        public RubyArray eachLine(VirtualFrame frame, RubyString string, @SuppressWarnings("unused") UndefinedPlaceholder separator) {
+            notDesignedForCompilation();
+
+            final RubyBasicObject globals = getContext().getCoreLibrary().getGlobalVariablesObject();
+            final RubyString recordSeparator = (RubyString) globals.getInstanceVariable("$/");
+            return eachLine(frame, string, recordSeparator);
+        }
+
+        @Specialization(guards = "!isUndefinedPlaceholder(arguments[1])")
+        public RubyArray eachLine(VirtualFrame frame, RubyString string, Object separator) {
             notDesignedForCompilation();
 
             final List<Object> lines = new ArrayList<>();
 
             String str = string.toString();
+            String sep = toStrNode.executeRubyString(frame, separator).toString();
+
             int start = 0;
 
             while (start < str.length()) {
-                int end = str.indexOf('\n', start);
+                int end = str.indexOf(sep, start);
 
                 if (end == -1) {
                     lines.add(getContext().makeString(str.substring(start)));
                     break;
                 }
 
-                String line = str.substring(start, end+1);
-                start = end+1;
+                String line = str.substring(start, end + sep.length());
+                start = end + sep.length();
 
                 lines.add(getContext().makeString(line));
             }
 
             return RubyArray.fromObjects(getContext().getCoreLibrary().getArrayClass(), lines.toArray(new Object[lines.size()]));
         }
-
     }
 
     @CoreMethod(names = "empty?")
@@ -775,6 +817,8 @@ public abstract class StringNodes {
 
     @CoreMethod(names = "encode", required = 1)
     public abstract static class EncodeNode extends CoreMethodNode {
+
+        @Child private ToStrNode toStrNode;
 
         public EncodeNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -804,6 +848,18 @@ public abstract class StringNodes {
             final org.jruby.RubyString jrubyTranscoded = (org.jruby.RubyString) jrubyString.encode(getContext().getRuntime().getCurrentContext(), jrubyEncodingString);
 
             return getContext().toTruffle(jrubyTranscoded);
+        }
+
+        @Specialization(guards = { "!isRubyString(arguments[1])", "!isRubyEncoding(arguments[1])" })
+        public RubyString encode(VirtualFrame frame, RubyString string, Object encoding) {
+            notDesignedForCompilation();
+
+            if (toStrNode == null) {
+                CompilerDirectives.transferToInterpreter();
+                toStrNode = insert(ToStrNodeFactory.create(getContext(), getSourceSection(), null));
+            }
+
+            return encode(string, toStrNode.executeRubyString(frame, encoding));
         }
     }
 
@@ -1075,7 +1131,7 @@ public abstract class StringNodes {
 
         public InsertNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            concatNode = StringNodesFactory.ConcatNodeFactory.create(context, sourceSection, new RubyNode[]{});
+            concatNode = StringNodesFactory.ConcatNodeFactory.create(context, sourceSection, null, null);
             getIndexNode = StringNodesFactory.GetIndexNodeFactory.create(context, sourceSection, new RubyNode[]{});
         }
 
@@ -1499,25 +1555,6 @@ public abstract class StringNodes {
             }
 
             return RubyArray.fromObjects(getContext().getCoreLibrary().getArrayClass(), objects);
-        }
-    }
-
-    @CoreMethod(names = "start_with?", required = 1)
-    public abstract static class StartWithNode extends CoreMethodNode {
-
-        public StartWithNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
-        public StartWithNode(StartWithNode prev) {
-            super(prev);
-        }
-
-        @Specialization
-        public boolean endWith(RubyString string, RubyString b) {
-            notDesignedForCompilation();
-
-            return string.toString().startsWith(b.toString());
         }
     }
 

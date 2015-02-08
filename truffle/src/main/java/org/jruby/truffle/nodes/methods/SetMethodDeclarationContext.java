@@ -23,11 +23,13 @@ public class SetMethodDeclarationContext extends RubyNode {
 
     @Child private RubyNode child;
 
+    final Visibility visibility;
     final String what;
 
-    public SetMethodDeclarationContext(RubyContext context, SourceSection sourceSection, String what, RubyNode child) {
+    public SetMethodDeclarationContext(RubyContext context, SourceSection sourceSection, Visibility visibility, String what, RubyNode child) {
         super(context, sourceSection);
         this.child = child;
+        this.visibility = visibility;
         this.what = what;
     }
 
@@ -39,7 +41,7 @@ public class SetMethodDeclarationContext extends RubyNode {
         Object oldVisibility = frame.getValue(slot);
 
         try {
-            frame.setObject(slot, Visibility.PUBLIC);
+            frame.setObject(slot, visibility);
 
             return child.execute(frame);
         } finally {

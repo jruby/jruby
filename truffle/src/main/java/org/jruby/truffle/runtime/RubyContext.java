@@ -21,6 +21,7 @@ import org.jcodings.Encoding;
 import org.jcodings.specific.UTF8Encoding;
 import org.jruby.Ruby;
 import org.jruby.RubyNil;
+import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.truffle.TruffleHooks;
 import org.jruby.truffle.nodes.RubyNode;
@@ -115,7 +116,6 @@ public class RubyContext extends ExecutionContext {
 
         emptyShape = RubyBasicObject.LAYOUT.createShape(new RubyOperations(this));
 
-        // See note in CoreLibrary#initialize to see why we need to break this into two statements
         coreLibrary = new CoreLibrary(this);
         coreLibrary.initialize();
 
@@ -182,7 +182,7 @@ public class RubyContext extends ExecutionContext {
         final NodeWrapper loadWrapper = new NodeWrapper() {
             @Override
             public RubyNode wrap(RubyNode node) {
-                return new SetMethodDeclarationContext(node.getContext(), node.getSourceSection(), "load", node);
+                return new SetMethodDeclarationContext(node.getContext(), node.getSourceSection(), Visibility.PRIVATE, "load", node);
             }
         };
 
@@ -210,14 +210,14 @@ public class RubyContext extends ExecutionContext {
         return symbolTable.getSymbol(name);
     }
 
-    public Object eval(ByteList code, RubyNode currentNode) {
+    public Object instanceEval(ByteList code, Object self, RubyNode currentNode) {
         final Source source = Source.fromText(code, "(eval)");
-        return execute(this, source, code.getEncoding(), TranslatorDriver.ParserContext.TOP_LEVEL, coreLibrary.getMainObject(), null, currentNode, NodeWrapper.IDENTITY);
-    }
-
-    public Object eval(ByteList code, Object self, RubyNode currentNode) {
-        final Source source = Source.fromText(code, "(eval)");
-        return execute(this, source, code.getEncoding(), TranslatorDriver.ParserContext.TOP_LEVEL, self, null, currentNode, NodeWrapper.IDENTITY);
+        return execute(this, source, code.getEncoding(), TranslatorDriver.ParserContext.TOP_LEVEL, self, null, currentNode, new NodeWrapper() {
+            @Override
+            public RubyNode wrap(RubyNode node) {
+                return new SetMethodDeclarationContext(node.getContext(), node.getSourceSection(), Visibility.PUBLIC, "instance_eval", node);
+            }
+        });
     }
 
     public Object eval(ByteList code, RubyBinding binding, boolean ownScopeForAssignments, RubyNode currentNode) {

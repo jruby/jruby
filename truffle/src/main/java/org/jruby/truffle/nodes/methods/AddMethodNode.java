@@ -20,7 +20,9 @@ import com.oracle.truffle.api.source.SourceSection;
 
 import org.jruby.runtime.Visibility;
 import org.jruby.truffle.nodes.RubyNode;
+import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.runtime.control.TruffleFatalException;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
 import org.jruby.truffle.runtime.core.RubyModule;
 import org.jruby.truffle.runtime.core.RubySymbol;
@@ -66,28 +68,28 @@ public class AddMethodNode extends RubyNode {
         return getContext().newSymbol(method.getName());
     }
 
-    private Visibility getVisibility(VirtualFrame frame, String name) {
+    private static Visibility getVisibility(Frame frame, String name) {
         notDesignedForCompilation();
 
         if (name.equals("initialize") || name.equals("initialize_copy") || name.equals("initialize_clone") || name.equals("initialize_dup") || name.equals("respond_to_missing?")) {
             return Visibility.PRIVATE;
         } else {
-            // Ignore scopes who do not have a visibility slot.
-            Visibility currentFrameVisibility = findVisibility(frame);
-            if (currentFrameVisibility != null) {
-                return currentFrameVisibility;
-            }
-
-            return Truffle.getRuntime().iterateFrames(new FrameInstanceVisitor<Visibility>() {
-
-                @Override
-                public Visibility visitFrame(FrameInstance frameInstance) {
-                    Frame frame = frameInstance.getFrame(FrameAccess.READ_ONLY, true);
-                    return findVisibility(frame);
-                }
-
-            });
+            return getVisibility(frame);
         }
+    }
+
+    private static Visibility getVisibility(Frame frame) {
+        notDesignedForCompilation();
+
+        while (frame != null) {
+            Visibility visibility = findVisibility(frame);
+            if (visibility != null) {
+                return visibility;
+            }
+            frame = RubyArguments.getDeclarationFrame(frame.getArguments());
+        }
+
+        throw new UnsupportedOperationException("No declaration frame with visibility found");
     }
 
     private static Visibility findVisibility(Frame frame) {

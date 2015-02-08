@@ -73,13 +73,13 @@ public class ArrayGuards {
         return a.getStore() instanceof Object[] && b.getStore() instanceof Object[];
     }
 
-    // New names
+    // New names being used for the new primitive nodes - old guards will be removed over time
 
     public static boolean isNullArray(RubyArray array) {
         return array.getStore() == null;
     }
 
-    public static boolean isIntegerArray(RubyArray array) {
+    public static boolean isIntArray(RubyArray array) {
         return array.getStore() instanceof int[];
     }
 
@@ -93,10 +93,6 @@ public class ArrayGuards {
 
     public static boolean isObjectArray(RubyArray array) {
         return array.getStore() instanceof Object[];
-    }
-
-    public static boolean isNormalisedInBounds(RubyArray array, int index) {
-        return index >= 0 && index < array.getSize();
     }
 
 }

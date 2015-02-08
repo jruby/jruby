@@ -3,6 +3,7 @@ package org.jruby.ir.passes;
 import org.jruby.ir.IRClosure;
 import org.jruby.ir.IRScope;
 import org.jruby.ir.instructions.*;
+import org.jruby.ir.operands.ImmutableLiteral;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.TemporaryVariable;
 import org.jruby.ir.operands.Variable;
@@ -123,13 +124,26 @@ public class OptimizeTempVarsPass extends CompilerPass {
                         if (!(use instanceof ReturnInstr)) {
                             CopyInstr ci = (CopyInstr)i;
                             Operand src = ci.getSource();
-                            i.markDead();
-                            instrs.remove();
+                            // Only tmp vars are in SSA form post IR-building and it is safe to
+                            // replace uses with defs without examining intervening instrs. But,
+                            // not true for local vars and other operands that use local vars.
+                            //   a = 0
+                            //   %v_1 = a
+                            //   a = 1
+                            //   x = %v_1
+                            // In that snippet, it would be buggy to rewrite it to:
+                            //   a = 0
+                            //   a = 1
+                            //   x = a
+                            if (src instanceof TemporaryVariable || src instanceof ImmutableLiteral) {
+                                i.markDead();
+                                instrs.remove();
 
-                            // Fix up use
-                            Map<Operand, Operand> copyMap = new HashMap<>();
-                            copyMap.put(v, src);
-                            use.simplifyOperands(copyMap, true);
+                                // Fix up use
+                                Map<Operand, Operand> copyMap = new HashMap<>();
+                                copyMap.put(v, src);
+                                use.simplifyOperands(copyMap, true);
+                            }
                         }
                     }
                 }
@@ -138,11 +152,21 @@ public class OptimizeTempVarsPass extends CompilerPass {
                 //    2: x = %v
                 // If %v is not used anywhere else, the result of 1. can be updated to use x and 2. can be removed
                 //
-                // NOTE: consider this pattern:
-                //    %v = <operand> (copy instr)
-                //    x = %v
-                // This code will have been captured in the previous if branch which would have deleted %v = 5
-                // Hence the check for whether the src def instr is dead
+                // CAVEATS:
+                // --------
+                // 1. We only do this if 'x' is a temporary variable since only tmp vars are in SSA form.
+                //      %v = ...(not a copy-1)
+                //      x = .. (not a copy-2)
+                //      x = %v
+                //    In that snippet above, it would be buggy to replace it with:
+                //      x = ...(not a copy-1)
+                //      x = .. (not a copy-2)
+                //
+                // 2. Consider this pattern
+                //      %v = <operand> (copy instr)
+                //      x = %v
+                //    This code will have been captured in the previous if branch which would have deleted %v = 5
+                //    Hence the check for whether the src def instr is dead
                 else if (i instanceof CopyInstr) {
                     CopyInstr ci = (CopyInstr)i;
                     Operand src = ci.getSource();
@@ -150,13 +174,14 @@ public class OptimizeTempVarsPass extends CompilerPass {
                         TemporaryVariable vsrc = (TemporaryVariable)src;
                         Instr use = tmpVarUses.get(vsrc);
                         Instr def = tmpVarDefs.get(vsrc);
-                        if ((use != null && use != NopInstr.NOP) && (def != null && def != NopInstr.NOP)) {
-                            if (!def.isDead()) {
-                                // Fix up def
-                                ((ResultInstr) def).updateResult(ci.getResult());
-                                ci.markDead();
-                                instrs.remove();
-                            }
+                        if (use != null && use != NopInstr.NOP &&
+                            def != null && def != NopInstr.NOP &&
+                            !def.isDead() && ((ResultInstr)def).getResult() instanceof TemporaryVariable)
+                        {
+                            // Fix up def
+                            ((ResultInstr) def).updateResult(ci.getResult());
+                            ci.markDead();
+                            instrs.remove();
                         }
                     }
                 }

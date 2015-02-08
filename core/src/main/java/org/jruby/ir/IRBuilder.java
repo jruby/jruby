@@ -782,7 +782,7 @@ public class IRBuilder {
     public Operand buildArray(Node node) {
         List<Operand> elts = new ArrayList<>();
         for (Node e: node.childNodes())
-            elts.add(build(e));
+            elts.add(copyAndReturnValue(build(e)));
 
         return copyAndReturnValue(new Array(elts));
     }
@@ -2393,10 +2393,10 @@ public class IRBuilder {
                 splatKeywordArgument = build(pair.getValue());
                 break;
             } else {
-               keyOperand = build(key);
+               keyOperand = copyAndReturnValue(build(key));
             }
 
-            args.add(new KeyValuePair<>(keyOperand, build(pair.getValue())));
+            args.add(new KeyValuePair<Operand, Operand>(keyOperand, copyAndReturnValue(build(pair.getValue()))));
         }
 
         if (splatKeywordArgument != null) { // splat kwargs merge with any explicit kwargs

@@ -179,11 +179,11 @@ public final class RubyArray extends RubyBasicObject {
         size++;
     }
 
-    public int normaliseIndex(int index) {
-        return normaliseIndex(size, index);
+    public int normalizeIndex(int index) {
+        return normalizeIndex(size, index);
     }
 
-    public static int normaliseIndex(int length, int index) {
+    public static int normalizeIndex(int length, int index) {
         if (CompilerDirectives.injectBranchProbability(CompilerDirectives.UNLIKELY_PROBABILITY, index < 0)) {
             return length + index;
         } else {
@@ -300,6 +300,8 @@ public final class RubyArray extends RubyBasicObject {
     }
 
     private boolean verifyStore(Object store, int size) {
+        assert size >= 0;
+
         assert store == null
                 || store instanceof Object[]
                 || store instanceof int[]

@@ -17,15 +17,29 @@ import org.jruby.truffle.runtime.RubyContext;
 public abstract class PrimitiveArrayNodeFactory {
 
     /**
-     * Create a node to read from an array with a constant denormalised index.
+     * Create a node to read from an array with a constant denormalized index.
      */
     public static RubyNode read(RubyContext context, SourceSection sourceSection, RubyNode array, int index) {
         final RubyNode literalIndex = new FixnumLiteralNode.IntegerFixnumLiteralNode(context, sourceSection, index);
 
-        if (index > 0) {
+        if (index >= 0) {
             return ArrayReadNormalizedNodeFactory.create(context, sourceSection, array, literalIndex);
         } else {
             return ArrayReadDenormalizedNodeFactory.create(context, sourceSection, array, literalIndex);
+        }
+    }
+
+    /**
+     * Create a node to read a slice from an array with a constant denormalized start and exclusive end.
+     */
+    public static RubyNode readSlice(RubyContext context, SourceSection sourceSection, RubyNode array, int start, int exclusiveEnd) {
+        final RubyNode literalStart = new FixnumLiteralNode.IntegerFixnumLiteralNode(context, sourceSection, start);
+        final RubyNode literalExclusiveEnd = new FixnumLiteralNode.IntegerFixnumLiteralNode(context, sourceSection, exclusiveEnd);
+
+        if (start >= 0 && exclusiveEnd >= 0) {
+            return ArrayReadSliceNormalizedNodeFactory.create(context, sourceSection, array, literalStart, literalExclusiveEnd);
+        } else {
+            return ArrayReadSliceDenormalizedNodeFactory.create(context, sourceSection, array, literalStart, literalExclusiveEnd);
         }
     }
 

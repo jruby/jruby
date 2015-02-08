@@ -1,7 +1,6 @@
 fails:String#[]= with Fixnum index taints self if other_str is tainted
 fails:String#[]= with Fixnum index raises IndexError if the string index doesn't match a position in the string
 fails:String#[]= with Fixnum index calls to_int on index
-fails:String#[]= with Fixnum index calls #to_str to convert other to a String
 fails:String#[]= with Fixnum index calls #to_int to convert the index
 fails:String#[]= with Fixnum index raises a TypeError if #to_int does not return an Fixnum
 fails:String#[]= with Fixnum index raises an IndexError if #to_int returns a value out of range

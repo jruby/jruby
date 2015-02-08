@@ -8,8 +8,6 @@
 
 module Kernel
 
-  module_function
-
   def p(*args)
     args.each do |arg|
       print arg.inspect
@@ -18,6 +16,7 @@ module Kernel
 
     args.size <= 1 ? args.first : args
   end
+  module_function :p
 
   def puts(*args)
     print "\n" if args.empty?
@@ -32,10 +31,12 @@ module Kernel
       end
     end
   end
+  module_function :puts
 
   def printf(*args)
     print sprintf(*args)
   end
+  module_function :printf
 
   alias_method :trust, :untaint
   alias_method :untrust, :taint

@@ -231,7 +231,7 @@ public abstract class CoreMethodNodeManager {
                 }
 
                 if (undefined && object) {
-                    System.out.println("Ambiguous default argument " + (argc - i) + " in " + node.getCanonicalName());
+                    throw new RuntimeException("Ambiguous default argument " + (argc - i) + " in " + node.getCanonicalName());
                 }
             }
         }

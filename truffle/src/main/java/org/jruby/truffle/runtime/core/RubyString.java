@@ -163,8 +163,8 @@ public class RubyString extends RubyBasicObject implements CodeRangeable {
         return StringSupport.strLengthFromRubyString(this);
     }
 
-    public int normaliseIndex(int index) {
-        return RubyArray.normaliseIndex(bytes.length(), index);
+    public int normalizeIndex(int index) {
+        return RubyArray.normalizeIndex(bytes.length(), index);
     }
 
     public int clampExclusiveIndex(int index) {

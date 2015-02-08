@@ -20,6 +20,7 @@ import org.joni.Syntax;
 import org.jruby.ast.*;
 import org.jruby.common.IRubyWarnings;
 import org.jruby.lexer.yacc.InvalidSourcePosition;
+import org.jruby.runtime.Visibility;
 import org.jruby.truffle.nodes.*;
 import org.jruby.truffle.nodes.DefinedNode;
 import org.jruby.truffle.nodes.ForNode;
@@ -1051,8 +1052,8 @@ public class BodyTranslator extends Translator {
 
         final SingletonClassNode singletonClassNode = SingletonClassNodeFactory.create(context, sourceSection, objectNode);
 
-        return new SetMethodDeclarationContext(context, sourceSection, "defs",
-                translateMethodDefinition(sourceSection, singletonClassNode, node.getName(), node, node.getArgsNode(), node.getBodyNode()));
+        return new SetMethodDeclarationContext(context, sourceSection, Visibility.PUBLIC,
+                "defs", translateMethodDefinition(sourceSection, singletonClassNode, node.getName(), node, node.getArgsNode(), node.getBodyNode()));
     }
 
     protected RubyNode translateMethodDefinition(SourceSection sourceSection, RubyNode classNode, String methodName, org.jruby.ast.Node parseTree, org.jruby.ast.ArgsNode argsNode, org.jruby.ast.Node bodyNode) {
@@ -1492,7 +1493,30 @@ public class BodyTranslator extends Translator {
     @Override
     public RubyNode visitInstVarNode(org.jruby.ast.InstVarNode node) {
         final SourceSection sourceSection = translate(node.getPosition());
+
+        // TODO CS 6-Feb-15 - this appears to be the name *with* sigil - need to clarify this
+
         final String nameWithoutSigil = node.getName();
+
+        /*
+         * Rubinius uses the instance variable @total to store the size of an array. In order to use code that
+         * expects that we'll replace it statically with a call to Array#size. We also replace @tuple with
+         * self, and @start to be 0.
+         */
+
+        if (sourceSection.getSource().getPath().equals("core:/jruby/truffle/core/rubinius/kernel/common/array.rb")) {
+            if (nameWithoutSigil.equals("@total")) {
+                return new RubyCallNode(context, sourceSection,
+                        "size",
+                        new SelfNode(context, sourceSection),
+                        null,
+                        false);
+            } else if (nameWithoutSigil.equals("@tuple")) {
+                return new SelfNode(context, sourceSection);
+            } else if (nameWithoutSigil.equals("@start")) {
+                return new FixnumLiteralNode.IntegerFixnumLiteralNode(context, sourceSection, 0);
+            }
+        }
 
         final RubyNode receiver = new SelfNode(context, sourceSection);
 

@@ -10,7 +10,10 @@
 package org.jruby.truffle.nodes.core;
 
 import com.oracle.truffle.api.CompilerDirectives;
+import com.oracle.truffle.api.dsl.CreateCast;
+import com.oracle.truffle.api.dsl.NodeChild;
 import com.oracle.truffle.api.dsl.Specialization;
+import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.utilities.ConditionProfile;
 import org.jcodings.Encoding;
@@ -20,6 +23,9 @@ import org.jcodings.specific.UTF8Encoding;
 import org.jcodings.util.CaseInsensitiveBytesHash;
 import org.jcodings.util.Hash;
 import org.jruby.runtime.encoding.EncodingService;
+import org.jruby.truffle.nodes.RubyNode;
+import org.jruby.truffle.nodes.coerce.ToStrNode;
+import org.jruby.truffle.nodes.coerce.ToStrNodeFactory;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyArray;
 import org.jruby.truffle.runtime.core.RubyEncoding;
@@ -195,6 +201,8 @@ public abstract class EncodingNodes {
     @CoreMethod(names = "default_internal=", onSingleton = true, required = 1)
     public abstract static class SetDefaultInternalNode extends CoreMethodNode {
 
+        @Child private ToStrNode toStrNode;
+
         public SetDefaultInternalNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
         }
@@ -204,7 +212,7 @@ public abstract class EncodingNodes {
         }
 
         @Specialization
-        public RubyEncoding defaultExternal(RubyEncoding encoding) {
+        public RubyEncoding defaultInternal(RubyEncoding encoding) {
             notDesignedForCompilation();
 
             getContext().getRuntime().setDefaultInternalEncoding(encoding.getEncoding());
@@ -213,18 +221,34 @@ public abstract class EncodingNodes {
         }
 
         @Specialization
-        public RubyNilClass defaultExternal(RubyNilClass encoding) {
+        public RubyNilClass defaultInternal(RubyNilClass encoding) {
             notDesignedForCompilation();
 
-            getContext().getRuntime().setDefaultInternalEncoding(ASCIIEncoding.INSTANCE);
+            getContext().getRuntime().setDefaultInternalEncoding(null);
 
             return encoding;
+        }
+
+        @Specialization(guards = { "!isRubyEncoding", "!isRubyNilClass" })
+        public RubyString defaultInternal(VirtualFrame frame, Object encoding) {
+            notDesignedForCompilation();
+
+            if (toStrNode == null) {
+                CompilerDirectives.transferToInterpreter();
+                toStrNode = insert(ToStrNodeFactory.create(getContext(), getSourceSection(), null));
+            }
+
+            final RubyString encodingName = toStrNode.executeRubyString(frame, encoding);
+            getContext().getRuntime().setDefaultInternalEncoding(RubyEncoding.getEncoding(encodingName.toString()).getEncoding());
+
+            return encodingName;
         }
 
     }
 
     @CoreMethod(names = "find", onSingleton = true, required = 1)
-    public abstract static class FindNode extends CoreMethodNode {
+    @NodeChild(value = "name")
+    public abstract static class FindNode extends RubyNode {
 
         public FindNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -232,6 +256,10 @@ public abstract class EncodingNodes {
 
         public FindNode(FindNode prev) {
             super(prev);
+        }
+
+        @CreateCast("name") public RubyNode coerceNameToString(RubyNode name) {
+            return ToStrNodeFactory.create(getContext(), getSourceSection(), name);
         }
 
         @Specialization

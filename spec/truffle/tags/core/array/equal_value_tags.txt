@@ -1,4 +1,0 @@
-fails:Array#== handles well recursive arrays
-fails:Array#== does not call #to_ary on Array subclasses
-fails:Array#== ignores array class differences
-fails:Array#== compares with an equivalent Array-like object using #to_ary

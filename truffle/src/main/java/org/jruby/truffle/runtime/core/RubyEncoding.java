@@ -54,8 +54,8 @@ public class RubyEncoding extends RubyBasicObject {
         lookup.put(aliasName.toLowerCase(Locale.ENGLISH), encoding);
     }
 
-    public static RubyEncoding newEncoding(RubyContext context, Encoding encoding, byte[] name, int p, int end, boolean dummy) {
-        return new RubyEncoding(context.getCoreLibrary().getEncodingClass(), encoding, new ByteList(name, p, end), dummy);
+    public static RubyEncoding newEncoding(RubyClass encodingClass, Encoding encoding, byte[] name, int p, int end, boolean dummy) {
+        return new RubyEncoding(encodingClass, encoding, new ByteList(name, p, end), dummy);
     }
 
     private RubyEncoding(RubyClass encodingClass, Encoding encoding, ByteList name, boolean dummy) {
