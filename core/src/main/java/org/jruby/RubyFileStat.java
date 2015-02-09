@@ -49,6 +49,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.FileResource;
 import org.jruby.util.JRubyFile;
 import org.jruby.util.JRubyNonExistentFile;
+import org.jruby.util.StringSupport;
 
 /**
  * Implements File::Stat
@@ -126,6 +127,9 @@ public class RubyFileStat extends RubyObject {
 
     @JRubyMethod(name = "initialize", required = 1, visibility = Visibility.PRIVATE, compat = CompatVersion.RUBY1_8)
     public IRubyObject initialize(IRubyObject fname, Block unusedBlock) {
+        Ruby runtime = getRuntime();
+        ThreadContext context = runtime.getCurrentContext();
+        RubyString path = StringSupport.checkEmbeddedNulls(runtime, RubyFile.get_path(context, fname));
         setup(fname.convertToString().toString(), false);
 
         return this;

@@ -64,6 +64,7 @@ import org.jruby.util.FileResource;
 import org.jruby.util.JRubyFile;
 import org.jruby.util.ByteList;
 import static org.jruby.CompatVersion.*;
+import org.jruby.util.StringSupport;
 
 /**
  * .The Ruby built-in class Dir.
@@ -134,11 +135,12 @@ public class RubyDir extends RubyObject {
      */
     @JRubyMethod(compat = RUBY1_8, visibility = Visibility.PRIVATE)
     public IRubyObject initialize(ThreadContext context, IRubyObject arg) {
-        RubyString newPath = arg.convertToString();
+	Ruby runtime = context.runtime;
+        RubyString newPath = StringSupport.checkEmbeddedNulls(runtime, RubyFile.get_path(context, arg.convertToString()));
         path = newPath;
         pos = 0;
 
-        String adjustedPath = RubyFile.adjustRootPathOnWindows(context.runtime, newPath.toString(), null);
+        String adjustedPath = RubyFile.adjustRootPathOnWindows(runtime, newPath.toString(), null);
         checkDirIsTwoSlashesOnWindows(getRuntime(), adjustedPath);
 
         dir = JRubyFile.createResource(context, adjustedPath);
@@ -269,13 +271,15 @@ public class RubyDir extends RubyObject {
 
     @JRubyMethod(name = "entries", meta = true, compat = RUBY1_9)
     public static RubyArray entries19(ThreadContext context, IRubyObject recv, IRubyObject arg) {
-        return entriesCommon(context, RubyFile.get_path(context, arg).asJavaString());
+        RubyString path = StringSupport.checkEmbeddedNulls(context.runtime, RubyFile.get_path(context, arg));
+        return entriesCommon(context, path.asJavaString());
     }
 
     @JRubyMethod(name = "entries", meta = true, compat = RUBY1_9)
     public static RubyArray entries19(ThreadContext context, IRubyObject recv, IRubyObject arg, IRubyObject opts) {
+        RubyString path = StringSupport.checkEmbeddedNulls(context.runtime, RubyFile.get_path(context, arg));
         // FIXME: do something with opts
-        return entriesCommon(context, RubyFile.get_path(context, arg).asJavaString());
+        return entriesCommon(context, path.asJavaString());
     }
 
     private static RubyArray entriesCommon(ThreadContext context, String path) {
@@ -310,7 +314,8 @@ public class RubyDir extends RubyObject {
     public static IRubyObject chdir(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
         Ruby runtime = context.runtime;
         RubyString path = args.length == 1 ?
-            RubyFile.get_path(context, args[0]) : getHomeDirectoryPath(context);
+            StringSupport.checkEmbeddedNulls(runtime, RubyFile.get_path(context, args[0])) :
+            getHomeDirectoryPath(context);
         String adjustedPath = RubyFile.adjustRootPathOnWindows(runtime, path.asJavaString(), null);
         checkDirIsTwoSlashesOnWindows(runtime, adjustedPath);
         String realPath = null;
@@ -370,7 +375,9 @@ public class RubyDir extends RubyObject {
 
     @JRubyMethod(name = {"rmdir", "unlink", "delete"}, required = 1, meta = true, compat = RUBY1_9)
     public static IRubyObject rmdir19(ThreadContext context, IRubyObject recv, IRubyObject path) {
-        return rmdirCommon(context.runtime, RubyFile.get_path(context, path).asJavaString());
+        Ruby runtime = context.runtime;
+        RubyString cleanPath = StringSupport.checkEmbeddedNulls(runtime, RubyFile.get_path(context, path));
+        return rmdirCommon(runtime, cleanPath.asJavaString());
     }
 
     private static IRubyObject rmdirCommon(Ruby runtime, String path) {
@@ -449,7 +456,9 @@ public class RubyDir extends RubyObject {
 
     @JRubyMethod(name = "mkdir", required = 1, optional = 1, meta = true, compat = RUBY1_9)
     public static IRubyObject mkdir19(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
-        return mkdirCommon(context.runtime, RubyFile.get_path(context, args[0]).asJavaString(), args);
+        Ruby runtime = context.runtime;
+        RubyString path = StringSupport.checkEmbeddedNulls(runtime, RubyFile.get_path(context, args[0]));
+        return mkdirCommon(runtime, path.asJavaString(), args);
     }
 
     private static IRubyObject mkdirCommon(Ruby runtime, String path, IRubyObject[] args) {
@@ -612,14 +621,17 @@ public class RubyDir extends RubyObject {
 
     @JRubyMethod(name = {"exists?", "exist?"}, meta = true, compat = RUBY1_9)
     public static IRubyObject exist(ThreadContext context, IRubyObject recv, IRubyObject arg) {
+        Ruby runtime = context.runtime;
         // Capture previous exception if any.
-        IRubyObject exception = context.runtime.getGlobalVariables().get("$!");
+        IRubyObject exception = runtime.getGlobalVariables().get("$!");
+        RubyString path = StringSupport.checkEmbeddedNulls(runtime, RubyFile.get_path(context, arg));
+
         try {
-            return context.runtime.newFileStat(RubyFile.get_path(context, arg).asJavaString(), false).directory_p();
+            return runtime.newFileStat(path.asJavaString(), false).directory_p();
         } catch (Exception e) {
             // Restore $!
-            context.runtime.getGlobalVariables().set("$!", exception);
-            return context.runtime.newBoolean(false);
+            runtime.getGlobalVariables().set("$!", exception);
+            return runtime.newBoolean(false);
         }
     }
 

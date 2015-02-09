@@ -37,6 +37,8 @@ import org.jruby.runtime.builtin.IRubyObject;
 
 import sun.misc.Unsafe;
 
+import java.util.Arrays;
+
 public final class StringSupport {
     public static final int CR_MASK      = RubyObject.USER0_F | RubyObject.USER1_F;  
     public static final int CR_UNKNOWN   = 0;
@@ -564,4 +566,78 @@ public final class StringSupport {
         return 0;
     }
 
+    public static int memchr(byte[] ptr, int start, int find, int len) {
+        for (int i = start; i < start + len; i++) {
+            if (ptr[i] == find) return i;
+        }
+        return -1;
+    }
+
+    // StringValueCstr, rb_string_value_cstr without trailing null addition
+    public static RubyString checkEmbeddedNulls(Ruby runtime, IRubyObject ptr) {
+        RubyString str = ptr.convertToString();
+        ByteList strByteList = str.getByteList();
+        byte[] sBytes = strByteList.unsafeBytes();
+        int s = strByteList.begin();
+        int len = strByteList.length();
+        Encoding enc = str.getEncoding();
+        final int minlen = enc.minLength();
+
+        if (minlen > 1) {
+            if (strNullChar(sBytes, s, len, minlen, enc) != -1) {
+                throw runtime.newArgumentError("string contains null char");
+            }
+            return strFillTerm(str, sBytes, s, len, minlen, minlen);
+        }
+        if (memchr(sBytes, s, 0, len) != -1) {
+            throw runtime.newArgumentError("string contains null byte");
+        }
+//        if (s[len]) {
+//            rb_str_modify(str);
+//            s = RSTRING_PTR(str);
+//            s[RSTRING_LEN(str)] = 0;
+//        }
+        return str;
+    }
+
+    // MRI: str_null_char
+    public static int strNullChar(byte[] sBytes, int s, int len, final int minlen, Encoding enc) {
+        int e = s + len;
+
+        for (; s + minlen <= e; s += enc.length(sBytes, s, e)) {
+            if (zeroFilled(sBytes, s, minlen)) return s;
+        }
+        return -1;
+    }
+
+    public static boolean zeroFilled(byte[] sBytes, int s, int n) {
+        for (; n > 0; --n) {
+            if (sBytes[s++] != 0) return false;
+        }
+        return true;
+    }
+
+    public static RubyString strFillTerm(RubyString str, byte[] sBytes, int s, int len, int oldtermlen, int termlen) {
+        int capa = str.getByteList().getUnsafeBytes().length - str.getByteList().begin();
+
+        if (capa < len + termlen) {
+            str.modify(len + termlen);
+        }
+        else if (!str.independent()) {
+            if (zeroFilled(sBytes, s + len, termlen)) return str;
+            str.makeIndependent();
+        }
+        sBytes = str.getByteList().getUnsafeBytes();
+        s = str.getByteList().begin();
+        TERM_FILL(sBytes, s + len, termlen);
+        return str;
+    }
+
+    public static void TERM_FILL(byte[] ptrBytes, int ptr, int termlen) {
+        int term_fill_ptr = ptr;
+        int term_fill_len = termlen;
+        ptrBytes[term_fill_ptr] = '\0';
+        if (term_fill_len > 1)
+        Arrays.fill(ptrBytes, term_fill_ptr, term_fill_len, (byte)0);
+    }
 }

@@ -684,6 +684,21 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
         return newStringNoCopy(runtime, new ByteList(bytes, false));
     }
 
+    // str_independent
+    public boolean independent() {
+        return shareLevel == SHARE_LEVEL_NONE;
+    }
+
+    // str_make_independent, modified to create a new String rather than possibly modifying a frozen one
+    public RubyString makeIndependent() {
+        RubyClass klass = metaClass;
+        RubyString str = strDup(klass.getClassRuntime(), klass);
+        str.modify();
+        str.setFrozen(true);
+        str.infectBy(this);
+        return str;
+    }
+
     /** Encoding aware String construction routines for 1.9
      *
      */
