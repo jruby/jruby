@@ -1329,6 +1329,38 @@ public abstract class StringNodes {
 
     }
 
+    @CoreMethod(names = "swapcase")
+    public abstract static class SwapcaseNode extends CoreMethodNode {
+        public SwapcaseNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public SwapcaseNode(SwapcaseNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public RubyString swapcase(RubyString string) {
+            notDesignedForCompilation();
+
+            char[] charArray = string.toString().toCharArray();
+            StringBuilder newString = new StringBuilder();
+
+            for (int i = 0; i < charArray.length; i++) {
+                char current = charArray[i];
+
+                if (Character.isLowerCase(current)) {
+                    newString.append(Character.toString(current).toUpperCase());
+                } else if (Character.isUpperCase(current)){
+                    newString.append(Character.toString(current).toLowerCase());
+                } else {
+                    newString.append(current);
+                }
+            }
+            return getContext().makeString(newString.toString(), string.getByteList().getEncoding());
+        }
+    }
+
     @CoreMethod(names = "rstrip")
     public abstract static class RStripNode extends CoreMethodNode {
 
