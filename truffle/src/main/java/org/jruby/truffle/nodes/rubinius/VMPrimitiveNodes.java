@@ -10,6 +10,8 @@
 package org.jruby.truffle.nodes.rubinius;
 
 import org.jruby.truffle.nodes.RubyNode;
+import org.jruby.truffle.nodes.core.BasicObjectNodes;
+import org.jruby.truffle.nodes.core.BasicObjectNodesFactory;
 import org.jruby.truffle.nodes.core.KernelNodes;
 import org.jruby.truffle.nodes.core.KernelNodesFactory;
 import org.jruby.truffle.nodes.objects.ClassNode;
@@ -29,6 +31,7 @@ import org.jruby.truffle.runtime.signal.SignalOperations;
 
 import sun.misc.Signal;
 
+import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.SourceSection;
@@ -42,6 +45,7 @@ public abstract class VMPrimitiveNodes {
     public abstract static class CatchNode extends RubiniusPrimitiveNode {
 
         @Child private YieldDispatchHeadNode dispatchNode;
+        @Child private BasicObjectNodes.ReferenceEqualNode referenceEqualNode;
 
         public CatchNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -53,6 +57,14 @@ public abstract class VMPrimitiveNodes {
             dispatchNode = prev.dispatchNode;
         }
 
+        private boolean areSame(VirtualFrame frame, Object left, Object right) {
+            if (referenceEqualNode == null) {
+                CompilerDirectives.transferToInterpreterAndInvalidate();
+                referenceEqualNode = insert(BasicObjectNodesFactory.ReferenceEqualNodeFactory.create(getContext(), getSourceSection(), null, null));
+            }
+            return referenceEqualNode.executeReferenceEqual(frame, left, right);
+        }
+
         @Specialization
         public Object doCatch(VirtualFrame frame, Object tag, RubyProc block) {
             notDesignedForCompilation();
@@ -60,8 +72,7 @@ public abstract class VMPrimitiveNodes {
             try {
                 return dispatchNode.dispatch(frame, block, tag);
             } catch (ThrowException e) {
-                if (e.getTag().equals(tag)) {
-                    // TODO(cs): unset rather than set to Nil?
+                if (areSame(frame, e.getTag(), tag)) {
                     notDesignedForCompilation();
                     RubyBasicObject globals = getContext().getCoreLibrary().getGlobalVariablesObject();
                     globals.getOperations().setInstanceVariable(globals, "$!", getContext().getCoreLibrary().getNilObject());
