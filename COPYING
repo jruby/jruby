@@ -108,9 +108,11 @@ lib/ruby/1.9, and lib/ruby/site_ruby/1.8/rubygems*.
  The Rubinius API implementation in truffle/src/main/ruby/core/rubinius/api
  is copyright (c) 2011, Evan Phoenix, and released under the 3-clause BSD license.
 
- The Rubinius core library implementation in truffle/src/main/ruby/core/rubinius/kernel
- is copyright (c) 2007-2014, Evan Phoenix and contributors, and released under
- the 3-clause BSD license.
+ The Rubinius core library implementation
+ in truffle/src/main/ruby/core/rubinius/bootstrap
+ and truffle/src/main/ruby/core/rubinius/common is
+ copyright (c) 2007-2014, Evan Phoenix and contributors,
+ and released under the 3-clause BSD license.
 
 The complete text of the Eclipse Public License is as follows:
 
