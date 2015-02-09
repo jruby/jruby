@@ -419,7 +419,7 @@ public class CoreLibrary {
 
         if (Options.TRUFFLE_LOAD_CORE.load()) {
             try {
-                loadRubyCore("jruby/truffle/core.rb");
+                loadRubyCore("core.rb");
             } catch (RaiseException e) {
                 final RubyException rubyException = e.getRubyException();
 

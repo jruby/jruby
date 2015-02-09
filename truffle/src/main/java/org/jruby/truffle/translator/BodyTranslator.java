@@ -920,7 +920,7 @@ public class BodyTranslator extends Translator {
          * we will because we'll translate that to ::Rubinius. But it is a simpler translation.
          */
 
-        if (node.getName().equals("Rubinius") && sourceSection.getSource().getPath().startsWith("core:/jruby/truffle/core/rubinius/kernel")) {
+        if (node.getName().equals("Rubinius") && sourceSection.getSource().getPath().startsWith("core:/core/rubinius/kernel")) {
             return new org.jruby.ast.Colon3Node(node.getPosition(), node.getName()).accept(this);
         }
 
@@ -1504,7 +1504,7 @@ public class BodyTranslator extends Translator {
          * self, and @start to be 0.
          */
 
-        if (sourceSection.getSource().getPath().equals("core:/jruby/truffle/core/rubinius/kernel/common/array.rb")) {
+        if (sourceSection.getSource().getPath().equals("core:/core/rubinius/kernel/common/array.rb")) {
             if (nameWithoutSigil.equals("@total")) {
                 return new RubyCallNode(context, sourceSection,
                         "size",
