@@ -742,59 +742,6 @@ public abstract class StringNodes {
 
     }
 
-    @CoreMethod(names = "each_line", optional = 1)
-    public abstract static class EachLineNode extends YieldingCoreMethodNode {
-
-        @Child private ToStrNode toStrNode;
-
-        public EachLineNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-            toStrNode = ToStrNodeFactory.create(context, sourceSection, null);
-        }
-
-        public EachLineNode(EachLineNode prev) {
-            super(prev);
-            toStrNode = prev.toStrNode;
-        }
-
-        @Specialization
-        public RubyArray eachLine(VirtualFrame frame, RubyString string, @SuppressWarnings("unused") UndefinedPlaceholder separator) {
-            notDesignedForCompilation();
-
-            final RubyBasicObject globals = getContext().getCoreLibrary().getGlobalVariablesObject();
-            final RubyString recordSeparator = (RubyString) globals.getInstanceVariable("$/");
-            return eachLine(frame, string, recordSeparator);
-        }
-
-        @Specialization(guards = "!isUndefinedPlaceholder(arguments[1])")
-        public RubyArray eachLine(VirtualFrame frame, RubyString string, Object separator) {
-            notDesignedForCompilation();
-
-            final List<Object> lines = new ArrayList<>();
-
-            String str = string.toString();
-            String sep = toStrNode.executeRubyString(frame, separator).toString();
-
-            int start = 0;
-
-            while (start < str.length()) {
-                int end = str.indexOf(sep, start);
-
-                if (end == -1) {
-                    lines.add(getContext().makeString(str.substring(start)));
-                    break;
-                }
-
-                String line = str.substring(start, end + sep.length());
-                start = end + sep.length();
-
-                lines.add(getContext().makeString(line));
-            }
-
-            return RubyArray.fromObjects(getContext().getCoreLibrary().getArrayClass(), lines.toArray(new Object[lines.size()]));
-        }
-    }
-
     @CoreMethod(names = "empty?")
     public abstract static class EmptyNode extends CoreMethodNode {
 
