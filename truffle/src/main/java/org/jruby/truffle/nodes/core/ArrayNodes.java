@@ -271,6 +271,7 @@ public abstract class ArrayNodes {
             super(prev);
             readNode = prev.readNode;
             readSliceNode = prev.readSliceNode;
+            readNormalizedSliceNode = prev.readNormalizedSliceNode;
             fallbackNode = prev.fallbackNode;
         }
 
