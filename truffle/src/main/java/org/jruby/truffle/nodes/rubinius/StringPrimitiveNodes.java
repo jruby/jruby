@@ -11,10 +11,14 @@ package org.jruby.truffle.nodes.rubinius;
 
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.dsl.Specialization;
+import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.utilities.ConditionProfile;
 import org.jcodings.exception.EncodingException;
 import org.jcodings.specific.ASCIIEncoding;
+import org.jruby.truffle.nodes.RubyNode;
+import org.jruby.truffle.nodes.core.StringNodes;
+import org.jruby.truffle.nodes.core.StringNodesFactory;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.*;
@@ -25,6 +29,28 @@ import org.jruby.util.StringSupport;
  * Rubinius primitives associated with the Ruby {@code String} class.
  */
 public abstract class StringPrimitiveNodes {
+
+    @RubiniusPrimitive(name = "string_byte_substring")
+    public static abstract class StringByteSubstringPrimitiveNode extends RubiniusPrimitiveNode {
+
+        @Child private StringNodes.ByteSliceNode byteSliceNode;
+
+        public StringByteSubstringPrimitiveNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+            byteSliceNode = StringNodesFactory.ByteSliceNodeFactory.create(context, sourceSection, new RubyNode[] {});
+        }
+
+        public StringByteSubstringPrimitiveNode(StringByteSubstringPrimitiveNode prev) {
+            super(prev);
+            byteSliceNode = prev.byteSliceNode;
+        }
+
+        @Specialization
+        public Object stringByteSubstring(VirtualFrame frame, RubyString string, int index, int length) {
+            return byteSliceNode.byteSlice(string, index, length);
+        }
+
+    }
 
     @RubiniusPrimitive(name = "string_check_null_safe", needsSelf = false)
     public static abstract class StringCheckNullSafePrimitiveNode extends RubiniusPrimitiveNode {
