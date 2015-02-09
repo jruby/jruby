@@ -549,7 +549,7 @@ public abstract class StringNodes {
                 return getContext().getCoreLibrary().getNilObject();
             }
 
-            final byte[] copiedBytes = Arrays.copyOfRange(bytes.getUnsafeBytes(), index, index + 1);
+            final byte[] copiedBytes = Arrays.copyOfRange(bytes.getUnsafeBytes(), index, index + length);
 
             return new RubyString(getContext().getCoreLibrary().getStringClass(), new ByteList(copiedBytes, string.getBytes().getEncoding()));
         }
