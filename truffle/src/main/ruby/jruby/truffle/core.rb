@@ -60,6 +60,7 @@ require_relative 'core/rubinius/kernel/common/struct'
 require_relative 'core/rubinius/kernel/common/regexp'
 require_relative 'core/rubinius/kernel/common/signal'
 require_relative 'core/rubinius/kernel/common/mutex'
+require_relative 'core/rubinius/kernel/common/throw_catch'
 require_relative 'core/rubinius/kernel/common/time'
 require_relative 'core/rubinius/kernel/common/true'
 

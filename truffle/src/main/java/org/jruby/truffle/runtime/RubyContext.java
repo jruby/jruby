@@ -70,15 +70,6 @@ public class RubyContext extends ExecutionContext {
 
     private final AtomicLong nextObjectID = new AtomicLong(ObjectIDOperations.FIRST_OBJECT_ID);
 
-    private final ThreadLocal<Deque<Object>> throwTags = new ThreadLocal<Deque<Object>>() {
-
-        @Override
-        protected Deque<Object> initialValue() {
-            return new ArrayDeque<>();
-        }
-
-    };
-
     public RubyContext(Ruby runtime) {
         assert runtime != null;
 
@@ -402,10 +393,6 @@ public class RubyContext extends ExecutionContext {
 
     public Warnings getWarnings() {
         return warnings;
-    }
-
-    public Deque<Object> getThrowTags() {
-        return throwTags.get();
     }
 
     public SafepointManager getSafepointManager() {

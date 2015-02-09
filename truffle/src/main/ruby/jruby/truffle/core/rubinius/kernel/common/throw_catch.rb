@@ -24,21 +24,46 @@
 # OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-# Only part of Rubinius' rubinius.rb
-
 module Rubinius
-  def self.watch_signal(sig, ignored)
-    Rubinius.primitive :vm_watch_signal
-    raise PrimitiveFailure, "Rubinius.vm_watch_signal primitive failed" # Truffle: simplified failure
-  end
+  module ThrownValue
+    def self.register(obj)
+      cur = (Thread.current[:__catches__] ||= [])
+      cur << obj
 
-  def self.throw(dest, obj)
-    Rubinius.primitive :vm_throw
-    raise PrimitiveFailure, "Rubinius.throw primitive failed"
-  end
+      begin
+        yield
+      ensure
+        cur.pop
+      end
+    end
 
-  def self.catch(dest, obj)
-    Rubinius.primitive :vm_catch
-    raise PrimitiveFailure, "Rubinius.catch primitive failed"
+    def self.available?(obj)
+      cur = Thread.current[:__catches__]
+      return false unless cur
+      cur.each do |c|
+        return true if Rubinius::Type.object_equal(c, obj)
+      end
+      false
+    end
   end
+end
+
+module Kernel
+  def catch(obj = Object.new, &block)
+    raise LocalJumpError unless block_given?
+
+    Rubinius::ThrownValue.register(obj) do
+      return Rubinius.catch(obj, block)
+    end
+  end
+  module_function :catch
+
+  def throw(obj, value=nil)
+    unless Rubinius::ThrownValue.available? obj
+      raise ArgumentError, "uncaught throw #{obj.inspect}"
+    end
+
+    Rubinius.throw obj, value
+  end
+  module_function :throw
 end

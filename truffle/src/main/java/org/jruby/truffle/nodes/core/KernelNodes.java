@@ -397,41 +397,6 @@ public abstract class KernelNodes {
         }
     }
 
-    @CoreMethod(names = "catch", isModuleFunction = true, needsBlock = true, required = 1)
-    public abstract static class CatchNode extends YieldingCoreMethodNode {
-
-        public CatchNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
-        public CatchNode(CatchNode prev) {
-            super(prev);
-        }
-
-        @Specialization
-        public Object doCatch(VirtualFrame frame, Object tag, RubyProc block) {
-            notDesignedForCompilation();
-
-            try {
-                getContext().getThrowTags().push(tag);
-
-                return yield(frame, block);
-            } catch (ThrowException e) {
-                if (e.getTag().equals(tag)) {
-                    // TODO(cs): unset rather than set to Nil?
-                    notDesignedForCompilation();
-                    getContext().getCoreLibrary().getGlobalVariablesObject().getOperations().setInstanceVariable(getContext().getCoreLibrary().getGlobalVariablesObject(), "$!", getContext().getCoreLibrary().getNilObject());
-                    return e.getValue();
-                } else {
-                    throw e;
-                }
-            } finally {
-                Object popped = getContext().getThrowTags().pop();
-                assert popped == tag;
-            }
-        }
-    }
-
     @CoreMethod(names = "class")
     public abstract static class KernelClassNode extends CoreMethodNode {
 
@@ -2148,38 +2113,6 @@ public abstract class KernelNodes {
             } catch (UnexpectedResultException e) {
                 throw new UnsupportedOperationException();
             }
-        }
-
-    }
-
-    @CoreMethod(names = "throw", isModuleFunction = true, required = 1, optional = 1)
-    public abstract static class ThrowNode extends CoreMethodNode {
-
-        public ThrowNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
-        public ThrowNode(ThrowNode prev) {
-            super(prev);
-        }
-
-        @Specialization
-        public Object doThrow(Object tag, UndefinedPlaceholder value) {
-            return doThrow(tag, getContext().getCoreLibrary().getNilObject());
-        }
-
-        @Specialization(guards = "!isUndefinedPlaceholder(arguments[1])")
-        public Object doThrow(Object tag, Object value) {
-            notDesignedForCompilation();
-
-            if (!getContext().getThrowTags().contains(tag)) {
-                throw new RaiseException(new RubyException(
-                        getContext().getCoreLibrary().getArgumentErrorClass(),
-                        getContext().makeString(String.format("uncaught throw \"%s\"", tag)),
-                        RubyCallStack.getBacktrace(this)));
-            }
-
-            throw new ThrowException(tag, value);
         }
 
     }
