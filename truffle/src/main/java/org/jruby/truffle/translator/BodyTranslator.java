@@ -1518,6 +1518,23 @@ public class BodyTranslator extends Translator {
             }
         }
 
+        if (sourceSection.getSource().getPath().equals("core:/core/rubinius/common/string.rb")) {
+            if (nameWithoutSigil.equals("@num_bytes")) {
+                return new RubyCallNode(context, sourceSection,
+                        "bytesize",
+                        new SelfNode(context, sourceSection),
+                        null,
+                        false);
+            } else if (nameWithoutSigil.equals("@data")) {
+                return new RubyCallNode(context, sourceSection,
+                        "bytes",
+                        new SelfNode(context, sourceSection),
+                        null,
+                        false);
+            }
+        }
+
+
         final RubyNode receiver = new SelfNode(context, sourceSection);
 
         return new ReadInstanceVariableNode(context, sourceSection, nameWithoutSigil, receiver, false);
