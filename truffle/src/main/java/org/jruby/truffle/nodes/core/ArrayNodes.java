@@ -349,11 +349,9 @@ public abstract class ArrayNodes {
     @CoreMethod(names = "[]=", required = 2, optional = 1, lowerFixnumParameters = 0)
     public abstract static class IndexSetNode extends ArrayCoreMethodNode {
 
+        @Child private ArrayWriteDenormalizedNode writeNode;
+
         private final BranchProfile tooSmallBranch = BranchProfile.create();
-        private final BranchProfile pastEndBranch = BranchProfile.create();
-        private final BranchProfile appendBranch = BranchProfile.create();
-        private final BranchProfile beyondBranch = BranchProfile.create();
-        private final BranchProfile reallocateBranch = BranchProfile.create();
 
         public IndexSetNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -361,303 +359,23 @@ public abstract class ArrayNodes {
 
         public IndexSetNode(IndexSetNode prev) {
             super(prev);
+            writeNode = prev.writeNode;
         }
 
-        // Set a simple index in an empty array
-
-        @Specialization(guards = "isNull")
-        public Object setNull(RubyArray array, int index, int value, UndefinedPlaceholder unused) {
-            if (index == 0) {
-                array.setStore(new int[]{value}, 1);
-            } else {
-                beyondBranch.enter();
-                final Object[] newStore = new Object[index + 1];
-                for (int n = 0; n < index; n++) {
-                    newStore[n] = getContext().getCoreLibrary().getNilObject();
-                }
-                newStore[index] = value;
-                array.setStore(newStore, newStore.length);
-            }
-
-            return value;
-        }
-
-        @Specialization(guards = "isNull")
-        public Object setNull(RubyArray array, int index, long value, UndefinedPlaceholder unused) {
-            if (index == 0) {
-                array.setStore(new long[]{value}, 1);
-            } else {
-                beyondBranch.enter();
-                final Object[] newStore = new Object[index + 1];
-                for (int n = 0; n < index; n++) {
-                    newStore[n] = getContext().getCoreLibrary().getNilObject();
-                }
-                newStore[index] = value;
-                array.setStore(newStore, newStore.length);
-            }
-
-            return value;
-        }
-
-        @Specialization(guards = "isNull")
-        public Object setNull(RubyArray array, int index, double value, UndefinedPlaceholder unused) {
-            if (index == 0) {
-                array.setStore(new double[]{value}, 1);
-            } else {
-                beyondBranch.enter();
-                final Object[] newStore = new Object[index + 1];
-                for (int n = 0; n < index; n++) {
-                    newStore[n] = getContext().getCoreLibrary().getNilObject();
-                }
-                newStore[index] = value;
-                array.setStore(newStore, newStore.length);
-            }
-
-            return value;
-        }
-
-        @Specialization(guards = "isNull")
-        public Object setNull(RubyArray array, int index, Object value, UndefinedPlaceholder unused) {
-            notDesignedForCompilation();
-
-            if (index == 0) {
-                array.slowPush(value);
-            } else {
-                beyondBranch.enter();
-                final Object[] newStore = new Object[index + 1];
-                for (int n = 0; n < index; n++) {
-                    newStore[n] = getContext().getCoreLibrary().getNilObject();
-                }
-                newStore[index] = value;
-                array.setStore(newStore, newStore.length);
-            }
-
-            return value;
-        }
-
-        // Set a simple index in an existing array
-
-        @Specialization(guards = "isIntegerFixnum")
-        public int setIntegerFixnum(RubyArray array, int index, int value, UndefinedPlaceholder unused) {
-            final int normalizedIndex = array.normalizeIndex(index);
-            int[] store = (int[]) array.getStore();
-
-            if (normalizedIndex < 0) {
-                tooSmallBranch.enter();
+        @Specialization
+        public Object set(VirtualFrame frame, RubyArray array, int index, Object value, UndefinedPlaceholder unused) {
+            if (writeNode == null) {
                 CompilerDirectives.transferToInterpreter();
-                throw new RaiseException(getContext().getCoreLibrary().indexTooSmallError("array", index, array.getSize(), this));
-            } else if (normalizedIndex >= array.getSize()) {
-                pastEndBranch.enter();
-
-                if (normalizedIndex == array.getSize()) {
-                    appendBranch.enter();
-
-                    if (normalizedIndex >= store.length) {
-                        reallocateBranch.enter();
-                        array.setStore(store = Arrays.copyOf(store, ArrayUtils.capacity(store.length, normalizedIndex + 1)), array.getSize());
-                    }
-
-                    store[normalizedIndex] = value;
-                    array.setStore(store, array.getSize() + 1);
-                } else if (normalizedIndex > array.getSize()) {
-                    beyondBranch.enter();
-                    final Object[] newStore = new Object[index + 1];
-                    for (int n = 0; n < array.getSize(); n++) {
-                        newStore[n] = store[n];
-                    }
-                    for (int n = array.getSize(); n < index; n++) {
-                        newStore[n] = getContext().getCoreLibrary().getNilObject();
-                    }
-                    newStore[index] = value;
-                    array.setStore(newStore, newStore.length);
-                }
-            } else {
-                store[normalizedIndex] = value;
+                writeNode = insert(ArrayWriteDenormalizedNodeFactory.create(getContext(), getSourceSection(), null, null, null));
             }
 
-            return value;
-        }
-
-        @Specialization(guards = "isIntegerFixnum")
-        public long setLongInIntegerFixnum(RubyArray array, int index, long value, UndefinedPlaceholder unused) {
-            if (array.getAllocationSite() != null) {
-                array.getAllocationSite().convertedIntToLong();
-            }
-
-            final int normalizedIndex = array.normalizeIndex(index);
-
-            long[] store = ArrayUtils.longCopyOf((int[]) array.getStore());
-            array.setStore(store, array.getSize());
-
-            if (normalizedIndex < 0) {
-                tooSmallBranch.enter();
-                CompilerDirectives.transferToInterpreter();
-                throw new RaiseException(getContext().getCoreLibrary().indexTooSmallError("array", index, array.getSize(), this));
-            } else if (normalizedIndex >= array.getSize()) {
-                pastEndBranch.enter();
-
-                if (normalizedIndex == array.getSize()) {
-                    appendBranch.enter();
-
-                    if (normalizedIndex >= store.length) {
-                        reallocateBranch.enter();
-                        array.setStore(store = Arrays.copyOf(store, ArrayUtils.capacity(store.length, normalizedIndex + 1)), array.getSize());
-                    }
-
-                    store[normalizedIndex] = value;
-                    array.setStore(store, array.getSize() + 1);
-                } else if (normalizedIndex > array.getSize()) {
-                    beyondBranch.enter();
-                    final Object[] newStore = new Object[index + 1];
-                    for (int n = 0; n < array.getSize(); n++) {
-                        newStore[n] = store[n];
-                    }
-                    for (int n = array.getSize(); n < index; n++) {
-                        newStore[n] = getContext().getCoreLibrary().getNilObject();
-                    }
-                    newStore[index] = value;
-                    array.setStore(newStore, newStore.length);
-                }
-            } else {
-                store[normalizedIndex] = value;
-            }
-
-            return value;
-        }
-
-        @Specialization(guards = "isLongFixnum")
-        public int setLongFixnum(RubyArray array, int index, int value, UndefinedPlaceholder unused) {
-            setLongFixnum(array, index, (long) value, unused);
-            return value;
-        }
-
-        @Specialization(guards = "isLongFixnum")
-        public long setLongFixnum(RubyArray array, int index, long value, UndefinedPlaceholder unused) {
-            final int normalizedIndex = array.normalizeIndex(index);
-            long[] store = (long[]) array.getStore();
-
-            if (normalizedIndex < 0) {
-                tooSmallBranch.enter();
-                CompilerDirectives.transferToInterpreter();
-                throw new RaiseException(getContext().getCoreLibrary().indexTooSmallError("array", index, array.getSize(), this));
-            } else if (normalizedIndex >= array.getSize()) {
-                pastEndBranch.enter();
-
-                if (normalizedIndex == array.getSize()) {
-                    appendBranch.enter();
-
-                    if (normalizedIndex >= store.length) {
-                        reallocateBranch.enter();
-                        array.setStore(store = Arrays.copyOf(store, ArrayUtils.capacity(store.length, normalizedIndex + 1)), array.getSize());
-                    }
-
-                    store[normalizedIndex] = value;
-                    array.setStore(store, array.getSize() + 1);
-                } else if (normalizedIndex > array.getSize()) {
-                    beyondBranch.enter();
-                    final Object[] newStore = new Object[index + 1];
-                    for (int n = 0; n < array.getSize(); n++) {
-                        newStore[n] = store[n];
-                    }
-                    for (int n = array.getSize(); n < index; n++) {
-                        newStore[n] = getContext().getCoreLibrary().getNilObject();
-                    }
-                    newStore[index] = value;
-                    array.setStore(newStore, newStore.length);
-                }
-            } else {
-                store[normalizedIndex] = value;
-            }
-
-            return value;
-        }
-
-        @Specialization(guards = "isFloat")
-        public double setFloat(RubyArray array, int index, double value, UndefinedPlaceholder unused) {
-            final int normalizedIndex = array.normalizeIndex(index);
-            double[] store = (double[]) array.getStore();
-
-            if (normalizedIndex < 0) {
-                tooSmallBranch.enter();
-                CompilerDirectives.transferToInterpreter();
-                throw new RaiseException(getContext().getCoreLibrary().indexTooSmallError("array", index, array.getSize(), this));
-            } else if (normalizedIndex >= array.getSize()) {
-                pastEndBranch.enter();
-
-                if (normalizedIndex == array.getSize()) {
-                    appendBranch.enter();
-
-                    if (normalizedIndex >= store.length) {
-                        reallocateBranch.enter();
-                        array.setStore(store = Arrays.copyOf(store, ArrayUtils.capacity(store.length, normalizedIndex + 1)), array.getSize());
-                    }
-
-                    store[normalizedIndex] = value;
-                    array.setStore(store, array.getSize() + 1);
-                } else if (normalizedIndex > array.getSize()) {
-                    beyondBranch.enter();
-                    final Object[] newStore = new Object[index + 1];
-                    for (int n = 0; n < array.getSize(); n++) {
-                        newStore[n] = store[n];
-                    }
-                    for (int n = array.getSize(); n < index; n++) {
-                        newStore[n] = getContext().getCoreLibrary().getNilObject();
-                    }
-                    newStore[index] = value;
-                    array.setStore(newStore, newStore.length);
-                }
-            } else {
-                store[normalizedIndex] = value;
-            }
-
-            return value;
-        }
-
-        @Specialization(guards = "isObject")
-        public Object setObject(RubyArray array, int index, Object value, UndefinedPlaceholder unused) {
-            final int normalizedIndex = array.normalizeIndex(index);
-            Object[] store = (Object[]) array.getStore();
-
-            if (normalizedIndex < 0) {
-                tooSmallBranch.enter();
-                CompilerDirectives.transferToInterpreter();
-                throw new RaiseException(getContext().getCoreLibrary().indexTooSmallError("array", index, array.getSize(), this));
-            } else if (normalizedIndex >= array.getSize()) {
-                pastEndBranch.enter();
-
-                if (normalizedIndex == array.getSize()) {
-                    appendBranch.enter();
-
-                    if (normalizedIndex >= store.length) {
-                        reallocateBranch.enter();
-                        array.setStore(store = Arrays.copyOf(store, ArrayUtils.capacity(store.length, normalizedIndex + 1)), array.getSize());
-                    }
-
-                    store[normalizedIndex] = value;
-                    array.setStore(store, array.getSize() + 1);
-                } else if (normalizedIndex > array.getSize()) {
-                    beyondBranch.enter();
-                    final Object[] newStore = new Object[index + 1];
-                    for (int n = 0; n < array.getSize(); n++) {
-                        newStore[n] = store[n];
-                    }
-                    for (int n = array.getSize(); n < index; n++) {
-                        newStore[n] = getContext().getCoreLibrary().getNilObject();
-                    }
-                    newStore[index] = value;
-                    array.setStore(newStore, newStore.length);
-                }
-            } else {
-                store[normalizedIndex] = value;
-            }
-
-            return value;
+            return writeNode.executeWrite(frame, array, index, value);
         }
 
         // Set a slice of the array to a particular value
 
         @Specialization(guards = { "isObject", "!isRubyArray(arguments[3])", "!isUndefinedPlaceholder(arguments[3])" })
-        public Object setObject(RubyArray array, int start, int length, Object value) {
+        public Object setObject(VirtualFrame frame, RubyArray array, int start, int length, Object value) {
             notDesignedForCompilation();
 
             if (length < 0) {
@@ -668,8 +386,12 @@ public abstract class ArrayNodes {
             final int begin = array.normalizeIndex(start);
 
             if (begin >= array.getSize()) {
-                // We don't care of length in this case
-                return setObject(array, start, value, UndefinedPlaceholder.INSTANCE);
+                if (writeNode == null) {
+                    CompilerDirectives.transferToInterpreter();
+                    writeNode = insert(ArrayWriteDenormalizedNodeFactory.create(getContext(), getSourceSection(), null, null, null));
+                }
+
+                return writeNode.executeWrite(frame, array, start, value);
             } else {
                 throw new UnsupportedOperationException();
             }
@@ -678,7 +400,7 @@ public abstract class ArrayNodes {
         // Set a slice of the array to another array
 
         @Specialization(guards = "isIntegerFixnum")
-        public RubyArray setIntegerFixnum(RubyArray array, int start, int length, RubyArray value) {
+        public Object setIntegerFixnum(VirtualFrame frame, RubyArray array, int start, int length, RubyArray value) {
             notDesignedForCompilation();
 
             if (length < 0) {
@@ -710,7 +432,7 @@ public abstract class ArrayNodes {
         }
 
         @Specialization(guards = "isIntegerFixnum")
-        public RubyArray setIntegerFixnumRange(RubyArray array, RubyRange.IntegerFixnumRange range, RubyArray other, UndefinedPlaceholder unused) {
+        public Object setIntegerFixnumRange(VirtualFrame frame, RubyArray array, RubyRange.IntegerFixnumRange range, RubyArray other, UndefinedPlaceholder unused) {
             if (range.doesExcludeEnd()) {
                 CompilerDirectives.transferToInterpreter();
                 throw new UnsupportedOperationException();
