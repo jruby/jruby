@@ -386,7 +386,6 @@ public class IRBuilder {
             case MATCH3NODE: return buildMatch3((Match3Node) node);
             case MATCHNODE: return buildMatch((MatchNode) node);
             case MODULENODE: return buildModule((ModuleNode) node);
-            case MULTIPLEASGNNODE: return buildMultipleAsgn((MultipleAsgnNode) node); // Only for 1.8
             case MULTIPLEASGN19NODE: return buildMultipleAsgn19((MultipleAsgn19Node) node);
             case NEWLINENODE: return buildNewline((NewlineNode) node);
             case NEXTNODE: return buildNext((NextNode) node);
@@ -2625,50 +2624,6 @@ public class IRBuilder {
         Variable processBodyResult = addResultInstr(new ProcessModuleBodyInstr(createTemporaryVariable(), moduleVar, NullBlock.INSTANCE));
         newIRBuilder(manager, body).buildModuleOrClassBody(moduleNode.getBodyNode(), moduleNode.getPosition().getLine());
         return processBodyResult;
-    }
-
-    public Operand buildMultipleAsgn(MultipleAsgnNode multipleAsgnNode) {
-        Operand  values = build(multipleAsgnNode.getValueNode());
-        Variable ret = getValueInTemporaryVariable(values);
-        buildMultipleAsgnAssignment(multipleAsgnNode, null, ret);
-        return ret;
-    }
-
-    // This method is called both for regular multiple assignment as well as argument passing
-    //
-    // Ex: a,b,*c=v  is a regular assignment and in this case, the "values" operand will be non-null
-    // Ex: { |a,b,*c| ..} is the argument passing case
-    public void buildMultipleAsgnAssignment(final MultipleAsgnNode multipleAsgnNode, Operand argsArray, Operand values) {
-        final ListNode sourceArray = multipleAsgnNode.getHeadNode();
-
-        // First, build assignments for specific named arguments
-        int i = 0;
-        if (sourceArray != null) {
-            for (Node an: sourceArray.childNodes()) {
-                if (values == null) {
-                    buildBlockArgsAssignment(an, argsArray, i, false);
-                } else {
-                    Variable rhsVal = addResultInstr(new ReqdArgMultipleAsgnInstr(createTemporaryVariable(), values, i));
-                    buildAssignment(an, rhsVal);
-                }
-                i++;
-            }
-        }
-
-        // First, build an assignment for a splat, if any, with the rest of the args!
-        Node argsNode = multipleAsgnNode.getArgsNode();
-        if (argsNode == null) {
-            if (sourceArray == null) {
-                throw new NotCompilableException("Something's wrong, multiple assignment with no head or args at: " + multipleAsgnNode.getPosition());
-            }
-        } else if (!(argsNode instanceof StarNode)) {
-            if (values != null) {
-                buildAssignment(argsNode,     // rest of the argument array!
-                        addResultInstr(new RestArgMultipleAsgnInstr(createTemporaryVariable(), values, i)));
-            } else {
-                buildBlockArgsAssignment(argsNode, argsArray, i, true); // rest of the argument array!
-            }
-        }
     }
 
     public Operand buildNewline(NewlineNode node) {
