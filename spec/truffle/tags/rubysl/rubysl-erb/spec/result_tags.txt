@@ -1,0 +1,3 @@
+fails:ERB#result is not able to h() or u() unless including ERB::Util
+fails:ERB#result is able to h() or u() if ERB::Util is included
+fails:ERB#result use TOPLEVEL_BINDING if binding is not passed
