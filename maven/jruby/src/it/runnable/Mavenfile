@@ -40,7 +40,10 @@ build do
   directory 'pkg'
 end
 
-jruby_plugin!( :gem, :includeRubygemsInResources => true )
+jruby_plugin!( :gem, '1.0.8',
+               # need a jruby-complete from maven central here
+               :jrubyVersion => '1.7.19',
+               :includeRubygemsInResources => true )
 
 if File.file?('Jarfile.lock')
   phase :package do

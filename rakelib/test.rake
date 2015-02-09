@@ -107,7 +107,8 @@ namespace :test do
     end
     t.test_files = files
     t.verbose = true
-    t.ruby_opts << '-J-ea'
+    t.test_files = files_in_file 'test/slow.index'
+    t.ruby_opts << '-J-ea' << '--1.8'
     t.ruby_opts << '-J-cp target/test-classes'
   end
 
