@@ -22,10 +22,12 @@ import org.jruby.truffle.nodes.objects.ClassNode;
 import org.jruby.truffle.nodes.objects.ClassNodeFactory;
 import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.runtime.UndefinedPlaceholder;
 import org.jruby.truffle.runtime.core.RubyArray;
 import org.jruby.truffle.runtime.core.RubyClass;
 import org.jruby.truffle.runtime.core.RubyMethod;
 import org.jruby.truffle.runtime.core.RubyModule;
+import org.jruby.truffle.runtime.core.RubyProc;
 import org.jruby.truffle.runtime.core.RubyString;
 import org.jruby.truffle.runtime.core.RubySymbol;
 import org.jruby.truffle.runtime.core.RubyUnboundMethod;
@@ -67,7 +69,7 @@ public abstract class MethodNodes {
 
     }
 
-    @CoreMethod(names = "call", argumentsAsArray = true)
+    @CoreMethod(names = "call", needsBlock = true, argumentsAsArray = true)
     public abstract static class CallNode extends CoreMethodNode {
 
         @Child private IndirectCallNode callNode;
@@ -83,7 +85,7 @@ public abstract class MethodNodes {
         }
 
         @Specialization
-        public Object call(VirtualFrame frame, RubyMethod method, Object... arguments) {
+        public Object call(VirtualFrame frame, RubyMethod method, Object[] arguments, @SuppressWarnings("unused") UndefinedPlaceholder block) {
             // TODO(CS 11-Jan-15) should use a cache and DirectCallNode here so that we can inline - but it's
             // incompatible with our current dispatch chain.
 
@@ -94,6 +96,21 @@ public abstract class MethodNodes {
                     internalMethod.getDeclarationFrame(),
                     method.getReceiver(),
                     null,
+                    arguments));
+        }
+
+        @Specialization
+        public Object call(VirtualFrame frame, RubyMethod method, Object[] arguments, RubyProc block) {
+            // TODO(CS 11-Jan-15) should use a cache and DirectCallNode here so that we can inline - but it's
+            // incompatible with our current dispatch chain.
+
+            final InternalMethod internalMethod = method.getMethod();
+
+            return callNode.call(frame, method.getMethod().getCallTarget(), RubyArguments.pack(
+                    internalMethod,
+                    internalMethod.getDeclarationFrame(),
+                    method.getReceiver(),
+                    block,
                     arguments));
         }
 
