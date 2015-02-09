@@ -547,37 +547,37 @@ public class RubyStruct extends RubyObject {
     private IRubyObject inspectStruct(final ThreadContext context, boolean recur) {
         Ruby runtime = context.runtime;
         RubyArray member = __member__();
-        ByteList buffer = new ByteList("#<struct ".getBytes());
+        RubyString buffer = RubyString.newString(getRuntime(), new ByteList("#<struct ".getBytes()));
         String cpath = getMetaClass().getRealClass().getName();
         char first = cpath.charAt(0);
 
         if (recur || first != '#') {
-            buffer.append(cpath.getBytes());
-            buffer.append(' ');
+            buffer.cat(cpath.getBytes());
+            buffer.cat(' ');
         }
 
         if (recur) {
-            buffer.append(":...>".getBytes());
-            return runtime.newString(buffer);
+            buffer.cat(":...>".getBytes());
+            return buffer.dup();
         }
 
         for (int i = 0,k=member.getLength(); i < k; i++) {
             if (i > 0) {
-                buffer.append(',').append(' ');
+                buffer.cat(',').cat(' ');
             }
             RubySymbol slot = (RubySymbol)member.eltInternal(i);
             String name = slot.toString();
             if (IdUtil.isLocal(name) || IdUtil.isConstant(name)) {
-                buffer.append(RubyString.objAsString(context, slot).getByteList());
+                buffer.cat19(RubyString.objAsString(context, slot));
             } else {
-                buffer.append(((RubyString) slot.inspect(context)).getByteList());
+                buffer.cat19(((RubyString) slot.inspect(context)));
             }
-            buffer.append('=');
-            buffer.append(inspect(context, values[i]).getByteList());
+            buffer.cat('=');
+            buffer.cat19(inspect(context, values[i]));
         }
 
-        buffer.append('>');
-        return getRuntime().newString(buffer); // OBJ_INFECT
+        buffer.cat('>');
+        return buffer.dup(); // OBJ_INFECT
     }
 
     @JRubyMethod(name = {"inspect", "to_s"})
