@@ -1448,13 +1448,13 @@ public class BodyTranslator extends Translator {
 
         org.jruby.ast.Node thenBody = node.getThenBody();
 
-        if (thenBody == null) {
+        if (thenBody == null || thenBody.isNil()) {
             thenBody = new org.jruby.ast.NilNode(node.getPosition());
         }
 
         org.jruby.ast.Node elseBody = node.getElseBody();
 
-        if (elseBody == null) {
+        if (elseBody == null || elseBody.isNil()) {
             elseBody = new org.jruby.ast.NilNode(node.getPosition());
         }
 
