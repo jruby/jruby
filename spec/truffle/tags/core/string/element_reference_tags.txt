@@ -7,12 +7,9 @@ fails:String#[] with Range always taints resulting strings when self is tainted
 fails:String#[] with Range returns subclass instances
 fails:String#[] with Range calls to_int on range arguments
 fails:String#[] with Range works with Range subclasses
-fails:String#[] with Regexp returns the matching portion of self
-fails:String#[] with Regexp returns nil if there is no match
 fails:String#[] with Regexp always taints resulting strings when self or regexp is tainted
 fails:String#[] with Regexp returns an untrusted string if the regexp is untrusted
 fails:String#[] with Regexp returns subclass instances
-fails:String#[] with Regexp sets $~ to MatchData when there is a match and nil when there's none
 fails:String#[] with Regexp, index returns the capture for the given index
 fails:String#[] with Regexp, index always taints resulting strings when self or regexp is tainted
 fails:String#[] with Regexp, index returns an untrusted string if the regexp is untrusted

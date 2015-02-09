@@ -313,6 +313,19 @@ public abstract class StringNodes {
             }
         }
 
+        @Specialization
+        public Object slice(RubyString string, RubyRegexp regexp, UndefinedPlaceholder capture) {
+            notDesignedForCompilation();
+
+            final Object matchData = regexp.matchCommon(string.getBytes(), false, false);
+
+            if (matchData == getContext().getCoreLibrary().getNilObject()) {
+                return matchData;
+            }
+
+            return ((RubyMatchData) matchData).getValues()[0];
+        }
+
     }
 
     @CoreMethod(names = "[]=", required = 2, lowerFixnumParameters = 0)
