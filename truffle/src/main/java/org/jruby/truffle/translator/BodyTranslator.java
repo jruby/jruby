@@ -2527,6 +2527,7 @@ public class BodyTranslator extends Translator {
 
         RubyNode condition = node.getConditionNode().accept(this);
 
+        final boolean oldTranslatingWhile = translatingWhile;
         translatingWhile = true;
 
         final RubyNode body;
@@ -2534,7 +2535,7 @@ public class BodyTranslator extends Translator {
         try {
             body = node.getBodyNode().accept(this);
         } finally {
-            translatingWhile = false;
+            translatingWhile = oldTranslatingWhile;
         }
 
         if (node.evaluateAtStart()) {
