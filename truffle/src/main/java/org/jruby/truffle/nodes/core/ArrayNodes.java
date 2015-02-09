@@ -36,9 +36,6 @@ import org.jruby.truffle.nodes.methods.arguments.ReadPreArgumentNode;
 import org.jruby.truffle.nodes.methods.locals.ReadLevelVariableNodeFactory;
 import org.jruby.truffle.nodes.yield.YieldDispatchHeadNode;
 import org.jruby.truffle.runtime.*;
-import org.jruby.truffle.runtime.RubyArguments;
-import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.UndefinedPlaceholder;
 import org.jruby.truffle.runtime.control.BreakException;
 import org.jruby.truffle.runtime.control.NextException;
 import org.jruby.truffle.runtime.control.RaiseException;
@@ -949,9 +946,16 @@ public abstract class ArrayNodes {
         public RubyArray concatObject(RubyArray array, RubyArray other) {
             notDesignedForCompilation();
 
-            // TODO(CS): is there already space in array?
-            System.arraycopy(other.getStore(), 0, array.getStore(), array.getSize(), other.getSize());
-            array.setStore(Arrays.copyOf((Object[]) array.getStore(), array.getSize() + other.getSize()), array.getSize() + other.getSize());
+            int size = array.getSize();
+            int newSize = size + other.getSize();
+            Object[] store = (Object[]) array.getStore();
+
+            if (newSize > store.length) {
+                store = Arrays.copyOf(store, ArrayUtils.capacity(store.length, newSize));
+            }
+
+            System.arraycopy(other.getStore(), 0, store, size, other.getSize());
+            array.setStore(store, newSize);
             return array;
         }
 

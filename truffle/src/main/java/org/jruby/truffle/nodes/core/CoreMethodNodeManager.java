@@ -193,7 +193,7 @@ public abstract class CoreMethodNodeManager {
             }
         }
 
-        assert assertNoAmbiguousDefaultArguments(methodDetails);
+        verifyNoAmbiguousDefaultArguments(methodDetails);
 
         final CheckArityNode checkArity = new CheckArityNode(context, sourceSection, arity);
         final RubyNode block = SequenceNode.sequence(context, sourceSection, checkArity, methodNode);
@@ -202,7 +202,9 @@ public abstract class CoreMethodNodeManager {
         return new RubyRootNode(context, sourceSection, null, sharedMethodInfo, exceptionTranslatingNode);
     }
 
-    private static boolean assertNoAmbiguousDefaultArguments(MethodDetails methodDetails) {
+    private static boolean verifyNoAmbiguousDefaultArguments(MethodDetails methodDetails) {
+        boolean success = true;
+
         if (methodDetails.getMethodAnnotation().optional() > 0) {
             int opt = methodDetails.getMethodAnnotation().optional();
             int argc = methodDetails.getNodeFactory().getExecutionSignature().size();
@@ -231,12 +233,17 @@ public abstract class CoreMethodNodeManager {
                 }
 
                 if (undefined && object) {
-                    throw new RuntimeException("Ambiguous default argument " + (argc - i) + " in " + node.getCanonicalName());
+                    success = false;
+                    System.err.println("Ambiguous default argument " + (argc - i) + " in " + node.getCanonicalName());
                 }
             }
         }
 
-        return true;
+        if (!success) {
+            throw new RuntimeException("Found ambiguous arguments");
+        }
+
+        return success;
     }
 
     public static class MethodDetails {

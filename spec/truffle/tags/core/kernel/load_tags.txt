@@ -24,3 +24,6 @@ fails:Kernel.load (path resolution) with an unreadable file raises a LoadError
 fails:Kernel.load loads file even after $LOAD_PATH change
 fails:Kernel.load sets the enclosing scope to an anonymous module if passed true for 'wrap'
 fails:Kernel.load (shell expansion) expands a tilde to the HOME environment variable as the path to load
+fails(windows bug):Kernel#load loads a file that recursively requires itself
+fails(windows bug):Kernel.load loads a file that recursively requires itself
+
