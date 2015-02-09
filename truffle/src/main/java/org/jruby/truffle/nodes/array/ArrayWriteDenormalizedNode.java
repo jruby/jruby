@@ -26,7 +26,7 @@ import org.jruby.truffle.runtime.core.RubyArray;
 })
 public abstract class ArrayWriteDenormalizedNode extends RubyNode {
 
-    @Child private ArrayWriteNormalizedNode readNode;
+    @Child private ArrayWriteNormalizedNode writeNode;
 
     public ArrayWriteDenormalizedNode(RubyContext context, SourceSection sourceSection) {
         super(context, sourceSection);
@@ -34,21 +34,21 @@ public abstract class ArrayWriteDenormalizedNode extends RubyNode {
 
     public ArrayWriteDenormalizedNode(ArrayWriteDenormalizedNode prev) {
         super(prev);
-        readNode = prev.readNode;
+        writeNode = prev.writeNode;
     }
 
     public abstract Object executeWrite(VirtualFrame frame, RubyArray array, int index, Object value);
 
     @Specialization
-    public Object read(VirtualFrame frame, RubyArray array, int index, Object value) {
-        if (readNode == null) {
+    public Object write(VirtualFrame frame, RubyArray array, int index, Object value) {
+        if (writeNode == null) {
             CompilerDirectives.transferToInterpreter();
-            readNode = insert(ArrayWriteNormalizedNodeFactory.create(getContext(), getSourceSection(), null, null, null));
+            writeNode = insert(ArrayWriteNormalizedNodeFactory.create(getContext(), getSourceSection(), null, null, null));
         }
 
         final int normalizedIndex = array.normalizeIndex(index);
 
-        return readNode.executeWrite(frame, array, normalizedIndex, value);
+        return writeNode.executeWrite(frame, array, normalizedIndex, value);
     }
 
 }
