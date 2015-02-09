@@ -56,6 +56,9 @@ public abstract class RubyRange extends RubyBasicObject {
             }
         }
 
+        public int getLength() {
+            return getExclusiveEnd() - begin;
+        }
     }
 
     public static class LongFixnumRange extends RubyRange {

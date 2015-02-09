@@ -26,10 +26,7 @@ import org.jruby.runtime.Visibility;
 import org.jruby.truffle.nodes.CoreSourceSection;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.RubyRootNode;
-import org.jruby.truffle.nodes.array.ArrayReadDenormalizedNode;
-import org.jruby.truffle.nodes.array.ArrayReadDenormalizedNodeFactory;
-import org.jruby.truffle.nodes.array.ArrayReadSliceDenormalizedNode;
-import org.jruby.truffle.nodes.array.ArrayReadSliceDenormalizedNodeFactory;
+import org.jruby.truffle.nodes.array.*;
 import org.jruby.truffle.nodes.dispatch.*;
 import org.jruby.truffle.nodes.methods.arguments.MissingArgumentBehaviour;
 import org.jruby.truffle.nodes.methods.arguments.ReadPreArgumentNode;
@@ -53,10 +50,8 @@ import org.jruby.truffle.runtime.util.ArrayUtils;
 import org.jruby.util.ByteList;
 import org.jruby.util.Memo;
 
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
-import java.util.List;
 
 @CoreClass(name = "Array")
 public abstract class ArrayNodes {
@@ -265,10 +260,8 @@ public abstract class ArrayNodes {
 
         @Child protected ArrayReadDenormalizedNode readNode;
         @Child protected ArrayReadSliceDenormalizedNode readSliceNode;
-
+        @Child protected ArrayReadSliceNormalizedNode readNormalizedSliceNode;
         @Child protected CallDispatchHeadNode fallbackNode;
-
-        private final BranchProfile outOfBounds = BranchProfile.create();
 
         public IndexNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -305,127 +298,49 @@ public abstract class ArrayNodes {
             return readSliceNode.executeReadSlice(frame, array, start, length);
         }
 
-        // Slice with a range
-
-        @Specialization(guards = "isIntegerFixnum")
-        public Object sliceIntegerFixnum(RubyArray array, RubyRange.IntegerFixnumRange range, UndefinedPlaceholder undefined) {
-            notDesignedForCompilation();
-
+        @Specialization
+        public Object slice(VirtualFrame frame, RubyArray array, RubyRange.IntegerFixnumRange range, UndefinedPlaceholder undefined) {
             final int normalizedIndex = array.normalizeIndex(range.getBegin());
 
             if (normalizedIndex < 0 || normalizedIndex > array.getSize()) {
                 return getContext().getCoreLibrary().getNilObject();
             } else {
                 final int end = array.normalizeIndex(range.getEnd());
-                final int excludingEnd = array.clampExclusiveIndex(range.doesExcludeEnd() ? end : end + 1);
+                final int exclusiveEnd = array.clampExclusiveIndex(range.doesExcludeEnd() ? end : end + 1);
 
-                if (excludingEnd <= normalizedIndex) {
+                if (exclusiveEnd <= normalizedIndex) {
                     return new RubyArray(array.getLogicalClass(), null, 0);
                 }
 
-                return new RubyArray(array.getLogicalClass(), ArrayUtils.extractRange((int[]) array.getStore(), normalizedIndex, excludingEnd), excludingEnd - normalizedIndex);
-            }
-        }
+                final int length = exclusiveEnd - normalizedIndex;
 
-        @Specialization(guards = "isLongFixnum")
-        public Object sliceLongFixnum(RubyArray array, RubyRange.IntegerFixnumRange range, UndefinedPlaceholder undefined) {
-            notDesignedForCompilation();
-
-            final int normalizedIndex = array.normalizeIndex(range.getBegin());
-
-            if (normalizedIndex < 0 || normalizedIndex > array.getSize()) {
-                return getContext().getCoreLibrary().getNilObject();
-            } else {
-                final int end = array.normalizeIndex(range.getEnd());
-                final int excludingEnd = array.clampExclusiveIndex(range.doesExcludeEnd() ? end : end + 1);
-
-                if (excludingEnd <= normalizedIndex) {
-                    return new RubyArray(array.getLogicalClass(), null, 0);
+                if (readNormalizedSliceNode == null) {
+                    CompilerDirectives.transferToInterpreter();
+                    readNormalizedSliceNode = insert(ArrayReadSliceNormalizedNodeFactory.create(getContext(), getSourceSection(), null, null, null));
                 }
 
-                return new RubyArray(array.getLogicalClass(), ArrayUtils.extractRange((long[]) array.getStore(), normalizedIndex, excludingEnd), excludingEnd - normalizedIndex);
+                return readNormalizedSliceNode.executeReadSlice(frame, array, normalizedIndex, length);
             }
         }
-
-        @Specialization(guards = "isFloat")
-        public Object sliceFloat(RubyArray array, RubyRange.IntegerFixnumRange range, UndefinedPlaceholder undefined) {
-            notDesignedForCompilation();
-
-            final int normalizedIndex = array.normalizeIndex(range.getBegin());
-
-            if (normalizedIndex < 0 || normalizedIndex > array.getSize()) {
-                return getContext().getCoreLibrary().getNilObject();
-            } else {
-                final int end = array.normalizeIndex(range.getEnd());
-                final int excludingEnd = array.clampExclusiveIndex(range.doesExcludeEnd() ? end : end + 1);
-
-                if (excludingEnd <= normalizedIndex) {
-                    return new RubyArray(array.getLogicalClass(), null, 0);
-                }
-
-                return new RubyArray(array.getLogicalClass(), ArrayUtils.extractRange((double[]) array.getStore(), normalizedIndex, excludingEnd), excludingEnd - normalizedIndex);
-            }
-        }
-
-        @Specialization(guards = "isObject")
-        public Object sliceObject(RubyArray array, RubyRange.IntegerFixnumRange range, UndefinedPlaceholder undefined) {
-            notDesignedForCompilation();
-
-            final int normalizedIndex = array.normalizeIndex(range.getBegin());
-
-            if (normalizedIndex < 0 || normalizedIndex > array.getSize()) {
-                return getContext().getCoreLibrary().getNilObject();
-            } else {
-                final int end = array.normalizeIndex(range.getEnd());
-                final int excludingEnd = array.clampExclusiveIndex(range.doesExcludeEnd() ? end : end + 1);
-
-                if (excludingEnd <= normalizedIndex) {
-                    return new RubyArray(array.getLogicalClass(), null, 0);
-                }
-
-                return new RubyArray(array.getLogicalClass(), ArrayUtils.extractRange((Object[]) array.getStore(), normalizedIndex, excludingEnd), excludingEnd - normalizedIndex);
-            }
-        }
-
-        // Fallbacks
 
         @Specialization(guards = {"!isInteger(arguments[1])", "!isIntegerFixnumRange(arguments[1])"})
-        public Object sliceFallback(VirtualFrame frame, RubyArray array, Object a, UndefinedPlaceholder undefined) {
-            notDesignedForCompilation();
-
-            if (fallbackNode == null) {
-                CompilerDirectives.transferToInterpreter();
-                fallbackNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext()));
-            }
-
-            return fallbackNode.call(frame, array, "element_reference_fallback", null,
-                    getContext().makeString(getName()), RubyArray.fromObjects(getContext().getCoreLibrary().getArrayClass(), a));
+        public Object fallbackIndex(VirtualFrame frame, RubyArray array, Object a, UndefinedPlaceholder undefined) {
+            return fallback(frame, array, RubyArray.fromObjects(getContext().getCoreLibrary().getArrayClass(), a));
         }
 
-        @Specialization(guards = {"!isInteger(arguments[1])", "!isIntegerFixnumRange(arguments[1])", "!isUndefinedPlaceholder(arguments[2])"})
-        public Object sliceFallback1(VirtualFrame frame, RubyArray array, Object a, Object b) {
-            notDesignedForCompilation();
-
-            if (fallbackNode == null) {
-                CompilerDirectives.transferToInterpreter();
-                fallbackNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext()));
-            }
-
-            return fallbackNode.call(frame, array, "element_reference_fallback", null,
-                    getContext().makeString(getName()), RubyArray.fromObjects(getContext().getCoreLibrary().getArrayClass(), a, b));
+        @Specialization(guards = {"!isIntegerFixnumRange(arguments[1])", "!isUndefinedPlaceholder(arguments[2])"})
+        public Object fallbackSlice(VirtualFrame frame, RubyArray array, Object a, Object b) {
+            return fallback(frame, array, RubyArray.fromObjects(getContext().getCoreLibrary().getArrayClass(), a, b));
         }
 
-        @Specialization(guards = {"!isInteger(arguments[2])", "!isIntegerFixnumRange(arguments[2])", "!isUndefinedPlaceholder(arguments[2])"})
-        public Object sliceFallback2(VirtualFrame frame, RubyArray array, Object a, Object b) {
-            notDesignedForCompilation();
-
+        public Object fallback(VirtualFrame frame, RubyArray array, RubyArray args) {
             if (fallbackNode == null) {
                 CompilerDirectives.transferToInterpreter();
                 fallbackNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext()));
             }
 
             return fallbackNode.call(frame, array, "element_reference_fallback", null,
-                    getContext().makeString(getName()), RubyArray.fromObjects(getContext().getCoreLibrary().getArrayClass(), a, b));
+                    getContext().makeString(getName()), args);
         }
 
     }
