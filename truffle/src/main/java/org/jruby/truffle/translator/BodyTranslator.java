@@ -2153,7 +2153,9 @@ public class BodyTranslator extends Translator {
         RubyNode lhs = node.getFirstNode().accept(this);
         RubyNode rhs = node.getSecondNode().accept(this);
 
-        if (node.getFirstNode().needsDefinitionCheck()) {
+        // I think this is only required for constants - not instance variables
+
+        if (node.getFirstNode().needsDefinitionCheck() && !(node.getFirstNode() instanceof org.jruby.ast.InstVarNode)) {
             RubyNode defined = new DefinedNode(context, lhs.getSourceSection(), lhs);
             lhs = new AndNode(context, lhs.getSourceSection(), defined, lhs);
         }
