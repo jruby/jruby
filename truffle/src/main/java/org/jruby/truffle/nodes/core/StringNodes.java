@@ -730,7 +730,7 @@ public abstract class StringNodes {
         public RubyString eachChar(VirtualFrame frame, RubyString string, RubyProc block) {
             notDesignedForCompilation();
 
-            // TODO (nirvdrum 04-Feb-15): This needs to support Ruby's encoding and code range semantics.  For now, this hack will suffice for very simple Strings.
+            // TODO (nirvdrum 04-Feb-15): This needs to support Ruby' encoding and code range semantics.  For now, this hack will suffice for very simple Strings.
             final String javaString = string.toString();
 
             for (int i = 0; i < javaString.length(); i++) {
@@ -1343,21 +1343,28 @@ public abstract class StringNodes {
         public RubyString swapcase(RubyString string) {
             notDesignedForCompilation();
 
-            char[] charArray = string.toString().toCharArray();
-            StringBuilder newString = new StringBuilder();
+            ByteList byteList = StringNodesHelper.swapcase(string);
+            return getContext().makeString(byteList);
+        }
+    }
 
-            for (int i = 0; i < charArray.length; i++) {
-                char current = charArray[i];
+    @CoreMethod(names = "swapcase!")
+    public abstract static class SwapcaseBangNode extends CoreMethodNode {
+        public SwapcaseBangNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
 
-                if (Character.isLowerCase(current)) {
-                    newString.append(Character.toString(current).toUpperCase());
-                } else if (Character.isUpperCase(current)){
-                    newString.append(Character.toString(current).toLowerCase());
-                } else {
-                    newString.append(current);
-                }
-            }
-            return getContext().makeString(newString.toString(), string.getByteList().getEncoding());
+        public SwapcaseBangNode(SwapcaseBangNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public RubyString swapcase(RubyString string) {
+            notDesignedForCompilation();
+
+            ByteList byteList = StringNodesHelper.swapcase(string);
+            string.set(byteList);
+            return string;
         }
     }
 
@@ -2029,6 +2036,27 @@ public abstract class StringNodes {
 
         public static ByteList reverse(RubyString string) {
             ByteList byteListString = ByteList.create(new StringBuilder(string.toString()).reverse().toString());
+            byteListString.setEncoding(string.getBytes().getEncoding());
+
+            return byteListString;
+        }
+
+        public static ByteList swapcase(RubyString string) {
+            char[] charArray = string.toString().toCharArray();
+            StringBuilder newString = new StringBuilder();
+
+            for (int i = 0; i < charArray.length; i++) {
+                char current = charArray[i];
+
+                if (Character.isLowerCase(current)) {
+                    newString.append(Character.toString(current).toUpperCase());
+                } else if (Character.isUpperCase(current)){
+                    newString.append(Character.toString(current).toLowerCase());
+                } else {
+                    newString.append(current);
+                }
+            }
+            ByteList byteListString = ByteList.create(newString);
             byteListString.setEncoding(string.getBytes().getEncoding());
 
             return byteListString;
