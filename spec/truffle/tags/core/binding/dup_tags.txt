@@ -1,2 +1,0 @@
-fails:Binding#dup returns a copy of the Bind object
-fails:Binding#dup is a shallow copy of the Bind object
