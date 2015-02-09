@@ -733,7 +733,7 @@ public class BodyTranslator extends Translator {
 
                 RubyNode thenNode;
 
-                if (when.getBodyNode() == null) {
+                if (when.getBodyNode() == null || when.getBodyNode().isNil()) {
                     thenNode = new ObjectLiteralNode(context, sourceSection, context.getCoreLibrary().getNilObject());
                 } else {
                     thenNode = when.getBodyNode().accept(this);
