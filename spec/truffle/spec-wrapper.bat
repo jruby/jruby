@@ -7,5 +7,5 @@
   -Xparser.warn.argument_prefix=false ^
   -Xparser.warn.ambiguous_argument=false ^
   -Xparser.warn.flags_ignored=false ^
-  -J-Xss10m
+  -J-Xss10m ^
   -J-ea -J-Xmx2G %*
