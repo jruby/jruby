@@ -43,7 +43,7 @@ public class YieldInstr extends ResultBaseInstr implements FixedArityInstr {
 
     @Override
     public String toString() {
-        return getOperation() + "(" + getBlockArg() + ", " + (unwrapArray ? "UNWRAP=" : "") + getYieldArg() + ")";
+        return getResult() + " = " + getOperation() + "(" + getBlockArg() + ", " + (unwrapArray ? "UNWRAP=" : "") + getYieldArg() + ")";
     }
 
     public boolean isUnwrapArray() {
