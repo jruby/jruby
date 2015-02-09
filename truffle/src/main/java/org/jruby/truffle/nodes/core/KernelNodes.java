@@ -483,7 +483,7 @@ public abstract class KernelNodes {
 
     }
 
-    @CoreMethod(names = "eval", isModuleFunction = true, required = 1, optional = 3)
+    @CoreMethod(names = "eval", isModuleFunction = true, required = 1, optional = 3, lowerFixnumParameters = 3)
     @NodeChildren({
             @NodeChild(value = "source", type = RubyNode.class),
             @NodeChild(value = "binding", type = RubyNode.class),
