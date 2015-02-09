@@ -40,6 +40,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayDeque;
+import java.util.Deque;
 import java.util.Queue;
 import java.util.Random;
 import java.util.concurrent.atomic.AtomicLong;
@@ -69,10 +70,10 @@ public class RubyContext extends ExecutionContext {
 
     private final AtomicLong nextObjectID = new AtomicLong(ObjectIDOperations.FIRST_OBJECT_ID);
 
-    private final ThreadLocal<Queue<Object>> throwTags = new ThreadLocal<Queue<Object>>() {
+    private final ThreadLocal<Deque<Object>> throwTags = new ThreadLocal<Deque<Object>>() {
 
         @Override
-        protected Queue<Object> initialValue() {
+        protected Deque<Object> initialValue() {
             return new ArrayDeque<>();
         }
 
@@ -403,7 +404,7 @@ public class RubyContext extends ExecutionContext {
         return warnings;
     }
 
-    public Queue<Object> getThrowTags() {
+    public Deque<Object> getThrowTags() {
         return throwTags.get();
     }
 

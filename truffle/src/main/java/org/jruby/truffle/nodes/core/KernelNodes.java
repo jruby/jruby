@@ -413,7 +413,7 @@ public abstract class KernelNodes {
             notDesignedForCompilation();
 
             try {
-                getContext().getThrowTags().add(tag);
+                getContext().getThrowTags().push(tag);
 
                 return yield(frame, block);
             } catch (ThrowException e) {
@@ -426,7 +426,8 @@ public abstract class KernelNodes {
                     throw e;
                 }
             } finally {
-                getContext().getThrowTags().remove();
+                Object popped = getContext().getThrowTags().pop();
+                assert popped == tag;
             }
         }
     }
