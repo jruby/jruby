@@ -2111,7 +2111,7 @@ public abstract class KernelNodes {
             try {
                 return readTaintNode.isSet(object) && readTaintNode.executeBoolean(object);
             } catch (UnexpectedResultException e) {
-                throw new UnsupportedOperationException();
+                throw new UnsupportedOperationException(readTaintNode.execute(object).toString());
             }
         }
 

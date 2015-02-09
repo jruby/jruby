@@ -498,6 +498,7 @@ public abstract class ArrayNodes {
     }
 
     @CoreMethod(names = "compact")
+    @ImportGuards(ArrayGuards.class)
     public abstract static class CompactNode extends ArrayCoreMethodNode {
 
         public CompactNode(RubyContext context, SourceSection sourceSection) {
@@ -508,28 +509,93 @@ public abstract class ArrayNodes {
             super(prev);
         }
 
-        @Specialization(guards = "!isObject")
-        public RubyArray compatNotObjects(RubyArray array) {
-            return array;
+        @Specialization(guards = "isIntArray")
+        public RubyArray compactInt(RubyArray array) {
+            return new RubyArray(getContext().getCoreLibrary().getArrayClass(),
+                    Arrays.copyOf((int[]) array.getStore(), array.getSize()), array.getSize());
         }
 
-        @Specialization(guards = "isObject")
-        public RubyArray compatObjects(RubyArray array) {
-            notDesignedForCompilation();
+        @Specialization(guards = "isLongArray")
+        public RubyArray compactLong(RubyArray array) {
+            return new RubyArray(getContext().getCoreLibrary().getArrayClass(),
+                    Arrays.copyOf((long[]) array.getStore(), array.getSize()), array.getSize());
+        }
 
-            final Object[] compacted = new Object[array.getSize()];
-            int compactedSize = 0;
+        @Specialization(guards = "isDoubleArray")
+        public RubyArray compactDouble(RubyArray array) {
+            return new RubyArray(getContext().getCoreLibrary().getArrayClass(),
+                    Arrays.copyOf((double[]) array.getStore(), array.getSize()), array.getSize());
+        }
 
-            for (Object object : array.slowToArray()) {
-                if (object != getContext().getCoreLibrary().getNilObject()) {
-                    compacted[compactedSize] = object;
-                    compactedSize++;
+        @Specialization(guards = "isObjectArray")
+        public Object compactObjects(RubyArray array) {
+            // TODO CS 9-Feb-15 by removing nil we could make this array suitable for a primitive array storage class
+
+            final Object[] store = (Object[]) array.getStore();
+            final Object[] newStore = new Object[store.length];
+            final int size = array.getSize();
+
+            int m = 0;
+
+            for (int n = 0; n < size; n++) {
+                if (store[n] != getContext().getCoreLibrary().getNilObject()) {
+                    newStore[m] = store[n];
+                    m++;
                 }
             }
 
-            array.setStore(compacted, compactedSize);
+            return new RubyArray(getContext().getCoreLibrary().getArrayClass(), newStore, m);
+        }
 
-            return array;
+    }
+
+    @CoreMethod(names = "compact!")
+    public abstract static class CompactBangNode extends ArrayCoreMethodNode {
+
+        public CompactBangNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public CompactBangNode(CompactBangNode prev) {
+            super(prev);
+        }
+
+        @Specialization(guards = "!isObject")
+        public RubyNilClass compactNotObjects(RubyArray array) {
+            if (array.isFrozen()) {
+                CompilerDirectives.transferToInterpreter();
+                throw new RaiseException(getContext().getCoreLibrary().frozenError("String", this));
+            }
+
+            return getContext().getCoreLibrary().getNilObject();
+        }
+
+        @Specialization(guards = "isObject")
+        public Object compactObjects(RubyArray array) {
+            if (array.isFrozen()) {
+                CompilerDirectives.transferToInterpreter();
+                throw new RaiseException(getContext().getCoreLibrary().frozenError("String", this));
+            }
+
+            final Object[] store = (Object[]) array.getStore();
+            final int size = array.getSize();
+
+            int m = 0;
+
+            for (int n = 0; n < size; n++) {
+                if (store[n] != getContext().getCoreLibrary().getNilObject()) {
+                    store[m] = store[n];
+                    m++;
+                }
+            }
+
+            array.setStore(store, m);
+
+            if (m == size) {
+                return getContext().getCoreLibrary().getNilObject();
+            } else {
+                return array;
+            }
         }
 
     }

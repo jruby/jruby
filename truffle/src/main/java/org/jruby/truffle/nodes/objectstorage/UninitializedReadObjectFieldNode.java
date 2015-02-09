@@ -26,13 +26,22 @@ public class UninitializedReadObjectFieldNode extends ReadObjectFieldNode {
 
     @Override
     public Object execute(RubyBasicObject object) {
+        return rewrite(object).execute(object);
+    }
+
+    @Override
+    public boolean isSet(RubyBasicObject object) {
+        return rewrite(object).isSet(object);
+    }
+
+    private ReadObjectFieldNode rewrite(RubyBasicObject object) {
         CompilerDirectives.transferToInterpreterAndInvalidate();
 
         if (object.getDynamicObject().updateShape()) {
             ReadObjectFieldNode topNode = getTopNode();
             if (topNode != this) {
                 // retry existing cache nodes
-                return topNode.execute(object);
+                return topNode;
             }
         }
 
@@ -62,12 +71,7 @@ public class UninitializedReadObjectFieldNode extends ReadObjectFieldNode {
         }
 
         replace(newNode, "adding new read object field node to chain");
-        return newNode.execute(object);
-    }
-
-    @Override
-    public boolean isSet(RubyBasicObject object) {
-        return object.getObjectLayout().getProperty(name) != null;
+        return newNode;
     }
 
     private ReadObjectFieldNode getTopNode() {
