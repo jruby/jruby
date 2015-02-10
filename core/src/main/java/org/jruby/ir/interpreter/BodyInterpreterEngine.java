@@ -194,21 +194,6 @@ public class BodyInterpreterEngine extends InterpreterEngine {
                         setResult(temp, currDynScope, gfi.getResult(), result);
                         break;
                     }
-                    case TRACE: {
-                        if (context.runtime.hasEventHooks()) {
-                            TraceInstr trace = (TraceInstr) instr;
-                            // FIXME: Try and statically generate END linenumber instead of hacking it.
-                            int linenumber = trace.getLinenumber() == -1 ? context.getLine()+1 : trace.getLinenumber();
-
-                            context.trace(trace.getEvent(), trace.getName(), context.getFrameKlazz(),
-                                    trace.getFilename(), linenumber);
-                        }
-                        break;
-                    }
-                    case THREAD_POLL:
-                        if (IRRuntimeHelpers.inProfileMode()) Profiler.clockTick();
-                        context.callThreadPoll();
-                        break;
                     default:
                         if (instr.getOperation().opClass == OpClass.BRANCH_OP) {
                             ipc = instr.interpretAndGetNewIPC(context, currDynScope, currScope, self, temp, ipc);
