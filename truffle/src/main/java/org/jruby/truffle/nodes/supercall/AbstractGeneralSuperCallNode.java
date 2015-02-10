@@ -13,7 +13,6 @@ import com.oracle.truffle.api.Assumption;
 import com.oracle.truffle.api.CompilerAsserts;
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.Truffle;
-import com.oracle.truffle.api.frame.FrameInstance;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.DirectCallNode;
 import com.oracle.truffle.api.source.SourceSection;
@@ -25,16 +24,15 @@ import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.RubyClass;
 import org.jruby.truffle.runtime.core.RubyModule;
-import org.jruby.truffle.runtime.core.RubyProc;
-import org.jruby.truffle.runtime.methods.MethodLike;
 import org.jruby.truffle.runtime.methods.InternalMethod;
 
 public abstract class AbstractGeneralSuperCallNode extends RubyNode {
 
     @Child protected DirectCallNode callNode;
 
+    @CompilerDirectives.CompilationFinal protected InternalMethod currentMethod;
     @CompilerDirectives.CompilationFinal protected Assumption unmodifiedAssumption;
-    @CompilerDirectives.CompilationFinal protected InternalMethod method;
+    @CompilerDirectives.CompilationFinal protected InternalMethod superMethod;
 
     public AbstractGeneralSuperCallNode(RubyContext context, SourceSection sourceSection) {
         super(context, sourceSection);
@@ -42,42 +40,39 @@ public abstract class AbstractGeneralSuperCallNode extends RubyNode {
 
     protected boolean guard() {
         // TODO(CS): not sure this is enough... lots of 'unspecified' behaviour in the ISO spec here
-        return method != null && unmodifiedAssumption != null && unmodifiedAssumption.isValid();
+        InternalMethod method = RubyCallStack.getCurrentMethod();
+
+        return method == currentMethod && unmodifiedAssumption.isValid();
     }
 
     protected void lookup(VirtualFrame frame) {
         CompilerAsserts.neverPartOfCompilation();
 
-        final FrameInstance currentFrame = Truffle.getRuntime().getCurrentFrame();
-        MethodLike methodLike = RubyCallStack.getMethod(currentFrame);
+        currentMethod = RubyCallStack.getCurrentMethod();
 
-        while (!(methodLike instanceof InternalMethod)) {
-            methodLike = ((RubyProc) methodLike).getMethod();
-        }
-
-        final String name = ((InternalMethod) methodLike).getName();
-
+        String name = currentMethod.getName();
         // TODO: this is wrong, we need the lexically enclosing method (or define_method)'s module
-        final RubyModule declaringModule = RubyCallStack.getCurrentDeclaringModule();
+        RubyModule declaringModule = currentMethod.getDeclaringModule();
+
         final RubyClass selfMetaClass = getContext().getCoreLibrary().getMetaClass(RubyArguments.getSelf(frame.getArguments()));
 
-        method = ModuleOperations.lookupSuperMethod(declaringModule, name, selfMetaClass);
+        superMethod = ModuleOperations.lookupSuperMethod(declaringModule, name, selfMetaClass);
 
-        if (method == null || method.isUndefined()) {
-            method = null;
+        if (superMethod == null || superMethod.isUndefined()) {
+            superMethod = null;
             // TODO: should add " for #{receiver.inspect}" in error message
             throw new RaiseException(getContext().getCoreLibrary().noMethodError(String.format("super: no superclass method `%s'", name), this));
         }
 
-        final DirectCallNode newCallNode = Truffle.getRuntime().createDirectCallNode(method.getCallTarget());
+        unmodifiedAssumption = declaringModule.getUnmodifiedAssumption();
+
+        final DirectCallNode newCallNode = Truffle.getRuntime().createDirectCallNode(superMethod.getCallTarget());
 
         if (callNode == null) {
             callNode = insert(newCallNode);
         } else {
             callNode.replace(newCallNode);
         }
-
-        unmodifiedAssumption = declaringModule.getUnmodifiedAssumption();
     }
 
     @Override
@@ -93,7 +88,7 @@ public abstract class AbstractGeneralSuperCallNode extends RubyNode {
                 lookup(frame);
             }
 
-            if (method == null || method.isUndefined() || !method.isVisibleTo(this, context.getCoreLibrary().getMetaClass(self))) {
+            if (superMethod == null || superMethod.isUndefined() || !superMethod.isVisibleTo(this, context.getCoreLibrary().getMetaClass(self))) {
                 return getContext().getCoreLibrary().getNilObject();
             } else {
                 return context.makeString("super");
