@@ -45,7 +45,7 @@ public class GeneralSuperCallNode extends AbstractGeneralSuperCallNode {
     @ExplodeLoop
     @Override
     public final Object execute(VirtualFrame frame) {
-        final RubyBasicObject self = (RubyBasicObject) RubyArguments.getSelf(frame.getArguments());
+        final Object self = RubyArguments.getSelf(frame.getArguments());
 
         // Execute the arguments
 
@@ -74,7 +74,7 @@ public class GeneralSuperCallNode extends AbstractGeneralSuperCallNode {
 
         // Check we have a method and the module is unmodified
 
-        if (!guard()) {
+        if (!guard(self)) {
             CompilerDirectives.transferToInterpreterAndInvalidate();
             lookup(frame);
         }

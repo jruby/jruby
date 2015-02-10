@@ -29,7 +29,9 @@ public class GeneralSuperReCallNode extends AbstractGeneralSuperCallNode {
 
     @Override
     public final Object execute(VirtualFrame frame) {
-        if (!guard()) {
+        final Object self = RubyArguments.getSelf(frame.getArguments());
+
+        if (!guard(self)) {
             CompilerDirectives.transferToInterpreterAndInvalidate();
             lookup(frame);
         }
