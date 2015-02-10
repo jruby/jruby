@@ -2693,7 +2693,7 @@ public class BodyTranslator extends Translator {
                 methodParent = methodParent.getParent();
             }
 
-            return methodParent.getNamedMethodName();
+            return "block in " + methodParent.getNamedMethodName();
         } else {
             return environment.getNamedMethodName();
         }
