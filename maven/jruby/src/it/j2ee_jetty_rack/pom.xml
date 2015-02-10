@@ -71,6 +71,7 @@
         <configuration>
           <includeRubygemsInResources>true</includeRubygemsInResources>
           <includeLibDirectoryInResources>true</includeLibDirectoryInResources>
+          <jrubyVersion>1.7.19</jrubyVersion>
         </configuration>
       </plugin>
       <plugin>
