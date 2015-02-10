@@ -49,8 +49,9 @@ public class InternalMethod implements MethodLike {
         return sharedMethodInfo;
     }
 
-    @Override
-    public RubyModule getDeclaringModule() { return declaringModule; }
+    public RubyModule getDeclaringModule() {
+        return declaringModule;
+    }
 
     public String getName() {
         return name;

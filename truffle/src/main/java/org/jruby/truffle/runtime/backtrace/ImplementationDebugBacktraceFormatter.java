@@ -54,16 +54,6 @@ public class ImplementationDebugBacktraceFormatter implements BacktraceFormatter
         final MethodLike method = RubyArguments.getMethod(arguments);
         lines.add(String.format("      method = %s", method));
 
-        if (method instanceof InternalMethod) {
-            final InternalMethod internalMethod = (InternalMethod) method;
-
-            if (internalMethod.getDeclaringModule() == null) {
-                lines.add(String.format("        declaring module = null"));
-            } else {
-                lines.add(String.format("        declaring module = %s", internalMethod.getDeclaringModule().getName()));
-            }
-        }
-
         lines.add("      declaration frame:");
         formatDeclarationFrame(context, RubyArguments.getDeclarationFrame(arguments), lines);
 

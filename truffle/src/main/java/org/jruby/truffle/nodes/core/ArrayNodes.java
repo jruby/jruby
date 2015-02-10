@@ -1741,7 +1741,7 @@ public abstract class ArrayNodes {
 
             final RubyProc block = new RubyProc(getContext().getCoreLibrary().getProcClass(), RubyProc.Type.PROC,
                     maxBlock.getSharedMethodInfo(), maxBlock.getCallTarget(), maxBlock.getCallTarget(),
-                    maxBlock.getCallTarget(), maximumClosureFrame.materialize(), null, null, array, null);
+                    maxBlock.getCallTarget(), maximumClosureFrame.materialize(), null, array, null);
 
             eachNode.call(frame, array, "each", block);
 
@@ -1821,11 +1821,6 @@ public abstract class ArrayNodes {
             return sharedMethodInfo;
         }
 
-        @Override
-        public RubyModule getDeclaringModule() {
-            throw new UnsupportedOperationException();
-        }
-
         public CallTarget getCallTarget() {
             return callTarget;
         }
@@ -1860,7 +1855,7 @@ public abstract class ArrayNodes {
 
             final RubyProc block = new RubyProc(getContext().getCoreLibrary().getProcClass(), RubyProc.Type.PROC,
                     minBlock.getSharedMethodInfo(), minBlock.getCallTarget(), minBlock.getCallTarget(),
-                    minBlock.getCallTarget(), minimumClosureFrame.materialize(), null, null, array, null);
+                    minBlock.getCallTarget(), minimumClosureFrame.materialize(), null, array, null);
 
             eachNode.call(frame, array, "each", block);
 
@@ -1938,11 +1933,6 @@ public abstract class ArrayNodes {
         @Override
         public SharedMethodInfo getSharedMethodInfo() {
             return sharedMethodInfo;
-        }
-
-        @Override
-        public RubyModule getDeclaringModule() {
-            throw new UnsupportedOperationException();
         }
 
         public CallTarget getCallTarget() {
