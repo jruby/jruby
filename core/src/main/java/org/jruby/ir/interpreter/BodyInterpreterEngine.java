@@ -205,6 +205,10 @@ public class BodyInterpreterEngine extends InterpreterEngine {
                         }
                         break;
                     }
+                    case THREAD_POLL:
+                        if (IRRuntimeHelpers.inProfileMode()) Profiler.clockTick();
+                        context.callThreadPoll();
+                        break;
                     default:
                         if (instr.getOperation().opClass == OpClass.BRANCH_OP) {
                             ipc = instr.interpretAndGetNewIPC(context, currDynScope, currScope, self, temp, ipc);
