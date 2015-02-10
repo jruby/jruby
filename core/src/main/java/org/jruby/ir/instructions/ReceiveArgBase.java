@@ -23,11 +23,6 @@ public abstract class ReceiveArgBase extends ResultBaseInstr {
         return argIndex;
     }
 
-    @Override
-    public String toString() {
-        return super.toString() + "(" + argIndex + ")";
-    }
-
     public IRubyObject receiveArg(ThreadContext context, IRubyObject[] args, boolean keywordArgumentSupplied) {
         throw new RuntimeException("ReceiveArgBase.interpret called! " + this.getClass().getName() + " does not define receiveArg");
     }

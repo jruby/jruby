@@ -208,7 +208,7 @@ public abstract class BasicObjectNodes {
             super(prev);
         }
 
-        protected abstract boolean executeReferenceEqual(VirtualFrame frame, Object a, Object b);
+        public abstract boolean executeReferenceEqual(VirtualFrame frame, Object a, Object b);
 
         @Specialization public boolean equal(boolean a, boolean b) { return a == b; }
         @Specialization public boolean equal(int a, int b) { return a == b; }

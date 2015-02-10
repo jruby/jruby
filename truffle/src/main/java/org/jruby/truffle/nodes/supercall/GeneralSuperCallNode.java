@@ -45,7 +45,7 @@ public class GeneralSuperCallNode extends AbstractGeneralSuperCallNode {
     @ExplodeLoop
     @Override
     public final Object execute(VirtualFrame frame) {
-        final RubyBasicObject self = (RubyBasicObject) RubyArguments.getSelf(frame.getArguments());
+        final Object self = RubyArguments.getSelf(frame.getArguments());
 
         // Execute the arguments
 
@@ -74,13 +74,9 @@ public class GeneralSuperCallNode extends AbstractGeneralSuperCallNode {
 
         // Check we have a method and the module is unmodified
 
-        if (!guard()) {
+        if (!guard(self)) {
             CompilerDirectives.transferToInterpreterAndInvalidate();
             lookup(frame);
-        }
-
-        if (method == null || callNode == null) {
-            throw new IllegalStateException("No call node installed");
         }
 
         // Call the method
@@ -89,9 +85,9 @@ public class GeneralSuperCallNode extends AbstractGeneralSuperCallNode {
             // TODO(CS): need something better to splat the arguments array
             notDesignedForCompilation();
             final RubyArray argumentsArray = (RubyArray) argumentsObjects[0];
-            return callNode.call(frame, RubyArguments.pack(method, method.getDeclarationFrame(), self, blockObject,argumentsArray.slowToArray()));
+            return callNode.call(frame, RubyArguments.pack(superMethod, superMethod.getDeclarationFrame(), self, blockObject,argumentsArray.slowToArray()));
         } else {
-            return callNode.call(frame, RubyArguments.pack(method, method.getDeclarationFrame(), self, blockObject, argumentsObjects));
+            return callNode.call(frame, RubyArguments.pack(superMethod, superMethod.getDeclarationFrame(), self, blockObject, argumentsObjects));
         }
     }
 

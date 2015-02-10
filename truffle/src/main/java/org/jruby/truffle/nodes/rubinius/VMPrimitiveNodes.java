@@ -9,26 +9,80 @@
  */
 package org.jruby.truffle.nodes.rubinius;
 
-import com.oracle.truffle.api.dsl.Specialization;
-import com.oracle.truffle.api.frame.VirtualFrame;
-import com.oracle.truffle.api.source.SourceSection;
-
 import org.jruby.truffle.nodes.RubyNode;
+import org.jruby.truffle.nodes.core.BasicObjectNodes;
+import org.jruby.truffle.nodes.core.BasicObjectNodesFactory;
 import org.jruby.truffle.nodes.core.KernelNodes;
 import org.jruby.truffle.nodes.core.KernelNodesFactory;
 import org.jruby.truffle.nodes.objects.ClassNode;
 import org.jruby.truffle.nodes.objects.ClassNodeFactory;
+import org.jruby.truffle.nodes.yield.YieldDispatchHeadNode;
 import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.core.*;
+import org.jruby.truffle.runtime.control.ThrowException;
+import org.jruby.truffle.runtime.core.RubyBasicObject;
+import org.jruby.truffle.runtime.core.RubyClass;
+import org.jruby.truffle.runtime.core.RubyModule;
+import org.jruby.truffle.runtime.core.RubyNilClass;
+import org.jruby.truffle.runtime.core.RubyProc;
+import org.jruby.truffle.runtime.core.RubyString;
+import org.jruby.truffle.runtime.core.RubyThread;
 import org.jruby.truffle.runtime.signal.ProcSignalHandler;
 import org.jruby.truffle.runtime.signal.SignalOperations;
 
 import sun.misc.Signal;
 
+import com.oracle.truffle.api.CompilerDirectives;
+import com.oracle.truffle.api.dsl.Specialization;
+import com.oracle.truffle.api.frame.VirtualFrame;
+import com.oracle.truffle.api.source.SourceSection;
+
 /**
  * Rubinius primitives associated with the VM.
  */
 public abstract class VMPrimitiveNodes {
+
+    @RubiniusPrimitive(name = "vm_catch", needsSelf = false)
+    public abstract static class CatchNode extends RubiniusPrimitiveNode {
+
+        @Child private YieldDispatchHeadNode dispatchNode;
+        @Child private BasicObjectNodes.ReferenceEqualNode referenceEqualNode;
+
+        public CatchNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+            dispatchNode = new YieldDispatchHeadNode(context);
+        }
+
+        public CatchNode(CatchNode prev) {
+            super(prev);
+            dispatchNode = prev.dispatchNode;
+        }
+
+        private boolean areSame(VirtualFrame frame, Object left, Object right) {
+            if (referenceEqualNode == null) {
+                CompilerDirectives.transferToInterpreterAndInvalidate();
+                referenceEqualNode = insert(BasicObjectNodesFactory.ReferenceEqualNodeFactory.create(getContext(), getSourceSection(), null, null));
+            }
+            return referenceEqualNode.executeReferenceEqual(frame, left, right);
+        }
+
+        @Specialization
+        public Object doCatch(VirtualFrame frame, Object tag, RubyProc block) {
+            notDesignedForCompilation();
+
+            try {
+                return dispatchNode.dispatch(frame, block, tag);
+            } catch (ThrowException e) {
+                if (areSame(frame, e.getTag(), tag)) {
+                    notDesignedForCompilation();
+                    RubyBasicObject globals = getContext().getCoreLibrary().getGlobalVariablesObject();
+                    globals.getOperations().setInstanceVariable(globals, "$!", getContext().getCoreLibrary().getNilObject());
+                    return e.getValue();
+                } else {
+                    throw e;
+                }
+            }
+        }
+    }
 
     @RubiniusPrimitive(name = "vm_gc_start", needsSelf = false)
     public static abstract class VMGCStartPrimitiveNode extends RubiniusPrimitiveNode {
@@ -234,6 +288,26 @@ public abstract class VMPrimitiveNodes {
         public Object vmSingletonClassObject(Object object) {
             notDesignedForCompilation();
             return object instanceof RubyClass && ((RubyClass) object).isSingleton();
+        }
+
+    }
+
+    @RubiniusPrimitive(name = "vm_throw", needsSelf = false)
+    public abstract static class ThrowNode extends RubiniusPrimitiveNode {
+
+        public ThrowNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public ThrowNode(ThrowNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public Object doThrow(Object tag, Object value) {
+            notDesignedForCompilation();
+
+            throw new ThrowException(tag, value);
         }
 
     }

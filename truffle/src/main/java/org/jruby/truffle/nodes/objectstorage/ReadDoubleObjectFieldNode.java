@@ -20,12 +20,10 @@ import org.jruby.truffle.runtime.core.RubyBasicObject;
 @NodeInfo(cost = NodeCost.POLYMORPHIC)
 public class ReadDoubleObjectFieldNode extends ReadObjectFieldChainNode {
 
-    private final Shape objectLayout;
     private final DoubleLocation storageLocation;
 
     public ReadDoubleObjectFieldNode(Shape objectLayout, DoubleLocation storageLocation, ReadObjectFieldNode next) {
-        super(next);
-        this.objectLayout = objectLayout;
+        super(objectLayout, next);
         this.storageLocation = storageLocation;
     }
 

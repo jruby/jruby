@@ -31,11 +31,6 @@ public class OneFloatArgNoBlockCallInstr extends CallInstr {
                 getReceiver().cloneForInlining(ii), cloneCallArgs(ii));
     }
 
-    @Override
-    public String toString() {
-        return super.toString() + "{1F}";
-    }
-
     public double getFloatArg() {
         return flote;
     }

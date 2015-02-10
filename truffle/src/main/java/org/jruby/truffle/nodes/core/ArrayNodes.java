@@ -26,10 +26,7 @@ import org.jruby.runtime.Visibility;
 import org.jruby.truffle.nodes.CoreSourceSection;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.RubyRootNode;
-import org.jruby.truffle.nodes.array.ArrayReadDenormalizedNode;
-import org.jruby.truffle.nodes.array.ArrayReadDenormalizedNodeFactory;
-import org.jruby.truffle.nodes.array.ArrayReadSliceDenormalizedNode;
-import org.jruby.truffle.nodes.array.ArrayReadSliceDenormalizedNodeFactory;
+import org.jruby.truffle.nodes.array.*;
 import org.jruby.truffle.nodes.dispatch.*;
 import org.jruby.truffle.nodes.methods.arguments.MissingArgumentBehaviour;
 import org.jruby.truffle.nodes.methods.arguments.ReadPreArgumentNode;
@@ -53,10 +50,8 @@ import org.jruby.truffle.runtime.util.ArrayUtils;
 import org.jruby.util.ByteList;
 import org.jruby.util.Memo;
 
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
-import java.util.List;
 
 @CoreClass(name = "Array")
 public abstract class ArrayNodes {
@@ -265,10 +260,8 @@ public abstract class ArrayNodes {
 
         @Child protected ArrayReadDenormalizedNode readNode;
         @Child protected ArrayReadSliceDenormalizedNode readSliceNode;
-
+        @Child protected ArrayReadSliceNormalizedNode readNormalizedSliceNode;
         @Child protected CallDispatchHeadNode fallbackNode;
-
-        private final BranchProfile outOfBounds = BranchProfile.create();
 
         public IndexNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -278,6 +271,7 @@ public abstract class ArrayNodes {
             super(prev);
             readNode = prev.readNode;
             readSliceNode = prev.readSliceNode;
+            readNormalizedSliceNode = prev.readNormalizedSliceNode;
             fallbackNode = prev.fallbackNode;
         }
 
@@ -305,127 +299,49 @@ public abstract class ArrayNodes {
             return readSliceNode.executeReadSlice(frame, array, start, length);
         }
 
-        // Slice with a range
-
-        @Specialization(guards = "isIntegerFixnum")
-        public Object sliceIntegerFixnum(RubyArray array, RubyRange.IntegerFixnumRange range, UndefinedPlaceholder undefined) {
-            notDesignedForCompilation();
-
+        @Specialization
+        public Object slice(VirtualFrame frame, RubyArray array, RubyRange.IntegerFixnumRange range, UndefinedPlaceholder undefined) {
             final int normalizedIndex = array.normalizeIndex(range.getBegin());
 
             if (normalizedIndex < 0 || normalizedIndex > array.getSize()) {
                 return getContext().getCoreLibrary().getNilObject();
             } else {
                 final int end = array.normalizeIndex(range.getEnd());
-                final int excludingEnd = array.clampExclusiveIndex(range.doesExcludeEnd() ? end : end + 1);
+                final int exclusiveEnd = array.clampExclusiveIndex(range.doesExcludeEnd() ? end : end + 1);
 
-                if (excludingEnd <= normalizedIndex) {
+                if (exclusiveEnd <= normalizedIndex) {
                     return new RubyArray(array.getLogicalClass(), null, 0);
                 }
 
-                return new RubyArray(array.getLogicalClass(), ArrayUtils.extractRange((int[]) array.getStore(), normalizedIndex, excludingEnd), excludingEnd - normalizedIndex);
-            }
-        }
+                final int length = exclusiveEnd - normalizedIndex;
 
-        @Specialization(guards = "isLongFixnum")
-        public Object sliceLongFixnum(RubyArray array, RubyRange.IntegerFixnumRange range, UndefinedPlaceholder undefined) {
-            notDesignedForCompilation();
-
-            final int normalizedIndex = array.normalizeIndex(range.getBegin());
-
-            if (normalizedIndex < 0 || normalizedIndex > array.getSize()) {
-                return getContext().getCoreLibrary().getNilObject();
-            } else {
-                final int end = array.normalizeIndex(range.getEnd());
-                final int excludingEnd = array.clampExclusiveIndex(range.doesExcludeEnd() ? end : end + 1);
-
-                if (excludingEnd <= normalizedIndex) {
-                    return new RubyArray(array.getLogicalClass(), null, 0);
+                if (readNormalizedSliceNode == null) {
+                    CompilerDirectives.transferToInterpreter();
+                    readNormalizedSliceNode = insert(ArrayReadSliceNormalizedNodeFactory.create(getContext(), getSourceSection(), null, null, null));
                 }
 
-                return new RubyArray(array.getLogicalClass(), ArrayUtils.extractRange((long[]) array.getStore(), normalizedIndex, excludingEnd), excludingEnd - normalizedIndex);
+                return readNormalizedSliceNode.executeReadSlice(frame, array, normalizedIndex, length);
             }
         }
-
-        @Specialization(guards = "isFloat")
-        public Object sliceFloat(RubyArray array, RubyRange.IntegerFixnumRange range, UndefinedPlaceholder undefined) {
-            notDesignedForCompilation();
-
-            final int normalizedIndex = array.normalizeIndex(range.getBegin());
-
-            if (normalizedIndex < 0 || normalizedIndex > array.getSize()) {
-                return getContext().getCoreLibrary().getNilObject();
-            } else {
-                final int end = array.normalizeIndex(range.getEnd());
-                final int excludingEnd = array.clampExclusiveIndex(range.doesExcludeEnd() ? end : end + 1);
-
-                if (excludingEnd <= normalizedIndex) {
-                    return new RubyArray(array.getLogicalClass(), null, 0);
-                }
-
-                return new RubyArray(array.getLogicalClass(), ArrayUtils.extractRange((double[]) array.getStore(), normalizedIndex, excludingEnd), excludingEnd - normalizedIndex);
-            }
-        }
-
-        @Specialization(guards = "isObject")
-        public Object sliceObject(RubyArray array, RubyRange.IntegerFixnumRange range, UndefinedPlaceholder undefined) {
-            notDesignedForCompilation();
-
-            final int normalizedIndex = array.normalizeIndex(range.getBegin());
-
-            if (normalizedIndex < 0 || normalizedIndex > array.getSize()) {
-                return getContext().getCoreLibrary().getNilObject();
-            } else {
-                final int end = array.normalizeIndex(range.getEnd());
-                final int excludingEnd = array.clampExclusiveIndex(range.doesExcludeEnd() ? end : end + 1);
-
-                if (excludingEnd <= normalizedIndex) {
-                    return new RubyArray(array.getLogicalClass(), null, 0);
-                }
-
-                return new RubyArray(array.getLogicalClass(), ArrayUtils.extractRange((Object[]) array.getStore(), normalizedIndex, excludingEnd), excludingEnd - normalizedIndex);
-            }
-        }
-
-        // Fallbacks
 
         @Specialization(guards = {"!isInteger(arguments[1])", "!isIntegerFixnumRange(arguments[1])"})
-        public Object sliceFallback(VirtualFrame frame, RubyArray array, Object a, UndefinedPlaceholder undefined) {
-            notDesignedForCompilation();
-
-            if (fallbackNode == null) {
-                CompilerDirectives.transferToInterpreter();
-                fallbackNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext()));
-            }
-
-            return fallbackNode.call(frame, array, "element_reference_fallback", null,
-                    getContext().makeString(getName()), RubyArray.fromObjects(getContext().getCoreLibrary().getArrayClass(), a));
+        public Object fallbackIndex(VirtualFrame frame, RubyArray array, Object a, UndefinedPlaceholder undefined) {
+            return fallback(frame, array, RubyArray.fromObjects(getContext().getCoreLibrary().getArrayClass(), a));
         }
 
-        @Specialization(guards = {"!isInteger(arguments[1])", "!isIntegerFixnumRange(arguments[1])", "!isUndefinedPlaceholder(arguments[2])"})
-        public Object sliceFallback1(VirtualFrame frame, RubyArray array, Object a, Object b) {
-            notDesignedForCompilation();
-
-            if (fallbackNode == null) {
-                CompilerDirectives.transferToInterpreter();
-                fallbackNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext()));
-            }
-
-            return fallbackNode.call(frame, array, "element_reference_fallback", null,
-                    getContext().makeString(getName()), RubyArray.fromObjects(getContext().getCoreLibrary().getArrayClass(), a, b));
+        @Specialization(guards = {"!isIntegerFixnumRange(arguments[1])", "!isUndefinedPlaceholder(arguments[2])"})
+        public Object fallbackSlice(VirtualFrame frame, RubyArray array, Object a, Object b) {
+            return fallback(frame, array, RubyArray.fromObjects(getContext().getCoreLibrary().getArrayClass(), a, b));
         }
 
-        @Specialization(guards = {"!isInteger(arguments[2])", "!isIntegerFixnumRange(arguments[2])", "!isUndefinedPlaceholder(arguments[2])"})
-        public Object sliceFallback2(VirtualFrame frame, RubyArray array, Object a, Object b) {
-            notDesignedForCompilation();
-
+        public Object fallback(VirtualFrame frame, RubyArray array, RubyArray args) {
             if (fallbackNode == null) {
                 CompilerDirectives.transferToInterpreter();
                 fallbackNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext()));
             }
 
             return fallbackNode.call(frame, array, "element_reference_fallback", null,
-                    getContext().makeString(getName()), RubyArray.fromObjects(getContext().getCoreLibrary().getArrayClass(), a, b));
+                    getContext().makeString(getName()), args);
         }
 
     }
@@ -433,11 +349,9 @@ public abstract class ArrayNodes {
     @CoreMethod(names = "[]=", required = 2, optional = 1, lowerFixnumParameters = 0)
     public abstract static class IndexSetNode extends ArrayCoreMethodNode {
 
+        @Child private ArrayWriteDenormalizedNode writeNode;
+
         private final BranchProfile tooSmallBranch = BranchProfile.create();
-        private final BranchProfile pastEndBranch = BranchProfile.create();
-        private final BranchProfile appendBranch = BranchProfile.create();
-        private final BranchProfile beyondBranch = BranchProfile.create();
-        private final BranchProfile reallocateBranch = BranchProfile.create();
 
         public IndexSetNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -445,303 +359,23 @@ public abstract class ArrayNodes {
 
         public IndexSetNode(IndexSetNode prev) {
             super(prev);
+            writeNode = prev.writeNode;
         }
 
-        // Set a simple index in an empty array
-
-        @Specialization(guards = "isNull")
-        public Object setNull(RubyArray array, int index, int value, UndefinedPlaceholder unused) {
-            if (index == 0) {
-                array.setStore(new int[]{value}, 1);
-            } else {
-                beyondBranch.enter();
-                final Object[] newStore = new Object[index + 1];
-                for (int n = 0; n < index; n++) {
-                    newStore[n] = getContext().getCoreLibrary().getNilObject();
-                }
-                newStore[index] = value;
-                array.setStore(newStore, newStore.length);
-            }
-
-            return value;
-        }
-
-        @Specialization(guards = "isNull")
-        public Object setNull(RubyArray array, int index, long value, UndefinedPlaceholder unused) {
-            if (index == 0) {
-                array.setStore(new long[]{value}, 1);
-            } else {
-                beyondBranch.enter();
-                final Object[] newStore = new Object[index + 1];
-                for (int n = 0; n < index; n++) {
-                    newStore[n] = getContext().getCoreLibrary().getNilObject();
-                }
-                newStore[index] = value;
-                array.setStore(newStore, newStore.length);
-            }
-
-            return value;
-        }
-
-        @Specialization(guards = "isNull")
-        public Object setNull(RubyArray array, int index, double value, UndefinedPlaceholder unused) {
-            if (index == 0) {
-                array.setStore(new double[]{value}, 1);
-            } else {
-                beyondBranch.enter();
-                final Object[] newStore = new Object[index + 1];
-                for (int n = 0; n < index; n++) {
-                    newStore[n] = getContext().getCoreLibrary().getNilObject();
-                }
-                newStore[index] = value;
-                array.setStore(newStore, newStore.length);
-            }
-
-            return value;
-        }
-
-        @Specialization(guards = "isNull")
-        public Object setNull(RubyArray array, int index, Object value, UndefinedPlaceholder unused) {
-            notDesignedForCompilation();
-
-            if (index == 0) {
-                array.slowPush(value);
-            } else {
-                beyondBranch.enter();
-                final Object[] newStore = new Object[index + 1];
-                for (int n = 0; n < index; n++) {
-                    newStore[n] = getContext().getCoreLibrary().getNilObject();
-                }
-                newStore[index] = value;
-                array.setStore(newStore, newStore.length);
-            }
-
-            return value;
-        }
-
-        // Set a simple index in an existing array
-
-        @Specialization(guards = "isIntegerFixnum")
-        public int setIntegerFixnum(RubyArray array, int index, int value, UndefinedPlaceholder unused) {
-            final int normalizedIndex = array.normalizeIndex(index);
-            int[] store = (int[]) array.getStore();
-
-            if (normalizedIndex < 0) {
-                tooSmallBranch.enter();
+        @Specialization
+        public Object set(VirtualFrame frame, RubyArray array, int index, Object value, UndefinedPlaceholder unused) {
+            if (writeNode == null) {
                 CompilerDirectives.transferToInterpreter();
-                throw new RaiseException(getContext().getCoreLibrary().indexTooSmallError("array", index, array.getSize(), this));
-            } else if (normalizedIndex >= array.getSize()) {
-                pastEndBranch.enter();
-
-                if (normalizedIndex == array.getSize()) {
-                    appendBranch.enter();
-
-                    if (normalizedIndex >= store.length) {
-                        reallocateBranch.enter();
-                        array.setStore(store = Arrays.copyOf(store, ArrayUtils.capacity(store.length, normalizedIndex + 1)), array.getSize());
-                    }
-
-                    store[normalizedIndex] = value;
-                    array.setStore(store, array.getSize() + 1);
-                } else if (normalizedIndex > array.getSize()) {
-                    beyondBranch.enter();
-                    final Object[] newStore = new Object[index + 1];
-                    for (int n = 0; n < array.getSize(); n++) {
-                        newStore[n] = store[n];
-                    }
-                    for (int n = array.getSize(); n < index; n++) {
-                        newStore[n] = getContext().getCoreLibrary().getNilObject();
-                    }
-                    newStore[index] = value;
-                    array.setStore(newStore, newStore.length);
-                }
-            } else {
-                store[normalizedIndex] = value;
+                writeNode = insert(ArrayWriteDenormalizedNodeFactory.create(getContext(), getSourceSection(), null, null, null));
             }
 
-            return value;
-        }
-
-        @Specialization(guards = "isIntegerFixnum")
-        public long setLongInIntegerFixnum(RubyArray array, int index, long value, UndefinedPlaceholder unused) {
-            if (array.getAllocationSite() != null) {
-                array.getAllocationSite().convertedIntToLong();
-            }
-
-            final int normalizedIndex = array.normalizeIndex(index);
-
-            long[] store = ArrayUtils.longCopyOf((int[]) array.getStore());
-            array.setStore(store, array.getSize());
-
-            if (normalizedIndex < 0) {
-                tooSmallBranch.enter();
-                CompilerDirectives.transferToInterpreter();
-                throw new RaiseException(getContext().getCoreLibrary().indexTooSmallError("array", index, array.getSize(), this));
-            } else if (normalizedIndex >= array.getSize()) {
-                pastEndBranch.enter();
-
-                if (normalizedIndex == array.getSize()) {
-                    appendBranch.enter();
-
-                    if (normalizedIndex >= store.length) {
-                        reallocateBranch.enter();
-                        array.setStore(store = Arrays.copyOf(store, ArrayUtils.capacity(store.length, normalizedIndex + 1)), array.getSize());
-                    }
-
-                    store[normalizedIndex] = value;
-                    array.setStore(store, array.getSize() + 1);
-                } else if (normalizedIndex > array.getSize()) {
-                    beyondBranch.enter();
-                    final Object[] newStore = new Object[index + 1];
-                    for (int n = 0; n < array.getSize(); n++) {
-                        newStore[n] = store[n];
-                    }
-                    for (int n = array.getSize(); n < index; n++) {
-                        newStore[n] = getContext().getCoreLibrary().getNilObject();
-                    }
-                    newStore[index] = value;
-                    array.setStore(newStore, newStore.length);
-                }
-            } else {
-                store[normalizedIndex] = value;
-            }
-
-            return value;
-        }
-
-        @Specialization(guards = "isLongFixnum")
-        public int setLongFixnum(RubyArray array, int index, int value, UndefinedPlaceholder unused) {
-            setLongFixnum(array, index, (long) value, unused);
-            return value;
-        }
-
-        @Specialization(guards = "isLongFixnum")
-        public long setLongFixnum(RubyArray array, int index, long value, UndefinedPlaceholder unused) {
-            final int normalizedIndex = array.normalizeIndex(index);
-            long[] store = (long[]) array.getStore();
-
-            if (normalizedIndex < 0) {
-                tooSmallBranch.enter();
-                CompilerDirectives.transferToInterpreter();
-                throw new RaiseException(getContext().getCoreLibrary().indexTooSmallError("array", index, array.getSize(), this));
-            } else if (normalizedIndex >= array.getSize()) {
-                pastEndBranch.enter();
-
-                if (normalizedIndex == array.getSize()) {
-                    appendBranch.enter();
-
-                    if (normalizedIndex >= store.length) {
-                        reallocateBranch.enter();
-                        array.setStore(store = Arrays.copyOf(store, ArrayUtils.capacity(store.length, normalizedIndex + 1)), array.getSize());
-                    }
-
-                    store[normalizedIndex] = value;
-                    array.setStore(store, array.getSize() + 1);
-                } else if (normalizedIndex > array.getSize()) {
-                    beyondBranch.enter();
-                    final Object[] newStore = new Object[index + 1];
-                    for (int n = 0; n < array.getSize(); n++) {
-                        newStore[n] = store[n];
-                    }
-                    for (int n = array.getSize(); n < index; n++) {
-                        newStore[n] = getContext().getCoreLibrary().getNilObject();
-                    }
-                    newStore[index] = value;
-                    array.setStore(newStore, newStore.length);
-                }
-            } else {
-                store[normalizedIndex] = value;
-            }
-
-            return value;
-        }
-
-        @Specialization(guards = "isFloat")
-        public double setFloat(RubyArray array, int index, double value, UndefinedPlaceholder unused) {
-            final int normalizedIndex = array.normalizeIndex(index);
-            double[] store = (double[]) array.getStore();
-
-            if (normalizedIndex < 0) {
-                tooSmallBranch.enter();
-                CompilerDirectives.transferToInterpreter();
-                throw new RaiseException(getContext().getCoreLibrary().indexTooSmallError("array", index, array.getSize(), this));
-            } else if (normalizedIndex >= array.getSize()) {
-                pastEndBranch.enter();
-
-                if (normalizedIndex == array.getSize()) {
-                    appendBranch.enter();
-
-                    if (normalizedIndex >= store.length) {
-                        reallocateBranch.enter();
-                        array.setStore(store = Arrays.copyOf(store, ArrayUtils.capacity(store.length, normalizedIndex + 1)), array.getSize());
-                    }
-
-                    store[normalizedIndex] = value;
-                    array.setStore(store, array.getSize() + 1);
-                } else if (normalizedIndex > array.getSize()) {
-                    beyondBranch.enter();
-                    final Object[] newStore = new Object[index + 1];
-                    for (int n = 0; n < array.getSize(); n++) {
-                        newStore[n] = store[n];
-                    }
-                    for (int n = array.getSize(); n < index; n++) {
-                        newStore[n] = getContext().getCoreLibrary().getNilObject();
-                    }
-                    newStore[index] = value;
-                    array.setStore(newStore, newStore.length);
-                }
-            } else {
-                store[normalizedIndex] = value;
-            }
-
-            return value;
-        }
-
-        @Specialization(guards = "isObject")
-        public Object setObject(RubyArray array, int index, Object value, UndefinedPlaceholder unused) {
-            final int normalizedIndex = array.normalizeIndex(index);
-            Object[] store = (Object[]) array.getStore();
-
-            if (normalizedIndex < 0) {
-                tooSmallBranch.enter();
-                CompilerDirectives.transferToInterpreter();
-                throw new RaiseException(getContext().getCoreLibrary().indexTooSmallError("array", index, array.getSize(), this));
-            } else if (normalizedIndex >= array.getSize()) {
-                pastEndBranch.enter();
-
-                if (normalizedIndex == array.getSize()) {
-                    appendBranch.enter();
-
-                    if (normalizedIndex >= store.length) {
-                        reallocateBranch.enter();
-                        array.setStore(store = Arrays.copyOf(store, ArrayUtils.capacity(store.length, normalizedIndex + 1)), array.getSize());
-                    }
-
-                    store[normalizedIndex] = value;
-                    array.setStore(store, array.getSize() + 1);
-                } else if (normalizedIndex > array.getSize()) {
-                    beyondBranch.enter();
-                    final Object[] newStore = new Object[index + 1];
-                    for (int n = 0; n < array.getSize(); n++) {
-                        newStore[n] = store[n];
-                    }
-                    for (int n = array.getSize(); n < index; n++) {
-                        newStore[n] = getContext().getCoreLibrary().getNilObject();
-                    }
-                    newStore[index] = value;
-                    array.setStore(newStore, newStore.length);
-                }
-            } else {
-                store[normalizedIndex] = value;
-            }
-
-            return value;
+            return writeNode.executeWrite(frame, array, index, value);
         }
 
         // Set a slice of the array to a particular value
 
         @Specialization(guards = { "isObject", "!isRubyArray(arguments[3])", "!isUndefinedPlaceholder(arguments[3])" })
-        public Object setObject(RubyArray array, int start, int length, Object value) {
+        public Object setObject(VirtualFrame frame, RubyArray array, int start, int length, Object value) {
             notDesignedForCompilation();
 
             if (length < 0) {
@@ -752,8 +386,12 @@ public abstract class ArrayNodes {
             final int begin = array.normalizeIndex(start);
 
             if (begin >= array.getSize()) {
-                // We don't care of length in this case
-                return setObject(array, start, value, UndefinedPlaceholder.INSTANCE);
+                if (writeNode == null) {
+                    CompilerDirectives.transferToInterpreter();
+                    writeNode = insert(ArrayWriteDenormalizedNodeFactory.create(getContext(), getSourceSection(), null, null, null));
+                }
+
+                return writeNode.executeWrite(frame, array, start, value);
             } else {
                 throw new UnsupportedOperationException();
             }
@@ -762,7 +400,7 @@ public abstract class ArrayNodes {
         // Set a slice of the array to another array
 
         @Specialization(guards = "isIntegerFixnum")
-        public RubyArray setIntegerFixnum(RubyArray array, int start, int length, RubyArray value) {
+        public Object setIntegerFixnum(VirtualFrame frame, RubyArray array, int start, int length, RubyArray value) {
             notDesignedForCompilation();
 
             if (length < 0) {
@@ -794,7 +432,7 @@ public abstract class ArrayNodes {
         }
 
         @Specialization(guards = "isIntegerFixnum")
-        public RubyArray setIntegerFixnumRange(RubyArray array, RubyRange.IntegerFixnumRange range, RubyArray other, UndefinedPlaceholder unused) {
+        public Object setIntegerFixnumRange(VirtualFrame frame, RubyArray array, RubyRange.IntegerFixnumRange range, RubyArray other, UndefinedPlaceholder unused) {
             if (range.doesExcludeEnd()) {
                 CompilerDirectives.transferToInterpreter();
                 throw new UnsupportedOperationException();
@@ -860,6 +498,7 @@ public abstract class ArrayNodes {
     }
 
     @CoreMethod(names = "compact")
+    @ImportGuards(ArrayGuards.class)
     public abstract static class CompactNode extends ArrayCoreMethodNode {
 
         public CompactNode(RubyContext context, SourceSection sourceSection) {
@@ -870,28 +509,93 @@ public abstract class ArrayNodes {
             super(prev);
         }
 
-        @Specialization(guards = "!isObject")
-        public RubyArray compatNotObjects(RubyArray array) {
-            return array;
+        @Specialization(guards = "isIntArray")
+        public RubyArray compactInt(RubyArray array) {
+            return new RubyArray(getContext().getCoreLibrary().getArrayClass(),
+                    Arrays.copyOf((int[]) array.getStore(), array.getSize()), array.getSize());
         }
 
-        @Specialization(guards = "isObject")
-        public RubyArray compatObjects(RubyArray array) {
-            notDesignedForCompilation();
+        @Specialization(guards = "isLongArray")
+        public RubyArray compactLong(RubyArray array) {
+            return new RubyArray(getContext().getCoreLibrary().getArrayClass(),
+                    Arrays.copyOf((long[]) array.getStore(), array.getSize()), array.getSize());
+        }
 
-            final Object[] compacted = new Object[array.getSize()];
-            int compactedSize = 0;
+        @Specialization(guards = "isDoubleArray")
+        public RubyArray compactDouble(RubyArray array) {
+            return new RubyArray(getContext().getCoreLibrary().getArrayClass(),
+                    Arrays.copyOf((double[]) array.getStore(), array.getSize()), array.getSize());
+        }
 
-            for (Object object : array.slowToArray()) {
-                if (object != getContext().getCoreLibrary().getNilObject()) {
-                    compacted[compactedSize] = object;
-                    compactedSize++;
+        @Specialization(guards = "isObjectArray")
+        public Object compactObjects(RubyArray array) {
+            // TODO CS 9-Feb-15 by removing nil we could make this array suitable for a primitive array storage class
+
+            final Object[] store = (Object[]) array.getStore();
+            final Object[] newStore = new Object[store.length];
+            final int size = array.getSize();
+
+            int m = 0;
+
+            for (int n = 0; n < size; n++) {
+                if (store[n] != getContext().getCoreLibrary().getNilObject()) {
+                    newStore[m] = store[n];
+                    m++;
                 }
             }
 
-            array.setStore(compacted, compactedSize);
+            return new RubyArray(getContext().getCoreLibrary().getArrayClass(), newStore, m);
+        }
 
-            return array;
+    }
+
+    @CoreMethod(names = "compact!")
+    public abstract static class CompactBangNode extends ArrayCoreMethodNode {
+
+        public CompactBangNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public CompactBangNode(CompactBangNode prev) {
+            super(prev);
+        }
+
+        @Specialization(guards = "!isObject")
+        public RubyNilClass compactNotObjects(RubyArray array) {
+            if (array.isFrozen()) {
+                CompilerDirectives.transferToInterpreter();
+                throw new RaiseException(getContext().getCoreLibrary().frozenError("String", this));
+            }
+
+            return getContext().getCoreLibrary().getNilObject();
+        }
+
+        @Specialization(guards = "isObject")
+        public Object compactObjects(RubyArray array) {
+            if (array.isFrozen()) {
+                CompilerDirectives.transferToInterpreter();
+                throw new RaiseException(getContext().getCoreLibrary().frozenError("String", this));
+            }
+
+            final Object[] store = (Object[]) array.getStore();
+            final int size = array.getSize();
+
+            int m = 0;
+
+            for (int n = 0; n < size; n++) {
+                if (store[n] != getContext().getCoreLibrary().getNilObject()) {
+                    store[m] = store[n];
+                    m++;
+                }
+            }
+
+            array.setStore(store, m);
+
+            if (m == size) {
+                return getContext().getCoreLibrary().getNilObject();
+            } else {
+                return array;
+            }
         }
 
     }

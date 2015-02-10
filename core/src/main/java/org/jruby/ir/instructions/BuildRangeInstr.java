@@ -38,8 +38,8 @@ public class BuildRangeInstr extends ResultBaseInstr {
     }
 
     @Override
-    public String toString() {
-        return result + " = " + getBegin() + (exclusive ? ".." : "...") + getEnd();
+    public String[] toStringNonOperandArgs() {
+        return new String[] { "type: " + (exclusive ? "exclusive" : "inclusive")};
     }
 
     @Override

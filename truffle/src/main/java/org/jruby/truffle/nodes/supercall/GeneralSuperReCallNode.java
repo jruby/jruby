@@ -9,9 +9,12 @@
  */
 package org.jruby.truffle.nodes.supercall;
 
+import java.util.Arrays;
+
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.SourceSection;
+
 import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
 
@@ -26,22 +29,24 @@ public class GeneralSuperReCallNode extends AbstractGeneralSuperCallNode {
 
     @Override
     public final Object execute(VirtualFrame frame) {
-        if (!guard()) {
+        final Object self = RubyArguments.getSelf(frame.getArguments());
+
+        if (!guard(self)) {
             CompilerDirectives.transferToInterpreterAndInvalidate();
             lookup(frame);
         }
 
-        if (method == null || callNode == null) {
-            throw new IllegalStateException("No call node installed");
-        }
-
-        final Object[] superArguments;
+        final Object[] originalArguments;
 
         if (inBlock) {
-            superArguments = RubyArguments.getDeclarationFrame(frame.getArguments()).getArguments();
+            originalArguments = RubyArguments.getDeclarationFrame(frame.getArguments()).getArguments();
         } else {
-            superArguments = frame.getArguments();
+            originalArguments = frame.getArguments();
         }
+
+        final Object[] superArguments = Arrays.copyOf(originalArguments, originalArguments.length);
+
+        superArguments[RubyArguments.METHOD_INDEX] = superMethod;
 
         return callNode.call(frame, superArguments);
     }

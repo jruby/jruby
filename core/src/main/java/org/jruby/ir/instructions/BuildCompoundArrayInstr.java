@@ -55,7 +55,7 @@ public class BuildCompoundArrayInstr extends ResultBaseInstr {
     }
 
     @Override
-    public String toString() {
-        return result + " = " + (isArgsPush ? "ArgsPush[" : "ArgsCat:[") + getAppendingArg() + ", " + getAppendedArg() + "]";
+    public String[] toStringNonOperandArgs() {
+        return new String[] { "type: " + (isArgsPush ? "push" : "cat")};
     }
 }

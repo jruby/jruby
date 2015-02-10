@@ -18,11 +18,8 @@ import org.jruby.truffle.runtime.core.RubyBasicObject;
 @NodeInfo(cost = NodeCost.POLYMORPHIC)
 public class ReadMissingObjectFieldNode extends ReadObjectFieldChainNode {
 
-    private final Shape objectLayout;
-
     public ReadMissingObjectFieldNode(Shape objectLayout, ReadObjectFieldNode next) {
-        super(next);
-        this.objectLayout = objectLayout;
+        super(objectLayout, next);
     }
 
     @Override
@@ -38,6 +35,24 @@ public class ReadMissingObjectFieldNode extends ReadObjectFieldChainNode {
             return null;
         } else {
             return next.execute(object);
+        }
+    }
+
+    @Override
+    public boolean isSet(RubyBasicObject object) {
+        try {
+            objectLayout.getValidAssumption().check();
+        } catch (InvalidAssumptionException e) {
+            replace(next);
+            return next.isSet(object);
+        }
+
+        final boolean condition = object.getObjectLayout() == objectLayout;
+
+        if (condition) {
+            return false;
+        } else {
+            return next.isSet(object);
         }
     }
 

@@ -1,6 +1,7 @@
 package org.jruby.ir.instructions;
 
 import org.jruby.RubyModule;
+import org.jruby.internal.runtime.methods.InterpretedIRBodyMethod;
 import org.jruby.internal.runtime.methods.InterpretedIRMethod;
 import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Operation;
@@ -36,11 +37,11 @@ public class ProcessModuleBodyInstr extends ResultBaseInstr implements FixedArit
 
     @Override
     public Object interpret(ThreadContext context, StaticScope currScope, DynamicScope currDynScope, IRubyObject self, Object[] temp) {
-        InterpretedIRMethod bodyMethod = (InterpretedIRMethod) getModuleBody().retrieve(context, self, currScope, currDynScope, temp);
+        InterpretedIRBodyMethod bodyMethod = (InterpretedIRBodyMethod) getModuleBody().retrieve(context, self, currScope, currDynScope, temp);
         Block b = (Block) getBlock().retrieve(context, self, currScope, currDynScope, temp);
 		RubyModule implClass = bodyMethod.getImplementationClass();
 
-        return bodyMethod.call(context, implClass, implClass, null, new IRubyObject[]{}, b);
+        return bodyMethod.call(context, implClass, implClass, null, b);
     }
 
     @Override

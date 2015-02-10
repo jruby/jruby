@@ -1,7 +1,11 @@
 package org.jruby.ir.interpreter;
 
+import org.jruby.ir.IRClassBody;
+import org.jruby.ir.IREvalScript;
 import org.jruby.ir.IRFlags;
 import org.jruby.ir.IRMetaClassBody;
+import org.jruby.ir.IRMethod;
+import org.jruby.ir.IRModuleBody;
 import org.jruby.ir.IRScope;
 import org.jruby.ir.instructions.Instr;
 import org.jruby.ir.representations.CFG;
@@ -31,6 +35,11 @@ public class InterpreterContext {
     private final boolean receivesKeywordArguments;
     private final boolean metaClassBodyScope;
 
+    private final static InterpreterEngine BODY_INTERPRETER = new BodyInterpreterEngine();
+    private final static InterpreterEngine DEFAULT_INTERPRETER = new InterpreterEngine();
+    private final static InterpreterEngine SIMPLE_METHOD_INTERPRETER = new InterpreterEngine();
+    public final InterpreterEngine engine;
+
     // FIXME: Hack this should be a clone eventually since JIT might change this.  Comment for it reflects what it should be.
     // View of CFG at time of creating this context.
     private CFG cfg = null;
@@ -38,6 +47,15 @@ public class InterpreterContext {
     public InterpreterContext(IRScope scope, Instr[] instructions) {
         //FIXME: Remove once we conditionally plug in CFG on debug-only
         this.cfg = scope.getCFG();
+
+        if (scope instanceof IRModuleBody || scope instanceof IRClassBody) {
+            engine = BODY_INTERPRETER;
+        // ENEBO: Playing with unboxable and subset instruction sets
+        //} else if (scope instanceof IRMethod && scope.getFlags().contains(IRFlags.SIMPLE_METHOD)) {
+        //    engine = SIMPLE_METHOD_INTERPRETER;
+        } else {
+            engine = DEFAULT_INTERPRETER;
+        }
 
         this.name = scope.getName();
         this.fileName = scope.getFileName();

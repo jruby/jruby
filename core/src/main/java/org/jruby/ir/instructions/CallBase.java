@@ -346,10 +346,8 @@ public abstract class CallBase extends Instr implements ClosureAcceptingInstr {
     }
 
     @Override
-    public String toString() {
-        return "" + getOperation()  + "(" + callType + ", " + getName() + ", " + getReceiver() +
-                ", " + Arrays.toString(getCallArgs()) +
-                (getClosureArg() == null ? "" : ", &" + getClosureArg()) + ")";
+    public String[] toStringNonOperandArgs() {
+        return new String[] { "n:" + getName(), "t:" + callType.toString().substring(0, 2), "cl:"+ hasClosure};
     }
 
     public static boolean containsArgSplat(Operand[] arguments) {

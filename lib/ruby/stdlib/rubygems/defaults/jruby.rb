@@ -70,7 +70,7 @@ module Gem
   # Allow specifying jar and classpath type gem path entries
   def self.path_separator
     return File::PATH_SEPARATOR unless File::PATH_SEPARATOR == ':'
-    /(?<!jar:file|jar|file|classpath):/
+    /(?<!jar:file|jar|file|classpath|uri:classloader|uri):/
   end
 end
 
@@ -85,7 +85,7 @@ class Gem::Specification
         elsif File.directory?(File.join(dir, "specifications")) || dir =~ /^file:/
           File.join(dir, "specifications")
         end
-      }.compact + spec_directories_from_classpath
+      }.compact + ['uri:classloader://specifications'] + spec_directories_from_classpath
     end
 
     def add_dir dir

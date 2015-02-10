@@ -26,8 +26,8 @@ public class GetEncodingInstr extends ResultBaseInstr implements FixedArityInstr
     }
 
     @Override
-    public String toString() {
-        return super.toString() + "(" + encoding + ")";
+    public String[] toStringNonOperandArgs() {
+        return new String[] { "name: " + encoding };
     }
 
     @Override

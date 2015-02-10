@@ -13,15 +13,43 @@ import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.FrameSlot;
 import com.oracle.truffle.api.frame.MaterializedFrame;
 import com.oracle.truffle.api.source.SourceSection;
+import org.jruby.runtime.Visibility;
 import org.jruby.truffle.nodes.globals.GetFromThreadLocalNode;
 import org.jruby.truffle.nodes.globals.WrapInThreadLocalNode;
 import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyBinding;
+import org.jruby.truffle.runtime.core.RubyString;
 import org.jruby.truffle.runtime.core.RubySymbol;
 
 @CoreClass(name = "Binding")
 public abstract class BindingNodes {
+
+    @CoreMethod(names = "initialize_copy", visibility = Visibility.PRIVATE, required = 1)
+    public abstract static class InitializeCopyNode extends CoreMethodNode {
+
+        public InitializeCopyNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public InitializeCopyNode(InitializeCopyNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public Object initializeCopy(RubyBinding self, RubyBinding from) {
+            notDesignedForCompilation();
+
+            if (self == from) {
+                return self;
+            }
+
+            self.initialize(from.getSelf(), from.getFrame());
+
+            return self;
+        }
+
+    }
 
     @CoreMethod(names = "local_variable_get", required = 1)
     public abstract static class LocalVariableGetNode extends CoreMethodNode {

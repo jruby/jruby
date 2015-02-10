@@ -7,6 +7,7 @@ import org.jruby.RubyModule;
 import org.jruby.ir.dataflow.DataFlowProblem;
 import org.jruby.ir.instructions.*;
 import org.jruby.ir.interpreter.InterpreterContext;
+import org.jruby.ir.interpreter.SimpleMethodInterpreterEngine;
 import org.jruby.ir.operands.*;
 import org.jruby.ir.operands.Float;
 import org.jruby.ir.operands.Boolean;
@@ -462,6 +463,8 @@ public abstract class IRScope implements ParseResult {
     protected Instr[] prepareInstructions() {
         setupLinearization();
 
+        boolean simple_method = this instanceof IRMethod;
+
         SimpleCloneInfo cloneInfo = new SimpleCloneInfo(this, false);
 
         // FIXME: If CFG (or linearizedBBList) knew number of instrs we could end up allocing better
@@ -482,6 +485,7 @@ public abstract class IRScope implements ParseResult {
             // FIXME: Can be replaced with System.arrayCopy or clone() once we stop cloning individual instrs
             for (int i = 0; i < bbInstrsLength; i++) {
                 Instr instr = bbInstrs.get(i);
+                if (simple_method && SimpleMethodInterpreterEngine.OPERATIONS.get(instr.getOperation()) == null) simple_method = false;
                 if (!(instr instanceof ReceiveSelfInstr)) {
                     // FIXME: Can be removed once ipc and rpc are stored in table(s) in IC
                     Instr newInstr = instr.clone(cloneInfo);
@@ -492,6 +496,8 @@ public abstract class IRScope implements ParseResult {
                 }
             }
         }
+
+        if (simple_method) flags.add(IRFlags.SIMPLE_METHOD);
 
         cfg().getExitBB().getLabel().setTargetPC(ipc + 1);  // Exit BB ipc
 

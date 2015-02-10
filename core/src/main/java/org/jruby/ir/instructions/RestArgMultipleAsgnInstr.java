@@ -3,7 +3,6 @@ package org.jruby.ir.instructions;
 import org.jruby.RubyArray;
 import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Operation;
-import org.jruby.ir.operands.Fixnum;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.Variable;
 import org.jruby.ir.transformations.inlining.CloneInfo;
@@ -36,8 +35,8 @@ public class RestArgMultipleAsgnInstr extends MultipleAsgnBase implements FixedA
     }
 
     @Override
-    public String toString() {
-        return super.toString() + "(" + getArray() + ", " + index + ", " + preArgsCount + ", " + postArgsCount + ")";
+    public String[] toStringNonOperandArgs() {
+        return new String[] { "index: " + index, "pre: " + preArgsCount, "post: " + postArgsCount};
     }
 
     @Override

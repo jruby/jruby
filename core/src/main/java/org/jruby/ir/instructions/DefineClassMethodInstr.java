@@ -28,9 +28,10 @@ public class DefineClassMethodInstr extends Instr implements FixedArityInstr {
         return method;
     }
 
+
     @Override
-    public String toString() {
-        return getOperation() + "(" + getContainer() + ", " + method.getName() + ", " + method.getFileName() + ")";
+    public String[] toStringNonOperandArgs() {
+        return new String[] {"name: " + method.getName() };
     }
 
     @Override

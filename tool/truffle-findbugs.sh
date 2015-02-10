@@ -28,4 +28,4 @@ findbugs-3.0.0/bin/findbugs \
   -exclude tool/truffle-findbugs-exclude.xml \
   -exitcode \
   -low \
-  core/target/classes/org/jruby/truffle/ || exit $?
+  truffle/target/classes/org/jruby/truffle/ || exit $?

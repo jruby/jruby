@@ -1,0 +1,1 @@
+fails:ERB.new forget local variables defined previous one

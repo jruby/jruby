@@ -733,7 +733,7 @@ public class BodyTranslator extends Translator {
 
                 RubyNode thenNode;
 
-                if (when.getBodyNode() == null) {
+                if (when.getBodyNode() == null || when.getBodyNode().isNil()) {
                     thenNode = new ObjectLiteralNode(context, sourceSection, context.getCoreLibrary().getNilObject());
                 } else {
                     thenNode = when.getBodyNode().accept(this);
@@ -920,7 +920,7 @@ public class BodyTranslator extends Translator {
          * we will because we'll translate that to ::Rubinius. But it is a simpler translation.
          */
 
-        if (node.getName().equals("Rubinius") && sourceSection.getSource().getPath().startsWith("core:/jruby/truffle/core/rubinius/kernel")) {
+        if (node.getName().equals("Rubinius") && sourceSection.getSource().getPath().startsWith("core:/core/rubinius")) {
             return new org.jruby.ast.Colon3Node(node.getPosition(), node.getName()).accept(this);
         }
 
@@ -1448,13 +1448,13 @@ public class BodyTranslator extends Translator {
 
         org.jruby.ast.Node thenBody = node.getThenBody();
 
-        if (thenBody == null) {
+        if (thenBody == null || thenBody.isNil()) {
             thenBody = new org.jruby.ast.NilNode(node.getPosition());
         }
 
         org.jruby.ast.Node elseBody = node.getElseBody();
 
-        if (elseBody == null) {
+        if (elseBody == null || elseBody.isNil()) {
             elseBody = new org.jruby.ast.NilNode(node.getPosition());
         }
 
@@ -1504,7 +1504,7 @@ public class BodyTranslator extends Translator {
          * self, and @start to be 0.
          */
 
-        if (sourceSection.getSource().getPath().equals("core:/jruby/truffle/core/rubinius/kernel/common/array.rb")) {
+        if (sourceSection.getSource().getPath().equals("core:/core/rubinius/common/array.rb")) {
             if (nameWithoutSigil.equals("@total")) {
                 return new RubyCallNode(context, sourceSection,
                         "size",
@@ -1517,6 +1517,23 @@ public class BodyTranslator extends Translator {
                 return new FixnumLiteralNode.IntegerFixnumLiteralNode(context, sourceSection, 0);
             }
         }
+
+        if (sourceSection.getSource().getPath().equals("core:/core/rubinius/common/string.rb")) {
+            if (nameWithoutSigil.equals("@num_bytes")) {
+                return new RubyCallNode(context, sourceSection,
+                        "bytesize",
+                        new SelfNode(context, sourceSection),
+                        null,
+                        false);
+            } else if (nameWithoutSigil.equals("@data")) {
+                return new RubyCallNode(context, sourceSection,
+                        "bytes",
+                        new SelfNode(context, sourceSection),
+                        null,
+                        false);
+            }
+        }
+
 
         final RubyNode receiver = new SelfNode(context, sourceSection);
 
@@ -2529,6 +2546,7 @@ public class BodyTranslator extends Translator {
 
         RubyNode condition = node.getConditionNode().accept(this);
 
+        final boolean oldTranslatingWhile = translatingWhile;
         translatingWhile = true;
 
         final RubyNode body;
@@ -2536,7 +2554,7 @@ public class BodyTranslator extends Translator {
         try {
             body = node.getBodyNode().accept(this);
         } finally {
-            translatingWhile = false;
+            translatingWhile = oldTranslatingWhile;
         }
 
         if (node.evaluateAtStart()) {

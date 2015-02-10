@@ -49,24 +49,48 @@ public abstract class Instr {
         this.operands = operands;
     }
 
+    private String[] EMPTY_STRINGS = new String[0];
+    public String[] toStringNonOperandArgs() {
+        return EMPTY_STRINGS;
+    }
+
+    /**
+     * Instructions are meant to be in a machine-readable format so offline tooling can parse the
+     * debugging output.  The format is:
+     *
+     * (result_op '=')? instr '(' (operand ',' )* operand? ';' (extra_arg ',')* extra_arg? ')'
+     * extra_arg can either be plain value or in a key: value format.
+     * @return
+     */
     @Override
     public String toString() {
         StringBuilder buf = new StringBuilder(isDead() ? "[DEAD]" : "");
 
         if (this instanceof ResultInstr) buf.append(((ResultInstr) this).getResult()).append(" = ");
 
-        buf.append(operation);
+        buf.append(operation).append('(');
+        toArgList(buf, operands);
 
-        if (operands.length > 0) {
-            buf.append("(");
-            for (int i = 0; i < operands.length-1; i++) {
-                buf.append(operands[i]).append(", ");
-            }
-
-            buf.append(operands[operands.length-1]).append(")");
+        String[] extraArgs = toStringNonOperandArgs();
+        if (extraArgs.length >= 1) {
+            if (operands.length > 0) buf.append(' ');
+            buf.append(';');
+            toArgList(buf, extraArgs);
         }
+        buf.append(')');
 
         return buf.toString();
+    }
+
+    private StringBuilder toArgList(StringBuilder buf, Object[] args) {
+        if (args.length <= 0) return buf;
+
+        for (int i = 0; i < args.length - 1; i++) {
+            buf.append(args[i]).append(", ");
+        }
+        buf.append(args[args.length - 1]);
+
+        return buf;
     }
 
     @Interp

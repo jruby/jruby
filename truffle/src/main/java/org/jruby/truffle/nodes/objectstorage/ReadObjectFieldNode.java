@@ -57,8 +57,6 @@ public abstract class ReadObjectFieldNode extends Node {
         }
     }
 
-    public boolean isSet(RubyBasicObject object) {
-        return true;
-    }
+    public abstract boolean isSet(RubyBasicObject object);
 
 }

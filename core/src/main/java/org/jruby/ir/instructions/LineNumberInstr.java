@@ -19,8 +19,8 @@ public class LineNumberInstr extends Instr implements FixedArityInstr {
     }
 
     @Override
-    public String toString() {
-        return super.toString() + "(" + lineNumber + ")";
+    public String[] toStringNonOperandArgs() {
+        return new String[] {"n: " + lineNumber};
     }
 
     @Override

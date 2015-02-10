@@ -144,15 +144,15 @@ public abstract class ArrayReadSliceNormalizedNode extends RubyNode {
 
     // Guards
 
-    public static boolean indexInBounds(RubyArray array, int index, int length) {
+    protected static boolean indexInBounds(RubyArray array, int index, int length) {
         return index >= 0 && index <= array.getSize();
     }
 
-    public static boolean lengthPositive(RubyArray array, int index, int length) {
+    protected static boolean lengthPositive(RubyArray array, int index, int length) {
         return length >= 0;
     }
 
-    public static boolean endInBounds(RubyArray array, int index, int length) {
+    protected static boolean endInBounds(RubyArray array, int index, int length) {
         return index + length < array.getSize();
     }
 

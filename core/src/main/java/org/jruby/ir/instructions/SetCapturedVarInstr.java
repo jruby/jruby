@@ -32,8 +32,8 @@ public class SetCapturedVarInstr extends ResultBaseInstr implements FixedArityIn
     }
 
     @Override
-    public String toString() {
-        return result + " = set_captured_var(" + getMatch2Result() + ", '" + varName + "')";
+    public String[] toStringNonOperandArgs() {
+        return new String[] { "name: " + varName };
     }
 
     @Override

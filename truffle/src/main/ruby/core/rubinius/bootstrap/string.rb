@@ -24,11 +24,51 @@
 # OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-# Only part of Rubinius' rubinius.rb
+# Only part of Rubinius' string.rb
 
-module Rubinius
-  def self.watch_signal(sig, ignored)
-    Rubinius.primitive :vm_watch_signal
-    raise PrimitiveFailure, "Rubinius.vm_watch_signal primitive failed" # Truffle: simplified failure
+class String
+
+  def self.from_codepoint(code, enc)
+    Rubinius.primitive :string_from_codepoint
+    raise PrimitiveFailure, "String.from_codepoint primitive failed"
   end
+
+  def find_string(pattern, start)
+    Rubinius.primitive :string_index
+    raise PrimitiveFailure, "String#find_string primitive failed"
+  end
+
+  def byteslice(index_or_range, length=undefined)
+    Rubinius.primitive :string_byte_substring
+
+    if index_or_range.kind_of? Range
+      index = Rubinius::Type.coerce_to index_or_range.begin, Fixnum, :to_int
+      index += @num_bytes if index < 0
+      return if index < 0 or index > @num_bytes
+
+      finish = Rubinius::Type.coerce_to index_or_range.end, Fixnum, :to_int
+      finish += @num_bytes if finish < 0
+
+      finish += 1 unless index_or_range.exclude_end?
+      length = finish - index
+
+      return byteslice 0, 0 if length < 0
+    else
+      index = Rubinius::Type.coerce_to index_or_range, Fixnum, :to_int
+      index += @num_bytes if index < 0
+
+      if undefined.equal?(length)
+        return if index == @num_bytes
+        length = 1
+      else
+        length = Rubinius::Type.coerce_to length, Fixnum, :to_int
+        return if length < 0
+      end
+
+      return if index < 0 or index > @num_bytes
+    end
+
+    byteslice index, length
+  end
+
 end

@@ -24,18 +24,21 @@
 # OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-# Only part of Rubinius' string.rb
+# Only part of Rubinius' rubinius.rb
 
-class String
-
-  def self.from_codepoint(code, enc)
-    Rubinius.primitive :string_from_codepoint
-    raise PrimitiveFailure, "String.from_codepoint primitive failed"
+module Rubinius
+  def self.watch_signal(sig, ignored)
+    Rubinius.primitive :vm_watch_signal
+    raise PrimitiveFailure, "Rubinius.vm_watch_signal primitive failed" # Truffle: simplified failure
   end
 
-  def find_string(pattern, start)
-    Rubinius.primitive :string_index
-    raise PrimitiveFailure, "String#find_string primitive failed"
+  def self.throw(dest, obj)
+    Rubinius.primitive :vm_throw
+    raise PrimitiveFailure, "Rubinius.throw primitive failed"
   end
 
+  def self.catch(dest, obj)
+    Rubinius.primitive :vm_catch
+    raise PrimitiveFailure, "Rubinius.catch primitive failed"
+  end
 end

@@ -24,48 +24,46 @@
 # OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-# Only part of Rubinius' string.rb
+module Rubinius
+  module ThrownValue
+    def self.register(obj)
+      cur = (Thread.current[:__catches__] ||= [])
+      cur << obj
 
-class String
-
-  def include?(needle)
-    !!find_string(StringValue(needle), 0)
-  end
-
-  def chars
-    if block_given?
-      each_char do |char|
-        yield char
+      begin
+        yield
+      ensure
+        cur.pop
       end
-    else
-      each_char.to_a
+    end
+
+    def self.available?(obj)
+      cur = Thread.current[:__catches__]
+      return false unless cur
+      cur.each do |c|
+        return true if Rubinius::Type.object_equal(c, obj)
+      end
+      false
     end
   end
+end
 
-  def chomp(separator=$/)
-    str = dup
-    str.chomp!(separator) || str
-  end
+module Kernel
+  def catch(obj = Object.new, &block)
+    raise LocalJumpError unless block_given?
 
-  def lines(sep=$/)
-    if block_given?
-      each_line(sep) do |line|
-        yield line
-      end
-    else
-      each_line(sep).to_a
+    Rubinius::ThrownValue.register(obj) do
+      return Rubinius.catch(obj, block)
     end
   end
+  module_function :catch
 
-  def start_with?(*prefixes)
-    prefixes.each do |original_prefix|
-      prefix = Rubinius::Type.check_convert_type original_prefix, String, :to_str
-      unless prefix
-        raise TypeError, "no implicit conversion of #{original_prefix.class} into String"
-      end
-      return true if self[0, prefix.length] == prefix
+  def throw(obj, value=nil)
+    unless Rubinius::ThrownValue.available? obj
+      raise ArgumentError, "uncaught throw #{obj.inspect}"
     end
-    false
-  end
 
+    Rubinius.throw obj, value
+  end
+  module_function :throw
 end

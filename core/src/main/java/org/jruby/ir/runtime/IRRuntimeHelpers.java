@@ -9,6 +9,7 @@ import org.jruby.exceptions.Unrescuable;
 import org.jruby.internal.runtime.methods.CompiledIRMetaClassBody;
 import org.jruby.internal.runtime.methods.CompiledIRMethod;
 import org.jruby.internal.runtime.methods.DynamicMethod;
+import org.jruby.internal.runtime.methods.InterpretedIRBodyMethod;
 import org.jruby.internal.runtime.methods.InterpretedIRMetaClassBody;
 import org.jruby.internal.runtime.methods.InterpretedIRMethod;
 import org.jruby.internal.runtime.methods.UndefinedMethod;
@@ -1082,7 +1083,7 @@ public class IRRuntimeHelpers {
     @Interp
     public static DynamicMethod newInterpretedModuleBody(ThreadContext context, IRScope irModule, Object rubyContainer) {
         RubyModule newRubyModule = newRubyModuleFromIR(context, irModule, rubyContainer);
-        return new InterpretedIRMethod(irModule, Visibility.PUBLIC, newRubyModule);
+        return new InterpretedIRBodyMethod(irModule, newRubyModule);
     }
 
     @JIT
@@ -1105,7 +1106,7 @@ public class IRRuntimeHelpers {
     public static DynamicMethod newInterpretedClassBody(ThreadContext context, IRScope irClassBody, Object container, Object superClass) {
         RubyModule newRubyClass = newRubyClassFromIR(context.runtime, irClassBody, superClass, container);
 
-        return new InterpretedIRMethod(irClassBody, Visibility.PUBLIC, newRubyClass);
+        return new InterpretedIRBodyMethod(irClassBody, newRubyClass);
     }
 
     @JIT

@@ -1,5 +1,6 @@
 package org.jruby.ir.instructions;
 
+import java.util.Arrays;
 import org.jruby.ir.IRScope;
 import org.jruby.ir.transformations.inlining.CloneInfo;
 
@@ -15,6 +16,16 @@ public class InlinedLineNumberInstr extends LineNumberInstr {
         super(lineNumber);
 
         this.scope = scope;
+    }
+
+    @Override
+    public String[] toStringNonOperandArgs() {
+        String[] base = super.toStringNonOperandArgs();
+        String[] args = Arrays.copyOf(base, base.length + 1);
+
+        args[args.length - 1] = "scope_name: " + scope.getName();
+
+        return  args;
     }
 
     @Override

@@ -17,8 +17,8 @@ OTHER_COPYRIGHTS = [
 EXTENSIONS = %w[.java .rb]
 
 truffle_paths = %w[
-  core/src/main/java/org/jruby/truffle
-  core/src/main/ruby/jruby/truffle
+  truffle/src/main/java/org/jruby/truffle
+  truffle/src/main/ruby
   test/truffle
 ] + [__FILE__]
 

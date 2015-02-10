@@ -53,8 +53,8 @@ public class InheritanceSearchConstInstr extends ResultBaseInstr implements Fixe
     }
 
     @Override
-    public String toString() {
-        return super.toString() + "(" + getCurrentModule() + ", " + constName  + ")";
+    public String[] toStringNonOperandArgs() {
+        return new String[] { "name: " + constName, "no_priv: " + noPrivateConsts};
     }
 
     private Object cache(Ruby runtime, RubyModule module) {

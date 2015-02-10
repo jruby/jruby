@@ -48,8 +48,8 @@ public class LoadLocalVarInstr extends ResultBaseInstr implements FixedArityInst
     }
 
     @Override
-    public String toString() {
-        return result + " = load_lvar(" + scope.getName() + ", " + getLocalVar() + ")";
+    public String[] toStringNonOperandArgs() {
+        return new String[] { "scope: " + scope.getName() };
     }
 
     @Override

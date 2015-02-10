@@ -14,10 +14,12 @@ import com.oracle.truffle.api.Truffle;
 import com.oracle.truffle.api.frame.FrameInstance;
 import com.oracle.truffle.api.frame.FrameInstanceVisitor;
 import com.oracle.truffle.api.nodes.Node;
+
 import org.jruby.truffle.nodes.CoreSourceSection;
 import org.jruby.truffle.runtime.backtrace.Activation;
 import org.jruby.truffle.runtime.backtrace.Backtrace;
 import org.jruby.truffle.runtime.core.RubyModule;
+import org.jruby.truffle.runtime.core.RubyProc;
 import org.jruby.truffle.runtime.methods.InternalMethod;
 import org.jruby.truffle.runtime.methods.MethodLike;
 import org.jruby.util.Memo;
@@ -32,6 +34,15 @@ public abstract class RubyCallStack {
         final FrameInstance currentFrame = Truffle.getRuntime().getCurrentFrame();
         final MethodLike method = getMethod(currentFrame);
         return method.getDeclaringModule();
+    }
+
+    public static InternalMethod getCurrentMethod() {
+        final FrameInstance currentFrame = Truffle.getRuntime().getCurrentFrame();
+        MethodLike methodLike = getMethod(currentFrame);
+        while (!(methodLike instanceof InternalMethod)) {
+            methodLike = ((RubyProc) methodLike).getMethod();
+        }
+        return (InternalMethod) methodLike;
     }
 
     public static InternalMethod getCallingMethod() {

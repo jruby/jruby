@@ -9,13 +9,11 @@ import org.jruby.RubyClass;
 import org.jruby.RubyModule;
 import org.jruby.ir.*;
 import org.jruby.ir.representations.CFG;
-import org.jruby.ir.interpreter.Interpreter;
 import org.jruby.ir.interpreter.InterpreterContext;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
-import org.jruby.runtime.Helpers;
 import org.jruby.runtime.PositionAware;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
@@ -32,10 +30,6 @@ public class InterpretedIRMethod extends DynamicMethod implements IRMethodArgs, 
 
     protected final IRScope method;
 
-    // For synthetic methods and for module/class bodies we do not want these added to
-    // our backtraces.
-    private boolean isSynthetic;
-
     protected static class DynamicMethodBox {
         public DynamicMethod actualMethod;
         public int callCount = 0;
@@ -49,18 +43,11 @@ public class InterpretedIRMethod extends DynamicMethod implements IRMethodArgs, 
         this.method.getStaticScope().determineModule();
         this.arity = calculateArity();
 
-        // disable JIT for anything that's not an IRMethod, or if JIT is turned off
-        // FIXME: kinda hacky, but I use IRMethod data in JITCompiler, and module/class/script bodies generally only run once
-        if (!(method instanceof IRMethod) ||
-                !implementationClass.getRuntime().getInstanceConfig().getCompileMode().shouldJIT()) {
+        // disable JIT if JIT is disabled
+        // FIXME: kinda hacky, but I use IRMethod data in JITCompiler.
+        if (!implementationClass.getRuntime().getInstanceConfig().getCompileMode().shouldJIT()) {
             this.box.callCount = -1;
         }
-
-        isSynthetic = method instanceof IRModuleBody;
-    }
-
-    public boolean isSynthetic() {
-        return isSynthetic;
     }
 
     public IRScope getIRMethod() {
@@ -81,7 +68,7 @@ public class InterpretedIRMethod extends DynamicMethod implements IRMethodArgs, 
 
     public List<String[]> getParameterList() {
         method.prepareForInterpretation(); // We might not have parsed the method yet.
-        return (method instanceof IRMethod) ? ((IRMethod)method).getArgDesc() : new ArrayList<String[]>();
+        return ((IRMethod) method).getArgDesc();
     }
 
     private Arity calculateArity() {
@@ -114,7 +101,18 @@ public class InterpretedIRMethod extends DynamicMethod implements IRMethodArgs, 
         if (jittedMethod != null) {
             return jittedMethod.call(context, self, clazz, name, args, block);
         } else {
-            return Interpreter.INTERPRET_METHOD(context, this, self, name, args, block);
+            return INTERPRET_METHOD(context, ensureInstrsReady(), getImplementationClass().getMethodLocation(), self, name, args, block);
+        }
+    }
+
+    private static IRubyObject INTERPRET_METHOD(ThreadContext context, InterpreterContext ic, RubyModule implClass,
+                                               IRubyObject self, String name, IRubyObject[] args, Block block) {
+        try {
+            ThreadContext.pushBacktrace(context, name, ic.getFileName(), context.getLine());
+
+            return ic.engine.interpret(context, self, ic, implClass, name, args, block, null);
+        } finally {
+            ThreadContext.popBacktrace(context);
         }
     }
 
@@ -129,7 +127,18 @@ public class InterpretedIRMethod extends DynamicMethod implements IRMethodArgs, 
         if (jittedMethod != null) {
             return jittedMethod.call(context, self, clazz, name, block);
         } else {
-            return Interpreter.INTERPRET_METHOD(context, this, self, name, IRubyObject.NULL_ARRAY, block);
+            return INTERPRET_METHOD(context, ensureInstrsReady(), getImplementationClass().getMethodLocation(), self, name, block);
+        }
+    }
+
+    private static IRubyObject INTERPRET_METHOD(ThreadContext context, InterpreterContext ic, RubyModule implClass,
+                                               IRubyObject self, String name, Block block) {
+        try {
+            ThreadContext.pushBacktrace(context, name, ic.getFileName(), context.getLine());
+
+            return ic.engine.interpret(context, self, ic, implClass, name, block, null);
+        } finally {
+            ThreadContext.popBacktrace(context);
         }
     }
 
@@ -144,7 +153,18 @@ public class InterpretedIRMethod extends DynamicMethod implements IRMethodArgs, 
         if (jittedMethod != null) {
             return jittedMethod.call(context, self, clazz, name, arg0, block);
         } else {
-            return Interpreter.INTERPRET_METHOD(context, this, self, name, Helpers.arrayOf(arg0), block);
+            return INTERPRET_METHOD(context, ensureInstrsReady(), getImplementationClass().getMethodLocation(), self, name, arg0, block);
+        }
+    }
+
+    private static IRubyObject INTERPRET_METHOD(ThreadContext context, InterpreterContext ic, RubyModule implClass,
+                                               IRubyObject self, String name, IRubyObject arg1, Block block) {
+        try {
+            ThreadContext.pushBacktrace(context, name, ic.getFileName(), context.getLine());
+
+            return ic.engine.interpret(context, self, ic, implClass, name, arg1, block, null);
+        } finally {
+            ThreadContext.popBacktrace(context);
         }
     }
 
@@ -159,7 +179,18 @@ public class InterpretedIRMethod extends DynamicMethod implements IRMethodArgs, 
         if (jittedMethod != null) {
             return jittedMethod.call(context, self, clazz, name, arg0, arg1, block);
         } else {
-            return Interpreter.INTERPRET_METHOD(context, this, self, name, Helpers.arrayOf(arg0, arg1), block);
+            return INTERPRET_METHOD(context, ensureInstrsReady(), getImplementationClass().getMethodLocation(), self, name, arg0, arg1, block);
+        }
+    }
+
+    private static IRubyObject INTERPRET_METHOD(ThreadContext context, InterpreterContext ic, RubyModule implClass,
+                                               IRubyObject self, String name, IRubyObject arg1, IRubyObject arg2,  Block block) {
+        try {
+            ThreadContext.pushBacktrace(context, name, ic.getFileName(), context.getLine());
+
+            return ic.engine.interpret(context, self, ic, implClass, name, arg1, arg2, block, null);
+        } finally {
+            ThreadContext.popBacktrace(context);
         }
     }
 
@@ -174,8 +205,20 @@ public class InterpretedIRMethod extends DynamicMethod implements IRMethodArgs, 
         if (jittedMethod != null) {
             return jittedMethod.call(context, self, clazz, name, arg0, arg1, arg2, block);
         } else {
-            return Interpreter.INTERPRET_METHOD(context, this, self, name, Helpers.arrayOf(arg0, arg1, arg2), block);
+            return INTERPRET_METHOD(context, ensureInstrsReady(), getImplementationClass().getMethodLocation(), self, name, arg0, arg1, arg2, block);
         }
+    }
+
+    private static IRubyObject INTERPRET_METHOD(ThreadContext context, InterpreterContext ic, RubyModule implClass,
+                                               IRubyObject self, String name, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3, Block block) {
+        try {
+            ThreadContext.pushBacktrace(context, name, ic.getFileName(), context.getLine());
+
+            return ic.engine.interpret(context, self, ic, implClass, name, arg1, arg2, arg3, block, null);
+        } finally {
+            ThreadContext.popBacktrace(context);
+        }
+
     }
 
     protected void doDebug() {

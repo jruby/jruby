@@ -41,8 +41,8 @@ public class LexicalSearchConstInstr extends ResultBaseInstr implements FixedAri
     }
 
     @Override
-    public String toString() {
-        return super.toString() + "(" + getDefiningScope() + ", " + constName  + ")";
+    public String[] toStringNonOperandArgs() {
+        return new String[] { "name: " + constName };
     }
 
     @Override

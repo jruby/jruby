@@ -89,7 +89,7 @@ public abstract class ArrayReadNormalizedNode extends RubyNode {
 
     // Guards
 
-    public static boolean isInBounds(RubyArray array, int index) {
+    protected static boolean isInBounds(RubyArray array, int index) {
         return index >= 0 && index < array.getSize();
     }
 

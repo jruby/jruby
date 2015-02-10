@@ -63,6 +63,15 @@ namespace :test do
     :all => [:int, :jit, :aot]
   }
 
+  def files_in_file(filename)
+    files = []
+    File.readlines(filename).each do |line|
+      filename = "test/#{line.chomp}.rb"
+      files << filename if File.exist? filename
+    end
+    files
+  end
+
   namespace :mri do
     mri_test_files = File.readlines('test/mri.index').grep(/^[^#]\w+/).map(&:chomp).join(' ')
     task :int do
@@ -107,7 +116,8 @@ namespace :test do
     end
     t.test_files = files
     t.verbose = true
-    t.ruby_opts << '-J-ea'
+    t.test_files = files_in_file 'test/slow.index'
+    t.ruby_opts << '-J-ea' << '--1.8'
     t.ruby_opts << '-J-cp target/test-classes'
   end
 

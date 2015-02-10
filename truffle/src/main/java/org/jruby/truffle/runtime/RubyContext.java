@@ -43,6 +43,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayDeque;
+import java.util.Deque;
 import java.util.Queue;
 import java.util.Random;
 import java.util.concurrent.atomic.AtomicLong;
@@ -72,15 +73,6 @@ public class RubyContext extends ExecutionContext {
     private final CoverageTracker coverageTracker;
 
     private final AtomicLong nextObjectID = new AtomicLong(ObjectIDOperations.FIRST_OBJECT_ID);
-
-    private final ThreadLocal<Queue<Object>> throwTags = new ThreadLocal<Queue<Object>>() {
-
-        @Override
-        protected Queue<Object> initialValue() {
-            return new ArrayDeque<>();
-        }
-
-    };
 
     public RubyContext(Ruby runtime) {
         assert runtime != null;
@@ -414,10 +406,6 @@ public class RubyContext extends ExecutionContext {
 
     public Warnings getWarnings() {
         return warnings;
-    }
-
-    public Queue<Object> getThrowTags() {
-        return throwTags.get();
     }
 
     public SafepointManager getSafepointManager() {

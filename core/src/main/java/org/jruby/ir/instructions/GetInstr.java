@@ -25,7 +25,7 @@ public abstract class GetInstr extends ResultBaseInstr implements FixedArityInst
     }
 
     @Override
-    public String toString() {
-        return super.toString() + "(" + getSource() + (ref == null ? "" : ", " + ref) + ")";
+    public String[] toStringNonOperandArgs() {
+        return new String[] {"name: " + ref};
     }
 }

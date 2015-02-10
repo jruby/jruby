@@ -9,4 +9,3 @@ describe 'BigDecimal precision test with different execution order' do
     expect(r1).to eq(r2)
   end
 end
-

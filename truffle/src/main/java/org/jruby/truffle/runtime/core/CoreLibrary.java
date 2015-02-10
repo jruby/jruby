@@ -240,7 +240,7 @@ public class CoreLibrary {
         // Classes defined in Object
 
         arrayClass = defineClass("Array", new RubyArray.ArrayAllocator());
-        bindingClass = defineClass("Binding");
+        bindingClass = defineClass("Binding", new RubyBinding.BindingAllocator());
         dirClass = defineClass("Dir");
         encodingClass = defineClass("Encoding", new RubyEncoding.EncodingAllocator());
         falseClass = defineClass("FalseClass");
@@ -419,7 +419,7 @@ public class CoreLibrary {
 
         if (Options.TRUFFLE_LOAD_CORE.load()) {
             try {
-                loadRubyCore("jruby/truffle/core.rb");
+                loadRubyCore("core.rb");
             } catch (RaiseException e) {
                 final RubyException rubyException = e.getRubyException();
 

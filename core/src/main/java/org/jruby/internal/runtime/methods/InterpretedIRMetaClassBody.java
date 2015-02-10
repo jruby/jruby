@@ -1,26 +1,17 @@
 package org.jruby.internal.runtime.methods;
 
-import java.util.ArrayList;
-import java.util.List;
-
 import org.jruby.RubyModule;
-import org.jruby.ir.*;
-import org.jruby.ir.interpreter.Interpreter;
+import org.jruby.ir.IRScope;
 import org.jruby.ir.interpreter.InterpreterContext;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
-import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 
-public class InterpretedIRMetaClassBody extends InterpretedIRMethod {
+public class InterpretedIRMetaClassBody extends InterpretedIRBodyMethod {
     public InterpretedIRMetaClassBody(IRScope metaClassBody, RubyModule implementationClass) {
-        super(metaClassBody, Visibility.PUBLIC, implementationClass);
-    }
-
-    public List<String[]> getParameterList() {
-        return new ArrayList<String[]>();
+        super(metaClassBody, implementationClass);
     }
 
     protected void post(InterpreterContext ic, ThreadContext context) {
@@ -44,23 +35,23 @@ public class InterpretedIRMetaClassBody extends InterpretedIRMethod {
     }
 
     @Override
-    public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args, Block block) {
+    public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, Block block) {
         DynamicMethodBox box = this.box;
         if (box.callCount >= 0) tryJit(context, box);
         DynamicMethod actualMethod = box.actualMethod;
-        if (actualMethod != null) return actualMethod.call(context, self, clazz, name, args, block);
+        if (actualMethod != null) return actualMethod.call(context, self, clazz, name, block);
 
         InterpreterContext ic = ensureInstrsReady();
 
         if (IRRuntimeHelpers.isDebug()) doDebug();
 
         if (ic.hasExplicitCallProtocol()) {
-            return Interpreter.INTERPRET_METHOD(context, this, self, name, args, block);
+            return ic.engine.interpret(context, self, ic, getImplementationClass().getMethodLocation(), name, block, null);
         } else {
             try {
                 pre(ic, context, self, name, block);
 
-                return Interpreter.INTERPRET_METHOD(context, this, self, name, args, block);
+                return ic.engine.interpret(context, self, ic, getImplementationClass().getMethodLocation(), name, block, null);
             } finally {
                 post(ic, context);
             }

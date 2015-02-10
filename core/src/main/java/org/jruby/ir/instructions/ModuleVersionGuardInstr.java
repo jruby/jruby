@@ -46,9 +46,8 @@ public class ModuleVersionGuardInstr extends Instr implements FixedArityInstr {
     }
 
     @Override
-    public String toString() {
-        return super.toString() + "(" + getCandidateObject() + ", " + getExpectedVersion() + "[" + module.getName() + "], " +
-                getFailurePathLabel() + ")";
+    public String[] toStringNonOperandArgs() {
+        return new String[] { "name: " + module.getName(), "expected_version: " + expectedVersion};
     }
 
     @Override

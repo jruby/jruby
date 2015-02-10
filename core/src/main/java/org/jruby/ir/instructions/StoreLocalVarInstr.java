@@ -38,8 +38,8 @@ public class StoreLocalVarInstr extends Instr implements FixedArityInstr {
     }
 
     @Override
-    public String toString() {
-        return "store_lvar(" + getValue() + ", " + scope.getName() + ", " + getLocalVar() + ")";
+    public String[] toStringNonOperandArgs() {
+        return new String[] { "scope_name: " + scope.getName()};
     }
 
     // SSS FIXME: This feels dirty

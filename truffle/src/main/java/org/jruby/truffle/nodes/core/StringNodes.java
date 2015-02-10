@@ -313,6 +313,19 @@ public abstract class StringNodes {
             }
         }
 
+        @Specialization
+        public Object slice(RubyString string, RubyRegexp regexp, UndefinedPlaceholder capture) {
+            notDesignedForCompilation();
+
+            final Object matchData = regexp.matchCommon(string.getBytes(), false, false);
+
+            if (matchData == getContext().getCoreLibrary().getNilObject()) {
+                return matchData;
+            }
+
+            return ((RubyMatchData) matchData).getValues()[0];
+        }
+
     }
 
     @CoreMethod(names = "[]=", required = 2, lowerFixnumParameters = 0)
@@ -549,7 +562,7 @@ public abstract class StringNodes {
                 return getContext().getCoreLibrary().getNilObject();
             }
 
-            final byte[] copiedBytes = Arrays.copyOfRange(bytes.getUnsafeBytes(), index, index + 1);
+            final byte[] copiedBytes = Arrays.copyOfRange(bytes.getUnsafeBytes(), index, index + length);
 
             return new RubyString(getContext().getCoreLibrary().getStringClass(), new ByteList(copiedBytes, string.getBytes().getEncoding()));
         }
@@ -731,7 +744,7 @@ public abstract class StringNodes {
         public RubyString eachChar(VirtualFrame frame, RubyString string, RubyProc block) {
             notDesignedForCompilation();
 
-            // TODO (nirvdrum 04-Feb-15): This needs to support Ruby's encoding and code range semantics.  For now, this hack will suffice for very simple Strings.
+            // TODO (nirvdrum 04-Feb-15): This needs to support Ruby' encoding and code range semantics.  For now, this hack will suffice for very simple Strings.
             final String javaString = string.toString();
 
             for (int i = 0; i < javaString.length(); i++) {
@@ -741,59 +754,6 @@ public abstract class StringNodes {
             return string;
         }
 
-    }
-
-    @CoreMethod(names = "each_line", optional = 1)
-    public abstract static class EachLineNode extends YieldingCoreMethodNode {
-
-        @Child private ToStrNode toStrNode;
-
-        public EachLineNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-            toStrNode = ToStrNodeFactory.create(context, sourceSection, null);
-        }
-
-        public EachLineNode(EachLineNode prev) {
-            super(prev);
-            toStrNode = prev.toStrNode;
-        }
-
-        @Specialization
-        public RubyArray eachLine(VirtualFrame frame, RubyString string, @SuppressWarnings("unused") UndefinedPlaceholder separator) {
-            notDesignedForCompilation();
-
-            final RubyBasicObject globals = getContext().getCoreLibrary().getGlobalVariablesObject();
-            final RubyString recordSeparator = (RubyString) globals.getInstanceVariable("$/");
-            return eachLine(frame, string, recordSeparator);
-        }
-
-        @Specialization(guards = "!isUndefinedPlaceholder(arguments[1])")
-        public RubyArray eachLine(VirtualFrame frame, RubyString string, Object separator) {
-            notDesignedForCompilation();
-
-            final List<Object> lines = new ArrayList<>();
-
-            String str = string.toString();
-            String sep = toStrNode.executeRubyString(frame, separator).toString();
-
-            int start = 0;
-
-            while (start < str.length()) {
-                int end = str.indexOf(sep, start);
-
-                if (end == -1) {
-                    lines.add(getContext().makeString(str.substring(start)));
-                    break;
-                }
-
-                String line = str.substring(start, end + sep.length());
-                start = end + sep.length();
-
-                lines.add(getContext().makeString(line));
-            }
-
-            return RubyArray.fromObjects(getContext().getCoreLibrary().getArrayClass(), lines.toArray(new Object[lines.size()]));
-        }
     }
 
     @CoreMethod(names = "empty?")
@@ -809,9 +769,7 @@ public abstract class StringNodes {
 
         @Specialization
         public boolean empty(RubyString string) {
-            notDesignedForCompilation();
-
-            return string.toString().isEmpty();
+            return string.getBytes().length() == 0;
         }
     }
 
@@ -1328,6 +1286,45 @@ public abstract class StringNodes {
             return getContext().makeString(RubyString.rjust(string.toString(), length, padding.toString()));
         }
 
+    }
+
+    @CoreMethod(names = "swapcase")
+    public abstract static class SwapcaseNode extends CoreMethodNode {
+        public SwapcaseNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public SwapcaseNode(SwapcaseNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public RubyString swapcase(RubyString string) {
+            notDesignedForCompilation();
+
+            ByteList byteList = StringNodesHelper.swapcase(string);
+            return getContext().makeString(byteList);
+        }
+    }
+
+    @CoreMethod(names = "swapcase!")
+    public abstract static class SwapcaseBangNode extends CoreMethodNode {
+        public SwapcaseBangNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public SwapcaseBangNode(SwapcaseBangNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public RubyString swapcase(RubyString string) {
+            notDesignedForCompilation();
+
+            ByteList byteList = StringNodesHelper.swapcase(string);
+            string.set(byteList);
+            return string;
+        }
     }
 
     @CoreMethod(names = "rstrip")
@@ -1998,6 +1995,27 @@ public abstract class StringNodes {
 
         public static ByteList reverse(RubyString string) {
             ByteList byteListString = ByteList.create(new StringBuilder(string.toString()).reverse().toString());
+            byteListString.setEncoding(string.getBytes().getEncoding());
+
+            return byteListString;
+        }
+
+        public static ByteList swapcase(RubyString string) {
+            char[] charArray = string.toString().toCharArray();
+            StringBuilder newString = new StringBuilder();
+
+            for (int i = 0; i < charArray.length; i++) {
+                char current = charArray[i];
+
+                if (Character.isLowerCase(current)) {
+                    newString.append(Character.toString(current).toUpperCase());
+                } else if (Character.isUpperCase(current)){
+                    newString.append(Character.toString(current).toLowerCase());
+                } else {
+                    newString.append(current);
+                }
+            }
+            ByteList byteListString = ByteList.create(newString);
             byteListString.setEncoding(string.getBytes().getEncoding());
 
             return byteListString;
