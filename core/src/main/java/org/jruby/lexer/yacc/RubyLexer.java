@@ -142,7 +142,7 @@ public class RubyLexer {
         return new RationalNode(getPosition(), Long.parseLong(value, radix), 1);
     }
     
-    private ComplexNode newComplexNode(Node number) {
+    private ComplexNode newComplexNode(NumericNode number) {
         return new ComplexNode(getPosition(), number);
     }
     
@@ -547,7 +547,7 @@ public class RubyLexer {
         if ((suffix & SUFFIX_I) == 0) {
             return token;
         } else {
-            yaccValue = newComplexNode((Node) yaccValue);
+            yaccValue = newComplexNode((NumericNode) yaccValue);
             return RubyParser.tIMAGINARY;
         }
     }
@@ -2207,7 +2207,7 @@ public class RubyLexer {
         oneCharBL.append(c);
         yaccValue = new StrNode(getPosition(), oneCharBL);
         
-        return Tokens.tINTEGER;
+        return Tokens.tCHAR;
     }
     
     private int rightBracket() {

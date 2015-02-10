@@ -1000,7 +1000,7 @@ public class ParserSupport {
         return new Yield19Node(position, node); 
     }
     
-    public Node negateInteger(Node integerNode) {
+    public NumericNode negateInteger(NumericNode integerNode) {
         if (integerNode instanceof FixnumNode) {
             FixnumNode fixnumNode = (FixnumNode) integerNode;
             
@@ -1029,7 +1029,7 @@ public class ParserSupport {
     }
 
     public ComplexNode negateComplexNode(ComplexNode complexNode) {
-        complexNode.setNumber(negateNumeric(complexNode.getPosition(), complexNode.getNumber()));
+        complexNode.setNumber(negateNumeric(complexNode.getNumber()));
 
         return complexNode;
     }
@@ -1385,7 +1385,7 @@ public class ParserSupport {
         return new KeywordArgNode(position, assignable);
     }
     
-    public Node negateNumeric(ISourcePosition position, Node node) {
+    public NumericNode negateNumeric(NumericNode node) {
         switch (node.getNodeType()) {
             case FIXNUMNODE:
             case BIGNUMNODE:
