@@ -83,36 +83,41 @@ public class SafepointManager {
 
     private void assumptionInvalidated(boolean holdsGlobalLock) {
         RubyThread thread = null;
+
         if (holdsGlobalLock) {
             thread = context.getThreadManager().leaveGlobalLock();
         }
 
         try {
-            // clear the interrupted status which may have been set by interruptAllThreads().
-            Thread.interrupted();
-
-            // wait other threads to reach their safepoint
-            waitOnBarrier();
-
-            if (lock.isHeldByCurrentThread()) {
-                assumption = Truffle.getRuntime().createAssumption();
-            }
-
-            // wait the assumption to be renewed
-            waitOnBarrier();
-
-            try {
-                if (holdsGlobalLock && thread.getStatus() != Status.ABORTING) {
-                    action.accept(thread);
-                }
-            } finally {
-                // wait other threads to finish their action
-                waitOnBarrier();
-            }
+            step(thread);
         } finally {
             if (holdsGlobalLock) {
                 context.getThreadManager().enterGlobalLock(thread);
             }
+        }
+    }
+
+    private void step(RubyThread thread) {
+        // clear the interrupted status which may have been set by interruptAllThreads().
+        Thread.interrupted();
+
+        // wait other threads to reach their safepoint
+        waitOnBarrier();
+
+        if (lock.isHeldByCurrentThread()) {
+            assumption = Truffle.getRuntime().createAssumption();
+        }
+
+        // wait the assumption to be renewed
+        waitOnBarrier();
+
+        try {
+            if (thread != null && thread.getStatus() != Status.ABORTING) {
+                action.accept(thread);
+            }
+        } finally {
+            // wait other threads to finish their action
+            waitOnBarrier();
         }
     }
 
