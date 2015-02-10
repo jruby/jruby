@@ -85,7 +85,7 @@ class Gem::Specification
         elsif File.directory?(File.join(dir, "specifications")) || dir =~ /^file:/
           File.join(dir, "specifications")
         end
-      }.compact + ['uri:classloader://specifications'] + spec_directories_from_classpath
+      }.compact + spec_directories_from_classpath
     end
 
     def add_dir dir
