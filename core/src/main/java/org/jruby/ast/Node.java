@@ -48,7 +48,7 @@ import org.jruby.lexer.yacc.ISourcePositionHolder;
  */
 public abstract class Node implements ISourcePositionHolder, ParseResult {    
     // We define an actual list to get around bug in java integration (1387115)
-    static final List<Node> EMPTY_LIST = new ArrayList<Node>();
+    static final List<Node> EMPTY_LIST = new ArrayList<>();
     
     private ISourcePosition position;
 
@@ -71,7 +71,7 @@ public abstract class Node implements ISourcePositionHolder, ParseResult {
     public abstract List<Node> childNodes();
 
     protected static List<Node> createList(Node node) {
-        ArrayList<Node> list = new ArrayList<Node>(1);
+        ArrayList<Node> list = new ArrayList<>(1);
 
         list.add(node);
 
@@ -79,7 +79,7 @@ public abstract class Node implements ISourcePositionHolder, ParseResult {
     }
 
     protected static List<Node> createList(Node node1, Node node2) {
-        ArrayList<Node> list = new ArrayList<Node>(2);
+        ArrayList<Node> list = new ArrayList<>(2);
 
         list.add(node1);
         list.add(node2);
@@ -88,7 +88,7 @@ public abstract class Node implements ISourcePositionHolder, ParseResult {
     }
 
     protected static List<Node> createList(Node node1, Node node2, Node node3) {
-        ArrayList<Node> list = new ArrayList<Node>(3);
+        ArrayList<Node> list = new ArrayList<>(3);
 
         list.add(node1);
         list.add(node2);
@@ -98,7 +98,7 @@ public abstract class Node implements ISourcePositionHolder, ParseResult {
     }
 
     protected static List<Node> createList(Node... nodes) {
-        ArrayList<Node> list = new ArrayList<Node>(nodes.length);
+        ArrayList<Node> list = new ArrayList<>(nodes.length);
         
         for (Node node: nodes) {
             if (node != null) list.add(node);
@@ -117,38 +117,26 @@ public abstract class Node implements ISourcePositionHolder, ParseResult {
 
         StringBuilder builder = new StringBuilder(60);
 
-        if (indent) {
-            indent(indentation, builder);
-        }
+        if (indent) indent(indentation, builder);
 
         builder.append("(").append(getNodeName());
 
-        if (this instanceof INameNode) {
-            builder.append(":").append(((INameNode) this).getName());
-        }
+        if (this instanceof INameNode) builder.append(":").append(((INameNode) this).getName());
 
         builder.append(" ").append(getPosition().getLine());
 
-        if (!childNodes().isEmpty() && indent) {
-            builder.append("\n");
-        }
+        if (!childNodes().isEmpty() && indent) builder.append("\n");
 
         for (Node child : childNodes()) {
-            if (!indent) {
-                builder.append(", ");
-            }
+            if (!indent) builder.append(", ");
 
             if (child == null) {
-                if (indent) {
-                    indent(indentation + 1, builder);
-                }
+                if (indent) indent(indentation + 1, builder);
 
                 builder.append("null");
             } else {
                 if (indent && child instanceof NilImplicitNode) {
-                    if (indent) {
-                        indent(indentation + 1, builder);
-                    }
+                    indent(indentation + 1, builder);
 
                     builder.append(child.getClass().getSimpleName());
                 } else {
@@ -156,14 +144,10 @@ public abstract class Node implements ISourcePositionHolder, ParseResult {
                 }
             }
 
-            if (indent) {
-                builder.append("\n");
-            }
+            if (indent) builder.append("\n");
         }
 
-        if (!childNodes().isEmpty() && indent) {
-            indent(indentation, builder);
-        }
+        if (!childNodes().isEmpty() && indent) indent(indentation, builder);
 
         builder.append(")");
 
@@ -178,9 +162,7 @@ public abstract class Node implements ISourcePositionHolder, ParseResult {
 
     protected String getNodeName() {
         String name = getClass().getName();
-        int i = name.lastIndexOf('.');
-        String nodeType = name.substring(i + 1);
-        return nodeType;
+        return name.substring(name.lastIndexOf('.') + 1);
     }
 
     public <T extends org.jruby.ast.Node> T findFirstChild(final Class<T> nodeClass) {
