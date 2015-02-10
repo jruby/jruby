@@ -14,6 +14,7 @@ import org.jruby.ir.instructions.ResultInstr;
 import org.jruby.ir.instructions.ReturnBase;
 import org.jruby.ir.instructions.RuntimeHelperCall;
 import org.jruby.ir.instructions.SearchConstInstr;
+import org.jruby.ir.instructions.TraceInstr;
 import org.jruby.ir.instructions.specialized.OneOperandArgNoBlockCallInstr;
 import org.jruby.ir.instructions.specialized.OneOperandArgNoBlockNoResultCallInstr;
 import org.jruby.ir.operands.Operand;
@@ -185,6 +186,17 @@ public class BodyInterpreterEngine extends InterpreterEngine {
                             result = context.nil;
                         }
                         setResult(temp, currDynScope, gfi.getResult(), result);
+                        break;
+                    }
+                    case TRACE: {
+                        if (context.runtime.hasEventHooks()) {
+                            TraceInstr trace = (TraceInstr) instr;
+                            // FIXME: Try and statically generate END linenumber instead of hacking it.
+                            int linenumber = trace.getLinenumber() == -1 ? context.getLine()+1 : trace.getLinenumber();
+
+                            context.trace(trace.getEvent(), trace.getName(), context.getFrameKlazz(),
+                                    trace.getFilename(), linenumber);
+                        }
                         break;
                     }
                     default:
