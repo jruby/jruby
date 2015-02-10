@@ -18,14 +18,13 @@ import org.jruby.truffle.nodes.objects.Allocator;
 import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.methods.InternalMethod;
-import org.jruby.truffle.runtime.methods.MethodLike;
 import org.jruby.truffle.runtime.methods.SharedMethodInfo;
 import org.jruby.truffle.runtime.subsystems.ObjectSpaceManager;
 
 /**
  * Represents the Ruby {@code Proc} class.
  */
-public class RubyProc extends RubyBasicObject implements MethodLike {
+public class RubyProc extends RubyBasicObject {
 
     public static enum Type {
         BLOCK, PROC, LAMBDA

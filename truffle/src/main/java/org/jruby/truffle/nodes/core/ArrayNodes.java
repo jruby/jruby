@@ -44,7 +44,6 @@ import org.jruby.truffle.runtime.core.RubyProc;
 import org.jruby.truffle.runtime.core.RubyRange;
 import org.jruby.truffle.runtime.core.RubyString;
 import org.jruby.truffle.runtime.core.RubySymbol;
-import org.jruby.truffle.runtime.methods.MethodLike;
 import org.jruby.truffle.runtime.methods.SharedMethodInfo;
 import org.jruby.truffle.runtime.util.ArrayUtils;
 import org.jruby.util.ByteList;
@@ -1785,7 +1784,7 @@ public abstract class ArrayNodes {
 
     }
 
-    public static class MaxBlock implements MethodLike {
+    public static class MaxBlock {
 
         private final FrameDescriptor frameDescriptor;
         private final FrameSlot frameSlot;
@@ -1816,7 +1815,6 @@ public abstract class ArrayNodes {
             return frameSlot;
         }
 
-        @Override
         public SharedMethodInfo getSharedMethodInfo() {
             return sharedMethodInfo;
         }
@@ -1899,7 +1897,7 @@ public abstract class ArrayNodes {
 
     }
 
-    public static class MinBlock implements MethodLike {
+    public static class MinBlock {
 
         private final FrameDescriptor frameDescriptor;
         private final FrameSlot frameSlot;
@@ -1930,7 +1928,6 @@ public abstract class ArrayNodes {
             return frameSlot;
         }
 
-        @Override
         public SharedMethodInfo getSharedMethodInfo() {
             return sharedMethodInfo;
         }

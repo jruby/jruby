@@ -21,7 +21,7 @@ import org.jruby.truffle.runtime.core.RubyModule;
  * Any kind of Ruby method - so normal methods in classes and modules, but also blocks, procs,
  * lambdas and native methods written in Java.
  */
-public class InternalMethod implements MethodLike {
+public class InternalMethod {
 
     private final SharedMethodInfo sharedMethodInfo;
     private final String name;

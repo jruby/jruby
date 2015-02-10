@@ -40,7 +40,6 @@ import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.*;
 import org.jruby.truffle.runtime.methods.Arity;
 import org.jruby.truffle.runtime.methods.InternalMethod;
-import org.jruby.truffle.runtime.methods.MethodLike;
 import org.jruby.truffle.runtime.methods.SharedMethodInfo;
 import org.jruby.truffle.translator.NodeWrapper;
 import org.jruby.truffle.translator.TranslatorDriver;
@@ -1026,7 +1025,7 @@ public abstract class ModuleNodes {
 
             final List<RubyModule> modules = new ArrayList<>();
 
-            MethodLike method = RubyCallStack.getCallingMethod();
+            InternalMethod method = RubyCallStack.getCallingMethod();
             LexicalScope lexicalScope = method == null ? null : method.getSharedMethodInfo().getLexicalScope();
             RubyClass object = getContext().getCoreLibrary().getObjectClass();
 

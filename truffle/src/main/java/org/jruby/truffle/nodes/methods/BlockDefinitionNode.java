@@ -18,7 +18,6 @@ import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyModule;
 import org.jruby.truffle.runtime.core.RubyProc;
-import org.jruby.truffle.runtime.methods.MethodLike;
 import org.jruby.truffle.runtime.methods.SharedMethodInfo;
 
 /**

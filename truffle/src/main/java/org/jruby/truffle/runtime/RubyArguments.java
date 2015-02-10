@@ -16,10 +16,7 @@ import com.oracle.truffle.api.nodes.ExplodeLoop;
 import org.jruby.truffle.runtime.core.RubyHash;
 import org.jruby.truffle.runtime.core.RubyProc;
 import org.jruby.truffle.runtime.methods.InternalMethod;
-import org.jruby.truffle.runtime.methods.MethodLike;
 import org.jruby.truffle.runtime.util.ArrayUtils;
-
-import java.util.Arrays;
 
 /**
  * Pack and unpack Ruby method arguments to and from an array of objects.
