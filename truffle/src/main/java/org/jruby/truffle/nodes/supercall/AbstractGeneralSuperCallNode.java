@@ -65,7 +65,6 @@ public abstract class AbstractGeneralSuperCallNode extends RubyNode {
         currentMethod = RubyCallStack.getCurrentMethod();
 
         String name = currentMethod.getName();
-        // TODO: this is wrong, we need the lexically enclosing method (or define_method)'s module
         RubyModule declaringModule = currentMethod.getDeclaringModule();
 
         selfMetaClass = getContext().getCoreLibrary().getMetaClass(RubyArguments.getSelf(frame.getArguments()));
