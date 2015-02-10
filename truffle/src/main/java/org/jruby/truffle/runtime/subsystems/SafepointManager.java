@@ -20,19 +20,21 @@ import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyThread;
 import org.jruby.truffle.runtime.util.Consumer;
 
-import java.util.Collections;
+import java.util.HashSet;
 import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.Phaser;
+import java.util.concurrent.BrokenBarrierException;
+import java.util.concurrent.CyclicBarrier;
+import java.util.concurrent.locks.ReentrantLock;
 
 public class SafepointManager {
 
     private final RubyContext context;
 
-    private final Set<Thread> runningThreads = Collections.newSetFromMap(new ConcurrentHashMap<Thread, Boolean>());
+    private final Set<Thread> runningThreads = new HashSet<Thread>();
 
     @CompilerDirectives.CompilationFinal private Assumption assumption = Truffle.getRuntime().createAssumption();
-    private final Phaser phaser = new Phaser();
+    private final ReentrantLock lock = new ReentrantLock();
+    private CyclicBarrier barrier;
     private Consumer<RubyThread> action;
 
     public SafepointManager(RubyContext context) {
@@ -40,18 +42,31 @@ public class SafepointManager {
         runningThreads.add(Thread.currentThread());
     }
 
-    public synchronized void enterThread() {
+    public void enterThread() {
         CompilerAsserts.neverPartOfCompilation();
 
-        phaser.register();
-        runningThreads.add(Thread.currentThread());
+        // Waits for lock to become available
+        lock.lock();
+        try {
+            runningThreads.add(Thread.currentThread());
+        } finally {
+            lock.unlock();
+        }
     }
 
     public void leaveThread() {
         CompilerAsserts.neverPartOfCompilation();
 
-        phaser.arriveAndDeregister();
-        runningThreads.remove(Thread.currentThread());
+        // Leave only when there is no more running safepoint action.
+        while (!lock.tryLock()) {
+            poll(false);
+        }
+        // SafepointManager lock acquired
+        try {
+            runningThreads.remove(Thread.currentThread());
+        } finally {
+            lock.unlock();
+        }
     }
 
     public void poll() {
@@ -62,11 +77,11 @@ public class SafepointManager {
         try {
             assumption.check();
         } catch (InvalidAssumptionException e) {
-            assumptionInvalidated(holdsGlobalLock, false);
+            assumptionInvalidated(holdsGlobalLock);
         }
     }
 
-    private void assumptionInvalidated(boolean holdsGlobalLock, boolean isDrivingThread) {
+    private void assumptionInvalidated(boolean holdsGlobalLock) {
         RubyThread thread = null;
 
         if (holdsGlobalLock) {
@@ -74,7 +89,7 @@ public class SafepointManager {
         }
 
         try {
-            step(thread, isDrivingThread);
+            step(thread);
         } finally {
             if (holdsGlobalLock) {
                 context.getThreadManager().enterGlobalLock(thread);
@@ -82,16 +97,19 @@ public class SafepointManager {
         }
     }
 
-    private void step(RubyThread thread, boolean isDrivingThread) {
-        // wait other threads to reach their safepoint
-        phaser.arriveAndAwaitAdvance();
+    private void step(RubyThread thread) {
+        // clear the interrupted status which may have been set by interruptAllThreads().
+        Thread.interrupted();
 
-        if (isDrivingThread) {
+        // wait other threads to reach their safepoint
+        waitOnBarrier();
+
+        if (lock.isHeldByCurrentThread()) {
             assumption = Truffle.getRuntime().createAssumption();
         }
 
         // wait the assumption to be renewed
-        phaser.arriveAndAwaitAdvance();
+        waitOnBarrier();
 
         try {
             if (thread != null && thread.getStatus() != Status.ABORTING) {
@@ -99,10 +117,7 @@ public class SafepointManager {
             }
         } finally {
             // wait other threads to finish their action
-            phaser.arriveAndAwaitAdvance();
-
-            // clear the interrupted status which may have been set by interruptAllThreads().
-            Thread.interrupted();
+            waitOnBarrier();
         }
     }
 
@@ -119,19 +134,46 @@ public class SafepointManager {
         }
     }
 
-    private synchronized void pauseAllThreadsAndExecute(boolean holdsGlobalLock, Consumer<RubyThread> action) {
+    private void pauseAllThreadsAndExecute(boolean holdsGlobalLock, Consumer<RubyThread> action) {
         CompilerDirectives.transferToInterpreter();
 
-        this.action = action;
+        assert !lock.isHeldByCurrentThread() : "reentering pauseAllThreadsAndExecute";
+        lock.lock();
+        try {
+            this.action = action;
 
-        /* this is a potential cause for race conditions,
-         * but we need to invalidate first so the interrupted threads
-         * see the invalidation in poll() in their catch(InterruptedException) clause
-         * and wait on the barrier instead of retrying their blocking action. */
-        assumption.invalidate();
-        interruptAllThreads();
+            barrier = new CyclicBarrier(runningThreads.size());
 
-        assumptionInvalidated(holdsGlobalLock, true);
+            /* this is a potential cause for race conditions,
+             * but we need to invalidate first so the interrupted threads
+             * see the invalidation in poll() in their catch(InterruptedException) clause
+             * and wait on the barrier instead of retrying their blocking action. */
+            assumption.invalidate();
+            interruptAllThreads();
+
+            assumptionInvalidated(holdsGlobalLock);
+        } finally {
+            lock.unlock();
+        }
+    }
+
+    private void waitOnBarrier() {
+        while (true) {
+            try {
+                barrier.await();
+                break;
+            } catch (BrokenBarrierException | InterruptedException e) {
+                // System.err.println("Safepoint barrier interrupted for thread " + Thread.currentThread());
+                if (lock.isHeldByCurrentThread()) {
+                    barrier.reset();
+                } else {
+                    // wait for the lock holder to repair the barrier
+                    while (barrier.isBroken()) {
+                        Thread.yield();
+                    }
+                }
+            }
+        }
     }
 
     private void interruptAllThreads() {
