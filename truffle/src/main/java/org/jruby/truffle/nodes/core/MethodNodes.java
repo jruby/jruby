@@ -86,21 +86,11 @@ public abstract class MethodNodes {
 
         @Specialization
         public Object call(VirtualFrame frame, RubyMethod method, Object[] arguments, @SuppressWarnings("unused") UndefinedPlaceholder block) {
-            // TODO(CS 11-Jan-15) should use a cache and DirectCallNode here so that we can inline - but it's
-            // incompatible with our current dispatch chain.
-
-            final InternalMethod internalMethod = method.getMethod();
-
-            return callNode.call(frame, method.getMethod().getCallTarget(), RubyArguments.pack(
-                    internalMethod,
-                    internalMethod.getDeclarationFrame(),
-                    method.getReceiver(),
-                    null,
-                    arguments));
+            return doCall(frame, method, arguments, null);
         }
 
         @Specialization
-        public Object call(VirtualFrame frame, RubyMethod method, Object[] arguments, RubyProc block) {
+        public Object doCall(VirtualFrame frame, RubyMethod method, Object[] arguments, RubyProc block) {
             // TODO(CS 11-Jan-15) should use a cache and DirectCallNode here so that we can inline - but it's
             // incompatible with our current dispatch chain.
 
