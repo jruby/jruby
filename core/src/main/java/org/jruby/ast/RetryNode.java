@@ -40,7 +40,7 @@ import org.jruby.lexer.yacc.ISourcePosition;
  */
 public class RetryNode extends Node implements NonLocalControlFlowNode {
     public RetryNode(ISourcePosition position) {
-        super(position);
+        super(position, false);
     }
 
     public NodeType getNodeType() {

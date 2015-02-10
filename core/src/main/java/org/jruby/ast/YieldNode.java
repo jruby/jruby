@@ -52,7 +52,7 @@ public class YieldNode extends Node {
      *                          yield [1, 2, 3] (expandedArguments = false).
      */
     public YieldNode(ISourcePosition position, Node argsNode, boolean expandedArguments) {
-        super(position);
+        super(position, argsNode != null && argsNode.containsAssignment());
         
         // block.yield depends on null to represent empty and nil to represent nil - [nil] vs []
         //assert argsNode != null : "argsNode is not null";

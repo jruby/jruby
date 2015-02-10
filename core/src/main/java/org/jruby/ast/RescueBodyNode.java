@@ -45,7 +45,8 @@ public class RescueBodyNode extends Node {
     private final RescueBodyNode optRescueNode;
 
     public RescueBodyNode(ISourcePosition position, Node exceptionNodes, Node bodyNode, RescueBodyNode optRescueNode) {
-        super(position);
+        super(position, exceptionNodes != null && exceptionNodes.containsAssignment() ||
+                bodyNode.containsAssignment() || optRescueNode != null && optRescueNode.containsAssignment());
         
        assert bodyNode != null : "bodyNode is not null";
         

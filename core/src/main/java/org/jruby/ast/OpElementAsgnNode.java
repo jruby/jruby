@@ -52,7 +52,7 @@ public class OpElementAsgnNode extends Node {
     private final String operatorName;
 
     public OpElementAsgnNode(ISourcePosition position, Node receiverNode, String operatorName, Node argsNode, Node valueNode) {
-        super(position);
+        super(position, receiverNode.containsAssignment() || argsNode != null && argsNode.containsAssignment() || valueNode.containsAssignment());
         
         assert receiverNode != null : "receiverNode is not null";
         assert valueNode != null : "valueNode is not null";

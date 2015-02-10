@@ -48,7 +48,7 @@ public class DotNode extends Node {
 
     public DotNode(ISourcePosition position, Node beginNode, Node endNode, boolean exclusive, 
             boolean isLiteral) {
-        super(position);
+        super(position, beginNode.containsAssignment() || endNode.containsAssignment());
         
         assert beginNode != null : "beginNode is not null";
         assert endNode != null : "endNode is not null";

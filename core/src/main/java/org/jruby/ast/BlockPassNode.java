@@ -54,7 +54,7 @@ public class BlockPassNode extends Node {
     private Node argsNode;
 
     public BlockPassNode(ISourcePosition position, Node bodyNode) {
-        super(position);
+        super(position, bodyNode != null && bodyNode.containsAssignment());
         this.bodyNode = bodyNode;
     }
 

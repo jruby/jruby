@@ -49,7 +49,7 @@ public class LocalVarNode extends Node implements INameNode, IScopedNode {
     private final int location;
 
     public LocalVarNode(ISourcePosition position, int location, String name) {
-        super(position);
+        super(position, false);
         this.location = location;
         this.name = name;
     }

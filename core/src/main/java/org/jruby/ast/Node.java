@@ -52,8 +52,16 @@ public abstract class Node implements ISourcePositionHolder, ParseResult {
     
     private ISourcePosition position;
 
-    public Node(ISourcePosition position) {
+    // Does this node contain a node which is an assignment.  We can use this knowledge when emitting IR
+    // instructions to do more or less depending on whether we have to cope with scenarios like:
+    //    a = 1; [a, a = 2];
+    // in IR, we can see that ArrayNode contains an assignment and emit its individual elements differently
+    // so that the two values of a end up being different.
+    protected boolean containsAssignment;
+
+    public Node(ISourcePosition position, boolean containsAssignment) {
         this.position = position;
+        this.containsAssignment = containsAssignment;
     }
 
     /**
@@ -202,5 +210,12 @@ public abstract class Node implements ISourcePositionHolder, ParseResult {
      */
     public boolean needsDefinitionCheck() {
         return true;
+    }
+
+    /**
+     * Does this node or one of its children contain an assignment?
+     */
+    public boolean containsAssignment() {
+        return containsAssignment;
     }
 }

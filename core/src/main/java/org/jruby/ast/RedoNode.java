@@ -41,7 +41,7 @@ import org.jruby.lexer.yacc.ISourcePosition;
  */
 public class RedoNode extends Node implements NonLocalControlFlowNode {
     public RedoNode(ISourcePosition position) {
-        super(position);
+        super(position, false);
     }
 
     public NodeType getNodeType() {

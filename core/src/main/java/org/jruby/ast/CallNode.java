@@ -49,7 +49,8 @@ public class CallNode extends Node implements INameNode, IArgumentNode, BlockAcc
 
     public CallNode(ISourcePosition position, Node receiverNode, String name, Node argsNode, 
             Node iterNode) {
-        super(position);
+        super(position, receiverNode.containsAssignment() || argsNode != null && argsNode.containsAssignment() ||
+                iterNode != null && iterNode.containsAssignment());
         
         assert receiverNode != null : "receiverNode is not null";
 

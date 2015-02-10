@@ -39,7 +39,7 @@ public class ArgsPushNode extends Node {
     private Node secondNode;
     
     public ArgsPushNode(ISourcePosition position, Node firstNode, Node secondNode) {
-        super(position);
+        super(position, firstNode.containsAssignment() || secondNode.containsAssignment());
         
         assert firstNode != null : "ArgsPushNode.first == null";
         assert secondNode != null : "ArgsPushNode.second == null";

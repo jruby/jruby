@@ -48,7 +48,7 @@ public class RegexpNode extends Node implements ILiteralNode {
     private final RegexpOptions options;
 
     public RegexpNode(ISourcePosition position, ByteList value, RegexpOptions options) {
-        super(position);
+        super(position, false);
 
         this.value = value;
         this.options = options;

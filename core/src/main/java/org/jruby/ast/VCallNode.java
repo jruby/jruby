@@ -45,7 +45,7 @@ public class VCallNode extends Node implements INameNode {
     private String name;
 
     public VCallNode(ISourcePosition position, String name) {
-        super(position);
+        super(position, false);
 
         this.name = name;
     }

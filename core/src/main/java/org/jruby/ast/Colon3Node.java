@@ -45,7 +45,11 @@ public class Colon3Node extends Node implements INameNode {
     protected String name;
 
     public Colon3Node(ISourcePosition position, String name) {
-        super(position);
+        this(position, name, false);
+    }
+
+    protected Colon3Node(ISourcePosition position, String name, boolean containsAssignment) {
+        super(position, containsAssignment);
         this.name = name;
     }
 

@@ -43,7 +43,7 @@ public abstract class MethodDefNode extends Node implements INameNode {
 
 	public MethodDefNode(ISourcePosition position, ArgumentNode nameNode, ArgsNode argsNode, 
 	        StaticScope scope, Node bodyNode) {
-            super(position);
+            super(position, argsNode.containsAssignment() || bodyNode.containsAssignment());
 
             assert bodyNode != null : "bodyNode must not be null";
             

@@ -8,6 +8,6 @@ import org.jruby.lexer.yacc.ISourcePosition;
  */
 public abstract class NumericNode extends Node implements ILiteralNode {
     public NumericNode(ISourcePosition position) {
-        super(position);
+        super(position, false);
     }
 }
