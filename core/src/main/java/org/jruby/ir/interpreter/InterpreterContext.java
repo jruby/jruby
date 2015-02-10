@@ -4,6 +4,7 @@ import org.jruby.ir.IRClassBody;
 import org.jruby.ir.IREvalScript;
 import org.jruby.ir.IRFlags;
 import org.jruby.ir.IRMetaClassBody;
+import org.jruby.ir.IRMethod;
 import org.jruby.ir.IRModuleBody;
 import org.jruby.ir.IRScope;
 import org.jruby.ir.instructions.Instr;
@@ -36,6 +37,7 @@ public class InterpreterContext {
 
     private final static InterpreterEngine BODY_INTERPRETER = new BodyInterpreterEngine();
     private final static InterpreterEngine DEFAULT_INTERPRETER = new InterpreterEngine();
+    private final static InterpreterEngine SIMPLE_METHOD_INTERPRETER = new InterpreterEngine();
     public final InterpreterEngine engine;
 
     // FIXME: Hack this should be a clone eventually since JIT might change this.  Comment for it reflects what it should be.
@@ -48,6 +50,9 @@ public class InterpreterContext {
 
         if (scope instanceof IRModuleBody || scope instanceof IRClassBody) {
             engine = BODY_INTERPRETER;
+        // ENEBO: Playing with unboxable and subset instruction sets
+        //} else if (scope instanceof IRMethod && scope.getFlags().contains(IRFlags.SIMPLE_METHOD)) {
+        //    engine = SIMPLE_METHOD_INTERPRETER;
         } else {
             engine = DEFAULT_INTERPRETER;
         }
