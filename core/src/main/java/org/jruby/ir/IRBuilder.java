@@ -2633,7 +2633,7 @@ public class IRBuilder {
     public Operand buildNext(final NextNode nextNode) {
         IRLoop currLoop = getCurrentLoop();
 
-        Operand rv = (nextNode.getValueNode() == null) ? manager.getNil() : build(nextNode.getValueNode());
+        Operand rv = build(nextNode.getValueNode());
 
         // If we have ensure blocks, have to run those first!
         if (!activeEnsureBlockStack.empty()) emitEnsureBlocks(currLoop);
@@ -3128,7 +3128,7 @@ public class IRBuilder {
     }
 
     public Operand buildReturn(ReturnNode returnNode) {
-        Operand retVal = returnNode.getValueNode() == null ? manager.getNil() : build(returnNode.getValueNode());
+        Operand retVal = build(returnNode.getValueNode());
 
         if (scope instanceof IRClosure) {
             // If 'm' is a block scope, a return returns from the closest enclosing method.

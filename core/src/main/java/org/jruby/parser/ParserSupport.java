@@ -344,6 +344,8 @@ public class ParserSupport {
                 node = newSValueNode(position, node);
             }
         }
+
+        if (node == null) node = NilImplicitNode.NIL;
         
         return node;
     }
