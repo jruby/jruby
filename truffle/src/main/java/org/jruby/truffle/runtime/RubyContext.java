@@ -28,6 +28,8 @@ import org.jruby.truffle.nodes.methods.SetMethodDeclarationContext;
 import org.jruby.truffle.nodes.rubinius.RubiniusPrimitiveManager;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.*;
+import org.jruby.truffle.runtime.methods.InternalMethod;
+import org.jruby.truffle.runtime.methods.SharedMethodInfo;
 import org.jruby.truffle.runtime.subsystems.*;
 import org.jruby.truffle.runtime.util.FileUtils;
 import org.jruby.truffle.translator.NodeWrapper;
@@ -212,8 +214,10 @@ public class RubyContext extends ExecutionContext {
         final RubyRootNode rootNode = translator.parse(context, source, defaultEncoding, parserContext, parentFrame, ownScopeForAssignments, currentNode, wrapper);
         final CallTarget callTarget = Truffle.getRuntime().createCallTarget(rootNode);
 
-        // TODO(CS): we really need a method here - it's causing problems elsewhere
-        return callTarget.call(RubyArguments.pack(null, parentFrame, self, null, new Object[]{}));
+        final InternalMethod method = new InternalMethod(rootNode.getSharedMethodInfo(), rootNode.getSharedMethodInfo().getName(),
+                getCoreLibrary().getObjectClass(), Visibility.PUBLIC, false, callTarget, parentFrame);
+
+        return callTarget.call(RubyArguments.pack(method, parentFrame, self, null, new Object[] {}));
     }
 
     public long getNextObjectID() {

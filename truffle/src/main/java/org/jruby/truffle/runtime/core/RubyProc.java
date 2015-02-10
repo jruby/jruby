@@ -12,10 +12,12 @@ package org.jruby.truffle.runtime.core;
 import com.oracle.truffle.api.CallTarget;
 import com.oracle.truffle.api.CompilerDirectives.CompilationFinal;
 import com.oracle.truffle.api.frame.MaterializedFrame;
+
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.objects.Allocator;
 import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.runtime.methods.InternalMethod;
 import org.jruby.truffle.runtime.methods.MethodLike;
 import org.jruby.truffle.runtime.methods.SharedMethodInfo;
 import org.jruby.truffle.runtime.subsystems.ObjectSpaceManager;
@@ -38,7 +40,9 @@ public class RubyProc extends RubyBasicObject implements MethodLike {
     /** Call target for lambdas and methods, which have strict arguments destructuring */
     @CompilationFinal private CallTarget callTargetForMethods;
     @CompilationFinal private MaterializedFrame declarationFrame;
-    @CompilationFinal private MethodLike method;
+    /** The method which defined the block, that is the lexically enclosing method.
+     * Notably used by super to figure out in which method we were. */
+    @CompilationFinal private InternalMethod method;
     @CompilationFinal private Object self;
     @CompilationFinal private RubyProc block;
 
@@ -49,14 +53,14 @@ public class RubyProc extends RubyBasicObject implements MethodLike {
 
     public RubyProc(RubyClass procClass, Type type, SharedMethodInfo sharedMethodInfo, CallTarget callTargetForBlocks,
                     CallTarget callTargetForProcs, CallTarget callTargetForMethods, MaterializedFrame declarationFrame,
-                    MethodLike method, Object self, RubyProc block) {
+                    InternalMethod method, Object self, RubyProc block) {
         this(procClass, type);
         initialize(sharedMethodInfo, callTargetForBlocks, callTargetForProcs, callTargetForMethods, declarationFrame,
                 method, self, block);
     }
 
     public void initialize(SharedMethodInfo sharedMethodInfo, CallTarget callTargetForBlocks, CallTarget callTargetForProcs,
-                           CallTarget callTargetForMethods, MaterializedFrame declarationFrame, MethodLike method,
+                           CallTarget callTargetForMethods, MaterializedFrame declarationFrame, InternalMethod method,
                            Object self, RubyProc block) {
         this.sharedMethodInfo = sharedMethodInfo;
         this.callTargetForBlocks = callTargetForBlocks;
@@ -86,7 +90,7 @@ public class RubyProc extends RubyBasicObject implements MethodLike {
 
         // TODO(CS): handle exceptions in here?
 
-        return getCallTargetForType().call(RubyArguments.pack(this, declarationFrame, self, block, args));
+        return getCallTargetForType().call(RubyArguments.pack(getMethod(), declarationFrame, self, block, args));
     }
 
     public Type getType() {
@@ -113,7 +117,7 @@ public class RubyProc extends RubyBasicObject implements MethodLike {
         return declarationFrame;
     }
 
-    public MethodLike getMethod() {
+    public InternalMethod getMethod() {
         return method;
     }
 
