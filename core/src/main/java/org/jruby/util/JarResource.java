@@ -22,6 +22,8 @@ abstract class JarResource extends AbstractFileResource {
         try {
             // since pathname is actually an uri we need to decode any url decoded characters like %20
             // which happens when directory names contain spaces
+            // but do not to decode '+' to allow '+' inside a filenames
+            sanitized = sanitized.replace("+", "%2B");
             sanitized = URLDecoder.decode(sanitized, "UTF-8");
         } catch (IllegalArgumentException iae) {
             // something in the path did not decode, so it's probably not a URI
