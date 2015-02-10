@@ -92,8 +92,7 @@ public class StringLiteral extends Operand {
 
     @Override
     public Object retrieve(ThreadContext context, IRubyObject self, StaticScope currScope, DynamicScope currDynScope, Object[] temp) {
-        // SSS FIXME: AST interpreter passes in a coderange argument.
-        return RubyString.newStringShared(context.runtime, bytelist);
+        return RubyString.newStringShared(context.runtime, bytelist, coderange);
     }
 
     @Override
