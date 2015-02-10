@@ -10,6 +10,7 @@ import org.jruby.ir.instructions.GetFieldInstr;
 import org.jruby.ir.instructions.Instr;
 import org.jruby.ir.instructions.JumpInstr;
 import org.jruby.ir.instructions.LineNumberInstr;
+import org.jruby.ir.instructions.NonlocalReturnInstr;
 import org.jruby.ir.instructions.ResultInstr;
 import org.jruby.ir.instructions.ReturnBase;
 import org.jruby.ir.instructions.RuntimeHelperCall;
@@ -67,6 +68,11 @@ public class BodyInterpreterEngine extends InterpreterEngine {
                 switch (operation) {
                     case RETURN:
                         return (IRubyObject) retrieveOp(((ReturnBase) instr).getReturnValue(), context, self, currDynScope, currScope, temp);
+                    case NONLOCAL_RETURN: {
+                        NonlocalReturnInstr ri = (NonlocalReturnInstr)instr;
+                        IRubyObject rv = (IRubyObject)retrieveOp(ri.getReturnValue(), context, self, currDynScope, currScope, temp);
+                        return IRRuntimeHelpers.initiateNonLocalReturn(context, currDynScope, blockType, rv);
+                    }
                     case LINE_NUM:
                         context.setLine(((LineNumberInstr) instr).lineNumber);
                         break;
