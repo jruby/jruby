@@ -56,6 +56,10 @@ public abstract class AbstractGeneralSuperCallNode extends RubyNode {
     }
 
     protected void lookup(VirtualFrame frame) {
+        lookup(frame, false);
+    }
+
+    private void lookup(VirtualFrame frame, boolean checkIfDefined) {
         CompilerAsserts.neverPartOfCompilation();
 
         currentMethod = RubyCallStack.getCurrentMethod();
@@ -70,6 +74,9 @@ public abstract class AbstractGeneralSuperCallNode extends RubyNode {
 
         if (superMethod == null || superMethod.isUndefined()) {
             superMethod = null;
+            if (checkIfDefined) {
+                return;
+            }
             // TODO: should add " for #{receiver.inspect}" in error message
             throw new RaiseException(getContext().getCoreLibrary().noMethodError(String.format("super: no superclass method `%s'", name), this));
         }
@@ -91,20 +98,16 @@ public abstract class AbstractGeneralSuperCallNode extends RubyNode {
 
         final RubyContext context = getContext();
 
-        try {
-            final Object self = RubyArguments.getSelf(frame.getArguments());
+        final Object self = RubyArguments.getSelf(frame.getArguments());
 
-            if (!guard(self)) {
-                lookup(frame);
-            }
+        if (!guard(self)) {
+            lookup(frame, true);
+        }
 
-            if (superMethod == null || superMethod.isUndefined() || !superMethod.isVisibleTo(this, context.getCoreLibrary().getMetaClass(self))) {
-                return getContext().getCoreLibrary().getNilObject();
-            } else {
-                return context.makeString("super");
-            }
-        } catch (Throwable t) {
+        if (superMethod == null || superMethod.isUndefined() || !superMethod.isVisibleTo(this, context.getCoreLibrary().getMetaClass(self))) {
             return getContext().getCoreLibrary().getNilObject();
+        } else {
+            return context.makeString("super");
         }
     }
 
