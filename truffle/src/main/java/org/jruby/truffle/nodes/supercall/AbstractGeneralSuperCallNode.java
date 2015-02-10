@@ -96,18 +96,16 @@ public abstract class AbstractGeneralSuperCallNode extends RubyNode {
     public Object isDefined(VirtualFrame frame) {
         notDesignedForCompilation();
 
-        final RubyContext context = getContext();
-
         final Object self = RubyArguments.getSelf(frame.getArguments());
 
         if (!guard(self)) {
             lookup(frame, true);
         }
 
-        if (superMethod == null || superMethod.isUndefined() || !superMethod.isVisibleTo(this, context.getCoreLibrary().getMetaClass(self))) {
+        if (superMethod == null) {
             return getContext().getCoreLibrary().getNilObject();
         } else {
-            return context.makeString("super");
+            return getContext().makeString("super");
         }
     }
 
