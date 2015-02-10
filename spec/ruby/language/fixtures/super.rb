@@ -153,6 +153,34 @@ module Super
     end
   end
 
+  module MultiSuperTargets
+    module M
+      def foo
+        super
+      end
+    end
+
+    class BaseA
+      def foo
+        :BaseA
+      end
+    end
+
+    class BaseB
+      def foo
+        :BaseB
+      end
+    end
+
+    class A < BaseA
+      include M
+    end
+
+    class B < BaseB
+      include M
+    end
+  end
+
   module MS3
     module ModA
       def foo(a)
