@@ -155,7 +155,8 @@ public class RubyParser {
   kRESCUE_MOD kALIAS kDEFINED klBEGIN klEND k__LINE__ k__FILE__
   k__ENCODING__ kDO_LAMBDA 
 
-%token <String> tIDENTIFIER tFID tGVAR tIVAR tCONSTANT tCVAR tLABEL tCHAR
+%token <String> tIDENTIFIER tFID tGVAR tIVAR tCONSTANT tCVAR tLABEL
+%token <StrNode> tCHAR
 %type <String> sym symbol operation operation2 operation3 cname fname op 
 %type <String> f_norm_arg dot_or_colon restarg_mark blkarg_mark
 %token <String> tUPLUS         /* unary+ */
@@ -1863,9 +1864,7 @@ strings         : string {
 
 // [!null]
 string          : tCHAR {
-                    ByteList aChar = ByteList.create($1);
-                    aChar.setEncoding(lexer.getEncoding());
-                    $$ = lexer.createStrNode(lexer.getPosition(), aChar, 0);
+                    $$ = $1;
                 }
                 | string1 {
                     $$ = $1;

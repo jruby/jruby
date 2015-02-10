@@ -2194,7 +2194,7 @@ public class RubyLexer {
                 setState(LexState.EXPR_END);
                 yaccValue = new StrNode(getPosition(), oneCharBL);
                 
-                return Tokens.tINTEGER; // FIXME: This should be something else like a tCHAR in 1.9/2.0
+                return Tokens.tCHAR;
             } else {
                 c = readEscape();
             }
