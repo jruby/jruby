@@ -19,20 +19,6 @@ abstract class JarResource extends AbstractFileResource {
         Matcher matcher = PREFIX_MATCH.matcher(pathname);
         String sanitized = matcher.matches() ? matcher.group(1) : pathname;
 
-        try {
-            // since pathname is actually an uri we need to decode any url decoded characters like %20
-            // which happens when directory names contain spaces
-            // but do not to decode '+' to allow '+' inside a filenames
-            sanitized = sanitized.replace("+", "%2B");
-            sanitized = URLDecoder.decode(sanitized, "UTF-8");
-        } catch (IllegalArgumentException iae) {
-            // something in the path did not decode, so it's probably not a URI
-            // See jruby/jruby#2264.
-            return null;
-        } catch (UnsupportedEncodingException e) {
-            throw new RuntimeException( "hmm - system does not know UTF-8 string encoding :(" );
-        }
-
         int bang = sanitized.indexOf('!');
         String jarPath = sanitized.substring(0, bang);
         String entryPath = sanitized.substring(bang + 1);
@@ -54,7 +40,22 @@ abstract class JarResource extends AbstractFileResource {
 
         if (index == null) {
             // Jar doesn't exist
-            return null;
+            try {
+                jarPath = URLDecoder.decode(jarPath, "UTF-8");
+                entryPath = URLDecoder.decode(entryPath, "UTF-8");
+            } catch (IllegalArgumentException iae) {
+                // something in the path did not decode, so it's probably not a URI
+                // See jruby/jruby#2264.
+                return null;
+            } catch (UnsupportedEncodingException e) {
+                throw new RuntimeException( "hmm - system does not know UTF-8 string encoding :(" );
+            }
+            index = jarCache.getIndex(jarPath);
+
+            if (index == null) {
+                // Jar doesn't exist
+                return null;
+            }
         }
 
         // Try it as directory first, because jars tend to have foo/ entries
