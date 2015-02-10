@@ -768,9 +768,7 @@ public abstract class StringNodes {
 
         @Specialization
         public boolean empty(RubyString string) {
-            notDesignedForCompilation();
-
-            return string.toString().isEmpty();
+            return string.getBytes().length() == 0;
         }
     }
 
