@@ -12,12 +12,13 @@ package org.jruby.truffle.nodes.dispatch;
 import com.oracle.truffle.api.Assumption;
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.Truffle;
-import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.DirectCallNode;
 import com.oracle.truffle.api.nodes.IndirectCallNode;
 import com.oracle.truffle.api.nodes.InvalidAssumptionException;
 import com.oracle.truffle.api.utilities.BranchProfile;
+
+import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyProc;
@@ -52,8 +53,10 @@ public class CachedBooleanDispatchNode extends CachedDispatchNode {
             Object trueValue,
             InternalMethod trueMethod,
             boolean indirect,
-            DispatchAction dispatchAction) {
-        super(context, cachedName, next, indirect, dispatchAction);
+			DispatchAction dispatchAction, RubyNode[] argumentNodes,
+			boolean isSplatted) {
+		super(context, cachedName, next, indirect, dispatchAction,
+				argumentNodes, isSplatted);
 
         this.falseUnmodifiedAssumption = falseUnmodifiedAssumption;
         this.falseMethod = falseMethod;
@@ -132,7 +135,7 @@ public class CachedBooleanDispatchNode extends CachedDispatchNode {
                                         trueMethod.getDeclarationFrame(),
                                         receiverObject,
                                         CompilerDirectives.unsafeCast(blockObject, RubyProc.class, true, false),
-                                        CompilerDirectives.unsafeCast(argumentsObjects, Object[].class, true)));
+                                        CompilerDirectives.unsafeCast(executeArguments(frame, argumentsObjects), Object[].class, true)));
                     } else {
                         return trueCallDirect.call(
                                 frame,
@@ -141,7 +144,7 @@ public class CachedBooleanDispatchNode extends CachedDispatchNode {
                                         trueMethod.getDeclarationFrame(),
                                         receiverObject,
                                         CompilerDirectives.unsafeCast(blockObject, RubyProc.class, true, false),
-                                        CompilerDirectives.unsafeCast(argumentsObjects, Object[].class, true)));
+                                        CompilerDirectives.unsafeCast(executeArguments(frame, argumentsObjects), Object[].class, true)));
                     }
                 }
 
@@ -180,7 +183,7 @@ public class CachedBooleanDispatchNode extends CachedDispatchNode {
                                         falseMethod.getDeclarationFrame(),
                                         receiverObject,
                                         CompilerDirectives.unsafeCast(blockObject, RubyProc.class, true, false),
-                                        CompilerDirectives.unsafeCast(argumentsObjects, Object[].class, true)));
+                                        CompilerDirectives.unsafeCast(executeArguments(frame, argumentsObjects), Object[].class, true)));
                     } else {
                         return falseCallDirect.call(
                                 frame,
@@ -189,7 +192,7 @@ public class CachedBooleanDispatchNode extends CachedDispatchNode {
                                         falseMethod.getDeclarationFrame(),
                                         receiverObject,
                                         CompilerDirectives.unsafeCast(blockObject, RubyProc.class, true, false),
-                                        CompilerDirectives.unsafeCast(argumentsObjects, Object[].class, true)));
+                                        CompilerDirectives.unsafeCast(executeArguments(frame, argumentsObjects), Object[].class, true)));
                     }
                 }
 

@@ -34,8 +34,20 @@ public abstract class HashLiteralNode extends RubyNode {
         assert keyValues.length % 2 == 0;
         this.keyValues = keyValues;
         dupNode = DispatchHeadNodeFactory.createMethodCall(context);
-        freezeNode = DispatchHeadNodeFactory.createMethodCall(context);
-    }
+		freezeNode = DispatchHeadNodeFactory.createMethodCall(context);
+	}
+
+	public int size() {
+		return keyValues.length / 2;
+	}
+
+	public RubyNode getKey(int index) {
+		return keyValues[2 * index];
+	}
+
+	public RubyNode getValue(int index) {
+		return keyValues[2 * index + 1];
+	}
 
     public static HashLiteralNode create(RubyContext context, SourceSection sourceSection, RubyNode[] keyValues) {
         if (keyValues.length == 0) {

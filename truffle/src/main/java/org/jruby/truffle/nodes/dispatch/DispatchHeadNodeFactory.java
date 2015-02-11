@@ -9,7 +9,7 @@
  */
 package org.jruby.truffle.nodes.dispatch;
 
-import org.jruby.truffle.runtime.LexicalScope;
+import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.RubyContext;
 
 public class DispatchHeadNodeFactory {
@@ -20,7 +20,9 @@ public class DispatchHeadNodeFactory {
                 false,
                 false,
                 MissingBehavior.CALL_METHOD_MISSING,
-                null);
+                null,
+                null,
+                false);
     }
 
     public static CallDispatchHeadNode createMethodCall(RubyContext context, boolean ignoreVisibility) {
@@ -29,7 +31,9 @@ public class DispatchHeadNodeFactory {
                 ignoreVisibility,
                 false,
                 MissingBehavior.CALL_METHOD_MISSING,
-                null);
+                null,
+                null,
+                false);
     }
 
     public static CallDispatchHeadNode createMethodCall(RubyContext context, MissingBehavior missingBehavior) {
@@ -38,7 +42,9 @@ public class DispatchHeadNodeFactory {
                 false,
                 false,
                 missingBehavior,
-                null);
+                null,
+                null,
+                false);
     }
 
     public static CallDispatchHeadNode createMethodCall(RubyContext context, boolean ignoreVisibility, MissingBehavior missingBehavior) {
@@ -47,7 +53,9 @@ public class DispatchHeadNodeFactory {
                 ignoreVisibility,
                 false,
                 missingBehavior,
-                null);
+                null,
+                null,
+                false);
     }
 
     public static CallDispatchHeadNode createMethodCall(RubyContext context, boolean ignoreVisibility, boolean indirect, MissingBehavior missingBehavior) {
@@ -56,7 +64,20 @@ public class DispatchHeadNodeFactory {
                 ignoreVisibility,
                 indirect,
                 missingBehavior,
-                null);
+                null,
+                null,
+                false);
+    }
+    
+    public static CallDispatchHeadNode createMethodCall(RubyContext context, boolean ignoreVisibility, boolean indirect, MissingBehavior missingBehavior, RubyNode[] arguments, boolean isSplatted) {
+        return new CallDispatchHeadNode(
+                context,
+                ignoreVisibility,
+                indirect,
+                missingBehavior,
+                null,
+                arguments,
+                isSplatted);
     }
 
     public static CallDispatchHeadNode createMethodCallOnSelf(RubyContext context) {
@@ -65,7 +86,9 @@ public class DispatchHeadNodeFactory {
                 true,
                 false,
                 MissingBehavior.CALL_METHOD_MISSING,
-                null);
+                null,
+                null,
+                false);
     }
 
 }
