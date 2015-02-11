@@ -59,10 +59,6 @@ public class SafepointManager {
         poll(true);
     }
 
-    public void pollWithoutGlobalLock() {
-        poll(false);
-    }
-
     private void poll(boolean holdsGlobalLock) {
         try {
             assumption.check();
