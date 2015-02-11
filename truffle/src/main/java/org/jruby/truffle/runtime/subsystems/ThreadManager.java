@@ -112,21 +112,20 @@ public class ThreadManager {
     @CompilerDirectives.TruffleBoundary
     public <T> T runOnce(BlockingActionWithoutGlobalLock<T> action) {
         T result = null;
+
         final RubyThread runningThread = leaveGlobalLock();
-        runningThread.setStatus(Status.SLEEP);
 
         try {
-            try {
-                result = action.block();
-            } finally {
-                runningThread.setStatus(Status.RUN);
-                // We need to enter the global lock before anything else!
-                enterGlobalLock(runningThread);
-            }
+            runningThread.setStatus(Status.SLEEP);
+            result = action.block();
         } catch (InterruptedException e) {
             // We were interrupted, possibly by the SafepointManager.
-            context.getSafepointManager().poll();
+            context.getSafepointManager().pollWithoutGlobalLock();
+        } finally {
+            runningThread.setStatus(Status.RUN);
+            enterGlobalLock(runningThread);
         }
+
         return result;
     }
 
