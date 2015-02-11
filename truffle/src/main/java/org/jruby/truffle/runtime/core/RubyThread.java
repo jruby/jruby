@@ -40,8 +40,8 @@ public class RubyThread extends RubyBasicObject {
     private volatile Thread thread;
     private volatile Status status = Status.RUN;
 
-    private RubyException exception;
-    private Object value;
+    private volatile RubyException exception;
+    private volatile Object value;
 
     private RubyBasicObject threadLocals;
 
