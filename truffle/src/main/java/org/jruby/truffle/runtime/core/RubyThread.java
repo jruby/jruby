@@ -84,6 +84,7 @@ public class RubyThread extends RubyBasicObject {
         try {
             task.run();
         } catch (ThreadExitException e) {
+            value = context.getCoreLibrary().getNilObject();
             return;
         } catch (RaiseException e) {
             exception = e.getRubyException();

@@ -319,15 +319,7 @@ public abstract class ThreadNodes {
 
             self.join();
 
-            if (self.getException() != null) {
-                throw new RaiseException(self.getException());
-            }
-
-            if (self.getValue() == null) {
-                return getContext().getCoreLibrary().getNilObject();
-            } else {
-                return self.getValue();
-            }
+            return self.getValue();
         }
 
     }
