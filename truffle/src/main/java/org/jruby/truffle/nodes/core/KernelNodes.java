@@ -1373,21 +1373,30 @@ public abstract class KernelNodes {
                 bytes[i] = ((RubyString) toS.call(frame, args[i], "to_s", null)).getBytes().bytes();
             }
 
-            final RubyThread runningThread = getContext().getThreadManager().leaveGlobalLock();
+            getContext().getThreadManager().runUntilResult(new BlockingActionWithoutGlobalLock<Boolean>() {
+                int i = 0;
 
-            try {
-                for (byte[] string : bytes) {
-                    write(string);
+                @Override
+                public Boolean block() throws InterruptedException {
+                    while (i < bytes.length) {
+                        write(bytes[i]);
+                        i++;
+
+                    }
+                    return SUCCESS;
                 }
-            } finally {
-                getContext().getThreadManager().enterGlobalLock(runningThread);
-            }
+            });
 
             return getContext().getCoreLibrary().getNilObject();
         }
 
         @TruffleBoundary
-        private void write(byte[] bytes) {
+        private void write(byte[] bytes) throws InterruptedException {
+            if (Thread.interrupted()) {
+                throw new InterruptedException();
+            }
+
+            // TODO (eregon, 11 Nov. 2015): the write itself should throw InterruptedException
             try{
                 getContext().getRuntime().getInstanceConfig().getOutput().write(bytes);
             } catch (IOException e) {
