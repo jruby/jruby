@@ -45,7 +45,7 @@ public abstract class AbstractGeneralSuperCallNode extends RubyNode {
     }
 
     protected boolean guard(VirtualFrame frame, Object self) {
-        InternalMethod method = RubyCallStack.getCurrentMethod();
+        InternalMethod method = RubyArguments.getMethod(frame.getArguments());
 
         return superMethod != null &&
                 method == currentMethod &&
@@ -65,7 +65,7 @@ public abstract class AbstractGeneralSuperCallNode extends RubyNode {
     private void lookup(VirtualFrame frame, boolean checkIfDefined) {
         CompilerAsserts.neverPartOfCompilation();
 
-        currentMethod = RubyCallStack.getCurrentMethod();
+        currentMethod = RubyArguments.getMethod(frame.getArguments());
 
         String name = currentMethod.getName();
         RubyModule declaringModule = currentMethod.getDeclaringModule();

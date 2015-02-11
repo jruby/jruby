@@ -1020,12 +1020,12 @@ public abstract class ModuleNodes {
         }
 
         @Specialization
-        public RubyArray nesting() {
+        public RubyArray nesting(VirtualFrame frame) {
             notDesignedForCompilation();
 
             final List<RubyModule> modules = new ArrayList<>();
 
-            InternalMethod method = RubyCallStack.getCallingMethod();
+            InternalMethod method = RubyCallStack.getCallingMethod(frame);
             LexicalScope lexicalScope = method == null ? null : method.getSharedMethodInfo().getLexicalScope();
             RubyClass object = getContext().getCoreLibrary().getObjectClass();
 

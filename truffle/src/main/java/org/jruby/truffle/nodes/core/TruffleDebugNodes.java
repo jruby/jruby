@@ -11,8 +11,10 @@ package org.jruby.truffle.nodes.core;
 
 import com.oracle.truffle.api.Truffle;
 import com.oracle.truffle.api.dsl.Specialization;
+import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.NodeUtil;
 import com.oracle.truffle.api.source.SourceSection;
+
 import org.jruby.truffle.runtime.DebugOperations;
 import org.jruby.truffle.runtime.RubyCallStack;
 import org.jruby.truffle.runtime.RubyContext;
@@ -223,10 +225,10 @@ public abstract class TruffleDebugNodes {
         }
 
         @Specialization
-        public Object parseTree() {
+        public Object parseTree(VirtualFrame frame) {
             notDesignedForCompilation();
 
-            final org.jruby.ast.Node parseTree = RubyCallStack.getCallingMethod().getSharedMethodInfo().getParseTree();
+            final org.jruby.ast.Node parseTree = RubyCallStack.getCallingMethod(frame).getSharedMethodInfo().getParseTree();
 
             if (parseTree == null) {
                 return getContext().getCoreLibrary().getNilObject();
