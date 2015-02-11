@@ -18,61 +18,32 @@ import com.oracle.truffle.api.nodes.Node;
 import org.jruby.truffle.nodes.CoreSourceSection;
 import org.jruby.truffle.runtime.backtrace.Activation;
 import org.jruby.truffle.runtime.backtrace.Backtrace;
-import org.jruby.truffle.runtime.core.RubyModule;
-import org.jruby.truffle.runtime.core.RubyProc;
 import org.jruby.truffle.runtime.methods.InternalMethod;
-import org.jruby.truffle.runtime.methods.MethodLike;
-import org.jruby.util.Memo;
 import org.jruby.util.cli.Options;
 
 import java.util.ArrayList;
 
 public abstract class RubyCallStack {
 
-    /** Called "cref" in MRI. */
-    public static RubyModule getCurrentDeclaringModule() {
-        final FrameInstance currentFrame = Truffle.getRuntime().getCurrentFrame();
-        final MethodLike method = getMethod(currentFrame);
-        return method.getDeclaringModule();
-    }
-
     public static InternalMethod getCurrentMethod() {
         final FrameInstance currentFrame = Truffle.getRuntime().getCurrentFrame();
-        MethodLike methodLike = getMethod(currentFrame);
-        while (!(methodLike instanceof InternalMethod)) {
-            methodLike = ((RubyProc) methodLike).getMethod();
-        }
-        return (InternalMethod) methodLike;
+        return getMethod(currentFrame);
     }
 
     public static InternalMethod getCallingMethod() {
         CompilerAsserts.neverPartOfCompilation();
 
-        final Memo<Boolean> seenCurrent = new Memo<Boolean>();
-
-        MethodLike method;
-
-        final FrameInstance currentFrame = Truffle.getRuntime().getCurrentFrame();
-
-        method = getMethod(currentFrame);
-
-        if (method instanceof InternalMethod) {
-            seenCurrent.set(true);
-        }
+        final InternalMethod currentMethod = getCurrentMethod();
 
         return Truffle.getRuntime().iterateFrames(new FrameInstanceVisitor<InternalMethod>() {
 
             @Override
             public InternalMethod visitFrame(FrameInstance frameInstance) {
-                final MethodLike maybeMethod = getMethod(frameInstance);
+                final InternalMethod method = getMethod(frameInstance);
+                assert method != null;
 
-                if (maybeMethod instanceof InternalMethod) {
-                    if (seenCurrent.get()) {
-                        return (InternalMethod) maybeMethod;
-                    } else {
-                        seenCurrent.set(true);
-                        return null;
-                    }
+                if (method != currentMethod) {
+                    return method;
                 } else {
                     return null;
                 }
@@ -81,12 +52,8 @@ public abstract class RubyCallStack {
         });
     }
 
-    public static MethodLike getMethod(FrameInstance frame) {
+    public static InternalMethod getMethod(FrameInstance frame) {
         CompilerAsserts.neverPartOfCompilation();
-
-        if (frame == null) {
-            return null;
-        }
 
         return RubyArguments.getMethod(frame.getFrame(FrameInstance.FrameAccess.READ_ONLY, true).getArguments());
     }

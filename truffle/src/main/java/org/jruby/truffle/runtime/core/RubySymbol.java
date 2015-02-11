@@ -55,7 +55,7 @@ public class RubySymbol extends RubyBasicObject {
         final CallTarget callTarget = Truffle.getRuntime().createCallTarget(rootNode);
 
         return new RubyProc(context.getCoreLibrary().getProcClass(), RubyProc.Type.PROC, sharedMethodInfo, callTarget,
-                callTarget, callTarget, null, null, null, getContext().getCoreLibrary().getNilObject(), null);
+                callTarget, callTarget, null, null, getContext().getCoreLibrary().getNilObject(), null);
     }
 
     public ByteList getSymbolBytes() {

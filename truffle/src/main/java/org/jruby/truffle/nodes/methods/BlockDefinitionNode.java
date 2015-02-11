@@ -18,12 +18,12 @@ import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyModule;
 import org.jruby.truffle.runtime.core.RubyProc;
-import org.jruby.truffle.runtime.methods.MethodLike;
 import org.jruby.truffle.runtime.methods.SharedMethodInfo;
 
 /**
- * Define a block. That is, store the definition of a block and when executed produce the executable
- * object that results.
+ * Create a RubyProc to pass as a block to the called method.
+ * The literal block is represented as call targets and a SharedMethodInfo.
+ * This is executed at the call site just before dispatch.
  */
 public class BlockDefinitionNode extends RubyNode {
 
@@ -62,19 +62,11 @@ public class BlockDefinitionNode extends RubyNode {
             declarationFrame = null;
         }
 
-        final MethodLike methodLike = RubyArguments.getMethod(frame.getArguments());
-
-        final RubyModule declaringModule;
-
-        if (methodLike == null) {
-            declaringModule = null;
-        } else {
-            declaringModule = methodLike.getDeclaringModule();
-        }
-
         return new RubyProc(getContext().getCoreLibrary().getProcClass(), RubyProc.Type.PROC, sharedMethodInfo,
-                callTargetForBlocks, callTargetForProcs, callTargetForMethods, declarationFrame, declaringModule,
-                RubyArguments.getMethod(frame.getArguments()), RubyArguments.getSelf(frame.getArguments()),
+                callTargetForBlocks, callTargetForProcs, callTargetForMethods,
+                declarationFrame,
+                RubyArguments.getMethod(frame.getArguments()),
+                RubyArguments.getSelf(frame.getArguments()),
                 RubyArguments.getBlock(frame.getArguments()));
     }
 

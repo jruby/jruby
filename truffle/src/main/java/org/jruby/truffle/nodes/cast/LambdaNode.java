@@ -38,7 +38,7 @@ public class LambdaNode extends RubyNode {
 
         return new RubyProc(getContext().getCoreLibrary().getProcClass(), RubyProc.Type.LAMBDA,
                 method.getSharedMethodInfo(), method.getCallTarget(), method.getCallTarget(), method.getCallTarget(),
-                method.getDeclarationFrame(), method.getDeclaringModule(), method, RubyArguments.getSelf(frame.getArguments()), null);
+                method.getDeclarationFrame(), method, RubyArguments.getSelf(frame.getArguments()), null);
     }
 
     @Override

@@ -124,6 +124,11 @@ public class RubyEnumerator extends RubyObject {
         return enumeratorizeWithSize(context, object, method, NULL_ARRAY, sizeFn);
     }
 
+    public static IRubyObject enumeratorizeWithSize(ThreadContext context, IRubyObject object, String method,IRubyObject arg, IRubyObject size) {
+        Ruby runtime = context.runtime;
+        return new RubyEnumerator(runtime, runtime.getEnumerator(), object, runtime.fastNewSymbol(method), new IRubyObject[] { arg }, size);
+    }
+
     public static IRubyObject enumeratorize(Ruby runtime, IRubyObject object, String method) {
         return new RubyEnumerator(runtime, runtime.getEnumerator(), object, runtime.fastNewSymbol(method), IRubyObject.NULL_ARRAY);
     }

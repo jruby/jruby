@@ -44,7 +44,6 @@ import org.jruby.truffle.runtime.core.RubyProc;
 import org.jruby.truffle.runtime.core.RubyRange;
 import org.jruby.truffle.runtime.core.RubyString;
 import org.jruby.truffle.runtime.core.RubySymbol;
-import org.jruby.truffle.runtime.methods.MethodLike;
 import org.jruby.truffle.runtime.methods.SharedMethodInfo;
 import org.jruby.truffle.runtime.util.ArrayUtils;
 import org.jruby.util.ByteList;
@@ -1736,12 +1735,12 @@ public abstract class ArrayNodes {
 
             final Memo<Object> maximum = new Memo<>();
 
-            final VirtualFrame maximumClosureFrame = Truffle.getRuntime().createVirtualFrame(RubyArguments.pack(maxBlock, null, array, null, new Object[]{}), maxBlock.getFrameDescriptor());
+            final VirtualFrame maximumClosureFrame = Truffle.getRuntime().createVirtualFrame(RubyArguments.pack(null, null, array, null, new Object[] {}), maxBlock.getFrameDescriptor());
             maximumClosureFrame.setObject(maxBlock.getFrameSlot(), maximum);
 
             final RubyProc block = new RubyProc(getContext().getCoreLibrary().getProcClass(), RubyProc.Type.PROC,
                     maxBlock.getSharedMethodInfo(), maxBlock.getCallTarget(), maxBlock.getCallTarget(),
-                    maxBlock.getCallTarget(), maximumClosureFrame.materialize(), null, null, array, null);
+                    maxBlock.getCallTarget(), maximumClosureFrame.materialize(), null, array, null);
 
             eachNode.call(frame, array, "each", block);
 
@@ -1785,7 +1784,7 @@ public abstract class ArrayNodes {
 
     }
 
-    public static class MaxBlock implements MethodLike {
+    public static class MaxBlock {
 
         private final FrameDescriptor frameDescriptor;
         private final FrameSlot frameSlot;
@@ -1816,14 +1815,8 @@ public abstract class ArrayNodes {
             return frameSlot;
         }
 
-        @Override
         public SharedMethodInfo getSharedMethodInfo() {
             return sharedMethodInfo;
-        }
-
-        @Override
-        public RubyModule getDeclaringModule() {
-            throw new UnsupportedOperationException();
         }
 
         public CallTarget getCallTarget() {
@@ -1855,12 +1848,12 @@ public abstract class ArrayNodes {
 
             final Memo<Object> minimum = new Memo<>();
 
-            final VirtualFrame minimumClosureFrame = Truffle.getRuntime().createVirtualFrame(RubyArguments.pack(minBlock, null, array, null, new Object[]{}), minBlock.getFrameDescriptor());
+            final VirtualFrame minimumClosureFrame = Truffle.getRuntime().createVirtualFrame(RubyArguments.pack(null, null, array, null, new Object[] {}), minBlock.getFrameDescriptor());
             minimumClosureFrame.setObject(minBlock.getFrameSlot(), minimum);
 
             final RubyProc block = new RubyProc(getContext().getCoreLibrary().getProcClass(), RubyProc.Type.PROC,
                     minBlock.getSharedMethodInfo(), minBlock.getCallTarget(), minBlock.getCallTarget(),
-                    minBlock.getCallTarget(), minimumClosureFrame.materialize(), null, null, array, null);
+                    minBlock.getCallTarget(), minimumClosureFrame.materialize(), null, array, null);
 
             eachNode.call(frame, array, "each", block);
 
@@ -1904,7 +1897,7 @@ public abstract class ArrayNodes {
 
     }
 
-    public static class MinBlock implements MethodLike {
+    public static class MinBlock {
 
         private final FrameDescriptor frameDescriptor;
         private final FrameSlot frameSlot;
@@ -1935,14 +1928,8 @@ public abstract class ArrayNodes {
             return frameSlot;
         }
 
-        @Override
         public SharedMethodInfo getSharedMethodInfo() {
             return sharedMethodInfo;
-        }
-
-        @Override
-        public RubyModule getDeclaringModule() {
-            throw new UnsupportedOperationException();
         }
 
         public CallTarget getCallTarget() {

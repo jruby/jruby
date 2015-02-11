@@ -48,7 +48,7 @@ public class CachedYieldDispatchNode extends YieldDispatchNode {
             return next.dispatch(frame, block, argumentsObjects);
         }
 
-        return callNode.call(frame, RubyArguments.pack(block, block.getDeclarationFrame(), block.getSelfCapturedInScope(), block.getBlockCapturedInScope(), argumentsObjects));
+        return callNode.call(frame, RubyArguments.pack(block.getMethod(), block.getDeclarationFrame(), block.getSelfCapturedInScope(), block.getBlockCapturedInScope(), argumentsObjects));
     }
 
     @Override
@@ -57,7 +57,7 @@ public class CachedYieldDispatchNode extends YieldDispatchNode {
             return next.dispatch(frame, block, argumentsObjects);
         }
 
-        return callNode.call(frame, RubyArguments.pack(block, block.getDeclarationFrame(), block.getSelfCapturedInScope(), modifiedBlock, argumentsObjects));
+        return callNode.call(frame, RubyArguments.pack(block.getMethod(), block.getDeclarationFrame(), block.getSelfCapturedInScope(), modifiedBlock, argumentsObjects));
     }
 
     @Override
@@ -66,7 +66,7 @@ public class CachedYieldDispatchNode extends YieldDispatchNode {
             return next.dispatchWithModifiedSelf(frame, block, self, argumentsObjects);
         }
 
-        return callNode.call(frame, RubyArguments.pack(block, block.getDeclarationFrame(), self, block.getBlockCapturedInScope(), argumentsObjects));
+        return callNode.call(frame, RubyArguments.pack(block.getMethod(), block.getDeclarationFrame(), self, block.getBlockCapturedInScope(), argumentsObjects));
     }
 
     @Override

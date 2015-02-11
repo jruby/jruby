@@ -15,10 +15,8 @@ import com.oracle.truffle.api.nodes.ExplodeLoop;
 
 import org.jruby.truffle.runtime.core.RubyHash;
 import org.jruby.truffle.runtime.core.RubyProc;
-import org.jruby.truffle.runtime.methods.MethodLike;
+import org.jruby.truffle.runtime.methods.InternalMethod;
 import org.jruby.truffle.runtime.util.ArrayUtils;
-
-import java.util.Arrays;
 
 /**
  * Pack and unpack Ruby method arguments to and from an array of objects.
@@ -31,7 +29,7 @@ public final class RubyArguments {
     public static final int BLOCK_INDEX = 3;
     public static final int RUNTIME_ARGUMENT_COUNT = 4;
 
-    public static Object[] pack(MethodLike method, MaterializedFrame declarationFrame, Object self, RubyProc block, Object[] arguments) {
+    public static Object[] pack(InternalMethod method, MaterializedFrame declarationFrame, Object self, RubyProc block, Object[] arguments) {
         final Object[] packed = new Object[arguments.length + RUNTIME_ARGUMENT_COUNT];
 
         packed[METHOD_INDEX] = method;
@@ -43,8 +41,8 @@ public final class RubyArguments {
         return packed;
     }
 
-    public static MethodLike getMethod(Object[] arguments) {
-        return (MethodLike) arguments[METHOD_INDEX];
+    public static InternalMethod getMethod(Object[] arguments) {
+        return (InternalMethod) arguments[METHOD_INDEX];
     }
 
     public static Object getSelf(Object[] arguments) {

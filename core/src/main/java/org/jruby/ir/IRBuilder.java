@@ -1741,7 +1741,7 @@ public class IRBuilder {
     protected void receiveNonBlockArgs(final ArgsNode argsNode) {
         final int numPreReqd = argsNode.getPreCount();
         final int numPostReqd = argsNode.getPostCount();
-        final int required = argsNode.getRequiredArgsCount(); // numPreReqd + numPostReqd
+        final int required = argsNode.getRequiredArgsCount() + argsNode.getRequiredKeywordCount(); // numPreReqd + numPostReqd
         int opt = argsNode.getOptionalArgsCount();
         int rest = argsNode.getRestArg();
 
