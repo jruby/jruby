@@ -243,6 +243,8 @@ public class RubyContext extends ExecutionContext {
         if (fiberManager != null) {
             fiberManager.shutdown();
         }
+
+        threadManager.shutdown();
     }
 
     public RubyString makeString(String string) {

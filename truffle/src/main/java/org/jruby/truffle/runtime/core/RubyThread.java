@@ -168,7 +168,8 @@ public class RubyThread extends RubyBasicObject {
         return exception;
     }
 
-    public void shutdown() {
+    public void exit() {
+        throw new ThreadExitException();
     }
 
     public String getName() {
