@@ -277,7 +277,7 @@ public abstract class FileNodes {
 
         @Specialization
         public RubyString expandPath(RubyString path, @SuppressWarnings("unused") UndefinedPlaceholder dir) {
-            return getContext().makeString(RubyFile.expandPath(path.toString()));
+            return getContext().makeString(RubyFile.expandPath(getContext(), path.toString()));
         }
 
         @Specialization

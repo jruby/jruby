@@ -109,6 +109,3 @@ class MSpecScript
   set :files, get(:language) + get(:core) + get(:rubysl)
 
 end
-
-# TODO (nirvdrum 11-Feb-15) Remove this hack once our File.expand_path doesn't translate '\' & '/' ... until then, we need feed this path through it to get consistent results in the specs.
-SPEC_TEMP_DIR = File.expand_path "#{File.expand_path(Dir.pwd)}/rubyspec_temp"

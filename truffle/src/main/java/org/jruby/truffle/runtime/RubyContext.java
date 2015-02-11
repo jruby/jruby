@@ -72,6 +72,8 @@ public class RubyContext extends ExecutionContext {
 
     private final AtomicLong nextObjectID = new AtomicLong(ObjectIDOperations.FIRST_OBJECT_ID);
 
+    private final boolean runningOnWindows;
+
     public RubyContext(Ruby runtime) {
         assert runtime != null;
 
@@ -116,6 +118,8 @@ public class RubyContext extends ExecutionContext {
         if (Options.TRUFFLE_STACK_SERVER_PORT.load() != 0) {
             new StackServerManager(this, Options.TRUFFLE_STACK_SERVER_PORT.load()).start();
         }
+
+        runningOnWindows = System.getProperty("os.name").toLowerCase().indexOf("win") >= 0;
     }
 
     public Shape getEmptyShape() {
@@ -140,6 +144,10 @@ public class RubyContext extends ExecutionContext {
         }
 
         return name;
+    }
+
+    public boolean isRunningOnWindows() {
+        return runningOnWindows;
     }
 
     public void loadFile(String fileName, RubyNode currentNode) {
