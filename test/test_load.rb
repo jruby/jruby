@@ -264,7 +264,7 @@ DEPS
   def test_jar_with_plus_in_name
     assert_in_sub_runtime %{
       require 'test/jar_with+.jar'
-      Dir['test/jar_with+.jar!/*'].size == 2
+      Dir["#{File.dirname( __FILE__ )}/jar_with+.jar!/*"].size == 2
     }
   end
 
