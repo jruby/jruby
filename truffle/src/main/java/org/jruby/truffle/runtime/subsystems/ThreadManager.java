@@ -153,6 +153,8 @@ public class ThreadManager {
                 }
             }
         });
+
+        leaveGlobalLock();
     }
 
 }

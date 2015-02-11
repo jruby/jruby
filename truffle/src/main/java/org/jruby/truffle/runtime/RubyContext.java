@@ -236,10 +236,6 @@ public class RubyContext extends ExecutionContext {
     public void shutdown() {
         atExitManager.run();
 
-        threadManager.leaveGlobalLock();
-
-        objectSpaceManager.shutdown();
-
         if (fiberManager != null) {
             fiberManager.shutdown();
         }
