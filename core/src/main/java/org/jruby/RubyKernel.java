@@ -68,6 +68,7 @@ import org.jruby.util.ByteList;
 import org.jruby.util.ConvertBytes;
 import org.jruby.util.IdUtil;
 import org.jruby.util.ShellLauncher;
+import org.jruby.util.StringSupport;
 import org.jruby.util.TypeConverter;
 import org.jruby.util.cli.Options;
 import org.jruby.util.io.OpenFile;
@@ -191,13 +192,14 @@ public class RubyKernel {
     public static IRubyObject autoload(final IRubyObject recv, IRubyObject symbol, IRubyObject file) {
         Ruby runtime = recv.getRuntime(); 
         String nonInternedName = symbol.asJavaString();
+
+        final RubyString fileString = StringSupport.checkEmbeddedNulls(runtime,
+                                        RubyFile.get_path(runtime.getCurrentContext(), file));
         
         if (!IdUtil.isValidConstantName(nonInternedName)) {
             throw runtime.newNameError("autoload must be constant name", nonInternedName);
         }
 
-        final RubyString fileString = RubyFile.get_path(runtime.getCurrentContext(), file);
-        
         if (fileString.isEmpty()) throw runtime.newArgumentError("empty file name");
         
         final String baseName = symbol.asJavaString().intern(); // interned, OK for "fast" methods
@@ -967,7 +969,8 @@ public class RubyKernel {
     }
 
     private static IRubyObject requireCommon(Ruby runtime, IRubyObject recv, IRubyObject name, Block block) {
-        return runtime.newBoolean(runtime.getLoadService().require(name.convertToString().toString()));
+        RubyString path = StringSupport.checkEmbeddedNulls(runtime, name);
+        return runtime.newBoolean(runtime.getLoadService().require(path.toString()));
     }
 
     public static IRubyObject load(IRubyObject recv, IRubyObject[] args, Block block) {
@@ -976,7 +979,9 @@ public class RubyKernel {
 
     @JRubyMethod(name = "load", required = 1, optional = 1, module = true, visibility = PRIVATE)
     public static IRubyObject load19(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
-        return loadCommon(RubyFile.get_path(context, args[0]), context.runtime, args, block);
+        Ruby runtime = context.runtime;
+        RubyString path = StringSupport.checkEmbeddedNulls(runtime, RubyFile.get_path(context, args[0]));
+        return loadCommon(path, runtime, args, block);
     }
 
     private static IRubyObject loadCommon(IRubyObject fileName, Ruby runtime, IRubyObject[] args, Block block) {
