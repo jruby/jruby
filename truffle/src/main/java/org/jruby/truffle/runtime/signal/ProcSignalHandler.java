@@ -36,8 +36,13 @@ public class ProcSignalHandler implements SignalHandler {
             @Override
             public void accept(RubyThread thread) {
                 if (thread == context.getThreadManager().getRootThread()) {
-                    // assumes this proc does not re-enter the SafepointManager.
-                    proc.rootCall();
+                    context.getThreadManager().enterGlobalLock(thread);
+                    try {
+                        // assumes this proc does not re-enter the SafepointManager.
+                        proc.rootCall();
+                    } finally {
+                        context.getThreadManager().leaveGlobalLock();
+                    }
                 }
             }
 
