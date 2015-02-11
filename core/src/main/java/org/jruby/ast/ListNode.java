@@ -50,7 +50,7 @@ public class ListNode extends Node {
      * @param firstNode first element of the list
      */
     public ListNode(ISourcePosition position, Node firstNode) {
-        super(position, firstNode != null && firstNode.containsAssignment);
+        super(position, firstNode != null && firstNode.containsVariableAssignment);
         
         list = new ArrayList<>(4);
         list.add(firstNode);
@@ -74,7 +74,7 @@ public class ListNode extends Node {
             return this;
         }
 
-        if (node.containsAssignment()) containsAssignment = true;
+        if (node.containsVariableAssignment()) containsVariableAssignment = true;
         list.add(node);
 
         if (getPosition() == null) setPosition(node.getPosition());
@@ -86,7 +86,7 @@ public class ListNode extends Node {
         // Ruby Grammar productions return plenty of nulls.
         if (node == null) return this;
 
-        if (node.containsAssignment()) containsAssignment = true;
+        if (node.containsVariableAssignment()) containsVariableAssignment = true;
         list.add(0, node);
         
         setPosition(node.getPosition());
@@ -106,7 +106,7 @@ public class ListNode extends Node {
      */
     public ListNode addAll(ListNode other) {
         if (other != null && other.size() > 0) {
-            if (other.containsAssignment()) containsAssignment = true;
+            if (other.containsVariableAssignment()) containsVariableAssignment = true;
             list.addAll(other.list);
 
             if (getPosition() == null) setPosition(other.getPosition());

@@ -52,7 +52,7 @@ public class UntilNode extends Node {
     }
 
     public UntilNode(ISourcePosition position, Node conditionNode, Node bodyNode, boolean evaluateAtStart) {
-        super(position, conditionNode.containsAssignment() || bodyNode.containsAssignment());
+        super(position, conditionNode.containsVariableAssignment() || bodyNode.containsVariableAssignment());
         
         assert conditionNode != null : "conditionNode is not null";
         assert bodyNode != null : "bodyNode is not null";

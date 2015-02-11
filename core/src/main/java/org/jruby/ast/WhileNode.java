@@ -57,7 +57,7 @@ public class WhileNode extends Node {
 
     public WhileNode(ISourcePosition position, Node conditionNode, Node bodyNode,
             boolean evalAtStart) {
-        super(position, conditionNode.containsAssignment() || bodyNode.containsAssignment());
+        super(position, conditionNode.containsVariableAssignment() || bodyNode.containsVariableAssignment());
         
         assert conditionNode != null : "conditionNode is not null";
         assert bodyNode != null : "bodyNode is not null";

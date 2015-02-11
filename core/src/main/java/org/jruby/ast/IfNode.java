@@ -46,8 +46,8 @@ public class IfNode extends Node {
     private final Node elseBody;
 
     public IfNode(ISourcePosition position, Node condition, Node thenBody, Node elseBody) {
-        super(position, condition.containsAssignment || thenBody != null && thenBody.containsAssignment ||
-                elseBody != null && elseBody.containsAssignment);
+        super(position, condition.containsVariableAssignment || thenBody != null && thenBody.containsVariableAssignment ||
+                elseBody != null && elseBody.containsVariableAssignment);
         
         assert condition != null : "condition is not null";
 

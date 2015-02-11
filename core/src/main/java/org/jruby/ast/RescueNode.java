@@ -46,9 +46,9 @@ public class RescueNode extends Node {
     private final Node elseNode;
     
     public RescueNode(ISourcePosition position, Node bodyNode, RescueBodyNode rescueNode, Node elseNode) {
-        super(position, bodyNode != null && bodyNode.containsAssignment() ||
-                rescueNode != null && rescueNode.containsAssignment() ||
-                elseNode != null && elseNode.containsAssignment());
+        super(position, bodyNode != null && bodyNode.containsVariableAssignment() ||
+                rescueNode != null && rescueNode.containsVariableAssignment() ||
+                elseNode != null && elseNode.containsVariableAssignment());
         this.bodyNode = bodyNode;
         this.rescueNode = rescueNode;
         this.elseNode = elseNode;

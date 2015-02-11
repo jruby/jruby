@@ -47,8 +47,8 @@ public class SuperNode extends Node implements BlockAcceptingNode {
     }
     
     public SuperNode(ISourcePosition position, Node argsNode, Node iterNode) {
-        super(position, argsNode != null && argsNode.containsAssignment() ||
-                iterNode != null && iterNode.containsAssignment());
+        super(position, argsNode != null && argsNode.containsVariableAssignment() ||
+                iterNode != null && iterNode.containsVariableAssignment());
         this.argsNode = argsNode;
         this.iterNode = iterNode;
     }

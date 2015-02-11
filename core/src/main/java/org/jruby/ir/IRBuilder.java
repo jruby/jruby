@@ -334,7 +334,7 @@ public class IRBuilder {
             case ANDNODE: return buildAnd((AndNode) node);
             case ARGSCATNODE: return buildArgsCat((ArgsCatNode) node);
             case ARGSPUSHNODE: return buildArgsPush((ArgsPushNode) node);
-            case ARRAYNODE: return buildArray(node);
+            case ARRAYNODE: return buildArray((ArrayNode) node);
             case ATTRASSIGNNODE: return buildAttrAssign((AttrAssignNode) node);
             case BACKREFNODE: return buildBackref((BackRefNode) node);
             case BEGINNODE: return buildBegin((BeginNode) node);
@@ -520,6 +520,12 @@ public class IRBuilder {
         return addResultInstr(new CopyInstr(createTemporaryVariable(), val));
     }
 
+    protected Operand buildWithOrder(Node node, boolean preserveOrder) {
+        Operand value = build(node);
+
+        return preserveOrder ? copyAndReturnValue(value) : value;
+    }
+
     protected Variable getValueInTemporaryVariable(Operand val) {
         if (val != null && val instanceof TemporaryVariable) return (Variable) val;
 
@@ -566,9 +572,10 @@ public class IRBuilder {
                 List<Node> children = args.childNodes();
                 int numberOfArgs = children.size();
                 Operand[] builtArgs = new Operand[numberOfArgs];
+                boolean hasAssignments = args.containsVariableAssignment();
 
                 for (int i = 0; i < numberOfArgs; i++) {
-                    builtArgs[i] = build(children.get(i));
+                    builtArgs[i] = buildWithOrder(children.get(i), hasAssignments);
                 }
                 return builtArgs;
             }
@@ -778,10 +785,12 @@ public class IRBuilder {
         }
     }
 
-    public Operand buildArray(Node node) {
+    public Operand buildArray(ArrayNode node) {
         List<Operand> elts = new ArrayList<>();
-        for (Node e: node.childNodes())
-            elts.add(copyAndReturnValue(build(e)));
+        boolean containsAssignments = node.containsVariableAssignment();
+        for (Node e: node.childNodes()) {
+            elts.add(buildWithOrder(e, containsAssignments));
+        }
 
         return copyAndReturnValue(new Array(elts));
     }
@@ -2383,6 +2392,7 @@ public class IRBuilder {
     public Operand buildHash(HashNode hashNode) {
         List<KeyValuePair<Operand, Operand>> args = new ArrayList<>();
         Operand splatKeywordArgument = null;
+        boolean hasAssignments = hashNode.containsVariableAssignment();
 
         for (KeyValuePair<Node, Node> pair: hashNode.getPairs()) {
             Node key = pair.getKey();
@@ -2392,10 +2402,10 @@ public class IRBuilder {
                 splatKeywordArgument = build(pair.getValue());
                 break;
             } else {
-               keyOperand = copyAndReturnValue(build(key));
+               keyOperand = buildWithOrder(key, hasAssignments);
             }
 
-            args.add(new KeyValuePair<Operand, Operand>(keyOperand, copyAndReturnValue(build(pair.getValue()))));
+            args.add(new KeyValuePair<>(keyOperand, buildWithOrder(pair.getValue(), hasAssignments)));
         }
 
         if (splatKeywordArgument != null) { // splat kwargs merge with any explicit kwargs
