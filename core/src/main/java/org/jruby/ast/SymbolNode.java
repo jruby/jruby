@@ -58,14 +58,14 @@ public class SymbolNode extends Node implements ILiteralNode, INameNode {
     private Encoding encoding;
 
     public SymbolNode(ISourcePosition position, String name) {
-        super(position);
+        super(position, false);
 
         this.name = name;
         this.encoding = null;
     }
 
     public SymbolNode(ISourcePosition position, ByteList value) {
-        super(position);
+        super(position, false);
         this.name = value.toString().intern();
         // FIXME: A full scan to determine whether we should back off to US-ASCII.  Lexer should just do this properly.
         if (value.lengthEnc() == value.length()) {

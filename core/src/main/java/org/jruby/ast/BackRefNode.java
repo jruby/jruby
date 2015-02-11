@@ -54,7 +54,7 @@ public class BackRefNode extends Node {
     private final DefinedMessage definedMessage;
 
     public BackRefNode(ISourcePosition position, int type) {
-        super(position);
+        super(position, false);
         this.type = (char) type;
         this.definedMessage = DefinedMessage.byText("$" + (char)type);
     }

@@ -74,7 +74,7 @@ public class GeneralSuperCallNode extends AbstractGeneralSuperCallNode {
 
         // Check we have a method and the module is unmodified
 
-        if (!guard(self)) {
+        if (!guard(frame, self)) {
             CompilerDirectives.transferToInterpreterAndInvalidate();
             lookup(frame);
         }

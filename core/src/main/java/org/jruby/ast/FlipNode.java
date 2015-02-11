@@ -49,7 +49,7 @@ public class FlipNode extends Node {
     private final int location;
     
     public FlipNode(ISourcePosition position, Node beginNode, Node endNode, boolean exclusive, int location) {
-        super(position);
+        super(position, beginNode.containsVariableAssignment() || endNode.containsVariableAssignment());
         
         assert beginNode != null : "beginNode is not null";
         assert endNode != null : "endNode is not null";

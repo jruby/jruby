@@ -13,6 +13,7 @@ import com.oracle.truffle.api.CompilerAsserts;
 import com.oracle.truffle.api.Truffle;
 import com.oracle.truffle.api.frame.FrameInstance;
 import com.oracle.truffle.api.frame.FrameInstanceVisitor;
+import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.Node;
 
 import org.jruby.truffle.nodes.CoreSourceSection;
@@ -25,15 +26,10 @@ import java.util.ArrayList;
 
 public abstract class RubyCallStack {
 
-    public static InternalMethod getCurrentMethod() {
-        final FrameInstance currentFrame = Truffle.getRuntime().getCurrentFrame();
-        return getMethod(currentFrame);
-    }
-
-    public static InternalMethod getCallingMethod() {
+    public static InternalMethod getCallingMethod(VirtualFrame frame) {
         CompilerAsserts.neverPartOfCompilation();
 
-        final InternalMethod currentMethod = getCurrentMethod();
+        final InternalMethod currentMethod = RubyArguments.getMethod(frame.getArguments());
 
         return Truffle.getRuntime().iterateFrames(new FrameInstanceVisitor<InternalMethod>() {
 

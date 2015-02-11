@@ -50,7 +50,7 @@ public class LocalAsgnNode extends AssignableNode implements INameNode, IScopedN
     private final int location;
 
     public LocalAsgnNode(ISourcePosition position, String name, int location, Node valueNode) {
-        super(position, valueNode);
+        super(position, valueNode, true);
         this.name = name;
         this.location = location;
     }

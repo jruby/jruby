@@ -51,15 +51,13 @@ public class WhileNode extends Node {
     private final Node bodyNode;
     private final boolean evaluateAtStart;
     
-    public boolean containsNonlocalFlow = false;
-
     public WhileNode(ISourcePosition position, Node conditionNode, Node bodyNode) {
         this(position, conditionNode, bodyNode, true);
     }
 
     public WhileNode(ISourcePosition position, Node conditionNode, Node bodyNode,
             boolean evalAtStart) {
-        super(position);
+        super(position, conditionNode.containsVariableAssignment() || bodyNode.containsVariableAssignment());
         
         assert conditionNode != null : "conditionNode is not null";
         assert bodyNode != null : "bodyNode is not null";

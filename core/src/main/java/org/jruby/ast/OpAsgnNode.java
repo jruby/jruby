@@ -47,7 +47,7 @@ public class OpAsgnNode extends Node {
     private final String variableNameAsgn;
 
     public OpAsgnNode(ISourcePosition position, Node receiverNode, Node valueNode, String variableName, String operatorName) {
-        super(position);
+        super(position, receiverNode.containsVariableAssignment());
         
         assert receiverNode != null : "receiverNode is not null";
         assert valueNode != null : "valueNode is not null";

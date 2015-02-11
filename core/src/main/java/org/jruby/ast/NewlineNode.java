@@ -51,7 +51,7 @@ public class NewlineNode extends Node {
     private final Node nextNode;
 
     public NewlineNode(ISourcePosition position, Node nextNode) {
-        super(position);
+        super(position, nextNode.containsVariableAssignment());
 
         assert nextNode != null : "nextNode is not null";
         

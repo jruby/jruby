@@ -41,7 +41,7 @@ public class Match3Node extends Node {
     private final Node valueNode;
 
     public Match3Node(ISourcePosition position, Node receiverNode, Node valueNode) {
-        super(position);
+        super(position, receiverNode.containsVariableAssignment() || valueNode.containsVariableAssignment());
         
         assert receiverNode != null : "receiverNode is not null";
         assert valueNode != null : "valueNode is not null";

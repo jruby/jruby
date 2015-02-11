@@ -43,7 +43,7 @@ public class NextNode extends Node implements NonLocalControlFlowNode {
     private final Node valueNode;
 
     public NextNode(ISourcePosition position, Node valueNode) {
-        super(position);
+        super(position, valueNode.containsVariableAssignment());
         
         assert valueNode != null : "valueNode is not null";
         

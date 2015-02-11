@@ -52,7 +52,7 @@ public class CaseNode extends Node {
     private Node elseNode = null;
     
     public CaseNode(ISourcePosition position, Node caseNode, ListNode cases) {
-        super(position);
+        super(position, caseNode != null && caseNode.containsVariableAssignment() || cases.containsVariableAssignment());
         
         assert cases != null : "caseBody is not null";
         // TODO: Rewriter and compiler assume case when empty expression.  In MRI this is just

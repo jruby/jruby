@@ -103,7 +103,13 @@ public class ArgsNode extends Node {
      */
     public ArgsNode(ISourcePosition position, ListNode pre, ListNode optionalArguments,
             RestArgNode rest, ListNode post, ListNode keywords, KeywordRestArgNode keyRest, BlockArgNode blockArgNode) {
-        super(position);
+        super(position, pre != null && pre.containsVariableAssignment() ||
+                        optionalArguments != null && optionalArguments.containsVariableAssignment() ||
+                        rest != null && rest.containsVariableAssignment() ||
+                        post != null && post.containsVariableAssignment() ||
+                        keywords != null && keywords.containsVariableAssignment() ||
+                        keyRest != null && keyRest.containsVariableAssignment() ||
+                        blockArgNode != null && blockArgNode.containsVariableAssignment());
 
         this.pre = pre;
         this.preCount = pre == null ? 0 : pre.size();

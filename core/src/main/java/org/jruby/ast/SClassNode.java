@@ -52,7 +52,7 @@ public class SClassNode extends Node {
     private final Node bodyNode;
 
     public SClassNode(ISourcePosition position, Node recvNode, StaticScope scope, Node bodyNode) {
-        super(position);
+        super(position, recvNode.containsVariableAssignment() || bodyNode.containsVariableAssignment());
         
         assert scope != null : "scope is not null";
         assert recvNode != null : "receiverNode is not null";

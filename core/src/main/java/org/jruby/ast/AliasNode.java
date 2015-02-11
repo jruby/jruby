@@ -43,7 +43,7 @@ public class AliasNode extends Node {
     private Node newName;
 
     public AliasNode(ISourcePosition position, Node newName, Node oldName) {
-        super(position);
+        super(position, newName.containsVariableAssignment() || oldName.containsVariableAssignment());
         this.oldName = oldName;
         this.newName = newName;
     }

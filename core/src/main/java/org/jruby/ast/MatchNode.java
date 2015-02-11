@@ -40,7 +40,7 @@ public class MatchNode extends Node {
     private final Node regexpNode;
 
     public MatchNode(ISourcePosition position, Node regexpNode) {
-        super(position);
+        super(position, regexpNode.containsVariableAssignment());
         
         assert regexpNode != null : "regexpNode is not null";
         

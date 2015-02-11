@@ -20,7 +20,7 @@ import org.jruby.truffle.runtime.RubyContext;
  */
 public class RubyMutex extends RubyBasicObject {
 
-    private ReentrantLock lock = new ReentrantLock();
+    private final ReentrantLock lock = new ReentrantLock();
 
     public RubyMutex(RubyClass rubyClass) {
         super(rubyClass);
