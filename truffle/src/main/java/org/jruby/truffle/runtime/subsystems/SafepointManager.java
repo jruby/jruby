@@ -101,9 +101,6 @@ public class SafepointManager {
         } finally {
             // wait other threads to finish their action
             phaser.arriveAndAwaitAdvance();
-
-            // clear the interrupted status which may have been set by interruptAllThreads().
-            Thread.interrupted();
         }
     }
 
