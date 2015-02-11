@@ -10,7 +10,7 @@
 package org.jruby.truffle.nodes.core;
 
 import com.oracle.truffle.api.CompilerDirectives;
-import com.oracle.truffle.api.dsl.ImportGuards;
+import com.oracle.truffle.api.dsl.ImportStatic;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.ExplodeLoop;
@@ -534,7 +534,7 @@ public abstract class HashNodes {
     }
 
     @CoreMethod(names = { "each", "each_pair" }, needsBlock = true)
-    @ImportGuards(HashGuards.class)
+    @ImportStatic(HashGuards.class)
     public abstract static class EachNode extends YieldingCoreMethodNode {
 
         public EachNode(RubyContext context, SourceSection sourceSection) {
@@ -862,7 +862,7 @@ public abstract class HashNodes {
     }
 
     @CoreMethod(names = {"map", "collect"}, needsBlock = true)
-    @ImportGuards(HashGuards.class)
+    @ImportStatic(HashGuards.class)
     public abstract static class MapNode extends YieldingCoreMethodNode {
 
         public MapNode(RubyContext context, SourceSection sourceSection) {

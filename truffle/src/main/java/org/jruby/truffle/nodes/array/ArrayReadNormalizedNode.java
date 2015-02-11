@@ -9,7 +9,7 @@
  */
 package org.jruby.truffle.nodes.array;
 
-import com.oracle.truffle.api.dsl.ImportGuards;
+import com.oracle.truffle.api.dsl.ImportStatic;
 import com.oracle.truffle.api.dsl.NodeChild;
 import com.oracle.truffle.api.dsl.NodeChildren;
 import com.oracle.truffle.api.dsl.Specialization;
@@ -26,7 +26,7 @@ import org.jruby.truffle.runtime.core.RubyNilClass;
         @NodeChild(value="array", type=RubyNode.class),
         @NodeChild(value="index", type=RubyNode.class)
 })
-@ImportGuards(ArrayGuards.class)
+@ImportStatic(ArrayGuards.class)
 public abstract class ArrayReadNormalizedNode extends RubyNode {
 
     public ArrayReadNormalizedNode(RubyContext context, SourceSection sourceSection) {

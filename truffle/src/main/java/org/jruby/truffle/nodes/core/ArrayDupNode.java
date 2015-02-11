@@ -9,7 +9,7 @@
  */
 package org.jruby.truffle.nodes.core;
 
-import com.oracle.truffle.api.dsl.ImportGuards;
+import com.oracle.truffle.api.dsl.ImportStatic;
 import com.oracle.truffle.api.dsl.NodeChild;
 import com.oracle.truffle.api.dsl.NodeChildren;
 import com.oracle.truffle.api.dsl.Specialization;
@@ -25,7 +25,7 @@ import java.util.Arrays;
  * Dup an array, without using any method lookup. This isn't a call - it's an operation on a core class.
  */
 @NodeChildren({@NodeChild(value = "array", type = RubyNode.class)})
-@ImportGuards(ArrayGuards.class)
+@ImportStatic(ArrayGuards.class)
 public abstract class ArrayDupNode extends RubyNode {
 
     public ArrayDupNode(RubyContext context, SourceSection sourceSection) {

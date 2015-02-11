@@ -12,7 +12,7 @@ package org.jruby.truffle.nodes.core;
 import com.oracle.truffle.api.CallTarget;
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.Truffle;
-import com.oracle.truffle.api.dsl.ImportGuards;
+import com.oracle.truffle.api.dsl.ImportStatic;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.FrameDescriptor;
 import com.oracle.truffle.api.frame.FrameSlot;
@@ -497,7 +497,7 @@ public abstract class ArrayNodes {
     }
 
     @CoreMethod(names = "compact")
-    @ImportGuards(ArrayGuards.class)
+    @ImportStatic(ArrayGuards.class)
     public abstract static class CompactNode extends ArrayCoreMethodNode {
 
         public CompactNode(RubyContext context, SourceSection sourceSection) {
@@ -808,7 +808,7 @@ public abstract class ArrayNodes {
     }
 
     @CoreMethod(names = "each", needsBlock = true)
-    @ImportGuards(ArrayGuards.class)
+    @ImportStatic(ArrayGuards.class)
     public abstract static class EachNode extends YieldingCoreMethodNode {
 
         @Child private CallDispatchHeadNode toEnumNode;
@@ -992,7 +992,7 @@ public abstract class ArrayNodes {
     }
 
     @CoreMethod(names = "each_with_index", needsBlock = true)
-    @ImportGuards(ArrayGuards.class)
+    @ImportStatic(ArrayGuards.class)
     public abstract static class EachWithIndexNode extends YieldingCoreMethodNode {
 
         private final BranchProfile breakProfile = BranchProfile.create();
@@ -1140,7 +1140,7 @@ public abstract class ArrayNodes {
     }
 
     @CoreMethod(names = "initialize", needsBlock = true, optional = 2)
-    @ImportGuards(ArrayGuards.class)
+    @ImportStatic(ArrayGuards.class)
     public abstract static class InitializeNode extends YieldingCoreMethodNode {
 
         @Child private ArrayBuilderNode arrayBuilder;
@@ -1297,7 +1297,7 @@ public abstract class ArrayNodes {
     }
 
     @CoreMethod(names = {"inject", "reduce"}, needsBlock = true, optional = 1)
-    @ImportGuards(ArrayGuards.class)
+    @ImportStatic(ArrayGuards.class)
     public abstract static class InjectNode extends YieldingCoreMethodNode {
 
         @Child private CallDispatchHeadNode dispatch;
@@ -1512,7 +1512,7 @@ public abstract class ArrayNodes {
     }
 
     @CoreMethod(names = {"map", "collect"}, needsBlock = true)
-    @ImportGuards(ArrayGuards.class)
+    @ImportStatic(ArrayGuards.class)
     public abstract static class MapNode extends YieldingCoreMethodNode {
 
         @Child private ArrayBuilderNode arrayBuilder;
@@ -1634,7 +1634,7 @@ public abstract class ArrayNodes {
     }
 
     @CoreMethod(names = {"map!", "collect!"}, needsBlock = true)
-    @ImportGuards(ArrayGuards.class)
+    @ImportStatic(ArrayGuards.class)
     public abstract static class MapInPlaceNode extends YieldingCoreMethodNode {
 
         @Child private ArrayBuilderNode arrayBuilder;
@@ -2360,7 +2360,7 @@ public abstract class ArrayNodes {
     }
 
     @CoreMethod(names = "reject", needsBlock = true)
-    @ImportGuards(ArrayGuards.class)
+    @ImportStatic(ArrayGuards.class)
     public abstract static class RejectNode extends YieldingCoreMethodNode {
 
         @Child private ArrayBuilderNode arrayBuilder;
@@ -2449,7 +2449,7 @@ public abstract class ArrayNodes {
     }
 
     @CoreMethod(names = { "reject!", "delete_if" }, needsBlock = true)
-    @ImportGuards(ArrayGuards.class)
+    @ImportStatic(ArrayGuards.class)
     public abstract static class RejectInPlaceNode extends YieldingCoreMethodNode {
 
         public RejectInPlaceNode(RubyContext context, SourceSection sourceSection) {
@@ -2543,7 +2543,7 @@ public abstract class ArrayNodes {
     }
 
     @CoreMethod(names = "select", needsBlock = true)
-    @ImportGuards(ArrayGuards.class)
+    @ImportStatic(ArrayGuards.class)
     public abstract static class SelectNode extends YieldingCoreMethodNode {
 
         @Child private ArrayBuilderNode arrayBuilder;
