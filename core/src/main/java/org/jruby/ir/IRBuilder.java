@@ -11,6 +11,7 @@ import org.jruby.ir.instructions.*;
 import org.jruby.ir.instructions.defined.GetErrorInfoInstr;
 import org.jruby.ir.instructions.defined.RestoreErrorInfoInstr;
 import org.jruby.ir.operands.*;
+import org.jruby.ir.operands.Boolean;
 import org.jruby.ir.operands.Float;
 import org.jruby.ir.transformations.inlining.SimpleCloneInfo;
 import org.jruby.runtime.CallType;
@@ -534,12 +535,14 @@ public class IRBuilder {
 
     // Return the last argument in the list as this represents rhs of the overall attrassign expression
     // e.g. 'a[1] = 2 #=> 2' or 'a[1] = 1,2,3 #=> [1,2,3]'
-    protected Operand buildAttrAssignCallArgs(List<Operand> argsList, Node args) {
+    protected Operand buildAttrAssignCallArgs(List<Operand> argsList, Node args, boolean containsAssignment) {
+        if (args == null) return manager.getNil();
+
         switch (args.getNodeType()) {
             case ARRAYNODE: {     // a[1] = 2; a[1,2,3] = 4,5,6
                 Operand last = manager.getNil();
                 for (Node n: args.childNodes()) {
-                    last = build(n);
+                    last = buildWithOrder(n, containsAssignment);
                     argsList.add(last);
                 }
                 return last;
@@ -810,10 +813,11 @@ public class IRBuilder {
     }
 
     private Operand buildAttrAssign(final AttrAssignNode attrAssignNode) {
-        Operand obj = build(attrAssignNode.getReceiverNode());
+        boolean containsAssignment = attrAssignNode.containsVariableAssignment();
+        Operand obj = buildWithOrder(attrAssignNode.getReceiverNode(), containsAssignment);
         List<Operand> args = new ArrayList<>();
         Node argsNode = attrAssignNode.getArgsNode();
-        Operand lastArg = (argsNode == null) ? manager.getNil() : buildAttrAssignCallArgs(args, argsNode);
+        Operand lastArg = buildAttrAssignCallArgs(args, argsNode, containsAssignment);
         addInstr(AttrAssignInstr.create(obj, attrAssignNode.getName(), args.toArray(new Operand[args.size()])));
         return lastArg;
     }
@@ -973,7 +977,7 @@ public class IRBuilder {
         //    new Callinstr( ... , build(receiverNode, s), ...)
         // that is incorrect IR because the receiver has to be built *before* call arguments are built
         // to preserve expected code execution order
-        Operand   receiver   = build(receiverNode);
+        Operand receiver = buildWithOrder(receiverNode, callNode.containsVariableAssignment());
         Operand[] args       = setupCallArgs(callArgsNode);
         Operand   block      = setupCallClosure(callNode.getIterNode());
         Variable  callResult = createTemporaryVariable();
@@ -2402,7 +2406,7 @@ public class IRBuilder {
                 splatKeywordArgument = build(pair.getValue());
                 break;
             } else {
-               keyOperand = buildWithOrder(key, hasAssignments);
+                keyOperand = buildWithOrder(key, hasAssignments);
             }
 
             args.add(new KeyValuePair<>(keyOperand, buildWithOrder(pair.getValue(), hasAssignments)));
@@ -2771,64 +2775,36 @@ public class IRBuilder {
     }
 
     public Operand buildOpElementAsgn(OpElementAsgnNode node) {
-        if (node.isOr()) return buildOpElementAsgnWithOr(node);
-        if (node.isAnd()) return buildOpElementAsgnWithAnd(node);
+        // Translate "a[x] ||= n" --> "a[x] = n if !is_true(a[x])"
+        if (node.isOr()) return buildOpElementAsgnWith(node, manager.getTrue());
 
+        // Translate "a[x] &&= n" --> "a[x] = n if is_true(a[x])"
+        if (node.isAnd()) return buildOpElementAsgnWith(node, manager.getFalse());
+
+        // a[i] *= n, etc.  anything that is not "a[i] &&= .. or a[i] ||= .."
         return buildOpElementAsgnWithMethod(node);
     }
 
-    // Translate "a[x] ||= n" --> "a[x] = n if !is_true(a[x])"
-    //
-    //    tmp = build(a) <-- receiver
-    //    arg = build(x) <-- args
-    //    val = buildCall([], tmp, arg)
-    //    f = is_true(val)
-    //    beq(f, true, L)
-    //    val = build(n) <-- val
-    //    buildCall([]= tmp, arg, val)
-    // L:
-    //
-    public Operand buildOpElementAsgnWithOr(OpElementAsgnNode opElementAsgnNode) {
-        Operand array = build(opElementAsgnNode.getReceiverNode());
-        Label    l     = getNewLabel();
-        Variable elt   = createTemporaryVariable();
+    private Operand buildOpElementAsgnWith(OpElementAsgnNode opElementAsgnNode, Boolean truthy) {
+        Operand array = buildWithOrder(opElementAsgnNode.getReceiverNode(), opElementAsgnNode.containsVariableAssignment());
+        Label endLabel = getNewLabel();
+        Variable elt = createTemporaryVariable();
         Operand[] argList = setupCallArgs(opElementAsgnNode.getArgsNode());
         addInstr(CallInstr.create(elt, "[]", array, argList, null));
-        addInstr(BEQInstr.create(elt, manager.getTrue(), l));
-        Operand value = build(opElementAsgnNode.getValueNode());
-        argList = addArg(argList, value);
-        addInstr(CallInstr.create(elt, "[]=", array, argList, null));
-        addInstr(new CopyInstr(elt, value));
-        addInstr(new LabelInstr(l));
-        return elt;
-    }
-
-    // Translate "a[x] &&= n" --> "a[x] = n if is_true(a[x])"
-    public Operand buildOpElementAsgnWithAnd(OpElementAsgnNode opElementAsgnNode) {
-        Operand array = build(opElementAsgnNode.getReceiverNode());
-        Label    l     = getNewLabel();
-        Variable elt   = createTemporaryVariable();
-        Operand[] argList = setupCallArgs(opElementAsgnNode.getArgsNode());
-        addInstr(CallInstr.create(elt, "[]", array, argList, null));
-        addInstr(BEQInstr.create(elt, manager.getFalse(), l));
+        addInstr(BEQInstr.create(elt, truthy, endLabel));
         Operand value = build(opElementAsgnNode.getValueNode());
 
         argList = addArg(argList, value);
         addInstr(CallInstr.create(elt, "[]=", array, argList, null));
         addInstr(new CopyInstr(elt, value));
-        addInstr(new LabelInstr(l));
+
+        addInstr(new LabelInstr(endLabel));
         return elt;
     }
 
     // a[i] *= n, etc.  anything that is not "a[i] &&= .. or a[i] ||= .."
-    //    arr = build(a) <-- receiver
-    //    arg = build(x) <-- args
-    //    elt = buildCall([], arr, arg)
-    //    val = build(n) <-- val
-    //    val = buildCall(METH, elt, val)
-    //    val = buildCall([]=, arr, arg, val)
     public Operand buildOpElementAsgnWithMethod(OpElementAsgnNode opElementAsgnNode) {
-        Operand array = build(opElementAsgnNode.getReceiverNode());
+        Operand array = buildWithOrder(opElementAsgnNode.getReceiverNode(), opElementAsgnNode.containsVariableAssignment());
         Operand[] argList = setupCallArgs(opElementAsgnNode.getArgsNode());
         Variable elt = createTemporaryVariable();
         addInstr(CallInstr.create(elt, "[]", array, argList, null)); // elt = a[args]
