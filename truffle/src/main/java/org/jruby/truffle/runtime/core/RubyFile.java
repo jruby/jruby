@@ -49,8 +49,21 @@ public class RubyFile extends RubyBasicObject {
         }
     }
 
-    public static String expandPath(String fileName) {
-        return expandPath(fileName, null);
+    public static String expandPath(RubyContext context, String fileName) {
+        RubyNode.notDesignedForCompilation();
+
+        // TODO (nirvdrum 11-Feb-15) This needs to work on Windows without calling into non-Truffle JRuby.
+        if (context.isRunningOnWindows()) {
+            final org.jruby.RubyString path = context.toJRuby(context.makeString(fileName));
+            final org.jruby.RubyString expanded = (org.jruby.RubyString) org.jruby.RubyFile.expand_path19(
+                    context.getRuntime().getCurrentContext(),
+                    null,
+                    new org.jruby.runtime.builtin.IRubyObject[] { path });
+
+            return expanded.asJavaString();
+        } else {
+            return expandPath(fileName, null);
+        }
     }
 
     public static String expandPath(String fileName, String dir) {

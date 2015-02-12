@@ -4,6 +4,7 @@ properties( 'tesla.dump.pom' => 'pom.xml',
             'tesla.dump.readOnly' => true,
             'jruby.version' => '@project.version@',
             'jruby.plugins.version' => '1.0.8' )
+
 gemfile
 
 gem 'bundler', '1.7.7'
@@ -12,47 +13,22 @@ pom 'org.jruby:jruby', '${jruby.version}'
 
 jar 'de.saumya.mojo:jruby-mains', '0.1.0'
 
-files = [ 'config.ru', '*file', '*file.lock', '.jbundler/classpath.rb',
-          'lib/**', 'app/**', 'config/**', 'vendor/**', 'spec/**' ]
-
-# resource :directory => '${basedir}' do
-#   includes( files )
-# end
-
-# execute 'create jrubydir info', :phase => 'process-resources' do |ctx|
-#   target = ctx.project.build.output_directory.to_pathname
-#   entries = files.collect { |f| Dir[ f.sub( /\/.*$/, '') ] }.flatten.uniq
-#   File.write( File.join( target, '.jrubydir' ),
-#               (['.'] + entries + [ '' ]).join( "\n" ) )
-#   require (ctx.basedir.to_pathname + '/../../../../../core/src/main/ruby/jruby/commands.rb')
-#   files.select do |f| 
-#     f =~ /\// 
-#   end.collect do |f|
-#     f.sub( /\/.*$/, '')
-#   end.each do |f|
-#     JRuby::Commands.generate_dir_info( File.join( target, f ), false )
-#   end
-# end
-
-# resource :directory => '${project.build.directory}/rubygems/bin' do
-#   includes '*'
-#   target_path 'META-INF/jruby.home/bin'
-# end
-
 build do
   directory 'pkg'
 end
 
+files = [ 'config.ru', '*file', '*file.lock', '.jbundler/classpath.rb',
+          'lib/**', 'app/**', 'config/**', 'vendor/**', 'spec/**' ]
 jruby_plugin!( :gem,
                # need a jruby-complete from maven central here
+               # TODO fix plugin to use the one from compile-artifacts
                :jrubyVersion => '1.7.19',
                :includeRubygemsInResources => true ) do
   execute_goals( 'generate-resources', 'process-resources', :includeBinStubs => true, :includeRubyResources => files )
 end
 
-
 if File.file?('Jarfile.lock')
-  phase :package do
+  phase 'generate-resources' do
     plugin :dependency do
       items = []
       File.read( 'Jarfile.lock' ).each_line do |l|
