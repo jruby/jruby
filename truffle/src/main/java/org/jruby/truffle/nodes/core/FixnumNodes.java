@@ -1033,8 +1033,8 @@ public abstract class FixnumNodes {
         }
 
         @Specialization(guards = {
-                "!isInteger(a)",
-                "!isLong(a)",
+                "!isInteger(b)",
+                "!isLong(b)",
                 "!isDouble(b)",
                 "!isRubyBignum(b)"})
         public RubyNilClass compare(Object a, Object b) {
@@ -1369,7 +1369,7 @@ public abstract class FixnumNodes {
             }
         }
 
-        @Specialization(guards = {"!isInteger(a)", "!isLong(a)"})
+        @Specialization(guards = {"!isInteger(b)", "!isLong(b)"})
         public Object leftShiftFallback(VirtualFrame frame, Object a, Object b) {
             if (fallbackCallNode == null) {
                 CompilerDirectives.transferToInterpreter();
@@ -1481,7 +1481,7 @@ public abstract class FixnumNodes {
             return 0;
         }
 
-        @Specialization(guards = {"!isInteger(a)", "!isLong(a)"})
+        @Specialization(guards = {"!isInteger(b)", "!isLong(b)"})
         public Object rightShiftFallback(VirtualFrame frame, Object a, Object b) {
             if (fallbackCallNode == null) {
                 CompilerDirectives.transferToInterpreter();
