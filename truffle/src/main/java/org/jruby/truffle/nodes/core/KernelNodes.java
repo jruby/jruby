@@ -541,16 +541,14 @@ public abstract class KernelNodes {
         public Object eval(RubyString source, RubyBinding binding, RubyString filename, UndefinedPlaceholder lineNumber) {
             notDesignedForCompilation();
 
-            // TODO (nirvdrum Dec. 29, 2014) Do something with the supplied filename.
-            return getContext().eval(source.getBytes(), binding, false, this);
+            return getContext().eval(source.getBytes(), binding, false, filename.toString(), this);
         }
 
         @Specialization
         public Object eval(RubyString source, RubyBinding binding, RubyString filename, int lineNumber) {
             notDesignedForCompilation();
 
-            // TODO (nirvdrum Dec. 29, 2014) Do something with the supplied filename and lineNumber.
-            return getContext().eval(source.getBytes(), binding, false, this);
+            return getContext().eval(source.getBytes(), binding, false, filename.toString(), this);
         }
 
         @Specialization(guards = "!isRubyBinding(binding)")

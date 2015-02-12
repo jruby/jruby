@@ -203,8 +203,8 @@ public class RubyContext extends ExecutionContext {
     }
 
     @TruffleBoundary
-    public Object instanceEval(ByteList code, Object self, RubyNode currentNode) {
-        final Source source = Source.fromText(code, "(eval)");
+    public Object instanceEval(ByteList code, Object self, String filename, RubyNode currentNode) {
+        final Source source = Source.fromText(code, filename);
         return execute(this, source, code.getEncoding(), TranslatorDriver.ParserContext.TOP_LEVEL, self, null, currentNode, new NodeWrapper() {
             @Override
             public RubyNode wrap(RubyNode node) {
@@ -213,10 +213,18 @@ public class RubyContext extends ExecutionContext {
         });
     }
 
+    public Object instanceEval(ByteList code, Object self, RubyNode currentNode) {
+        return instanceEval(code, self, "(eval)", currentNode);
+    }
+
     @TruffleBoundary
-    public Object eval(ByteList code, RubyBinding binding, boolean ownScopeForAssignments, RubyNode currentNode) {
-        final Source source = Source.fromText(code, "(eval)");
+    public Object eval(ByteList code, RubyBinding binding, boolean ownScopeForAssignments, String filename, RubyNode currentNode) {
+        final Source source = Source.fromText(code, filename);
         return execute(this, source, code.getEncoding(), TranslatorDriver.ParserContext.TOP_LEVEL, binding.getSelf(), binding.getFrame(), ownScopeForAssignments, currentNode, NodeWrapper.IDENTITY);
+    }
+
+    public Object eval(ByteList code, RubyBinding binding, boolean ownScopeForAssignments, RubyNode currentNode) {
+        return eval(code, binding, ownScopeForAssignments, "(eval)", currentNode);
     }
 
     public Object execute(RubyContext context, Source source, Encoding defaultEncoding, TranslatorDriver.ParserContext parserContext, Object self, MaterializedFrame parentFrame, RubyNode currentNode, NodeWrapper wrapper) {
