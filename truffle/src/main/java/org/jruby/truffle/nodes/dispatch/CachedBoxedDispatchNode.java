@@ -117,7 +117,7 @@ public class CachedBoxedDispatchNode extends CachedDispatchNode {
                     frame,
                     receiverObject,
                     methodName,
-                    CompilerDirectives.unsafeCast(blockObject, RubyProc.class, true, false),
+                    (RubyProc) blockObject,
                     argumentsObjects,
                     "class modified");
         }
@@ -132,8 +132,8 @@ public class CachedBoxedDispatchNode extends CachedDispatchNode {
                                     method,
                                     method.getDeclarationFrame(),
                                     receiverObject,
-                                    CompilerDirectives.unsafeCast(blockObject, RubyProc.class, true, false),
-                                    CompilerDirectives.unsafeCast(argumentsObjects, Object[].class, true)));
+                                    (RubyProc) blockObject,
+                                    (Object[]) argumentsObjects));
                 } else {
                     return callNode.call(
                             frame,
@@ -141,8 +141,8 @@ public class CachedBoxedDispatchNode extends CachedDispatchNode {
                                     method,
                                     method.getDeclarationFrame(),
                                     receiverObject,
-                                    CompilerDirectives.unsafeCast(blockObject, RubyProc.class, true, false),
-                                    CompilerDirectives.unsafeCast(argumentsObjects, Object[].class, true)));
+                                    (RubyProc) blockObject,
+                                    (Object[]) argumentsObjects));
                 }
             }
 
