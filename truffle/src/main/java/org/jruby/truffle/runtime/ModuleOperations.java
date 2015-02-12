@@ -38,6 +38,7 @@ public abstract class ModuleOperations {
         return includesModule(thisClass, otherClass);
     }
 
+    @TruffleBoundary
     public static Map<String, RubyConstant> getAllConstants(RubyModule module) {
         CompilerAsserts.neverPartOfCompilation();
 
@@ -66,6 +67,7 @@ public abstract class ModuleOperations {
      * @param module The receiver of the constant lookup.
      *               Must be identical to lexicalScope.getLiveModule() if lexicalScope != null.
      */
+    @TruffleBoundary
     public static RubyConstant lookupConstant(RubyContext context, LexicalScope lexicalScope, RubyModule module, String name) {
         CompilerAsserts.neverPartOfCompilation();
         assert lexicalScope == null || lexicalScope.getLiveModule() == module;
@@ -128,6 +130,7 @@ public abstract class ModuleOperations {
         return null;
     }
 
+    @TruffleBoundary
     public static Map<String, InternalMethod> getAllMethods(RubyModule module) {
         CompilerAsserts.neverPartOfCompilation();
 
@@ -175,6 +178,7 @@ public abstract class ModuleOperations {
         return null;
     }
 
+    @TruffleBoundary
     public static InternalMethod lookupSuperMethod(RubyModule declaringModule, String name, RubyClass objectMetaClass) {
         CompilerAsserts.neverPartOfCompilation();
 
@@ -195,6 +199,7 @@ public abstract class ModuleOperations {
         return null;
     }
 
+    @TruffleBoundary
     public static Map<String, Object> getAllClassVariables(RubyModule module) {
         CompilerAsserts.neverPartOfCompilation();
 
@@ -215,6 +220,7 @@ public abstract class ModuleOperations {
         return classVariables;
     }
 
+    @TruffleBoundary
     public static Object lookupClassVariable(RubyModule module, String name) {
         CompilerAsserts.neverPartOfCompilation();
 
@@ -241,6 +247,7 @@ public abstract class ModuleOperations {
         return null;
     }
 
+    @TruffleBoundary
     public static void setClassVariable(RubyModule module, String name, Object value) {
         CompilerAsserts.neverPartOfCompilation();
 

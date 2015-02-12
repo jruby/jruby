@@ -136,6 +136,7 @@ public class RubyModule extends RubyBasicObject implements ModuleChain {
         }
     }
 
+    @TruffleBoundary
     public void initCopy(RubyModule other) {
         this.name = other.name;
         this.parentModule = other.parentModule;

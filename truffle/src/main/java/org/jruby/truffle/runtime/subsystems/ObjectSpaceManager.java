@@ -28,6 +28,7 @@ import org.jruby.truffle.runtime.subsystems.ThreadManager.BlockingActionWithoutG
 import org.jruby.truffle.runtime.util.Consumer;
 
 import com.oracle.truffle.api.Truffle;
+import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.frame.Frame;
 import com.oracle.truffle.api.frame.FrameInstance;
 import com.oracle.truffle.api.frame.FrameInstanceVisitor;
@@ -147,6 +148,7 @@ public class ObjectSpaceManager {
     private Map<Long, RubyBasicObject> liveObjects;
     private ObjectGraphVisitor visitor;
 
+    @TruffleBoundary
     public Map<Long, RubyBasicObject> collectLiveObjects() {
         RubyNode.notDesignedForCompilation();
 
