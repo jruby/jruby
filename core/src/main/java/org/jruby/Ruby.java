@@ -2620,11 +2620,11 @@ public final class Ruby implements Constantizable {
     public synchronized JRubyClassLoader getJRubyClassLoader() {
         // FIXME: Get rid of laziness and handle restricted access elsewhere
         if (!Ruby.isSecurityRestricted() && jrubyClassLoader == null) {
-            if (config.isSelfFirstClassLoader()){
-                jrubyClassLoader = new SelfFirstJRubyClassLoader(config.getLoader());
+            if (config.isClassloaderDelegate()){
+                jrubyClassLoader = new JRubyClassLoader(config.getLoader());
             }
             else {
-                jrubyClassLoader = new JRubyClassLoader(config.getLoader());
+                jrubyClassLoader = new SelfFirstJRubyClassLoader(config.getLoader());
             }
 
             // if jit code cache is used, we need to add the cache directory to the classpath
