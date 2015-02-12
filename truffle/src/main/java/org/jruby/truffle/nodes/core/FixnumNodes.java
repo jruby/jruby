@@ -971,8 +971,8 @@ public abstract class FixnumNodes {
         }
 
         @Specialization(guards = {
-                "!isInteger(a)",
-                "!isLong(a)",
+                "!isInteger(b)",
+                "!isLong(b)",
                 "!isRubyBignum(b)"
         })
         public Object equal(VirtualFrame frame, Object a, Object b) {
