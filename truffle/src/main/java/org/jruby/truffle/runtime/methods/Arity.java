@@ -39,16 +39,16 @@ public class Arity {
         return allowsMore;
     }
 
-	public boolean hasKeywords() {
-		return hasKeywords;
-	}
+    public boolean hasKeywords() {
+        return hasKeywords;
+    }
 
-	public int getCountKeywords() {
-		return definedKeywords;
-	}
+    public int getCountKeywords() {
+        return definedKeywords;
+    }
 
-	public boolean hasKeyRest() {
-		return hasKeyRest;
-	}
+    public boolean hasKeyRest() {
+        return hasKeyRest;
+    }
 
 }

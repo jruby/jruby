@@ -85,8 +85,8 @@ public class DispatchHeadNode extends Node {
         first.replace(new UncachedDispatchNode(context, ignoreVisibility, dispatchAction, argumentNodes, isSplatted));
     }
     
-	public RubyNode[] getArgumentNodes() {
-		return argumentNodes;
-	}
+    public RubyNode[] getArgumentNodes() {
+        return argumentNodes;
+    }
 
 }

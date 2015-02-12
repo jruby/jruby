@@ -70,99 +70,99 @@ public class CachedBoxedDispatchNode extends CachedDispatchNode {
                 isSplatted);
      }
      
-	public static RubyNode[] expandedArgumentNodes(RubyContext context,
-			InternalMethod method, RubyNode[] argumentNodes, boolean isSplatted) {
-		final RubyNode[] result;
+    public static RubyNode[] expandedArgumentNodes(RubyContext context,
+            InternalMethod method, RubyNode[] argumentNodes, boolean isSplatted) {
+        final RubyNode[] result;
 
-		boolean shouldExpand = true;
-		if (method == null
-				|| method.getSharedMethodInfo().getKeywordArguments() == null) {
-			// no keyword arguments in method definition
-			shouldExpand = false;
-		} else if (argumentNodes.length != 0
-				&& !(argumentNodes[argumentNodes.length - 1] instanceof HashLiteralNode)) {
-			// last argument is not a Hash that could be expanded
-			shouldExpand = false;
-		} else if (method.getSharedMethodInfo().getArity() == null
-				|| method.getSharedMethodInfo().getArity().getRequired() >= argumentNodes.length) {
-			shouldExpand = false;
-		} else if (isSplatted
-				|| method.getSharedMethodInfo().getArity().allowsMore()) {
-			// TODO: make optimization work if splat arguments are involed
-			// the problem is that Markers and keyword args are used when
-			// reading splatted args
-			shouldExpand = false;
-		}
+        boolean shouldExpand = true;
+        if (method == null
+                || method.getSharedMethodInfo().getKeywordArguments() == null) {
+            // no keyword arguments in method definition
+            shouldExpand = false;
+        } else if (argumentNodes.length != 0
+                && !(argumentNodes[argumentNodes.length - 1] instanceof HashLiteralNode)) {
+            // last argument is not a Hash that could be expanded
+            shouldExpand = false;
+        } else if (method.getSharedMethodInfo().getArity() == null
+                || method.getSharedMethodInfo().getArity().getRequired() >= argumentNodes.length) {
+            shouldExpand = false;
+        } else if (isSplatted
+                || method.getSharedMethodInfo().getArity().allowsMore()) {
+            // TODO: make optimization work if splat arguments are involed
+            // the problem is that Markers and keyword args are used when
+            // reading splatted args
+            shouldExpand = false;
+        }
 
-		if (shouldExpand) {
-			List<String> kwargs = method.getSharedMethodInfo().getKeywordArguments();
+        if (shouldExpand) {
+            List<String> kwargs = method.getSharedMethodInfo().getKeywordArguments();
            
-			int countArgNodes = argumentNodes.length + kwargs.size() + 1;
-			if (argumentNodes.length == 0) {
-				countArgNodes++;
-			}
-			
-			result = new RubyNode[countArgNodes];
-			int i;
-		   
-			for (i = 0; i < argumentNodes.length - 1; ++i) {
-				result[i] = argumentNodes[i];
-			}
-		   
-			int firstMarker = i++;
-			result[firstMarker] = new MarkerNode(context, null);
+            int countArgNodes = argumentNodes.length + kwargs.size() + 1;
+            if (argumentNodes.length == 0) {
+                countArgNodes++;
+            }
+            
+            result = new RubyNode[countArgNodes];
+            int i;
+           
+            for (i = 0; i < argumentNodes.length - 1; ++i) {
+                result[i] = argumentNodes[i];
+            }
+           
+            int firstMarker = i++;
+            result[firstMarker] = new MarkerNode(context, null);
 
-			HashLiteralNode hashNode;
-			if (argumentNodes.length > 0) {
-				hashNode = (HashLiteralNode) argumentNodes[argumentNodes.length - 1];
-			} else {
-				hashNode = HashLiteralNode.create(context, null,
-						new RubyNode[0]);
-			}
+            HashLiteralNode hashNode;
+            if (argumentNodes.length > 0) {
+                hashNode = (HashLiteralNode) argumentNodes[argumentNodes.length - 1];
+            } else {
+                hashNode = HashLiteralNode.create(context, null,
+                        new RubyNode[0]);
+            }
 
-			List<String> restKeywordLabels = new ArrayList<String>();
-			for (int j = 0; j < hashNode.size(); j++) {
-			   final String label = ((ObjectLiteralNode) hashNode.getKey(j)).execute(null).toString();
-			   restKeywordLabels.add(label);
-			}
+            List<String> restKeywordLabels = new ArrayList<String>();
+            for (int j = 0; j < hashNode.size(); j++) {
+               final String label = ((ObjectLiteralNode) hashNode.getKey(j)).execute(null).toString();
+               restKeywordLabels.add(label);
+            }
 
-			for (String kwarg : kwargs) {
-			   result[i] = new OptionalKeywordArgMissingNode(context, null);
-			   for (int j = 0; j < hashNode.size(); j++) {
-			       final String label = ((ObjectLiteralNode) hashNode.getKey(j)).execute(null).toString();
-			       
-			       if (label.equals(kwarg)) {
-			           result[i] = hashNode.getValue(j);
-			           restKeywordLabels.remove(label);
-			           break;
-			       }
-			   }
-			   i++;
-			}
-			result[i++] = new MarkerNode(context, null);
+            for (String kwarg : kwargs) {
+               result[i] = new OptionalKeywordArgMissingNode(context, null);
+               for (int j = 0; j < hashNode.size(); j++) {
+                   final String label = ((ObjectLiteralNode) hashNode.getKey(j)).execute(null).toString();
+                   
+                   if (label.equals(kwarg)) {
+                       result[i] = hashNode.getValue(j);
+                       restKeywordLabels.remove(label);
+                       break;
+                   }
+               }
+               i++;
+            }
+            result[i++] = new MarkerNode(context, null);
 
-			if (restKeywordLabels.size() > 0
-					&& !method.getSharedMethodInfo().getArity().hasKeyRest()) {
-				result[firstMarker] = new UnknownArgumentErrorNode(context, null, restKeywordLabels.get(0));
-			} else if (restKeywordLabels.size() > 0) {
-				i = 0;
-				RubyNode[] keyValues = new RubyNode[2 * restKeywordLabels
-						.size()];
+            if (restKeywordLabels.size() > 0
+                    && !method.getSharedMethodInfo().getArity().hasKeyRest()) {
+                result[firstMarker] = new UnknownArgumentErrorNode(context, null, restKeywordLabels.get(0));
+            } else if (restKeywordLabels.size() > 0) {
+                i = 0;
+                RubyNode[] keyValues = new RubyNode[2 * restKeywordLabels
+                        .size()];
 
-			   for (String label : restKeywordLabels) {
-			       for (int j = 0; j < hashNode.size(); j++) {
-			           final String argLabel = ((ObjectLiteralNode) hashNode.getKey(j)).execute(null).toString();
-			           
-			           if (argLabel.equals(label)) {
-			               keyValues[i++] = hashNode.getKey(j);
-			               keyValues[i++] = hashNode.getValue(j);
-			           }
-			       }
-			   }
-			   
-			   HashLiteralNode restHash = HashLiteralNode.create(context, null, keyValues);
-			   result[firstMarker] = restHash;
-			}
+               for (String label : restKeywordLabels) {
+                   for (int j = 0; j < hashNode.size(); j++) {
+                       final String argLabel = ((ObjectLiteralNode) hashNode.getKey(j)).execute(null).toString();
+                       
+                       if (argLabel.equals(label)) {
+                           keyValues[i++] = hashNode.getKey(j);
+                           keyValues[i++] = hashNode.getValue(j);
+                       }
+                   }
+               }
+               
+               HashLiteralNode restHash = HashLiteralNode.create(context, null, keyValues);
+               result[firstMarker] = restHash;
+            }
 
         }
         else {
@@ -252,8 +252,8 @@ public class CachedBoxedDispatchNode extends CachedDispatchNode {
                                     CompilerDirectives.unsafeCast(blockObject, RubyProc.class, true, false),
                                     CompilerDirectives.unsafeCast(executeArguments(frame, argumentsObjects), Object[].class, true)));
                 } else {
-                	Object args = executeArguments(frame, argumentsObjects);
-                	return callNode.call(
+                    Object args = executeArguments(frame, argumentsObjects);
+                    return callNode.call(
                             frame,
                             RubyArguments.pack(
                                     method,

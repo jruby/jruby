@@ -37,25 +37,25 @@ public class ReadKeywordRestArgumentNode extends RubyNode {
     }
 
     @Override
-	public Object execute(VirtualFrame frame) {
-		if (RubyArguments.isKwOptimized(frame.getArguments())) {
-			Object restHash = RubyArguments.getOptimizedKeywordArgument(
-					frame.getArguments(), kwIndex);
+    public Object execute(VirtualFrame frame) {
+        if (RubyArguments.isKwOptimized(frame.getArguments())) {
+            Object restHash = RubyArguments.getOptimizedKeywordArgument(
+                    frame.getArguments(), kwIndex);
 
-			if (restHash instanceof MarkerNode.Marker) {
-				// no rest keyword args hash passed
-				return HashLiteralNode.create(getContext(), null,
-						new RubyNode[0]).execute(frame);
-			} else {
-				return restHash;
-			}
-		} else {
-			return lookupRestKeywordArgumentHash(frame);
-		}
-	}
+            if (restHash instanceof MarkerNode.Marker) {
+                // no rest keyword args hash passed
+                return HashLiteralNode.create(getContext(), null,
+                        new RubyNode[0]).execute(frame);
+            } else {
+                return restHash;
+            }
+        } else {
+            return lookupRestKeywordArgumentHash(frame);
+        }
+    }
 
-	private Object lookupRestKeywordArgumentHash(VirtualFrame frame) {
-		notDesignedForCompilation();
+    private Object lookupRestKeywordArgumentHash(VirtualFrame frame) {
+        notDesignedForCompilation();
 
         final RubyHash hash = RubyArguments.getUserKeywordsHash(frame.getArguments(), minimum);
 

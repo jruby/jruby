@@ -53,10 +53,10 @@ public class CachedBooleanDispatchNode extends CachedDispatchNode {
             Object trueValue,
             InternalMethod trueMethod,
             boolean indirect,
-			DispatchAction dispatchAction, RubyNode[] argumentNodes,
-			boolean isSplatted) {
-		super(context, cachedName, next, indirect, dispatchAction,
-				argumentNodes, isSplatted);
+            DispatchAction dispatchAction, RubyNode[] argumentNodes,
+            boolean isSplatted) {
+        super(context, cachedName, next, indirect, dispatchAction,
+                argumentNodes, isSplatted);
 
         this.falseUnmodifiedAssumption = falseUnmodifiedAssumption;
         this.falseMethod = falseMethod;

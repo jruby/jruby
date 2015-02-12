@@ -90,9 +90,8 @@ public abstract class CachedDispatchNode extends DispatchNode {
         return indirect;
     }
     
-	protected RubyNode[] argumentsWithDecodedKwargsHash(RubyNode[] arguments,
-			InternalMethod method) {
-		return null;
-	}
+    protected RubyNode[] argumentsWithDecodedKwargsHash(RubyNode[] arguments, InternalMethod method) {
+        return null;
+    }
 
 }

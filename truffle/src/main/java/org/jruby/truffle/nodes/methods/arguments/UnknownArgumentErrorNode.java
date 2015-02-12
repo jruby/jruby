@@ -9,18 +9,18 @@ import com.oracle.truffle.api.source.SourceSection;
 
 public class UnknownArgumentErrorNode extends RubyNode {
 
-	private final String label;
+    private final String label;
 
-	public UnknownArgumentErrorNode(RubyContext context,
-			SourceSection sourceSection, String label) {
-		super(context, sourceSection);
-		this.label = label;
-	}
+    public UnknownArgumentErrorNode(RubyContext context,
+            SourceSection sourceSection, String label) {
+        super(context, sourceSection);
+        this.label = label;
+    }
 
-	@Override
-	public Object execute(VirtualFrame frame) {
-		throw new RaiseException(getContext().getCoreLibrary().argumentError(
-				"unknown keyword: " + label, this));
-	}
+    @Override
+    public Object execute(VirtualFrame frame) {
+        throw new RaiseException(getContext().getCoreLibrary().argumentError(
+                "unknown keyword: " + label, this));
+    }
 
 }

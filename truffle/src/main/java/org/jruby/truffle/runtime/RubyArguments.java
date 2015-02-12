@@ -42,14 +42,14 @@ public final class RubyArguments {
         return packed;
     }
     
-	public static Object getOptimizedKeywordArgument(Object[] arguments,
-			int index) {
-		return arguments[arguments.length - 1 + index];
-	}
+    public static Object getOptimizedKeywordArgument(Object[] arguments,
+            int index) {
+        return arguments[arguments.length - 1 + index];
+    }
 
-	public static boolean isKwOptimized(Object[] arguments) {
-		return arguments[arguments.length - 1] instanceof MarkerNode.Marker;
-	}
+    public static boolean isKwOptimized(Object[] arguments) {
+        return arguments[arguments.length - 1] instanceof MarkerNode.Marker;
+    }
 
     public static InternalMethod getMethod(Object[] arguments) {
         return (InternalMethod) arguments[METHOD_INDEX];
@@ -90,15 +90,15 @@ public final class RubyArguments {
         return internalArguments.length - RUNTIME_ARGUMENT_COUNT;
     }
 
-	public static int getNamedUserArgumentsCount(Object[] internalArguments) {
-		if (isKwOptimized(internalArguments)) {
-			return getUserArgumentsCount(internalArguments)
-					- getMethod(internalArguments).getSharedMethodInfo()
-							.getKeywordArguments().size() - 1;
-		} else {
-			return getUserArgumentsCount(internalArguments);
-		}
-	}
+    public static int getNamedUserArgumentsCount(Object[] internalArguments) {
+        if (isKwOptimized(internalArguments)) {
+            return getUserArgumentsCount(internalArguments)
+                    - getMethod(internalArguments).getSharedMethodInfo()
+                            .getKeywordArguments().size() - 1;
+        } else {
+            return getUserArgumentsCount(internalArguments);
+        }
+    }
 
     public static Object getUserArgument(Object[] internalArguments, int index) {
         return internalArguments[RUNTIME_ARGUMENT_COUNT + index];

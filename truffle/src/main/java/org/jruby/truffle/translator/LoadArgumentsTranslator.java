@@ -128,12 +128,12 @@ public class LoadArgumentsTranslator extends Translator {
         }
 
         if (hasKeywordArguments) {
-			kwIndex = 0;
-			countKwArgs = 0;
-			for (org.jruby.ast.Node arg : node.getKeywords().childNodes()) {
-				countKwArgs++;
-			}
-        	
+            kwIndex = 0;
+            countKwArgs = 0;
+            for (org.jruby.ast.Node arg : node.getKeywords().childNodes()) {
+                countKwArgs++;
+            }
+            
             for (org.jruby.ast.Node arg : node.getKeywords().childNodes()) {
                 sequence.add(arg.accept(this));
                 kwIndex++;

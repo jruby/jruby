@@ -38,22 +38,22 @@ public class ReadKeywordArgumentNode extends RubyNode {
     }
 
     @Override
-	public Object execute(VirtualFrame frame) {
-		if (RubyArguments.isKwOptimized(frame.getArguments())) {
-			Object kwarg = argumentValueProfile
-					.profile(RubyArguments.getOptimizedKeywordArgument(
-							frame.getArguments(), kwIndex));
+    public Object execute(VirtualFrame frame) {
+        if (RubyArguments.isKwOptimized(frame.getArguments())) {
+            Object kwarg = argumentValueProfile
+                    .profile(RubyArguments.getOptimizedKeywordArgument(
+                            frame.getArguments(), kwIndex));
 
-			if (kwarg instanceof OptionalKeywordArgMissingNode.OptionalKeywordArgMissing) {
-				return defaultValue.execute(frame);
-			} else {
-				return kwarg;
-			}
-		} else {
-			return lookupKeywordInHash(frame);
-		}
-	}
-    		
+            if (kwarg instanceof OptionalKeywordArgMissingNode.OptionalKeywordArgMissing) {
+                return defaultValue.execute(frame);
+            } else {
+                return kwarg;
+            }
+        } else {
+            return lookupKeywordInHash(frame);
+        }
+    }
+
     public Object lookupKeywordInHash(VirtualFrame frame) {
         notDesignedForCompilation();
 
