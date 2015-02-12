@@ -58,12 +58,12 @@ public abstract class ToSNode extends RubyNode {
         return string;
     }
 
-    @Specialization(guards = "!isRubyString", rewriteOn = UnexpectedResultException.class)
+    @Specialization(guards = "!isRubyString(object)", rewriteOn = UnexpectedResultException.class)
     public RubyString toS(VirtualFrame frame, Object object) throws UnexpectedResultException {
         return RubyTypesGen.RUBYTYPES.expectRubyString(callToSNode.call(frame, object, "to_s", null));
     }
 
-    @Specialization(guards = "!isRubyString")
+    @Specialization(guards = "!isRubyString(object)")
     public RubyString toSFallback(VirtualFrame frame, Object object) {
         final Object value = callToSNode.call(frame, object, "to_s", null);
 

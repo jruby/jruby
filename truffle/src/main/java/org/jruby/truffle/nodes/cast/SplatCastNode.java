@@ -89,7 +89,7 @@ public abstract class SplatCastNode extends RubyNode {
         return dup.executeDup(frame, array);
     }
 
-    @Specialization(guards = {"!isRubyNilClass", "!isRubyArray"})
+    @Specialization(guards = {"!isRubyNilClass(object)", "!isRubyArray(object)"})
     public RubyArray splat(VirtualFrame frame, Object object) {
         notDesignedForCompilation();
 

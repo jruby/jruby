@@ -50,7 +50,7 @@ public abstract class EncodingPrimitiveNodes {
             return encoding;
         }
 
-        @Specialization(guards = {"!isRubyString", "!isRubySymbol", "!isRubyEncoding"})
+        @Specialization(guards = {"!isRubyString(object)", "!isRubySymbol(object)", "!isRubyEncoding(object)"})
         public RubyNilClass encodingGetObjectEncoding(RubyBasicObject object) {
             // TODO(CS, 26 Jan 15) something to do with __encoding__ here?
             return getContext().getCoreLibrary().getNilObject();

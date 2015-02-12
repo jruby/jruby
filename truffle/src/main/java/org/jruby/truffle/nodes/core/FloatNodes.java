@@ -147,7 +147,7 @@ public abstract class FloatNodes {
             return a * b.doubleValue();
         }
 
-        @Specialization(guards = "isRational(arguments[1])")
+        @Specialization(guards = "isRational(b)")
         public Object mul(VirtualFrame frame, double a, RubyBasicObject b) {
             if (rationalConvertNode == null) {
                 CompilerDirectives.transferToInterpreter();
@@ -213,7 +213,7 @@ public abstract class FloatNodes {
             return Math.pow(a, b.doubleValue());
         }
 
-        @Specialization(guards = "isRational(arguments[1])")
+        @Specialization(guards = "isRational(b)")
         public Object pow(VirtualFrame frame, double a, RubyBasicObject b) {
             if (rationalPowNode == null) {
                 CompilerDirectives.transferToInterpreter();
@@ -260,10 +260,10 @@ public abstract class FloatNodes {
         }
 
         @Specialization(guards = {
-                "!isInteger(arguments[1])",
-                "!isLong(arguments[1])",
-                "!isDouble(arguments[1])",
-                "!isRubyBignum(arguments[1])"})
+                "!isInteger(b)",
+                "!isLong(b)",
+                "!isDouble(b)",
+                "!isRubyBignum(b)"})
         public Object div(VirtualFrame frame, double a, Object b) {
             if (redoCoercedNode == null) {
                 CompilerDirectives.transferToInterpreter();
@@ -389,7 +389,7 @@ public abstract class FloatNodes {
             return a < b.doubleValue();
         }
 
-        @Specialization(guards = "!isRubyBignum(arguments[1])")
+        @Specialization(guards = "!isRubyBignum(other)")
         public boolean less(double a, RubyBasicObject other) {
             throw new RaiseException(new RubyException(
                     getContext().getCoreLibrary().getArgumentErrorClass(),
@@ -430,7 +430,7 @@ public abstract class FloatNodes {
             return a <= b.doubleValue();
         }
 
-        @Specialization(guards = "!isRubyBignum(arguments[1])")
+        @Specialization(guards = "!isRubyBignum(other)")
         public boolean less(double a, RubyBasicObject other) {
             throw new RaiseException(new RubyException(
                     getContext().getCoreLibrary().getArgumentErrorClass(),
@@ -473,7 +473,7 @@ public abstract class FloatNodes {
             return a == b.doubleValue();
         }
 
-        @Specialization(guards = "!isRubyBignum(arguments[1])")
+        @Specialization(guards = "!isRubyBignum(b)")
         public Object equal(VirtualFrame frame, double a, RubyBasicObject b) {
             if (fallbackCallNode == null) {
                 CompilerDirectives.transferToInterpreter();
@@ -495,27 +495,27 @@ public abstract class FloatNodes {
             super(prev);
         }
 
-        @Specialization(guards = "isNaN(arguments[0])")
+        @Specialization(guards = "isNaN(a)")
         public RubyNilClass compareFirstNaN(double a, Object b) {
             return getContext().getCoreLibrary().getNilObject();
         }
 
-        @Specialization(guards = "isNaN(arguments[1])")
+        @Specialization(guards = "isNaN(b)")
         public RubyNilClass compareSecondNaN(Object a, double b) {
             return getContext().getCoreLibrary().getNilObject();
         }
 
-        @Specialization(guards = {"!isNaN(arguments[0])"})
+        @Specialization(guards = {"!isNaN(a)"})
         public int compare(double a, int b) {
             return Double.compare(a, b);
         }
 
-        @Specialization(guards = {"!isNaN(arguments[0])"})
+        @Specialization(guards = {"!isNaN(a)"})
         public int compare(double a, long b) {
             return Double.compare(a, b);
         }
 
-        @Specialization(guards = "isInfinity(arguments[0])")
+        @Specialization(guards = "isInfinity(a)")
         public int compareInfinity(double a, RubyBignum b) {
             if (a < 0) {
                 return -1;
@@ -524,17 +524,17 @@ public abstract class FloatNodes {
             }
         }
 
-        @Specialization(guards = {"!isNaN(arguments[0])", "!isInfinity(arguments[0])"})
+        @Specialization(guards = {"!isNaN(a)", "!isInfinity(a)"})
         public int compare(double a, RubyBignum b) {
             return Double.compare(a, b.doubleValue());
         }
 
-        @Specialization(guards = {"!isNaN(arguments[0])", "!isNaN(arguments[1])"})
+        @Specialization(guards = {"!isNaN(a)", "!isNaN(b)"})
         public int compare(double a, double b) {
             return Double.compare(a, b);
         }
 
-        @Specialization(guards = {"!isNaN(arguments[0])", "!isRubyBignum(arguments[1])"})
+        @Specialization(guards = {"!isNaN(a)", "!isRubyBignum(b)"})
         public RubyNilClass compare(double a, RubyBasicObject b) {
             return getContext().getCoreLibrary().getNilObject();
         }
@@ -572,7 +572,7 @@ public abstract class FloatNodes {
             return a >= b.doubleValue();
         }
 
-        @Specialization(guards = "!isRubyBignum(arguments[1])")
+        @Specialization(guards = "!isRubyBignum(other)")
         public boolean less(double a, RubyBasicObject other) {
             throw new RaiseException(new RubyException(
                     getContext().getCoreLibrary().getArgumentErrorClass(),
@@ -613,7 +613,7 @@ public abstract class FloatNodes {
             return a > b.doubleValue();
         }
 
-        @Specialization(guards = "!isRubyBignum(arguments[1])")
+        @Specialization(guards = "!isRubyBignum(other)")
         public boolean less(double a, RubyBasicObject other) {
             throw new RaiseException(new RubyException(
                     getContext().getCoreLibrary().getArgumentErrorClass(),

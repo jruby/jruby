@@ -115,7 +115,7 @@ public abstract class FixnumNodes {
             return fixnumOrBignum(bignum(a).add(b));
         }
 
-        @Specialization(guards = "isRational(arguments[1])")
+        @Specialization(guards = "isRational(b)")
         public Object add(VirtualFrame frame, int a, RubyBasicObject b) {
             if (rationalAdd == null) {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
@@ -155,7 +155,7 @@ public abstract class FixnumNodes {
             return fixnumOrBignum(bignum(a).add(b));
         }
 
-        @Specialization(guards = "isRational(arguments[1])")
+        @Specialization(guards = "isRational(b)")
         public Object add(VirtualFrame frame, long a, RubyBasicObject b) {
             if (rationalAdd == null) {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
@@ -214,7 +214,7 @@ public abstract class FixnumNodes {
             return a - b;
         }
 
-        @Specialization(guards = "isRational(arguments[1])")
+        @Specialization(guards = "isRational(b)")
         public Object sub(VirtualFrame frame, int a, RubyBasicObject b) {
             if (rationalConvertNode == null) {
                 CompilerDirectives.transferToInterpreter();
@@ -356,12 +356,12 @@ public abstract class FixnumNodes {
             rationalPowNode = prev.rationalPowNode;
         }
 
-        @Specialization(guards = "canShiftIntoInt")
+        @Specialization(guards = "canShiftIntoInt(a, b)")
         public int powTwo(int a, int b) {
             return 1 << b;
         }
 
-        @Specialization(guards = "canShiftIntoInt")
+        @Specialization(guards = "canShiftIntoInt(a, b)")
         public int powTwo(int a, long b) {
             return 1 << b;
         }
@@ -386,12 +386,12 @@ public abstract class FixnumNodes {
             return pow((long) a, b);
         }
 
-        @Specialization(guards = "canShiftIntoLong")
+        @Specialization(guards = "canShiftIntoLong(a, b)")
         public long powTwo(long a, int b) {
             return 1 << b;
         }
 
-        @Specialization(guards = "canShiftIntoLong")
+        @Specialization(guards = "canShiftIntoLong(a, b)")
         public long powTwo(long a, long b) {
             return 1 << b;
         }
@@ -450,7 +450,7 @@ public abstract class FixnumNodes {
             return Math.pow(a, b.doubleValue());
         }
 
-        @Specialization(guards = "isRational(arguments[1])")
+        @Specialization(guards = "isRational(b)")
         public Object pow(VirtualFrame frame, Object a, RubyBasicObject b) {
             if (rationalConvertNode == null) {
                 CompilerDirectives.transferToInterpreter();
@@ -971,9 +971,9 @@ public abstract class FixnumNodes {
         }
 
         @Specialization(guards = {
-                "!isInteger(arguments[1])",
-                "!isLong(arguments[1])",
-                "!isRubyBignum(arguments[1])"
+                "!isInteger(a)",
+                "!isLong(a)",
+                "!isRubyBignum(b)"
         })
         public Object equal(VirtualFrame frame, Object a, Object b) {
             return reverseCallNode.call(frame, b, getName(), null, a);
@@ -1033,10 +1033,10 @@ public abstract class FixnumNodes {
         }
 
         @Specialization(guards = {
-                "!isInteger(arguments[1])",
-                "!isLong(arguments[1])",
-                "!isDouble(arguments[1])",
-                "!isRubyBignum(arguments[1])"})
+                "!isInteger(a)",
+                "!isLong(a)",
+                "!isDouble(b)",
+                "!isRubyBignum(b)"})
         public RubyNilClass compare(Object a, Object b) {
             return getContext().getCoreLibrary().getNilObject();
         }
@@ -1317,27 +1317,27 @@ public abstract class FixnumNodes {
 
         public abstract Object executeLeftShift(VirtualFrame frame, Object a, Object b);
 
-        @Specialization(guards = {"isPositive(arguments[1])", "canShiftIntoInt"})
+        @Specialization(guards = {"isPositive(b)", "canShiftIntoInt(a, b)"})
         public int leftShift(int a, int b) {
             return a << b;
         }
 
-        @Specialization(guards = {"isPositive(arguments[1])", "canShiftIntoInt"})
+        @Specialization(guards = {"isPositive(b)", "canShiftIntoInt(a, b)"})
         public int leftShift(int a, long b) {
             return a << b;
         }
 
-        @Specialization(guards = {"isPositive(arguments[1])", "canShiftIntoLong"})
+        @Specialization(guards = {"isPositive(b)", "canShiftIntoLong(a, b)"})
         public long leftShiftToLong(int a, int b) {
             return leftShiftToLong((long) a, b);
         }
 
-        @Specialization(guards = {"isPositive(arguments[1])"})
+        @Specialization(guards = {"isPositive(b)"})
         public Object leftShiftWithOverflow(int a, int b) {
             return leftShiftWithOverflow((long) a, b);
         }
 
-        @Specialization(guards = "isStrictlyNegative(arguments[1])")
+        @Specialization(guards = "isStrictlyNegative(b)")
         public int leftShiftNeg(int a, int b) {
             if (-b >= Integer.SIZE) {
                 return 0;
@@ -1346,12 +1346,12 @@ public abstract class FixnumNodes {
             }
         }
 
-        @Specialization(guards = {"isPositive(arguments[1])", "canShiftIntoLong"})
+        @Specialization(guards = {"isPositive(b)", "canShiftIntoLong(a, b)"})
         public long leftShiftToLong(long a, int b) {
             return a << b;
         }
 
-        @Specialization(guards = {"isPositive(arguments[1])"})
+        @Specialization(guards = {"isPositive(b)"})
         public Object leftShiftWithOverflow(long a, int b) {
             if (canShiftIntoLong(a, b)) {
                 return leftShiftToLong(a, b);
@@ -1360,7 +1360,7 @@ public abstract class FixnumNodes {
             }
         }
 
-        @Specialization(guards = "isStrictlyNegative(arguments[1])")
+        @Specialization(guards = "isStrictlyNegative(b)")
         public long leftShiftNeg(long a, int b) {
             if (-b >= Integer.SIZE) {
                 return 0;
@@ -1369,7 +1369,7 @@ public abstract class FixnumNodes {
             }
         }
 
-        @Specialization(guards = {"!isInteger(arguments[1])", "!isLong(arguments[1])"})
+        @Specialization(guards = {"!isInteger(a)", "!isLong(a)"})
         public Object leftShiftFallback(VirtualFrame frame, Object a, Object b) {
             if (fallbackCallNode == null) {
                 CompilerDirectives.transferToInterpreter();
@@ -1481,7 +1481,7 @@ public abstract class FixnumNodes {
             return 0;
         }
 
-        @Specialization(guards = {"!isInteger(arguments[1])", "!isLong(arguments[1])"})
+        @Specialization(guards = {"!isInteger(a)", "!isLong(a)"})
         public Object rightShiftFallback(VirtualFrame frame, Object a, Object b) {
             if (fallbackCallNode == null) {
                 CompilerDirectives.transferToInterpreter();

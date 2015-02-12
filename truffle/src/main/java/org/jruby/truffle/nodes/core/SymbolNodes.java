@@ -58,7 +58,7 @@ public abstract class SymbolNodes {
             return a.toString().equals(Long.toString(b));
         }
 
-        @Specialization(guards = "notSymbol")
+        @Specialization(guards = "notSymbol(a, b)")
         public boolean equal(RubySymbol a, Object b) {
             return false;
         }

@@ -276,12 +276,12 @@ public abstract class KernelNodes {
             arrayBuilderNode = prev.arrayBuilderNode;
         }
 
-        @Specialization(guards = "isOneArrayElement")
+        @Specialization(guards = "isOneArrayElement(args)")
         public RubyArray arrayOneArrayElement(Object[] args) {
             return (RubyArray) args[0];
         }
 
-        @Specialization(guards = "!isOneArrayElement")
+        @Specialization(guards = "!isOneArrayElement(args)")
         public RubyArray array(Object[] args) {
             final int length = args.length;
             Object store = arrayBuilderNode.start(length);
@@ -557,7 +557,7 @@ public abstract class KernelNodes {
             return getContext().eval(source.getBytes(), binding, false, this);
         }
 
-        @Specialization(guards = "!isRubyBinding(binding)")
+        @Specialization(guards = "!isRubyBinding(badBinding)")
         public Object eval(RubyString source, RubyBasicObject badBinding, UndefinedPlaceholder filename, UndefinedPlaceholder lineNumber) {
             throw new RaiseException(
                     getContext().getCoreLibrary().typeError(
@@ -1578,22 +1578,22 @@ public abstract class KernelNodes {
             return getContext().getRandom().nextDouble();
         }
 
-        @Specialization(guards = "isZero")
+        @Specialization(guards = "isZero(max)")
         public double randZero(int max) {
             return getContext().getRandom().nextDouble();
         }
 
-        @Specialization(guards = "isNonZero")
+        @Specialization(guards = "isNonZero(max)")
         public int randNonZero(int max) {
             return getContext().getRandom().nextInt(max);
         }
 
-        @Specialization(guards = "isZero")
+        @Specialization(guards = "isZero(max)")
         public double randZero(long max) {
             return getContext().getRandom().nextDouble();
         }
 
-        @Specialization(guards = "isNonZero")
+        @Specialization(guards = "isNonZero(max)")
         public long randNonZero(long max) {
             return getContext().getRandom().nextLong() % max;
         }
@@ -1866,7 +1866,7 @@ public abstract class KernelNodes {
             return value;
         }
 
-        @Specialization(guards = "!isRubyString")
+        @Specialization(guards = "!isRubyString(value)")
         public Object string(VirtualFrame frame, Object value) {
             return toS.call(frame, value, "to_s", null);
         }
@@ -1907,12 +1907,12 @@ public abstract class KernelNodes {
             return doSleepMillis((long) (duration * 1000));
         }
 
-        @Specialization(guards = "isRubiniusUndefined")
+        @Specialization(guards = "isRubiniusUndefined(duration)")
         public long sleep(RubyBasicObject duration) {
             return sleep(UndefinedPlaceholder.INSTANCE);
         }
 
-        @Specialization(guards = "!isRubiniusUndefined")
+        @Specialization(guards = "!isRubiniusUndefined(duration)")
         public long sleep(VirtualFrame frame, RubyBasicObject duration) {
             if (floatCastNode == null) {
                 CompilerDirectives.transferToInterpreterAndInvalidate();

@@ -13,9 +13,7 @@ import com.oracle.truffle.api.CompilerAsserts;
 import com.oracle.truffle.api.dsl.GenerateNodeFactory;
 import com.oracle.truffle.api.dsl.TypeSystemReference;
 import com.oracle.truffle.api.frame.VirtualFrame;
-import com.oracle.truffle.api.instrument.Probe;
 import com.oracle.truffle.api.instrument.ProbeNode;
-import com.oracle.truffle.api.instrument.TruffleEventReceiver;
 import com.oracle.truffle.api.interop.TruffleObject;
 import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.nodes.UnexpectedResultException;
@@ -465,7 +463,7 @@ public abstract class RubyNode extends Node {
     }
 
     @SuppressWarnings("static-method")
-    public boolean isObjectArray(Object value) {
+    public boolean isJavaObjectArray(Object value) {
         return value instanceof Object[];
     }
 

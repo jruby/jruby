@@ -193,7 +193,8 @@ public abstract class CoreMethodNodeManager {
             }
         }
 
-        verifyNoAmbiguousDefaultArguments(methodDetails);
+        // TODO CS 12 Feb 15 - doesn't work any more I'm afraid as the guards use parameter names now
+        //verifyNoAmbiguousDefaultArguments(methodDetails);
 
         final CheckArityNode checkArity = new CheckArityNode(context, sourceSection, arity);
         final RubyNode block = SequenceNode.sequence(context, sourceSection, checkArity, methodNode);

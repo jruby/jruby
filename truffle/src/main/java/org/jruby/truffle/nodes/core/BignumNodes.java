@@ -294,7 +294,7 @@ public abstract class BignumNodes {
             return a.compare(b) < 0;
         }
 
-        @Specialization(guards = "isRational(arguments[1])")
+        @Specialization(guards = "isRational(b)")
         public Object pow(VirtualFrame frame, Object a, RubyBasicObject b) {
             if (rationalConvertNode == null) {
                 CompilerDirectives.transferToInterpreter();

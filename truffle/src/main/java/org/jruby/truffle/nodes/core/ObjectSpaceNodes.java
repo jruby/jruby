@@ -67,12 +67,12 @@ public abstract class ObjectSpaceNodes {
             }
         }
 
-        @Specialization(guards = "isLargeFixnumID")
+        @Specialization(guards = "isLargeFixnumID(id)")
         public Object id2RefLargeFixnum(RubyBignum id) {
             return ObjectIDOperations.toFixnum(id);
         }
 
-        @Specialization(guards = "isFloatID")
+        @Specialization(guards = "isFloatID(id)")
         public double id2RefFloat(RubyBignum id) {
             return ObjectIDOperations.toFloat(id);
         }

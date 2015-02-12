@@ -10,10 +10,7 @@
 package org.jruby.truffle.nodes.methods.locals;
 
 import com.oracle.truffle.api.CompilerDirectives;
-import com.oracle.truffle.api.frame.Frame;
-import com.oracle.truffle.api.frame.FrameSlot;
-import com.oracle.truffle.api.frame.FrameSlotKind;
-import com.oracle.truffle.api.frame.FrameSlotTypeException;
+import com.oracle.truffle.api.frame.*;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.RubyContext;
@@ -81,23 +78,23 @@ public abstract class FrameSlotNode extends RubyNode {
         return frame.getValue(frameSlot);
     }
 
-    protected final boolean isBooleanKind() {
+    protected final boolean isBooleanKind(VirtualFrame frame) {
         return isKind(FrameSlotKind.Boolean);
     }
 
-    protected final boolean isFixnumKind() {
+    protected final boolean isFixnumKind(VirtualFrame frame) {
         return isKind(FrameSlotKind.Int);
     }
 
-    protected final boolean isLongFixnumKind() {
+    protected final boolean isLongFixnumKind(VirtualFrame frame) {
         return isKind(FrameSlotKind.Long);
     }
 
-    protected final boolean isFloatKind() {
+    protected final boolean isFloatKind(VirtualFrame frame) {
         return isKind(FrameSlotKind.Double);
     }
 
-    protected final boolean isObjectKind() {
+    protected final boolean isObjectKind(VirtualFrame frame) {
         if (frameSlot.getKind() != FrameSlotKind.Object) {
             CompilerDirectives.transferToInterpreter();
             frameSlot.setKind(FrameSlotKind.Object);

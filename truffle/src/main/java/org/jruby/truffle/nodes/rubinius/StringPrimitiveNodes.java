@@ -89,14 +89,14 @@ public abstract class StringPrimitiveNodes {
             super(prev);
         }
 
-        @Specialization(guards = "isSimple")
+        @Specialization(guards = "isSimple(code, encoding)")
         public RubyString stringFromCodepointSimple(int code, RubyEncoding encoding) {
             return new RubyString(
                     getContext().getCoreLibrary().getStringClass(),
                     new ByteList(new byte[]{(byte) code}, encoding.getEncoding()));
         }
 
-        @Specialization(guards = "!isSimple")
+        @Specialization(guards = "!isSimple(code, encoding)")
         public RubyString stringFromCodepoint(int code, RubyEncoding encoding) {
             notDesignedForCompilation();
 

@@ -42,12 +42,12 @@ public abstract class ObjectPrimitiveNodes {
             return ObjectIDOperations.NIL;
         }
 
-        @Specialization(guards = "isTrue")
+        @Specialization(guards = "isTrue(value)")
         public int objectIDTrue(boolean value) {
             return ObjectIDOperations.TRUE;
         }
 
-        @Specialization(guards = "!isTrue")
+        @Specialization(guards = "!isTrue(value)")
         public int objectIDFalse(boolean value) {
             return ObjectIDOperations.FALSE;
         }

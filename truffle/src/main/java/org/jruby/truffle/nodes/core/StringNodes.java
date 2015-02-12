@@ -116,7 +116,7 @@ public abstract class StringNodes {
             return a.equals(b.toString());
         }
 
-        @Specialization(guards = "!isRubyString(arguments[1])")
+        @Specialization(guards = "!isRubyString(b)")
         public boolean equal(RubyString a, Object b) {
             return false;
         }
@@ -150,7 +150,7 @@ public abstract class StringNodes {
             return 0;
         }
 
-        @Specialization(guards = "!isRubyString(arguments[1])")
+        @Specialization(guards = "!isRubyString(b)")
         public Object compare(VirtualFrame frame, RubyString a, Object b) {
             notDesignedForCompilation();
 
@@ -599,7 +599,7 @@ public abstract class StringNodes {
             return getContext().getCoreLibrary().getNilObject();
         }
 
-        @Specialization(guards = { "!isUndefinedPlaceholder(arguments[1])", "!isRubyNilClass(arguments[1])" })
+        @Specialization(guards = { "!isUndefinedPlaceholder(stringToChomp)", "!isRubyNilClass(stringToChomp)" })
         public RubyString chompBangWithString(VirtualFrame frame, RubyString string, Object stringToChomp) {
             notDesignedForCompilation();
 
@@ -808,7 +808,7 @@ public abstract class StringNodes {
             return getContext().toTruffle(jrubyTranscoded);
         }
 
-        @Specialization(guards = { "!isRubyString(arguments[1])", "!isRubyEncoding(arguments[1])" })
+        @Specialization(guards = { "!isRubyString(encoding)", "!isRubyEncoding(encoding)" })
         public RubyString encode(VirtualFrame frame, RubyString string, Object encoding) {
             notDesignedForCompilation();
 

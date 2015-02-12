@@ -44,7 +44,7 @@ public abstract class EnsureCapacityArrayNode extends RubyNode {
     public abstract Object executeEnsureCapacity(VirtualFrame frame, RubyArray array, int requiredCapacity);
 
     @Specialization(
-            guards={"isIntArray"}
+            guards={"isIntArray(array)"}
     )
     public boolean ensureCapacityInt(RubyArray array, int requiredCapacity) {
         final int[] store = (int[]) array.getStore();
@@ -58,7 +58,7 @@ public abstract class EnsureCapacityArrayNode extends RubyNode {
     }
 
     @Specialization(
-            guards={"isLongArray"}
+            guards={"isLongArray(array)"}
     )
     public boolean ensureCapacityLong(RubyArray array, int requiredCapacity) {
         final long[] store = (long[]) array.getStore();
@@ -72,7 +72,7 @@ public abstract class EnsureCapacityArrayNode extends RubyNode {
     }
 
     @Specialization(
-            guards={"isDoubleArray"}
+            guards={"isDoubleArray(array)"}
     )
     public boolean ensureCapacityDouble(RubyArray array, int requiredCapacity) {
         final double[] store = (double[]) array.getStore();
@@ -86,7 +86,7 @@ public abstract class EnsureCapacityArrayNode extends RubyNode {
     }
 
     @Specialization(
-            guards={"isObjectArray"}
+            guards={"isObjectArray(array)"}
     )
     public boolean ensureCapacityObject(RubyArray array, int requiredCapacity) {
         final Object[] store = (Object[]) array.getStore();

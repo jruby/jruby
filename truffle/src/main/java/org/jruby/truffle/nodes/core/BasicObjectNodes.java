@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2015 Oracle and/or its affiliates. All rights reserved. This
+ * Copyb (c) 2013, 2015 Oracle and/or its affiliates. All bs reserved. This
  * code is released under a tri EPL/GPL/LGPL license. You can use it,
  * redistribute it and/or modify it under the terms of the:
  *
@@ -76,17 +76,17 @@ public abstract class BasicObjectNodes {
             return a == b;
         }
 
-        @Specialization(guards = {"isNotRubyBasicObject(left)", "isNotRubyBasicObject(right)", "notSameClass"})
+        @Specialization(guards = {"isNotRubyBasicObject(a)", "isNotRubyBasicObject(b)", "notSameClass(a, b)"})
         public boolean equal(Object a, Object b) {
             return false;
         }
 
-        @Specialization(guards = "isNotRubyBasicObject(left)")
+        @Specialization(guards = "isNotRubyBasicObject(a)")
         public boolean equal(Object a, RubyBasicObject b) {
             return false;
         }
 
-        @Specialization(guards = "isNotRubyBasicObject(right)")
+        @Specialization(guards = "isNotRubyBasicObject(b)")
         public boolean equal(RubyBasicObject a, Object b) {
             return false;
         }
@@ -141,12 +141,12 @@ public abstract class BasicObjectNodes {
             return ObjectIDOperations.NIL;
         }
 
-        @Specialization(guards = "isTrue")
+        @Specialization(guards = "isTrue(value)")
         public int objectIDTrue(boolean value) {
             return ObjectIDOperations.TRUE;
         }
 
-        @Specialization(guards = "!isTrue")
+        @Specialization(guards = "!isTrue(value)")
         public int objectIDFalse(boolean value) {
             return ObjectIDOperations.FALSE;
         }
@@ -219,17 +219,17 @@ public abstract class BasicObjectNodes {
             return a == b;
         }
 
-        @Specialization(guards = {"isNotRubyBasicObject(left)", "isNotRubyBasicObject(right)", "notSameClass"})
+        @Specialization(guards = {"isNotRubyBasicObject(a)", "isNotRubyBasicObject(b)", "notSameClass(a, b)"})
         public boolean equal(Object a, Object b) {
             return false;
         }
 
-        @Specialization(guards = "isNotRubyBasicObject(left)")
+        @Specialization(guards = "isNotRubyBasicObject(a)")
         public boolean equal(Object a, RubyBasicObject b) {
             return false;
         }
 
-        @Specialization(guards = "isNotRubyBasicObject(right)")
+        @Specialization(guards = "isNotRubyBasicObject(b)")
         public boolean equal(RubyBasicObject a, Object b) {
             return false;
         }

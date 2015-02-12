@@ -32,17 +32,17 @@ public abstract class SingleValueCastNode extends RubyNode {
 
     public abstract Object executeSingleValue(VirtualFrame frame, Object[] args);
 
-    @Specialization(guards = "noArguments")
+    @Specialization(guards = "noArguments(args)")
     protected RubyNilClass castNil(Object[] args) {
         return getContext().getCoreLibrary().getNilObject();
     }
 
-    @Specialization(guards = "singleArgument")
+    @Specialization(guards = "singleArgument(args)")
     protected Object castSingle(Object[] args) {
         return args[0];
     }
     
-    @Specialization(guards = { "!noArguments", "!singleArgument" })
+    @Specialization(guards = { "!noArguments(args)", "!singleArgument(args)" })
     protected RubyArray castMany(Object[] args) {
         notDesignedForCompilation();
 

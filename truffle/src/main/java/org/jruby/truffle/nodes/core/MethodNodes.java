@@ -62,7 +62,7 @@ public abstract class MethodNodes {
             return areSame(frame, a.getReceiver(), b.getReceiver()) && a.getMethod() == b.getMethod();
         }
 
-        @Specialization(guards = "!isRubyMethod(arguments[1])")
+        @Specialization(guards = "!isRubyMethod(b)")
         public boolean equal(RubyMethod a, Object b) {
             return false;
         }

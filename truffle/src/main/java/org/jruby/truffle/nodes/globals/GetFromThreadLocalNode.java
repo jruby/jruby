@@ -40,7 +40,7 @@ public abstract class GetFromThreadLocalNode extends RubyNode {
         return threadLocal.get();
     }
 
-    @Specialization(guards = "!isThreadLocal")
+    @Specialization(guards = "!isThreadLocal(value)")
     public Object get(Object value) {
         return value;
     }

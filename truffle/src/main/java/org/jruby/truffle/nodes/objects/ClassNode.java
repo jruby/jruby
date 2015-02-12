@@ -35,12 +35,12 @@ public abstract class ClassNode extends RubyNode {
 
     public abstract RubyClass executeGetClass(VirtualFrame frame, Object value);
 
-    @Specialization(guards = "isTrue")
+    @Specialization(guards = "isTrue(value)")
     protected RubyClass getClassTrue(boolean value) {
         return getContext().getCoreLibrary().getTrueClass();
     }
 
-    @Specialization(guards = "!isTrue")
+    @Specialization(guards = "!isTrue(value)")
     protected RubyClass getClassFalse(boolean value) {
         return getContext().getCoreLibrary().getFalseClass();
     }

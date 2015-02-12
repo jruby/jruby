@@ -44,7 +44,7 @@ public abstract class GeneralizeArrayNode extends RubyNode {
     // TODO CS 9-Feb-15 should use ArrayUtils.capacity?
 
     @Specialization(
-            guards={"isNullArray"}
+            guards={"isNullArray(array)"}
     )
     public RubyArray generalizeNull(RubyArray array, int requiredCapacity) {
         array.setStore(new Object[requiredCapacity], array.getSize());
@@ -52,7 +52,7 @@ public abstract class GeneralizeArrayNode extends RubyNode {
     }
 
     @Specialization(
-            guards={"isIntArray"}
+            guards={"isIntArray(array)"}
     )
     public RubyArray generalizeInt(RubyArray array, int requiredCapacity) {
         final int[] intStore = (int[]) array.getStore();
@@ -61,7 +61,7 @@ public abstract class GeneralizeArrayNode extends RubyNode {
     }
 
     @Specialization(
-            guards={"isLongArray"}
+            guards={"isLongArray(array)"}
     )
     public RubyArray generalizeLong(RubyArray array, int requiredCapacity) {
         final long[] intStore = (long[]) array.getStore();
@@ -70,7 +70,7 @@ public abstract class GeneralizeArrayNode extends RubyNode {
     }
 
     @Specialization(
-            guards={"isDoubleArray"}
+            guards={"isDoubleArray(array)"}
     )
     public RubyArray generalizeDouble(RubyArray array, int requiredCapacity) {
         final double[] intStore = (double[]) array.getStore();

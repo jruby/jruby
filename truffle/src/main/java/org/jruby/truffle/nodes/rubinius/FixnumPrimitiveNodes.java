@@ -55,7 +55,7 @@ public abstract class FixnumPrimitiveNodes {
             }
         }
 
-        @Specialization(guards = {"!isRubyString(arguments[1])", "!isRubyNilObject(arguments[1])"})
+        @Specialization(guards = {"!isRubyString(b)", "!isRubyNilObject(b)"})
         public RubyArray coerce(VirtualFrame frame, int a, Object b) {
             if (toFRespond.doesRespondTo(frame, "to_f", b)) {
                 final Object bFloat = toF.call(frame, b, "to_f", null);

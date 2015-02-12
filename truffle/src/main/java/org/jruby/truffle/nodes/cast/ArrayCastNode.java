@@ -101,7 +101,7 @@ public abstract class ArrayCastNode extends RubyNode {
         }
     }
 
-    @Specialization(guards = {"!isRubyNilClass", "!isRubyArray"})
+    @Specialization(guards = {"!isRubyNilClass(object)", "!isRubyArray(object)"})
     public Object cast(VirtualFrame frame, RubyBasicObject object) {
         notDesignedForCompilation();
 
