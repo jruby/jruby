@@ -22,7 +22,6 @@ env:
     - TARGET='spec:ruby19:fast'
     - TARGET='jruby-jars'
     - TARGET='complete'
-    - TARGET='main'
     - TARGET='osgi'
     - TARGET='j2ee'
     - TARGET='test-jruby-jars'
@@ -30,6 +29,10 @@ env:
     - TARGET='main-extended'
 
 matrix:
+  include:
+    # there is one integration test which uses a external jar for jdk7+
+    - jdk: oraclejdk7
+      env: TARGET='main'
   fast_finish: true
 
 branches:
