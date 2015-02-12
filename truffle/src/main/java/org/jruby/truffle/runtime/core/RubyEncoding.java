@@ -16,6 +16,8 @@ import org.jruby.truffle.nodes.objects.Allocator;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.util.ByteList;
 
+import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
+
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Locale;
@@ -33,10 +35,12 @@ public class RubyEncoding extends RubyBasicObject {
     private final ByteList name;
     private final boolean dummy;
 
+    @TruffleBoundary
     public static synchronized RubyEncoding getEncoding(Encoding encoding) {
         return lookup.get(new String(encoding.getName(), StandardCharsets.UTF_8).toLowerCase(Locale.ENGLISH));
     }
 
+    @TruffleBoundary
     public static RubyEncoding getEncoding(String name) {
         return lookup.get(name.toLowerCase(Locale.ENGLISH));
     }
@@ -45,11 +49,13 @@ public class RubyEncoding extends RubyBasicObject {
         return encodingList[index];
     }
 
+    @TruffleBoundary
     public static void storeEncoding(int encodingListIndex, RubyEncoding encoding) {
         encodingList[encodingListIndex] = encoding;
         lookup.put(encoding.getName().toString().toLowerCase(Locale.ENGLISH), encoding);
     }
 
+    @TruffleBoundary
     public static void storeAlias(String aliasName, RubyEncoding encoding) {
         lookup.put(aliasName.toLowerCase(Locale.ENGLISH), encoding);
     }

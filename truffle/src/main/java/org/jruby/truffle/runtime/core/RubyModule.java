@@ -12,6 +12,7 @@ package org.jruby.truffle.runtime.core;
 import com.oracle.truffle.api.Assumption;
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.CompilerDirectives.CompilationFinal;
+import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.Truffle;
 import com.oracle.truffle.api.frame.Frame;
 import com.oracle.truffle.api.frame.FrameInstance;
@@ -158,6 +159,7 @@ public class RubyModule extends RubyBasicObject implements ModuleChain {
         newVersion();
     }
 
+    @TruffleBoundary
     public void include(Node currentNode, RubyModule module) {
         RubyNode.notDesignedForCompilation();
 
@@ -180,6 +182,7 @@ public class RubyModule extends RubyBasicObject implements ModuleChain {
     /**
      * Set the value of a constant, possibly redefining it.
      */
+    @TruffleBoundary
     public void setConstant(RubyNode currentNode, String name, Object value) {
         RubyNode.notDesignedForCompilation();
 
@@ -196,6 +199,7 @@ public class RubyModule extends RubyBasicObject implements ModuleChain {
         newLexicalVersion();
     }
 
+    @TruffleBoundary
     public void removeConstant(RubyNode currentNode, String data) {
         RubyNode.notDesignedForCompilation();
 
@@ -204,6 +208,7 @@ public class RubyModule extends RubyBasicObject implements ModuleChain {
         newLexicalVersion();
     }
 
+    @TruffleBoundary
     public void removeClassVariable(RubyNode currentNode, String variableName) {
         RubyNode.notDesignedForCompilation();
 
@@ -212,6 +217,7 @@ public class RubyModule extends RubyBasicObject implements ModuleChain {
         classVariables.remove(variableName);
     }
 
+    @TruffleBoundary
     public void addMethod(RubyNode currentNode, InternalMethod method) {
         RubyNode.notDesignedForCompilation();
 
@@ -223,6 +229,7 @@ public class RubyModule extends RubyBasicObject implements ModuleChain {
         newVersion();
     }
 
+    @TruffleBoundary
     public void removeMethod(RubyNode currentNode, String methodName) {
         RubyNode.notDesignedForCompilation();
 
@@ -232,6 +239,7 @@ public class RubyModule extends RubyBasicObject implements ModuleChain {
         newVersion();
     }
 
+    @TruffleBoundary
     public void undefMethod(RubyNode currentNode, String methodName) {
         RubyNode.notDesignedForCompilation();
         final InternalMethod method = ModuleOperations.lookupMethod(this, methodName);
@@ -242,6 +250,7 @@ public class RubyModule extends RubyBasicObject implements ModuleChain {
         }
     }
 
+    @TruffleBoundary
     public void undefMethod(RubyNode currentNode, InternalMethod method) {
         RubyNode.notDesignedForCompilation();
         addMethod(currentNode, method.undefined());
@@ -251,6 +260,7 @@ public class RubyModule extends RubyBasicObject implements ModuleChain {
      * Also searches on Object for modules.
      * Used for alias_method, visibility changes, etc.
      */
+    @TruffleBoundary
     private InternalMethod deepMethodSearch(String name) {
         InternalMethod method = ModuleOperations.lookupMethod(this, name);
 
@@ -262,6 +272,7 @@ public class RubyModule extends RubyBasicObject implements ModuleChain {
         return method;
     }
 
+    @TruffleBoundary
     public void alias(RubyNode currentNode, String newName, String oldName) {
         RubyNode.notDesignedForCompilation();
 
@@ -275,6 +286,7 @@ public class RubyModule extends RubyBasicObject implements ModuleChain {
         addMethod(currentNode, method.withNewName(newName));
     }
 
+    @TruffleBoundary
     public void changeConstantVisibility(RubyNode currentNode, RubySymbol constant, boolean isPrivate) {
         RubyNode.notDesignedForCompilation();
 
@@ -289,6 +301,7 @@ public class RubyModule extends RubyBasicObject implements ModuleChain {
         }
     }
 
+    @TruffleBoundary
     public void appendFeatures(RubyNode currentNode, RubyModule other) {
         RubyNode.notDesignedForCompilation();
 

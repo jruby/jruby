@@ -10,6 +10,8 @@
 package org.jruby.truffle.runtime;
 
 import com.oracle.truffle.api.CompilerAsserts;
+import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
+
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.core.RubyClass;
 import org.jruby.truffle.runtime.core.RubyModule;
@@ -146,6 +148,7 @@ public abstract class ModuleOperations {
         return methods;
     }
 
+    @TruffleBoundary
     public static InternalMethod lookupMethod(RubyModule module, String name) {
         CompilerAsserts.neverPartOfCompilation();
 

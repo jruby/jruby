@@ -10,6 +10,7 @@
 package org.jruby.truffle.nodes.core;
 
 import com.oracle.truffle.api.CompilerDirectives;
+import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.dsl.CreateCast;
 import com.oracle.truffle.api.dsl.NodeChild;
 import com.oracle.truffle.api.dsl.NodeChildren;
@@ -1939,6 +1940,7 @@ public abstract class StringNodes {
 
     static class StringNodesHelper {
 
+        @TruffleBoundary
         public static ByteList capitalize(RubyString string) {
             String javaString = string.toString();
             String head = javaString.substring(0, 1).toUpperCase(Locale.ENGLISH);
@@ -1948,12 +1950,14 @@ public abstract class StringNodes {
             return byteListString;
         }
 
+        @TruffleBoundary
         public static ByteList upcase(RubyString string) {
             ByteList byteListString = ByteList.create(string.toString().toUpperCase(Locale.ENGLISH));
             byteListString.setEncoding(string.getBytes().getEncoding());
             return byteListString;
         }
 
+        @TruffleBoundary
         public static ByteList downcase(RubyString string) {
             ByteList newByteList = ByteList.create(string.toString().toLowerCase(Locale.ENGLISH));
             newByteList.setEncoding(string.getBytes().getEncoding());
@@ -1961,6 +1965,7 @@ public abstract class StringNodes {
             return newByteList;
         }
 
+        @TruffleBoundary
         public static ByteList chomp(RubyString string) {
             String javaString = string.toString();
             if (javaString.endsWith("\r")) {
@@ -1978,6 +1983,7 @@ public abstract class StringNodes {
 
         }
 
+        @TruffleBoundary
         public static ByteList chompWithString(RubyString string, RubyString stringToChomp) {
 
             String tempString = string.toString();
@@ -1992,6 +1998,7 @@ public abstract class StringNodes {
             return byteList;
         }
 
+        @TruffleBoundary
         public static ByteList reverse(RubyString string) {
             ByteList byteListString = ByteList.create(new StringBuilder(string.toString()).reverse().toString());
             byteListString.setEncoding(string.getBytes().getEncoding());
@@ -1999,6 +2006,7 @@ public abstract class StringNodes {
             return byteListString;
         }
 
+        @TruffleBoundary
         public static ByteList swapcase(RubyString string) {
             char[] charArray = string.toString().toCharArray();
             StringBuilder newString = new StringBuilder();

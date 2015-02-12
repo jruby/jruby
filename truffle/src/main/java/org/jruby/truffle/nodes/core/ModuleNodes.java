@@ -409,7 +409,7 @@ public abstract class ModuleNodes {
         public Object classEval(VirtualFrame frame, RubyModule module, RubyString code, @SuppressWarnings("unused") UndefinedPlaceholder file, @SuppressWarnings("unused") UndefinedPlaceholder line, @SuppressWarnings("unused") UndefinedPlaceholder block) {
             notDesignedForCompilation();
 
-            final Source source = Source.fromText(code.getBytes(), "(eval)");
+            final Source source = Source.fromText(code.toString(), "(eval)");
             return classEvalSource(frame, module, source, code.getBytes().getEncoding());
         }
 
@@ -417,7 +417,7 @@ public abstract class ModuleNodes {
         public Object classEval(VirtualFrame frame, RubyModule module, RubyString code, RubyString file, @SuppressWarnings("unused") UndefinedPlaceholder line, @SuppressWarnings("unused") UndefinedPlaceholder block) {
             notDesignedForCompilation();
 
-            final Source source = Source.asPseudoFile(code.getBytes(), file.toString());
+            final Source source = Source.asPseudoFile(code.toString(), file.toString());
             return classEvalSource(frame, module, source, code.getBytes().getEncoding());
         }
 
@@ -425,7 +425,7 @@ public abstract class ModuleNodes {
         public Object classEval(VirtualFrame frame, RubyModule module, RubyString code, RubyString file, @SuppressWarnings("unused") int line, @SuppressWarnings("unused") UndefinedPlaceholder block) {
             notDesignedForCompilation();
 
-            final Source source = Source.asPseudoFile(code.getBytes(), file.toString());
+            final Source source = Source.asPseudoFile(code.toString(), file.toString());
             return classEvalSource(frame, module, source, code.getBytes().getEncoding());
         }
 

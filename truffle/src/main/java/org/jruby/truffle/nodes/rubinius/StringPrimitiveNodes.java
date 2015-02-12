@@ -105,6 +105,7 @@ public abstract class StringPrimitiveNodes {
             try {
                 length = encoding.getEncoding().codeToMbcLength(code);
             } catch (EncodingException e) {
+                CompilerDirectives.transferToInterpreter();
                 throw new RaiseException(getContext().getCoreLibrary().rangeError(code, encoding, this));
             }
 
@@ -118,6 +119,7 @@ public abstract class StringPrimitiveNodes {
             try {
                 encoding.getEncoding().codeToMbc(code, bytes, 0);
             } catch (EncodingException e) {
+                CompilerDirectives.transferToInterpreter();
                 throw new RaiseException(getContext().getCoreLibrary().rangeError(code, encoding, this));
             }
 
@@ -131,6 +133,7 @@ public abstract class StringPrimitiveNodes {
             notDesignedForCompilation();
 
             if (code < Integer.MIN_VALUE || code > Integer.MAX_VALUE) {
+                CompilerDirectives.transferToInterpreter();
                 throw new UnsupportedOperationException();
             }
 
