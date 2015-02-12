@@ -255,6 +255,13 @@ DEPS
     }
   end
 
+  def test_jar_with_plus_in_name
+    assert_in_sub_runtime %{
+       require 'test/jruby/jar_with+.jar'
+       Dir["#{File.dirname( __FILE__ )}/jar_with+.jar!/*"].size == 2
+     }
+   end
+
   # JRUBY-5045
   def test_cwd_plus_dotdot_jar_loading
     assert_equal "hi", run_in_sub_runtime(%{
