@@ -49,7 +49,7 @@ public class DVarNode extends Node implements INameNode, IScopedNode {
     private int location;
 
     public DVarNode(ISourcePosition position, int location, String name) {
-        super(position);
+        super(position, false);
         this.location = location;
         this.name = name;
     }

@@ -78,30 +78,13 @@ public abstract class ThreadNodes {
 
         @Specialization
         public RubyNilClass exit() {
-            throw new ThreadExitException();
+            getContext().getThreadManager().getCurrentThread().exit();
+            return getContext().getCoreLibrary().getNilObject();
         }
 
     }
 
-    @CoreMethod(names = "exit", needsSelf = false)
-    public abstract static class ExitInstanceNode extends CoreMethodNode {
-
-        public ExitInstanceNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
-        public ExitInstanceNode(ExitInstanceNode prev) {
-            super(prev);
-        }
-
-        @Specialization
-        public RubyNilClass exit() {
-            throw new ThreadExitException();
-        }
-
-    }
-
-    @CoreMethod(names = "kill")
+    @CoreMethod(names = { "kill", "exit", "terminate" })
     public abstract static class KillNode extends CoreMethodNode {
 
         public KillNode(RubyContext context, SourceSection sourceSection) {
@@ -119,7 +102,7 @@ public abstract class ThreadNodes {
                 @Override
                 public void accept(RubyThread currentThread) {
                     if (currentThread == thread) {
-                        throw new ThreadExitException();
+                        currentThread.exit();
                     }
                 }
 
@@ -336,15 +319,7 @@ public abstract class ThreadNodes {
 
             self.join();
 
-            if (self.getException() != null) {
-                throw new RaiseException(self.getException());
-            }
-
-            if (self.getValue() == null) {
-                return getContext().getCoreLibrary().getNilObject();
-            } else {
-                return self.getValue();
-            }
+            return self.getValue();
         }
 
     }

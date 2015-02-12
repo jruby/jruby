@@ -43,7 +43,7 @@ public class AttrAssignNode extends Node implements INameNode, IArgumentNode {
     private Node argsNode;
 
     public AttrAssignNode(ISourcePosition position, Node receiverNode, String name, Node argsNode) {
-        super(position);
+        super(position, receiverNode != null && receiverNode.containsVariableAssignment() || argsNode != null && argsNode.containsVariableAssignment());
         
         assert receiverNode != null : "receiverNode is not null";
         // TODO: At least ParserSupport.attrset passes argsNode as null.  ImplicitNil is wrong magic for 

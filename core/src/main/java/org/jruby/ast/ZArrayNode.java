@@ -43,7 +43,7 @@ import org.jruby.lexer.yacc.ISourcePosition;
  */
 public class ZArrayNode extends Node implements ILiteralNode {
     public ZArrayNode(ISourcePosition position) {
-        super(position);
+        super(position, false);
     }
 
     public NodeType getNodeType() {

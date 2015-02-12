@@ -565,7 +565,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
             }
         }
 
-        fname = RubyFile.get_path(context, fname);
+        fname = StringSupport.checkEmbeddedNulls(runtime, RubyFile.get_path(context, fname));
         // Not implemented
 //        fname.checkTaint();
         fptr = file.openFile;
@@ -1146,7 +1146,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
             case 1:
                 fname = argv[0];
         }
-        fname = RubyFile.get_path(context, fname);
+        fname = StringSupport.checkEmbeddedNulls(runtime, RubyFile.get_path(context, fname));
 
         if (vmode.isNil())
             oflags = OpenFlags.O_RDONLY.intValue();
@@ -3414,7 +3414,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
         Ruby runtime = context.runtime;
         IRubyObject path, v;
         
-        path = RubyFile.get_path(context, argv[0]);
+        path = StringSupport.checkEmbeddedNulls(runtime, RubyFile.get_path(context, argv[0]));
         failIfDirectory(runtime, (RubyString)path); // only in JRuby
         // MRI increments args past 0 now, so remaining uses of args only see non-path args
         
@@ -3471,8 +3471,8 @@ public class RubyIO extends RubyObject implements IOEncodable {
      *    open_args: array of string
      */
     private static IRubyObject write19(ThreadContext context, IRubyObject recv, IRubyObject path, IRubyObject str, IRubyObject offset, RubyHash options) {
-        RubyString pathStr = RubyFile.get_path(context, path);
         Ruby runtime = context.runtime;
+        RubyString pathStr = StringSupport.checkEmbeddedNulls(runtime, RubyFile.get_path(context, path));
         failIfDirectory(runtime, pathStr);
 
         RubyIO file = null;
@@ -3513,11 +3513,11 @@ public class RubyIO extends RubyObject implements IOEncodable {
      */
     @JRubyMethod(meta = true, required = 1, optional = 2)
     public static IRubyObject binread(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
-        IRubyObject nil = context.runtime.getNil();
-        IRubyObject path = RubyFile.get_path(context, args[0]);
+        Ruby runtime = context.runtime;
+        IRubyObject nil = runtime.getNil();
+        IRubyObject path = StringSupport.checkEmbeddedNulls(runtime, RubyFile.get_path(context, args[0]));
         IRubyObject length = nil;
         IRubyObject offset = nil;
-        Ruby runtime = context.runtime;
 
         if (args.length > 2) {
             offset = args[2];

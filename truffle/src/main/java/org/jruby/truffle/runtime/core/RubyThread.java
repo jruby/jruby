@@ -40,8 +40,8 @@ public class RubyThread extends RubyBasicObject {
     private volatile Thread thread;
     private volatile Status status = Status.RUN;
 
-    private RubyException exception;
-    private Object value;
+    private volatile RubyException exception;
+    private volatile Object value;
 
     private RubyBasicObject threadLocals;
 
@@ -51,10 +51,6 @@ public class RubyThread extends RubyBasicObject {
         super(rubyClass);
         this.manager = manager;
         threadLocals = new RubyBasicObject(rubyClass.getContext().getCoreLibrary().getObjectClass());
-    }
-
-    public void ignoreSafepointActions() {
-        status = Status.ABORTING;
     }
 
     public void initialize(RubyContext context, RubyNode currentNode, final RubyProc block) {
@@ -88,6 +84,7 @@ public class RubyThread extends RubyBasicObject {
         try {
             task.run();
         } catch (ThreadExitException e) {
+            value = context.getCoreLibrary().getNilObject();
             return;
         } catch (RaiseException e) {
             exception = e.getRubyException();
@@ -168,7 +165,8 @@ public class RubyThread extends RubyBasicObject {
         return exception;
     }
 
-    public void shutdown() {
+    public void exit() {
+        throw new ThreadExitException();
     }
 
     public String getName() {

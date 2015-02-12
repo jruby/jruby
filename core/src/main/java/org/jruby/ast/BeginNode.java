@@ -43,7 +43,7 @@ public class BeginNode extends Node {
     private final Node bodyNode;
 
     public BeginNode(ISourcePosition position, Node bodyNode) {
-        super(position);
+        super(position, bodyNode.containsVariableAssignment());
         
         assert bodyNode != null : "bodyNode is not null";
         

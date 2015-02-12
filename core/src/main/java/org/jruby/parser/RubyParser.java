@@ -83,6 +83,7 @@ import org.jruby.ast.NilImplicitNode;
 import org.jruby.ast.NilNode;
 import org.jruby.ast.Node;
 import org.jruby.ast.NonLocalControlFlowNode;
+import org.jruby.ast.NumericNode;
 import org.jruby.ast.OpAsgnAndNode;
 import org.jruby.ast.OpAsgnNode;
 import org.jruby.ast.OpAsgnOrNode;
@@ -147,7 +148,7 @@ public class RubyParser {
         support.setWarnings(warnings);
         lexer.setWarnings(warnings);
     }
-					// line 151 "-"
+					// line 152 "-"
   // %token constants
   public static final int kCLASS = 257;
   public static final int kMODULE = 258;
@@ -296,8 +297,8 @@ public class RubyParser {
    135,    37,    36,    38,    38,    38,    38,    44,   144,    44,
    145,    39,    39,    39,    39,    39,    39,    39,    39,    39,
     39,    39,    39,    39,    39,    39,    39,    39,    39,    39,
-    39,    39,    39,    39,    33,    33,    40,    40,    40,    40,
-    40,    40,    45,    34,    34,    59,    59,   147,   110,   139,
+    39,    39,    39,    39,    31,    31,    40,    40,    40,    40,
+    40,    40,    45,    32,    32,    59,    59,   147,   110,   139,
     43,    43,    43,    43,    43,    43,    43,    43,    43,    43,
     43,   111,   111,   122,   122,   112,   112,   112,   112,   112,
    112,   112,   112,   112,   112,    71,    71,   100,   100,   101,
@@ -305,7 +306,7 @@ public class RubyParser {
     72,    72,    72,    72,    72,    72,    72,    72,    72,    72,
     77,    77,    77,    77,    77,    77,    77,    77,    77,    77,
     77,    77,    77,    77,    77,    77,    77,    77,    77,     6,
-     6,    32,    32,    32,     7,     7,     7,     7,     7,   115,
+     6,    30,    30,    30,     7,     7,     7,     7,     7,   115,
    115,   116,   116,    61,   148,    61,     8,     8,     8,     8,
      8,     8,     8,     8,     8,     8,     8,     8,     8,     8,
      8,     8,     8,     8,     8,     8,     8,     8,     8,     8,
@@ -341,8 +342,8 @@ public class RubyParser {
     25,    81,    81,    27,    27,    87,    87,    85,    85,    26,
     26,    88,    88,    80,    80,    86,    86,    20,    20,    21,
     21,    24,    24,    23,   173,    23,   174,   175,    23,    62,
-    62,    62,    62,     2,     1,     1,     1,     1,    31,    29,
-    29,    30,    30,    30,    30,    56,    56,    56,    56,    56,
+    62,    62,    62,     2,     1,     1,     1,     1,    29,    33,
+    33,    34,    34,    34,    34,    56,    56,    56,    56,    56,
     56,    56,    56,    56,    56,    56,    56,   114,   114,   114,
    114,   114,   114,   114,   114,   114,   114,   114,   114,    63,
     63,    54,   176,    54,    54,    69,   177,    69,    92,    92,
@@ -431,8 +432,8 @@ public class RubyParser {
    453,     0,     0,     0,     0,     0,     0,     0,     0,     0,
      0,     0,     0,   477,   479,   481,     0,     0,   412,   529,
    530,   501,   504,   502,   503,     0,     0,   450,    59,   295,
-     0,   454,   296,   297,     0,   298,   299,   294,   449,   499,
-   451,    32,    46,     0,     0,     0,     0,     0,     0,   302,
+     0,   454,   296,   297,     0,   298,   299,   294,   451,    32,
+    46,   449,   499,     0,     0,     0,     0,     0,     0,   302,
      0,    54,     0,     0,    85,     0,     4,   300,   301,     0,
      0,    71,     0,     2,     0,     5,     0,     7,   351,   352,
    315,     0,     0,   511,   510,   512,   513,     0,     0,   515,
@@ -538,7 +539,7 @@ public class RubyParser {
      1,   360,    67,    68,   674,   637,   131,   229,   631,   865,
    420,   568,   569,   570,   216,    69,    70,    71,    72,    73,
    363,   362,    74,   540,   365,    75,    76,   549,    77,    78,
-    79,    80,   132,    81,    82,   659,   236,   237,   238,   239,
+   132,    79,    80,    81,    82,   659,   236,   237,   238,   239,
     84,    85,    86,    87,   240,   256,   319,   827,  1005,   828,
    820,   496,   824,   639,   442,   305,    89,   788,    90,    91,
    571,   231,   855,   258,   572,   573,   881,   778,   779,   680,
@@ -779,8 +780,8 @@ public class RubyParser {
 //yyGindex 179
      0,     0,     4,     0,  -401,     0,   -57,     2,    -4,   496,
    987,     0,     0,  -116,     0,     0,     0,  1134,     0,     0,
-   914,  1153,     0,   890,     0,     0,     0,   853,     0,     0,
-   109,    34,  1219,  -394,   -34,     0,  1113,  -429,     0,    36,
+   914,  1153,     0,   890,     0,     0,     0,   853,     0,    34,
+  1219,  -394,   -34,     0,   109,     0,  1113,  -429,     0,    36,
    806,  1520,     8,    11,   770,    -5,   139,  -435,     0,   184,
      0,    94,     0,    15,     0,   -11,  1225,   589,     0,     0,
   -672,     0,     0,   843,  -395,     0,     0,     0,  -382,   311,
@@ -2983,7 +2984,7 @@ states[236] = new ParserState() {
 };
 states[237] = new ParserState() {
   @Override public Object execute(ParserSupport support, RubyLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
-                    yyVal = support.getOperatorCallNode(support.getOperatorCallNode(((Node)yyVals[-2+yyTop]), "**", ((Node)yyVals[0+yyTop]), lexer.getPosition()), "-@");
+                    yyVal = support.getOperatorCallNode(support.getOperatorCallNode(((NumericNode)yyVals[-2+yyTop]), "**", ((Node)yyVals[0+yyTop]), lexer.getPosition()), "-@");
     return yyVal;
   }
 };
@@ -4220,6 +4221,12 @@ states[447] = new ParserState() {
     return yyVal;
   }
 };
+states[449] = new ParserState() {
+  @Override public Object execute(ParserSupport support, RubyLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+                    yyVal = ((NumericNode)yyVals[0+yyTop]);
+    return yyVal;
+  }
+};
 states[450] = new ParserState() {
   @Override public Object execute(ParserSupport support, RubyLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
                     yyVal = new SymbolNode(lexer.getPosition(), new ByteList(((String)yyVals[0+yyTop]).getBytes(), lexer.getEncoding()));
@@ -4243,9 +4250,7 @@ states[452] = new ParserState() {
 };
 states[453] = new ParserState() {
   @Override public Object execute(ParserSupport support, RubyLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
-                    ByteList aChar = ByteList.create(((String)yyVals[0+yyTop]));
-                    aChar.setEncoding(lexer.getEncoding());
-                    yyVal = lexer.createStrNode(lexer.getPosition(), aChar, 0);
+                    yyVal = ((StrNode)yyVals[0+yyTop]);
     return yyVal;
   }
 };
@@ -4534,13 +4539,13 @@ states[498] = new ParserState() {
 };
 states[499] = new ParserState() {
   @Override public Object execute(ParserSupport support, RubyLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
-                    yyVal = ((Node)yyVals[0+yyTop]);  
+                    yyVal = ((NumericNode)yyVals[0+yyTop]);  
     return yyVal;
   }
 };
 states[500] = new ParserState() {
   @Override public Object execute(ParserSupport support, RubyLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
-                     yyVal = support.negateNumeric(((Node)yyVals[0+yyTop]).getPosition(), ((Node)yyVals[0+yyTop]));
+                     yyVal = support.negateNumeric(((NumericNode)yyVals[0+yyTop]));
     return yyVal;
   }
 };
@@ -5240,7 +5245,7 @@ states[634] = new ParserState() {
   }
 };
 }
-					// line 2507 "RubyParser.y"
+					// line 2510 "RubyParser.y"
 
     /** The parse method use an lexer stream and parse it to an AST node 
      * structure
@@ -5259,4 +5264,4 @@ states[634] = new ParserState() {
         return support.getResult();
     }
 }
-					// line 9788 "-"
+					// line 9793 "-"

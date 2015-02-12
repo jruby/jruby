@@ -10,6 +10,7 @@
 package org.jruby.truffle.runtime;
 
 import com.oracle.truffle.api.*;
+import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.frame.MaterializedFrame;
 import com.oracle.truffle.api.instrument.Probe;
 import com.oracle.truffle.api.object.Shape;
@@ -76,6 +77,8 @@ public class RubyContext extends ExecutionContext {
 
     private final AtomicLong nextObjectID = new AtomicLong(ObjectIDOperations.FIRST_OBJECT_ID);
 
+    private final boolean runningOnWindows;
+
     public RubyContext(Ruby runtime) {
         assert runtime != null;
 
@@ -129,6 +132,8 @@ public class RubyContext extends ExecutionContext {
         if (Options.TRUFFLE_STACK_SERVER_PORT.load() != 0) {
             new StackServerManager(this, Options.TRUFFLE_STACK_SERVER_PORT.load()).start();
         }
+
+        runningOnWindows = System.getProperty("os.name").toLowerCase().indexOf("win") >= 0;
     }
 
     public Shape getEmptyShape() {
@@ -139,6 +144,7 @@ public class RubyContext extends ExecutionContext {
         RubyNode.notDesignedForCompilation();
 
         if (!name.startsWith("@")) {
+            CompilerDirectives.transferToInterpreter();
             throw new RaiseException(context.getCoreLibrary().nameErrorInstanceNameNotAllowable(name, currentNode));
         }
 
@@ -149,10 +155,15 @@ public class RubyContext extends ExecutionContext {
         RubyNode.notDesignedForCompilation();
 
         if (!name.startsWith("@@")) {
+            CompilerDirectives.transferToInterpreter();
             throw new RaiseException(context.getCoreLibrary().nameErrorInstanceNameNotAllowable(name, currentNode));
         }
 
         return name;
+    }
+
+    public boolean isRunningOnWindows() {
+        return runningOnWindows;
     }
 
     public void loadFile(String fileName, RubyNode currentNode) {
@@ -204,6 +215,7 @@ public class RubyContext extends ExecutionContext {
         return symbolTable.getSymbol(name);
     }
 
+    @TruffleBoundary
     public Object instanceEval(ByteList code, Object self, RubyNode currentNode) {
         final Source source = Source.fromText(code, "(eval)");
         return execute(this, source, code.getEncoding(), TranslatorDriver.ParserContext.TOP_LEVEL, self, null, currentNode, new NodeWrapper() {
@@ -214,6 +226,7 @@ public class RubyContext extends ExecutionContext {
         });
     }
 
+    @TruffleBoundary
     public Object eval(ByteList code, RubyBinding binding, boolean ownScopeForAssignments, RubyNode currentNode) {
         final Source source = Source.fromText(code, "(eval)");
         return execute(this, source, code.getEncoding(), TranslatorDriver.ParserContext.TOP_LEVEL, binding.getSelf(), binding.getFrame(), ownScopeForAssignments, currentNode, NodeWrapper.IDENTITY);
@@ -223,6 +236,7 @@ public class RubyContext extends ExecutionContext {
         return execute(context, source, defaultEncoding, parserContext, self, parentFrame, true, currentNode, wrapper);
     }
 
+    @TruffleBoundary
     public Object execute(RubyContext context, Source source, Encoding defaultEncoding, TranslatorDriver.ParserContext parserContext, Object self, MaterializedFrame parentFrame, boolean ownScopeForAssignments, RubyNode currentNode, NodeWrapper wrapper) {
         final RubyRootNode rootNode = translator.parse(context, source, defaultEncoding, parserContext, parentFrame, ownScopeForAssignments, currentNode, wrapper);
         final CallTarget callTarget = Truffle.getRuntime().createCallTarget(rootNode);
@@ -249,13 +263,11 @@ public class RubyContext extends ExecutionContext {
     public void shutdown() {
         atExitManager.run();
 
-        threadManager.leaveGlobalLock();
-
-        objectSpaceManager.shutdown();
-
         if (fiberManager != null) {
             fiberManager.shutdown();
         }
+
+        threadManager.shutdown();
     }
 
     public RubyString makeString(String string) {

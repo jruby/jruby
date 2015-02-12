@@ -41,11 +41,11 @@ public abstract class AssignableNode extends Node implements IArityNode {
     private Node valueNode;
     
     public AssignableNode(ISourcePosition position) {
-        super(position);
+        super(position, true);
     }
     
-    public AssignableNode(ISourcePosition position, Node valueNode) {
-        super(position);
+    public AssignableNode(ISourcePosition position, Node valueNode, boolean containsAssignment) {
+        super(position, containsAssignment);
         
         assert valueNode != null : "valueNode is not null";
         

@@ -49,7 +49,7 @@ public class InstAsgnNode extends AssignableNode implements INameNode {
      * @param valueNode the value of the variable
      **/
     public InstAsgnNode(ISourcePosition position, String name, Node valueNode) {
-        super(position, valueNode);
+        super(position, valueNode, valueNode != null && valueNode.containsVariableAssignment());
         
         this.name = name;
     }

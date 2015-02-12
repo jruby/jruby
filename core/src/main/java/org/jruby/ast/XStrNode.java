@@ -45,7 +45,7 @@ public class XStrNode extends Node implements ILiteralNode {
 
     public XStrNode(ISourcePosition position, ByteList value) {
         // FIXME: Shouldn't this have codeRange like StrNode?
-        super(position);
+        super(position, false);
         this.value = (value == null ? ByteList.create("") : value);
     }
 

@@ -138,7 +138,7 @@ public class FeatureManager {
                 return false;
             }
 
-            final String expandedPath = RubyFile.expandPath(fileName);
+            final String expandedPath = RubyFile.expandPath(context, fileName);
 
             for (Object loaded : Arrays.asList(context.getCoreLibrary().getLoadedFeatures().slowToArray())) {
                 if (loaded.toString().equals(expandedPath)) {

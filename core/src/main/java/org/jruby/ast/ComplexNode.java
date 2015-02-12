@@ -14,10 +14,10 @@ import org.jruby.lexer.yacc.ISourcePosition;
  *
  * @author enebo
  */
-public class ComplexNode extends Node {
-    private Node y;
+public class ComplexNode extends NumericNode {
+    private NumericNode y;
 
-    public ComplexNode(ISourcePosition position, Node y) {
+    public ComplexNode(ISourcePosition position, NumericNode y) {
         super(position);
 
         this.y = y;
@@ -38,11 +38,11 @@ public class ComplexNode extends Node {
         return NodeType.COMPLEXNODE;
     }
 
-    public Node getNumber() {
+    public NumericNode getNumber() {
         return y;
     }
 
-    public void setNumber(Node y) {
+    public void setNumber(NumericNode y) {
         this.y = y;
     }
 }

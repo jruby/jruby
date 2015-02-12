@@ -14,6 +14,7 @@ import com.oracle.truffle.api.CompilerDirectives;
 import org.jruby.RubyThread.Status;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyThread;
+import org.jruby.truffle.runtime.util.Consumer;
 
 import java.util.Collections;
 import java.util.Set;
@@ -143,9 +144,17 @@ public class ThreadManager {
     }
 
     public void shutdown() {
-        for (RubyThread thread : runningRubyThreads) {
-            thread.shutdown();
-        }
+        // kill all threads except main
+        context.getSafepointManager().pauseAllThreadsAndExecute(new Consumer<RubyThread>() {
+            @Override
+            public void accept(RubyThread thread) {
+                if (thread != rootThread) {
+                    thread.exit();
+                }
+            }
+        });
+
+        leaveGlobalLock();
     }
 
 }

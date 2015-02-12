@@ -49,7 +49,7 @@ public class UndefNode extends Node {
     private Node name;
 
     public UndefNode(ISourcePosition position, Node name) {
-        super(position);
+        super(position, false);
         this.name = name;
     }
 

@@ -40,7 +40,7 @@ import org.jruby.lexer.yacc.ISourcePosition;
 /** 
  * Represents an integer literal.
  */
-public class FixnumNode extends Node implements ILiteralNode {
+public class FixnumNode extends NumericNode implements ILiteralNode {
     private long value;
 
     public FixnumNode(ISourcePosition position, long value) {

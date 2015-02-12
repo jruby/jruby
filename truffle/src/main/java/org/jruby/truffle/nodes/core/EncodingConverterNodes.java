@@ -9,8 +9,10 @@
  */
 package org.jruby.truffle.nodes.core;
 
+import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.source.SourceSection;
+
 import org.jcodings.Encoding;
 import org.jcodings.transcode.EConv;
 import org.jcodings.transcode.Transcoder;
@@ -37,6 +39,7 @@ public abstract class EncodingConverterNodes {
             super(prev);
         }
 
+        @TruffleBoundary
         @Specialization
         public RubyArray convpath(RubyEncodingConverter converter) {
             notDesignedForCompilation();
@@ -84,6 +87,7 @@ public abstract class EncodingConverterNodes {
             super(prev);
         }
 
+        @TruffleBoundary
         @Specialization
         public RubyNilClass initialize(RubyEncodingConverter self, RubyString source, RubyString destination) {
             notDesignedForCompilation();
@@ -121,6 +125,7 @@ public abstract class EncodingConverterNodes {
             super(prev);
         }
 
+        @TruffleBoundary
         @Specialization
         public RubyArray searchConvpath(RubyString source, RubyString destination) {
             notDesignedForCompilation();

@@ -18,6 +18,8 @@ import com.oracle.truffle.api.nodes.DirectCallNode;
 import com.oracle.truffle.api.source.SourceSection;
 
 import org.jruby.truffle.nodes.RubyNode;
+import org.jruby.truffle.nodes.objects.MetaClassNode;
+import org.jruby.truffle.nodes.objects.MetaClassNodeFactory;
 import org.jruby.truffle.runtime.ModuleOperations;
 import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyCallStack;
@@ -29,6 +31,7 @@ import org.jruby.truffle.runtime.methods.InternalMethod;
 
 public abstract class AbstractGeneralSuperCallNode extends RubyNode {
 
+    @Child protected MetaClassNode metaClassNode;
     @Child protected DirectCallNode callNode;
 
     @CompilerDirectives.CompilationFinal private InternalMethod currentMethod;
@@ -38,20 +41,20 @@ public abstract class AbstractGeneralSuperCallNode extends RubyNode {
 
     public AbstractGeneralSuperCallNode(RubyContext context, SourceSection sourceSection) {
         super(context, sourceSection);
+        metaClassNode = MetaClassNodeFactory.create(context, sourceSection, null);
     }
 
-    protected boolean guard(Object self) {
-        InternalMethod method = RubyCallStack.getCurrentMethod();
-
-        // This is overly restrictive, but seems the be the only reasonable check in term of performance.
-        // The ideal condition would be to check if both ancestor lists starting at
-        // the current method's module are identical, which is non-trivial
-        // if the current method's module is an (included) module and not a class.
-        boolean compatibleAncestors = getContext().getCoreLibrary().getMetaClass(self) == selfMetaClass;
+    protected boolean guard(VirtualFrame frame, Object self) {
+        InternalMethod method = RubyArguments.getMethod(frame.getArguments());
 
         return superMethod != null &&
                 method == currentMethod &&
-                compatibleAncestors &&
+
+                // This is overly restrictive, but seems the be the only reasonable check in term of performance.
+                // The ideal condition would be to check if both ancestor lists starting at
+                // the current method's module are identical, which is non-trivial
+                // if the current method's module is an (included) module and not a class.
+                metaClassNode.executeMetaClass(frame, self) == selfMetaClass &&
                 unmodifiedAssumption.isValid();
     }
 
@@ -62,7 +65,7 @@ public abstract class AbstractGeneralSuperCallNode extends RubyNode {
     private void lookup(VirtualFrame frame, boolean checkIfDefined) {
         CompilerAsserts.neverPartOfCompilation();
 
-        currentMethod = RubyCallStack.getCurrentMethod();
+        currentMethod = RubyArguments.getMethod(frame.getArguments());
 
         String name = currentMethod.getName();
         RubyModule declaringModule = currentMethod.getDeclaringModule();
@@ -97,7 +100,7 @@ public abstract class AbstractGeneralSuperCallNode extends RubyNode {
 
         final Object self = RubyArguments.getSelf(frame.getArguments());
 
-        if (!guard(self)) {
+        if (!guard(frame, self)) {
             lookup(frame, true);
         }
 

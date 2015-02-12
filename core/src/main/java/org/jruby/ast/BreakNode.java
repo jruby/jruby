@@ -43,7 +43,7 @@ public class BreakNode extends Node implements NonLocalControlFlowNode {
     private final Node valueNode;
     
     public BreakNode(ISourcePosition position, Node valueNode) {
-        super(position);
+        super(position, valueNode != null && valueNode.containsVariableAssignment());
         
         assert valueNode != null : "valueNode is not null";
         

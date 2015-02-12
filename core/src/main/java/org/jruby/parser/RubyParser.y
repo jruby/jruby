@@ -80,6 +80,7 @@ import org.jruby.ast.NilImplicitNode;
 import org.jruby.ast.NilNode;
 import org.jruby.ast.Node;
 import org.jruby.ast.NonLocalControlFlowNode;
+import org.jruby.ast.NumericNode;
 import org.jruby.ast.OpAsgnAndNode;
 import org.jruby.ast.OpAsgnNode;
 import org.jruby.ast.OpAsgnOrNode;
@@ -155,7 +156,8 @@ public class RubyParser {
   kRESCUE_MOD kALIAS kDEFINED klBEGIN klEND k__LINE__ k__FILE__
   k__ENCODING__ kDO_LAMBDA 
 
-%token <String> tIDENTIFIER tFID tGVAR tIVAR tCONSTANT tCVAR tLABEL tCHAR
+%token <String> tIDENTIFIER tFID tGVAR tIVAR tCONSTANT tCVAR tLABEL
+%token <StrNode> tCHAR
 %type <String> sym symbol operation operation2 operation3 cname fname op 
 %type <String> f_norm_arg dot_or_colon restarg_mark blkarg_mark
 %token <String> tUPLUS         /* unary+ */
@@ -216,7 +218,8 @@ public class RubyParser {
 %type <Node> string_contents xstring_contents method_call
 %type <Object> string_content
 %type <Node> regexp_contents
-%type <Node> words qwords word literal numeric simple_numeric dsym cpath command_asgn command_call
+%type <Node> words qwords word literal dsym cpath command_asgn command_call
+%type <NumericNode> numeric simple_numeric 
 %type <Node> mrhs_arg
 %type <Node> compstmt bodystmt stmts stmt expr arg primary command 
 %type <Node> stmt_or_begin
@@ -1842,7 +1845,9 @@ opt_ensure      : kENSURE compstmt {
                 }
                 | none
 
-literal         : numeric
+literal         : numeric {
+                    $$ = $1;
+                }
                 | symbol {
                     $$ = new SymbolNode(lexer.getPosition(), new ByteList($1.getBytes(), lexer.getEncoding()));
                 }
@@ -1863,9 +1868,7 @@ strings         : string {
 
 // [!null]
 string          : tCHAR {
-                    ByteList aChar = ByteList.create($1);
-                    aChar.setEncoding(lexer.getEncoding());
-                    $$ = lexer.createStrNode(lexer.getPosition(), aChar, 0);
+                    $$ = $1;
                 }
                 | string1 {
                     $$ = $1;
@@ -2057,7 +2060,7 @@ dsym            : tSYMBEG xstring_contents tSTRING_END {
                     $$ = $1;  
                 }
                 | tUMINUS_NUM simple_numeric %prec tLOWEST {
-                     $$ = support.negateNumeric($2.getPosition(), $2);
+                     $$ = support.negateNumeric($2);
                 }
 
 simple_numeric  : tINTEGER {

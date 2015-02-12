@@ -14,7 +14,7 @@ import org.jruby.lexer.yacc.InvalidSourcePosition;
  */
 public class RequiredKeywordArgumentValueNode extends Node implements InvisibleNode {
     public RequiredKeywordArgumentValueNode() {
-        super(InvalidSourcePosition.INSTANCE);
+        super(InvalidSourcePosition.INSTANCE, false);
     }
 
     @Override

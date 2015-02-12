@@ -25,7 +25,7 @@ public class ReadLocalDummyNode extends org.jruby.ast.Node {
     final FrameSlot frameSlot;
 
     public ReadLocalDummyNode(ISourcePosition sourcePosition, SourceSection sourceSection, FrameSlot frameSlot) {
-        super(sourcePosition);
+        super(sourcePosition, false);
         this.sourceSection = sourceSection;
         this.frameSlot = frameSlot;
     }

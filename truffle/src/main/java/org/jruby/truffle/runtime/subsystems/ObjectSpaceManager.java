@@ -20,6 +20,7 @@ import java.util.WeakHashMap;
 
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
 import org.jruby.truffle.runtime.core.RubyProc;
 import org.jruby.truffle.runtime.core.RubyThread;
@@ -27,6 +28,7 @@ import org.jruby.truffle.runtime.subsystems.ThreadManager.BlockingActionWithoutG
 import org.jruby.truffle.runtime.util.Consumer;
 
 import com.oracle.truffle.api.Truffle;
+import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.frame.Frame;
 import com.oracle.truffle.api.frame.FrameInstance;
 import com.oracle.truffle.api.frame.FrameInstanceVisitor;
@@ -66,7 +68,6 @@ public class ObjectSpaceManager {
     private final Map<RubyBasicObject, FinalizerReference> finalizerReferences = new WeakHashMap<>();
     private final ReferenceQueue<RubyBasicObject> finalizerQueue = new ReferenceQueue<>();
     private RubyThread finalizerThread;
-    private boolean stop;
 
     public ObjectSpaceManager(RubyContext context) {
         this.context = context;
@@ -92,7 +93,6 @@ public class ObjectSpaceManager {
             // TODO(CS): should we be running this in a real Ruby thread?
 
             finalizerThread = new RubyThread(context.getCoreLibrary().getThreadClass(), context.getThreadManager());
-            finalizerThread.ignoreSafepointActions();
             finalizerThread.initialize(context, null, "finalizer", new Runnable() {
                 @Override
                 public void run() {
@@ -115,34 +115,17 @@ public class ObjectSpaceManager {
     private void runFinalizers() {
         // Run in a loop
 
-        while (!stop) {
-            // Is there a finalizer ready to immediately run?
-
-            FinalizerReference finalizerReference = (FinalizerReference) finalizerQueue.poll();
-
-            if (finalizerReference != null) {
-                runFinalizers(finalizerReference);
-                continue;
-            }
-
-            // Check if we've been asked to stop
-
-            if (stop) {
-                break;
-            }
-
+        while (true) {
             // Leave the global lock and wait on the finalizer queue
 
-            finalizerReference = context.getThreadManager().runOnce(new BlockingActionWithoutGlobalLock<FinalizerReference>() {
+            FinalizerReference finalizerReference = context.getThreadManager().runUntilResult(new BlockingActionWithoutGlobalLock<FinalizerReference>() {
                 @Override
                 public FinalizerReference block() throws InterruptedException {
                     return (FinalizerReference) finalizerQueue.remove();
                 }
             });
 
-            if (finalizerReference != null) {
-                runFinalizers(finalizerReference);
-            }
+            runFinalizers(finalizerReference);
         }
     }
 
@@ -151,34 +134,8 @@ public class ObjectSpaceManager {
             for (RubyProc proc : finalizerReference.getFinalizers()) {
                 proc.rootCall();
             }
-        } catch (Throwable t) {
+        } catch (RaiseException e) {
             // MRI seems to silently ignore exceptions in finalizers
-        }
-    }
-
-    public void shutdown() {
-        RubyNode.notDesignedForCompilation();
-
-        if (finalizerThread == null) {
-            return;
-        }
-
-        // TODO (eregon): refactor this without explicit interrupt
-        context.getThreadManager().enterGlobalLock(finalizerThread);
-
-        try {
-            // Tell the finalizer thread to stop and wait for it to do so
-            stop = true;
-            finalizerThread.interrupt();
-            finalizerThread.join();
-
-            // Run any finalizers for objects that are still live
-
-            for (FinalizerReference finalizerReference : finalizerReferences.values()) {
-                runFinalizers(finalizerReference);
-            }
-        } finally {
-            context.getThreadManager().leaveGlobalLock();
         }
     }
 
@@ -191,6 +148,7 @@ public class ObjectSpaceManager {
     private Map<Long, RubyBasicObject> liveObjects;
     private ObjectGraphVisitor visitor;
 
+    @TruffleBoundary
     public Map<Long, RubyBasicObject> collectLiveObjects() {
         RubyNode.notDesignedForCompilation();
 

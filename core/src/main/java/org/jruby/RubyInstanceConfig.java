@@ -1234,23 +1234,23 @@ public class RubyInstanceConfig {
     /**
      * Set whether to use the self-first jruby classloader.
      *
-     * @see Options#SELF_FIRST_CLASS_LOADER
+     * @see Options#CLASSLOADER_DELEGATE
      *
      * @param b new value indicating whether self-first classloader is used
      */
-    public void setSelfFirstClassLoader(boolean b) {
-        _selfFirstClassLoader = b;
+    public void setClassloaderDelegate(boolean b) {
+        _classloaderDelegate = b;
     }
 
     /**
      * Get whether to use the self-first jruby classloader.
      *
-     * @see Options#SELF_FIRST_CLASS_LOADER
+     * @see Options#CLASSLOADER_DELEGATE
      *
      * @return true if self-first classloader is used; false otherwise.
      */
-    public boolean isSelfFirstClassLoader() {
-        return _selfFirstClassLoader;
+    public boolean isClassloaderDelegate() {
+        return _classloaderDelegate;
     }
 
     /**
@@ -1512,7 +1512,7 @@ public class RubyInstanceConfig {
      * Whether native code is enabled for this configuration.
      */
     private boolean _nativeEnabled = NATIVE_ENABLED;
-    private boolean _selfFirstClassLoader = Options.SELF_FIRST_CLASS_LOADER.load();
+    private boolean _classloaderDelegate = Options.CLASSLOADER_DELEGATE.load();
 
     private TraceType traceType =
             TraceType.traceTypeFor(Options.BACKTRACE_STYLE.load());

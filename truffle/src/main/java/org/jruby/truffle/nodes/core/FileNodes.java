@@ -277,7 +277,7 @@ public abstract class FileNodes {
 
         @Specialization
         public RubyString expandPath(RubyString path, @SuppressWarnings("unused") UndefinedPlaceholder dir) {
-            return getContext().makeString(RubyFile.expandPath(path.toString()));
+            return getContext().makeString(RubyFile.expandPath(getContext(), path.toString()));
         }
 
         @Specialization
@@ -335,7 +335,7 @@ public abstract class FileNodes {
 
             for (int n = 0; n < parts.length; n++) {
                 if (n > 0) {
-                    builder.append(File.separator);
+                    builder.append("/");
                 }
 
                 if (parts[n] instanceof RubyArray) {

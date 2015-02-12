@@ -341,15 +341,7 @@ public class BodyTranslator extends Translator {
 
         RubyNode resultNode;
 
-        if (node.getValueNode() == null) {
-            parentSourceSection = sourceSection;
-
-            try {
-                resultNode = new ObjectLiteralNode(context, sourceSection, context.getCoreLibrary().getNilObject());
-            } finally {
-                parentSourceSection = null;
-            }
-        } else if (node.getValueNode().getPosition() == InvalidSourcePosition.INSTANCE) {
+        if (node.getValueNode().getPosition() == InvalidSourcePosition.INSTANCE) {
             parentSourceSection = sourceSection;
 
             try {
@@ -2055,31 +2047,21 @@ public class BodyTranslator extends Translator {
 
         RubyNode resultNode;
 
-        if (node.getValueNode() == null) {
-            parentSourceSection = sourceSection;
+        final boolean t = translatingNextExpression;
+        translatingNextExpression = true;
 
-            try {
-                resultNode = new ObjectLiteralNode(context, sourceSection, context.getCoreLibrary().getNilObject());
-            } finally {
+        if (node.getValueNode().getPosition() == InvalidSourcePosition.INSTANCE) {
+            parentSourceSection = sourceSection;
+        }
+
+        try {
+            resultNode = node.getValueNode().accept(this);
+        } finally {
+            if (node.getValueNode().getPosition() == InvalidSourcePosition.INSTANCE) {
                 parentSourceSection = null;
             }
-        } else {
-            final boolean t = translatingNextExpression;
-            translatingNextExpression = true;
 
-            if (node.getValueNode().getPosition() == InvalidSourcePosition.INSTANCE) {
-                parentSourceSection = sourceSection;
-            }
-
-            try {
-                resultNode = node.getValueNode().accept(this);
-            } finally {
-                if (node.getValueNode().getPosition() == InvalidSourcePosition.INSTANCE) {
-                    parentSourceSection = null;
-                }
-
-                translatingNextExpression = t;
-            }
+            translatingNextExpression = t;
         }
 
         return new NextNode(context, sourceSection, resultNode);
@@ -2448,13 +2430,7 @@ public class BodyTranslator extends Translator {
     public RubyNode visitReturnNode(org.jruby.ast.ReturnNode node) {
         final SourceSection sourceSection = translate(node.getPosition());
 
-        RubyNode translatedChild;
-
-        if (node.getValueNode() == null) {
-            translatedChild = new ObjectLiteralNode(context, sourceSection, context.getCoreLibrary().getNilObject());
-        } else {
-            translatedChild = node.getValueNode().accept(this);
-        }
+        RubyNode translatedChild = node.getValueNode().accept(this);
 
         return new ReturnNode(context, sourceSection, environment.getReturnID(), translatedChild);
     }

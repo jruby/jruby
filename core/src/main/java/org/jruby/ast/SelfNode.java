@@ -42,7 +42,7 @@ import org.jruby.lexer.yacc.ISourcePosition;
  */
 public class SelfNode extends Node implements INameNode {
     public SelfNode(ISourcePosition position) {
-        super(position);
+        super(position, false);
     }
 
     public NodeType getNodeType() {

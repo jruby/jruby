@@ -41,7 +41,7 @@ public class ArgsCatNode extends Node {
     private final Node secondNode;
 
     public ArgsCatNode(ISourcePosition position, Node firstNode, Node secondNode) {
-        super(position);
+        super(position, firstNode.containsVariableAssignment() || secondNode.containsVariableAssignment());
         
         assert firstNode != null : "ArgsCatNode.first == null";
         assert secondNode != null : "ArgsCatNode.second == null";

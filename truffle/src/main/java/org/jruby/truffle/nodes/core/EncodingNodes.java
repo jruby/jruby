@@ -10,12 +10,14 @@
 package org.jruby.truffle.nodes.core;
 
 import com.oracle.truffle.api.CompilerDirectives;
+import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.dsl.CreateCast;
 import com.oracle.truffle.api.dsl.NodeChild;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.utilities.ConditionProfile;
+
 import org.jcodings.Encoding;
 import org.jcodings.EncodingDB;
 import org.jcodings.specific.ASCIIEncoding;
@@ -53,6 +55,7 @@ public abstract class EncodingNodes {
             super(prev);
         }
 
+        @TruffleBoundary
         @Specialization
         public RubyHash aliases() {
             notDesignedForCompilation();
@@ -282,6 +285,7 @@ public abstract class EncodingNodes {
             super(prev);
         }
 
+        @TruffleBoundary
         @Specialization
         public RubyArray find() {
             notDesignedForCompilation();
