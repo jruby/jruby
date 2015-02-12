@@ -2,7 +2,6 @@ package org.jruby.ir.dataflow.analyses;
 
 import org.jruby.dirgra.Edge;
 import org.jruby.ir.IRClosure;
-import org.jruby.ir.IRFlags;
 import org.jruby.ir.IRScope;
 import org.jruby.ir.dataflow.DataFlowConstants;
 import org.jruby.ir.dataflow.FlowGraphNode;
@@ -71,13 +70,13 @@ public class LiveVariableNode extends FlowGraphNode<LiveVariablesProblem, LiveVa
         in.or(pred.out);
     }
 
-    private void markAllVariablesLive(LiveVariablesProblem lvp, BitSet living, Collection<? extends Variable> variableList) {
+    private void markAllVariablesLive(LiveVariablesProblem lvp, Collection<? extends Variable> variableList) {
         for (Variable variable: variableList) {
-            markVariableLive(lvp, living, variable);
+            markVariableLive(lvp, variable);
         }
     }
 
-    private void markVariableLive(LiveVariablesProblem lvp, BitSet living, Variable x) {
+    private void markVariableLive(LiveVariablesProblem lvp, Variable x) {
         Integer dv = lvp.getDFVar(x);
 
         // A buggy Ruby program that uses but does not assign a value to a var
@@ -179,7 +178,7 @@ public class LiveVariableNode extends FlowGraphNode<LiveVariablesProblem, LiveVa
                 } while (changed);
 
                 // Merge live on closure entry info into the current problem.
-                markAllVariablesLive(problem, living, liveOnEntryAfter);
+                markAllVariablesLive(problem, liveOnEntryAfter);
             }
 
             // If this is a dataflow barrier -- mark all local vars but %self and %block live
@@ -196,12 +195,10 @@ public class LiveVariableNode extends FlowGraphNode<LiveVariablesProblem, LiveVa
         // the binding has escaped since the if (scopeBindingHasEscapd) check above
         // would have handled it. But, extra readability of the DRY-ed version is
         // worth the the little bit of extra work.
-        if (i.canRaiseException()) {
-            makeOutExceptionVariablesLiving(living);
-        }
+        if (i.canRaiseException()) makeOutExceptionVariablesLiving();
 
         // Now, for all variables used by 'i', mark them live before 'i'
-        markAllVariablesLive(problem, living, i.getUsedVariables());
+        markAllVariablesLive(problem, i.getUsedVariables());
     }
 
     @Override
@@ -221,12 +218,8 @@ public class LiveVariableNode extends FlowGraphNode<LiveVariablesProblem, LiveVa
      * control-flow edge from pretty much every instr. to the rescuer/exit BB, we are handling it
      * implicitly here.
      */
-    private void makeOutExceptionVariablesLiving(BitSet living) {
-        BitSet etOut = getExceptionTargetNode().out;
-
-        for (int i = 0; i < etOut.size(); i++) {
-            if (etOut.get(i)) living.set(i);
-        }
+    private void makeOutExceptionVariablesLiving() {
+        living.or(getExceptionTargetNode().out);
     }
 
     @Override
@@ -314,7 +307,7 @@ public class LiveVariableNode extends FlowGraphNode<LiveVariablesProblem, LiveVa
                     IRClosure cl = ((WrappedIRClosure)o).getClosure();
                     LiveVariablesProblem cl_lvp = (LiveVariablesProblem)cl.getDataFlowSolution(problem.getName());
                     // Collect variables live on entry and merge that info into the current problem.
-                    markAllVariablesLive(problem, living, cl_lvp.getVarsLiveOnScopeEntry());
+                    markAllVariablesLive(problem, cl_lvp.getVarsLiveOnScopeEntry());
                 } else if (scopeBindingHasEscaped) {
                     // Mark all non-self, non-block local variables live if 'c' is a dataflow barrier!
                     for (Variable x: problem.getNonSelfLocalVars()) {
@@ -327,12 +320,10 @@ public class LiveVariableNode extends FlowGraphNode<LiveVariablesProblem, LiveVa
             // the binding has escaped since the if (scopeBindingHasEscapd) check above
             // would have handled it. But, extra readability of the DRY-ed version is
             // worth the the little bit of extra work.
-            if (i.canRaiseException()) {
-                makeOutExceptionVariablesLiving(living);
-            }
+            if (i.canRaiseException()) makeOutExceptionVariablesLiving();
 
             // Do not mark this instruction's operands live if the instruction itself is dead!
-            if (!i.isDead()) markAllVariablesLive(problem, living, i.getUsedVariables());
+            if (!i.isDead()) markAllVariablesLive(problem, i.getUsedVariables());
         }
     }
 
