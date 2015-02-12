@@ -68,7 +68,7 @@ class MethodTranslator extends BodyTranslator {
          */
 
         if (isBlock && argsNode.childNodes().size() == 2 && argsNode.getRestArgNode() instanceof org.jruby.ast.UnnamedRestArgNode) {
-            arityForCheck = new Arity(arity.getRequired(), 0, false, false, 0);
+            arityForCheck = new Arity(arity.getRequired(), 0, false, false, false, 0);
         } else {
             arityForCheck = arity;
         }
@@ -236,7 +236,7 @@ class MethodTranslator extends BodyTranslator {
     private static Arity getArity(org.jruby.ast.ArgsNode argsNode) {
         final int minimum = argsNode.getRequiredArgsCount();
         final int maximum = argsNode.getMaxArgumentsCount();
-        return new Arity(minimum, argsNode.getOptionalArgsCount(), maximum == -1, argsNode.hasKwargs(), argsNode.countKeywords());
+        return new Arity(minimum, argsNode.getOptionalArgsCount(), maximum == -1, argsNode.hasKwargs(), argsNode.hasKeyRest(), argsNode.countKeywords());
     }
 
     @Override

@@ -2611,7 +2611,7 @@ public class BodyTranslator extends Translator {
         final SourceSection sourceSection = translate(node.getPosition());
 
         // TODO(cs): code copied and modified from visitIterNode - extract common
-        final SharedMethodInfo sharedMethodInfo = new SharedMethodInfo(sourceSection, environment.getLexicalScope(), "(lambda)", true, node, false);
+        final SharedMethodInfo sharedMethodInfo = new SharedMethodInfo(sourceSection, environment.getLexicalScope(), "(lambda)", true, node, false, node.getArgs());
 
         final TranslatorEnvironment newEnvironment = new TranslatorEnvironment(
                 context, environment, environment.getParser(), environment.getReturnID(), false, false, sharedMethodInfo, sharedMethodInfo.getName(), true);
