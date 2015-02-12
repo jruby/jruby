@@ -101,7 +101,7 @@ public class UncachedDispatchNode extends DispatchNode {
                                     method.getDeclarationFrame(),
                                     receiverObject,
                                     (RubyProc) blockObject,
-                                    CompilerDirectives.unsafeCast(argumentsObjects, Object[].class, true)));
+                                    (Object[]) argumentsObjects));
                 } else if (dispatchAction == DispatchAction.RESPOND_TO_METHOD) {
                     return true;
                 } else {
@@ -124,7 +124,7 @@ public class UncachedDispatchNode extends DispatchNode {
             }
 
             if (dispatchAction == DispatchAction.CALL_METHOD) {
-                final Object[] argumentsObjectsArray = CompilerDirectives.unsafeCast(argumentsObjects, Object[].class, true);
+                final Object[] argumentsObjectsArray = (Object[]) argumentsObjects;
 
                 final Object[] modifiedArgumentsObjects = new Object[1 + argumentsObjectsArray.length];
 

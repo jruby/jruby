@@ -84,7 +84,7 @@ public class CachedUnboxedDispatchNode extends CachedDispatchNode {
                     frame,
                     receiverObject,
                     methodName,
-                    CompilerDirectives.unsafeCast(blockObject, RubyProc.class, true, false),
+                    (RubyProc) blockObject,
                     argumentsObjects,
                     "class modified");
         }
@@ -98,16 +98,16 @@ public class CachedUnboxedDispatchNode extends CachedDispatchNode {
                             RubyArguments.pack(
                                     method,
                                     method.getDeclarationFrame(),
-                                    receiverObject, CompilerDirectives.unsafeCast(blockObject, RubyProc.class, true, false),
-                                    CompilerDirectives.unsafeCast(argumentsObjects, Object[].class, true)));
+                                    receiverObject, (RubyProc) blockObject,
+                                    (Object[]) argumentsObjects));
                 } else {
                     return callNode.call(
                             frame,
                             RubyArguments.pack(
                                     method,
                                     method.getDeclarationFrame(),
-                                    receiverObject, CompilerDirectives.unsafeCast(blockObject, RubyProc.class, true, false),
-                                    CompilerDirectives.unsafeCast(argumentsObjects, Object[].class, true)));
+                                    receiverObject, (RubyProc) blockObject,
+                                    (Object[]) argumentsObjects));
                 }
             }
 

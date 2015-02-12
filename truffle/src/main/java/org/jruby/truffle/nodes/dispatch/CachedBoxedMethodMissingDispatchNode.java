@@ -98,7 +98,7 @@ public class CachedBoxedMethodMissingDispatchNode extends CachedDispatchNode {
                     frame,
                     receiverObject,
                     methodName,
-                    CompilerDirectives.unsafeCast(blockObject, RubyProc.class, true, false),
+                    (RubyProc) blockObject,
                     argumentsObjects,
                     "class modified");
         }
@@ -107,7 +107,7 @@ public class CachedBoxedMethodMissingDispatchNode extends CachedDispatchNode {
             case CALL_METHOD: {
                 // When calling #method_missing we need to prepend the symbol
 
-                final Object[] argumentsObjectsArray = CompilerDirectives.unsafeCast(argumentsObjects, Object[].class, true);
+                final Object[] argumentsObjectsArray = (Object[]) argumentsObjects;
                 final Object[] modifiedArgumentsObjects = new Object[1 + argumentsObjectsArray.length];
                 modifiedArgumentsObjects[0] = getCachedNameAsSymbol();
                 RubyArguments.arraycopy(argumentsObjectsArray, 0, modifiedArgumentsObjects, 1, argumentsObjectsArray.length);
@@ -120,7 +120,7 @@ public class CachedBoxedMethodMissingDispatchNode extends CachedDispatchNode {
                                     method,
                                     method.getDeclarationFrame(),
                                     receiverObject,
-                                    CompilerDirectives.unsafeCast(blockObject, RubyProc.class, true, false),
+                                    (RubyProc) blockObject,
                                     modifiedArgumentsObjects));
                 } else {
                     return callNode.call(
@@ -129,7 +129,7 @@ public class CachedBoxedMethodMissingDispatchNode extends CachedDispatchNode {
                                     method,
                                     method.getDeclarationFrame(),
                                     receiverObject,
-                                    CompilerDirectives.unsafeCast(blockObject, RubyProc.class, true, false),
+                                    (RubyProc) blockObject,
                                     modifiedArgumentsObjects));
                 }
             }
@@ -146,7 +146,7 @@ public class CachedBoxedMethodMissingDispatchNode extends CachedDispatchNode {
                                     method,
                                     method.getDeclarationFrame(),
                                     receiverObject,
-                                    CompilerDirectives.unsafeCast(blockObject, RubyProc.class, true, false),
+                                    (RubyProc) blockObject,
                                     new Object[]{getCachedNameAsSymbol()}));
                 } else {
                     return callNode.call(
@@ -155,7 +155,7 @@ public class CachedBoxedMethodMissingDispatchNode extends CachedDispatchNode {
                                     method,
                                     method.getDeclarationFrame(),
                                     receiverObject,
-                                    CompilerDirectives.unsafeCast(blockObject, RubyProc.class, true, false),
+                                    (RubyProc) blockObject,
                                     new Object[]{getCachedNameAsSymbol()}));
                 }
             }
