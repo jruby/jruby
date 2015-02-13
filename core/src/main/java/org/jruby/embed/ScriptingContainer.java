@@ -1870,19 +1870,20 @@ public class ScriptingContainer implements EmbedRubyInstanceConfigAdapter {
      * classloader and the JRuby classloader, those classess would be incompatible
      * with each other and with other library objects from the opposing classloader.
      *
-     * @param selfFirstClassloader set whether prefer the JRuby classloader when dynamically loading classes
+     * @param classloaderDelegate set whether prefer the JRuby classloader to delegate first 
+     *                            to the parent classloader when dynamically loading classes
      * @since JRuby 9.0.0.0
      */
-    public void setSelfFirstClassloader(boolean selfFirstClassloader) {
-        getProvider().getRubyInstanceConfig().setSelfFirstClassLoader(selfFirstClassloader);
+    public void setClassloaderDelegate(boolean classloaderDelegate) {
+        getProvider().getRubyInstanceConfig().setClassloaderDelegate(classloaderDelegate);
     }
 
     /**
      * Retrieve the self-first classloader setting.
      *
-     * @see ScriptingContainer#setSelfFirstClassloader(boolean)
+     * @see ScriptingContainer#setClassloaderDelegate(boolean)
      */
-    public boolean getSelfFirstClassloader() {
-        return getProvider().getRubyInstanceConfig().isSelfFirstClassLoader();
+    public boolean getClassloaderDelegate() {
+        return getProvider().getRubyInstanceConfig().isClassloaderDelegate();
     }
 }

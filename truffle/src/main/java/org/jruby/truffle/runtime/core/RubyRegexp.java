@@ -11,10 +11,12 @@ package org.jruby.truffle.runtime.core;
 
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.CompilerDirectives.CompilationFinal;
+import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.Truffle;
 import com.oracle.truffle.api.frame.Frame;
 import com.oracle.truffle.api.frame.FrameInstance;
 import com.oracle.truffle.api.frame.FrameSlot;
+
 import org.jcodings.Encoding;
 import org.joni.*;
 import org.joni.exception.SyntaxException;
@@ -425,6 +427,7 @@ public class RubyRegexp extends RubyBasicObject {
         return compile(currentNode, context, bytes.bytes(), bytes.getEncoding(), options);
     }
 
+    @TruffleBoundary
     public static Regex compile(RubyNode currentNode, RubyContext context, byte[] bytes, Encoding encoding, int options) {
         RubyNode.notDesignedForCompilation();
 

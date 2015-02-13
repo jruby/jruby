@@ -29,7 +29,7 @@ public class BouncyCastleTestCase {
     @Test
     public void ruby(){
         ScriptingContainer container = new ScriptingContainer();
-        container.setSelfFirstClassloader(true);
+        container.setClassloaderDelegate(false);
         Object result = container.parse( "require 'openssl'; Java::OrgBouncycastleJceProvider::BouncyCastleProvider.new.info").run();
         assertEquals( "BouncyCastle Security Provider v1.49", result.toString() );
 

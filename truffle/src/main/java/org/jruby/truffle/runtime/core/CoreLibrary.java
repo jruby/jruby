@@ -510,6 +510,7 @@ public class CoreLibrary {
         } else if (object == null) {
             throw new RuntimeException();
         } else {
+            CompilerDirectives.transferToInterpreter();
             throw new UnsupportedOperationException(String.format("Don't know how to get the metaclass for %s", object.getClass()));
         }
     }
@@ -534,6 +535,7 @@ public class CoreLibrary {
         } else if (object == null) {
             throw new RuntimeException();
         } else {
+            CompilerDirectives.transferToInterpreter();
             throw new UnsupportedOperationException(String.format("Don't know how to get the logical class for %s", object.getClass()));
         }
     }
@@ -563,7 +565,6 @@ public class CoreLibrary {
         }
 
         CompilerDirectives.transferToInterpreter();
-
         throw new UnsupportedOperationException();
     }
 
@@ -730,6 +731,7 @@ public class CoreLibrary {
     }
 
     public RubyException nameErrorUndefinedLocalVariableOrMethod(String name, String object, Node currentNode) {
+        CompilerAsserts.neverPartOfCompilation();
         return nameError(String.format("undefined local variable or method `%s' for %s", name, object), currentNode);
     }
 

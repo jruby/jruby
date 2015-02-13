@@ -98,15 +98,18 @@ public class ExceptionTranslatingNode extends RubyNode {
                 builder.append(")");
 
                 if (value instanceof RubyArray) {
-                    final Object store = ((RubyArray) value).getStore();
+                    final RubyArray array = (RubyArray) value;
+                    builder.append("[");
 
-                    if (store == null) {
-                        builder.append("[null]");
+                    if (array.getStore() == null) {
+                        builder.append("null");
                     } else {
-                        builder.append("[");
-                        builder.append(store.getClass().getName());
-                        builder.append("]");
+                        builder.append(array.getStore().getClass().getName());
                     }
+
+                    builder.append(",");
+                    builder.append(array.getSize());
+                    builder.append("]");
                 } else if (value instanceof RubyHash) {
                     final Object store = ((RubyHash) value).getStore();
 
@@ -120,6 +123,11 @@ public class ExceptionTranslatingNode extends RubyNode {
                 }
             } else {
                 builder.append(value.getClass().getName());
+            }
+
+            if (value instanceof Number) {
+                builder.append("=");
+                builder.append(value.toString());
             }
         }
 

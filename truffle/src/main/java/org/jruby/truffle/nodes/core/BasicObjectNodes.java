@@ -9,7 +9,9 @@
  */
 package org.jruby.truffle.nodes.core;
 
+import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.Truffle;
+import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.dsl.CreateCast;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
@@ -321,6 +323,7 @@ public abstract class BasicObjectNodes {
         }
 
         private Object methodMissing(Object self, RubySymbol name, Object[] args, RubyProc block) {
+            CompilerDirectives.transferToInterpreter();
             // TODO: should not be a call to Java toString(), but rather sth like name_err_mesg_to_str() in MRI error.c
             if (lastCallWasVCall()) {
                 throw new RaiseException(

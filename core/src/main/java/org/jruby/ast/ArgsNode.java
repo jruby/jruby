@@ -299,4 +299,27 @@ public class ArgsNode extends Node {
 
         return Node.createList(pre, optArgs, restArgNode, blockArgNode);
     }
+
+    public int getRequiredKeywordCount() {
+        if (hasRequiredKeywordArg()) return 1;
+        return 0;
+    }
+
+    private boolean hasRequiredKeywordArg() {
+        if (getKeywords() == null) return false;
+
+        for (Node keyWordNode :getKeywords().childNodes()) {
+            for (Node asgnNode : keyWordNode.childNodes()) {
+                if (isRequiredKeywordArgumentValueNode(asgnNode)) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    private boolean isRequiredKeywordArgumentValueNode(Node asgnNode) {
+        return asgnNode.childNodes().get(0) instanceof RequiredKeywordArgumentValueNode;
+    }
+
 }

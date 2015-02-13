@@ -1,12 +1,15 @@
 require 'java'
 require 'rbconfig'
 require 'test/unit'
+require 'test/jruby/test_helper'
+require 'jruby/core_ext'
 
 TopLevelConstantExistsProc = Proc.new do
   java_import 'java.lang.String'
 end
 
 class TestHigherJavasupport < Test::Unit::TestCase
+  include TestHelper
   TestHelper = org.jruby.test.TestHelper
   JArray = ArrayList = java.util.ArrayList
   FinalMethodBaseTest = org.jruby.test.FinalMethodBaseTest
@@ -19,6 +22,19 @@ class TestHigherJavasupport < Test::Unit::TestCase
       cwp.an_int = nil
       assert_equal 0, cwp.an_int
     }
+  end
+
+  class JRUBY5564; end
+  def test_reified_class_in_jruby_class_loader
+    a_class = JRUBY5564.become_java!(false)
+
+    # load the java class from the classloader
+    cl = java.lang.Thread.current_thread.getContextClassLoader
+    if IS_COMMAND_LINE_EXECUTION
+      assert_equal cl.load_class(a_class.get_name), a_class
+    else
+      assert_raise { cl.load_class(a_class.get_name) }
+    end
   end
 
   def test_java_passing_class

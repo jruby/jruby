@@ -103,8 +103,8 @@ public class TranslatorDriver {
 
         try {
             node = (org.jruby.ast.RootNode) parser.parse(source.getName(), source.getCode().getBytes(StandardCharsets.UTF_8), new ManyVarsDynamicScope(staticScope), parserConfiguration);
-        } catch (Exception e) {
-            String message = e.getMessage();
+        } catch (org.jruby.exceptions.RaiseException e) {
+            String message = e.getException().message.asJavaString();
 
             if (message == null) {
                 message = "(no message)";

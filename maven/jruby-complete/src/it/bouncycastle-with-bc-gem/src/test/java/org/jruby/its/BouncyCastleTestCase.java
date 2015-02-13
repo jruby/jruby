@@ -24,7 +24,7 @@ public class BouncyCastleTestCase {
     @Test
     public void ruby() {
         ScriptingContainer container = new ScriptingContainer();
-        container.setSelfFirstClassloader(true);
+        container.setClassloaderDelegate(false);
         Object result = container.parse( "gem 'bouncy-castle-java', '1.5.0146.1'; require 'bouncy-castle-java'; Java::OrgBouncycastleJceProvider::BouncyCastleProvider.new.info").run();
         assertEquals( "BouncyCastle Security Provider v1.46", result.toString() );
 

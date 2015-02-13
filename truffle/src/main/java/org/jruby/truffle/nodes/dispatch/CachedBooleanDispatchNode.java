@@ -122,7 +122,7 @@ public class CachedBooleanDispatchNode extends CachedDispatchNode {
                         frame,
                         receiverObject,
                         methodName,
-                        CompilerDirectives.unsafeCast(blockObject, RubyProc.class, true, false),
+                        (RubyProc) blockObject,
                         argumentsObjects,
                         "class modified");
             }
@@ -139,8 +139,8 @@ public class CachedBooleanDispatchNode extends CachedDispatchNode {
                                         trueMethod,
                                         trueMethod.getDeclarationFrame(),
                                         receiverObject,
-                                        CompilerDirectives.unsafeCast(blockObject, RubyProc.class, true, false),
-                                        CompilerDirectives.unsafeCast(argumentsObjects, Object[].class, true)));
+                                        (RubyProc) blockObject,
+                                        (Object[]) argumentsObjects));
                     } else {
                         return trueCallDirect.call(
                                 frame,
@@ -148,8 +148,8 @@ public class CachedBooleanDispatchNode extends CachedDispatchNode {
                                         trueMethod,
                                         trueMethod.getDeclarationFrame(),
                                         receiverObject,
-                                        CompilerDirectives.unsafeCast(blockObject, RubyProc.class, true, false),
-                                        CompilerDirectives.unsafeCast(argumentsObjects, Object[].class, true)));
+                                        (RubyProc) blockObject,
+                                        (Object[]) argumentsObjects));
                     }
                 }
 
@@ -172,7 +172,7 @@ public class CachedBooleanDispatchNode extends CachedDispatchNode {
                         frame,
                         receiverObject,
                         methodName,
-                        CompilerDirectives.unsafeCast(blockObject, RubyProc.class, true, false),
+                        (RubyProc) blockObject,
                         argumentsObjects,
                         "class modified");
             }
@@ -189,8 +189,8 @@ public class CachedBooleanDispatchNode extends CachedDispatchNode {
                                         falseMethod,
                                         falseMethod.getDeclarationFrame(),
                                         receiverObject,
-                                        CompilerDirectives.unsafeCast(blockObject, RubyProc.class, true, false),
-                                        CompilerDirectives.unsafeCast(argumentsObjects, Object[].class, true)));
+                                        (RubyProc) blockObject,
+                                        (Object[]) argumentsObjects));
                     } else {
                         return falseCallDirect.call(
                                 frame,
@@ -198,8 +198,8 @@ public class CachedBooleanDispatchNode extends CachedDispatchNode {
                                         falseMethod,
                                         falseMethod.getDeclarationFrame(),
                                         receiverObject,
-                                        CompilerDirectives.unsafeCast(blockObject, RubyProc.class, true, false),
-                                        CompilerDirectives.unsafeCast(argumentsObjects, Object[].class, true)));
+                                        (RubyProc) blockObject,
+                                        (Object[]) argumentsObjects));
                     }
                 }
 

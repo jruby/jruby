@@ -69,7 +69,7 @@ public class CachedBoxedReturnMissingDispatchNode extends CachedDispatchNode {
                     frame,
                     receiverObject,
                     methodName,
-                    CompilerDirectives.unsafeCast(blockObject, RubyProc.class, true, false),
+                    (RubyProc) blockObject,
                     argumentsObjects,
                     "class modified");
         }
