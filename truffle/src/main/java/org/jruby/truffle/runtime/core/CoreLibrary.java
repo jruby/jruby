@@ -31,6 +31,7 @@ import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.control.TruffleFatalException;
 import org.jruby.truffle.runtime.hash.HashOperations;
 import org.jruby.truffle.runtime.hash.KeyValue;
+import org.jruby.truffle.runtime.signal.SignalOperations;
 import org.jruby.truffle.translator.NodeWrapper;
 import org.jruby.truffle.translator.TranslatorDriver;
 import org.jruby.util.cli.Options;
@@ -324,6 +325,7 @@ public class CoreLibrary {
         initializeGlobalVariables();
         initializeConstants();
         initializeEncodingConstants();
+        initializeSignalConstants();
 
         // Common symbols
         eachSymbol = getContext().getSymbolTable().getSymbol("each");
@@ -386,6 +388,20 @@ public class CoreLibrary {
 
         fileClass.setConstant(null, "PATH_SEPARATOR", RubyString.fromJavaString(stringClass, File.pathSeparator));
         fileClass.setConstant(null, "FNM_SYSCASE", 0);
+    }
+
+    private void initializeSignalConstants() {
+        RubyNode.notDesignedForCompilation();
+
+        Object[] signals = new Object[SignalOperations.SIGNALS_LIST.size()];
+
+        int i = 0;
+        for (Map.Entry<String, Integer> signal : SignalOperations.SIGNALS_LIST.entrySet()) {
+            RubyString signalName = context.makeString(signal.getKey());
+            signals[i++] = RubyArray.fromObjects(arrayClass, signalName, signal.getValue());
+        }
+
+        signalModule.setConstant(null, "SIGNAL_LIST", new RubyArray(arrayClass, signals, signals.length));
     }
 
     private RubyClass defineClass(String name) {
