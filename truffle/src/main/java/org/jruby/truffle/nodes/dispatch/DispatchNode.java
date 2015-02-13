@@ -10,6 +10,7 @@
 package org.jruby.truffle.nodes.dispatch;
 
 import org.jruby.truffle.nodes.RubyNode;
+import org.jruby.truffle.nodes.cast.ProcOrNullNode;
 import org.jruby.truffle.runtime.LexicalScope;
 import org.jruby.truffle.runtime.ModuleOperations;
 import org.jruby.truffle.runtime.RubyConstant;
@@ -45,11 +46,13 @@ public abstract class DispatchNode extends RubyNode {
     public static final Object MISSING = new Object();
     
     @Children protected final RubyNode[] argumentNodes;
+    @Child protected ProcOrNullNode block;
 
-    public DispatchNode(RubyContext context, DispatchAction dispatchAction, RubyNode[] argumentNodes, boolean isSplatted) {
+    public DispatchNode(RubyContext context, DispatchAction dispatchAction, RubyNode[] argumentNodes, ProcOrNullNode block, boolean isSplatted) {
         super(context, null);
         this.dispatchAction = dispatchAction;
         this.argumentNodes = argumentNodes;
+        this.block = block;
         this.isSplatted = isSplatted;
         assert dispatchAction != null;
     }
@@ -57,6 +60,7 @@ public abstract class DispatchNode extends RubyNode {
     public DispatchNode(DispatchNode prev) {
         super(prev);
         argumentNodes = prev.getHeadNode().getArgumentNodes();
+        block = prev.getHeadNode().getBlock();
         isSplatted = prev.isSplatted;
         dispatchAction = prev.dispatchAction;
     }
@@ -213,6 +217,18 @@ public abstract class DispatchNode extends RubyNode {
             return splat(argumentsObjects[0]);
         } else {
             return argumentsObjects;
+        }
+    }
+    
+    protected Object executeBlock(VirtualFrame frame, Object blockOverride) {
+    	if (blockOverride != null) {
+    		return blockOverride;
+    	}
+    	
+        if (block != null) {
+            return block.executeRubyProc(frame);
+        } else {
+            return null;
         }
     }
     

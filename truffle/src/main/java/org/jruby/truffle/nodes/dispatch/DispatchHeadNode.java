@@ -10,6 +10,7 @@
 package org.jruby.truffle.nodes.dispatch;
 
 import org.jruby.truffle.nodes.RubyNode;
+import org.jruby.truffle.nodes.cast.ProcOrNullNode;
 import org.jruby.truffle.runtime.LexicalScope;
 import org.jruby.truffle.runtime.RubyContext;
 
@@ -26,6 +27,7 @@ public class DispatchHeadNode extends Node {
     protected final DispatchAction dispatchAction;
     protected final boolean isSplatted;
     protected final RubyNode[] argumentNodes;
+    protected final ProcOrNullNode block;
 
     @Child private DispatchNode first;
 
@@ -37,6 +39,7 @@ public class DispatchHeadNode extends Node {
             LexicalScope lexicalScope,
             DispatchAction dispatchAction,
             RubyNode[] argumentNodes,
+            ProcOrNullNode block,
             boolean isSplatted) {
         this.context = context;
         this.ignoreVisibility = ignoreVisibility;
@@ -46,7 +49,8 @@ public class DispatchHeadNode extends Node {
         this.dispatchAction = dispatchAction;
         this.argumentNodes = argumentNodes;
         this.isSplatted = isSplatted;
-        first = new UnresolvedDispatchNode(context, ignoreVisibility, indirect, missingBehavior, dispatchAction, argumentNodes, isSplatted);
+        this.block = block;
+        first = new UnresolvedDispatchNode(context, ignoreVisibility, indirect, missingBehavior, dispatchAction, argumentNodes, block, isSplatted);
     }
 
     public Object dispatch(
@@ -65,7 +69,7 @@ public class DispatchHeadNode extends Node {
 
     public void reset(String reason) {
         first.replace(new UnresolvedDispatchNode(
-                context, ignoreVisibility, indirect, missingBehavior, dispatchAction, argumentNodes, isSplatted), reason);
+                context, ignoreVisibility, indirect, missingBehavior, dispatchAction, argumentNodes, block, isSplatted), reason);
     }
 
     public DispatchNode getFirstDispatchNode() {
@@ -82,11 +86,14 @@ public class DispatchHeadNode extends Node {
 
     public void forceUncached() {
         adoptChildren();
-        first.replace(new UncachedDispatchNode(context, ignoreVisibility, dispatchAction, argumentNodes, isSplatted));
+        first.replace(new UncachedDispatchNode(context, ignoreVisibility, dispatchAction, argumentNodes, block, isSplatted));
     }
     
     public RubyNode[] getArgumentNodes() {
         return argumentNodes;
     }
 
+    public ProcOrNullNode getBlock() {
+    	return block;
+    }
 }

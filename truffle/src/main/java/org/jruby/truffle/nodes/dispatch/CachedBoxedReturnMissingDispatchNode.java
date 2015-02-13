@@ -10,6 +10,7 @@
 package org.jruby.truffle.nodes.dispatch;
 
 import org.jruby.truffle.nodes.RubyNode;
+import org.jruby.truffle.nodes.cast.ProcOrNullNode;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
 import org.jruby.truffle.runtime.core.RubyClass;
@@ -33,8 +34,9 @@ public class CachedBoxedReturnMissingDispatchNode extends CachedDispatchNode {
             boolean indirect,
             DispatchAction dispatchAction,
             RubyNode[] argumentNodes,
+            ProcOrNullNode block,
             boolean isSplatted) {
-        super(context, cachedName, next, indirect, dispatchAction, argumentNodes, isSplatted);
+        super(context, cachedName, next, indirect, dispatchAction, argumentNodes, block, isSplatted);
         
         assert expectedClass != null;
         this.expectedClass = expectedClass;

@@ -31,7 +31,7 @@ public abstract class FixnumPrimitiveNodes {
 
         public FixnumCoercePrimitiveNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            toFRespond = new DoesRespondDispatchHeadNode(context, false, false, MissingBehavior.RETURN_MISSING, null, null, false);
+            toFRespond = new DoesRespondDispatchHeadNode(context, false, false, MissingBehavior.RETURN_MISSING, null, null, null, false);
             toF = DispatchHeadNodeFactory.createMethodCall(context);
         }
 

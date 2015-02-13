@@ -10,6 +10,7 @@
 package org.jruby.truffle.nodes.dispatch;
 
 import org.jruby.truffle.nodes.RubyNode;
+import org.jruby.truffle.nodes.cast.ProcOrNullNode;
 import org.jruby.truffle.runtime.LexicalScope;
 import org.jruby.truffle.runtime.RubyContext;
 
@@ -17,8 +18,8 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 
 public class DoesRespondDispatchHeadNode extends DispatchHeadNode {
 
-    public DoesRespondDispatchHeadNode(RubyContext context, boolean ignoreVisibility, boolean indirect, MissingBehavior missingBehavior, LexicalScope lexicalScope, RubyNode[] argumentNodes, boolean isSplatted) {
-        super(context, ignoreVisibility, indirect, missingBehavior, lexicalScope, DispatchAction.RESPOND_TO_METHOD, argumentNodes, isSplatted);
+    public DoesRespondDispatchHeadNode(RubyContext context, boolean ignoreVisibility, boolean indirect, MissingBehavior missingBehavior, LexicalScope lexicalScope, RubyNode[] argumentNodes, ProcOrNullNode block, boolean isSplatted) {
+        super(context, ignoreVisibility, indirect, missingBehavior, lexicalScope, DispatchAction.RESPOND_TO_METHOD, argumentNodes, block, isSplatted);
     }
 
     /**

@@ -10,6 +10,7 @@
 package org.jruby.truffle.nodes.dispatch;
 
 import org.jruby.truffle.nodes.RubyNode;
+import org.jruby.truffle.nodes.cast.ProcOrNullNode;
 import org.jruby.truffle.nodes.conversion.ToJavaStringNode;
 import org.jruby.truffle.nodes.conversion.ToJavaStringNodeFactory;
 import org.jruby.truffle.nodes.conversion.ToSymbolNode;
@@ -40,8 +41,8 @@ public class UncachedDispatchNode extends DispatchNode {
     private final BranchProfile constantMissingProfile = BranchProfile.create();
     private final BranchProfile methodMissingProfile = BranchProfile.create();
 
-    public UncachedDispatchNode(RubyContext context, boolean ignoreVisibility, DispatchAction dispatchAction, RubyNode[] argumentNodes, boolean isSplatted) {
-        super(context, dispatchAction, argumentNodes, isSplatted);
+    public UncachedDispatchNode(RubyContext context, boolean ignoreVisibility, DispatchAction dispatchAction, RubyNode[] argumentNodes, ProcOrNullNode block,boolean isSplatted) {
+        super(context, dispatchAction, argumentNodes, block, isSplatted);
         this.ignoreVisibility = ignoreVisibility;
         callNode = Truffle.getRuntime().createIndirectCallNode();
         toSymbolNode = ToSymbolNodeFactory.create(context, null, null);
@@ -94,6 +95,9 @@ public class UncachedDispatchNode extends DispatchNode {
 
             if (method != null) {
                 if (dispatchAction == DispatchAction.CALL_METHOD) {
+                	argumentsObjects = executeArguments(frame, argumentsObjects);
+                	blockObject = executeBlock(frame, blockObject);
+                	
                     return callNode.call(
                             frame,
                             method.getCallTarget(),
@@ -102,7 +106,7 @@ public class UncachedDispatchNode extends DispatchNode {
                                     method.getDeclarationFrame(),
                                     receiverObject,
                                     (RubyProc) blockObject,
-                                    CompilerDirectives.unsafeCast(executeArguments(frame, argumentsObjects), Object[].class, true)));
+                                    CompilerDirectives.unsafeCast(argumentsObjects, Object[].class, true)));
                 } else if (dispatchAction == DispatchAction.RESPOND_TO_METHOD) {
                     return true;
                 } else {
@@ -133,6 +137,8 @@ public class UncachedDispatchNode extends DispatchNode {
 
                 RubyArguments.arraycopy(argumentsObjectsArray, 0, modifiedArgumentsObjects, 1, argumentsObjectsArray.length);
 
+            	blockObject = executeBlock(frame, blockObject);
+            	
                 return callNode.call(
                         frame,
                         missingMethod.getCallTarget(),

@@ -21,6 +21,7 @@ import com.oracle.truffle.api.nodes.IndirectCallNode;
 import com.oracle.truffle.api.nodes.InvalidAssumptionException;
 
 import org.jruby.truffle.nodes.RubyNode;
+import org.jruby.truffle.nodes.cast.ProcOrNullNode;
 import org.jruby.truffle.nodes.literal.HashLiteralNode;
 import org.jruby.truffle.nodes.literal.ObjectLiteralNode;
 import org.jruby.truffle.nodes.methods.MarkerNode;
@@ -55,6 +56,7 @@ public class CachedBoxedDispatchNode extends CachedDispatchNode {
             boolean indirect,
             DispatchAction dispatchAction,
             RubyNode[] argumentNodes,
+            ProcOrNullNode block,
             boolean isSplatted) {
         this(
                 context,
@@ -67,6 +69,7 @@ public class CachedBoxedDispatchNode extends CachedDispatchNode {
                 indirect,
                 dispatchAction,
                 argumentNodes,
+                block,
                 isSplatted);
      }
      
@@ -151,7 +154,7 @@ public class CachedBoxedDispatchNode extends CachedDispatchNode {
 
                for (String label : restKeywordLabels) {
                    for (int j = 0; j < hashNode.size(); j++) {
-                       final String argLabel = ((ObjectLiteralNode) hashNode.getKey(j)).execute(null).toString();
+                       final String argLabel = ((ObjectLiteralNode) hashNode.getKey(j)).getObject().toString();
                        
                        if (argLabel.equals(label)) {
                            keyValues[i++] = hashNode.getKey(j);
@@ -186,8 +189,9 @@ public class CachedBoxedDispatchNode extends CachedDispatchNode {
             boolean indirect,
             DispatchAction dispatchAction,
             RubyNode[] argumentNodes,
+            ProcOrNullNode block,
             boolean isSplatted) {
-        super(context, cachedName, next, indirect, dispatchAction, expandedArgumentNodes(context, method, argumentNodes, isSplatted), isSplatted);
+        super(context, cachedName, next, indirect, dispatchAction, expandedArgumentNodes(context, method, argumentNodes, isSplatted), block, isSplatted);
 
         this.expectedClass = expectedClass;
         this.unmodifiedAssumption = unmodifiedAssumption;
@@ -241,6 +245,8 @@ public class CachedBoxedDispatchNode extends CachedDispatchNode {
 
         switch (getDispatchAction()) {
             case CALL_METHOD: {
+            	argumentsObjects = executeArguments(frame, argumentsObjects);
+            	blockObject = executeBlock(frame, blockObject);
                 if (isIndirect()) {
                     return indirectCallNode.call(
                             frame,
@@ -250,9 +256,8 @@ public class CachedBoxedDispatchNode extends CachedDispatchNode {
                                     method.getDeclarationFrame(),
                                     receiverObject,
                                     CompilerDirectives.unsafeCast(blockObject, RubyProc.class, true, false),
-                                    CompilerDirectives.unsafeCast(executeArguments(frame, argumentsObjects), Object[].class, true)));
+                                    CompilerDirectives.unsafeCast(argumentsObjects, Object[].class, true)));
                 } else {
-                    Object args = executeArguments(frame, argumentsObjects);
                     return callNode.call(
                             frame,
                             RubyArguments.pack(
@@ -260,7 +265,7 @@ public class CachedBoxedDispatchNode extends CachedDispatchNode {
                                     method.getDeclarationFrame(),
                                     receiverObject,
                                     CompilerDirectives.unsafeCast(blockObject, RubyProc.class, true, false),
-                                    CompilerDirectives.unsafeCast(args, Object[].class, true)));
+                                    CompilerDirectives.unsafeCast(argumentsObjects, Object[].class, true)));
                 }
             }
 

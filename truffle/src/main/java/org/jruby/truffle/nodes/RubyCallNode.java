@@ -20,7 +20,6 @@ import org.jruby.truffle.nodes.dispatch.*;
 import org.jruby.truffle.runtime.ModuleOperations;
 import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.core.RubyProc;
 import org.jruby.truffle.runtime.methods.InternalMethod;
 
 public class RubyCallNode extends RubyNode {
@@ -28,8 +27,6 @@ public class RubyCallNode extends RubyNode {
     private final String methodName;
 
     @Child private RubyNode receiver;
-    @Child private ProcOrNullNode block;
-    private final RubyNode[] arguments;
 
     private final boolean isVCall;
 
@@ -52,19 +49,16 @@ public class RubyCallNode extends RubyNode {
         super(context, section);
 
         this.methodName = methodName;
-
         this.receiver = receiver;
 
-        if (block == null) {
-            this.block = null;
-        } else {
-            this.block = ProcOrNullNodeFactory.create(context, section, block);
+        ProcOrNullNode blockNode = null;
+        if (block != null) {
+        	blockNode = ProcOrNullNodeFactory.create(context, section, block);
         }
 
-        this.arguments = arguments;
         this.isVCall = isVCall;
 
-        dispatchHead = DispatchHeadNodeFactory.createMethodCall(context, ignoreVisibility, false, MissingBehavior.CALL_METHOD_MISSING, arguments, isSplatted);
+        dispatchHead = DispatchHeadNodeFactory.createMethodCall(context, ignoreVisibility, false, MissingBehavior.CALL_METHOD_MISSING, arguments, blockNode, isSplatted);
         respondToMissing = DispatchHeadNodeFactory.createMethodCall(context, true, MissingBehavior.RETURN_MISSING);
         respondToMissingCast = BooleanCastNodeFactory.create(context, section, null);
 
@@ -74,19 +68,9 @@ public class RubyCallNode extends RubyNode {
     @Override
     public Object execute(VirtualFrame frame) {
         final Object receiverObject = receiver.execute(frame);
-        final RubyProc blockObject = executeBlock(frame);
-
-        return dispatchHead.call(frame, receiverObject, methodName, blockObject, (Object[]) null);
+        return dispatchHead.call(frame, receiverObject, methodName, null, (Object[]) null);
     }
-
-    private RubyProc executeBlock(VirtualFrame frame) {
-        if (block != null) {
-            return block.executeRubyProc(frame);
-        } else {
-            return null;
-        }
-    }
-
+    
     @Override
     public Object isDefined(VirtualFrame frame) {
         notDesignedForCompilation();
@@ -95,7 +79,7 @@ public class RubyCallNode extends RubyNode {
             return getContext().getCoreLibrary().getNilObject();
         }
 
-        for (RubyNode argument : arguments) {
+        for (RubyNode argument : dispatchHead.getArgumentNodes()) {
             if (argument.isDefined(frame) == getContext().getCoreLibrary().getNilObject()) {
                 return getContext().getCoreLibrary().getNilObject();
             }

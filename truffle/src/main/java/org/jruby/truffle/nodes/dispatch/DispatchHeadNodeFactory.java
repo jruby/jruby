@@ -10,6 +10,7 @@
 package org.jruby.truffle.nodes.dispatch;
 
 import org.jruby.truffle.nodes.RubyNode;
+import org.jruby.truffle.nodes.cast.ProcOrNullNode;
 import org.jruby.truffle.runtime.RubyContext;
 
 public class DispatchHeadNodeFactory {
@@ -20,6 +21,7 @@ public class DispatchHeadNodeFactory {
                 false,
                 false,
                 MissingBehavior.CALL_METHOD_MISSING,
+                null,
                 null,
                 null,
                 false);
@@ -33,6 +35,7 @@ public class DispatchHeadNodeFactory {
                 MissingBehavior.CALL_METHOD_MISSING,
                 null,
                 null,
+                null,
                 false);
     }
 
@@ -42,6 +45,7 @@ public class DispatchHeadNodeFactory {
                 false,
                 false,
                 missingBehavior,
+                null,
                 null,
                 null,
                 false);
@@ -55,6 +59,7 @@ public class DispatchHeadNodeFactory {
                 missingBehavior,
                 null,
                 null,
+                null,
                 false);
     }
 
@@ -66,10 +71,11 @@ public class DispatchHeadNodeFactory {
                 missingBehavior,
                 null,
                 null,
+                null,
                 false);
     }
     
-    public static CallDispatchHeadNode createMethodCall(RubyContext context, boolean ignoreVisibility, boolean indirect, MissingBehavior missingBehavior, RubyNode[] arguments, boolean isSplatted) {
+    public static CallDispatchHeadNode createMethodCall(RubyContext context, boolean ignoreVisibility, boolean indirect, MissingBehavior missingBehavior, RubyNode[] arguments, ProcOrNullNode block, boolean isSplatted) {
         return new CallDispatchHeadNode(
                 context,
                 ignoreVisibility,
@@ -77,6 +83,7 @@ public class DispatchHeadNodeFactory {
                 missingBehavior,
                 null,
                 arguments,
+                block,
                 isSplatted);
     }
 
@@ -86,6 +93,7 @@ public class DispatchHeadNodeFactory {
                 true,
                 false,
                 MissingBehavior.CALL_METHOD_MISSING,
+                null,
                 null,
                 null,
                 false);

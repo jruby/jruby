@@ -10,6 +10,7 @@
 package org.jruby.truffle.nodes.dispatch;
 
 import org.jruby.truffle.nodes.RubyNode;
+import org.jruby.truffle.nodes.cast.ProcOrNullNode;
 import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyConstant;
 import org.jruby.truffle.runtime.RubyContext;
@@ -40,8 +41,9 @@ public final class UnresolvedDispatchNode extends DispatchNode {
             MissingBehavior missingBehavior,
             DispatchAction dispatchAction,
             RubyNode[] argumentNodes,
+            ProcOrNullNode block,
             boolean isSplatted) {
-        super(context, dispatchAction, argumentNodes, isSplatted);
+        super(context, dispatchAction, argumentNodes, block, isSplatted);
         
         this.ignoreVisibility = ignoreVisibility;
         this.indirect = indirect;
@@ -59,7 +61,7 @@ public final class UnresolvedDispatchNode extends DispatchNode {
 
         if (depth == Options.TRUFFLE_DISPATCH_POLYMORPHIC_MAX.load()) {
             return getHeadNode().getFirstDispatchNode()
-                    .replace(new UncachedDispatchNode(getContext(), ignoreVisibility, getDispatchAction(), argumentNodes, isSplatted))
+                    .replace(new UncachedDispatchNode(getContext(), ignoreVisibility, getDispatchAction(), argumentNodes, block, isSplatted))
                     .executeDispatch(frame, receiverObject,
                             methodName, blockObject, argumentsObjects);
         }
@@ -136,7 +138,7 @@ public final class UnresolvedDispatchNode extends DispatchNode {
                         methodName, first,
                         falseUnmodifiedAssumption, null, falseMethod,
                         trueUnmodifiedAssumption, null, trueMethod, indirect, getDispatchAction(),
-                        argumentNodes, isSplatted);
+                        argumentNodes, block, isSplatted);
 
                 first.replace(newDispatch);
 
@@ -146,7 +148,7 @@ public final class UnresolvedDispatchNode extends DispatchNode {
                 final CachedUnboxedDispatchNode newDispatch = new CachedUnboxedDispatchNode(getContext(),
                         methodName, first, receiverObject.getClass(),
                         getContext().getCoreLibrary().getLogicalClass(receiverObject).getUnmodifiedAssumption(), null, method, indirect, getDispatchAction(),
-                        argumentNodes, isSplatted);
+                        argumentNodes, block, isSplatted);
 
                 first.replace(newDispatch);
 
@@ -181,10 +183,10 @@ public final class UnresolvedDispatchNode extends DispatchNode {
             final DispatchNode newDispatch;
 
             if (receiverObject instanceof RubySymbol) {
-                newDispatch = new CachedBoxedSymbolDispatchNode(getContext(), methodName, first, null, method, indirect, getDispatchAction(), argumentNodes, isSplatted);
+                newDispatch = new CachedBoxedSymbolDispatchNode(getContext(), methodName, first, null, method, indirect, getDispatchAction(), argumentNodes, block, isSplatted);
             } else {
                 newDispatch = new CachedBoxedDispatchNode(getContext(), methodName, first,
-                        getContext().getCoreLibrary().getMetaClass(receiverObject), null, method, indirect, getDispatchAction(), argumentNodes, isSplatted);
+                        getContext().getCoreLibrary().getMetaClass(receiverObject), null, method, indirect, getDispatchAction(), argumentNodes, block, isSplatted);
             }
 
             first.replace(newDispatch);
@@ -206,7 +208,7 @@ public final class UnresolvedDispatchNode extends DispatchNode {
             // But we want to check the module assumption, not its singleton class assumption.
             final DispatchNode newDispatch = new CachedBoxedDispatchNode(getContext(), methodName, first,
                     module.getSingletonClass(null), module.getUnmodifiedAssumption(), constant.getValue(),
-                    null, indirect, getDispatchAction(), argumentNodes, isSplatted);
+                    null, indirect, getDispatchAction(), argumentNodes, block, isSplatted);
 
             first.replace(newDispatch);
             return newDispatch.executeDispatch(frame, receiverObject,
@@ -225,7 +227,7 @@ public final class UnresolvedDispatchNode extends DispatchNode {
         switch (missingBehavior) {
             case RETURN_MISSING: {
                 return first.replace(new CachedBoxedReturnMissingDispatchNode(getContext(), methodName, first,
-                        receiverObject.getMetaClass(), indirect, getDispatchAction(), argumentNodes, isSplatted));
+                        receiverObject.getMetaClass(), indirect, getDispatchAction(), argumentNodes, block, isSplatted));
             }
 
             case CALL_CONST_MISSING: {
@@ -237,11 +239,11 @@ public final class UnresolvedDispatchNode extends DispatchNode {
                 }
 
                 if (Options.TRUFFLE_DISPATCH_METAPROGRAMMING_ALWAYS_UNCACHED.load()) {
-                    return first.replace(new UncachedDispatchNode(getContext(), ignoreVisibility, getDispatchAction(), argumentNodes, isSplatted));
+                    return first.replace(new UncachedDispatchNode(getContext(), ignoreVisibility, getDispatchAction(), argumentNodes, block, isSplatted));
                 }
 
                 return first.replace(new CachedBoxedMethodMissingDispatchNode(getContext(), methodName, first,
-                        receiverObject.getMetaClass(), method, Options.TRUFFLE_DISPATCH_METAPROGRAMMING_ALWAYS_INDIRECT.load(), getDispatchAction(), argumentNodes, isSplatted));
+                        receiverObject.getMetaClass(), method, Options.TRUFFLE_DISPATCH_METAPROGRAMMING_ALWAYS_INDIRECT.load(), getDispatchAction(), argumentNodes, block, isSplatted));
             }
 
             default: {
@@ -258,7 +260,7 @@ public final class UnresolvedDispatchNode extends DispatchNode {
         switch (missingBehavior) {
             case RETURN_MISSING: {
                 return first.replace(new CachedBoxedReturnMissingDispatchNode(getContext(), methodName, first,
-                        getContext().getCoreLibrary().getMetaClass(receiverObject), indirect, getDispatchAction(), argumentNodes, isSplatted));
+                        getContext().getCoreLibrary().getMetaClass(receiverObject), indirect, getDispatchAction(), argumentNodes, block, isSplatted));
             }
 
             case CALL_METHOD_MISSING: {
@@ -270,11 +272,11 @@ public final class UnresolvedDispatchNode extends DispatchNode {
                 }
 
                 if (Options.TRUFFLE_DISPATCH_METAPROGRAMMING_ALWAYS_UNCACHED.load()) {
-                    return first.replace(new UncachedDispatchNode(getContext(), ignoreVisibility, getDispatchAction(), argumentNodes, isSplatted));
+                    return first.replace(new UncachedDispatchNode(getContext(), ignoreVisibility, getDispatchAction(), argumentNodes, block, isSplatted));
                 }
 
                 return first.replace(new CachedBoxedMethodMissingDispatchNode(getContext(), methodName, first,
-                        getContext().getCoreLibrary().getMetaClass(receiverObject), method, Options.TRUFFLE_DISPATCH_METAPROGRAMMING_ALWAYS_INDIRECT.load(), getDispatchAction(), argumentNodes, isSplatted));
+                        getContext().getCoreLibrary().getMetaClass(receiverObject), method, Options.TRUFFLE_DISPATCH_METAPROGRAMMING_ALWAYS_INDIRECT.load(), getDispatchAction(), argumentNodes, block, isSplatted));
             }
 
             default: {

@@ -10,6 +10,7 @@
 package org.jruby.truffle.nodes.dispatch;
 
 import org.jruby.truffle.nodes.RubyNode;
+import org.jruby.truffle.nodes.cast.ProcOrNullNode;
 import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
@@ -46,8 +47,9 @@ public class CachedUnboxedDispatchNode extends CachedDispatchNode {
             boolean indirect,
             DispatchAction dispatchAction,
             RubyNode[] argumentNodes,
+            ProcOrNullNode block,
             boolean isSplatted) {
-        super(context, cachedName, next, indirect, dispatchAction, argumentNodes, isSplatted);
+        super(context, cachedName, next, indirect, dispatchAction, argumentNodes, block, isSplatted);
             
         this.expectedClass = expectedClass;
         this.unmodifiedAssumption = unmodifiedAssumption;
@@ -95,6 +97,9 @@ public class CachedUnboxedDispatchNode extends CachedDispatchNode {
 
         switch (getDispatchAction()) {
             case CALL_METHOD: {
+            	argumentsObjects = executeArguments(frame, argumentsObjects);
+            	blockObject = executeBlock(frame, blockObject);
+            	
                 if (isIndirect()) {
                     return indirectCallNode.call(
                             frame,
@@ -103,7 +108,7 @@ public class CachedUnboxedDispatchNode extends CachedDispatchNode {
                                     method,
                                     method.getDeclarationFrame(),
                                     receiverObject, CompilerDirectives.unsafeCast(blockObject, RubyProc.class, true, false),
-                                    CompilerDirectives.unsafeCast(executeArguments(frame, argumentsObjects), Object[].class, true)));
+                                    CompilerDirectives.unsafeCast(argumentsObjects, Object[].class, true)));
                 } else {
                     return callNode.call(
                             frame,
@@ -111,7 +116,7 @@ public class CachedUnboxedDispatchNode extends CachedDispatchNode {
                                     method,
                                     method.getDeclarationFrame(),
                                     receiverObject, CompilerDirectives.unsafeCast(blockObject, RubyProc.class, true, false),
-                                    CompilerDirectives.unsafeCast(executeArguments(frame, argumentsObjects), Object[].class, true)));
+                                    CompilerDirectives.unsafeCast(argumentsObjects, Object[].class, true)));
                 }
             }
 
