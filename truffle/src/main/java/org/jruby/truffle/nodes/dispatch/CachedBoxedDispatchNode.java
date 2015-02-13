@@ -33,6 +33,7 @@ import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
 import org.jruby.truffle.runtime.core.RubyClass;
 import org.jruby.truffle.runtime.core.RubyProc;
+import org.jruby.truffle.runtime.core.RubySymbol;
 import org.jruby.truffle.runtime.methods.InternalMethod;
 
 public class CachedBoxedDispatchNode extends CachedDispatchNode {
@@ -125,14 +126,23 @@ public class CachedBoxedDispatchNode extends CachedDispatchNode {
 
             List<String> restKeywordLabels = new ArrayList<String>();
             for (int j = 0; j < hashNode.size(); j++) {
-               final String label = ((ObjectLiteralNode) hashNode.getKey(j)).execute(null).toString();
-               restKeywordLabels.add(label);
+            	Object key = hashNode.getKey(j);
+            	boolean keyIsSymbol = key instanceof ObjectLiteralNode &&
+            			((ObjectLiteralNode) key).getObject() instanceof RubySymbol;
+            	
+            	if (!keyIsSymbol) {
+            		// cannot optimize case where keyword label is dynamic (not a fixed RubySymbol)
+            		return argumentNodes;
+            	}
+            	
+            	final String label = ((ObjectLiteralNode) hashNode.getKey(j)).getObject().toString();
+            	restKeywordLabels.add(label);
             }
 
             for (String kwarg : kwargs) {
                result[i] = new OptionalKeywordArgMissingNode(context, null);
                for (int j = 0; j < hashNode.size(); j++) {
-                   final String label = ((ObjectLiteralNode) hashNode.getKey(j)).execute(null).toString();
+                   final String label = ((ObjectLiteralNode) hashNode.getKey(j)).getObject().toString();
                    
                    if (label.equals(kwarg)) {
                        result[i] = hashNode.getValue(j);
