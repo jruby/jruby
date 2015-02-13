@@ -94,6 +94,6 @@ public class DispatchHeadNode extends Node {
     }
 
     public ProcOrNullNode getBlock() {
-    	return block;
+        return block;
     }
 }
