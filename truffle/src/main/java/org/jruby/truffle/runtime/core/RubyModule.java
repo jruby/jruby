@@ -201,12 +201,13 @@ public class RubyModule extends RubyBasicObject implements ModuleChain {
     }
 
     @TruffleBoundary
-    public void removeConstant(RubyNode currentNode, String data) {
+    public RubyConstant removeConstant(RubyNode currentNode, String name) {
         RubyNode.notDesignedForCompilation();
 
         checkFrozen(currentNode);
-        getConstants().remove(data);
+        RubyConstant oldConstant = getConstants().remove(name);
         newLexicalVersion();
+        return oldConstant;
     }
 
     @TruffleBoundary

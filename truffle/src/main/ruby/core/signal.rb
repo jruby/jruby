@@ -13,5 +13,6 @@ module Signal
     Names[name] = number
     Numbers[number] = name
   end
+  remove_const :SIGNAL_LIST
 
 end

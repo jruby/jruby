@@ -729,6 +729,11 @@ public class CoreLibrary {
         return new RubyException(nameErrorClass, context.makeString(message), RubyCallStack.getBacktrace(currentNode));
     }
 
+    public RubyException nameErrorConstantNotDefined(RubyModule module, String name, Node currentNode) {
+        CompilerAsserts.neverPartOfCompilation();
+        return nameError(String.format("constant %s::%s not defined", module.getName(), name), currentNode);
+    }
+
     public RubyException nameErrorUninitializedConstant(RubyModule module, String name, Node currentNode) {
         CompilerAsserts.neverPartOfCompilation();
         return nameError(String.format("uninitialized constant %s::%s", module.getName(), name), currentNode);
