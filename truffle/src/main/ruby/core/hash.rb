@@ -8,6 +8,14 @@
 
 class Hash
 
+  def invert
+    inverted = {}
+    each_pair { |key, value|
+      inverted[value] = key
+    }
+    inverted
+  end
+
   def to_hash
     self
   end
