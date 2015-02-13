@@ -32,7 +32,8 @@ class MSpecScript
     # require 'socket'
     "^spec/ruby/core/file/socket_spec.rb",
 
-    "^spec/ruby/core/filetest", # Need FileTest constant
+    # FileTest in describe
+    "^spec/ruby/core/filetest",
 
     # STDOUT.tty?
     "^spec/ruby/core/io/tty_spec.rb",
@@ -41,17 +42,19 @@ class MSpecScript
     # require 'fcntl'
     "^spec/ruby/core/io/reopen_spec.rb",
 
-    "^spec/ruby/core/kernel/__method___spec.rb", # __method__ in fixtures
-    "^spec/ruby/core/kernel/autoload_spec.rb", # autoload in describe
+    # __method__ in fixtures
+    "^spec/ruby/core/kernel/__method___spec.rb",
 
-    # seems side-effecting when not run in isolation
+    # autoload in describe
+    "^spec/ruby/core/kernel/autoload_spec.rb",
+
+    # seem side-effecting when not run in isolation
     "^spec/ruby/core/marshal/dump_spec.rb",
     "^spec/ruby/core/marshal/float_spec.rb",
     "^spec/ruby/core/marshal/load_spec.rb",
     "^spec/ruby/core/marshal/restore_spec.rb",
 
     # unknown
-    "^spec/ruby/core/numeric/to_c_spec.rb",
     "^spec/ruby/core/process/detach_spec.rb",
     "^spec/ruby/core/process/kill_spec.rb",
     "^spec/ruby/core/regexp/compile_spec.rb",
