@@ -116,8 +116,8 @@ public class CachedBoxedMethodMissingDispatchNode extends CachedDispatchNode {
                 final Object[] modifiedArgumentsObjects = new Object[1 + argumentsObjectsArray.length];
                 modifiedArgumentsObjects[0] = getCachedNameAsSymbol();
                 RubyArguments.arraycopy(argumentsObjectsArray, 0, modifiedArgumentsObjects, 1, argumentsObjectsArray.length);
-            	blockObject = executeBlock(frame, blockObject);
-            	
+                blockObject = executeBlock(frame, blockObject);
+                
                 if (isIndirect()) {
                     return indirectCallNode.call(
                             frame,
@@ -144,7 +144,7 @@ public class CachedBoxedMethodMissingDispatchNode extends CachedDispatchNode {
                 return false;
 
             case READ_CONSTANT: {
-            	blockObject = executeBlock(frame, blockObject);
+                blockObject = executeBlock(frame, blockObject);
                 if (isIndirect()) {
                     return indirectCallNode.call(
                             frame,

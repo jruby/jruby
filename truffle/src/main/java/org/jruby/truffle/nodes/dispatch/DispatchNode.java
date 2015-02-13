@@ -221,10 +221,10 @@ public abstract class DispatchNode extends RubyNode {
     }
     
     protected Object executeBlock(VirtualFrame frame, Object blockOverride) {
-    	if (blockOverride != null) {
-    		return blockOverride;
-    	}
-    	
+        if (blockOverride != null) {
+            return blockOverride;
+        }
+        
         if (block != null) {
             return block.executeRubyProc(frame);
         } else {
