@@ -1414,8 +1414,6 @@ public class RubyIO extends RubyObject implements IOEncodable {
         io = (RubyIO)tmp;
         if (((RubyString)str).size() == 0) return RubyFixnum.zero(runtime);
 
-        str = ((RubyString)str).dupFrozen();
-
         fptr = io.getOpenFileChecked();
 
         boolean locked = fptr.lock();
