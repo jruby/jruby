@@ -36,7 +36,7 @@ public class ReadOptionalArgumentNode extends RubyNode {
 
     @Override
     public Object execute(VirtualFrame frame) {
-        if (RubyArguments.getUserArgumentsCount(frame.getArguments()) < minimum) {
+        if (RubyArguments.getNamedUserArgumentsCount(frame.getArguments()) < minimum) {
             defaultValueProfile.enter();
             return defaultValue.execute(frame);
         } else {

@@ -19,7 +19,6 @@ import org.jruby.ast.ArgsNode;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.RubyRootNode;
 import org.jruby.truffle.nodes.cast.ArrayCastNodeFactory;
-import org.jruby.truffle.nodes.cast.BooleanCastNodeFactory;
 import org.jruby.truffle.nodes.control.IfNode;
 import org.jruby.truffle.nodes.control.SequenceNode;
 import org.jruby.truffle.nodes.literal.ObjectLiteralNode;
@@ -68,7 +67,7 @@ class MethodTranslator extends BodyTranslator {
          */
 
         if (isBlock && argsNode.childNodes().size() == 2 && argsNode.getRestArgNode() instanceof org.jruby.ast.UnnamedRestArgNode) {
-            arityForCheck = new Arity(arity.getRequired(), 0, false, false);
+            arityForCheck = new Arity(arity.getRequired(), 0, false, false, false, 0);
         } else {
             arityForCheck = arity;
         }
@@ -236,7 +235,7 @@ class MethodTranslator extends BodyTranslator {
     private static Arity getArity(org.jruby.ast.ArgsNode argsNode) {
         final int minimum = argsNode.getRequiredArgsCount();
         final int maximum = argsNode.getMaxArgumentsCount();
-        return new Arity(minimum, argsNode.getOptionalArgsCount(), maximum == -1, argsNode.hasKwargs());
+        return new Arity(minimum, argsNode.getOptionalArgsCount(), maximum == -1, argsNode.hasKwargs(), argsNode.hasKeyRest(), argsNode.countKeywords());
     }
 
     @Override
