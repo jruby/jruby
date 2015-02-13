@@ -16,7 +16,7 @@ class MSpecScript
     "spec/ruby/language"
   ]
 
-  set :core, [
+  core = [
     "spec/ruby/core",
 
     # Can't load these - so tags aren't enough to exclude them. The problem is
@@ -51,7 +51,6 @@ class MSpecScript
     "^spec/ruby/core/marshal/restore_spec.rb",
 
     # unknown
-    "^spec/ruby/core/method/source_location_spec.rb",   # Windows
     "^spec/ruby/core/numeric/denominator_spec.rb",
     "^spec/ruby/core/numeric/numerator_spec.rb",
     "^spec/ruby/core/numeric/to_c_spec.rb",
@@ -65,31 +64,37 @@ class MSpecScript
     "^spec/ruby/core/string/crypt_spec.rb",
     "^spec/ruby/core/string/gsub_spec.rb",
     "^spec/ruby/core/string/match_spec.rb",
-    "^spec/ruby/core/string/modulo_spec.rb",
-    "^spec/ruby/core/struct/each_spec.rb",                   # Windows
-    "^spec/ruby/core/struct/element_reference_spec.rb",      # Windows
-    "^spec/ruby/core/struct/element_set_spec.rb",            # Windows
-    "^spec/ruby/core/struct/eql_spec.rb",                    # Windows
-    "^spec/ruby/core/struct/equal_value_spec.rb",            # Windows
-    "^spec/ruby/core/struct/hash_spec.rb",                   # Windows
-    "^spec/ruby/core/struct/initialize_copy_spec.rb",        # Windows
-    "^spec/ruby/core/struct/initialize_spec.rb",             # Windows
-    "^spec/ruby/core/struct/inspect_spec.rb",                # Windows
-    "^spec/ruby/core/struct/instance_variables_spec.rb",     # Windows
-    "^spec/ruby/core/struct/length_spec.rb",                 # Windows
-    "^spec/ruby/core/struct/members_spec.rb",                # Windows
-    "^spec/ruby/core/struct/new_spec.rb",                    # Windows
-    "^spec/ruby/core/struct/select_spec.rb",                 # Windows
-    "^spec/ruby/core/struct/size_spec.rb",                   # Windows
-    "^spec/ruby/core/struct/struct_spec.rb",                 # Windows
-    "^spec/ruby/core/struct/to_a_spec.rb",                   # Windows
-    "^spec/ruby/core/struct/to_h_spec.rb",                   # Windows
-    "^spec/ruby/core/struct/to_s_spec.rb",                   # Windows
-    "^spec/ruby/core/struct/values_at_spec.rb",              # Windows
-    "^spec/ruby/core/struct/values_spec.rb",                 # Windows
-    "^spec/ruby/core/symbol/versions/encoding_1.9_spec.rb",  # Windows
-    "^spec/ruby/core/unboundmethod/source_location_spec.rb"  # Windows
-  ]
+    "^spec/ruby/core/string/modulo_spec.rb"
+]
+
+core += [
+    # Windows
+    "^spec/ruby/core/method/source_location_spec.rb",
+    "^spec/ruby/core/struct/each_spec.rb",
+    "^spec/ruby/core/struct/element_reference_spec.rb",
+    "^spec/ruby/core/struct/element_set_spec.rb",
+    "^spec/ruby/core/struct/eql_spec.rb",
+    "^spec/ruby/core/struct/equal_value_spec.rb",
+    "^spec/ruby/core/struct/hash_spec.rb",
+    "^spec/ruby/core/struct/initialize_copy_spec.rb",
+    "^spec/ruby/core/struct/initialize_spec.rb",
+    "^spec/ruby/core/struct/inspect_spec.rb",
+    "^spec/ruby/core/struct/instance_variables_spec.rb",
+    "^spec/ruby/core/struct/length_spec.rb",
+    "^spec/ruby/core/struct/members_spec.rb",
+    "^spec/ruby/core/struct/new_spec.rb",
+    "^spec/ruby/core/struct/select_spec.rb",
+    "^spec/ruby/core/struct/size_spec.rb",
+    "^spec/ruby/core/struct/struct_spec.rb",
+    "^spec/ruby/core/struct/to_a_spec.rb",
+    "^spec/ruby/core/struct/to_h_spec.rb",
+    "^spec/ruby/core/struct/to_s_spec.rb",
+    "^spec/ruby/core/struct/values_at_spec.rb",
+    "^spec/ruby/core/struct/values_spec.rb",
+    "^spec/ruby/core/symbol/versions/encoding_1.9_spec.rb",
+    "^spec/ruby/core/unboundmethod/source_location_spec.rb"
+  ] if windows?
+  set :core, core
 
   set :rubysl, [
     "spec/truffle/spec/rubysl/rubysl-erb/spec",
