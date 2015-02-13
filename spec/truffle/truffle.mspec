@@ -22,10 +22,11 @@ class MSpecScript
     # Can't load these - so tags aren't enough to exclude them. The problem is
     # either fixtures or syntax. Some of them are probably easy fixes.
 
-    # as_superuser, Process.euid
+    # as_superuser, as_user, Process.euid
     "^spec/ruby/core/file/chown_spec.rb",
     "^spec/ruby/core/file/lchown_spec.rb",
     "^spec/ruby/core/process/euid_spec.rb",
+    "^spec/ruby/core/process/kill_spec.rb",
     "^spec/ruby/core/process/setpriority_spec.rb",
     "^spec/ruby/core/process/uid_spec.rb",
 
@@ -54,18 +55,23 @@ class MSpecScript
     "^spec/ruby/core/marshal/load_spec.rb",
     "^spec/ruby/core/marshal/restore_spec.rb",
 
-    # unknown
+    # require 'timeout'
     "^spec/ruby/core/process/detach_spec.rb",
-    "^spec/ruby/core/process/kill_spec.rb",
+
+    # problems with comparing special characters and tags
     "^spec/ruby/core/regexp/compile_spec.rb",
-    "^spec/ruby/core/regexp/encoding_spec.rb",
-    "^spec/ruby/core/regexp/source_spec.rb",
-    "^spec/ruby/core/signal/list_spec.rb",
     "^spec/ruby/core/string/chomp_spec.rb",
-    "^spec/ruby/core/string/crypt_spec.rb",
-    "^spec/ruby/core/string/gsub_spec.rb",
+    "^spec/ruby/core/string/modulo_spec.rb",
+
+    # NullPointerException on load
+    "^spec/ruby/core/regexp/encoding_spec.rb",
+
+    # error compiling regex on load
+    "^spec/ruby/core/regexp/source_spec.rb",
     "^spec/ruby/core/string/match_spec.rb",
-    "^spec/ruby/core/string/modulo_spec.rb"
+
+    # infinite loop on some examples
+    # "^spec/ruby/core/string/gsub_spec.rb",
 ]
 
 core += [
@@ -93,7 +99,7 @@ core += [
     "^spec/ruby/core/struct/values_at_spec.rb",
     "^spec/ruby/core/struct/values_spec.rb",
     "^spec/ruby/core/symbol/versions/encoding_1.9_spec.rb",
-    "^spec/ruby/core/unboundmethod/source_location_spec.rb"
+    "^spec/ruby/core/unboundmethod/source_location_spec.rb",
   ] if windows?
   set :core, core
 
