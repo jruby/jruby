@@ -222,9 +222,9 @@ public abstract class FixnumNodes {
                 rationalSubNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext()));
             }
 
-            final Object aComplex = rationalConvertNode.call(frame, getContext().getCoreLibrary().getRationalClass(), "convert", null, a, 1);
+            final Object aRational = rationalConvertNode.call(frame, getContext().getCoreLibrary().getRationalClass(), "convert", null, a, 1);
 
-            return rationalSubNode.call(frame, aComplex, "-", null, b);
+            return rationalSubNode.call(frame, aRational, "-", null, b);
         }
 
         @Specialization(rewriteOn = ArithmeticException.class)
@@ -262,12 +262,15 @@ public abstract class FixnumNodes {
     @CoreMethod(names = "*", required = 1)
     public abstract static class MulNode extends BignumNodes.BignumCoreMethodNode {
 
+        @Child private CallDispatchHeadNode rationalMulNode;
+
         public MulNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
         }
 
         public MulNode(MulNode prev) {
             super(prev);
+            rationalMulNode = prev.rationalMulNode;
         }
 
         @Specialization(rewriteOn = ArithmeticException.class)
@@ -330,161 +333,28 @@ public abstract class FixnumNodes {
             return fixnumOrBignum(bignum(a).multiply(b));
         }
 
-    }
-
-    @CoreMethod(names = "**", required = 1)
-    public abstract static class PowNode extends BignumNodes.BignumCoreMethodNode {
-
-        @Child private CallDispatchHeadNode complexConvertNode;
-        @Child private CallDispatchHeadNode complexPowNode;
-
-        @Child private CallDispatchHeadNode rationalConvertNode;
-        @Child private CallDispatchHeadNode rationalPowNode;
-
-        private final ConditionProfile negativeProfile = ConditionProfile.createBinaryProfile();
-        private final ConditionProfile complexProfile = ConditionProfile.createBinaryProfile();
-
-        public PowNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
-        public PowNode(PowNode prev) {
-            super(prev);
-            complexConvertNode = prev.complexConvertNode;
-            complexPowNode = prev.complexPowNode;
-            rationalConvertNode = prev.rationalConvertNode;
-            rationalPowNode = prev.rationalPowNode;
-        }
-
-        @Specialization(guards = "canShiftIntoInt")
-        public int powTwo(int a, int b) {
-            return 1 << b;
-        }
-
-        @Specialization(guards = "canShiftIntoInt")
-        public int powTwo(int a, long b) {
-            return 1 << b;
-        }
-
-        @Specialization
-        public Object pow(int a, int b) {
-            return pow(a, (long) b);
-        }
-
-        @Specialization
-        public Object pow(int a, long b) {
-            return pow((long) a, b);
-        }
-
-        @Specialization
-        public Object pow(VirtualFrame frame, int a, double b) {
-            return pow(frame, (long) a, b);
-        }
-
-        @Specialization
-        public Object pow(int a, RubyBignum b) {
-            return pow((long) a, b);
-        }
-
-        @Specialization(guards = "canShiftIntoLong")
-        public long powTwo(long a, int b) {
-            return 1 << b;
-        }
-
-        @Specialization(guards = "canShiftIntoLong")
-        public long powTwo(long a, long b) {
-            return 1 << b;
-        }
-
-        @Specialization
-        public Object pow(long a, int b) {
-            return pow(a, (long) b);
-        }
-
-        @Specialization
-        public Object pow(long a, long b) {
-            if (negativeProfile.profile(b < 0)) {
-                return Math.pow(a, b);
-            } else {
-                return fixnumOrBignum(bignum(a).pow(b));
-            }
-        }
-
-        @Specialization
-        public Object pow(VirtualFrame frame, long a, double b) {
-            if (complexProfile.profile(a < 0 && b != Math.round(b))) {
-                if (complexConvertNode == null) {
-                    CompilerDirectives.transferToInterpreter();
-                    complexConvertNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext(), true));
-                    complexPowNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext()));
-                }
-
-                final Object aComplex = complexConvertNode.call(frame, getContext().getCoreLibrary().getComplexClass(), "convert", null, a, 0);
-
-                return complexPowNode.call(frame, aComplex, "**", null, b);
-            } else {
-                return Math.pow(a, b);
-            }
-        }
-
-        @Specialization
-        public Object pow(long a, RubyBignum b) {
-            notDesignedForCompilation();
-
-            if (a == 0) {
-                return 0;
-            }
-
-            if (a == 1) {
-                return 1;
-            }
-
-            if (a == -1) {
-                if (b.bigIntegerValue().testBit(0)) {
-                    return -1;
-                } else {
-                    return 1;
-                }
-            }
-
-            return Math.pow(a, b.doubleValue());
+        @Specialization(guards = "isRational(arguments[1])")
+        public Object mul(VirtualFrame frame, int a, RubyBasicObject b) {
+            return mulRational(frame, (long) a, b);
         }
 
         @Specialization(guards = "isRational(arguments[1])")
-        public Object pow(VirtualFrame frame, Object a, RubyBasicObject b) {
-            if (rationalConvertNode == null) {
-                CompilerDirectives.transferToInterpreter();
-                rationalConvertNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext(), true));
-                rationalPowNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext()));
+        public Object mulRational(VirtualFrame frame, long a, RubyBasicObject b) {
+            if (rationalMulNode == null) {
+                CompilerDirectives.transferToInterpreterAndInvalidate();
+                rationalMulNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext()));
             }
 
-            final Object aRational = rationalConvertNode.call(frame, getContext().getCoreLibrary().getRationalClass(), "convert", null, a, 1);
-
-            return rationalPowNode.call(frame, aRational, "**", null, b);
-        }
-
-        protected static boolean canShiftIntoInt(int a, int b) {
-            return canShiftIntoInt(a, (long) b);
-        }
-
-        protected static boolean canShiftIntoInt(int a, long b) {
-            // Highest bit we can set is the 30th due to sign
-            return a == 2 && b <= 32 - 2;
-        }
-
-        protected static boolean canShiftIntoLong(long a, int b) {
-            return canShiftIntoLong(a, (long) b);
-        }
-
-        protected static boolean canShiftIntoLong(long a, long b) {
-            // Highest bit we can set is the 30th due to sign
-            return a == 2 && b <= 64 - 2;
+            return rationalMulNode.call(frame, b, "*", null, a);
         }
 
     }
 
     @CoreMethod(names = {"/", "__slash__"}, required = 1)
     public abstract static class DivNode extends CoreMethodNode {
+
+        @Child private CallDispatchHeadNode rationalConvertNode;
+        @Child private CallDispatchHeadNode rationalDivNode;
 
         private final BranchProfile bGreaterZero = BranchProfile.create();
         private final BranchProfile bGreaterZeroAGreaterEqualZero = BranchProfile.create();
@@ -501,6 +371,8 @@ public abstract class FixnumNodes {
 
         public DivNode(DivNode prev) {
             super(prev);
+            rationalConvertNode = prev.rationalConvertNode;
+            rationalDivNode = prev.rationalDivNode;
         }
 
         @Specialization(rewriteOn = UnexpectedResultException.class)
@@ -659,6 +531,19 @@ public abstract class FixnumNodes {
         public int div(@SuppressWarnings("unused") long a, @SuppressWarnings("unused") RubyBignum b) {
             // TODO(CS): not entirely sure this is correct
             return 0;
+        }
+
+        @Specialization(guards = "isRational(arguments[1])")
+        public Object div(VirtualFrame frame, int a, RubyBasicObject b) {
+            if (rationalConvertNode == null) {
+                CompilerDirectives.transferToInterpreter();
+                rationalConvertNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext(), true));
+                rationalDivNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext()));
+            }
+
+            final Object aRational = rationalConvertNode.call(frame, getContext().getCoreLibrary().getRationalClass(), "convert", null, a, 1);
+
+            return rationalDivNode.call(frame, aRational, "/", null, b);
         }
 
     }
