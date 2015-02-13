@@ -20,10 +20,8 @@ class MSpecScript
     "spec/ruby/core",
 
     # Can't load these - so tags aren't enough to exclude them. The problem is
-    # either fixtures or 'before' blocks. Some of them are probably easy fixes.
+    # either fixtures or syntax. Some of them are probably easy fixes.
 
-    "^spec/ruby/core/dir/element_reference_spec.rb",
-    "^spec/ruby/core/dir/glob_spec.rb",
     "^spec/ruby/core/enumerable/find_index_spec.rb",
     "^spec/ruby/core/enumerable/to_a_spec.rb",
     "^spec/ruby/core/enumerable/to_h_spec.rb",
