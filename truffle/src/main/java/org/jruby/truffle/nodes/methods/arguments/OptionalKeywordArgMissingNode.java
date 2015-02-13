@@ -8,18 +8,18 @@ import com.oracle.truffle.api.source.SourceSection;
 
 public class OptionalKeywordArgMissingNode extends RubyNode {
 
+    private static OptionalKeywordArgMissing instance = new OptionalKeywordArgMissing();
+
     public OptionalKeywordArgMissingNode(RubyContext context,
             SourceSection sourceSection) {
         super(context, sourceSection);
     }
 
-    public static class OptionalKeywordArgMissing {
-        
-    }
+    public static class OptionalKeywordArgMissing {}
 
     @Override
     public Object execute(VirtualFrame frame) {
-        return new OptionalKeywordArgMissing();
+        return instance;
     }
     
 }
