@@ -1,6 +1,0 @@
-fails:Module#remove_const removes the constant specified by a String or Symbol from the receiver's constant table
-fails:Module#remove_const returns the value of the removed constant
-fails:Module#remove_const raises a NameError if the name contains non-alphabetic characters except '_'
-fails:Module#remove_const calls #to_str to convert the given name to a String
-fails:Module#remove_const raises a TypeError if conversion to a String by calling #to_str fails
-fails:Module#remove_const is a private method

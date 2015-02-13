@@ -9,6 +9,7 @@
  */
 package org.jruby.truffle.runtime.signal;
 
+import java.util.Collections;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -23,7 +24,7 @@ public class SignalOperations {
 
     private static final ConcurrentMap<Signal, SignalHandler> ORIGINAL_HANDLERS = new ConcurrentHashMap<Signal, SignalHandler>();
 
-    public static final Map<String, Integer> SIGNALS_LIST = RubySignal.list();
+    public static final Map<String, Integer> SIGNALS_LIST = Collections.unmodifiableMap(RubySignal.list());
 
     public static final SignalHandler IGNORE_HANDLER = new SignalHandler() {
         @Override

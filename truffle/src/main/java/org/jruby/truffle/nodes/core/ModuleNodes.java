@@ -24,8 +24,11 @@ import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.RubyRootNode;
 import org.jruby.truffle.nodes.cast.BooleanCastNode;
 import org.jruby.truffle.nodes.cast.BooleanCastNodeFactory;
+import org.jruby.truffle.nodes.coerce.ToStrNode;
+import org.jruby.truffle.nodes.coerce.ToStrNodeFactory;
 import org.jruby.truffle.nodes.control.SequenceNode;
 import org.jruby.truffle.nodes.core.KernelNodes.BindingNode;
+import org.jruby.truffle.nodes.core.StringNodes.StringNodesHelper;
 import org.jruby.truffle.nodes.dispatch.*;
 import org.jruby.truffle.nodes.methods.SetMethodDeclarationContext;
 import org.jruby.truffle.nodes.methods.arguments.CheckArityNode;
@@ -1401,6 +1404,57 @@ public abstract class ModuleNodes {
 
             module.removeClassVariable(this, name.toString());
             return module;
+        }
+
+    }
+
+    @CoreMethod(names = "remove_const", required = 1, visibility = Visibility.PRIVATE)
+    public abstract static class RemoveConstNode extends CoreMethodNode {
+
+        @Child private ToStrNode toStrNode;
+
+        public RemoveConstNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public RemoveConstNode(RemoveConstNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public Object removeConst(RubyModule module, RubyString name) {
+            notDesignedForCompilation();
+
+            return removeConstant(module, name.toString());
+        }
+
+        @Specialization
+        public Object removeConst(RubyModule module, RubySymbol name) {
+            notDesignedForCompilation();
+
+            return removeConstant(module, name.toString());
+        }
+
+        @Specialization(guards = "!isRubySymbol(arguments[1])")
+        public Object removeConst(VirtualFrame frame, RubyModule module, Object name) {
+            notDesignedForCompilation();
+
+            if (toStrNode == null) {
+                CompilerDirectives.transferToInterpreter();
+                toStrNode = insert(ToStrNodeFactory.create(getContext(), getSourceSection(), null));
+            }
+
+            return removeConstant(module, toStrNode.executeRubyString(frame, name).toString());
+        }
+
+        private Object removeConstant(RubyModule module, String name) {
+            RubyConstant oldConstant = module.removeConstant(this, name);
+            if (oldConstant == null) {
+                CompilerDirectives.transferToInterpreter();
+                throw new RaiseException(getContext().getCoreLibrary().nameErrorConstantNotDefined(module, name, this));
+            } else {
+                return oldConstant.getValue();
+            }
         }
 
     }

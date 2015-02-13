@@ -24,8 +24,6 @@
 # OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-# Only part of Rubinius' signal.rb
-
 module Signal
   Names = {
     "EXIT" => 0
@@ -99,12 +97,6 @@ module Signal
 
   def self.list
     Names.dup
-  end
-
-  # Added for Truffle
-  setup_signal_list do |name, number|
-    Names[name] = number
-    Numbers[number] = name
   end
 
 end

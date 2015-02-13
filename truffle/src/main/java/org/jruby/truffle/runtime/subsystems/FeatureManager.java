@@ -21,6 +21,7 @@ import org.jruby.truffle.runtime.core.RubyFile;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.FileSystems;
 import java.util.Arrays;
 
 /**
@@ -114,7 +115,29 @@ public class FeatureManager {
         // We expect '/' in various classpath URLs, so normalize Windows file paths to use '/'
         fileName = fileName.replace('\\', '/');
 
-        if (fileName.startsWith("core:/")) {
+        if (fileName.startsWith("uri:classloader:/")) {
+            // TODO CS 13-Feb-15 this uri:classloader:/ and core:/ thing is a hack - simplify it
+
+            for (Object loaded : Arrays.asList(context.getCoreLibrary().getLoadedFeatures().slowToArray())) {
+                if (loaded.toString().equals(fileName)) {
+                    return true;
+                }
+            }
+
+            String coreFileName = fileName.substring("uri:classloader:/".length());
+
+            coreFileName = FileSystems.getDefault().getPath(coreFileName).normalize().toString();
+
+            if (context.getRuntime().getLoadService().getClassPathResource(context.getRuntime().getJRubyClassLoader(), coreFileName) == null) {
+                return false;
+            }
+
+            context.getCoreLibrary().loadRubyCore(coreFileName, "uri:classloader:/");
+            context.getCoreLibrary().getLoadedFeatures().slowPush(context.makeString(fileName));
+
+            return true;
+        }
+        else if (fileName.startsWith("core:/")) {
             for (Object loaded : Arrays.asList(context.getCoreLibrary().getLoadedFeatures().slowToArray())) {
                 if (loaded.toString().equals(fileName)) {
                     return true;
@@ -127,7 +150,8 @@ public class FeatureManager {
                 return false;
             }
 
-            context.getCoreLibrary().loadRubyCore(coreFileName);
+
+            context.getCoreLibrary().loadRubyCore(coreFileName, "core:/");
             context.getCoreLibrary().getLoadedFeatures().slowPush(context.makeString(fileName));
 
             return true;

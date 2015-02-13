@@ -6,18 +6,13 @@
 # GNU General Public License version 2
 # GNU Lesser General Public License version 2.1
 
-class Hash
+module Signal
 
-  def invert
-    inverted = {}
-    each_pair { |key, value|
-      inverted[value] = key
-    }
-    inverted
+  # Fill the Names and Numbers Hash.
+  SIGNAL_LIST.each do |name, number|
+    Names[name] = number
+    Numbers[number] = name
   end
-
-  def to_hash
-    self
-  end
+  remove_const :SIGNAL_LIST
 
 end

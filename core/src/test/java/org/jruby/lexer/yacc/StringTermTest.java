@@ -17,20 +17,14 @@ public class StringTermTest extends TestCase {
         final String testScriptUsingSingleQuote = "# encoding: utf-8\n'\\Ã¢â‚¬â„¢'";
         final String testScriptUsingDoubleQuote = "# encoding: utf-8\n\"\\Ã¢â‚¬â„¢\"";
 
-        CompatVersion[] versions = new CompatVersion[] { CompatVersion.RUBY1_8,
-                CompatVersion.RUBY1_9, CompatVersion.RUBY2_0 };
+        RubyInstanceConfig config = new RubyInstanceConfig();
+        Ruby runtime = Ruby.newInstance(config);
 
-        for (CompatVersion v : versions) {
-            RubyInstanceConfig config = new RubyInstanceConfig();
-            config.setCompatVersion(v);
-            Ruby runtime = Ruby.newInstance(config);
+        IRubyObject eval1 = runtime.evalScriptlet(testScriptUsingSingleQuote);
+        assertEquals("\\Ã¢â‚¬â„¢", eval1.toJava(String.class));
 
-            IRubyObject eval1 = runtime.evalScriptlet(testScriptUsingSingleQuote);
-            assertEquals("\\Ã¢â‚¬â„¢", eval1.toJava(String.class));
-
-            IRubyObject eval2 = runtime.evalScriptlet(testScriptUsingDoubleQuote);
-            assertEquals("Ã¢â‚¬â„¢", eval2.toJava(String.class));
-        }
+        IRubyObject eval2 = runtime.evalScriptlet(testScriptUsingDoubleQuote);
+        assertEquals("Ã¢â‚¬â„¢", eval2.toJava(String.class));
     }
 
     /**
@@ -40,20 +34,14 @@ public class StringTermTest extends TestCase {
         final String testScriptUsingSingleQuote = "# encoding: utf-8\n'\\\\あ'";
         final String testScriptUsingDoubleQuote = "# encoding: utf-8\n\"\\\\あ\"";
 
-        CompatVersion[] versions = new CompatVersion[] { CompatVersion.RUBY1_8,
-                CompatVersion.RUBY1_9, CompatVersion.RUBY2_0 };
+        RubyInstanceConfig config = new RubyInstanceConfig();
+        Ruby runtime = Ruby.newInstance(config);
 
-        for (CompatVersion v : versions) {
-            RubyInstanceConfig config = new RubyInstanceConfig();
-            config.setCompatVersion(v);
-            Ruby runtime = Ruby.newInstance(config);
+        IRubyObject eval1 = runtime.evalScriptlet(testScriptUsingSingleQuote);
+        assertEquals("\\あ", eval1.toJava(String.class));
 
-            IRubyObject eval1 = runtime.evalScriptlet(testScriptUsingSingleQuote);
-            assertEquals("\\あ", eval1.toJava(String.class));
-
-            IRubyObject eval2 = runtime.evalScriptlet(testScriptUsingDoubleQuote);
-            assertEquals("\\あ", eval2.toJava(String.class));
-        }
+        IRubyObject eval2 = runtime.evalScriptlet(testScriptUsingDoubleQuote);
+        assertEquals("\\あ", eval2.toJava(String.class));
     }
 
 }

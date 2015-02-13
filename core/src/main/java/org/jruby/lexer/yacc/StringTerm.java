@@ -317,6 +317,13 @@ public class StringTerm extends StrTerm {
                         
                         continue;
                     } else if (expand) {
+                        /* add NonAscii to Buffer after backslash */
+                        if (!Encoding.isAscii((byte) c)) {
+                            if (addNonAsciiToBuffer(c, src, encoding, lexer, buffer) == RubyLexer.EOF) return RubyLexer.EOF;
+
+                            continue;
+                        }
+
                         src.unread(c);
                         if (escape) buffer.append('\\');
                         c = lexer.readEscape();
@@ -324,6 +331,13 @@ public class StringTerm extends StrTerm {
                         /* ignore backslashed spaces in %w */
                     } else if (c != end && !(begin != '\0' && c == begin)) {
                         buffer.append('\\');
+
+                        /* add NonAscii to Buffer after backslash */
+                        if (!Encoding.isAscii((byte) c)) {
+                            if (addNonAsciiToBuffer(c, src, encoding, lexer, buffer) == RubyLexer.EOF) return RubyLexer.EOF;
+
+                            continue;
+                        }
                     }
                 }
             } else if (!Encoding.isAscii((byte) c)) {

@@ -48,6 +48,7 @@ public class RubiniusPrimitiveManager {
         nodeFactories.addAll(StringPrimitiveNodesFactory.getFactories());
         nodeFactories.addAll(SymbolPrimitiveNodesFactory.getFactories());
         nodeFactories.addAll(FixnumPrimitiveNodesFactory.getFactories());
+        nodeFactories.addAll(BignumPrimitiveNodesFactory.getFactories());
         nodeFactories.addAll(FloatPrimitiveNodesFactory.getFactories());
         nodeFactories.addAll(EncodingPrimitiveNodesFactory.getFactories());
         nodeFactories.addAll(RegexpPrimitiveNodesFactory.getFactories());

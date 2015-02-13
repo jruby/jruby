@@ -24,27 +24,12 @@
 # OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-# Only part of Rubinius' fixnum.rb
+# Only part of Rubinius' bignnum.rb
 
-class Fixnum
-
-  alias_method :modulo, :%
-
-  def coerce(other)
-    Rubinius.primitive :fixnum_coerce
-    super other
-  end
-
-  def fdiv(n)
-    if n.kind_of?(Fixnum)
-      to_f / n
-    else
-      redo_coerced :fdiv, n
-    end
-  end
+class Bignum < Integer
 
   def **(o)
-    Rubinius.primitive :fixnum_pow
+    Rubinius.primitive :bignum_pow
 
     if o.is_a?(Float) && self < 0 && o != o.round
       return Complex.new(self, 0) ** o

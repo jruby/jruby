@@ -31,6 +31,7 @@ import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.control.TruffleFatalException;
 import org.jruby.truffle.runtime.hash.HashOperations;
 import org.jruby.truffle.runtime.hash.KeyValue;
+import org.jruby.truffle.runtime.signal.SignalOperations;
 import org.jruby.truffle.translator.NodeWrapper;
 import org.jruby.truffle.translator.TranslatorDriver;
 import org.jruby.util.cli.Options;
@@ -324,6 +325,7 @@ public class CoreLibrary {
         initializeGlobalVariables();
         initializeConstants();
         initializeEncodingConstants();
+        initializeSignalConstants();
 
         // Common symbols
         eachSymbol = getContext().getSymbolTable().getSymbol("each");
@@ -388,6 +390,20 @@ public class CoreLibrary {
         fileClass.setConstant(null, "FNM_SYSCASE", 0);
     }
 
+    private void initializeSignalConstants() {
+        RubyNode.notDesignedForCompilation();
+
+        Object[] signals = new Object[SignalOperations.SIGNALS_LIST.size()];
+
+        int i = 0;
+        for (Map.Entry<String, Integer> signal : SignalOperations.SIGNALS_LIST.entrySet()) {
+            RubyString signalName = context.makeString(signal.getKey());
+            signals[i++] = RubyArray.fromObjects(arrayClass, signalName, signal.getValue());
+        }
+
+        signalModule.setConstant(null, "SIGNAL_LIST", new RubyArray(arrayClass, signals, signals.length));
+    }
+
     private RubyClass defineClass(String name) {
         return defineClass(objectClass, name, objectClass.getAllocator());
     }
@@ -438,10 +454,14 @@ public class CoreLibrary {
     }
 
     public void loadRubyCore(String fileName) {
+        loadRubyCore(fileName, "core:/");
+    }
+
+    public void loadRubyCore(String fileName, String prefix) {
         final Source source;
 
         try {
-            source = Source.fromReader(new InputStreamReader(getRubyCoreInputStream(fileName), StandardCharsets.UTF_8), "core:/" + fileName);
+            source = Source.fromReader(new InputStreamReader(getRubyCoreInputStream(fileName), StandardCharsets.UTF_8), prefix + fileName);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
@@ -711,6 +731,11 @@ public class CoreLibrary {
     public RubyException nameError(String message, Node currentNode) {
         CompilerAsserts.neverPartOfCompilation();
         return new RubyException(nameErrorClass, context.makeString(message), RubyCallStack.getBacktrace(currentNode));
+    }
+
+    public RubyException nameErrorConstantNotDefined(RubyModule module, String name, Node currentNode) {
+        CompilerAsserts.neverPartOfCompilation();
+        return nameError(String.format("constant %s::%s not defined", module.getName(), name), currentNode);
     }
 
     public RubyException nameErrorUninitializedConstant(RubyModule module, String name, Node currentNode) {

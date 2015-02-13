@@ -214,6 +214,12 @@ public class RubyBignum extends RubyBasicObject {
     }
 
     @CompilerDirectives.TruffleBoundary
+    @Override
+    public String toString() {
+        return value.toString();
+    }
+
+    @CompilerDirectives.TruffleBoundary
     public String toHexString() {
         return value.toString(16);
     }

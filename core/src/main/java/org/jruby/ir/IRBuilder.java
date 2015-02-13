@@ -2086,7 +2086,7 @@ public class IRBuilder {
 
         Variable res = createTemporaryVariable();
         addInstr(new BuildCompoundStringInstr(res, pieces, node.getEncoding()));
-        return copyAndReturnValue(res);
+        return res;
     }
 
     public Operand buildDSymbol(DSymbolNode node) {
