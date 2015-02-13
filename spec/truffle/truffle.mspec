@@ -51,8 +51,6 @@ class MSpecScript
     "^spec/ruby/core/marshal/restore_spec.rb",
 
     # unknown
-    "^spec/ruby/core/numeric/denominator_spec.rb",
-    "^spec/ruby/core/numeric/numerator_spec.rb",
     "^spec/ruby/core/numeric/to_c_spec.rb",
     "^spec/ruby/core/process/detach_spec.rb",
     "^spec/ruby/core/process/kill_spec.rb",
