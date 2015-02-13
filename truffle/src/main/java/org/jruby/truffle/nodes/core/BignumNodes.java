@@ -132,7 +132,7 @@ public abstract class BignumNodes {
     }
 
     @CoreMethod(names = "*", required = 1)
-    public abstract static class MulNode extends CoreMethodNode {
+    public abstract static class MulNode extends BignumCoreMethodNode {
 
         public MulNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -143,13 +143,13 @@ public abstract class BignumNodes {
         }
 
         @Specialization
-        public RubyBignum mul(RubyBignum a, int b) {
-            return a.multiply(b);
+        public Object mul(RubyBignum a, int b) {
+            return fixnumOrBignum(a.multiply(b));
         }
 
         @Specialization
-        public RubyBignum mul(RubyBignum a, long b) {
-            return a.multiply(b);
+        public Object mul(RubyBignum a, long b) {
+            return fixnumOrBignum(a.multiply(b));
         }
 
         @Specialization
@@ -158,41 +158,8 @@ public abstract class BignumNodes {
         }
 
         @Specialization
-        public RubyBignum mul(RubyBignum a, RubyBignum b) {
-            return a.multiply(b);
-        }
-
-    }
-
-    @CoreMethod(names = "**", required = 1)
-    public abstract static class PowNode extends CoreMethodNode {
-
-        public PowNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
-        public PowNode(PowNode prev) {
-            super(prev);
-        }
-
-        @Specialization
-        public RubyBignum pow(RubyBignum a, int b) {
-            return a.pow(b);
-        }
-
-        @Specialization
-        public RubyBignum pow(RubyBignum a, long b) {
-            return a.pow(b);
-        }
-
-        @Specialization
-        public double pow(RubyBignum a, double b) {
-            return Math.pow(a.doubleValue(), b);
-        }
-
-        @Specialization
-        public RubyBignum pow(RubyBignum a, RubyBignum b) {
-            return a.pow(b);
+        public Object mul(RubyBignum a, RubyBignum b) {
+            return fixnumOrBignum(a.multiply(b));
         }
 
     }
@@ -214,8 +181,8 @@ public abstract class BignumNodes {
         }
 
         @Specialization
-        public RubyBignum div(RubyBignum a, long b) {
-            return a.divide(b);
+        public Object div(RubyBignum a, long b) {
+            return fixnumOrBignum(a.divide(b));
         }
 
         @Specialization
@@ -225,7 +192,7 @@ public abstract class BignumNodes {
 
         @Specialization
         public Object div(RubyBignum a, RubyBignum b) {
-            return a.divide(b);
+            return fixnumOrBignum(a.divide(b));
         }
 
     }
@@ -739,10 +706,9 @@ public abstract class BignumNodes {
             super(prev);
         }
 
-        @CompilerDirectives.TruffleBoundary
         @Specialization
         public RubyString toS(RubyBignum value) {
-            return getContext().makeString(value.bigIntegerValue().toString());
+            return getContext().makeString(value.toString());
         }
 
     }

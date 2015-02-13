@@ -82,16 +82,16 @@ public abstract class FixnumPrimitiveNodes {
     }
 
     @RubiniusPrimitive(name = "fixnum_pow")
-    public abstract static class PowNode extends BignumNodes.BignumCoreMethodNode {
+    public abstract static class FixnumPowPrimitiveNode extends BignumNodes.BignumCoreMethodNode {
 
         private final ConditionProfile negativeProfile = ConditionProfile.createBinaryProfile();
         private final ConditionProfile complexProfile = ConditionProfile.createBinaryProfile();
 
-        public PowNode(RubyContext context, SourceSection sourceSection) {
+        public FixnumPowPrimitiveNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
         }
 
-        public PowNode(PowNode prev) {
+        public FixnumPowPrimitiveNode(FixnumPowPrimitiveNode prev) {
             super(prev);
         }
 
@@ -182,7 +182,15 @@ public abstract class FixnumPrimitiveNodes {
                 return null; // Primitive failure
             }
 
-            return Math.pow(a, b.doubleValue());
+            if (b.isEqualTo(b.longValue())) {
+                // This is a bug of course
+                return pow(a, b.longValue());
+            }
+
+            getContext().getRuntime().getWarnings().warn("in a**b, b may be too big");
+            // b >= 2**63 && (a > 1 || a < -1) => larger than largest double
+            // MRI behavior/bug: always positive Infinity even if a negative and b odd (likely due to libc pow(a, +inf)).
+            return Double.POSITIVE_INFINITY;
         }
 
         @Specialization(guards = "!isRubyBignum(arguments[1])")
