@@ -8,13 +8,15 @@ import com.oracle.truffle.api.source.SourceSection;
 
 public class MarkerNode extends RubyNode {
 
+    private static Marker instance = new Marker();
+
     public MarkerNode(RubyContext context, SourceSection sourceSection) {
         super(context, sourceSection);
     }
 
     @Override
     public Object execute(VirtualFrame frame) {
-        return new Marker();
+        return instance;
     }
 
     public static class Marker {}
