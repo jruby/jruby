@@ -454,10 +454,14 @@ public class CoreLibrary {
     }
 
     public void loadRubyCore(String fileName) {
+        loadRubyCore(fileName, "core:/");
+    }
+
+    public void loadRubyCore(String fileName, String prefix) {
         final Source source;
 
         try {
-            source = Source.fromReader(new InputStreamReader(getRubyCoreInputStream(fileName), StandardCharsets.UTF_8), "core:/" + fileName);
+            source = Source.fromReader(new InputStreamReader(getRubyCoreInputStream(fileName), StandardCharsets.UTF_8), prefix + fileName);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
