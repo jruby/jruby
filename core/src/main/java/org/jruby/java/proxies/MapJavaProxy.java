@@ -86,10 +86,12 @@ public class MapJavaProxy extends ConcreteJavaProxy {
         }
         // (JavaProxy)recv).getObject() might raise exception when
         // wrong number of args are given to the constructor.
+        IRubyObject oldExc = getRuntime().getGlobalVariables().get("$!"); // Save $!
         try {
             wrappedMap.setSize(((Map)((JavaProxy)this).getObject()).size());
         } catch (RaiseException e) {
             wrappedMap.setSize(0);
+            getRuntime().getGlobalVariables().set("$!", oldExc); // Restore $!
         }
         return wrappedMap;
     }

@@ -859,15 +859,14 @@ public class RubyModule extends RubyObject {
         }
 
         if (name.equals("method_missing")) {
-
-            IRubyObject oldExc = runtime.getGlobalVariables().get("$!");
+            IRubyObject oldExc = runtime.getGlobalVariables().get("$!"); // Save $!
             try {
                 removeMethod(context, name);
             } catch (RaiseException t) {
                 if (!(t.getException() instanceof RubyNameError)) {
                     throw t;
                 } else {
-                    runtime.getGlobalVariables().set("$!", oldExc);
+                    runtime.getGlobalVariables().set("$!", oldExc); // Restore $!
                 }
             }
             return;

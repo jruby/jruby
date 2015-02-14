@@ -409,7 +409,7 @@ public class RubyNumeric extends RubyObject {
     protected IRubyObject[] getCoerced(ThreadContext context, IRubyObject other, boolean error) {
         IRubyObject result;
         
-        IRubyObject savedError = context.runtime.getGlobalVariables().get("$!");
+        IRubyObject savedError = context.runtime.getGlobalVariables().get("$!"); // Save $!
         try {
             result = other.callMethod(context, "coerce", this);
         } catch (RaiseException e) {
@@ -417,7 +417,7 @@ public class RubyNumeric extends RubyObject {
                 throw getRuntime().newTypeError(
                         other.getMetaClass().getName() + " can't be coerced into " + getMetaClass().getName());
             } else {
-                context.runtime.getGlobalVariables().set("$!", savedError);
+                context.runtime.getGlobalVariables().set("$!", savedError); // Restore $!
             }
              
             return null;
@@ -461,7 +461,7 @@ public class RubyNumeric extends RubyObject {
     protected final RubyArray doCoerce(ThreadContext context, IRubyObject other, boolean err) {
         IRubyObject result;
 
-        IRubyObject savedError = context.runtime.getGlobalVariables().get("$!");
+        IRubyObject savedError = context.runtime.getGlobalVariables().get("$!"); // Svae $!
         try {
             result = coerceBody(context, other);
         } catch (RaiseException e) {
@@ -471,8 +471,7 @@ public class RubyNumeric extends RubyObject {
             if (err) {
                 coerceFailed(context, other);
             }
-            // Restore $!
-            context.runtime.getGlobalVariables().set("$!", savedError);
+            context.runtime.getGlobalVariables().set("$!", savedError); // Restore $!
             return null;
         }
     

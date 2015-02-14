@@ -756,7 +756,7 @@ public class RubyEnumerator extends RubyObject {
             IRubyObject finalObject = NEVER;
             
             try {
-                IRubyObject oldExc = runtime.getGlobalVariables().get("$!");
+                IRubyObject oldExc = runtime.getGlobalVariables().get("$!"); // Save $!
                 final TerminateEnumeration terminateEnumeration = new TerminateEnumeration();
                 try {
                     object.callMethod(context, method, methodArgs, CallBlock.newCallClosure(object, object.getMetaClass(), Arity.OPTIONAL, new BlockCallback() {
@@ -784,9 +784,9 @@ public class RubyEnumerator extends RubyObject {
                     }
                     // ignore, we're shutting down
                 } catch (RaiseException re) {
-                    runtime.getGlobalVariables().set("$!", oldExc);
                     if (DEBUG) System.out.println(Thread.currentThread().getName() + ": exception at toplevel: " + re.getException());
                     finalObject = re.getException();
+                    runtime.getGlobalVariables().set("$!", oldExc); // Restore $!
                 } catch (Throwable t) {
                     if (DEBUG) {
                         System.out.println(Thread.currentThread().getName() + ": exception at toplevel: " + t);

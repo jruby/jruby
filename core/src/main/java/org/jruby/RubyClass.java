@@ -684,13 +684,13 @@ public class RubyClass extends RubyModule {
             return null;
         }
         else {
-            IRubyObject oldExc = runtime.getGlobalVariables().get("$!");
+            IRubyObject oldExc = runtime.getGlobalVariables().get("$!"); // Save $!
             try {
                 return checkFuncallExec(context, self, method, args);
             } catch (RaiseException e) {
-                // restore $!
-                runtime.getGlobalVariables().set("$!", oldExc);
-                return checkFuncallFailed(context, self, method, runtime.getNoMethodError(), args);
+                IRubyObject ret = checkFuncallFailed(context, self, method, runtime.getNoMethodError(), args);
+                runtime.getGlobalVariables().set("$!", oldExc); // restore $!
+                return ret;
             }
         }
     }

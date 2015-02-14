@@ -116,6 +116,7 @@ public class RubyEtc {
     public static IRubyObject getpwuid(IRubyObject recv, IRubyObject[] args) {
         Ruby runtime = recv.getRuntime();
         POSIX posix = runtime.getPosix();
+        IRubyObject oldExc = runtime.getGlobalVariables().get("$!"); // Save $!
         try {
             int uid = args.length == 0 ? posix.getuid() : RubyNumeric.fix2int(args[0]);
             Passwd pwd = posix.getpwuid(uid);
@@ -128,6 +129,7 @@ public class RubyEtc {
             return setupPasswd(runtime, pwd);
         } catch (RaiseException re) {
             if (runtime.getNotImplementedError().isInstance(re.getException())) {
+                runtime.getGlobalVariables().set("$!", oldExc); // Restore $!
                 return runtime.getNil();
             }
             throw re;

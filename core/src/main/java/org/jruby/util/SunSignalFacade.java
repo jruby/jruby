@@ -81,7 +81,7 @@ public class SunSignalFacade implements SignalFacade {
 
         public void handle(Signal signal) {
             ThreadContext context = runtime.getCurrentContext();
-            IRubyObject oldExc = runtime.getGlobalVariables().get("$!");
+            IRubyObject oldExc = runtime.getGlobalVariables().get("$!"); // Save $!
             try {
                 if (block != null) {
                     block.callMethod(context, "call");
@@ -93,7 +93,7 @@ public class SunSignalFacade implements SignalFacade {
                     runtime.getThread().callMethod(context, "main")
                         .callMethod(context, "raise", e.getException());
                 } catch(Exception ignored) {}
-                runtime.getGlobalVariables().set("$!", oldExc);
+                runtime.getGlobalVariables().set("$!", oldExc); // Restore $!
             } catch (MainExitException mee) {
                 runtime.getThreadService().getMainThread().kill();
             } finally {
