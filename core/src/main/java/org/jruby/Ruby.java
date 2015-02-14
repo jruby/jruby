@@ -3228,7 +3228,7 @@ public final class Ruby implements Constantizable {
 
         while (!atExitBlocks.empty()) {
             RubyProc proc = atExitBlocks.pop();
-            IRubyObject oldExc = context.runtime.getGlobalVariables().get("$!"); // Save $!
+            // IRubyObject oldExc = context.runtime.getGlobalVariables().get("$!"); // Save $!
             try {
                 proc.call(getCurrentContext(), IRubyObject.NULL_ARRAY);
             } catch (RaiseException rj) {
@@ -3244,7 +3244,7 @@ public final class Ruby implements Constantizable {
                     }
                 }
                 // Reset $! now that rj has been handled
-                context.runtime.getGlobalVariables().set("$!", oldExc);
+                // context.runtime.getGlobalVariables().set("$!", oldExc);
             }
         }
 
