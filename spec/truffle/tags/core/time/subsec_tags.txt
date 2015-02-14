@@ -1,3 +1,2 @@
 fails:Time#subsec returns the fractional seconds as a Rational for a Time constructed with a Rational number of seconds
 fails:Time#subsec returns the fractional seconds as a Rational for a Time constructed with a Float number of seconds
-fails:Time#subsec returns the fractional seconds as a Rational for a Time constructed with an Float number of microseconds

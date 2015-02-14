@@ -33,8 +33,6 @@ fails:Time.local raises an ArgumentError for out of range day
 fails:Time.local raises an ArgumentError for out of range hour
 fails:Time.local raises an ArgumentError for out of range minute
 fails:Time.local raises an ArgumentError for out of range second
-fails:Time.local raises ArgumentError when given 9 arguments
-fails:Time.local raises ArgumentError when given 11 arguments
 fails:Time.local returns subclass instances
 fails:Time.local handles string arguments
 fails:Time.local handles float arguments
