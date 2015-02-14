@@ -1,4 +1,3 @@
-fails:Time.gm creates a time based on given values, interpreted as UTC (GMT)
 fails:Time.gm creates a time based on given C-style gmtime arguments, interpreted as UTC (GMT)
 fails:Time.gm interprets pre-Gregorian reform dates using Gregorian proleptic calendar
 fails:Time.gm interprets Julian-Gregorian gap dates using Gregorian proleptic calendar
@@ -27,7 +26,6 @@ fails:Time.gm interprets all numerals as base 10
 fails:Time.gm handles fractional seconds as a Float
 fails:Time.gm handles fractional seconds as a Rational
 fails:Time.gm handles years from 0 as such
-fails:Time.gm accepts various year ranges
 fails:Time.gm raises an ArgumentError for out of range month
 fails:Time.gm raises an ArgumentError for out of range day
 fails:Time.gm raises an ArgumentError for out of range hour

@@ -27,7 +27,6 @@ fails:Time.local interprets all numerals as base 10
 fails:Time.local handles fractional seconds as a Float
 fails:Time.local handles fractional seconds as a Rational
 fails:Time.local handles years from 0 as such
-fails:Time.local accepts various year ranges
 fails:Time.local raises an ArgumentError for out of range month
 fails:Time.local raises an ArgumentError for out of range day
 fails:Time.local raises an ArgumentError for out of range hour

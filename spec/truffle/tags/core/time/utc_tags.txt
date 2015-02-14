@@ -1,5 +1,4 @@
 fails:Time#utc? returns true if time represents a time in UTC (GMT)
-fails:Time.utc creates a time based on given values, interpreted as UTC (GMT)
 fails:Time.utc creates a time based on given C-style gmtime arguments, interpreted as UTC (GMT)
 fails:Time.utc interprets pre-Gregorian reform dates using Gregorian proleptic calendar
 fails:Time.utc interprets Julian-Gregorian gap dates using Gregorian proleptic calendar
@@ -28,7 +27,6 @@ fails:Time.utc interprets all numerals as base 10
 fails:Time.utc handles fractional seconds as a Float
 fails:Time.utc handles fractional seconds as a Rational
 fails:Time.utc handles years from 0 as such
-fails:Time.utc accepts various year ranges
 fails:Time.utc raises an ArgumentError for out of range month
 fails:Time.utc raises an ArgumentError for out of range day
 fails:Time.utc raises an ArgumentError for out of range hour

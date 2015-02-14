@@ -31,6 +31,10 @@ public abstract class TimeOperations {
         return milliseconds % 1_000;
     }
 
+    public static long nanosecondsInCurrentSecond(long milliseconds) {
+        return millisecondsToNanoseconds(millisecondsInCurrentSecond(milliseconds));
+    }
+
     public static long millisecondsToNanoseconds(long milliseconds) {
         return milliseconds * 1_000_000;
     }

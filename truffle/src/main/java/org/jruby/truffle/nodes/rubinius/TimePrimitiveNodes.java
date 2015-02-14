@@ -14,6 +14,7 @@ import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.SourceSection;
 import org.joda.time.DateTime;
+import org.joda.time.DateTimeZone;
 import org.jruby.truffle.nodes.objectstorage.ReadHeadObjectFieldNode;
 import org.jruby.truffle.nodes.objectstorage.WriteHeadObjectFieldNode;
 import org.jruby.truffle.runtime.RubyContext;
@@ -155,11 +156,11 @@ public abstract class TimePrimitiveNodes {
     @RubiniusPrimitive(name = "time_decompose")
     public static abstract class TimeDecomposePrimitiveNode extends RubiniusPrimitiveNode {
 
-        @Child private RubyTimeToDateTimeNode toDateTimeNode;
+        @Child private RubyTimeToJodaDateTimeNode toDateTimeNode;
 
         public TimeDecomposePrimitiveNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            toDateTimeNode = new RubyTimeToDateTimeNode(context, sourceSection);
+            toDateTimeNode = new RubyTimeToJodaDateTimeNode(context, sourceSection);
         }
 
         public TimeDecomposePrimitiveNode(TimeDecomposePrimitiveNode prev) {
@@ -194,11 +195,11 @@ public abstract class TimePrimitiveNodes {
     @RubiniusPrimitive(name = "time_strftime")
     public static abstract class TimeStrftimePrimitiveNode extends RubiniusPrimitiveNode {
 
-        @Child private RubyTimeToDateTimeNode toDateTimeNode;
+        @Child private RubyTimeToJodaDateTimeNode toDateTimeNode;
 
         public TimeStrftimePrimitiveNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            toDateTimeNode = new RubyTimeToDateTimeNode(context, sourceSection);
+            toDateTimeNode = new RubyTimeToJodaDateTimeNode(context, sourceSection);
         }
 
         public TimeStrftimePrimitiveNode(TimeStrftimePrimitiveNode prev) {
@@ -223,18 +224,41 @@ public abstract class TimePrimitiveNodes {
     @RubiniusPrimitive(name = "time_s_from_array", needsSelf = false)
     public static abstract class TimeSFromArrayPrimitiveNode extends RubiniusPrimitiveNode {
 
+        @Child private JodaDateTimeToRubyTimeNode toRubyTime;
+
         public TimeSFromArrayPrimitiveNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
+            toRubyTime = new JodaDateTimeToRubyTimeNode(context, sourceSection);
         }
 
         public TimeSFromArrayPrimitiveNode(TimeSFromArrayPrimitiveNode prev) {
             super(prev);
+            toRubyTime = prev.toRubyTime;
         }
 
         @Specialization
-        public RubyTime timeSFromArray(Object sec, Object min, Object hour, Object mday, Object month, Object year,
-                                       Object nsec, Object isdst, Object fromgmt, Object utcoffset) {
-            throw new UnsupportedOperationException("time_s_from_array");
+        public RubyTime timeSFromArray(VirtualFrame frame, int sec, int min, int hour, int mday, int month, int year,
+                                       RubyNilClass nsec, int isdst, boolean fromgmt, int utcoffset) {
+            final DateTime dateTime;
+            if (fromgmt) {
+                dateTime = new DateTime(year, month, mday, hour, min, sec, DateTimeZone.UTC);
+            } else {
+                // TODO CS 14-Feb-15 why is this negative? Rbx has some comments about having to reserve it
+                dateTime = new DateTime(year, month, mday, hour, min, sec, DateTimeZone.forOffsetMillis(-(int) TimeOperations.secondsToMiliseconds(utcoffset)));
+            }
+            return toRubyTime.toDateTime(frame, dateTime);
+        }
+
+        @Specialization
+        public RubyTime timeSFromArray(VirtualFrame frame, int sec, int min, int hour, int mday, int month, int year,
+                                       RubyNilClass nsec, int isdst, boolean fromgmt, RubyNilClass utcoffset) {
+            final DateTime dateTime;
+            if (fromgmt) {
+                dateTime = new DateTime(year, month, mday, hour, min, sec, DateTimeZone.UTC);
+            } else {
+                dateTime = new DateTime(year, month, mday, hour, min, sec, DateTimeZone.forOffsetHours(isdst));
+            }
+            return toRubyTime.toDateTime(frame, dateTime);
         }
 
     }

@@ -144,4 +144,8 @@ class String
     false
   end
 
+  def self.try_convert(obj)
+    Rubinius::Type.try_convert obj, String, :to_str
+  end
+
 end

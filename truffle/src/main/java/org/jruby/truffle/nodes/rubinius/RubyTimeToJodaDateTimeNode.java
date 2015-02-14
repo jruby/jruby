@@ -27,14 +27,14 @@ import org.jruby.truffle.runtime.core.TimeOperations;
  * Supports {@link TimePrimitiveNodes} by converting a {@link RubyTime} to a {@link DateTime}. We use a node because
  * doing this requires accessing instance variables, which we want to use an inline cache for.
  */
-class RubyTimeToDateTimeNode extends Node {
+class RubyTimeToJodaDateTimeNode extends Node {
 
     private final RubyContext context;
 
     @Child private ReadHeadObjectFieldNode readIsGMTNode = new ReadHeadObjectFieldNode("@is_gmt");
     @Child private ReadHeadObjectFieldNode readOffsetNode = new ReadHeadObjectFieldNode("@offset");
 
-    public RubyTimeToDateTimeNode(RubyContext context, SourceSection sourceSection) {
+    public RubyTimeToJodaDateTimeNode(RubyContext context, SourceSection sourceSection) {
         this.context = context;
     }
 
@@ -59,15 +59,25 @@ class RubyTimeToDateTimeNode extends Node {
 
     @CompilerDirectives.TruffleBoundary
     private DateTime toDateTime(long seconds, long nanoseconds, boolean isGMT, Object offset) {
+        long time = TimeOperations.secondsAndNanosecondsToMiliseconds(seconds, nanoseconds);
+
         final DateTimeZone dateTimeZone;
 
-        if (isGMT) {
+        if (isGMT || offset == null || offset == context.getCoreLibrary().getNilObject()) {
             dateTimeZone = DateTimeZone.UTC;
+        } else if (offset instanceof Integer) {
+            final int intOffset = (int) offset;
+
+            // TODO CS 14-Feb-15 why is this negative? Rbx has some comments about having to reserve it
+            dateTimeZone = DateTimeZone.forOffsetMillis(-intOffset);
+
+            // TODO CS 14-Feb-15 we seem to need to actually apply the offset here as well? And twice?
+            time -= dateTimeZone.getOffset(time) * 2;
         } else {
-            dateTimeZone = org.jruby.RubyTime.getLocalTimeZone(context.getRuntime());
+            throw new UnsupportedOperationException(offset.getClass().getName());
         }
 
-        return new DateTime(TimeOperations.secondsAndNanosecondsToMiliseconds(seconds, nanoseconds), dateTimeZone);
+        return new DateTime(time, dateTimeZone);
     }
 
 }

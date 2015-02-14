@@ -24,7 +24,6 @@ fails:Time.new interprets all numerals as base 10
 fails:Time.new handles fractional seconds as a Float
 fails:Time.new handles fractional seconds as a Rational
 fails:Time.new handles years from 0 as such
-fails:Time.new accepts various year ranges
 fails:Time.new raises an ArgumentError for out of range month
 fails:Time.new raises an ArgumentError for out of range day
 fails:Time.new raises an ArgumentError for out of range hour
