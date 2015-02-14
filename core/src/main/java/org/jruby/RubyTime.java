@@ -1216,17 +1216,21 @@ public class RubyTime extends RubyObject {
 
         int offset = 0;
         if (offsetVar != null && offsetVar.respondsTo("to_int")) {
+            IRubyObject oldExc = runtime.getGlobalVariables().get("$!");
             try {
                 offset = offsetVar.convertToInteger().getIntValue() * 1000;
             } catch (RaiseException typeError) {
+                runtime.getGlobalVariables().set("$!", oldExc);
             }
         }
 
         String zone = "";
         if (zoneVar != null && zoneVar.respondsTo("to_str")) {
+            IRubyObject oldExc = runtime.getGlobalVariables().get("$!");
             try {
                 zone = zoneVar.convertToString().toString();
             } catch (RaiseException typeError) {
+                runtime.getGlobalVariables().set("$!", oldExc);
             }
         }
 

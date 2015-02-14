@@ -438,12 +438,14 @@ public class Main {
     }
     
     private boolean checkStreamSyntax(Ruby runtime, InputStream in, String filename) {
+        IRubyObject oldExc = runtime.getGlobalVariables().get("$!");
         try {
             runtime.parseFromMain(in, filename);
             config.getOutput().println("Syntax OK");
             return true;
         } catch (RaiseException re) {
             if (re.getException().getMetaClass().getBaseName().equals("SyntaxError")) {
+                runtime.getGlobalVariables().set("$!", oldExc);
                 config.getError().println("SyntaxError in " + re.getException().message(runtime.getCurrentContext()));
             } else {
                 throw re;

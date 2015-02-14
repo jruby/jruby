@@ -953,6 +953,7 @@ public class Java implements Library {
             } catch (RaiseException re) { /* expected */
                 RubyException rubyEx = re.getException();
                 if (rubyEx.kind_of_p(context, runtime.getStandardError()).isTrue()) {
+                    // SSS FIXME: Why is this being done conditionally??
                     Helpers.setErrorInfo(runtime, previousErrorInfo);
                 }
             } catch (Exception e) { /* expected */ }
@@ -1019,6 +1020,7 @@ public class Java implements Library {
             } catch (RaiseException re) { /* not primitive or lc class */
                 RubyException rubyEx = re.getException();
                 if (rubyEx.kind_of_p(context, runtime.getStandardError()).isTrue()) {
+                    // SSS FIXME: Why is this being set to nil??
                     Helpers.setErrorInfo(runtime, runtime.getNil());
                 }
             } catch (Exception e) { /* not primitive or lc class */ }

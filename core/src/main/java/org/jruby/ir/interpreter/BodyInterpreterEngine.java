@@ -199,10 +199,7 @@ public class BodyInterpreterEngine extends InterpreterEngine {
                             ipc = instr.interpretAndGetNewIPC(context, currDynScope, currScope, self, temp, ipc);
                         } else {
                             Object result = instr.interpret(context, currScope, currDynScope, self, temp);
-
-                            if (instr instanceof ResultInstr) {
-                                setResult(temp, currDynScope, ((ResultInstr) instr).getResult(), result);
-                            }
+                            setResult(temp, currDynScope, instr, result);
                         }
                 }
             } catch (Throwable t) {

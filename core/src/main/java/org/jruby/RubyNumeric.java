@@ -470,9 +470,9 @@ public class RubyNumeric extends RubyObject {
             warnings.warn("in the next release. Return nil in #coerce if the coercion is impossible.");
             if (err) {
                 coerceFailed(context, other);
-            } else {
-                context.runtime.getGlobalVariables().set("$!", savedError);
             }
+            // Restore $!
+            context.runtime.getGlobalVariables().set("$!", savedError);
             return null;
         }
     
