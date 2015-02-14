@@ -7,6 +7,6 @@ fails:Executing break from within a block returns from the original invoking met
 slow:The break statement in a lambda created at the toplevel returns a value when invoking from a method
 slow:The break statement in a lambda created at the toplevel returns a value when invoking from a block
 slow:The break statement in a lambda created at the toplevel returns a value when invoking from the toplevel
-fails(windows bug):The break statement in a lambda created at the toplevel returns a value when invoking from the toplevel
-fails(windows bug):The break statement in a lambda created at the toplevel returns a value when invoking from a method
-fails(windows bug):The break statement in a lambda created at the toplevel returns a value when invoking from a block
+windows:The break statement in a lambda created at the toplevel returns a value when invoking from the toplevel
+windows:The break statement in a lambda created at the toplevel returns a value when invoking from a method
+windows:The break statement in a lambda created at the toplevel returns a value when invoking from a block

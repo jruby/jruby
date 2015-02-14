@@ -119,6 +119,11 @@ core += [
                         [/_spec.rb$/,           '_tags.txt']
                       ]
 
+  if windows?
+    # exclude specs tagged with 'windows'
+    set :xtags, (get(:xtags) || []) + ['windows']
+  end
+
   MSpec.enable_feature :encoding
   MSpec.enable_feature :fiber
   MSpec.disable_feature :fork
