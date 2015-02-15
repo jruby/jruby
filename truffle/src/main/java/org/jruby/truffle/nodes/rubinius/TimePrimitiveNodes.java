@@ -82,10 +82,30 @@ public abstract class TimePrimitiveNodes {
         }
 
         @Specialization(guards = "isTrue(arguments[2])")
+        public RubyTime timeSSpecificUTC(long seconds, long nanoseconds, boolean isUTC, RubyNilClass offset) {
+            return timeSSpecificUTC((int) seconds, (int) nanoseconds, isUTC, offset);
+        }
+
+        @Specialization(guards = "isTrue(arguments[2])")
         public RubyTime timeSSpecificUTC(int seconds, int nanoseconds, boolean isUTC, RubyNilClass offset) {
             // TODO(CS): overflow checks needed?
             final long milliseconds = seconds * 1_000 + (nanoseconds / 1_000_000);
             return new RubyTime(getContext().getCoreLibrary().getTimeClass(), new DateTime(milliseconds), null);
+        }
+
+        @Specialization(guards = "!isTrue(arguments[2])")
+        public RubyTime timeSSpecific(long seconds, long nanoseconds, boolean isUTC, RubyNilClass offset) {
+            return timeSSpecific((int) seconds, (int) nanoseconds, isUTC, offset);
+        }
+
+        @Specialization(guards = "!isTrue(arguments[2])")
+        public RubyTime timeSSpecific(int seconds, int nanoseconds, boolean isUTC, RubyNilClass offset) {
+            // TODO CS 14-Feb-15 uses debug send
+            final DateTimeZone zone = org.jruby.RubyTime.getTimeZoneFromTZString(getContext().getRuntime(),
+                    DebugOperations.send(getContext(), getContext().getCoreLibrary().getENV(), "[]", null, getContext().makeString("TZ")).toString());
+            // TODO(CS): overflow checks needed?
+            final long milliseconds = seconds * 1_000 + (nanoseconds / 1_000_000);
+            return new RubyTime(getContext().getCoreLibrary().getTimeClass(), new DateTime(milliseconds, zone), null);
         }
 
     }
@@ -271,6 +291,18 @@ public abstract class TimePrimitiveNodes {
         public RubyTime timeSFromArray(RubyClass timeClass, RubyBasicObject sec, int min, int hour, int mday, int month, int year,
                                        RubyNilClass nsec, int isdst, boolean fromutc, Object utcoffset) {
             return null;
+        }
+
+        @Specialization
+        public RubyTime timeSFromArray(RubyClass timeClass, double sec, int min, int hour, int mday, int month, int year,
+                                       long nsec, int isdst, boolean fromutc, Object utcoffset) {
+            return timeSFromArray(timeClass, sec, min, hour, mday, month, year, (int) nsec, isdst, fromutc, utcoffset);
+        }
+
+        @Specialization
+        public RubyTime timeSFromArray(RubyClass timeClass, double sec, int min, int hour, int mday, int month, int year,
+                                       int nsec, long isdst, boolean fromutc, Object utcoffset) {
+            return timeSFromArray(timeClass, sec, min, hour, mday, month, year, nsec, (int) isdst, fromutc, utcoffset);
         }
 
         @Specialization
