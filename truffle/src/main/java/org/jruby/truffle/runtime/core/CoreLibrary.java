@@ -580,7 +580,7 @@ public class CoreLibrary {
         }
 
         if (value instanceof RubyBignum) {
-            return ((RubyBignum) value).doubleValue();
+            return ((RubyBignum) value).bigIntegerValue().doubleValue();
         }
 
         if (value instanceof Double) {
@@ -608,6 +608,11 @@ public class CoreLibrary {
     public RubyException argumentError(String message, Node currentNode) {
         CompilerAsserts.neverPartOfCompilation();
         return new RubyException(argumentErrorClass, context.makeString(message), RubyCallStack.getBacktrace(currentNode));
+    }
+
+    public RubyException argumentErrorOutOfRange(Node currentNode) {
+        CompilerAsserts.neverPartOfCompilation();
+        return argumentError("out of range", currentNode);
     }
 
     public RubyException argumentErrorInvalidRadix(int radix, Node currentNode) {

@@ -27,6 +27,8 @@ import org.jruby.truffle.runtime.core.RubyBasicObject;
 import org.jruby.truffle.runtime.core.RubyBignum;
 import org.jruby.truffle.runtime.core.RubyString;
 
+import java.math.BigInteger;
+
 /**
  * Rubinius primitives associated with the Ruby {@code Fixnum} class.
  */
@@ -145,7 +147,8 @@ public abstract class FixnumPrimitiveNodes {
             if (negativeProfile.profile(b < 0)) {
                 return null; // Primitive failure
             } else {
-                return fixnumOrBignum(bignum(a).pow(b));
+                // TODO CS 15-Feb-15 - what to do about this cast?
+                return fixnumOrBignum(BigInteger.valueOf(a).pow((int) b));
             }
         }
 
@@ -178,13 +181,13 @@ public abstract class FixnumPrimitiveNodes {
                 }
             }
 
-            if (b.compare(0) < 0) {
+            if (b.bigIntegerValue().compareTo(BigInteger.ZERO) < 0) {
                 return null; // Primitive failure
             }
 
-            if (b.isEqualTo(b.longValue())) {
+            if (b.bigIntegerValue().equals(b)) {
                 // This is a bug of course
-                return pow(a, b.longValue());
+                return pow(a, b.bigIntegerValue().longValue());
             }
 
             getContext().getRuntime().getWarnings().warn("in a**b, b may be too big");

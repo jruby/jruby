@@ -61,6 +61,7 @@ import org.jruby.util.ByteList;
 import org.jruby.util.KeyValuePair;
 import org.jruby.util.cli.Options;
 
+import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 
@@ -294,7 +295,17 @@ public class BodyTranslator extends Translator {
 
     @Override
     public RubyNode visitBignumNode(org.jruby.ast.BignumNode node) {
-        return new ObjectLiteralNode(context, translate(node.getPosition()), new RubyBignum(context.getCoreLibrary().getBignumClass(), node.getValue()));
+        final SourceSection sourceSection = translate(node.getPosition());
+
+        // These aren't always Bignums!
+
+        final BigInteger value = node.getValue();
+
+        if (value.bitLength() >= 64) {
+            return new ObjectLiteralNode(context, sourceSection, new RubyBignum(context.getCoreLibrary().getBignumClass(), node.getValue()));
+        } else {
+            return new FixnumLiteralNode.LongFixnumLiteralNode(context, sourceSection, value.longValue());
+        }
     }
 
     @Override

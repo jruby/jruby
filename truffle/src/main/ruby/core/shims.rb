@@ -196,3 +196,11 @@ class Rational
   alias :__slash__ :/
 
 end
+
+class BasicObject
+
+  def __id__
+    Rubinius.primitive :object_id
+  end
+
+end

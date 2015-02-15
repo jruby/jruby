@@ -92,7 +92,7 @@ public class GeneralDivModNode extends RubyNode {
     }
 
     public RubyArray execute(double a, RubyBignum b) {
-        return divMod(a, b.doubleValue());
+        return divMod(a, b.bigIntegerValue().doubleValue());
     }
 
     public RubyArray execute(double a, double b) {
@@ -142,7 +142,7 @@ public class GeneralDivModNode extends RubyNode {
         } else {
             useObjectPairProfile.enter();
             return new RubyArray(getContext().getCoreLibrary().getArrayClass(), new Object[]{
-                    fixnumOrBignumQuotient.fixnumOrBignum(create((BigInteger) integerDiv)),
+                    fixnumOrBignumQuotient.fixnumOrBignum((BigInteger) integerDiv),
                     mod}, 2);
         }
     }
@@ -188,8 +188,8 @@ public class GeneralDivModNode extends RubyNode {
         }
 
         return new RubyArray(getContext().getCoreLibrary().getArrayClass(), new Object[]{
-                fixnumOrBignumQuotient.fixnumOrBignum(create(bigIntegerResults[0])),
-                fixnumOrBignumRemainder.fixnumOrBignum(create(bigIntegerResults[1]))}, 2);
+                fixnumOrBignumQuotient.fixnumOrBignum(bigIntegerResults[0]),
+                fixnumOrBignumRemainder.fixnumOrBignum(bigIntegerResults[1])}, 2);
     }
 
     public RubyBignum create(BigInteger value) {
