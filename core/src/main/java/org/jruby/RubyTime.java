@@ -834,7 +834,7 @@ public class RubyTime extends RubyObject {
     public IRubyObject zone() {
         final String zone = RubyTime.zoneHelper(getEnvTimeZone(getRuntime()).toString(), dt, isTzRelative);
         if (zone == null) return getRuntime().getNil();
-        return getRuntime().newString();
+        return getRuntime().newString(zone);
     }
 
     public static String zoneHelper(String envTZ, DateTime dt, boolean isTzRelative) {
