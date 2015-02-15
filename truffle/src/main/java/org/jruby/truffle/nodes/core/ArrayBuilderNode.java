@@ -443,8 +443,8 @@ public abstract class ArrayBuilderNode extends Node {
             if (otherStore instanceof int[]) {
                 // TODO CS 5-Feb-15 hack to get things working with empty int[] store
 
-                if (((int[]) otherStore).length > 0) {
-                    throw new UnsupportedOperationException();
+                for (int n = 0; n < array.getSize(); n++) {
+                    ((Object[]) store)[index + n] = ((int[]) otherStore)[n];
                 }
 
                 return store;
