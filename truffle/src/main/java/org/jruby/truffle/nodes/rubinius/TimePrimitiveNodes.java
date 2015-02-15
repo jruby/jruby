@@ -104,7 +104,7 @@ public abstract class TimePrimitiveNodes {
             final DateTimeZone zone = org.jruby.RubyTime.getTimeZoneFromTZString(getContext().getRuntime(),
                     DebugOperations.send(getContext(), getContext().getCoreLibrary().getENV(), "[]", null, getContext().makeString("TZ")).toString());
             // TODO(CS): overflow checks needed?
-            final long milliseconds = seconds * 1_000 + (nanoseconds / 1_000_000);
+            final long milliseconds = (long) seconds * 1_000 + ((long) nanoseconds / 1_000_000);
             return new RubyTime(getContext().getCoreLibrary().getTimeClass(), new DateTime(milliseconds, zone), null);
         }
 
