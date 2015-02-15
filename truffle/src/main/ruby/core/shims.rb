@@ -190,3 +190,9 @@ module Kernel
     "#{prefix} #{parts.join(', ')}>"
   end
 end
+
+class Rational
+
+  alias :__slash__ :/
+
+end
