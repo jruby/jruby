@@ -9,6 +9,7 @@
  */
 package org.jruby.truffle.runtime.core;
 
+import org.joda.time.DateTimeZone;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.objects.Allocator;
 import org.jruby.truffle.runtime.RubyContext;
@@ -17,18 +18,20 @@ public class RubyTime extends RubyBasicObject {
 
     private long seconds;
     private long nanoseconds;
+    private DateTimeZone zone;
 
-    public RubyTime(RubyClass timeClass, long seconds, long nanoseconds) {
+    public RubyTime(RubyClass timeClass, long seconds, long nanoseconds, DateTimeZone zone) {
         super(timeClass);
         this.seconds = seconds;
         this.nanoseconds = nanoseconds;
+        this.zone = zone;
     }
 
     public static class TimeAllocator implements Allocator {
 
         @Override
         public RubyBasicObject allocate(RubyContext context, RubyClass rubyClass, RubyNode currentNode) {
-            return new RubyTime(rubyClass, 0, 0);
+            return new RubyTime(rubyClass, 0, 0, DateTimeZone.UTC);
         }
 
     }
@@ -49,4 +52,11 @@ public class RubyTime extends RubyBasicObject {
         this.nanoseconds = nanoseconds;
     }
 
+    public DateTimeZone getZone() {
+        return zone;
+    }
+
+    public void setZone(DateTimeZone zone) {
+        this.zone = zone;
+    }
 }

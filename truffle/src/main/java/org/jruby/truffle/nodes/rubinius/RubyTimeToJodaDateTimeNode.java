@@ -51,28 +51,28 @@ class RubyTimeToJodaDateTimeNode extends Node {
             isGMT = false;
         }
 
-        return toDateTime(time.getSeconds(),
+        return toDateTime(time.getZone(), time.getSeconds(),
                 time.getNanoseconds(),
                 isGMT,
                 readOffsetNode.execute(time));
     }
 
     @CompilerDirectives.TruffleBoundary
-    private DateTime toDateTime(long seconds, long nanoseconds, boolean isGMT, Object offset) {
+    private DateTime toDateTime(DateTimeZone zone, long seconds, long nanoseconds, boolean isGMT, Object offset) {
         long time = TimeOperations.secondsAndNanosecondsToMiliseconds(seconds, nanoseconds);
 
         final DateTimeZone dateTimeZone;
 
         if (isGMT || offset == null || offset == context.getCoreLibrary().getNilObject()) {
-            dateTimeZone = DateTimeZone.UTC;
+            dateTimeZone = zone;
         } else if (offset instanceof Integer) {
             final int intOffset = (int) offset;
 
             // TODO CS 14-Feb-15 why is this negative? Rbx has some comments about having to reserve it
-            dateTimeZone = DateTimeZone.forOffsetMillis(-intOffset);
+            dateTimeZone = zone;//DateTimeZone.forOffsetMillis(-intOffset);
 
             // TODO CS 14-Feb-15 we seem to need to actually apply the offset here as well? And twice?
-            time -= dateTimeZone.getOffset(time) * 2;
+            //time -= dateTimeZone.getOffset(time) * 2;
         } else {
             throw new UnsupportedOperationException(offset.getClass().getName());
         }

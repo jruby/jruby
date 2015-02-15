@@ -1,3 +1,1 @@
-fails:Time#_dump dumps a Time object to a bytestring
-fails:Time#_dump dumps an array with a time as second element
 fails:Time#_dump dumps like MRI's marshaled time format

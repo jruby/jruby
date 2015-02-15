@@ -1,4 +1,3 @@
-fails:Time.new creates a time based on given values, interpreted in the local time zone
 fails:Time.new respects rare old timezones
 fails:Time.new accepts 1 argument (year)
 fails:Time.new accepts 2 arguments (year, month)

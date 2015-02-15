@@ -32,7 +32,7 @@ class JodaDateTimeToRubyTimeNode extends Node {
 
     public RubyTime toDateTime(VirtualFrame frame, DateTime dateTime) {
         final long miliseconds = dateTime.getMillis();
-        final RubyTime time = new RubyTime(context.getCoreLibrary().getTimeClass(), TimeOperations.millisecondsToSeconds(miliseconds), TimeOperations.nanosecondsInCurrentSecond(miliseconds));
+        final RubyTime time = new RubyTime(context.getCoreLibrary().getTimeClass(), TimeOperations.millisecondsToSeconds(miliseconds), TimeOperations.nanosecondsInCurrentSecond(miliseconds), dateTime.getZone());
         writeIsGMTNode.execute(time, dateTime.getZone() == DateTimeZone.UTC);
         writeOffsetNode.execute(time, dateTime.getZone().getOffset(miliseconds));
         return time;

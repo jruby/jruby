@@ -17,6 +17,7 @@ import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
 import org.jruby.truffle.nodes.objectstorage.ReadHeadObjectFieldNode;
 import org.jruby.truffle.nodes.objectstorage.WriteHeadObjectFieldNode;
+import org.jruby.truffle.runtime.DebugOperations;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.*;
 import org.jruby.util.ByteList;
@@ -43,9 +44,13 @@ public abstract class TimePrimitiveNodes {
         @Specialization
         public RubyTime timeSNow(RubyClass timeClass) {
             final long milliseconds = System.currentTimeMillis();
+            // TODO CS 14-Feb-15 uses debug send
+            final DateTimeZone zone = org.jruby.RubyTime.getTimeZoneFromTZString(getContext().getRuntime(),
+                    DebugOperations.send(getContext(), getContext().getCoreLibrary().getENV(), "[]", null, getContext().makeString("TZ")).toString());
             return new RubyTime(timeClass,
                             TimeOperations.millisecondsToSeconds(milliseconds),
-                            TimeOperations.millisecondsToNanoseconds(TimeOperations.millisecondsInCurrentSecond(milliseconds)));
+                            TimeOperations.millisecondsToNanoseconds(TimeOperations.millisecondsInCurrentSecond(milliseconds)),
+                            zone);
         }
 
     }
@@ -69,7 +74,7 @@ public abstract class TimePrimitiveNodes {
 
         @Specialization
         public RubyTime timeSDup(RubyTime other) {
-            final RubyTime time = new RubyTime(getContext().getCoreLibrary().getTimeClass(), other.getSeconds(), other.getNanoseconds());
+            final RubyTime time = new RubyTime(getContext().getCoreLibrary().getTimeClass(), other.getSeconds(), other.getNanoseconds(), other.getZone());
             writeIsGMTNode.execute(time, readIsGMTNode.execute(other));
             writeOffsetNode.execute(time, readOffsetNode.execute(other));
             return time;
@@ -109,7 +114,8 @@ public abstract class TimePrimitiveNodes {
         @Specialization
         public RubyTime timeSSpecific(long seconds, long nanoseconds, Object isGMT, Object offset) {
             // TODO(CS): overflow checks here in Rbx
-            final RubyTime time = new RubyTime(getContext().getCoreLibrary().getTimeClass(), seconds, nanoseconds);
+            // TODO CS 14-Feb-15 uses UTC
+            final RubyTime time = new RubyTime(getContext().getCoreLibrary().getTimeClass(), seconds, nanoseconds, DateTimeZone.UTC);
             writeIsGMTNode.execute(time, isGMT);
             writeOffsetNode.execute(time, offset);
             return time;
@@ -178,15 +184,17 @@ public abstract class TimePrimitiveNodes {
         @CompilerDirectives.TruffleBoundary
         public Object[] decompose(DateTime dateTime) {
             final int sec = dateTime.getSecondOfMinute();
-            final int min = dateTime.getMinuteOfDay();
+            final int min = dateTime.getMinuteOfHour();
             final int hour = dateTime.getHourOfDay();
             final int day = dateTime.getDayOfMonth();
             final int month = dateTime.getMonthOfYear();
             final int year = dateTime.getYear();
             final int wday = dateTime.getDayOfWeek();
             final int yday = dateTime.getDayOfYear();
-            final Object isdst = getContext().getCoreLibrary().getNilObject();
-            final Object zone = getContext().getCoreLibrary().getNilObject();
+            final boolean isdst = false;
+            // TODO CS 14-Feb-15 uses debug send
+            final String envTimeZoneString = DebugOperations.send(getContext(), getContext().getCoreLibrary().getENV(), "[]", null, getContext().makeString("TZ")).toString();
+            final RubyString zone = getContext().makeString(org.jruby.RubyTime.zoneHelper(envTimeZoneString, dateTime, false));
             return new Object[]{sec, min, hour, day, month, year, wday, yday, isdst, zone};
         }
 
@@ -256,7 +264,10 @@ public abstract class TimePrimitiveNodes {
             if (fromgmt) {
                 dateTime = new DateTime(year, month, mday, hour, min, sec, DateTimeZone.UTC);
             } else {
-                dateTime = new DateTime(year, month, mday, hour, min, sec, DateTimeZone.forOffsetHours(isdst));
+                // TODO CS 14-Feb-15 uses debug send
+                final DateTimeZone zone = org.jruby.RubyTime.getTimeZoneFromTZString(getContext().getRuntime(),
+                        DebugOperations.send(getContext(), getContext().getCoreLibrary().getENV(), "[]", null, getContext().makeString("TZ")).toString());
+                dateTime = new DateTime(year, month, mday, hour, min, sec, zone);
             }
             return toRubyTime.toDateTime(frame, dateTime);
         }
