@@ -1,11 +1,6 @@
 fails:Time.local creates a time based on given C-style gmtime arguments, interpreted in the local time zone
 fails:Time.local creates the correct time just before dst change
 fails:Time.local creates the correct time just after dst change
-fails:Time.local handles a String second
-fails:Time.local coerces the second with #to_int
-fails:Time.local interprets all numerals as base 10
-fails:Time.local handles fractional seconds as a Float
-fails:Time.local handles fractional seconds as a Rational
 fails:Time.local handles string arguments
 fails:Time.local handles float arguments
 fails:Time.local handles microseconds

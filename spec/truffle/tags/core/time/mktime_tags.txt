@@ -1,11 +1,6 @@
 fails:Time.mktime creates a time based on given C-style gmtime arguments, interpreted in the local time zone
 fails:Time.mktime creates the correct time just before dst change
 fails:Time.mktime creates the correct time just after dst change
-fails:Time.mktime handles a String second
-fails:Time.mktime coerces the second with #to_int
-fails:Time.mktime interprets all numerals as base 10
-fails:Time.mktime handles fractional seconds as a Float
-fails:Time.mktime handles fractional seconds as a Rational
 fails:Time.mktime handles string arguments
 fails:Time.mktime handles float arguments
 fails:Time.mktime handles microseconds

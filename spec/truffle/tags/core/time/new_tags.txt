@@ -1,5 +1,0 @@
-fails:Time.new handles a String second
-fails:Time.new coerces the second with #to_int
-fails:Time.new interprets all numerals as base 10
-fails:Time.new handles fractional seconds as a Float
-fails:Time.new handles fractional seconds as a Rational

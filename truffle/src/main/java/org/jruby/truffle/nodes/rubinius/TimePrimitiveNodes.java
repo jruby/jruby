@@ -212,6 +212,13 @@ public abstract class TimePrimitiveNodes {
         }
 
         @Specialization
+        public RubyTime timeSFromArray(RubyClass timeClass, long sec, int min, int hour, int mday, int month, int year,
+                                       int nsec, int isdst, boolean fromutc, Object utcoffset) {
+            // TODO CS 15-Feb-15 that cast
+            return timeSFromArray(timeClass, (int) sec, min, hour, mday, month, year, nsec, isdst, fromutc, utcoffset);
+        }
+
+        @Specialization
         public RubyTime timeSFromArray(RubyClass timeClass, int sec, int min, int hour, int mday, int month, int year,
                                        long nsec, int isdst, boolean fromutc, Object utcoffset) {
             // TODO CS 15-Feb-15 that cast
@@ -230,25 +237,39 @@ public abstract class TimePrimitiveNodes {
             }
 
             if (isdst == -1 && !fromutc && utcoffset instanceof Integer) {
-                final DateTime dateTime = new DateTime(year, month, mday, hour, min, sec, DateTimeZone.forOffsetMillis(((int) utcoffset) * 1_000));
+                final DateTime dateTime = new DateTime(year, month, mday, hour, min, sec, nsec / 1_000_000, DateTimeZone.forOffsetMillis(((int) utcoffset) * 1_000));
                 return new RubyTime(timeClass, dateTime, utcoffset);
             } else if (isdst == -1 && !fromutc && utcoffset instanceof Long) {
-                final DateTime dateTime = new DateTime(year, month, mday, hour, min, sec, DateTimeZone.forOffsetMillis((int) ((long) utcoffset) * 1_000));
+                final DateTime dateTime = new DateTime(year, month, mday, hour, min, sec, nsec / 1_000_000, DateTimeZone.forOffsetMillis((int) ((long) utcoffset) * 1_000));
                 return new RubyTime(timeClass, dateTime, utcoffset);
             } else if (isdst == -1 && !fromutc && utcoffset instanceof RubyBasicObject && isRational((RubyBasicObject) utcoffset)) {
                 // TODO CS 15-Feb-15 debug send and cast
                 final int millis = cast(DebugOperations.send(getContext(), utcoffset, "_offset_to_milliseconds", null));
-                final DateTime dateTime = new DateTime(year, month, mday, hour, min, sec, DateTimeZone.forOffsetMillis(millis));
+                final DateTime dateTime = new DateTime(year, month, mday, hour, min, sec, nsec / 1_000_000, DateTimeZone.forOffsetMillis(millis));
                 return new RubyTime(timeClass, dateTime, utcoffset);
             } else if (isdst == -1 && !fromutc && utcoffset == getContext().getCoreLibrary().getNilObject()) {
                 // TODO CS 14-Feb-15 uses debug send
                 final DateTimeZone zone = org.jruby.RubyTime.getTimeZoneFromTZString(getContext().getRuntime(),
                         DebugOperations.send(getContext(), getContext().getCoreLibrary().getENV(), "[]", null, getContext().makeString("TZ")).toString());
-                final DateTime dateTime = new DateTime(year, month, mday, hour, min, sec, zone);
+                final DateTime dateTime = new DateTime(year, month, mday, hour, min, sec, nsec / 1_000_000, zone);
                 return new RubyTime(timeClass, dateTime, null);
             } else {
                 throw new UnsupportedOperationException(String.format("%s %s %s %s", isdst, fromutc, utcoffset, utcoffset.getClass()));
             }
+        }
+
+        @Specialization
+        public RubyTime timeSFromArray(RubyClass timeClass, RubyBasicObject sec, int min, int hour, int mday, int month, int year,
+                                       RubyNilClass nsec, int isdst, boolean fromutc, Object utcoffset) {
+            return null;
+        }
+
+        @Specialization
+        public RubyTime timeSFromArray(RubyClass timeClass, double sec, int min, int hour, int mday, int month, int year,
+                                       RubyNilClass nsec, int isdst, boolean fromutc, Object utcoffset) {
+            final int secondsWhole = (int) sec;
+            final int nanosecondsFractional = (int) ((sec * 1_000_000_000) - (secondsWhole * 1_000_000_000));
+            return timeSFromArray(timeClass, secondsWhole, min, hour, mday, month, year, nanosecondsFractional, isdst, fromutc, utcoffset);
         }
 
         private int cast(Object value) {
