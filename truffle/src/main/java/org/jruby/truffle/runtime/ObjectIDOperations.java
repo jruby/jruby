@@ -63,14 +63,14 @@ public abstract class ObjectIDOperations {
         return fixnum * 2 + 1;
     }
 
-    public static RubyBignum largeFixnumToID(RubyContext context, long fixnum) {
+    public static BigInteger largeFixnumToID(long fixnum) {
         assert !isSmallFixnum(fixnum);
-        return new RubyBignum(context.getCoreLibrary().getBignumClass(), BigInteger.valueOf(fixnum).or(LARGE_FIXNUM_FLAG));
+        return BigInteger.valueOf(fixnum).or(LARGE_FIXNUM_FLAG);
     }
 
-    public static RubyBignum floatToID(RubyContext context, double value) {
+    public static BigInteger floatToID(double value) {
         long bits = Double.doubleToRawLongBits(value);
-        return new RubyBignum(context.getCoreLibrary().getBignumClass(), BigInteger.valueOf(bits).or(FLOAT_FLAG));
+        return BigInteger.valueOf(bits).or(FLOAT_FLAG);
     }
 
     // ID => primitive
@@ -83,20 +83,20 @@ public abstract class ObjectIDOperations {
         return (id - 1) / 2;
     }
 
-    public static boolean isLargeFixnumID(RubyBignum id) {
-        return !id.bigIntegerValue().and(LARGE_FIXNUM_FLAG).equals(BigInteger.ZERO);
+    public static boolean isLargeFixnumID(BigInteger id) {
+        return !id.and(LARGE_FIXNUM_FLAG).equals(BigInteger.ZERO);
     }
 
     public static long toFixnum(RubyBignum id) {
-        return id.longValue();
+        return id.bigIntegerValue().longValue();
     }
 
-    public static boolean isFloatID(RubyBignum id) {
-        return !id.bigIntegerValue().and(FLOAT_FLAG).equals(BigInteger.ZERO);
+    public static boolean isFloatID(BigInteger id) {
+        return !id.and(FLOAT_FLAG).equals(BigInteger.ZERO);
     }
 
     public static double toFloat(RubyBignum id) {
-        return Double.longBitsToDouble(id.longValue());
+        return Double.longBitsToDouble(id.bigIntegerValue().longValue());
     }
 
 }

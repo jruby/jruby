@@ -1062,6 +1062,7 @@ public abstract class KernelNodes {
 
         @Child private DoesRespondDispatchHeadNode toIntRespondTo;
         @Child private CallDispatchHeadNode toInt;
+        @Child private FixnumOrBignumNode fixnumOrBignum;
 
         public IntegerNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -1073,6 +1074,7 @@ public abstract class KernelNodes {
             super(prev);
             toIntRespondTo = prev.toIntRespondTo;
             toInt = prev.toInt;
+            fixnumOrBignum = prev.fixnumOrBignum;
         }
 
         @Specialization
@@ -1106,7 +1108,12 @@ public abstract class KernelNodes {
             try {
                 return Integer.parseInt(value.toString());
             } catch (NumberFormatException e) {
-                return bignum(new BigInteger(value.toString()));
+                if (fixnumOrBignum == null) {
+                    CompilerDirectives.transferToInterpreter();
+                    fixnumOrBignum = insert(new FixnumOrBignumNode(getContext(), getSourceSection()));
+                }
+
+                return fixnumOrBignum.fixnumOrBignum(new BigInteger(value.toString()));
             }
         }
 
@@ -2151,7 +2158,7 @@ public abstract class KernelNodes {
 
         @Specialization
         public String toHexString(RubyBignum value) {
-            return value.toHexString();
+            return value.bigIntegerValue().toString(16);
         }
 
     }

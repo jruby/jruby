@@ -1942,13 +1942,13 @@ public class RubyIO extends RubyObject implements IOEncodable {
         ThreadContext context = runtime.getCurrentContext();
         IRubyObject closed = io.checkCallMethod(context, "closed?");
         if (closed != null && closed.isTrue()) return io;
-        IRubyObject oldExc = context.getErrorInfo();
+        IRubyObject oldExc = runtime.getGlobalVariables().get("$!"); // Save $!
         try {
             return io.checkCallMethod(context, "close");
         } catch (RaiseException re) {
             if (re.getMessage().contains(CLOSED_STREAM_MSG)) {
                 // ignore
-                context.setErrorInfo(oldExc);
+                runtime.getGlobalVariables().set("$!", oldExc); // Restore $!
                 return context.nil;
             } else {
                 throw re;

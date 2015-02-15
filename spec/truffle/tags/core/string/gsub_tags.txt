@@ -63,3 +63,8 @@ fails:String#gsub! with pattern and block uses the compatible encoding if they a
 fails:String#gsub! with pattern and block raises an Encoding::CompatibilityError if the encodings are not compatible
 fails:String#gsub! with pattern and block replaces the incompatible part properly even if the encodings are not compatible
 fails:String#gsub! with pattern and block raises an ArgumentError if encoding is not valid
+fails:String#gsub with pattern and replacement respects $KCODE when the pattern collapses
+fails:String#gsub with pattern and replacement handles pattern collapse without $KCODE
+fails:String#gsub with pattern and block returns a copy of self with all occurrences of pattern replaced with the block's return value
+fails:String#gsub with pattern and block doesn't interpolate special sequences like \1 for the block's return value
+fails:String#gsub with pattern and block converts the block's return value to a string using to_s

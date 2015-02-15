@@ -832,17 +832,21 @@ public class RubyTime extends RubyObject {
 
     @JRubyMethod
     public IRubyObject zone() {
-        Ruby runtime = getRuntime();
-        if (isTzRelative) return runtime.getNil();
-        
-        String envTZ = getEnvTimeZone(runtime).toString();
+        final String zone = RubyTime.zoneHelper(getEnvTimeZone(getRuntime()).toString(), dt, isTzRelative);
+        if (zone == null) return getRuntime().getNil();
+        return getRuntime().newString(zone);
+    }
+
+    public static String zoneHelper(String envTZ, DateTime dt, boolean isTzRelative) {
+        if (isTzRelative) return null;
+
         // see declaration of SHORT_TZNAME
         if (SHORT_STD_TZNAME.containsKey(envTZ) && ! dt.getZone().toTimeZone().inDaylightTime(dt.toDate())) {
-            return runtime.newString(SHORT_STD_TZNAME.get(envTZ));
+            return SHORT_STD_TZNAME.get(envTZ);
         }
         
         if (SHORT_DL_TZNAME.containsKey(envTZ) && dt.getZone().toTimeZone().inDaylightTime(dt.toDate())) {
-            return runtime.newString(SHORT_DL_TZNAME.get(envTZ));
+            return SHORT_DL_TZNAME.get(envTZ);
         }
         
         String zone = dt.getZone().getShortName(dt.getMillis());
@@ -865,7 +869,7 @@ public class RubyTime extends RubyObject {
             }
         }
         
-        return runtime.newString(zone);
+        return zone;
     }
 
     public void setDateTime(DateTime dt) {
@@ -1216,17 +1220,21 @@ public class RubyTime extends RubyObject {
 
         int offset = 0;
         if (offsetVar != null && offsetVar.respondsTo("to_int")) {
+            IRubyObject oldExc = runtime.getGlobalVariables().get("$!"); // Save $!
             try {
                 offset = offsetVar.convertToInteger().getIntValue() * 1000;
             } catch (RaiseException typeError) {
+                runtime.getGlobalVariables().set("$!", oldExc); // Restore $!
             }
         }
 
         String zone = "";
         if (zoneVar != null && zoneVar.respondsTo("to_str")) {
+            IRubyObject oldExc = runtime.getGlobalVariables().get("$!"); // Save $!
             try {
                 zone = zoneVar.convertToString().toString();
             } catch (RaiseException typeError) {
+                runtime.getGlobalVariables().set("$!", oldExc); // Restore $!
             }
         }
 

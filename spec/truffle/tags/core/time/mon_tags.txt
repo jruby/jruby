@@ -1,3 +1,0 @@
-fails:Time#mon returns the month of the year for a local Time
-fails:Time#mon returns the month of the year for a UTC Time
-fails:Time#mon returns the four digit year for a Time with a fixed offset

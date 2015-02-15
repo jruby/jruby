@@ -1435,7 +1435,7 @@ public abstract class ModuleNodes {
             return removeConstant(module, name.toString());
         }
 
-        @Specialization(guards = "!isRubySymbol(arguments[1])")
+        @Specialization(guards = "!isRubySymbol(name)")
         public Object removeConst(VirtualFrame frame, RubyModule module, Object name) {
             notDesignedForCompilation();
 

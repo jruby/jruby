@@ -25,6 +25,8 @@ import org.jruby.truffle.runtime.core.RubyBignum;
 import org.jruby.truffle.runtime.core.RubyProc;
 import org.jruby.truffle.runtime.core.RubyString;
 
+import java.math.BigInteger;
+
 @CoreClass(name = "Integer")
 public abstract class IntegerNodes {
 
@@ -89,6 +91,8 @@ public abstract class IntegerNodes {
     @CoreMethod(names = "times", needsBlock = true)
     public abstract static class TimesNode extends YieldingCoreMethodNode {
 
+        @Child private FixnumOrBignumNode fixnumOrBignum;
+
         private final BranchProfile breakProfile = BranchProfile.create();
         private final BranchProfile nextProfile = BranchProfile.create();
         private final BranchProfile redoProfile = BranchProfile.create();
@@ -99,6 +103,7 @@ public abstract class IntegerNodes {
 
         public TimesNode(TimesNode prev) {
             super(prev);
+            fixnumOrBignum = prev.fixnumOrBignum;
         }
 
         @Specialization
@@ -186,10 +191,15 @@ public abstract class IntegerNodes {
         public Object times(VirtualFrame frame, RubyBignum n, RubyProc block) {
             notDesignedForCompilation();
 
-            outer: for (RubyBignum i = bignum(0); i.compare(n) < 0; i = i.add(1)) {
+            if (fixnumOrBignum == null) {
+                CompilerDirectives.transferToInterpreter();
+                fixnumOrBignum = insert(new FixnumOrBignumNode(getContext(), getSourceSection()));
+            }
+
+            outer: for (BigInteger i = BigInteger.ZERO; i.compareTo(n.bigIntegerValue()) < 0; i = i.add(BigInteger.ONE)) {
                 while (true) {
                     try {
-                        yield(frame, block, i);
+                        yield(frame, block, fixnumOrBignum.fixnumOrBignum(i));
                         continue outer;
                     } catch (BreakException e) {
                         breakProfile.enter();

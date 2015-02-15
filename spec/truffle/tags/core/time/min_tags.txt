@@ -1,3 +1,0 @@
-fails:Time#min returns the minute of the hour (0..59) for a local Time
-fails:Time#min returns the minute of the hour for a UTC Time
-fails:Time#min returns the minute of the hour for a Time with a fixed offset

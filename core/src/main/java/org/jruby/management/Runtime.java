@@ -109,10 +109,12 @@ public class Runtime implements RuntimeMBean {
 
             @Override
             public void run() {
+                // IRubyObject oldExc = ruby.get().getGlobalVariables().get("$!"); // Save $!
                 try {
                     result[0] = ruby.get().evalScriptlet(code).toString();
                 } catch (RaiseException re) {
                     result[0] = ruby.get().getInstanceConfig().getTraceType().printBacktrace(re.getException(), false);
+                    // ruby.get().getGlobalVariables().set("$!", oldExc); // Restore $!
                 } catch (Throwable t) {
                     StringWriter sw = new StringWriter();
                     t.printStackTrace(new PrintWriter(sw));

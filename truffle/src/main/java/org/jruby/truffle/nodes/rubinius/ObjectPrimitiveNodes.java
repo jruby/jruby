@@ -9,10 +9,12 @@
  */
 package org.jruby.truffle.nodes.rubinius;
 
+import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.SourceSection;
 
+import org.jruby.truffle.nodes.core.FixnumOrBignumNode;
 import org.jruby.truffle.runtime.ObjectIDOperations;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
@@ -27,12 +29,15 @@ public abstract class ObjectPrimitiveNodes {
     @RubiniusPrimitive(name = "object_id")
     public abstract static class ObjectIDPrimitiveNode extends RubiniusPrimitiveNode {
 
+        @Child private FixnumOrBignumNode fixnumOrBignum;
+
         public ObjectIDPrimitiveNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
         }
 
         public ObjectIDPrimitiveNode(ObjectIDPrimitiveNode prev) {
             super(prev);
+            fixnumOrBignum = prev.fixnumOrBignum;
         }
 
         public abstract Object executeObjectID(VirtualFrame frame, Object value);
@@ -78,13 +83,23 @@ public abstract class ObjectPrimitiveNodes {
             if (isSmallFixnum(value)) {
                 return ObjectIDOperations.smallFixnumToID(value);
             } else {
-                return ObjectIDOperations.largeFixnumToID(getContext(), value);
+                if (fixnumOrBignum == null) {
+                    CompilerDirectives.transferToInterpreter();
+                    fixnumOrBignum = insert(new FixnumOrBignumNode(getContext(), getSourceSection()));
+                }
+
+                return fixnumOrBignum.fixnumOrBignum(ObjectIDOperations.largeFixnumToID(value));
             }
         }
 
         @Specialization
-        public RubyBignum objectID(double value) {
-            return ObjectIDOperations.floatToID(getContext(), value);
+        public Object objectID(double value) {
+            if (fixnumOrBignum == null) {
+                CompilerDirectives.transferToInterpreter();
+                fixnumOrBignum = insert(new FixnumOrBignumNode(getContext(), getSourceSection()));
+            }
+
+            return fixnumOrBignum.fixnumOrBignum(ObjectIDOperations.floatToID(value));
         }
 
         @Specialization

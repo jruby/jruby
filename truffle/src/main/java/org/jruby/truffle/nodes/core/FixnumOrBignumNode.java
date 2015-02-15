@@ -36,8 +36,8 @@ public class FixnumOrBignumNode extends RubyNode {
     private final BranchProfile bignumProfile = BranchProfile.create();
     private final BranchProfile checkLongProfile = BranchProfile.create();
 
-    public Object fixnumOrBignum(RubyBignum value) {
-        if (value.compare(Long.MIN_VALUE) >= 0 && value.compare(Long.MAX_VALUE) <= 0) {
+    public Object fixnumOrBignum(BigInteger value) {
+        if (value.compareTo(BigInteger.valueOf(Long.MIN_VALUE)) >= 0 && value.compareTo(BigInteger.valueOf(Long.MAX_VALUE)) <= 0) {
             lowerProfile.enter();
 
             final long longValue = value.longValue();
@@ -50,7 +50,7 @@ public class FixnumOrBignumNode extends RubyNode {
                 return longValue;
             }
         } else {
-            return value;
+            return new RubyBignum(getContext().getCoreLibrary().getBignumClass(), value);
         }
     }
 
@@ -69,7 +69,7 @@ public class FixnumOrBignumNode extends RubyNode {
 
         bignumProfile.enter();
 
-        return new RubyBignum(getContext().getCoreLibrary().getBignumClass(), doubleToBigInteger(value));
+        return fixnumOrBignum(doubleToBigInteger(value));
     }
 
     @CompilerDirectives.TruffleBoundary

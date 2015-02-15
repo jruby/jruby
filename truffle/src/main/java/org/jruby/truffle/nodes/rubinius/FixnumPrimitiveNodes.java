@@ -27,6 +27,8 @@ import org.jruby.truffle.runtime.core.RubyBasicObject;
 import org.jruby.truffle.runtime.core.RubyBignum;
 import org.jruby.truffle.runtime.core.RubyString;
 
+import java.math.BigInteger;
+
 /**
  * Rubinius primitives associated with the Ruby {@code Fixnum} class.
  */
@@ -95,12 +97,12 @@ public abstract class FixnumPrimitiveNodes {
             super(prev);
         }
 
-        @Specialization(guards = "canShiftIntoInt")
+        @Specialization(guards = "canShiftIntoInt(a, b)")
         public int powTwo(int a, int b) {
             return 1 << b;
         }
 
-        @Specialization(guards = "canShiftIntoInt")
+        @Specialization(guards = "canShiftIntoInt(a, b)")
         public int powTwo(int a, long b) {
             return 1 << b;
         }
@@ -125,12 +127,12 @@ public abstract class FixnumPrimitiveNodes {
             return pow((long) a, b);
         }
 
-        @Specialization(guards = "canShiftIntoLong")
+        @Specialization(guards = "canShiftIntoLong(a, b)")
         public long powTwo(long a, int b) {
             return 1 << b;
         }
 
-        @Specialization(guards = "canShiftIntoLong")
+        @Specialization(guards = "canShiftIntoLong(a, b)")
         public long powTwo(long a, long b) {
             return 1 << b;
         }
@@ -145,7 +147,8 @@ public abstract class FixnumPrimitiveNodes {
             if (negativeProfile.profile(b < 0)) {
                 return null; // Primitive failure
             } else {
-                return fixnumOrBignum(bignum(a).pow(b));
+                // TODO CS 15-Feb-15 - what to do about this cast?
+                return fixnumOrBignum(BigInteger.valueOf(a).pow((int) b));
             }
         }
 
@@ -178,13 +181,13 @@ public abstract class FixnumPrimitiveNodes {
                 }
             }
 
-            if (b.compare(0) < 0) {
+            if (b.bigIntegerValue().compareTo(BigInteger.ZERO) < 0) {
                 return null; // Primitive failure
             }
 
-            if (b.isEqualTo(b.longValue())) {
+            if (b.bigIntegerValue().equals(b)) {
                 // This is a bug of course
-                return pow(a, b.longValue());
+                return pow(a, b.bigIntegerValue().longValue());
             }
 
             getContext().getRuntime().getWarnings().warn("in a**b, b may be too big");
@@ -193,12 +196,12 @@ public abstract class FixnumPrimitiveNodes {
             return Double.POSITIVE_INFINITY;
         }
 
-        @Specialization(guards = "!isRubyBignum(arguments[1])")
+        @Specialization(guards = "!isRubyBignum(b)")
         public Object pow(int a, RubyBasicObject b) {
             return null; // Primitive failure
         }
 
-        @Specialization(guards = "!isRubyBignum(arguments[1])")
+        @Specialization(guards = "!isRubyBignum(b)")
         public Object pow(long a, RubyBasicObject b) {
             return null; // Primitive failure
         }

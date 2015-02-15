@@ -151,14 +151,13 @@ public class ExceptionTranslatingNode extends RubyNode {
                 throwable.printStackTrace();
             }
         } catch (NullPointerException e) {
-
         }
 
         if (Options.TRUFFLE_PANIC_ON_JAVA_ASSERT.load() && throwable instanceof AssertionError) {
             DebugOperations.panic(getContext(), this, throwable.toString());
         }
 
-        return getContext().getCoreLibrary().internalError(String.format("%s %s", throwable.getClass().getSimpleName(), throwable.getMessage()), this);
+        return getContext().getCoreLibrary().internalError(String.format("%s %s %s", throwable.getClass().getSimpleName(), throwable.getMessage(), throwable.getStackTrace()[0].toString()), this);
     }
 
 }

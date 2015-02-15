@@ -1678,12 +1678,16 @@ public abstract class StringNodes {
     @CoreMethod(names = "to_i")
     public abstract static class ToINode extends CoreMethodNode {
 
+        @Child private FixnumOrBignumNode fixnumOrBignum;
+
         public ToINode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
+            fixnumOrBignum = new FixnumOrBignumNode(context, sourceSection);
         }
 
         public ToINode(ToINode prev) {
             super(prev);
+            fixnumOrBignum = prev.fixnumOrBignum;
         }
 
         @Specialization
@@ -1697,7 +1701,7 @@ public abstract class StringNodes {
             try {
                 return Integer.parseInt(string.toString());
             } catch (NumberFormatException e) {
-                return bignum(new BigInteger(string.toString()));
+                return fixnumOrBignum.fixnumOrBignum(new BigInteger(string.toString()));
             }
         }
     }

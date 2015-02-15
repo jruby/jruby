@@ -203,6 +203,7 @@ public class Tempfile extends RubyFile implements Finalizable {
         POSIX posix = runtime.getPosix();
 
         if (posix.isNative() && !Platform.IS_WINDOWS) {
+            IRubyObject oldExc = context.runtime.getGlobalVariables().get("$!"); // Save $!
             try {
                 RubyFile.unlink(context, this);
             } catch (RaiseException re) {
@@ -210,10 +211,10 @@ public class Tempfile extends RubyFile implements Finalizable {
                 if (!(excp instanceof RubySystemCallError)) throw re;
 
                 int errno = (int)((RubySystemCallError)excp).errno().convertToInteger().getLongValue();
-                if (errno != Errno.ENOENT.intValue() &&
-                        errno != Errno.EACCES.intValue()) {
+                if (errno != Errno.ENOENT.intValue() && errno != Errno.EACCES.intValue()) {
                     throw re;
                 }
+                context.runtime.getGlobalVariables().set("$!", oldExc); // Restore $!
             }
             openFile.setPath(null);
             tmpname = context.nil;

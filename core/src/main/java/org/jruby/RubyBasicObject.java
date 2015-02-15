@@ -1150,8 +1150,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      */
     @Override
     public int compareTo(IRubyObject other) {
-        // SSS FIXME: How do we get access to the runtime here?
-        // IRubyObject oldExc = runtime.getGlobalVariables().get("$!");
+        IRubyObject oldExc = getRuntime().getGlobalVariables().get("$!");
         try {
             IRubyObject cmp = invokedynamic(getRuntime().getCurrentContext(),
                     this, OP_CMP, other);
@@ -1161,7 +1160,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
                 return (int) cmp.convertToInteger().getLongValue();
             }
         } catch (RaiseException ex) {
-            // runtime.getGlobalVariables().set("$!", oldExc);
+            getRuntime().getGlobalVariables().set("$!", oldExc);
         }
         
         /* We used to raise an error if two IRubyObject were not comparable, but

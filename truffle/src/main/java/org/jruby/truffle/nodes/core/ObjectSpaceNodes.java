@@ -78,11 +78,11 @@ public abstract class ObjectSpaceNodes {
         }
 
         protected boolean isLargeFixnumID(RubyBignum id) {
-            return ObjectIDOperations.isLargeFixnumID(id);
+            return ObjectIDOperations.isLargeFixnumID(id.bigIntegerValue());
         }
 
         protected boolean isFloatID(RubyBignum id) {
-            return ObjectIDOperations.isFloatID(id);
+            return ObjectIDOperations.isFloatID(id.bigIntegerValue());
         }
 
     }

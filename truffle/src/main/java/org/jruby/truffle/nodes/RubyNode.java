@@ -13,6 +13,7 @@ import com.oracle.truffle.api.CompilerAsserts;
 import com.oracle.truffle.api.dsl.GenerateNodeFactory;
 import com.oracle.truffle.api.dsl.TypeSystemReference;
 import com.oracle.truffle.api.frame.VirtualFrame;
+import com.oracle.truffle.api.instrument.Probe;
 import com.oracle.truffle.api.instrument.ProbeNode;
 import com.oracle.truffle.api.interop.TruffleObject;
 import com.oracle.truffle.api.nodes.Node;
@@ -256,16 +257,8 @@ public abstract class RubyNode extends Node {
         return value;
     }
 
-    public RubyBignum bignum(int value) {
-        return bignum((long) value);
-    }
-
-    public RubyBignum bignum(long value) {
-        return bignum(BigInteger.valueOf(value));
-    }
-
-    public RubyBignum bignum(BigInteger value) {
-        return new RubyBignum(getContext().getCoreLibrary().getBignumClass(), value);
+    public RubyNode getNonWrapperNode() {
+        return this;
     }
 
     public boolean isRational(RubyBasicObject o) {

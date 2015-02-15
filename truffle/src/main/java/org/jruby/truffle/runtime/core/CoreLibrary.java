@@ -431,6 +431,11 @@ public class CoreLibrary {
     }
 
     public void initializeAfterMethodsAdded() {
+        // ENV is supposed to be an object that actually updates the environment, and sees any updates
+
+        envHash = getSystemEnv();
+        objectClass.setConstant(null, "ENV", envHash);
+
         // Load Ruby core
 
         if (Options.TRUFFLE_LOAD_CORE.load()) {
@@ -446,11 +451,6 @@ public class CoreLibrary {
                 throw new TruffleFatalException("couldn't load the core library", e);
             }
         }
-
-        // ENV is supposed to be an object that actually updates the environment, and sees any updates
-
-        envHash = getSystemEnv();
-        objectClass.setConstant(null, "ENV", envHash);
     }
 
     public void loadRubyCore(String fileName) {
@@ -580,7 +580,7 @@ public class CoreLibrary {
         }
 
         if (value instanceof RubyBignum) {
-            return ((RubyBignum) value).doubleValue();
+            return ((RubyBignum) value).bigIntegerValue().doubleValue();
         }
 
         if (value instanceof Double) {
@@ -608,6 +608,11 @@ public class CoreLibrary {
     public RubyException argumentError(String message, Node currentNode) {
         CompilerAsserts.neverPartOfCompilation();
         return new RubyException(argumentErrorClass, context.makeString(message), RubyCallStack.getBacktrace(currentNode));
+    }
+
+    public RubyException argumentErrorOutOfRange(Node currentNode) {
+        CompilerAsserts.neverPartOfCompilation();
+        return argumentError("out of range", currentNode);
     }
 
     public RubyException argumentErrorInvalidRadix(int radix, Node currentNode) {

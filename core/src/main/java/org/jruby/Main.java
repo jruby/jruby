@@ -438,6 +438,7 @@ public class Main {
     }
     
     private boolean checkStreamSyntax(Ruby runtime, InputStream in, String filename) {
+        IRubyObject oldExc = runtime.getGlobalVariables().get("$!"); // Save $!
         try {
             runtime.parseFromMain(in, filename);
             config.getOutput().println("Syntax OK");
@@ -448,6 +449,7 @@ public class Main {
             } else {
                 throw re;
             }
+            runtime.getGlobalVariables().set("$!", oldExc); // Restore $!
             return false;
         }
     }

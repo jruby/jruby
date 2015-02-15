@@ -277,7 +277,7 @@ public class RubyFileTest {
     @JRubyMethod(name = "symlink?", required = 1, module = true)
     public static RubyBoolean symlink_p(IRubyObject recv, IRubyObject filename) {
         Ruby runtime = recv.getRuntime();
-        IRubyObject oldExc = runtime.getGlobalVariables().get("$!");
+        IRubyObject oldExc = runtime.getGlobalVariables().get("$!"); // Save $!
         
         try {
             // Note: We can't use file.exists() to check whether the symlink
@@ -291,7 +291,7 @@ public class RubyFileTest {
         } catch (SecurityException re) {
             return runtime.getFalse();
         } catch (RaiseException re) {
-            runtime.getGlobalVariables().set("$!", oldExc);
+            runtime.getGlobalVariables().set("$!", oldExc); // Restore $!
             return runtime.getFalse();
         }
     }

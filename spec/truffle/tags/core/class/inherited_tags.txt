@@ -1,2 +1,2 @@
 fails:Class.inherited is invoked with the child Class when self is subclassed
-fails(windows bug):Class.inherited is invoked only once per subclass
+windows:Class.inherited is invoked only once per subclass

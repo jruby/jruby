@@ -1,1 +1,0 @@
-fails:Time#to_a returns a 10 element array representing the deconstructed time

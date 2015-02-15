@@ -169,8 +169,15 @@ module Commands
   private :test_pe
 
   def tag(path, *args)
+    return tag_all(*args) if path == 'all'
     mspec 'tag', '--add', 'fails', '--fail', path, *args
   end
+
+  # Add tags to all given examples without running them. Useful to avoid file exclusions.
+  def tag_all(*args)
+    mspec('tag', *%w[--unguarded --all --dry-run --add fails], *args)
+  end
+  private :tag_all
 
   def untag(path, *args)
     puts
