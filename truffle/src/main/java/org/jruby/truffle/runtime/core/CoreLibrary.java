@@ -431,6 +431,11 @@ public class CoreLibrary {
     }
 
     public void initializeAfterMethodsAdded() {
+        // ENV is supposed to be an object that actually updates the environment, and sees any updates
+
+        envHash = getSystemEnv();
+        objectClass.setConstant(null, "ENV", envHash);
+
         // Load Ruby core
 
         if (Options.TRUFFLE_LOAD_CORE.load()) {
@@ -446,11 +451,6 @@ public class CoreLibrary {
                 throw new TruffleFatalException("couldn't load the core library", e);
             }
         }
-
-        // ENV is supposed to be an object that actually updates the environment, and sees any updates
-
-        envHash = getSystemEnv();
-        objectClass.setConstant(null, "ENV", envHash);
     }
 
     public void loadRubyCore(String fileName) {

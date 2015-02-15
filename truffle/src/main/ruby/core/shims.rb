@@ -208,3 +208,5 @@ class BasicObject
   end
 
 end
+
+ENV['TZ'] = 'UTC'
