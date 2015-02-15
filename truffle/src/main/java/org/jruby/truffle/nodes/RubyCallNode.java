@@ -53,7 +53,7 @@ public class RubyCallNode extends RubyNode {
 
         ProcOrNullNode blockNode = null;
         if (block != null) {
-            blockNode = ProcOrNullNodeFactory.create(context, section, block);
+        	blockNode = ProcOrNullNodeFactory.create(context, section, block);
         }
 
         this.isVCall = isVCall;

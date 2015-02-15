@@ -126,17 +126,17 @@ public class CachedBoxedDispatchNode extends CachedDispatchNode {
 
             List<String> restKeywordLabels = new ArrayList<String>();
             for (int j = 0; j < hashNode.size(); j++) {
-                Object key = hashNode.getKey(j);
-                boolean keyIsSymbol = key instanceof ObjectLiteralNode &&
-                     ((ObjectLiteralNode) key).getObject() instanceof RubySymbol;
-                
-                if (!keyIsSymbol) {
-                   // cannot optimize case where keyword label is dynamic (not a fixed RubySymbol)
-                   return argumentNodes;
-                }
-                
-                final String label = ((ObjectLiteralNode) hashNode.getKey(j)).getObject().toString();
-                restKeywordLabels.add(label);
+            	Object key = hashNode.getKey(j);
+            	boolean keyIsSymbol = key instanceof ObjectLiteralNode &&
+            			((ObjectLiteralNode) key).getObject() instanceof RubySymbol;
+            	
+            	if (!keyIsSymbol) {
+            		// cannot optimize case where keyword label is dynamic (not a fixed RubySymbol)
+            		return argumentNodes;
+            	}
+            	
+            	final String label = ((ObjectLiteralNode) hashNode.getKey(j)).getObject().toString();
+            	restKeywordLabels.add(label);
             }
 
             for (String kwarg : kwargs) {
@@ -255,8 +255,8 @@ public class CachedBoxedDispatchNode extends CachedDispatchNode {
 
         switch (getDispatchAction()) {
             case CALL_METHOD: {
-                argumentsObjects = executeArguments(frame, argumentsObjects);
-                blockObject = executeBlock(frame, blockObject);
+            	argumentsObjects = executeArguments(frame, argumentsObjects);
+            	blockObject = executeBlock(frame, blockObject);
                 if (isIndirect()) {
                     return indirectCallNode.call(
                             frame,

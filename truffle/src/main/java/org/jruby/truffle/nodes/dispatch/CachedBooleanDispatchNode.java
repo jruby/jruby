@@ -129,8 +129,8 @@ public class CachedBooleanDispatchNode extends CachedDispatchNode {
 
             switch (getDispatchAction()) {
                 case CALL_METHOD: {
-                    argumentsObjects = executeArguments(frame, argumentsObjects);
-                    blockObject = executeBlock(frame, blockObject);
+                	argumentsObjects = executeArguments(frame, argumentsObjects);
+                	blockObject = executeBlock(frame, blockObject);
                     if (isIndirect()) {
                         return indirectCallNode.call(
                                 frame,
@@ -179,8 +179,8 @@ public class CachedBooleanDispatchNode extends CachedDispatchNode {
 
             switch (getDispatchAction()) {
                 case CALL_METHOD: {
-                    argumentsObjects = executeArguments(frame, argumentsObjects);
-                    blockObject = executeBlock(frame, blockObject);
+                	argumentsObjects = executeArguments(frame, argumentsObjects);
+                	blockObject = executeBlock(frame, blockObject);
                     if (isIndirect()) {
                         return indirectCallNode.call(
                                 frame,

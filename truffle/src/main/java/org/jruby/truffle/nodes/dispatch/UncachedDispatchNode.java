@@ -95,9 +95,9 @@ public class UncachedDispatchNode extends DispatchNode {
 
             if (method != null) {
                 if (dispatchAction == DispatchAction.CALL_METHOD) {
-                    argumentsObjects = executeArguments(frame, argumentsObjects);
-                    blockObject = executeBlock(frame, blockObject);
-
+                	argumentsObjects = executeArguments(frame, argumentsObjects);
+                	blockObject = executeBlock(frame, blockObject);
+                	
                     return callNode.call(
                             frame,
                             method.getCallTarget(),
@@ -136,8 +136,8 @@ public class UncachedDispatchNode extends DispatchNode {
 
                 RubyArguments.arraycopy(argumentsObjectsArray, 0, modifiedArgumentsObjects, 1, argumentsObjectsArray.length);
 
-                blockObject = executeBlock(frame, blockObject);
-
+            	blockObject = executeBlock(frame, blockObject);
+            	
                 return callNode.call(
                         frame,
                         missingMethod.getCallTarget(),
