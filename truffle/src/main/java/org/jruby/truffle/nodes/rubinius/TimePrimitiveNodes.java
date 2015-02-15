@@ -147,7 +147,13 @@ public abstract class TimePrimitiveNodes {
             final int day = dateTime.getDayOfMonth();
             final int month = dateTime.getMonthOfYear();
             final int year = dateTime.getYear();
-            final int wday = dateTime.getDayOfWeek();
+
+            int wday = dateTime.getDayOfWeek();
+
+            if (wday == 7) {
+                wday = 0;
+            }
+
             final int yday = dateTime.getDayOfYear();
             final boolean isdst = false;
 
