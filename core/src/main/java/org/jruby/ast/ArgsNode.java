@@ -154,18 +154,6 @@ public class ArgsNode extends Node {
     public boolean hasKwargs() {
         return hasKwargs;
     }
-    
-    public int countKeywords() {
-        if (hasKwargs) {
-            if (keywords == null) {
-                // Rest keyword argument
-                return 0;
-            }
-            return keywords.size();
-        } else {
-            return 0;
-        }
-    }
 
     protected boolean hasMasgnArgs() {
         if (preCount > 0) for (Node node : pre.childNodes()) {
@@ -264,10 +252,6 @@ public class ArgsNode extends Node {
 
     public KeywordRestArgNode getKeyRest() {
         return keyRest;
-    }
-
-    public boolean hasKeyRest() {
-        return keyRest != null;
     }
 
     public void checkArgCount(Ruby runtime, int argsLength) {

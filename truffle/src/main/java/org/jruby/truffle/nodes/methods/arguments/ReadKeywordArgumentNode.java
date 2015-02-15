@@ -11,8 +11,6 @@ package org.jruby.truffle.nodes.methods.arguments;
 
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.SourceSection;
-import com.oracle.truffle.api.utilities.ValueProfile;
-
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
@@ -24,37 +22,17 @@ public class ReadKeywordArgumentNode extends RubyNode {
 
     private final int minimum;
     private final String name;
-    private final int kwIndex;
-    private final ValueProfile argumentValueProfile = ValueProfile.createPrimitiveProfile();
-    
     @Child private RubyNode defaultValue;
 
-    public ReadKeywordArgumentNode(RubyContext context, SourceSection sourceSection, int minimum, String name, RubyNode defaultValue, int kwIndex) {
+    public ReadKeywordArgumentNode(RubyContext context, SourceSection sourceSection, int minimum, String name, RubyNode defaultValue) {
         super(context, sourceSection);
         this.minimum = minimum;
         this.name = name;
         this.defaultValue = defaultValue;
-        this.kwIndex = kwIndex;
     }
 
     @Override
     public Object execute(VirtualFrame frame) {
-        if (RubyArguments.isKwOptimized(frame.getArguments())) {
-            Object kwarg = argumentValueProfile
-                    .profile(RubyArguments.getOptimizedKeywordArgument(
-                            frame.getArguments(), kwIndex));
-
-            if (kwarg instanceof OptionalKeywordArgMissingNode.OptionalKeywordArgMissing) {
-                return defaultValue.execute(frame);
-            } else {
-                return kwarg;
-            }
-        } else {
-            return lookupKeywordInHash(frame);
-        }
-    }
-
-    public Object lookupKeywordInHash(VirtualFrame frame) {
         notDesignedForCompilation();
 
         final RubyHash hash = RubyArguments.getUserKeywordsHash(frame.getArguments(), minimum);

@@ -14,17 +14,13 @@ public class Arity {
     private final int required;
     private final int optional;
     private final boolean allowsMore;
-    private final int definedKeywords;
     private final boolean hasKeywords;
-    private final boolean hasKeyRest;
 
-    public Arity(int required, int optional, boolean allowsMore, boolean hasKeywords, boolean hasKeyRest, int definedKeywords) {
+    public Arity(int required, int optional, boolean allowsMore, boolean hasKeywords) {
         this.required = required;
         this.optional = optional;
         this.allowsMore = allowsMore;
-        this.definedKeywords = definedKeywords;
         this.hasKeywords = hasKeywords;
-        this.hasKeyRest = hasKeyRest;
     }
 
     public int getRequired() {
@@ -41,14 +37,6 @@ public class Arity {
 
     public boolean hasKeywords() {
         return hasKeywords;
-    }
-
-    public int getCountKeywords() {
-        return definedKeywords;
-    }
-
-    public boolean hasKeyRest() {
-        return hasKeyRest;
     }
 
 }

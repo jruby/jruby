@@ -9,16 +9,6 @@
  */
 package org.jruby.truffle.runtime.methods;
 
-import java.util.ArrayList;
-import java.util.List;
-
-import org.jruby.ast.ArgsNode;
-import org.jruby.ast.AssignableNode;
-import org.jruby.ast.DAsgnNode;
-import org.jruby.ast.KeywordArgNode;
-import org.jruby.ast.LocalAsgnNode;
-import org.jruby.ast.Node;
-
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.runtime.LexicalScope;
 
@@ -34,9 +24,6 @@ public class SharedMethodInfo {
     private final boolean isBlock;
     private final org.jruby.ast.Node parseTree;
     private final boolean alwaysSplit;
-    
-    private final List<String> keywordArguments;
-    private final Arity arity;
 
     public SharedMethodInfo(SourceSection sourceSection, LexicalScope lexicalScope, String name, boolean isBlock, org.jruby.ast.Node parseTree, boolean alwaysSplit) {
         assert sourceSection != null;
@@ -48,59 +35,6 @@ public class SharedMethodInfo {
         this.isBlock = isBlock;
         this.parseTree = parseTree;
         this.alwaysSplit = alwaysSplit;
-        this.keywordArguments = null;
-        this.arity = null;
-    }
-    
-    public SharedMethodInfo(SourceSection sourceSection,
-            LexicalScope lexicalScope, String name, boolean isBlock,
-            org.jruby.ast.Node parseTree, boolean alwaysSplit, ArgsNode argsNode) {
-        assert sourceSection != null;
-        assert name != null;
-
-        this.sourceSection = sourceSection;
-        this.lexicalScope = lexicalScope;
-        this.name = name;
-        this.isBlock = isBlock;
-        this.parseTree = parseTree;
-        this.alwaysSplit = alwaysSplit;
-
-        if (argsNode.hasKwargs()) {
-            keywordArguments = new ArrayList<String>();
-            if (argsNode.getKeywords() != null) {
-                for (Node node : argsNode.getKeywords().childNodes()) {
-                    final KeywordArgNode kwarg = (KeywordArgNode) node;
-                    final AssignableNode assignableNode = kwarg.getAssignable();
-
-                    if (assignableNode instanceof LocalAsgnNode) {
-                        keywordArguments.add(((LocalAsgnNode) assignableNode)
-                                .getName());
-                    } else if (assignableNode instanceof DAsgnNode) {
-                        keywordArguments.add(((DAsgnNode) assignableNode)
-                                .getName());
-                    } else {
-                        throw new UnsupportedOperationException(
-                                "unsupported keyword arg " + node);
-                    }
-                }
-            }
-        } else {
-            keywordArguments = null;
-        }
-        
-        this.arity = getArity(argsNode);
-    }
-
-    // TODO: copied from MethodTranslator
-    private static Arity getArity(org.jruby.ast.ArgsNode argsNode) {
-        final int minimum = argsNode.getRequiredArgsCount();
-        final int maximum = argsNode.getMaxArgumentsCount();
-        return new Arity(minimum, argsNode.getOptionalArgsCount(),
-                maximum == -1, argsNode.hasKwargs(), argsNode.hasKeyRest(), argsNode.countKeywords());
-    }
-
-    public Arity getArity() {
-        return arity;
     }
 
     public SourceSection getSourceSection() {
@@ -140,10 +74,6 @@ public class SharedMethodInfo {
         builder.append(sourceSection.getShortDescription());
 
         return builder.toString();
-    }
-    
-    public List<String> getKeywordArguments() {
-        return keywordArguments;
     }
 
 }
