@@ -42,3 +42,5 @@ fails:Time.mktime handles fractional microseconds as a Float
 fails:Time.mktime handles fractional microseconds as a Rational
 fails:Time.mktime ignores fractional seconds if a passed whole number of microseconds
 fails:Time.mktime ignores fractional seconds if a passed fractional number of microseconds
+fails:Time.mktime creates a time based on given values, interpreted in the local time zone
+fails:Time.mktime accepts various year ranges

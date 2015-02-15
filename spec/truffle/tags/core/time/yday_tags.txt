@@ -1,0 +1,1 @@
+fails:Time#yday returns an integer representing the day of the year, 1..366

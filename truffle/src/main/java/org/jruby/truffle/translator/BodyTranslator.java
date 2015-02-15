@@ -1469,8 +1469,6 @@ public class BodyTranslator extends Translator {
         final SourceSection sourceSection = translate(node.getPosition());
         final String nameWithoutSigil = node.getName();
 
-        final RubyNode receiver = new SelfNode(context, sourceSection);
-
         RubyNode rhs;
 
         if (node.getValueNode() == null) {
@@ -1479,6 +1477,25 @@ public class BodyTranslator extends Translator {
             rhs = node.getValueNode().accept(this);
         }
 
+        if (sourceSection.getSource().getPath().equals("core:/core/rubinius/common/time.rb")) {
+            if (nameWithoutSigil.equals("@is_gmt")) {
+                return new RubyCallNode(context, sourceSection,
+                        "_set_gmt",
+                        new SelfNode(context, sourceSection),
+                        null,
+                        false,
+                        rhs);
+            } else if (nameWithoutSigil.equals("@offset")) {
+                return new RubyCallNode(context, sourceSection,
+                        "_set_offset",
+                        new SelfNode(context, sourceSection),
+                        null,
+                        false,
+                        rhs);
+            }
+        }
+
+        final RubyNode receiver = new SelfNode(context, sourceSection);
         return new WriteInstanceVariableNode(context, sourceSection, nameWithoutSigil, receiver, rhs, false);
     }
 
@@ -1526,6 +1543,21 @@ public class BodyTranslator extends Translator {
             }
         }
 
+        if (sourceSection.getSource().getPath().equals("core:/core/rubinius/common/time.rb")) {
+            if (nameWithoutSigil.equals("@is_gmt")) {
+                return new RubyCallNode(context, sourceSection,
+                        "_gmt?",
+                        new SelfNode(context, sourceSection),
+                        null,
+                        false);
+            } else if (nameWithoutSigil.equals("@offset")) {
+                return new RubyCallNode(context, sourceSection,
+                        "_offset",
+                        new SelfNode(context, sourceSection),
+                        null,
+                        false);
+            }
+        }
 
         final RubyNode receiver = new SelfNode(context, sourceSection);
 

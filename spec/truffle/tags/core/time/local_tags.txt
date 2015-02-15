@@ -42,4 +42,5 @@ fails:Time.local ignores fractional seconds if a passed whole number of microsec
 fails:Time.local ignores fractional seconds if a passed fractional number of microseconds
 fails:Time.local raises ArgumentError when given 9 arguments
 fails:Time.local raises ArgumentError when given 11 arguments
-
+fails:Time.local creates a time based on given values, interpreted in the local time zone
+fails:Time.local accepts various year ranges
