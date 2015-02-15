@@ -31,7 +31,7 @@ public abstract class TimeNodes {
 
         @Specialization
         public boolean internalGMT(RubyTime time) {
-            return time.getDateTime().getZone().equals(DateTimeZone.UTC);
+            return time.getOffset() == null && time.getDateTime().getZone().equals(DateTimeZone.UTC);
         }
     }
 

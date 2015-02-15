@@ -19,6 +19,7 @@ import org.jruby.truffle.nodes.objectstorage.ReadHeadObjectFieldNode;
 import org.jruby.truffle.nodes.objectstorage.WriteHeadObjectFieldNode;
 import org.jruby.truffle.runtime.DebugOperations;
 import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.*;
 import org.jruby.util.RubyDateFormatter;
 
@@ -45,7 +46,7 @@ public abstract class TimePrimitiveNodes {
             // TODO CS 14-Feb-15 uses debug send
             final DateTimeZone zone = org.jruby.RubyTime.getTimeZoneFromTZString(getContext().getRuntime(),
                     DebugOperations.send(getContext(), getContext().getCoreLibrary().getENV(), "[]", null, getContext().makeString("TZ")).toString());
-            return new RubyTime(timeClass, DateTime.now(zone));
+            return new RubyTime(timeClass, DateTime.now(zone), null);
         }
 
     }
@@ -63,7 +64,7 @@ public abstract class TimePrimitiveNodes {
 
         @Specialization
         public RubyTime timeSDup(RubyTime other) {
-            final RubyTime time = new RubyTime(getContext().getCoreLibrary().getTimeClass(), other.getDateTime());
+            final RubyTime time = new RubyTime(getContext().getCoreLibrary().getTimeClass(), other.getDateTime(), other.getOffset());
             return time;
         }
 
@@ -84,7 +85,7 @@ public abstract class TimePrimitiveNodes {
         public RubyTime timeSSpecificUTC(int seconds, int nanoseconds, boolean isUTC, RubyNilClass offset) {
             // TODO(CS): overflow checks needed?
             final long milliseconds = seconds * 1_000 + (nanoseconds / 1_000_000);
-            return new RubyTime(getContext().getCoreLibrary().getTimeClass(), new DateTime(milliseconds));
+            return new RubyTime(getContext().getCoreLibrary().getTimeClass(), new DateTime(milliseconds), null);
         }
 
     }
@@ -187,7 +188,7 @@ public abstract class TimePrimitiveNodes {
 
     }
 
-    @RubiniusPrimitive(name = "time_s_from_array", needsSelf = false)
+    @RubiniusPrimitive(name = "time_s_from_array", needsSelf = true)
     public static abstract class TimeSFromArrayPrimitiveNode extends RubiniusPrimitiveNode {
 
         public TimeSFromArrayPrimitiveNode(RubyContext context, SourceSection sourceSection) {
@@ -199,13 +200,64 @@ public abstract class TimePrimitiveNodes {
         }
 
         @Specialization
-        public RubyTime timeSFromArray(int sec, int min, int hour, int mday, int month, int year,
+        public RubyTime timeSFromArray(RubyClass timeClass, RubyNilClass sec, int min, int hour, int mday, int month, int year,
                                        RubyNilClass nsec, int isdst, boolean fromutc, Object utcoffset) {
+            return timeSFromArray(timeClass, 0, min, hour, mday, month, year, nsec, isdst, fromutc, utcoffset);
+        }
+
+        @Specialization
+        public RubyTime timeSFromArray(RubyClass timeClass, int sec, int min, int hour, int mday, int month, int year,
+                                       RubyNilClass nsec, int isdst, boolean fromutc, Object utcoffset) {
+            return timeSFromArray(timeClass, sec, min, hour, mday, month, year, 0, isdst, fromutc, utcoffset);
+        }
+
+        @Specialization
+        public RubyTime timeSFromArray(RubyClass timeClass, int sec, int min, int hour, int mday, int month, int year,
+                                       long nsec, int isdst, boolean fromutc, Object utcoffset) {
+            // TODO CS 15-Feb-15 that cast
+            return timeSFromArray(timeClass, sec, min, hour, mday, month, year, (int) nsec, isdst, fromutc, utcoffset);
+        }
+
+        @Specialization
+        public RubyTime timeSFromArray(RubyClass timeClass, int sec, int min, int hour, int mday, int month, int year,
+                                       int nsec, int isdst, boolean fromutc, Object utcoffset) {
+            if (sec < 0 || sec > 59 ||
+                    min < 0 || min > 59 ||
+                    hour < 0 || hour > 23 ||
+                    mday < 1 || mday > 31 ||
+                    month < 1 || month > 12) {
+                throw new RaiseException(getContext().getCoreLibrary().argumentErrorOutOfRange(this));
+            }
+
             if (isdst == -1 && !fromutc && utcoffset instanceof Integer) {
                 final DateTime dateTime = new DateTime(year, month, mday, hour, min, sec, DateTimeZone.forOffsetMillis(((int) utcoffset) * 1_000));
-                return new RubyTime(getContext().getCoreLibrary().getTimeClass(), dateTime);
+                return new RubyTime(timeClass, dateTime, utcoffset);
+            } else if (isdst == -1 && !fromutc && utcoffset instanceof Long) {
+                final DateTime dateTime = new DateTime(year, month, mday, hour, min, sec, DateTimeZone.forOffsetMillis((int) ((long) utcoffset) * 1_000));
+                return new RubyTime(timeClass, dateTime, utcoffset);
+            } else if (isdst == -1 && !fromutc && utcoffset instanceof RubyBasicObject && isRational((RubyBasicObject) utcoffset)) {
+                // TODO CS 15-Feb-15 debug send and cast
+                final int millis = cast(DebugOperations.send(getContext(), utcoffset, "_offset_to_milliseconds", null));
+                final DateTime dateTime = new DateTime(year, month, mday, hour, min, sec, DateTimeZone.forOffsetMillis(millis));
+                return new RubyTime(timeClass, dateTime, utcoffset);
+            } else if (isdst == -1 && !fromutc && utcoffset == getContext().getCoreLibrary().getNilObject()) {
+                // TODO CS 14-Feb-15 uses debug send
+                final DateTimeZone zone = org.jruby.RubyTime.getTimeZoneFromTZString(getContext().getRuntime(),
+                        DebugOperations.send(getContext(), getContext().getCoreLibrary().getENV(), "[]", null, getContext().makeString("TZ")).toString());
+                final DateTime dateTime = new DateTime(year, month, mday, hour, min, sec, zone);
+                return new RubyTime(timeClass, dateTime, null);
             } else {
-                throw new UnsupportedOperationException(String.format("%s %s %s", isdst, fromutc, utcoffset));
+                throw new UnsupportedOperationException(String.format("%s %s %s %s", isdst, fromutc, utcoffset, utcoffset.getClass()));
+            }
+        }
+
+        private int cast(Object value) {
+            if (value instanceof Integer) {
+                return (int) value;
+            } else if (value instanceof Long) {
+                return (int) (long) value;
+            } else {
+                throw new UnsupportedOperationException("Can't cast " + value.getClass());
             }
         }
 
@@ -279,7 +331,11 @@ public abstract class TimePrimitiveNodes {
 
         @Specialization
         public Object timeUTCOffset(RubyTime time) {
-            throw new UnsupportedOperationException("time_utc_offset");
+            if (time.getOffset() != null) {
+                return time.getOffset();
+            } else {
+                return time.getDateTime().getZone().getOffset(time.getDateTime().getMillis()) / 1_000;
+            }
         }
 
     }

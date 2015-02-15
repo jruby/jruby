@@ -26,15 +26,9 @@ fails:Time.gm interprets all numerals as base 10
 fails:Time.gm handles fractional seconds as a Float
 fails:Time.gm handles fractional seconds as a Rational
 fails:Time.gm handles years from 0 as such
-fails:Time.gm raises an ArgumentError for out of range month
-fails:Time.gm raises an ArgumentError for out of range day
-fails:Time.gm raises an ArgumentError for out of range hour
-fails:Time.gm raises an ArgumentError for out of range minute
-fails:Time.gm raises an ArgumentError for out of range second
 fails:Time.gm returns subclass instances
 fails:Time.gm handles string arguments
 fails:Time.gm handles float arguments
-fails:Time.gm raises an ArgumentError for out of range values
 fails:Time.gm handles microseconds
 fails:Time.gm handles fractional microseconds as a Float
 fails:Time.gm handles fractional microseconds as a Rational

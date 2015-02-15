@@ -27,17 +27,9 @@ fails:Time.utc interprets all numerals as base 10
 fails:Time.utc handles fractional seconds as a Float
 fails:Time.utc handles fractional seconds as a Rational
 fails:Time.utc handles years from 0 as such
-fails:Time.utc raises an ArgumentError for out of range month
-fails:Time.utc raises an ArgumentError for out of range day
-fails:Time.utc raises an ArgumentError for out of range hour
-fails:Time.utc raises an ArgumentError for out of range minute
-fails:Time.utc raises an ArgumentError for out of range second
-fails:Time.utc raises ArgumentError when given 9 arguments
-fails:Time.utc raises ArgumentError when given 11 arguments
 fails:Time.utc returns subclass instances
 fails:Time.utc handles string arguments
 fails:Time.utc handles float arguments
-fails:Time.utc raises an ArgumentError for out of range values
 fails:Time.utc handles microseconds
 fails:Time.utc handles fractional microseconds as a Float
 fails:Time.utc handles fractional microseconds as a Rational

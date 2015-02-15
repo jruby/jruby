@@ -18,19 +18,21 @@ import org.jruby.truffle.runtime.RubyContext;
 public class RubyTime extends RubyBasicObject {
 
     private DateTime dateTime;
+    private Object offset;
 
     private static final DateTime ZERO = new DateTime(0);
 
-    public RubyTime(RubyClass timeClass, DateTime dateTime) {
+    public RubyTime(RubyClass timeClass, DateTime dateTime, Object offset) {
         super(timeClass);
         this.dateTime = dateTime;
+        this.offset = offset;
     }
 
     public static class TimeAllocator implements Allocator {
 
         @Override
         public RubyBasicObject allocate(RubyContext context, RubyClass rubyClass, RubyNode currentNode) {
-            return new RubyTime(rubyClass, ZERO);
+            return new RubyTime(rubyClass, ZERO, context.getCoreLibrary().getNilObject());
         }
 
     }
@@ -41,6 +43,14 @@ public class RubyTime extends RubyBasicObject {
 
     public void setDateTime(DateTime dateTime) {
         this.dateTime = dateTime;
+    }
+
+    public Object getOffset() {
+        return offset;
+    }
+
+    public void setOffset(Object offset) {
+        this.offset = offset;
     }
 
 }

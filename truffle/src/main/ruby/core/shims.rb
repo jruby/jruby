@@ -195,6 +195,10 @@ class Rational
 
   alias :__slash__ :/
 
+  def _offset_to_milliseconds
+    (self * 1000).to_i
+  end
+
 end
 
 class BasicObject
