@@ -82,6 +82,8 @@ public class BodyTranslator extends Translator {
 
     private boolean privately = false;
 
+    protected boolean usesRubiniusPrimitive = false;
+
     private static final Set<String> debugIgnoredCalls = new HashSet<>();
 
     static {
@@ -379,6 +381,8 @@ public class BodyTranslator extends Translator {
     }
 
     private RubyNode translateRubiniusPrimitive(SourceSection sourceSection, CallNode node) {
+        usesRubiniusPrimitive = true;
+
         /*
          * Translates something that looks like
          *
