@@ -1,6 +1,5 @@
 fails:Kernel#eval evaluates within the scope of the eval
 fails:Kernel#eval evaluates such that consts are scoped to the class of the eval
-fails:Kernel#eval sets constants at the toplevel from inside a block
 fails:Kernel#eval uses the filename of the binding if none is provided
 fails:Kernel#eval uses the receiver as self inside the eval
 fails:Kernel#eval returns from the scope calling #eval when evaluating 'return'
