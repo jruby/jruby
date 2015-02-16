@@ -178,11 +178,12 @@ public class RubyString extends RubyBasicObject implements CodeRangeable {
     }
 
     @Override
+    @TruffleBoundary
     public int scanForCodeRange() {
         int cr = getCodeRange();
 
         if (cr == StringSupport.CR_UNKNOWN) {
-            cr = StringSupport.codeRangeScan(bytes.getEncoding(), bytes);
+            cr = slowCodeRangeScan();
             setCodeRange(cr);
         }
 
@@ -229,6 +230,11 @@ public class RubyString extends RubyBasicObject implements CodeRangeable {
             return new RubyString(rubyClass, new ByteList());
         }
 
+    }
+
+    @TruffleBoundary
+    private int slowCodeRangeScan() {
+        return StringSupport.codeRangeScan(bytes.getEncoding(), bytes);
     }
 
 }
