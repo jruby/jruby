@@ -172,7 +172,7 @@ public abstract class StringNodes {
 
                 return compare(a, coerced);
             } catch (RaiseException e) {
-                if (e.getRubyException().getClass().equals(getContext().getCoreLibrary().getTypeErrorClass())) {
+                if (e.getRubyException().getLogicalClass().equals(getContext().getCoreLibrary().getTypeErrorClass())) {
                     return getContext().getCoreLibrary().getNilObject();
                 } else {
                     throw e;
