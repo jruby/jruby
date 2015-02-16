@@ -1,1 +1,0 @@
-fails:String#valid_encoding? returns false if a valid String had an invalid character appended to it

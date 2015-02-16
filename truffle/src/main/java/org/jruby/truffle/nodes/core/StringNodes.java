@@ -43,6 +43,7 @@ import org.jruby.truffle.runtime.util.ArrayUtils;
 import org.jruby.util.ByteList;
 import org.jruby.util.Pack;
 import org.jruby.util.StringSupport;
+import org.jruby.util.io.EncodingUtils;
 
 import java.math.BigInteger;
 import java.nio.ByteBuffer;
@@ -226,7 +227,23 @@ public abstract class StringNodes {
                 throw new RaiseException(getContext().getCoreLibrary().frozenError("String", this));
             }
 
-            string.getBytes().append(other.getBytes());
+            final int codeRange = other.getCodeRange();
+            final int[] ptr_cr_ret = { codeRange };
+
+            try {
+                EncodingUtils.encCrStrBufCat(getContext().getRuntime(), string, other.getByteList(), other.getByteList().getEncoding(), codeRange, ptr_cr_ret);
+            } catch (org.jruby.exceptions.RaiseException e) {
+                if (e.getException().getMetaClass().equals(getContext().getRuntime().getEncodingCompatibilityError())) {
+                    CompilerDirectives.transferToInterpreter();
+
+                    throw new RaiseException(getContext().getCoreLibrary().encodingCompatibilityError(e.getException().message.asJavaString(), this));
+                }
+
+                throw e;
+            }
+
+            other.setCodeRange(ptr_cr_ret[0]);
+
             return string;
         }
     }
