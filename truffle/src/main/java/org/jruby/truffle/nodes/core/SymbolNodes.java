@@ -17,6 +17,7 @@ import org.jruby.truffle.runtime.core.RubyArray;
 import org.jruby.truffle.runtime.core.RubyProc;
 import org.jruby.truffle.runtime.core.RubyString;
 import org.jruby.truffle.runtime.core.RubySymbol;
+import org.jruby.util.ByteList;
 
 @CoreClass(name = "Symbol")
 public abstract class SymbolNodes {
@@ -226,6 +227,27 @@ public abstract class SymbolNodes {
         public int size(RubySymbol symbol) {
             notDesignedForCompilation();
             return symbol.toString().length();
+        }
+
+    }
+
+    @CoreMethod(names = { "swapcase"})
+    public abstract static class SwapcaseNode extends CoreMethodNode {
+
+        public SwapcaseNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public SwapcaseNode(SwapcaseNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public RubySymbol swapcase(RubySymbol symbol) {
+            notDesignedForCompilation();
+
+            ByteList byteList = StringNodes.StringNodesHelper.swapcase(symbol.toRubyString());
+            return getContext().newSymbol(byteList);
         }
 
     }

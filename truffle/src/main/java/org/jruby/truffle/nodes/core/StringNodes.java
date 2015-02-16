@@ -1982,7 +1982,7 @@ public abstract class StringNodes {
         }
     }
 
-    static class StringNodesHelper {
+    public static class StringNodesHelper {
 
         @TruffleBoundary
         public static ByteList capitalize(RubyString string) {
