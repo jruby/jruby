@@ -22,6 +22,7 @@ import org.jruby.runtime.encoding.EncodingService;
 import org.jruby.runtime.load.LoadServiceResource;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.core.ArrayNodes;
+import org.jruby.truffle.nodes.core.ProcessNodes;
 import org.jruby.truffle.nodes.methods.SetMethodDeclarationContext;
 import org.jruby.truffle.nodes.objects.Allocator;
 import org.jruby.truffle.runtime.RubyCallStack;
@@ -388,6 +389,9 @@ public class CoreLibrary {
 
         fileClass.setConstant(null, "PATH_SEPARATOR", RubyString.fromJavaString(stringClass, File.pathSeparator));
         fileClass.setConstant(null, "FNM_SYSCASE", 0);
+
+        processModule.setConstant(null, "CLOCK_MONOTONIC", ProcessNodes.CLOCK_MONOTONIC);
+        processModule.setConstant(null, "CLOCK_REALTIME", ProcessNodes.CLOCK_REALTIME);
     }
 
     private void initializeSignalConstants() {
