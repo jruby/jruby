@@ -5,6 +5,8 @@ import static org.junit.Assert.assertEquals;
 import java.util.Arrays;
 import java.io.File;
 import java.io.StringWriter;
+import java.net.URL;
+import java.net.URLClassLoader;
 
 import org.jruby.embed.LocalContextScope;
 import org.jruby.embed.ScriptingContainer;
@@ -69,7 +71,7 @@ public class SimpleTest {
     private void runIt(String index, String script) throws Exception {
 	ClassLoader cl = Thread.currentThread().getContextClassLoader();
 	try {
-	    //Thread.currentThread().setContextClassLoader();
+	    Thread.currentThread().setContextClassLoader(new URLClassLoader( new URL[] {}, null ));
 	    System.err.println("\n\nrunning --------- " + index + "\n");
 	    ScriptingContainer container = newScriptingContainer();
 	    if (script != null) container.runScriptlet( script );
