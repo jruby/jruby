@@ -32,6 +32,8 @@ import org.jruby.truffle.nodes.coerce.ToStrNodeFactory;
 import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNode;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
+import org.jruby.truffle.nodes.rubinius.StringPrimitiveNodes;
+import org.jruby.truffle.nodes.rubinius.StringPrimitiveNodesFactory;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.UndefinedPlaceholder;
 import org.jruby.truffle.runtime.control.RaiseException;
@@ -104,17 +106,22 @@ public abstract class StringNodes {
     @CoreMethod(names = {"==", "===", "eql?"}, required = 1)
     public abstract static class EqualNode extends CoreMethodNode {
 
+        @Child private StringPrimitiveNodes.StringEqualPrimitiveNode stringEqualNode;
+
         public EqualNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
+            stringEqualNode = StringPrimitiveNodesFactory.StringEqualPrimitiveNodeFactory.create(context, sourceSection, new RubyNode[]{});
         }
 
         public EqualNode(EqualNode prev) {
             super(prev);
+            stringEqualNode = prev.stringEqualNode;
         }
 
         @Specialization
         public boolean equal(RubyString a, RubyString b) {
-            return a.equals(b.toString());
+            //return a.equals(b);
+            return stringEqualNode.stringEqual(a, b);
         }
 
         @Specialization(guards = "!isRubyString(arguments[1])")

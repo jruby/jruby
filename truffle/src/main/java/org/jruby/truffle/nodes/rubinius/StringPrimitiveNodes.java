@@ -78,6 +78,34 @@ public abstract class StringPrimitiveNodes {
 
     }
 
+    @RubiniusPrimitive(name = "string_equal", needsSelf = true)
+    public static abstract class StringEqualPrimitiveNode extends RubiniusPrimitiveNode {
+
+        private final ConditionProfile incompatibleEncodingProfile = ConditionProfile.createBinaryProfile();
+
+        public StringEqualPrimitiveNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public StringEqualPrimitiveNode(StringEqualPrimitiveNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public boolean stringEqual(RubyString string, RubyString other) {
+            final ByteList a = string.getBytes();
+            final ByteList b = other.getBytes();
+
+            if (incompatibleEncodingProfile.profile((a.getEncoding().equals(b.getEncoding()) == false) &&
+                    (org.jruby.RubyEncoding.areCompatible(string, other) == null))) {
+                return false;
+            }
+
+            return a.equal(b);
+        }
+
+    }
+
     @RubiniusPrimitive(name = "string_from_codepoint", needsSelf = false)
     public static abstract class StringFromCodepointPrimitiveNode extends RubiniusPrimitiveNode {
 
