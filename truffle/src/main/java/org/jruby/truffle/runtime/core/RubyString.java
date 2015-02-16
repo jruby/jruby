@@ -29,6 +29,7 @@ import org.jruby.util.StringSupport;
 public class RubyString extends RubyBasicObject implements CodeRangeable {
 
     private ByteList bytes;
+    private int codeRange = StringSupport.CR_UNKNOWN;
 
     public RubyString(RubyClass stringClass, ByteList bytes) {
         super(stringClass);
@@ -53,6 +54,7 @@ public class RubyString extends RubyBasicObject implements CodeRangeable {
 
     public void forceEncoding(Encoding encoding) {
         this.bytes.setEncoding(encoding);
+        clearCodeRange();
     }
 
     public ByteList getBytes() {
@@ -172,30 +174,34 @@ public class RubyString extends RubyBasicObject implements CodeRangeable {
 
     @Override
     public int getCodeRange() {
-        // TODO (nirvdrum Jan. 2, 2015): Make this work with the String's real code range, not just a stubbed value.
-        return StringSupport.CR_7BIT;
+        return codeRange;
     }
 
     @Override
     public int scanForCodeRange() {
-        // TODO (nirvdrum Jan. 2, 2015): Make this work with the String's real code range, not just a stubbed value.
-        return getCodeRange();
+        int cr = getCodeRange();
+
+        if (cr == StringSupport.CR_UNKNOWN) {
+            cr = StringSupport.codeRangeScan(bytes.getEncoding(), bytes);
+            setCodeRange(cr);
+        }
+
+        return cr;
     }
 
     @Override
     public boolean isCodeRangeValid() {
-        // TODO (nirvdrum Jan. 5, 2015): Make this work with the String's real code range, not just a stubbed value.
-        return true;
+        return codeRange == StringSupport.CR_VALID;
     }
 
     @Override
     public final void setCodeRange(int codeRange) {
-        // TODO (nirvdrum Jan. 5, 2015): Make this work with the String's real code range, not just a stubbed value.
+        this.codeRange = codeRange;
     }
 
     @Override
     public final void clearCodeRange() {
-        // TODO (nirvdrum Jan. 13, 2015): Make this work with the String's real code range, not just a stubbed value.
+        codeRange = StringSupport.CR_UNKNOWN;
     }
 
     @Override
