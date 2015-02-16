@@ -211,4 +211,23 @@ public abstract class SymbolNodes {
 
     }
 
+    @CoreMethod(names = { "size"})
+    public abstract static class SizeNode extends CoreMethodNode {
+
+        public SizeNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public SizeNode(SizeNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public int size(RubySymbol symbol) {
+            notDesignedForCompilation();
+            return symbol.toString().length();
+        }
+
+    }
+
 }
