@@ -81,7 +81,7 @@ public class CoreLibrary {
     private final RubyClass numericClass;
     private final RubyClass objectClass;
     private final RubyClass procClass;
-    private final RubyClass processClass;
+    private final RubyModule processModule;
     private final RubyClass rangeClass;
     private final RubyClass rangeErrorClass;
     private final RubyClass rationalClass;
@@ -252,7 +252,7 @@ public class CoreLibrary {
         defineClass("Mutex", new RubyMutex.MutexAllocator());
         nilClass = defineClass("NilClass");
         procClass = defineClass("Proc", new RubyProc.ProcAllocator());
-        processClass = defineClass("Process");
+        processModule = defineModule("Process");
         rangeClass = defineClass("Range", new RubyRange.RangeAllocator());
         regexpClass = defineClass("Regexp", new RubyRegexp.RegexpAllocator());
         stringClass = defineClass("String", new RubyString.StringAllocator());
