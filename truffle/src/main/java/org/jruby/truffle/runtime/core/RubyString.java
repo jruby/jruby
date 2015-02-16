@@ -206,6 +206,12 @@ public class RubyString extends RubyBasicObject implements CodeRangeable {
     }
 
     @Override
+    public final void modify() {
+        // TODO (nirvdrum 16-Feb-15): This should check whether the underlying ByteList is being shared and copy if necessary.
+        bytes.invalidate();
+    }
+
+    @Override
     public final void modify(int length) {
         // TODO (nirvdrum Jan. 13, 2015): This should check whether the underlying ByteList is being shared and copy if necessary.
         bytes.ensure(length);
