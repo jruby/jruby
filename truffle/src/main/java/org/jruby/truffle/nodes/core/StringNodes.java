@@ -122,7 +122,6 @@ public abstract class StringNodes {
 
         @Specialization
         public boolean equal(RubyString a, RubyString b) {
-            //return a.equals(b);
             return stringEqualNode.stringEqual(a, b);
         }
 
