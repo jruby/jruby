@@ -217,7 +217,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
 
     // rb_enc_str_asciionly_p
     public final boolean isAsciiOnly() {
-        return value.getEncoding().isAsciiCompatible() && scanForCodeRange() == CR_7BIT;
+        return StringSupport.isAsciiOnly(this);
     }
 
     @Override
