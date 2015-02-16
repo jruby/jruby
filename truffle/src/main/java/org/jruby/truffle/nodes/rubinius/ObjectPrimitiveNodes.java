@@ -29,15 +29,12 @@ public abstract class ObjectPrimitiveNodes {
     @RubiniusPrimitive(name = "object_id")
     public abstract static class ObjectIDPrimitiveNode extends RubiniusPrimitiveNode {
 
-        @Child private FixnumOrBignumNode fixnumOrBignum;
-
         public ObjectIDPrimitiveNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
         }
 
         public ObjectIDPrimitiveNode(ObjectIDPrimitiveNode prev) {
             super(prev);
-            fixnumOrBignum = prev.fixnumOrBignum;
         }
 
         public abstract Object executeObjectID(VirtualFrame frame, Object value);
@@ -83,23 +80,13 @@ public abstract class ObjectPrimitiveNodes {
             if (isSmallFixnum(value)) {
                 return ObjectIDOperations.smallFixnumToID(value);
             } else {
-                if (fixnumOrBignum == null) {
-                    CompilerDirectives.transferToInterpreter();
-                    fixnumOrBignum = insert(new FixnumOrBignumNode(getContext(), getSourceSection()));
-                }
-
-                return fixnumOrBignum.fixnumOrBignum(ObjectIDOperations.largeFixnumToID(value));
+                return ObjectIDOperations.largeFixnumToID(getContext(), value);
             }
         }
 
         @Specialization
         public Object objectID(double value) {
-            if (fixnumOrBignum == null) {
-                CompilerDirectives.transferToInterpreter();
-                fixnumOrBignum = insert(new FixnumOrBignumNode(getContext(), getSourceSection()));
-            }
-
-            return fixnumOrBignum.fixnumOrBignum(ObjectIDOperations.floatToID(value));
+            return ObjectIDOperations.floatToID(getContext(), value);
         }
 
         @Specialization

@@ -63,14 +63,14 @@ public abstract class ObjectIDOperations {
         return fixnum * 2 + 1;
     }
 
-    public static BigInteger largeFixnumToID(long fixnum) {
+    public static RubyBignum largeFixnumToID(RubyContext context, long fixnum) {
         assert !isSmallFixnum(fixnum);
-        return BigInteger.valueOf(fixnum).or(LARGE_FIXNUM_FLAG);
+        return new RubyBignum(context.getCoreLibrary().getBignumClass(), BigInteger.valueOf(fixnum).or(LARGE_FIXNUM_FLAG));
     }
 
-    public static BigInteger floatToID(double value) {
+    public static RubyBignum floatToID(RubyContext context, double value) {
         long bits = Double.doubleToRawLongBits(value);
-        return BigInteger.valueOf(bits).or(FLOAT_FLAG);
+        return new RubyBignum(context.getCoreLibrary().getBignumClass(), BigInteger.valueOf(bits).or(FLOAT_FLAG));
     }
 
     // ID => primitive

@@ -593,6 +593,47 @@ public abstract class BignumNodes {
 
     }
 
+    @CoreMethod(names = "coerce", required = 1)
+    public abstract static class CoerceNode extends CoreMethodNode {
+
+        public CoerceNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public CoerceNode(CoerceNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public RubyArray coerce(RubyBignum a, int b) {
+            notDesignedForCompilation();
+
+            // TODO (eregon, 16 Feb. 2015): This is NOT spec, but let's try to see if we can make it work.
+            // b is converted to a Bignum here in other implementations.
+            Object[] store = new Object[] { b, a };
+            return new RubyArray(getContext().getCoreLibrary().getArrayClass(), store, store.length);
+        }
+
+        @Specialization
+        public RubyArray coerce(RubyBignum a, long b) {
+            notDesignedForCompilation();
+
+            // TODO (eregon, 16 Feb. 2015): This is NOT spec, but let's try to see if we can make it work.
+            // b is converted to a Bignum here in other implementations.
+            Object[] store = new Object[] { b, a };
+            return new RubyArray(getContext().getCoreLibrary().getArrayClass(), store, store.length);
+        }
+
+        @Specialization
+        public RubyArray coerce(RubyBignum a, RubyBignum b) {
+            notDesignedForCompilation();
+
+            Object[] store = new Object[] { b, a };
+            return new RubyArray(getContext().getCoreLibrary().getArrayClass(), store, store.length);
+        }
+
+    }
+
     @CoreMethod(names = "divmod", required = 1)
     public abstract static class DivModNode extends CoreMethodNode {
 
