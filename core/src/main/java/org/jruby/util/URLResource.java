@@ -24,8 +24,8 @@ import org.jruby.util.io.ModeFlags;
 public class URLResource extends AbstractFileResource {
 
     public static String URI = "uri:";
-    public static String CLASSLOADER = "classloader:/";
-    public static String URI_CLASSLOADER = URI + CLASSLOADER;
+    public static String CLASSLOADER = "classloader:";
+    public static String URI_CLASSLOADER = URI + CLASSLOADER + "/";
 
     private final String uri;
 
