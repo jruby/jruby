@@ -22,6 +22,7 @@ import org.jruby.runtime.encoding.EncodingService;
 import org.jruby.runtime.load.LoadServiceResource;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.core.ArrayNodes;
+import org.jruby.truffle.nodes.core.ProcessNodes;
 import org.jruby.truffle.nodes.methods.SetMethodDeclarationContext;
 import org.jruby.truffle.nodes.objects.Allocator;
 import org.jruby.truffle.runtime.RubyCallStack;
@@ -81,7 +82,7 @@ public class CoreLibrary {
     private final RubyClass numericClass;
     private final RubyClass objectClass;
     private final RubyClass procClass;
-    private final RubyClass processClass;
+    private final RubyModule processModule;
     private final RubyClass rangeClass;
     private final RubyClass rangeErrorClass;
     private final RubyClass rationalClass;
@@ -252,7 +253,7 @@ public class CoreLibrary {
         defineClass("Mutex", new RubyMutex.MutexAllocator());
         nilClass = defineClass("NilClass");
         procClass = defineClass("Proc", new RubyProc.ProcAllocator());
-        processClass = defineClass("Process");
+        processModule = defineModule("Process");
         rangeClass = defineClass("Range", new RubyRange.RangeAllocator());
         regexpClass = defineClass("Regexp", new RubyRegexp.RegexpAllocator());
         stringClass = defineClass("String", new RubyString.StringAllocator());
@@ -388,6 +389,9 @@ public class CoreLibrary {
 
         fileClass.setConstant(null, "PATH_SEPARATOR", RubyString.fromJavaString(stringClass, File.pathSeparator));
         fileClass.setConstant(null, "FNM_SYSCASE", 0);
+
+        processModule.setConstant(null, "CLOCK_MONOTONIC", ProcessNodes.CLOCK_MONOTONIC);
+        processModule.setConstant(null, "CLOCK_REALTIME", ProcessNodes.CLOCK_REALTIME);
     }
 
     private void initializeSignalConstants() {

@@ -165,6 +165,17 @@ public class DetailedSourcePositionTest extends TestCase {
         // assertEquals(8, position.getLength());
     }
 
+    public void testSyntaxError() {
+        try {
+            parse("3.to_i(\n");
+        } catch (org.jruby.exceptions.RaiseException e) {
+            final String syntaxErrorMessage = e.getException().message.asJavaString();
+
+            // There's no easy way to get at the source position information, but it is embedded in the syntax error message.
+            assertEquals("test:1: syntax error, unexpected end-of-file\n", syntaxErrorMessage);
+        }
+    }
+
     private class FoundException extends RuntimeException {
 
         private final Node node;
