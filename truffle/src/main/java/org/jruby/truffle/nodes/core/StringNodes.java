@@ -1864,6 +1864,24 @@ public abstract class StringNodes {
         }
     }
 
+    @CoreMethod(names = "valid_encoding?")
+    public abstract static class ValidEncodingQueryNode extends CoreMethodNode {
+
+        public ValidEncodingQueryNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public ValidEncodingQueryNode(ValidEncodingQueryNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public boolean validEncodingQuery(RubyString string) {
+            return string.scanForCodeRange() != StringSupport.CR_BROKEN;
+        }
+
+    }
+
     @CoreMethod(names = "capitalize!")
     public abstract static class CapitalizeBangNode extends CoreMethodNode {
 
