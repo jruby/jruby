@@ -107,6 +107,8 @@ public abstract class StringNodes {
     public abstract static class EqualNode extends CoreMethodNode {
 
         @Child private StringPrimitiveNodes.StringEqualPrimitiveNode stringEqualNode;
+        @Child private KernelNodes.RespondToNode respondToNode;
+        @Child private CallDispatchHeadNode objectEqualNode;
 
         public EqualNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -125,7 +127,21 @@ public abstract class StringNodes {
         }
 
         @Specialization(guards = "!isRubyString(arguments[1])")
-        public boolean equal(RubyString a, Object b) {
+        public boolean equal(VirtualFrame frame, RubyString a, Object b) {
+            if (respondToNode == null) {
+                CompilerDirectives.transferToInterpreter();
+                respondToNode = insert(KernelNodesFactory.RespondToNodeFactory.create(getContext(), getSourceSection(), new RubyNode[] { null, null, null }));
+            }
+
+            if (respondToNode.doesRespondTo(frame, b, getContext().makeString("to_str"), false)) {
+                if (objectEqualNode == null) {
+                    CompilerDirectives.transferToInterpreter();
+                    objectEqualNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext()));
+                }
+
+                return objectEqualNode.callBoolean(frame, b, "==", null, a);
+            }
+
             return false;
         }
     }
