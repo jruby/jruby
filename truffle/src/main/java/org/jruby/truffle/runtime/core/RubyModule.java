@@ -31,6 +31,7 @@ import org.jruby.truffle.runtime.methods.InternalMethod;
 import org.jruby.truffle.runtime.subsystems.ObjectSpaceManager;
 
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Represents the Ruby {@code Module} class.
@@ -91,9 +92,9 @@ public class RubyModule extends RubyBasicObject implements ModuleChain {
     private LexicalScope lexicalScope;
     private String name;
 
-    private final Map<String, InternalMethod> methods = new HashMap<>();
-    private final Map<String, RubyConstant> constants = new HashMap<>();
-    private final Map<String, Object> classVariables = new HashMap<>();
+    private final Map<String, InternalMethod> methods = new ConcurrentHashMap<>();
+    private final Map<String, RubyConstant> constants = new ConcurrentHashMap<>();
+    private final Map<String, Object> classVariables = new ConcurrentHashMap<>();
 
     private final CyclicAssumption unmodifiedAssumption;
 
