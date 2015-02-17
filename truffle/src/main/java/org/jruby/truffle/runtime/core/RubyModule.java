@@ -119,21 +119,21 @@ public class RubyModule extends RubyBasicObject implements ModuleChain {
 
         unmodifiedAssumption = new CyclicAssumption(name + " is unmodified");
 
-        getAdoptedByLexicalParent(lexicalParent, currentNode);
+        if (lexicalParent != null) {
+            getAdoptedByLexicalParent(lexicalParent, currentNode);
+        }
     }
 
     public void getAdoptedByLexicalParent(RubyModule lexicalParent, RubyNode currentNode) {
-        if (lexicalParent != null) {
-            lexicalParent.setConstant(currentNode, name, this);
-            lexicalParent.addLexicalDependent(this);
+        lexicalParent.setConstant(currentNode, name, this);
+        lexicalParent.addLexicalDependent(this);
 
-            // Tricky, we need to compare with the Object class, but we only have a Module at hand.
-            RubyClass classClass = lexicalParent.getLogicalClass();
-            RubyClass objectClass = classClass.getSuperClass().getSuperClass();
+        // Tricky, we need to compare with the Object class, but we only have a Module at hand.
+        RubyClass classClass = lexicalParent.getLogicalClass();
+        RubyClass objectClass = classClass.getSuperClass().getSuperClass();
 
-            if (lexicalParent.getName() != null && lexicalParent != objectClass) {
-                name = lexicalParent.getName() + "::" + name;
-            }
+        if (lexicalParent.getName() != null && lexicalParent != objectClass) {
+            name = lexicalParent.getName() + "::" + name;
         }
     }
 
