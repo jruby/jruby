@@ -40,11 +40,9 @@ fails:String#gsub with pattern and block raises an Encoding::CompatibilityError 
 fails:String#gsub with pattern and block replaces the incompatible part properly even if the encodings are not compatible
 fails:String#gsub! with pattern and replacement taints self if replacement is tainted
 fails:String#gsub! with pattern and replacement untrusts self if replacement is untrusted
-fails:String#gsub! with pattern and replacement raises a RuntimeError when self is frozen
 fails:String#gsub! with pattern and block modifies self in place and returns self
 fails:String#gsub! with pattern and block taints self if block's result is tainted
 fails:String#gsub! with pattern and block untrusts self if block's result is untrusted
-fails:String#gsub! with pattern and block raises a RuntimeError when self is frozen
 fails:String#gsub! with pattern and block uses the compatible encoding if they are compatible
 fails:String#gsub! with pattern and block raises an Encoding::CompatibilityError if the encodings are not compatible
 fails:String#gsub! with pattern and block replaces the incompatible part properly even if the encodings are not compatible
