@@ -14,6 +14,7 @@ import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.utilities.ConditionProfile;
 import org.joni.exception.ValueException;
+import org.jruby.runtime.Visibility;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.RubyArray;
@@ -259,6 +260,23 @@ public abstract class MatchDataNodes {
             return RubyArray.fromObjects(getContext().getCoreLibrary().getArrayClass(), matchData.valuesAt(indicies));
         }
 
+    }
+
+    @CoreMethod(names = "__rubinius_source__", visibility = Visibility.PRIVATE)
+    public abstract static class RubiniusSourceNode extends CoreMethodNode {
+
+        public RubiniusSourceNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public RubiniusSourceNode(RubiniusSourceNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public RubyString rubiniusSource(RubyMatchData matchData) {
+            return matchData.getSource();
+        }
     }
 
 }

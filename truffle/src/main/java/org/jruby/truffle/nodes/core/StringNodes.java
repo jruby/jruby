@@ -357,7 +357,7 @@ public abstract class StringNodes {
         public Object slice(RubyString string, RubyRegexp regexp, UndefinedPlaceholder capture) {
             notDesignedForCompilation();
 
-            final Object matchData = regexp.matchCommon(string.getBytes(), false, false);
+            final Object matchData = regexp.matchCommon(string, false, false);
 
             if (matchData == getContext().getCoreLibrary().getNilObject()) {
                 return matchData;
@@ -479,7 +479,7 @@ public abstract class StringNodes {
 
         @Specialization
         public Object match(RubyString string, RubyRegexp regexp) {
-            return regexp.matchCommon(string.getBytes(), true, false);
+            return regexp.matchCommon(string, true, false);
         }
     }
 
@@ -1232,12 +1232,12 @@ public abstract class StringNodes {
             notDesignedForCompilation();
 
             final RubyRegexp regexp = new RubyRegexp(this, getContext().getCoreLibrary().getRegexpClass(), regexpString.getBytes(), Option.DEFAULT);
-            return regexp.matchCommon(string.getBytes(), false, false);
+            return regexp.matchCommon(string, false, false);
         }
 
         @Specialization
         public Object match(RubyString string, RubyRegexp regexp) {
-            return regexp.matchCommon(string.getBytes(), false, false);
+            return regexp.matchCommon(string, false, false);
         }
     }
 
@@ -1504,7 +1504,7 @@ public abstract class StringNodes {
 
             if (regexp.getRegex().numberOfCaptures() == 0) {
                 while (true) {
-                    Object matchData = regexp.matchCommon(string.getBytes(), false, true, matcher, p + end, range);
+                    Object matchData = regexp.matchCommon(string, false, true, matcher, p + end, range);
 
                     if (matchData == context.getCoreLibrary().getNilObject()) {
                         break;
@@ -1524,7 +1524,7 @@ public abstract class StringNodes {
                 regexp.setThread("$~", lastGoodMatchData);
             } else {
                 while (true) {
-                    Object matchData = regexp.matchCommon(string.getBytes(), false, true, matcher, p + end, stringBytes.length);
+                    Object matchData = regexp.matchCommon(string, false, true, matcher, p + end, stringBytes.length);
 
                     if (matchData == context.getCoreLibrary().getNilObject()) {
                         break;

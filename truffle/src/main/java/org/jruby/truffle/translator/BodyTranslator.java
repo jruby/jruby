@@ -1542,6 +1542,18 @@ public class BodyTranslator extends Translator {
             }
         }
 
+        if (sourceSection.getSource().getPath().equals("core:/core/rubinius/common/regexp.rb")) {
+            if (nameWithoutSigil.equals("@source")) {
+                return new RubyCallNode(context, sourceSection,
+                        "__rubinius_source__",
+                        new SelfNode(context, sourceSection),
+                        null,
+                        false,
+                        true,
+                        false);
+            }
+        }
+
         if (sourceSection.getSource().getPath().equals("core:/core/rubinius/common/string.rb")) {
             if (nameWithoutSigil.equals("@num_bytes")) {
                 return new RubyCallNode(context, sourceSection,
