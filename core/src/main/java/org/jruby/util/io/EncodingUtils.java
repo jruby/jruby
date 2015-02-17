@@ -1357,7 +1357,8 @@ public class EncodingUtils {
                 if ((b2 = io.getbyte(context)).isNil()) break;
                 if (((RubyFixnum)b2).getLongValue() == 0xFE) {
                     b3 = io.getbyte(context);
-                    if (((RubyFixnum)b3).getLongValue() == 0 && !(b4 = io.getbyte(context)).isNil()) {
+                    if (!b3.isNil() && ((RubyFixnum)b3).getLongValue() == 0
+                            && !(b4 = io.getbyte(context)).isNil()) {
                         if (((RubyFixnum)b4).getLongValue() == 0) {
                             return UTF32LEEncoding.INSTANCE;
                         }
