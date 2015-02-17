@@ -537,7 +537,7 @@ public class BodyTranslator extends Translator {
         final RubyNode constructException = new RubyCallNode(context, sourceSection, "new",
                 new ObjectLiteralNode(context, sourceSection, context.getCoreLibrary().getRuntimeErrorClass()),
                 null, false,
-                new StringLiteralNode(context, sourceSection, ByteList.create("can't modify frozen TODO")));
+                new StringLiteralNode(context, sourceSection, ByteList.create("FrozenError: can't modify frozen TODO")));
 
         final RubyNode raise = new RubyCallNode(context, sourceSection, "raise", new SelfNode(context, sourceSection), null, false, true, false, constructException);
 
