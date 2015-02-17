@@ -1564,11 +1564,12 @@ public class BodyTranslator extends Translator {
                         null,
                         false);
             } else if (nameWithoutSigil.equals("@data")) {
-                return new RubyCallNode(context, sourceSection,
-                        "bytes",
-                        new SelfNode(context, sourceSection),
-                        null,
-                        false);
+                final RubyNode bytes = new RubyCallNode(context, sourceSection, "bytes",
+                        new SelfNode(context, sourceSection), null, false);
+
+                return new RubyCallNode(context, sourceSection, "new",
+                        new ObjectLiteralNode(context, sourceSection, context.getCoreLibrary().getStringDataClass()),
+                        null, false, bytes);
             }
         }
 

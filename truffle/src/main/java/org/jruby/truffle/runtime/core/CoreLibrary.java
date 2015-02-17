@@ -92,6 +92,7 @@ public class CoreLibrary {
     private final RubyClass runtimeErrorClass;
     private final RubyClass standardErrorClass;
     private final RubyClass stringClass;
+    private final RubyClass stringDataClass;
     private final RubyClass symbolClass;
     private final RubyClass syntaxErrorClass;
     private final RubyClass systemCallErrorClass;
@@ -287,6 +288,7 @@ public class CoreLibrary {
 
         rubiniusModule = defineModule("Rubinius");
         byteArrayClass = new RubyClass(context, rubiniusModule, objectClass, "ByteArray");
+        stringDataClass = new RubyClass(context, rubiniusModule, objectClass, "StringData");
 
         // Include the core modules
 
@@ -1096,6 +1098,10 @@ public class CoreLibrary {
 
     public RubyClass getByteArrayClass() {
         return byteArrayClass;
+    }
+
+    public RubyClass getStringDataClass() {
+        return stringDataClass;
     }
 
     public RubyBasicObject getRubiniusUndefined() {
