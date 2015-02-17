@@ -1254,6 +1254,39 @@ public abstract class StringNodes {
         }
     }
 
+    @CoreMethod(names = "replace", required = 1)
+    public abstract static class ReplaceNode extends CoreMethodNode {
+
+        public ReplaceNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public ReplaceNode(ReplaceNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public RubyString replace(RubyString string, RubyString other) {
+            notDesignedForCompilation();
+
+            if (string.isFrozen()) {
+                CompilerDirectives.transferToInterpreter();
+
+                throw new RaiseException(getContext().getCoreLibrary().frozenError("String", this));
+            }
+
+            if (string == other) {
+                return string;
+            }
+
+            string.getByteList().replace(other.getByteList().bytes());
+            string.setCodeRange(other.getCodeRange());
+
+            return string;
+        }
+
+    }
+
     @CoreMethod(names = "rindex", required = 1, optional = 1, lowerFixnumParameters = 1)
     public abstract static class RindexNode extends CoreMethodNode {
 

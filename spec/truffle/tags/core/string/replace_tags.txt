@@ -1,12 +1,5 @@
-fails:String#replace returns self
-fails:String#replace replaces the content of self with other
 fails:String#replace taints self if other is tainted
-fails:String#replace does not untaint self if other is untainted
 fails:String#replace untrusts self if other is untrusted
-fails:String#replace does not trust self if other is trusted
 fails:String#replace replaces the encoding of self with that of other
 fails:String#replace carries over the encoding invalidity
 fails:String#replace tries to convert other to string using to_str
-fails:String#replace raises a TypeError if other can't be converted to string
-fails:String#replace raises a RuntimeError on a frozen instance that is modified
-fails:String#replace raises a RuntimeError on a frozen instance when self-replacing
