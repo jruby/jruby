@@ -720,14 +720,6 @@ public abstract class ModuleNodes {
                 throw new RaiseException(getContext().getCoreLibrary().nameError(String.format("wrong constant name %s", name), this));
             }
 
-            if (object instanceof RubyModule) {
-                final RubyModule setModule = (RubyModule) object;
-                if (setModule.getName() == null) {
-                    setModule.setName(name);
-                    setModule.getAdoptedByLexicalParent(module, this);
-                }
-            }
-
             module.setConstant(this, name, object);
         }
 
@@ -991,7 +983,7 @@ public abstract class ModuleNodes {
         public Object name(RubyModule module) {
             notDesignedForCompilation();
 
-            if (module.getName() == null) {
+            if (!module.hasName()) {
                 return getContext().getCoreLibrary().getNilObject();
             }
 

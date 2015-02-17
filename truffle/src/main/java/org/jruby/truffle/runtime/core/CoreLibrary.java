@@ -161,10 +161,10 @@ public class CoreLibrary {
         moduleClass.unsafeSetSuperclass(objectClass);
         classClass.unsafeSetSuperclass(moduleClass);
 
-        classClass.getAdoptedByLexicalParent(objectClass, null);
-        basicObjectClass.getAdoptedByLexicalParent(objectClass, null);
-        objectClass.getAdoptedByLexicalParent(objectClass, null);
-        moduleClass.getAdoptedByLexicalParent(objectClass, null);
+        classClass.getAdoptedByLexicalParent(objectClass, "Class", null);
+        basicObjectClass.getAdoptedByLexicalParent(objectClass, "BasicObject", null);
+        objectClass.getAdoptedByLexicalParent(objectClass, "Object", null);
+        moduleClass.getAdoptedByLexicalParent(objectClass, "Module", null);
 
         // BasicObject knows itself
 

@@ -2181,11 +2181,6 @@ public abstract class KernelNodes {
             notDesignedForCompilation();
 
             String className = classNode.executeGetClass(self).getName();
-
-            if (className == null) {
-                className = "Class";
-            }
-
             Object id = objectIDNode.executeObjectID(frame, self);
             String hexID = toHexStringNode.executeToHexString(frame, id);
 

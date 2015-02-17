@@ -115,31 +115,34 @@ public class RubyModule extends RubyBasicObject implements ModuleChain {
     protected RubyModule(RubyContext context, RubyClass selfClass, RubyModule lexicalParent, String name, RubyNode currentNode) {
         super(selfClass, context);
         this.context = context;
-        this.name = name;
 
         unmodifiedAssumption = new CyclicAssumption(name + " is unmodified");
 
         if (lexicalParent != null) {
-            getAdoptedByLexicalParent(lexicalParent, currentNode);
+            getAdoptedByLexicalParent(lexicalParent, name, currentNode);
         }
     }
 
-    public void getAdoptedByLexicalParent(RubyModule lexicalParent, RubyNode currentNode) {
-        lexicalParent.setConstant(currentNode, name, this);
+    public void getAdoptedByLexicalParent(RubyModule lexicalParent, String name, RubyNode currentNode) {
+        lexicalParent.setConstantInternal(currentNode, name, this);
         lexicalParent.addLexicalDependent(this);
 
-        // Tricky, we need to compare with the Object class, but we only have a Class at hand.
-        RubyClass classClass = logicalClass.getLogicalClass();
-        RubyClass objectClass = classClass.getSuperClass().getSuperClass();
+        if (this.name == null) {
+            // Tricky, we need to compare with the Object class, but we only have a Class at hand.
+            RubyClass classClass = logicalClass.getLogicalClass();
+            RubyClass objectClass = classClass.getSuperClass().getSuperClass();
 
-        if (lexicalParent.getName() != null && lexicalParent != objectClass) {
-            name = lexicalParent.getName() + "::" + name;
+            if (lexicalParent == objectClass) {
+                this.name = name;
+            } else if (lexicalParent.hasName()) {
+                this.name = lexicalParent.getName() + "::" + name;
+            }
         }
     }
 
     @TruffleBoundary
     public void initCopy(RubyModule other) {
-        this.name = other.name;
+        // Do not copy name, the copy is an anonymous module
         this.parentModule = other.parentModule;
         this.methods.putAll(other.methods);
         this.constants.putAll(other.constants);
@@ -186,6 +189,14 @@ public class RubyModule extends RubyBasicObject implements ModuleChain {
      */
     @TruffleBoundary
     public void setConstant(RubyNode currentNode, String name, Object value) {
+        if (value instanceof RubyModule) {
+            ((RubyModule) value).getAdoptedByLexicalParent(this, name, currentNode);
+        } else {
+            setConstantInternal(currentNode, name, value);
+        }
+    }
+
+    private void setConstantInternal(RubyNode currentNode, String name, Object value) {
         RubyNode.notDesignedForCompilation();
 
         checkFrozen(currentNode);
@@ -317,7 +328,15 @@ public class RubyModule extends RubyBasicObject implements ModuleChain {
     }
 
     public String getName() {
-        return name;
+        if (name != null) {
+            return name;
+        } else {
+            return "#<" + logicalClass.getName() + ":0x" + Long.toHexString(getObjectID()) + ">";
+        }
+    }
+
+    public boolean hasName() {
+        return name != null;
     }
 
     @Override
@@ -530,10 +549,6 @@ public class RubyModule extends RubyBasicObject implements ModuleChain {
                 return new IncludedModulesIterator(top);
             }
         };
-    }
-
-    public void setName(String name) {
-        this.name = name;
     }
 
     public static class ModuleAllocator implements Allocator {

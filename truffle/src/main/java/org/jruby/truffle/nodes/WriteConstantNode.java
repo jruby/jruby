@@ -49,13 +49,7 @@ public class WriteConstantNode extends RubyNode {
 
         final RubyModule module = (RubyModule) receiverObject;
 
-        if (rhsValue instanceof RubyModule && ((RubyModule) rhsValue).getName() == null) {
-            final RubyModule setModule = (RubyModule) rhsValue;
-            setModule.setName(name);
-            setModule.getAdoptedByLexicalParent(module, this);
-        } else {
-            module.setConstant(this, name, rhsValue);
-        }
+        module.setConstant(this, name, rhsValue);
 
         return rhsValue;
     }
