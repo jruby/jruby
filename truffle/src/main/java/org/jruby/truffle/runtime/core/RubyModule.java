@@ -89,7 +89,7 @@ public class RubyModule extends RubyBasicObject implements ModuleChain {
     private final RubyContext context;
 
     @CompilationFinal protected ModuleChain parentModule;
-    private LexicalScope lexicalScope;
+
     private String name;
 
     private final Map<String, InternalMethod> methods = new ConcurrentHashMap<>();
@@ -122,7 +122,7 @@ public class RubyModule extends RubyBasicObject implements ModuleChain {
         getAdoptedByLexicalParent(lexicalParent, currentNode);
     }
 
-    protected void getAdoptedByLexicalParent(RubyModule lexicalParent, RubyNode currentNode) {
+    public void getAdoptedByLexicalParent(RubyModule lexicalParent, RubyNode currentNode) {
         if (lexicalParent != null) {
             lexicalParent.setConstant(currentNode, name, this);
             lexicalParent.addLexicalDependent(this);
@@ -131,7 +131,7 @@ public class RubyModule extends RubyBasicObject implements ModuleChain {
             RubyClass classClass = lexicalParent.getLogicalClass();
             RubyClass objectClass = classClass.getSuperClass().getSuperClass();
 
-            if (lexicalParent != objectClass) {
+            if (lexicalParent.getName() != null && lexicalParent != objectClass) {
                 name = lexicalParent.getName() + "::" + name;
             }
         }
@@ -534,14 +534,6 @@ public class RubyModule extends RubyBasicObject implements ModuleChain {
 
     public void setName(String name) {
         this.name = name;
-    }
-
-    public void setLexicalScope(LexicalScope lexicalScope) {
-        this.lexicalScope = lexicalScope;
-    }
-
-    public LexicalScope getLexicalScope() {
-        return lexicalScope;
     }
 
     public static class ModuleAllocator implements Allocator {

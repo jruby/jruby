@@ -912,7 +912,7 @@ public class BodyTranslator extends Translator {
             throw new UnsupportedOperationException();
         }
 
-        return new WriteConstantNode(context, sourceSection, node.getName(), environment.getLexicalScope(), moduleNode, node.getValueNode().accept(this));
+        return new WriteConstantNode(context, sourceSection, node.getName(), moduleNode, node.getValueNode().accept(this));
     }
 
     @Override

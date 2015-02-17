@@ -723,8 +723,8 @@ public abstract class ModuleNodes {
             if (object instanceof RubyModule) {
                 final RubyModule setModule = (RubyModule) object;
                 if (setModule.getName() == null) {
-                    setModule.setLexicalScope(new LexicalScope(null, module));
                     setModule.setName(name);
+                    setModule.getAdoptedByLexicalParent(module, this);
                 }
             }
 
@@ -995,19 +995,7 @@ public abstract class ModuleNodes {
                 return getContext().getCoreLibrary().getNilObject();
             }
 
-            final StringBuilder builder = new StringBuilder();
-
-            builder.append(module.getName());
-
-            LexicalScope lexicalScope = module.getLexicalScope();
-
-            while (lexicalScope != null && lexicalScope.getLiveModule() != getContext().getCoreLibrary().getObjectClass()) {
-                builder.insert(0, "::");
-                builder.insert(0, lexicalScope.getLiveModule().getName());
-                lexicalScope = lexicalScope.getParent();
-            }
-
-            return getContext().makeString(builder.toString());
+            return getContext().makeString(module.getName());
         }
     }
 
