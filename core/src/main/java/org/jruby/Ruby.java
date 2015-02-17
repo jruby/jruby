@@ -3106,6 +3106,9 @@ public final class Ruby implements Constantizable {
                 found = true;
                 continue;
             }
+            if (j >= newHooks.length) {
+                break;
+            }
             newHooks[j] = hooks[i];
             j++;
         }
