@@ -277,6 +277,10 @@ public class RubyContext extends ExecutionContext {
         return makeString(Character.toString(string));
     }
 
+    public RubyString makeString(char string, Encoding encoding) {
+        return makeString(Character.toString(string), encoding);
+    }
+
     public RubyString makeString(ByteList bytes) {
         return RubyString.fromByteList(coreLibrary.getStringClass(), bytes);
     }

@@ -302,7 +302,7 @@ public abstract class StringNodes {
             if (normalizedIndex < 0 || normalizedIndex >= bytes.length()) {
                 throw new UnexpectedResultException(getContext().getCoreLibrary().getNilObject());
             } else {
-                return getContext().makeString(bytes.charAt(normalizedIndex));
+                return getContext().makeString(bytes.charAt(normalizedIndex), string.getByteList().getEncoding());
             }
         }
 
@@ -315,7 +315,7 @@ public abstract class StringNodes {
                 outOfBounds.enter();
                 return getContext().getCoreLibrary().getNilObject();
             } else {
-                return getContext().makeString(bytes.charAt(normalizedIndex));
+                return getContext().makeString(bytes.charAt(normalizedIndex), string.getByteList().getEncoding());
             }
         }
 
@@ -333,7 +333,7 @@ public abstract class StringNodes {
                 final int end = string.normalizeIndex(range.getEnd());
                 final int excludingEnd = string.clampExclusiveIndex(range.doesExcludeEnd() ? end : end+1);
 
-                return getContext().makeString(javaString.substring(begin, excludingEnd));
+                return getContext().makeString(javaString.substring(begin, excludingEnd), string.getByteList().getEncoding());
             }
         }
 
@@ -349,7 +349,10 @@ public abstract class StringNodes {
             } else {
                 final int end = Math.min(bytes.length(), begin + length);
 
-                return new RubyString(getContext().getCoreLibrary().getStringClass(), new ByteList(bytes, begin, end - begin));
+                final ByteList byteList = new ByteList(bytes, begin, end - begin);
+                byteList.setEncoding(string.getByteList().getEncoding());
+
+                return getContext().makeString(byteList);
             }
         }
 
