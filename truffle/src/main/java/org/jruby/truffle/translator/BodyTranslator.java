@@ -539,7 +539,7 @@ public class BodyTranslator extends Translator {
                 null, false,
                 new StringLiteralNode(context, sourceSection, ByteList.create("can't modify frozen TODO")));
 
-        final RubyNode raise = new RubyCallNode(context, sourceSection, "raise", new SelfNode(context, sourceSection), null, false, constructException);
+        final RubyNode raise = new RubyCallNode(context, sourceSection, "raise", new SelfNode(context, sourceSection), null, false, true, false, constructException);
 
         return new IfNode(context, sourceSection,
                 frozen,
