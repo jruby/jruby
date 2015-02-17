@@ -18,6 +18,7 @@ import org.jruby.truffle.runtime.core.RubyProc;
 import org.jruby.truffle.runtime.core.RubyString;
 import org.jruby.truffle.runtime.core.RubySymbol;
 import org.jruby.util.ByteList;
+import org.jruby.util.StringSupport;
 
 @CoreClass(name = "Symbol")
 public abstract class SymbolNodes {
@@ -212,7 +213,7 @@ public abstract class SymbolNodes {
 
     }
 
-    @CoreMethod(names = { "size"})
+    @CoreMethod(names = "size")
     public abstract static class SizeNode extends CoreMethodNode {
 
         public SizeNode(RubyContext context, SourceSection sourceSection) {
@@ -225,8 +226,7 @@ public abstract class SymbolNodes {
 
         @Specialization
         public int size(RubySymbol symbol) {
-            notDesignedForCompilation();
-            return symbol.toString().length();
+            return StringSupport.strLengthFromRubyString(symbol);
         }
 
     }
