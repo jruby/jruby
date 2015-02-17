@@ -9,16 +9,23 @@
  */
 package org.jruby.truffle.nodes.core;
 
+import com.oracle.truffle.api.CompilerDirectives;
+import com.oracle.truffle.api.dsl.CreateCast;
+import com.oracle.truffle.api.dsl.NodeChild;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.SourceSection;
 
+import org.jruby.truffle.nodes.RubyNode;
+import org.jruby.truffle.nodes.cast.ToSNodeFactory;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.UndefinedPlaceholder;
 import org.jruby.truffle.runtime.core.RubyArray;
 import org.jruby.truffle.runtime.core.RubyFile;
 import org.jruby.truffle.runtime.core.RubyProc;
 import org.jruby.truffle.runtime.core.RubyString;
+import org.jruby.truffle.runtime.subsystems.ThreadManager;
+import org.jruby.util.ByteList;
 
 import java.io.BufferedReader;
 import java.io.FileInputStream;
@@ -64,6 +71,56 @@ public abstract class IONodes {
             }
 
             return RubyArray.fromObjects(getContext().getCoreLibrary().getArrayClass(), lines.toArray(new Object[lines.size()]));
+        }
+
+    }
+
+    @CoreMethod(names = "write", needsSelf = false, required = 1)
+    @NodeChild(value = "string")
+    public abstract static class WriteNode extends RubyNode {
+
+        public WriteNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public WriteNode(WriteNode prev) {
+            super(prev);
+        }
+
+        @CreateCast("string") public RubyNode callToS(RubyNode other) {
+            return ToSNodeFactory.create(getContext(), getSourceSection(), other);
+        }
+
+        @Specialization
+        public int write(RubyString string) {
+            notDesignedForCompilation();
+
+            final ByteList byteList = string.getByteList();
+
+            final int offset = byteList.getBegin();
+            final int length = byteList.getRealSize();
+            final byte[] bytes = byteList.getUnsafeBytes();
+
+            getContext().getThreadManager().runUntilResult(new ThreadManager.BlockingActionWithoutGlobalLock<Boolean>() {
+                @Override
+                public Boolean block() throws InterruptedException {
+                    write(bytes, offset, length);
+
+                    return SUCCESS;
+                }
+            });
+
+            return length;
+        }
+
+        @CompilerDirectives.TruffleBoundary
+        private void write(byte[] bytes, int offset, int length) throws InterruptedException {
+            if (Thread.interrupted()) {
+                throw new InterruptedException();
+            }
+
+            // TODO (nirvdrum 17-Feb-15) This shouldn't always just write to STDOUT, but that's the only use case we're supporting currently.
+            getContext().getRuntime().getInstanceConfig().getOutput().write(bytes, offset, length);
         }
 
     }

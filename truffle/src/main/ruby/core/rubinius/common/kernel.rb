@@ -105,6 +105,14 @@ module Kernel
     raise PrimitiveFailure, "Kernel#object_id primitive failed"
   end
 
+  def print(*args)
+    args.each do |obj|
+      $stdout.write obj.to_s
+    end
+    nil
+  end
+  module_function :print
+
   def trap(sig, prc=nil, &block)
     Signal.trap(sig, prc, &block)
   end

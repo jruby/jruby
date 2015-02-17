@@ -1355,62 +1355,6 @@ public abstract class KernelNodes {
         }
     }
 
-    @CoreMethod(names = "print", isModuleFunction = true, argumentsAsArray = true)
-    public abstract static class PrintNode extends CoreMethodNode {
-
-        @Child private CallDispatchHeadNode toS;
-
-        public PrintNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-            toS = DispatchHeadNodeFactory.createMethodCall(context);
-        }
-
-        public PrintNode(PrintNode prev) {
-            super(prev);
-            toS = prev.toS;
-        }
-
-        @Specialization
-        public RubyNilClass print(VirtualFrame frame, Object[] args) {
-            final byte[][] bytes = new byte[args.length][];
-
-            for (int i = 0; i < args.length; i++) {
-                bytes[i] = ((RubyString) toS.call(frame, args[i], "to_s", null)).getBytes().bytes();
-            }
-
-            getContext().getThreadManager().runUntilResult(new BlockingActionWithoutGlobalLock<Boolean>() {
-                int i = 0;
-
-                @Override
-                public Boolean block() throws InterruptedException {
-                    while (i < bytes.length) {
-                        write(bytes[i]);
-                        i++;
-
-                    }
-                    return SUCCESS;
-                }
-            });
-
-            return getContext().getCoreLibrary().getNilObject();
-        }
-
-        @TruffleBoundary
-        private void write(byte[] bytes) throws InterruptedException {
-            if (Thread.interrupted()) {
-                throw new InterruptedException();
-            }
-
-            // TODO (eregon, 11 Nov. 2015): the write itself should throw InterruptedException
-            try{
-                getContext().getRuntime().getInstanceConfig().getOutput().write(bytes);
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
-        }
-
-    }
-
     @CoreMethod(names = "private_methods", optional = 1)
     public abstract static class PrivateMethodsNode extends CoreMethodNode {
 

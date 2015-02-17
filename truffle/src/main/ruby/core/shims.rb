@@ -28,7 +28,7 @@ module STDIN
   end
 end
 
-module STDOUT
+class STDOUT < IO
   def self.puts(*values)
     Kernel.send(:puts, *values)
   end
@@ -42,7 +42,7 @@ module STDOUT
   end
 
   def self.write(value)
-    print value
+    IO.new.write value
   end
 
   def self.flush
