@@ -43,6 +43,22 @@ class Regexp
     Rubinius.primitive :regexp_initialize
     raise PrimitiveFailure, "Regexp.compile(#{pattern.inspect}, #{opts}) primitive failed"
   end
+
   private :compile
+
+  def search_region(str, start, finish, forward) # equiv to MRI's re_search
+    Rubinius.primitive :regexp_search_region
+    raise PrimitiveFailure, "Regexp#search_region primitive failed"
+  end
+
+  def self.last_match=(match)
+    Rubinius.primitive :regexp_set_last_match
+
+    unless match.kind_of? MatchData
+      raise TypeError, "Expected MatchData, got #{match.inspect}"
+    end
+
+    raise PrimitiveFailure, "Regexp#set_last_match primitive failed"
+  end
 
 end

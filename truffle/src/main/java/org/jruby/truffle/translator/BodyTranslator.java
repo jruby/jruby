@@ -1551,6 +1551,12 @@ public class BodyTranslator extends Translator {
                         false,
                         true,
                         false);
+            } else if (nameWithoutSigil.equals("@full")) {
+                return new RubyCallNode(context, sourceSection,
+                        "full",
+                        new SelfNode(context, sourceSection),
+                        null,
+                        false);
             }
         }
 

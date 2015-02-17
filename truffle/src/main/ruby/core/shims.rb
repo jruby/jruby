@@ -157,8 +157,8 @@ class Module
 end
 
 class String
-  def gsub(*args)
-    dup.gsub!(*args)
+  def append(other)
+    self << other
   end
 end
 
@@ -210,3 +210,14 @@ class BasicObject
 end
 
 ENV['TZ'] = 'UTC'
+
+class MatchData
+  def full
+    @cached_full ||= begin
+      tuple = Rubinius::Tuple.new
+      tuple << self.begin(0)
+      tuple << self.end(0)
+      tuple
+    end
+  end
+end
