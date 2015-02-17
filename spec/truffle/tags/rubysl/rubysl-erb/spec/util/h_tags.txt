@@ -1,2 +1,0 @@
-fails:ERB::Util.h escape (& < > " ') to (&amp; &lt; &gt; &quot; &#39;)
-fails:ERB::Util.h not escape characters except (& < > " ')
