@@ -118,8 +118,6 @@ public class SafepointManager {
     }
 
     private synchronized void pauseAllThreadsAndExecute(boolean holdsGlobalLock, Consumer<RubyThread> action) {
-        CompilerDirectives.transferToInterpreter();
-
         this.action = action;
 
         /* this is a potential cause for race conditions,
