@@ -598,11 +598,16 @@ public abstract class StringNodes {
 
             final int normalizedIndex = string.normalizeIndex(index);
 
-            if (normalizedIndex > bytes.length() || normalizedIndex + length > bytes.length()) {
+            if (normalizedIndex > bytes.length()) {
                 return getContext().getCoreLibrary().getNilObject();
             }
 
-            final byte[] copiedBytes = Arrays.copyOfRange(bytes.getUnsafeBytes(), index, index + length);
+            int rangeEnd = normalizedIndex + length;
+            if (rangeEnd > bytes.getRealSize()) {
+                rangeEnd = bytes.getRealSize();
+            }
+
+            final byte[] copiedBytes = Arrays.copyOfRange(bytes.getUnsafeBytes(), normalizedIndex, rangeEnd);
 
             return new RubyString(getContext().getCoreLibrary().getStringClass(), new ByteList(copiedBytes, string.getBytes().getEncoding()));
         }
