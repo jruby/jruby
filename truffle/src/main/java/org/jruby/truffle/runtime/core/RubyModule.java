@@ -129,7 +129,7 @@ public class RubyModule extends RubyBasicObject implements ModuleChain {
         lexicalParent.addLexicalDependent(this);
 
         // Tricky, we need to compare with the Object class, but we only have a Module at hand.
-        RubyClass classClass = lexicalParent.getLogicalClass();
+        RubyClass classClass = lexicalParent.getLogicalClass().getLogicalClass();
         RubyClass objectClass = classClass.getSuperClass().getSuperClass();
 
         if (lexicalParent.getName() != null && lexicalParent != objectClass) {
