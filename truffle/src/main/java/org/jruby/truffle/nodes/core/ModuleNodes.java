@@ -435,7 +435,7 @@ public abstract class ModuleNodes {
                 throw new RaiseException(getContext().getCoreLibrary().argumentError("empty file name", this));
             }
 
-            module.setAutoloadConstant(this, name.toString(), filename);
+            module.setAutoloadConstant(this, name, filename);
 
             return getContext().getCoreLibrary().getNilObject();
         }
