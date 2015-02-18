@@ -14,8 +14,8 @@ import org.jruby.ir.operands.WrappedIRClosure;
 public class BeginEndInterpreterContext extends InterpreterContext {
     private List<IRClosure> beginBlocks;
 
-    public BeginEndInterpreterContext(IRScope scope, Instr[] instructions) {
-        super(scope, instructions);
+    public BeginEndInterpreterContext(IRScope scope, Instr[] instructions, boolean rebuild) {
+        super(scope, instructions, rebuild);
 
         beginBlocks = scope.getBeginBlocks();
     }

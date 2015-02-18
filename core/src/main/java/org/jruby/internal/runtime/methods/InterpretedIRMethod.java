@@ -14,6 +14,7 @@ import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
+import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.PositionAware;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
@@ -83,11 +84,35 @@ public class InterpretedIRMethod extends DynamicMethod implements IRMethodArgs, 
         return this.arity;
     }
 
+    protected void post(InterpreterContext ic, ThreadContext context) {
+        // update call stacks (pop: ..)
+        context.popFrame();
+        if (ic.popDynScope()) {
+            context.popScope();
+        }
+    }
+
+    protected void pre(InterpreterContext ic, ThreadContext context, IRubyObject self, String name, Block block, RubyModule implClass) {
+        // update call stacks (push: frame, class, scope, etc.)
+        context.preMethodFrameOnly(implClass, name, self, block);
+        if (ic.pushNewDynScope()) {
+            context.pushScope(DynamicScope.newDynamicScope(ic.getStaticScope()));
+        }
+        context.setCurrentVisibility(getVisibility());
+    }
+
     public InterpreterContext ensureInstrsReady() {
         // Try unsync access first before calling more expensive method for getting IC
         InterpreterContext ic = method.getInterpreterContext();
 
-        return ic == null ? method.prepareForInterpretation() : ic;
+        // Build/rebuild if necessary
+        if (ic == null) {
+            ic = method.prepareForInterpretation();
+        } else if (ic.needsRebuilding()) {
+            ic = method.prepareForInterpretation(true);
+        }
+
+        return ic;
     }
 
     @Override
@@ -105,12 +130,21 @@ public class InterpretedIRMethod extends DynamicMethod implements IRMethodArgs, 
         }
     }
 
-    private static IRubyObject INTERPRET_METHOD(ThreadContext context, InterpreterContext ic, RubyModule implClass,
+    private IRubyObject INTERPRET_METHOD(ThreadContext context, InterpreterContext ic, RubyModule implClass,
                                                IRubyObject self, String name, IRubyObject[] args, Block block) {
         try {
             ThreadContext.pushBacktrace(context, name, ic.getFileName(), context.getLine());
 
-            return ic.engine.interpret(context, self, ic, implClass, name, args, block, null);
+            if (ic.hasExplicitCallProtocol()) {
+                return ic.engine.interpret(context, self, ic, implClass, name, args, block, null);
+            } else {
+                try {
+                    this.pre(ic, context, self, name, block, implClass);
+                    return ic.engine.interpret(context, self, ic, implClass, name, args, block, null);
+                } finally {
+                    this.post(ic, context);
+                }
+            }
         } finally {
             ThreadContext.popBacktrace(context);
         }
@@ -131,12 +165,21 @@ public class InterpretedIRMethod extends DynamicMethod implements IRMethodArgs, 
         }
     }
 
-    private static IRubyObject INTERPRET_METHOD(ThreadContext context, InterpreterContext ic, RubyModule implClass,
+    private IRubyObject INTERPRET_METHOD(ThreadContext context, InterpreterContext ic, RubyModule implClass,
                                                IRubyObject self, String name, Block block) {
         try {
             ThreadContext.pushBacktrace(context, name, ic.getFileName(), context.getLine());
 
-            return ic.engine.interpret(context, self, ic, implClass, name, block, null);
+            if (ic.hasExplicitCallProtocol()) {
+                return ic.engine.interpret(context, self, ic, implClass, name, block, null);
+            } else {
+                try {
+                    this.pre(ic, context, self, name, block, implClass);
+                    return ic.engine.interpret(context, self, ic, implClass, name, block, null);
+                } finally {
+                    this.post(ic, context);
+                }
+            }
         } finally {
             ThreadContext.popBacktrace(context);
         }
@@ -157,12 +200,21 @@ public class InterpretedIRMethod extends DynamicMethod implements IRMethodArgs, 
         }
     }
 
-    private static IRubyObject INTERPRET_METHOD(ThreadContext context, InterpreterContext ic, RubyModule implClass,
+    private IRubyObject INTERPRET_METHOD(ThreadContext context, InterpreterContext ic, RubyModule implClass,
                                                IRubyObject self, String name, IRubyObject arg1, Block block) {
         try {
             ThreadContext.pushBacktrace(context, name, ic.getFileName(), context.getLine());
 
-            return ic.engine.interpret(context, self, ic, implClass, name, arg1, block, null);
+            if (ic.hasExplicitCallProtocol()) {
+                return ic.engine.interpret(context, self, ic, implClass, name, arg1, block, null);
+            } else {
+                try {
+                    this.pre(ic, context, self, name, block, implClass);
+                    return ic.engine.interpret(context, self, ic, implClass, name, arg1, block, null);
+                } finally {
+                    this.post(ic, context);
+                }
+            }
         } finally {
             ThreadContext.popBacktrace(context);
         }
@@ -183,12 +235,21 @@ public class InterpretedIRMethod extends DynamicMethod implements IRMethodArgs, 
         }
     }
 
-    private static IRubyObject INTERPRET_METHOD(ThreadContext context, InterpreterContext ic, RubyModule implClass,
+    private IRubyObject INTERPRET_METHOD(ThreadContext context, InterpreterContext ic, RubyModule implClass,
                                                IRubyObject self, String name, IRubyObject arg1, IRubyObject arg2,  Block block) {
         try {
             ThreadContext.pushBacktrace(context, name, ic.getFileName(), context.getLine());
 
-            return ic.engine.interpret(context, self, ic, implClass, name, arg1, arg2, block, null);
+            if (ic.hasExplicitCallProtocol()) {
+                return ic.engine.interpret(context, self, ic, implClass, name, arg1, arg2, block, null);
+            } else {
+                try {
+                    this.pre(ic, context, self, name, block, implClass);
+                    return ic.engine.interpret(context, self, ic, implClass, name, arg1, arg2, block, null);
+                } finally {
+                    this.post(ic, context);
+                }
+            }
         } finally {
             ThreadContext.popBacktrace(context);
         }
@@ -209,12 +270,21 @@ public class InterpretedIRMethod extends DynamicMethod implements IRMethodArgs, 
         }
     }
 
-    private static IRubyObject INTERPRET_METHOD(ThreadContext context, InterpreterContext ic, RubyModule implClass,
+    private IRubyObject INTERPRET_METHOD(ThreadContext context, InterpreterContext ic, RubyModule implClass,
                                                IRubyObject self, String name, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3, Block block) {
         try {
             ThreadContext.pushBacktrace(context, name, ic.getFileName(), context.getLine());
 
-            return ic.engine.interpret(context, self, ic, implClass, name, arg1, arg2, arg3, block, null);
+            if (ic.hasExplicitCallProtocol()) {
+                return ic.engine.interpret(context, self, ic, implClass, name, arg1, arg2, arg3, block, null);
+            } else {
+                try {
+                    this.pre(ic, context, self, name, block, implClass);
+                    return ic.engine.interpret(context, self, ic, implClass, name, arg1, arg2, arg3, block, null);
+                } finally {
+                    this.post(ic, context);
+                }
+            }
         } finally {
             ThreadContext.popBacktrace(context);
         }

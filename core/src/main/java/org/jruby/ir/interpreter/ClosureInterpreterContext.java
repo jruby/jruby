@@ -9,8 +9,8 @@ import org.jruby.runtime.ThreadContext;
  * Interpreter knowledge needed to interpret a closure.
  */
 public class ClosureInterpreterContext extends InterpreterContext {
-    public ClosureInterpreterContext(IRClosure scope, Instr[] instructions) {
-        super(scope, instructions);
+    public ClosureInterpreterContext(IRClosure scope, Instr[] instructions, boolean rebuild) {
+        super(scope, instructions, rebuild);
     }
 
     /**

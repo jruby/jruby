@@ -36,7 +36,16 @@ public class InterpretedIRBodyMethod extends InterpretedIRMethod {
         if (IRRuntimeHelpers.isDebug()) doDebug();
 
         InterpreterContext ic = ensureInstrsReady();
-        return ic.engine.interpret(context, self, ic, getImplementationClass().getMethodLocation(), name, block, null);
+        if (ic.hasExplicitCallProtocol()) {
+            return ic.engine.interpret(context, self, ic, getImplementationClass().getMethodLocation(), name, block, null);
+        } else {
+            try {
+                this.pre(ic, context, self, name, block, getImplementationClass());
+                return ic.engine.interpret(context, self, ic, getImplementationClass().getMethodLocation(), name, block, null);
+            } finally {
+                this.post(ic, context);
+            }
+        }
     }
 
     @Override

@@ -41,6 +41,7 @@ import org.jruby.ir.instructions.specialized.ZeroOperandArgNoBlockCallInstr;
 import org.jruby.ir.operands.Bignum;
 import org.jruby.ir.operands.Fixnum;
 import org.jruby.ir.operands.Float;
+import org.jruby.ir.operands.Label;
 import org.jruby.ir.operands.LocalVariable;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.Self;
@@ -52,6 +53,8 @@ import org.jruby.ir.operands.UnboxedBoolean;
 import org.jruby.ir.operands.UnboxedFixnum;
 import org.jruby.ir.operands.UnboxedFloat;
 import org.jruby.ir.operands.Variable;
+import org.jruby.ir.runtime.IRBreakJump;
+import org.jruby.ir.runtime.IRReturnJump;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.Block;
@@ -62,6 +65,8 @@ import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.ivars.VariableAccessor;
 import org.jruby.runtime.opto.ConstantCache;
+
+import java.util.Stack;
 
 /**
  * Base full interpreter.  Subclasses can use utility methods here and override what they want.
@@ -115,10 +120,18 @@ public class InterpreterEngine {
         IRScope scope = currScope.getIRScope();
         boolean      acceptsKeywordArgument = interpreterContext.receivesKeywordArguments();
 
+        Stack<Integer> rescuePCs = null;
+        if (interpreterContext.getCFG() == null) {
+            rescuePCs = new Stack<Integer>();
+        }
+
         // Init profiling this scope
         boolean debug   = IRRuntimeHelpers.isDebug();
         boolean profile = IRRuntimeHelpers.inProfileMode();
         Integer scopeVersion = profile ? Profiler.initProfiling(scope) : 0;
+
+        // Update profile
+        interpreterContext.incrementRunCount();
 
         // Enter the looooop!
         while (ipc < n) {
@@ -164,7 +177,7 @@ public class InterpreterEngine {
                             currDynScope = interpreterContext.newDynamicScope(context);
                             context.pushScope(currDynScope);
                         } else {
-                            processBookKeepingOp(context, instr, operation, name, args, self, block, implClass);
+                            processBookKeepingOp(context, instr, operation, name, args, self, block, implClass, rescuePCs);
                         }
                         break;
                     case OTHER_OP:
@@ -176,7 +189,21 @@ public class InterpreterEngine {
                     extractToMethodToAvoidC2Crash(context, instr, t);
                 }
 
-                ipc = instr.getRPC();
+                if (rescuePCs == null) {
+                    // When CFG is present
+                    ipc = instr.getRPC();
+                } else {
+                    // When CFG is absent
+                    if (rescuePCs.empty()
+                        || (t instanceof IRBreakJump && (instr instanceof BreakInstr))
+                        || (t instanceof IRReturnJump && (instr instanceof NonlocalReturnInstr)))
+                    {
+                        ipc = -1;
+                    } else {
+                        ipc = rescuePCs.pop();
+                    }
+                }
+
                 if (debug) {
                     Interpreter.LOG.info("in : " + interpreterContext.getStaticScope().getIRScope() + ", caught Java throwable: " + t + "; excepting instr: " + instr);
                     Interpreter.LOG.info("ipc for rescuer: " + ipc);
@@ -323,8 +350,16 @@ public class InterpreterEngine {
 
     private static void processBookKeepingOp(ThreadContext context, Instr instr, Operation operation,
                                              String name, IRubyObject[] args, IRubyObject self, Block block,
-                                             RubyModule implClass) {
+                                             RubyModule implClass, Stack<Integer> rescuePCs) {
         switch(operation) {
+            case LABEL:
+                break;
+            case EXC_REGION_START:
+                rescuePCs.push(((Label)instr.getOperands()[0]).getTargetPC());
+                break;
+            case EXC_REGION_END:
+                rescuePCs.pop();
+                break;
             case PUSH_FRAME:
                 context.preMethodFrameOnly(implClass, name, self, block);
                 // Only the top-level script scope has PRIVATE visibility.
@@ -392,6 +427,8 @@ public class InterpreterEngine {
     {
         Object result;
         switch(operation) {
+            case RECV_SELF:
+                break;
             case COPY: {
                 CopyInstr c = (CopyInstr)instr;
                 Operand src = c.getSource();

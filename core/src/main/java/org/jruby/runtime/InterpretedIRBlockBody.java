@@ -32,8 +32,18 @@ public class InterpretedIRBlockBody extends IRBlockBody {
             LOG.info(closure.debugOutput());
             displayedCFG = true;
         }
-        // Always prepared in the context of parent scope -- so a null value here is a bug.
-        return closure.getInterpreterContext();
+
+        // Try unsync access first before calling more expensive method for getting IC
+        InterpreterContext ic = closure.getInterpreterContext();
+
+        // Build/rebuild if necessary
+        if (ic == null) {
+            ic = closure.prepareForInterpretation();
+        } else if (ic.needsRebuilding()) {
+            ic = closure.prepareForInterpretation(true);
+        }
+
+        return ic;
     }
 
     protected IRubyObject commonYieldPath(ThreadContext context, IRubyObject[] args, IRubyObject self, Binding binding, Type type, Block block) {
