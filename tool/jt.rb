@@ -89,6 +89,7 @@ module Commands
 
   def help
     puts 'jt build                                     build'
+    puts 'jt build truffle                             build only the Truffle part, assumes the rest is up-to-date'
     puts 'jt clean                                     clean'
     puts 'jt rebuild                                   clean and build'
     puts 'jt run [options] args...                     run JRuby with -X+T and args'
@@ -114,8 +115,15 @@ module Commands
     puts 'you can also put build or rebuild in front of any command'
   end
 
-  def build
-    mvn 'package'
+  def build(project = nil)
+    case project
+    when 'truffle'
+      mvn '-pl', 'truffle', 'package'
+    when nil
+      mvn 'package'
+    else
+      raise ArgumentError, project
+    end
   end
 
   def clean
@@ -251,7 +259,14 @@ class JT
       exit
     end
 
-    send args.shift if %w[build rebuild].include? args.first
+    case args.first
+    when "rebuild"
+      send(args.shift)
+    when "build"
+      command = [args.shift]
+      command << args.shift if args.first == "truffle"
+      send(*command)
+    end
 
     return if args.empty?
 
