@@ -92,10 +92,9 @@ public abstract class IONodes {
             return ToSNodeFactory.create(getContext(), getSourceSection(), other);
         }
 
+        @CompilerDirectives.TruffleBoundary
         @Specialization
         public int write(RubyString string) {
-            notDesignedForCompilation();
-
             final ByteList byteList = string.getByteList();
 
             final int offset = byteList.getBegin();
