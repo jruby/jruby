@@ -13,81 +13,62 @@
 class Channel
 end
 
-module STDIN
-  def self.external_encoding
-    @external || Encoding.default_external
+class IO
+  def external_encoding
+    @external
   end
 
-  def self.internal_encoding
+  def internal_encoding
     @internal
   end
 
-  def self.set_encoding(external, internal)
+  def set_encoding(external, internal)
     @external = external
     @internal = internal
   end
 end
 
-class STDOUT < IO
-  def self.puts(*values)
+STDIN = IO.new
+
+class << STDIN
+  def external_encoding
+    super || Encoding.default_external
+  end
+end
+
+STDOUT = IO.new
+$stdout = STDOUT
+
+class << STDOUT
+  def puts(*values)
     Kernel.send(:puts, *values)
   end
 
-  def self.print(*values)
+  def print(*values)
     Kernel.send(:print, *values)
   end
 
-  def self.printf(*values)
+  def printf(*values)
     Kernel.send(:printf, *values)
   end
 
-  def self.write(value)
-    IO.new.write value
-  end
-
-  def self.flush
+  def flush
     Truffle::Debug.flush_stdout
   end
 
-  def self.sync
+  def sync
     false
   end
 
-  def self.sync=(value)
-  end
-
-  def self.external_encoding
-    @external
-  end
-
-  def self.internal_encoding
-    @internal
-  end
-
-  def self.set_encoding(external, internal)
-    @external = external
-    @internal = internal
+  def sync=(value)
   end
 end
 
-$stdout = STDOUT
+STDERR = IO.new
 
-module STDERR
+class << STDERR
   def self.puts(*values)
     Kernel.send(:puts, *values)
-  end
-
-  def self.external_encoding
-    @external
-  end
-
-  def self.internal_encoding
-    @internal
-  end
-
-  def self.set_encoding(external, internal)
-    @external = external
-    @internal = internal
   end
 end
 
