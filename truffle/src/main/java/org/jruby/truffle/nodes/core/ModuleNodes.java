@@ -441,6 +441,38 @@ public abstract class ModuleNodes {
         }
     }
 
+    @CoreMethod(names = "autoload?", required = 1)
+    public abstract static class AutoloadQueryNode extends CoreMethodNode {
+
+        public AutoloadQueryNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public AutoloadQueryNode(AutoloadQueryNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public Object autoloadQuery(RubyModule module, RubySymbol name) {
+            return autoloadQuery(module, name.toString());
+        }
+
+        @Specialization
+        public Object autoloadQuery(RubyModule module, RubyString name) {
+            return autoloadQuery(module, name.toString());
+        }
+
+        private Object autoloadQuery(RubyModule module, String name) {
+            final RubyConstant constant = ModuleOperations.lookupConstant(getContext(), LexicalScope.NONE, module, name);
+
+            if ((constant == null) || ! constant.isAutoload()) {
+                return getContext().getCoreLibrary().getNilObject();
+            }
+
+            return constant.getValue();
+        }
+    }
+
     @CoreMethod(names = {"class_eval","module_eval"}, optional = 3, needsBlock = true)
     public abstract static class ClassEvalNode extends CoreMethodNode {
 
