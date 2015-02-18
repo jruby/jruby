@@ -441,6 +441,10 @@ public abstract class IRScope implements ParseResult {
     }
 
     public CFG buildCFG() {
+        if (getCFG() != null) {
+            return getCFG();
+        }
+
         CFG newCFG = new CFG(this);
         newCFG.build(getInstrs());
         // Clear out instruction list after CFG has been built.
