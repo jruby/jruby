@@ -162,6 +162,10 @@ public class RubyContext extends ExecutionContext {
     }
 
     private void loadFileAbsolute(String fileName, RubyNode currentNode) {
+        if (isRunningOnWindows()) {
+            fileName.replace('\\', '/');
+        }
+
         final byte[] bytes = FileUtils.readAllBytesInterruptedly(this, fileName);
 
         // Assume UTF-8 for the moment
