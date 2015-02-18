@@ -20,14 +20,15 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.Node.Child;
 import com.oracle.truffle.api.source.Source;
 import com.oracle.truffle.api.source.SourceSection;
-
 import com.oracle.truffle.api.utilities.ConditionProfile;
+
 import org.jcodings.Encoding;
 import org.jruby.runtime.Visibility;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.RubyRootNode;
 import org.jruby.truffle.nodes.cast.BooleanCastNode;
 import org.jruby.truffle.nodes.cast.BooleanCastNodeFactory;
+import org.jruby.truffle.nodes.coerce.SymbolOrToStrNodeFactory;
 import org.jruby.truffle.nodes.coerce.ToStrNode;
 import org.jruby.truffle.nodes.coerce.ToStrNodeFactory;
 import org.jruby.truffle.nodes.control.SequenceNode;
@@ -780,9 +781,8 @@ public abstract class ModuleNodes {
     }
 
     @CoreMethod(names = "const_set", required = 2)
-    public abstract static class ConstSetNode extends CoreMethodNode {
-
-        @Child private ToStrNode toStrNode;
+    @NodeChildren({ @NodeChild("module"), @NodeChild("name"), @NodeChild("value") })
+    public abstract static class ConstSetNode extends RubyNode {
 
         public ConstSetNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -792,23 +792,12 @@ public abstract class ModuleNodes {
             super(prev);
         }
 
+        @CreateCast("name")
+        public RubyNode coerceToString(RubyNode name) {
+            return SymbolOrToStrNodeFactory.create(getContext(), getSourceSection(), name);
+        }
+
         @Specialization
-        public Object setConstant(RubyModule module, RubySymbol name, Object value) {
-            notDesignedForCompilation();
-
-            return setConstant(module, name.toString(), value);
-        }
-
-        @Specialization(guards = "!isRubySymbol(arguments[1])")
-        public Object setConstant(VirtualFrame frame, RubyModule module, Object name, Object value) {
-            if (toStrNode == null) {
-                CompilerDirectives.transferToInterpreter();
-                toStrNode = insert(ToStrNodeFactory.create(getContext(), getSourceSection(), null));
-            }
-
-            return setConstant(module, toStrNode.executeRubyString(frame, name).toString(), value);
-        }
-
         public Object setConstant(RubyModule module, String name, Object value) {
             notDesignedForCompilation();
 
@@ -1486,9 +1475,8 @@ public abstract class ModuleNodes {
     }
 
     @CoreMethod(names = "remove_const", required = 1, visibility = Visibility.PRIVATE)
-    public abstract static class RemoveConstNode extends CoreMethodNode {
-
-        @Child private ToStrNode toStrNode;
+    @NodeChildren({ @NodeChild("module"), @NodeChild("name") })
+    public abstract static class RemoveConstNode extends RubyNode {
 
         public RemoveConstNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -1498,33 +1486,13 @@ public abstract class ModuleNodes {
             super(prev);
         }
 
-        @Specialization
-        public Object removeConst(RubyModule module, RubyString name) {
-            notDesignedForCompilation();
-
-            return removeConstant(module, name.toString());
+        @CreateCast("name")
+        public RubyNode coerceToString(RubyNode name) {
+            return SymbolOrToStrNodeFactory.create(getContext(), getSourceSection(), name);
         }
 
         @Specialization
-        public Object removeConst(RubyModule module, RubySymbol name) {
-            notDesignedForCompilation();
-
-            return removeConstant(module, name.toString());
-        }
-
-        @Specialization(guards = "!isRubySymbol(arguments[1])")
-        public Object removeConst(VirtualFrame frame, RubyModule module, Object name) {
-            notDesignedForCompilation();
-
-            if (toStrNode == null) {
-                CompilerDirectives.transferToInterpreter();
-                toStrNode = insert(ToStrNodeFactory.create(getContext(), getSourceSection(), null));
-            }
-
-            return removeConstant(module, toStrNode.executeRubyString(frame, name).toString());
-        }
-
-        private Object removeConstant(RubyModule module, String name) {
+        Object removeConstant(RubyModule module, String name) {
             RubyConstant oldConstant = module.removeConstant(this, name);
             if (oldConstant == null) {
                 CompilerDirectives.transferToInterpreter();
