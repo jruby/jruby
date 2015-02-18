@@ -211,6 +211,7 @@ public class RubyModule extends RubyBasicObject implements ModuleChain {
             getConstants().put(name, new RubyConstant(this, value, false, autoload));
         } else {
             // TODO(CS): warn when redefining a constant
+            // TODO (nirvdrum 18-Feb-15): But don't warn when redefining an autoloaded constant.
             getConstants().put(name, new RubyConstant(this, value, previous.isPrivate(), autoload));
         }
 

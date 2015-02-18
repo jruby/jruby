@@ -207,8 +207,6 @@ public final class UnresolvedDispatchNode extends DispatchNode {
                     requireNode = insert(KernelNodesFactory.RequireNodeFactory.create(getContext(), getSourceSection(), new RubyNode[]{}));
                 }
 
-                module.removeConstant(this, (String) methodName);
-
                 requireNode.require((RubyString) constant.getValue());
 
                 return doRubyBasicObject(frame, first, receiverObject, methodName, blockObject, argumentsObjects);

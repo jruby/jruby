@@ -2,7 +2,6 @@ fails:Module#autoload loads the registered constant when it is opened as a class
 fails:Module#autoload loads the registered constant when it is opened as a module
 fails:Module#autoload does not load the file if the file is manually required
 fails:Module#autoload ignores the autoload request if the file is already loaded
-fails:Module#autoload does not remove the constant from the constant table if load fails
 fails:Module#autoload does not remove the constant from the constant table if the loaded files does not define it
 fails:Module#autoload loads the file when opening a module that is the autoloaded constant
 fails:Module#autoload looks up the constant when in a meta class scope
