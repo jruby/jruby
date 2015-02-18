@@ -12,12 +12,16 @@ package org.jruby.truffle.nodes.core;
 import com.oracle.truffle.api.CallTarget;
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.Truffle;
+import com.oracle.truffle.api.dsl.CreateCast;
+import com.oracle.truffle.api.dsl.NodeChild;
+import com.oracle.truffle.api.dsl.NodeChildren;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.Node.Child;
 import com.oracle.truffle.api.source.Source;
 import com.oracle.truffle.api.source.SourceSection;
 
+import com.oracle.truffle.api.utilities.ConditionProfile;
 import org.jcodings.Encoding;
 import org.jruby.runtime.Visibility;
 import org.jruby.truffle.nodes.RubyNode;
@@ -382,6 +386,59 @@ public abstract class ModuleNodes {
             AttrWriterNode.attrWriter(currentNode, context, sourceSection, module, name);
         }
 
+    }
+
+    @CoreMethod(names = "autoload", required = 2)
+    @NodeChildren({
+            @NodeChild(value = "module"),
+            @NodeChild(value = "name"),
+            @NodeChild(value = "filename")
+    })
+    public abstract static class AutoloadNode extends RubyNode {
+
+        @Child private StringNodes.EmptyNode emptyNode;
+        private final ConditionProfile invalidConstantName = ConditionProfile.createBinaryProfile();
+        private final ConditionProfile emptyFilename = ConditionProfile.createBinaryProfile();
+
+        public AutoloadNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+            emptyNode = StringNodesFactory.EmptyNodeFactory.create(context, sourceSection, new RubyNode[]{});
+        }
+
+        public AutoloadNode(AutoloadNode prev) {
+            super(prev);
+            emptyNode = prev.emptyNode;
+        }
+
+        @CreateCast("filename") public RubyNode coerceFilenameToString(RubyNode filename) {
+            return ToStrNodeFactory.create(getContext(), getSourceSection(), filename);
+        }
+
+        @Specialization
+        public RubyNilClass autoload(RubyModule module, RubySymbol name, RubyString filename) {
+            return autoload(module, name.toString(), filename);
+        }
+
+        @Specialization
+        public RubyNilClass autoload(RubyModule module, RubyString name, RubyString filename) {
+            return autoload(module, name.toString(), filename);
+        }
+
+        private RubyNilClass autoload(RubyModule module, String name, RubyString filename) {
+            if (invalidConstantName.profile(!IdUtil.isConstant(name))) {
+                CompilerDirectives.transferToInterpreter();
+                throw new RaiseException(getContext().getCoreLibrary().nameError(String.format("autoload must be constant name: %s", name), this));
+            }
+
+            if (emptyFilename.profile(emptyNode.empty(filename))) {
+                CompilerDirectives.transferToInterpreter();
+                throw new RaiseException(getContext().getCoreLibrary().argumentError("empty file name", this));
+            }
+
+            module.setAutoloadConstant(this, name.toString(), filename);
+
+            return getContext().getCoreLibrary().getNilObject();
+        }
     }
 
     @CoreMethod(names = {"class_eval","module_eval"}, optional = 3, needsBlock = true)

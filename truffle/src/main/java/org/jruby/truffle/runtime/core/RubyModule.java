@@ -124,7 +124,7 @@ public class RubyModule extends RubyBasicObject implements ModuleChain {
     }
 
     public void getAdoptedByLexicalParent(RubyModule lexicalParent, String name, RubyNode currentNode) {
-        lexicalParent.setConstantInternal(currentNode, name, this);
+        lexicalParent.setConstantInternal(currentNode, name, this, false);
         lexicalParent.addLexicalDependent(this);
 
         if (this.name == null) {
@@ -192,21 +192,26 @@ public class RubyModule extends RubyBasicObject implements ModuleChain {
         if (value instanceof RubyModule) {
             ((RubyModule) value).getAdoptedByLexicalParent(this, name, currentNode);
         } else {
-            setConstantInternal(currentNode, name, value);
+            setConstantInternal(currentNode, name, value, false);
         }
     }
 
-    private void setConstantInternal(RubyNode currentNode, String name, Object value) {
+    @TruffleBoundary
+    public void setAutoloadConstant(RubyNode currentNode, String name, RubyString filename) {
+        setConstantInternal(currentNode, name, filename, true);
+    }
+
+    private void setConstantInternal(RubyNode currentNode, String name, Object value, boolean autoload) {
         RubyNode.notDesignedForCompilation();
 
         checkFrozen(currentNode);
 
         RubyConstant previous = getConstants().get(name);
         if (previous == null) {
-            getConstants().put(name, new RubyConstant(this, value, false));
+            getConstants().put(name, new RubyConstant(this, value, false, autoload));
         } else {
             // TODO(CS): warn when redefining a constant
-            getConstants().put(name, new RubyConstant(this, value, previous.isPrivate()));
+            getConstants().put(name, new RubyConstant(this, value, previous.isPrivate(), autoload));
         }
 
         newLexicalVersion();

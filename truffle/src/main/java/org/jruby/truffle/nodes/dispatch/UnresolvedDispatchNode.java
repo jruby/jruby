@@ -12,6 +12,9 @@ package org.jruby.truffle.nodes.dispatch;
 import com.oracle.truffle.api.Assumption;
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.frame.VirtualFrame;
+import org.jruby.truffle.nodes.RubyNode;
+import org.jruby.truffle.nodes.core.KernelNodes;
+import org.jruby.truffle.nodes.core.KernelNodesFactory;
 import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyConstant;
 import org.jruby.truffle.runtime.RubyContext;
@@ -19,6 +22,7 @@ import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
 import org.jruby.truffle.runtime.core.RubyClass;
 import org.jruby.truffle.runtime.core.RubyModule;
+import org.jruby.truffle.runtime.core.RubyString;
 import org.jruby.truffle.runtime.core.RubySymbol;
 import org.jruby.truffle.runtime.methods.InternalMethod;
 import org.jruby.util.cli.Options;
@@ -31,6 +35,8 @@ public final class UnresolvedDispatchNode extends DispatchNode {
     private final boolean indirect;
     private final MissingBehavior missingBehavior;
 
+    @Child private KernelNodes.RequireNode requireNode;
+
     public UnresolvedDispatchNode(
             RubyContext context,
             boolean ignoreVisibility,
@@ -41,6 +47,7 @@ public final class UnresolvedDispatchNode extends DispatchNode {
         this.ignoreVisibility = ignoreVisibility;
         this.indirect = indirect;
         this.missingBehavior = missingBehavior;
+        requireNode = KernelNodesFactory.RequireNodeFactory.create(context, getSourceSection(), new RubyNode[]{});
     }
 
     @Override
@@ -193,6 +200,14 @@ public final class UnresolvedDispatchNode extends DispatchNode {
                 final DispatchNode newDispatch = createConstantMissingNode(methodName, callerClass, module);
                 return newDispatch.executeDispatch(frame, module,
                         methodName, blockObject, argumentsObjects);
+            }
+
+            if (constant.isAutoload()) {
+                module.removeConstant(this, (String) methodName);
+
+                requireNode.require((RubyString) constant.getValue());
+
+                return doRubyBasicObject(frame, first, receiverObject, methodName, blockObject, argumentsObjects);
             }
 
             // The module, the "receiver" is an instance of its singleton class.

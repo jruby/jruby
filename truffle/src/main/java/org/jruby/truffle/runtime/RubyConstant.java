@@ -18,11 +18,13 @@ public class RubyConstant {
     private final RubyModule declaringModule;
     private final Object value;
     private boolean isPrivate;
+    private boolean autoload;
 
-    public RubyConstant(RubyModule declaringModule, Object value, boolean isPrivate) {
+    public RubyConstant(RubyModule declaringModule, Object value, boolean isPrivate, boolean autoload) {
         this.declaringModule = declaringModule;
         this.value = value;
         this.isPrivate = isPrivate;
+        this.autoload = autoload;
     }
 
     public Object getValue() {
@@ -70,6 +72,10 @@ public class RubyConstant {
         }
 
         return false;
+    }
+
+    public boolean isAutoload() {
+        return autoload;
     }
 
 }
