@@ -31,6 +31,7 @@ import java.io.BufferedReader;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.io.PrintStream;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
@@ -101,11 +102,16 @@ public abstract class IONodes {
             final int length = byteList.getRealSize();
             final byte[] bytes = byteList.getUnsafeBytes();
 
+            // TODO (nirvdrum 17-Feb-15) This shouldn't always just write to STDOUT, but that's the only use case we're supporting currently.
+            final PrintStream stream = getContext().getRuntime().getInstanceConfig().getOutput();
+
             getContext().getThreadManager().runUntilResult(new ThreadManager.BlockingActionWithoutGlobalLock<Boolean>() {
                 @Override
                 public Boolean block() throws InterruptedException {
-                    write(bytes, offset, length);
-
+                    if (Thread.interrupted()) {
+                        throw new InterruptedException();
+                    }
+                    write(stream, bytes, offset, length);
                     return SUCCESS;
                 }
             });
@@ -114,13 +120,8 @@ public abstract class IONodes {
         }
 
         @CompilerDirectives.TruffleBoundary
-        private void write(byte[] bytes, int offset, int length) throws InterruptedException {
-            if (Thread.interrupted()) {
-                throw new InterruptedException();
-            }
-
-            // TODO (nirvdrum 17-Feb-15) This shouldn't always just write to STDOUT, but that's the only use case we're supporting currently.
-            getContext().getRuntime().getInstanceConfig().getOutput().write(bytes, offset, length);
+        private void write(PrintStream stream, byte[] bytes, int offset, int length) throws InterruptedException {
+            stream.write(bytes, offset, length);
         }
 
     }
