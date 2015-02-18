@@ -425,7 +425,7 @@ public abstract class ModuleNodes {
         }
 
         private RubyNilClass autoload(RubyModule module, String name, RubyString filename) {
-            if (invalidConstantName.profile(!IdUtil.isConstant(name))) {
+            if (invalidConstantName.profile(!IdUtil.isValidConstantName19(name))) {
                 CompilerDirectives.transferToInterpreter();
                 throw new RaiseException(getContext().getCoreLibrary().nameError(String.format("autoload must be constant name: %s", name), this));
             }
@@ -782,6 +782,8 @@ public abstract class ModuleNodes {
     @CoreMethod(names = "const_set", required = 2)
     public abstract static class ConstSetNode extends CoreMethodNode {
 
+        @Child private ToStrNode toStrNode;
+
         public ConstSetNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
         }
@@ -791,25 +793,31 @@ public abstract class ModuleNodes {
         }
 
         @Specialization
-        public RubyModule setConstant(RubyModule module, RubyString name, Object object) {
+        public Object setConstant(RubyModule module, RubySymbol name, Object value) {
             notDesignedForCompilation();
-            setConstant(module, name.toString(), object);
-            return module;
+
+            return setConstant(module, name.toString(), value);
         }
 
-        @Specialization
-        public RubyModule setConstant(RubyModule module, RubySymbol name, Object object) {
-            notDesignedForCompilation();
-            setConstant(module, name.toString(), object);
-            return module;
+        @Specialization(guards = "!isRubySymbol(arguments[1])")
+        public Object setConstant(VirtualFrame frame, RubyModule module, Object name, Object value) {
+            if (toStrNode == null) {
+                CompilerDirectives.transferToInterpreter();
+                toStrNode = insert(ToStrNodeFactory.create(getContext(), getSourceSection(), null));
+            }
+
+            return setConstant(module, toStrNode.executeRubyString(frame, name).toString(), value);
         }
 
-        public void setConstant(RubyModule module, String name, Object object) {
-            if (!IdUtil.isConstant(name)) {
+        public Object setConstant(RubyModule module, String name, Object value) {
+            notDesignedForCompilation();
+
+            if (!IdUtil.isValidConstantName19(name)) {
                 throw new RaiseException(getContext().getCoreLibrary().nameError(String.format("wrong constant name %s", name), this));
             }
 
-            module.setConstant(this, name, object);
+            module.setConstant(this, name, value);
+            return value;
         }
 
     }
