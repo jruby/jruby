@@ -47,7 +47,6 @@ public final class UnresolvedDispatchNode extends DispatchNode {
         this.ignoreVisibility = ignoreVisibility;
         this.indirect = indirect;
         this.missingBehavior = missingBehavior;
-        requireNode = KernelNodesFactory.RequireNodeFactory.create(context, getSourceSection(), new RubyNode[]{});
     }
 
     @Override
@@ -203,6 +202,11 @@ public final class UnresolvedDispatchNode extends DispatchNode {
             }
 
             if (constant.isAutoload()) {
+                if (requireNode == null) {
+                    CompilerDirectives.transferToInterpreter();
+                    requireNode = insert(KernelNodesFactory.RequireNodeFactory.create(getContext(), getSourceSection(), new RubyNode[]{}));
+                }
+
                 module.removeConstant(this, (String) methodName);
 
                 requireNode.require((RubyString) constant.getValue());
