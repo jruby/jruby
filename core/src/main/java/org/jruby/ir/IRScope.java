@@ -142,7 +142,7 @@ public abstract class IRScope implements ParseResult {
 
     // What state is this scope in?
     enum ScopeState {
-        INIT, INSTRS_CLONED, CFG_BUILT
+        INIT, INTERPED, INSTRS_CLONED, CFG_BUILT
     };
 
     private ScopeState state = ScopeState.INIT;
@@ -455,6 +455,13 @@ public abstract class IRScope implements ParseResult {
             return getCFG();
         }
 
+        // If the scope has already been interpreted once,
+        // the scope can be on the call stack right now.
+        // So, clone instructions before building the CFG.
+        if (this.state == ScopeState.INTERPED) {
+            this.cloneInstrs();
+        }
+
         CFG newCFG = new CFG(this);
         newCFG.build(getInstrs());
         // Clear out instruction list after CFG has been built.
@@ -637,7 +644,7 @@ public abstract class IRScope implements ParseResult {
     }
 
     protected void cloneInstrs() {
-        if (this.state == ScopeState.INIT) {
+        if (getCFG() == null) {
             // Clone instrs before modifying them
             SimpleCloneInfo cloneInfo = new SimpleCloneInfo(this, false);
             List<Instr> newInstrList = new ArrayList<Instr>(this.instrList.size());
@@ -647,20 +654,22 @@ public abstract class IRScope implements ParseResult {
             this.instrList = newInstrList;
             this.state = ScopeState.INSTRS_CLONED;
         }
+        for (IRClosure cl: getClosures()) {
+            cl.cloneInstrs();
+        }
     }
 
     /** Run any necessary passes to get the IR ready for interpretation */
     public synchronized InterpreterContext prepareForInterpretation(boolean rebuild) {
-        if (interpreterContext != null) {
+        if (interpreterContext == null) {
+            this.state = ScopeState.INTERPED;
+        } else {
             if (!rebuild || getCFG() != null) {
                 return interpreterContext; // Already prepared/rebuilt
             }
 
             // If rebuilding, clone instrs before building cfg, running passes, etc.
             this.cloneInstrs();
-            for (IRClosure cl: getClosures()) {
-                cl.cloneInstrs();
-            }
 
             // Build CFG, run passes, etc.
             initScope(false);
