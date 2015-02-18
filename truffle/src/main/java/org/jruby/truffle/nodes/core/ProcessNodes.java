@@ -44,23 +44,23 @@ public abstract class ProcessNodes {
             nanosecondSymbol = prev.nanosecondSymbol;
         }
 
-        @Specialization(guards = "isMonotonic(arguments[0])")
+        @Specialization(guards = "isMonotonic(clock_id)")
         Object clock_gettime_monotonic(int clock_id, UndefinedPlaceholder unit) {
             return clock_gettime_monotonic(CLOCK_MONOTONIC, floatSecondSymbol);
         }
 
-        @Specialization(guards = "isRealtime(arguments[0])")
+        @Specialization(guards = "isRealtime(clock_id)")
         Object clock_gettime_realtime(int clock_id, UndefinedPlaceholder unit) {
             return clock_gettime_realtime(CLOCK_REALTIME, floatSecondSymbol);
         }
 
-        @Specialization(guards = "isMonotonic(arguments[0])")
+        @Specialization(guards = "isMonotonic(clock_id)")
         Object clock_gettime_monotonic(int clock_id, RubySymbol unit) {
             long time = System.nanoTime();
             return timeToUnit(time, unit);
         }
 
-        @Specialization(guards = "isRealtime(arguments[0])")
+        @Specialization(guards = "isRealtime(clock_id)")
         Object clock_gettime_realtime(int clock_id, RubySymbol unit) {
             long time = System.currentTimeMillis() * 1000000;
             return timeToUnit(time, unit);
