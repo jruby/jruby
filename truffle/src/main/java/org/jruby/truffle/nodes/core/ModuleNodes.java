@@ -812,7 +812,8 @@ public abstract class ModuleNodes {
     }
 
     @CoreMethod(names = "define_method", needsBlock = true, required = 1, optional = 1)
-    public abstract static class DefineMethodNode extends CoreMethodNode {
+    @NodeChildren({ @NodeChild("module"), @NodeChild("name"), @NodeChild("proc"), @NodeChild("block") })
+    public abstract static class DefineMethodNode extends RubyNode {
 
         public DefineMethodNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -822,52 +823,40 @@ public abstract class ModuleNodes {
             super(prev);
         }
 
+        @CreateCast("name")
+        public RubyNode coerceToString(RubyNode name) {
+            return SymbolOrToStrNodeFactory.create(getContext(), getSourceSection(), name);
+        }
+
         @Specialization
-        public RubySymbol defineMethod(RubyModule module, RubyString name, @SuppressWarnings("unused") UndefinedPlaceholder proc, RubyProc block) {
+        public RubySymbol defineMethod(RubyModule module, String name, UndefinedPlaceholder proc, RubyProc block) {
             notDesignedForCompilation();
 
             return defineMethod(module, name, block, UndefinedPlaceholder.INSTANCE);
         }
 
         @Specialization
-        public RubySymbol defineMethod(RubyModule module, RubyString name, RubyProc proc, @SuppressWarnings("unused") UndefinedPlaceholder block) {
-            notDesignedForCompilation();
-
-            final RubySymbol symbol = getContext().getSymbolTable().getSymbol(name.getBytes());
-            defineMethod(module, symbol, proc);
-            return symbol;
+        public RubySymbol defineMethod(RubyModule module, String name, RubyProc proc, UndefinedPlaceholder block) {
+            return defineMethod(module, name, proc);
         }
 
         @Specialization
-        public RubySymbol defineMethod(RubyModule module, RubySymbol name, @SuppressWarnings("unused") UndefinedPlaceholder proc, RubyProc block) {
+        public RubySymbol defineMethod(RubyModule module, String name, RubyMethod method, UndefinedPlaceholder block) {
             notDesignedForCompilation();
 
-            return defineMethod(module, name, block, UndefinedPlaceholder.INSTANCE);
+            module.addMethod(this, method.getMethod().withNewName(name));
+
+            return getContext().getSymbolTable().getSymbol(name);
         }
 
-        @Specialization
-        public RubySymbol defineMethod(RubyModule module, RubySymbol name, RubyProc proc, @SuppressWarnings("unused") UndefinedPlaceholder block) {
-            notDesignedForCompilation();
-
-            defineMethod(module, name, proc);
-            return name;
-        }
-
-        @Specialization
-        public RubySymbol defineMethod(RubyModule module, RubySymbol name, RubyMethod method, UndefinedPlaceholder block) {
-            notDesignedForCompilation();
-
-            module.addMethod(this, method.getMethod().withNewName(name.toString()));
-
-            return name;
-        }
-
-        private void defineMethod(RubyModule module, RubySymbol name, RubyProc proc) {
+        private RubySymbol defineMethod(RubyModule module, String name, RubyProc proc) {
             notDesignedForCompilation();
 
             final CallTarget modifiedCallTarget = proc.getCallTargetForMethods();
-            final InternalMethod modifiedMethod = new InternalMethod(proc.getSharedMethodInfo(), name.toString(), module, Visibility.PUBLIC, false, modifiedCallTarget, proc.getDeclarationFrame());
+            final InternalMethod modifiedMethod = new InternalMethod(proc.getSharedMethodInfo(), name, module, Visibility.PUBLIC, false, modifiedCallTarget, proc.getDeclarationFrame());
             module.addMethod(this, modifiedMethod);
+
+            return getContext().getSymbolTable().getSymbol(name);
         }
 
     }
