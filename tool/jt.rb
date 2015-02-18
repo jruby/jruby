@@ -20,18 +20,20 @@ module Utilities
 
   GRAAL_LOCATIONS = [
     ENV['GRAAL_BIN'],
-    '../graalvm-jdk1.8.0/bin/java',         # This also seems like a sensible place to keep it
-    '../../graal/graalvm-jdk1.8.0/bin/java' # This is where I (CS) keep it
+    'graalvm-jdk1.8.0/bin/java',
+    '../graalvm-jdk1.8.0/bin/java',
+    '../../graal/graalvm-jdk1.8.0/bin/java'
   ].compact.map { |path| File.expand_path(path, JRUBY_DIR) }
 
   BENCH_LOCATIONS = [
     ENV['BENCH_DIR'],
+    'bench9000',
     '../bench9000'
   ].compact.map { |path| File.expand_path(path, JRUBY_DIR) }
 
   def self.find_graal
     not_found = -> {
-      raise "couldn't find graal - download it from http://lafo.ssw.uni-linz.ac.at/graalvm/ and extract it into the parent directory"
+      raise "couldn't find graal - download it from http://lafo.ssw.uni-linz.ac.at/graalvm/ and extract it into the JRuby repository or parent directory"
     }
     GRAAL_LOCATIONS.find(not_found) do |location|
       File.executable?(location)
@@ -40,7 +42,7 @@ module Utilities
 
   def self.find_bench
     not_found = -> {
-      raise "couldn't find bench9000 - clone it from https://github.com/jruby/bench9000.git into the parent directory"
+      raise "couldn't find bench9000 - clone it from https://github.com/jruby/bench9000.git into the JRuby repository or parent directory"
     }
     BENCH_LOCATIONS.find(not_found) do |location|
       Dir.exist?(location)
