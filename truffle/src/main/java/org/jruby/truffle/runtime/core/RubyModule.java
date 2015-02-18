@@ -31,6 +31,7 @@ import org.jruby.truffle.runtime.methods.InternalMethod;
 import org.jruby.truffle.runtime.subsystems.ObjectSpaceManager;
 
 import java.util.*;
+import java.util.Map.Entry;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -134,8 +135,26 @@ public class RubyModule extends RubyBasicObject implements ModuleChain {
 
             if (lexicalParent == objectClass) {
                 this.name = name;
+                updateAnonymousChildrenModules();
             } else if (lexicalParent.hasName()) {
                 this.name = lexicalParent.getName() + "::" + name;
+                updateAnonymousChildrenModules();
+            }
+            // else: Our lexicalParent is also an anonymous module
+            // and will name us when it gets named via updateAnonymousChildrenModules()
+        }
+    }
+
+    private void updateAnonymousChildrenModules() {
+        RubyNode.notDesignedForCompilation();
+
+        for (Entry<String, RubyConstant> entry : constants.entrySet()) {
+            RubyConstant constant = entry.getValue();
+            if (constant.getValue() instanceof RubyModule) {
+                RubyModule module = (RubyModule) constant.getValue();
+                if (!module.hasName()) {
+                    module.getAdoptedByLexicalParent(this, entry.getKey(), null);
+                }
             }
         }
     }

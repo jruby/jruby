@@ -1,4 +1,2 @@
-fails:Module#name is nil when assigned to a constant in an anonymous module
 fails:Module#name is set with a conditional assignment to a nested constant
 fails:Module#name preserves the encoding in which the class was defined
-fails:Module#name is set when the anonymous outer module name is set
