@@ -216,6 +216,7 @@ public abstract class StringNodes {
             return ToStrNodeFactory.create(getContext(), getSourceSection(), other);
         }
 
+        @TruffleBoundary
         @Specialization
         public RubyString concat(RubyString string, RubyString other) {
             // TODO (nirvdrum 06-Feb-15) This shouldn't be designed for compilation because we don't support all the String semantics yet, but a bench9000 benchmark has it on a hot path, so commenting out for now.
