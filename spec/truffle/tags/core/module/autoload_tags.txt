@@ -10,3 +10,11 @@ fails:Module#autoload calls #to_path on non-string filenames
 fails:Module#autoload calls #to_path on non-String filename arguments
 fails:Module#autoload (concurrently) blocks a second thread while a first is doing the autoload
 fails:Module#autoload (concurrently) blocks others threads while doing an autoload
+fails:Module#autoload loads the registered constant into a dynamically created class
+fails:Module#autoload loads the registered constant into a dynamically created module
+fails:Module#autoload loads the registered constant when it is inherited from
+fails:Module#autoload loads the registered constant when it is included
+fails:Module#autoload runs for an exception condition class and doesn't trample the exception
+fails:Module#autoload loads the file that defines subclass XX::YY < YY and YY is a top level constant
+fails:Module#autoload shares the autoload request across dup'ed copies of modules
+fails:Module#autoload when changing $LOAD_PATH does not reload a file due to a different load path
