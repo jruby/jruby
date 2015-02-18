@@ -641,9 +641,7 @@ public abstract class IRScope implements ParseResult {
             depends(linearization());
         } catch (RuntimeException e) {
             LOG.error("Error linearizing cfg: ", e);
-            CFG c = cfg();
-            LOG.error("\nGraph:\n" + c.toStringGraph());
-            LOG.error("\nInstructions:\n" + c.toStringInstrs());
+            LOG.error(this.debugOutput());
             throw e;
         }
     }
@@ -762,6 +760,16 @@ public abstract class IRScope implements ParseResult {
     @Override
     public String toString() {
         return getScopeType() + " " + getName() + "[" + getFileName() + ":" + getLineNumber() + "]";
+    }
+
+    public String debugOutput() {
+        if (this.cfg == null) {
+            return "Instructions:\n" + this.toStringInstrs();
+        } else {
+            return
+                "\nCFG:\n" + this.cfg.toStringGraph() +
+                "\nInstructions:\n" + this.cfg.toStringInstrs();
+        }
     }
 
     public String toStringInstrs() {

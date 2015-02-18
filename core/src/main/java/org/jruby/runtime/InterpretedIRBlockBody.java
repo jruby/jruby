@@ -29,9 +29,7 @@ public class InterpretedIRBlockBody extends IRBlockBody {
     public InterpreterContext ensureInstrsReady() {
         if (IRRuntimeHelpers.isDebug() && !displayedCFG) {
             LOG.info("Executing '" + closure + "' (pushScope=" + pushScope + ", reuseParentScope=" + reuseParentScope);
-            CFG cfg = closure.getCFG();
-            LOG.info("Graph:\n" + cfg.toStringGraph());
-            LOG.info("CFG:\n" + cfg.toStringInstrs());
+            LOG.info(closure.debugOutput());
             displayedCFG = true;
         }
         // Always prepared in the context of parent scope -- so a null value here is a bug.
