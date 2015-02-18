@@ -161,7 +161,16 @@ public class InterpreterContext {
         buf.append(fileName).append(':').append(lineNumber);
         if (name != null) buf.append(' ').append(name);
 
-        buf.append("\nCFG:\n").append(cfg.toStringInstrs());
+        if (cfg != null) {
+            buf.append("\nCFG:\n").append(cfg.toStringInstrs());
+        } else {
+            int i = 0;
+            for (Instr instr : instructions) {
+                if (i > 0) buf.append("\n");
+                buf.append("  ").append(i).append('\t').append(instr);
+                i++;
+            }
+        }
 
         return buf.toString();
     }

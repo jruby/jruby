@@ -23,12 +23,3 @@ fails:String#chomp! when passed '' removes more than one trailing newlines
 fails:String#chomp! when passed '' removes more than one trailing carriage return, newline pairs
 fails:String#chomp! when passed '' returns nil when self is empty
 fails:String#chomp! when passed '\n' removes one trailing carriage return
-fails:String#chomp! when passed '\n' removes one trailing carrige return, newline pair
-fails:String#chomp! when passed '\n' returns nil when self is empty
-fails:String#chomp! when passed a String returns nil if the argument does not match the trailing characters
-fails:String#chomp! when passed a String returns nil when self is empty
-fails:String#chomp! when passed a String does not taint the result when the argument is tainted
-fails:String#chomp removes the final carriage return, newline from a non-ASCII String
-fails:String#chomp! returns nil when the String is not modified
-fails:String#chomp! removes the final carriage return, newline from a non-ASCII String
-fails:String#chomp! removes the final carriage return, newline from a multibyte String

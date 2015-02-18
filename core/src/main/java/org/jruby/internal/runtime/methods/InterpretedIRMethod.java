@@ -230,9 +230,7 @@ public class InterpretedIRMethod extends DynamicMethod implements IRMethodArgs, 
         ensureInstrsReady();
         LOG.info("Executing '" + method.getName() + "'");
         if (!displayedCFG) {
-            CFG cfg = method.getCFG();
-            LOG.info("Graph:\n" + cfg.toStringGraph());
-            LOG.info("CFG:\n" + cfg.toStringInstrs());
+            LOG.info(method.debugOutput());
             displayedCFG = true;
         }
     }

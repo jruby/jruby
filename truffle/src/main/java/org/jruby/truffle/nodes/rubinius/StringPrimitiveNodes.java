@@ -20,6 +20,7 @@ import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.core.StringNodes;
 import org.jruby.truffle.nodes.core.StringNodesFactory;
 import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.runtime.UndefinedPlaceholder;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.*;
 import org.jruby.util.ByteList;
@@ -74,6 +75,56 @@ public abstract class StringPrimitiveNodes {
             }
 
             return true;
+        }
+
+    }
+
+    @RubiniusPrimitive(name = "string_equal", needsSelf = true)
+    public static abstract class StringEqualPrimitiveNode extends RubiniusPrimitiveNode {
+
+        private final ConditionProfile incompatibleEncodingProfile = ConditionProfile.createBinaryProfile();
+
+        public StringEqualPrimitiveNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public StringEqualPrimitiveNode(StringEqualPrimitiveNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public boolean stringEqual(RubyString string, RubyString other) {
+            final ByteList a = string.getBytes();
+            final ByteList b = other.getBytes();
+
+            if (incompatibleEncodingProfile.profile((a.getEncoding().equals(b.getEncoding()) == false) &&
+                    (org.jruby.RubyEncoding.areCompatible(string, other) == null))) {
+                return false;
+            }
+
+            return a.equal(b);
+        }
+
+    }
+
+    @RubiniusPrimitive(name = "string_find_character")
+    public static abstract class StringFindCharacterPrimitiveNode extends RubiniusPrimitiveNode {
+
+        @Child private StringNodes.GetIndexNode getIndexNode;
+
+        public StringFindCharacterPrimitiveNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+            getIndexNode = StringNodesFactory.GetIndexNodeFactory.create(context, sourceSection, new RubyNode[]{});
+        }
+
+        public StringFindCharacterPrimitiveNode(StringFindCharacterPrimitiveNode prev) {
+            super(prev);
+            getIndexNode = prev.getIndexNode;
+        }
+
+        @Specialization
+        public Object stringFindCharacter(RubyString string, int index) {
+            return getIndexNode.getIndex(string, index, UndefinedPlaceholder.INSTANCE);
         }
 
     }

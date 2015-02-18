@@ -537,9 +537,9 @@ public class BodyTranslator extends Translator {
         final RubyNode constructException = new RubyCallNode(context, sourceSection, "new",
                 new ObjectLiteralNode(context, sourceSection, context.getCoreLibrary().getRuntimeErrorClass()),
                 null, false,
-                new StringLiteralNode(context, sourceSection, ByteList.create("can't modify frozen TODO")));
+                new StringLiteralNode(context, sourceSection, ByteList.create("FrozenError: can't modify frozen TODO")));
 
-        final RubyNode raise = new RubyCallNode(context, sourceSection, "raise", new SelfNode(context, sourceSection), null, false, constructException);
+        final RubyNode raise = new RubyCallNode(context, sourceSection, "raise", new SelfNode(context, sourceSection), null, false, true, false, constructException);
 
         return new IfNode(context, sourceSection,
                 frozen,
@@ -912,7 +912,7 @@ public class BodyTranslator extends Translator {
             throw new UnsupportedOperationException();
         }
 
-        return new WriteConstantNode(context, sourceSection, node.getName(), environment.getLexicalScope(), moduleNode, node.getValueNode().accept(this));
+        return new WriteConstantNode(context, sourceSection, node.getName(), moduleNode, node.getValueNode().accept(this));
     }
 
     @Override
@@ -1542,6 +1542,20 @@ public class BodyTranslator extends Translator {
             }
         }
 
+        if (sourceSection.getSource().getPath().equals("core:/core/rubinius/common/regexp.rb")) {
+            if (nameWithoutSigil.equals("@source")) {
+                return MatchDataNodesFactory.RubiniusSourceNodeFactory.create(
+                        context, sourceSection,
+                        new SelfNode(context, sourceSection));
+            } else if (nameWithoutSigil.equals("@full")) {
+                return new RubyCallNode(context, sourceSection,
+                        "full",
+                        new SelfNode(context, sourceSection),
+                        null,
+                        false);
+            }
+        }
+
         if (sourceSection.getSource().getPath().equals("core:/core/rubinius/common/string.rb")) {
             if (nameWithoutSigil.equals("@num_bytes")) {
                 return new RubyCallNode(context, sourceSection,
@@ -1550,11 +1564,12 @@ public class BodyTranslator extends Translator {
                         null,
                         false);
             } else if (nameWithoutSigil.equals("@data")) {
-                return new RubyCallNode(context, sourceSection,
-                        "bytes",
-                        new SelfNode(context, sourceSection),
-                        null,
-                        false);
+                final RubyNode bytes = new RubyCallNode(context, sourceSection, "bytes",
+                        new SelfNode(context, sourceSection), null, false);
+
+                return new RubyCallNode(context, sourceSection, "new",
+                        new ObjectLiteralNode(context, sourceSection, context.getCoreLibrary().getStringDataClass()),
+                        null, false, bytes);
             }
         }
 

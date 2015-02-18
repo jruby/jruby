@@ -76,16 +76,17 @@ public class RubyRegexp extends RubyBasicObject {
     }
 
     @CompilerDirectives.TruffleBoundary
-    public Object matchCommon(ByteList bytes, boolean operator, boolean setNamedCaptures) {
-        final byte[] stringBytes = bytes.bytes();
+    public Object matchCommon(RubyString source, boolean operator, boolean setNamedCaptures) {
+        final byte[] stringBytes = source.getByteList().bytes();
         final Matcher matcher = regex.matcher(stringBytes);
         int range = stringBytes.length;
 
-        return matchCommon(bytes, operator, setNamedCaptures, matcher, 0, range);
+        return matchCommon(source, operator, setNamedCaptures, matcher, 0, range);
     }
 
     @CompilerDirectives.TruffleBoundary
-    public Object matchCommon(ByteList bytes, boolean operator, boolean setNamedCaptures, Matcher matcher, int startPos, int range) {
+    public Object matchCommon(RubyString source, boolean operator, boolean setNamedCaptures, Matcher matcher, int startPos, int range) {
+        final ByteList bytes = source.getByteList();
         final RubyContext context = getContext();
 
         final Frame frame = Truffle.getRuntime().getCallerFrame().getFrame(FrameInstance.FrameAccess.READ_WRITE, false);
@@ -139,7 +140,7 @@ public class RubyRegexp extends RubyBasicObject {
         final RubyString post = new RubyString(context.getCoreLibrary().getStringClass(), bytes.makeShared(region.end[0], bytes.length() - region.end[0]).dup());
         final RubyString global = new RubyString(context.getCoreLibrary().getStringClass(), bytes.makeShared(region.beg[0], region.end[0] - region.beg[0]).dup());
 
-        final RubyMatchData matchObject = new RubyMatchData(context.getCoreLibrary().getMatchDataClass(), regex, region, values, pre, post, global);
+        final RubyMatchData matchObject = new RubyMatchData(context.getCoreLibrary().getMatchDataClass(), source, regex, region, values, pre, post, global);
 
         if (operator) {
             if (values.length > 0) {
@@ -228,7 +229,7 @@ public class RubyRegexp extends RubyBasicObject {
         final StringBuilder builder = new StringBuilder();
 
         while (true) {
-            Object matchData = matchCommon(string.getBytes(), false, false, matcher, p + end, range);
+            Object matchData = matchCommon(string, false, false, matcher, p + end, range);
 
             if (matchData == context.getCoreLibrary().getNilObject()) {
                 builder.append(StandardCharsets.UTF_8.decode(ByteBuffer.wrap(stringBytes, lastMatchEnd, range - lastMatchEnd)));
@@ -354,7 +355,7 @@ public class RubyRegexp extends RubyBasicObject {
             final ArrayList<RubyString> strings = new ArrayList<>();
 
             while (true) {
-                Object matchData = matchCommon(string.getBytes(), false, true, matcher, p + end, range);
+                Object matchData = matchCommon(string, false, true, matcher, p + end, range);
 
                 if (matchData == context.getCoreLibrary().getNilObject()) {
                     break;
@@ -377,7 +378,7 @@ public class RubyRegexp extends RubyBasicObject {
             final List<RubyArray> allMatches = new ArrayList<>();
 
             while (true) {
-                Object matchData = matchCommon(string.getBytes(), false, true, matcher, p + end, stringBytes.length);
+                Object matchData = matchCommon(string, false, true, matcher, p + end, stringBytes.length);
 
                 if (matchData == context.getCoreLibrary().getNilObject()) {
                     break;

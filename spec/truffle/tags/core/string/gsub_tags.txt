@@ -1,70 +1,27 @@
-fails:String#gsub with pattern and replacement replaces \1 sequences with the regexp's corresponding capture
-fails:String#gsub with pattern and replacement treats \1 sequences without corresponding captures as empty strings
-fails:String#gsub with pattern and replacement replaces \& and \0 with the complete match
-fails:String#gsub with pattern and replacement replaces \` with everything before the current match
-fails:String#gsub with pattern and replacement replaces \' with everything after the current match
-fails:String#gsub with pattern and replacement replaces \+ with the last paren that actually matched
 fails:String#gsub with pattern and replacement treats \+ as an empty string if there was no captures
-fails:String#gsub with pattern and replacement maps \\ in replacement to \
 fails:String#gsub with pattern and replacement replaces \k named backreferences with the regexp's corresponding capture
 fails:String#gsub with pattern and replacement taints the result if the original string or replacement is tainted
 fails:String#gsub with pattern and replacement untrusts the result if the original string or replacement is untrusted
-fails:String#gsub with pattern and replacement tries to convert pattern to a string using to_str
-fails:String#gsub with pattern and replacement tries to convert replacement to a string using to_str
-fails:String#gsub with pattern and replacement sets $~ to MatchData of last match and nil when there's none
-fails:String#gsub with pattern and Hash returns a copy of self with all occurrences of pattern replaced with the value of the corresponding hash key
-fails:String#gsub with pattern and Hash ignores keys that don't correspond to matches
-fails:String#gsub with pattern and Hash returns an empty string if the pattern matches but the hash specifies no replacements
-fails:String#gsub with pattern and Hash ignores non-String keys
-fails:String#gsub with pattern and Hash uses a key's value as many times as needed
 fails:String#gsub with pattern and Hash uses the hash's default value for missing keys
 fails:String#gsub with pattern and Hash coerces the hash values with #to_s
 fails:String#gsub with pattern and Hash uses the hash's value set from default_proc for missing keys
-fails:String#gsub with pattern and Hash sets $~ to MatchData of last match and nil when there's none for access from outside
-fails:String#gsub with pattern and Hash doesn't interpolate special sequences like \1 for the block's return value
 fails:String#gsub with pattern and Hash untrusts the result if the original string is untrusted
-fails:String#gsub with pattern and Hash untrusts the result if a hash value is untrusted
 fails:String#gsub with pattern and Hash taints the result if the original string is tainted
-fails:String#gsub with pattern and Hash taints the result if a hash value is tainted
-fails:String#gsub! with pattern and Hash returns self with all occurrences of pattern replaced with the value of the corresponding hash key
-fails:String#gsub! with pattern and Hash ignores keys that don't correspond to matches
-fails:String#gsub! with pattern and Hash replaces self with an empty string if the pattern matches but the hash specifies no replacements
-fails:String#gsub! with pattern and Hash ignores non-String keys
-fails:String#gsub! with pattern and Hash uses a key's value as many times as needed
 fails:String#gsub! with pattern and Hash uses the hash's default value for missing keys
 fails:String#gsub! with pattern and Hash coerces the hash values with #to_s
 fails:String#gsub! with pattern and Hash uses the hash's value set from default_proc for missing keys
-fails:String#gsub! with pattern and Hash sets $~ to MatchData of last match and nil when there's none for access from outside
-fails:String#gsub! with pattern and Hash doesn't interpolate special sequences like \1 for the block's return value
-fails:String#gsub! with pattern and Hash keeps untrusted state
 fails:String#gsub! with pattern and Hash untrusts self if a hash value is untrusted
-fails:String#gsub! with pattern and Hash keeps tainted state
 fails:String#gsub! with pattern and Hash taints self if a hash value is tainted
 fails:String#gsub with pattern and block sets $~ for access from the block
 fails:String#gsub with pattern and block restores $~ after leaving the block
-fails:String#gsub with pattern and block sets $~ to MatchData of last match and nil when there's none for access from outside
 passes:String#gsub with pattern and block converts the block's return value to a string using to_s
 fails:String#gsub with pattern and block untrusts the result if the original string or replacement is untrusted
-fails:String#gsub with pattern and block uses the compatible encoding if they are compatible
-fails:String#gsub with pattern and block raises an Encoding::CompatibilityError if the encodings are not compatible
-fails:String#gsub with pattern and block replaces the incompatible part properly even if the encodings are not compatible
-fails:String#gsub with pattern and block raises an ArgumentError if encoding is not valid
-fails:String#gsub! with pattern and replacement modifies self in place and returns self
 fails:String#gsub! with pattern and replacement taints self if replacement is tainted
 fails:String#gsub! with pattern and replacement untrusts self if replacement is untrusted
-fails:String#gsub! with pattern and replacement returns nil if no modifications were made
-fails:String#gsub! with pattern and replacement raises a RuntimeError when self is frozen
-fails:String#gsub! with pattern and block modifies self in place and returns self
 fails:String#gsub! with pattern and block taints self if block's result is tainted
 fails:String#gsub! with pattern and block untrusts self if block's result is untrusted
-fails:String#gsub! with pattern and block returns nil if no modifications were made
-fails:String#gsub! with pattern and block raises a RuntimeError when self is frozen
 fails:String#gsub! with pattern and block uses the compatible encoding if they are compatible
-fails:String#gsub! with pattern and block raises an Encoding::CompatibilityError if the encodings are not compatible
 fails:String#gsub! with pattern and block replaces the incompatible part properly even if the encodings are not compatible
-fails:String#gsub! with pattern and block raises an ArgumentError if encoding is not valid
 fails:String#gsub with pattern and replacement respects $KCODE when the pattern collapses
 fails:String#gsub with pattern and replacement handles pattern collapse without $KCODE
-fails:String#gsub with pattern and block returns a copy of self with all occurrences of pattern replaced with the block's return value
-fails:String#gsub with pattern and block doesn't interpolate special sequences like \1 for the block's return value
-fails:String#gsub with pattern and block converts the block's return value to a string using to_s
+fails:String#gsub with pattern and replacement returns subclass instances when called on a subclass

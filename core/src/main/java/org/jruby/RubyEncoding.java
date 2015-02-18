@@ -175,20 +175,15 @@ public class RubyEncoding extends RubyObject implements Constantizable {
 
         if (obj2.getByteList().getRealSize() == 0) return enc1;
         if (obj1.getByteList().getRealSize() == 0) {
-            return enc1.isAsciiCompatible() && obj2 instanceof RubyString &&
-                    ((RubyString) obj2).isAsciiOnly() ? enc1 : enc2;
+            return enc1.isAsciiCompatible() && StringSupport.isAsciiOnly(obj2) ? enc1 : enc2;
         }
 
         if (!enc1.isAsciiCompatible() || !enc2.isAsciiCompatible()) return null;
 
         int cr1 = obj1.scanForCodeRange();
-        if (obj2 instanceof RubyString) {
-            int cr2 = obj2.scanForCodeRange();
-            return areCompatible(enc1, cr1, enc2, cr2);
-        }
-        if (cr1 == StringSupport.CR_7BIT) return enc2;
+        int cr2 = obj2.scanForCodeRange();
 
-        return null;
+        return areCompatible(enc1, cr1, enc2, cr2);
     }
 
     public static Encoding areCompatible(Encoding enc1, Encoding enc2) {

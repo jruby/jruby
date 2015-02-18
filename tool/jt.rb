@@ -20,18 +20,20 @@ module Utilities
 
   GRAAL_LOCATIONS = [
     ENV['GRAAL_BIN'],
-    '../graalvm-jdk1.8.0/bin/java',         # This also seems like a sensible place to keep it
-    '../../graal/graalvm-jdk1.8.0/bin/java' # This is where I (CS) keep it
+    'graalvm-jdk1.8.0/bin/java',
+    '../graalvm-jdk1.8.0/bin/java',
+    '../../graal/graalvm-jdk1.8.0/bin/java'
   ].compact.map { |path| File.expand_path(path, JRUBY_DIR) }
 
   BENCH_LOCATIONS = [
     ENV['BENCH_DIR'],
+    'bench9000',
     '../bench9000'
   ].compact.map { |path| File.expand_path(path, JRUBY_DIR) }
 
   def self.find_graal
     not_found = -> {
-      raise "couldn't find graal - download it from http://lafo.ssw.uni-linz.ac.at/graalvm/ and extract it into the parent directory"
+      raise "couldn't find graal - download it from http://lafo.ssw.uni-linz.ac.at/graalvm/ and extract it into the JRuby repository or parent directory"
     }
     GRAAL_LOCATIONS.find(not_found) do |location|
       File.executable?(location)
@@ -40,7 +42,7 @@ module Utilities
 
   def self.find_bench
     not_found = -> {
-      raise "couldn't find bench9000 - clone it from https://github.com/jruby/bench9000.git into the parent directory"
+      raise "couldn't find bench9000 - clone it from https://github.com/jruby/bench9000.git into the JRuby repository or parent directory"
     }
     BENCH_LOCATIONS.find(not_found) do |location|
       Dir.exist?(location)
@@ -89,6 +91,7 @@ module Commands
 
   def help
     puts 'jt build                                     build'
+    puts 'jt build truffle                             build only the Truffle part, assumes the rest is up-to-date'
     puts 'jt clean                                     clean'
     puts 'jt rebuild                                   clean and build'
     puts 'jt run [options] args...                     run JRuby with -X+T and args'
@@ -103,6 +106,7 @@ module Commands
     puts 'jt tag spec/ruby/language/while_spec.rb      tag failing specs in this file'
     puts 'jt untag spec/ruby/language                  untag passing specs in this directory'
     puts 'jt untag spec/ruby/language/while_spec.rb    untag passing specs in this file'
+    puts 'jt bench debug benchmark                     run a single benchmark with options for compiler debugging'
     puts 'jt bench reference [benchmarks]              run a set of benchmarks and record a reference point'
     puts 'jt bench compare [benchmarks]                run a set of benchmarks and compare against a reference point'
     puts '    benchmarks can be any benchmarks of group of benchmarks supported'
@@ -114,8 +118,15 @@ module Commands
     puts 'you can also put build or rebuild in front of any command'
   end
 
-  def build
-    mvn 'package'
+  def build(project = nil)
+    case project
+    when 'truffle'
+      mvn '-pl', 'truffle', 'package'
+    when nil
+      mvn 'package'
+    else
+      raise ArgumentError, project
+    end
   end
 
   def clean
@@ -192,13 +203,18 @@ module Commands
       "JRUBY_9000_DEV_DIR" => JRUBY_DIR,
       "GRAAL_BIN" => Utilities.find_graal,
     }
-    args << "5" if args.empty?
     bench_args = ["-I#{bench_dir}/lib", "#{bench_dir}/bin/bench"]
     case command
+    when 'debug'
+      env_vars = env_vars.merge({'JRUBY_OPTS' => '-J-G:+TraceTruffleCompilation -J-G:+DumpOnError'})
+      bench_args += ['score', 'jruby-9000-dev-truffle-graal', '--show-commands', '--show-samples']
+      raise 'specify a single benchmark for run - eg classic-fannkuch-redux' if args.size != 1
     when 'reference'
       bench_args += ['reference', 'jruby-9000-dev-truffle-graal', '--show-commands']
+      args << "5" if args.empty?
     when 'compare'
       bench_args += ['compare-reference', 'jruby-9000-dev-truffle-graal']
+      args << "5" if args.empty?
     else
       raise ArgumentError, command
     end
@@ -251,7 +267,14 @@ class JT
       exit
     end
 
-    send args.shift if %w[build rebuild].include? args.first
+    case args.first
+    when "rebuild"
+      send(args.shift)
+    when "build"
+      command = [args.shift]
+      command << args.shift if args.first == "truffle"
+      send(*command)
+    end
 
     return if args.empty?
 

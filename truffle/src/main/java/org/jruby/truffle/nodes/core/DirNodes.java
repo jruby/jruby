@@ -16,6 +16,7 @@ import com.oracle.truffle.api.source.SourceSection;
 
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyArray;
+import org.jruby.truffle.runtime.core.RubyFile;
 import org.jruby.truffle.runtime.core.RubyProc;
 import org.jruby.truffle.runtime.core.RubyString;
 
@@ -173,7 +174,7 @@ public abstract class DirNodes {
                     @Override
                     public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
                         if (matcher.matches(file)) {
-                            array.slowPush(context.makeString(file.toString()));
+                            array.slowPush(context.makeString(RubyFile.expandPath(context, file.toString())));
                         }
 
                         return FileVisitResult.CONTINUE;

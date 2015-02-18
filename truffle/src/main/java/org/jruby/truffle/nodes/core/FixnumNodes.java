@@ -11,6 +11,7 @@ package org.jruby.truffle.nodes.core;
 
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.ExactMath;
+import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.UnexpectedResultException;
@@ -296,6 +297,7 @@ public abstract class FixnumNodes {
             return ExactMath.multiplyExact(a, b);
         }
 
+        @TruffleBoundary
         @Specialization
         public Object mulWithOverflow(int a, long b) {
             return fixnumOrBignum(BigInteger.valueOf(a).multiply(BigInteger.valueOf(b)));
@@ -306,6 +308,7 @@ public abstract class FixnumNodes {
             return a * b;
         }
 
+        @TruffleBoundary
         @Specialization
         public Object mul(int a, RubyBignum b) {
             return fixnumOrBignum(BigInteger.valueOf(a).multiply(b.bigIntegerValue()));
@@ -316,6 +319,7 @@ public abstract class FixnumNodes {
             return ExactMath.multiplyExact(a, b);
         }
 
+        @TruffleBoundary
         @Specialization
         public Object mulWithOverflow(long a, int b) {
             return fixnumOrBignum(BigInteger.valueOf(a).multiply(BigInteger.valueOf(b)));
@@ -326,6 +330,7 @@ public abstract class FixnumNodes {
             return ExactMath.multiplyExact(a, b);
         }
 
+        @TruffleBoundary
         @Specialization
         public Object mulWithOverflow(long a, long b) {
             return fixnumOrBignum(BigInteger.valueOf(a).multiply(BigInteger.valueOf(b)));
@@ -336,6 +341,7 @@ public abstract class FixnumNodes {
             return a * b;
         }
 
+        @TruffleBoundary
         @Specialization
         public Object mul(long a, RubyBignum b) {
             return fixnumOrBignum(BigInteger.valueOf(a).multiply(b.bigIntegerValue()));

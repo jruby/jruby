@@ -92,6 +92,7 @@ public class CoreLibrary {
     private final RubyClass runtimeErrorClass;
     private final RubyClass standardErrorClass;
     private final RubyClass stringClass;
+    private final RubyClass stringDataClass;
     private final RubyClass symbolClass;
     private final RubyClass syntaxErrorClass;
     private final RubyClass systemCallErrorClass;
@@ -160,10 +161,10 @@ public class CoreLibrary {
         moduleClass.unsafeSetSuperclass(objectClass);
         classClass.unsafeSetSuperclass(moduleClass);
 
-        classClass.getAdoptedByLexicalParent(objectClass, null);
-        basicObjectClass.getAdoptedByLexicalParent(objectClass, null);
-        objectClass.getAdoptedByLexicalParent(objectClass, null);
-        moduleClass.getAdoptedByLexicalParent(objectClass, null);
+        classClass.getAdoptedByLexicalParent(objectClass, "Class", null);
+        basicObjectClass.getAdoptedByLexicalParent(objectClass, "BasicObject", null);
+        objectClass.getAdoptedByLexicalParent(objectClass, "Object", null);
+        moduleClass.getAdoptedByLexicalParent(objectClass, "Module", null);
 
         // BasicObject knows itself
 
@@ -287,6 +288,7 @@ public class CoreLibrary {
 
         rubiniusModule = defineModule("Rubinius");
         byteArrayClass = new RubyClass(context, rubiniusModule, objectClass, "ByteArray");
+        stringDataClass = new RubyClass(context, rubiniusModule, objectClass, "StringData");
 
         // Include the core modules
 
@@ -1096,6 +1098,10 @@ public class CoreLibrary {
 
     public RubyClass getByteArrayClass() {
         return byteArrayClass;
+    }
+
+    public RubyClass getStringDataClass() {
+        return stringDataClass;
     }
 
     public RubyBasicObject getRubiniusUndefined() {

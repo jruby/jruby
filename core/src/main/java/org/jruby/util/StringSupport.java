@@ -1275,4 +1275,8 @@ public final class StringSupport {
         cr = CodeRangeSupport.codeRangeAnd(cr, repl.getCodeRange());
         if (cr != CR_BROKEN) source.setCodeRange(cr);
     }
+
+    public static boolean isAsciiOnly(CodeRangeable string) {
+        return string.getByteList().getEncoding().isAsciiCompatible() && string.scanForCodeRange() == CR_7BIT;
+    }
 }

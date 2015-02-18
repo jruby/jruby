@@ -47,7 +47,13 @@ public abstract class FileNodes {
         public RubyString absolutePath(RubyString path) {
             notDesignedForCompilation();
 
-            return getContext().makeString(new File(path.toString()).getAbsolutePath());
+            String absolute = new File(path.toString()).getAbsolutePath();
+
+            if (getContext().isRunningOnWindows()) {
+                absolute = absolute.replace('\\', '/');
+            }
+
+            return getContext().makeString(absolute);
         }
 
     }
