@@ -36,7 +36,7 @@ public final class RubyArguments {
         packed[DECLARATION_FRAME_INDEX] = declarationFrame;
         packed[SELF_INDEX] = self;
         packed[BLOCK_INDEX] = block;
-        arraycopy(arguments, 0, packed, RUNTIME_ARGUMENT_COUNT, arguments.length);
+        ArrayUtils.arraycopy(arguments, 0, packed, RUNTIME_ARGUMENT_COUNT, arguments.length);
 
         return packed;
     }
@@ -55,25 +55,6 @@ public final class RubyArguments {
 
     public static Object[] extractUserArguments(Object[] arguments) {
         return ArrayUtils.extractRange(arguments, RUNTIME_ARGUMENT_COUNT, arguments.length);
-    }
-
-    public static Object[] concatUserArguments(Object o, Object[] arguments) {
-        final Object[] concatenatedArguments;
-
-        if (o instanceof Object[]) {
-            Object[] concatArray = (Object[]) o;
-            concatenatedArguments = new Object[concatArray.length + arguments.length - RUNTIME_ARGUMENT_COUNT];
-
-            arraycopy(concatArray, 0, concatenatedArguments, 0, concatArray.length);
-            arraycopy(arguments, RUNTIME_ARGUMENT_COUNT, concatenatedArguments, concatArray.length, getUserArgumentsCount(arguments));
-        } else {
-            concatenatedArguments = new Object[1 + arguments.length - RUNTIME_ARGUMENT_COUNT];
-
-            concatenatedArguments[0] = o;
-            arraycopy(arguments, RUNTIME_ARGUMENT_COUNT, concatenatedArguments, 1, getUserArgumentsCount(arguments));
-        }
-
-        return concatenatedArguments;
     }
 
     public static int getUserArgumentsCount(Object[] internalArguments) {
@@ -102,13 +83,6 @@ public final class RubyArguments {
 
     public static MaterializedFrame getDeclarationFrame(Object[] arguments) {
         return (MaterializedFrame) arguments[DECLARATION_FRAME_INDEX];
-    }
-
-    @ExplodeLoop
-    public static void arraycopy(Object[] src, int srcPos, Object[] dest, int destPos, int length) {
-        for (int i = 0; i < length; i++) {
-            dest[destPos + i] = src[srcPos + i];
-        }
     }
 
     /**
