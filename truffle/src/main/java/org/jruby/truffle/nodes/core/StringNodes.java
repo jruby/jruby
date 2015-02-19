@@ -222,11 +222,7 @@ public abstract class StringNodes {
             // TODO (nirvdrum 06-Feb-15) This shouldn't be designed for compilation because we don't support all the String semantics yet, but a bench9000 benchmark has it on a hot path, so commenting out for now.
             //notDesignedForCompilation();
 
-            if (string.isFrozen()) {
-                CompilerDirectives.transferToInterpreter();
-
-                throw new RaiseException(getContext().getCoreLibrary().frozenError("String", this));
-            }
+            string.checkFrozen(this);
 
             final int codeRange = other.getCodeRange();
             final int[] ptr_cr_ret = { codeRange };
@@ -391,11 +387,7 @@ public abstract class StringNodes {
         public RubyString elementSet(VirtualFrame frame, RubyString string, int index, Object replacement) {
             notDesignedForCompilation();
 
-            if (string.isFrozen()) {
-                CompilerDirectives.transferToInterpreter();
-
-                throw new RaiseException(getContext().getCoreLibrary().frozenError("String", this));
-            }
+            string.checkFrozen(this);
 
             if (index < 0) {
                 if (-index > string.length()) {
@@ -422,11 +414,7 @@ public abstract class StringNodes {
         public RubyString elementSet(VirtualFrame frame, RubyString string, RubyRange.IntegerFixnumRange range, Object replacement) {
             notDesignedForCompilation();
 
-            if (string.isFrozen()) {
-                CompilerDirectives.transferToInterpreter();
-
-                throw new RaiseException(getContext().getCoreLibrary().frozenError("String", this));
-            }
+            string.checkFrozen(this);
 
             int begin = range.getBegin();
             int end = range.getEnd();
@@ -1044,11 +1032,7 @@ public abstract class StringNodes {
         public RubyString insert(RubyString string, int index, RubyString otherString) {
             notDesignedForCompilation();
 
-            if (string.isFrozen()) {
-                CompilerDirectives.transferToInterpreter();
-
-                throw new RaiseException(getContext().getCoreLibrary().frozenError("String", this));
-            }
+            string.checkFrozen(this);
 
             if (index == -1) {
                 concatNode.concat(string, otherString);
@@ -1171,11 +1155,7 @@ public abstract class StringNodes {
         public RubyString replace(RubyString string, RubyString other) {
             notDesignedForCompilation();
 
-            if (string.isFrozen()) {
-                CompilerDirectives.transferToInterpreter();
-
-                throw new RaiseException(getContext().getCoreLibrary().frozenError("String", this));
-            }
+            string.checkFrozen(this);
 
             if (string == other) {
                 return string;
@@ -1594,11 +1574,7 @@ public abstract class StringNodes {
         public RubyString succBang(RubyString string) {
             notDesignedForCompilation();
 
-            if (string.isFrozen()) {
-                CompilerDirectives.transferToInterpreter();
-
-                throw new RaiseException(getContext().getCoreLibrary().frozenError("String", this));
-            }
+            string.checkFrozen(this);
 
             if (string.length() > 0) {
                 string.set(StringSupport.succCommon(string.getBytes()));
