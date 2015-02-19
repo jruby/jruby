@@ -648,20 +648,23 @@ public abstract class IRScope implements ParseResult {
     }
 
     protected void cloneInstrs(SimpleCloneInfo cloneInfo) {
-        if (getCFG() == null) {
-            List<Instr> newInstrList = new ArrayList<Instr>(this.instrList.size());
-            for (Instr instr: this.instrList) {
-                newInstrList.add(instr.clone(cloneInfo));
-            }
-            this.instrList = newInstrList;
-            this.state = ScopeState.INSTRS_CLONED;
-            for (IRClosure cl : getClosures()) {
-                cl.cloneInstrs(cloneInfo.cloneForCloningClosure(cl));
-            }
-        } else {
-            for (IRClosure cl : getClosures()) {
-                cl.cloneInstrs();
-            }
+        // FIXME: not cloning if we happen to have a CFG violates the spirit of this method name.
+        // We do this currently because in a scenario where a nested closure is called much more than
+        // an outer scope we will process that closure first independently.  If at a later point we
+        // process the outer scope then the inner scope will have nuked instrList and explode if we
+        // try to clone the non-existent instrList.
+        if (getCFG() != null) return;
+
+        List<Instr> newInstrList = new ArrayList<>(instrList.size());
+
+        for (Instr instr: this.instrList) {
+            newInstrList.add(instr.clone(cloneInfo));
+        }
+
+        instrList = newInstrList;
+        state = ScopeState.INSTRS_CLONED;
+        for (IRClosure cl : getClosures()) {
+            cl.cloneInstrs(cloneInfo.cloneForCloningClosure(cl));
         }
     }
 
