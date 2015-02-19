@@ -50,24 +50,6 @@ public class DefineOrGetModuleNode extends RubyNode {
         RubyModule lexicalParent = getLexicalParentModule(frame);
         final RubyConstant constant = lookupForExistingModule(frame, lexicalParent);
 
-        // If a constant already exists with this module name and it's an autoload module, we have to trigger
-        // the autoload behavior before proceeding.
-        if ((constant != null) && constant.isAutoload()) {
-            if (requireNode == null) {
-                CompilerDirectives.transferToInterpreter();
-                requireNode = insert(KernelNodesFactory.RequireNodeFactory.create(getContext(), getSourceSection(), new RubyNode[]{}));
-            }
-
-            // We know that we're redefining this constant as we're defining a class with that name.  We remove the
-            // constant here rather than just overwrite it in order to prevent autoload loops in either the require
-            // call or the recursive execute call.
-            lexicalParent.removeConstant(this, name);
-
-            requireNode.require((RubyString) constant.getValue());
-
-            return execute(frame);
-        }
-
         RubyModule definingModule;
 
         if (constant == null) {
@@ -112,6 +94,24 @@ public class DefineOrGetModuleNode extends RubyNode {
 
         if (constant != null && !constant.isVisibleTo(getContext(), LexicalScope.NONE, lexicalParent)) {
             throw new RaiseException(getContext().getCoreLibrary().nameErrorPrivateConstant(lexicalParent, name, this));
+        }
+
+        // If a constant already exists with this class/module name and it's an autoload module, we have to trigger
+        // the autoload behavior before proceeding.
+        if ((constant != null) && constant.isAutoload()) {
+            if (requireNode == null) {
+                CompilerDirectives.transferToInterpreter();
+                requireNode = insert(KernelNodesFactory.RequireNodeFactory.create(getContext(), getSourceSection(), new RubyNode[]{}));
+            }
+
+            // We know that we're redefining this constant as we're defining a class/module with that name.  We remove
+            // the constant here rather than just overwrite it in order to prevent autoload loops in either the require
+            // call or the recursive execute call.
+            lexicalParent.removeConstant(this, name);
+
+            requireNode.require((RubyString) constant.getValue());
+
+            return lookupForExistingModule(frame, lexicalParent);
         }
 
         return constant;
