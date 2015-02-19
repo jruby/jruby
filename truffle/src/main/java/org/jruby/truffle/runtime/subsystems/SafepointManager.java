@@ -31,7 +31,7 @@ public class SafepointManager {
 
     private final Set<Thread> runningThreads = Collections.newSetFromMap(new ConcurrentHashMap<Thread, Boolean>());
 
-    @CompilerDirectives.CompilationFinal private Assumption assumption = Truffle.getRuntime().createAssumption();
+    @CompilerDirectives.CompilationFinal private Assumption assumption = Truffle.getRuntime().createAssumption("safepoint");
     private final Phaser phaser = new Phaser();
     private volatile Consumer<RubyThread> action;
 
