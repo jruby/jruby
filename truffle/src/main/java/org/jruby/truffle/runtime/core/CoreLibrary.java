@@ -541,7 +541,7 @@ public class CoreLibrary {
         } else if (object instanceof Double) {
             return floatClass;
         } else if (object == null) {
-            throw new RuntimeException();
+            throw new RuntimeException("Can't get metaclass for null");
         } else {
             CompilerDirectives.transferToInterpreter();
             throw new UnsupportedOperationException(String.format("Don't know how to get the metaclass for %s", object.getClass()));
