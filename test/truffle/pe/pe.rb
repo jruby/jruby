@@ -82,7 +82,7 @@ module PETests
   end
 
   def self.broken_example(description)
-    describe "#{description} is not constant" do
+    describe "#{description} is constant" do
       @warnings.push "broken example not run: #{full_description}"
     end
   end
