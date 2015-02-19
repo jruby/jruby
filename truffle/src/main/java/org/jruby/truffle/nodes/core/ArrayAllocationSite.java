@@ -19,7 +19,7 @@ public class ArrayAllocationSite {
     public static final boolean ARRAYS_OPTIMISTIC_LONG = Options.TRUFFLE_ARRAYS_OPTIMISTIC_LONG.load();
 
     @CompilerDirectives.CompilationFinal private boolean convertedIntToLong = false;
-    private final Assumption assumption = Truffle.getRuntime().createAssumption();
+    private final Assumption assumption = Truffle.getRuntime().createAssumption("array-allocation");
 
     @CompilerDirectives.TruffleBoundary
     public void convertedIntToLong() {
