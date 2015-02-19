@@ -1780,8 +1780,8 @@ public class BodyTranslator extends Translator {
     public RubyNode visitMultipleAsgnNode(org.jruby.ast.MultipleAsgn19Node node) {
         final SourceSection sourceSection = translate(node.getPosition());
 
-        final org.jruby.ast.ArrayNode preArray = (org.jruby.ast.ArrayNode) node.getPre();
-        final org.jruby.ast.ArrayNode postArray = (org.jruby.ast.ArrayNode) node.getPost();
+        final org.jruby.ast.ListNode preArray = node.getPre();
+        final org.jruby.ast.ListNode postArray = node.getPost();
         final org.jruby.ast.Node rhs = node.getValueNode();
 
         RubyNode rhsTranslated;
