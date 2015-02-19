@@ -20,6 +20,7 @@ module PETests
     @description_stack = []
     @failures = []
     @successes = []
+    @warnings = []
     @dots = 0
   end
 
@@ -37,6 +38,10 @@ module PETests
     end
   end
 
+  def self.full_description
+    @description_stack.join(" ")
+  end
+
   def self.example(description)
     describe "#{description} is constant" do
       begin
@@ -44,10 +49,10 @@ module PETests
           yield
         end
 
-        @successes.push @description_stack.join(" ")
+        @successes.push full_description
         print "."
       rescue RubyTruffleError
-        @failures.push @description_stack.join(" ")
+        @failures.push full_description
         print "E"
       ensure
         @dots += 1
@@ -58,44 +63,49 @@ module PETests
 
   def self.counter_example(description)
     describe "#{description} is not constant" do
-      begin
-        1_000_000.times do
-          yield
-        end
-
-        @failures.push @description_stack.join(" ")
-        print "E"
-      rescue RubyTruffleError
-        @successes.push @description_stack.join(" ")
-        print "."
-      ensure
-        @dots += 1
-        puts if @dots == 80
-      end
+      @warnings.push "counter example not run: #{full_description}"
+    #  begin
+    #    1_000_000.times do
+    #      yield
+    #    end
+    #
+    #    @failures.push full_description
+    #    print "E"
+    #  rescue RubyTruffleError
+    #    @successes.push full_description
+    #    print "."
+    #  ensure
+    #    @dots += 1
+    #    puts if @dots == 80
+    #  end
     end
   end
 
   def self.broken_example(description)
-    puts "warning: broken examples not run"
-    #describe "#{description} is not constant" do
-    #  inner_example do
-    #    yield
-    #  end
-    #end
+    describe "#{description} is not constant" do
+      @warnings.push "broken example not run: #{full_description}"
+    end
   end
 
   def self.finish
-    print "\n"
+    puts
+    puts
+    
+    @failures.each do |message|
+      puts "failed: #{message}"
+    end
+    
+    @warnings.each do |message|
+      puts "warning: #{message}"
+    end
+
+    puts
 
     if @failures.empty?
       puts "success - #{@successes.length} passed"
       true
     else
       puts "failure - #{@failures.length} failed, #{@successes.length} passed"
-      
-      @failures.each do |message|
-        puts "failed: #{message}"
-      end
 
       false
     end
