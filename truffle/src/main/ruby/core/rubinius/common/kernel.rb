@@ -97,6 +97,11 @@ module Kernel
   end
   private :autoload
 
+  def autoload?(name)
+    Object.autoload?(name)
+  end
+  private :autoload?
+
   def define_singleton_method(*args, &block)
     singleton_class.send(:define_method, *args, &block)
   end
