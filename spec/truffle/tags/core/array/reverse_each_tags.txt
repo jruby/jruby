@@ -1,5 +1,0 @@
-fails:Array#reverse_each traverses array in reverse order and pass each element to block
-fails:Array#reverse_each returns self
-fails:Array#reverse_each yields only the top level element of an empty recursive arrays
-fails:Array#reverse_each yields only the top level element of a recursive array
-fails:Array#reverse_each returns an Enumerator if no block given
