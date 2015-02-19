@@ -31,7 +31,7 @@ public class RubyClass extends RubyModule {
     // TODO(CS): is this compilation final needed? Is it a problem for correctness?
     @CompilationFinal Allocator allocator;
 
-    private boolean isSingleton;
+    private final boolean isSingleton;
     private final Set<RubyClass> subClasses = Collections.newSetFromMap(new WeakHashMap<RubyClass, Boolean>());
 
     /**
