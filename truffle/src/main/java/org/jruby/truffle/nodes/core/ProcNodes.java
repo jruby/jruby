@@ -128,7 +128,9 @@ public abstract class ProcNodes {
 
             final Memo<Integer> frameCount = new Memo<>(0);
 
-            final MaterializedFrame parentFrame = Truffle.getRuntime().iterateFrames(new FrameInstanceVisitor<MaterializedFrame>() {
+            // The parent will be the Proc.new call.  We need to go an extra level up in order to get the parent
+            // of the Proc.new call, since that is where the block should be inherited from.
+            final MaterializedFrame grandparentFrame = Truffle.getRuntime().iterateFrames(new FrameInstanceVisitor<MaterializedFrame>() {
 
                 @Override
                 public MaterializedFrame visitFrame(FrameInstance frameInstance) {
@@ -142,16 +144,16 @@ public abstract class ProcNodes {
 
             });
 
-            final RubyProc parentBlock = RubyArguments.getBlock(parentFrame.getArguments());
+            final RubyProc grandparentBlock = RubyArguments.getBlock(grandparentFrame.getArguments());
 
-            if (parentBlock == null) {
+            if (grandparentBlock == null) {
                 CompilerDirectives.transferToInterpreter();
 
                 // TODO (nirvdrum 19-Feb-15) MRI reports this error on the #new method, not #initialize.
                 throw new RaiseException(getContext().getCoreLibrary().argumentError("tried to create Proc object without a block", this));
             }
 
-            return initialize(proc, parentBlock);
+            return initialize(proc, grandparentBlock);
         }
 
     }
