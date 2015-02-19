@@ -65,9 +65,10 @@ class << STDOUT
 end
 
 STDERR = IO.new
+$stderr = STDERR
 
 class << STDERR
-  def self.puts(*values)
+  def puts(*values)
     Kernel.send(:puts, *values)
   end
 end

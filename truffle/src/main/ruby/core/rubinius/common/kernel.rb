@@ -128,4 +128,10 @@ module Kernel
   end
   module_function :trap
 
+  def warn(*messages)
+    $stderr.puts(*messages) if !$VERBOSE.nil? && !messages.empty?
+    nil
+  end
+  module_function :warn
+
 end
