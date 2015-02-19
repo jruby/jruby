@@ -13,6 +13,8 @@ import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.nodes.RubyNode;
+import org.jruby.truffle.nodes.core.KernelNodes;
+import org.jruby.truffle.nodes.core.KernelNodesFactory;
 import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNode;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
@@ -21,6 +23,7 @@ import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.RubyClass;
 import org.jruby.truffle.runtime.core.RubyModule;
+import org.jruby.truffle.runtime.core.RubyString;
 
 /**
  * Define a new class, or get the existing one of the same name.
@@ -29,6 +32,7 @@ public class DefineOrGetClassNode extends DefineOrGetModuleNode {
 
     @Child private RubyNode superClass;
     @Child private CallDispatchHeadNode inheritedNode;
+    @Child private KernelNodes.RequireNode requireNode;
 
     public DefineOrGetClassNode(RubyContext context, SourceSection sourceSection, String name, RubyNode lexicalParent, RubyNode superClass) {
         super(context, sourceSection, name, lexicalParent);
@@ -56,6 +60,24 @@ public class DefineOrGetClassNode extends DefineOrGetModuleNode {
 
         RubyClass definingClass;
         RubyClass superClassObject = getRubySuperClass(frame, context);
+
+        // If a constant already exists with this module name and it's an autoload module, we have to trigger
+        // the autoload behavior before proceeding.
+        if ((constant != null) && constant.isAutoload()) {
+            if (requireNode == null) {
+                CompilerDirectives.transferToInterpreter();
+                requireNode = insert(KernelNodesFactory.RequireNodeFactory.create(getContext(), getSourceSection(), new RubyNode[]{}));
+            }
+
+            // We know that we're redefining this constant as we're defining a class with that name.  We remove the
+            // constant here rather than just overwrite it in order to prevent autoload loops in either the require
+            // call or the recursive execute call.
+            lexicalParent.removeConstant(this, name);
+
+            requireNode.require((RubyString) constant.getValue());
+
+            return execute(frame);
+        }
 
         if (constant == null) {
             definingClass = new RubyClass(context, lexicalParent, superClassObject, name);
