@@ -2590,7 +2590,11 @@ public class BodyTranslator extends Translator {
         final RubyNode body;
 
         try {
-            body = node.getBodyNode().accept(this);
+            if (node.getBodyNode().isNil()) {
+                body = new NilLiteralNode(context, sourceSection);
+            } else {
+                body = node.getBodyNode().accept(this);
+            }
         } finally {
             translatingWhile = oldTranslatingWhile;
         }
