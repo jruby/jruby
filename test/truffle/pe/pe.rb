@@ -57,7 +57,7 @@ module PETests
   end
 
   def self.counter_example(description)
-    describe "#{description} is constant" do
+    describe "#{description} is not constant" do
       begin
         1_000_000.times do
           yield
