@@ -78,6 +78,7 @@ public class CoreLibrary {
     private final RubyClass moduleClass;
     private final RubyClass nameErrorClass;
     private final RubyClass nilClass;
+    private final RubyClass noMemoryErrorClass;
     private final RubyClass noMethodErrorClass;
     private final RubyClass numericClass;
     private final RubyClass objectClass;
@@ -178,6 +179,9 @@ public class CoreLibrary {
 
         // FiberError
         fiberErrorClass = defineClass(exceptionClass, "FiberError");
+
+        // NoMemoryError
+        noMemoryErrorClass = defineClass(exceptionClass, "NoMemoryError");
 
         // StandardError
         standardErrorClass = defineClass(exceptionClass, "StandardError");
