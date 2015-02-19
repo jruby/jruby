@@ -318,13 +318,6 @@ public class CFG {
             } else if (iop != Operation.LABEL) {
                 currBB.addInstr(i);
             }
-
-            if (i instanceof CallBase) { // Build CFG for the closure if there exists one
-                Operand closureArg = ((CallBase) i).getClosureArg(getScope().getManager().getNil());
-                if (closureArg instanceof WrappedIRClosure) {
-                    ((WrappedIRClosure) closureArg).getClosure().buildCFG();
-                }
-            }
         }
 
         // Process all rescued regions
