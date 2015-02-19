@@ -125,17 +125,15 @@ end
 
 # Tests organised by class
 
-$: << File.expand_path('..', __FILE__)
-
-require "language/metaprogramming_pe.rb"
-require "core/truefalse_pe.rb"
-require "core/fixnum_pe.rb"
-require "core/float_pe.rb"
-require "core/symbol_pe.rb"
-require "core/array_pe.rb"
-require "core/hash_pe.rb"
-require "core/kernel/set_trace_func_pe.rb"
-require "macro/pushing_pixels_pe.rb"
+require_relative 'language/metaprogramming_pe.rb'
+require_relative 'core/truefalse_pe.rb'
+require_relative 'core/fixnum_pe.rb'
+require_relative 'core/float_pe.rb'
+require_relative 'core/symbol_pe.rb'
+require_relative 'core/array_pe.rb'
+require_relative 'core/hash_pe.rb'
+require_relative 'core/kernel/set_trace_func_pe.rb'
+require_relative 'macro/pushing_pixels_pe.rb'
 
 # Finished
 
