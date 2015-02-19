@@ -33,7 +33,7 @@ public class SafepointManager {
 
     @CompilerDirectives.CompilationFinal private Assumption assumption = Truffle.getRuntime().createAssumption();
     private final Phaser phaser = new Phaser();
-    private Consumer<RubyThread> action;
+    private volatile Consumer<RubyThread> action;
 
     public SafepointManager(RubyContext context) {
         this.context = context;

@@ -21,6 +21,7 @@ import com.oracle.truffle.api.nodes.UnexpectedResultException;
 import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.utilities.ConditionProfile;
 
+import org.jcodings.Encoding;
 import org.jruby.common.IRubyWarnings;
 import org.jruby.runtime.Visibility;
 import org.jruby.truffle.nodes.RubyNode;
@@ -787,7 +788,9 @@ public abstract class KernelNodes {
             // TODO(CS): having some trouble interacting with JRuby stdin - so using this hack
             final InputStream in = getContext().getRuntime().getInstanceConfig().getInput();
 
-            final BufferedReader reader = new BufferedReader(new InputStreamReader(in));
+            Encoding encoding = getContext().getRuntime().getDefaultExternalEncoding();
+
+            final BufferedReader reader = new BufferedReader(new InputStreamReader(in, encoding.getCharset()));
 
             final String line = getContext().getThreadManager().runUntilResult(new BlockingActionWithoutGlobalLock<String>() {
                 @Override
@@ -1849,7 +1852,7 @@ public abstract class KernelNodes {
 
         @Specialization
         public long sleep(int duration) {
-            return doSleepMillis(duration * 1000);
+            return doSleepMillis(duration * 1000L);
         }
 
         @Specialization

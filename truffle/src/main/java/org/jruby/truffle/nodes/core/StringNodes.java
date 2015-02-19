@@ -1987,9 +1987,9 @@ public abstract class StringNodes {
                 char current = charArray[i];
 
                 if (Character.isLowerCase(current)) {
-                    newString.append(Character.toString(current).toUpperCase());
+                    newString.append(Character.toString(current).toUpperCase(Locale.ENGLISH));
                 } else if (Character.isUpperCase(current)){
-                    newString.append(Character.toString(current).toLowerCase());
+                    newString.append(Character.toString(current).toLowerCase(Locale.ENGLISH));
                 } else {
                     newString.append(current);
                 }

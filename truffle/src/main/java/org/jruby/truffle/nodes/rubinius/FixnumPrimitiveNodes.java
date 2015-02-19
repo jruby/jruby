@@ -154,7 +154,7 @@ public abstract class FixnumPrimitiveNodes {
 
         @Specialization
         public Object pow(long a, double b) {
-            if (complexProfile.profile(a < 0 && b != Math.round(b))) {
+            if (complexProfile.profile(a < 0)) {
                 return null; // Primitive failure
             } else {
                 return Math.pow(a, b);
@@ -183,11 +183,6 @@ public abstract class FixnumPrimitiveNodes {
 
             if (b.bigIntegerValue().compareTo(BigInteger.ZERO) < 0) {
                 return null; // Primitive failure
-            }
-
-            if (b.bigIntegerValue().equals(b)) {
-                // This is a bug of course
-                return pow(a, b.bigIntegerValue().longValue());
             }
 
             getContext().getRuntime().getWarnings().warn("in a**b, b may be too big");

@@ -24,7 +24,7 @@ public class FileUtils {
     public static byte[] readAllBytesInterruptedly(RubyContext context, String file) {
         RubyNode.notDesignedForCompilation();
 
-        final Path path = Paths.get(file.toString());
+        final Path path = Paths.get(file);
 
         return context.getThreadManager().runUntilResult(new BlockingActionWithoutGlobalLock<byte[]>() {
             @Override

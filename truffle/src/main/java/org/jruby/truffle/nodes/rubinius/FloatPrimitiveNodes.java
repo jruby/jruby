@@ -38,7 +38,7 @@ public abstract class FloatPrimitiveNodes {
 
             String string = String.format(Locale.ENGLISH, "%.9f", value);
 
-            if (string.toLowerCase().contains("e")) {
+            if (string.toLowerCase(Locale.ENGLISH).contains("e")) {
                 throw new UnsupportedOperationException();
             }
 
@@ -56,7 +56,7 @@ public abstract class FloatPrimitiveNodes {
                     throw new UnsupportedOperationException();
                 }
 
-                string.replace(".", "");
+                string = string.replace(".", "");
             }
 
             final int sign = value < 0 ? 1 : 0;

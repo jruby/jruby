@@ -258,7 +258,7 @@ public final class RubyArray extends RubyBasicObject {
                 case 0:
                     return boxedStore;
                 case 1:
-                    ArrayUtils.longCopyOf((int[]) canonicalStore);
+                    return ArrayUtils.longCopyOf((int[]) canonicalStore);
                 case 2:
                     return canonicalStore;
                 default:
