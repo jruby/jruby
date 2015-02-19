@@ -458,17 +458,17 @@ public abstract class IRScope implements ParseResult {
         // If the scope has already been interpreted once,
         // the scope can be on the call stack right now.
         // So, clone instructions before building the CFG.
-        if (this.state == ScopeState.INTERPED) {
-            this.cloneInstrs();
+        if (state == ScopeState.INTERPED) {
+            cloneInstrs();
         }
 
         CFG newCFG = new CFG(this);
         newCFG.build(getInstrs());
         // Clear out instruction list after CFG has been built.
-        this.instrList = null;
+        instrList = null;
 
         setCFG(newCFG);
-        this.state = ScopeState.CFG_BUILT;
+        state = ScopeState.CFG_BUILT;
 
         return newCFG;
     }
@@ -644,18 +644,24 @@ public abstract class IRScope implements ParseResult {
     }
 
     protected void cloneInstrs() {
+        cloneInstrs(new SimpleCloneInfo(this, false));
+    }
+
+    protected void cloneInstrs(SimpleCloneInfo cloneInfo) {
         if (getCFG() == null) {
-            // Clone instrs before modifying them
-            SimpleCloneInfo cloneInfo = new SimpleCloneInfo(this, false);
             List<Instr> newInstrList = new ArrayList<Instr>(this.instrList.size());
             for (Instr instr: this.instrList) {
                 newInstrList.add(instr.clone(cloneInfo));
             }
             this.instrList = newInstrList;
             this.state = ScopeState.INSTRS_CLONED;
-        }
-        for (IRClosure cl: getClosures()) {
-            cl.cloneInstrs();
+            for (IRClosure cl : getClosures()) {
+                cl.cloneInstrs(cloneInfo.cloneForCloningClosure(cl));
+            }
+        } else {
+            for (IRClosure cl : getClosures()) {
+                cl.cloneInstrs();
+            }
         }
     }
 
