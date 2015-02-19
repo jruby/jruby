@@ -182,14 +182,6 @@ class Rational
 
 end
 
-class BasicObject
-
-  def __id__
-    Rubinius.primitive :object_id
-  end
-
-end
-
 ENV['TZ'] = 'UTC'
 
 class MatchData
