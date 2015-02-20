@@ -51,7 +51,7 @@ public class InterpreterContext {
         this.cfg = scope.getCFG();
         this.rebuilt = rebuild;
         if (this.rebuilt) {
-            this.runCount = 20;
+            this.runCount = 30;
         }
 
 /*
@@ -97,7 +97,7 @@ public class InterpreterContext {
     }
 
     public boolean needsRebuilding() {
-        return this.runCount == 20;
+        return this.runCount == 30;
     }
 
     public Object[] allocateTemporaryVariables() {
