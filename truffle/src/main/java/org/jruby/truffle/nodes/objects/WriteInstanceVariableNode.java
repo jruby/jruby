@@ -13,6 +13,7 @@ import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.UnexpectedResultException;
 import com.oracle.truffle.api.source.SourceSection;
+
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.WriteNode;
 import org.jruby.truffle.nodes.objectstorage.WriteHeadObjectFieldNode;
@@ -27,7 +28,7 @@ public class WriteInstanceVariableNode extends RubyNode implements WriteNode {
     @Child private WriteHeadObjectFieldNode writeNode;
     private final boolean isGlobal;
 
-    public WriteInstanceVariableNode(RubyContext context, SourceSection sourceSection, Object name, RubyNode receiver, RubyNode rhs, boolean isGlobal) {
+    public WriteInstanceVariableNode(RubyContext context, SourceSection sourceSection, String name, RubyNode receiver, RubyNode rhs, boolean isGlobal) {
         super(context, sourceSection);
         this.receiver = receiver;
         this.rhs = rhs;
@@ -112,7 +113,7 @@ public class WriteInstanceVariableNode extends RubyNode implements WriteNode {
 
     @Override
     public RubyNode makeReadNode() {
-        return new ReadInstanceVariableNode(getContext(), getSourceSection(), writeNode.getName(), receiver, isGlobal);
+        return new ReadInstanceVariableNode(getContext(), getSourceSection(), (String) writeNode.getName(), receiver, isGlobal);
     }
 
     @Override

@@ -16,6 +16,7 @@ import com.oracle.truffle.api.object.Property;
 import com.oracle.truffle.api.object.Shape;
 import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.utilities.BranchProfile;
+
 import org.jruby.truffle.nodes.ReadNode;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.objectstorage.ReadHeadObjectFieldNode;
@@ -31,7 +32,7 @@ public class ReadInstanceVariableNode extends RubyNode implements ReadNode {
     private final BranchProfile nullProfile = BranchProfile.create();
     private final BranchProfile primitiveProfile = BranchProfile.create();
 
-    public ReadInstanceVariableNode(RubyContext context, SourceSection sourceSection, Object name, RubyNode receiver, boolean isGlobal) {
+    public ReadInstanceVariableNode(RubyContext context, SourceSection sourceSection, String name, RubyNode receiver, boolean isGlobal) {
         super(context, sourceSection);
         this.receiver = receiver;
         readNode = new ReadHeadObjectFieldNode(name);
@@ -141,6 +142,6 @@ public class ReadInstanceVariableNode extends RubyNode implements ReadNode {
 
     @Override
     public RubyNode makeWriteNode(RubyNode rhs) {
-        return new WriteInstanceVariableNode(getContext(), getSourceSection(), readNode.getName(), receiver, rhs, isGlobal);
+        return new WriteInstanceVariableNode(getContext(), getSourceSection(), (String) readNode.getName(), receiver, rhs, isGlobal);
     }
 }
