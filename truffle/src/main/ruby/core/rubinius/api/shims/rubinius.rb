@@ -17,7 +17,7 @@ module Rubinius
     ENABLED = true
 
     def initialize(size, &block)
-      super &block
+      super(&block)
     end
 
   end
