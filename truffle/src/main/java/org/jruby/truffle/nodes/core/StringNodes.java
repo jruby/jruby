@@ -232,7 +232,6 @@ public abstract class StringNodes {
             } catch (org.jruby.exceptions.RaiseException e) {
                 if (e.getException().getMetaClass().equals(getContext().getRuntime().getEncodingCompatibilityError())) {
                     CompilerDirectives.transferToInterpreter();
-
                     throw new RaiseException(getContext().getCoreLibrary().encodingCompatibilityError(e.getException().message.asJavaString(), this));
                 }
 
@@ -950,6 +949,7 @@ public abstract class StringNodes {
             super(prev);
         }
 
+        @TruffleBoundary
         @Specialization
         public RubyString inspect(RubyString string) {
             notDesignedForCompilation();
