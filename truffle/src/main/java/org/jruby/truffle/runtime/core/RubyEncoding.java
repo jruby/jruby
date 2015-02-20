@@ -28,6 +28,7 @@ import java.util.Map;
  */
 public class RubyEncoding extends RubyBasicObject {
 
+    // Both are mutated only in CoreLibrary.initializeEncodingConstants().
     private static RubyEncoding[] encodingList = new RubyEncoding[EncodingDB.getEncodings().size()];
     private static Map<String, RubyEncoding> lookup = new HashMap<>();
 

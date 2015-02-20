@@ -24,6 +24,7 @@ import java.util.Collections;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Phaser;
+import java.util.concurrent.locks.ReentrantLock;
 
 public class SafepointManager {
 
@@ -31,7 +32,9 @@ public class SafepointManager {
 
     private final Set<Thread> runningThreads = Collections.newSetFromMap(new ConcurrentHashMap<Thread, Boolean>());
 
-    @CompilerDirectives.CompilationFinal private Assumption assumption = Truffle.getRuntime().createAssumption("safepoint");
+    @CompilerDirectives.CompilationFinal private Assumption assumption = Truffle.getRuntime().createAssumption();
+    private final ReentrantLock lock = new ReentrantLock();
+
     private final Phaser phaser = new Phaser();
     private volatile Consumer<RubyThread> action;
 
@@ -41,11 +44,16 @@ public class SafepointManager {
         enterThread();
     }
 
-    public synchronized void enterThread() {
+    public void enterThread() {
         CompilerAsserts.neverPartOfCompilation();
 
-        phaser.register();
-        runningThreads.add(Thread.currentThread());
+        lock.lock();
+        try {
+            phaser.register();
+            runningThreads.add(Thread.currentThread());
+        } finally {
+            lock.unlock();
+        }
     }
 
     public void leaveThread() {
@@ -117,19 +125,36 @@ public class SafepointManager {
         }
     }
 
-    private synchronized void pauseAllThreadsAndExecute(boolean holdsGlobalLock, Consumer<RubyThread> action) {
+    private void pauseAllThreadsAndExecute(boolean holdsGlobalLock, Consumer<RubyThread> action) {
         CompilerDirectives.transferToInterpreter();
 
-        this.action = action;
+        if (lock.isHeldByCurrentThread()) {
+            throw new IllegalStateException("Re-entered SafepointManager");
+        }
 
-        /* this is a potential cause for race conditions,
-         * but we need to invalidate first so the interrupted threads
-         * see the invalidation in poll() in their catch(InterruptedException) clause
-         * and wait on the barrier instead of retrying their blocking action. */
-        assumption.invalidate();
-        interruptAllThreads();
+        while (true) {
+            try {
+                lock.lockInterruptibly();
+                break;
+            } catch (InterruptedException e) {
+                poll(holdsGlobalLock);
+            }
+        }
 
-        assumptionInvalidated(holdsGlobalLock, true);
+        try {
+            this.action = action;
+
+            /* this is a potential cause for race conditions,
+             * but we need to invalidate first so the interrupted threads
+             * see the invalidation in poll() in their catch(InterruptedException) clause
+             * and wait on the barrier instead of retrying their blocking action. */
+            assumption.invalidate();
+            interruptAllThreads();
+
+            assumptionInvalidated(holdsGlobalLock, true);
+        } finally {
+            lock.unlock();
+        }
     }
 
     private void interruptAllThreads() {

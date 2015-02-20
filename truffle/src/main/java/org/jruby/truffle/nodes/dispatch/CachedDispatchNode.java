@@ -71,7 +71,7 @@ public abstract class CachedDispatchNode extends DispatchNode {
             // TODO(CS, 11-Jan-15) this just repeats the above guard...
             return cachedName == methodName;
         } else if (cachedName instanceof RubyString) {
-            return (methodName instanceof RubyString) && ((RubyString) cachedName).getBytes().equals(((RubyString) methodName).getBytes());
+            return (methodName instanceof RubyString) && ((RubyString) cachedName).getBytes().equal(((RubyString) methodName).getBytes());
         } else {
             throw new UnsupportedOperationException();
         }

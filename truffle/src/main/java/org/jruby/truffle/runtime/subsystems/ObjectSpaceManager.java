@@ -73,7 +73,7 @@ public class ObjectSpaceManager {
         this.context = context;
     }
 
-    public void defineFinalizer(RubyBasicObject object, RubyProc proc) {
+    public synchronized void defineFinalizer(RubyBasicObject object, RubyProc proc) {
         RubyNode.notDesignedForCompilation();
 
         // Record the finalizer against the object
@@ -102,7 +102,7 @@ public class ObjectSpaceManager {
         }
     }
 
-    public void undefineFinalizer(RubyBasicObject object) {
+    public synchronized void undefineFinalizer(RubyBasicObject object) {
         RubyNode.notDesignedForCompilation();
 
         final FinalizerReference finalizerReference = finalizerReferences.get(object);
@@ -145,16 +145,13 @@ public class ObjectSpaceManager {
 
     }
 
-    private Map<Long, RubyBasicObject> liveObjects;
-    private ObjectGraphVisitor visitor;
-
     @TruffleBoundary
     public Map<Long, RubyBasicObject> collectLiveObjects() {
         RubyNode.notDesignedForCompilation();
 
-        liveObjects = new HashMap<>();
+        final Map<Long, RubyBasicObject> liveObjects = new HashMap<>();
 
-        visitor = new ObjectGraphVisitor() {
+        final ObjectGraphVisitor visitor = new ObjectGraphVisitor() {
 
             @Override
             public boolean visit(RubyBasicObject object) {
@@ -168,10 +165,10 @@ public class ObjectSpaceManager {
             @Override
             public void accept(RubyThread currentThread) {
                 synchronized (liveObjects) {
-                    visitor.visit(currentThread);
+                    currentThread.visitObjectGraph(visitor);
                     context.getCoreLibrary().getGlobalVariablesObject().visitObjectGraph(visitor);
-                    context.getCoreLibrary().getMainObject().visitObjectGraph(visitor);
-                    context.getCoreLibrary().getObjectClass().visitObjectGraph(visitor);
+
+                    // Needs to be called from the corresponding Java thread or it will not use the correct call stack.
                     visitCallStack(visitor);
                 }
             }
@@ -181,7 +178,7 @@ public class ObjectSpaceManager {
         return Collections.unmodifiableMap(liveObjects);
     }
 
-    public void visitCallStack(final ObjectGraphVisitor visitor) {
+    private void visitCallStack(final ObjectGraphVisitor visitor) {
         FrameInstance currentFrame = Truffle.getRuntime().getCurrentFrame();
         if (currentFrame != null) {
             visitFrameInstance(currentFrame, visitor);

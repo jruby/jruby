@@ -132,33 +132,11 @@ public class RubyString extends RubyBasicObject implements CodeRangeable {
     }
 
     @Override
-    public boolean equals(Object other) {
-        RubyNode.notDesignedForCompilation();
-
-        if (other == this) {
-            return true;
-        }
-
-        if (other instanceof String || other instanceof RubyString) {
-            return toString().equals(other.toString());
-        }
-
-        return false;
-    }
-
-    @Override
     @TruffleBoundary
     public String toString() {
         RubyNode.notDesignedForCompilation();
 
         return Helpers.decodeByteList(getContext().getRuntime(), bytes);
-    }
-
-    @Override
-    public int hashCode() {
-        RubyNode.notDesignedForCompilation();
-
-        return bytes.hashCode();
     }
 
     public int length() {

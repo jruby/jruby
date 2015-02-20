@@ -173,16 +173,12 @@ public class RubyBasicObject implements TruffleObject {
         return getOperations().isFieldDefined(this, name);
     }
 
-    public boolean isTrue() {
-        return true;
-    }
-
     @Override
     public ForeignAccessFactory getForeignAccessFactory() {
         throw new UnsupportedOperationException();
     }
 
-    public void visitObjectGraph(ObjectSpaceManager.ObjectGraphVisitor visitor) {
+    public final void visitObjectGraph(ObjectSpaceManager.ObjectGraphVisitor visitor) {
         if (visitor.visit(this)) {
             metaClass.visitObjectGraph(visitor);
 

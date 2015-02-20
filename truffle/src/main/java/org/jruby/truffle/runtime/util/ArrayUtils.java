@@ -118,16 +118,6 @@ public abstract class ArrayUtils {
         return false;
     }
 
-    public static boolean contains(Object[] array, int length, Object value) {
-        for (int n = 0; n < length; n++) {
-            if (array[n].equals(value)) {
-                return true;
-            }
-        }
-
-        return false;
-    }
-
     public static Object[] box(int[] unboxed) {
         return box(unboxed, 0);
     }

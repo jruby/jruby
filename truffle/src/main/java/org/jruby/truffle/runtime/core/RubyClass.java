@@ -153,14 +153,6 @@ public class RubyClass extends RubyModule {
         return allocator;
     }
 
-    @Override
-    public void visitObjectGraph(ObjectGraphVisitor visitor) {
-        // MRI consider all singleton classes as internal objects.
-        if (!isSingleton) {
-            super.visitObjectGraph(visitor);
-        }
-    }
-
     public static class ClassAllocator implements Allocator {
 
         @Override

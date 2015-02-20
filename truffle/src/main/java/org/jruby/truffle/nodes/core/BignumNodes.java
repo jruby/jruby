@@ -754,6 +754,7 @@ public abstract class BignumNodes {
             super(prev);
         }
 
+        @TruffleBoundary
         @Specialization
         public RubyString toS(RubyBignum value) {
             return getContext().makeString(value.bigIntegerValue().toString());

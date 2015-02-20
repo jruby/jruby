@@ -14,6 +14,10 @@ import com.oracle.truffle.api.nodes.NodeUtil;
 import com.oracle.truffle.api.source.Source;
 import com.oracle.truffle.api.source.SourceSection;
 
+import org.jcodings.specific.ASCIIEncoding;
+import org.jcodings.specific.USASCIIEncoding;
+import org.jcodings.specific.UTF8Encoding;
+import org.jcodings.specific.Windows_31JEncoding;
 import org.joni.NameEntry;
 import org.joni.Regex;
 import org.joni.Syntax;
@@ -2354,14 +2358,14 @@ public class BodyTranslator extends Translator {
         // This isn't quite right - we shouldn't be looking up by name, we need a real reference to this constants
         if (node.getOptions().isEncodingNone()) {
             if (!all7Bit(node.getValue().bytes())) {
-                regexp.getSource().setEncoding(context.getRuntime().getEncodingService().getAscii8bitEncoding());
+                regexp.getSource().setEncoding(ASCIIEncoding.INSTANCE);
             } else {
-                regexp.getSource().setEncoding(context.getRuntime().getEncodingService().getUSAsciiEncoding());
+                regexp.getSource().setEncoding(USASCIIEncoding.INSTANCE);
             }
         } else if (node.getOptions().getKCode().getKCode().equals("SJIS")) {
-            regexp.getSource().setEncoding(((RubyEncoding) context.getCoreLibrary().getEncodingClass().getConstants().get("Windows_31J").getValue()).getEncoding());
+            regexp.getSource().setEncoding(Windows_31JEncoding.INSTANCE);
         } else if (node.getOptions().getKCode().getKCode().equals("UTF8")) {
-            regexp.getSource().setEncoding(((RubyEncoding) context.getCoreLibrary().getEncodingClass().getConstants().get("UTF_8").getValue()).getEncoding());
+            regexp.getSource().setEncoding(UTF8Encoding.INSTANCE);
         }
 
         final ObjectLiteralNode literalNode = new ObjectLiteralNode(context, translate(node.getPosition()), regexp);

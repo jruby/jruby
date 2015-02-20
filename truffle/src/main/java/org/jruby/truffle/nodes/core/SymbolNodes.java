@@ -12,6 +12,8 @@ package org.jruby.truffle.nodes.core;
 import com.oracle.truffle.api.Truffle;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.source.SourceSection;
+
+import org.jruby.truffle.nodes.core.StringNodes.HashNode;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyArray;
 import org.jruby.truffle.runtime.core.RubyProc;
@@ -39,34 +41,10 @@ public abstract class SymbolNodes {
             return a == b;
         }
 
-        @Specialization
-        public boolean equal(RubySymbol a, RubyString b) {
-            notDesignedForCompilation();
 
-            return a.toString().equals(b.toString());
-        }
-
-        @Specialization
-        public boolean equal(RubySymbol a, int b) {
-            notDesignedForCompilation();
-
-            return a.toString().equals(Integer.toString(b));
-        }
-
-        @Specialization
-        public boolean equal(RubySymbol a, long b) {
-            notDesignedForCompilation();
-
-            return a.toString().equals(Long.toString(b));
-        }
-
-        @Specialization(guards = "notSymbol(a, b)")
+        @Specialization(guards = "!isRubySymbol(b)")
         public boolean equal(RubySymbol a, Object b) {
             return false;
-        }
-
-        protected boolean notSymbol(RubySymbol a, Object b) {
-            return !(b instanceof RubySymbol);
         }
 
     }
@@ -107,7 +85,7 @@ public abstract class SymbolNodes {
 
             final RubyArray array = new RubyArray(getContext().getCoreLibrary().getArrayClass());
 
-            for (RubySymbol s : getContext().getSymbolTable().getSymbolsTable().values()){
+            for (RubySymbol s : getContext().getSymbolTable().allSymbols()) {
                 array.slowPush(s);
             }
             return array;
@@ -131,6 +109,24 @@ public abstract class SymbolNodes {
             notDesignedForCompilation();
 
             return symbol.toString().isEmpty();
+        }
+
+    }
+
+    @CoreMethod(names = "hash")
+    public abstract static class HashNode extends CoreMethodNode {
+
+        public HashNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public HashNode(HashNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public int hash(RubySymbol symbol) {
+            return symbol.toString().hashCode();
         }
 
     }

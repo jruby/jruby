@@ -188,7 +188,7 @@ public abstract class StringNodes {
 
                 return compare(a, coerced);
             } catch (RaiseException e) {
-                if (e.getRubyException().getLogicalClass().equals(getContext().getCoreLibrary().getTypeErrorClass())) {
+                if (e.getRubyException().getLogicalClass() == getContext().getCoreLibrary().getTypeErrorClass()) {
                     return getContext().getCoreLibrary().getNilObject();
                 } else {
                     throw e;
@@ -230,9 +230,8 @@ public abstract class StringNodes {
             try {
                 EncodingUtils.encCrStrBufCat(getContext().getRuntime(), string, other.getByteList(), other.getByteList().getEncoding(), codeRange, ptr_cr_ret);
             } catch (org.jruby.exceptions.RaiseException e) {
-                if (e.getException().getMetaClass().equals(getContext().getRuntime().getEncodingCompatibilityError())) {
+                if (e.getException().getMetaClass() == getContext().getRuntime().getEncodingCompatibilityError()) {
                     CompilerDirectives.transferToInterpreter();
-
                     throw new RaiseException(getContext().getCoreLibrary().encodingCompatibilityError(e.getException().message.asJavaString(), this));
                 }
 
@@ -743,7 +742,7 @@ public abstract class StringNodes {
 
             ByteList newByteList = StringNodesHelper.downcase(string);
 
-            if (newByteList.equals(string.getBytes())) {
+            if (newByteList.equal(string.getBytes())) {
                 return getContext().getCoreLibrary().getNilObject();
             } else {
                 string.set(newByteList);
@@ -940,6 +939,24 @@ public abstract class StringNodes {
         }
     }
 
+    @CoreMethod(names = "hash")
+    public abstract static class HashNode extends CoreMethodNode {
+
+        public HashNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public HashNode(HashNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public int hash(RubyString string) {
+            return string.getBytes().hashCode();
+        }
+
+    }
+
     @CoreMethod(names = "inspect")
     public abstract static class InspectNode extends CoreMethodNode {
 
@@ -951,6 +968,7 @@ public abstract class StringNodes {
             super(prev);
         }
 
+        @TruffleBoundary
         @Specialization
         public RubyString inspect(RubyString string) {
             notDesignedForCompilation();

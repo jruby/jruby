@@ -396,33 +396,6 @@ public class RubyRegexp extends RubyBasicObject {
         }
     }
 
-    @Override
-    public int hashCode() {
-        return regex.hashCode();
-    }
-
-    @Override
-    public boolean equals(Object obj) {
-        if (this == obj) {
-            return true;
-        }
-        if (obj == null) {
-            return false;
-        }
-        if (!(obj instanceof RubyRegexp)) {
-            return false;
-        }
-        RubyRegexp other = (RubyRegexp) obj;
-        if (source == null) {
-            if (other.source != null) {
-                return false;
-            }
-        } else if (!source.equals(other.source)) {
-            return false;
-        }
-        return true;
-    }
-
     public static Regex compile(RubyNode currentNode, RubyContext context, ByteList bytes, int options) {
         RubyNode.notDesignedForCompilation();
         return compile(currentNode, context, bytes.bytes(), bytes.getEncoding(), options);

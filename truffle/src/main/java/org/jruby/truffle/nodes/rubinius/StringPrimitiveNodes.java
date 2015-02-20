@@ -97,7 +97,7 @@ public abstract class StringPrimitiveNodes {
             final ByteList a = string.getBytes();
             final ByteList b = other.getBytes();
 
-            if (incompatibleEncodingProfile.profile((a.getEncoding().equals(b.getEncoding()) == false) &&
+            if (incompatibleEncodingProfile.profile((a.getEncoding() != b.getEncoding()) &&
                     (org.jruby.RubyEncoding.areCompatible(string, other) == null))) {
                 return false;
             }
