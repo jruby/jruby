@@ -215,13 +215,13 @@ public class RubyModule extends RubyBasicObject implements ModuleChain {
 
         checkFrozen(currentNode);
 
-        RubyConstant previous = getConstants().get(name);
+        RubyConstant previous = constants.get(name);
         if (previous == null) {
-            getConstants().put(name, new RubyConstant(this, value, false, autoload));
+            constants.put(name, new RubyConstant(this, value, false, autoload));
         } else {
             // TODO(CS): warn when redefining a constant
             // TODO (nirvdrum 18-Feb-15): But don't warn when redefining an autoloaded constant.
-            getConstants().put(name, new RubyConstant(this, value, previous.isPrivate(), autoload));
+            constants.put(name, new RubyConstant(this, value, previous.isPrivate(), autoload));
         }
 
         newLexicalVersion();
@@ -232,9 +232,18 @@ public class RubyModule extends RubyBasicObject implements ModuleChain {
         RubyNode.notDesignedForCompilation();
 
         checkFrozen(currentNode);
-        RubyConstant oldConstant = getConstants().remove(name);
+        RubyConstant oldConstant = constants.remove(name);
         newLexicalVersion();
         return oldConstant;
+    }
+
+    @TruffleBoundary
+    public void setClassVariable(RubyNode currentNode, String variableName, Object value) {
+        RubyNode.notDesignedForCompilation();
+
+        checkFrozen(currentNode);
+
+        classVariables.put(variableName, value);
     }
 
     @TruffleBoundary
@@ -251,10 +260,9 @@ public class RubyModule extends RubyBasicObject implements ModuleChain {
         RubyNode.notDesignedForCompilation();
 
         assert method != null;
-        assert getMethods() != null;
 
         checkFrozen(currentNode);
-        getMethods().put(method.getName(), method.withDeclaringModule(this));
+        methods.put(method.getName(), method.withDeclaringModule(this));
         newVersion();
     }
 
@@ -264,7 +272,7 @@ public class RubyModule extends RubyBasicObject implements ModuleChain {
 
         checkFrozen(currentNode);
 
-        getMethods().remove(methodName);
+        methods.remove(methodName);
         newVersion();
     }
 
