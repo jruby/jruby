@@ -145,16 +145,13 @@ public class ObjectSpaceManager {
 
     }
 
-    private Map<Long, RubyBasicObject> liveObjects;
-    private ObjectGraphVisitor visitor;
-
     @TruffleBoundary
     public Map<Long, RubyBasicObject> collectLiveObjects() {
         RubyNode.notDesignedForCompilation();
 
-        liveObjects = new HashMap<>();
+        final Map<Long, RubyBasicObject> liveObjects = new HashMap<>();
 
-        visitor = new ObjectGraphVisitor() {
+        final ObjectGraphVisitor visitor = new ObjectGraphVisitor() {
 
             @Override
             public boolean visit(RubyBasicObject object) {
