@@ -171,7 +171,7 @@ public class RubyBasicObject {
         return getOperations().isFieldDefined(this, name);
     }
 
-    public void visitObjectGraph(ObjectSpaceManager.ObjectGraphVisitor visitor) {
+    public final void visitObjectGraph(ObjectSpaceManager.ObjectGraphVisitor visitor) {
         if (visitor.visit(this)) {
             metaClass.visitObjectGraph(visitor);
 
