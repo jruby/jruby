@@ -490,20 +490,10 @@ public class RubyModule extends RubyBasicObject implements ModuleChain {
             }
         }
 
-        for (Object classVariable : classVariables.values()) {
-            if (classVariable instanceof RubyBasicObject) {
-                ((RubyBasicObject) classVariable).visitObjectGraph(visitor);
-            }
-        }
-
         for (InternalMethod method : methods.values()) {
             if (method.getDeclarationFrame() != null) {
                 getContext().getObjectSpaceManager().visitFrame(method.getDeclarationFrame(), visitor);
             }
-        }
-
-        for (RubyModule ancestor : ancestors()) {
-            ancestor.visitObjectGraph(visitor);
         }
     }
 
