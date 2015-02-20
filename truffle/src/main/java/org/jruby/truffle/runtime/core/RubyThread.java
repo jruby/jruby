@@ -45,7 +45,7 @@ public class RubyThread extends RubyBasicObject {
 
     private final RubyBasicObject threadLocals;
 
-    private final List<Lock> ownedLocks = new ArrayList<Lock>();
+    private final List<Lock> ownedLocks = new ArrayList<Lock>(); // Always accessed by the same underlying Java thread.
 
     public RubyThread(RubyClass rubyClass, ThreadManager manager) {
         super(rubyClass);
