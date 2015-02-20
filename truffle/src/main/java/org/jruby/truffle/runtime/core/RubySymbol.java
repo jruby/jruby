@@ -178,7 +178,7 @@ public class RubySymbol extends RubyBasicObject implements CodeRangeable {
             RubySymbol symbol = symbolsTable.get(byteList);
 
             if (symbol == null) {
-                symbol = createSymbol(name);
+                symbol = createSymbol(name, byteList);
             }
             return symbol;
         }
@@ -190,22 +190,14 @@ public class RubySymbol extends RubyBasicObject implements CodeRangeable {
             RubySymbol symbol = symbolsTable.get(byteList);
 
             if (symbol == null) {
-                symbol = createSymbol(byteList);
+                symbol = createSymbol(byteList.toString(), byteList);
             }
             return symbol;
 
         }
 
-        private RubySymbol createSymbol(ByteList byteList) {
-            RubySymbol symbol = new RubySymbol(context.getCoreLibrary().getSymbolClass(), byteList.toString(), byteList);
-            symbolsTable.put(byteList, symbol);
-            return symbol;
-        }
-
-        private RubySymbol createSymbol(String name) {
-            ByteList byteList = org.jruby.RubySymbol.symbolBytesFromString(context.getRuntime(), name);
+        private RubySymbol createSymbol(String name, ByteList byteList) {
             RubySymbol symbol = new RubySymbol(context.getCoreLibrary().getSymbolClass(), name, byteList);
-
             RubySymbol existingSymbol = symbolsTable.putIfAbsent(byteList, symbol);
             return existingSymbol == null ? symbol : existingSymbol;
         }
