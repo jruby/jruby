@@ -938,6 +938,24 @@ public abstract class StringNodes {
         }
     }
 
+    @CoreMethod(names = "hash")
+    public abstract static class HashNode extends CoreMethodNode {
+
+        public HashNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public HashNode(HashNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public int hash(RubyString string) {
+            return string.getBytes().hashCode();
+        }
+
+    }
+
     @CoreMethod(names = "inspect")
     public abstract static class InspectNode extends CoreMethodNode {
 
