@@ -16,3 +16,6 @@ windows:Signal.trap accepts 'DEFAULT' in place of a proc
 windows:Signal.trap accepts 'SIG_IGN' in place of a proc
 windows:Signal.trap accepts 'IGNORE' in place of a proc
 windows:Signal.trap the special EXIT signal code can unset the handler
+slow:Signal.trap the special EXIT signal code accepts the EXIT code
+slow:Signal.trap the special EXIT signal code runs the proc before at_exit handlers
+slow:Signal.trap the special EXIT signal code can unset the handler
