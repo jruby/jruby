@@ -12,6 +12,8 @@ package org.jruby.truffle.nodes.core;
 import com.oracle.truffle.api.Truffle;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.source.SourceSection;
+
+import org.jruby.truffle.nodes.core.StringNodes.HashNode;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyArray;
 import org.jruby.truffle.runtime.core.RubyProc;
@@ -131,6 +133,24 @@ public abstract class SymbolNodes {
             notDesignedForCompilation();
 
             return symbol.toString().isEmpty();
+        }
+
+    }
+
+    @CoreMethod(names = "hash")
+    public abstract static class HashNode extends CoreMethodNode {
+
+        public HashNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public HashNode(HashNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public int hash(RubySymbol symbol) {
+            return symbol.toString().hashCode();
         }
 
     }

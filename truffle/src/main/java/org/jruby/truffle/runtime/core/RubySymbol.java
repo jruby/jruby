@@ -77,24 +77,6 @@ public class RubySymbol extends RubyBasicObject implements CodeRangeable {
     }
 
     @Override
-    public int hashCode() {
-        return symbol.hashCode();
-    }
-
-    @Override
-    public boolean equals(Object other) {
-        if (other == this) {
-            return true;
-        } else if (other instanceof RubySymbol) {
-            return symbol == ((RubySymbol) other).symbol;
-        } else if (other instanceof RubyString) {
-            return other.equals(symbol);
-        } else {
-            return super.equals(other);
-        }
-    }
-
-    @Override
     public String toString() {
         return symbol;
     }
