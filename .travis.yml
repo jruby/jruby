@@ -69,7 +69,6 @@ matrix:
     - env: PHASE='-Pcomplete'
     - env: PHASE='-Prake -Dtask=spec:jrubyc'
     - env: PHASE='-Prake -Dtask=spec:profiler'
-    - env: COMMAND=tool/truffle-findbugs.sh
 
 branches:
   only:
