@@ -41,34 +41,9 @@ public abstract class SymbolNodes {
             return a == b;
         }
 
-        @Specialization
-        public boolean equal(RubySymbol a, RubyString b) {
-            notDesignedForCompilation();
-
-            return a.toString().equals(b.toString());
-        }
-
-        @Specialization
-        public boolean equal(RubySymbol a, int b) {
-            notDesignedForCompilation();
-
-            return a.toString().equals(Integer.toString(b));
-        }
-
-        @Specialization
-        public boolean equal(RubySymbol a, long b) {
-            notDesignedForCompilation();
-
-            return a.toString().equals(Long.toString(b));
-        }
-
-        @Specialization(guards = "notSymbol")
+        @Specialization(guards = "!isRubySymbol(arguments[1])")
         public boolean equal(RubySymbol a, Object b) {
             return false;
-        }
-
-        protected boolean notSymbol(RubySymbol a, Object b) {
-            return !(b instanceof RubySymbol);
         }
 
     }
