@@ -20,7 +20,7 @@ public class RubyBignum extends RubyBasicObject {
     private static final BigInteger LONG_MAX = BigInteger.valueOf(Long.MAX_VALUE);
     private static final BigInteger LONG_MIN = BigInteger.valueOf(Long.MIN_VALUE);
 
-    private BigInteger value;
+    private final BigInteger value;
 
     public RubyBignum(RubyClass rubyClass, BigInteger value) {
         super(rubyClass);

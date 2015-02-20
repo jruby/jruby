@@ -879,8 +879,7 @@ public abstract class HashNodes {
             final Object[] store = (Object[]) hash.getStore();
             final int size = hash.getSize();
 
-            final int resultSize = store.length / 2;
-            final Object[] result = new Object[resultSize];
+            final Object[] result = new Object[size];
 
             int count = 0;
 
@@ -902,7 +901,7 @@ public abstract class HashNodes {
                 }
             }
 
-            return new RubyArray(getContext().getCoreLibrary().getArrayClass(), result, resultSize);
+            return new RubyArray(getContext().getCoreLibrary().getArrayClass(), result, size);
         }
 
         @Specialization(guards = "isBuckets(hash)")

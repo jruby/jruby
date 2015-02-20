@@ -9,18 +9,22 @@
  */
 package org.jruby.truffle.nodes.objects;
 
+import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.UnexpectedResultException;
 import com.oracle.truffle.api.source.SourceSection;
 
 import org.jruby.truffle.nodes.RubyNode;
+import org.jruby.truffle.nodes.core.KernelNodes;
+import org.jruby.truffle.nodes.core.KernelNodesFactory;
 import org.jruby.truffle.runtime.LexicalScope;
 import org.jruby.truffle.runtime.RubyConstant;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.RubyClass;
 import org.jruby.truffle.runtime.core.RubyModule;
+import org.jruby.truffle.runtime.core.RubyString;
 
 /**
  * Define a new module, or get the existing one of the same name.
@@ -29,6 +33,7 @@ public class DefineOrGetModuleNode extends RubyNode {
 
     protected final String name;
     @Child private RubyNode lexicalParentModule;
+    @Child private KernelNodes.RequireNode requireNode;
 
     public DefineOrGetModuleNode(RubyContext context, SourceSection sourceSection, String name, RubyNode lexicalParent) {
         super(context, sourceSection);
@@ -89,6 +94,24 @@ public class DefineOrGetModuleNode extends RubyNode {
 
         if (constant != null && !constant.isVisibleTo(getContext(), LexicalScope.NONE, lexicalParent)) {
             throw new RaiseException(getContext().getCoreLibrary().nameErrorPrivateConstant(lexicalParent, name, this));
+        }
+
+        // If a constant already exists with this class/module name and it's an autoload module, we have to trigger
+        // the autoload behavior before proceeding.
+        if ((constant != null) && constant.isAutoload()) {
+            if (requireNode == null) {
+                CompilerDirectives.transferToInterpreter();
+                requireNode = insert(KernelNodesFactory.RequireNodeFactory.create(getContext(), getSourceSection(), new RubyNode[]{}));
+            }
+
+            // We know that we're redefining this constant as we're defining a class/module with that name.  We remove
+            // the constant here rather than just overwrite it in order to prevent autoload loops in either the require
+            // call or the recursive execute call.
+            lexicalParent.removeConstant(this, name);
+
+            requireNode.require((RubyString) constant.getValue());
+
+            return lookupForExistingModule(frame, lexicalParent);
         }
 
         return constant;

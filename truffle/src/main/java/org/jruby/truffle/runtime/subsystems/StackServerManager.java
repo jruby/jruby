@@ -51,7 +51,7 @@ public class StackServerManager {
                 httpExchange.getResponseHeaders().set("Content-Type","text/plain");
                 httpExchange.sendResponseHeaders(200, 0);
 
-                final PrintStream stream = new PrintStream(httpExchange.getResponseBody());
+                final PrintStream stream = new PrintStream(httpExchange.getResponseBody(), false, "UTF-8");
 
                 context.getSafepointManager().pauseAllThreadsAndExecuteFromNonRubyThread(new Consumer<RubyThread>() {
 

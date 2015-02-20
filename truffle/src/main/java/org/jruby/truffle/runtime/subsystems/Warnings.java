@@ -17,7 +17,7 @@ import org.jruby.truffle.runtime.RubyContext;
 
 public class Warnings {
 
-    private RubyContext context;
+    private final RubyContext context;
 
     public Warnings(RubyContext context) {
         this.context = context;

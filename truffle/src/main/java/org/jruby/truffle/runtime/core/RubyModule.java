@@ -173,16 +173,6 @@ public class RubyModule extends RubyBasicObject implements ModuleChain {
         return !(this instanceof RubyClass);
     }
 
-    /**
-     * This method supports initialization and solves boot-order problems and should not normally be
-     * used.
-     */
-    protected void unsafeSetParent(RubyModule parent) {
-        parentModule = parent;
-        parent.addDependent(this);
-        newVersion();
-    }
-
     @TruffleBoundary
     public void include(Node currentNode, RubyModule module) {
         RubyNode.notDesignedForCompilation();

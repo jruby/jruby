@@ -65,7 +65,7 @@ public class RubyFiber extends RubyBasicObject {
 
     private static class FiberExceptionMessage implements FiberMessage {
 
-        public RubyException exception;
+        private final RubyException exception;
 
         public FiberExceptionMessage(RubyException exception) {
             this.exception = exception;
@@ -88,7 +88,7 @@ public class RubyFiber extends RubyBasicObject {
     private final RubyThread rubyThread;
 
     private String name;
-    private boolean topLevel;
+    private final boolean topLevel;
     private final BlockingQueue<FiberMessage> messageQueue = new ArrayBlockingQueue<>(1);
     private RubyFiber lastResumedByFiber = null;
     private boolean alive = true;

@@ -24,8 +24,17 @@ then
 fi
 
 findbugs-3.0.0/bin/findbugs \
+  -maxHeap 2000 \
   -textui $ui_options \
   -exclude tool/truffle-findbugs-exclude.xml \
   -exitcode \
   -low \
-  truffle/target/classes/org/jruby/truffle/ || exit $?
+  truffle/target/classes/org/jruby/truffle/
+
+exit_code=$?
+if [ $exit_code -eq 2 ]
+then
+  exit 0 # just some classes missing
+else
+  exit $exit_code
+fi

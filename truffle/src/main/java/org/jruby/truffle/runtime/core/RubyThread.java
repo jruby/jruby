@@ -43,9 +43,9 @@ public class RubyThread extends RubyBasicObject {
     private volatile RubyException exception;
     private volatile Object value;
 
-    private RubyBasicObject threadLocals;
+    private final RubyBasicObject threadLocals;
 
-    private List<Lock> ownedLocks = new ArrayList<Lock>();
+    private final List<Lock> ownedLocks = new ArrayList<Lock>();
 
     public RubyThread(RubyClass rubyClass, ThreadManager manager) {
         super(rubyClass);

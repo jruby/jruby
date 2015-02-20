@@ -89,8 +89,8 @@ public abstract class TimePrimitiveNodes {
         @Specialization(guards = "isTrue(isUTC)")
         public RubyTime timeSSpecificUTC(int seconds, int nanoseconds, boolean isUTC, RubyNilClass offset) {
             // TODO(CS): overflow checks needed?
-            final long milliseconds = seconds * 1_000 + (nanoseconds / 1_000_000);
-            return new RubyTime(getContext().getCoreLibrary().getTimeClass(), new DateTime(milliseconds), null);
+            final long milliseconds = seconds * 1_000L + (nanoseconds / 1_000_000);
+            return new RubyTime(getContext().getCoreLibrary().getTimeClass(), new DateTime(milliseconds, DateTimeZone.UTC), null);
         }
 
         @Specialization(guards = "!isTrue(isUTC)")
@@ -141,7 +141,7 @@ public abstract class TimePrimitiveNodes {
 
         @Specialization
         public long timeUSeconds(RubyTime time) {
-            return time.getDateTime().getMillisOfSecond() * 1_000;
+            return time.getDateTime().getMillisOfSecond() * 1_000L;
         }
 
     }
@@ -345,7 +345,7 @@ public abstract class TimePrimitiveNodes {
 
         @Specialization
         public long timeNSeconds(RubyTime time) {
-            return time.getDateTime().getMillisOfSecond() * 1_000_000;
+            return time.getDateTime().getMillisOfSecond() * 1_000_000L;
         }
 
     }

@@ -62,6 +62,12 @@ public class RubyBasicObject implements TruffleObject {
         }
     }
 
+    protected void unsafeSetLogicalClass(RubyClass newLogicalClass) {
+        assert logicalClass == null;
+        logicalClass = newLogicalClass;
+        metaClass = newLogicalClass;
+    }
+
     public boolean hasNoSingleton() {
         return false;
     }
@@ -150,17 +156,6 @@ public class RubyBasicObject implements TruffleObject {
         RubyNode.notDesignedForCompilation();
         getSingletonClass(currentNode).include(currentNode, module);
     }
-
-    public void unsafeSetLogicalClass(RubyClass newLogicalClass) {
-        assert logicalClass == null;
-        logicalClass = newLogicalClass;
-        metaClass = newLogicalClass;
-    }
-
-    //public void unsafeSetMetaClass(RubyClass newMetaClass) {
-    //    assert metaClass == null;
-    //    metaClass = newMetaClass;
-    //}
 
     public Object getInstanceVariable(String name) {
         RubyNode.notDesignedForCompilation();

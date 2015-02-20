@@ -561,20 +561,14 @@ public abstract class ArrayNodes {
 
         @Specialization(guards = "!isObject(array)")
         public RubyNilClass compactNotObjects(RubyArray array) {
-            if (array.isFrozen()) {
-                CompilerDirectives.transferToInterpreter();
-                throw new RaiseException(getContext().getCoreLibrary().frozenError("String", this));
-            }
+            array.checkFrozen(this);
 
             return getContext().getCoreLibrary().getNilObject();
         }
 
         @Specialization(guards = "isObject(array)")
         public Object compactObjects(RubyArray array) {
-            if (array.isFrozen()) {
-                CompilerDirectives.transferToInterpreter();
-                throw new RaiseException(getContext().getCoreLibrary().frozenError("String", this));
-            }
+            array.checkFrozen(this);
 
             final Object[] store = (Object[]) array.getStore();
             final int size = array.getSize();

@@ -65,9 +65,10 @@ class << STDOUT
 end
 
 STDERR = IO.new
+$stderr = STDERR
 
 class << STDERR
-  def self.puts(*values)
+  def puts(*values)
     Kernel.send(:puts, *values)
   end
 end
@@ -178,14 +179,6 @@ class Rational
 
   def _offset_to_milliseconds
     (self * 1000).to_i
-  end
-
-end
-
-class BasicObject
-
-  def __id__
-    Rubinius.primitive :object_id
   end
 
 end

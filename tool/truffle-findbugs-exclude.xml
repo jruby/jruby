@@ -4,6 +4,10 @@
     <Class name="~.*NodeFactory.*" />
   </Match>
   <Match>
+    <Class name="org.jruby.truffle.nodes.core.MutexNodes$UnlockNode" />
+    <Bug pattern="IMSE_DONT_CATCH_IMSE" />
+  </Match>
+  <Match>
     <Class name="org.jruby.truffle.nodes.rubinius.VMPrimitiveNodes$VMGCStartPrimitiveNode" />
     <Bug pattern="DM_GC" />
   </Match>
