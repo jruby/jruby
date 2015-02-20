@@ -73,7 +73,7 @@ public class ObjectSpaceManager {
         this.context = context;
     }
 
-    public void defineFinalizer(RubyBasicObject object, RubyProc proc) {
+    public synchronized void defineFinalizer(RubyBasicObject object, RubyProc proc) {
         RubyNode.notDesignedForCompilation();
 
         // Record the finalizer against the object
@@ -102,7 +102,7 @@ public class ObjectSpaceManager {
         }
     }
 
-    public void undefineFinalizer(RubyBasicObject object) {
+    public synchronized void undefineFinalizer(RubyBasicObject object) {
         RubyNode.notDesignedForCompilation();
 
         final FinalizerReference finalizerReference = finalizerReferences.get(object);
