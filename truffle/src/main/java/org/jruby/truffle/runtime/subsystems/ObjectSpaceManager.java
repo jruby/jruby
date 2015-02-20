@@ -165,10 +165,10 @@ public class ObjectSpaceManager {
             @Override
             public void accept(RubyThread currentThread) {
                 synchronized (liveObjects) {
-                    visitor.visit(currentThread);
+                    currentThread.visitObjectGraph(visitor);
                     context.getCoreLibrary().getGlobalVariablesObject().visitObjectGraph(visitor);
-                    context.getCoreLibrary().getMainObject().visitObjectGraph(visitor);
-                    context.getCoreLibrary().getObjectClass().visitObjectGraph(visitor);
+
+                    // Needs to be called from the corresponding Java thread or it will not use the correct call stack.
                     visitCallStack(visitor);
                 }
             }
@@ -178,7 +178,7 @@ public class ObjectSpaceManager {
         return Collections.unmodifiableMap(liveObjects);
     }
 
-    public void visitCallStack(final ObjectGraphVisitor visitor) {
+    private void visitCallStack(final ObjectGraphVisitor visitor) {
         FrameInstance currentFrame = Truffle.getRuntime().getCurrentFrame();
         if (currentFrame != null) {
             visitFrameInstance(currentFrame, visitor);
