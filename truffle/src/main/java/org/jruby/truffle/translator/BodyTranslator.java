@@ -44,6 +44,7 @@ import org.jruby.truffle.nodes.control.RetryNode;
 import org.jruby.truffle.nodes.control.ReturnNode;
 import org.jruby.truffle.nodes.control.WhileNode;
 import org.jruby.truffle.nodes.core.*;
+import org.jruby.truffle.nodes.debug.AssertConstantNodeFactory;
 import org.jruby.truffle.nodes.globals.*;
 import org.jruby.truffle.nodes.literal.*;
 import org.jruby.truffle.nodes.methods.*;
@@ -390,6 +391,12 @@ public class BodyTranslator extends Translator {
             } else if (node.getName().equals("check_frozen")) {
                 return translateRubiniusCheckFrozen(sourceSection);
             }
+        } else if (node.getReceiverNode() instanceof org.jruby.ast.Colon2ConstNode
+                && ((org.jruby.ast.Colon2ConstNode) node.getReceiverNode()).getLeftNode() instanceof org.jruby.ast.ConstNode
+                && ((org.jruby.ast.ConstNode) ((org.jruby.ast.Colon2ConstNode) node.getReceiverNode()).getLeftNode()).getName().equals("Truffle")
+                && ((org.jruby.ast.Colon2ConstNode) node.getReceiverNode()).getName().equals("Debug")
+                && node.getName().equals("assert_constant")) {
+            return AssertConstantNodeFactory.create(context, sourceSection, node.getArgsNode().childNodes().get(0).accept(this));
         }
 
         return visitCallNodeExtraArgument(node, null, false, false);
@@ -1112,11 +1119,6 @@ public class BodyTranslator extends Translator {
 
     @Override
     public RubyNode visitFCallNode(org.jruby.ast.FCallNode node) {
-        if (Options.TRUFFLE_DEBUG_ENABLE_ASSERT_CONSTANT.load() && node.getName().equals("truffle_assert_constant")) {
-            SourceSection sourceSection = translate(node.getPosition());
-            return AssertCompilationConstantNodeFactory.create(context, sourceSection, node.getArgsNode().childNodes().get(0).accept(this));
-        }
-
         final org.jruby.ast.Node receiver = new org.jruby.ast.SelfNode(node.getPosition());
         final CallNode callNode = new CallNode(node.getPosition(), receiver, node.getName(), node.getArgsNode(), node.getIterNode());
 

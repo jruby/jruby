@@ -3,25 +3,25 @@ PETests.tests do
   describe "A Fixnum" do
     
     example "literal" do
-      truffle_assert_constant 14
+      Truffle::Debug.assert_constant 14
     end
     
     describe "#+" do
       
       example "a Fixnum" do
-        truffle_assert_constant 14 + 2
+        Truffle::Debug.assert_constant 14 + 2
       end
       
       counter_example "a Bignum" do
-        truffle_assert_constant 14 + 0xfffffffffffffffffffffffffffffff
+        Truffle::Debug.assert_constant 14 + 0xfffffffffffffffffffffffffffffff
       end
       
       example "a Float" do
-        truffle_assert_constant 14 + 2.0
+        Truffle::Debug.assert_constant 14 + 2.0
       end
       
       counter_example "rand" do
-        truffle_assert_constant 14 + rand
+        Truffle::Debug.assert_constant 14 + rand
       end
 
     end
@@ -29,19 +29,19 @@ PETests.tests do
     describe "#*" do
       
       example "a Fixnum" do
-        truffle_assert_constant 14 * 2
+        Truffle::Debug.assert_constant 14 * 2
       end
       
       counter_example "a Bignum" do
-        truffle_assert_constant 14 * 0xfffffffffffffffffffffffffffffff
+        Truffle::Debug.assert_constant 14 * 0xfffffffffffffffffffffffffffffff
       end
       
       example "a Float" do
-        truffle_assert_constant 14 * 2.0
+        Truffle::Debug.assert_constant 14 * 2.0
       end
       
       counter_example "rand" do
-        truffle_assert_constant 14 * rand
+        Truffle::Debug.assert_constant 14 * rand
       end
 
     end
@@ -49,19 +49,19 @@ PETests.tests do
     describe "#/" do
       
       example "a Fixnum" do
-        truffle_assert_constant 14 / 2
+        Truffle::Debug.assert_constant 14 / 2
       end
       
       example "a Bignum" do
-        truffle_assert_constant 14 / 0xfffffffffffffffffffffffffffffff
+        Truffle::Debug.assert_constant 14 / 0xfffffffffffffffffffffffffffffff
       end
       
       example "a Float" do
-        truffle_assert_constant 14 / 2.0
+        Truffle::Debug.assert_constant 14 / 2.0
       end
       
       counter_example "rand" do
-        truffle_assert_constant 14 / rand
+        Truffle::Debug.assert_constant 14 / rand
       end
 
     end
@@ -69,7 +69,7 @@ PETests.tests do
     describe "#<=>" do
       
       example "a Fixnum" do
-        truffle_assert_constant 14 <=> 2
+        Truffle::Debug.assert_constant 14 <=> 2
       end
 
     end

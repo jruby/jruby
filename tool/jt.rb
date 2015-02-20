@@ -174,7 +174,6 @@ module Commands
     run(*%w[
             --graal
             -J-G:+TruffleCompilationExceptionsAreThrown
-            -Xtruffle.debug.enable_assert_constant=true
             test/truffle/pe/pe.rb])
   end
   private :test_pe

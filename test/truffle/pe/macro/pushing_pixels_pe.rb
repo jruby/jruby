@@ -31,7 +31,7 @@ PETests.tests do
 
   broken_example "A set of constants used in a literal hash, mapped to an array, indexed, used in an array literal, sorted, indexed, and added, all via method_missing, respond_to? and send" do
     bar = PushingPixelsFixtures::Bar.new
-    truffle_assert_constant bar.foo(14, 8, 6)
+    Truffle::Debug.assert_constant bar.foo(14, 8, 6)
   end
 
 end

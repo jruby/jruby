@@ -19,6 +19,7 @@ import org.jruby.truffle.runtime.DebugOperations;
 import org.jruby.truffle.runtime.RubyCallStack;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.backtrace.Backtrace;
+import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.RubyArray;
 import org.jruby.truffle.runtime.core.RubyHash;
 import org.jruby.truffle.runtime.core.RubyNilClass;
@@ -26,6 +27,24 @@ import org.jruby.truffle.runtime.core.RubyString;
 
 @CoreClass(name = "Truffle::Debug")
 public abstract class TruffleDebugNodes {
+
+    @CoreMethod(names = "assert_constant", onSingleton = true, required = 1)
+    public abstract static class AssertConstantNode extends CoreMethodNode {
+
+        public AssertConstantNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public AssertConstantNode(AssertConstantNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public RubyNilClass assertConstant(Object value) {
+            throw new RaiseException(getContext().getCoreLibrary().runtimeError("Truffle::Debug.assert_constant can only be called lexically", this));
+        }
+
+    }
 
     @CoreMethod(names = "dump_call_stack", onSingleton = true)
     public abstract static class DumpCallStackNode extends CoreMethodNode {

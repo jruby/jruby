@@ -20,7 +20,7 @@ PETests.tests do
         }
 
         broken_example "still has Fixnum#+ Fixnum" do
-          truffle_assert_constant KernelSetTraceFuncFixtures.method_with_many_lines(14, 2)
+          Truffle::Debug.assert_constant KernelSetTraceFuncFixtures.method_with_many_lines(14, 2)
         end
       ensure
         set_trace_func nil

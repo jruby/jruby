@@ -9,7 +9,7 @@
 # This file relies on some implementation details of JRuby+Truffle and Truffle,
 # so be careful as you edit. Every block that you pass to example must be
 # unique - so you can't always build up examples by running in a loop or using
-# helper method. truffle_assert_constant looks like a method but is replaced
+# helper method. Truffle::Debug.assert_constant looks like a method but is replaced
 # in the parser with a specific node.
 
 # Definition of the DSL
@@ -122,11 +122,11 @@ PETests.tests do
   describe "For example" do
 
     example "a fixnum literal" do
-      truffle_assert_constant 14
+      Truffle::Debug.assert_constant 14
     end
 
     counter_example "a call to #rand" do
-      truffle_assert_constant rand
+      Truffle::Debug.assert_constant rand
     end
 
   end
