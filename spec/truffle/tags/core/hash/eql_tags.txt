@@ -3,6 +3,7 @@ fails:Hash#eql? returns false when the numbers of keys differ without comparing 
 fails:Hash#eql? first compares keys via hash
 fails:Hash#eql? does not compare keys with different hash codes via eql?
 fails:Hash#eql? computes equality for complex recursive hashes
+fails:Hash#eql? computes equality for recursive hashes & arrays
 fails:Hash#eql? compares values when keys match
 fails:Hash#eql? compares keys with eql? semantics
 fails:Hash#eql? returns true iff other Hash has the same number of keys and each key-value pair matches
