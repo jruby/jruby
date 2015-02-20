@@ -10,10 +10,11 @@
 package org.jruby.truffle.runtime.core;
 
 import com.oracle.truffle.api.CallTarget;
-import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.Truffle;
+import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.frame.FrameDescriptor;
 import com.oracle.truffle.api.source.SourceSection;
+
 import org.jcodings.Encoding;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.RubyRootNode;
@@ -25,6 +26,7 @@ import org.jruby.util.ByteListHolder;
 import org.jruby.util.CodeRangeable;
 import org.jruby.util.StringSupport;
 
+import java.util.Collection;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -107,7 +109,7 @@ public class RubySymbol extends RubyBasicObject implements CodeRangeable {
     }
 
     @Override
-    @CompilerDirectives.TruffleBoundary
+    @TruffleBoundary
     public int scanForCodeRange() {
         int cr = getCodeRange();
 
@@ -155,7 +157,7 @@ public class RubySymbol extends RubyBasicObject implements CodeRangeable {
         return bytes;
     }
 
-    @CompilerDirectives.TruffleBoundary
+    @TruffleBoundary
     private int slowCodeRangeScan() {
         return StringSupport.codeRangeScan(bytes.getEncoding(), bytes);
     }
@@ -169,6 +171,7 @@ public class RubySymbol extends RubyBasicObject implements CodeRangeable {
             this.context = context;
         }
 
+        @TruffleBoundary
         public RubySymbol getSymbol(String name) {
             ByteList byteList = org.jruby.RubySymbol.symbolBytesFromString(context.getRuntime(), name);
 
@@ -180,6 +183,7 @@ public class RubySymbol extends RubyBasicObject implements CodeRangeable {
             return symbol;
         }
 
+        @TruffleBoundary
         public RubySymbol getSymbol(ByteList byteList) {
             // TODO(CS): is this broken? ByteList is mutable...
 
@@ -206,8 +210,9 @@ public class RubySymbol extends RubyBasicObject implements CodeRangeable {
             return existingSymbol == null ? symbol : existingSymbol;
         }
 
-        public ConcurrentHashMap<ByteList, RubySymbol> getSymbolsTable(){
-            return symbolsTable;
+        @TruffleBoundary
+        public Collection<RubySymbol> allSymbols() {
+            return symbolsTable.values();
         }
     }
 

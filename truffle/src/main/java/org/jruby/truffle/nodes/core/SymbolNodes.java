@@ -107,7 +107,7 @@ public abstract class SymbolNodes {
 
             final RubyArray array = new RubyArray(getContext().getCoreLibrary().getArrayClass());
 
-            for (RubySymbol s : getContext().getSymbolTable().getSymbolsTable().values()){
+            for (RubySymbol s : getContext().getSymbolTable().allSymbols()) {
                 array.slowPush(s);
             }
             return array;
