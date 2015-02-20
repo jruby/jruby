@@ -111,7 +111,7 @@ public class DefineOrGetModuleNode extends RubyNode {
 
             requireNode.require((RubyString) constant.getValue());
 
-            return lookupForExistingModule(frame, lexicalParent);
+            return lookupForExistingModule(lexicalParent);
         }
 
         return constant;
