@@ -17,13 +17,7 @@ import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.control.ReturnException;
 import org.jruby.truffle.runtime.control.ThreadExitException;
 import org.jruby.truffle.runtime.subsystems.ThreadManager;
-import org.jruby.truffle.runtime.subsystems.ObjectSpaceManager.ObjectGraphVisitor;
 import org.jruby.truffle.runtime.subsystems.ThreadManager.BlockingActionWithoutGlobalLock;
-
-import com.oracle.truffle.api.Truffle;
-import com.oracle.truffle.api.frame.Frame;
-import com.oracle.truffle.api.frame.FrameInstance;
-import com.oracle.truffle.api.frame.FrameInstanceVisitor;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -177,31 +171,6 @@ public class RubyThread extends RubyBasicObject {
 
     public String getName() {
         return name;
-    }
-
-    @Override
-    public void visitObjectGraphChildren(ObjectGraphVisitor visitor) {
-        visitCallStack(visitor);
-    }
-
-    private void visitCallStack(final ObjectGraphVisitor visitor) {
-        FrameInstance currentFrame = Truffle.getRuntime().getCurrentFrame();
-        if (currentFrame != null) {
-            visitFrameInstance(currentFrame, visitor);
-        }
-
-        Truffle.getRuntime().iterateFrames(new FrameInstanceVisitor<Object>() {
-            @Override
-            public Void visitFrame(FrameInstance frameInstance) {
-                visitFrameInstance(frameInstance, visitor);
-                return null;
-            }
-        });
-    }
-
-    private void visitFrameInstance(FrameInstance frameInstance, ObjectGraphVisitor visitor) {
-        Frame frame = frameInstance.getFrame(FrameInstance.FrameAccess.READ_ONLY, true);
-        getContext().getObjectSpaceManager().visitFrame(frame, visitor);
     }
 
     public static class ThreadAllocator implements Allocator {

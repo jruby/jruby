@@ -160,20 +160,41 @@ public class ObjectSpaceManager {
 
         };
 
-        context.getCoreLibrary().getGlobalVariablesObject().visitObjectGraph(visitor);
-
         context.getSafepointManager().pauseAllThreadsAndExecute(new Consumer<RubyThread>() {
 
             @Override
             public void accept(RubyThread currentThread) {
                 synchronized (liveObjects) {
-                    currentThread.visitObjectGraph(visitor);
+                    visitor.visit(currentThread);
+                    context.getCoreLibrary().getGlobalVariablesObject().visitObjectGraph(visitor);
+                    context.getCoreLibrary().getMainObject().visitObjectGraph(visitor);
+                    context.getCoreLibrary().getObjectClass().visitObjectGraph(visitor);
+                    visitCallStack(visitor);
                 }
             }
 
         });
 
         return Collections.unmodifiableMap(liveObjects);
+    }
+
+    public void visitCallStack(final ObjectGraphVisitor visitor) {
+        FrameInstance currentFrame = Truffle.getRuntime().getCurrentFrame();
+        if (currentFrame != null) {
+            visitFrameInstance(currentFrame, visitor);
+        }
+
+        Truffle.getRuntime().iterateFrames(new FrameInstanceVisitor<Object>() {
+            @Override
+            public Void visitFrame(FrameInstance frameInstance) {
+                visitFrameInstance(frameInstance, visitor);
+                return null;
+            }
+        });
+    }
+
+    public void visitFrameInstance(FrameInstance frameInstance, ObjectGraphVisitor visitor) {
+        visitFrame(frameInstance.getFrame(FrameInstance.FrameAccess.READ_ONLY, true), visitor);
     }
 
     public void visitFrame(Frame frame, ObjectGraphVisitor visitor) {
