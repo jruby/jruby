@@ -10,30 +10,36 @@
 package org.jruby.truffle.runtime.core;
 
 import com.oracle.truffle.api.CallTarget;
+import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.Truffle;
 import com.oracle.truffle.api.frame.FrameDescriptor;
 import com.oracle.truffle.api.source.SourceSection;
+import org.jcodings.Encoding;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.RubyRootNode;
 import org.jruby.truffle.nodes.methods.SymbolProcNode;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.methods.SharedMethodInfo;
 import org.jruby.util.ByteList;
+import org.jruby.util.ByteListHolder;
+import org.jruby.util.CodeRangeable;
+import org.jruby.util.StringSupport;
 
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Represents the Ruby {@code Symbol} class.
  */
-public class RubySymbol extends RubyBasicObject {
+public class RubySymbol extends RubyBasicObject implements CodeRangeable {
 
     private final String symbol;
-    private final ByteList symbolBytes;
+    private final ByteList bytes;
+    private int codeRange = StringSupport.CR_UNKNOWN;
 
-    private RubySymbol(RubyClass symbolClass, String symbol, ByteList byteList) {
+    private RubySymbol(RubyClass symbolClass, String symbol, ByteList bytes) {
         super(symbolClass);
         this.symbol = symbol;
-        this.symbolBytes = byteList;
+        this.bytes = bytes;
     }
 
     public static RubySymbol newSymbol(RubyContext runtime, String name) {
@@ -59,13 +65,13 @@ public class RubySymbol extends RubyBasicObject {
     }
 
     public ByteList getSymbolBytes() {
-        return symbolBytes;
+        return bytes;
     }
 
     public org.jruby.RubySymbol getJRubySymbol() {
         RubyNode.notDesignedForCompilation();
 
-        return getContext().getRuntime().newSymbol(symbolBytes);
+        return getContext().getRuntime().newSymbol(bytes);
     }
 
     @Override
@@ -93,6 +99,65 @@ public class RubySymbol extends RubyBasicObject {
 
     public RubyString toRubyString() {
          return getContext().makeString(toString());
+    }
+
+    @Override
+    public int getCodeRange() {
+        return codeRange;
+    }
+
+    @Override
+    @CompilerDirectives.TruffleBoundary
+    public int scanForCodeRange() {
+        int cr = getCodeRange();
+
+        if (cr == StringSupport.CR_UNKNOWN) {
+            cr = slowCodeRangeScan();
+            setCodeRange(cr);
+        }
+
+        return cr;
+    }
+
+    @Override
+    public boolean isCodeRangeValid() {
+        return codeRange == StringSupport.CR_VALID;
+    }
+
+    @Override
+    public final void setCodeRange(int codeRange) {
+        this.codeRange = codeRange;
+    }
+
+    @Override
+    public final void clearCodeRange() {
+        codeRange = StringSupport.CR_UNKNOWN;
+    }
+
+    @Override
+    public final void modify() {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public final void modify(int length) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public Encoding checkEncoding(ByteListHolder other) {
+        // TODO (nirvdrum Jan. 13, 2015): This should check if the encodings are compatible rather than just always succeeding.
+        return bytes.getEncoding();
+    }
+
+    @Override
+    public ByteList getByteList() {
+        return bytes;
+    }
+
+    @CompilerDirectives.TruffleBoundary
+    private int slowCodeRangeScan() {
+        return StringSupport.codeRangeScan(bytes.getEncoding(), bytes);
     }
 
     public static final class SymbolTable {

@@ -1,14 +1,3 @@
-fails:String#lines splits using default newline separator when none is specified
-fails:String#lines splits self using the supplied record separator and passes each substring to the block
 fails:String#lines taints substrings that are passed to the block if self is tainted
-fails:String#lines passes self as a whole to the block if the separator is nil
-fails:String#lines yields paragraphs (broken by 2 or more successive newlines) when passed ''
 fails:String#lines uses $/ as the separator when none is given
 fails:String#lines yields subclass instances for subclasses
-fails:String#lines returns self
-fails:String#lines tries to convert the separator to a string using to_str
-fails:String#lines does not care if the string is modified while substituting
-fails:String#lines raises a TypeError when the separator can't be converted to a string
-fails:String#lines accepts a string separator
-fails:String#lines raises a TypeError when the separator is a symbol
-fails:String#lines returns an array when no block given

@@ -133,6 +133,283 @@ class String
     end
   end
 
+  def gsub(pattern, replacement=undefined)
+    # Because of the behavior of $~, this is duplicated from gsub! because
+    # if we call gsub! from gsub, the last_match can't be updated properly.
+
+    unless valid_encoding?
+      raise ArgumentError, "invalid byte sequence in #{encoding}"
+    end
+
+    if undefined.equal? replacement
+      unless block_given?
+        return to_enum(:gsub, pattern, replacement)
+      end
+      use_yield = true
+      tainted = false
+    else
+      tainted = replacement.tainted?
+      untrusted = replacement.untrusted?
+
+      unless replacement.kind_of?(String)
+        hash = Rubinius::Type.check_convert_type(replacement, Hash, :to_hash)
+        replacement = StringValue(replacement) unless hash
+        tainted ||= replacement.tainted?
+        untrusted ||= replacement.untrusted?
+      end
+      use_yield = false
+    end
+
+    pattern = Rubinius::Type.coerce_to_regexp(pattern, true) unless pattern.kind_of? Regexp
+    match = pattern.search_region(self, 0, @num_bytes, true)
+
+    unless match
+      Regexp.last_match = nil
+    end
+
+    orig_len = @num_bytes
+    orig_data = @data
+
+    last_end = 0
+    offset = nil
+
+    last_match = nil
+
+    ret = byteslice(0, 0) # Empty string and string subclass
+    offset = match.full.at(0) if match
+
+    while match
+      if str = match.pre_match_from(last_end)
+        ret.append str
+      end
+
+      if use_yield || hash
+        Regexp.last_match = match
+
+        if use_yield
+          val = yield match.to_s
+        else
+          val = hash[match.to_s]
+        end
+        untrusted = true if val.untrusted?
+        val = val.to_s unless val.kind_of?(String)
+
+        tainted ||= val.tainted?
+
+        ret.append val
+
+        if !@data.equal?(orig_data) or @num_bytes != orig_len
+          raise RuntimeError, "string modified"
+        end
+      else
+        replacement.to_sub_replacement(ret, match)
+      end
+
+      tainted ||= val.tainted?
+
+      last_end = match.full.at(1)
+
+      if match.collapsing?
+        if char = find_character(offset)
+          offset += char.bytesize
+        else
+          offset += 1
+        end
+      else
+        offset = match.full.at(1)
+      end
+
+      last_match = match
+
+      match = pattern.match_from self, offset
+      break unless match
+
+      offset = match.full.at(0)
+    end
+
+    Regexp.last_match = last_match
+
+    str = byteslice(last_end, @num_bytes-last_end+1)
+    if str
+      ret.append str
+    end
+
+    ret.taint if tainted
+    ret.untrust if untrusted
+
+    ret
+  end
+
+  def gsub!(pattern, replacement=undefined)
+    # Because of the behavior of $~, this is duplicated from gsub! because
+    # if we call gsub! from gsub, the last_match can't be updated properly.
+
+    unless valid_encoding?
+      raise ArgumentError, "invalid byte sequence in #{encoding}"
+    end
+
+    if undefined.equal? replacement
+      unless block_given?
+        return to_enum(:gsub, pattern, replacement)
+      end
+      Rubinius.check_frozen
+      use_yield = true
+      tainted = false
+    else
+      Rubinius.check_frozen
+      tainted = replacement.tainted?
+      untrusted = replacement.untrusted?
+
+      unless replacement.kind_of?(String)
+        hash = Rubinius::Type.check_convert_type(replacement, Hash, :to_hash)
+        replacement = StringValue(replacement) unless hash
+        tainted ||= replacement.tainted?
+        untrusted ||= replacement.untrusted?
+      end
+      use_yield = false
+    end
+
+    pattern = Rubinius::Type.coerce_to_regexp(pattern, true) unless pattern.kind_of? Regexp
+    match = pattern.search_region(self, 0, @num_bytes, true)
+
+    unless match
+      Regexp.last_match = nil
+      return nil
+    end
+
+    orig_len = @num_bytes
+    orig_data = @data
+
+    last_end = 0
+    offset = nil
+
+    last_match = nil
+
+    ret = byteslice(0, 0) # Empty string and string subclass
+    offset = match.full.at(0)
+
+    while match
+      if str = match.pre_match_from(last_end)
+        ret.append str
+      end
+
+      if use_yield || hash
+        Regexp.last_match = match
+
+        if use_yield
+          val = yield match.to_s
+        else
+          val = hash[match.to_s]
+        end
+        untrusted = true if val.untrusted?
+        val = val.to_s unless val.kind_of?(String)
+
+        tainted ||= val.tainted?
+
+        ret.append val
+
+        if !@data.equal?(orig_data) or @num_bytes != orig_len
+          raise RuntimeError, "string modified"
+        end
+      else
+        replacement.to_sub_replacement(ret, match)
+      end
+
+      tainted ||= val.tainted?
+
+      last_end = match.full.at(1)
+
+      if match.collapsing?
+        if char = find_character(offset)
+          offset += char.bytesize
+        else
+          offset += 1
+        end
+      else
+        offset = match.full.at(1)
+      end
+
+      last_match = match
+
+      match = pattern.match_from self, offset
+      break unless match
+
+      offset = match.full.at(0)
+    end
+
+    Regexp.last_match = last_match
+
+    str = byteslice(last_end, @num_bytes-last_end+1)
+    if str
+      ret.append str
+    end
+
+    ret.taint if tainted
+    ret.untrust if untrusted
+
+    replace(ret)
+    self
+  end
+
+  def to_sub_replacement(result, match)
+    index = 0
+    while index < @num_bytes
+      current = index
+      while current < @num_bytes && @data[current] != 92  # ?\\
+        current += 1
+      end
+      result.append(byteslice(index, current - index))
+      break if current == @num_bytes
+
+      # found backslash escape, looking next
+      if current == @num_bytes - 1
+        result.append("\\") # backslash at end of string
+        break
+      end
+      index = current + 1
+
+      cap = @data[index]
+
+      additional = case cap
+                     when 38   # ?&
+                       match[0]
+                     when 96   # ?`
+                       match.pre_match
+                     when 39   # ?'
+                       match.post_match
+                     when 43   # ?+
+                       match.captures.compact[-1].to_s
+                     when 48..57   # ?0..?9
+                       match[cap - 48].to_s
+                     when 92 # ?\\ escaped backslash
+                       '\\'
+                     when 107 # \k named capture
+                       if @data[index + 1] == 60
+                         name = ""
+                         i = index + 2
+                         while i < @data.size && @data[i] != 62
+                           name << @data[i]
+                           i += 1
+                         end
+                         if i >= @data.size
+                           '\\'.append(cap.chr)
+                           index += 1
+                           next
+                         end
+                         index = i
+                         name.force_encoding result.encoding
+                         match[name]
+                       else
+                         '\\'.append(cap.chr)
+                       end
+                     else     # unknown escape
+                       '\\'.append(cap.chr)
+                   end
+      result.append(additional)
+      index += 1
+    end
+  end
+
   def start_with?(*prefixes)
     prefixes.each do |original_prefix|
       prefix = Rubinius::Type.check_convert_type original_prefix, String, :to_str

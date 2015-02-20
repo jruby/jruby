@@ -1,5 +1,0 @@
-fails:ERB::Util.url_encode encode characters
-fails:ERB::Util.url_encode encode unicode string
-fails:ERB::Util.url_encode returns empty string when argument is nil
-fails:ERB::Util.url_encode returns string when argument is number
-fails:ERB::Util.url_encode returns string when argument is boolean

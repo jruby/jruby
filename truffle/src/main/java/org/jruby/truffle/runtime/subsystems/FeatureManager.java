@@ -31,7 +31,7 @@ import java.util.Arrays;
  */
 public class FeatureManager {
 
-    private RubyContext context;
+    private final RubyContext context;
 
     public FeatureManager(RubyContext context) {
         this.context = context;
@@ -55,10 +55,6 @@ public class FeatureManager {
 
                 if (feature.equals("rbconfig")) {
                     // Kernel#rbconfig is always there
-                    return true;
-                }
-
-                if (feature.equals("time")) {
                     return true;
                 }
 

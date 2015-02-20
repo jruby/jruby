@@ -114,7 +114,7 @@ public abstract class EncodingConverterNodes {
 
     }
 
-    @CoreMethod(names = "search_convpath", isModuleFunction = true, needsSelf = false, required = 2)
+    @CoreMethod(names = "search_convpath", onSingleton = true, required = 2)
     public abstract static class SearchConvPathNode extends CoreMethodNode {
 
         public SearchConvPathNode(RubyContext context, SourceSection sourceSection) {

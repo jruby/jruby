@@ -9,9 +9,12 @@
  */
 package org.jruby.truffle.nodes.core;
 
+import java.util.Locale;
+
 import com.oracle.truffle.api.Truffle;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.source.SourceSection;
+
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyString;
 
@@ -31,7 +34,7 @@ public abstract class TruffleNodes {
 
         @Specialization
         public boolean graal() {
-            return Truffle.getRuntime().getName().toLowerCase().contains("graal");
+            return Truffle.getRuntime().getName().toLowerCase(Locale.ENGLISH).contains("graal");
         }
 
     }

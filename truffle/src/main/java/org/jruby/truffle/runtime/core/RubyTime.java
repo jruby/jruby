@@ -9,6 +9,7 @@
  */
 package org.jruby.truffle.runtime.core;
 
+import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.objects.Allocator;
@@ -16,47 +17,40 @@ import org.jruby.truffle.runtime.RubyContext;
 
 public class RubyTime extends RubyBasicObject {
 
-    private long seconds;
-    private long nanoseconds;
-    private DateTimeZone zone;
+    private DateTime dateTime;
+    private Object offset;
 
-    public RubyTime(RubyClass timeClass, long seconds, long nanoseconds, DateTimeZone zone) {
+    private static final DateTime ZERO = new DateTime(0);
+
+    public RubyTime(RubyClass timeClass, DateTime dateTime, Object offset) {
         super(timeClass);
-        this.seconds = seconds;
-        this.nanoseconds = nanoseconds;
-        this.zone = zone;
+        this.dateTime = dateTime;
+        this.offset = offset;
     }
 
     public static class TimeAllocator implements Allocator {
 
         @Override
         public RubyBasicObject allocate(RubyContext context, RubyClass rubyClass, RubyNode currentNode) {
-            return new RubyTime(rubyClass, 0, 0, DateTimeZone.UTC);
+            return new RubyTime(rubyClass, ZERO, context.getCoreLibrary().getNilObject());
         }
 
     }
 
-    public long getSeconds() {
-        return seconds;
+    public DateTime getDateTime() {
+        return dateTime;
     }
 
-    public void setSeconds(long seconds) {
-        this.seconds = seconds;
+    public void setDateTime(DateTime dateTime) {
+        this.dateTime = dateTime;
     }
 
-    public long getNanoseconds() {
-        return nanoseconds;
+    public Object getOffset() {
+        return offset;
     }
 
-    public void setNanoseconds(long nanoseconds) {
-        this.nanoseconds = nanoseconds;
+    public void setOffset(Object offset) {
+        this.offset = offset;
     }
 
-    public DateTimeZone getZone() {
-        return zone;
-    }
-
-    public void setZone(DateTimeZone zone) {
-        this.zone = zone;
-    }
 }

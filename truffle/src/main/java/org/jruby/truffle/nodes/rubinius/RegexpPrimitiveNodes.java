@@ -9,7 +9,10 @@
  */
 package org.jruby.truffle.nodes.rubinius;
 
+import org.joni.Matcher;
 import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.runtime.core.RubyClass;
+import org.jruby.truffle.runtime.core.RubyMatchData;
 import org.jruby.truffle.runtime.core.RubyRegexp;
 import org.jruby.truffle.runtime.core.RubyString;
 
@@ -44,4 +47,48 @@ public abstract class RegexpPrimitiveNodes {
 
     }
 
+    @RubiniusPrimitive(name = "regexp_search_region")
+    public static abstract class RegexpSearchRegionPrimitiveNode extends RubiniusPrimitiveNode {
+
+        public RegexpSearchRegionPrimitiveNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public RegexpSearchRegionPrimitiveNode(RegexpSearchRegionPrimitiveNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public Object searchRegion(RubyRegexp regexp, RubyString string, int start, int end, boolean forward) {
+            notDesignedForCompilation();
+
+            final Matcher matcher = regexp.getRegex().matcher(string.getBytes().bytes());
+
+            return regexp.matchCommon(string, false, false, matcher, start, end);
+        }
+
+    }
+
+    @RubiniusPrimitive(name = "regexp_set_last_match")
+    public static abstract class RegexpSetLastMatchPrimitiveNode extends RubiniusPrimitiveNode {
+
+        public RegexpSetLastMatchPrimitiveNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public RegexpSetLastMatchPrimitiveNode(RegexpSetLastMatchPrimitiveNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public Object setLastMatch(RubyClass regexpClass, Object matchData) {
+            notDesignedForCompilation();
+
+            getContext().getThreadManager().getCurrentThread().getThreadLocals().getOperations().setInstanceVariable(
+                    getContext().getThreadManager().getCurrentThread().getThreadLocals(), "$~", matchData);
+
+            return matchData;
+        }
+
+    }
 }

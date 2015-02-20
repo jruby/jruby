@@ -147,9 +147,9 @@ class LibrarySearcher {
 
     // FIXME: to_path should not be called n times it should only be once and that means a cache which would
     // also reduce all this casting and/or string creates.
+    // (mkristian) would it make sense to turn $LOAD_PATH into something like RubyClassPathVariable where we could cache
+    // the Strings ?
     private String getPath(IRubyObject loadPathEntry) {
-        if (runtime.is1_8()) return loadPathEntry.convertToString().asJavaString();
-
         return RubyFile.get_path(runtime.getCurrentContext(), loadPathEntry).asJavaString();
     }
 

@@ -9,10 +9,12 @@
  */
 package org.jruby.truffle.nodes.rubinius;
 
+import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.SourceSection;
 
+import org.jruby.truffle.nodes.core.FixnumOrBignumNode;
 import org.jruby.truffle.runtime.ObjectIDOperations;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
@@ -83,7 +85,7 @@ public abstract class ObjectPrimitiveNodes {
         }
 
         @Specialization
-        public RubyBignum objectID(double value) {
+        public Object objectID(double value) {
             return ObjectIDOperations.floatToID(getContext(), value);
         }
 

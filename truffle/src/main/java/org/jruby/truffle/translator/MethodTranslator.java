@@ -135,9 +135,14 @@ class MethodTranslator extends BodyTranslator {
                             new ObjectLiteralNode(context, sourceSection, context.getCoreLibrary().getNilObject()),
                             new CheckArityNode(context, sourceSection, arityForCheck, parameterCollector.getKeywords(), argsNode.getKeyRest() != null)), preludeBuilder);
         } else {
-            prelude = SequenceNode.sequence(context, sourceSection,
-                    new CheckArityNode(context, sourceSection, arityForCheck, parameterCollector.getKeywords(), argsNode.getKeyRest() != null),
-                    loadArguments);
+            if (usesRubiniusPrimitive) {
+                // Use Rubinius.primitive seems to turn off arity checking. See Time.from_array for example.
+                prelude = loadArguments;
+            } else {
+                prelude = SequenceNode.sequence(context, sourceSection,
+                        new CheckArityNode(context, sourceSection, arityForCheck, parameterCollector.getKeywords(), argsNode.getKeyRest() != null),
+                        loadArguments);
+            }
         }
 
         body = SequenceNode.sequence(context, sourceSection, prelude, body);

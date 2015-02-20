@@ -23,8 +23,11 @@ import org.jruby.truffle.nodes.control.SequenceNode;
 import org.jruby.truffle.nodes.core.*;
 import org.jruby.truffle.nodes.rubinius.ByteArrayNodesFactory;
 import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.runtime.backtrace.Backtrace;
+import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.RubyArray;
 import org.jruby.truffle.runtime.core.RubyClass;
+import org.jruby.truffle.runtime.core.RubyException;
 import org.jruby.truffle.runtime.util.FileUtils;
 import org.jruby.truffle.translator.NodeWrapper;
 import org.jruby.truffle.translator.TranslatorDriver;
@@ -97,6 +100,7 @@ public class TruffleBridgeImpl implements TruffleBridge {
         CoreMethodNodeManager.addCoreMethodNodes(rubyObjectClass, UnboundMethodNodesFactory.getFactories());
         CoreMethodNodeManager.addCoreMethodNodes(rubyObjectClass, ByteArrayNodesFactory.getFactories());
         CoreMethodNodeManager.addCoreMethodNodes(rubyObjectClass, TruffleNodesFactory.getFactories());
+        CoreMethodNodeManager.addCoreMethodNodes(rubyObjectClass, TimeNodesFactory.getFactories());
 
         // Give the core library manager a chance to tweak some of those methods
 
@@ -187,7 +191,15 @@ public class TruffleBridgeImpl implements TruffleBridge {
 
     @Override
     public void shutdown() {
-        truffleContext.shutdown();
+        try {
+            truffleContext.shutdown();
+        } catch (RaiseException e) {
+            final RubyException rubyException = e.getRubyException();
+
+            for (String line : Backtrace.DISPLAY_FORMATTER.format(e.getRubyException().getContext(), rubyException, rubyException.getBacktrace())) {
+                System.err.println(line);
+            }
+        }
     }
 
 }

@@ -93,6 +93,9 @@ public abstract class CoreMethodNodeManager {
             if (anno.onSingleton()) {
                 System.err.println("WARNING: Either onSingleton or isModuleFunction for " + methodDetails.getIndicativeName());
             }
+            if (!module.isOnlyAModule()) {
+                System.err.println("WARNING: Using isModuleFunction on a Class for " + methodDetails.getIndicativeName());
+            }
         }
 
         // Do not use needsSelf=true in module functions, it is either the module/class or the instance.

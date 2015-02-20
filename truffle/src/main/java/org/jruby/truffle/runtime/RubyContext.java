@@ -44,6 +44,7 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayDeque;
 import java.util.Deque;
+import java.util.Locale;
 import java.util.Queue;
 import java.util.Random;
 import java.util.concurrent.atomic.AtomicLong;
@@ -120,7 +121,7 @@ public class RubyContext extends ExecutionContext {
             new StackServerManager(this, Options.TRUFFLE_STACK_SERVER_PORT.load()).start();
         }
 
-        runningOnWindows = System.getProperty("os.name").toLowerCase().indexOf("win") >= 0;
+        runningOnWindows = System.getProperty("os.name").toLowerCase(Locale.ENGLISH).indexOf("win") >= 0;
     }
 
     public Shape getEmptyShape() {
@@ -275,6 +276,10 @@ public class RubyContext extends ExecutionContext {
 
     public RubyString makeString(char string) {
         return makeString(Character.toString(string));
+    }
+
+    public RubyString makeString(char string, Encoding encoding) {
+        return makeString(Character.toString(string), encoding);
     }
 
     public RubyString makeString(ByteList bytes) {

@@ -220,18 +220,6 @@ public abstract class RubyNode extends Node implements ProbeNode.Instrumentable 
         return value;
     }
 
-    public RubyBignum bignum(int value) {
-        return bignum((long) value);
-    }
-
-    public RubyBignum bignum(long value) {
-        return bignum(BigInteger.valueOf(value));
-    }
-
-    public RubyBignum bignum(BigInteger value) {
-        return new RubyBignum(getContext().getCoreLibrary().getBignumClass(), value);
-    }
-
     public RubyNode getNonWrapperNode() {
         return this;
     }

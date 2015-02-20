@@ -12,10 +12,14 @@ package org.jruby.truffle.nodes.core;
 import com.oracle.truffle.api.CallTarget;
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.Truffle;
+import com.oracle.truffle.api.dsl.CreateCast;
+import com.oracle.truffle.api.dsl.NodeChild;
+import com.oracle.truffle.api.dsl.NodeChildren;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.Source;
 import com.oracle.truffle.api.source.SourceSection;
+import com.oracle.truffle.api.utilities.ConditionProfile;
 
 import org.jcodings.Encoding;
 import org.jruby.runtime.Visibility;
@@ -23,6 +27,7 @@ import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.RubyRootNode;
 import org.jruby.truffle.nodes.cast.BooleanCastNode;
 import org.jruby.truffle.nodes.cast.BooleanCastNodeFactory;
+import org.jruby.truffle.nodes.coerce.SymbolOrToStrNodeFactory;
 import org.jruby.truffle.nodes.coerce.ToStrNode;
 import org.jruby.truffle.nodes.coerce.ToStrNodeFactory;
 import org.jruby.truffle.nodes.control.SequenceNode;
@@ -383,6 +388,91 @@ public abstract class ModuleNodes {
 
     }
 
+    @CoreMethod(names = "autoload", required = 2)
+    @NodeChildren({
+            @NodeChild(value = "module"),
+            @NodeChild(value = "name"),
+            @NodeChild(value = "filename")
+    })
+    public abstract static class AutoloadNode extends RubyNode {
+
+        @Child private StringNodes.EmptyNode emptyNode;
+        private final ConditionProfile invalidConstantName = ConditionProfile.createBinaryProfile();
+        private final ConditionProfile emptyFilename = ConditionProfile.createBinaryProfile();
+
+        public AutoloadNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+            emptyNode = StringNodesFactory.EmptyNodeFactory.create(context, sourceSection, new RubyNode[]{});
+        }
+
+        public AutoloadNode(AutoloadNode prev) {
+            super(prev);
+            emptyNode = prev.emptyNode;
+        }
+
+        @CreateCast("filename") public RubyNode coerceFilenameToString(RubyNode filename) {
+            return ToStrNodeFactory.create(getContext(), getSourceSection(), filename);
+        }
+
+        @Specialization
+        public RubyNilClass autoload(RubyModule module, RubySymbol name, RubyString filename) {
+            return autoload(module, name.toString(), filename);
+        }
+
+        @Specialization
+        public RubyNilClass autoload(RubyModule module, RubyString name, RubyString filename) {
+            return autoload(module, name.toString(), filename);
+        }
+
+        private RubyNilClass autoload(RubyModule module, String name, RubyString filename) {
+            if (invalidConstantName.profile(!IdUtil.isValidConstantName19(name))) {
+                CompilerDirectives.transferToInterpreter();
+                throw new RaiseException(getContext().getCoreLibrary().nameError(String.format("autoload must be constant name: %s", name), this));
+            }
+
+            if (emptyFilename.profile(emptyNode.empty(filename))) {
+                CompilerDirectives.transferToInterpreter();
+                throw new RaiseException(getContext().getCoreLibrary().argumentError("empty file name", this));
+            }
+
+            module.setAutoloadConstant(this, name, filename);
+
+            return getContext().getCoreLibrary().getNilObject();
+        }
+    }
+
+    @CoreMethod(names = "autoload?", required = 1)
+    public abstract static class AutoloadQueryNode extends CoreMethodNode {
+
+        public AutoloadQueryNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public AutoloadQueryNode(AutoloadQueryNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public Object autoloadQuery(RubyModule module, RubySymbol name) {
+            return autoloadQuery(module, name.toString());
+        }
+
+        @Specialization
+        public Object autoloadQuery(RubyModule module, RubyString name) {
+            return autoloadQuery(module, name.toString());
+        }
+
+        private Object autoloadQuery(RubyModule module, String name) {
+            final RubyConstant constant = ModuleOperations.lookupConstant(getContext(), LexicalScope.NONE, module, name);
+
+            if ((constant == null) || ! constant.isAutoload()) {
+                return getContext().getCoreLibrary().getNilObject();
+            }
+
+            return constant.getValue();
+        }
+    }
+
     @CoreMethod(names = {"class_eval","module_eval"}, optional = 3, needsBlock = true)
     public abstract static class ClassEvalNode extends CoreMethodNode {
 
@@ -690,7 +780,8 @@ public abstract class ModuleNodes {
     }
 
     @CoreMethod(names = "const_set", required = 2)
-    public abstract static class ConstSetNode extends CoreMethodNode {
+    @NodeChildren({ @NodeChild("module"), @NodeChild("name"), @NodeChild("value") })
+    public abstract static class ConstSetNode extends RubyNode {
 
         public ConstSetNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -700,40 +791,28 @@ public abstract class ModuleNodes {
             super(prev);
         }
 
-        @Specialization
-        public RubyModule setConstant(RubyModule module, RubyString name, Object object) {
-            notDesignedForCompilation();
-            setConstant(module, name.toString(), object);
-            return module;
+        @CreateCast("name")
+        public RubyNode coerceToString(RubyNode name) {
+            return SymbolOrToStrNodeFactory.create(getContext(), getSourceSection(), name);
         }
 
         @Specialization
-        public RubyModule setConstant(RubyModule module, RubySymbol name, Object object) {
+        public Object setConstant(RubyModule module, String name, Object value) {
             notDesignedForCompilation();
-            setConstant(module, name.toString(), object);
-            return module;
-        }
 
-        public void setConstant(RubyModule module, String name, Object object) {
-            if (!IdUtil.isConstant(name)) {
+            if (!IdUtil.isValidConstantName19(name)) {
                 throw new RaiseException(getContext().getCoreLibrary().nameError(String.format("wrong constant name %s", name), this));
             }
 
-            if (object instanceof RubyModule) {
-                final RubyModule setModule = (RubyModule) object;
-                if (setModule.getName() == null) {
-                    setModule.setLexicalScope(new LexicalScope(null, module));
-                    setModule.setName(name);
-                }
-            }
-
-            module.setConstant(this, name, object);
+            module.setConstant(this, name, value);
+            return value;
         }
 
     }
 
     @CoreMethod(names = "define_method", needsBlock = true, required = 1, optional = 1)
-    public abstract static class DefineMethodNode extends CoreMethodNode {
+    @NodeChildren({ @NodeChild("module"), @NodeChild("name"), @NodeChild("proc"), @NodeChild("block") })
+    public abstract static class DefineMethodNode extends RubyNode {
 
         public DefineMethodNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -743,52 +822,40 @@ public abstract class ModuleNodes {
             super(prev);
         }
 
+        @CreateCast("name")
+        public RubyNode coerceToString(RubyNode name) {
+            return SymbolOrToStrNodeFactory.create(getContext(), getSourceSection(), name);
+        }
+
         @Specialization
-        public RubySymbol defineMethod(RubyModule module, RubyString name, @SuppressWarnings("unused") UndefinedPlaceholder proc, RubyProc block) {
+        public RubySymbol defineMethod(RubyModule module, String name, UndefinedPlaceholder proc, RubyProc block) {
             notDesignedForCompilation();
 
             return defineMethod(module, name, block, UndefinedPlaceholder.INSTANCE);
         }
 
         @Specialization
-        public RubySymbol defineMethod(RubyModule module, RubyString name, RubyProc proc, @SuppressWarnings("unused") UndefinedPlaceholder block) {
-            notDesignedForCompilation();
-
-            final RubySymbol symbol = getContext().getSymbolTable().getSymbol(name.getBytes());
-            defineMethod(module, symbol, proc);
-            return symbol;
+        public RubySymbol defineMethod(RubyModule module, String name, RubyProc proc, UndefinedPlaceholder block) {
+            return defineMethod(module, name, proc);
         }
 
         @Specialization
-        public RubySymbol defineMethod(RubyModule module, RubySymbol name, @SuppressWarnings("unused") UndefinedPlaceholder proc, RubyProc block) {
+        public RubySymbol defineMethod(RubyModule module, String name, RubyMethod method, UndefinedPlaceholder block) {
             notDesignedForCompilation();
 
-            return defineMethod(module, name, block, UndefinedPlaceholder.INSTANCE);
+            module.addMethod(this, method.getMethod().withNewName(name));
+
+            return getContext().getSymbolTable().getSymbol(name);
         }
 
-        @Specialization
-        public RubySymbol defineMethod(RubyModule module, RubySymbol name, RubyProc proc, @SuppressWarnings("unused") UndefinedPlaceholder block) {
-            notDesignedForCompilation();
-
-            defineMethod(module, name, proc);
-            return name;
-        }
-
-        @Specialization
-        public RubySymbol defineMethod(RubyModule module, RubySymbol name, RubyMethod method, UndefinedPlaceholder block) {
-            notDesignedForCompilation();
-
-            module.addMethod(this, method.getMethod().withNewName(name.toString()));
-
-            return name;
-        }
-
-        private void defineMethod(RubyModule module, RubySymbol name, RubyProc proc) {
+        private RubySymbol defineMethod(RubyModule module, String name, RubyProc proc) {
             notDesignedForCompilation();
 
             final CallTarget modifiedCallTarget = proc.getCallTargetForMethods();
-            final InternalMethod modifiedMethod = new InternalMethod(proc.getSharedMethodInfo(), name.toString(), module, Visibility.PUBLIC, false, modifiedCallTarget, proc.getDeclarationFrame());
+            final InternalMethod modifiedMethod = new InternalMethod(proc.getSharedMethodInfo(), name, module, Visibility.PUBLIC, false, modifiedCallTarget, proc.getDeclarationFrame());
             module.addMethod(this, modifiedMethod);
+
+            return getContext().getSymbolTable().getSymbol(name);
         }
 
     }
@@ -990,23 +1057,11 @@ public abstract class ModuleNodes {
         public Object name(RubyModule module) {
             notDesignedForCompilation();
 
-            if (module.getName() == null) {
+            if (!module.hasName()) {
                 return getContext().getCoreLibrary().getNilObject();
             }
 
-            final StringBuilder builder = new StringBuilder();
-
-            builder.append(module.getName());
-
-            LexicalScope lexicalScope = module.getLexicalScope();
-
-            while (lexicalScope != null && lexicalScope.getLiveModule() != getContext().getCoreLibrary().getObjectClass()) {
-                builder.insert(0, "::");
-                builder.insert(0, lexicalScope.getLiveModule().getName());
-                lexicalScope = lexicalScope.getParent();
-            }
-
-            return getContext().makeString(builder.toString());
+            return getContext().makeString(module.getName());
         }
     }
 
@@ -1408,9 +1463,8 @@ public abstract class ModuleNodes {
     }
 
     @CoreMethod(names = "remove_const", required = 1, visibility = Visibility.PRIVATE)
-    public abstract static class RemoveConstNode extends CoreMethodNode {
-
-        @Child private ToStrNode toStrNode;
+    @NodeChildren({ @NodeChild("module"), @NodeChild("name") })
+    public abstract static class RemoveConstNode extends RubyNode {
 
         public RemoveConstNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -1420,33 +1474,13 @@ public abstract class ModuleNodes {
             super(prev);
         }
 
-        @Specialization
-        public Object removeConst(RubyModule module, RubyString name) {
-            notDesignedForCompilation();
-
-            return removeConstant(module, name.toString());
+        @CreateCast("name")
+        public RubyNode coerceToString(RubyNode name) {
+            return SymbolOrToStrNodeFactory.create(getContext(), getSourceSection(), name);
         }
 
         @Specialization
-        public Object removeConst(RubyModule module, RubySymbol name) {
-            notDesignedForCompilation();
-
-            return removeConstant(module, name.toString());
-        }
-
-        @Specialization(guards = "!isRubySymbol(arguments[1])")
-        public Object removeConst(VirtualFrame frame, RubyModule module, Object name) {
-            notDesignedForCompilation();
-
-            if (toStrNode == null) {
-                CompilerDirectives.transferToInterpreter();
-                toStrNode = insert(ToStrNodeFactory.create(getContext(), getSourceSection(), null));
-            }
-
-            return removeConstant(module, toStrNode.executeRubyString(frame, name).toString());
-        }
-
-        private Object removeConstant(RubyModule module, String name) {
+        Object removeConstant(RubyModule module, String name) {
             RubyConstant oldConstant = module.removeConstant(this, name);
             if (oldConstant == null) {
                 CompilerDirectives.transferToInterpreter();

@@ -17,6 +17,8 @@ import com.oracle.truffle.api.utilities.ConditionProfile;
 
 import org.jruby.truffle.runtime.core.*;
 
+import java.math.BigInteger;
+
 /**
  * Rubinius primitives associated with the Ruby {@code Bignum} class.
  */
@@ -45,18 +47,19 @@ public abstract class BignumPrimitiveNodes {
             if (negativeProfile.profile(b < 0)) {
                 return null; // Primitive failure
             } else {
-                return a.pow(b);
+                // TODO CS 15-Feb-15 what about this cast?
+                return new RubyBignum(getContext().getCoreLibrary().getBignumClass(), a.bigIntegerValue().pow((int) b));
             }
         }
 
         @Specialization
         public double pow(RubyBignum a, double b) {
-            return Math.pow(a.doubleValue(), b);
+            return Math.pow(a.bigIntegerValue().doubleValue(), b);
         }
 
         @Specialization
         public RubyBignum pow(RubyBignum a, RubyBignum b) {
-            return a.pow(b);
+            throw new UnsupportedOperationException();
         }
 
     }

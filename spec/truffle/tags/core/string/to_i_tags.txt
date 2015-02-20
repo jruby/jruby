@@ -50,5 +50,3 @@ fails:String#to_i with bases parses a String in base 33
 fails:String#to_i with bases parses a String in base 34
 fails:String#to_i with bases parses a String in base 35
 fails:String#to_i with bases parses a String in base 36
-fails:String#to_i returns the correct Bignum for long strings
-

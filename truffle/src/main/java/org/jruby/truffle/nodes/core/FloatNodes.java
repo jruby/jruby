@@ -73,7 +73,7 @@ public abstract class FloatNodes {
 
         @Specialization
         public double add(double a, RubyBignum b) {
-            return a + b.doubleValue();
+            return a + b.bigIntegerValue().doubleValue();
         }
 
     }
@@ -106,7 +106,7 @@ public abstract class FloatNodes {
 
         @Specialization
         public double sub(double a, RubyBignum b) {
-            return a - b.doubleValue();
+            return a - b.bigIntegerValue().doubleValue();
         }
 
     }
@@ -144,7 +144,7 @@ public abstract class FloatNodes {
 
         @Specialization
         public double mul(double a, RubyBignum b) {
-            return a * b.doubleValue();
+            return a * b.bigIntegerValue().doubleValue();
         }
 
         @Specialization(guards = "isRational(arguments[1])")
@@ -210,7 +210,7 @@ public abstract class FloatNodes {
 
         @Specialization
         public double pow(double a, RubyBignum b) {
-            return Math.pow(a, b.doubleValue());
+            return Math.pow(a, b.bigIntegerValue().doubleValue());
         }
 
         @Specialization(guards = "isRational(arguments[1])")
@@ -256,7 +256,7 @@ public abstract class FloatNodes {
 
         @Specialization
         public double div(double a, RubyBignum b) {
-            return a / b.doubleValue();
+            return a / b.bigIntegerValue().doubleValue();
         }
 
         @Specialization(guards = {
@@ -316,7 +316,7 @@ public abstract class FloatNodes {
 
         @Specialization
         public double mod(double a, RubyBignum b) {
-            return mod(a, b.doubleValue());
+            return mod(a, b.bigIntegerValue().doubleValue());
         }
 
     }
@@ -386,7 +386,7 @@ public abstract class FloatNodes {
 
         @Specialization
         public boolean less(double a, RubyBignum b) {
-            return a < b.doubleValue();
+            return a < b.bigIntegerValue().doubleValue();
         }
 
         @Specialization(guards = "!isRubyBignum(arguments[1])")
@@ -427,7 +427,7 @@ public abstract class FloatNodes {
 
         @Specialization
         public boolean lessEqual(double a, RubyBignum b) {
-            return a <= b.doubleValue();
+            return a <= b.bigIntegerValue().doubleValue();
         }
 
         @Specialization(guards = "!isRubyBignum(arguments[1])")
@@ -470,7 +470,7 @@ public abstract class FloatNodes {
 
         @Specialization
         public boolean equal(double a, RubyBignum b) {
-            return a == b.doubleValue();
+            return a == b.bigIntegerValue().doubleValue();
         }
 
         @Specialization(guards = "!isRubyBignum(arguments[1])")
@@ -526,7 +526,7 @@ public abstract class FloatNodes {
 
         @Specialization(guards = {"!isNaN(arguments[0])", "!isInfinity(arguments[0])"})
         public int compare(double a, RubyBignum b) {
-            return Double.compare(a, b.doubleValue());
+            return Double.compare(a, b.bigIntegerValue().doubleValue());
         }
 
         @Specialization(guards = {"!isNaN(arguments[0])", "!isNaN(arguments[1])"})
@@ -569,7 +569,7 @@ public abstract class FloatNodes {
 
         @Specialization
         public boolean greaterEqual(double a, RubyBignum b) {
-            return a >= b.doubleValue();
+            return a >= b.bigIntegerValue().doubleValue();
         }
 
         @Specialization(guards = "!isRubyBignum(arguments[1])")
@@ -610,7 +610,7 @@ public abstract class FloatNodes {
 
         @Specialization
         public boolean equal(double a, RubyBignum b) {
-            return a > b.doubleValue();
+            return a > b.bigIntegerValue().doubleValue();
         }
 
         @Specialization(guards = "!isRubyBignum(arguments[1])")

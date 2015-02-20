@@ -1,2 +1,1 @@
-fails:String#to_s taints the result when self is tainted
 fails:String#to_s returns a new instance of String when called on a subclass

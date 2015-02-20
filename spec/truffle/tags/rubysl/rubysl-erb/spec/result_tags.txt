@@ -1,1 +1,0 @@
-fails:ERB#result is able to h() or u() if ERB::Util is included

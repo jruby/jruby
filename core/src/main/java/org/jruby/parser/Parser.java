@@ -127,9 +127,16 @@ public class Parser {
                 case NOT_ASCII_COMPATIBLE:
                     throw runtime.newArgumentError(e.getMessage());
                 default:
+                    int line = e.getPosition().getLine();
+
+                    // Detailed source positions always have the right line number so they don't need to be adjusted.
+                    if (! (e.getPosition() instanceof DetailedSourcePosition)) {
+                        line++;
+                    }
+
                     StringBuilder buffer = new StringBuilder(100);
                     buffer.append(e.getPosition().getFile()).append(':');
-                    buffer.append(e.getPosition().getLine() + 1).append(": ");
+                    buffer.append(line).append(": ");
                     buffer.append(e.getMessage());
 
                     throw runtime.newSyntaxError(buffer.toString());

@@ -61,6 +61,7 @@ import org.jruby.util.ByteList;
 import org.jruby.util.KeyValuePair;
 import org.jruby.util.cli.Options;
 
+import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 
@@ -81,6 +82,8 @@ public class BodyTranslator extends Translator {
     private String currentCallMethodName = null;
 
     private boolean privately = false;
+
+    protected boolean usesRubiniusPrimitive = false;
 
     private static final Set<String> debugIgnoredCalls = new HashSet<>();
 
@@ -292,7 +295,17 @@ public class BodyTranslator extends Translator {
 
     @Override
     public RubyNode visitBignumNode(org.jruby.ast.BignumNode node) {
-        return new ObjectLiteralNode(context, translate(node.getPosition()), new RubyBignum(context.getCoreLibrary().getBignumClass(), node.getValue()));
+        final SourceSection sourceSection = translate(node.getPosition());
+
+        // These aren't always Bignums!
+
+        final BigInteger value = node.getValue();
+
+        if (value.bitLength() >= 64) {
+            return new ObjectLiteralNode(context, sourceSection, new RubyBignum(context.getCoreLibrary().getBignumClass(), node.getValue()));
+        } else {
+            return new FixnumLiteralNode.LongFixnumLiteralNode(context, sourceSection, value.longValue());
+        }
     }
 
     @Override
@@ -379,6 +392,8 @@ public class BodyTranslator extends Translator {
     }
 
     private RubyNode translateRubiniusPrimitive(SourceSection sourceSection, CallNode node) {
+        usesRubiniusPrimitive = true;
+
         /*
          * Translates something that looks like
          *
@@ -522,9 +537,9 @@ public class BodyTranslator extends Translator {
         final RubyNode constructException = new RubyCallNode(context, sourceSection, "new",
                 new ObjectLiteralNode(context, sourceSection, context.getCoreLibrary().getRuntimeErrorClass()),
                 null, false,
-                new StringLiteralNode(context, sourceSection, ByteList.create("can't modify frozen TODO")));
+                new StringLiteralNode(context, sourceSection, ByteList.create("FrozenError: can't modify frozen TODO")));
 
-        final RubyNode raise = new RubyCallNode(context, sourceSection, "raise", new SelfNode(context, sourceSection), null, false, constructException);
+        final RubyNode raise = new RubyCallNode(context, sourceSection, "raise", new SelfNode(context, sourceSection), null, false, true, false, constructException);
 
         return new IfNode(context, sourceSection,
                 frozen,
@@ -897,7 +912,7 @@ public class BodyTranslator extends Translator {
             throw new UnsupportedOperationException();
         }
 
-        return new WriteConstantNode(context, sourceSection, node.getName(), environment.getLexicalScope(), moduleNode, node.getValueNode().accept(this));
+        return new WriteConstantNode(context, sourceSection, node.getName(), moduleNode, node.getValueNode().accept(this));
     }
 
     @Override
@@ -1469,8 +1484,6 @@ public class BodyTranslator extends Translator {
         final SourceSection sourceSection = translate(node.getPosition());
         final String nameWithoutSigil = node.getName();
 
-        final RubyNode receiver = new SelfNode(context, sourceSection);
-
         RubyNode rhs;
 
         if (node.getValueNode() == null) {
@@ -1479,6 +1492,25 @@ public class BodyTranslator extends Translator {
             rhs = node.getValueNode().accept(this);
         }
 
+        if (sourceSection.getSource().getPath().equals("core:/core/rubinius/common/time.rb")) {
+            if (nameWithoutSigil.equals("@is_gmt")) {
+                return new RubyCallNode(context, sourceSection,
+                        "_set_gmt",
+                        new SelfNode(context, sourceSection),
+                        null,
+                        false,
+                        rhs);
+            } else if (nameWithoutSigil.equals("@offset")) {
+                return new RubyCallNode(context, sourceSection,
+                        "_set_offset",
+                        new SelfNode(context, sourceSection),
+                        null,
+                        false,
+                        rhs);
+            }
+        }
+
+        final RubyNode receiver = new SelfNode(context, sourceSection);
         return new WriteInstanceVariableNode(context, sourceSection, nameWithoutSigil, receiver, rhs, false);
     }
 
@@ -1510,6 +1542,20 @@ public class BodyTranslator extends Translator {
             }
         }
 
+        if (sourceSection.getSource().getPath().equals("core:/core/rubinius/common/regexp.rb")) {
+            if (nameWithoutSigil.equals("@source")) {
+                return MatchDataNodesFactory.RubiniusSourceNodeFactory.create(
+                        context, sourceSection,
+                        new SelfNode(context, sourceSection));
+            } else if (nameWithoutSigil.equals("@full")) {
+                return new RubyCallNode(context, sourceSection,
+                        "full",
+                        new SelfNode(context, sourceSection),
+                        null,
+                        false);
+            }
+        }
+
         if (sourceSection.getSource().getPath().equals("core:/core/rubinius/common/string.rb")) {
             if (nameWithoutSigil.equals("@num_bytes")) {
                 return new RubyCallNode(context, sourceSection,
@@ -1518,14 +1564,30 @@ public class BodyTranslator extends Translator {
                         null,
                         false);
             } else if (nameWithoutSigil.equals("@data")) {
+                final RubyNode bytes = new RubyCallNode(context, sourceSection, "bytes",
+                        new SelfNode(context, sourceSection), null, false);
+
+                return new RubyCallNode(context, sourceSection, "new",
+                        new ObjectLiteralNode(context, sourceSection, context.getCoreLibrary().getStringDataClass()),
+                        null, false, bytes);
+            }
+        }
+
+        if (sourceSection.getSource().getPath().equals("core:/core/rubinius/common/time.rb")) {
+            if (nameWithoutSigil.equals("@is_gmt")) {
                 return new RubyCallNode(context, sourceSection,
-                        "bytes",
+                        "_gmt?",
+                        new SelfNode(context, sourceSection),
+                        null,
+                        false);
+            } else if (nameWithoutSigil.equals("@offset")) {
+                return new RubyCallNode(context, sourceSection,
+                        "_offset",
                         new SelfNode(context, sourceSection),
                         null,
                         false);
             }
         }
-
 
         final RubyNode receiver = new SelfNode(context, sourceSection);
 
@@ -1718,8 +1780,8 @@ public class BodyTranslator extends Translator {
     public RubyNode visitMultipleAsgnNode(org.jruby.ast.MultipleAsgn19Node node) {
         final SourceSection sourceSection = translate(node.getPosition());
 
-        final org.jruby.ast.ArrayNode preArray = (org.jruby.ast.ArrayNode) node.getPre();
-        final org.jruby.ast.ArrayNode postArray = (org.jruby.ast.ArrayNode) node.getPost();
+        final org.jruby.ast.ListNode preArray = node.getPre();
+        final org.jruby.ast.ListNode postArray = node.getPost();
         final org.jruby.ast.Node rhs = node.getValueNode();
 
         RubyNode rhsTranslated;

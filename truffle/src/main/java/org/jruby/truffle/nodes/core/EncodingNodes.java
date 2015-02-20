@@ -86,6 +86,24 @@ public abstract class EncodingNodes {
         }
     }
 
+    @CoreMethod(names = "ascii_compatible?")
+    public abstract static class AsciiCompatibleNode extends CoreMethodNode {
+
+        public AsciiCompatibleNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public AsciiCompatibleNode(AsciiCompatibleNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public Object isCompatible(RubyEncoding encoding) {
+            notDesignedForCompilation();
+            return encoding.getEncoding().isAsciiCompatible();
+        }
+    }
+
     @CoreMethod(names = "compatible?", needsSelf = false, onSingleton = true, required = 2)
     public abstract static class CompatibleQueryNode extends CoreMethodNode {
 

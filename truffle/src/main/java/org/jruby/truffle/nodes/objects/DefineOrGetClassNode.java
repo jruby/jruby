@@ -13,6 +13,8 @@ import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.nodes.RubyNode;
+import org.jruby.truffle.nodes.core.KernelNodes;
+import org.jruby.truffle.nodes.core.KernelNodesFactory;
 import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNode;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
@@ -21,6 +23,7 @@ import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.RubyClass;
 import org.jruby.truffle.runtime.core.RubyModule;
+import org.jruby.truffle.runtime.core.RubyString;
 
 /**
  * Define a new class, or get the existing one of the same name.
@@ -29,6 +32,7 @@ public class DefineOrGetClassNode extends DefineOrGetModuleNode {
 
     @Child private RubyNode superClass;
     @Child private CallDispatchHeadNode inheritedNode;
+    @Child private KernelNodes.RequireNode requireNode;
 
     public DefineOrGetClassNode(RubyContext context, SourceSection sourceSection, String name, RubyNode lexicalParent, RubyNode superClass) {
         super(context, sourceSection, name, lexicalParent);

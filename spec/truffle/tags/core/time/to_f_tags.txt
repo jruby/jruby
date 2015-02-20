@@ -1,0 +1,1 @@
+fails:Time#to_f returns the float number of seconds + usecs since the epoch

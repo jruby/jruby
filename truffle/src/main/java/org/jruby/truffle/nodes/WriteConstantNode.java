@@ -12,7 +12,7 @@ package org.jruby.truffle.nodes;
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.SourceSection;
-import org.jruby.truffle.runtime.LexicalScope;
+
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.RubyModule;
@@ -23,14 +23,12 @@ import org.jruby.truffle.runtime.core.RubyModule;
 public class WriteConstantNode extends RubyNode {
 
     private final String name;
-    private final LexicalScope lexicalScope;
     @Child private RubyNode module;
     @Child private RubyNode rhs;
 
-    public WriteConstantNode(RubyContext context, SourceSection sourceSection, String name, LexicalScope lexicalScope, RubyNode module, RubyNode rhs) {
+    public WriteConstantNode(RubyContext context, SourceSection sourceSection, String name, RubyNode module, RubyNode rhs) {
         super(context, sourceSection);
         this.name = name;
-        this.lexicalScope = lexicalScope;
         this.module = module;
         this.rhs = rhs;
     }
@@ -41,14 +39,6 @@ public class WriteConstantNode extends RubyNode {
 
         // Evaluate RHS first.
         final Object rhsValue = rhs.execute(frame);
-
-        if (rhsValue instanceof RubyModule) {
-            final RubyModule setModule = (RubyModule) rhsValue;
-            if (setModule.getName() == null) {
-                setModule.setLexicalScope(lexicalScope);
-                setModule.setName(name);
-            }
-        }
 
         final Object receiverObject = module.execute(frame);
 

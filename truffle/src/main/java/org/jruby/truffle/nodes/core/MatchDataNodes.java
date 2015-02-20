@@ -10,10 +10,14 @@
 package org.jruby.truffle.nodes.core;
 
 import com.oracle.truffle.api.CompilerDirectives;
+import com.oracle.truffle.api.dsl.NodeChild;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.utilities.ConditionProfile;
+
 import org.joni.exception.ValueException;
+import org.jruby.runtime.Visibility;
+import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.RubyArray;
@@ -259,6 +263,24 @@ public abstract class MatchDataNodes {
             return RubyArray.fromObjects(getContext().getCoreLibrary().getArrayClass(), matchData.valuesAt(indicies));
         }
 
+    }
+
+    // Not a core method, used to simulate Rubinius @source.
+    @NodeChild(value = "self")
+    public abstract static class RubiniusSourceNode extends RubyNode {
+
+        public RubiniusSourceNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public RubiniusSourceNode(RubiniusSourceNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public RubyString rubiniusSource(RubyMatchData matchData) {
+            return matchData.getSource();
+        }
     }
 
 }

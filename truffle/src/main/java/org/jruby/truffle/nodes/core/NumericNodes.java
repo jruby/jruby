@@ -17,6 +17,8 @@ import org.jruby.truffle.runtime.core.RubyBignum;
 import org.jruby.truffle.runtime.core.RubyNilClass;
 import org.jruby.truffle.runtime.core.RubyProc;
 
+import java.math.BigInteger;
+
 @CoreClass(name = "Numeric")
 public abstract class NumericNodes {
 
@@ -84,7 +86,7 @@ public abstract class NumericNodes {
 
         @Specialization
         public Object nonZero(RubyBignum value) {
-            if (value.isZero()) {
+            if (value.bigIntegerValue().equals(BigInteger.ZERO)) {
                 return false;
             } else {
                 return value;

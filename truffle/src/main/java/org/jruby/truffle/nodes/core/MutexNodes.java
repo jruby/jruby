@@ -148,10 +148,15 @@ public abstract class MutexNodes {
 
             try {
                 lock.unlock();
-                thread.releasedLock(lock);
             } catch (IllegalMonitorStateException e) {
-                throw new RaiseException(getContext().getCoreLibrary().threadError("Attempt to unlock a mutex which is not locked", this));
+                if (!lock.isLocked()) {
+                    throw new RaiseException(getContext().getCoreLibrary().threadError("Attempt to unlock a mutex which is not locked", this));
+                } else {
+                    throw new RaiseException(getContext().getCoreLibrary().threadError("Attempt to unlock a mutex which is locked by another thread", this));
+                }
             }
+
+            thread.releasedLock(lock);
 
             return mutex;
         }

@@ -38,7 +38,9 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.encoding.EncodingCapable;
 import org.jruby.runtime.encoding.EncodingService;
 import org.jruby.util.ByteList;
+import org.jruby.util.ByteListHolder;
 import org.jruby.util.CodeRangeSupport;
+import org.jruby.util.CodeRangeable;
 import org.jruby.util.StringSupport;
 import org.jruby.util.TypeConverter;
 
@@ -1461,7 +1463,7 @@ public class EncodingUtils {
         // negative length check here, we shouldn't need
         strBufCat(runtime, str, ptr);
     }
-    public static void  rbStrBufCat(Ruby runtime, RubyString str, byte[] ptrBytes, int ptr, int len) {
+    public static void  rbStrBufCat(Ruby runtime, ByteListHolder str, byte[] ptrBytes, int ptr, int len) {
         if (len == 0) return;
         // negative length check here, we shouldn't need
         strBufCat(runtime, str, ptrBytes, ptr, len);
@@ -1476,7 +1478,7 @@ public class EncodingUtils {
     public static void strBufCat(Ruby runtime, RubyString str, ByteList ptr) {
         strBufCat(runtime, str, ptr.getUnsafeBytes(), ptr.getBegin(), ptr.getRealSize());
     }
-    public static void strBufCat(Ruby runtime, RubyString str, byte[] ptrBytes, int ptr, int len) {
+    public static void strBufCat(Ruby runtime, ByteListHolder str, byte[] ptrBytes, int ptr, int len) {
         str.modify();
         strBufCat(str.getByteList(), ptrBytes, ptr, len);
     }
@@ -1508,16 +1510,16 @@ public class EncodingUtils {
     }
 
     // rb_enc_cr_str_buf_cat
-    public static void encCrStrBufCat(Ruby runtime, RubyString str, ByteList ptr, Encoding ptrEnc, int ptr_cr, int[] ptr_cr_ret) {
+    public static void encCrStrBufCat(Ruby runtime, CodeRangeable str, ByteList ptr, Encoding ptrEnc, int ptr_cr, int[] ptr_cr_ret) {
         encCrStrBufCat(runtime, str, ptr.getUnsafeBytes(), ptr.getBegin(), ptr.getRealSize(), ptrEnc, ptr_cr, ptr_cr_ret);
     }
-    public static void encCrStrBufCat(Ruby runtime, RubyString str, byte[] ptrBytes, int ptr, int len, Encoding ptrEnc, int ptr_cr, int[] ptr_cr_ret) {
-        Encoding strEnc = str.getEncoding();
+    public static void encCrStrBufCat(Ruby runtime, CodeRangeable str, byte[] ptrBytes, int ptr, int len, Encoding ptrEnc, int ptr_cr, int[] ptr_cr_ret) {
+        Encoding strEnc = str.getByteList().getEncoding();
         Encoding resEnc;
         int str_cr, res_cr;
         boolean incompatible = false;
 
-        str_cr = str.size() > 0 ? str.getCodeRange() : StringSupport.CR_7BIT;
+        str_cr = str.getByteList().getRealSize() > 0 ? str.getCodeRange() : StringSupport.CR_7BIT;
 
         if (strEnc == ptrEnc) {
             if (str_cr == StringSupport.CR_UNKNOWN) {
@@ -1530,9 +1532,10 @@ public class EncodingUtils {
                 if (len == 0) {
                     return;
                 }
-                if (str.size() == 0) {
+                if (str.getByteList().getRealSize() == 0) {
                     rbStrBufCat(runtime, str, ptrBytes, ptr, len);
-                    str.setEncodingAndCodeRange(ptrEnc, ptr_cr);
+                    str.getByteList().setEncoding(ptrEnc);
+                    str.setCodeRange(ptr_cr);
                     return;
                 }
                 incompatible = true;
@@ -1586,7 +1589,8 @@ public class EncodingUtils {
         // MRI checks for len < 0 here, but I don't think that's possible for us
 
         strBufCat(runtime, str, ptrBytes, ptr, len);
-        str.setEncodingAndCodeRange(resEnc, res_cr);
+        str.getByteList().setEncoding(resEnc);
+        str.setCodeRange(res_cr);
     }
 
     // econv_args

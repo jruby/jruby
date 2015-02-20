@@ -10,12 +10,16 @@
 package org.jruby.truffle.nodes.core;
 
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
+import com.oracle.truffle.api.dsl.CreateCast;
+import com.oracle.truffle.api.dsl.NodeChild;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.SourceSection;
 
 import jnr.posix.FileStat;
 
+import org.jruby.truffle.nodes.RubyNode;
+import org.jruby.truffle.nodes.coerce.ToStrNodeFactory;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.UndefinedPlaceholder;
 import org.jruby.truffle.runtime.core.*;
@@ -47,7 +51,13 @@ public abstract class FileNodes {
         public RubyString absolutePath(RubyString path) {
             notDesignedForCompilation();
 
-            return getContext().makeString(new File(path.toString()).getAbsolutePath());
+            String absolute = new File(path.toString()).getAbsolutePath();
+
+            if (getContext().isRunningOnWindows()) {
+                absolute = absolute.replace('\\', '/');
+            }
+
+            return getContext().makeString(absolute);
         }
 
     }
@@ -245,7 +255,8 @@ public abstract class FileNodes {
     }
 
     @CoreMethod(names = {"exist?", "exists?"}, onSingleton = true, required = 1)
-    public abstract static class ExistsNode extends CoreMethodNode {
+    @NodeChild(value = "path")
+    public abstract static class ExistsNode extends RubyNode {
 
         public ExistsNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -253,6 +264,10 @@ public abstract class FileNodes {
 
         public ExistsNode(ExistsNode prev) {
             super(prev);
+        }
+
+        @CreateCast("path") public RubyNode coercePathToString(RubyNode path) {
+            return ToStrNodeFactory.create(getContext(), getSourceSection(), path);
         }
 
         @Specialization

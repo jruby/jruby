@@ -71,4 +71,9 @@ class String
     byteslice index, length
   end
 
+  def find_character(offset)
+    Rubinius.primitive :string_find_character
+    raise PrimitiveFailure, "String#find_character primitive failed"
+  end
+
 end

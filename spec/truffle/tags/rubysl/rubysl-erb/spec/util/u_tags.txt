@@ -1,5 +1,0 @@
-fails:ERB::Util.u encode characters
-fails:ERB::Util.u encode unicode string
-fails:ERB::Util.u returns empty string when argument is nil
-fails:ERB::Util.u returns string when argument is number
-fails:ERB::Util.u returns string when argument is boolean

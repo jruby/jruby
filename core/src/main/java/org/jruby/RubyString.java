@@ -217,7 +217,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
 
     // rb_enc_str_asciionly_p
     public final boolean isAsciiOnly() {
-        return value.getEncoding().isAsciiCompatible() && scanForCodeRange() == CR_7BIT;
+        return StringSupport.isAsciiOnly(this);
     }
 
     @Override
@@ -2582,18 +2582,10 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
     private IRubyObject gsubCommon19(ThreadContext context, Block block, RubyString repl,
             RubyHash hash, IRubyObject arg0, final boolean bang, int tuFlags, boolean useBackref) {
         Ruby runtime = context.runtime;
-
-        final Regex pattern, prepared;
-        final RubyRegexp regexp;
-        if (arg0 instanceof RubyRegexp) {
-            regexp = (RubyRegexp)arg0;
-            pattern = regexp.getPattern();
-            prepared = regexp.preparePattern(this);
-        } else {
-            regexp = null;
-            pattern = getStringPattern19(runtime, arg0);
-            prepared = RubyRegexp.preparePattern(runtime, pattern, this);
-        }
+        RubyRegexp regexp = arg0 instanceof RubyRegexp ? (RubyRegexp) arg0 :
+                RubyRegexp.newRegexp(runtime, RubyRegexp.quote19(getStringForPattern(arg0).getByteList(), false), new RegexpOptions());
+        Regex pattern = regexp.getPattern();
+        Regex prepared = regexp.preparePattern(this);
 
         int offset, cp, n, blen;
 

@@ -235,8 +235,7 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
         BeginEndInterpreterContext ic = (BeginEndInterpreterContext) script.prepareForInterpretation();
 
         if (IRRuntimeHelpers.isDebug()) {
-            LOG.info("Graph:\n" + script.cfg().toStringGraph());
-            LOG.info("CFG:\n" + script.cfg().toStringInstrs());
+            LOG.info(script.debugOutput());
         }
 
         return ic;

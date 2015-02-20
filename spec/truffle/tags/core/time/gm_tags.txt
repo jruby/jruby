@@ -1,40 +1,4 @@
-fails:Time.gm creates a time based on given C-style gmtime arguments, interpreted as UTC (GMT)
-fails:Time.gm interprets pre-Gregorian reform dates using Gregorian proleptic calendar
-fails:Time.gm interprets Julian-Gregorian gap dates using Gregorian proleptic calendar
-fails:Time.gm interprets post-Gregorian reform dates using Gregorian calendar
-fails:Time.gm accepts 1 argument (year)
-fails:Time.gm accepts 2 arguments (year, month)
-fails:Time.gm accepts 3 arguments (year, month, day)
-fails:Time.gm accepts 4 arguments (year, month, day, hour)
-fails:Time.gm accepts 5 arguments (year, month, day, hour, minute)
-fails:Time.gm accepts nil month, day, hour, minute, and second
-fails:Time.gm handles a String year
-fails:Time.gm coerces the year with #to_int
-fails:Time.gm handles a String month given as a numeral
-fails:Time.gm handles a String month given as a short month name
-fails:Time.gm coerces the month with #to_str
-fails:Time.gm coerces the month with #to_int
-fails:Time.gm handles a String day
-fails:Time.gm coerces the day with #to_int
-fails:Time.gm handles a String hour
-fails:Time.gm coerces the hour with #to_int
-fails:Time.gm handles a String minute
-fails:Time.gm coerces the minute with #to_int
-fails:Time.gm handles a String second
-fails:Time.gm coerces the second with #to_int
-fails:Time.gm interprets all numerals as base 10
-fails:Time.gm handles fractional seconds as a Float
-fails:Time.gm handles fractional seconds as a Rational
-fails:Time.gm handles years from 0 as such
-fails:Time.gm raises an ArgumentError for out of range month
-fails:Time.gm raises an ArgumentError for out of range day
-fails:Time.gm raises an ArgumentError for out of range hour
-fails:Time.gm raises an ArgumentError for out of range minute
-fails:Time.gm raises an ArgumentError for out of range second
-fails:Time.gm returns subclass instances
 fails:Time.gm handles string arguments
-fails:Time.gm handles float arguments
-fails:Time.gm raises an ArgumentError for out of range values
 fails:Time.gm handles microseconds
 fails:Time.gm handles fractional microseconds as a Float
 fails:Time.gm handles fractional microseconds as a Rational

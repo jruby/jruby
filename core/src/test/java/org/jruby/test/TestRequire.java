@@ -44,7 +44,8 @@ public class TestRequire extends TestRubyBase {
     public void testRubyRequire() throws Exception {
         String result = eval("require 'A/C'; puts A::C.new.meth");
         assertEquals("ok", result);
-        result = eval("$: << 'A'; require 'B'; puts B.new.meth");
+        // the current working directory is core/
+        result = eval("$: << 'src/test/ruby/A'; require 'B'; puts B.new.meth");
         assertEquals("ok", result);
     }
 

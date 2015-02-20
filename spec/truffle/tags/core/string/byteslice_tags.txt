@@ -1,7 +1,6 @@
 fails:String#byteslice returns the character code of the character at the given index
 fails:String#byteslice returns nil if index is outside of self
 fails:String#byteslice calls to_int on the given index
-fails:String#byteslice with index, length returns the substring starting at the given index with the given length
 fails:String#byteslice with index, length always taints resulting strings when self is tainted
 fails:String#byteslice with index, length returns nil if the offset falls outside of self
 fails:String#byteslice with index, length returns nil if the length is negative

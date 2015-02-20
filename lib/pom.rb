@@ -21,8 +21,7 @@ end
 default_gems =
   [
    ImportedGem.new( 'jruby-openssl', '0.9.6', true ),
-   ImportedGem.new( 'jruby-readline', '1.0.dev-SNAPSHOT', false ),
-   ImportedGem.new( 'jruby-ripper', '2.1.0.dev-SNAPSHOT', false ),
+   ImportedGem.new( 'jruby-readline', '1.0', false ),
    ImportedGem.new( 'rake', 'rake.version', true ),
    ImportedGem.new( 'rdoc', 'rdoc.version', true ),
    ImportedGem.new( 'json', 'json.version', true ),

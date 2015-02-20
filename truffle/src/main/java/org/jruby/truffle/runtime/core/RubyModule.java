@@ -31,6 +31,8 @@ import org.jruby.truffle.runtime.methods.InternalMethod;
 import org.jruby.truffle.runtime.subsystems.ObjectSpaceManager;
 
 import java.util.*;
+import java.util.Map.Entry;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Represents the Ruby {@code Module} class.
@@ -88,12 +90,12 @@ public class RubyModule extends RubyBasicObject implements ModuleChain {
     private final RubyContext context;
 
     @CompilationFinal protected ModuleChain parentModule;
-    private LexicalScope lexicalScope;
+
     private String name;
 
-    private final Map<String, InternalMethod> methods = new HashMap<>();
-    private final Map<String, RubyConstant> constants = new HashMap<>();
-    private final Map<String, Object> classVariables = new HashMap<>();
+    private final Map<String, InternalMethod> methods = new ConcurrentHashMap<>();
+    private final Map<String, RubyConstant> constants = new ConcurrentHashMap<>();
+    private final Map<String, Object> classVariables = new ConcurrentHashMap<>();
 
     private final CyclicAssumption unmodifiedAssumption;
 
@@ -114,31 +116,52 @@ public class RubyModule extends RubyBasicObject implements ModuleChain {
     protected RubyModule(RubyContext context, RubyClass selfClass, RubyModule lexicalParent, String name, RubyNode currentNode) {
         super(selfClass, context);
         this.context = context;
-        this.name = name;
 
         unmodifiedAssumption = new CyclicAssumption(name + " is unmodified");
 
-        getAdoptedByLexicalParent(lexicalParent, currentNode);
+        if (lexicalParent != null) {
+            getAdoptedByLexicalParent(lexicalParent, name, currentNode);
+        }
     }
 
-    protected void getAdoptedByLexicalParent(RubyModule lexicalParent, RubyNode currentNode) {
-        if (lexicalParent != null) {
-            lexicalParent.setConstant(currentNode, name, this);
-            lexicalParent.addLexicalDependent(this);
+    public void getAdoptedByLexicalParent(RubyModule lexicalParent, String name, RubyNode currentNode) {
+        lexicalParent.setConstantInternal(currentNode, name, this, false);
+        lexicalParent.addLexicalDependent(this);
 
-            // Tricky, we need to compare with the Object class, but we only have a Module at hand.
-            RubyClass classClass = lexicalParent.getLogicalClass();
+        if (this.name == null) {
+            // Tricky, we need to compare with the Object class, but we only have a Class at hand.
+            RubyClass classClass = logicalClass.getLogicalClass();
             RubyClass objectClass = classClass.getSuperClass().getSuperClass();
 
-            if (lexicalParent != objectClass) {
-                name = lexicalParent.getName() + "::" + name;
+            if (lexicalParent == objectClass) {
+                this.name = name;
+                updateAnonymousChildrenModules();
+            } else if (lexicalParent.hasName()) {
+                this.name = lexicalParent.getName() + "::" + name;
+                updateAnonymousChildrenModules();
+            }
+            // else: Our lexicalParent is also an anonymous module
+            // and will name us when it gets named via updateAnonymousChildrenModules()
+        }
+    }
+
+    private void updateAnonymousChildrenModules() {
+        RubyNode.notDesignedForCompilation();
+
+        for (Entry<String, RubyConstant> entry : constants.entrySet()) {
+            RubyConstant constant = entry.getValue();
+            if (constant.getValue() instanceof RubyModule) {
+                RubyModule module = (RubyModule) constant.getValue();
+                if (!module.hasName()) {
+                    module.getAdoptedByLexicalParent(this, entry.getKey(), null);
+                }
             }
         }
     }
 
     @TruffleBoundary
     public void initCopy(RubyModule other) {
-        this.name = other.name;
+        // Do not copy name, the copy is an anonymous module
         this.parentModule = other.parentModule;
         this.methods.putAll(other.methods);
         this.constants.putAll(other.constants);
@@ -148,16 +171,6 @@ public class RubyModule extends RubyBasicObject implements ModuleChain {
     /** If this instance is a module and not a class. */
     public boolean isOnlyAModule() {
         return !(this instanceof RubyClass);
-    }
-
-    /**
-     * This method supports initialization and solves boot-order problems and should not normally be
-     * used.
-     */
-    protected void unsafeSetParent(RubyModule parent) {
-        parentModule = parent;
-        parent.addDependent(this);
-        newVersion();
     }
 
     @TruffleBoundary
@@ -185,16 +198,30 @@ public class RubyModule extends RubyBasicObject implements ModuleChain {
      */
     @TruffleBoundary
     public void setConstant(RubyNode currentNode, String name, Object value) {
+        if (value instanceof RubyModule) {
+            ((RubyModule) value).getAdoptedByLexicalParent(this, name, currentNode);
+        } else {
+            setConstantInternal(currentNode, name, value, false);
+        }
+    }
+
+    @TruffleBoundary
+    public void setAutoloadConstant(RubyNode currentNode, String name, RubyString filename) {
+        setConstantInternal(currentNode, name, filename, true);
+    }
+
+    private void setConstantInternal(RubyNode currentNode, String name, Object value, boolean autoload) {
         RubyNode.notDesignedForCompilation();
 
         checkFrozen(currentNode);
 
         RubyConstant previous = getConstants().get(name);
         if (previous == null) {
-            getConstants().put(name, new RubyConstant(this, value, false));
+            getConstants().put(name, new RubyConstant(this, value, false, autoload));
         } else {
             // TODO(CS): warn when redefining a constant
-            getConstants().put(name, new RubyConstant(this, value, previous.isPrivate()));
+            // TODO (nirvdrum 18-Feb-15): But don't warn when redefining an autoloaded constant.
+            getConstants().put(name, new RubyConstant(this, value, previous.isPrivate(), autoload));
         }
 
         newLexicalVersion();
@@ -316,7 +343,15 @@ public class RubyModule extends RubyBasicObject implements ModuleChain {
     }
 
     public String getName() {
-        return name;
+        if (name != null) {
+            return name;
+        } else {
+            return "#<" + logicalClass.getName() + ":0x" + Long.toHexString(getObjectID()) + ">";
+        }
+    }
+
+    public boolean hasName() {
+        return name != null;
     }
 
     @Override
@@ -529,18 +564,6 @@ public class RubyModule extends RubyBasicObject implements ModuleChain {
                 return new IncludedModulesIterator(top);
             }
         };
-    }
-
-    public void setName(String name) {
-        this.name = name;
-    }
-
-    public void setLexicalScope(LexicalScope lexicalScope) {
-        this.lexicalScope = lexicalScope;
-    }
-
-    public LexicalScope getLexicalScope() {
-        return lexicalScope;
     }
 
     public static class ModuleAllocator implements Allocator {

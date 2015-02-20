@@ -1,4 +1,3 @@
 fails:String#each_line taints substrings that are passed to the block if self is tainted
-fails:String#each_line yields paragraphs (broken by 2 or more successive newlines) when passed ''
 fails:String#each_line uses $/ as the separator when none is given
 fails:String#each_line yields subclass instances for subclasses

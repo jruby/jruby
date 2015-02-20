@@ -26,6 +26,10 @@
 
 # Only part of Rubinius' fixnum.rb
 
+# Our Bignum#coerce(Fixnum).first returns a Fixnum and not a Bignum.
+# Therefore all Fixnum operations should handle Bignum (or Integer)
+# explicitly instead of using coercion.
+
 class Fixnum
 
   alias_method :modulo, :%
@@ -36,7 +40,7 @@ class Fixnum
   end
 
   def fdiv(n)
-    if n.kind_of?(Fixnum)
+    if n.kind_of?(Integer) # Truffle: Fixnum => Integer, to handle Bignum as MRI
       to_f / n
     else
       redo_coerced :fdiv, n

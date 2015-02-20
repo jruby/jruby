@@ -21,6 +21,8 @@ import org.jruby.runtime.encoding.EncodingService;
 import org.jruby.runtime.load.LoadServiceResource;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.core.ArrayNodes;
+import org.jruby.truffle.nodes.core.ProcessNodes;
+import org.jruby.truffle.nodes.methods.SetMethodDeclarationContext;
 import org.jruby.truffle.nodes.objects.Allocator;
 import org.jruby.truffle.runtime.RubyCallStack;
 import org.jruby.truffle.runtime.RubyContext;
@@ -74,11 +76,12 @@ public class CoreLibrary {
     private final RubyClass moduleClass;
     private final RubyClass nameErrorClass;
     private final RubyClass nilClass;
+    private final RubyClass noMemoryErrorClass;
     private final RubyClass noMethodErrorClass;
     private final RubyClass numericClass;
     private final RubyClass objectClass;
     private final RubyClass procClass;
-    private final RubyClass processClass;
+    private final RubyModule processModule;
     private final RubyClass rangeClass;
     private final RubyClass rangeErrorClass;
     private final RubyClass rationalClass;
@@ -88,6 +91,7 @@ public class CoreLibrary {
     private final RubyClass runtimeErrorClass;
     private final RubyClass standardErrorClass;
     private final RubyClass stringClass;
+    private final RubyClass stringDataClass;
     private final RubyClass symbolClass;
     private final RubyClass syntaxErrorClass;
     private final RubyClass systemCallErrorClass;
@@ -156,10 +160,10 @@ public class CoreLibrary {
         moduleClass.unsafeSetSuperclass(objectClass);
         classClass.unsafeSetSuperclass(moduleClass);
 
-        classClass.getAdoptedByLexicalParent(objectClass, null);
-        basicObjectClass.getAdoptedByLexicalParent(objectClass, null);
-        objectClass.getAdoptedByLexicalParent(objectClass, null);
-        moduleClass.getAdoptedByLexicalParent(objectClass, null);
+        classClass.getAdoptedByLexicalParent(objectClass, "Class", null);
+        basicObjectClass.getAdoptedByLexicalParent(objectClass, "BasicObject", null);
+        objectClass.getAdoptedByLexicalParent(objectClass, "Object", null);
+        moduleClass.getAdoptedByLexicalParent(objectClass, "Module", null);
 
         // BasicObject knows itself
 
@@ -173,6 +177,9 @@ public class CoreLibrary {
 
         // FiberError
         fiberErrorClass = defineClass(exceptionClass, "FiberError");
+
+        // NoMemoryError
+        noMemoryErrorClass = defineClass(exceptionClass, "NoMemoryError");
 
         // StandardError
         standardErrorClass = defineClass(exceptionClass, "StandardError");
@@ -249,7 +256,7 @@ public class CoreLibrary {
         defineClass("Mutex", new RubyMutex.MutexAllocator());
         nilClass = defineClass("NilClass");
         procClass = defineClass("Proc", new RubyProc.ProcAllocator());
-        processClass = defineClass("Process");
+        processModule = defineModule("Process");
         rangeClass = defineClass("Range", new RubyRange.RangeAllocator());
         regexpClass = defineClass("Regexp", new RubyRegexp.RegexpAllocator());
         stringClass = defineClass("String", new RubyString.StringAllocator());
@@ -283,6 +290,7 @@ public class CoreLibrary {
 
         rubiniusModule = defineModule("Rubinius");
         byteArrayClass = new RubyClass(context, rubiniusModule, objectClass, "ByteArray");
+        stringDataClass = new RubyClass(context, rubiniusModule, objectClass, "StringData");
 
         // Include the core modules
 
@@ -385,6 +393,9 @@ public class CoreLibrary {
 
         fileClass.setConstant(null, "PATH_SEPARATOR", RubyString.fromJavaString(stringClass, File.pathSeparator));
         fileClass.setConstant(null, "FNM_SYSCASE", 0);
+
+        processModule.setConstant(null, "CLOCK_MONOTONIC", ProcessNodes.CLOCK_MONOTONIC);
+        processModule.setConstant(null, "CLOCK_REALTIME", ProcessNodes.CLOCK_REALTIME);
     }
 
     private void initializeSignalConstants() {
@@ -428,6 +439,11 @@ public class CoreLibrary {
     }
 
     public void initializeAfterMethodsAdded() {
+        // ENV is supposed to be an object that actually updates the environment, and sees any updates
+
+        envHash = getSystemEnv();
+        objectClass.setConstant(null, "ENV", envHash);
+
         // Load Ruby core
 
         if (Options.TRUFFLE_LOAD_CORE.load()) {
@@ -443,11 +459,6 @@ public class CoreLibrary {
                 throw new TruffleFatalException("couldn't load the core library", e);
             }
         }
-
-        // ENV is supposed to be an object that actually updates the environment, and sees any updates
-
-        envHash = getSystemEnv();
-        objectClass.setConstant(null, "ENV", envHash);
     }
 
     public void loadRubyCore(String fileName) {
@@ -528,7 +539,7 @@ public class CoreLibrary {
         } else if (object instanceof Double) {
             return floatClass;
         } else if (object == null) {
-            throw new RuntimeException();
+            throw new RuntimeException("Can't get metaclass for null");
         } else {
             CompilerDirectives.transferToInterpreter();
             throw new UnsupportedOperationException(String.format("Don't know how to get the metaclass for %s", object.getClass()));
@@ -577,7 +588,7 @@ public class CoreLibrary {
         }
 
         if (value instanceof RubyBignum) {
-            return ((RubyBignum) value).doubleValue();
+            return ((RubyBignum) value).bigIntegerValue().doubleValue();
         }
 
         if (value instanceof Double) {
@@ -605,6 +616,11 @@ public class CoreLibrary {
     public RubyException argumentError(String message, Node currentNode) {
         CompilerAsserts.neverPartOfCompilation();
         return new RubyException(argumentErrorClass, context.makeString(message), RubyCallStack.getBacktrace(currentNode));
+    }
+
+    public RubyException argumentErrorOutOfRange(Node currentNode) {
+        CompilerAsserts.neverPartOfCompilation();
+        return argumentError("out of range", currentNode);
     }
 
     public RubyException argumentErrorInvalidRadix(int radix, Node currentNode) {
@@ -1084,6 +1100,10 @@ public class CoreLibrary {
 
     public RubyClass getByteArrayClass() {
         return byteArrayClass;
+    }
+
+    public RubyClass getStringDataClass() {
+        return stringDataClass;
     }
 
     public RubyBasicObject getRubiniusUndefined() {

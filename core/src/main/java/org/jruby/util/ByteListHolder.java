@@ -30,6 +30,7 @@ import org.jcodings.Encoding;
 
 public interface ByteListHolder {
     public ByteList getByteList();
+    public void modify();
     public void modify(int length);
     public Encoding checkEncoding(ByteListHolder other);
 }

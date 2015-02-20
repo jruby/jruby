@@ -11,3 +11,5 @@ fails:Time#+ maintains nanoseconds precision
 fails:Time#+ maintains subseconds precision
 fails:Time#+ maintains precision
 fails:Time#+ increments the time by the specified amount as rational numbers
+fails:Time#+ increments the time by the specified amount
+fails:Time#+ does not return a subclass instance

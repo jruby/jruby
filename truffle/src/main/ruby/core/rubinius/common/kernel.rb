@@ -92,6 +92,16 @@ module Kernel
   end
   module_function :StringValue
 
+  def autoload(name, file)
+    Object.autoload(name, file)
+  end
+  private :autoload
+
+  def autoload?(name)
+    Object.autoload?(name)
+  end
+  private :autoload?
+
   def define_singleton_method(*args, &block)
     singleton_class.send(:define_method, *args, &block)
   end
@@ -105,9 +115,23 @@ module Kernel
     raise PrimitiveFailure, "Kernel#object_id primitive failed"
   end
 
+  def print(*args)
+    args.each do |obj|
+      $stdout.write obj.to_s
+    end
+    nil
+  end
+  module_function :print
+
   def trap(sig, prc=nil, &block)
     Signal.trap(sig, prc, &block)
   end
   module_function :trap
+
+  def warn(*messages)
+    $stderr.puts(*messages) if !$VERBOSE.nil? && !messages.empty?
+    nil
+  end
+  module_function :warn
 
 end

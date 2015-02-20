@@ -1,2 +1,0 @@
-fails:Time#mon returns the month of the year for a local Time
-fails:Time#mon returns the month of the year for a UTC Time

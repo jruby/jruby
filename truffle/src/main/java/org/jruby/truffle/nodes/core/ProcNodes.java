@@ -10,7 +10,10 @@
 package org.jruby.truffle.nodes.core;
 
 import com.oracle.truffle.api.CompilerDirectives;
+import com.oracle.truffle.api.Truffle;
 import com.oracle.truffle.api.dsl.Specialization;
+import com.oracle.truffle.api.frame.FrameInstance;
+import com.oracle.truffle.api.frame.FrameInstanceVisitor;
 import com.oracle.truffle.api.frame.MaterializedFrame;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.NullSourceSection;
@@ -21,11 +24,13 @@ import org.jruby.truffle.nodes.yield.YieldDispatchHeadNode;
 import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.UndefinedPlaceholder;
+import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.RubyArray;
 import org.jruby.truffle.runtime.core.RubyBinding;
 import org.jruby.truffle.runtime.core.RubyNilClass;
 import org.jruby.truffle.runtime.core.RubyProc;
 import org.jruby.truffle.runtime.core.RubyString;
+import org.jruby.util.Memo;
 
 @CoreClass(name = "Proc")
 public abstract class ProcNodes {
@@ -115,6 +120,40 @@ public abstract class ProcNodes {
                     block.getMethod(), block.getSelfCapturedInScope(), block.getBlockCapturedInScope());
 
             return getContext().getCoreLibrary().getNilObject();
+        }
+
+        @Specialization
+        public RubyNilClass initialize(VirtualFrame frame, RubyProc proc, @SuppressWarnings("unused") UndefinedPlaceholder block) {
+            notDesignedForCompilation();
+
+            final Memo<Integer> frameCount = new Memo<>(0);
+
+            // The parent will be the Proc.new call.  We need to go an extra level up in order to get the parent
+            // of the Proc.new call, since that is where the block should be inherited from.
+            final MaterializedFrame grandparentFrame = Truffle.getRuntime().iterateFrames(new FrameInstanceVisitor<MaterializedFrame>() {
+
+                @Override
+                public MaterializedFrame visitFrame(FrameInstance frameInstance) {
+                    if (frameCount.get() == 1) {
+                        return frameInstance.getFrame(FrameInstance.FrameAccess.READ_WRITE, false).materialize();
+                    } else {
+                        frameCount.set(frameCount.get() + 1);
+                        return null;
+                    }
+                }
+
+            });
+
+            final RubyProc grandparentBlock = RubyArguments.getBlock(grandparentFrame.getArguments());
+
+            if (grandparentBlock == null) {
+                CompilerDirectives.transferToInterpreter();
+
+                // TODO (nirvdrum 19-Feb-15) MRI reports this error on the #new method, not #initialize.
+                throw new RaiseException(getContext().getCoreLibrary().argumentError("tried to create Proc object without a block", this));
+            }
+
+            return initialize(proc, grandparentBlock);
         }
 
     }

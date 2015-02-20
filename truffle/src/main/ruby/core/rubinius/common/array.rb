@@ -373,6 +373,21 @@ class Array
     nil
   end
 
+  def reverse_each
+    return to_enum(:reverse_each) unless block_given?
+
+    stop = @start - 1
+    i = stop + @total
+    tuple = @tuple
+
+    while i > stop
+      yield tuple.at(i)
+      i -= 1
+    end
+
+    self
+  end
+
   def to_a
     if self.instance_of? Array
       self

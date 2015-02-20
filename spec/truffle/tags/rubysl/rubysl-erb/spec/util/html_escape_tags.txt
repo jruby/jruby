@@ -1,5 +1,0 @@
-fails:ERB::Util.html_escape escape (& < > " ') to (&amp; &lt; &gt; &quot; &#39;)
-fails:ERB::Util.html_escape not escape characters except (& < > " ')
-fails:ERB::Util.html_escape return empty string when argument is nil
-fails:ERB::Util.html_escape returns string when argument is number
-fails:ERB::Util.html_escape returns string when argument is boolean

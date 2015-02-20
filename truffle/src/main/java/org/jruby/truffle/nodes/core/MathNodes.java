@@ -389,7 +389,7 @@ public abstract class MathNodes {
 
         @Specialization
         public RubyArray frexp(RubyBignum a) {
-            return frexp(a.doubleValue());
+            return frexp(a.bigIntegerValue().doubleValue());
         }
 
         @Specialization
@@ -564,17 +564,17 @@ public abstract class MathNodes {
 
         @Specialization
         public double function(RubyBignum a, int b) {
-            return function(a.doubleValue(), b);
+            return function(a.bigIntegerValue().doubleValue(), b);
         }
 
         @Specialization
         public double function(RubyBignum a, long b) {
-            return function(a.doubleValue(), b);
+            return function(a.bigIntegerValue().doubleValue(), b);
         }
 
         @Specialization
         public double function(RubyBignum a, double b) {
-            return function(a.doubleValue(), b);
+            return function(a.bigIntegerValue().doubleValue(), b);
         }
 
         @Specialization
@@ -650,7 +650,7 @@ public abstract class MathNodes {
 
         @Specialization
         public RubyArray lgamma(RubyBignum a) {
-            return lgamma(a.doubleValue());
+            return lgamma(a.bigIntegerValue().doubleValue());
         }
 
         @Specialization
@@ -709,7 +709,7 @@ public abstract class MathNodes {
 
         @Specialization
         public double function(RubyBignum a, UndefinedPlaceholder b) {
-            return doFunction(a.doubleValue());
+            return doFunction(a.bigIntegerValue().doubleValue());
         }
 
         @Specialization
@@ -929,7 +929,7 @@ public abstract class MathNodes {
 
         @Specialization
         public double function(RubyBignum a) {
-            return doFunction(a.doubleValue());
+            return doFunction(a.bigIntegerValue().doubleValue());
         }
 
         @Specialization
@@ -994,7 +994,7 @@ public abstract class MathNodes {
 
         @Specialization
         public double function(int a, RubyBignum b) {
-            return doFunction(a, b.doubleValue());
+            return doFunction(a, b.bigIntegerValue().doubleValue());
         }
 
         @Specialization
@@ -1014,7 +1014,7 @@ public abstract class MathNodes {
 
         @Specialization
         public double function(long a, RubyBignum b) {
-            return doFunction(a, b.doubleValue());
+            return doFunction(a, b.bigIntegerValue().doubleValue());
         }
 
         @Specialization
@@ -1024,22 +1024,22 @@ public abstract class MathNodes {
 
         @Specialization
         public double function(RubyBignum a, int b) {
-            return doFunction(a.doubleValue(), b);
+            return doFunction(a.bigIntegerValue().doubleValue(), b);
         }
 
         @Specialization
         public double function(RubyBignum a, long b) {
-            return doFunction(a.doubleValue(), b);
+            return doFunction(a.bigIntegerValue().doubleValue(), b);
         }
 
         @Specialization
         public double function(RubyBignum a, RubyBignum b) {
-            return doFunction(a.doubleValue(), b.doubleValue());
+            return doFunction(a.bigIntegerValue().doubleValue(), b.bigIntegerValue().doubleValue());
         }
 
         @Specialization
         public double function(RubyBignum a, double b) {
-            return doFunction(a.doubleValue(), b);
+            return doFunction(a.bigIntegerValue().doubleValue(), b);
         }
 
         @Specialization
@@ -1054,7 +1054,7 @@ public abstract class MathNodes {
 
         @Specialization
         public double function(double a, RubyBignum b) {
-            return doFunction(a, b.doubleValue());
+            return doFunction(a, b.bigIntegerValue().doubleValue());
         }
 
         @Specialization

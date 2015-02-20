@@ -1,2 +1,0 @@
-fails:Time#hour returns the hour of the day (0..23) for a local Time
-fails:Time#hour returns the hour of the day for a UTC Time

@@ -21,6 +21,7 @@ import com.oracle.truffle.api.nodes.UnexpectedResultException;
 import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.utilities.ConditionProfile;
 
+import org.jcodings.Encoding;
 import org.jruby.common.IRubyWarnings;
 import org.jruby.runtime.Visibility;
 import org.jruby.truffle.nodes.RubyNode;
@@ -783,7 +784,9 @@ public abstract class KernelNodes {
             // TODO(CS): having some trouble interacting with JRuby stdin - so using this hack
             final InputStream in = getContext().getRuntime().getInstanceConfig().getInput();
 
-            final BufferedReader reader = new BufferedReader(new InputStreamReader(in));
+            Encoding encoding = getContext().getRuntime().getDefaultExternalEncoding();
+
+            final BufferedReader reader = new BufferedReader(new InputStreamReader(in, encoding.getCharset()));
 
             final String line = getContext().getThreadManager().runUntilResult(new BlockingActionWithoutGlobalLock<String>() {
                 @Override
@@ -1055,6 +1058,7 @@ public abstract class KernelNodes {
 
         @Child private DoesRespondDispatchHeadNode toIntRespondTo;
         @Child private CallDispatchHeadNode toInt;
+        @Child private FixnumOrBignumNode fixnumOrBignum;
 
         public IntegerNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -1066,6 +1070,7 @@ public abstract class KernelNodes {
             super(prev);
             toIntRespondTo = prev.toIntRespondTo;
             toInt = prev.toInt;
+            fixnumOrBignum = prev.fixnumOrBignum;
         }
 
         @Specialization
@@ -1099,7 +1104,12 @@ public abstract class KernelNodes {
             try {
                 return Integer.parseInt(value.toString());
             } catch (NumberFormatException e) {
-                return bignum(new BigInteger(value.toString()));
+                if (fixnumOrBignum == null) {
+                    CompilerDirectives.transferToInterpreter();
+                    fixnumOrBignum = insert(new FixnumOrBignumNode(getContext(), getSourceSection()));
+                }
+
+                return fixnumOrBignum.fixnumOrBignum(new BigInteger(value.toString()));
             }
         }
 
@@ -1342,62 +1352,6 @@ public abstract class KernelNodes {
         public boolean nil() {
             return false;
         }
-    }
-
-    @CoreMethod(names = "print", isModuleFunction = true, argumentsAsArray = true)
-    public abstract static class PrintNode extends CoreMethodNode {
-
-        @Child private CallDispatchHeadNode toS;
-
-        public PrintNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-            toS = DispatchHeadNodeFactory.createMethodCall(context);
-        }
-
-        public PrintNode(PrintNode prev) {
-            super(prev);
-            toS = prev.toS;
-        }
-
-        @Specialization
-        public RubyNilClass print(VirtualFrame frame, Object[] args) {
-            final byte[][] bytes = new byte[args.length][];
-
-            for (int i = 0; i < args.length; i++) {
-                bytes[i] = ((RubyString) toS.call(frame, args[i], "to_s", null)).getBytes().bytes();
-            }
-
-            getContext().getThreadManager().runUntilResult(new BlockingActionWithoutGlobalLock<Boolean>() {
-                int i = 0;
-
-                @Override
-                public Boolean block() throws InterruptedException {
-                    while (i < bytes.length) {
-                        write(bytes[i]);
-                        i++;
-
-                    }
-                    return SUCCESS;
-                }
-            });
-
-            return getContext().getCoreLibrary().getNilObject();
-        }
-
-        @TruffleBoundary
-        private void write(byte[] bytes) throws InterruptedException {
-            if (Thread.interrupted()) {
-                throw new InterruptedException();
-            }
-
-            // TODO (eregon, 11 Nov. 2015): the write itself should throw InterruptedException
-            try{
-                getContext().getRuntime().getInstanceConfig().getOutput().write(bytes);
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
-        }
-
     }
 
     @CoreMethod(names = "private_methods", optional = 1)
@@ -1894,7 +1848,7 @@ public abstract class KernelNodes {
 
         @Specialization
         public long sleep(int duration) {
-            return doSleepMillis(duration * 1000);
+            return doSleepMillis(duration * 1000L);
         }
 
         @Specialization
@@ -2144,7 +2098,7 @@ public abstract class KernelNodes {
 
         @Specialization
         public String toHexString(RubyBignum value) {
-            return value.toHexString();
+            return value.bigIntegerValue().toString(16);
         }
 
     }
@@ -2170,11 +2124,6 @@ public abstract class KernelNodes {
             notDesignedForCompilation();
 
             String className = classNode.executeGetClass(self).getName();
-
-            if (className == null) {
-                className = "Class";
-            }
-
             Object id = objectIDNode.executeObjectID(frame, self);
             String hexID = toHexStringNode.executeToHexString(frame, id);
 
