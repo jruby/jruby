@@ -698,6 +698,15 @@ public abstract class IRScope implements ParseResult {
 
     /** Run any necessary passes to get the IR ready for compilation */
     public synchronized List<BasicBlock> prepareForCompilation() {
+        // FIXME: This is messy and prepareForInterpretation and prepareForCompilation need to
+        // clean up the lifecycle aspects of creating CFG from instrList and running passes in
+        // a consistent and predictable way.  This is a hack atm to unbreak the fact JIT
+        // may happen before IC.build count and thus not have cloned the instrs (which then
+        // modifies instrs IC is using causing weird blowups.
+        if (getCFG() == null) {
+            cloneInstrs();
+        }
+
         // Reset linearization, if any exists
         resetLinearizationData();
 
