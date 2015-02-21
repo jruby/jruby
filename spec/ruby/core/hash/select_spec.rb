@@ -58,6 +58,11 @@ describe "Hash#select!" do
     all_args_select.should == [[1, 2], [3, 4]]
   end
 
+  it "should return an empty hash even if changes are made" do
+    h = new_hash(:a => 2)
+    h.select! { |k, v| k != :a }.should equal new_hash
+  end
+
   it "returns nil if no changes were made" do
     new_hash(:a => 1).select! { |k,v| v <= 1 }.should == nil
   end
