@@ -63,21 +63,20 @@ module PETests
 
   def self.counter_example(description)
     describe "#{description} is not constant" do
-      @warnings.push "counter example not run: #{full_description}"
-    #  begin
-    #    1_000_000.times do
-    #      yield
-    #    end
-    #
-    #    @failures.push full_description
-    #    print "E"
-    #  rescue RubyTruffleError
-    #    @successes.push full_description
-    #    print "."
-    #  ensure
-    #    @dots += 1
-    #    puts if @dots == 80
-    #  end
+      begin
+        1_000_000.times do
+          yield
+        end
+    
+        @failures.push full_description
+        print "E"
+      rescue RubyTruffleError
+        @successes.push full_description
+        print "."
+      ensure
+        @dots += 1
+        puts if @dots == 80
+      end
     end
   end
 
