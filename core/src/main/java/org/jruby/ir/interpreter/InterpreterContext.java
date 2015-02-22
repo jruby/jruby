@@ -19,7 +19,6 @@ public class InterpreterContext {
     private final int temporaryFixnumVariablecount;
     private final int temporaryFloatVariablecount;
 
-
     private final String name;
     private final String fileName;
     private final int lineNumber;
@@ -44,10 +43,18 @@ public class InterpreterContext {
     // View of CFG at time of creating this context.
     private CFG cfg = null;
 
-    public InterpreterContext(IRScope scope, Instr[] instructions) {
+    private int runCount = 0;
+    private boolean rebuilt = false;
+
+    public InterpreterContext(IRScope scope, Instr[] instructions, boolean rebuild) {
         //FIXME: Remove once we conditionally plug in CFG on debug-only
         this.cfg = scope.getCFG();
+        this.rebuilt = rebuild;
+        if (this.rebuilt) {
+            this.runCount = 30;
+        }
 
+/*
         if (scope instanceof IRModuleBody || scope instanceof IRClassBody) {
             engine = BODY_INTERPRETER;
         // ENEBO: Playing with unboxable and subset instruction sets
@@ -56,6 +63,8 @@ public class InterpreterContext {
         } else {
             engine = DEFAULT_INTERPRETER;
         }
+*/
+        engine = DEFAULT_INTERPRETER;
 
         this.name = scope.getName();
         this.fileName = scope.getFileName();
@@ -73,6 +82,22 @@ public class InterpreterContext {
         this.pushNewDynScope = !isDynscopeEliminated && !reuseParentDynScope;
         this.popDynScope = this.pushNewDynScope || this.reuseParentDynScope;
         this.receivesKeywordArguments = scope.getFlags().contains(IRFlags.RECEIVES_KEYWORD_ARGS);
+    }
+
+    public CFG getCFG() {
+        return this.cfg;
+    }
+
+    public boolean isRebuilt() {
+        return this.rebuilt;
+    }
+
+    public void incrementRunCount() {
+        this.runCount++;
+    }
+
+    public boolean needsRebuilding() {
+        return this.runCount == 30;
     }
 
     public Object[] allocateTemporaryVariables() {

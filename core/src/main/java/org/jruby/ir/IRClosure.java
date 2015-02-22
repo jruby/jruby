@@ -106,8 +106,8 @@ public class IRClosure extends IRScope {
     }
 
     @Override
-    public InterpreterContext allocateInterpreterContext(Instr[] instructionList) {
-        return new ClosureInterpreterContext(this, instructionList);
+    public InterpreterContext allocateInterpreterContext(Instr[] instructionList, boolean rebuild) {
+        return new ClosureInterpreterContext(this, instructionList, rebuild);
     }
 
     public void setBeginEndBlock() {
