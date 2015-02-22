@@ -455,13 +455,6 @@ public abstract class IRScope implements ParseResult {
             return getCFG();
         }
 
-        // If the scope has already been interpreted once,
-        // the scope can be on the call stack right now.
-        // So, clone instructions before building the CFG.
-        if (state == ScopeState.INTERPED) {
-            cloneInstrs();
-        }
-
         CFG newCFG = new CFG(this);
         newCFG.build(getInstrs());
         // Clear out instruction list after CFG has been built.
@@ -616,6 +609,19 @@ public abstract class IRScope implements ParseResult {
     }
 
     protected void initScope(boolean jitMode) {
+        // FIXME: This is messy and prepareForInterpretation and prepareForCompilation need to
+        // clean up the lifecycle aspects of creating CFG from instrList and running passes in
+        // a consistent and predictable way.  This is a hack atm to unbreak the fact JIT
+        // may happen before IC.build count and thus not have cloned the instrs (which then
+        // modifies instrs IC is using causing weird blowups.
+        //
+        // If the scope has already been interpreted once,
+        // the scope can be on the call stack right now.
+        // So, clone instructions before modifying them!
+        if (state != ScopeState.INIT && getCFG() == null) {
+            cloneInstrs();
+        }
+
         runCompilerPasses(getManager().getCompilerPasses(this));
 
         if (!jitMode && RubyInstanceConfig.IR_COMPILER_PASSES == null) {
@@ -672,14 +678,9 @@ public abstract class IRScope implements ParseResult {
     public synchronized InterpreterContext prepareForInterpretation(boolean rebuild) {
         if (interpreterContext == null) {
             this.state = ScopeState.INTERPED;
+        } else if (!rebuild || getCFG() != null) {
+            return interpreterContext; // Already prepared/rebuilt
         } else {
-            if (!rebuild || getCFG() != null) {
-                return interpreterContext; // Already prepared/rebuilt
-            }
-
-            // If rebuilding, clone instrs before building cfg, running passes, etc.
-            this.cloneInstrs();
-
             // Build CFG, run passes, etc.
             initScope(false);
 
@@ -698,15 +699,6 @@ public abstract class IRScope implements ParseResult {
 
     /** Run any necessary passes to get the IR ready for compilation */
     public synchronized List<BasicBlock> prepareForCompilation() {
-        // FIXME: This is messy and prepareForInterpretation and prepareForCompilation need to
-        // clean up the lifecycle aspects of creating CFG from instrList and running passes in
-        // a consistent and predictable way.  This is a hack atm to unbreak the fact JIT
-        // may happen before IC.build count and thus not have cloned the instrs (which then
-        // modifies instrs IC is using causing weird blowups.
-        if (getCFG() == null) {
-            cloneInstrs();
-        }
-
         // Reset linearization, if any exists
         resetLinearizationData();
 
