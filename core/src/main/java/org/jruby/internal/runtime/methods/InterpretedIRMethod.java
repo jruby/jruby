@@ -68,7 +68,7 @@ public class InterpretedIRMethod extends DynamicMethod implements IRMethodArgs, 
     }
 
     public List<String[]> getParameterList() {
-        method.prepareForInterpretation(); // We might not have parsed the method yet.
+        ensureInstrsReady(); // Make sure method is minimally built before returning this info
         return ((IRMethod) method).getArgDesc();
     }
 

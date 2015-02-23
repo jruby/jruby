@@ -645,10 +645,6 @@ public abstract class IRScope implements ParseResult {
         return new InterpreterContext(this, instructionList, rebuild);
     }
 
-    public InterpreterContext prepareForInterpretation() {
-        return prepareForInterpretation(false);
-    }
-
     protected void cloneInstrs() {
         cloneInstrs(new SimpleCloneInfo(this, false));
     }
@@ -682,14 +678,10 @@ public abstract class IRScope implements ParseResult {
         // Also get reference in case second thread is trying to do the same thing at near same time
         InterpreterContext ic = interpreterContext;
 
-        if (ic == null) {
-            if (this instanceof IRMethod) {
-                ic = prepareForInterpretation(); // Note: IRMethod has override
-            } else {
-                ic = prepareForBuildInterpretation();
-            }
-        } else if (ic.needsRebuilding()) {
-            ic = prepareForInterpretation(true);
+        if (ic == null) {                           // Never been interp'd.  Make simplest interpreter.
+            ic = prepareForBuildInterpretation();
+        } else if (ic.needsRebuilding()) {          // Already have IC but IC says it is time to take it up a notch!
+            prepareForFullBuildInterpretation();
         }
 
         return ic;
@@ -705,27 +697,13 @@ public abstract class IRScope implements ParseResult {
         return interpreterContext;
     }
 
-    /** Run any necessary passes to get the IR ready for interpretation */
-    public synchronized InterpreterContext prepareForInterpretation(boolean rebuild) {
-        if (interpreterContext == null) {
-            this.state = ScopeState.INTERPED;
-        } else if (!rebuild || getCFG() != null) {
-            return interpreterContext; // Already prepared/rebuilt
-        } else {
-            // Build CFG, run passes, etc.
-            initScope(false);
+    public synchronized void prepareForFullBuildInterpretation() {
+        // Build CFG, run passes, etc.
+        initScope(false);
 
-            // Always add call protocol instructions now for both interpreter and JIT
-            // since we are removing support for implicit stuff in the interpreter.
-            // When JIT later runs this same pass, it will be a NOP there.
-            if (!isUnsafeScope()) {
-                (new AddCallProtocolInstructions()).run(this);
-            }
-        }
-
-        interpreterContext = allocateInterpreterContext(prepareInstructions(), rebuild);
-
-        return interpreterContext;
+        // Always add call protocol instructions now for both interpreter and JIT since we are removing support
+        // for implicit stuff in the interpreter. When JIT later runs this same pass, it will be a NOP there.
+        if (!isUnsafeScope()) new AddCallProtocolInstructions().run(this);
     }
 
     /** Run any necessary passes to get the IR ready for compilation */

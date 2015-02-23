@@ -1,19 +1,17 @@
 package org.jruby.ir;
 
-import org.jruby.ast.MethodDefNode;
-import org.jruby.internal.runtime.methods.IRMethodArgs;
-import org.jruby.ir.instructions.Instr;
-import org.jruby.ir.interpreter.InterpreterContext;
-import org.jruby.ir.operands.LocalVariable;
-import org.jruby.ir.representations.BasicBlock;
-import org.jruby.parser.StaticScope;
-
 import java.lang.invoke.MethodType;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import org.jruby.ast.MethodDefNode;
+import org.jruby.internal.runtime.methods.IRMethodArgs;
+import org.jruby.ir.interpreter.InterpreterContext;
+import org.jruby.ir.operands.LocalVariable;
+import org.jruby.ir.representations.BasicBlock;
+import org.jruby.parser.StaticScope;
 
 public class IRMethod extends IRScope {
     public final boolean isInstanceMethod;
@@ -44,19 +42,19 @@ public class IRMethod extends IRScope {
         }
     }
 
-    /** Run any necessary passes to get the IR ready for interpretation */
-    public synchronized InterpreterContext prepareForInterpretation() {
+    @Override
+    public synchronized InterpreterContext prepareForBuildInterpretation() {
         if (defn != null) {
             IRBuilder.topIRBuilder(getManager(), this).defineMethodInner(defn, getLexicalParent());
 
             defn = null;
         }
 
-        return super.prepareForInterpretation();
+        return super.prepareForBuildInterpretation();
     }
 
     public synchronized List<BasicBlock> prepareForCompilation() {
-        if (defn != null) prepareForInterpretation();
+        if (defn != null) acquireInterpreterContext();
 
         return super.prepareForCompilation();
     }
