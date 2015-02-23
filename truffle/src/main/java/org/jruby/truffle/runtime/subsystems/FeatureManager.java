@@ -58,23 +58,19 @@ public class FeatureManager {
                     return true;
                 }
 
-                // Try as a full path
-
-                if (requireFile(feature, currentNode)) {
-                    return true;
-                }
-
-                if (requireFile(feature + ".rb", currentNode)) {
-                    return true;
-                }
-
-                // Try each load path in turn
-
-                for (Object pathObject : context.getCoreLibrary().getLoadPath().slowToArray()) {
-                    final String loadPath = pathObject.toString();
-
-                    if (requireInPath(loadPath, feature, currentNode)) {
+                if (new File(feature).isAbsolute()) {
+                    // Try as a full path
+                    if (requireInPath(null, feature, currentNode)) {
                         return true;
+                    }
+                } else {
+                    // Try each load path in turn
+                    for (Object pathObject : context.getCoreLibrary().getLoadPath().slowToArray()) {
+                        final String loadPath = pathObject.toString();
+
+                        if (requireInPath(loadPath, feature, currentNode)) {
+                            return true;
+                        }
                     }
                 }
             }
@@ -90,31 +86,33 @@ public class FeatureManager {
     }
 
     private boolean requireInPath(String path, String feature, RubyNode currentNode) throws IOException {
-        if (requireFile(new File(path, feature).getPath(), currentNode)) {
+        String fullPath = new File(path, feature).getPath();
+
+        if (requireFile(fullPath, currentNode)) {
             return true;
         }
 
-        if (requireFile(new File(path, feature).getPath() + ".rb", currentNode)) {
+        if (requireFile(fullPath + ".rb", currentNode)) {
             return true;
         }
 
         return false;
     }
 
-    private boolean requireFile(String fileName, RubyNode currentNode) throws IOException {
+    private boolean requireFile(String path, RubyNode currentNode) throws IOException {
         // We expect '/' in various classpath URLs, so normalize Windows file paths to use '/'
-        fileName = fileName.replace('\\', '/');
+        path = path.replace('\\', '/');
 
-        if (fileName.startsWith("uri:classloader:/")) {
+        if (path.startsWith("uri:classloader:/")) {
             // TODO CS 13-Feb-15 this uri:classloader:/ and core:/ thing is a hack - simplify it
 
             for (Object loaded : Arrays.asList(context.getCoreLibrary().getLoadedFeatures().slowToArray())) {
-                if (loaded.toString().equals(fileName)) {
+                if (loaded.toString().equals(path)) {
                     return true;
                 }
             }
 
-            String coreFileName = fileName.substring("uri:classloader:/".length());
+            String coreFileName = path.substring("uri:classloader:/".length());
 
             coreFileName = FileSystems.getDefault().getPath(coreFileName).normalize().toString();
 
@@ -123,18 +121,18 @@ public class FeatureManager {
             }
 
             context.getCoreLibrary().loadRubyCore(coreFileName, "uri:classloader:/");
-            context.getCoreLibrary().getLoadedFeatures().slowPush(context.makeString(fileName));
+            context.getCoreLibrary().getLoadedFeatures().slowPush(context.makeString(path));
 
             return true;
         }
-        else if (fileName.startsWith("core:/")) {
+        else if (path.startsWith("core:/")) {
             for (Object loaded : Arrays.asList(context.getCoreLibrary().getLoadedFeatures().slowToArray())) {
-                if (loaded.toString().equals(fileName)) {
+                if (loaded.toString().equals(path)) {
                     return true;
                 }
             }
 
-            final String coreFileName = fileName.substring("core:/".length());
+            final String coreFileName = path.substring("core:/".length());
 
             if (context.getRuntime().getLoadService().getClassPathResource(context.getRuntime().getJRubyClassLoader(), coreFileName) == null) {
                 return false;
@@ -142,17 +140,19 @@ public class FeatureManager {
 
 
             context.getCoreLibrary().loadRubyCore(coreFileName, "core:/");
-            context.getCoreLibrary().getLoadedFeatures().slowPush(context.makeString(fileName));
+            context.getCoreLibrary().getLoadedFeatures().slowPush(context.makeString(path));
 
             return true;
         } else {
-            final File file = new File(fileName);
+            final File file = new File(path);
 
-            if (!file.isFile()) {
+            assert file.isAbsolute();
+
+            if (!file.isAbsolute() || !file.isFile()) {
                 return false;
             }
 
-            final String expandedPath = RubyFile.expandPath(context, fileName);
+            final String expandedPath = RubyFile.expandPath(context, path);
 
             for (Object loaded : Arrays.asList(context.getCoreLibrary().getLoadedFeatures().slowToArray())) {
                 if (loaded.toString().equals(expandedPath)) {
@@ -163,7 +163,7 @@ public class FeatureManager {
             context.getCoreLibrary().getLoadedFeatures().slowPush(context.makeString(expandedPath));
 
             // TODO (nirvdrum 15-Jan-15): If we fail to load, we should remove the path from the loaded features because subsequent requires of the same statement may succeed.
-            context.loadFile(fileName, currentNode);
+            context.loadFile(path, currentNode);
         }
 
         return true;
