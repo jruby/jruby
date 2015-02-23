@@ -674,6 +674,23 @@ public abstract class IRScope implements ParseResult {
         }
     }
 
+    /**
+     * Get an existing interpreter context or create a new one if it has not been made before
+     */
+    public InterpreterContext acquireInterpreterContext() {
+        // Try unsync access first before calling more expensive method for getting IC
+        // Also get reference in case second thread is trying to do the same thing at near same time
+        InterpreterContext ic = interpreterContext;
+
+        if (ic == null) {
+            ic = prepareForInterpretation(); // Note: IRMethod has override
+        } else if (ic.needsRebuilding()) {
+            ic = prepareForInterpretation(true);
+        }
+
+        return ic;
+    }
+
     /** Run any necessary passes to get the IR ready for interpretation */
     public synchronized InterpreterContext prepareForInterpretation(boolean rebuild) {
         if (interpreterContext == null) {
