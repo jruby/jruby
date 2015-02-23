@@ -140,13 +140,6 @@ public abstract class IRScope implements ParseResult {
 
     private TemporaryVariable yieldClosureVariable;
 
-    // What state is this scope in?
-    enum ScopeState {
-        INIT, INTERPED, INSTRS_CLONED, CFG_BUILT
-    };
-
-    private ScopeState state = ScopeState.INIT;
-
     // Used by cloning code
     protected IRScope(IRScope s, IRScope lexicalParent) {
         this.lexicalParent = lexicalParent;
@@ -171,7 +164,6 @@ public abstract class IRScope implements ParseResult {
 
         this.localVars = new HashMap<String, LocalVariable>(s.localVars);
         this.scopeId = globalScopeCount.getAndIncrement();
-        this.state = ScopeState.INIT; // SSS FIXME: Is this correct?
 
         this.executedPasses = new ArrayList<CompilerPass>();
 
@@ -217,7 +209,6 @@ public abstract class IRScope implements ParseResult {
 
         this.localVars = new HashMap<String, LocalVariable>();
         this.scopeId = globalScopeCount.getAndIncrement();
-        this.state = ScopeState.INIT;
 
         this.executedPasses = new ArrayList<CompilerPass>();
 
@@ -461,7 +452,6 @@ public abstract class IRScope implements ParseResult {
         instrList = null;
 
         setCFG(newCFG);
-        state = ScopeState.CFG_BUILT;
 
         return newCFG;
     }
@@ -651,7 +641,7 @@ public abstract class IRScope implements ParseResult {
         }
 
         instrList = newInstrList;
-        state = ScopeState.INSTRS_CLONED;
+
         for (IRClosure cl : getClosures()) {
             cl.cloneInstrs(cloneInfo.cloneForCloningClosure(cl));
         }
@@ -678,7 +668,6 @@ public abstract class IRScope implements ParseResult {
      * Called directly after IRBuild but before CFG is built.
      */
     public synchronized InterpreterContext prepareForBuildInterpretation() {
-        state = ScopeState.INTERPED;
         interpreterContext = allocateInterpreterContext(prepareInstructions(), false);
 
         return interpreterContext;
