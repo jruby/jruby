@@ -808,7 +808,7 @@ public abstract class StringNodes {
         }
     }
 
-    @CoreMethod(names = "encode", required = 1)
+    @CoreMethod(names = "encode", required = 1, optional = 1)
     public abstract static class EncodeNode extends CoreMethodNode {
 
         @Child private ToStrNode toStrNode;
@@ -822,7 +822,7 @@ public abstract class StringNodes {
         }
 
         @Specialization
-        public RubyString encode(RubyString string, RubyString encoding) {
+        public RubyString encode(RubyString string, RubyString encoding, @SuppressWarnings("unused") UndefinedPlaceholder options) {
             notDesignedForCompilation();
 
             final org.jruby.RubyString jrubyString = getContext().toJRuby(string);
@@ -833,7 +833,15 @@ public abstract class StringNodes {
         }
 
         @Specialization
-        public RubyString encode(RubyString string, RubyEncoding encoding) {
+        public RubyString encode(RubyString string, RubyString encoding, @SuppressWarnings("unused") RubyHash options) {
+            notDesignedForCompilation();
+
+            // TODO (nirvdrum 20-Feb-15) We need to do something with the options hash. I'm stubbing this out just to get the jUnit mspec formatter running.
+            return encode(string, encoding, UndefinedPlaceholder.INSTANCE);
+        }
+
+        @Specialization
+        public RubyString encode(RubyString string, RubyEncoding encoding, @SuppressWarnings("unused") UndefinedPlaceholder options) {
             notDesignedForCompilation();
 
             final org.jruby.RubyString jrubyString = getContext().toJRuby(string);
@@ -844,7 +852,7 @@ public abstract class StringNodes {
         }
 
         @Specialization(guards = { "!isRubyString(arguments[1])", "!isRubyEncoding(arguments[1])" })
-        public RubyString encode(VirtualFrame frame, RubyString string, Object encoding) {
+        public RubyString encode(VirtualFrame frame, RubyString string, Object encoding, UndefinedPlaceholder options) {
             notDesignedForCompilation();
 
             if (toStrNode == null) {
@@ -852,7 +860,7 @@ public abstract class StringNodes {
                 toStrNode = insert(ToStrNodeFactory.create(getContext(), getSourceSection(), null));
             }
 
-            return encode(string, toStrNode.executeRubyString(frame, encoding));
+            return encode(string, toStrNode.executeRubyString(frame, encoding), options);
         }
     }
 
