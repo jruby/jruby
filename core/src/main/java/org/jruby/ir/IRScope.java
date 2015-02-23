@@ -609,19 +609,6 @@ public abstract class IRScope implements ParseResult {
     }
 
     protected void initScope(boolean jitMode) {
-        // FIXME: This is messy and prepareForInterpretation and prepareForCompilation need to
-        // clean up the lifecycle aspects of creating CFG from instrList and running passes in
-        // a consistent and predictable way.  This is a hack atm to unbreak the fact JIT
-        // may happen before IC.build count and thus not have cloned the instrs (which then
-        // modifies instrs IC is using causing weird blowups.
-        //
-        // If the scope has already been interpreted once,
-        // the scope can be on the call stack right now.
-        // So, clone instructions before modifying them!
-        if (state != ScopeState.INIT && getCFG() == null) {
-            cloneInstrs();
-        }
-
         runCompilerPasses(getManager().getCompilerPasses(this));
 
         if (!jitMode && RubyInstanceConfig.IR_COMPILER_PASSES == null) {
@@ -698,16 +685,28 @@ public abstract class IRScope implements ParseResult {
     }
 
     public synchronized void prepareForFullBuildInterpretation() {
-        // Build CFG, run passes, etc.
-        initScope(false);
+        cloneInstrs();     // clone so interpreter does not get messed up by in-flight instr changes from passes
+        initScope(false);  // Build CFG, run passes, etc.
 
         // Always add call protocol instructions now for both interpreter and JIT since we are removing support
         // for implicit stuff in the interpreter. When JIT later runs this same pass, it will be a NOP there.
         if (!isUnsafeScope()) new AddCallProtocolInstructions().run(this);
     }
 
+    /* Make sure scope is at a full build state */
+    private void guaranteeAtFullBuild() {
+        if (interpreterContext == null) {
+            prepareForBuildInterpretation();
+            prepareForFullBuildInterpretation();
+        } else if (getCFG() == null) {
+            prepareForFullBuildInterpretation();
+        }
+    }
+
     /** Run any necessary passes to get the IR ready for compilation */
     public synchronized List<BasicBlock> prepareForCompilation() {
+        guaranteeAtFullBuild();
+
         // Reset linearization, if any exists
         resetLinearizationData();
 
