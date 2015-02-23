@@ -66,7 +66,7 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
 
         for (IRClosure b: beBlocks) {
             // SSS FIXME: Should I piggyback on WrappedIRClosure.retrieve or just copy that code here?
-            b.prepareForInterpretation();
+            b.prepareForBuildInterpretation();
             Block blk = (Block)(new WrappedIRClosure(b.getSelf(), b)).retrieve(context, self, currScope, context.getCurrentScope(), temp);
             blk.yield(context, null);
         }
@@ -74,7 +74,7 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
 
     @Override
     protected IRubyObject execute(Ruby runtime, IRScriptBody irScope, IRubyObject self) {
-        BeginEndInterpreterContext ic = (BeginEndInterpreterContext) irScope.prepareForInterpretation();
+        BeginEndInterpreterContext ic = (BeginEndInterpreterContext) irScope.prepareForBuildInterpretation();
         ThreadContext context = runtime.getCurrentContext();
         String name = "(root)";
 
@@ -233,7 +233,7 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
         staticScope.setIRScope(script);
 
         IRBuilder.topIRBuilder(runtime.getIRManager(), script).buildEvalRoot(rootNode);
-        BeginEndInterpreterContext ic = (BeginEndInterpreterContext) script.prepareForInterpretation();
+        BeginEndInterpreterContext ic = (BeginEndInterpreterContext) script.prepareForBuildInterpretation();
 
         if (IRRuntimeHelpers.isDebug()) {
             LOG.info(script.debugOutput());

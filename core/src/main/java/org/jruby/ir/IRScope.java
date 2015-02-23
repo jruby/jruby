@@ -683,12 +683,26 @@ public abstract class IRScope implements ParseResult {
         InterpreterContext ic = interpreterContext;
 
         if (ic == null) {
-            ic = prepareForInterpretation(); // Note: IRMethod has override
+            if (this instanceof IRMethod) {
+                ic = prepareForInterpretation(); // Note: IRMethod has override
+            } else {
+                ic = prepareForBuildInterpretation();
+            }
         } else if (ic.needsRebuilding()) {
             ic = prepareForInterpretation(true);
         }
 
         return ic;
+    }
+
+    /**
+     * Called directly after IRBuild but before CFG is built.
+     */
+    public synchronized InterpreterContext prepareForBuildInterpretation() {
+        state = ScopeState.INTERPED;
+        interpreterContext = allocateInterpreterContext(prepareInstructions(), false);
+
+        return interpreterContext;
     }
 
     /** Run any necessary passes to get the IR ready for interpretation */

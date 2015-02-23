@@ -2,6 +2,7 @@ package org.jruby.ir;
 
 import org.jruby.ast.MethodDefNode;
 import org.jruby.internal.runtime.methods.IRMethodArgs;
+import org.jruby.ir.instructions.Instr;
 import org.jruby.ir.interpreter.InterpreterContext;
 import org.jruby.ir.operands.LocalVariable;
 import org.jruby.ir.representations.BasicBlock;
