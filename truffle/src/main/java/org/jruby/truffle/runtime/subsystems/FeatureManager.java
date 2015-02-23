@@ -68,12 +68,6 @@ public class FeatureManager {
                     return true;
                 }
 
-                // Try as a path relative to the current directory
-
-                if (requireInPath(context.getRuntime().getCurrentDirectory(), feature, currentNode)) {
-                    return true;
-                }
-
                 // Try each load path in turn
 
                 for (Object pathObject : context.getCoreLibrary().getLoadPath().slowToArray()) {
