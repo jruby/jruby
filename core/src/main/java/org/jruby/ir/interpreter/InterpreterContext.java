@@ -1,7 +1,5 @@
 package org.jruby.ir.interpreter;
 
-import org.jruby.ir.IRClassBody;
-import org.jruby.ir.IREvalScript;
 import org.jruby.ir.IRFlags;
 import org.jruby.ir.IRMetaClassBody;
 import org.jruby.ir.IRMethod;
@@ -27,7 +25,6 @@ public class InterpreterContext {
 
     // Cached computed fields
     private final boolean hasExplicitCallProtocol;
-    private final boolean isDynscopeEliminated;
     private final boolean pushNewDynScope;
     private final boolean reuseParentDynScope;
     private final boolean popDynScope;
@@ -54,16 +51,7 @@ public class InterpreterContext {
             this.runCount = 30;
         }
 
-/*
-        if (scope instanceof IRModuleBody || scope instanceof IRClassBody) {
-            engine = BODY_INTERPRETER;
-        // ENEBO: Playing with unboxable and subset instruction sets
-        //} else if (scope instanceof IRMethod && scope.getFlags().contains(IRFlags.SIMPLE_METHOD)) {
-        //    engine = SIMPLE_METHOD_INTERPRETER;
-        } else {
-            engine = DEFAULT_INTERPRETER;
-        }
-*/
+        // For impl testing - engine = determineInterpreterEngine(scope);
         engine = DEFAULT_INTERPRETER;
 
         this.name = scope.getName();
@@ -78,10 +66,19 @@ public class InterpreterContext {
         this.instructions = instructions;
         this.hasExplicitCallProtocol = scope.getFlags().contains(IRFlags.HAS_EXPLICIT_CALL_PROTOCOL);
         this.reuseParentDynScope = scope.getFlags().contains(IRFlags.REUSE_PARENT_DYNSCOPE);
-        this.isDynscopeEliminated = scope.getFlags().contains(IRFlags.DYNSCOPE_ELIMINATED);
-        this.pushNewDynScope = !isDynscopeEliminated && !reuseParentDynScope;
+        this.pushNewDynScope = !scope.getFlags().contains(IRFlags.DYNSCOPE_ELIMINATED) && !reuseParentDynScope;
         this.popDynScope = this.pushNewDynScope || this.reuseParentDynScope;
         this.receivesKeywordArguments = scope.getFlags().contains(IRFlags.RECEIVES_KEYWORD_ARGS);
+    }
+
+    private InterpreterEngine determineInterpreterEngine(IRScope scope) {
+        if (scope instanceof IRModuleBody) {
+            return BODY_INTERPRETER;
+        } else if (scope instanceof IRMethod && scope.getFlags().contains(IRFlags.SIMPLE_METHOD)) {
+            return SIMPLE_METHOD_INTERPRETER; // ENEBO: Playing with unboxable and subset instruction sets
+        } else {
+            return DEFAULT_INTERPRETER;
+        }
     }
 
     public CFG getCFG() {
@@ -120,32 +117,8 @@ public class InterpreterContext {
         return fileName;
     }
 
-    public StaticScope getStaticScope() {
-        return staticScope;
-    }
-
-    public int getTemporaryVariablecount() {
-        return temporaryVariablecount;
-    }
-
-    public int getTemporaryBooleanVariablecount() {
-        return temporaryBooleanVariablecount;
-    }
-
-    public int getTemporaryFixnumVariablecount() {
-        return temporaryFixnumVariablecount;
-    }
-
-    public int getTemporaryFloatVariablecount() {
-        return temporaryFloatVariablecount;
-    }
-
     public Instr[] getInstructions() {
         return instructions;
-    }
-
-    public boolean isDynscopeEliminated() {
-        return isDynscopeEliminated;
     }
 
     /**
