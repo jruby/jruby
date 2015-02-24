@@ -392,8 +392,8 @@ public class PosixShim {
     }
 
     public Channel open(String cwd, String path, ModeFlags flags, int perm, ClassLoader classLoader) {
-        if (path.equals("/dev/null") || path.equalsIgnoreCase("nul:") || path.equalsIgnoreCase("nul")) {
-            return new NullChannel();
+        if ((path.equals("/dev/null") || path.equalsIgnoreCase("nul")) && Platform.IS_WINDOWS) {
+            path = "nul:";
         }
 
         if (path.startsWith("classpath:/") && classLoader != null) {
