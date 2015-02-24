@@ -20,6 +20,8 @@ import com.oracle.truffle.api.utilities.ConditionProfile;
 import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.runtime.UndefinedPlaceholder;
+import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.RubyArray;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
 import org.jruby.truffle.runtime.core.RubyBignum;
@@ -743,7 +745,7 @@ public abstract class BignumNodes {
 
     }
 
-    @CoreMethod(names = {"to_s", "inspect"})
+    @CoreMethod(names = {"to_s", "inspect"}, optional = 1)
     public abstract static class ToSNode extends CoreMethodNode {
 
         public ToSNode(RubyContext context, SourceSection sourceSection) {
@@ -756,8 +758,19 @@ public abstract class BignumNodes {
 
         @TruffleBoundary
         @Specialization
-        public RubyString toS(RubyBignum value) {
+        public RubyString toS(RubyBignum value, UndefinedPlaceholder undefined) {
             return getContext().makeString(value.bigIntegerValue().toString());
+        }
+
+        @CompilerDirectives.TruffleBoundary
+        @Specialization
+        public RubyString toS(RubyBignum value, int base) {
+            if (base < 2 || base > 36) {
+                CompilerDirectives.transferToInterpreter();
+                throw new RaiseException(getContext().getCoreLibrary().argumentErrorInvalidRadix(base, this));
+            }
+
+            return getContext().makeString(value.bigIntegerValue().toString(base));
         }
 
     }
