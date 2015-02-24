@@ -176,8 +176,6 @@ class TruffleFormatter < DottedFormatter
     parts.each do |part|
       sub_path = File.join(sub_path, part)
 
-      puts "#{sub_path} exists?: #{Dir.exist?(sub_path)}"
-
       Dir.mkdir(sub_path) unless Dir.exist?(sub_path)
     end
   end
