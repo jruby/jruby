@@ -64,6 +64,8 @@ import org.jruby.util.io.STDIO;
 
 import static org.jruby.internal.runtime.GlobalVariable.Scope.*;
 
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.channels.Channel;
@@ -283,9 +285,17 @@ public class RubyGlobal {
         } else {
             switch (stdio) {
                 case IN:
+                    if (stream instanceof FileInputStream) {
+                        return ((FileInputStream)stream).getChannel();
+                    }
+
                     return Channels.newChannel((InputStream)stream);
                 case OUT:
                 case ERR:
+                    if (stream instanceof FileOutputStream) {
+                        return ((FileOutputStream)stream).getChannel();
+                    }
+
                     return Channels.newChannel((OutputStream)stream);
                 default: throw new RuntimeException("invalid stdio: " + stdio);
             }
