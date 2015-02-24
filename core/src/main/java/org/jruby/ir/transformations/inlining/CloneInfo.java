@@ -28,9 +28,7 @@ public abstract class CloneInfo {
         boolean ensureClone = this instanceof SimpleCloneInfo && ((SimpleCloneInfo) this).isEnsureBlockCloneMode();
         SimpleCloneInfo clone = new SimpleCloneInfo(clonedClosure, ensureClone);
 
-        for (Variable v: variableRenameMap.keySet()) {
-            clone.variableRenameMap.put(v, variableRenameMap.get(v));
-        }
+        clone.variableRenameMap.putAll(variableRenameMap);
 
         return clone;
     }

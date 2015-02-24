@@ -571,6 +571,33 @@
       </modules>
     </profile>
     <profile>
+      <id>truffle-specs-language-report</id>
+      <build>
+        <defaultGoal>package</defaultGoal>
+      </build>
+      <modules>
+        <module>test</module>
+      </modules>
+    </profile>
+    <profile>
+      <id>truffle-specs-core-report</id>
+      <build>
+        <defaultGoal>package</defaultGoal>
+      </build>
+      <modules>
+        <module>test</module>
+      </modules>
+    </profile>
+    <profile>
+      <id>truffle-specs-rubysl-report</id>
+      <build>
+        <defaultGoal>package</defaultGoal>
+      </build>
+      <modules>
+        <module>test</module>
+      </modules>
+    </profile>
+    <profile>
       <id>truffle-test-pe</id>
       <build>
         <defaultGoal>package</defaultGoal>

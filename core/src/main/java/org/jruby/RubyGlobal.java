@@ -56,6 +56,7 @@ import org.jruby.util.ByteList;
 import org.jruby.util.KCode;
 import org.jruby.util.OSEnvironment;
 import org.jruby.util.RegexpOptions;
+import org.jruby.util.ShellLauncher;
 import org.jruby.util.cli.OutputStrings;
 import org.jruby.util.io.BadDescriptorException;
 import org.jruby.util.io.OpenFile;
@@ -191,11 +192,11 @@ public class RubyGlobal {
         runtime.defineVariable(new BacktraceGlobalVariable(runtime, "$@"), THREAD);
 
         IRubyObject stdin = RubyIO.prepStdio(
-                runtime, runtime.getIn(), prepareStdioChannel(runtime, STDIO.IN, runtime.getIn()), OpenFile.READABLE, runtime.getIO(), "<STDIN>");
+                runtime, runtime.getIn(), prepareStdioChannel(runtime, STDIO.IN, ShellLauncher.unwrapFilterInputStream(runtime.getIn())), OpenFile.READABLE, runtime.getIO(), "<STDIN>");
         IRubyObject stdout = RubyIO.prepStdio(
-                runtime, runtime.getOut(), prepareStdioChannel(runtime, STDIO.OUT, runtime.getOut()), OpenFile.WRITABLE, runtime.getIO(), "<STDOUT>");
+                runtime, runtime.getOut(), prepareStdioChannel(runtime, STDIO.OUT, ShellLauncher.unwrapFilterOutputStream(runtime.getOut())), OpenFile.WRITABLE, runtime.getIO(), "<STDOUT>");
         IRubyObject stderr = RubyIO.prepStdio(
-                runtime, runtime.getErr(), prepareStdioChannel(runtime, STDIO.ERR, runtime.getErr()), OpenFile.WRITABLE | OpenFile.SYNC, runtime.getIO(), "<STDERR>");
+                runtime, runtime.getErr(), prepareStdioChannel(runtime, STDIO.ERR, ShellLauncher.unwrapFilterOutputStream(runtime.getErr())), OpenFile.WRITABLE | OpenFile.SYNC, runtime.getIO(), "<STDERR>");
 
         runtime.defineVariable(new InputGlobalVariable(runtime, "$stdin", stdin), GLOBAL);
         runtime.defineVariable(new OutputGlobalVariable(runtime, "$stdout", stdout), GLOBAL);

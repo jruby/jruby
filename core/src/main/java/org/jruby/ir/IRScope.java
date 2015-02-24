@@ -58,6 +58,7 @@ import static org.jruby.ir.IRFlags.*;
  * and so on ...
  */
 public abstract class IRScope implements ParseResult {
+
     private static final Logger LOG = LoggerFactory.getLogger("IRScope");
 
     private static AtomicInteger globalScopeCount = new AtomicInteger();
@@ -139,6 +140,13 @@ public abstract class IRScope implements ParseResult {
 
     private TemporaryVariable yieldClosureVariable;
 
+    // What state is this scope in?
+    enum ScopeState {
+        INIT, INTERPED, INSTRS_CLONED, CFG_BUILT
+    };
+
+    private ScopeState state = ScopeState.INIT;
+
     // Used by cloning code
     protected IRScope(IRScope s, IRScope lexicalParent) {
         this.lexicalParent = lexicalParent;
@@ -163,6 +171,7 @@ public abstract class IRScope implements ParseResult {
 
         this.localVars = new HashMap<String, LocalVariable>(s.localVars);
         this.scopeId = globalScopeCount.getAndIncrement();
+        this.state = ScopeState.INIT; // SSS FIXME: Is this correct?
 
         this.executedPasses = new ArrayList<CompilerPass>();
 
@@ -208,6 +217,7 @@ public abstract class IRScope implements ParseResult {
 
         this.localVars = new HashMap<String, LocalVariable>();
         this.scopeId = globalScopeCount.getAndIncrement();
+        this.state = ScopeState.INIT;
 
         this.executedPasses = new ArrayList<CompilerPass>();
 
@@ -448,9 +458,10 @@ public abstract class IRScope implements ParseResult {
         CFG newCFG = new CFG(this);
         newCFG.build(getInstrs());
         // Clear out instruction list after CFG has been built.
-        this.instrList = null;
+        instrList = null;
 
         setCFG(newCFG);
+        state = ScopeState.CFG_BUILT;
 
         return newCFG;
     }
@@ -465,6 +476,20 @@ public abstract class IRScope implements ParseResult {
 
     @Interp
     protected Instr[] prepareInstructions() {
+        if (getCFG() == null) {
+            int n = instrList.size();
+            Instr[] linearizedInstrArray = instrList.toArray(new Instr[n]);
+            for (int ipc = 0; ipc < n; ipc++) {
+                Instr i = linearizedInstrArray[ipc];
+                i.setIPC(ipc);
+                if (i instanceof LabelInstr) {
+                    ((LabelInstr)i).getLabel().setTargetPC(ipc+1);
+                }
+            }
+
+            return linearizedInstrArray;
+        }
+
         setupLinearization();
 
         boolean simple_method = this instanceof IRMethod;
@@ -584,6 +609,19 @@ public abstract class IRScope implements ParseResult {
     }
 
     protected void initScope(boolean jitMode) {
+        // FIXME: This is messy and prepareForInterpretation and prepareForCompilation need to
+        // clean up the lifecycle aspects of creating CFG from instrList and running passes in
+        // a consistent and predictable way.  This is a hack atm to unbreak the fact JIT
+        // may happen before IC.build count and thus not have cloned the instrs (which then
+        // modifies instrs IC is using causing weird blowups.
+        //
+        // If the scope has already been interpreted once,
+        // the scope can be on the call stack right now.
+        // So, clone instructions before modifying them!
+        if (state != ScopeState.INIT && getCFG() == null) {
+            cloneInstrs();
+        }
+
         runCompilerPasses(getManager().getCompilerPasses(this));
 
         if (!jitMode && RubyInstanceConfig.IR_COMPILER_PASSES == null) {
@@ -603,26 +641,58 @@ public abstract class IRScope implements ParseResult {
     }
 
     /** Make version specific to scope which needs it (e.g. Closure vs non-closure). */
-    public InterpreterContext allocateInterpreterContext(Instr[] instructionList) {
-        return new InterpreterContext(this, instructionList);
+    public InterpreterContext allocateInterpreterContext(Instr[] instructionList, boolean rebuild) {
+        return new InterpreterContext(this, instructionList, rebuild);
+    }
+
+    public InterpreterContext prepareForInterpretation() {
+        return prepareForInterpretation(false);
+    }
+
+    protected void cloneInstrs() {
+        cloneInstrs(new SimpleCloneInfo(this, false));
+    }
+
+    protected void cloneInstrs(SimpleCloneInfo cloneInfo) {
+        // FIXME: not cloning if we happen to have a CFG violates the spirit of this method name.
+        // We do this currently because in a scenario where a nested closure is called much more than
+        // an outer scope we will process that closure first independently.  If at a later point we
+        // process the outer scope then the inner scope will have nuked instrList and explode if we
+        // try to clone the non-existent instrList.
+        if (getCFG() != null) return;
+
+        List<Instr> newInstrList = new ArrayList<>(instrList.size());
+
+        for (Instr instr: this.instrList) {
+            newInstrList.add(instr.clone(cloneInfo));
+        }
+
+        instrList = newInstrList;
+        state = ScopeState.INSTRS_CLONED;
+        for (IRClosure cl : getClosures()) {
+            cl.cloneInstrs(cloneInfo.cloneForCloningClosure(cl));
+        }
     }
 
     /** Run any necessary passes to get the IR ready for interpretation */
-    public synchronized InterpreterContext prepareForInterpretation() {
-        if (interpreterContext != null) return interpreterContext; // Already prepared
+    public synchronized InterpreterContext prepareForInterpretation(boolean rebuild) {
+        if (interpreterContext == null) {
+            this.state = ScopeState.INTERPED;
+        } else if (!rebuild || getCFG() != null) {
+            return interpreterContext; // Already prepared/rebuilt
+        } else {
+            // Build CFG, run passes, etc.
+            initScope(false);
 
-        initScope(false);
-
-        // System.out.println("-- passes run for: " + this + " = " + java.util.Arrays.toString(executedPasses.toArray()));
-
-        // Always add call protocol instructions now for both interpreter and JIT
-        // since we are removing support for implicit stuff in the interpreter.
-        // When JIT later runs this same pass, it will be a NOP there.
-        if (!isUnsafeScope()) {
-            (new AddCallProtocolInstructions()).run(this);
+            // Always add call protocol instructions now for both interpreter and JIT
+            // since we are removing support for implicit stuff in the interpreter.
+            // When JIT later runs this same pass, it will be a NOP there.
+            if (!isUnsafeScope()) {
+                (new AddCallProtocolInstructions()).run(this);
+            }
         }
 
-        interpreterContext = allocateInterpreterContext(prepareInstructions());
+        interpreterContext = allocateInterpreterContext(prepareInstructions(), rebuild);
 
         return interpreterContext;
     }
