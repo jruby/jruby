@@ -593,7 +593,7 @@
                 <xsl:variable name="failureCount" select="sum(testsuite/@failures)"/>
                 <xsl:variable name="skippedCount" select="sum(testsuite/@skipped)" />
                 <xsl:variable name="timeCount" select="sum(testsuite/@time)"/>
-                <xsl:variable name="successRate" select="($testCount - $failureCount - $errorCount) div $testCount"/>
+                <xsl:variable name="successRate" select="($testCount - $failureCount - $errorCount - $skippedCount) div $testCount"/>
                 <table class="details" border="0" cellpadding="5" cellspacing="2" width="95%">
                     <tr valign="top">
                         <th>Tests</th>
