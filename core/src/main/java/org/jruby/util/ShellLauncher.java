@@ -866,9 +866,11 @@ public class ShellLauncher {
     public static OutputStream unwrapFilterOutputStream(OutputStream filteredStream) {
         while (filteredStream instanceof FilterOutputStream) {
             try {
-                filteredStream = (OutputStream)
+                OutputStream tmpStream = (OutputStream)
                         FieldAccess.getProtectedFieldValue(FilterOutputStream.class,
-                                "in", filteredStream);
+                                "out", filteredStream);
+                if (tmpStream == null) break;
+                filteredStream = tmpStream;
             } catch (Exception e) {
                 break; // break out if we've dug as deep as we can
             }
@@ -891,9 +893,11 @@ public class ShellLauncher {
     public static InputStream unwrapFilterInputStream(InputStream filteredStream) {
         while (filteredStream instanceof FilterInputStream) {
             try {
-                filteredStream = (InputStream)
+                InputStream tmpStream = (InputStream)
                         FieldAccess.getProtectedFieldValue(FilterInputStream.class,
                                 "in", filteredStream);
+                if (tmpStream == null) break;
+                filteredStream = tmpStream;
             } catch (Exception e) {
                 break; // break out if we've dug as deep as we can
             }
