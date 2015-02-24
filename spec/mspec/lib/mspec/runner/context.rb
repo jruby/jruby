@@ -182,7 +182,16 @@ class ContextState
   # Removes filtered examples. Returns true if there are examples
   # left to evaluate.
   def filter_examples
-    @examples.reject! { |ex| ex.filtered? }
+    filtered = @examples.select do |ex|
+      ex.filtered?
+    end
+
+    filtered.each do |ex|
+      MSpec.actions :tagged, ex
+    end
+
+    @examples -= filtered
+
     not @examples.empty?
   end
 
