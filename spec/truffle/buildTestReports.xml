@@ -18,7 +18,7 @@
             <fileset dir="tmp">
                 <include name="**/TEST-*.xml"/>
             </fileset>
-            <report format="frames" todir="${genReportDir}/html"/>
+            <report format="frames" styledir="${basedir}/spec/truffle" todir="${genReportDir}/html"/>
         </junitreport>
     </target>
 </project>
