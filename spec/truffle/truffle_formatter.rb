@@ -73,14 +73,6 @@ class TruffleFormatter < DottedFormatter
     failures = @local_tally.counter.failures
     tagged = @local_tally.counter.tagged
 
-    skipped_stats = if tagged > 0
-                      # TODO (nirvdrum 23-Feb-15) Clean this up when Truffle supports Float#round(int)
-                      skipped_percentage = ((tagged / tests.to_f) * 1000).round / 10.0
-                      "#{skipped_percentage}% Skipped"
-                    else
-                      ''
-                    end
-
     @file.puts <<-XML
         <testsuite
           tests="#{tests}"
@@ -88,7 +80,6 @@ class TruffleFormatter < DottedFormatter
           failures="#{failures}"
           skipped="#{tagged}"
           time="#{current_time - @file_time}"
-          hostname="#{skipped_stats}"
           name="#{@testsuite_name}">
     XML
 

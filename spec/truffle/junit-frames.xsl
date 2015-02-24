@@ -660,12 +660,17 @@
                             <td><xsl:value-of select="sum($insamepackage/@failures)"/></td>
                             <td><xsl:value-of select="sum($insamepackage/@skipped)" /></td>
                             <td>
+                                <xsl:if test="sum($insamepackage/@skipped) > 0">
+                                    <xsl:call-template name="display-percent">
+                                        <xsl:with-param name="value" select="sum($insamepackage/@skipped) div sum($insamepackage/@tests)"/>
+                                    </xsl:call-template>
+                                </xsl:if>
+                            </td>
+                            <td>
                                 <xsl:call-template name="display-time">
                                     <xsl:with-param name="value" select="sum($insamepackage/@time)"/>
                                 </xsl:call-template>
                             </td>
-                            <td><xsl:value-of select="$insamepackage/@timestamp"/></td>
-                            <td><xsl:value-of select="$insamepackage/@hostname"/></td>
                         </tr>
                     </xsl:for-each>
                 </table>
@@ -754,9 +759,8 @@
             <th>Errors</th>
             <th>Failures</th>
             <th>Skipped</th>
+            <th>Skip %</th>
             <th nowrap="nowrap">Time(s)</th>
-            <th nowrap="nowrap">Time Stamp</th>
-            <th>Host</th>
         </tr>
     </xsl:template>
 
@@ -817,12 +821,17 @@
                     </xsl:otherwise>
                 </xsl:choose>
             </td>
+            <td>
+                <xsl:if test="@skipped > 0">
+                    <xsl:call-template name="display-percent">
+                        <xsl:with-param name="value" select="@skipped div @tests"/>
+                    </xsl:call-template>
+                </xsl:if>
+            </td>
             <td><xsl:call-template name="display-time">
                 <xsl:with-param name="value" select="@time"/>
             </xsl:call-template>
             </td>
-            <td><xsl:apply-templates select="@timestamp"/></td>
-            <td><xsl:apply-templates select="@hostname"/></td>
         </tr>
     </xsl:template>
 
