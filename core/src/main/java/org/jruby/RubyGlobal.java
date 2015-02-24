@@ -194,11 +194,11 @@ public class RubyGlobal {
         runtime.defineVariable(new BacktraceGlobalVariable(runtime, "$@"), THREAD);
 
         IRubyObject stdin = RubyIO.prepStdio(
-                runtime, runtime.getIn(), prepareStdioChannel(runtime, STDIO.IN, ShellLauncher.unwrapFilterInputStream(runtime.getIn())), OpenFile.READABLE, runtime.getIO(), "<STDIN>");
+                runtime, runtime.getIn(), prepareStdioChannel(runtime, STDIO.IN, runtime.getIn()), OpenFile.READABLE, runtime.getIO(), "<STDIN>");
         IRubyObject stdout = RubyIO.prepStdio(
-                runtime, runtime.getOut(), prepareStdioChannel(runtime, STDIO.OUT, ShellLauncher.unwrapFilterOutputStream(runtime.getOut())), OpenFile.WRITABLE, runtime.getIO(), "<STDOUT>");
+                runtime, runtime.getOut(), prepareStdioChannel(runtime, STDIO.OUT, runtime.getOut()), OpenFile.WRITABLE, runtime.getIO(), "<STDOUT>");
         IRubyObject stderr = RubyIO.prepStdio(
-                runtime, runtime.getErr(), prepareStdioChannel(runtime, STDIO.ERR, ShellLauncher.unwrapFilterOutputStream(runtime.getErr())), OpenFile.WRITABLE | OpenFile.SYNC, runtime.getIO(), "<STDERR>");
+                runtime, runtime.getErr(), prepareStdioChannel(runtime, STDIO.ERR, runtime.getErr()), OpenFile.WRITABLE | OpenFile.SYNC, runtime.getIO(), "<STDERR>");
 
         runtime.defineVariable(new InputGlobalVariable(runtime, "$stdin", stdin), GLOBAL);
         runtime.defineVariable(new OutputGlobalVariable(runtime, "$stdout", stdout), GLOBAL);
@@ -285,6 +285,7 @@ public class RubyGlobal {
         } else {
             switch (stdio) {
                 case IN:
+                    stream = ShellLauncher.unwrapFilterInputStream((InputStream)stream);
                     if (stream instanceof FileInputStream) {
                         return ((FileInputStream)stream).getChannel();
                     }
@@ -292,6 +293,7 @@ public class RubyGlobal {
                     return Channels.newChannel((InputStream)stream);
                 case OUT:
                 case ERR:
+                    stream = ShellLauncher.unwrapFilterOutputStream((OutputStream)stream);
                     if (stream instanceof FileOutputStream) {
                         return ((FileOutputStream)stream).getChannel();
                     }
