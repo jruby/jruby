@@ -251,10 +251,17 @@ project 'JRuby Integration Tests' do
   profile 'truffle-specs-language-report' do
 
     plugin :antrun do
+      dependency 'org.apache.ant', 'ant-junit', '${ant.version}'
+
       execute_goals( 'run',
                      :id => 'rake',
                      :phase => 'test',
                      :configuration => [ xml( truffle_spec_config(:language, true) ) ] )
+
+      execute_goals( 'run',
+                     :id => 'junit-report-generation',
+                     :phase => 'test',
+                     :configuration => [ xml( '<target><ant antfile="${basedir}/../spec/truffle/buildTestReports.xml" /></target>' ) ] )
     end
 
   end
@@ -262,10 +269,17 @@ project 'JRuby Integration Tests' do
   profile 'truffle-specs-core-report' do
 
     plugin :antrun do
+      dependency 'org.apache.ant', 'ant-junit', '${ant.version}'
+
       execute_goals( 'run',
                      :id => 'rake',
                      :phase => 'test',
                      :configuration => [ xml( truffle_spec_config(:core, true) ) ] )
+
+      execute_goals( 'run',
+                     :id => 'junit-report-generation',
+                     :phase => 'test',
+                     :configuration => [ xml( '<target><ant antfile="${basedir}/../spec/truffle/buildTestReports.xml" /></target>' ) ] )
     end
 
   end
@@ -273,10 +287,17 @@ project 'JRuby Integration Tests' do
   profile 'truffle-specs-rubysl-report' do
 
     plugin :antrun do
+      dependency 'org.apache.ant', 'ant-junit', '${ant.version}'
+
       execute_goals( 'run',
                      :id => 'rake',
                      :phase => 'test',
                      :configuration => [ xml( truffle_spec_config(:rubysl, true) ) ] )
+
+      execute_goals( 'run',
+                     :id => 'junit-report-generation',
+                     :phase => 'test',
+                     :configuration => [ xml( '<target><ant antfile="${basedir}/../spec/truffle/buildTestReports.xml" /></target>' ) ] )
     end
 
   end

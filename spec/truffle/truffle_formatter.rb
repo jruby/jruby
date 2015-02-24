@@ -19,15 +19,18 @@ class TruffleFormatter < DottedFormatter
 
   def start
     # TODO (nirvdrum 23-Feb-15) Remove this hack when Truffle supports deleting directories with files and can do so synchronously.
-    system("rm -r tmp/*")
+    system("rm -r #{File.join(result_dir_base, '*')}")
     sleep(1)
   end
 
   def load
     parts = MSpec.retrieve(:file).sub(Dir.pwd + '/', '').split('/')
 
-    @spec_type = parts[0...2].join('.')
-    @classname = parts[2...-1].join('_')
+    @spec_type = parts[0...3].join('.')
+    @class_name = parts[3...-1].join('_')
+
+    @class_name = 'Ruby' if @class_name.empty?
+
     @filename_base = parts[-1].split('.rb').first.split('_spec').first
 
     @tests.clear
@@ -35,8 +38,8 @@ class TruffleFormatter < DottedFormatter
 
     (@local_tally = TallyAction.new).register
 
-    @testsuite_name = [@spec_type, @classname, @filename_base].compact.join('.')
-    @dir = File.join('tmp', @spec_type, @classname)
+    @testsuite_name = [@spec_type, @class_name, @filename_base].compact.join('.')
+    @dir = File.join(result_dir_base, @spec_type, @class_name)
 
     mkdir_p(@dir)
 
@@ -70,14 +73,6 @@ class TruffleFormatter < DottedFormatter
     failures = @local_tally.counter.failures
     tagged = @local_tally.counter.tagged
 
-    skipped_stats = if tagged > 0
-                      # TODO (nirvdrum 23-Feb-15) Clean this up when Truffle supports Float#round(int)
-                      skipped_percentage = ((tagged / tests.to_f) * 1000).round / 10.0
-                      "#{skipped_percentage}% Skipped"
-                    else
-                      ''
-                    end
-
     @file.puts <<-XML
         <testsuite
           tests="#{tests}"
@@ -85,7 +80,6 @@ class TruffleFormatter < DottedFormatter
           failures="#{failures}"
           skipped="#{tagged}"
           time="#{current_time - @file_time}"
-          hostname="#{skipped_stats}"
           name="#{@testsuite_name}">
     XML
 
@@ -93,7 +87,7 @@ class TruffleFormatter < DottedFormatter
       description = encode_for_xml h[:test].description
 
       @file.puts <<-XML
-        <testcase classname="#{@classname}" name="#{description}" time="#{h[:time]}">
+        <testcase classname="#{@class_name}" name="#{description}" time="#{h[:time]}">
       XML
 
       if h[:exception]
@@ -167,6 +161,10 @@ class TruffleFormatter < DottedFormatter
     def current_time
       Time.now
     end
+  end
+
+  def result_dir_base
+    File.join('test', 'target', 'mspec-results')
   end
 
   def mkdir_p(dir)
