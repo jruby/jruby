@@ -261,7 +261,7 @@ project 'JRuby Integration Tests' do
       execute_goals( 'run',
                      :id => 'junit-report-generation',
                      :phase => 'test',
-                     :configuration => [ xml( '<target><ant antfile="${basedir}/../spec/truffle/buildTestReports.xml" dir="../" /></target>' ) ] )
+                     :configuration => [ xml( '<target><ant antfile="${basedir}/../spec/truffle/buildTestReports.xml" /></target>' ) ] )
     end
 
   end
@@ -279,7 +279,7 @@ project 'JRuby Integration Tests' do
       execute_goals( 'run',
                      :id => 'junit-report-generation',
                      :phase => 'test',
-                     :configuration => [ xml( '<target><ant antfile="${basedir}/../spec/truffle/buildTestReports.xml" dir="../" /></target>' ) ] )
+                     :configuration => [ xml( '<target><ant antfile="${basedir}/../spec/truffle/buildTestReports.xml" /></target>' ) ] )
     end
 
   end
@@ -297,7 +297,7 @@ project 'JRuby Integration Tests' do
       execute_goals( 'run',
                      :id => 'junit-report-generation',
                      :phase => 'test',
-                     :configuration => [ xml( '<target><ant antfile="${basedir}/../spec/truffle/buildTestReports.xml" dir="../" /></target>' ) ] )
+                     :configuration => [ xml( '<target><ant antfile="${basedir}/../spec/truffle/buildTestReports.xml" /></target>' ) ] )
     end
 
   end

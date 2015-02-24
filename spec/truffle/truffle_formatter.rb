@@ -19,7 +19,7 @@ class TruffleFormatter < DottedFormatter
 
   def start
     # TODO (nirvdrum 23-Feb-15) Remove this hack when Truffle supports deleting directories with files and can do so synchronously.
-    system("rm -r tmp/*")
+    system("rm -r #{File.join(result_dir_base, '*')}")
     sleep(1)
   end
 
@@ -39,7 +39,7 @@ class TruffleFormatter < DottedFormatter
     (@local_tally = TallyAction.new).register
 
     @testsuite_name = [@spec_type, @class_name, @filename_base].compact.join('.')
-    @dir = File.join('tmp', @spec_type, @class_name)
+    @dir = File.join(result_dir_base, @spec_type, @class_name)
 
     mkdir_p(@dir)
 
@@ -170,6 +170,10 @@ class TruffleFormatter < DottedFormatter
     def current_time
       Time.now
     end
+  end
+
+  def result_dir_base
+    File.join('test', 'target', 'mspec-results')
   end
 
   def mkdir_p(dir)

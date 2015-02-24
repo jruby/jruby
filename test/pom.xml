@@ -843,7 +843,7 @@
                 </goals>
                 <configuration>
                   <target>
-                    <ant antfile="${basedir}/../spec/truffle/buildTestReports.xml" dir="../" />
+                    <ant antfile="${basedir}/../spec/truffle/buildTestReports.xml" />
                   </target>
                 </configuration>
               </execution>
@@ -909,7 +909,7 @@
                 </goals>
                 <configuration>
                   <target>
-                    <ant antfile="${basedir}/../spec/truffle/buildTestReports.xml" dir="../" />
+                    <ant antfile="${basedir}/../spec/truffle/buildTestReports.xml" />
                   </target>
                 </configuration>
               </execution>
@@ -975,7 +975,7 @@
                 </goals>
                 <configuration>
                   <target>
-                    <ant antfile="${basedir}/../spec/truffle/buildTestReports.xml" dir="../" />
+                    <ant antfile="${basedir}/../spec/truffle/buildTestReports.xml" />
                   </target>
                 </configuration>
               </execution>
