@@ -683,7 +683,7 @@ public abstract class IRScope implements ParseResult {
     }
 
     /* Make sure scope is at a full build state */
-    private void guaranteeAtFullBuild() {
+    protected synchronized void guaranteeAtFullBuild() {
         if (interpreterContext == null) {
             prepareForBuildInterpretation();
             prepareForFullBuildInterpretation();
@@ -695,6 +695,10 @@ public abstract class IRScope implements ParseResult {
     /** Run any necessary passes to get the IR ready for compilation */
     public synchronized List<BasicBlock> prepareForCompilation() {
         guaranteeAtFullBuild();
+
+        for (IRClosure closure: getClosures()) {
+            closure.guaranteeAtFullBuild();
+        }
 
         // Reset linearization, if any exists
         resetLinearizationData();

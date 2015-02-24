@@ -82,19 +82,19 @@ public class InterpreterContext {
     }
 
     public CFG getCFG() {
-        return this.cfg;
+        return cfg;
     }
 
     public boolean isRebuilt() {
-        return this.rebuilt;
+        return rebuilt;
     }
 
     public void incrementRunCount() {
-        this.runCount++;
+        runCount++;
     }
 
     public boolean needsRebuilding() {
-        return this.runCount == 30;
+        return runCount >= 30;
     }
 
     public Object[] allocateTemporaryVariables() {
