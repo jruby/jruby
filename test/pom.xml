@@ -835,7 +835,26 @@
                   </target>
                 </configuration>
               </execution>
+              <execution>
+                <id>junit-report-generation</id>
+                <phase>test</phase>
+                <goals>
+                  <goal>run</goal>
+                </goals>
+                <configuration>
+                  <target>
+                    <ant antfile="${basedir}/../spec/truffle/buildTestReports.xml" dir="../" />
+                  </target>
+                </configuration>
+              </execution>
             </executions>
+            <dependencies>
+              <dependency>
+                <groupId>org.apache.ant</groupId>
+                <artifactId>ant-junit</artifactId>
+                <version>${ant.version}</version>
+              </dependency>
+            </dependencies>
           </plugin>
         </plugins>
       </build>
@@ -882,7 +901,26 @@
                   </target>
                 </configuration>
               </execution>
+              <execution>
+                <id>junit-report-generation</id>
+                <phase>test</phase>
+                <goals>
+                  <goal>run</goal>
+                </goals>
+                <configuration>
+                  <target>
+                    <ant antfile="${basedir}/../spec/truffle/buildTestReports.xml" dir="../" />
+                  </target>
+                </configuration>
+              </execution>
             </executions>
+            <dependencies>
+              <dependency>
+                <groupId>org.apache.ant</groupId>
+                <artifactId>ant-junit</artifactId>
+                <version>${ant.version}</version>
+              </dependency>
+            </dependencies>
           </plugin>
         </plugins>
       </build>
@@ -929,7 +967,26 @@
                   </target>
                 </configuration>
               </execution>
+              <execution>
+                <id>junit-report-generation</id>
+                <phase>test</phase>
+                <goals>
+                  <goal>run</goal>
+                </goals>
+                <configuration>
+                  <target>
+                    <ant antfile="${basedir}/../spec/truffle/buildTestReports.xml" dir="../" />
+                  </target>
+                </configuration>
+              </execution>
             </executions>
+            <dependencies>
+              <dependency>
+                <groupId>org.apache.ant</groupId>
+                <artifactId>ant-junit</artifactId>
+                <version>${ant.version}</version>
+              </dependency>
+            </dependencies>
           </plugin>
         </plugins>
       </build>
