@@ -26,8 +26,11 @@ class TruffleFormatter < DottedFormatter
   def load
     parts = MSpec.retrieve(:file).sub(Dir.pwd + '/', '').split('/')
 
-    @spec_type = parts[0...2].join('.')
-    @classname = parts[2...-1].join('_')
+    @spec_type = parts[0...3].join('.')
+    @class_name = parts[3...-1].join('_')
+
+    @class_name = 'Ruby' if @class_name.empty?
+
     @filename_base = parts[-1].split('.rb').first.split('_spec').first
 
     @tests.clear
@@ -35,8 +38,8 @@ class TruffleFormatter < DottedFormatter
 
     (@local_tally = TallyAction.new).register
 
-    @testsuite_name = [@spec_type, @classname, @filename_base].compact.join('.')
-    @dir = File.join('tmp', @spec_type, @classname)
+    @testsuite_name = [@spec_type, @class_name, @filename_base].compact.join('.')
+    @dir = File.join('tmp', @spec_type, @class_name)
 
     mkdir_p(@dir)
 
@@ -93,7 +96,7 @@ class TruffleFormatter < DottedFormatter
       description = encode_for_xml h[:test].description
 
       @file.puts <<-XML
-        <testcase classname="#{@classname}" name="#{description}" time="#{h[:time]}">
+        <testcase classname="#{@class_name}" name="#{description}" time="#{h[:time]}">
       XML
 
       if h[:exception]
