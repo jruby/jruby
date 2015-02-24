@@ -1713,7 +1713,7 @@ public abstract class StringNodes {
         public RubySymbol toSym(RubyString string) {
             notDesignedForCompilation();
 
-            return getContext().newSymbol(string.toString());
+            return getContext().newSymbol(string.getByteList());
         }
     }
 
