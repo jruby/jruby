@@ -4,7 +4,8 @@ class MSpecScript
     ENV.key?('WINDIR') || ENV.key?('windir')
   end
 
-  set :target, File.join(File.dirname(__FILE__), "spec-wrapper#{windows? ? '.bat' : ''}")
+  set :target, File.expand_path('../../../bin/jruby', __FILE__)
+  set :flags, %w[-X+T -J-ea -J-Xmx2G]
 
   set :language, [
     "spec/ruby/language"

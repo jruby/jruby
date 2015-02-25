@@ -1,6 +1,0 @@
-#!/usr/bin/env bash
-
-# Workaround for RubySpec #292
-
-bin/jruby -X+T \
-  -J-ea -J-Xmx2G "$@"
