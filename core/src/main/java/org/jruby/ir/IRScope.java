@@ -447,13 +447,26 @@ public abstract class IRScope implements ParseResult {
         }
 
         CFG newCFG = new CFG(this);
-        newCFG.build(getInstrs());
+        newCFG.build(prepareBuildInstructions(getInstrs()));
         // Clear out instruction list after CFG has been built.
         instrList = null;
 
         setCFG(newCFG);
 
         return newCFG;
+    }
+
+    private Instr[] prepareBuildInstructions(List<Instr> instructions) {
+        int length = instructions.size();
+        Instr[] linearizedInstrArray = instructions.toArray(new Instr[length]);
+        for (int ipc = 0; ipc < length; ipc++) {
+            Instr i = linearizedInstrArray[ipc];
+            i.setIPC(ipc);
+
+            if (i instanceof LabelInstr) ((LabelInstr) i).getLabel().setTargetPC(ipc + 1);
+        }
+
+        return linearizedInstrArray;
     }
 
     protected void setCFG(CFG cfg) {
