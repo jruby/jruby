@@ -1345,6 +1345,8 @@ public class BodyTranslator extends Translator {
             rhs = WrapInThreadLocalNodeFactory.create(context, sourceSection, rhs);
         } else if (name.equals("$stdout")) {
             rhs = new CheckStdoutVariableTypeNode(context, sourceSection, rhs);
+        } else if (name.equals("$VERBOSE")) {
+            rhs = new UpdateVerbosityNode(context, sourceSection, rhs);
         }
 
         if (readOnlyGlobalVariables.contains(name)) {
