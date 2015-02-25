@@ -24,8 +24,6 @@ public class IRClosure extends IRScope {
     public final Label endLabel;   // Label for the end of the closure (used to implement retry)
     public final int closureId;    // Unique id for this closure within the nearest ancestor method.
 
-    private int nestingDepth;      // How many nesting levels within a method is this closure nested in?
-
     private boolean isBeginEndBlock;
 
     /** The parameter names, for Proc#parameters */
@@ -50,15 +48,6 @@ public class IRClosure extends IRScope {
         setName(prefix + closureId);
         this.body = null;
         this.parameterList = new String[] {};
-
-        // set nesting depth
-        int n = 0;
-        IRScope s = this.getLexicalParent();
-        while (s instanceof IRClosure) {
-            n++;
-            s = s.getLexicalParent();
-        }
-        this.nestingDepth = n;
     }
 
     /** Used by cloning code */
@@ -101,8 +90,6 @@ public class IRClosure extends IRScope {
                 staticScope.setScopeType(this.getScopeType());
             }
         }
-
-        this.nestingDepth++;
     }
 
     @Override
@@ -268,12 +255,7 @@ public class IRClosure extends IRScope {
         return lvar;
     }
 
-    public int getNestingDepth() {
-        return nestingDepth;
-    }
-
     protected IRClosure cloneForInlining(CloneInfo ii, IRClosure clone) {
-        clone.nestingDepth  = this.nestingDepth;
         // SSS FIXME: This is fragile. Untangle this state.
         // Why is this being copied over to InterpretedIRBlockBody?
         clone.setParameterList(this.parameterList);
