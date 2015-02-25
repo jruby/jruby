@@ -843,6 +843,7 @@
                 </goals>
                 <configuration>
                   <target>
+                    <property name="reportTitle" value="Language Spec Report" />
                     <ant antfile="${basedir}/../spec/truffle/buildTestReports.xml" />
                   </target>
                 </configuration>
@@ -909,6 +910,7 @@
                 </goals>
                 <configuration>
                   <target>
+                    <property name="reportTitle" value="Core Spec Report" />
                     <ant antfile="${basedir}/../spec/truffle/buildTestReports.xml" />
                   </target>
                 </configuration>
@@ -975,6 +977,7 @@
                 </goals>
                 <configuration>
                   <target>
+                    <property name="reportTitle" value="Stdlib Spec Report" />
                     <ant antfile="${basedir}/../spec/truffle/buildTestReports.xml" />
                   </target>
                 </configuration>

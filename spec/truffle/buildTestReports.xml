@@ -11,6 +11,7 @@
     </description>
 
     <target name="gen">
+        <property name="reportTitle" value="Spec Results"/>
         <property name="genReportDir" location="target/mspec-html-report"/>
         <delete dir="${genReportDir}"/>
         <mkdir dir="${genReportDir}"/>
@@ -18,7 +19,9 @@
             <fileset dir="target/mspec-results">
                 <include name="**/TEST-*.xml"/>
             </fileset>
-            <report format="frames" styledir="${basedir}/../spec/truffle" todir="${genReportDir}/html"/>
+            <report format="frames" styledir="${basedir}/../spec/truffle" todir="${genReportDir}/html">
+                <param name="TITLE" expression="${reportTitle}" />
+            </report>
         </junitreport>
     </target>
 </project>
