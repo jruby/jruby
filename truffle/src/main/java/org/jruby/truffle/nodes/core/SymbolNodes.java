@@ -241,7 +241,28 @@ public abstract class SymbolNodes {
         public RubySymbol swapcase(RubySymbol symbol) {
             notDesignedForCompilation();
 
-            ByteList byteList = StringNodes.StringNodesHelper.swapcase(symbol.toRubyString());
+            final ByteList byteList = StringNodes.StringNodesHelper.swapcase(symbol.toRubyString());
+            return getContext().newSymbol(byteList);
+        }
+
+    }
+
+    @CoreMethod(names = "upcase")
+    public abstract static class UpcaseNode extends CoreMethodNode {
+
+        public UpcaseNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public UpcaseNode(UpcaseNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public RubySymbol upcase(RubySymbol symbol) {
+            notDesignedForCompilation();
+
+            final ByteList byteList = StringNodes.StringNodesHelper.upcase(symbol.toRubyString());
             return getContext().newSymbol(byteList);
         }
 
