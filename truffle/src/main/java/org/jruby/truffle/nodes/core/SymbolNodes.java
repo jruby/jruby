@@ -9,11 +9,10 @@
  */
 package org.jruby.truffle.nodes.core;
 
+import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.Truffle;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.source.SourceSection;
-
-import org.jruby.truffle.nodes.core.StringNodes.HashNode;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyArray;
 import org.jruby.truffle.runtime.core.RubyProc;
@@ -241,7 +240,7 @@ public abstract class SymbolNodes {
         public RubySymbol swapcase(RubySymbol symbol) {
             notDesignedForCompilation();
 
-            final ByteList byteList = StringNodes.StringNodesHelper.swapcase(symbol.toRubyString());
+            final ByteList byteList = SymbolNodesHelper.swapcase(symbol.getByteList());
             return getContext().newSymbol(byteList);
         }
 
@@ -262,8 +261,40 @@ public abstract class SymbolNodes {
         public RubySymbol upcase(RubySymbol symbol) {
             notDesignedForCompilation();
 
-            final ByteList byteList = StringNodes.StringNodesHelper.upcase(symbol.toRubyString());
+            final ByteList byteList = SymbolNodesHelper.upcase(symbol.getByteList());
             return getContext().newSymbol(byteList);
+        }
+
+    }
+
+    public static class SymbolNodesHelper {
+
+        @TruffleBoundary
+        public static ByteList upcase(ByteList originalByteList) {
+            final ByteList byteList = originalByteList.dup();
+            final int length = byteList.length();
+            for (int i = 0; i < length; i++) {
+                final char c = byteList.charAt(i);
+                if ((c >= 'a') && (c <= 'z')) {
+                    byteList.set(i, c & 0x5f);
+                }
+            }
+            return byteList;
+        }
+
+        @TruffleBoundary
+        public static ByteList swapcase(ByteList originalByteList) {
+            final ByteList byteList = originalByteList.dup();
+            final int length = byteList.length();
+            for (int i = 0; i < length; i++) {
+                final char c = byteList.charAt(i);
+                if ((c >= 'a') && (c <= 'z')) {
+                    byteList.set(i, c & 0x5f);
+                } else if ((c >= 'A') && (c <= 'Z')) {
+                    byteList.set(i, c ^ 0x20);
+                }
+            }
+            return byteList;
         }
 
     }
