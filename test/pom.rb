@@ -263,7 +263,7 @@ project 'JRuby Integration Tests' do
                      :phase => 'test',
                      :configuration => [ xml(
                        '<target>' +
-                         '<property name="reportTitle" value="Language Spec Report" />' +
+                         '<property name="reportTitle" value="Language Specs Report" />' +
                          '<ant antfile="${basedir}/../spec/truffle/buildTestReports.xml" />' +
                        '</target>' ) ] )
     end
@@ -285,7 +285,7 @@ project 'JRuby Integration Tests' do
                      :phase => 'test',
                      :configuration => [ xml(
                        '<target>' +
-                         '<property name="reportTitle" value="Core Spec Report" />' +
+                         '<property name="reportTitle" value="Core Specs Report" />' +
                          '<ant antfile="${basedir}/../spec/truffle/buildTestReports.xml" />' +
                        '</target>' ) ] )
     end
@@ -307,7 +307,7 @@ project 'JRuby Integration Tests' do
                      :phase => 'test',
                      :configuration => [ xml(
                        '<target>' +
-                         '<property name="reportTitle" value="Stdlib Spec Report" />' +
+                         '<property name="reportTitle" value="Stdlib Specs Report" />' +
                          '<ant antfile="${basedir}/../spec/truffle/buildTestReports.xml" />' +
                        '</target>' ) ] )
     end
