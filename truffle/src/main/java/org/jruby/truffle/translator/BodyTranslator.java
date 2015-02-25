@@ -1343,6 +1343,8 @@ public class BodyTranslator extends Translator {
             rhs = new CheckOutputSeparatorVariableTypeNode(context, sourceSection, rhs);
         } else if (name.equals("$_")) {
             rhs = WrapInThreadLocalNodeFactory.create(context, sourceSection, rhs);
+        } else if (name.equals("$stdout")) {
+            rhs = new CheckStdoutVariableTypeNode(context, sourceSection, rhs);
         }
 
         if (readOnlyGlobalVariables.contains(name)) {
@@ -1378,9 +1380,6 @@ public class BodyTranslator extends Translator {
 
             return ((ReadNode) localVarNode).makeWriteNode(rhs);
         } else {
-            if (name.equals("$stdout")) {
-                rhs = new CheckStdoutVariableTypeNode(context, sourceSection, rhs);
-            }
             final ObjectLiteralNode globalVariablesObjectNode = new ObjectLiteralNode(context, sourceSection, context.getCoreLibrary().getGlobalVariablesObject());
             return new WriteInstanceVariableNode(context, sourceSection, name, globalVariablesObjectNode, rhs, true);
 
