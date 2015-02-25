@@ -85,7 +85,6 @@ public class IRWriter {
             IRClosure closure = (IRClosure) scope;
 
             file.encode(closure.getSignature().encode());
-            file.encode(closure.getArgumentType());
         }
 
         persistStaticScope(file, scope.getStaticScope());

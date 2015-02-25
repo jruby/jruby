@@ -30,7 +30,6 @@ public class IRClosure extends IRScope {
     private String[] parameterList;
 
     private Signature signature;
-    private int argumentType;
 
     /** Added for interp/JIT purposes */
     private IRBlockBody body;
@@ -67,17 +66,16 @@ public class IRClosure extends IRScope {
         this.signature = c.signature;
     }
 
-    public IRClosure(IRManager manager, IRScope lexicalParent, int lineNumber, StaticScope staticScope, Signature signature, int argumentType) {
-        this(manager, lexicalParent, lineNumber, staticScope, signature, argumentType, "_CLOSURE_");
+    public IRClosure(IRManager manager, IRScope lexicalParent, int lineNumber, StaticScope staticScope, Signature signature) {
+        this(manager, lexicalParent, lineNumber, staticScope, signature, "_CLOSURE_");
     }
 
-    public IRClosure(IRManager manager, IRScope lexicalParent, int lineNumber, StaticScope staticScope, Signature signature, int argumentType, String prefix) {
-        this(manager, lexicalParent, lineNumber, staticScope, signature, argumentType, prefix, false);
+    public IRClosure(IRManager manager, IRScope lexicalParent, int lineNumber, StaticScope staticScope, Signature signature, String prefix) {
+        this(manager, lexicalParent, lineNumber, staticScope, signature, prefix, false);
     }
 
-    public IRClosure(IRManager manager, IRScope lexicalParent, int lineNumber, StaticScope staticScope, Signature signature, int argumentType, String prefix, boolean isBeginEndBlock) {
+    public IRClosure(IRManager manager, IRScope lexicalParent, int lineNumber, StaticScope staticScope, Signature signature, String prefix, boolean isBeginEndBlock) {
         this(manager, lexicalParent, lexicalParent.getFileName(), lineNumber, staticScope, prefix);
-        this.argumentType = argumentType;
         this.signature = signature;
         lexicalParent.addClosure(this);
 
@@ -305,10 +303,6 @@ public class IRClosure extends IRScope {
 
     public Signature getSignature() {
         return signature;
-    }
-
-    public int getArgumentType() {
-        return argumentType;
     }
 
     public void setHandle(Handle handle) {

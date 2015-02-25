@@ -133,9 +133,9 @@ public class IRReader {
         case SCRIPT_BODY:
             return new IRScriptBody(manager, name, staticScope);
         case FOR:
-            return new IRFor(manager, lexicalParent, line, staticScope, signature, argumentType);
+            return new IRFor(manager, lexicalParent, line, staticScope, signature);
         case CLOSURE:
-            return new IRClosure(manager, lexicalParent, line, staticScope, signature, argumentType);
+            return new IRClosure(manager, lexicalParent, line, staticScope, signature);
         case EVAL_SCRIPT:
             // SSS FIXME: This is broken right now -- the isModuleEval arg has to be persisted and then read back.
             return new IREvalScript(manager, lexicalParent, lexicalParent.getFileName(), line, staticScope, EvalType.NONE);
