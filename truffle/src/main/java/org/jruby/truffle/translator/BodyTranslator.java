@@ -77,7 +77,6 @@ public class BodyTranslator extends Translator {
 
     protected final BodyTranslator parent;
     protected final TranslatorEnvironment environment;
-    private final boolean topLevel;
 
     public boolean translatingForStatement = false;
     public boolean useClassVariablesAsIfInClass = false;
@@ -105,7 +104,6 @@ public class BodyTranslator extends Translator {
         super(currentNode, context, source);
         this.parent = parent;
         this.environment = environment;
-        this.topLevel = topLevel;
         initGlobalVariableAliases();
         initReadOnlyGlobalVariables();
     }
@@ -1037,7 +1035,7 @@ public class BodyTranslator extends Translator {
         final SourceSection sourceSection = translate(node.getPosition());
         final RubyNode classNode;
 
-        if (topLevel) {
+        if (parent == null) {
             /*
              * In the top-level, methods are defined in the class of the main object. This is
              * counter-intuitive - I would have expected them to be defined in the singleton class.

@@ -41,7 +41,7 @@ import java.nio.charset.StandardCharsets;
 public class TranslatorDriver {
 
     public static enum ParserContext {
-        TOP_LEVEL, SHELL, MODULE
+        TOP_LEVEL, SHELL, MODULE, EVAL
     }
 
     private long nextReturnID = 0;
