@@ -113,6 +113,10 @@ public class InterpreterContext {
         return temporaryFloatVariablecount > 0 ? new double[temporaryFloatVariablecount] : null;
     }
 
+    public StaticScope getStaticScope() {
+        return staticScope;
+    }
+
     public String getFileName() {
         return fileName;
     }
