@@ -213,7 +213,7 @@ module Enumerable
       private :initialize
 
       def yield(*args)
-        @proc.call *args
+        @proc.call(*args)
       end
 
       def <<(*args)
@@ -235,7 +235,7 @@ module Enumerable
       private :initialize
 
       def each(*args)
-        enclosed_yield = Proc.new { |*enclosed_args| yield *enclosed_args }
+        enclosed_yield = Proc.new { |*enclosed_args| yield(*enclosed_args) }
 
         @proc.call Yielder.new(&enclosed_yield), *args
       end
@@ -494,7 +494,7 @@ module Enumerable
           @fiber = Rubinius::Fiber.new(0) do
             obj = @object
             @result = obj.each do |*val|
-              Rubinius::Fiber.yield *val
+              Rubinius::Fiber.yield(*val)
             end
             @done = true
           end
