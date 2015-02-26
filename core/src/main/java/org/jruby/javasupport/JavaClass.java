@@ -76,7 +76,7 @@ public class JavaClass extends JavaObject {
     public RubyModule getProxyModule() {
         // allow proxy to be read without synchronization. if proxy
         // is under construction, only the building thread can see it.
-        RubyModule proxy = getRuntime().getJavaSupport().proxyClassCache.get((Class)getValue());
+        RubyModule proxy = getRuntime().getJavaSupport().getProxyClassFromCache((Class)getValue());
         if ( proxy != null ) return proxy; // proxy is complete, return it
 
         // proxy may be under construction, return thread-local instance
@@ -86,7 +86,7 @@ public class JavaClass extends JavaObject {
     public RubyClass getProxyClass() {
         // allow proxy to be read without synchronization. if proxy
         // is under construction, only the building thread can see it.
-        RubyModule proxy = getRuntime().getJavaSupport().proxyClassCache.get((Class)getValue());
+        RubyModule proxy = getRuntime().getJavaSupport().getProxyClassFromCache((Class)getValue());
         if ( proxy != null ) return (RubyClass)proxy; // proxy is complete, return it
 
         // proxy may be under construction, return thread-local instance
