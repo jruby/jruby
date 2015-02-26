@@ -247,7 +247,6 @@ public class JavaClass extends JavaObject {
         static final int STATIC_METHOD = 2;
         static final int INSTANCE_FIELD = 3;
         static final int INSTANCE_METHOD = 4;
-        static final int CONSTRUCTOR = 5;
 
         final String name;
         final int type;
