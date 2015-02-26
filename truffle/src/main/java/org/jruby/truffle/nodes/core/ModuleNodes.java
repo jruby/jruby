@@ -17,7 +17,6 @@ import com.oracle.truffle.api.dsl.NodeChild;
 import com.oracle.truffle.api.dsl.NodeChildren;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
-import com.oracle.truffle.api.nodes.Node.Child;
 import com.oracle.truffle.api.source.Source;
 import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.utilities.ConditionProfile;
@@ -29,11 +28,9 @@ import org.jruby.truffle.nodes.RubyRootNode;
 import org.jruby.truffle.nodes.cast.BooleanCastNode;
 import org.jruby.truffle.nodes.cast.BooleanCastNodeFactory;
 import org.jruby.truffle.nodes.coerce.SymbolOrToStrNodeFactory;
-import org.jruby.truffle.nodes.coerce.ToStrNode;
 import org.jruby.truffle.nodes.coerce.ToStrNodeFactory;
 import org.jruby.truffle.nodes.control.SequenceNode;
 import org.jruby.truffle.nodes.core.KernelNodes.BindingNode;
-import org.jruby.truffle.nodes.core.StringNodes.StringNodesHelper;
 import org.jruby.truffle.nodes.dispatch.*;
 import org.jruby.truffle.nodes.methods.SetMethodDeclarationContext;
 import org.jruby.truffle.nodes.methods.arguments.CheckArityNode;
@@ -87,20 +84,20 @@ public abstract class ModuleNodes {
     }
 
     @CoreMethod(names = "<=", required = 1)
-    public abstract static class IsSubclassOfNode extends CoreMethodNode {
+    public abstract static class IsSubclassOfOrEqualToNode extends CoreMethodNode {
 
-        public IsSubclassOfNode(RubyContext context, SourceSection sourceSection) {
+        public IsSubclassOfOrEqualToNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
         }
 
-        public IsSubclassOfNode(IsSubclassOfNode prev) {
+        public IsSubclassOfOrEqualToNode(IsSubclassOfOrEqualToNode prev) {
             super(prev);
         }
 
-        public abstract Object executeIsSubclassOf(VirtualFrame frame, RubyModule self, RubyModule other);
+        public abstract Object executeIsSubclassOfOrEqualTo(VirtualFrame frame, RubyModule self, RubyModule other);
 
         @Specialization
-        public Object isSubclassOf(VirtualFrame frame, RubyModule self, RubyModule other) {
+        public Object isSubclassOfOrEqualTo(VirtualFrame frame, RubyModule self, RubyModule other) {
             notDesignedForCompilation();
 
             if (self == other || ModuleOperations.includesModule(self, other)) {
@@ -115,7 +112,7 @@ public abstract class ModuleNodes {
         }
 
         @Specialization
-        public Object isSubclassOf(VirtualFrame frame, RubyModule self, RubyBasicObject other) {
+        public Object isSubclassOfOrEqualTo(VirtualFrame frame, RubyModule self, RubyBasicObject other) {
             notDesignedForCompilation();
 
             throw new RaiseException(getContext().getCoreLibrary().typeError("compared with non class/module", this));
@@ -124,20 +121,20 @@ public abstract class ModuleNodes {
     }
 
     @CoreMethod(names = ">=", required = 1)
-    public abstract static class IsSuperclassOfNode extends CoreMethodNode {
+    public abstract static class IsSuperclassOfOrEqualToNode extends CoreMethodNode {
 
-        public IsSuperclassOfNode(RubyContext context, SourceSection sourceSection) {
+        public IsSuperclassOfOrEqualToNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
         }
 
-        public IsSuperclassOfNode(IsSuperclassOfNode prev) {
+        public IsSuperclassOfOrEqualToNode(IsSuperclassOfOrEqualToNode prev) {
             super(prev);
         }
 
-        public abstract Object executeIsSubclassOf(VirtualFrame frame, RubyModule self, RubyModule other);
+        public abstract Object executeIsSuperclassOfOrEqualTo(VirtualFrame frame, RubyModule self, RubyModule other);
 
         @Specialization
-        public Object isSuperclassOf(VirtualFrame frame, RubyModule self, RubyModule other) {
+        public Object isSuperclassOfOrEqualTo(VirtualFrame frame, RubyModule self, RubyModule other) {
             notDesignedForCompilation();
 
             if (self == other || ModuleOperations.includesModule(other, self)) {
@@ -152,7 +149,7 @@ public abstract class ModuleNodes {
         }
 
         @Specialization
-        public Object isSuperclassOf(VirtualFrame frame, RubyModule self, RubyBasicObject other) {
+        public Object isSuperclassOfOrEqualTo(VirtualFrame frame, RubyModule self, RubyBasicObject other) {
             notDesignedForCompilation();
 
             throw new RaiseException(getContext().getCoreLibrary().typeError("compared with non class/module", this));
@@ -163,7 +160,7 @@ public abstract class ModuleNodes {
     @CoreMethod(names = "<=>", required = 1)
     public abstract static class CompareNode extends CoreMethodNode {
 
-        @Child private IsSubclassOfNode subclassNode;
+        @Child private IsSubclassOfOrEqualToNode subclassNode;
         @Child private BooleanCastNode booleanCastNode;
 
         public CompareNode(RubyContext context, SourceSection sourceSection) {
@@ -177,9 +174,9 @@ public abstract class ModuleNodes {
         private Object isSubclass(VirtualFrame frame, RubyModule self, RubyModule other) {
             if (subclassNode == null) {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
-                subclassNode = insert(ModuleNodesFactory.IsSubclassOfNodeFactory.create(getContext(), getSourceSection(), new RubyNode[]{null, null}));
+                subclassNode = insert(ModuleNodesFactory.IsSubclassOfOrEqualToNodeFactory.create(getContext(), getSourceSection(), new RubyNode[]{null, null}));
             }
-            return subclassNode.executeIsSubclassOf(frame, self, other);
+            return subclassNode.executeIsSubclassOfOrEqualTo(frame, self, other);
         }
 
         private boolean booleanCast(VirtualFrame frame, Object value) {
