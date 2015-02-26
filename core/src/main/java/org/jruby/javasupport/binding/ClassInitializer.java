@@ -44,8 +44,8 @@ public class ClassInitializer extends Initializer {
         setupClassMethods(javaClass, state);
         setupClassConstructors(javaClass, state);
 
-        javaClassObject.staticAssignedNames = Collections.unmodifiableMap(state.staticNames);
-        javaClassObject.instanceAssignedNames = Collections.unmodifiableMap(state.instanceNames);
+        runtime.getJavaSupport().staticAssignedNames.get(javaClass).putAll(state.staticNames);
+        runtime.getJavaSupport().instanceAssignedNames.get(javaClass).putAll(state.instanceNames);
 
         // flag the class as a Java class proxy.
         proxy.setJavaProxy(true);

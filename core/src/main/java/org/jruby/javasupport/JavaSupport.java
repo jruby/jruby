@@ -33,6 +33,7 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.javasupport;
 
+import org.jruby.javasupport.binding.AssignedName;
 import org.jruby.util.collections.MapBasedClassValue;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
@@ -86,6 +87,8 @@ public class JavaSupport {
 
     private final ClassValue<JavaClass> javaClassCache;
     private final ClassValue<RubyModule> proxyClassCache;
+    public final ClassValue<Map<String, AssignedName>> staticAssignedNames;
+    public final ClassValue<Map<String, AssignedName>> instanceAssignedNames;
     private static final Constructor<? extends ClassValue> CLASS_VALUE_CONSTRUCTOR;
 
     static {
@@ -153,6 +156,18 @@ public class JavaSupport {
                 @Override
                 public RubyModule computeValue(Class<?> cls) {
                     return Java.createProxyClassForClass(runtime, cls);
+                }
+            });
+            this.staticAssignedNames = CLASS_VALUE_CONSTRUCTOR.newInstance(new ClassValueCalculator<Map<String, AssignedName>>() {
+                @Override
+                public Map<String, AssignedName> computeValue(Class<?> cls) {
+                    return new HashMap<String, AssignedName>();
+                }
+            });
+            this.instanceAssignedNames = CLASS_VALUE_CONSTRUCTOR.newInstance(new ClassValueCalculator<Map<String, AssignedName>>() {
+                @Override
+                public Map<String, AssignedName> computeValue(Class<?> cls) {
+                    return new HashMap<String, AssignedName>();
                 }
             });
         }

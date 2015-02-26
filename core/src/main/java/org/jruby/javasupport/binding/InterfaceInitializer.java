@@ -55,8 +55,8 @@ public class InterfaceInitializer extends Initializer {
             }
         }
 
-        javaClassObject.staticAssignedNames = Collections.unmodifiableMap(state.staticNames);
-        javaClassObject.instanceAssignedNames = Collections.emptyMap();
+        runtime.getJavaSupport().staticAssignedNames.get(javaClass).putAll(state.staticNames);
+        runtime.getJavaSupport().instanceAssignedNames.get(javaClass).clear();
 
         // flag the class as a Java class proxy.
         proxy.setJavaProxy(true);

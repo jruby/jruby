@@ -76,9 +76,6 @@ import java.util.concurrent.locks.ReentrantLock;
 @JRubyClass(name="Java::JavaClass", parent="Java::JavaObject")
 public class JavaClass extends JavaObject {
 
-    public volatile Map<String, AssignedName> staticAssignedNames;
-    public volatile Map<String, AssignedName> instanceAssignedNames;
-
     // caching constructors, as they're accessed for each new instance
     private volatile RubyArray constructors;
 
