@@ -83,6 +83,47 @@ public abstract class ModuleNodes {
         }
     }
 
+    @CoreMethod(names = "<", required = 1)
+    public abstract static class IsSubclassOfNode extends CoreMethodNode {
+
+        public IsSubclassOfNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public IsSubclassOfNode(IsSubclassOfNode prev) {
+            super(prev);
+        }
+
+        public abstract Object executeIsSubclassOf(VirtualFrame frame, RubyModule self, RubyModule other);
+
+        @Specialization
+        public Object isSubclassOf(VirtualFrame frame, RubyModule self, RubyModule other) {
+            notDesignedForCompilation();
+
+            if (self == other) {
+                return false;
+            }
+
+            if (ModuleOperations.includesModule(self, other)) {
+                return true;
+            }
+
+            if (ModuleOperations.includesModule(other, self)) {
+                return false;
+            }
+
+            return getContext().getCoreLibrary().getNilObject();
+        }
+
+        @Specialization
+        public Object isSubclassOf(VirtualFrame frame, RubyModule self, RubyBasicObject other) {
+            notDesignedForCompilation();
+
+            throw new RaiseException(getContext().getCoreLibrary().typeError("compared with non class/module", this));
+        }
+
+    }
+
     @CoreMethod(names = "<=", required = 1)
     public abstract static class IsSubclassOfOrEqualToNode extends CoreMethodNode {
 
