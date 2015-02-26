@@ -599,6 +599,24 @@ public abstract class BignumNodes {
 
     }
 
+    @CoreMethod(names = "bit_length")
+    public abstract static class BitLengthNode extends CoreMethodNode {
+
+        public BitLengthNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public BitLengthNode(BitLengthNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public int bitLength(RubyBignum value) {
+            return value.bigIntegerValue().bitLength();
+        }
+
+    }
+
     @CoreMethod(names = "coerce", required = 1)
     public abstract static class CoerceNode extends CoreMethodNode {
 
