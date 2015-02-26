@@ -402,7 +402,7 @@ public class Java implements Library {
             throw runtime.newArgumentError(javaClass.toString() + " is not an interface");
         }
 
-        RubyModule proxyModule = runtime.getJavaSupport().unfinishedProxyClassCache.get(javaClass).get();
+        RubyModule proxyModule = runtime.getJavaSupport().getUnfinishedProxyClassCache().get(javaClass).get();
 
         if (proxyModule != null) return proxyModule;
 
@@ -465,7 +465,7 @@ public class Java implements Library {
 
         if ( clazz.isInterface() ) return Java.getInterfaceModule(runtime, clazz);
 
-        RubyModule proxyClass = runtime.getJavaSupport().unfinishedProxyClassCache.get(clazz).get();
+        RubyModule proxyClass = runtime.getJavaSupport().getUnfinishedProxyClassCache().get(clazz).get();
 
         if (proxyClass != null) return proxyClass;
 

@@ -7,7 +7,6 @@ import org.jruby.javasupport.JavaClass;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
-import java.util.Collections;
 import java.util.Map;
 
 /**
@@ -24,7 +23,7 @@ public class InterfaceInitializer extends Initializer {
 
         super.initializeBase(proxy);
 
-        runtime.getJavaSupport().unfinishedProxyClassCache.get(javaClass).set(proxy);
+        runtime.getJavaSupport().getUnfinishedProxyClassCache().get(javaClass).set(proxy);
 
         Field[] fields = JavaClass.getDeclaredFields(javaClass);
 
@@ -55,8 +54,8 @@ public class InterfaceInitializer extends Initializer {
             }
         }
 
-        runtime.getJavaSupport().staticAssignedNames.get(javaClass).putAll(state.staticNames);
-        runtime.getJavaSupport().instanceAssignedNames.get(javaClass).clear();
+        runtime.getJavaSupport().getStaticAssignedNames().get(javaClass).putAll(state.staticNames);
+        runtime.getJavaSupport().getInstanceAssignedNames().get(javaClass).clear();
 
         // flag the class as a Java class proxy.
         proxy.setJavaProxy(true);

@@ -45,14 +45,10 @@ import org.jruby.RubyModule;
 import org.jruby.RubyString;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
-import org.jruby.common.IRubyWarnings.ID;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.java.proxies.ArrayJavaProxy;
 import org.jruby.java.proxies.ConcreteJavaProxy;
 import org.jruby.java.util.ArrayUtils;
-import org.jruby.javasupport.binding.AssignedName;
-import org.jruby.javasupport.binding.ClassInitializer;
-import org.jruby.javasupport.binding.InterfaceInitializer;
 import org.jruby.runtime.Helpers;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
@@ -67,12 +63,9 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Vector;
-import java.util.concurrent.locks.ReentrantLock;
 
 @JRubyClass(name="Java::JavaClass", parent="Java::JavaObject")
 public class JavaClass extends JavaObject {
@@ -89,7 +82,7 @@ public class JavaClass extends JavaObject {
         if ( proxy != null ) return proxy; // proxy is complete, return it
 
         // proxy may be under construction, return thread-local instance
-        return getRuntime().getJavaSupport().unfinishedProxyClassCache.get((Class)getValue()).get();
+        return getRuntime().getJavaSupport().getUnfinishedProxyClassCache().get((Class) getValue()).get();
     }
 
     public RubyClass getProxyClass() {
@@ -99,7 +92,7 @@ public class JavaClass extends JavaObject {
         if ( proxy != null ) return (RubyClass)proxy; // proxy is complete, return it
 
         // proxy may be under construction, return thread-local instance
-        return (RubyClass)getRuntime().getJavaSupport().unfinishedProxyClassCache.get((Class)getValue()).get();
+        return (RubyClass) getRuntime().getJavaSupport().getUnfinishedProxyClassCache().get((Class) getValue()).get();
     }
 
     public JavaClass(final Ruby runtime, final Class<?> javaClass) {

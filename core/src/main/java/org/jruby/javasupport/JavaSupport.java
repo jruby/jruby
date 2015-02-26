@@ -87,10 +87,10 @@ public class JavaSupport {
     };
 
     private final ClassValue<JavaClass> javaClassCache;
-    public final ClassValue<RubyModule> proxyClassCache;
-    public final ClassValue<ThreadLocal<RubyModule>> unfinishedProxyClassCache;
-    public final ClassValue<Map<String, AssignedName>> staticAssignedNames;
-    public final ClassValue<Map<String, AssignedName>> instanceAssignedNames;
+    private final ClassValue<RubyModule> proxyClassCache;
+    private final ClassValue<ThreadLocal<RubyModule>> unfinishedProxyClassCache;
+    private final ClassValue<Map<String, AssignedName>> staticAssignedNames;
+    private final ClassValue<Map<String, AssignedName>> instanceAssignedNames;
     private static final Constructor<? extends ClassValue> CLASS_VALUE_CONSTRUCTOR;
 
     static {
@@ -403,4 +403,15 @@ public class JavaSupport {
         return this.javaProxyClassCache;
     }
 
+    public ClassValue<ThreadLocal<RubyModule>> getUnfinishedProxyClassCache() {
+        return unfinishedProxyClassCache;
+    }
+
+    public ClassValue<Map<String, AssignedName>> getStaticAssignedNames() {
+        return staticAssignedNames;
+    }
+
+    public ClassValue<Map<String, AssignedName>> getInstanceAssignedNames() {
+        return instanceAssignedNames;
+    }
 }

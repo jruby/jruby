@@ -10,7 +10,6 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
-import java.util.Collections;
 import java.util.Map;
 
 /**
@@ -31,7 +30,7 @@ public class ClassInitializer extends Initializer {
 
         proxyClass.setReifiedClass(javaClass);
 
-        runtime.getJavaSupport().unfinishedProxyClassCache.get(javaClass).set(proxyClass);
+        runtime.getJavaSupport().getUnfinishedProxyClassCache().get(javaClass).set(proxyClass);
 
         if ( javaClass.isArray() || javaClass.isPrimitive() ) {
             return proxy;
@@ -41,8 +40,8 @@ public class ClassInitializer extends Initializer {
         setupClassMethods(javaClass, state);
         setupClassConstructors(javaClass, state);
 
-        runtime.getJavaSupport().staticAssignedNames.get(javaClass).putAll(state.staticNames);
-        runtime.getJavaSupport().instanceAssignedNames.get(javaClass).putAll(state.instanceNames);
+        runtime.getJavaSupport().getStaticAssignedNames().get(javaClass).putAll(state.staticNames);
+        runtime.getJavaSupport().getInstanceAssignedNames().get(javaClass).putAll(state.instanceNames);
 
         // flag the class as a Java class proxy.
         proxy.setJavaProxy(true);

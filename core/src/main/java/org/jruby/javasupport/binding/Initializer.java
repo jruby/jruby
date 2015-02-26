@@ -418,8 +418,8 @@ public abstract class Initializer {
                 staticNames = new HashMap<String, AssignedName>();
                 instanceNames = new HashMap<String, AssignedName>();
             } else {
-                staticNames = new HashMap<String, AssignedName>(runtime.getJavaSupport().staticAssignedNames.get(superClass));
-                instanceNames = new HashMap<String, AssignedName>(runtime.getJavaSupport().instanceAssignedNames.get(superClass));
+                staticNames = new HashMap<String, AssignedName>(runtime.getJavaSupport().getStaticAssignedNames().get(superClass));
+                instanceNames = new HashMap<String, AssignedName>(runtime.getJavaSupport().getInstanceAssignedNames().get(superClass));
             }
             staticNames.putAll(STATIC_RESERVED_NAMES);
             instanceNames.putAll(INSTANCE_RESERVED_NAMES);
