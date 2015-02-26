@@ -1,5 +1,0 @@
-fails:Symbol#downcase returns a Symbol
-fails:Symbol#downcase converts uppercase ASCII characters to their lowercase equivalents
-fails:Symbol#downcase leaves lowercase Unicode characters as they were
-fails:Symbol#downcase leaves uppercase Unicode characters as they were
-fails:Symbol#downcase leaves non-alphabetic ASCII characters as they were
