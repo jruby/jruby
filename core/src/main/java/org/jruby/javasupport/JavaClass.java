@@ -73,8 +73,6 @@ public class JavaClass extends JavaObject {
     // caching constructors, as they're accessed for each new instance
     private volatile RubyArray constructors;
 
-    private volatile List<IRubyObject> proxyExtenders;
-
     public RubyModule getProxyModule() {
         // allow proxy to be read without synchronization. if proxy
         // is under construction, only the building thread can see it.
