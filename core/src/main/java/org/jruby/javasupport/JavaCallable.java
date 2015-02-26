@@ -15,7 +15,7 @@
  * Copyright (C) 2004 Stefan Matthias Aust <sma@3plus4.de>
  * Copyright (C) 2004 Jan Arne Petersen <jpetersen@uni-bonn.de>
  * Copyright (C) 2004 David Corbin <dcorbin@users.sourceforge.net>
- * 
+ *
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
  * or the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
@@ -46,6 +46,7 @@ import org.jruby.anno.JRubyMethod;
 import org.jruby.runtime.Helpers;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.cli.Options;
+import static org.jruby.javasupport.JavaClass.toRubyArray;
 
 public abstract class JavaCallable extends JavaAccessibleObject implements ParameterTypes {
     protected final Class<?>[] parameterTypes;
@@ -82,18 +83,18 @@ public abstract class JavaCallable extends JavaAccessibleObject implements Param
 
     @JRubyMethod
     public final RubyArray argument_types() {
-        return JavaClass.getRubyArray(getRuntime(), getParameterTypes());
+        return toRubyArray(getRuntime(), getParameterTypes());
     }
 
     // same as argument_types, but matches name in java.lang.reflect.Constructor/Method
     @JRubyMethod
-    public IRubyObject parameter_types() {
-        return JavaClass.getRubyArray(getRuntime(), getParameterTypes());
+    public RubyArray parameter_types() {
+        return toRubyArray(getRuntime(), getParameterTypes());
     }
 
     @JRubyMethod
-    public IRubyObject exception_types() {
-        return JavaClass.getRubyArray(getRuntime(), getExceptionTypes());
+    public RubyArray exception_types() {
+        return toRubyArray(getRuntime(), getExceptionTypes());
     }
 
     @JRubyMethod
@@ -110,12 +111,12 @@ public abstract class JavaCallable extends JavaAccessibleObject implements Param
     public IRubyObject parameter_annotations() {
         return Java.getInstance(getRuntime(), getParameterAnnotations());
     }
-    
+
     @JRubyMethod(name = "varargs?")
     public RubyBoolean varargs_p() {
         return getRuntime().newBoolean(isVarArgs());
     }
-    
+
     @JRubyMethod
     public RubyString to_generic_string() {
         return getRuntime().newString(toGenericString());
