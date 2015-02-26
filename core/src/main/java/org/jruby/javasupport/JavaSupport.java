@@ -58,22 +58,6 @@ import org.jruby.util.cli.Options;
 import org.jruby.util.collections.ClassValueCalculator;
 
 public class JavaSupport {
-    private static final Map<String,Class> PRIMITIVE_CLASSES = new HashMap<String,Class>();
-    static {
-        PRIMITIVE_CLASSES.put("boolean", Boolean.TYPE);
-        PRIMITIVE_CLASSES.put("byte", Byte.TYPE);
-        PRIMITIVE_CLASSES.put("char", Character.TYPE);
-        PRIMITIVE_CLASSES.put("short", Short.TYPE);
-        PRIMITIVE_CLASSES.put("int", Integer.TYPE);
-        PRIMITIVE_CLASSES.put("long", Long.TYPE);
-        PRIMITIVE_CLASSES.put("float", Float.TYPE);
-        PRIMITIVE_CLASSES.put("double", Double.TYPE);
-    }
-
-    public static Class getPrimitiveClass(String primitiveType) {
-        return PRIMITIVE_CLASSES.get(primitiveType);
-    }
-
     private final Ruby runtime;
 
     private final ObjectProxyCache<IRubyObject,RubyClass> objectProxyCache =
@@ -188,7 +172,7 @@ public class JavaSupport {
 
     public Class loadJavaClass(String className) throws ClassNotFoundException {
         Class primitiveClass;
-        if ((primitiveClass = PRIMITIVE_CLASSES.get(className)) == null) {
+        if ((primitiveClass = JavaUtil.PRIMITIVE_CLASSES.get(className)) == null) {
             if (!Ruby.isSecurityRestricted()) {
                 return Class.forName(className, true, runtime.getJRubyClassLoader());
             }
@@ -427,5 +411,10 @@ public class JavaSupport {
             }
             vars[i] = v;
         }
+    }
+
+    @Deprecated
+    public static Class getPrimitiveClass(String primitiveType) {
+        return JavaUtil.PRIMITIVE_CLASSES.get(primitiveType);
     }
 }

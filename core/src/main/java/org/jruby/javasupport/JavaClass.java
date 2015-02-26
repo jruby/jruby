@@ -187,28 +187,15 @@ public class JavaClass extends JavaObject {
         return ( javaClass instanceof JavaClass ) ? ((JavaClass) javaClass).javaClass() : null;
     }
 
-    private static final Map<String, Class> PRIMITIVE_TO_CLASS = new HashMap<String,Class>();
-
-    static {
-        PRIMITIVE_TO_CLASS.put("byte", byte.class);
-        PRIMITIVE_TO_CLASS.put("boolean", boolean.class);
-        PRIMITIVE_TO_CLASS.put("short", short.class);
-        PRIMITIVE_TO_CLASS.put("char", char.class);
-        PRIMITIVE_TO_CLASS.put("int", int.class);
-        PRIMITIVE_TO_CLASS.put("long", long.class);
-        PRIMITIVE_TO_CLASS.put("float", float.class);
-        PRIMITIVE_TO_CLASS.put("double", double.class);
-    }
-
     static boolean isPrimitiveName(final String name) {
-        return PRIMITIVE_TO_CLASS.containsKey(name);
+        return JavaUtil.PRIMITIVE_CLASSES.containsKey(name);
     }
 
     public static synchronized JavaClass forNameVerbose(Ruby runtime, String className) {
         Class <?> klass = null;
         if (className.indexOf('.') == -1 && Character.isLowerCase(className.charAt(0))) {
             // one word type name that starts lower-case...it may be a primitive type
-            klass = PRIMITIVE_TO_CLASS.get(className);
+            klass = JavaUtil.PRIMITIVE_CLASSES.get(className);
         }
 
         if (klass == null) {

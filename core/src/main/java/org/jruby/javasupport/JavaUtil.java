@@ -47,6 +47,7 @@ import java.lang.reflect.ReflectPermission;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.security.AccessController;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -955,6 +956,20 @@ public class JavaUtil {
     
     public static Object objectFromJavaProxy(IRubyObject self) {
         return ((JavaProxy)self).getObject();
+    }
+
+    public static final Map<String,Class> PRIMITIVE_CLASSES;
+    static {
+        Map<String, Class> primitiveClasses = new HashMap<String,Class>();
+        primitiveClasses.put("boolean", Boolean.TYPE);
+        primitiveClasses.put("byte", Byte.TYPE);
+        primitiveClasses.put("char", Character.TYPE);
+        primitiveClasses.put("short", Short.TYPE);
+        primitiveClasses.put("int", Integer.TYPE);
+        primitiveClasses.put("long", Long.TYPE);
+        primitiveClasses.put("float", Float.TYPE);
+        primitiveClasses.put("double", Double.TYPE);
+        PRIMITIVE_CLASSES = Collections.unmodifiableMap(primitiveClasses);
     }
 
     @Deprecated
