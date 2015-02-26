@@ -518,7 +518,7 @@ public class JavaClass extends JavaObject {
     private RubyModule unfinishedProxyModule;
     private RubyClass unfinishedProxyClass;
     
-    private final ReentrantLock proxyLock = new ReentrantLock();
+    private final ReentrantLock proxyLock;
 
     private final Initializer initializer;
     
@@ -576,6 +576,7 @@ public class JavaClass extends JavaObject {
         } else {
             initializer = DUMMY_INITIALIZER;
         }
+        this.proxyLock = runtime.getJavaSupport().getProxyLock();
     }
     
     @Override
