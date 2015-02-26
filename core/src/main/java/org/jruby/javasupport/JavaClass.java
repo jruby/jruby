@@ -67,28 +67,24 @@ import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyClass;
 import org.jruby.common.IRubyWarnings.ID;
 import org.jruby.exceptions.RaiseException;
-import org.jruby.internal.runtime.methods.DynamicMethod;
-import org.jruby.internal.runtime.methods.JavaMethod.JavaMethodZero;
-import org.jruby.java.invokers.ConstructorInvoker;
-import org.jruby.java.invokers.SingletonMethodInvoker;
-import org.jruby.java.invokers.InstanceFieldGetter;
-import org.jruby.java.invokers.InstanceFieldSetter;
-import org.jruby.java.invokers.InstanceMethodInvoker;
-import org.jruby.java.invokers.StaticFieldGetter;
-import org.jruby.java.invokers.StaticFieldSetter;
-import org.jruby.java.invokers.StaticMethodInvoker;
 import org.jruby.java.proxies.ArrayJavaProxy;
 import org.jruby.java.proxies.ConcreteJavaProxy;
 import org.jruby.java.util.ArrayUtils;
+import org.jruby.javasupport.binding.AssignedName;
+import org.jruby.javasupport.binding.ClassInitializer;
+import org.jruby.javasupport.binding.Initializer;
+import org.jruby.javasupport.binding.InstanceMethodInvokerInstaller;
+import org.jruby.javasupport.binding.InterfaceInitializer;
+import org.jruby.javasupport.binding.MethodInstaller;
+import org.jruby.javasupport.binding.NamedInstaller;
+import org.jruby.javasupport.binding.Priority;
+import org.jruby.javasupport.binding.SingletonMethodInvokerInstaller;
+import org.jruby.javasupport.binding.StaticMethodInvokerInstaller;
 import org.jruby.runtime.Helpers;
-import org.jruby.runtime.Block;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
-import org.jruby.runtime.Visibility;
-import static org.jruby.runtime.Visibility.*;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
-import org.jruby.util.IdUtil;
 import org.jruby.util.cli.Options;
 import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
@@ -96,390 +92,8 @@ import org.jruby.util.log.LoggerFactory;
 @JRubyClass(name="Java::JavaClass", parent="Java::JavaObject")
 public class JavaClass extends JavaObject {
 
-    private static final Logger LOG = LoggerFactory.getLogger("JavaClass");
-
-    public static final String METHOD_MANGLE = "__method";
-    public static final boolean DEBUG_SCALA = false;
-
-    public static final boolean CAN_SET_ACCESSIBLE;
-
-    static {
-        boolean canSetAccessible = false;
-
-        if (RubyInstanceConfig.CAN_SET_ACCESSIBLE) {
-            try {
-                AccessController.checkPermission(new ReflectPermission("suppressAccessChecks"));
-                canSetAccessible = true;
-            } catch (Throwable t) {
-                // added this so if things are weird in the future we can debug without
-                // spinning a new binary
-                if (Options.JI_LOGCANSETACCESSIBLE.load()) {
-                    t.printStackTrace();
-                }
-
-                // assume any exception means we can't suppress access checks
-                canSetAccessible = false;
-            }
-        }
-
-        CAN_SET_ACCESSIBLE = canSetAccessible;
-    }
-
-    private static void handleScalaSingletons(final Class<?> javaClass, final Initializer.State state) {
-        // check for Scala companion object
-        try {
-            final ClassLoader loader = javaClass.getClassLoader();
-            if ( loader == null ) return; //this is a core class, bail
-
-            Class<?> companionClass = loader.loadClass(javaClass.getName() + '$');
-            final Field field = companionClass.getField("MODULE$");
-            final Object singleton = field.get(null);
-            if ( singleton == null ) return;
-
-            final Method[] scalaMethods = getMethods(companionClass);
-            for ( int j = scalaMethods.length - 1; j >= 0; j-- ) {
-                final Method method = scalaMethods[j];
-                String name = method.getName();
-
-                if (DEBUG_SCALA) LOG.debug("Companion object method {} for {}", name, companionClass);
-
-                if ( name.indexOf('$') >= 0 ) name = fixScalaNames(name);
-
-                if ( ! Modifier.isStatic( method.getModifiers() ) ) {
-                    AssignedName assignedName = state.staticNames.get(name);
-                    // For JRUBY-4505, restore __method methods for reserved names
-                    if (INSTANCE_RESERVED_NAMES.containsKey(method.getName())) {
-                        if (DEBUG_SCALA) LOG.debug("in reserved " + name);
-                        setupSingletonMethods(state.staticInstallers, javaClass, singleton, method, name + METHOD_MANGLE);
-                        continue;
-                    }
-                    if (assignedName == null) {
-                        state.staticNames.put(name, new AssignedName(name, Priority.METHOD));
-                        if (DEBUG_SCALA) LOG.debug("Assigned name is null");
-                    } else {
-                        if (Priority.METHOD.lessImportantThan(assignedName)) {
-                            if (DEBUG_SCALA) LOG.debug("Less important");
-                            continue;
-                        }
-                        if (!Priority.METHOD.asImportantAs(assignedName)) {
-                            state.staticInstallers.remove(name);
-                            state.staticInstallers.remove(name + '=');
-                            state.staticNames.put(name, new AssignedName(name, Priority.METHOD));
-                        }
-                    }
-                    if (DEBUG_SCALA) LOG.debug("Installing {} {} {}", name, method, singleton);
-                    setupSingletonMethods(state.staticInstallers, javaClass, singleton, method, name);
-                }
-                else {
-                    if (DEBUG_SCALA) LOG.debug("Method {} is sadly static", method);
-                }
-            }
-        }
-        catch (ClassNotFoundException e) { /* there's no companion object */ }
-        catch (NoSuchFieldException e) { /* no MODULE$ field in companion */ }
-        catch (Exception e) {
-            if (DEBUG_SCALA) LOG.debug("Failed with {}", e);
-        }
-    }
-
-    /**
-     * Assigned names only override based priority of an assigned type, the type must be less than
-     * or equal to the assigned type. For example, field name (FIELD) in a subclass will override
-     * an alias (ALIAS) in a superclass, but not a method (METHOD).
-     */
-    private enum Priority {
-        RESERVED(0), METHOD(1), FIELD(2), PROTECTED_METHOD(3),
-        WEAKLY_RESERVED(4), ALIAS(5), PROTECTED_FIELD(6);
-
-        private int value;
-
-        Priority(int value) {
-            this.value = value;
-        }
-
-        public boolean asImportantAs(AssignedName other) {
-            return other != null && other.type.value == value;
-        }
-
-        public boolean lessImportantThan(AssignedName other) {
-            return other != null && other.type.value < value;
-        }
-
-        public boolean moreImportantThan(AssignedName other) {
-            return other == null || other.type.value > value;
-        }
-    }
-
-    private static class AssignedName {
-        String name;
-        Priority type;
-
-        AssignedName () {}
-        AssignedName(String name, Priority type) {
-            this.name = name;
-            this.type = type;
-        }
-    }
-
-    // TODO: other reserved names?
-    private static final Map<String, AssignedName> RESERVED_NAMES = new HashMap<String, AssignedName>();
-    static {
-        RESERVED_NAMES.put("__id__", new AssignedName("__id__", Priority.RESERVED));
-        RESERVED_NAMES.put("__send__", new AssignedName("__send__", Priority.RESERVED));
-        // JRUBY-5132: java.awt.Component.instance_of?() expects 2 args
-        RESERVED_NAMES.put("instance_of?", new AssignedName("instance_of?", Priority.RESERVED));
-    }
-    private static final Map<String, AssignedName> STATIC_RESERVED_NAMES = new HashMap<String, AssignedName>(RESERVED_NAMES);
-    static {
-        STATIC_RESERVED_NAMES.put("new", new AssignedName("new", Priority.RESERVED));
-    }
-    private static final Map<String, AssignedName> INSTANCE_RESERVED_NAMES = new HashMap<String, AssignedName>(RESERVED_NAMES);
-    static {
-        // only possible for "getClass" to be an instance method in Java
-        INSTANCE_RESERVED_NAMES.put("class", new AssignedName("class", Priority.RESERVED));
-        // "initialize" has meaning only for an instance (as opposed to a class)
-        INSTANCE_RESERVED_NAMES.put("initialize", new AssignedName("initialize", Priority.RESERVED));
-    }
-
-
-    private static abstract class NamedInstaller {
-        static final int STATIC_FIELD = 1;
-        static final int STATIC_METHOD = 2;
-        static final int INSTANCE_FIELD = 3;
-        static final int INSTANCE_METHOD = 4;
-
-        final String name;
-        final int type;
-
-        Visibility visibility = Visibility.PUBLIC;
-
-        NamedInstaller(String name, int type) {
-            this.name = name;
-            this.type = type;
-        }
-
-        abstract void install(RubyModule proxy);
-
-        // small hack to save a cast later on
-        boolean hasLocalMethod() { return true; }
-
-        boolean isPublic() { return visibility == Visibility.PUBLIC; }
-
-        //boolean isProtected() { return visibility == Visibility.PROTECTED; }
-
-    }
-
-    private static abstract class FieldInstaller extends NamedInstaller {
-
-        final Field field;
-
-        FieldInstaller(String name, int type, Field field) {
-            super(name,type);
-            this.field = field;
-        }
-    }
-
-    private static class StaticFieldGetterInstaller extends FieldInstaller {
-
-        StaticFieldGetterInstaller(String name, Field field) {
-            super(name, STATIC_FIELD, field);
-        }
-
-        @Override void install(final RubyModule proxy) {
-            if ( Modifier.isPublic( field.getModifiers() ) ) {
-                proxy.getSingletonClass().addMethod(name, new StaticFieldGetter(name, proxy, field));
-            }
-        }
-    }
-
-    private static class StaticFieldSetterInstaller extends FieldInstaller {
-
-        StaticFieldSetterInstaller(String name, Field field) {
-            super(name, STATIC_FIELD, field);
-        }
-
-        @Override void install(final RubyModule proxy) {
-            if ( Modifier.isPublic( field.getModifiers() ) ) {
-                proxy.getSingletonClass().addMethod(name, new StaticFieldSetter(name, proxy, field));
-            }
-        }
-    }
-
-    private static class InstanceFieldGetterInstaller extends FieldInstaller {
-
-        InstanceFieldGetterInstaller(String name, Field field) {
-            super(name, INSTANCE_FIELD, field);
-        }
-
-        @Override void install(final RubyModule proxy) {
-            if ( Modifier.isPublic( field.getModifiers() ) ) {
-                proxy.addMethod(name, new InstanceFieldGetter(name, proxy, field));
-            }
-        }
-    }
-
-    private static class InstanceFieldSetterInstaller extends FieldInstaller {
-
-        InstanceFieldSetterInstaller(String name, Field field) {
-            super(name, INSTANCE_FIELD, field);
-        }
-
-        @Override void install(final RubyModule proxy) {
-            if ( Modifier.isPublic( field.getModifiers() ) ) {
-                proxy.addMethod(name, new InstanceFieldSetter(name, proxy, field));
-            }
-        }
-    }
-
-    private static abstract class MethodInstaller extends NamedInstaller {
-
-        protected final List<Method> methods = new ArrayList<Method>(4);
-        protected List<String> aliases;
-        private boolean localMethod;
-
-        MethodInstaller(String name, int type) { super(name, type); }
-
-        // called only by initializing thread; no synchronization required
-        void addMethod(final Method method, final Class<?> clazz) {
-            this.methods.add(method);
-            localMethod |=
-                clazz == method.getDeclaringClass() ||
-                method.getDeclaringClass().isInterface();
-        }
-
-        // called only by initializing thread; no synchronization required
-        void addAlias(final String alias) {
-            List<String> aliases = this.aliases;
-            if (aliases == null) {
-                aliases = this.aliases = new ArrayList<String>(4);
-            }
-            if ( ! aliases.contains(alias) ) aliases.add(alias);
-        }
-
-        @Override
-        boolean hasLocalMethod () { return localMethod; }
-
-        void setLocalMethod(boolean flag) { localMethod = flag; }
-
-    }
-
-    private static class ConstructorInvokerInstaller extends MethodInstaller {
-
-        protected final List<Constructor> constructors = new ArrayList<Constructor>(4);
-        private boolean localConstructor;
-
-        ConstructorInvokerInstaller(String name) { super(name, STATIC_METHOD); }
-
-        // called only by initializing thread; no synchronization required
-        void addConstructor(final Constructor ctor, final Class<?> clazz) {
-            if ( ! Ruby.isSecurityRestricted() ) {
-                try {
-                    ctor.setAccessible(true);
-                } catch(SecurityException e) {}
-            }
-            this.constructors.add(ctor);
-            localConstructor |= clazz == ctor.getDeclaringClass();
-        }
-
-        @Override void install(final RubyModule proxy) {
-            if ( localConstructor ) {
-                proxy.addMethod(name, new ConstructorInvoker(proxy, constructors));
-            }
-            else { // if there's no constructor, we must prevent construction
-                proxy.addMethod(name, new org.jruby.internal.runtime.methods.JavaMethod(proxy, PUBLIC) {
-                    @Override
-                    public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args, Block block) {
-                        throw context.runtime.newTypeError("no public constructors for " + clazz);
-                    }
-                });
-            }
-        }
-    }
-
-    private static class StaticMethodInvokerInstaller extends MethodInstaller {
-
-        StaticMethodInvokerInstaller(String name) { super(name, STATIC_METHOD); }
-
-        @Override void install(final RubyModule proxy) {
-            if ( hasLocalMethod() ) {
-                final RubyClass singletonClass = proxy.getSingletonClass();
-                DynamicMethod method = new StaticMethodInvoker(singletonClass, methods);
-                singletonClass.addMethod(name, method);
-                if ( aliases != null && isPublic() ) {
-                    singletonClass.defineAliases(aliases, name);
-                    //aliases = null;
-                }
-            }
-        }
-    }
-
-    private static class SingletonMethodInvokerInstaller extends StaticMethodInvokerInstaller {
-
-        final Object singleton;
-
-        SingletonMethodInvokerInstaller(String name, Object singleton) {
-            super(name);
-            this.singleton = singleton;
-        }
-
-        @Override void install(final RubyModule proxy) {
-            // we don't check haveLocalMethod() here because it's not local and we know
-            // that we always want to go ahead and install it
-            final RubyClass singletonClass = proxy.getSingletonClass();
-            DynamicMethod method = new SingletonMethodInvoker(this.singleton, singletonClass, methods);
-            singletonClass.addMethod(name, method);
-            if ( aliases != null && isPublic() ) {
-                singletonClass.defineAliases(aliases, name);
-                //aliases = null;
-            }
-        }
-    }
-
-    private static class InstanceMethodInvokerInstaller extends MethodInstaller {
-
-        InstanceMethodInvokerInstaller(String name) { super(name, INSTANCE_METHOD); }
-
-        @Override void install(final RubyModule proxy) {
-            if ( hasLocalMethod() ) {
-                proxy.addMethod(name, new InstanceMethodInvoker(proxy, methods));
-                if ( aliases != null && isPublic() ) {
-                    proxy.defineAliases(aliases, this.name);
-                    //aliases = null;
-                }
-            }
-        }
-    }
-
-    private static class ConstantField {
-
-        final Field field;
-
-        ConstantField(Field field) { this.field = field; }
-
-        void install(final RubyModule proxy) {
-            final String name = field.getName();
-            if ( proxy.getConstantAt(name) == null ) {
-                try {
-                    final Object value = field.get(null);
-                    proxy.setConstant(name, JavaUtil.convertJavaToUsableRubyObject(proxy.getRuntime(), value));
-                }
-                catch (IllegalAccessException iae) {
-                    // if we can't read it, we don't set it
-                }
-            }
-        }
-
-        private static final int CONSTANT = Modifier.FINAL | Modifier.PUBLIC | Modifier.STATIC;
-
-        static boolean isConstant(final Field field) {
-            return (field.getModifiers() & CONSTANT) == CONSTANT &&
-                Character.isUpperCase( field.getName().charAt(0) );
-        }
-
-    }
-
-    private volatile Map<String, AssignedName> staticAssignedNames;
-    private volatile Map<String, AssignedName> instanceAssignedNames;
+    public volatile Map<String, AssignedName> staticAssignedNames;
+    public volatile Map<String, AssignedName> instanceAssignedNames;
 
     // caching constructors, as they're accessed for each new instance
     private volatile RubyArray constructors;
@@ -491,14 +105,14 @@ public class JavaClass extends JavaObject {
 
     // proxy class for concrete classes.  also used for
     // "concrete" interfaces, which is why we have two fields
-    private volatile RubyClass proxyClass;
+    public volatile RubyClass proxyClass;
 
     // readable only by thread building proxy, so don't need to be
     // volatile. used to handle recursive calls to getProxyClass/Module
     // while proxy is being constructed (usually when a constant
     // defined by a class is of the same type as that class).
-    private RubyModule unfinishedProxyModule;
-    private RubyClass unfinishedProxyClass;
+    public RubyModule unfinishedProxyModule;
+    public RubyClass unfinishedProxyClass;
 
     private final ReentrantLock proxyLock = new ReentrantLock();
 
@@ -540,13 +154,13 @@ public class JavaClass extends JavaObject {
         proxyLock.unlock();
     }
 
-    private void setProxyClass(final RubyClass proxyClass) {
+    public void setProxyClass(final RubyClass proxyClass) {
         //assert this.proxyLock != null;
         this.proxyClass = proxyClass;
         //this.unfinishedProxyClass = null;
     }
 
-    private void setProxyModule(final RubyModule proxyModule) {
+    public void setProxyModule(final RubyModule proxyModule) {
         //assert this.proxyLock != null;
         this.proxyModule = proxyModule;
         //this.unfinishedProxyModule = null;
@@ -575,306 +189,6 @@ public class JavaClass extends JavaObject {
         return javaClass().hashCode();
     }
 
-    private static abstract class Initializer {
-        protected final Ruby runtime;
-        protected final Class javaClass;
-
-        public Initializer(Ruby runtime, Class javaClass) {
-            this.runtime = runtime;
-            this.javaClass = javaClass;
-        }
-
-        public abstract void initialize(JavaClass javaClassObject, RubyModule proxy);
-
-        public void initializeBase(RubyModule proxy) {
-            proxy.addMethod("__jsend!", new org.jruby.internal.runtime.methods.JavaMethod.JavaMethodNBlock(proxy, PUBLIC) {
-                @Override
-                public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args, Block block) {
-                    String callName = args[0].asJavaString();
-
-                    DynamicMethod method = self.getMetaClass().searchMethod(callName);
-                    int v = method.getArity().getValue();
-
-                    IRubyObject[] newArgs = new IRubyObject[args.length - 1];
-                    System.arraycopy(args, 1, newArgs, 0, newArgs.length);
-
-                    if(v < 0 || v == (newArgs.length)) {
-                        return Helpers.invoke(context, self, callName, newArgs, Block.NULL_BLOCK);
-                    } else {
-                        RubyClass superClass = self.getMetaClass().getSuperClass();
-                        return Helpers.invokeAs(context, superClass, self, callName, newArgs, Block.NULL_BLOCK);
-                    }
-                }
-            });
-        }
-
-        public static class State {
-
-            final Map<String, AssignedName> staticNames;
-            final Map<String, AssignedName> instanceNames;
-            final Map<String, NamedInstaller> staticInstallers = new HashMap<String, NamedInstaller>();
-            final Map<String, NamedInstaller> instanceInstallers = new HashMap<String, NamedInstaller>();
-            final List<ConstantField> constantFields = new ArrayList<ConstantField>();
-
-            ConstructorInvokerInstaller constructorInstaller;
-
-            State(final Ruby runtime, final Class superClass) {
-                if (superClass == null) {
-                    staticNames = new HashMap<String, AssignedName>();
-                    instanceNames = new HashMap<String, AssignedName>();
-                } else {
-                    JavaClass superJavaClass = get(runtime,superClass);
-                    staticNames = new HashMap<String, AssignedName>(superJavaClass.staticAssignedNames);
-                    instanceNames = new HashMap<String, AssignedName>(superJavaClass.instanceAssignedNames);
-                }
-                staticNames.putAll(STATIC_RESERVED_NAMES);
-                instanceNames.putAll(INSTANCE_RESERVED_NAMES);
-            }
-
-        }
-
-    }
-
-    private static class InterfaceInitializer extends Initializer {
-
-        InterfaceInitializer(Ruby runtime, Class<?> javaClass) {
-            super(runtime, javaClass);
-        }
-
-        public void initialize(JavaClass javaClassObject, RubyModule proxy) {
-            final State state = new State(runtime, null);
-
-            super.initializeBase(proxy);
-
-            Field[] fields = getDeclaredFields(javaClass);
-
-            for (int i = fields.length; --i >= 0; ) {
-                final Field field = fields[i];
-                if ( javaClass != field.getDeclaringClass() ) continue;
-
-                if ( ConstantField.isConstant(field) ) {
-                    state.constantFields.add(new ConstantField(field));
-                }
-
-                final int mod = field.getModifiers();
-                if ( Modifier.isStatic(mod) ) {
-                    addField(state.staticInstallers, state.staticNames, field, Modifier.isFinal(mod), true);
-                }
-            }
-
-            setupInterfaceMethods(javaClass, state);
-
-            // Add in any Scala singleton methods
-            handleScalaSingletons(javaClass, state);
-
-            // Now add all aliases for the static methods (fields) as appropriate
-            for (Map.Entry<String, NamedInstaller> entry : state.staticInstallers.entrySet()) {
-                final NamedInstaller installer = entry.getValue();
-                if (installer.type == NamedInstaller.STATIC_METHOD && installer.hasLocalMethod()) {
-                    assignAliases((MethodInstaller) installer, state.staticNames);
-                }
-            }
-
-            javaClassObject.staticAssignedNames = Collections.unmodifiableMap(state.staticNames);
-            javaClassObject.instanceAssignedNames = Collections.emptyMap();
-
-            javaClassObject.unfinishedProxyModule = proxy;
-
-            // flag the class as a Java class proxy.
-            proxy.setJavaProxy(true);
-            proxy.getSingletonClass().setJavaProxy(true);
-
-            installClassFields(proxy, state);
-            installClassStaticMethods(proxy, state);
-            installClassClasses(javaClass, proxy);
-
-            javaClassObject.setProxyModule(proxy); // this.proxyModule = proxy
-
-            javaClassObject.applyProxyExtenders();
-        }
-
-    }
-
-    private static class ClassInitializer extends Initializer {
-        ClassInitializer(Ruby runtime, Class<?> javaClass) {
-            super(runtime, javaClass);
-        }
-
-        public void initialize(JavaClass javaClassObject, RubyModule proxy) {
-            RubyClass proxyClass = (RubyClass)proxy;
-            Class<?> superclass = javaClass.getSuperclass();
-
-            final State state = new State(runtime, superclass);
-
-            super.initializeBase(proxy);
-
-            if ( javaClass.isArray() || javaClass.isPrimitive() ) {
-                // see note below re: 2-field kludge
-                javaClassObject.setProxyClass(proxyClass);
-                javaClassObject.setProxyModule(proxy);
-                return;
-            }
-
-            setupClassFields(javaClass, state);
-            setupClassMethods(javaClass, state);
-            setupClassConstructors(javaClass, state);
-
-            javaClassObject.staticAssignedNames = Collections.unmodifiableMap(state.staticNames);
-            javaClassObject.instanceAssignedNames = Collections.unmodifiableMap(state.instanceNames);
-
-            proxyClass.setReifiedClass(javaClass);
-
-            assert javaClassObject.proxyClass == null;
-            javaClassObject.unfinishedProxyClass = proxyClass;
-
-            // flag the class as a Java class proxy.
-            proxy.setJavaProxy(true);
-            proxy.getSingletonClass().setJavaProxy(true);
-
-            // set parent to either package module or outer class
-            final RubyModule parent;
-            final Class<?> enclosingClass = javaClass.getEnclosingClass();
-            if ( enclosingClass != null ) {
-                parent = Java.getProxyClass(runtime, enclosingClass);
-            } else {
-                parent = Java.getJavaPackageModule(runtime, javaClass.getPackage());
-            }
-            proxy.setParent(parent);
-
-            // set the Java class name and package
-            if ( javaClass.isAnonymousClass() ) {
-                String baseName = ""; // javaClass.getSimpleName() returns "" for anonymous
-                if ( enclosingClass != null ) {
-                    // instead of an empty name anonymous classes will have a "conforming"
-                    // although not valid (by Ruby semantics) RubyClass name e.g. :
-                    // 'Java::JavaUtilConcurrent::TimeUnit::1' for $1 anonymous enum class
-                    // NOTE: if this turns out suitable shall do the same for method etc.
-                    final String className = javaClass.getName();
-                    final int length = className.length();
-                    final int offset = enclosingClass.getName().length();
-                    if ( length > offset && className.charAt(offset) != '$' ) {
-                        baseName = className.substring( offset );
-                    }
-                    else if ( length > offset + 1 ) { // skip '$'
-                        baseName = className.substring( offset + 1 );
-                    }
-                }
-                proxy.setBaseName( baseName );
-            }
-            else {
-                proxy.setBaseName( javaClass.getSimpleName() );
-            }
-
-            installClassFields(proxyClass, state);
-            installClassInstanceMethods(proxyClass, state);
-            installClassConstructors(proxyClass, state);
-            installClassClasses(javaClass, proxyClass);
-
-            // FIXME: bit of a kludge here (non-interface classes assigned to both
-            // class and module fields). simplifies proxy extender code, will go away
-            // when JI is overhauled (and proxy extenders are deprecated).
-            javaClassObject.setProxyClass(proxyClass);
-            javaClassObject.setProxyModule(proxy);
-
-            javaClassObject.applyProxyExtenders();
-
-            // TODO: we can probably release our references to the constantFields
-            // array and static/instance callback hashes at this point.
-        }
-
-        private void setupClassMethods(Class<?> javaClass, Initializer.State state) {
-            // TODO: protected methods.  this is going to require a rework of some of the mechanism.
-            Method[] methods = getMethods(javaClass);
-
-            for (int i = methods.length; --i >= 0;) {
-                // we need to collect all methods, though we'll only
-                // install the ones that are named in this class
-                Method method = methods[i];
-                String name = method.getName();
-
-                if (Modifier.isStatic(method.getModifiers())) {
-                    prepareStaticMethod(javaClass, state, method, name);
-                } else {
-                    prepareInstanceMethod(javaClass, state, method, name);
-                }
-            }
-
-            // try to wire up Scala singleton logic if present
-            handleScalaSingletons(javaClass, state);
-
-            // now iterate over all installers and make sure they also have appropriate aliases
-            assignStaticAliases(state);
-            assignInstanceAliases(state);
-        }
-
-        private void setupClassConstructors(final Class<?> javaClass, final Initializer.State state) {
-            // TODO: protected methods.  this is going to require a rework
-            // of some of the mechanism.
-            final Constructor[] constructors = getConstructors(javaClass);
-
-            // create constructorInstaller; if there are no constructors, it will disable construction
-            ConstructorInvokerInstaller constructorInstaller = new ConstructorInvokerInstaller("__jcreate!");
-
-            for ( int i = constructors.length; --i >= 0; ) {
-                // we need to collect all methods, though we'll only
-                // install the ones that are named in this class
-                constructorInstaller.addConstructor(constructors[i], javaClass);
-            }
-
-            state.constructorInstaller = constructorInstaller;
-        }
-
-        private void prepareInstanceMethod(Class<?> javaClass, Initializer.State state, Method method, String name) {
-            AssignedName assignedName = state.instanceNames.get(name);
-
-            // For JRUBY-4505, restore __method methods for reserved names
-            if (INSTANCE_RESERVED_NAMES.containsKey(method.getName())) {
-                setupInstanceMethods(state.instanceInstallers, javaClass, method, name + METHOD_MANGLE);
-                return;
-            }
-
-            if (assignedName == null) {
-                state.instanceNames.put(name, new AssignedName(name, Priority.METHOD));
-            } else {
-                if (Priority.METHOD.lessImportantThan(assignedName)) return;
-                if (!Priority.METHOD.asImportantAs(assignedName)) {
-                    state.instanceInstallers.remove(name);
-                    state.instanceInstallers.remove(name + '=');
-                    state.instanceNames.put(name, new AssignedName(name, Priority.METHOD));
-                }
-            }
-            setupInstanceMethods(state.instanceInstallers, javaClass, method, name);
-        }
-
-        private static void assignInstanceAliases(Initializer.State state) {
-            for (Map.Entry<String, NamedInstaller> entry : state.instanceInstallers.entrySet()) {
-                if (entry.getValue().type == NamedInstaller.INSTANCE_METHOD) {
-                    MethodInstaller methodInstaller = (MethodInstaller)entry.getValue();
-
-                    // no aliases for __method methods
-                    if (entry.getKey().endsWith("__method")) continue;
-
-                    if (methodInstaller.hasLocalMethod()) {
-                        assignAliases(methodInstaller, state.instanceNames);
-                    }
-
-                    // JRUBY-6967: Types with java.lang.Comparable were using Ruby Comparable#== instead of dispatching directly to
-                    // java.lang.Object.equals. We force an alias here to ensure we always use equals.
-                    if (entry.getKey().equals("equals")) {
-                        // we only install "local" methods, but need to force this so it will bind
-                        methodInstaller.setLocalMethod(true);
-                        methodInstaller.addAlias("==");
-                    }
-                }
-            }
-        }
-
-        private static void installClassConstructors(final RubyModule proxy, final Initializer.State state) {
-            if ( state.constructorInstaller != null ) state.constructorInstaller.install(proxy);
-        }
-
-    }
-
     void setupProxyClass(final RubyClass proxy) {
         assert proxyLock.isHeldByCurrentThread();
 
@@ -883,295 +197,6 @@ public class JavaClass extends JavaObject {
         final Class<?> javaClass = javaClass();
 
         new ClassInitializer(getRuntime(), javaClass).initialize(this, proxy);
-    }
-
-    private static void assignAliases(MethodInstaller installer, Map<String, AssignedName> assignedNames) {
-        String name = installer.name;
-        String rubyCasedName = JavaUtil.getRubyCasedName(name);
-        addUnassignedAlias(rubyCasedName,assignedNames,installer);
-
-        String javaPropertyName = JavaUtil.getJavaPropertyName(name);
-        String rubyPropertyName = null;
-
-        for (Method method: installer.methods) {
-            Class<?>[] argTypes = method.getParameterTypes();
-            Class<?> resultType = method.getReturnType();
-            int argCount = argTypes.length;
-
-            // Add scala aliases for apply/update to roughly equivalent Ruby names
-            if (rubyCasedName.equals("apply")) {
-                addUnassignedAlias("[]", assignedNames, installer);
-            }
-            if (rubyCasedName.equals("update") && argCount == 2) {
-                addUnassignedAlias("[]=", assignedNames, installer);
-            }
-
-            // Scala aliases for $ method names
-            if (name.startsWith("$")) {
-                addUnassignedAlias(fixScalaNames(name), assignedNames, installer);
-            }
-
-            // Add property name aliases
-            if (javaPropertyName != null) {
-                if (rubyCasedName.startsWith("get_")) {
-                    rubyPropertyName = rubyCasedName.substring(4);
-                    if (argCount == 0 ||                                // getFoo      => foo
-                        argCount == 1 && argTypes[0] == int.class) {    // getFoo(int) => foo(int)
-
-                        addUnassignedAlias(javaPropertyName,assignedNames,installer);
-                        addUnassignedAlias(rubyPropertyName,assignedNames,installer);
-                    }
-                } else if (rubyCasedName.startsWith("set_")) {
-                    rubyPropertyName = rubyCasedName.substring(4);
-                    if (argCount == 1 && resultType == void.class) {    // setFoo(Foo) => foo=(Foo)
-                        addUnassignedAlias(javaPropertyName+'=',assignedNames,installer);
-                        addUnassignedAlias(rubyPropertyName+'=',assignedNames,installer);
-                    }
-                } else if (rubyCasedName.startsWith("is_")) {
-                    rubyPropertyName = rubyCasedName.substring(3);
-                    if (resultType == boolean.class) {                  // isFoo() => foo, isFoo(*) => foo(*)
-                        addUnassignedAlias(javaPropertyName,assignedNames,installer);
-                        addUnassignedAlias(rubyPropertyName,assignedNames,installer);
-                    }
-                }
-            }
-
-            // Additionally add ?-postfixed aliases to any boolean methods and properties.
-            if (resultType == boolean.class) {
-                // is_something?, contains_thing?
-                addUnassignedAlias(rubyCasedName+'?',assignedNames,installer);
-                if (rubyPropertyName != null) {
-                    // something?
-                    addUnassignedAlias(rubyPropertyName+'?',assignedNames,installer);
-                }
-            }
-        }
-    }
-
-    private static void addUnassignedAlias(String name, Map<String, AssignedName> assignedNames,
-            MethodInstaller installer) {
-        if (name == null) return;
-
-        AssignedName assignedName = assignedNames.get(name);
-        // TODO: missing additional logic for dealing with conflicting protected fields.
-        if (Priority.ALIAS.moreImportantThan(assignedName)) {
-            installer.addAlias(name);
-            assignedNames.put(name, new AssignedName(name, Priority.ALIAS));
-        } else if (Priority.ALIAS.asImportantAs(assignedName)) {
-            installer.addAlias(name);
-        }
-    }
-
-    private static void installClassClasses(final Class<?> javaClass, final RubyModule proxy) {
-        // setup constants for public inner classes
-        Class<?>[] classes = getDeclaredClasses(javaClass);
-
-        final Ruby runtime = proxy.getRuntime();
-
-        for ( int i = classes.length; --i >= 0; ) {
-            final Class<?> clazz = classes[i];
-            if ( javaClass != clazz.getDeclaringClass() ) continue;
-
-            // no non-public inner classes
-            if ( ! Modifier.isPublic(clazz.getModifiers()) ) continue;
-
-            final String simpleName = getSimpleName(clazz);
-            if ( simpleName.length() == 0 ) continue;
-
-            final RubyModule innerProxy = Java.getProxyClass(runtime, get(runtime, clazz));
-
-            if ( IdUtil.isConstant(simpleName) ) {
-                if (proxy.getConstantAt(simpleName) == null) {
-                    proxy.const_set(runtime.newString(simpleName), innerProxy);
-                }
-            }
-            else { // lower-case name
-                if ( ! proxy.respondsTo(simpleName) ) {
-                    // define a class method
-                    proxy.getSingletonClass().addMethod(simpleName, new JavaMethodZero(proxy.getSingletonClass(), Visibility.PUBLIC) {
-                        @Override
-                        public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name) {
-                            return innerProxy;
-                        }
-                    });
-                }
-            }
-        }
-    }
-
-    private static void installClassFields(final RubyModule proxy, final Initializer.State state) {
-        //assert state.constantFields != null;
-        for (ConstantField field : state.constantFields) {
-            field.install(proxy);
-        }
-    }
-
-    private static void installClassInstanceMethods(final RubyClass proxy, final Initializer.State state) {
-        installClassStaticMethods(proxy, state);
-        //assert state.instanceInstallers != null;
-        for ( Map.Entry<String, NamedInstaller> entry : state.instanceInstallers.entrySet() ) {
-            entry.getValue().install(proxy);
-        }
-    }
-
-    private static void installClassStaticMethods(final RubyModule proxy, final Initializer.State state) {
-        //assert state.staticInstallers != null;
-        for ( Map.Entry<String, NamedInstaller> entry : state.staticInstallers.entrySet() ) {
-            entry.getValue().install(proxy);
-        }
-    }
-
-    private static void addField(
-            final Map <String, NamedInstaller> callbacks,
-            final Map<String, AssignedName> names,
-            final Field field,
-            final boolean isFinal,
-            final boolean isStatic) {
-
-        final String name = field.getName();
-
-        if ( Priority.FIELD.lessImportantThan( names.get(name) ) ) return;
-
-        names.put(name, new AssignedName(name, Priority.FIELD));
-        callbacks.put(name, isStatic ? new StaticFieldGetterInstaller(name, field) :
-            new InstanceFieldGetterInstaller(name, field));
-
-        if (!isFinal) {
-            String setName = name + '=';
-            callbacks.put(setName, isStatic ? new StaticFieldSetterInstaller(setName, field) :
-                new InstanceFieldSetterInstaller(setName, field));
-        }
-    }
-
-    private static void setupClassFields(Class<?> javaClass, Initializer.State state) {
-        Field[] fields = getFields(javaClass);
-
-        for (int i = fields.length; --i >= 0;) {
-            Field field = fields[i];
-            if (javaClass != field.getDeclaringClass()) continue;
-
-            if (ConstantField.isConstant(field)) {
-                state.constantFields.add(new ConstantField(field));
-                continue;
-            }
-
-            int modifiers = field.getModifiers();
-            if (Modifier.isStatic(modifiers)) {
-                addField(state.staticInstallers, state.staticNames, field, Modifier.isFinal(modifiers), true);
-            } else {
-                addField(state.instanceInstallers, state.instanceNames, field, Modifier.isFinal(modifiers), false);
-            }
-        }
-    }
-
-    private static String fixScalaNames(final String name) {
-        String s = name;
-        for (Map.Entry<String, String> entry : SCALA_OPERATORS.entrySet()) {
-            s = s.replaceAll(entry.getKey(), entry.getValue());
-        }
-        return s;
-    }
-
-    private static final Map<String, String> SCALA_OPERATORS;
-    static {
-        HashMap<String, String> scalaOperators = new HashMap<String, String>();
-        scalaOperators.put("\\$plus", "+");
-        scalaOperators.put("\\$minus", "-");
-        scalaOperators.put("\\$colon", ":");
-        scalaOperators.put("\\$div", "/");
-        scalaOperators.put("\\$eq", "=");
-        scalaOperators.put("\\$less", "<");
-        scalaOperators.put("\\$greater", ">");
-        scalaOperators.put("\\$bslash", "\\\\");
-        scalaOperators.put("\\$hash", "#");
-        scalaOperators.put("\\$times", "*");
-        scalaOperators.put("\\$bang", "!");
-        scalaOperators.put("\\$at", "@");
-        scalaOperators.put("\\$percent", "%");
-        scalaOperators.put("\\$up", "^");
-        scalaOperators.put("\\$amp", "&");
-        scalaOperators.put("\\$tilde", "~");
-        scalaOperators.put("\\$qmark", "?");
-        scalaOperators.put("\\$bar", "|");
-        SCALA_OPERATORS = Collections.unmodifiableMap(scalaOperators);
-    }
-
-    private static void setupInterfaceMethods(Class<?> javaClass, Initializer.State state) {
-        // TODO: protected methods.  this is going to require a rework of some of the mechanism.
-        Method[] methods = getMethods(javaClass);
-
-        for (int i = methods.length; --i >= 0;) {
-            // Java 8 introduced static methods on interfaces, so we just look for those
-            Method method = methods[i];
-            String name = method.getName();
-
-            if (!Modifier.isStatic(method.getModifiers())) continue;
-
-            prepareStaticMethod(javaClass, state, method, name);
-        }
-
-        // now iterate over all installers and make sure they also have appropriate aliases
-        assignStaticAliases(state);
-    }
-
-    private static void assignStaticAliases(final Initializer.State state) {
-        for (Map.Entry<String, NamedInstaller> entry : state.staticInstallers.entrySet()) {
-            // no aliases for __method methods
-            if (entry.getKey().endsWith("__method")) continue;
-
-            if (entry.getValue().type == NamedInstaller.STATIC_METHOD && entry.getValue().hasLocalMethod()) {
-                assignAliases((MethodInstaller) entry.getValue(), state.staticNames);
-            }
-        }
-    }
-
-    private static void prepareStaticMethod(Class<?> javaClass, Initializer.State state, Method method, String name) {
-        AssignedName assignedName = state.staticNames.get(name);
-
-        // For JRUBY-4505, restore __method methods for reserved names
-        if (STATIC_RESERVED_NAMES.containsKey(method.getName())) {
-            setupStaticMethods(state.staticInstallers, javaClass, method, name + METHOD_MANGLE);
-            return;
-        }
-
-        if (assignedName == null) {
-            state.staticNames.put(name, new AssignedName(name, Priority.METHOD));
-        } else {
-            if (Priority.METHOD.lessImportantThan(assignedName)) return;
-            if (!Priority.METHOD.asImportantAs(assignedName)) {
-                state.staticInstallers.remove(name);
-                state.staticInstallers.remove(name + '=');
-                state.staticNames.put(name, new AssignedName(name, Priority.METHOD));
-            }
-        }
-        setupStaticMethods(state.staticInstallers, javaClass, method, name);
-    }
-
-    private static void setupInstanceMethods(Map<String, NamedInstaller> methodCallbacks, Class<?> javaClass, Method method, String name) {
-        MethodInstaller invoker = (MethodInstaller) methodCallbacks.get(name);
-        if (invoker == null) {
-            invoker = new InstanceMethodInvokerInstaller(name);
-            methodCallbacks.put(name, invoker);
-        }
-        invoker.addMethod(method, javaClass);
-    }
-
-    private static void setupStaticMethods(Map<String, NamedInstaller> methodCallbacks, Class<?> javaClass, Method method, String name) {
-        MethodInstaller invoker = (MethodInstaller) methodCallbacks.get(name);
-        if (invoker == null) {
-            invoker = new StaticMethodInvokerInstaller(name);
-            methodCallbacks.put(name, invoker);
-        }
-        invoker.addMethod(method, javaClass);
-    }
-
-    private static void setupSingletonMethods(Map<String, NamedInstaller> methodCallbacks, Class<?> javaClass, Object singleton, Method method, String name) {
-        MethodInstaller invoker = (MethodInstaller) methodCallbacks.get(name);
-        if (invoker == null) {
-            invoker = new SingletonMethodInvokerInstaller(name, singleton);
-            methodCallbacks.put(name, invoker);
-        }
-        invoker.addMethod(method, javaClass);
     }
 
     void setupProxyModule(final RubyModule proxy) {
@@ -1211,7 +236,7 @@ public class JavaClass extends JavaObject {
         finally { unlockProxy(); }
     }
 
-    private void applyProxyExtenders() {
+    public void applyProxyExtenders() {
         final ArrayList<IRubyObject> extenders = proxyExtenders;
         if ( extenders != null ) {
             final ThreadContext context = getRuntime().getCurrentContext();
@@ -1465,7 +490,7 @@ public class JavaClass extends JavaObject {
         if (!(annoClass instanceof JavaClass)) {
             throw getRuntime().newTypeError(annoClass, getRuntime().getJavaSupport().getJavaClassClass());
         }
-        return Java.getInstance(getRuntime(), javaClass().getAnnotation(((JavaClass)annoClass).javaClass()));
+        return Java.getInstance(getRuntime(), javaClass().getAnnotation(((JavaClass) annoClass).javaClass()));
     }
 
     @JRubyMethod
@@ -1563,7 +588,7 @@ public class JavaClass extends JavaObject {
         return Java.getInstance(getRuntime(), javaClass().getSigners());
     }
 
-    private static String getSimpleName(Class<?> clazz) {
+    public static String getSimpleName(Class<?> clazz) {
  		if (clazz.isArray()) {
  			return getSimpleName(clazz.getComponentType()) + "[]";
  		}
@@ -1811,7 +836,7 @@ public class JavaClass extends JavaObject {
         try {
             Class<?>[] parameterTypes = buildClassArgs(runtime, args);
             @SuppressWarnings("unchecked")
-            Constructor<?> constructor = javaClass().getDeclaredConstructor (parameterTypes);
+            Constructor<?> constructor = javaClass().getDeclaredConstructor(parameterTypes);
             return new JavaConstructor(runtime, constructor);
         }
         catch (NoSuchMethodException nsme) {
@@ -2057,14 +1082,14 @@ public class JavaClass extends JavaObject {
         return JavaClass.get(getRuntime(), javaClass().getComponentType());
     }
 
-    private static Constructor[] getConstructors(Class<?> javaClass) {
+    public static Constructor[] getConstructors(Class<?> javaClass) {
         try {
             return javaClass.getConstructors();
         }
         catch (SecurityException e) { return new Constructor[0]; }
     }
 
-    private static Class<?>[] getDeclaredClasses(Class<?> javaClass) {
+    public static Class<?>[] getDeclaredClasses(Class<?> javaClass) {
         try {
             return javaClass.getDeclaredClasses();
         }
@@ -2076,13 +1101,6 @@ public class JavaClass extends JavaObject {
             // See http://lampsvn.epfl.ch/trac/scala/ticket/2749
             return new Class<?>[0];
         }
-    }
-
-    private static Class<?>[] getClasses(Class<?> javaClass) {
-        try {
-            return javaClass.getClasses();
-        }
-        catch (SecurityException e) { return new Class<?>[0]; }
     }
 
     public static Field[] getDeclaredFields(Class<?> javaClass) {
@@ -2101,110 +1119,6 @@ public class JavaClass extends JavaObject {
         catch (SecurityException e) { return new Field[0]; }
     }
 
-    private static boolean methodsAreEquivalent(Method child, Method parent) {
-        return parent.getDeclaringClass().isAssignableFrom(child.getDeclaringClass())
-                && child.getReturnType() == parent.getReturnType()
-                && child.isVarArgs() == parent.isVarArgs()
-                && Modifier.isPublic(child.getModifiers()) == Modifier.isPublic(parent.getModifiers())
-                && Modifier.isProtected(child.getModifiers()) == Modifier.isProtected(parent.getModifiers())
-                && Modifier.isStatic(child.getModifiers()) == Modifier.isStatic(parent.getModifiers())
-                && Arrays.equals(child.getParameterTypes(), parent.getParameterTypes());
-    }
-
-    private static int addNewMethods(HashMap<String, List<Method>> nameMethods, Method[] methods, boolean includeStatic, boolean removeDuplicate) {
-        int added = 0;
-        Methods: for (Method m : methods) {
-            // Skip private methods, since they may mess with dispatch
-            if (Modifier.isPrivate(m.getModifiers())) continue;
-
-            // ignore bridge methods because we'd rather directly call methods that this method
-            // is bridging (and such methods are by definition always available.)
-            if ((m.getModifiers()&ACC_BRIDGE)!=0)
-                continue;
-
-            if (!includeStatic && Modifier.isStatic(m.getModifiers())) {
-                // Skip static methods if we're not suppose to include them.
-                // Generally for superclasses; we only bind statics from the actual
-                // class.
-                continue;
-            }
-            List<Method> childMethods = nameMethods.get(m.getName());
-            if (childMethods == null) {
-                // first method of this name, add a collection for it
-                childMethods = new ArrayList<Method>(1);
-                childMethods.add(m);
-                nameMethods.put(m.getName(), childMethods);
-                added++;
-            } else {
-                // we have seen other methods; check if we already have
-                // an equivalent one
-                for (ListIterator<Method> iter = childMethods.listIterator(); iter.hasNext();) {
-                    Method m2 = iter.next();
-                    if (methodsAreEquivalent(m2, m)) {
-                        if (removeDuplicate) {
-                            // Replace the existing method, since the super call is more general
-                            // and virtual dispatch will call the subclass impl anyway.
-                            // Used for instance methods, for which we usually want to use the highest-up
-                            // callable implementation.
-                            iter.set(m);
-                        } else {
-                            // just skip the new method, since we don't need it (already found one)
-                            // used for interface methods, which we want to add unconditionally
-                            // but only if we need them
-                        }
-                        continue Methods;
-                    }
-                }
-                // no equivalent; add it
-                childMethods.add(m);
-                added++;
-            }
-        }
-        return added;
-    }
-
-    public static Method[] getMethods(Class<?> javaClass) {
-        HashMap<String, List<Method>> nameMethods = new HashMap<String, List<Method>>(30);
-
-        // to better size the final ArrayList below
-        int total = 0;
-
-        // we scan all superclasses, but avoid adding superclass methods with
-        // same name+signature as subclass methods (see JRUBY-3130)
-        for (Class c = javaClass; c != null; c = c.getSuperclass()) {
-            // only add class's methods if it's public or we can set accessible
-            // (see JRUBY-4799)
-            if (Modifier.isPublic(c.getModifiers()) || CAN_SET_ACCESSIBLE) {
-                // for each class, scan declared methods for new signatures
-                try {
-                    // add methods, including static if this is the actual class,
-                    // and replacing child methods with equivalent parent methods
-                    total += addNewMethods(nameMethods, c.getDeclaredMethods(), c == javaClass, true);
-                } catch (SecurityException e) {
-                }
-            }
-
-            // then do the same for each interface
-            for (Class i : c.getInterfaces()) {
-                try {
-                    // add methods, not including static (should be none on
-                    // interfaces anyway) and not replacing child methods with
-                    // parent methods
-                    total += addNewMethods(nameMethods, i.getMethods(), false, false);
-                } catch (SecurityException e) {
-                }
-            }
-        }
-
-        // now only bind the ones that remain
-        ArrayList<Method> finalList = new ArrayList<Method>(total);
-
-        for (Map.Entry<String, List<Method>> entry : nameMethods.entrySet()) {
-            finalList.addAll(entry.getValue());
-        }
-
-        return finalList.toArray(new Method[finalList.size()]);
-    }
-
-    private static final int ACC_BRIDGE    = 0x00000040;
+    @Deprecated
+    public static final boolean CAN_SET_ACCESSIBLE = JavaUtil.CAN_SET_ACCESSIBLE;
 }
