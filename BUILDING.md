@@ -118,12 +118,12 @@ jruby <test file> -n <specific test method>
 ```
 EXCLUDES=test/mri/excludes bin/jruby -r test/mri_test_env.rb test/mri/runner.rb -q -- <test file>
 ```
-# Run a single spec
+#### Run a single spec
 ```
 bin/jruby spec/mspec/bin/mspec run spec/ruby/core/symbol/length_spec.rb
 ```
 
-# Run a single spec with remote debugging
+#### Run a single spec with remote debugging
 ```
 bin/jruby spec/mspec/bin/mspec run -T-J-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=5005 spec/ruby/core/symbol/length_spec.rb
 ```
