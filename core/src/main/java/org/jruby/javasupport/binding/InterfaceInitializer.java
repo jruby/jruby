@@ -19,12 +19,12 @@ public class InterfaceInitializer extends Initializer {
         super(runtime, javaClass);
     }
 
-    public void initialize(JavaClass javaClassObject, RubyModule proxy) {
+    public RubyModule initialize(RubyModule proxy) {
         final State state = new State(runtime, null);
 
         super.initializeBase(proxy);
 
-        javaClassObject.unfinishedProxyModule = proxy;
+        runtime.getJavaSupport().unfinishedProxyClassCache.get(javaClass).set(proxy);
 
         Field[] fields = JavaClass.getDeclaredFields(javaClass);
 
@@ -66,9 +66,7 @@ public class InterfaceInitializer extends Initializer {
         installClassStaticMethods(proxy, state);
         installClassClasses(javaClass, proxy);
 
-        javaClassObject.setProxyModule(proxy); // this.proxyModule = proxy
-
-        javaClassObject.applyProxyExtenders();
+        return proxy;
     }
 
     private static void setupInterfaceMethods(Class<?> javaClass, Initializer.State state) {

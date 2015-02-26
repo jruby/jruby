@@ -21,7 +21,7 @@ public class ClassInitializer extends Initializer {
         super(runtime, javaClass);
     }
 
-    public void initialize(JavaClass javaClassObject, RubyModule proxy) {
+    public RubyModule initialize(RubyModule proxy) {
         RubyClass proxyClass = (RubyClass)proxy;
         Class<?> superclass = javaClass.getSuperclass();
 
@@ -31,13 +31,10 @@ public class ClassInitializer extends Initializer {
 
         proxyClass.setReifiedClass(javaClass);
 
-        javaClassObject.unfinishedProxyClass = proxyClass;
+        runtime.getJavaSupport().unfinishedProxyClassCache.get(javaClass).set(proxyClass);
 
         if ( javaClass.isArray() || javaClass.isPrimitive() ) {
-            // see note below re: 2-field kludge
-            javaClassObject.setProxyClass(proxyClass);
-            javaClassObject.setProxyModule(proxy);
-            return;
+            return proxy;
         }
 
         setupClassFields(javaClass, state);
@@ -90,16 +87,7 @@ public class ClassInitializer extends Initializer {
         installClassConstructors(proxyClass, state);
         installClassClasses(javaClass, proxyClass);
 
-        // FIXME: bit of a kludge here (non-interface classes assigned to both
-        // class and module fields). simplifies proxy extender code, will go away
-        // when JI is overhauled (and proxy extenders are deprecated).
-        javaClassObject.setProxyClass(proxyClass);
-        javaClassObject.setProxyModule(proxy);
-
-        javaClassObject.applyProxyExtenders();
-
-        // TODO: we can probably release our references to the constantFields
-        // array and static/instance callback hashes at this point.
+        return proxy;
     }
 
     private static void installClassInstanceMethods(final RubyClass proxy, final Initializer.State state) {

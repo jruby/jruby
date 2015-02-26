@@ -42,6 +42,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.locks.ReentrantLock;
 
 import org.jruby.Ruby;
 import org.jruby.RubyClass;
@@ -86,7 +87,8 @@ public class JavaSupport {
     };
 
     private final ClassValue<JavaClass> javaClassCache;
-    private final ClassValue<RubyModule> proxyClassCache;
+    public final ClassValue<RubyModule> proxyClassCache;
+    public final ClassValue<ThreadLocal<RubyModule>> unfinishedProxyClassCache;
     public final ClassValue<Map<String, AssignedName>> staticAssignedNames;
     public final ClassValue<Map<String, AssignedName>> instanceAssignedNames;
     private static final Constructor<? extends ClassValue> CLASS_VALUE_CONSTRUCTOR;
@@ -155,7 +157,15 @@ public class JavaSupport {
             this.proxyClassCache = CLASS_VALUE_CONSTRUCTOR.newInstance(new ClassValueCalculator<RubyModule>() {
                 @Override
                 public RubyModule computeValue(Class<?> cls) {
+                    RubyModule unfinished = unfinishedProxyClassCache.get(cls).get();
+                    if (unfinished != null) return unfinished;
                     return Java.createProxyClassForClass(runtime, cls);
+                }
+            });
+            this.unfinishedProxyClassCache = CLASS_VALUE_CONSTRUCTOR.newInstance(new ClassValueCalculator<ThreadLocal<RubyModule>>() {
+                @Override
+                public ThreadLocal<RubyModule> computeValue(Class<?> cls) {
+                    return new ThreadLocal<RubyModule>();
                 }
             });
             this.staticAssignedNames = CLASS_VALUE_CONSTRUCTOR.newInstance(new ClassValueCalculator<Map<String, AssignedName>>() {

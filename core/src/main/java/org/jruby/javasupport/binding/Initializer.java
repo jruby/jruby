@@ -71,6 +71,20 @@ public abstract class Initializer {
         this.javaClass = javaClass;
     }
 
+    public static RubyModule setupProxyClass(Ruby runtime, final Class<?> javaClass, final RubyClass proxy) {
+        setJavaClassFor(javaClass, proxy);
+
+        return new ClassInitializer(runtime, javaClass).initialize(proxy);
+    }
+
+    public static RubyModule setupProxyModule(Ruby runtime, final Class<?> javaClass, final RubyModule proxy) {
+        setJavaClassFor(javaClass, proxy);
+
+        assert javaClass.isInterface();
+
+        return new InterfaceInitializer(runtime, javaClass).initialize(proxy);
+    }
+
     protected static void addField(
             final Map<String, NamedInstaller> callbacks,
             final Map<String, AssignedName> names,
@@ -360,7 +374,12 @@ public abstract class Initializer {
         }
     }
 
-    public abstract void initialize(JavaClass javaClassObject, RubyModule proxy);
+    private static void setJavaClassFor(final Class<?> javaClass, final RubyModule proxy) {
+        proxy.setInstanceVariable("@java_class", new JavaClass(proxy.getRuntime(), javaClass));
+        proxy.dataWrapStruct(javaClass);
+    }
+
+    public abstract RubyModule initialize(RubyModule proxy);
 
     public void initializeBase(RubyModule proxy) {
         proxy.addMethod("__jsend!", new org.jruby.internal.runtime.methods.JavaMethod.JavaMethodNBlock(proxy, PUBLIC) {

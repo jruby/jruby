@@ -71,6 +71,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Vector;
 import java.util.concurrent.locks.ReentrantLock;
 
 @JRubyClass(name="Java::JavaClass", parent="Java::JavaObject")
@@ -79,83 +80,29 @@ public class JavaClass extends JavaObject {
     // caching constructors, as they're accessed for each new instance
     private volatile RubyArray constructors;
 
-    private volatile ArrayList<IRubyObject> proxyExtenders;
-
-    // proxy module for interfaces
-    private volatile RubyModule proxyModule;
-
-    // proxy class for concrete classes.  also used for
-    // "concrete" interfaces, which is why we have two fields
-    public volatile RubyClass proxyClass;
-
-    // readable only by thread building proxy, so don't need to be
-    // volatile. used to handle recursive calls to getProxyClass/Module
-    // while proxy is being constructed (usually when a constant
-    // defined by a class is of the same type as that class).
-    public RubyModule unfinishedProxyModule;
-    public RubyClass unfinishedProxyClass;
-
-    private final ReentrantLock proxyLock = new ReentrantLock();
+    private volatile List<IRubyObject> proxyExtenders;
 
     public RubyModule getProxyModule() {
         // allow proxy to be read without synchronization. if proxy
         // is under construction, only the building thread can see it.
-        RubyModule proxy = proxyModule;
+        RubyModule proxy = getRuntime().getJavaSupport().proxyClassCache.get((Class)getValue());
         if ( proxy != null ) return proxy; // proxy is complete, return it
 
-        ReentrantLock lock = this.proxyLock;
-        if ( lock != null && lock.isHeldByCurrentThread() ) {
-            // proxy is under construction, building thread can
-            // safely read non-volatile value
-            return unfinishedProxyModule;
-        }
-        return null;
+        // proxy may be under construction, return thread-local instance
+        return getRuntime().getJavaSupport().unfinishedProxyClassCache.get((Class)getValue()).get();
     }
 
     public RubyClass getProxyClass() {
         // allow proxy to be read without synchronization. if proxy
         // is under construction, only the building thread can see it.
-        RubyClass proxy = proxyClass;
-        if ( proxy != null ) return proxy; // proxy is complete, return it
+        RubyModule proxy = getRuntime().getJavaSupport().proxyClassCache.get((Class)getValue());
+        if ( proxy != null ) return (RubyClass)proxy; // proxy is complete, return it
 
-        ReentrantLock lock = this.proxyLock;
-        if ( lock != null && lock.isHeldByCurrentThread() ) {
-            // proxy is under construction, building thread can
-            // safely read non-volatile value
-            return unfinishedProxyClass;
-        }
-        return null;
+        // proxy may be under construction, return thread-local instance
+        return (RubyClass)getRuntime().getJavaSupport().unfinishedProxyClassCache.get((Class)getValue()).get();
     }
 
-    final void lockProxy() {
-        proxyLock.lock();
-    }
-
-    final void unlockProxy() {
-        proxyLock.unlock();
-    }
-
-    public void setProxyClass(final RubyClass proxyClass) {
-        //assert this.proxyLock != null;
-        this.proxyClass = proxyClass;
-        //this.unfinishedProxyClass = null;
-    }
-
-    public void setProxyModule(final RubyModule proxyModule) {
-        //assert this.proxyLock != null;
-        this.proxyModule = proxyModule;
-        //this.unfinishedProxyModule = null;
-    }
-
-    //private Map<String, AssignedName> getStaticAssignedNames() {
-    //    return Collections.unmodifiableMap(staticAssignedNames);
-    //}
-
-    //private Map<String, AssignedName> getInstanceAssignedNames() {
-    //    return Collections.unmodifiableMap(instanceAssignedNames);
-    //}
-
-    JavaClass(final Ruby runtime, final Class<?> javaClass) {
+    public JavaClass(final Ruby runtime, final Class<?> javaClass) {
         super(runtime, runtime.getJavaSupport().getJavaClassClass(), javaClass);
     }
 
@@ -170,66 +117,18 @@ public class JavaClass extends JavaObject {
         return javaClass().hashCode();
     }
 
-    void setupProxyClass(final RubyClass proxy) {
-        assert proxyLock.isHeldByCurrentThread();
-
-        setJavaClassFor(proxy);
-
-        final Class<?> javaClass = javaClass();
-
-        new ClassInitializer(getRuntime(), javaClass).initialize(this, proxy);
-    }
-
-    void setupProxyModule(final RubyModule proxy) {
-        assert proxyLock.isHeldByCurrentThread();
-        assert this.proxyModule == null;
-
-        setJavaClassFor(proxy);
-
-        final Class<?> javaClass = javaClass();
-        assert javaClass.isInterface();
-
-        new InterfaceInitializer(getRuntime(), javaClass).initialize(this, proxy);
-    }
-
-    private void setJavaClassFor(final RubyModule proxy) {
-        proxy.setInstanceVariable("@java_class", this);
-    }
-
     public void addProxyExtender(final IRubyObject extender) {
         if ( ! extender.respondsTo("extend_proxy") ) {
             throw getRuntime().newTypeError("proxy extender must have an extend_proxy method");
         }
-        lockProxy();
-        try {
-            if ( proxyModule == null ) {
-                if (proxyExtenders == null) {
-                    proxyExtenders = new ArrayList<IRubyObject>();
-                }
-                proxyExtenders.add(extender);
-            }
-            else {
-                final Ruby runtime = getRuntime();
-                runtime.getWarnings().warn(ID.PROXY_EXTENDED_LATE, " proxy extender added after proxy class created for " + this);
-                extendProxy(runtime.getCurrentContext(), extender);
-            }
-        }
-        finally { unlockProxy(); }
+
+        ThreadContext context = getRuntime().getCurrentContext();
+        RubyModule proxy = getRuntime().getJavaSupport().getProxyClassFromCache(javaClass());
+        extendProxy(context, extender, proxy);
     }
 
-    public void applyProxyExtenders() {
-        final ArrayList<IRubyObject> extenders = proxyExtenders;
-        if ( extenders != null ) {
-            final ThreadContext context = getRuntime().getCurrentContext();
-            for (IRubyObject extender : extenders) {
-                extendProxy(context, extender);
-            }
-            proxyExtenders = null;
-        }
-    }
-
-    private void extendProxy(final ThreadContext context, final IRubyObject extender) {
-        extender.callMethod(context, "extend_proxy", proxyModule);
+    private void extendProxy(final ThreadContext context, final IRubyObject extender, final RubyModule proxy) {
+        extender.callMethod(context, "extend_proxy", proxy);
     }
 
     @JRubyMethod(required = 1)
