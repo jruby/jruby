@@ -139,8 +139,6 @@ public class JavaSupport {
 
     private final Map<String, JavaClass> nameClassMap = new HashMap<String, JavaClass>();
 
-    private final Map<Object, Object[]> javaObjectVariables = new WeakIdentityHashMap();
-
     // A cache of all JavaProxyClass objects created for this runtime
     private Map<Set<?>, JavaProxyClass> javaProxyClassCache = Collections.synchronizedMap(new HashMap<Set<?>, JavaProxyClass>());
 
@@ -269,32 +267,6 @@ public class JavaSupport {
         return nameClassMap;
     }
 
-    public void setJavaObjectVariable(Object o, int i, Object v) {
-        synchronized (javaObjectVariables) {
-            Object[] vars = javaObjectVariables.get(o);
-            if (vars == null) {
-                vars = new Object[i + 1];
-                javaObjectVariables.put(o, vars);
-            } else if (vars.length <= i) {
-                Object[] newVars = new Object[i + 1];
-                System.arraycopy(vars, 0, newVars, 0, vars.length);
-                javaObjectVariables.put(o, newVars);
-                vars = newVars;
-            }
-            vars[i] = v;
-        }
-    }
-
-    public Object getJavaObjectVariable(Object o, int i) {
-        if (i == -1) return null;
-
-        synchronized (javaObjectVariables) {
-            Object[] vars = javaObjectVariables.get(o);
-            if (vars == null || vars.length <= i) return null;
-            return vars[i];
-        }
-    }
-
     public RubyModule getJavaModule() {
         RubyModule module;
         if ((module = javaModule) != null) return module;
@@ -413,5 +385,47 @@ public class JavaSupport {
 
     public ClassValue<Map<String, AssignedName>> getInstanceAssignedNames() {
         return instanceAssignedNames;
+    }
+
+    @Deprecated
+    private volatile Map<Object, Object[]> javaObjectVariables = new WeakIdentityHashMap();
+
+    @Deprecated
+    public Object getJavaObjectVariable(Object o, int i) {
+        if (i == -1) return null;
+
+        Map<Object, Object[]> variables = javaObjectVariables;
+        if (variables == null) return null;
+
+        synchronized (this) {
+            if (variables == null) return null;
+
+            Object[] vars = variables.get(o);
+            if (vars == null || vars.length <= i) return null;
+            return vars[i];
+        }
+    }
+
+    @Deprecated
+    public void setJavaObjectVariable(Object o, int i, Object v) {
+        if (i == -1) return;
+
+        synchronized (this) {
+            Map<Object, Object[]> variables = javaObjectVariables;
+
+            if (variables == null) javaObjectVariables = variables = new WeakIdentityHashMap();
+
+            Object[] vars = variables.get(o);
+            if (vars == null) {
+                vars = new Object[i + 1];
+                variables.put(o, vars);
+            } else if (vars.length <= i) {
+                Object[] newVars = new Object[i + 1];
+                System.arraycopy(vars, 0, newVars, 0, vars.length);
+                variables.put(o, newVars);
+                vars = newVars;
+            }
+            vars[i] = v;
+        }
     }
 }
