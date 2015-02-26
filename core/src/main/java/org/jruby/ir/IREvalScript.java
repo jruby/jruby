@@ -3,7 +3,6 @@ package org.jruby.ir;
 import java.util.ArrayList;
 import java.util.List;
 import org.jruby.EvalType;
-import org.jruby.ir.instructions.Instr;
 import org.jruby.ir.interpreter.BeginEndInterpreterContext;
 import org.jruby.ir.interpreter.InterpreterContext;
 import org.jruby.ir.operands.Label;
@@ -35,8 +34,12 @@ public class IREvalScript extends IRClosure {
     }
 
     @Override
-    public InterpreterContext allocateInterpreterContext(Instr[] instructionList, boolean rebuild) {
-        return new BeginEndInterpreterContext(this, instructionList, rebuild);
+    public InterpreterContext allocateInterpreterContext() {
+        InterpreterContext interpreterContext =  new BeginEndInterpreterContext(this, instrList);
+
+        instrList = null; // Once IC has this we are done with this structure forever more...
+
+        return interpreterContext;
     }
 
     @Override

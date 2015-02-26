@@ -92,7 +92,7 @@ public abstract class IRScope implements ParseResult {
     private StaticScope staticScope;
 
     /** List of IR instructions for this method */
-    private List<Instr> instrList;
+    protected List<Instr> instrList;
 
     /** Control flow graph representation of this method's instructions */
     private CFG cfg;
@@ -447,26 +447,13 @@ public abstract class IRScope implements ParseResult {
         }
 
         CFG newCFG = new CFG(this);
-        newCFG.build(prepareBuildInstructions(getInstrs()));
+        newCFG.build(interpreterContext.getInstructions());
         // Clear out instruction list after CFG has been built.
         instrList = null;
 
         setCFG(newCFG);
 
         return newCFG;
-    }
-
-    private Instr[] prepareBuildInstructions(List<Instr> instructions) {
-        int length = instructions.size();
-        Instr[] linearizedInstrArray = instructions.toArray(new Instr[length]);
-        for (int ipc = 0; ipc < length; ipc++) {
-            Instr i = linearizedInstrArray[ipc];
-            i.setIPC(ipc);
-
-            if (i instanceof LabelInstr) ((LabelInstr) i).getLabel().setTargetPC(ipc + 1);
-        }
-
-        return linearizedInstrArray;
     }
 
     protected void setCFG(CFG cfg) {
@@ -631,8 +618,12 @@ public abstract class IRScope implements ParseResult {
     }
 
     /** Make version specific to scope which needs it (e.g. Closure vs non-closure). */
-    public InterpreterContext allocateInterpreterContext(Instr[] instructionList, boolean rebuild) {
-        return new InterpreterContext(this, instructionList, rebuild);
+    public InterpreterContext allocateInterpreterContext() {
+        InterpreterContext interpreterContext = new InterpreterContext(this, instrList);
+
+        instrList = null;
+
+        return interpreterContext;
     }
 
     protected void cloneInstrs() {
@@ -663,7 +654,7 @@ public abstract class IRScope implements ParseResult {
     /**
      * Get an existing interpreter context or create a new one if it has not been made before
      */
-    public InterpreterContext acquireInterpreterContext() {
+    public synchronized InterpreterContext acquireInterpreterContext() {
         // Try unsync access first before calling more expensive method for getting IC
         // Also get reference in case second thread is trying to do the same thing at near same time
         InterpreterContext ic = interpreterContext;
@@ -671,7 +662,7 @@ public abstract class IRScope implements ParseResult {
         if (ic == null) {                           // Never been interp'd.  Make simplest interpreter.
             ic = prepareForBuildInterpretation();
         } else if (ic.needsRebuilding()) {          // Already have IC but IC says it is time to take it up a notch!
-            prepareForFullBuildInterpretation();
+            //prepareForFullBuildInterpretation();
         }
 
         return ic;
@@ -681,7 +672,7 @@ public abstract class IRScope implements ParseResult {
      * Called directly after IRBuild but before CFG is built.
      */
     public synchronized InterpreterContext prepareForBuildInterpretation() {
-        interpreterContext = allocateInterpreterContext(prepareInstructions(), false);
+        interpreterContext = allocateInterpreterContext();
 
         return interpreterContext;
     }
@@ -1132,10 +1123,8 @@ public abstract class IRScope implements ParseResult {
         // We have two paths.  eval and non-eval.
         if (instrList == null) {  // CFG already made.  eval has zsuper and we walk back to some executing method/script
             // FIXME: Need to verify this can never re-order recvs in a way to swap order to zsuper
-            for (BasicBlock bb: getCFG().getBasicBlocks()) {
-                for (Instr instr: bb.getInstrs()) {
-                    extractCallOperands(callArgs, keywordArgs, instr);
-                }
+            for (Instr instr: interpreterContext.getInstructions()) {
+                extractCallOperands(callArgs, keywordArgs, instr);
             }
         } else {                  // common zsuper case.  non-eval and at build time entirely.
             for (Instr instr : getInstrs()) {

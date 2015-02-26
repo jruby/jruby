@@ -1,11 +1,13 @@
 package org.jruby.ir.interpreter;
 
+import java.util.List;
 import org.jruby.ir.IRFlags;
 import org.jruby.ir.IRMetaClassBody;
 import org.jruby.ir.IRMethod;
 import org.jruby.ir.IRModuleBody;
 import org.jruby.ir.IRScope;
 import org.jruby.ir.instructions.Instr;
+import org.jruby.ir.instructions.LabelInstr;
 import org.jruby.ir.representations.CFG;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.DynamicScope;
@@ -43,10 +45,9 @@ public class InterpreterContext {
     private int runCount = 0;
     private boolean rebuilt = false;
 
-    public InterpreterContext(IRScope scope, Instr[] instructions, boolean rebuild) {
+    public InterpreterContext(IRScope scope, List<Instr> instructions) {
         //FIXME: Remove once we conditionally plug in CFG on debug-only
         this.cfg = scope.getCFG();
-        this.rebuilt = rebuild;
         if (this.rebuilt) {
             this.runCount = 30;
         }
@@ -63,7 +64,7 @@ public class InterpreterContext {
         this.temporaryBooleanVariablecount = scope.getBooleanVariablesCount();
         this.temporaryFixnumVariablecount = scope.getFixnumVariablesCount();
         this.temporaryFloatVariablecount = scope.getFloatVariablesCount();
-        this.instructions = instructions;
+        this.instructions = prepareBuildInstructions(instructions);
         this.hasExplicitCallProtocol = scope.getFlags().contains(IRFlags.HAS_EXPLICIT_CALL_PROTOCOL);
         this.reuseParentDynScope = scope.getFlags().contains(IRFlags.REUSE_PARENT_DYNSCOPE);
         this.pushNewDynScope = !scope.getFlags().contains(IRFlags.DYNSCOPE_ELIMINATED) && !reuseParentDynScope;
@@ -81,6 +82,19 @@ public class InterpreterContext {
         }
     }
 
+    private Instr[] prepareBuildInstructions(List<Instr> instructions) {
+        int length = instructions.size();
+        Instr[] linearizedInstrArray = instructions.toArray(new Instr[length]);
+        for (int ipc = 0; ipc < length; ipc++) {
+            Instr i = linearizedInstrArray[ipc];
+            i.setIPC(ipc);
+
+            if (i instanceof LabelInstr) ((LabelInstr) i).getLabel().setTargetPC(ipc + 1);
+        }
+
+        return linearizedInstrArray;
+    }
+
     public CFG getCFG() {
         return cfg;
     }
@@ -90,7 +104,7 @@ public class InterpreterContext {
     }
 
     public void incrementRunCount() {
-        runCount++;
+        //runCount++;
     }
 
     public boolean needsRebuilding() {

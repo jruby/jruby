@@ -1,6 +1,5 @@
 package org.jruby.ir;
 
-import org.jruby.ir.instructions.Instr;
 import org.jruby.ir.interpreter.BeginEndInterpreterContext;
 import org.jruby.ir.interpreter.InterpreterContext;
 import org.jruby.parser.StaticScope;
@@ -31,8 +30,8 @@ public class IRScriptBody extends IRScope {
     }
 
     @Override
-    public InterpreterContext allocateInterpreterContext(Instr[] instructionList, boolean rebuild) {
-        return new BeginEndInterpreterContext(this, instructionList, rebuild);
+    public InterpreterContext allocateInterpreterContext() {
+        return new BeginEndInterpreterContext(this, instrList);
     }
 
     @Override
@@ -53,7 +52,7 @@ public class IRScriptBody extends IRScope {
     /* Record a begin block -- not all scope implementations can handle them */
     @Override
     public void recordBeginBlock(IRClosure beginBlockClosure) {
-        if (beginBlocks == null) beginBlocks = new ArrayList<IRClosure>();
+        if (beginBlocks == null) beginBlocks = new ArrayList<>();
         beginBlockClosure.setBeginEndBlock();
         beginBlocks.add(beginBlockClosure);
     }
