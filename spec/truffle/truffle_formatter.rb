@@ -27,11 +27,11 @@ class TruffleFormatter < DottedFormatter
     parts = MSpec.retrieve(:file).sub(Dir.pwd + '/', '').split('/')
 
     @spec_type = parts[0...3].join('.')
-    @class_name = parts[3...-1].join('_')
+    @class_name = parts[3...-1].join('_').gsub('.', '_')
 
     @class_name = 'Ruby' if @class_name.empty?
 
-    @filename_base = parts[-1].split('.rb').first.split('_spec').first
+    @filename_base = parts[-1].split('.rb').first.split('_spec').first.to_s.gsub('.', '_')
 
     @tests.clear
     @file_time = current_time
