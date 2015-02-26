@@ -410,7 +410,7 @@ public class Java implements Library {
             if ((interfaceModule = javaClass.getProxyModule()) == null) {
                 interfaceModule = (RubyModule) runtime.getJavaSupport().getJavaInterfaceTemplate().dup();
                 interfaceModule.setInstanceVariable("@java_class", javaClass);
-                javaClass.setupInterfaceModule(interfaceModule);
+                javaClass.setupProxy(interfaceModule);
                 // include any interfaces we extend
                 Class<?>[] extended = javaClass.javaClass().getInterfaces();
                 for (int i = extended.length; --i >= 0;) {
