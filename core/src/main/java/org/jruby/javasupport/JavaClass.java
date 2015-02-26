@@ -69,13 +69,9 @@ import org.jruby.exceptions.RaiseException;
 import org.jruby.java.proxies.ArrayJavaProxy;
 import org.jruby.java.proxies.ConcreteJavaProxy;
 import org.jruby.java.util.ArrayUtils;
-import org.jruby.javasupport.binding.AssignedName;
 import org.jruby.javasupport.binding.ClassInitializer;
-import org.jruby.javasupport.binding.ConstantField;
 import org.jruby.javasupport.binding.Initializer;
 import org.jruby.javasupport.binding.InterfaceInitializer;
-import org.jruby.javasupport.binding.NamedInstaller;
-import org.jruby.javasupport.binding.Priority;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 
