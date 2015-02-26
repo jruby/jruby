@@ -740,7 +740,7 @@ public abstract class BignumNodes {
 
         @Specialization
         public int size(RubyBignum value) {
-            return value.bigIntegerValue().bitLength();
+            return (value.bigIntegerValue().bitLength() + 7) / 8;
         }
 
     }
