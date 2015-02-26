@@ -855,12 +855,22 @@ public abstract class IRScope implements ParseResult {
         StringBuilder b = new StringBuilder();
 
         int i = 0;
-        for (Instr instr : instrList) {
-            if (i > 0) b.append("\n");
+        if (instrList == null) {
+            for (Instr instr : interpreterContext.getInstructions()) {
+                if (i > 0) b.append("\n");
 
-            b.append("  ").append(i).append('\t').append(instr);
+                b.append("  ").append(i).append('\t').append(instr);
 
-            i++;
+                i++;
+            }
+        } else {
+            for (Instr instr : instrList) {
+                if (i > 0) b.append("\n");
+
+                b.append("  ").append(i).append('\t').append(instr);
+
+                i++;
+            }
         }
 
         if (!nestedClosures.isEmpty()) {
