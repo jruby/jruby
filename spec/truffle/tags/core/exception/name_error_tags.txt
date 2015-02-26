@@ -1,2 +1,1 @@
-fails:NameError is a superclass of NoMethodError
 fails:NameError.new NameError.new should take optional name argument
