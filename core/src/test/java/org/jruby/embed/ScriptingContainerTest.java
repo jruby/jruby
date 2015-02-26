@@ -90,7 +90,7 @@ public class ScriptingContainerTest {
     static OutputStream outStream = null;
     PrintStream pstream = null;
     FileWriter writer = null;
-    String basedir = new File(System.getProperty("user.dir")).getParent();
+    String basedir = System.getProperty("jruby.home");
 
     public ScriptingContainerTest() {
     }
@@ -1048,7 +1048,6 @@ public class ScriptingContainerTest {
         Class<Object> returnType = null;
         EmbedEvalUnit unit = null;
         ScriptingContainer instance = new ScriptingContainer(LocalContextScope.THREADSAFE, LocalVariableBehavior.PERSISTENT);
-        instance.setHomeDirectory(basedir);
         instance.setError(pstream);
         instance.setOutput(pstream);
         instance.setWriter(writer);
@@ -1074,7 +1073,7 @@ public class ScriptingContainerTest {
         Object receiver = unit.run();
         instance.callMethod(instance.getProvider().getRuntime().getTopSelf(), "dump", null, unit);
         Object expResult =
-                "songs: Hey Soul Sister, Who Says, Apologize\npodcasts: Java Posse, Stack Overflow\n";
+                "songs: Hey Soul Sister Who Says Apologizepodcasts: Java Posse Stack Overflow\n";
         assertEquals(expResult, sw.toString());
 
         instance.getVarMap().clear();
