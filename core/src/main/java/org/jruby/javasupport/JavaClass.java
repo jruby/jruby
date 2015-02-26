@@ -52,6 +52,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.ReentrantLock;
 
 import org.jruby.Ruby;
@@ -119,11 +120,11 @@ public class JavaClass extends JavaObject {
     private volatile ArrayList<IRubyObject> proxyExtenders;
 
     // proxy module for interfaces
-    public volatile RubyModule proxyModule;
+    public final AtomicReference<RubyModule> proxyModule = new AtomicReference<RubyModule>();
 
     // proxy class for concrete classes.  also used for
     // "concrete" interfaces, which is why we have two fields
-    public volatile RubyClass proxyClass;
+    public final AtomicReference<RubyClass> proxyClass = new AtomicReference<RubyClass>();
 
     // readable only by thread building proxy, so don't need to be
     // volatile. used to handle recursive calls to getProxyClass/Module
@@ -140,7 +141,7 @@ public class JavaClass extends JavaObject {
         // allow proxy to be read without synchronization. if proxy
         // is under construction, only the building thread can see it.
         RubyModule proxy;
-        if ((proxy = proxyModule) != null) {
+        if ((proxy = proxyModule.get()) != null) {
             // proxy is complete, return it
             return proxy;
         } else if (proxyLock.isHeldByCurrentThread()) {
@@ -155,7 +156,7 @@ public class JavaClass extends JavaObject {
         // allow proxy to be read without synchronization. if proxy
         // is under construction, only the building thread can see it.
         RubyClass proxy;
-        if ((proxy = proxyClass) != null) {
+        if ((proxy = proxyClass.get()) != null) {
             // proxy is complete, return it
             return proxy;
         } else if (proxyLock.isHeldByCurrentThread()) {
@@ -242,7 +243,7 @@ public class JavaClass extends JavaObject {
     }
 
     private void extendProxy(IRubyObject extender) {
-        extender.callMethod(getRuntime().getCurrentContext(), "extend_proxy", proxyModule);
+        extender.callMethod(getRuntime().getCurrentContext(), "extend_proxy", proxyModule.get());
     }
     
     @JRubyMethod(required = 1)

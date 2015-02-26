@@ -67,7 +67,7 @@ public class InterfaceInitializer extends Initializer {
         module.setJavaProxy(true);
         module.getSingletonClass().setJavaProxy(true);
 
-        javaClassObject.proxyModule = module;
+        javaClassObject.proxyModule.compareAndSet(null, module);
         javaClassObject.applyProxyExtenders();
     }
 

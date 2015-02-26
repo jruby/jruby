@@ -64,12 +64,11 @@ public class ClassInitializer extends Initializer {
 
         proxyClass.setReifiedClass(javaClass);
 
-        assert javaClassObject.proxyClass == null;
         javaClassObject.unfinishedProxyClass = proxyClass;
         if (javaClass.isArray() || javaClass.isPrimitive()) {
             // see note below re: 2-field kludge
-            javaClassObject.proxyClass = proxyClass;
-            javaClassObject.proxyModule = proxy;
+            javaClassObject.proxyClass.compareAndSet(null, proxyClass);
+            javaClassObject.proxyModule.compareAndSet(null, proxy);
             return;
         }
 
@@ -97,8 +96,8 @@ public class ClassInitializer extends Initializer {
         // FIXME: bit of a kludge here (non-interface classes assigned to both
         // class and module fields). simplifies proxy extender code, will go away
         // when JI is overhauled (and proxy extenders are deprecated).
-        javaClassObject.proxyClass = proxyClass;
-        javaClassObject.proxyModule = proxy;
+        javaClassObject.proxyClass.compareAndSet(null, proxyClass);
+        javaClassObject.proxyModule.compareAndSet(null, proxy);
 
         javaClassObject.applyProxyExtenders();
 
