@@ -494,6 +494,7 @@ public class IRBuilder {
 
         // Create a new nested builder to ensure this gets its own IR builder state like the ensure block stack
         newIRBuilder(manager, closure).buildLambdaInner(node);
+        closure.acquireInterpreterContext();
 
         Variable lambda = createTemporaryVariable();
         WrappedIRClosure lambdaBody = new WrappedIRClosure(closure.getSelf(), closure);
@@ -2379,6 +2380,7 @@ public class IRBuilder {
 
         // Create a new nested builder to ensure this gets its own IR builder state like the ensure block stack
         newIRBuilder(manager, closure).buildForIterInner(forNode);
+        closure.acquireInterpreterContext();
 
         return new WrappedIRClosure(buildSelf(), closure);
     }
@@ -2529,6 +2531,7 @@ public class IRBuilder {
 
         // Create a new nested builder to ensure this gets its own IR builder state like the ensure block stack
         newIRBuilder(manager, closure).buildIterInner(iterNode);
+        closure.acquireInterpreterContext();
 
         return new WrappedIRClosure(buildSelf(), closure);
     }
@@ -2868,6 +2871,7 @@ public class IRBuilder {
         IRClosure endClosure = new IRClosure(manager, scope, postExeNode.getPosition().getLine(), nearestLVarScope.getStaticScope(), Signature.from(postExeNode), "_END_", true);
         // Create a new nested builder to ensure this gets its own IR builder state like the ensure block stack
         newIRBuilder(manager, endClosure).buildPrePostExeInner(postExeNode.getBodyNode());
+        endClosure.acquireInterpreterContext();
 
         // Add an instruction in 's' to record the end block in the 'topLevel' scope.
         // SSS FIXME: IR support for end-blocks that access vars in non-toplevel-scopes
@@ -2883,6 +2887,7 @@ public class IRBuilder {
                 Signature.from(preExeNode), "_BEGIN_");
         // Create a new nested builder to ensure this gets its own IR builder state like the ensure block stack
         newIRBuilder(manager, beginClosure).buildPrePostExeInner(preExeNode.getBodyNode());
+        beginClosure.acquireInterpreterContext();
 
         topLevel.recordBeginBlock(beginClosure);  // Record the begin block at IR build time
         return manager.getNil();

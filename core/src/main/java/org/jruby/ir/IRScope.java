@@ -785,8 +785,14 @@ public abstract class IRScope implements ParseResult {
         // * once after IR generation and local optimizations propagates constants locally
         // * also potentially at later times after other opt passes
         if (cfg == null) {
-            for (Instr i: getInstrs()) {
-                i.computeScopeFlags(this);
+            if (instrList == null) {
+                for (Instr i : interpreterContext.getInstructions()) {
+                    i.computeScopeFlags(this);
+                }
+            } else {
+                for (Instr i : getInstrs()) {
+                    i.computeScopeFlags(this);
+                }
             }
         } else {
             for (BasicBlock b: cfg.getBasicBlocks()) {

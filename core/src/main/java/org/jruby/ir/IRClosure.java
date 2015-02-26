@@ -268,8 +268,14 @@ public class IRClosure extends IRScope {
         if (getCFG() != null) {
             clone.setCFG(getCFG().clone(clonedII, clone));
         } else {
-            for (Instr i: getInstrs()) {
-                clone.addInstr(i.clone(clonedII));
+            if (instrList == null) {
+                for (Instr i: interpreterContext.getInstructions()) {
+                    clone.addInstr(i.clone(clonedII));
+                }
+            } else {
+                for (Instr i : getInstrs()) {
+                    clone.addInstr(i.clone(clonedII));
+                }
             }
         }
 
