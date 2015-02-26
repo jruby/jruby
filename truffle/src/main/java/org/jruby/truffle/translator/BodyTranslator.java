@@ -2541,7 +2541,7 @@ public class BodyTranslator extends Translator {
 
     @Override
     public RubyNode visitSymbolNode(org.jruby.ast.SymbolNode node) {
-        return new ObjectLiteralNode(context, translate(node.getPosition()), context.newSymbol(node.getName()));
+        return new ObjectLiteralNode(context, translate(node.getPosition()), context.newSymbol(node.getName(), node.getEncoding()));
     }
 
     @Override
