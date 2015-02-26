@@ -36,35 +36,15 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.javasupport;
 
-import java.io.ByteArrayOutputStream;
-import java.io.InputStream;
-import java.io.IOException;
-import java.lang.reflect.Array;
-import java.lang.reflect.Constructor;
-import java.lang.reflect.Field;
-import java.lang.reflect.Method;
-import java.lang.reflect.Modifier;
-import java.lang.reflect.ReflectPermission;
-import java.security.AccessController;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.ListIterator;
-import java.util.Map;
-import java.util.concurrent.locks.ReentrantLock;
-
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubyBoolean;
 import org.jruby.RubyClass;
-import org.jruby.RubyInstanceConfig;
 import org.jruby.RubyInteger;
 import org.jruby.RubyModule;
 import org.jruby.RubyString;
-import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyClass;
+import org.jruby.anno.JRubyMethod;
 import org.jruby.common.IRubyWarnings.ID;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.java.proxies.ArrayJavaProxy;
@@ -72,22 +52,26 @@ import org.jruby.java.proxies.ConcreteJavaProxy;
 import org.jruby.java.util.ArrayUtils;
 import org.jruby.javasupport.binding.AssignedName;
 import org.jruby.javasupport.binding.ClassInitializer;
-import org.jruby.javasupport.binding.Initializer;
-import org.jruby.javasupport.binding.InstanceMethodInvokerInstaller;
 import org.jruby.javasupport.binding.InterfaceInitializer;
-import org.jruby.javasupport.binding.MethodInstaller;
-import org.jruby.javasupport.binding.NamedInstaller;
-import org.jruby.javasupport.binding.Priority;
-import org.jruby.javasupport.binding.SingletonMethodInvokerInstaller;
-import org.jruby.javasupport.binding.StaticMethodInvokerInstaller;
 import org.jruby.runtime.Helpers;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
-import org.jruby.util.cli.Options;
-import org.jruby.util.log.Logger;
-import org.jruby.util.log.LoggerFactory;
+
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.lang.reflect.Array;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.Field;
+import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.locks.ReentrantLock;
 
 @JRubyClass(name="Java::JavaClass", parent="Java::JavaObject")
 public class JavaClass extends JavaObject {
