@@ -24,6 +24,8 @@ public class InterfaceInitializer extends Initializer {
 
         super.initializeBase(proxy);
 
+        javaClassObject.unfinishedProxyModule = proxy;
+
         Field[] fields = JavaClass.getDeclaredFields(javaClass);
 
         for (int i = fields.length; --i >= 0; ) {
@@ -55,8 +57,6 @@ public class InterfaceInitializer extends Initializer {
 
         javaClassObject.staticAssignedNames = Collections.unmodifiableMap(state.staticNames);
         javaClassObject.instanceAssignedNames = Collections.emptyMap();
-
-        javaClassObject.unfinishedProxyModule = proxy;
 
         // flag the class as a Java class proxy.
         proxy.setJavaProxy(true);

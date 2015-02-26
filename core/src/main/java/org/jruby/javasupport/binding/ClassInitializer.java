@@ -29,6 +29,10 @@ public class ClassInitializer extends Initializer {
 
         super.initializeBase(proxy);
 
+        proxyClass.setReifiedClass(javaClass);
+
+        javaClassObject.unfinishedProxyClass = proxyClass;
+
         if ( javaClass.isArray() || javaClass.isPrimitive() ) {
             // see note below re: 2-field kludge
             javaClassObject.setProxyClass(proxyClass);
@@ -42,11 +46,6 @@ public class ClassInitializer extends Initializer {
 
         javaClassObject.staticAssignedNames = Collections.unmodifiableMap(state.staticNames);
         javaClassObject.instanceAssignedNames = Collections.unmodifiableMap(state.instanceNames);
-
-        proxyClass.setReifiedClass(javaClass);
-
-        assert javaClassObject.proxyClass == null;
-        javaClassObject.unfinishedProxyClass = proxyClass;
 
         // flag the class as a Java class proxy.
         proxy.setJavaProxy(true);
