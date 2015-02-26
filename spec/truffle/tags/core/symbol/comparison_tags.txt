@@ -1,7 +1,0 @@
-fails:Symbol#<=> with Symbol returns -1 when self is less than other
-fails:Symbol#<=> with Symbol returns 1 when self is greater than other
-fails:Symbol#<=> with Symbol considers symbol that comes lexicographically first to be less if the symbols have same size
-fails:Symbol#<=> with Symbol compares shorter string with corresponding number of first chars of longer string
-fails:Symbol#<=> returns nil if other is a String
-fails:Symbol#<=> returns nil if other is a Fixnum
-fails:Symbol#<=> returns nil if other is an object

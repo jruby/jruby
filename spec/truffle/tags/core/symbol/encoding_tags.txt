@@ -1,1 +1,0 @@
-fails:Symbol#encoding for ASCII symbols is US-ASCII
