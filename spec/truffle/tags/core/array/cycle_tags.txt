@@ -1,7 +1,3 @@
-fails:Array#cycle does not yield and returns nil when the array is empty and passed value is an integer
-fails:Array#cycle does not yield and returns nil when the array is empty and passed value is nil
-fails:Array#cycle does not yield and returns nil when passed 0
-fails:Array#cycle iterates the array 'count' times yielding each item to the block
 fails:Array#cycle iterates indefinitely when not passed a count
 fails:Array#cycle iterates indefinitely when passed nil
 fails:Array#cycle does not rescue StopIteration when not passed a count
