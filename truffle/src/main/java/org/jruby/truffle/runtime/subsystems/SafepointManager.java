@@ -30,7 +30,7 @@ public class SafepointManager {
 
     private final RubyContext context;
 
-    private final Set<Thread> runningThreads = Collections.newSetFromMap(new ConcurrentHashMap<Thread, Boolean>());
+    private final Set<RunningThread> runningThreads = Collections.newSetFromMap(new ConcurrentHashMap<RunningThread, Boolean>());
 
     @CompilerDirectives.CompilationFinal private Assumption assumption = Truffle.getRuntime().createAssumption();
     private final ReentrantLock lock = new ReentrantLock();
@@ -44,12 +44,16 @@ public class SafepointManager {
     }
 
     public void enterThread() {
+        enterThread(true);
+    }
+
+    public void enterThread(boolean interruptible) {
         CompilerAsserts.neverPartOfCompilation();
 
         lock.lock();
         try {
             phaser.register();
-            runningThreads.add(Thread.currentThread());
+            runningThreads.add(new RunningThread(Thread.currentThread(), interruptible));
         } finally {
             lock.unlock();
         }
@@ -116,7 +120,7 @@ public class SafepointManager {
     }
 
     public void pauseAllThreadsAndExecuteFromNonRubyThread(Consumer<RubyThread> action) {
-        enterThread();
+        enterThread(false);
         try {
             pauseAllThreadsAndExecute(false, action);
         } finally {
@@ -124,7 +128,7 @@ public class SafepointManager {
         }
     }
 
-    private void pauseAllThreadsAndExecute(boolean holdsGlobalLock, Consumer<RubyThread> action) {
+    public void pauseAllThreadsAndExecute(boolean holdsGlobalLock, Consumer<RubyThread> action) {
         CompilerDirectives.transferToInterpreter();
 
         if (lock.isHeldByCurrentThread()) {
@@ -157,9 +161,48 @@ public class SafepointManager {
     }
 
     private void interruptAllThreads() {
-        for (Thread thread : runningThreads) {
-            thread.interrupt();
+        for (RunningThread thread : runningThreads) {
+            if (thread.isInterruptible()) {
+                thread.getThread().interrupt();
+            }
         }
+    }
+
+    private class RunningThread {
+
+        private final Thread thread;
+        private final boolean interruptible;
+
+        public RunningThread(Thread thread, boolean interruptible) {
+            this.thread = thread;
+            this.interruptible = interruptible;
+        }
+
+        public Thread getThread() {
+            return thread;
+        }
+
+        public boolean isInterruptible() {
+            return interruptible;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+
+            RunningThread that = (RunningThread) o;
+
+            if (!thread.equals(that.thread)) return false;
+
+            return true;
+        }
+
+        @Override
+        public int hashCode() {
+            return thread.hashCode();
+        }
+
     }
 
 }

@@ -111,8 +111,8 @@ public class RubyContext extends ExecutionContext {
 
         rubiniusPrimitiveManager = RubiniusPrimitiveManager.create();
 
-        if (Options.TRUFFLE_STACK_SERVER_PORT.load() != 0) {
-            new StackServerManager(this, Options.TRUFFLE_STACK_SERVER_PORT.load()).start();
+        if (Options.TRUFFLE_INSTRUMENTATION_SERVER_PORT.load() != 0) {
+            new InstrumentationServerManager(this, Options.TRUFFLE_INSTRUMENTATION_SERVER_PORT.load()).start();
         }
 
         runningOnWindows = System.getProperty("os.name").toLowerCase(Locale.ENGLISH).indexOf("win") >= 0;
@@ -240,7 +240,7 @@ public class RubyContext extends ExecutionContext {
         final InternalMethod method = new InternalMethod(rootNode.getSharedMethodInfo(), rootNode.getSharedMethodInfo().getName(),
                 getCoreLibrary().getObjectClass(), Visibility.PUBLIC, false, callTarget, parentFrame);
 
-        return callTarget.call(RubyArguments.pack(method, parentFrame, self, null, new Object[] {}));
+        return callTarget.call(RubyArguments.pack(method, parentFrame, self, null, new Object[]{}));
     }
 
     public long getNextObjectID() {

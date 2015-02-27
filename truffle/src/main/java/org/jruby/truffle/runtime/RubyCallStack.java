@@ -54,12 +54,14 @@ public abstract class RubyCallStack {
         return RubyArguments.getMethod(frame.getFrame(FrameInstance.FrameAccess.READ_ONLY, true).getArguments());
     }
 
+    private static final boolean BACKTRACE_GENERATE = Options.TRUFFLE_BACKTRACE_GENERATE.load();
+
     public static Backtrace getBacktrace(Node currentNode) {
         CompilerAsserts.neverPartOfCompilation();
 
         final ArrayList<Activation> activations = new ArrayList<>();
 
-        if (Options.TRUFFLE_BACKTRACE_GENERATE.load()) {
+        if (BACKTRACE_GENERATE) {
             /*
              * TODO(cs): if this materializing the frames proves really expensive
              * we might want to make it optional - I think it's only used for some
