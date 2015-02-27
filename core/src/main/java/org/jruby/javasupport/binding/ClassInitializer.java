@@ -86,6 +86,8 @@ public class ClassInitializer extends Initializer {
         installClassConstructors(proxyClass, state);
         installClassClasses(javaClass, proxyClass);
 
+        proxy.getName(); // trigger calculateName()
+
         return proxy;
     }
 

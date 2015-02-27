@@ -65,6 +65,8 @@ public class InterfaceInitializer extends Initializer {
         installClassStaticMethods(proxy, state);
         installClassClasses(javaClass, proxy);
 
+        proxy.getName(); // trigger calculateName()
+
         return proxy;
     }
 
