@@ -31,6 +31,7 @@ package org.jruby.embed.internal;
 
 import java.util.Map;
 import org.jruby.Ruby;
+import org.jruby.RubyInstanceConfig;
 import org.jruby.embed.LocalVariableBehavior;
 
 /**
@@ -38,13 +39,14 @@ import org.jruby.embed.LocalVariableBehavior;
  * @author Yoko Harada <yokolet@gmail.com>
  */
 public class ThreadSafeLocalContextProvider extends AbstractLocalContextProvider {
-    private ThreadLocal<LocalContext> contextHolder =
+
+    private final ThreadLocal<LocalContext> contextHolder =
             new ThreadLocal<LocalContext>() {
                 @Override
                 public LocalContext initialValue() {
                     return getInstance();
                 }
-                
+
                 @Override
                 public void remove() {
                     LocalContext localContext = get();
@@ -52,29 +54,39 @@ public class ThreadSafeLocalContextProvider extends AbstractLocalContextProvider
                 }
             };
 
+    public ThreadSafeLocalContextProvider(LocalVariableBehavior behavior) {
+        super(behavior);
+    }
+
     public ThreadSafeLocalContextProvider(LocalVariableBehavior behavior, boolean lazy) {
-        this.behavior = behavior;
+        super(behavior);
         this.lazy = lazy;
     }
 
+    @Override
     public Ruby getRuntime() {
-        return contextHolder.get().getThreadSafeRuntime();
+        return contextHolder.get().getRuntime();
     }
 
+    @Override
     public BiVariableMap getVarMap() {
         return contextHolder.get().getVarMap(this);
     }
 
+    @Override
     public Map getAttributeMap() {
         return contextHolder.get().getAttributeMap();
     }
 
+    @Override
     public boolean isRuntimeInitialized() {
-        return contextHolder.get().initialized;
+        return contextHolder.get().isInitialized();
     }
-    
+
+    @Override
     public void terminate() {
         contextHolder.remove();
         contextHolder.set(null);
     }
+
 }

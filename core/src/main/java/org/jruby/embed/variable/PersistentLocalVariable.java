@@ -29,7 +29,6 @@
  */
 package org.jruby.embed.variable;
 
-import org.jruby.Ruby;
 import org.jruby.RubyObject;
 import org.jruby.embed.internal.BiVariableMap;
 import org.jruby.runtime.DynamicScope;
@@ -44,7 +43,8 @@ import org.jruby.runtime.scope.ManyVarsDynamicScope;
  * @author Yoko Harada <yokolet@gmail.com>
  */
 public class PersistentLocalVariable extends AbstractVariable {
-    private static String pattern = "([a-z]|_)([a-zA-Z]|_|\\d)*";
+
+    private static final String VALID_NAME = "([a-z]|_)([a-zA-Z]|_|\\d)*";
 
     /**
      * Returns an instance of this class. This factory method is used when a
@@ -56,7 +56,7 @@ public class PersistentLocalVariable extends AbstractVariable {
      * @return the instance of PersistentLocalVariable
      */
     public static BiVariable getInstance(RubyObject receiver, String name, Object... javaObject) {
-        if (name.matches(pattern)) {
+        if (name.matches(VALID_NAME)) {
             return new PersistentLocalVariable(receiver, name, javaObject);
         }
         return null;
@@ -73,7 +73,7 @@ public class PersistentLocalVariable extends AbstractVariable {
      * @param name the persistent local variable name
      * @param irubyObject Ruby local object
      */
-    PersistentLocalVariable(IRubyObject origin, String name, IRubyObject irubyObject) {
+    PersistentLocalVariable(RubyObject origin, String name, IRubyObject irubyObject) {
         super(origin, name, true, irubyObject);
     }
 
@@ -82,6 +82,7 @@ public class PersistentLocalVariable extends AbstractVariable {
      *
      * @return this enum type, BiVariable.Type.LocalVariable.
      */
+    @Override
     public Type getType() {
         return Type.LocalVariable;
     }
@@ -94,7 +95,7 @@ public class PersistentLocalVariable extends AbstractVariable {
      * @return true if the given name is of a Ruby local variable.
      */
     public static boolean isValidName(Object name) {
-        return isValidName(pattern, name);
+        return isValidName(VALID_NAME, name);
     }
 
     /**
@@ -119,12 +120,13 @@ public class PersistentLocalVariable extends AbstractVariable {
         // Local variable is always saved as a top level variable.
         for (int i=0; i<names.length; i++) {
             BiVariable var;
-            if ((var = vars.getVariable((RubyObject)receiver.getRuntime().getTopSelf(), names[i])) != null
-                    && receiver.getRuntime().getTopSelf() == var.getReceiver()) {
-                var.setRubyObject(values[i]);
+            final RubyObject topSelf = getTopSelf(receiver);
+            if ( ( var = vars.getVariable(topSelf, names[i]) ) != null
+                && topSelf == var.getReceiver() ) {
+                var.setRubyObject( values[i] );
             } else {
-                var = new PersistentLocalVariable(receiver.getRuntime().getTopSelf(), names[i], values[i]);
-                vars.update(names[i], var);
+                var = new PersistentLocalVariable(topSelf, names[i], values[i]);
+                vars.update( names[i], var );
             }
         }
     }
@@ -133,21 +135,24 @@ public class PersistentLocalVariable extends AbstractVariable {
      * Injects a local variable value to a parsed Ruby script. This method is
      * invoked during EvalUnit#run() is executed.
      */
+    @Override
     public void inject() {
         //done in JRubyVariableMap.inject()
     }
 
     /**
      * Attempts to remove this variable from top self or receiver.
-     * 
+     *
      */
+    @Override
     public void remove() {
-        ThreadContext context = receiver.getRuntime().getCurrentContext();
+        final ThreadContext context = getCurrentContext();
         try {
             DynamicScope currentScope = context.getCurrentScope();
             ManyVarsDynamicScope scope = (ManyVarsDynamicScope) context.getCurrentScope();
             scope = new ManyVarsDynamicScope(context.runtime.getStaticScopeFactory().newEvalScope(currentScope.getStaticScope()), currentScope);
-        } catch (ArrayIndexOutOfBoundsException e) {
+        }
+        catch (ArrayIndexOutOfBoundsException e) {
             //no context is left.
             //no operation is needed.
         }

@@ -30,6 +30,7 @@
 package org.jruby.embed.internal;
 
 import java.util.List;
+import org.jruby.Ruby;
 import org.jruby.RubyInstanceConfig;
 import org.jruby.embed.LocalVariableBehavior;
 import org.jruby.util.ClassCache;
@@ -39,34 +40,72 @@ import org.jruby.util.ClassCache;
  * @author Yoko Harada <yokolet@gmail.com>
  */
 public abstract class AbstractLocalContextProvider implements LocalContextProvider {
-    protected RubyInstanceConfig config = new RubyInstanceConfig();
-    protected LocalVariableBehavior behavior = LocalVariableBehavior.TRANSIENT;
+
+    protected final RubyInstanceConfig config;
+    protected final LocalVariableBehavior behavior;
     protected boolean lazy = true;
+
+    protected AbstractLocalContextProvider() {
+        this( new RubyInstanceConfig() );
+    }
+
+    protected AbstractLocalContextProvider(RubyInstanceConfig config) {
+        this.config = config; this.behavior = LocalVariableBehavior.TRANSIENT;
+    }
+
+    protected AbstractLocalContextProvider(RubyInstanceConfig config, LocalVariableBehavior behavior) {
+        this.config = config; this.behavior = behavior;
+    }
+
+    protected AbstractLocalContextProvider(LocalVariableBehavior behavior) {
+        this.config = new RubyInstanceConfig(); this.behavior = behavior;
+    }
 
     @Deprecated
     public void setLoadPaths(List loadPaths) {
-        if (config != null) {
-            config.setLoadPaths(loadPaths);
-        }
-        
+        config.setLoadPaths(loadPaths);
     }
 
     @Deprecated
     public void setClassCache(ClassCache classCache) {
-        if (config != null) {
-            config.setClassCache(classCache);
-        }
-    }
-
-    public RubyInstanceConfig getRubyInstanceConfig() {
-        return config;
+        config.setClassCache(classCache);
     }
 
     protected LocalContext getInstance() {
         return new LocalContext(config, behavior, lazy);
     }
-    
+
+    @Override
+    public RubyInstanceConfig getRubyInstanceConfig() {
+        return config;
+    }
+
+    @Override
     public LocalVariableBehavior getLocalVariableBehavior() {
         return behavior;
     }
+
+    boolean isGlobalRuntimeReady() { return Ruby.isGlobalRuntimeReady(); }
+
+    Ruby getGlobalRuntime(AbstractLocalContextProvider provider) {
+        if ( isGlobalRuntimeReady() ) {
+            return Ruby.getGlobalRuntime();
+        }
+        return Ruby.newInstance(provider.config);
+    }
+
+    RubyInstanceConfig getGlobalRuntimeConfig(AbstractLocalContextProvider provider) {
+        // make sure we do not yet initialize the runtime here
+        if ( isGlobalRuntimeReady() ) {
+            return getGlobalRuntime(provider).getInstanceConfig();
+        }
+        return provider.config;
+    }
+
+    static RubyInstanceConfig getGlobalRuntimeConfigOrNew() {
+        return Ruby.isGlobalRuntimeReady() ?
+                Ruby.getGlobalRuntime().getInstanceConfig() :
+                    new RubyInstanceConfig();
+    }
+
 }
