@@ -17,6 +17,7 @@ import com.oracle.truffle.api.source.BytesDecoder;
 import com.oracle.truffle.api.source.Source;
 
 import org.jcodings.Encoding;
+import org.jcodings.specific.ASCIIEncoding;
 import org.jcodings.specific.UTF8Encoding;
 import org.jruby.Ruby;
 import org.jruby.RubyNil;
@@ -193,9 +194,15 @@ public class RubyContext extends ExecutionContext {
         return symbolTable;
     }
 
+
     @CompilerDirectives.TruffleBoundary
     public RubySymbol newSymbol(String name) {
-        return symbolTable.getSymbol(name);
+        return symbolTable.getSymbol(name, ASCIIEncoding.INSTANCE);
+    }
+
+    @CompilerDirectives.TruffleBoundary
+    public RubySymbol newSymbol(String name, Encoding encoding) {
+        return symbolTable.getSymbol(name, encoding);
     }
 
     @CompilerDirectives.TruffleBoundary

@@ -335,7 +335,7 @@ public abstract class SymbolNodes {
 
         @Specialization
         public int size(RubySymbol symbol) {
-            return StringSupport.strLengthFromRubyString(symbol);
+            return symbol.getByteList().lengthEnc();
         }
 
     }
