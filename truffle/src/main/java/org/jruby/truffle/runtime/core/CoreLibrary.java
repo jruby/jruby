@@ -60,6 +60,7 @@ public class CoreLibrary {
     private final RubyClass complexClass;
     private final RubyClass dirClass;
     private final RubyClass encodingClass;
+    private final RubyClass encodingErrorClass;
     private final RubyClass eofErrorClass;
     private final RubyClass exceptionClass;
     private final RubyClass falseClass;
@@ -181,6 +182,9 @@ public class CoreLibrary {
         // Exception
         exceptionClass = defineClass("Exception");
         exceptionClass.setAllocator(new RubyException.ExceptionAllocator());
+
+        // EncodingError
+        encodingErrorClass = defineClass(exceptionClass, "EncodingError");
 
         // FiberError
         fiberErrorClass = defineClass(exceptionClass, "FiberError");
