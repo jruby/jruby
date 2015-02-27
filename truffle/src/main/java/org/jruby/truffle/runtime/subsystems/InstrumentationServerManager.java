@@ -9,6 +9,8 @@
  */
 package org.jruby.truffle.runtime.subsystems;
 
+import com.oracle.truffle.api.Truffle;
+import com.oracle.truffle.api.frame.FrameInstance;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
@@ -85,6 +87,40 @@ public class InstrumentationServerManager {
                     final OutputStream stream = httpExchange.getResponseBody();
                     stream.write(bytes);
                     stream.close();
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
+
+        });
+
+        server.createContext("/break", new HttpHandler() {
+
+            @Override
+            public void handle(HttpExchange httpExchange) {
+                try {
+                    context.getSafepointManager().pauseAllThreadsAndExecuteFromNonRubyThread(new Consumer<RubyThread>() {
+
+                        @Override
+                        public void accept(RubyThread thread) {
+                            if (thread.getName().equals("main")) {
+                                thread.getDeferredSafepointActions().add(new Runnable() {
+
+                                    @Override
+                                    public void run() {
+                                        new SimpleShell(context).run(Truffle.getRuntime().getCurrentFrame()
+                                                .getFrame(FrameInstance.FrameAccess.MATERIALIZE, false).materialize(), null);
+                                    }
+
+                                });
+                            }
+                        }
+
+                    });
+
+                    httpExchange.getResponseHeaders().set("Content-Type", "text/plain");
+                    httpExchange.sendResponseHeaders(200, 0);
+                    httpExchange.getResponseBody().close();
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
