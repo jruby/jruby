@@ -87,10 +87,7 @@ public abstract class IRScope implements ParseResult {
     private List<IRScope> lexicalChildren;
 
     /** Parser static-scope that this IR scope corresponds to */
-    private StaticScope staticScope;
-
-    /** List of IR instructions for this method */
-    protected List<Instr> instrList;
+    private final StaticScope staticScope;
 
     /** Control flow graph representation of this method's instructions */
     private CFG cfg;
@@ -150,9 +147,9 @@ public abstract class IRScope implements ParseResult {
         this.nextClosureIndex = s.nextClosureIndex;
         this.temporaryVariableIndex = s.temporaryVariableIndex;
         this.floatVariableIndex = s.floatVariableIndex;
-        this.nestedClosures = new ArrayList<IRClosure>();
-        this.dfProbs = new HashMap<String, DataFlowProblem>();
-        this.nextVarIndex = new HashMap<String, Integer>(); // SSS FIXME: clone!
+        this.nestedClosures = new ArrayList<>();
+        this.dfProbs = new HashMap<>();
+        this.nextVarIndex = new HashMap<>(); // SSS FIXME: clone!
         this.cfg = null;
         this.interpreterContext = null;
         this.linearizedBBList = null;
@@ -160,10 +157,10 @@ public abstract class IRScope implements ParseResult {
         this.flagsComputed = s.flagsComputed;
         this.flags = s.flags.clone();
 
-        this.localVars = new HashMap<String, LocalVariable>(s.localVars);
+        this.localVars = new HashMap<>(s.localVars);
         this.scopeId = globalScopeCount.getAndIncrement();
 
-        this.executedPasses = new ArrayList<CompilerPass>();
+        this.executedPasses = new ArrayList<>();
 
         setupLexicalContainment();
     }
@@ -180,9 +177,9 @@ public abstract class IRScope implements ParseResult {
         this.nextClosureIndex = 0;
         this.temporaryVariableIndex = -1;
         this.floatVariableIndex = -1;
-        this.nestedClosures = new ArrayList<IRClosure>();
-        this.dfProbs = new HashMap<String, DataFlowProblem>();
-        this.nextVarIndex = new HashMap<String, Integer>();
+        this.nestedClosures = new ArrayList<>();
+        this.dfProbs = new HashMap<>();
+        this.nextVarIndex = new HashMap<>();
         this.cfg = null;
         this.interpreterContext = null;
         this.linearizedBBList = null;
@@ -204,23 +201,19 @@ public abstract class IRScope implements ParseResult {
         flags.add(REQUIRES_DYNSCOPE);
         flags.add(USES_ZSUPER);
 
-        this.localVars = new HashMap<String, LocalVariable>();
+        this.localVars = new HashMap<>();
         this.scopeId = globalScopeCount.getAndIncrement();
 
-        this.executedPasses = new ArrayList<CompilerPass>();
+        this.executedPasses = new ArrayList<>();
 
         setupLexicalContainment();
     }
 
-    private final void setupLexicalContainment() {
+    private void setupLexicalContainment() {
         if (manager.isDryRun() || RubyInstanceConfig.IR_WRITING) {
-            lexicalChildren = new ArrayList<IRScope>();
+            lexicalChildren = new ArrayList<>();
             if (lexicalParent != null) lexicalParent.addChildScope(this);
         }
-    }
-
-    private boolean hasListener() {
-        return manager.getIRScopeListener() != null;
     }
 
     public int getScopeId() {
@@ -251,7 +244,7 @@ public abstract class IRScope implements ParseResult {
     }
 
     public void initNestedClosures() {
-        this.nestedClosures = new ArrayList<IRClosure>();
+        this.nestedClosures = new ArrayList<>();
     }
 
     public void addClosure(IRClosure closure) {
@@ -260,16 +253,6 @@ public abstract class IRScope implements ParseResult {
 
     public void removeClosure(IRClosure closure) {
         nestedClosures.remove(closure);
-    }
-
-    public void addInstr(Instr instr) {
-        if (instr instanceof ThreadPollInstr) threadPollInstrsCount++;
-
-        instr.computeScopeFlags(this);
-
-        if (hasListener()) manager.getIRScopeListener().addedInstr(this, instr, instrList.size());
-
-        instrList.add(instr);
     }
 
     public LocalVariable getNewFlipStateVariable() {
@@ -547,7 +530,7 @@ public abstract class IRScope implements ParseResult {
             passes = getManager().getSafePasses(this);
         }
 
-        CompilerPassScheduler scheduler = getManager().schedulePasses(passes);
+        CompilerPassScheduler scheduler = IRManager.schedulePasses(passes);
         for (CompilerPass pass: scheduler) {
             pass.run(this);
         }
@@ -610,7 +593,7 @@ public abstract class IRScope implements ParseResult {
         if (getCFG() != null) return;
 
         // FIXME: most likely this is Instr[] and not a list now
-        List<Instr> newInstrList = new ArrayList<>(instrList.size());
+        List<Instr> newInstrList = new ArrayList<>(interpreterContext.getInstructions().length);
 
         for (Instr instr: interpreterContext.getInstructions()) {
             newInstrList.add(instr.clone(cloneInfo));
@@ -1027,8 +1010,8 @@ public abstract class IRScope implements ParseResult {
     }
 
     public void setUpUseDefLocalVarMaps() {
-        definedLocalVars = new java.util.HashSet<Variable>();
-        usedLocalVars = new java.util.HashSet<Variable>();
+        definedLocalVars = new java.util.HashSet<>();
+        usedLocalVars = new java.util.HashSet<>();
         for (BasicBlock bb : cfg().getBasicBlocks()) {
             for (Instr i : bb.getInstrs()) {
                 for (Variable v : i.getUsedVariables()) {

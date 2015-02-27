@@ -122,7 +122,7 @@ public class InterpreterEngine {
 
         Stack<Integer> rescuePCs = null;
         if (interpreterContext.getCFG() == null) {
-            rescuePCs = new Stack<Integer>();
+            rescuePCs = new Stack<>();
         }
 
         // Init profiling this scope

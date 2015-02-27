@@ -6,7 +6,6 @@ import org.jruby.ir.IRMetaClassBody;
 import org.jruby.ir.IRMethod;
 import org.jruby.ir.IRModuleBody;
 import org.jruby.ir.IRScope;
-import org.jruby.ir.IRScriptBody;
 import org.jruby.ir.instructions.Instr;
 import org.jruby.ir.instructions.LabelInstr;
 import org.jruby.ir.representations.CFG;
@@ -20,10 +19,6 @@ public class InterpreterContext {
     private final int temporaryFixnumVariablecount;
     private final int temporaryFloatVariablecount;
 
-    private final String name;
-    private final String fileName;
-    private final int lineNumber;
-    private final StaticScope staticScope;
     private final Instr[] instructions;
 
     // Cached computed fields
@@ -39,17 +34,11 @@ public class InterpreterContext {
     private final static InterpreterEngine SIMPLE_METHOD_INTERPRETER = new InterpreterEngine();
     public final InterpreterEngine engine;
 
-    // FIXME: Hack this should be a clone eventually since JIT might change this.  Comment for it reflects what it should be.
-    // View of CFG at time of creating this context.
-    private CFG cfg = null;
-
     private int runCount = 0;
     private boolean rebuilt = false;
     private IRScope scope;
 
     public InterpreterContext(IRScope scope, List<Instr> instructions) {
-        //FIXME: Remove once we conditionally plug in CFG on debug-only
-        this.cfg = scope.getCFG();
         if (this.rebuilt) {
             this.runCount = 30;
         }
@@ -58,10 +47,6 @@ public class InterpreterContext {
         // For impl testing - engine = determineInterpreterEngine(scope);
         engine = DEFAULT_INTERPRETER;
 
-        this.name = scope.getName();
-        this.fileName = scope.getFileName();
-        this.lineNumber = scope.getLineNumber();
-        this.staticScope = scope.getStaticScope();
         this.metaClassBodyScope = scope instanceof IRMetaClassBody;
         this.temporaryVariablecount = scope.getTemporaryVariablesCount();
         this.temporaryBooleanVariablecount = scope.getBooleanVariablesCount();
@@ -102,7 +87,7 @@ public class InterpreterContext {
         return scope;
     }
     public CFG getCFG() {
-        return cfg;
+        return null;
     }
 
     public boolean isRebuilt() {
@@ -134,11 +119,15 @@ public class InterpreterContext {
     }
 
     public StaticScope getStaticScope() {
-        return staticScope;
+        return scope.getStaticScope();
     }
 
     public String getFileName() {
-        return fileName;
+        return scope.getFileName();
+    }
+
+    public String getName() {
+        return scope.getName();
     }
 
     public Instr[] getInstructions() {
@@ -151,9 +140,9 @@ public class InterpreterContext {
     public DynamicScope newDynamicScope(ThreadContext context) {
         // Add a parent-link to current dynscope to support non-local returns cheaply. This doesn't
         // affect variable scoping since local variables will all have the right scope depth.
-        if (metaClassBodyScope) return DynamicScope.newDynamicScope(staticScope, context.getCurrentScope());
+        if (metaClassBodyScope) return DynamicScope.newDynamicScope(getStaticScope(), context.getCurrentScope());
 
-        return DynamicScope.newDynamicScope(staticScope);
+        return DynamicScope.newDynamicScope(getStaticScope());
     }
 
     public boolean hasExplicitCallProtocol() {
@@ -180,18 +169,14 @@ public class InterpreterContext {
     public String toString() {
         StringBuilder buf = new StringBuilder();
 
-        buf.append(fileName).append(':').append(lineNumber);
-        if (name != null) buf.append(' ').append(name);
+        buf.append(getFileName()).append(':').append(scope.getLineNumber());
+        if (getName() != null) buf.append(' ').append(getName());
 
-        if (cfg != null) {
-            buf.append("\nCFG:\n").append(cfg.toStringInstrs());
-        } else {
-            int i = 0;
-            for (Instr instr : instructions) {
-                if (i > 0) buf.append("\n");
-                buf.append("  ").append(i).append('\t').append(instr);
-                i++;
-            }
+        int i = 0;
+        for (Instr instr : instructions) {
+            if (i > 0) buf.append("\n");
+            buf.append("  ").append(i).append('\t').append(instr);
+            i++;
         }
 
         return buf.toString();
