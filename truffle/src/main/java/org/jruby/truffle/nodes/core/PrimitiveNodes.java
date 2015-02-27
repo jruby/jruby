@@ -11,21 +11,105 @@ package org.jruby.truffle.nodes.core;
 
 import com.oracle.truffle.api.Truffle;
 import com.oracle.truffle.api.dsl.Specialization;
+import com.oracle.truffle.api.frame.FrameInstance;
+import com.oracle.truffle.api.frame.FrameInstanceVisitor;
+import com.oracle.truffle.api.frame.MaterializedFrame;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.NodeUtil;
 import com.oracle.truffle.api.source.SourceSection;
-
+import org.jruby.RubyGC;
 import org.jruby.truffle.runtime.DebugOperations;
+import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyCallStack;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.backtrace.Backtrace;
-import org.jruby.truffle.runtime.core.RubyArray;
-import org.jruby.truffle.runtime.core.RubyHash;
-import org.jruby.truffle.runtime.core.RubyNilClass;
-import org.jruby.truffle.runtime.core.RubyString;
+import org.jruby.truffle.runtime.core.*;
+import org.jruby.util.Memo;
 
-@CoreClass(name = "Truffle::Debug")
-public abstract class TruffleDebugNodes {
+import java.util.Locale;
+
+@CoreClass(name = "Truffle::Primitive")
+public abstract class PrimitiveNodes {
+
+    @CoreMethod(names = "binding_of_caller", onSingleton = true)
+    public abstract static class BindingOfCallerNode extends CoreMethodNode {
+
+        public BindingOfCallerNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public BindingOfCallerNode(BindingOfCallerNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public RubyBinding bindingOfCaller() {
+            /*
+             * When you use this method you're asking for the binding of the caller at the call site. When we get into
+             * this method, that is then the binding of the caller of the caller.
+             */
+
+            notDesignedForCompilation();
+
+            final Memo<Integer> frameCount = new Memo<>(0);
+
+            final MaterializedFrame frame = Truffle.getRuntime().iterateFrames(new FrameInstanceVisitor<MaterializedFrame>() {
+
+                @Override
+                public MaterializedFrame visitFrame(FrameInstance frameInstance) {
+                    if (frameCount.get() == 1) {
+                        return frameInstance.getFrame(FrameInstance.FrameAccess.READ_WRITE, false).materialize();
+                    } else {
+                        frameCount.set(frameCount.get() + 1);
+                        return null;
+                    }
+                }
+
+            });
+
+            return new RubyBinding(
+                    getContext().getCoreLibrary().getBindingClass(),
+                    RubyArguments.getSelf(frame.getArguments()),
+                    frame);
+        }
+
+    }
+
+    @CoreMethod(names = "gc_count", onSingleton = true)
+    public abstract static class GCCountNode extends CoreMethodNode {
+
+        public GCCountNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public GCCountNode(GCCountNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public int gcCount() {
+            return RubyGC.getCollectionCount();
+        }
+
+    }
+
+    @CoreMethod(names = "gc_time", onSingleton = true)
+    public abstract static class GCTimeNode extends CoreMethodNode {
+
+        public GCTimeNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public GCTimeNode(GCTimeNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public long gcTime() {
+            return RubyGC.getCollectionTime();
+        }
+
+    }
 
     @CoreMethod(names = "dump_call_stack", onSingleton = true)
     public abstract static class DumpCallStackNode extends CoreMethodNode {
@@ -255,6 +339,60 @@ public abstract class TruffleDebugNodes {
             notDesignedForCompilation();
 
             return getContext().makeString(NodeUtil.printCompactTreeToString(Truffle.getRuntime().getCallerFrame().getCallNode().getRootNode()));
+        }
+
+    }
+
+    @CoreMethod(names = "graal?", onSingleton = true)
+    public abstract static class GraalNode extends CoreMethodNode {
+
+        public GraalNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public GraalNode(GraalNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public boolean graal() {
+            return Truffle.getRuntime().getName().toLowerCase(Locale.ENGLISH).contains("graal");
+        }
+
+    }
+
+    @CoreMethod(names = "substrate?", onSingleton = true)
+    public abstract static class SubstrateNode extends CoreMethodNode {
+
+        public SubstrateNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public SubstrateNode(SubstrateNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public boolean substrate() {
+            return getContext().getRuntime().isSubstrateVM();
+        }
+
+    }
+
+    @CoreMethod(names = "version", onSingleton = true)
+    public abstract static class VersionNode extends CoreMethodNode {
+
+        public VersionNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public VersionNode(VersionNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public RubyString version() {
+            return getContext().makeString(System.getProperty("graal.version", "unknown"));
         }
 
     }
