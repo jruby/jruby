@@ -493,9 +493,9 @@ public class Java implements Library {
             // java.lang.Object is added at root of java proxy classes
             proxyClass = createProxyClass(runtime, javaSupport.getConcreteProxyClass(), clazz, true);
             if (NEW_STYLE_EXTENSION) {
-                proxyClass.getMetaClass().defineAnnotatedMethods(Java.NewStyleExtensionInherited.class);
+                proxyClass.getMetaClass().defineAnnotatedMethods(NewStyleExtensionInherited.class);
             } else {
-                proxyClass.getMetaClass().defineAnnotatedMethods(Java.OldStyleExtensionInherited.class);
+                proxyClass.getMetaClass().defineAnnotatedMethods(OldStyleExtensionInherited.class);
             }
             addToJavaPackageModule(proxyClass);
         }
