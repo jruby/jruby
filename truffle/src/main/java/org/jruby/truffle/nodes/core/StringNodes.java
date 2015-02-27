@@ -1555,33 +1555,6 @@ public abstract class StringNodes {
         }
     }
 
-    @CoreMethod(names = "sub", required = 2)
-    public abstract static class SubNode extends RegexpNodes.EscapingNode {
-
-        public SubNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
-        public SubNode(SubNode prev) {
-            super(prev);
-        }
-
-        @Specialization
-        public RubyString sub(VirtualFrame frame, RubyString string, RubyString regexpString, RubyString replacement) {
-            notDesignedForCompilation();
-
-            final RubyRegexp regexp = new RubyRegexp(this, getContext().getCoreLibrary().getRegexpClass(), escape(frame, regexpString).getBytes(), Option.DEFAULT);
-            return sub(string, regexp, replacement);
-        }
-
-        @Specialization
-        public RubyString sub(RubyString string, RubyRegexp regexp, RubyString replacement) {
-            notDesignedForCompilation();
-
-            return regexp.sub(string.toString(), replacement.toString());
-        }
-    }
-
     @CoreMethod(names = "succ")
     public abstract static class SuccNode extends CoreMethodNode {
 
