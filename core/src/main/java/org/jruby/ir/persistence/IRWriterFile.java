@@ -185,7 +185,7 @@ public class IRWriterFile implements IRWriterEncoder, IRPersistenceValues {
     @Override
     public void startEncodingScopeInstrs(IRScope scope) {
         addScopeInstructionOffset(scope); // Record offset so we add this value to scope headers entry
-        encode(scope.getInstrs().size()); // Allows us to right-size when reconstructing instr list.
+        encode(scope.getInterpreterContext().getInstructions().length); // Allows us to right-size when reconstructing instr list.
     }
 
     @Override

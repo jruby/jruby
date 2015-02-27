@@ -54,7 +54,7 @@ public class OptimizeTempVarsPass extends CompilerPass {
         // Pass 1: Analyze instructions and find use and def count of temporary variables
         Map<TemporaryVariable, Instr> tmpVarUses = new HashMap<>();
         Map<TemporaryVariable, Instr> tmpVarDefs = new HashMap<>();
-        for (Instr i: s.getInstrs()) {
+        for (Instr i: s.getInterpreterContext().getInstructions()) {
             for (Variable v: i.getUsedVariables()) {
                  if (v instanceof TemporaryVariable) {
                      TemporaryVariable tv = (TemporaryVariable)v;
@@ -83,7 +83,7 @@ public class OptimizeTempVarsPass extends CompilerPass {
         // Pass 2: Transform code and do additional analysis:
         // * If the result of this instr. has not been used, mark it dead
         // * Find copies where constant values are set
-        ListIterator<Instr> instrs = s.getInstrs().listIterator();
+        ListIterator<Instr> instrs = Arrays.asList(s.getInterpreterContext().getInstructions()).listIterator();
         while (instrs.hasNext()) {
             Instr i = instrs.next();
 
@@ -214,7 +214,7 @@ public class OptimizeTempVarsPass extends CompilerPass {
         // At the first definition, we allocate a variable which then starts the live range
         Map<TemporaryVariable, Integer> lastVarUseOrDef = new HashMap<TemporaryVariable, Integer>();
         int iCount = -1;
-        for (Instr i: s.getInstrs()) {
+        for (Instr i: s.getInterpreterContext().getInstructions()) {
             iCount++;
 
             // update last use/def
@@ -247,7 +247,7 @@ public class OptimizeTempVarsPass extends CompilerPass {
         iCount = -1;
         s.resetTemporaryVariables();
 
-        for (Instr i: s.getInstrs()) {
+        for (Instr i: s.getInterpreterContext().getInstructions()) {
             iCount++;
 
             // Assign new vars

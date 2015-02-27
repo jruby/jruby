@@ -1,5 +1,7 @@
 package org.jruby.ir;
 
+import java.util.ArrayList;
+import java.util.List;
 import org.jruby.ir.instructions.*;
 import org.jruby.ir.interpreter.ClosureInterpreterContext;
 import org.jruby.ir.interpreter.InterpreterContext;
@@ -91,10 +93,8 @@ public class IRClosure extends IRScope {
     }
 
     @Override
-    public InterpreterContext allocateInterpreterContext() {
-        InterpreterContext interpreterContext = new ClosureInterpreterContext(this, instrList);
-
-        instrList = null; // Once IC has this we are done with this structure forever more...
+    public InterpreterContext allocateInterpreterContext(List<Instr> instructions) {
+        interpreterContext = new ClosureInterpreterContext(this, instructions);
 
         return interpreterContext;
     }
@@ -265,19 +265,18 @@ public class IRClosure extends IRScope {
 
         SimpleCloneInfo clonedII = ii.cloneForCloningClosure(clone);
 
-        if (getCFG() != null) {
-            clone.setCFG(getCFG().clone(clonedII, clone));
-        } else {
-            if (instrList == null) {
-                for (Instr i: interpreterContext.getInstructions()) {
-                    clone.addInstr(i.clone(clonedII));
-                }
-            } else {
-                for (Instr i : getInstrs()) {
-                    clone.addInstr(i.clone(clonedII));
-                }
-            }
+//        if (getCFG() != null) {
+//            clone.setCFG(getCFG().clone(clonedII, clone));
+//        } else {
+        List<Instr> newInstrs = new ArrayList<>(interpreterContext.getInstructions().length);
+
+        for (Instr i: interpreterContext.getInstructions()) {
+            newInstrs.add(i.clone(clonedII));
         }
+
+        clone.allocateInterpreterContext(newInstrs);
+
+//        }
 
         return clone;
     }

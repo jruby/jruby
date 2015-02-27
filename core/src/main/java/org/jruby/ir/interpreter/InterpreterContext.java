@@ -6,6 +6,7 @@ import org.jruby.ir.IRMetaClassBody;
 import org.jruby.ir.IRMethod;
 import org.jruby.ir.IRModuleBody;
 import org.jruby.ir.IRScope;
+import org.jruby.ir.IRScriptBody;
 import org.jruby.ir.instructions.Instr;
 import org.jruby.ir.instructions.LabelInstr;
 import org.jruby.ir.representations.CFG;
@@ -44,6 +45,7 @@ public class InterpreterContext {
 
     private int runCount = 0;
     private boolean rebuilt = false;
+    private IRScope scope;
 
     public InterpreterContext(IRScope scope, List<Instr> instructions) {
         //FIXME: Remove once we conditionally plug in CFG on debug-only
@@ -52,6 +54,7 @@ public class InterpreterContext {
             this.runCount = 30;
         }
 
+        this.scope = scope;
         // For impl testing - engine = determineInterpreterEngine(scope);
         engine = DEFAULT_INTERPRETER;
 
@@ -95,6 +98,9 @@ public class InterpreterContext {
         return linearizedInstrArray;
     }
 
+    public IRScope getScope() {
+        return scope;
+    }
     public CFG getCFG() {
         return cfg;
     }

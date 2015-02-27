@@ -33,7 +33,7 @@ public class InterpretedIRBlockBody extends IRBlockBody {
             displayedCFG = true;
         }
 
-        return closure.acquireInterpreterContext();
+        return closure.getInterpreterContext();
     }
 
     protected IRubyObject commonYieldPath(ThreadContext context, IRubyObject[] args, IRubyObject self, Binding binding, Type type, Block block) {

@@ -101,8 +101,13 @@ public class InterpretedIRMethod extends DynamicMethod implements IRMethodArgs, 
         context.setCurrentVisibility(getVisibility());
     }
 
+    // FIXME: for subclasses we should override this method since it can be simple get
+    // FIXME: to avoid cost of synch call in lazilyacquire we can save the ic here
     public InterpreterContext ensureInstrsReady() {
-        return method.acquireInterpreterContext();
+        if (method instanceof IRMethod) {
+            return ((IRMethod) method).lazilyAcquireInterpreterContext();
+        }
+        return method.getInterpreterContext();
     }
 
     @Override

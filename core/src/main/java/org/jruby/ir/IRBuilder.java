@@ -1,6 +1,7 @@
 package org.jruby.ir;
 
 import org.jcodings.specific.ASCIIEncoding;
+import org.jcodings.specific.USASCIIEncoding;
 import org.jruby.Ruby;
 import org.jruby.RubyInstanceConfig;
 import org.jruby.ast.*;
@@ -10,6 +11,7 @@ import org.jruby.internal.runtime.methods.IRMethodArgs;
 import org.jruby.ir.instructions.*;
 import org.jruby.ir.instructions.defined.GetErrorInfoInstr;
 import org.jruby.ir.instructions.defined.RestoreErrorInfoInstr;
+import org.jruby.ir.interpreter.InterpreterContext;
 import org.jruby.ir.operands.*;
 import org.jruby.ir.operands.Boolean;
 import org.jruby.ir.operands.Float;
@@ -221,8 +223,8 @@ public class IRBuilder {
             }
         }
 
-        public void cloneIntoHostScope(IRBuilder b) {
-            SimpleCloneInfo ii = new SimpleCloneInfo(b.scope, true);
+        public void cloneIntoHostScope(IRBuilder builder) {
+            SimpleCloneInfo ii = new SimpleCloneInfo(builder.scope, true);
 
             // Clone required labels.
             // During normal cloning below, labels not found in the rename map
@@ -233,18 +235,18 @@ public class IRBuilder {
             }
 
             // Clone instructions now
-            b.addInstr(new LabelInstr(ii.getRenamedLabel(start)));
-            b.addInstr(new ExceptionRegionStartMarkerInstr(bodyRescuer));
-            for (Instr i: instrs) {
-                Instr clonedInstr = i.clone(ii);
+            builder.addInstr(new LabelInstr(ii.getRenamedLabel(start)));
+            builder.addInstr(new ExceptionRegionStartMarkerInstr(bodyRescuer));
+            for (Instr instr: instrs) {
+                Instr clonedInstr = instr.clone(ii);
                 if (clonedInstr instanceof CallBase) {
                     CallBase call = (CallBase)clonedInstr;
                     Operand block = call.getClosureArg(null);
-                    if (block instanceof WrappedIRClosure) b.scope.addClosure(((WrappedIRClosure)block).getClosure());
+                    if (block instanceof WrappedIRClosure) builder.scope.addClosure(((WrappedIRClosure)block).getClosure());
                 }
-                b.addInstr(clonedInstr);
+                builder.addInstr(clonedInstr);
             }
-            b.addInstr(new ExceptionRegionEndMarkerInstr());
+            builder.addInstr(new ExceptionRegionEndMarkerInstr());
         }
     }
 
@@ -279,32 +281,54 @@ public class IRBuilder {
     protected IRBuilder parent;
     protected IRManager manager;
     protected IRScope scope;
+    protected List<Instr> instructions;
 
     public IRBuilder(IRManager manager, IRScope scope, IRBuilder parent) {
         this.manager = manager;
         this.scope = scope;
         this.parent = parent;
+        instructions = new ArrayList<>(50);
         this.activeRescuers.push(Label.UNRESCUED_REGION_LABEL);
     }
 
-    public void addInstr(Instr i) {
+    public void addInstr(Instr instr) {
         // If we are building an ensure body, stash the instruction
         // in the ensure body's list. If not, add it to the scope directly.
         if (ensureBodyBuildStack.empty()) {
-            scope.addInstr(i);
+            if (instr instanceof ThreadPollInstr) scope.threadPollInstrsCount++;
+
+            instr.computeScopeFlags(scope);
+
+            if (hasListener()) manager.getIRScopeListener().addedInstr(scope, instr, instructions.size());
+
+            instructions.add(instr);
         } else {
-            ensureBodyBuildStack.peek().addInstr(i);
+            ensureBodyBuildStack.peek().addInstr(instr);
         }
     }
 
-    public void addInstrAtBeginning(Instr i) {
+    public void addInstrAtBeginning(Instr instr) {
         // If we are building an ensure body, stash the instruction
         // in the ensure body's list. If not, add it to the scope directly.
         if (ensureBodyBuildStack.empty()) {
-            scope.addInstrAtBeginning(i);
+            instr.computeScopeFlags(scope);
+
+            if (hasListener()) manager.getIRScopeListener().addedInstr(scope, instr, 0);
+
+            instructions.add(0, instr);
         } else {
-            ensureBodyBuildStack.peek().addInstrAtBeginning(i);
+            ensureBodyBuildStack.peek().addInstrAtBeginning(instr);
         }
+    }
+
+    public IRBuilder getNearestFlipVariableScopeBuilder() {
+        IRBuilder current = this;
+
+        while (current != null && !this.scope.isFlipScope()) {
+            current = current.parent;
+        }
+
+        return current;
     }
 
     // Emit cloned ensure bodies by walking up the ensure block stack.
@@ -475,7 +499,7 @@ public class IRBuilder {
         return operand;
     }
 
-    private void buildLambdaInner(LambdaNode node) {
+    private InterpreterContext buildLambdaInner(LambdaNode node) {
         prepareImplicitState();                                    // recv_self, add frame block, etc)
         addCurrentScopeAndModule();                                // %current_scope/%current_module
 
@@ -487,6 +511,8 @@ public class IRBuilder {
         if (closureRetVal != U_NIL) addInstr(new ReturnInstr(closureRetVal));
 
         handleBreakAndReturnsInLambdas();
+
+        return scope.allocateInterpreterContext(instructions);
     }
 
     public Operand buildLambda(LambdaNode node) {
@@ -494,7 +520,6 @@ public class IRBuilder {
 
         // Create a new nested builder to ensure this gets its own IR builder state like the ensure block stack
         newIRBuilder(manager, closure).buildLambdaInner(node);
-        closure.acquireInterpreterContext();
 
         Variable lambda = createTemporaryVariable();
         WrappedIRClosure lambdaBody = new WrappedIRClosure(closure.getSelf(), closure);
@@ -1660,7 +1685,7 @@ public class IRBuilder {
 
     // Called by defineMethod but called on a new builder so things like ensure block info recording
     // do not get confused.
-    protected void defineMethodInner(MethodDefNode defNode, IRScope parent) {
+    protected InterpreterContext defineMethodInner(MethodDefNode defNode, IRScope parent) {
         if (RubyInstanceConfig.FULL_TRACE_ENABLED) {
             addInstr(new TraceInstr(RubyEvent.CALL, getName(), getFileName(), scope.getLineNumber()));
         }
@@ -1687,8 +1712,11 @@ public class IRBuilder {
 
         if (rv != null) addInstr(new ReturnInstr(rv));
 
+        scope.computeScopeFlagsEarly(instructions);
         // If the method can receive non-local returns
         if (scope.canReceiveNonlocalReturns()) handleNonlocalReturnInMethod();
+
+        return scope.allocateInterpreterContext(instructions);
     }
 
     private IRMethod defineNewMethod(MethodDefNode defNode, boolean isInstanceMethod) {
@@ -2285,9 +2313,9 @@ public class IRBuilder {
         Fixnum s2 = new Fixnum((long)2);
 
         // Create a variable to hold the flip state
-        IRScope nearestNonClosure = scope.getNearestFlipVariableScope();
-        Variable flipState = nearestNonClosure.getNewFlipStateVariable();
-        nearestNonClosure.initFlipStateVariable(flipState, s1);
+        IRBuilder nearestNonClosureBuilder = getNearestFlipVariableScopeBuilder();
+        Variable flipState = nearestNonClosureBuilder.scope.getNewFlipStateVariable();
+        nearestNonClosureBuilder.initFlipStateVariable(flipState, s1);
         if (scope instanceof IRClosure) {
             // Clone the flip variable to be usable at the proper-depth.
             int n = 0;
@@ -2358,7 +2386,7 @@ public class IRBuilder {
         return result;
     }
 
-    private void buildForIterInner(ForNode forNode) {
+    private InterpreterContext buildForIterInner(ForNode forNode) {
         prepareImplicitState();                                    // recv_self, add frame block, etc)
 
         Node varNode = forNode.getVarNode();
@@ -2372,6 +2400,8 @@ public class IRBuilder {
         if (closureRetVal != U_NIL) { // can be null if the node is an if node with returns in both branches.
             addInstr(new ReturnInstr(closureRetVal));
         }
+
+        return scope.allocateInterpreterContext(instructions);
     }
 
     public Operand buildForIter(final ForNode forNode) {
@@ -2380,7 +2410,6 @@ public class IRBuilder {
 
         // Create a new nested builder to ensure this gets its own IR builder state like the ensure block stack
         newIRBuilder(manager, closure).buildForIterInner(forNode);
-        closure.acquireInterpreterContext();
 
         return new WrappedIRClosure(buildSelf(), closure);
     }
@@ -2503,7 +2532,7 @@ public class IRBuilder {
         return addResultInstr(new GetFieldInstr(createTemporaryVariable(), buildSelf(), node.getName()));
     }
 
-    private void buildIterInner(IterNode iterNode) {
+    private InterpreterContext buildIterInner(IterNode iterNode) {
         prepareImplicitState();                                    // recv_self, add frame block, etc)
 
         if (iterNode.getVarNode().getNodeType() != null) receiveBlockArgs(iterNode);
@@ -2524,6 +2553,8 @@ public class IRBuilder {
         // SSS FIXME: At a later time, see if we can optimize this and
         // do this on demand.
         handleBreakAndReturnsInLambdas();
+
+        return scope.allocateInterpreterContext(instructions);
     }
     public Operand buildIter(final IterNode iterNode) {
         IRClosure closure = new IRClosure(manager, scope, iterNode.getPosition().getLine(), iterNode.getScope(),
@@ -2531,7 +2562,6 @@ public class IRBuilder {
 
         // Create a new nested builder to ensure this gets its own IR builder state like the ensure block stack
         newIRBuilder(manager, closure).buildIterInner(iterNode);
-        closure.acquireInterpreterContext();
 
         return new WrappedIRClosure(buildSelf(), closure);
     }
@@ -2854,7 +2884,7 @@ public class IRBuilder {
         return result;
     }
 
-    private void buildPrePostExeInner(Node body) {
+    private InterpreterContext buildPrePostExeInner(Node body) {
         // Set up %current_scope and %current_module
         addInstr(new CopyInstr(scope.getCurrentScopeVariable(), CURRENT_SCOPE[0]));
         addInstr(new CopyInstr(scope.getCurrentModuleVariable(), SCOPE_MODULE[0]));
@@ -2862,6 +2892,8 @@ public class IRBuilder {
 
         // END does not have either explicit or implicit return, so we add one
         addInstr(new ReturnInstr(new Nil()));
+
+        return scope.allocateInterpreterContext(instructions);
     }
 
     public Operand buildPostExe(PostExeNode postExeNode) {
@@ -2871,7 +2903,6 @@ public class IRBuilder {
         IRClosure endClosure = new IRClosure(manager, scope, postExeNode.getPosition().getLine(), nearestLVarScope.getStaticScope(), Signature.from(postExeNode), "_END_", true);
         // Create a new nested builder to ensure this gets its own IR builder state like the ensure block stack
         newIRBuilder(manager, endClosure).buildPrePostExeInner(postExeNode.getBodyNode());
-        endClosure.acquireInterpreterContext();
 
         // Add an instruction in 's' to record the end block in the 'topLevel' scope.
         // SSS FIXME: IR support for end-blocks that access vars in non-toplevel-scopes
@@ -2887,7 +2918,6 @@ public class IRBuilder {
                 Signature.from(preExeNode), "_BEGIN_");
         // Create a new nested builder to ensure this gets its own IR builder state like the ensure block stack
         newIRBuilder(manager, beginClosure).buildPrePostExeInner(preExeNode.getBodyNode());
-        beginClosure.acquireInterpreterContext();
 
         topLevel.recordBeginBlock(beginClosure);  // Record the begin block at IR build time
         return manager.getNil();
@@ -3147,7 +3177,7 @@ public class IRBuilder {
         return U_NIL;
     }
 
-    public void buildEvalRoot(RootNode rootNode) {
+    public InterpreterContext buildEvalRoot(RootNode rootNode) {
         addInstr(new LineNumberInstr(scope.getLineNumber()));
 
         prepareImplicitState();                                    // recv_self, add frame block, etc)
@@ -3155,14 +3185,14 @@ public class IRBuilder {
 
         Operand returnValue = rootNode.getBodyNode() == null ? manager.getNil() : build(rootNode.getBodyNode());
         addInstr(new ReturnInstr(returnValue));
+
+        return scope.allocateInterpreterContext(instructions);
     }
 
-    public static IRScriptBody buildRoot(IRManager manager, RootNode rootNode) {
+    public static InterpreterContext buildRoot(IRManager manager, RootNode rootNode) {
         IRScriptBody script = new IRScriptBody(manager, rootNode.getPosition().getFile(), rootNode.getStaticScope());
 
-        topIRBuilder(manager, script).buildRootInner(rootNode);
-
-        return script;
+        return topIRBuilder(manager, script).buildRootInner(rootNode);
     }
 
     private void addCurrentScopeAndModule() {
@@ -3170,12 +3200,14 @@ public class IRBuilder {
         addInstr(new CopyInstr(scope.getCurrentModuleVariable(), SCOPE_MODULE[0])); // %current_module
     }
 
-    private void buildRootInner(RootNode rootNode) {
+    private InterpreterContext buildRootInner(RootNode rootNode) {
         prepareImplicitState();                                    // recv_self, add frame block, etc)
         addCurrentScopeAndModule();                                // %current_scope/%current_module
 
         // Build IR for the tree and return the result of the expression tree
         addInstr(new ReturnInstr(build(rootNode.getBodyNode())));
+
+        return scope.allocateInterpreterContext(instructions);
     }
 
     public Variable buildSelf() {
@@ -3340,6 +3372,7 @@ public class IRBuilder {
     }
 
     private Operand buildZSuperIfNest(final Operand block) {
+        final IRBuilder builder = this;
         // If we are in a block, we cannot make any assumptions about what args
         // the super instr is going to get -- if there were no 'define_method'
         // for defining methods, we could guarantee that the super is going to
@@ -3361,6 +3394,7 @@ public class IRBuilder {
 
                 int depthFromSuper = 0;
                 Label next = null;
+                IRBuilder superBuilder = builder;
                 IRScope superScope = scope;
 
                 // Loop and generate a block for each possible value of depthFromSuper
@@ -3370,11 +3404,12 @@ public class IRBuilder {
                     if (next != null) addInstr(new LabelInstr(next));
                     next = getNewLabel();
                     addInstr(BNEInstr.create(new Fixnum(depthFromSuper), scopeDepth, next));
-                    Operand[] args = adjustVariableDepth(superScope.getCallArgs(), depthFromSuper);
+                    Operand[] args = adjustVariableDepth(getCallArgs(superScope, superBuilder), depthFromSuper);
                     addInstr(new ZSuperInstr(zsuperResult, buildSelf(), args,  block));
                     addInstr(new JumpInstr(allDoneLabel));
 
-                    // Move on
+                    // We may run out of live builds and walk int already built scopes if zsuper in an eval
+                    superBuilder = superBuilder != null && superBuilder.parent != null ? superBuilder.parent : null;
                     superScope = superScope.getLexicalParent();
                     depthFromSuper++;
                 }
@@ -3383,7 +3418,7 @@ public class IRBuilder {
 
                 // If we hit a method, this is known to always succeed
                 if (superScope instanceof IRMethod) {
-                    Operand[] args = adjustVariableDepth(superScope.getCallArgs(), depthFromSuper);
+                    Operand[] args = adjustVariableDepth(getCallArgs(superScope, superBuilder), depthFromSuper);
                     addInstr(new ZSuperInstr(zsuperResult, buildSelf(), args, block));
                 } //else {
                 // FIXME: Do or don't ... there is no try
@@ -3407,7 +3442,7 @@ public class IRBuilder {
 
         // Enebo:ZSuper in for (or nested for) can be statically resolved like method but it needs to fixup depth.
         if (scope instanceof IRMethod) {
-            return buildSuperInstr(block, scope.getCallArgs());
+            return buildSuperInstr(block, getCallArgs(scope, this));
         } else {
             return buildZSuperIfNest(block);
         }
@@ -3432,7 +3467,7 @@ public class IRBuilder {
         return newArgs;
     }
 
-    private void buildModuleOrClassBody(Node bodyNode, int linenumber) {
+    private InterpreterContext buildModuleOrClassBody(Node bodyNode, int linenumber) {
         if (RubyInstanceConfig.FULL_TRACE_ENABLED) {
             addInstr(new TraceInstr(RubyEvent.CLASS, null, getFileName(), linenumber));
         }
@@ -3447,6 +3482,8 @@ public class IRBuilder {
         }
 
         addInstr(new ReturnInstr(bodyReturnValue));
+
+        return scope.allocateInterpreterContext(instructions);
     }
 
     private String methodNameFor() {
@@ -3477,5 +3514,63 @@ public class IRBuilder {
 
     private String getFileName() {
         return scope.getFileName();
+    }
+
+    public void initFlipStateVariable(Variable v, Operand initState) {
+        addInstrAtBeginning(new CopyInstr(v, initState));
+    }
+
+    /**
+     * Extract all call arguments from the specified scope (only useful for Closures and Methods) so that
+     * we can convert zsupers to supers with explicit arguments.
+     *
+     * Note: This is fairly expensive because we walk entire scope when we could potentially stop earlier
+     * if we knew when recv_* were done.
+     */
+    public static Operand[] getCallArgs(IRScope scope, IRBuilder builder) {
+        List<Operand> callArgs = new ArrayList<>(5);
+        List<KeyValuePair<Operand, Operand>> keywordArgs = new ArrayList<>(3);
+
+        if (builder != null) {  // Still in currently building scopes
+            for (Instr instr : builder.instructions) {
+                extractCallOperands(callArgs, keywordArgs, instr);
+            }
+        } else {               // walked out past the eval to already build scopes
+            for (Instr instr : scope.interpreterContext.getInstructions()) {
+                extractCallOperands(callArgs, keywordArgs, instr);
+            }
+        }
+
+        return getCallOperands(scope, callArgs, keywordArgs);
+    }
+
+
+    private static void extractCallOperands(List<Operand> callArgs, List<KeyValuePair<Operand, Operand>> keywordArgs, Instr instr) {
+        if (instr instanceof ReceiveKeywordRestArgInstr) {
+            // Always add the keyword rest arg to the beginning
+            keywordArgs.add(0, new KeyValuePair<Operand, Operand>(Symbol.KW_REST_ARG_DUMMY, ((ReceiveArgBase) instr).getResult()));
+        } else if (instr instanceof ReceiveKeywordArgInstr) {
+            ReceiveKeywordArgInstr rkai = (ReceiveKeywordArgInstr) instr;
+            // FIXME: This lost encoding information when name was converted to string earlier in IRBuilder
+            keywordArgs.add(new KeyValuePair<Operand, Operand>(new Symbol(rkai.argName, USASCIIEncoding.INSTANCE), rkai.getResult()));
+        } else if (instr instanceof ReceiveRestArgInstr) {
+            callArgs.add(new Splat(((ReceiveRestArgInstr) instr).getResult()));
+        } else if (instr instanceof ReceiveArgBase) {
+            callArgs.add(((ReceiveArgBase) instr).getResult());
+        }
+    }
+
+    private static Operand[] getCallOperands(IRScope scope, List<Operand> callArgs, List<KeyValuePair<Operand, Operand>> keywordArgs) {
+        if (scope.receivesKeywordArgs()) {
+            int i = 0;
+            Operand[] args = new Operand[callArgs.size() + 1];
+            for (Operand arg: callArgs) {
+                args[i++] = arg;
+            }
+            args[i] = new Hash(keywordArgs, true);
+            return args;
+        }
+
+        return callArgs.toArray(new Operand[callArgs.size()]);
     }
 }

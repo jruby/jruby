@@ -42,19 +42,18 @@ public class IRMethod extends IRScope {
         }
     }
 
-    @Override
-    public synchronized InterpreterContext prepareForBuildInterpretation() {
+    public synchronized InterpreterContext lazilyAcquireInterpreterContext() {
         if (defn != null) {
             IRBuilder.topIRBuilder(getManager(), this).defineMethodInner(defn, getLexicalParent());
 
             defn = null;
         }
 
-        return super.prepareForBuildInterpretation();
+        return interpreterContext;
     }
 
     public synchronized List<BasicBlock> prepareForCompilation() {
-        if (defn != null) acquireInterpreterContext();
+        if (defn != null) lazilyAcquireInterpreterContext();
 
         return super.prepareForCompilation();
     }
