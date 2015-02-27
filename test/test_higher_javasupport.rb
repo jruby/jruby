@@ -861,7 +861,7 @@ CLASSDEF
 
   def test_no_warnings_on_concurrent_class_const_initialization
     Java.send :remove_const, :DefaultPackageClass if Java.const_defined? :DefaultPackageClass
-    
+
     stderr = $stderr; require 'stringio'
     begin
       $stderr = StringIO.new
@@ -877,6 +877,28 @@ CLASSDEF
     ensure
       $stderr = stderr
     end
+  end
+
+  # reproducing https://github.com/jruby/jruby/issues/2014
+  def test_concurrent_proxy_class_initialization
+    abort_on_exception = Thread.abort_on_exception
+    begin
+      Thread.abort_on_exception = true
+      # some strange enough (un-initialized proxy) classes not used elsewhere
+      threads = (0..10).map do
+        Thread.new { Java::java.awt.Desktop::Action.valueOf('OPEN') }
+      end
+      threads.each { |thread| thread.join }
+
+      # same but top (package) level class and using an aliased method :
+      threads = (0..10).map do
+        Thread.new { java.lang.management.MemoryType.value_of('HEAP') }
+      end
+      threads.each { |thread| thread.join }
+    ensure
+      Thread.abort_on_exception = abort_on_exception
+    end
+
   end
 
 end
