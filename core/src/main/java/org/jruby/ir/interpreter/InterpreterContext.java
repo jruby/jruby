@@ -15,9 +15,6 @@ import org.jruby.runtime.ThreadContext;
 
 public class InterpreterContext {
     private final int temporaryVariablecount;
-    private final int temporaryBooleanVariablecount;
-    private final int temporaryFixnumVariablecount;
-    private final int temporaryFloatVariablecount;
 
     private final Instr[] instructions;
 
@@ -31,6 +28,7 @@ public class InterpreterContext {
 
     private final static InterpreterEngine BODY_INTERPRETER = new BodyInterpreterEngine();
     private final static InterpreterEngine DEFAULT_INTERPRETER = new InterpreterEngine();
+    private final static InterpreterEngine STARTUP_INTERPRETER = new StartupInterpreterEngine();
     private final static InterpreterEngine SIMPLE_METHOD_INTERPRETER = new InterpreterEngine();
     public final InterpreterEngine engine;
 
@@ -45,13 +43,10 @@ public class InterpreterContext {
 
         this.scope = scope;
         // For impl testing - engine = determineInterpreterEngine(scope);
-        engine = DEFAULT_INTERPRETER;
+        engine = STARTUP_INTERPRETER;
 
         this.metaClassBodyScope = scope instanceof IRMetaClassBody;
         this.temporaryVariablecount = scope.getTemporaryVariablesCount();
-        this.temporaryBooleanVariablecount = scope.getBooleanVariablesCount();
-        this.temporaryFixnumVariablecount = scope.getFixnumVariablesCount();
-        this.temporaryFloatVariablecount = scope.getFloatVariablesCount();
         this.instructions = prepareBuildInstructions(instructions);
         this.hasExplicitCallProtocol = scope.getFlags().contains(IRFlags.HAS_EXPLICIT_CALL_PROTOCOL);
         this.reuseParentDynScope = scope.getFlags().contains(IRFlags.REUSE_PARENT_DYNSCOPE);
@@ -107,15 +102,15 @@ public class InterpreterContext {
     }
 
     public boolean[] allocateTemporaryBooleanVariables() {
-        return temporaryBooleanVariablecount > 0 ? new boolean[temporaryBooleanVariablecount] : null;
+        return null;
     }
 
     public long[] allocateTemporaryFixnumVariables() {
-        return temporaryFixnumVariablecount > 0 ? new long[temporaryFixnumVariablecount] : null;
+        return null;
     }
 
     public double[] allocateTemporaryFloatVariables() {
-        return temporaryFloatVariablecount > 0 ? new double[temporaryFloatVariablecount] : null;
+        return null;
     }
 
     public StaticScope getStaticScope() {
