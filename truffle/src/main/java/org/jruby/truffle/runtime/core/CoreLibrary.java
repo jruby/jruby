@@ -80,6 +80,7 @@ public class CoreLibrary {
     private final RubyClass nilClass;
     private final RubyClass noMemoryErrorClass;
     private final RubyClass noMethodErrorClass;
+    private final RubyClass notImplementedErrorClass;
     private final RubyClass numericClass;
     private final RubyClass objectClass;
     private final RubyClass procClass;
@@ -186,7 +187,6 @@ public class CoreLibrary {
         // StandardError
         standardErrorClass = defineClass(exceptionClass, "StandardError");
         argumentErrorClass = defineClass(standardErrorClass, "ArgumentError");
-        loadErrorClass = defineClass(standardErrorClass, "LoadError");
         localJumpErrorClass = defineClass(standardErrorClass, "LocalJumpError");
         regexpErrorClass = defineClass(standardErrorClass, "RegexpError");
         rubyTruffleErrorClass = defineClass(standardErrorClass, "RubyTruffleError");
@@ -219,6 +219,8 @@ public class CoreLibrary {
 
         // ScriptError
         RubyClass scriptErrorClass = defineClass(exceptionClass, "ScriptError");
+        loadErrorClass = defineClass(scriptErrorClass, "LoadError");
+        notImplementedErrorClass = defineClass(scriptErrorClass, "NotImplementedError");
         syntaxErrorClass = defineClass(scriptErrorClass, "SyntaxError");
 
         // SignalException

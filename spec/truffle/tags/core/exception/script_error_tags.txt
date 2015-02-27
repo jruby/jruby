@@ -1,2 +1,0 @@
-fails:ScriptError is a superclass of LoadError
-fails:ScriptError is a superclass of NotImplementedError
