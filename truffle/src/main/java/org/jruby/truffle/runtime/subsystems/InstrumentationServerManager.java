@@ -62,7 +62,7 @@ public class InstrumentationServerManager {
                                     // Not thread-safe so keep the formatting synchronized for now.
                                     String[] lines = Backtrace.DISPLAY_FORMATTER.format(context, null, backtrace);
 
-                                    builder.append(Thread.currentThread().getName());
+                                    builder.append(String.format("#%d %s", Thread.currentThread().getId(), Thread.currentThread().getName()));
                                     builder.append("\n");
                                     for (String line : lines) {
                                         builder.append(line);
