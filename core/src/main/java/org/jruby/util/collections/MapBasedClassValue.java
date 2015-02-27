@@ -15,12 +15,15 @@ public class MapBasedClassValue<T> extends ClassValue<T> {
     public T get(Class cls) {
         T obj = cache.get(cls);
 
-        if (obj == null) {
-            T newObj = calculator.computeValue(cls);
-            obj = cache.putIfAbsent(cls, newObj);
-            if (obj == null) {
-                obj = newObj;
-            }
+        if (obj != null) return obj;
+
+        synchronized (this) {
+            obj = cache.get(cls);
+
+            if (obj != null) return obj;
+
+            obj = calculator.computeValue(cls);
+            cache.put(cls, obj);
         }
 
         return obj;
