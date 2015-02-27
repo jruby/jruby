@@ -56,6 +56,7 @@ import static org.jruby.ir.IRFlags.*;
  * and so on ...
  */
 public abstract class IRScope implements ParseResult {
+    private static final Collection<IRClosure> NO_CLOSURES = Collections.unmodifiableCollection(new ArrayList<IRClosure>(0));
 
     private static final Logger LOG = LoggerFactory.getLogger("IRScope");
 
@@ -147,7 +148,6 @@ public abstract class IRScope implements ParseResult {
         this.nextClosureIndex = s.nextClosureIndex;
         this.temporaryVariableIndex = s.temporaryVariableIndex;
         this.floatVariableIndex = s.floatVariableIndex;
-        this.nestedClosures = new ArrayList<>();
         this.dfProbs = new HashMap<>();
         this.nextVarIndex = new HashMap<>(); // SSS FIXME: clone!
         this.cfg = null;
@@ -177,7 +177,6 @@ public abstract class IRScope implements ParseResult {
         this.nextClosureIndex = 0;
         this.temporaryVariableIndex = -1;
         this.floatVariableIndex = -1;
-        this.nestedClosures = new ArrayList<>();
         this.dfProbs = new HashMap<>();
         this.nextVarIndex = new HashMap<>();
         this.cfg = null;
@@ -243,16 +242,13 @@ public abstract class IRScope implements ParseResult {
         return lexicalChildren;
     }
 
-    public void initNestedClosures() {
-        this.nestedClosures = new ArrayList<>();
-    }
-
     public void addClosure(IRClosure closure) {
+        if (nestedClosures == null) nestedClosures = new ArrayList<>();
         nestedClosures.add(closure);
     }
 
     public void removeClosure(IRClosure closure) {
-        nestedClosures.remove(closure);
+        if (nestedClosures != null) nestedClosures.remove(closure);
     }
 
     public LocalVariable getNewFlipStateVariable() {
@@ -267,8 +263,8 @@ public abstract class IRScope implements ParseResult {
         return getNewLabel("LBL");
     }
 
-    public List<IRClosure> getClosures() {
-        return nestedClosures;
+    public Collection<IRClosure> getClosures() {
+        return nestedClosures == null ? NO_CLOSURES : nestedClosures;
     }
 
     public IRManager getManager() {
@@ -807,7 +803,7 @@ public abstract class IRScope implements ParseResult {
             i++;
         }
 
-        if (!nestedClosures.isEmpty()) {
+        if (nestedClosures != null && !nestedClosures.isEmpty()) {
             b.append("\n\n------ Closures encountered in this scope ------\n");
             for (IRClosure c: nestedClosures)
                 b.append(c.toStringBody());
