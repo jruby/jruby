@@ -42,8 +42,12 @@ import static java.lang.Character.isLowerCase;
 import static java.lang.Character.isUpperCase;
 import static java.lang.Character.isDigit;
 import static java.lang.Character.toLowerCase;
+
+import java.lang.reflect.ReflectPermission;
 import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.security.AccessController;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -55,6 +59,7 @@ import java.util.regex.Pattern;
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubyBasicObject;
+import org.jruby.RubyInstanceConfig;
 import org.jruby.ext.bigdecimal.RubyBigDecimal;
 import org.jruby.RubyBignum;
 import org.jruby.RubyBoolean;
@@ -85,8 +90,34 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
 import org.jruby.util.CodegenUtils;
 import org.jruby.util.TypeConverter;
+import org.jruby.util.cli.Options;
 
 public class JavaUtil {
+
+    public static final boolean CAN_SET_ACCESSIBLE;
+
+    static {
+        boolean canSetAccessible = false;
+
+        if (RubyInstanceConfig.CAN_SET_ACCESSIBLE) {
+            try {
+                AccessController.checkPermission(new ReflectPermission("suppressAccessChecks"));
+                canSetAccessible = true;
+            } catch (Throwable t) {
+                // added this so if things are weird in the future we can debug without
+                // spinning a new binary
+                if (Options.JI_LOGCANSETACCESSIBLE.load()) {
+                    t.printStackTrace();
+                }
+
+                // assume any exception means we can't suppress access checks
+                canSetAccessible = false;
+            }
+        }
+
+        CAN_SET_ACCESSIBLE = canSetAccessible;
+    }
+
     public static IRubyObject[] convertJavaArrayToRuby(Ruby runtime, Object[] objects) {
         if (objects == null) return IRubyObject.NULL_ARRAY;
         
@@ -925,6 +956,20 @@ public class JavaUtil {
     
     public static Object objectFromJavaProxy(IRubyObject self) {
         return ((JavaProxy)self).getObject();
+    }
+
+    public static final Map<String,Class> PRIMITIVE_CLASSES;
+    static {
+        Map<String, Class> primitiveClasses = new HashMap<String,Class>();
+        primitiveClasses.put("boolean", Boolean.TYPE);
+        primitiveClasses.put("byte", Byte.TYPE);
+        primitiveClasses.put("char", Character.TYPE);
+        primitiveClasses.put("short", Short.TYPE);
+        primitiveClasses.put("int", Integer.TYPE);
+        primitiveClasses.put("long", Long.TYPE);
+        primitiveClasses.put("float", Float.TYPE);
+        primitiveClasses.put("double", Double.TYPE);
+        PRIMITIVE_CLASSES = Collections.unmodifiableMap(primitiveClasses);
     }
 
     @Deprecated

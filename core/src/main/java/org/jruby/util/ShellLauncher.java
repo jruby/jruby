@@ -749,7 +749,7 @@ public class ShellLauncher {
 
             String[] args = parseCommandLine(runtime.getCurrentContext(), runtime, strings);
             LaunchConfig lc = new LaunchConfig(runtime, strings, false);
-            boolean useShell = lc.shouldRunInShell();
+            boolean useShell = Platform.IS_WINDOWS ? lc.shouldRunInShell() : false;
             if (addShell) for (String arg : args) useShell |= shouldUseShell(arg);
             
             // CON: popen is a case where I think we should just always shell out.

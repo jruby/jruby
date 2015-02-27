@@ -18,7 +18,7 @@
  * Copyright (C) 2004 Stefan Matthias Aust <sma@3plus4.de>
  * Copyright (C) 2005 Charles O Nutter <headius@headius.com>
  * Copyright (C) 2007 William N Dortch <bill.dortch@gmail.com>
- * 
+ *
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
  * or the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
@@ -33,13 +33,16 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.javasupport;
 
+import org.jruby.javasupport.binding.AssignedName;
 import org.jruby.util.collections.MapBasedClassValue;
 import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Member;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.locks.ReentrantLock;
 
 import org.jruby.Ruby;
 import org.jruby.RubyClass;
@@ -55,25 +58,9 @@ import org.jruby.util.cli.Options;
 import org.jruby.util.collections.ClassValueCalculator;
 
 public class JavaSupport {
-    private static final Map<String,Class> PRIMITIVE_CLASSES = new HashMap<String,Class>();
-    static {
-        PRIMITIVE_CLASSES.put("boolean", Boolean.TYPE);
-        PRIMITIVE_CLASSES.put("byte", Byte.TYPE);
-        PRIMITIVE_CLASSES.put("char", Character.TYPE);
-        PRIMITIVE_CLASSES.put("short", Short.TYPE);
-        PRIMITIVE_CLASSES.put("int", Integer.TYPE);
-        PRIMITIVE_CLASSES.put("long", Long.TYPE);
-        PRIMITIVE_CLASSES.put("float", Float.TYPE);
-        PRIMITIVE_CLASSES.put("double", Double.TYPE);
-    }
-    
-    public static Class getPrimitiveClass(String primitiveType) {
-        return PRIMITIVE_CLASSES.get(primitiveType);
-    }
-
     private final Ruby runtime;
-    
-    private final ObjectProxyCache<IRubyObject,RubyClass> objectProxyCache = 
+
+    private final ObjectProxyCache<IRubyObject,RubyClass> objectProxyCache =
         // TODO: specifying soft refs, may want to compare memory consumption,
         // behavior with weak refs (specify WEAK in place of SOFT below)
         new ObjectProxyCache<IRubyObject,RubyClass>(ObjectProxyCache.ReferenceType.WEAK) {
@@ -82,11 +69,14 @@ public class JavaSupport {
             return Java.allocateProxy(javaObject, clazz);
         }
     };
-    
+
     private final ClassValue<JavaClass> javaClassCache;
     private final ClassValue<RubyModule> proxyClassCache;
+    private final ClassValue<ThreadLocal<RubyModule>> unfinishedProxyClassCache;
+    private final ClassValue<Map<String, AssignedName>> staticAssignedNames;
+    private final ClassValue<Map<String, AssignedName>> instanceAssignedNames;
     private static final Constructor<? extends ClassValue> CLASS_VALUE_CONSTRUCTOR;
-    
+
     static {
         Constructor<? extends ClassValue> constructor = null;
 
@@ -130,17 +120,15 @@ public class JavaSupport {
     private RubyClass arrayProxyClass;
     private RubyClass concreteProxyClass;
     private RubyClass mapJavaProxy;
-    
-    private final Map<String, JavaClass> nameClassMap = new HashMap<String, JavaClass>();
 
-    private final Map<Object, Object[]> javaObjectVariables = new WeakIdentityHashMap();
+    private final Map<String, JavaClass> nameClassMap = new HashMap<String, JavaClass>();
 
     // A cache of all JavaProxyClass objects created for this runtime
     private Map<Set<?>, JavaProxyClass> javaProxyClassCache = Collections.synchronizedMap(new HashMap<Set<?>, JavaProxyClass>());
-    
+
     public JavaSupport(final Ruby ruby) {
         this.runtime = ruby;
-        
+
         try {
             this.javaClassCache = CLASS_VALUE_CONSTRUCTOR.newInstance(new ClassValueCalculator<JavaClass>() {
                 @Override
@@ -154,14 +142,35 @@ public class JavaSupport {
                     return Java.createProxyClassForClass(runtime, cls);
                 }
             });
-        } catch (Exception ex) {
-            throw new RuntimeException(ex);
+            this.unfinishedProxyClassCache = CLASS_VALUE_CONSTRUCTOR.newInstance(new ClassValueCalculator<ThreadLocal<RubyModule>>() {
+                @Override
+                public ThreadLocal<RubyModule> computeValue(Class<?> cls) {
+                    return new ThreadLocal<RubyModule>();
+                }
+            });
+            this.staticAssignedNames = CLASS_VALUE_CONSTRUCTOR.newInstance(new ClassValueCalculator<Map<String, AssignedName>>() {
+                @Override
+                public Map<String, AssignedName> computeValue(Class<?> cls) {
+                    return new HashMap<String, AssignedName>();
+                }
+            });
+            this.instanceAssignedNames = CLASS_VALUE_CONSTRUCTOR.newInstance(new ClassValueCalculator<Map<String, AssignedName>>() {
+                @Override
+                public Map<String, AssignedName> computeValue(Class<?> cls) {
+                    return new HashMap<String, AssignedName>();
+                }
+            });
+        }
+        catch (InstantiationException ex) { throw new RuntimeException(ex); }
+        catch (IllegalAccessException ex) { throw new RuntimeException(ex); }
+        catch (InvocationTargetException ex) {
+            throw new RuntimeException(ex.getTargetException());
         }
     }
-    
+
     public Class loadJavaClass(String className) throws ClassNotFoundException {
         Class primitiveClass;
-        if ((primitiveClass = PRIMITIVE_CLASSES.get(className)) == null) {
+        if ((primitiveClass = JavaUtil.PRIMITIVE_CLASSES.get(className)) == null) {
             if (!Ruby.isSecurityRestricted()) {
                 return Class.forName(className, true, runtime.getJRubyClassLoader());
             }
@@ -169,7 +178,7 @@ public class JavaSupport {
         }
         return primitiveClass;
     }
-    
+
     public Class loadJavaClassVerbose(String className) {
         try {
             return loadJavaClass(className);
@@ -184,7 +193,7 @@ public class JavaSupport {
             throw runtime.newSecurityError(se.getLocalizedMessage());
         }
     }
-    
+
     public Class loadJavaClassQuiet(String className) {
         try {
             return loadJavaClass(className);
@@ -235,65 +244,39 @@ public class JavaSupport {
     // (also note that there's no chance of getting a partially initialized
     // class/module, as happens-before is guaranteed by volatile write/read
     // of constants table.)
-    
+
     public Map<String, JavaClass> getNameClassMap() {
         return nameClassMap;
     }
 
-    public void setJavaObjectVariable(Object o, int i, Object v) {
-        synchronized (javaObjectVariables) {
-            Object[] vars = javaObjectVariables.get(o);
-            if (vars == null) {
-                vars = new Object[i + 1];
-                javaObjectVariables.put(o, vars);
-            } else if (vars.length <= i) {
-                Object[] newVars = new Object[i + 1];
-                System.arraycopy(vars, 0, newVars, 0, vars.length);
-                javaObjectVariables.put(o, newVars);
-                vars = newVars;
-            }
-            vars[i] = v;
-        }
-    }
-    
-    public Object getJavaObjectVariable(Object o, int i) {
-        if (i == -1) return null;
-        
-        synchronized (javaObjectVariables) {
-            Object[] vars = javaObjectVariables.get(o);
-            if (vars == null || vars.length <= i) return null;
-            return vars[i];
-        }
-    }
-    
     public RubyModule getJavaModule() {
         RubyModule module;
         if ((module = javaModule) != null) return module;
         return javaModule = runtime.getModule("Java");
     }
-    
+
     public RubyModule getJavaUtilitiesModule() {
         RubyModule module;
         if ((module = javaUtilitiesModule) != null) return module;
         return javaUtilitiesModule = runtime.getModule("JavaUtilities");
     }
-    
+
     public RubyModule getJavaArrayUtilitiesModule() {
         RubyModule module;
         if ((module = javaArrayUtilitiesModule) != null) return module;
         return javaArrayUtilitiesModule = runtime.getModule("JavaArrayUtilities");
     }
-    
+
     public RubyClass getJavaObjectClass() {
         RubyClass clazz;
         if ((clazz = javaObjectClass) != null) return clazz;
         return javaObjectClass = getJavaModule().getClass("JavaObject");
     }
-    
+
     public JavaClass getObjectJavaClass() {
         return objectJavaClass;
     }
-    
+
     public void setObjectJavaClass(JavaClass objectJavaClass) {
         this.objectJavaClass = objectJavaClass;
     }
@@ -303,7 +286,7 @@ public class JavaSupport {
         if ((clazz = javaArrayClass) != null) return clazz;
         return javaArrayClass = getJavaModule().getClass("JavaArray");
     }
-    
+
     public RubyClass getJavaClassClass() {
         RubyClass clazz;
         if ((clazz = javaClassClass) != null) return clazz;
@@ -321,7 +304,7 @@ public class JavaSupport {
         if ((module = packageModuleTemplate) != null) return module;
         return packageModuleTemplate = runtime.getModule("JavaPackageModuleTemplate");
     }
-    
+
     public RubyClass getJavaProxyClass() {
         RubyClass clazz;
         if ((clazz = javaProxyClass) != null) return clazz;
@@ -333,7 +316,7 @@ public class JavaSupport {
         if ((clazz = arrayJavaProxyCreatorClass) != null) return clazz;
         return arrayJavaProxyCreatorClass = runtime.getClass("ArrayJavaProxyCreator");
     }
-    
+
     public RubyClass getConcreteProxyClass() {
         RubyClass clazz;
         if ((clazz = concreteProxyClass) != null) return clazz;
@@ -345,13 +328,13 @@ public class JavaSupport {
         if ((clazz = mapJavaProxy) != null) return clazz;
         return mapJavaProxy = runtime.getClass("MapJavaProxy");
     }
-    
+
     public RubyClass getArrayProxyClass() {
         RubyClass clazz;
         if ((clazz = arrayProxyClass) != null) return clazz;
         return arrayProxyClass = runtime.getClass("ArrayJavaProxy");
     }
-    
+
     public RubyClass getJavaFieldClass() {
         RubyClass clazz;
         if ((clazz = javaFieldClass) != null) return clazz;
@@ -374,4 +357,62 @@ public class JavaSupport {
         return this.javaProxyClassCache;
     }
 
+    public ClassValue<ThreadLocal<RubyModule>> getUnfinishedProxyClassCache() {
+        return unfinishedProxyClassCache;
+    }
+
+    public ClassValue<Map<String, AssignedName>> getStaticAssignedNames() {
+        return staticAssignedNames;
+    }
+
+    public ClassValue<Map<String, AssignedName>> getInstanceAssignedNames() {
+        return instanceAssignedNames;
+    }
+
+    @Deprecated
+    private volatile Map<Object, Object[]> javaObjectVariables = new WeakIdentityHashMap();
+
+    @Deprecated
+    public Object getJavaObjectVariable(Object o, int i) {
+        if (i == -1) return null;
+
+        Map<Object, Object[]> variables = javaObjectVariables;
+        if (variables == null) return null;
+
+        synchronized (this) {
+            if (variables == null) return null;
+
+            Object[] vars = variables.get(o);
+            if (vars == null || vars.length <= i) return null;
+            return vars[i];
+        }
+    }
+
+    @Deprecated
+    public void setJavaObjectVariable(Object o, int i, Object v) {
+        if (i == -1) return;
+
+        synchronized (this) {
+            Map<Object, Object[]> variables = javaObjectVariables;
+
+            if (variables == null) javaObjectVariables = variables = new WeakIdentityHashMap();
+
+            Object[] vars = variables.get(o);
+            if (vars == null) {
+                vars = new Object[i + 1];
+                variables.put(o, vars);
+            } else if (vars.length <= i) {
+                Object[] newVars = new Object[i + 1];
+                System.arraycopy(vars, 0, newVars, 0, vars.length);
+                variables.put(o, newVars);
+                vars = newVars;
+            }
+            vars[i] = v;
+        }
+    }
+
+    @Deprecated
+    public static Class getPrimitiveClass(String primitiveType) {
+        return JavaUtil.PRIMITIVE_CLASSES.get(primitiveType);
+    }
 }
