@@ -671,7 +671,7 @@
                                             <xsl:with-param name="value" select="sum($insamepackage/@skipped) div sum($insamepackage/@tests)"/>
                                         </xsl:call-template>
                                     </xsl:when>
-                                    <xsl:otherwise>-</xsl:otherwise>
+                                    <xsl:otherwise>0%</xsl:otherwise>
                                 </xsl:choose>
                             </td>
                             <td>
@@ -858,7 +858,7 @@
                             <xsl:with-param name="value" select="@skipped div @tests"/>
                         </xsl:call-template>
                     </xsl:when>
-                    <xsl:otherwise>-</xsl:otherwise>
+                    <xsl:otherwise>0%</xsl:otherwise>
                 </xsl:choose>
             </td>
             <td><xsl:call-template name="display-time">
