@@ -9,11 +9,14 @@
  */
 package org.jruby.truffle.runtime.subsystems;
 
+import com.oracle.truffle.api.Truffle;
+import com.oracle.truffle.api.frame.FrameInstance;
 import com.oracle.truffle.api.frame.MaterializedFrame;
 import com.oracle.truffle.api.source.Source;
 import org.jcodings.specific.UTF8Encoding;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.RubyArguments;
+import org.jruby.truffle.runtime.RubyCallStack;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.backtrace.Backtrace;
 import org.jruby.truffle.runtime.control.RaiseException;
@@ -42,6 +45,10 @@ public class SimpleShell {
             }
 
             switch (tokenizer.nextToken()) {
+                case "backtrace":
+                    backtrace(currentNode);
+                    break;
+
                 case "continue":
                     return;
 
@@ -62,10 +69,16 @@ public class SimpleShell {
                         final RubyException rubyException = e.getRubyException();
 
                         for (String line : Backtrace.DISPLAY_FORMATTER.format(e.getRubyException().getContext(), rubyException, rubyException.getBacktrace())) {
-                            System.err.println(line);
+                            System.console().writer().println(line);
                         }
                     }
             }
+        }
+    }
+
+    private void backtrace(RubyNode currentNode) {
+        for (String line : Backtrace.DEBUG_FORMATTER.format(context, null, RubyCallStack.getBacktrace(currentNode))) {
+            System.err.println(line);
         }
     }
 
