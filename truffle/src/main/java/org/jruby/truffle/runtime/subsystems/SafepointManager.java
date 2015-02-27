@@ -65,7 +65,7 @@ public class SafepointManager {
         CompilerAsserts.neverPartOfCompilation();
 
         phaser.arriveAndDeregister();
-        runningThreads.remove(Thread.currentThread());
+        runningThreads.remove(new RunningThread(Thread.currentThread(), false));
     }
 
     public void poll() {
