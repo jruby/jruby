@@ -78,7 +78,6 @@ public class BodyTranslator extends Translator {
 
     protected final BodyTranslator parent;
     protected final TranslatorEnvironment environment;
-    private final boolean topLevel;
 
     public boolean translatingForStatement = false;
     public boolean useClassVariablesAsIfInClass = false;
@@ -106,7 +105,6 @@ public class BodyTranslator extends Translator {
         super(currentNode, context, source);
         this.parent = parent;
         this.environment = environment;
-        this.topLevel = topLevel;
         initGlobalVariableAliases();
         initReadOnlyGlobalVariables();
     }
@@ -1044,7 +1042,7 @@ public class BodyTranslator extends Translator {
         final SourceSection sourceSection = translate(node.getPosition());
         final RubyNode classNode;
 
-        if (topLevel) {
+        if (parent == null) {
             /*
              * In the top-level, methods are defined in the class of the main object. This is
              * counter-intuitive - I would have expected them to be defined in the singleton class.
@@ -1345,6 +1343,10 @@ public class BodyTranslator extends Translator {
             rhs = new CheckOutputSeparatorVariableTypeNode(context, sourceSection, rhs);
         } else if (name.equals("$_")) {
             rhs = WrapInThreadLocalNodeFactory.create(context, sourceSection, rhs);
+        } else if (name.equals("$stdout")) {
+            rhs = new CheckStdoutVariableTypeNode(context, sourceSection, rhs);
+        } else if (name.equals("$VERBOSE")) {
+            rhs = new UpdateVerbosityNode(context, sourceSection, rhs);
         }
 
         if (readOnlyGlobalVariables.contains(name)) {
@@ -1380,9 +1382,6 @@ public class BodyTranslator extends Translator {
 
             return ((ReadNode) localVarNode).makeWriteNode(rhs);
         } else {
-            if (name.equals("$stdout")) {
-                rhs = new CheckStdoutVariableTypeNode(context, sourceSection, rhs);
-            }
             final ObjectLiteralNode globalVariablesObjectNode = new ObjectLiteralNode(context, sourceSection, context.getCoreLibrary().getGlobalVariablesObject());
             return new WriteInstanceVariableNode(context, sourceSection, name, globalVariablesObjectNode, rhs, true);
 
@@ -2546,7 +2545,7 @@ public class BodyTranslator extends Translator {
 
     @Override
     public RubyNode visitSymbolNode(org.jruby.ast.SymbolNode node) {
-        return new ObjectLiteralNode(context, translate(node.getPosition()), context.newSymbol(node.getName()));
+        return new ObjectLiteralNode(context, translate(node.getPosition()), context.newSymbol(node.getName(), node.getEncoding()));
     }
 
     @Override

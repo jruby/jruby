@@ -16,6 +16,7 @@ import com.oracle.truffle.api.frame.FrameDescriptor;
 import com.oracle.truffle.api.source.SourceSection;
 
 import org.jcodings.Encoding;
+import org.jcodings.specific.ASCIIEncoding;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.RubyRootNode;
 import org.jruby.truffle.nodes.methods.SymbolProcNode;
@@ -45,7 +46,7 @@ public class RubySymbol extends RubyBasicObject implements CodeRangeable {
     }
 
     public static RubySymbol newSymbol(RubyContext runtime, String name) {
-        return runtime.getSymbolTable().getSymbol(name);
+        return runtime.getSymbolTable().getSymbol(name, ASCIIEncoding.INSTANCE);
     }
 
     public RubyProc toProc(SourceSection sourceSection, final RubyNode currentNode) {
@@ -155,7 +156,13 @@ public class RubySymbol extends RubyBasicObject implements CodeRangeable {
 
         @TruffleBoundary
         public RubySymbol getSymbol(String name) {
-            ByteList byteList = org.jruby.RubySymbol.symbolBytesFromString(context.getRuntime(), name);
+            return getSymbol(name, ASCIIEncoding.INSTANCE);
+        }
+
+        @TruffleBoundary
+        public RubySymbol getSymbol(String name, Encoding encoding) {
+            final ByteList byteList = org.jruby.RubySymbol.symbolBytesFromString(context.getRuntime(), name);
+            byteList.setEncoding(encoding);
 
             RubySymbol symbol = symbolsTable.get(byteList);
 

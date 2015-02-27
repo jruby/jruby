@@ -66,14 +66,14 @@ class Regexp
       when 0
         return %r/(?!)/
       when 1
-        pat = patterns.first
-        case pat
+        pattern = patterns.first
+        case pattern
           when Array
-            return union(*pat)
+            return union(*pattern)
           when Regexp
-            return pat
+            return pattern
           else
-            return Regexp.new(Regexp.quote(StringValue(pat)))
+            return Regexp.new(Regexp.quote(StringValue(pattern)))
         end
       else
         compatible?(*patterns)

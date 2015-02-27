@@ -60,6 +60,8 @@ public class CoreLibrary {
     private final RubyClass complexClass;
     private final RubyClass dirClass;
     private final RubyClass encodingClass;
+    private final RubyClass encodingErrorClass;
+    private final RubyClass eofErrorClass;
     private final RubyClass exceptionClass;
     private final RubyClass falseClass;
     private final RubyClass fiberClass;
@@ -71,6 +73,7 @@ public class CoreLibrary {
     private final RubyClass integerClass;
     private final RubyClass indexErrorClass;
     private final RubyClass ioClass;
+    private final RubyClass ioErrorClass;
     private final RubyClass keyErrorClass;
     private final RubyClass loadErrorClass;
     private final RubyClass localJumpErrorClass;
@@ -80,6 +83,7 @@ public class CoreLibrary {
     private final RubyClass nilClass;
     private final RubyClass noMemoryErrorClass;
     private final RubyClass noMethodErrorClass;
+    private final RubyClass notImplementedErrorClass;
     private final RubyClass numericClass;
     private final RubyClass objectClass;
     private final RubyClass procClass;
@@ -91,6 +95,7 @@ public class CoreLibrary {
     private final RubyClass regexpErrorClass;
     private final RubyClass rubyTruffleErrorClass;
     private final RubyClass runtimeErrorClass;
+    private final RubyClass securityErrorClass;
     private final RubyClass standardErrorClass;
     private final RubyClass stringClass;
     private final RubyClass stringDataClass;
@@ -98,6 +103,7 @@ public class CoreLibrary {
     private final RubyClass syntaxErrorClass;
     private final RubyClass systemCallErrorClass;
     private final RubyClass systemExitClass;
+    private final RubyClass systemStackErrorClass;
     private final RubyClass threadClass;
     private final RubyClass timeClass;
     private final RubyClass trueClass;
@@ -177,6 +183,9 @@ public class CoreLibrary {
         exceptionClass = defineClass("Exception");
         exceptionClass.setAllocator(new RubyException.ExceptionAllocator());
 
+        // EncodingError
+        encodingErrorClass = defineClass(exceptionClass, "EncodingError");
+
         // FiberError
         fiberErrorClass = defineClass(exceptionClass, "FiberError");
 
@@ -186,11 +195,12 @@ public class CoreLibrary {
         // StandardError
         standardErrorClass = defineClass(exceptionClass, "StandardError");
         argumentErrorClass = defineClass(standardErrorClass, "ArgumentError");
-        loadErrorClass = defineClass(standardErrorClass, "LoadError");
+        ioErrorClass = defineClass(standardErrorClass, "IOError");
         localJumpErrorClass = defineClass(standardErrorClass, "LocalJumpError");
         regexpErrorClass = defineClass(standardErrorClass, "RegexpError");
         rubyTruffleErrorClass = defineClass(standardErrorClass, "RubyTruffleError");
         runtimeErrorClass = defineClass(standardErrorClass, "RuntimeError");
+        threadErrorClass = defineClass(standardErrorClass, "ThreadError");
         typeErrorClass = defineClass(standardErrorClass, "TypeError");
         zeroDivisionErrorClass = defineClass(standardErrorClass, "ZeroDivisionError");
 
@@ -201,6 +211,9 @@ public class CoreLibrary {
         // StandardError > IndexError
         indexErrorClass = defineClass(standardErrorClass, "IndexError");
         keyErrorClass = defineClass(indexErrorClass, "KeyError");
+
+        // StandardError > IOError
+        eofErrorClass = defineClass(ioErrorClass, "EOFError");
 
         // StandardError > NameError
         nameErrorClass = defineClass(standardErrorClass, "NameError");
@@ -219,7 +232,12 @@ public class CoreLibrary {
 
         // ScriptError
         RubyClass scriptErrorClass = defineClass(exceptionClass, "ScriptError");
+        loadErrorClass = defineClass(scriptErrorClass, "LoadError");
+        notImplementedErrorClass = defineClass(scriptErrorClass, "NotImplementedError");
         syntaxErrorClass = defineClass(scriptErrorClass, "SyntaxError");
+
+        // SecurityError
+        securityErrorClass = defineClass(exceptionClass, "SecurityError");
 
         // SignalException
         RubyClass signalExceptionClass = defineClass(exceptionClass, "SignalException");
@@ -228,8 +246,9 @@ public class CoreLibrary {
         // SystemExit
         systemExitClass = defineClass(exceptionClass, "SystemExit");
 
-        // ThreadError
-        threadErrorClass = defineClass(exceptionClass, "ThreadError");
+        // SystemStackError
+        systemStackErrorClass = defineClass(exceptionClass, "SystemStackError");
+
 
         // Create core classes and modules
 

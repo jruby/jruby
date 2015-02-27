@@ -1,9 +1,0 @@
-fails:Symbol#capitalize returns a Symbol
-fails:Symbol#capitalize converts the first character to uppercase if it is ASCII
-fails:Symbol#capitalize leaves the first character alone if it is not an alphabetical ASCII character
-fails:Symbol#capitalize converts subsequent uppercase ASCII characters to their lowercase equivalents
-fails:Symbol#capitalize leaves ASCII characters already in the correct case as they were
-fails:Symbol#capitalize works with both upper- and lowercase ASCII characters in the same Symbol
-fails:Symbol#capitalize leaves uppercase Unicode characters as they were
-fails:Symbol#capitalize leaves lowercase Unicode characters as they were
-fails:Symbol#capitalize leaves non-alphabetic ASCII characters as they were

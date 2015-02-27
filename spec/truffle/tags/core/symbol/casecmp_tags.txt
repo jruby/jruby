@@ -1,6 +1,0 @@
-fails:Symbol#casecmp with Symbol compares symbols without regard to case
-fails:Symbol#casecmp with Symbol doesn't consider non-ascii characters equal that aren't
-fails:Symbol#casecmp with Symbol doesn't do case mapping for non-ascii characters
-fails:Symbol#casecmp returns nil if other is a String
-fails:Symbol#casecmp returns nil if other is a Fixnum
-fails:Symbol#casecmp returns nil if other is an object

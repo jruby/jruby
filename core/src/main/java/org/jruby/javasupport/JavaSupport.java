@@ -44,62 +44,62 @@ import java.lang.reflect.Member;
 import java.util.Map;
 import java.util.Set;
 
-public interface JavaSupport {
-    Class loadJavaClass(String className) throws ClassNotFoundException;
+public abstract class JavaSupport {
+    public abstract Class loadJavaClass(String className) throws ClassNotFoundException;
 
-    Class loadJavaClassVerbose(String className);
+    public abstract Class loadJavaClassVerbose(String className);
 
-    Class loadJavaClassQuiet(String className);
+    public abstract Class loadJavaClassQuiet(String className);
 
-    JavaClass getJavaClassFromCache(Class clazz);
+    public abstract JavaClass getJavaClassFromCache(Class clazz);
 
-    RubyModule getProxyClassFromCache(Class clazz);
+    public abstract RubyModule getProxyClassFromCache(Class clazz);
 
-    void handleNativeException(Throwable exception, Member target);
+    public abstract void handleNativeException(Throwable exception, Member target);
 
-    ObjectProxyCache<IRubyObject,RubyClass> getObjectProxyCache();
+    public abstract ObjectProxyCache<IRubyObject,RubyClass> getObjectProxyCache();
 
-    Map<String, JavaClass> getNameClassMap();
+    public abstract Map<String, JavaClass> getNameClassMap();
 
-    void setJavaObjectVariable(Object o, int i, Object v);
+    public abstract void setJavaObjectVariable(Object o, int i, Object v);
 
-    Object getJavaObjectVariable(Object o, int i);
+    public abstract Object getJavaObjectVariable(Object o, int i);
 
-    RubyModule getJavaModule();
+    public abstract RubyModule getJavaModule();
 
-    RubyModule getJavaUtilitiesModule();
+    public abstract RubyModule getJavaUtilitiesModule();
 
-    RubyModule getJavaArrayUtilitiesModule();
+    public abstract RubyModule getJavaArrayUtilitiesModule();
 
-    RubyClass getJavaObjectClass();
+    public abstract RubyClass getJavaObjectClass();
 
-    JavaClass getObjectJavaClass();
+    public abstract JavaClass getObjectJavaClass();
 
-    void setObjectJavaClass(JavaClass objectJavaClass);
+    public abstract void setObjectJavaClass(JavaClass objectJavaClass);
 
-    RubyClass getJavaArrayClass();
+    public abstract RubyClass getJavaArrayClass();
 
-    RubyClass getJavaClassClass();
+    public abstract RubyClass getJavaClassClass();
 
-    RubyModule getJavaInterfaceTemplate();
+    public abstract RubyModule getJavaInterfaceTemplate();
 
-    RubyModule getPackageModuleTemplate();
+    public abstract RubyModule getPackageModuleTemplate();
 
-    RubyClass getJavaProxyClass();
+    public abstract RubyClass getJavaProxyClass();
 
-    RubyClass getArrayJavaProxyCreatorClass();
+    public abstract RubyClass getArrayJavaProxyCreatorClass();
 
-    RubyClass getConcreteProxyClass();
+    public abstract RubyClass getConcreteProxyClass();
 
-    RubyClass getMapJavaProxyClass();
+    public abstract RubyClass getMapJavaProxyClass();
 
-    RubyClass getArrayProxyClass();
+    public abstract RubyClass getArrayProxyClass();
 
-    RubyClass getJavaFieldClass();
+    public abstract RubyClass getJavaFieldClass();
 
-    RubyClass getJavaMethodClass();
+    public abstract RubyClass getJavaMethodClass();
 
-    RubyClass getJavaConstructorClass();
+    public abstract RubyClass getJavaConstructorClass();
 
-    Map<Set<?>, JavaProxyClass> getJavaProxyClassCache();
+    public abstract Map<Set<?>, JavaProxyClass> getJavaProxyClassCache();
 }

@@ -1480,7 +1480,7 @@ public abstract class StringNodes {
 
         @Specialization
         public int size(RubyString string) {
-            return string.length();
+            return StringSupport.strLengthFromRubyString(string);
         }
     }
 
@@ -1714,7 +1714,7 @@ public abstract class StringNodes {
         public RubySymbol toSym(RubyString string) {
             notDesignedForCompilation();
 
-            return getContext().newSymbol(string.toString());
+            return getContext().newSymbol(string.getByteList());
         }
     }
 

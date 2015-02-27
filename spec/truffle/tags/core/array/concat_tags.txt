@@ -1,13 +1,9 @@
 fails:Array#concat tries to convert the passed argument to an Array using #to_ary
-fails:Array#concat does not call #to_ary on Array subclasses
 fails:Array#concat raises a RuntimeError when Array is frozen and modification occurs
 fails:Array#concat raises a RuntimeError when Array is frozen and no modification occurs
 fails:Array#concat is not infected by the other
-fails:Array#concat keeps the tainted status of elements
 fails:Array#concat is not infected untrustedness by the other
-fails:Array#concat keeps the untrusted status of elements
 fails:Array#concat returns the array itself
 fails:Array#concat appends the elements in the other array
-fails:Array#concat does not loop endlessly when argument is self
 fails:Array#concat keeps tainted status
 fails:Array#concat keeps untrusted status

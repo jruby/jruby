@@ -1,10 +1,2 @@
 fails:Exception#backtrace returns nil if no backtrace was set
-fails:Exception#backtrace returns an Array
-fails:Exception#backtrace sets each element to a String
-fails:Exception#backtrace includes the filename of the location where self raised in the first element
-fails:Exception#backtrace includes the line number of the location where self raised in the first element
-fails:Exception#backtrace includes the name of the method from where self raised in the first element
-fails:Exception#backtrace includes the filename of the location immediately prior to where self raised in the second element
-fails:Exception#backtrace includes the line number of the location immediately prior to where self raised in the second element
-fails:Exception#backtrace contains lines of the same format for each prior position in the stack
 fails:Exception#backtrace when redefined does not affect the behaviour of Exception#message

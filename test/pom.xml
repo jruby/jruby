@@ -808,7 +808,7 @@
                 </goals>
                 <configuration>
                   <target>
-                    <exec dir="${jruby.home}" executable="${jruby.home}/bin/jruby" failonerror="true">
+                    <exec failonerror="true" dir="${jruby.home}" executable="${jruby.home}/bin/jruby">
                       <arg value="-X+T" />
                       <arg value="-Xparser.warn.useless_use_of=false" />
                       <arg value="-Xparser.warn.not_reached=false" />
@@ -835,7 +835,27 @@
                   </target>
                 </configuration>
               </execution>
+              <execution>
+                <id>junit-report-generation</id>
+                <phase>test</phase>
+                <goals>
+                  <goal>run</goal>
+                </goals>
+                <configuration>
+                  <target>
+                    <property name="reportTitle" value="Language Specs Report" />
+                    <ant antfile="${basedir}/../spec/truffle/buildTestReports.xml" />
+                  </target>
+                </configuration>
+              </execution>
             </executions>
+            <dependencies>
+              <dependency>
+                <groupId>org.apache.ant</groupId>
+                <artifactId>ant-junit</artifactId>
+                <version>${ant.version}</version>
+              </dependency>
+            </dependencies>
           </plugin>
         </plugins>
       </build>
@@ -855,7 +875,7 @@
                 </goals>
                 <configuration>
                   <target>
-                    <exec dir="${jruby.home}" executable="${jruby.home}/bin/jruby" failonerror="true">
+                    <exec failonerror="true" dir="${jruby.home}" executable="${jruby.home}/bin/jruby">
                       <arg value="-X+T" />
                       <arg value="-Xparser.warn.useless_use_of=false" />
                       <arg value="-Xparser.warn.not_reached=false" />
@@ -882,7 +902,27 @@
                   </target>
                 </configuration>
               </execution>
+              <execution>
+                <id>junit-report-generation</id>
+                <phase>test</phase>
+                <goals>
+                  <goal>run</goal>
+                </goals>
+                <configuration>
+                  <target>
+                    <property name="reportTitle" value="Core Specs Report" />
+                    <ant antfile="${basedir}/../spec/truffle/buildTestReports.xml" />
+                  </target>
+                </configuration>
+              </execution>
             </executions>
+            <dependencies>
+              <dependency>
+                <groupId>org.apache.ant</groupId>
+                <artifactId>ant-junit</artifactId>
+                <version>${ant.version}</version>
+              </dependency>
+            </dependencies>
           </plugin>
         </plugins>
       </build>
@@ -902,7 +942,7 @@
                 </goals>
                 <configuration>
                   <target>
-                    <exec dir="${jruby.home}" executable="${jruby.home}/bin/jruby" failonerror="true">
+                    <exec failonerror="true" dir="${jruby.home}" executable="${jruby.home}/bin/jruby">
                       <arg value="-X+T" />
                       <arg value="-Xparser.warn.useless_use_of=false" />
                       <arg value="-Xparser.warn.not_reached=false" />
@@ -929,7 +969,27 @@
                   </target>
                 </configuration>
               </execution>
+              <execution>
+                <id>junit-report-generation</id>
+                <phase>test</phase>
+                <goals>
+                  <goal>run</goal>
+                </goals>
+                <configuration>
+                  <target>
+                    <property name="reportTitle" value="Stdlib Specs Report" />
+                    <ant antfile="${basedir}/../spec/truffle/buildTestReports.xml" />
+                  </target>
+                </configuration>
+              </execution>
             </executions>
+            <dependencies>
+              <dependency>
+                <groupId>org.apache.ant</groupId>
+                <artifactId>ant-junit</artifactId>
+                <version>${ant.version}</version>
+              </dependency>
+            </dependencies>
           </plugin>
         </plugins>
       </build>

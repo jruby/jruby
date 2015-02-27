@@ -2,16 +2,6 @@ fails:Exception.exception creates a new instance of Exception
 fails:Exception.exception sets the message of the Exception when passes a message
 fails:Exception.exception returns 'Exception' for message when no message given
 fails:Exception.exception returns the exception when it has a custom constructor
-fails:Exception is a Class
-fails:Exception is a superclass of NoMemoryError
-fails:Exception is a superclass of ScriptError
-fails:Exception is a superclass of SignalException
-fails:Exception is a superclass of Interrupt
-fails:Exception is a superclass of StandardError
-fails:Exception is a superclass of SystemExit
-fails:Exception is a superclass of SystemStackError
-fails:Exception is a superclass of SecurityError
-fails:Exception is a superclass of EncodingError
 fails:Exception#exception returns self when passed no argument
 fails:Exception#exception returns self when passed self as an argument
 fails:Exception#exception returns an exception of the same class as self with the message given as argument

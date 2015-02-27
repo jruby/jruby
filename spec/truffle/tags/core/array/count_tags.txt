@@ -1,3 +1,0 @@
-fails:Array#count returns the number of elements
-fails:Array#count returns the number of elements that equal the argument
-fails:Array#count returns the number of element for which the block evaluates to true

@@ -5,20 +5,23 @@
  ~
  ~ Run from JRuby root directory as: ant -buildfile spec/truffle/buildTestReports.xml
 -->
-<project name="genTestReport" default="gen" basedir="../../">
+<project name="genTestReport" default="gen" basedir="../../test">
     <description>
         Generate an HTML report from jUnit XML files.
     </description>
 
     <target name="gen">
-        <property name="genReportDir" location="tmp/unitTestReports"/>
+        <property name="reportTitle" value="Spec Results"/>
+        <property name="genReportDir" location="target/mspec-html-report"/>
         <delete dir="${genReportDir}"/>
         <mkdir dir="${genReportDir}"/>
-        <junitreport todir="tmp/unitTestReports">
-            <fileset dir="tmp">
+        <junitreport todir="${genReportDir}">
+            <fileset dir="target/mspec-results">
                 <include name="**/TEST-*.xml"/>
             </fileset>
-            <report format="frames" todir="${genReportDir}/html"/>
+            <report format="frames" styledir="${basedir}/../spec/truffle" todir="${genReportDir}/html">
+                <param name="TITLE" expression="${reportTitle}" />
+            </report>
         </junitreport>
     </target>
 </project>
