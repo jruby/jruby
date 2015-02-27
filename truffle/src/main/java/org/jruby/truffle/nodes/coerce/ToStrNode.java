@@ -25,16 +25,16 @@ import org.jruby.truffle.runtime.core.RubyString;
 @NodeChild(value = "child", type = RubyNode.class)
 public abstract class ToStrNode extends RubyNode {
 
-    @Child private CallDispatchHeadNode toStr;
+    @Child private CallDispatchHeadNode toStrNode;
 
     public ToStrNode(RubyContext context, SourceSection sourceSection) {
         super(context, sourceSection);
-        toStr = DispatchHeadNodeFactory.createMethodCall(context);
+        toStrNode = DispatchHeadNodeFactory.createMethodCall(context);
     }
 
     public ToStrNode(ToStrNode prev) {
         super(prev);
-        toStr = prev.toStr;
+        toStrNode = prev.toStrNode;
     }
 
     @Specialization
@@ -49,7 +49,7 @@ public abstract class ToStrNode extends RubyNode {
         final Object coerced;
 
         try {
-            coerced = toStr.call(frame, object, "to_str", null);
+            coerced = toStrNode.call(frame, object, "to_str", null);
         } catch (RaiseException e) {
             if (e.getRubyException().getLogicalClass() == getContext().getCoreLibrary().getNoMethodErrorClass()) {
                 CompilerDirectives.transferToInterpreter();
