@@ -30,10 +30,11 @@
 package org.jruby.embed.jsr223;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import javax.script.Bindings;
 import javax.script.ScriptContext;
 import javax.script.ScriptEngine;
@@ -43,7 +44,7 @@ import javax.script.SimpleBindings;
 
 /**
  * This is a substitute of javax.script.ScriptEngineManager.
- * 
+ *
  * With this script engine manager, you can avoid two known troubles. One this
  * happens on OS X JDK 5 which tries to load AppleScriptEngine and ends up in the
  * exception. Another one happens when you use livetribe version of javax.script
@@ -52,11 +53,13 @@ import javax.script.SimpleBindings;
  * @author Yoko Harada <yokolet@gmail.com>
  */
 public class JRubyScriptEngineManager {
-    private static final String service = "META-INF/services/javax.script.ScriptEngineFactory";
-    private HashSet<ScriptEngineFactory> factories;
-    private HashMap<String, ScriptEngineFactory> nameMap;
-    private HashMap<String, ScriptEngineFactory> extensionMap;
-    private HashMap<String, ScriptEngineFactory> mimetypeMap;
+
+    static final String SERVICE = "META-INF/services/javax.script.ScriptEngineFactory";
+
+    private final Collection<ScriptEngineFactory> factories;
+    private final Map<String, ScriptEngineFactory> nameMap;
+    private final Map<String, ScriptEngineFactory> extensionMap;
+    private final Map<String, ScriptEngineFactory> mimetypeMap;
     private Bindings globalMap;
 
     public JRubyScriptEngineManager() throws ScriptException {
@@ -64,22 +67,18 @@ public class JRubyScriptEngineManager {
     }
 
     public JRubyScriptEngineManager(ClassLoader loader) throws ScriptException {
-        init(loader);
-    }
-
-    private void init(ClassLoader loader) throws ScriptException {
-        nameMap = new HashMap();
-        extensionMap = new HashMap();
-        mimetypeMap = new HashMap();
+        nameMap = new HashMap<String, ScriptEngineFactory>();
+        extensionMap = new HashMap<String, ScriptEngineFactory>();
+        mimetypeMap = new HashMap<String, ScriptEngineFactory>();
         globalMap = new SimpleBindings();
         try {
-            factories =
-                (HashSet<ScriptEngineFactory>) (new ServiceFinder(loader, service)).getServices();
-            if (factories.isEmpty()) {
-                System.err.println("no factory");
+            factories = new ServiceFinder<ScriptEngineFactory>(SERVICE, loader).getServices();
+            if ( factories.isEmpty() ) {
+                System.err.println("no factory"); // TODO this is fatal, right?
             }
             prepareMaps();
-        } catch (Exception e) {
+        }
+        catch (Exception e) {
             e.printStackTrace();
             throw new ScriptException(e);
         }
@@ -102,11 +101,11 @@ public class JRubyScriptEngineManager {
         }
     }
 
-    public void setBindings(Bindings b) {
-        if (b == null) {
+    public void setBindings(final Bindings bindings) {
+        if (bindings == null) {
             throw new IllegalArgumentException("Null bindings");
         }
-        globalMap = b;
+        globalMap = bindings;
     }
 
     public Bindings getBindings() {
@@ -161,11 +160,7 @@ public class JRubyScriptEngineManager {
     }
 
     public List<ScriptEngineFactory> getEngineFactories() {
-        List<ScriptEngineFactory> l = new ArrayList();
-        for (ScriptEngineFactory factory : factories) {
-            l.add(factory);
-        }
-        return Collections.unmodifiableList(l);
+        return Collections.unmodifiableList(new ArrayList<ScriptEngineFactory>(factories));
     }
 
     public void registerEngineName(String name, ScriptEngineFactory factory) {
