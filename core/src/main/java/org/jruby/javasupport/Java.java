@@ -398,25 +398,7 @@ public class Java implements Library {
     }
 
     public static RubyModule getInterfaceModule(final Ruby runtime, final Class javaClass) {
-        if ( ! javaClass.isInterface() ) {
-            throw runtime.newArgumentError(javaClass.toString() + " is not an interface");
-        }
-
-        RubyModule proxyModule = runtime.getJavaSupport().getUnfinishedProxyClassCache().get(javaClass).get();
-
-        if (proxyModule != null) return proxyModule;
-
-        proxyModule = (RubyModule) runtime.getJavaSupport().getJavaInterfaceTemplate().dup();
-        // include any interfaces we extend
-        final Class<?>[] extended = javaClass.getInterfaces();
-        for ( int i = extended.length; --i >= 0; ) {
-            RubyModule extModule = getInterfaceModule(runtime, extended[i]);
-            proxyModule.includeModule(extModule);
-        }
-        Initializer.setupProxyModule(runtime, javaClass, proxyModule);
-        addToJavaPackageModule(proxyModule);
-
-        return proxyModule;
+        return Java.getProxyClass(runtime, javaClass);
     }
 
     public static RubyModule get_interface_module(final Ruby runtime, IRubyObject javaClassObject) {
@@ -457,19 +439,42 @@ public class Java implements Library {
     }
 
     public static RubyModule getProxyClass(final Ruby runtime, final Class<?> clazz) {
+        RubyModule unfinished = runtime.getJavaSupport().getUnfinishedProxyClassCache().get(clazz).get();
+        if (unfinished != null) return unfinished;
         return runtime.getJavaSupport().getProxyClassFromCache(clazz);
     }
 
+    // Only used by proxy ClassValue calculator in JavaSupport
     static RubyModule createProxyClassForClass(final Ruby runtime, final Class<?> clazz) {
         final JavaSupport javaSupport = runtime.getJavaSupport();
 
-        if ( clazz.isInterface() ) return Java.getInterfaceModule(runtime, clazz);
+        if (clazz.isInterface()) return generateInterfaceProxy(runtime, clazz);
 
-        RubyModule proxyClass = runtime.getJavaSupport().getUnfinishedProxyClassCache().get(clazz).get();
+        return generateClassProxy(runtime, clazz, javaSupport);
+    }
 
-        if (proxyClass != null) return proxyClass;
+    private static RubyModule generateInterfaceProxy(final Ruby runtime, final Class javaClass) {
+        if (!javaClass.isInterface()) {
+            throw runtime.newArgumentError(javaClass.toString() + " is not an interface");
+        }
 
-        if ( clazz.isArray() ) {
+        RubyModule proxyModule = (RubyModule) runtime.getJavaSupport().getJavaInterfaceTemplate().dup();
+
+        // include any interfaces we extend
+        final Class<?>[] extended = javaClass.getInterfaces();
+        for ( int i = extended.length; --i >= 0; ) {
+            RubyModule extModule = getInterfaceModule(runtime, extended[i]);
+            proxyModule.includeModule(extModule);
+        }
+        Initializer.setupProxyModule(runtime, javaClass, proxyModule);
+        addToJavaPackageModule(proxyModule);
+
+        return proxyModule;
+    }
+
+    private static RubyModule generateClassProxy(Ruby runtime, Class<?> clazz, JavaSupport javaSupport) {
+        RubyModule proxyClass;
+        if (clazz.isArray()) {
             proxyClass = createProxyClass(runtime, javaSupport.getArrayProxyClass(), clazz, true);
 
             // FIXME: Organizationally this might be nicer in a specialized class
@@ -506,12 +511,7 @@ public class Java implements Library {
             // include interface modules into the proxy class
             final Class<?>[] interfaces = clazz.getInterfaces();
             for ( int i = interfaces.length; --i >= 0; ) {
-                JavaClass ifaceClass = JavaClass.get(runtime, interfaces[i]);
-                // java.util.Map type object has its own proxy, but following
-                // is needed. Unless kind_of?(is_a?) test will fail.
-                //if (interfaces[i] != java.util.Map.class) {
-                proxyClass.includeModule(getInterfaceModule(runtime, ifaceClass));
-                //}
+                proxyClass.includeModule(getInterfaceModule(runtime, interfaces[i]));
             }
             if ( Modifier.isPublic(clazz.getModifiers()) ) {
                 addToJavaPackageModule(proxyClass);
@@ -554,8 +554,6 @@ public class Java implements Library {
         proxyClass.defineAnnotatedMethods( JavaProxyClassMethods.class );
 
         if ( invokeInherited ) proxyClass.inherit(superClass);
-
-        // add java_method for unbound use
 
         Initializer.setupProxyClass(runtime, javaClass, proxyClass);
 

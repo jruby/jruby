@@ -74,23 +74,11 @@ public class JavaClass extends JavaObject {
     private volatile RubyArray constructors;
 
     public RubyModule getProxyModule() {
-        // allow proxy to be read without synchronization. if proxy
-        // is under construction, only the building thread can see it.
-        RubyModule proxy = getRuntime().getJavaSupport().getProxyClassFromCache((Class)getValue());
-        if ( proxy != null ) return proxy; // proxy is complete, return it
-
-        // proxy may be under construction, return thread-local instance
-        return getRuntime().getJavaSupport().getUnfinishedProxyClassCache().get((Class) getValue()).get();
+        return Java.getProxyClass(getRuntime(), (Class)getValue());
     }
 
     public RubyClass getProxyClass() {
-        // allow proxy to be read without synchronization. if proxy
-        // is under construction, only the building thread can see it.
-        RubyModule proxy = getRuntime().getJavaSupport().getProxyClassFromCache((Class)getValue());
-        if ( proxy != null ) return (RubyClass)proxy; // proxy is complete, return it
-
-        // proxy may be under construction, return thread-local instance
-        return (RubyClass) getRuntime().getJavaSupport().getUnfinishedProxyClassCache().get((Class) getValue()).get();
+        return (RubyClass)Java.getProxyClass(getRuntime(), (Class)getValue());
     }
 
     public JavaClass(final Ruby runtime, final Class<?> javaClass) {
@@ -109,12 +97,14 @@ public class JavaClass extends JavaObject {
     }
 
     public void addProxyExtender(final IRubyObject extender) {
-        if ( ! extender.respondsTo("extend_proxy") ) {
-            throw getRuntime().newTypeError("proxy extender must have an extend_proxy method");
+        Ruby runtime = getRuntime();
+
+        if (!extender.respondsTo("extend_proxy")) {
+            throw runtime.newTypeError("proxy extender must have an extend_proxy method");
         }
 
-        ThreadContext context = getRuntime().getCurrentContext();
-        RubyModule proxy = getRuntime().getJavaSupport().getProxyClassFromCache(javaClass());
+        ThreadContext context = runtime.getCurrentContext();
+        RubyModule proxy = Java.getProxyClass(runtime, javaClass());
         extendProxy(context, extender, proxy);
     }
 

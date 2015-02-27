@@ -139,8 +139,6 @@ public class JavaSupport {
             this.proxyClassCache = CLASS_VALUE_CONSTRUCTOR.newInstance(new ClassValueCalculator<RubyModule>() {
                 @Override
                 public RubyModule computeValue(Class<?> cls) {
-                    RubyModule unfinished = unfinishedProxyClassCache.get(cls).get();
-                    if (unfinished != null) return unfinished;
                     return Java.createProxyClassForClass(runtime, cls);
                 }
             });

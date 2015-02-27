@@ -375,7 +375,7 @@ public abstract class Initializer {
     }
 
     private static void setJavaClassFor(final Class<?> javaClass, final RubyModule proxy) {
-        proxy.setInstanceVariable("@java_class", new JavaClass(proxy.getRuntime(), javaClass));
+        proxy.setInstanceVariable("@java_class", proxy.getRuntime().getJavaSupport().getJavaClassFromCache(javaClass));
         proxy.dataWrapStruct(javaClass);
     }
 
