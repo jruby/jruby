@@ -20,7 +20,9 @@ import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyThread;
 import org.jruby.truffle.runtime.util.Consumer;
 
+import java.util.ArrayList;
 import java.util.Collections;
+import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Phaser;
@@ -85,11 +87,24 @@ public class SafepointManager {
             thread = context.getThreadManager().leaveGlobalLock();
         }
 
+        // TODO CS 27-Feb-15 how do we get thread if it wasn't holding the global lock?
+
         try {
             step(thread, isDrivingThread);
         } finally {
             if (holdsGlobalLock) {
                 context.getThreadManager().enterGlobalLock(thread);
+            }
+        }
+
+        // We're now running again normally, with the global lock, and can run deferred actions
+
+        if (thread != null) {
+            final List<Runnable> deferredActions = new ArrayList<>(thread.getDeferredSafepointActions());
+            thread.getDeferredSafepointActions().clear();
+
+            for (Runnable action : deferredActions) {
+                action.run();
             }
         }
     }
