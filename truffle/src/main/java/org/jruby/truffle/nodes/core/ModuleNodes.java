@@ -641,7 +641,7 @@ public abstract class ModuleNodes {
         private Object classEvalSource(VirtualFrame frame, RubyModule module, Source source, Encoding encoding) {
             RubyBinding binding = getCallerBinding(frame);
 
-            return getContext().execute(getContext(), source, encoding, TranslatorDriver.ParserContext.MODULE, module, binding.getFrame(), this, new NodeWrapper() {
+            return getContext().execute(source, encoding, TranslatorDriver.ParserContext.MODULE, module, binding.getFrame(), this, new NodeWrapper() {
                 @Override
                 public RubyNode wrap(RubyNode node) {
                     return new SetMethodDeclarationContext(node.getContext(), node.getSourceSection(), Visibility.PUBLIC, "class_eval", node);
