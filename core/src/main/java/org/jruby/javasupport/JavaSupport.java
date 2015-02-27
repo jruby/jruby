@@ -40,7 +40,6 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.locks.ReentrantLock;
 
 import org.jruby.Ruby;
 import org.jruby.RubyClass;
@@ -135,8 +134,6 @@ public class JavaSupport {
     private final Map<String, JavaClass> nameClassMap = new HashMap<String, JavaClass>();
 
     private final Map<Object, Object[]> javaObjectVariables = new WeakIdentityHashMap();
-
-    private final ReentrantLock proxyLock = new ReentrantLock();
 
     // A cache of all JavaProxyClass objects created for this runtime
     private Map<Set<?>, JavaProxyClass> javaProxyClassCache = Collections.synchronizedMap(new HashMap<Set<?>, JavaProxyClass>());
@@ -375,10 +372,6 @@ public class JavaSupport {
 
     public Map<Set<?>, JavaProxyClass> getJavaProxyClassCache() {
         return this.javaProxyClassCache;
-    }
-
-    public ReentrantLock getProxyLock() {
-        return proxyLock;
     }
 
 }
