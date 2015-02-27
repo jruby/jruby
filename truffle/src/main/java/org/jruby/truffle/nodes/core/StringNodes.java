@@ -320,7 +320,7 @@ public abstract class StringNodes {
             }
         }
 
-        @Specialization(guards = "!isRubyRange(arguments[1])")
+        @Specialization(guards = { "!isRubyRange(arguments[1])", "!isRubyRegexp(arguments[1])" })
         public Object getIndex(VirtualFrame frame, RubyString string, Object index, UndefinedPlaceholder undefined) {
             notDesignedForCompilation();
 
