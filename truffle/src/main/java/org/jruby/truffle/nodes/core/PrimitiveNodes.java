@@ -9,6 +9,7 @@
  */
 package org.jruby.truffle.nodes.core;
 
+import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.Truffle;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.FrameInstance;
@@ -24,6 +25,7 @@ import org.jruby.truffle.runtime.RubyCallStack;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.backtrace.Backtrace;
 import org.jruby.truffle.runtime.core.*;
+import org.jruby.truffle.runtime.subsystems.SimpleShell;
 import org.jruby.util.Memo;
 
 import java.util.Locale;
@@ -393,6 +395,26 @@ public abstract class PrimitiveNodes {
         @Specialization
         public RubyString version() {
             return getContext().makeString(System.getProperty("graal.version", "unknown"));
+        }
+
+    }
+
+    @CoreMethod(names = "simple_shell", onSingleton = true)
+    public abstract static class SimpleShellNode extends CoreMethodNode {
+
+        public SimpleShellNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public SimpleShellNode(SimpleShellNode prev) {
+            super(prev);
+        }
+
+        @CompilerDirectives.TruffleBoundary
+        @Specialization
+        public RubyNilClass simpleShell() {
+            new SimpleShell(getContext()).run(Truffle.getRuntime().getCallerFrame().getFrame(FrameInstance.FrameAccess.MATERIALIZE, true).materialize(), this);
+            return getContext().getCoreLibrary().getNilObject();
         }
 
     }
