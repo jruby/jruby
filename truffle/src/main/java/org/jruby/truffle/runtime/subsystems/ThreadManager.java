@@ -38,6 +38,7 @@ public class ThreadManager {
     public ThreadManager(RubyContext context) {
         this.context = context;
         rootThread = new RubyThread(context.getCoreLibrary().getThreadClass(), this);
+        rootThread.setName("main");
         rootThread.setRootThread(Thread.currentThread());
         runningRubyThreads.add(rootThread);
         enterGlobalLock(rootThread);
