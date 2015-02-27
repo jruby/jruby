@@ -78,14 +78,14 @@ public class JavaSupport {
     private static final Constructor<? extends ClassValue> CLASS_VALUE_CONSTRUCTOR;
 
     static {
-        Constructor<? extends ClassValue> constructor = null;
+        Constructor constructor = null;
 
         if (Options.INVOKEDYNAMIC_CLASS_VALUES.load()) {
             try {
                 // try to load the ClassValue class. If it succeeds, we can use our
                 // ClassValue-based cache.
                 Class.forName("java.lang.ClassValue");
-                constructor = (Constructor<ClassValue>)Class.forName("org.jruby.util.collections.Java7ClassValue").getConstructor(ClassValueCalculator.class);
+                constructor = Class.forName("org.jruby.util.collections.Java7ClassValue").getConstructor(ClassValueCalculator.class);
             }
             catch (Exception ex) {
                 // fall through to Map version
@@ -95,12 +95,14 @@ public class JavaSupport {
         if (constructor == null) {
             try {
                 constructor = MapBasedClassValue.class.getConstructor(ClassValueCalculator.class);
-            } catch (Exception ex2) {
-                throw new RuntimeException(ex2);
+            }
+            catch (Exception ex) {
+                if ( ex instanceof RuntimeException ) throw (RuntimeException) ex;
+                throw new RuntimeException(ex);
             }
         }
 
-        CLASS_VALUE_CONSTRUCTOR = constructor;
+        CLASS_VALUE_CONSTRUCTOR = (Constructor<ClassValue>) constructor;
     }
 
     private RubyModule javaModule;
@@ -217,15 +219,17 @@ public class JavaSupport {
     }
 
     public void handleNativeException(Throwable exception, Member target) {
-        if (exception instanceof RaiseException) {
+        if ( exception instanceof RaiseException ) {
             // allow RaiseExceptions to propagate
             throw (RaiseException) exception;
-        } else if (exception instanceof Unrescuable) {
+        }
+        if (exception instanceof Unrescuable) {
             // allow "unrescuable" flow-control exceptions to propagate
-            if (exception instanceof Error) {
-                throw (Error)exception;
-            } else if (exception instanceof RuntimeException) {
-                throw (RuntimeException)exception;
+            if ( exception instanceof Error ) {
+                throw (Error) exception;
+            }
+            if ( exception instanceof RuntimeException ) {
+                throw (RuntimeException) exception;
             }
         }
         throw createRaiseException(exception, target);
