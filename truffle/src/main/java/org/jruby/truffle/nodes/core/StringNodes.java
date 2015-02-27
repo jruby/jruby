@@ -369,6 +369,30 @@ public abstract class StringNodes {
             }
         }
 
+        @Specialization(guards = "!isUndefinedPlaceholder(arguments[2])")
+        public Object slice(VirtualFrame frame, RubyString string, int start, Object length) {
+            notDesignedForCompilation();
+
+            if (toIntNode == null) {
+                CompilerDirectives.transferToInterpreter();
+                toIntNode = insert(ToIntNodeFactory.create(getContext(), getSourceSection(), null));
+            }
+
+            return slice(string, start, toIntNode.executeIntegerFixnum(frame, length));
+        }
+
+        @Specialization(guards = { "!isRubyRange(arguments[1])", "!isRubyRegexp(arguments[1])", "!isUndefinedPlaceholder(arguments[2])" })
+        public Object slice(VirtualFrame frame, RubyString string, Object start, Object length) {
+            notDesignedForCompilation();
+
+            if (toIntNode == null) {
+                CompilerDirectives.transferToInterpreter();
+                toIntNode = insert(ToIntNodeFactory.create(getContext(), getSourceSection(), null));
+            }
+
+            return slice(string, toIntNode.executeIntegerFixnum(frame, start), toIntNode.executeIntegerFixnum(frame, length));
+        }
+
         @Specialization
         public Object slice(RubyString string, RubyRegexp regexp, UndefinedPlaceholder capture) {
             notDesignedForCompilation();

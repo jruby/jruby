@@ -1,5 +1,4 @@
 fails:String#slice with index, length always taints resulting strings when self is tainted
-fails:String#slice with index, length calls to_int on the given index and the given length
 fails:String#slice with index, length returns subclass instances
 fails:String#slice with Range returns an empty string if range.begin is inside self and > real end
 fails:String#slice with Range always taints resulting strings when self is tainted
