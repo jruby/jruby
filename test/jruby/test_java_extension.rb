@@ -2,8 +2,6 @@ require 'java'
 require 'test/unit'
 
 class TestJavaExtension < Test::Unit::TestCase
-  import org.jruby.test.Worker
-  import org.jruby.test.Abstract
 
   class TestParent < org.jruby.test.Parent
     attr_accessor :result
@@ -11,6 +9,8 @@ class TestJavaExtension < Test::Unit::TestCase
       @result = "TEST PARENT: #{a}"
     end
   end
+
+  java_import org.jruby.test.Worker
 
   def test_overriding_method_in_java_superclass
     w = Worker.new
@@ -22,7 +22,6 @@ class TestJavaExtension < Test::Unit::TestCase
   import java.util.HashMap
   import java.util.ArrayList
   import java.util.HashSet
-  import java.lang.Short
 
   def test_set
     set = HashSet.new
@@ -30,16 +29,17 @@ class TestJavaExtension < Test::Unit::TestCase
     set.add(2)
 
     newSet = []
-    set.each {|x| newSet << x }
+    set.each { |x| newSet << x }
 
     assert newSet.include?(1)
     assert newSet.include?(2)
   end
 
   def test_comparable
-    one = Short.new(1)
-    two = Short.new(2)
-    three = Short.new(3)
+    short = Java::JavaLang::Short
+    one = short.new(1)
+    two = short.new(2)
+    three = short.new(3)
     list = [three, two, one]
     list = list.sort
     assert_equal([one, two, three], list)
@@ -147,6 +147,23 @@ class TestJavaExtension < Test::Unit::TestCase
     assert_equal BLUE, color.color
   end
 
+  def test_java_class_name
+    assert_equal 'Java::OrgJrubyJavasupportTest::Color', Color.name
+
+    assert_equal 'org.jruby.javasupport.test.Color', Color.java_class.name
+
+    assert_equal 'Java::JavaLang::Runnable', java.lang.Runnable.name
+    assert_equal 'java.lang.Runnable', Java::JavaLang::Runnable.java_class.name
+
+    assert_equal 'Java::JavaLang::String', JString.name
+
+    assert_equal 'Java::JavaLang::Thread::State', Java::java.lang.Thread::State.name
+    # an enum class with custom code for each constant :
+    assert_equal 'Java::JavaUtilConcurrent::TimeUnit::1', java.util.concurrent.TimeUnit::NANOSECONDS.class.name
+    assert_equal 'Java::JavaUtilConcurrent::TimeUnit::2', java.util.concurrent.TimeUnit::MICROSECONDS.class.name
+    assert java.util.concurrent.TimeUnit::MICROSECONDS.is_a?(java.util.concurrent.TimeUnit)
+  end
+
   include_package 'org.jruby.javasupport.test'
   include_package 'java.lang'
 
@@ -192,7 +209,7 @@ class TestJavaExtension < Test::Unit::TestCase
         result = obj.synchronized { "foo" }
     }
     assert_equal("foo", result)
-    
+
     begin
       obj.wait 1
     rescue java.lang.IllegalMonitorStateException
@@ -200,13 +217,13 @@ class TestJavaExtension < Test::Unit::TestCase
     else
       assert false, "java.lang.IllegalMonitorStateException was not thrown"
     end
-    
+
     assert_nothing_raised {
         obj.synchronized { obj.wait 1 }
     }
   end
 
-  
+
   def test_java_interface_impl_with_block
     ran = false
     SimpleExecutor::WrappedByMethodCall.new.execute(Runnable.impl {ran = true})
@@ -276,14 +293,42 @@ class TestJavaExtension < Test::Unit::TestCase
     begin
       assert_equal "Ruby overrides java!", a.call_protected
     rescue Exception => e
-      flunk "Exception raised: #{$!}"
+      flunk "Exception raised: #{e}"
     end
   end
-  
+
   def test_map_interface_to_array
     hash = {"one"=>"two","three"=>"four"}
     map = java.util.HashMap.new(hash)
     assert_equal hash.to_a.sort, map.to_a.sort
   end
+
+  def test_java_object_wrapper
+    wrapped1 = Java::JavaObject.wrap object = java.lang.StringBuilder.new
+    assert wrapped1.is_a? Java::JavaObject
+    assert_equal object, wrapped1
+
+    wrapped2 = Java::JavaObject.wrap java.lang.StringBuilder.new
+    assert_not_equal object, wrapped2
+    assert ! wrapped1.equal?(wrapped2)
+
+    wrapped3 = Java::JavaObject.wrap object
+    assert_equal wrapped1, wrapped3
+    assert wrapped1.equal?(wrapped3)
+
+    cal1 = java.util.Calendar.getInstance
+    cal1.setTime Java::JavaUtil::Date.new 0
+    cal2 = java.util.Calendar.getInstance
+    cal2.setTime Java::JavaUtil::Date.new 0
+
+    assert ! cal1.equal?(cal2)
+
+    wrapped1 = Java::JavaObject.wrap cal1
+    wrapped2 = Java::JavaObject.wrap cal2
+    assert wrapped2 == wrapped1
+    assert wrapped1.eql? wrapped2
+    assert ! wrapped1.equal?(wrapped2)
+  end
+
 end
 
