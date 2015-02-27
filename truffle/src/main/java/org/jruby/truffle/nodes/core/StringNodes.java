@@ -22,6 +22,7 @@ import com.oracle.truffle.api.utilities.BranchProfile;
 
 import org.jcodings.Encoding;
 import org.jcodings.specific.ASCIIEncoding;
+import org.jcodings.specific.UTF8Encoding;
 import org.joni.Matcher;
 import org.joni.Option;
 import org.joni.Region;
@@ -808,10 +809,11 @@ public abstract class StringNodes {
         }
     }
 
-    @CoreMethod(names = "encode", required = 1, optional = 1)
+    @CoreMethod(names = "encode", optional = 2)
     public abstract static class EncodeNode extends CoreMethodNode {
 
         @Child private ToStrNode toStrNode;
+        @Child private EncodingNodes.DefaultInternalNode defaultInternalNode;
 
         public EncodeNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -851,7 +853,7 @@ public abstract class StringNodes {
             return getContext().toTruffle(jrubyTranscoded);
         }
 
-        @Specialization(guards = { "!isRubyString(arguments[1])", "!isRubyEncoding(arguments[1])" })
+        @Specialization(guards = { "!isRubyString(arguments[1])", "!isRubyEncoding(arguments[1])", "!isUndefinedPlaceholder(arguments[1])" })
         public RubyString encode(VirtualFrame frame, RubyString string, Object encoding, UndefinedPlaceholder options) {
             notDesignedForCompilation();
 
@@ -861,6 +863,24 @@ public abstract class StringNodes {
             }
 
             return encode(string, toStrNode.executeRubyString(frame, encoding), options);
+        }
+
+        @Specialization
+        public RubyString encode(RubyString string, @SuppressWarnings("unused") UndefinedPlaceholder encoding, @SuppressWarnings("unused") UndefinedPlaceholder options) {
+            notDesignedForCompilation();
+
+            if (defaultInternalNode == null) {
+                CompilerDirectives.transferToInterpreter();
+                defaultInternalNode = insert(EncodingNodesFactory.DefaultInternalNodeFactory.create(getContext(), getSourceSection(), new RubyNode[]{}));
+            }
+
+            final Object defaultInternalEncoding = defaultInternalNode.defaultInternal();
+
+            if (defaultInternalEncoding == getContext().getCoreLibrary().getNilObject()) {
+                return encode(string, RubyEncoding.getEncoding("UTF-8"), UndefinedPlaceholder.INSTANCE);
+            }
+
+            return encode(string, (RubyEncoding) defaultInternalEncoding, UndefinedPlaceholder.INSTANCE);
         }
     }
 
