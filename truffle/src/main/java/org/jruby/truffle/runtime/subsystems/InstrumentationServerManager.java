@@ -87,7 +87,7 @@ public class InstrumentationServerManager {
                     final OutputStream stream = httpExchange.getResponseBody();
                     stream.write(bytes);
                     stream.close();
-                } catch (Exception e) {
+                } catch (IOException e) {
                     e.printStackTrace();
                 }
             }
@@ -121,7 +121,7 @@ public class InstrumentationServerManager {
                     httpExchange.getResponseHeaders().set("Content-Type", "text/plain");
                     httpExchange.sendResponseHeaders(200, 0);
                     httpExchange.getResponseBody().close();
-                } catch (Exception e) {
+                } catch (IOException e) {
                     e.printStackTrace();
                 }
             }

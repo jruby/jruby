@@ -183,7 +183,7 @@ public class SafepointManager {
         }
     }
 
-    private class RunningThread {
+    private static class RunningThread {
 
         private final Thread thread;
         private final boolean interruptible;
