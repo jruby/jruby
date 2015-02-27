@@ -133,14 +133,14 @@ public abstract class SymbolNodes {
         }
 
         @Specialization
-        public int CaseCompareNode(RubySymbol symbol, RubySymbol other) {
+        public int caseCompare(RubySymbol symbol, RubySymbol other) {
             notDesignedForCompilation();
 
             return symbol.getByteList().caseInsensitiveCmp(other.getByteList());
         }
 
         @Specialization(guards = "!isRubySymbol(arguments[1])")
-        public RubyNilClass CaseCompareNode(RubySymbol symbol,  Object other) {
+        public RubyNilClass caseCompare(RubySymbol symbol,  Object other) {
             notDesignedForCompilation();
             return getContext().getCoreLibrary().getNilObject();
         }
