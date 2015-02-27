@@ -42,8 +42,12 @@ public class SimpleShell {
             }
 
             switch (tokenizer.nextToken()) {
-                case "exit":
+                case "continue":
                     return;
+
+                case "exit":
+                    System.exit(0);
+                    break;
 
                 default:
                     try {
