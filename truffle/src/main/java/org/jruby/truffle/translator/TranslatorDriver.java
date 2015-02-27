@@ -41,7 +41,7 @@ import java.nio.charset.StandardCharsets;
 public class TranslatorDriver {
 
     public static enum ParserContext {
-        TOP_LEVEL, SHELL, MODULE
+        TOP_LEVEL, SHELL, MODULE, EVAL
     }
 
     private long nextReturnID = 0;
@@ -94,7 +94,9 @@ public class TranslatorDriver {
             }
         }
 
-        final org.jruby.parser.ParserConfiguration parserConfiguration = new org.jruby.parser.ParserConfiguration(context.getRuntime(), 0, false, parserContext == ParserContext.TOP_LEVEL, true);
+        boolean isInlineSource = parserContext == ParserContext.SHELL;
+        boolean isEvalParse = parserContext == ParserContext.EVAL || parserContext == ParserContext.MODULE;
+        final org.jruby.parser.ParserConfiguration parserConfiguration = new org.jruby.parser.ParserConfiguration(context.getRuntime(), 0, isInlineSource, !isEvalParse, true);
         parserConfiguration.setDefaultEncoding(defaultEncoding);
 
         // Parse to the JRuby AST

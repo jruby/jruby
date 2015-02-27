@@ -25,10 +25,11 @@ default_gems =
    ImportedGem.new( 'rake', 'rake.version', true ),
    ImportedGem.new( 'rdoc', 'rdoc.version', true ),
    ImportedGem.new( 'json', 'json.version', true ),
-   ImportedGem.new( 'jar-dependencies', '0.1.2', true ),
+   ImportedGem.new( 'jar-dependencies', '0.1.8', true ),
    ImportedGem.new( 'minitest', 'minitest.version', true ),
    ImportedGem.new( 'test-unit', 'test-unit.version', true ),
-   ImportedGem.new( 'power_assert', 'power_assert.version', true )
+   ImportedGem.new( 'power_assert', 'power_assert.version', true ),
+   ImportedGem.new( 'psych', '2.0.9-SNAPSHOT', true )
   ]
 
 project 'JRuby Lib Setup' do
@@ -67,7 +68,7 @@ project 'JRuby Lib Setup' do
   end
 
   # just depends on jruby-core so we are sure the jruby.jar is in place
-  jar "org.jruby:jruby-core:#{version}"
+  jar "org.jruby:jruby-core:#{version}", :scope => 'provided'
 
   repository( :url => 'http://rubygems-proxy.torquebox.org/releases',
               :id => 'rubygems-releases' )
@@ -80,7 +81,9 @@ project 'JRuby Lib Setup' do
 
   # tell maven to download the respective gem artifacts
   default_gems.each do |g|
-    gem g.name, g.version
+    dependency 'rubygems', g.name, g.version, :type => 'gem' do
+      exclusion 'rubygems:jar-dependencies'
+    end
   end
 
   # this is not an artifact for maven central
@@ -89,6 +92,10 @@ project 'JRuby Lib Setup' do
   plugin :invoker, :skipInstallation => true
 
   gem 'ruby-maven', '3.1.1.0.8', :scope => :provided
+
+  plugin :dependency, :useRepositoryLayout => true, :outputDirectory => 'ruby/stdlib', :excludeGroupIds => 'rubygems', :includeScope => :runtime do
+    execute_goal 'copy-dependencies', :phase => 'package'
+  end
 
   execute :install_gems, :'package' do |ctx|
     require 'fileutils'
@@ -128,6 +135,7 @@ project 'JRuby Lib Setup' do
     require 'rubygems/package'
 
     puts 'install gems unless already installed'
+    ENV_JAVA['jars.skip'] = 'true'
     ctx.project.artifacts.select do |a|
       a.group_id == 'rubygems' || a.group_id == 'org.jruby.gems'
     end.each do |a|

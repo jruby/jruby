@@ -188,7 +188,7 @@ public abstract class StringNodes {
 
                 return compare(a, coerced);
             } catch (RaiseException e) {
-                if (e.getRubyException().getLogicalClass().equals(getContext().getCoreLibrary().getTypeErrorClass())) {
+                if (e.getRubyException().getLogicalClass() == getContext().getCoreLibrary().getTypeErrorClass()) {
                     return getContext().getCoreLibrary().getNilObject();
                 } else {
                     throw e;
@@ -230,9 +230,8 @@ public abstract class StringNodes {
             try {
                 EncodingUtils.encCrStrBufCat(getContext().getRuntime(), string, other.getByteList(), other.getByteList().getEncoding(), codeRange, ptr_cr_ret);
             } catch (org.jruby.exceptions.RaiseException e) {
-                if (e.getException().getMetaClass().equals(getContext().getRuntime().getEncodingCompatibilityError())) {
+                if (e.getException().getMetaClass() == getContext().getRuntime().getEncodingCompatibilityError()) {
                     CompilerDirectives.transferToInterpreter();
-
                     throw new RaiseException(getContext().getCoreLibrary().encodingCompatibilityError(e.getException().message.asJavaString(), this));
                 }
 
@@ -742,7 +741,7 @@ public abstract class StringNodes {
 
             ByteList newByteList = StringNodesHelper.downcase(string);
 
-            if (newByteList.equals(string.getBytes())) {
+            if (newByteList.equal(string.getBytes())) {
                 return getContext().getCoreLibrary().getNilObject();
             } else {
                 string.set(newByteList);
@@ -809,7 +808,7 @@ public abstract class StringNodes {
         }
     }
 
-    @CoreMethod(names = "encode", required = 1)
+    @CoreMethod(names = "encode", required = 1, optional = 1)
     public abstract static class EncodeNode extends CoreMethodNode {
 
         @Child private ToStrNode toStrNode;
@@ -823,7 +822,7 @@ public abstract class StringNodes {
         }
 
         @Specialization
-        public RubyString encode(RubyString string, RubyString encoding) {
+        public RubyString encode(RubyString string, RubyString encoding, @SuppressWarnings("unused") UndefinedPlaceholder options) {
             notDesignedForCompilation();
 
             final org.jruby.RubyString jrubyString = getContext().toJRuby(string);
@@ -834,7 +833,15 @@ public abstract class StringNodes {
         }
 
         @Specialization
-        public RubyString encode(RubyString string, RubyEncoding encoding) {
+        public RubyString encode(RubyString string, RubyString encoding, @SuppressWarnings("unused") RubyHash options) {
+            notDesignedForCompilation();
+
+            // TODO (nirvdrum 20-Feb-15) We need to do something with the options hash. I'm stubbing this out just to get the jUnit mspec formatter running.
+            return encode(string, encoding, UndefinedPlaceholder.INSTANCE);
+        }
+
+        @Specialization
+        public RubyString encode(RubyString string, RubyEncoding encoding, @SuppressWarnings("unused") UndefinedPlaceholder options) {
             notDesignedForCompilation();
 
             final org.jruby.RubyString jrubyString = getContext().toJRuby(string);
@@ -845,7 +852,7 @@ public abstract class StringNodes {
         }
 
         @Specialization(guards = { "!isRubyString(arguments[1])", "!isRubyEncoding(arguments[1])" })
-        public RubyString encode(VirtualFrame frame, RubyString string, Object encoding) {
+        public RubyString encode(VirtualFrame frame, RubyString string, Object encoding, UndefinedPlaceholder options) {
             notDesignedForCompilation();
 
             if (toStrNode == null) {
@@ -853,7 +860,7 @@ public abstract class StringNodes {
                 toStrNode = insert(ToStrNodeFactory.create(getContext(), getSourceSection(), null));
             }
 
-            return encode(string, toStrNode.executeRubyString(frame, encoding));
+            return encode(string, toStrNode.executeRubyString(frame, encoding), options);
         }
     }
 
@@ -939,6 +946,24 @@ public abstract class StringNodes {
         }
     }
 
+    @CoreMethod(names = "hash")
+    public abstract static class HashNode extends CoreMethodNode {
+
+        public HashNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public HashNode(HashNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public int hash(RubyString string) {
+            return string.getBytes().hashCode();
+        }
+
+    }
+
     @CoreMethod(names = "inspect")
     public abstract static class InspectNode extends CoreMethodNode {
 
@@ -950,6 +975,7 @@ public abstract class StringNodes {
             super(prev);
         }
 
+        @TruffleBoundary
         @Specialization
         public RubyString inspect(RubyString string) {
             notDesignedForCompilation();
@@ -1453,7 +1479,7 @@ public abstract class StringNodes {
 
         @Specialization
         public int size(RubyString string) {
-            return string.length();
+            return StringSupport.strLengthFromRubyString(string);
         }
     }
 
@@ -1687,7 +1713,7 @@ public abstract class StringNodes {
         public RubySymbol toSym(RubyString string) {
             notDesignedForCompilation();
 
-            return getContext().newSymbol(string.toString());
+            return getContext().newSymbol(string.getByteList());
         }
     }
 

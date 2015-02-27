@@ -54,7 +54,7 @@ import org.jruby.util.WeakIdentityHashMap;
 import org.jruby.util.cli.Options;
 import org.jruby.util.collections.ClassValueCalculator;
 
-public class JavaSupportImpl implements JavaSupport {
+public class JavaSupportImpl extends JavaSupport {
     private static final Map<String,Class> PRIMITIVE_CLASSES = new HashMap<String,Class>();
     static {
         PRIMITIVE_CLASSES.put("boolean", Boolean.TYPE);

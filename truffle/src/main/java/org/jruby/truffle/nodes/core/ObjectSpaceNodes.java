@@ -102,13 +102,16 @@ public abstract class ObjectSpaceNodes {
         public int eachObject(VirtualFrame frame, @SuppressWarnings("unused") UndefinedPlaceholder ofClass, RubyProc block) {
             notDesignedForCompilation();
 
-            final Collection<RubyBasicObject> liveObjects = getContext().getObjectSpaceManager().collectLiveObjects().values();
+            int count = 0;
 
-            for (RubyBasicObject object : liveObjects) {
-                yield(frame, block, object);
+            for (RubyBasicObject object : getContext().getObjectSpaceManager().collectLiveObjects().values()) {
+                if (!isHidden(object)) {
+                    yield(frame, block, object);
+                    count++;
+                }
             }
 
-            return liveObjects.size();
+            return count;
         }
 
         @Specialization
@@ -118,13 +121,17 @@ public abstract class ObjectSpaceNodes {
             int count = 0;
 
             for (RubyBasicObject object : getContext().getObjectSpaceManager().collectLiveObjects().values()) {
-                if (ModuleOperations.assignableTo(object.getLogicalClass(), ofClass)) {
+                if (!isHidden(object) && ModuleOperations.assignableTo(object.getLogicalClass(), ofClass)) {
                     yield(frame, block, object);
                     count++;
                 }
             }
 
             return count;
+        }
+
+        private boolean isHidden(RubyBasicObject object) {
+            return object instanceof RubyClass && ((RubyClass) object).isSingleton();
         }
 
     }

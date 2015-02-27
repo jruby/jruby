@@ -29,6 +29,41 @@ import com.oracle.truffle.api.utilities.ConditionProfile;
 @CoreClass(name = "Regexp")
 public abstract class RegexpNodes {
 
+    @CoreMethod(names = "==", required = 1)
+    public abstract static class EqualNode extends CoreMethodNode {
+
+        public EqualNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public EqualNode(EqualNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public boolean equal(RubyRegexp a, RubyRegexp b) {
+            if (a == b) {
+                return true;
+            }
+
+            if (a.getRegex().getOptions() != b.getRegex().getOptions()) {
+                return false;
+            }
+
+            if (a.getSource().getEncoding() != b.getSource().getEncoding()) {
+                return false;
+            }
+
+            return a.getSource().equal(b.getSource());
+        }
+
+        @Specialization(guards = "!isRubyRegexp(arguments[1])")
+        public boolean equal(RubyRegexp a, Object b) {
+            return false;
+        }
+
+    }
+
     public abstract static class EscapingNode extends CoreMethodNode {
 
         @Child private EscapeNode escapeNode;
@@ -137,6 +172,25 @@ public abstract class RegexpNodes {
             notDesignedForCompilation();
 
             return getContext().makeString(org.jruby.RubyRegexp.quote19(new ByteList(pattern.getBytes()), true).toString());
+        }
+
+    }
+
+    @CoreMethod(names = "hash")
+    public abstract static class HashNode extends CoreMethodNode {
+
+        public HashNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public HashNode(HashNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public int hash(RubyRegexp regexp) {
+            int options = regexp.getRegex().getOptions() & ~32 /* option n, NO_ENCODING in common/regexp.rb */;
+            return options ^ regexp.getSource().hashCode();
         }
 
     }

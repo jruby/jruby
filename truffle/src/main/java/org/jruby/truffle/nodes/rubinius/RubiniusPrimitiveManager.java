@@ -23,7 +23,7 @@ import java.util.Map;
  */
 public class RubiniusPrimitiveManager {
 
-    private final Map<String, RubiniusPrimitiveConstructor> primitives;
+    private final Map<String, RubiniusPrimitiveConstructor> primitives; // Initialized once by create().
 
     private RubiniusPrimitiveManager(Map<String, RubiniusPrimitiveConstructor> primitives) {
         this.primitives = primitives;

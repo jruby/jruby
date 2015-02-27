@@ -681,6 +681,8 @@
                       <arg value="-Xparser.warn.shadowing_local=false" />
                       <arg value="-Xparser.warn.regex_condition=false" />
                       <arg value="-Xparser.warn.argument_prefix=false" />
+                      <arg value="-Xparser.warn.ambiguous_argument=false" />
+                      <arg value="-Xparser.warn.flags_ignored=false" />
                       <arg value="-J-ea" />
                       <arg value="-J-Xmx1G" />
                       <arg value="spec/mspec/bin/mspec" />
@@ -787,6 +789,207 @@
                 </configuration>
               </execution>
             </executions>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+    <profile>
+      <id>truffle-specs-language-report</id>
+      <build>
+        <plugins>
+          <plugin>
+            <artifactId>maven-antrun-plugin</artifactId>
+            <executions>
+              <execution>
+                <id>rake</id>
+                <phase>test</phase>
+                <goals>
+                  <goal>run</goal>
+                </goals>
+                <configuration>
+                  <target>
+                    <exec dir="${jruby.home}" executable="${jruby.home}/bin/jruby" failonerror="true">
+                      <arg value="-X+T" />
+                      <arg value="-Xparser.warn.useless_use_of=false" />
+                      <arg value="-Xparser.warn.not_reached=false" />
+                      <arg value="-Xparser.warn.grouped_expressions=false" />
+                      <arg value="-Xparser.warn.shadowing_local=false" />
+                      <arg value="-Xparser.warn.regex_condition=false" />
+                      <arg value="-Xparser.warn.argument_prefix=false" />
+                      <arg value="-Xparser.warn.ambiguous_argument=false" />
+                      <arg value="-Xparser.warn.flags_ignored=false" />
+                      <arg value="-J-ea" />
+                      <arg value="-J-Xmx1G" />
+                      <arg value="spec/mspec/bin/mspec" />
+                      <arg value="run" />
+                      <arg value="-f" />
+                      <arg value="${jruby.home}/spec/truffle/truffle_formatter.rb" />
+                      <arg value="-t" />
+                      <arg value="spec/truffle/spec-wrapper" />
+                      <arg value="--config" />
+                      <arg value="spec/truffle/truffle.mspec" />
+                      <arg value="--excl-tag" />
+                      <arg value="fails" />
+                      <arg value=":language" />
+                    </exec>
+                  </target>
+                </configuration>
+              </execution>
+              <execution>
+                <id>junit-report-generation</id>
+                <phase>test</phase>
+                <goals>
+                  <goal>run</goal>
+                </goals>
+                <configuration>
+                  <target>
+                    <property name="reportTitle" value="Language Specs Report" />
+                    <ant antfile="${basedir}/../spec/truffle/buildTestReports.xml" />
+                  </target>
+                </configuration>
+              </execution>
+            </executions>
+            <dependencies>
+              <dependency>
+                <groupId>org.apache.ant</groupId>
+                <artifactId>ant-junit</artifactId>
+                <version>${ant.version}</version>
+              </dependency>
+            </dependencies>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+    <profile>
+      <id>truffle-specs-core-report</id>
+      <build>
+        <plugins>
+          <plugin>
+            <artifactId>maven-antrun-plugin</artifactId>
+            <executions>
+              <execution>
+                <id>rake</id>
+                <phase>test</phase>
+                <goals>
+                  <goal>run</goal>
+                </goals>
+                <configuration>
+                  <target>
+                    <exec dir="${jruby.home}" executable="${jruby.home}/bin/jruby" failonerror="true">
+                      <arg value="-X+T" />
+                      <arg value="-Xparser.warn.useless_use_of=false" />
+                      <arg value="-Xparser.warn.not_reached=false" />
+                      <arg value="-Xparser.warn.grouped_expressions=false" />
+                      <arg value="-Xparser.warn.shadowing_local=false" />
+                      <arg value="-Xparser.warn.regex_condition=false" />
+                      <arg value="-Xparser.warn.argument_prefix=false" />
+                      <arg value="-Xparser.warn.ambiguous_argument=false" />
+                      <arg value="-Xparser.warn.flags_ignored=false" />
+                      <arg value="-J-ea" />
+                      <arg value="-J-Xmx1G" />
+                      <arg value="spec/mspec/bin/mspec" />
+                      <arg value="run" />
+                      <arg value="-f" />
+                      <arg value="${jruby.home}/spec/truffle/truffle_formatter.rb" />
+                      <arg value="-t" />
+                      <arg value="spec/truffle/spec-wrapper" />
+                      <arg value="--config" />
+                      <arg value="spec/truffle/truffle.mspec" />
+                      <arg value="--excl-tag" />
+                      <arg value="fails" />
+                      <arg value=":core" />
+                    </exec>
+                  </target>
+                </configuration>
+              </execution>
+              <execution>
+                <id>junit-report-generation</id>
+                <phase>test</phase>
+                <goals>
+                  <goal>run</goal>
+                </goals>
+                <configuration>
+                  <target>
+                    <property name="reportTitle" value="Core Specs Report" />
+                    <ant antfile="${basedir}/../spec/truffle/buildTestReports.xml" />
+                  </target>
+                </configuration>
+              </execution>
+            </executions>
+            <dependencies>
+              <dependency>
+                <groupId>org.apache.ant</groupId>
+                <artifactId>ant-junit</artifactId>
+                <version>${ant.version}</version>
+              </dependency>
+            </dependencies>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+    <profile>
+      <id>truffle-specs-rubysl-report</id>
+      <build>
+        <plugins>
+          <plugin>
+            <artifactId>maven-antrun-plugin</artifactId>
+            <executions>
+              <execution>
+                <id>rake</id>
+                <phase>test</phase>
+                <goals>
+                  <goal>run</goal>
+                </goals>
+                <configuration>
+                  <target>
+                    <exec dir="${jruby.home}" executable="${jruby.home}/bin/jruby" failonerror="true">
+                      <arg value="-X+T" />
+                      <arg value="-Xparser.warn.useless_use_of=false" />
+                      <arg value="-Xparser.warn.not_reached=false" />
+                      <arg value="-Xparser.warn.grouped_expressions=false" />
+                      <arg value="-Xparser.warn.shadowing_local=false" />
+                      <arg value="-Xparser.warn.regex_condition=false" />
+                      <arg value="-Xparser.warn.argument_prefix=false" />
+                      <arg value="-Xparser.warn.ambiguous_argument=false" />
+                      <arg value="-Xparser.warn.flags_ignored=false" />
+                      <arg value="-J-ea" />
+                      <arg value="-J-Xmx1G" />
+                      <arg value="spec/mspec/bin/mspec" />
+                      <arg value="run" />
+                      <arg value="-f" />
+                      <arg value="${jruby.home}/spec/truffle/truffle_formatter.rb" />
+                      <arg value="-t" />
+                      <arg value="spec/truffle/spec-wrapper" />
+                      <arg value="--config" />
+                      <arg value="spec/truffle/truffle.mspec" />
+                      <arg value="--excl-tag" />
+                      <arg value="fails" />
+                      <arg value=":rubysl" />
+                    </exec>
+                  </target>
+                </configuration>
+              </execution>
+              <execution>
+                <id>junit-report-generation</id>
+                <phase>test</phase>
+                <goals>
+                  <goal>run</goal>
+                </goals>
+                <configuration>
+                  <target>
+                    <property name="reportTitle" value="Stdlib Specs Report" />
+                    <ant antfile="${basedir}/../spec/truffle/buildTestReports.xml" />
+                  </target>
+                </configuration>
+              </execution>
+            </executions>
+            <dependencies>
+              <dependency>
+                <groupId>org.apache.ant</groupId>
+                <artifactId>ant-junit</artifactId>
+                <version>${ant.version}</version>
+              </dependency>
+            </dependencies>
           </plugin>
         </plugins>
       </build>

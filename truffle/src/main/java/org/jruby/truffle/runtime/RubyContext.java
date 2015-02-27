@@ -17,6 +17,7 @@ import com.oracle.truffle.api.source.BytesDecoder;
 import com.oracle.truffle.api.source.Source;
 
 import org.jcodings.Encoding;
+import org.jcodings.specific.ASCIIEncoding;
 import org.jcodings.specific.UTF8Encoding;
 import org.jruby.Ruby;
 import org.jruby.RubyNil;
@@ -193,9 +194,15 @@ public class RubyContext extends ExecutionContext {
         return symbolTable;
     }
 
+
     @CompilerDirectives.TruffleBoundary
     public RubySymbol newSymbol(String name) {
-        return symbolTable.getSymbol(name);
+        return symbolTable.getSymbol(name, ASCIIEncoding.INSTANCE);
+    }
+
+    @CompilerDirectives.TruffleBoundary
+    public RubySymbol newSymbol(String name, Encoding encoding) {
+        return symbolTable.getSymbol(name, encoding);
     }
 
     @CompilerDirectives.TruffleBoundary
@@ -206,7 +213,7 @@ public class RubyContext extends ExecutionContext {
     @TruffleBoundary
     public Object instanceEval(ByteList code, Object self, String filename, RubyNode currentNode) {
         final Source source = Source.fromText(code, filename);
-        return execute(this, source, code.getEncoding(), TranslatorDriver.ParserContext.TOP_LEVEL, self, null, currentNode, new NodeWrapper() {
+        return execute(this, source, code.getEncoding(), TranslatorDriver.ParserContext.EVAL, self, null, currentNode, new NodeWrapper() {
             @Override
             public RubyNode wrap(RubyNode node) {
                 return new SetMethodDeclarationContext(node.getContext(), node.getSourceSection(), Visibility.PUBLIC, "instance_eval", node);
@@ -221,7 +228,7 @@ public class RubyContext extends ExecutionContext {
     @TruffleBoundary
     public Object eval(ByteList code, RubyBinding binding, boolean ownScopeForAssignments, String filename, RubyNode currentNode) {
         final Source source = Source.fromText(code, filename);
-        return execute(this, source, code.getEncoding(), TranslatorDriver.ParserContext.TOP_LEVEL, binding.getSelf(), binding.getFrame(), ownScopeForAssignments, currentNode, NodeWrapper.IDENTITY);
+        return execute(this, source, code.getEncoding(), TranslatorDriver.ParserContext.EVAL, binding.getSelf(), binding.getFrame(), ownScopeForAssignments, currentNode, NodeWrapper.IDENTITY);
     }
 
     public Object eval(ByteList code, RubyBinding binding, boolean ownScopeForAssignments, RubyNode currentNode) {

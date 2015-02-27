@@ -1,8 +1,7 @@
 # yaml_dump.rb [embed]
 
-require 'yaml'
+# no use of yaml since psych is not installed at this point of the tests
 
 def dump
-  content = YAML::load @text
-  content.each { |k, v| puts "#{k}: #{v.join(", ")}" }
+  puts @text.gsub( /\n/m, '' ).gsub( /-/, '')
 end

@@ -248,13 +248,13 @@ public abstract class ModuleOperations {
     }
 
     @TruffleBoundary
-    public static void setClassVariable(RubyModule module, String name, Object value) {
+    public static void setClassVariable(RubyModule module, String name, Object value, RubyNode currentNode) {
         CompilerAsserts.neverPartOfCompilation();
 
         // Look in the current module
 
         if (module.getClassVariables().containsKey(name)) {
-            module.getClassVariables().put(name, value);
+            module.setClassVariable(currentNode, name, value);
             return;
         }
 
@@ -262,14 +262,14 @@ public abstract class ModuleOperations {
 
         for (RubyModule ancestor : module.parentAncestors()) {
             if (ancestor.getClassVariables().containsKey(name)) {
-                ancestor.getClassVariables().put(name, value);
+                ancestor.setClassVariable(currentNode, name, value);
                 return;
             }
         }
 
         // Not existing class variable - set in the current module
 
-        module.getClassVariables().put(name, value);
+        module.setClassVariable(currentNode, name, value);
     }
 
 }

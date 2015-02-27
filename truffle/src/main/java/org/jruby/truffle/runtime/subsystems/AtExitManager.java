@@ -11,7 +11,7 @@ package org.jruby.truffle.runtime.subsystems;
 
 import org.jruby.truffle.runtime.core.RubyProc;
 
-import java.util.ArrayList;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.ListIterator;
 
@@ -20,13 +20,13 @@ import java.util.ListIterator;
  */
 public class AtExitManager {
 
-    private final List<RubyProc> blocks = new ArrayList<>();
+    private final List<RubyProc> blocks = new LinkedList<>();
 
-    public void add(RubyProc block) {
+    public synchronized void add(RubyProc block) {
         blocks.add(block);
     }
 
-    public void run() {
+    public synchronized void run() {
         final ListIterator<RubyProc> iterator = blocks.listIterator(blocks.size());
 
         while (iterator.hasPrevious()) {

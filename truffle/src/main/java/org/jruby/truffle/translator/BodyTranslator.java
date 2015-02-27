@@ -14,6 +14,10 @@ import com.oracle.truffle.api.nodes.NodeUtil;
 import com.oracle.truffle.api.source.Source;
 import com.oracle.truffle.api.source.SourceSection;
 
+import org.jcodings.specific.ASCIIEncoding;
+import org.jcodings.specific.USASCIIEncoding;
+import org.jcodings.specific.UTF8Encoding;
+import org.jcodings.specific.Windows_31JEncoding;
 import org.joni.NameEntry;
 import org.joni.Regex;
 import org.joni.Syntax;
@@ -73,7 +77,6 @@ public class BodyTranslator extends Translator {
 
     protected final BodyTranslator parent;
     protected final TranslatorEnvironment environment;
-    private final boolean topLevel;
 
     public boolean translatingForStatement = false;
     public boolean useClassVariablesAsIfInClass = false;
@@ -101,7 +104,6 @@ public class BodyTranslator extends Translator {
         super(currentNode, context, source);
         this.parent = parent;
         this.environment = environment;
-        this.topLevel = topLevel;
         initGlobalVariableAliases();
         initReadOnlyGlobalVariables();
     }
@@ -1033,7 +1035,7 @@ public class BodyTranslator extends Translator {
         final SourceSection sourceSection = translate(node.getPosition());
         final RubyNode classNode;
 
-        if (topLevel) {
+        if (parent == null) {
             /*
              * In the top-level, methods are defined in the class of the main object. This is
              * counter-intuitive - I would have expected them to be defined in the singleton class.
@@ -1339,6 +1341,10 @@ public class BodyTranslator extends Translator {
             rhs = new CheckOutputSeparatorVariableTypeNode(context, sourceSection, rhs);
         } else if (name.equals("$_")) {
             rhs = WrapInThreadLocalNodeFactory.create(context, sourceSection, rhs);
+        } else if (name.equals("$stdout")) {
+            rhs = new CheckStdoutVariableTypeNode(context, sourceSection, rhs);
+        } else if (name.equals("$VERBOSE")) {
+            rhs = new UpdateVerbosityNode(context, sourceSection, rhs);
         }
 
         if (readOnlyGlobalVariables.contains(name)) {
@@ -1374,9 +1380,6 @@ public class BodyTranslator extends Translator {
 
             return ((ReadNode) localVarNode).makeWriteNode(rhs);
         } else {
-            if (name.equals("$stdout")) {
-                rhs = new CheckStdoutVariableTypeNode(context, sourceSection, rhs);
-            }
             final ObjectLiteralNode globalVariablesObjectNode = new ObjectLiteralNode(context, sourceSection, context.getCoreLibrary().getGlobalVariablesObject());
             return new WriteInstanceVariableNode(context, sourceSection, name, globalVariablesObjectNode, rhs, true);
 
@@ -2352,14 +2355,14 @@ public class BodyTranslator extends Translator {
         // This isn't quite right - we shouldn't be looking up by name, we need a real reference to this constants
         if (node.getOptions().isEncodingNone()) {
             if (!all7Bit(node.getValue().bytes())) {
-                regexp.getSource().setEncoding(context.getRuntime().getEncodingService().getAscii8bitEncoding());
+                regexp.getSource().setEncoding(ASCIIEncoding.INSTANCE);
             } else {
-                regexp.getSource().setEncoding(context.getRuntime().getEncodingService().getUSAsciiEncoding());
+                regexp.getSource().setEncoding(USASCIIEncoding.INSTANCE);
             }
         } else if (node.getOptions().getKCode().getKCode().equals("SJIS")) {
-            regexp.getSource().setEncoding(((RubyEncoding) context.getCoreLibrary().getEncodingClass().getConstants().get("Windows_31J").getValue()).getEncoding());
+            regexp.getSource().setEncoding(Windows_31JEncoding.INSTANCE);
         } else if (node.getOptions().getKCode().getKCode().equals("UTF8")) {
-            regexp.getSource().setEncoding(((RubyEncoding) context.getCoreLibrary().getEncodingClass().getConstants().get("UTF_8").getValue()).getEncoding());
+            regexp.getSource().setEncoding(UTF8Encoding.INSTANCE);
         }
 
         final ObjectLiteralNode literalNode = new ObjectLiteralNode(context, translate(node.getPosition()), regexp);
@@ -2538,7 +2541,7 @@ public class BodyTranslator extends Translator {
 
     @Override
     public RubyNode visitSymbolNode(org.jruby.ast.SymbolNode node) {
-        return new ObjectLiteralNode(context, translate(node.getPosition()), context.newSymbol(node.getName()));
+        return new ObjectLiteralNode(context, translate(node.getPosition()), context.newSymbol(node.getName(), node.getEncoding()));
     }
 
     @Override

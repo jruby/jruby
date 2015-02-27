@@ -826,16 +826,8 @@ public class ShellLauncher {
      */
     public static OutputStream unwrapBufferedStream(OutputStream filteredStream) {
         if (RubyInstanceConfig.NO_UNWRAP_PROCESS_STREAMS) return filteredStream;
-        while (filteredStream instanceof FilterOutputStream) {
-            try {
-                filteredStream = (OutputStream)
-                    FieldAccess.getProtectedFieldValue(FilterOutputStream.class,
-                        "out", filteredStream);
-            } catch (Exception e) {
-                break; // break out if we've dug as deep as we can
-            }
-        }
-        return filteredStream;
+
+        return unwrapFilterOutputStream(filteredStream);
     }
 
     /**
@@ -855,12 +847,57 @@ public class ShellLauncher {
         if (filteredStream.getClass().getName().indexOf("ProcessPipeInputStream") != 1) {
             return filteredStream;
         }
-        
+
+        return unwrapFilterInputStream((FilterInputStream)filteredStream);
+    }
+
+    /**
+     * Unwrap the given stream to its first non-FilterOutputStream. If the stream is not
+     * a FilterOutputStream it is returned immediately.
+     *
+     * Note that this version is used when you are absolutely sure you want to unwrap;
+     * the unwrapBufferedStream version will perform checks for certain types of
+     * process-related streams that should not be unwrapped (Java 7+ Process, e.g.).
+     *
+     * @param filteredStream a stream to be unwrapped, if it is a FilterOutputStream
+     * @return the deeped non-FilterOutputStream stream, or filterOutputStream if it is
+     *         not a FilterOutputStream to begin with.
+     */
+    public static OutputStream unwrapFilterOutputStream(OutputStream filteredStream) {
+        while (filteredStream instanceof FilterOutputStream) {
+            try {
+                OutputStream tmpStream = (OutputStream)
+                        FieldAccess.getProtectedFieldValue(FilterOutputStream.class,
+                                "out", filteredStream);
+                if (tmpStream == null) break;
+                filteredStream = tmpStream;
+            } catch (Exception e) {
+                break; // break out if we've dug as deep as we can
+            }
+        }
+        return filteredStream;
+    }
+
+    /**
+     * Unwrap the given stream to its first non-FilterInputStream. If the stream is not
+     * a FilterInputStream it is returned immediately.
+     *
+     * Note that this version is used when you are absolutely sure you want to unwrap;
+     * the unwrapBufferedStream version will perform checks for certain types of
+     * process-related streams that should not be unwrapped (Java 7+ Process, e.g.).
+     *
+     * @param filteredStream a stream to be unwrapped, if it is a FilterInputStream
+     * @return the deeped non-FilterInputStream stream, or filterInputStream if it is
+     *         not a FilterInputStream to begin with.
+     */
+    public static InputStream unwrapFilterInputStream(InputStream filteredStream) {
         while (filteredStream instanceof FilterInputStream) {
             try {
-                filteredStream = (InputStream)
-                    FieldAccess.getProtectedFieldValue(FilterInputStream.class,
-                        "in", filteredStream);
+                InputStream tmpStream = (InputStream)
+                        FieldAccess.getProtectedFieldValue(FilterInputStream.class,
+                                "in", filteredStream);
+                if (tmpStream == null) break;
+                filteredStream = tmpStream;
             } catch (Exception e) {
                 break; // break out if we've dug as deep as we can
             }

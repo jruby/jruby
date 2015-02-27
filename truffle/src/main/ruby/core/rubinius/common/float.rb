@@ -82,7 +82,7 @@ class Float < Numeric
   alias_method :modulo, :%
 
   def finite?
-    not (nan? or infinite?)
+    not(nan? or infinite?)
   end
 
   def rationalize(eps=undefined)
