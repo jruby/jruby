@@ -161,6 +161,47 @@ public abstract class ModuleNodes {
 
     }
 
+    @CoreMethod(names = ">", required = 1)
+    public abstract static class IsSuperclassOfNode extends CoreMethodNode {
+
+        public IsSuperclassOfNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public IsSuperclassOfNode(IsSuperclassOfNode prev) {
+            super(prev);
+        }
+
+        public abstract Object executeIsSuperclassOf(VirtualFrame frame, RubyModule self, RubyModule other);
+
+        @Specialization
+        public Object isSuperclassOf(VirtualFrame frame, RubyModule self, RubyModule other) {
+            notDesignedForCompilation();
+
+            if (self == other) {
+                return false;
+            }
+
+            if (ModuleOperations.includesModule(other, self)) {
+                return true;
+            }
+
+            if (ModuleOperations.includesModule(self, other)) {
+                return false;
+            }
+
+            return getContext().getCoreLibrary().getNilObject();
+        }
+
+        @Specialization
+        public Object isSuperclassOf(VirtualFrame frame, RubyModule self, RubyBasicObject other) {
+            notDesignedForCompilation();
+
+            throw new RaiseException(getContext().getCoreLibrary().typeError("compared with non class/module", this));
+        }
+
+    }
+
     @CoreMethod(names = ">=", required = 1)
     public abstract static class IsSuperclassOfOrEqualToNode extends CoreMethodNode {
 
