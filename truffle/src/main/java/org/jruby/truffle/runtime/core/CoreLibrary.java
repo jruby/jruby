@@ -94,6 +94,7 @@ public class CoreLibrary {
     private final RubyClass regexpErrorClass;
     private final RubyClass rubyTruffleErrorClass;
     private final RubyClass runtimeErrorClass;
+    private final RubyClass securityErrorClass;
     private final RubyClass standardErrorClass;
     private final RubyClass stringClass;
     private final RubyClass stringDataClass;
@@ -230,6 +231,9 @@ public class CoreLibrary {
         loadErrorClass = defineClass(scriptErrorClass, "LoadError");
         notImplementedErrorClass = defineClass(scriptErrorClass, "NotImplementedError");
         syntaxErrorClass = defineClass(scriptErrorClass, "SyntaxError");
+
+        // SecurityError
+        securityErrorClass = defineClass(exceptionClass, "SecurityError");
 
         // SignalException
         RubyClass signalExceptionClass = defineClass(exceptionClass, "SignalException");
