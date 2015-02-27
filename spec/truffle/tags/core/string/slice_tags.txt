@@ -1,4 +1,3 @@
-fails:String#slice calls to_int on the given index
 fails:String#slice with index, length always taints resulting strings when self is tainted
 fails:String#slice with index, length calls to_int on the given index and the given length
 fails:String#slice with index, length returns subclass instances

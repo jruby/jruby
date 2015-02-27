@@ -28,6 +28,8 @@ import org.joni.Option;
 import org.joni.Region;
 import org.jruby.runtime.Visibility;
 import org.jruby.truffle.nodes.RubyNode;
+import org.jruby.truffle.nodes.coerce.ToIntNode;
+import org.jruby.truffle.nodes.coerce.ToIntNodeFactory;
 import org.jruby.truffle.nodes.coerce.ToStrNode;
 import org.jruby.truffle.nodes.coerce.ToStrNodeFactory;
 import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
@@ -281,6 +283,8 @@ public abstract class StringNodes {
     @CoreMethod(names = {"[]", "slice"}, required = 1, optional = 1, lowerFixnumParameters = {0, 1})
     public abstract static class GetIndexNode extends CoreMethodNode {
 
+        @Child private ToIntNode toIntNode;
+
         private final BranchProfile outOfBounds = BranchProfile.create();
 
         public GetIndexNode(RubyContext context, SourceSection sourceSection) {
@@ -314,6 +318,18 @@ public abstract class StringNodes {
             } else {
                 return getContext().makeString(bytes.charAt(normalizedIndex), string.getByteList().getEncoding());
             }
+        }
+
+        @Specialization(guards = "!isRubyRange(arguments[1])")
+        public Object getIndex(VirtualFrame frame, RubyString string, Object index, UndefinedPlaceholder undefined) {
+            notDesignedForCompilation();
+
+            if (toIntNode == null) {
+                CompilerDirectives.transferToInterpreter();
+                toIntNode = insert(ToIntNodeFactory.create(getContext(), getSourceSection(), null));
+            }
+
+            return getIndex(string, toIntNode.executeIntegerFixnum(frame, index), undefined);
         }
 
         @Specialization
@@ -1348,7 +1364,7 @@ public abstract class StringNodes {
                 last--;
             }
 
-            return getContext().makeString(str.substring(0, last+1));
+            return getContext().makeString(str.substring(0, last + 1));
         }
 
     }
