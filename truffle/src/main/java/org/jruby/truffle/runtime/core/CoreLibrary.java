@@ -60,6 +60,7 @@ public class CoreLibrary {
     private final RubyClass complexClass;
     private final RubyClass dirClass;
     private final RubyClass encodingClass;
+    private final RubyClass eofErrorClass;
     private final RubyClass exceptionClass;
     private final RubyClass falseClass;
     private final RubyClass fiberClass;
@@ -204,6 +205,9 @@ public class CoreLibrary {
         // StandardError > IndexError
         indexErrorClass = defineClass(standardErrorClass, "IndexError");
         keyErrorClass = defineClass(indexErrorClass, "KeyError");
+
+        // StandardError > IOError
+        eofErrorClass = defineClass(ioErrorClass, "EOFError");
 
         // StandardError > NameError
         nameErrorClass = defineClass(standardErrorClass, "NameError");
