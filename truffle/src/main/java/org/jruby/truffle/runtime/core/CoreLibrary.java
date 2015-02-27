@@ -71,6 +71,7 @@ public class CoreLibrary {
     private final RubyClass integerClass;
     private final RubyClass indexErrorClass;
     private final RubyClass ioClass;
+    private final RubyClass ioErrorClass;
     private final RubyClass keyErrorClass;
     private final RubyClass loadErrorClass;
     private final RubyClass localJumpErrorClass;
@@ -187,10 +188,12 @@ public class CoreLibrary {
         // StandardError
         standardErrorClass = defineClass(exceptionClass, "StandardError");
         argumentErrorClass = defineClass(standardErrorClass, "ArgumentError");
+        ioErrorClass = defineClass(standardErrorClass, "IOError");
         localJumpErrorClass = defineClass(standardErrorClass, "LocalJumpError");
         regexpErrorClass = defineClass(standardErrorClass, "RegexpError");
         rubyTruffleErrorClass = defineClass(standardErrorClass, "RubyTruffleError");
         runtimeErrorClass = defineClass(standardErrorClass, "RuntimeError");
+        threadErrorClass = defineClass(standardErrorClass, "ThreadError");
         typeErrorClass = defineClass(standardErrorClass, "TypeError");
         zeroDivisionErrorClass = defineClass(standardErrorClass, "ZeroDivisionError");
 
@@ -229,9 +232,6 @@ public class CoreLibrary {
 
         // SystemExit
         systemExitClass = defineClass(exceptionClass, "SystemExit");
-
-        // ThreadError
-        threadErrorClass = defineClass(exceptionClass, "ThreadError");
 
         // Create core classes and modules
 
