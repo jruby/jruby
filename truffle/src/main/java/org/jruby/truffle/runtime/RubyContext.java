@@ -31,7 +31,6 @@ import org.jruby.truffle.nodes.rubinius.RubiniusPrimitiveManager;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.*;
 import org.jruby.truffle.runtime.methods.InternalMethod;
-import org.jruby.truffle.runtime.methods.SharedMethodInfo;
 import org.jruby.truffle.runtime.subsystems.*;
 import org.jruby.truffle.runtime.util.FileUtils;
 import org.jruby.truffle.translator.NodeWrapper;
@@ -40,13 +39,7 @@ import org.jruby.util.ByteList;
 import org.jruby.util.cli.Options;
 
 import java.io.File;
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Paths;
-import java.util.ArrayDeque;
-import java.util.Deque;
 import java.util.Locale;
-import java.util.Queue;
 import java.util.Random;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -187,7 +180,7 @@ public class RubyContext extends ExecutionContext {
             }
         };
 
-        execute(this, source, UTF8Encoding.INSTANCE, TranslatorDriver.ParserContext.TOP_LEVEL, coreLibrary.getMainObject(), null, currentNode, composed);
+        execute(source, UTF8Encoding.INSTANCE, TranslatorDriver.ParserContext.TOP_LEVEL, coreLibrary.getMainObject(), null, currentNode, composed);
     }
 
     public RubySymbol.SymbolTable getSymbolTable() {
@@ -213,7 +206,7 @@ public class RubyContext extends ExecutionContext {
     @TruffleBoundary
     public Object instanceEval(ByteList code, Object self, String filename, RubyNode currentNode) {
         final Source source = Source.fromText(code, filename);
-        return execute(this, source, code.getEncoding(), TranslatorDriver.ParserContext.EVAL, self, null, currentNode, new NodeWrapper() {
+        return execute(source, code.getEncoding(), TranslatorDriver.ParserContext.EVAL, self, null, currentNode, new NodeWrapper() {
             @Override
             public RubyNode wrap(RubyNode node) {
                 return new SetMethodDeclarationContext(node.getContext(), node.getSourceSection(), Visibility.PUBLIC, "instance_eval", node);
@@ -228,20 +221,20 @@ public class RubyContext extends ExecutionContext {
     @TruffleBoundary
     public Object eval(ByteList code, RubyBinding binding, boolean ownScopeForAssignments, String filename, RubyNode currentNode) {
         final Source source = Source.fromText(code, filename);
-        return execute(this, source, code.getEncoding(), TranslatorDriver.ParserContext.EVAL, binding.getSelf(), binding.getFrame(), ownScopeForAssignments, currentNode, NodeWrapper.IDENTITY);
+        return execute(source, code.getEncoding(), TranslatorDriver.ParserContext.EVAL, binding.getSelf(), binding.getFrame(), ownScopeForAssignments, currentNode, NodeWrapper.IDENTITY);
     }
 
     public Object eval(ByteList code, RubyBinding binding, boolean ownScopeForAssignments, RubyNode currentNode) {
         return eval(code, binding, ownScopeForAssignments, "(eval)", currentNode);
     }
 
-    public Object execute(RubyContext context, Source source, Encoding defaultEncoding, TranslatorDriver.ParserContext parserContext, Object self, MaterializedFrame parentFrame, RubyNode currentNode, NodeWrapper wrapper) {
-        return execute(context, source, defaultEncoding, parserContext, self, parentFrame, true, currentNode, wrapper);
+    public Object execute(Source source, Encoding defaultEncoding, TranslatorDriver.ParserContext parserContext, Object self, MaterializedFrame parentFrame, RubyNode currentNode, NodeWrapper wrapper) {
+        return execute(source, defaultEncoding, parserContext, self, parentFrame, true, currentNode, wrapper);
     }
 
     @TruffleBoundary
-    public Object execute(RubyContext context, Source source, Encoding defaultEncoding, TranslatorDriver.ParserContext parserContext, Object self, MaterializedFrame parentFrame, boolean ownScopeForAssignments, RubyNode currentNode, NodeWrapper wrapper) {
-        final RubyRootNode rootNode = translator.parse(context, source, defaultEncoding, parserContext, parentFrame, ownScopeForAssignments, currentNode, wrapper);
+    public Object execute(Source source, Encoding defaultEncoding, TranslatorDriver.ParserContext parserContext, Object self, MaterializedFrame parentFrame, boolean ownScopeForAssignments, RubyNode currentNode, NodeWrapper wrapper) {
+        final RubyRootNode rootNode = translator.parse(this, source, defaultEncoding, parserContext, parentFrame, ownScopeForAssignments, currentNode, wrapper);
         final CallTarget callTarget = Truffle.getRuntime().createCallTarget(rootNode);
 
         final InternalMethod method = new InternalMethod(rootNode.getSharedMethodInfo(), rootNode.getSharedMethodInfo().getName(),
