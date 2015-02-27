@@ -1,8 +1,3 @@
-fails:String#sub with pattern, replacement returns a copy of self with all occurrences of pattern replaced with replacement
-fails:String#sub with pattern, replacement ignores a block if supplied
-fails:String#sub with pattern, replacement supports \G which matches at the beginning of the string
-fails:String#sub with pattern, replacement supports /i for ignoring case
-fails:String#sub with pattern, replacement doesn't interpret regexp metacharacters if pattern is a string
 fails:String#sub with pattern, replacement replaces \1 sequences with the regexp's corresponding capture
 fails:String#sub with pattern, replacement treats \1 sequences without corresponding captures as empty strings
 fails:String#sub with pattern, replacement replaces \& and \0 with the complete match
@@ -12,13 +7,9 @@ fails:String#sub with pattern, replacement replaces \\\+ with \\+
 fails:String#sub with pattern, replacement replaces \+ with the last paren that actually matched
 fails:String#sub with pattern, replacement treats \+ as an empty string if there was no captures
 fails:String#sub with pattern, replacement maps \\ in replacement to \
-fails:String#sub with pattern, replacement leaves unknown \x escapes in replacement untouched
-fails:String#sub with pattern, replacement leaves \ at the end of replacement untouched
 fails:String#sub with pattern, replacement taints the result if the original string or replacement is tainted
 fails:String#sub with pattern, replacement tries to convert pattern to a string using to_str
-fails:String#sub with pattern, replacement raises a TypeError when pattern can't be converted to a string
 fails:String#sub with pattern, replacement tries to convert replacement to a string using to_str
-fails:String#sub with pattern, replacement raises a TypeError when replacement can't be converted to a string
 fails:String#sub with pattern, replacement returns subclass instances when called on a subclass
 fails:String#sub with pattern, replacement sets $~ to MatchData of match and nil when there's none
 fails:String#sub with pattern, replacement replaces \ with 
@@ -67,6 +58,4 @@ fails:String#sub! with pattern and Hash keeps untrusted state
 fails:String#sub! with pattern and Hash untrusts self if a hash value is untrusted
 fails:String#sub! with pattern and Hash keeps tainted state
 fails:String#sub! with pattern and Hash taints self if a hash value is tainted
-fails:String#sub with pattern, replacement raises a TypeError when pattern is a Symbol
-fails:String#sub with pattern, replacement raises a TypeError when pattern is an Array
 fails:String#sub with pattern, replacement replaces \ with 
