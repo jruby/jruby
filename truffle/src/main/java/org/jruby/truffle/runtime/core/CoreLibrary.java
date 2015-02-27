@@ -101,6 +101,7 @@ public class CoreLibrary {
     private final RubyClass syntaxErrorClass;
     private final RubyClass systemCallErrorClass;
     private final RubyClass systemExitClass;
+    private final RubyClass systemStackErrorClass;
     private final RubyClass threadClass;
     private final RubyClass timeClass;
     private final RubyClass trueClass;
@@ -236,6 +237,10 @@ public class CoreLibrary {
 
         // SystemExit
         systemExitClass = defineClass(exceptionClass, "SystemExit");
+
+        // SystemStackError
+        systemStackErrorClass = defineClass(exceptionClass, "SystemStackError");
+
 
         // Create core classes and modules
 
