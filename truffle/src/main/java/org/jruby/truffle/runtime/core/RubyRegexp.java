@@ -27,6 +27,7 @@ import org.jruby.truffle.nodes.objects.Allocator;
 import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.util.ByteList;
+import org.jruby.util.RegexpOptions;
 import org.jruby.util.StringSupport;
 
 import java.nio.ByteBuffer;
@@ -43,14 +44,29 @@ public class RubyRegexp extends RubyBasicObject {
     // TODO(CS): not sure these compilation finals are correct - are they needed anyway?
     @CompilationFinal private Regex regex;
     @CompilationFinal private ByteList source;
+    @CompilationFinal private RegexpOptions options;
+
 
     public RubyRegexp(RubyClass regexpClass) {
         super(regexpClass);
     }
 
+
+    public RubyRegexp(Node currentNode, RubyClass regexpClass, ByteList regex, RegexpOptions options) {
+        this(regexpClass);
+        this.options = options;
+        initialize(compile(currentNode, getContext(), regex, options.toJoniOptions()), regex);
+    }
+
     public RubyRegexp(Node currentNode, RubyClass regexpClass, ByteList regex, int options) {
         this(regexpClass);
         initialize(compile(currentNode, getContext(), regex, options), regex);
+    }
+
+    public RubyRegexp(RubyClass regexpClass, Regex regex, ByteList source, RegexpOptions options ) {
+        this(regexpClass);
+        this.options = options;
+        initialize(regex, source);
     }
 
     public RubyRegexp(RubyClass regexpClass, Regex regex, ByteList source) {
@@ -74,6 +90,10 @@ public class RubyRegexp extends RubyBasicObject {
 
     public ByteList getSource() {
         return source;
+    }
+
+    public RegexpOptions getOptions() {
+        return options;
     }
 
     @CompilerDirectives.TruffleBoundary

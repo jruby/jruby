@@ -2349,9 +2349,9 @@ public class BodyTranslator extends Translator {
 
     @Override
     public RubyNode visitRegexpNode(org.jruby.ast.RegexpNode node) {
-        Regex regex = RubyRegexp.compile(currentNode, context, node.getValue().bytes(), node.getEncoding(), node.getOptions().toOptions());
+        Regex regex = RubyRegexp.compile(currentNode, context, node.getValue().bytes(), node.getEncoding(), node.getOptions().toJoniOptions());
 
-        final RubyRegexp regexp = new RubyRegexp(context.getCoreLibrary().getRegexpClass(), regex, node.getValue());
+        final RubyRegexp regexp = new RubyRegexp(context.getCoreLibrary().getRegexpClass(), regex, node.getValue(), node.getOptions());
 
         // This isn't quite right - we shouldn't be looking up by name, we need a real reference to this constants
         if (node.getOptions().isEncodingNone()) {
