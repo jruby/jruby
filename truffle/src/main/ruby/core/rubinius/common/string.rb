@@ -47,6 +47,36 @@ class String
     str.chomp!(separator) || str
   end
 
+  def slice!(one, two=undefined)
+    Rubinius.check_frozen
+    # This is un-DRY, but it's a simple manual argument splitting. Keeps
+    # the code fast and clean since the sequence are pretty short.
+    #
+    if undefined.equal?(two)
+      result = slice(one)
+
+      if one.kind_of? Regexp
+        lm = Regexp.last_match
+        self[one] = '' if result
+        Regexp.last_match = lm
+      else
+        self[one] = '' if result
+      end
+    else
+      result = slice(one, two)
+
+      if one.kind_of? Regexp
+        lm = Regexp.last_match
+        self[one, two] = '' if result
+        Regexp.last_match = lm
+      else
+        self[one, two] = '' if result
+      end
+    end
+
+    result
+  end
+
   def each_line(sep=$/)
     return to_enum(:each_line, sep) unless block_given?
 
@@ -350,6 +380,7 @@ class String
     replace(ret)
     self
   end
+
 
   def to_sub_replacement(result, match)
     index = 0
