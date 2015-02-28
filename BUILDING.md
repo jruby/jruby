@@ -23,19 +23,13 @@ command to execute is:
 mvn
 ```
 
-Or if you prefer to be more explicit, the default "install" goal can
-be specified:
-
-```
-mvn install
-```
-
-This will do all of the following:
+This will run the default "install" goal (```mvn install```) and will do all of the following:
 
 * Compile JRuby
 * Compile JRuby-Truffle
 * Build `lib/jruby.jar`, needed for running at command line
-* It will install the default gems specifications `lib/ruby/gems/shared/specifications/default/` and the ruby files of those gems in `lib/ruby/stdlib/`.
+* It will install the default gems specifications `lib/ruby/gems/shared/specifications/default/` and the ruby files of
+  those gems in `lib/ruby/stdlib/`.
 
 The environment is now suitable for running Ruby applications.
 
