@@ -21,6 +21,10 @@ module Truffle
       end
     end
 
+    def self.clear(file, line)
+      Truffle::Primitive.detach file, line
+    end
+
   end
 
 end

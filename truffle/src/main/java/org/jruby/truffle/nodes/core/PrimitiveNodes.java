@@ -535,4 +535,24 @@ public abstract class PrimitiveNodes {
 
     }
 
+    @CoreMethod(names = "detach", onSingleton = true, required = 2)
+    public abstract static class DetachNode extends CoreMethodNode {
+
+        public DetachNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public DetachNode(DetachNode prev) {
+            super(prev);
+        }
+
+        @CompilerDirectives.TruffleBoundary
+        @Specialization
+        public RubyNilClass detach(RubyString file, int line) {
+            getContext().getAttachmentsManager().detach(file.toString(), line);
+            return getContext().getCoreLibrary().getNilObject();
+        }
+
+    }
+
 }

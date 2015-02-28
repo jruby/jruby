@@ -24,10 +24,13 @@ import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyBinding;
 import org.jruby.truffle.runtime.core.RubyProc;
 
+import java.util.*;
+
 public class AttachmentsManager {
 
     private final RubyContext context;
     private final LineToProbesMap lineToProbesMap;
+    private final Map<LineLocation, List<Instrument>> attachments = new HashMap<>();
 
     public AttachmentsManager(RubyContext context) {
         this.context = context;
@@ -38,7 +41,7 @@ public class AttachmentsManager {
         lineToProbesMap.install();
     }
 
-    public void attach(String file, int line, final RubyProc block) {
+    public synchronized void attach(String file, int line, final RubyProc block) {
         final Instrument instrument = Instrument.create(new SimpleEventListener() {
 
             @Override
@@ -53,8 +56,16 @@ public class AttachmentsManager {
 
         final LineLocation lineLocation = source.createLineLocation(line);
 
+        List<Instrument> instruments = attachments.get(lineLocation);
+
+        if (instruments == null) {
+            instruments = new ArrayList<>();
+            attachments.put(lineLocation, instruments);
+        }
+
+        instruments.add(instrument);
+
         for (Probe probe : lineToProbesMap.findProbes(lineLocation)) {
-            System.err.println(probe.getProbedSourceSection());
             if (probe.isTaggedAs(StandardSyntaxTag.STATEMENT)) {
                 probe.attach(instrument);
                 return;
@@ -62,6 +73,20 @@ public class AttachmentsManager {
         }
 
         throw new RuntimeException("couldn't find a statement!");
+    }
+
+    public synchronized void detach(String file, int line) {
+        final Source source = context.getSourceManager().forFileBestFuzzily(file);
+
+        final LineLocation lineLocation = source.createLineLocation(line);
+
+        final List<Instrument> instruments = attachments.remove(lineLocation);
+
+        if (instruments != null) {
+            for (Instrument instrument : instruments) {
+                instrument.dispose();
+            }
+        }
     }
 
 }
