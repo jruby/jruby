@@ -24,16 +24,21 @@ import org.jcodings.specific.ASCIIEncoding;
 import org.jcodings.specific.UTF8Encoding;
 import org.jcodings.util.CaseInsensitiveBytesHash;
 import org.jcodings.util.Hash;
+import org.jruby.Ruby;
+import org.jruby.RubyObject;
 import org.jruby.runtime.encoding.EncodingService;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.coerce.ToStrNode;
 import org.jruby.truffle.nodes.coerce.ToStrNodeFactory;
 import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.RubyArray;
 import org.jruby.truffle.runtime.core.RubyEncoding;
 import org.jruby.truffle.runtime.core.RubyHash;
 import org.jruby.truffle.runtime.core.RubyNilClass;
+import org.jruby.truffle.runtime.core.RubyRegexp;
 import org.jruby.truffle.runtime.core.RubyString;
+import org.jruby.truffle.runtime.core.RubySymbol;
 import org.jruby.truffle.runtime.hash.HashOperations;
 import org.jruby.truffle.runtime.hash.KeyValue;
 import org.jruby.util.ByteList;
@@ -142,6 +147,98 @@ public abstract class EncodingNodes {
                 return getContext().getCoreLibrary().getNilObject();
             }
         }
+
+        @Specialization
+        public Object isCompatible(RubyString first, RubyRegexp second) {
+            notDesignedForCompilation();
+
+            Encoding compatibleEncoding = org.jruby.RubyEncoding.areCompatible(first.getByteList().getEncoding(), second.getRegex().getEncoding());
+
+            if (compatibleEncodingProfile.profile(compatibleEncoding != null)) {
+                return RubyEncoding.getEncoding(compatibleEncoding);
+            } else {
+                return getContext().getCoreLibrary().getNilObject();
+            }
+        }
+
+        @Specialization
+        public Object isCompatible(RubyRegexp first, RubyString second) {
+            notDesignedForCompilation();
+
+            Encoding compatibleEncoding = org.jruby.RubyEncoding.areCompatible(first.getRegex().getEncoding(), second.getByteList().getEncoding());
+
+            if (compatibleEncodingProfile.profile(compatibleEncoding != null)) {
+                return RubyEncoding.getEncoding(compatibleEncoding);
+            } else {
+                return getContext().getCoreLibrary().getNilObject();
+            }
+        }
+
+        @Specialization
+        public Object isCompatible(RubyRegexp first, RubyRegexp second) {
+            notDesignedForCompilation();
+
+            Encoding compatibleEncoding = org.jruby.RubyEncoding.areCompatible(first.getRegex().getEncoding(), second.getRegex().getEncoding());
+
+            if (compatibleEncodingProfile.profile(compatibleEncoding != null)) {
+                return RubyEncoding.getEncoding(compatibleEncoding);
+            } else {
+                return getContext().getCoreLibrary().getNilObject();
+            }
+        }
+
+        @Specialization
+        public Object isCompatible(RubyRegexp first, RubySymbol second) {
+            notDesignedForCompilation();
+
+            Encoding compatibleEncoding = org.jruby.RubyEncoding.areCompatible(first.getRegex().getEncoding(), second.getByteList().getEncoding());
+
+            if (compatibleEncodingProfile.profile(compatibleEncoding != null)) {
+                return RubyEncoding.getEncoding(compatibleEncoding);
+            } else {
+                return getContext().getCoreLibrary().getNilObject();
+            }
+        }
+
+        @Specialization
+        public Object isCompatible(RubySymbol first, RubyRegexp second) {
+            notDesignedForCompilation();
+
+            Encoding compatibleEncoding = org.jruby.RubyEncoding.areCompatible(first.getByteList().getEncoding(), second.getRegex().getEncoding());
+
+            if (compatibleEncodingProfile.profile(compatibleEncoding != null)) {
+                return RubyEncoding.getEncoding(compatibleEncoding);
+            } else {
+                return getContext().getCoreLibrary().getNilObject();
+            }
+        }
+
+        @Specialization
+        public Object isCompatible(RubyString first, RubySymbol second) {
+            notDesignedForCompilation();
+
+            Encoding compatibleEncoding = org.jruby.RubyEncoding.areCompatible(first, second);
+
+            if (compatibleEncodingProfile.profile(compatibleEncoding != null)) {
+                return RubyEncoding.getEncoding(compatibleEncoding);
+            } else {
+                return getContext().getCoreLibrary().getNilObject();
+            }
+        }
+
+        @Specialization
+        public Object isCompatible(RubySymbol first, RubySymbol second) {
+            notDesignedForCompilation();
+
+            Encoding compatibleEncoding = org.jruby.RubyEncoding.areCompatible(first, second);
+
+            if (compatibleEncodingProfile.profile(compatibleEncoding != null)) {
+                return RubyEncoding.getEncoding(compatibleEncoding);
+            } else {
+                return getContext().getCoreLibrary().getNilObject();
+            }
+        }
+
     }
 
     @CoreMethod(names = "default_external", onSingleton = true)
@@ -215,6 +312,21 @@ public abstract class EncodingNodes {
             getContext().getRuntime().setDefaultExternalEncoding(encoding.getEncoding());
 
             return encoding;
+        }
+
+        @Specialization
+        public RubyEncoding defaultExternal(RubyString encodingString) {
+            notDesignedForCompilation();
+
+            final RubyEncoding rubyEncoding = RubyEncoding.getEncoding(encodingString.toString());
+            getContext().getRuntime().setDefaultExternalEncoding(rubyEncoding.getEncoding());
+
+            return rubyEncoding;
+        }
+
+        @Specialization
+        public RubyEncoding defaultExternal(RubyNilClass nil) {
+            throw new RaiseException(getContext().getCoreLibrary().argumentError("default external can not be nil", this));
         }
 
     }
@@ -358,6 +470,26 @@ public abstract class EncodingNodes {
             final RubyEncoding[] encodings = RubyEncoding.cloneEncodingList();
 
             return new RubyArray(getContext().getCoreLibrary().getArrayClass(), encodings, encodings.length);
+        }
+    }
+
+
+    @CoreMethod(names = "locale_charmap", onSingleton = true)
+    public abstract static class LocaleCharacterMapNode extends CoreMethodNode {
+
+        public LocaleCharacterMapNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public LocaleCharacterMapNode(LocaleCharacterMapNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public RubyString localeCharacterMap() {
+            notDesignedForCompilation();
+            final ByteList name = new ByteList(getContext().getRuntime().getEncodingService().getLocaleEncoding().getName());
+            return getContext().makeString(name);
         }
     }
 

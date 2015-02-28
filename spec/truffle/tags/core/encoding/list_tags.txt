@@ -1,3 +1,0 @@
-fails:Encoding.list returns each encoding only once
-fails:Encoding.list does not include any alias names
-fails:Encoding.list includes all aliased encodings
