@@ -224,3 +224,12 @@ module Rubinius
     end
   end
 end
+
+class Binding
+
+  def eval(string)
+    Kernel.eval(string, self)
+  end
+
+end
+
