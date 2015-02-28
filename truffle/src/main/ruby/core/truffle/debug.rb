@@ -10,10 +10,22 @@ module Truffle
 
   module Debug
 
-    def self.break(file = nil, line = nil)
+    def self.break(file = nil, line = nil, condition = nil)
       if line.nil?
         raise 'must specify both a file and a line, or neither' unless file.nil?
         Truffle::Primitive.simple_shell
+      elsif not condition.nil?
+        Truffle::Primitive.attach file, line do |binding|
+          if binding.eval(condition)
+            Truffle::Primitive.simple_shell
+          end
+        end
+      elsif block_given?
+        Truffle::Primitive.attach file, line do |binding|
+          if yield binding
+            Truffle::Primitive.simple_shell
+          end
+        end
       else
         Truffle::Primitive.attach file, line do |binding|
           Truffle::Primitive.simple_shell
