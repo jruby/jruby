@@ -5,6 +5,7 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
+import org.jruby.internal.runtime.methods.InterpretedIRMethod;
 import org.jruby.internal.runtime.methods.MixedModeIRMethod;
 import org.jruby.ir.interpreter.Interpreter;
 
@@ -16,6 +17,7 @@ public enum FrameType {
     static {
         INTERPRETED_CLASSES.add(Interpreter.class.getName());
         INTERPRETED_CLASSES.add(MixedModeIRMethod.class.getName());
+        INTERPRETED_CLASSES.add(InterpretedIRMethod.class.getName());
 
         INTERPRETED_FRAMES.put("INTERPRET_METHOD", FrameType.METHOD);
         INTERPRETED_FRAMES.put("INTERPRET_EVAL", FrameType.EVAL);

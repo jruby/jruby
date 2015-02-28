@@ -201,7 +201,7 @@ public class JITCompiler implements JITCompilerMBean {
         }
 
         public void run() {
-            method.switchToFuilBuild(method.getIRMethod().prepareFullBuild());
+            method.switchToFullBuild(method.getIRMethod().prepareFullBuild());
         }
     }
 

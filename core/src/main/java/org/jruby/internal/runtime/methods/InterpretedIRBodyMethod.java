@@ -23,7 +23,7 @@ public class InterpretedIRBodyMethod extends InterpretedIRMethod {
 
     @Override
     public List<String[]> getParameterList() {
-        return new ArrayList<String[]>();
+        return new ArrayList<>();
     }
 
     @Override

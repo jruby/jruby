@@ -1191,9 +1191,9 @@ public class IRRuntimeHelpers {
 
         DynamicMethod newMethod;
         if (context.runtime.getInstanceConfig().getCompileMode() == RubyInstanceConfig.CompileMode.OFF) {
-            newMethod = new InterpretedIRMethod(method, Visibility.PUBLIC, rubyClass);
+            newMethod = new InterpretedIRMethod(method, newVisibility, rubyClass);
         } else {
-            newMethod = new MixedModeIRMethod(method, Visibility.PUBLIC, rubyClass);
+            newMethod = new MixedModeIRMethod(method, newVisibility, rubyClass);
         }
 
         Helpers.addInstanceMethod(rubyClass, method.getName(), newMethod, currVisibility, context, runtime);

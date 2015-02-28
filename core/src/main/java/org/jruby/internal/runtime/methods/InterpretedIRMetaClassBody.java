@@ -36,8 +36,6 @@ public class InterpretedIRMetaClassBody extends InterpretedIRBodyMethod {
 
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, Block block) {
-        if (callCount >= 0) promoteToFullBuild(context);
-
         InterpreterContext ic = ensureInstrsReady();
 
         if (IRRuntimeHelpers.isDebug()) doDebug();
