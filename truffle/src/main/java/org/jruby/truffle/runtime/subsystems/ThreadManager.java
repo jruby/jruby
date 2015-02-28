@@ -156,7 +156,7 @@ public class ThreadManager {
             }
         });
 
-        leaveGlobalLock();
+        rootThread.cleanup(context);
     }
 
 }

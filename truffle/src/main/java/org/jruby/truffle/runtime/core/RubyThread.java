@@ -100,16 +100,21 @@ public class RubyThread extends RubyBasicObject {
         } catch (ReturnException e) {
             exception = getContext().getCoreLibrary().unexpectedReturn(currentNode);
         } finally {
-            status = Status.ABORTING;
-            context.getThreadManager().leaveGlobalLock();
-            context.getSafepointManager().leaveThread();
-            manager.unregisterThread(this);
-
-            status = Status.DEAD;
-            thread = null;
-            releaseOwnedLocks();
-            finished.countDown();
+            cleanup(context);
         }
+    }
+
+    // Only used by the main thread which cannot easily wrap everything inside a try/finally.
+    public void cleanup(RubyContext context) {
+        status = Status.ABORTING;
+        context.getThreadManager().leaveGlobalLock();
+        context.getSafepointManager().leaveThread();
+        manager.unregisterThread(this);
+
+        status = Status.DEAD;
+        thread = null;
+        releaseOwnedLocks();
+        finished.countDown();
     }
 
     public void setRootThread(Thread thread) {
