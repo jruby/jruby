@@ -36,15 +36,9 @@ public class InterpreterContext {
     private final static InterpreterEngine SIMPLE_METHOD_INTERPRETER = new InterpreterEngine();
     public final InterpreterEngine engine;
 
-    private int runCount = 0;
-    private boolean rebuilt = false;
     private IRScope scope;
 
     public InterpreterContext(IRScope scope, List<Instr> instructions) {
-        if (this.rebuilt) {
-            this.runCount = 30;
-        }
-
         this.scope = scope;
 
         // FIXME: Hack null instructions means coming from FullInterpreterContext but this should be way cleaner
@@ -87,20 +81,9 @@ public class InterpreterContext {
     public IRScope getScope() {
         return scope;
     }
+    
     public CFG getCFG() {
         return null;
-    }
-
-    public boolean isRebuilt() {
-        return rebuilt;
-    }
-
-    public void incrementRunCount() {
-        //runCount++;
-    }
-
-    public boolean needsRebuilding() {
-        return runCount >= 30;
     }
 
     public Object[] allocateTemporaryVariables() {

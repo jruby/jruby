@@ -51,9 +51,6 @@ public class StartupInterpreterEngine extends InterpreterEngine {
         boolean profile = IRRuntimeHelpers.inProfileMode();
         Integer scopeVersion = profile ? Profiler.initProfiling(scope) : 0;
 
-        // Update profile
-        interpreterContext.incrementRunCount();
-
         // Enter the looooop!
         while (ipc < n) {
             Instr instr = instrs[ipc];
