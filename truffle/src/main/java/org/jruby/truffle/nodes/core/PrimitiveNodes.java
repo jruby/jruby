@@ -515,4 +515,24 @@ public abstract class PrimitiveNodes {
 
     }
 
+    @CoreMethod(names = "attach", onSingleton = true, required = 2, needsBlock = true)
+    public abstract static class AttachNode extends CoreMethodNode {
+
+        public AttachNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public AttachNode(AttachNode prev) {
+            super(prev);
+        }
+
+        @CompilerDirectives.TruffleBoundary
+        @Specialization
+        public RubyNilClass attach(RubyString file, int line, RubyProc block) {
+            getContext().getAttachmentsManager().attach(file.toString(), line, block);
+            return getContext().getCoreLibrary().getNilObject();
+        }
+
+    }
+
 }

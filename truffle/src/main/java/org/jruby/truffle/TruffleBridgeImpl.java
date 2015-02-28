@@ -166,10 +166,7 @@ public class TruffleBridgeImpl implements TruffleBridge {
             // Assume UTF-8 for the moment
             source = Source.fromBytes(runtime.getInstanceConfig().inlineScript(), "-e", new BytesDecoder.UTF8BytesDecoder());
         } else {
-            final byte[] bytes = FileUtils.readAllBytesInterruptedly(truffleContext, inputFile);
-
-            // Assume UTF-8 for the moment
-            source = Source.fromBytes(bytes, inputFile, new BytesDecoder.UTF8BytesDecoder());
+            source = truffleContext.getSourceManager().forFile(inputFile);
         }
 
         truffleContext.load(source, null, new NodeWrapper() {

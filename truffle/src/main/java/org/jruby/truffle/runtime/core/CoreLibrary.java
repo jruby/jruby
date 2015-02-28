@@ -490,6 +490,7 @@ public class CoreLibrary {
         final Source source;
 
         try {
+            // TODO CS 28-Feb-15 need to use SourceManager here so that the debugger knows about the core files
             source = Source.fromReader(new InputStreamReader(getRubyCoreInputStream(fileName), StandardCharsets.UTF_8), prefix + fileName);
         } catch (IOException e) {
             throw new RuntimeException(e);

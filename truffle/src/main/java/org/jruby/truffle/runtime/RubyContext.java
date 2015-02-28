@@ -71,6 +71,8 @@ public class RubyContext extends ExecutionContext {
     private final RubiniusPrimitiveManager rubiniusPrimitiveManager;
     private final CoverageTracker coverageTracker;
     private final InstrumentationServerManager instrumentationServerManager;
+    private final AttachmentsManager attachmentsManager;
+    private final SourceManager sourceManager;
 
     private final AtomicLong nextObjectID = new AtomicLong(ObjectIDOperations.FIRST_OBJECT_ID);
 
@@ -89,10 +91,12 @@ public class RubyContext extends ExecutionContext {
             compilerOptions.setOption("MinInliningMaxCallerSize", 5000);
         }
 
+        // TODO CS 28-Feb-15 this is global
+        Probe.registerASTProber(new RubyDefaultASTProber());
+
         // TODO(CS, 28-Jan-15) this is global
         // TODO(CS, 28-Jan-15) maybe not do this for core?
         if (Options.TRUFFLE_COVERAGE.load()) {
-            Probe.registerASTProber(new RubyDefaultASTProber());
             coverageTracker = new CoverageTracker();
         } else {
             coverageTracker = null;
@@ -134,6 +138,10 @@ public class RubyContext extends ExecutionContext {
         }
 
         runningOnWindows = System.getProperty("os.name").toLowerCase(Locale.ENGLISH).indexOf("win") >= 0;
+
+        attachmentsManager = new AttachmentsManager(this);
+
+        sourceManager = new SourceManager(this);
     }
 
     public Shape getEmptyShape() {
@@ -175,11 +183,7 @@ public class RubyContext extends ExecutionContext {
     }
 
     private void loadFileAbsolute(String fileName, Node currentNode) {
-        final byte[] bytes = FileUtils.readAllBytesInterruptedly(this, fileName);
-
-        // Assume UTF-8 for the moment
-        final Source source = Source.fromBytes(bytes, fileName, new BytesDecoder.UTF8BytesDecoder());
-
+        final Source source = sourceManager.forFile(fileName);
         load(source, currentNode, NodeWrapper.IDENTITY);
     }
 
@@ -466,5 +470,13 @@ public class RubyContext extends ExecutionContext {
 
     public CoverageTracker getCoverageTracker() {
         return coverageTracker;
+    }
+
+    public AttachmentsManager getAttachmentsManager() {
+        return attachmentsManager;
+    }
+
+    public SourceManager getSourceManager() {
+        return sourceManager;
     }
 }
