@@ -268,9 +268,7 @@ public class RubyContext extends ExecutionContext {
             instrumentationServerManager.shutdown();
         }
 
-        if (fiberManager != null) {
-            fiberManager.shutdown();
-        }
+        fiberManager.shutdown();
 
         threadManager.shutdown();
     }
