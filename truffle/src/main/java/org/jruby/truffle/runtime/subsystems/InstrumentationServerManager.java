@@ -114,7 +114,7 @@ public class InstrumentationServerManager {
                                     @Override
                                     public void run() {
                                         new SimpleShell(context).run(Truffle.getRuntime().getCurrentFrame()
-                                                .getFrame(FrameInstance.FrameAccess.MATERIALIZE, false).materialize(), currentNode);
+                                                .getFrame(FrameInstance.FrameAccess.MATERIALIZE, true).materialize(), currentNode);
                                     }
 
                                 });
