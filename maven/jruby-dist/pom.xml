@@ -12,10 +12,9 @@
   <name>JRuby Dist</name>
   <properties>
     <tesla.dump.readonly>true</tesla.dump.readonly>
-    <jruby.plugins.version>1.0.3</jruby.plugins.version>
+    <jruby.plugins.version>1.0.8</jruby.plugins.version>
     <main.basedir>${project.parent.parent.basedir}</main.basedir>
     <tesla.dump.pom>pom.xml</tesla.dump.pom>
-    <tesla.version>0.1.1</tesla.version>
   </properties>
   <dependencies>
     <dependency>
@@ -70,17 +69,33 @@
         <version>2.4</version>
         <executions>
           <execution>
+            <id>jar</id>
             <phase>package</phase>
             <goals>
               <goal>single</goal>
             </goals>
+            <configuration>
+              <descriptors>
+                <descriptor>src/main/assembly/bin.xml</descriptor>
+              </descriptors>
+            </configuration>
+          </execution>
+          <execution>
+            <id>pack200</id>
+            <phase>package</phase>
+            <goals>
+              <goal>single</goal>
+            </goals>
+            <configuration>
+              <descriptors>
+                <descriptor>src/main/assembly/bin200.xml</descriptor>
+              </descriptors>
+            </configuration>
           </execution>
         </executions>
         <configuration>
+          <recompressZippedFiles>true</recompressZippedFiles>
           <tarLongFileMode>gnu</tarLongFileMode>
-          <descriptors>
-            <descriptor>src/main/assembly/jruby.xml</descriptor>
-          </descriptors>
         </configuration>
       </plugin>
       <plugin>
@@ -89,8 +104,19 @@
       <plugin>
         <groupId>io.tesla.polyglot</groupId>
         <artifactId>tesla-polyglot-maven-plugin</artifactId>
-        <version>${tesla.version}</version>
+        <version>0.1.1</version>
         <executions>
+          <execution>
+            <id>pack200</id>
+            <phase>prepare-package</phase>
+            <goals>
+              <goal>execute</goal>
+            </goals>
+            <configuration>
+              <taskId>pack200</taskId>
+              <nativePom>pom.rb</nativePom>
+            </configuration>
+          </execution>
           <execution>
             <id>fix_executable_bits</id>
             <phase>prepare-package</phase>
@@ -118,7 +144,7 @@
           <dependency>
             <groupId>io.tesla.polyglot</groupId>
             <artifactId>tesla-polyglot-ruby</artifactId>
-            <version>${tesla.version}</version>
+            <version>0.1.1</version>
           </dependency>
         </dependencies>
       </plugin>
@@ -180,7 +206,7 @@
           <plugin>
             <groupId>io.tesla.polyglot</groupId>
             <artifactId>tesla-polyglot-maven-plugin</artifactId>
-            <version>${tesla.version}</version>
+            <version>0.1.1</version>
             <executions>
               <execution>
                 <id>prepare_sources_for_it</id>
@@ -198,7 +224,7 @@
               <dependency>
                 <groupId>io.tesla.polyglot</groupId>
                 <artifactId>tesla-polyglot-ruby</artifactId>
-                <version>${tesla.version}</version>
+                <version>0.1.1</version>
               </dependency>
             </dependencies>
           </plugin>
@@ -239,7 +265,7 @@
           <plugin>
             <groupId>io.tesla.polyglot</groupId>
             <artifactId>tesla-polyglot-maven-plugin</artifactId>
-            <version>${tesla.version}</version>
+            <version>0.1.1</version>
             <executions>
               <execution>
                 <id>pack_sources</id>
@@ -257,7 +283,7 @@
               <dependency>
                 <groupId>io.tesla.polyglot</groupId>
                 <artifactId>tesla-polyglot-ruby</artifactId>
-                <version>${tesla.version}</version>
+                <version>0.1.1</version>
               </dependency>
             </dependencies>
           </plugin>
