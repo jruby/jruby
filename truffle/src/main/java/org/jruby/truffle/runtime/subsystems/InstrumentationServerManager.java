@@ -32,14 +32,15 @@ public class InstrumentationServerManager {
     private final RubyContext context;
     private final int port;
 
+    private HttpServer server;
+    private volatile boolean shuttingDown = false;
+
     public InstrumentationServerManager(RubyContext context, int port) {
         this.context = context;
         this.port = port;
     }
 
     public void start() {
-        final HttpServer server;
-
         try {
             server = HttpServer.create(new InetSocketAddress(port), 0);
         } catch (IOException e) {
@@ -89,6 +90,9 @@ public class InstrumentationServerManager {
                     stream.write(bytes);
                     stream.close();
                 } catch (IOException e) {
+                    if (shuttingDown) {
+                        return;
+                    }
                     e.printStackTrace();
                 }
             }
@@ -123,6 +127,9 @@ public class InstrumentationServerManager {
                     httpExchange.sendResponseHeaders(200, 0);
                     httpExchange.getResponseBody().close();
                 } catch (IOException e) {
+                    if (shuttingDown) {
+                        return;
+                    }
                     e.printStackTrace();
                 }
             }
@@ -130,6 +137,14 @@ public class InstrumentationServerManager {
         });
 
         server.start();
+    }
+
+    public void shutdown() {
+        if (server != null) {
+            shuttingDown = true;
+            // Leave it some time to send the remaining bytes.
+            server.stop(1);
+        }
     }
 
 }

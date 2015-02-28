@@ -66,6 +66,7 @@ public class RubyContext extends ExecutionContext {
     private final LexicalScope rootLexicalScope;
     private final CompilerOptions compilerOptions;
     private final RubiniusPrimitiveManager rubiniusPrimitiveManager;
+    private final InstrumentationServerManager instrumentationServerManager;
 
     private final AtomicLong nextObjectID = new AtomicLong(ObjectIDOperations.FIRST_OBJECT_ID);
 
@@ -113,7 +114,10 @@ public class RubyContext extends ExecutionContext {
         rubiniusPrimitiveManager = RubiniusPrimitiveManager.create();
 
         if (Options.TRUFFLE_INSTRUMENTATION_SERVER_PORT.load() != 0) {
-            new InstrumentationServerManager(this, Options.TRUFFLE_INSTRUMENTATION_SERVER_PORT.load()).start();
+            instrumentationServerManager = new InstrumentationServerManager(this, Options.TRUFFLE_INSTRUMENTATION_SERVER_PORT.load());
+            instrumentationServerManager.start();
+        } else {
+            instrumentationServerManager = null;
         }
 
         runningOnWindows = System.getProperty("os.name").toLowerCase(Locale.ENGLISH).indexOf("win") >= 0;
@@ -259,6 +263,10 @@ public class RubyContext extends ExecutionContext {
 
     public void shutdown() {
         atExitManager.run();
+
+        if (instrumentationServerManager != null) {
+            instrumentationServerManager.shutdown();
+        }
 
         if (fiberManager != null) {
             fiberManager.shutdown();
