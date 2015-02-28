@@ -87,7 +87,7 @@ public class LiveVariablesProblem extends DataFlowProblem<LiveVariablesProblem, 
      */
     public List<Variable> getVarsLiveOnScopeEntry() {
         List<Variable> liveVars = new ArrayList<Variable>();
-        BitSet liveIn = getFlowGraphNode(getScope().cfg().getEntryBB()).getLiveOutBitSet();
+        BitSet liveIn = getFlowGraphNode(getScope().getCFG().getEntryBB()).getLiveOutBitSet();
 
         for (int i = 0; i < liveIn.size(); i++) {
             if (!liveIn.get(i)) continue;

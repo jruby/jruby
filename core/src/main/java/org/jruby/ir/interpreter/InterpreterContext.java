@@ -1,6 +1,8 @@
 package org.jruby.ir.interpreter;
 
+import java.util.Collection;
 import java.util.List;
+import org.jruby.ir.IRClosure;
 import org.jruby.ir.IRFlags;
 import org.jruby.ir.IRMetaClassBody;
 import org.jruby.ir.IRMethod;
@@ -16,7 +18,9 @@ import org.jruby.runtime.ThreadContext;
 public class InterpreterContext {
     private final int temporaryVariablecount;
 
-    private final Instr[] instructions;
+    // startup interp will mark this at construction and not change but full interpreter will write it
+    // much later after running compiler passes.  JIT will not use this field at all.
+    protected Instr[] instructions;
 
     // Cached computed fields
     private final boolean hasExplicitCallProtocol;
@@ -175,5 +179,26 @@ public class InterpreterContext {
         }
 
         return buf.toString();
+    }
+
+    public String toStringInstrs() {
+        StringBuilder b = new StringBuilder();
+        int length = instructions.length;
+
+        for (int i = 0; i < length; i++) {
+            if (i > 0) b.append("\n");
+            b.append("  ").append(i).append('\t').append(instructions[i]);
+            i++;
+        }
+
+        Collection<IRClosure> nestedClosures = scope.getClosures();
+        if (nestedClosures != null && !nestedClosures.isEmpty()) {
+            b.append("\n\n------ Closures encountered in this scope ------\n");
+            for (IRClosure c: nestedClosures)
+                b.append(c.toStringBody());
+            b.append("------------------------------------------------\n");
+        }
+
+        return b.toString();
     }
 }

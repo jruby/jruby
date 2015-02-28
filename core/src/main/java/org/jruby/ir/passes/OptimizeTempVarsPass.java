@@ -48,9 +48,6 @@ public class OptimizeTempVarsPass extends CompilerPass {
     }
 
     private static void optimizeTmpVars(IRScope s) {
-        // Cannot run after CFG has been built in the form it has been written here.
-        if (s.getCFG() != null) return;
-
         // Pass 1: Analyze instructions and find use and def count of temporary variables
         Map<TemporaryVariable, Instr> tmpVarUses = new HashMap<>();
         Map<TemporaryVariable, Instr> tmpVarDefs = new HashMap<>();

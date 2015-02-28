@@ -31,7 +31,7 @@ public class DominatorTreeBuilder extends CompilerPass {
         try {
             buildDominatorTree(cfg, cfg.postOrderList(), cfg.getMaxNodeID());
         } catch (Exception e) {
-            LOG.debug("Caught exception building dom tree for {}", scope.cfg());
+            LOG.debug("Caught exception building dom tree for {}", scope.getCFG());
         }
 
         return null;

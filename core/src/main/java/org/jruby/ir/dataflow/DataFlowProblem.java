@@ -47,7 +47,7 @@ public abstract class DataFlowProblem<T extends DataFlowProblem<T, U>, U extends
         LinkedList<U> workList = generateWorkList();
 
         // 2. Initialize a bitset with a flag set for all basic blocks
-        int numNodes = scope.cfg().getMaxNodeID();
+        int numNodes = scope.getCFG().getMaxNodeID();
         BitSet bbSet = new BitSet(1+numNodes);
         bbSet.flip(0, numNodes); // set all bits from default of 0 to 1 (enebo: could we invert this in algo?)
 
@@ -64,7 +64,7 @@ public abstract class DataFlowProblem<T extends DataFlowProblem<T, U>, U extends
     protected LinkedList<U> generateWorkList() {
         LinkedList<U> wl = new LinkedList<U>();
         Iterator<BasicBlock> it = direction == DF_Direction.FORWARD ?
-                scope.cfg().getReversePostOrderTraverser() : scope.cfg().getPostOrderTraverser();
+                scope.getCFG().getReversePostOrderTraverser() : scope.getCFG().getPostOrderTraverser();
 
         while (it.hasNext()) {
             wl.add(getFlowGraphNode(it.next()));
@@ -78,11 +78,11 @@ public abstract class DataFlowProblem<T extends DataFlowProblem<T, U>, U extends
     }
 
     public Iterable<BasicBlock> getIncomingSourcesOf(BasicBlock bb) {
-        return scope.cfg().getIncomingSources(bb);
+        return scope.getCFG().getIncomingSources(bb);
     }
 
     public Iterable<BasicBlock> getOutgoingDestinationsOf(BasicBlock bb) {
-        return scope.cfg().getOutgoingDestinations(bb);
+        return scope.getCFG().getOutgoingDestinations(bb);
     }
 
     /* Individual analyses should override this */
@@ -111,11 +111,11 @@ public abstract class DataFlowProblem<T extends DataFlowProblem<T, U>, U extends
     }
 
     public U getEntryNode() {
-        return getFlowGraphNode(scope.cfg().getEntryBB());
+        return getFlowGraphNode(scope.getCFG().getEntryBB());
     }
 
     public U getExitNode() {
-        return getFlowGraphNode(scope.cfg().getExitBB());
+        return getFlowGraphNode(scope.getCFG().getExitBB());
     }
 
     public int addDataFlowVar() {
@@ -145,7 +145,7 @@ public abstract class DataFlowProblem<T extends DataFlowProblem<T, U>, U extends
             scope.buildCFG();
         }
 
-        for (BasicBlock bb: scope.cfg().getBasicBlocks()) {
+        for (BasicBlock bb: scope.getCFG().getBasicBlocks()) {
             U fgNode = buildFlowGraphNode(bb);
             fgNode.init();
             fgNode.buildDataFlowVars();

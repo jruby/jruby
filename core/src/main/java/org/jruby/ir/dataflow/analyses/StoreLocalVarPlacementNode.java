@@ -157,7 +157,7 @@ public class StoreLocalVarPlacementNode extends FlowGraphNode<StoreLocalVarPlace
         //       i,j are dirty inside the block, but not used outside
 
         if (basicBlock.isExitBB()) {
-            LiveVariablesProblem lvp = (LiveVariablesProblem)scope.getDataFlowSolution(DataFlowConstants.LVP_NAME);
+            LiveVariablesProblem lvp = (LiveVariablesProblem)scope.getFullInterpreterContext().getDataFlowProblems().get(DataFlowConstants.LVP_NAME);
             java.util.Collection<LocalVariable> liveVars = lvp.getVarsLiveOnScopeExit();
             if (liveVars != null) {
                 dirtyVars.retainAll(liveVars); // Intersection with variables live on exit from the scope
@@ -242,7 +242,7 @@ public class StoreLocalVarPlacementNode extends FlowGraphNode<StoreLocalVarPlace
                 // If this also happens to be exit BB, we would have intersected already earlier -- so no need to do it again!
 
                 if (!basicBlock.isExitBB()) {
-                    LiveVariablesProblem lvp = (LiveVariablesProblem)scope.getDataFlowSolution(DataFlowConstants.LVP_NAME);
+                    LiveVariablesProblem lvp = (LiveVariablesProblem)scope.getFullInterpreterContext().getDataFlowProblems().get(DataFlowConstants.LVP_NAME);
                     if (lvp == null) {
                         System.out.println("LVP missing for " + scope);
                     }

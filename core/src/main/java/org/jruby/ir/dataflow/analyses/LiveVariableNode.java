@@ -106,11 +106,11 @@ public class LiveVariableNode extends FlowGraphNode<LiveVariablesProblem, LiveVa
             // System.out.println("Processing closure: " + o + "-------");
             if (o != null && o instanceof WrappedIRClosure) {
                 IRClosure cl = ((WrappedIRClosure)o).getClosure();
-                LiveVariablesProblem cl_lvp = (LiveVariablesProblem) cl.getDataFlowSolution(DataFlowConstants.LVP_NAME);
+                LiveVariablesProblem cl_lvp = (LiveVariablesProblem) cl.getFullInterpreterContext().getDataFlowProblems().get(DataFlowConstants.LVP_NAME);
                 boolean needsInit = false;
                 if (cl_lvp == null) {
                     cl_lvp = new LiveVariablesProblem(cl, problem.getNonSelfLocalVars());
-                    cl.setDataFlowSolution(cl_lvp.getName(), cl_lvp);
+                    cl.getFullInterpreterContext().getDataFlowProblems().put(cl_lvp.getName(), cl_lvp);
                     cl.computeScopeFlags();
                     needsInit = true;
                 }
@@ -305,7 +305,7 @@ public class LiveVariableNode extends FlowGraphNode<LiveVariablesProblem, LiveVa
                 Operand o = ((ClosureAcceptingInstr)i).getClosureArg();
                 if (o != null && o instanceof WrappedIRClosure) {
                     IRClosure cl = ((WrappedIRClosure)o).getClosure();
-                    LiveVariablesProblem cl_lvp = (LiveVariablesProblem)cl.getDataFlowSolution(problem.getName());
+                    LiveVariablesProblem cl_lvp = (LiveVariablesProblem)cl.getFullInterpreterContext().getDataFlowProblems().get(problem.getName());
                     // Collect variables live on entry and merge that info into the current problem.
                     markAllVariablesLive(problem, cl_lvp.getVarsLiveOnScopeEntry());
                 } else if (scopeBindingHasEscaped) {

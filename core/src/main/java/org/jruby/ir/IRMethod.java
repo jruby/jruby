@@ -34,7 +34,7 @@ public class IRMethod extends IRScope {
         this.defn = defn;
         this.isInstanceMethod = isInstanceMethod;
         this.argDesc = new ArrayList<>();
-        this.signatures = new HashMap<>();
+        this.signatures = null;
 
         if (!getManager().isDryRun() && staticScope != null) {
             staticScope.setIRScope(this);
@@ -85,6 +85,7 @@ public class IRMethod extends IRScope {
     }
 
     public void addNativeSignature(int arity, MethodType signature) {
+        if (signatures == null) signatures = new HashMap<>();
         signatures.put(arity, signature);
     }
 

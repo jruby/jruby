@@ -121,7 +121,8 @@ public class JVMVisitor extends IRVisitor {
         b.append("\n\nLinearized instructions for JIT:\n");
 
         int i = 0;
-        for (BasicBlock bb : scope.buildLinearization()) {
+        // FIXME: This
+        for (BasicBlock bb : scope.getFullInterpreterContext().getLinearizedBBList()) {
             for (Instr instr : bb.getInstrs()) {
                 if (i > 0) b.append("\n");
 

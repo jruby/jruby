@@ -163,17 +163,7 @@ public class IRClosure extends IRScope {
     }
 
     public String toStringBody() {
-        StringBuilder buf = new StringBuilder();
-        buf.append(getName()).append(" = { \n");
-
-        CFG c = getCFG();
-        if (c != null) {
-            buf.append("\nCFG:\n").append(c.toStringGraph()).append("\nInstructions:\n").append(c.toStringInstrs());
-        } else {
-            buf.append(toStringInstrs());
-        }
-        buf.append("\n}\n\n");
-        return buf.toString();
+        return new StringBuilder(getName()).append(" = {\n").append(toStringInstrs()).append("\n}\n\n").toString();
     }
 
     public BlockBody getBlockBody() {

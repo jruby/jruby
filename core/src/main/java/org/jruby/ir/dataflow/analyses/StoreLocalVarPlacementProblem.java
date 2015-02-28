@@ -89,7 +89,7 @@ public class StoreLocalVarPlacementProblem extends DataFlowProblem<StoreLocalVar
 
         Set<LocalVariable> dirtyVars = null;
         IRScope cfgScope = getScope();
-        CFG     cfg      = cfgScope.cfg();
+        CFG     cfg      = cfgScope.getCFG();
 
         this.scopeHasLocalVarStores      = false;
         this.scopeHasUnrescuedExceptions = false;

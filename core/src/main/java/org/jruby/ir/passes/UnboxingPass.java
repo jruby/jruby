@@ -34,7 +34,7 @@ public class UnboxingPass extends CompilerPass {
 
     @Override
     public Object previouslyRun(IRScope scope) {
-        return scope.getDataFlowSolution(UnboxableOpsAnalysisProblem.NAME);
+        return scope.getFullInterpreterContext().getDataFlowProblems().get(UnboxableOpsAnalysisProblem.NAME);
     }
 
     public boolean invalidate(IRScope scope) {

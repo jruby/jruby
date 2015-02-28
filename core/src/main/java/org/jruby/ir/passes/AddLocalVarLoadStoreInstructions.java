@@ -73,20 +73,20 @@ public class AddLocalVarLoadStoreInstructions extends CompilerPass {
             (new LiveVariableAnalysis()).invalidate(s);
         }
 
-        s.setDataFlowSolution(StoreLocalVarPlacementProblem.NAME, slvp);
+        s.getFullInterpreterContext().getDataFlowProblems().put(StoreLocalVarPlacementProblem.NAME, slvp);
 
         return slvp;
     }
 
     @Override
     public Object previouslyRun(IRScope scope) {
-        return scope.getDataFlowSolution(StoreLocalVarPlacementProblem.NAME);
+        return scope.getFullInterpreterContext().getDataFlowProblems().get(StoreLocalVarPlacementProblem.NAME);
     }
 
     @Override
     public boolean invalidate(IRScope scope) {
         super.invalidate(scope);
-        scope.setDataFlowSolution(StoreLocalVarPlacementProblem.NAME, null);
+        scope.getFullInterpreterContext().getDataFlowProblems().put(StoreLocalVarPlacementProblem.NAME, null);
         return true;
     }
 }

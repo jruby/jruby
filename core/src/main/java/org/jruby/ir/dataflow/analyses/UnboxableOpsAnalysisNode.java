@@ -282,11 +282,11 @@ public class UnboxableOpsAnalysisNode extends FlowGraphNode<UnboxableOpsAnalysis
             } else if (o instanceof WrappedIRClosure) {
                 // Fetch the nested unboxing-analysis problem, creating one if necessary
                 IRClosure cl = ((WrappedIRClosure)o).getClosure();
-                UnboxableOpsAnalysisProblem subProblem = (UnboxableOpsAnalysisProblem)cl.getDataFlowSolution(DataFlowConstants.UNBOXING);
+                UnboxableOpsAnalysisProblem subProblem = (UnboxableOpsAnalysisProblem)cl.getFullInterpreterContext().getDataFlowProblems().get(DataFlowConstants.UNBOXING);
                 if (subProblem == null) {
                     subProblem = new UnboxableOpsAnalysisProblem();
                     subProblem.setup(cl);
-                    cl.setDataFlowSolution(DataFlowConstants.UNBOXING, subProblem);
+                    cl.getFullInterpreterContext().getDataFlowProblems().put(DataFlowConstants.UNBOXING, subProblem);
                 }
 
                 UnboxableOpsAnalysisNode exitNode  = subProblem.getExitNode();
@@ -565,7 +565,7 @@ public class UnboxableOpsAnalysisNode extends FlowGraphNode<UnboxableOpsAnalysis
         }
 
         // Only worry about vars live on exit from the BB
-        LiveVariablesProblem lvp = (LiveVariablesProblem)problem.getScope().getDataFlowSolution(DataFlowConstants.LVP_NAME);
+        LiveVariablesProblem lvp = (LiveVariablesProblem)problem.getScope().getFullInterpreterContext().getDataFlowProblems().get(DataFlowConstants.LVP_NAME);
         BitSet liveVarsSet = lvp.getFlowGraphNode(basicBlock).getLiveInBitSet();
 
         List<Instr> newInstrs = new ArrayList<Instr>();
@@ -655,7 +655,7 @@ public class UnboxableOpsAnalysisNode extends FlowGraphNode<UnboxableOpsAnalysis
 
                             // Fetch the nested unboxing-analysis problem, creating one if necessary
                             IRClosure cl = ((WrappedIRClosure)o).getClosure();
-                            UnboxableOpsAnalysisProblem subProblem = (UnboxableOpsAnalysisProblem)cl.getDataFlowSolution(DataFlowConstants.UNBOXING);
+                            UnboxableOpsAnalysisProblem subProblem = (UnboxableOpsAnalysisProblem)cl.getFullInterpreterContext().getDataFlowProblems().get(DataFlowConstants.UNBOXING);
                             UnboxableOpsAnalysisNode exitNode  = subProblem.getExitNode();
 
                             // Compute solution

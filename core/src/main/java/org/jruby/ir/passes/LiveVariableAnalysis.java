@@ -33,11 +33,11 @@ public class LiveVariableAnalysis extends CompilerPass {
 
     @Override
     public Object previouslyRun(IRScope scope) {
-        return scope.getDataFlowSolution(LiveVariablesProblem.NAME);
+        return scope.getFullInterpreterContext().getDataFlowProblems().get(LiveVariablesProblem.NAME);
     }
 
     private void collectNonLocalDirtyVars(IRClosure cl, Set<LocalVariable> vars, int minDepth) {
-        for (BasicBlock bb: cl.cfg().getBasicBlocks()) {
+        for (BasicBlock bb: cl.getCFG().getBasicBlocks()) {
             for (Instr i: bb.getInstrs()) {
                 // Collect local vars belonging to an outer scope dirtied here
                 if (i instanceof ResultInstr) {
@@ -90,7 +90,7 @@ public class LiveVariableAnalysis extends CompilerPass {
         }
 
         lvp.compute_MOP_Solution();
-        scope.setDataFlowSolution(LiveVariablesProblem.NAME, lvp);
+        scope.getFullInterpreterContext().getDataFlowProblems().put(LiveVariablesProblem.NAME, lvp);
 
         return lvp;
     }
@@ -98,7 +98,7 @@ public class LiveVariableAnalysis extends CompilerPass {
     @Override
     public boolean invalidate(IRScope scope) {
         super.invalidate(scope);
-        scope.setDataFlowSolution(LiveVariablesProblem.NAME, null);
+        scope.getFullInterpreterContext().getDataFlowProblems().put(LiveVariablesProblem.NAME, null);
         return true;
     }
 }

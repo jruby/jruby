@@ -39,11 +39,11 @@ public class AddCallProtocolInstructions extends CompilerPass {
         // If the scope uses $_ or $~ family of vars, has local load/stores, or if its binding has escaped, we have
         // to allocate a dynamic scope for it and add binding push/pop instructions.
         if (explicitCallProtocolSupported(scope)) {
-            StoreLocalVarPlacementProblem slvpp = (StoreLocalVarPlacementProblem)scope.getDataFlowSolution(StoreLocalVarPlacementProblem.NAME);
+            StoreLocalVarPlacementProblem slvpp = (StoreLocalVarPlacementProblem)scope.getFullInterpreterContext().getDataFlowProblems().get(StoreLocalVarPlacementProblem.NAME);
             boolean scopeHasLocalVarStores = false;
             boolean bindingHasEscaped      = scope.bindingHasEscaped();
 
-            CFG cfg = scope.cfg();
+            CFG cfg = scope.getCFG();
 
             if (slvpp != null && bindingHasEscaped) {
                 scopeHasLocalVarStores = slvpp.scopeHasLocalVarStores();
