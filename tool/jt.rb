@@ -97,6 +97,7 @@ module Commands
     puts 'jt run [options] args...                     run JRuby with -X+T and args'
     puts '    --graal        use Graal (set GRAAL_BIN or it will try to automagically find it)'
     puts '    --asm          show assembly (implies --graal)'
+    puts '    --server       run an instrumentation server on port 8080'
     puts 'jt test                                      run all specs'
     puts 'jt test fast                                 run all specs except sub-processes, GC, sleep, ...'
     puts 'jt test spec/ruby/language                   run specs in this directory'
@@ -153,6 +154,10 @@ module Commands
 
     if args.delete('--asm')
       jruby_args += %w[-J-XX:+UnlockDiagnosticVMOptions -J-XX:CompileCommand=print,*::callRoot]
+    end
+
+    if args.delete('--server')
+      jruby_args += %w[-Xtruffle.instrumentation_server_port=8080 -Xtruffle.passalot=1]
     end
 
     raw_sh(env_vars, "#{JRUBY_DIR}/bin/jruby", *jruby_args, *args)
