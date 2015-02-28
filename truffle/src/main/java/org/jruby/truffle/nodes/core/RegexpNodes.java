@@ -25,6 +25,7 @@ import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.utilities.ConditionProfile;
+import org.jruby.util.RegexpOptions;
 
 @CoreClass(name = "Regexp")
 public abstract class RegexpNodes {
@@ -253,8 +254,11 @@ public abstract class RegexpNodes {
 
                 throw new RaiseException(getContext().getCoreLibrary().typeError("uninitialized Regexp", this));
             }
+            if(regexp.getOptions() != null){
+                return regexp.getOptions().toOptions();
+            }
 
-            return regexp.getRegex().getOptions();
+            return RegexpOptions.fromJoniOptions(regexp.getRegex().getOptions()).toOptions();
         }
 
     }

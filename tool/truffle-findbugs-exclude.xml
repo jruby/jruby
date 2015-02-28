@@ -70,4 +70,8 @@
   <Match>
     <Bug pattern="SIC_INNER_SHOULD_BE_STATIC_ANON" />
   </Match>
+  <Match>
+    <Class name="org.jruby.truffle.runtime.subsystems.SimpleShell" />
+    <Bug pattern="DM_EXIT" />
+  </Match>
 </FindBugsFilter>

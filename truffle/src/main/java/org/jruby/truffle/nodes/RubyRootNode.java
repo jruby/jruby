@@ -53,7 +53,7 @@ public class RubyRootNode extends RootNode {
 
     @Override
     public Object execute(VirtualFrame frame) {
-        context.getSafepointManager().poll();
+        context.getSafepointManager().poll(this);
         return body.execute(frame);
     }
 

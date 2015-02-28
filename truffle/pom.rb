@@ -17,9 +17,8 @@ project 'JRuby Truffle' do
 
   plugin( :compiler,
           'encoding' => 'utf-8',
-          'debug' => 'true',
-          'verbose' => 'true',
-          'fork' => 'true',
+          'debug' => 'false',
+          'verbose' => 'false',
           'showWarnings' => 'true',
           'showDeprecation' => 'true',
           'source' => [ '${base.java.version}', '1.7' ],

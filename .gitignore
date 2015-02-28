@@ -59,6 +59,7 @@ lib/ruby/stdlib/test*
 lib/ruby/stdlib/hoe*
 lib/ruby/stdlib/minitest*
 lib/ruby/stdlib/power_assert*
+lib/ruby/stdlib/psych*
 release.properties
 share
 spaces test

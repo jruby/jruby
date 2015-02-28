@@ -9,6 +9,7 @@
  */
 package org.jruby.truffle.runtime.core;
 
+import com.oracle.truffle.api.nodes.Node;
 import org.jcodings.Encoding;
 import org.jcodings.EncodingDB;
 import org.jruby.truffle.nodes.RubyNode;
@@ -95,7 +96,7 @@ public class RubyEncoding extends RubyBasicObject {
     public static class EncodingAllocator implements Allocator {
 
         @Override
-        public RubyBasicObject allocate(RubyContext context, RubyClass rubyClass, RubyNode currentNode) {
+        public RubyBasicObject allocate(RubyContext context, RubyClass rubyClass, Node currentNode) {
             throw new UnsupportedOperationException();
         }
 

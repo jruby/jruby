@@ -71,7 +71,7 @@ public abstract class SymbolNodes {
         }
 
         @Specialization(guards = "!isRubySymbol(other)")
-        public RubyNilClass CompareNode(RubySymbol symbol,  Object other) {
+        public RubyNilClass compare(RubySymbol symbol,  Object other) {
             notDesignedForCompilation();
             return getContext().getCoreLibrary().getNilObject();
         }

@@ -12,6 +12,7 @@ package org.jruby.truffle.nodes.core;
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
+import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.RubyThread.Status;
 import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
@@ -22,6 +23,7 @@ import org.jruby.truffle.runtime.UndefinedPlaceholder;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.control.ThreadExitException;
 import org.jruby.truffle.runtime.core.*;
+import org.jruby.truffle.runtime.subsystems.SafepointAction;
 import org.jruby.truffle.runtime.util.Consumer;
 
 @CoreClass(name = "Thread")
@@ -97,10 +99,10 @@ public abstract class ThreadNodes {
 
         @Specialization
         public RubyThread kill(final RubyThread thread) {
-            getContext().getSafepointManager().pauseAllThreadsAndExecute(new Consumer<RubyThread>() {
+            getContext().getSafepointManager().pauseAllThreadsAndExecute(this, new SafepointAction() {
 
                 @Override
-                public void accept(RubyThread currentThread) {
+                public void run(RubyThread currentThread, Node currentNode) {
                     if (currentThread == thread) {
                         currentThread.exit();
                     }
@@ -215,10 +217,10 @@ public abstract class ThreadNodes {
 
             final RaiseException exceptionWrapper = new RaiseException((RubyException) exception);
 
-            getContext().getSafepointManager().pauseAllThreadsAndExecute(new Consumer<RubyThread>() {
+            getContext().getSafepointManager().pauseAllThreadsAndExecute(this, new SafepointAction() {
 
                 @Override
-                public void accept(RubyThread currentThread) {
+                public void run(RubyThread currentThread, Node currentNode) {
                     if (currentThread == thread) {
                         throw exceptionWrapper;
                     }

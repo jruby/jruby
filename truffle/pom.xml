@@ -68,9 +68,8 @@
         </executions>
         <configuration>
           <encoding>utf-8</encoding>
-          <debug>true</debug>
-          <verbose>true</verbose>
-          <fork>true</fork>
+          <debug>false</debug>
+          <verbose>false</verbose>
           <showWarnings>true</showWarnings>
           <showDeprecation>true</showDeprecation>
           <source>${base.java.version}</source>

@@ -225,7 +225,7 @@ public abstract class ArrayBuilderNode extends Node {
         @Override
         public Object append(Object store, int index, Object value) {
             // TODO(CS): inject probability
-            if (value instanceof Integer) {
+            if (store instanceof int[] && value instanceof Integer) {
                 ((int[]) store)[index] = (int) value;
                 return store;
             } else {
@@ -297,7 +297,7 @@ public abstract class ArrayBuilderNode extends Node {
         @Override
         public Object append(Object store, int index, Object value) {
             // TODO(CS): inject probability
-            if (value instanceof Long) {
+            if (store instanceof long[] && value instanceof Long) {
                 ((long[]) store)[index] = (long) value;
                 return store;
             } else if (value instanceof Integer) {
@@ -362,7 +362,7 @@ public abstract class ArrayBuilderNode extends Node {
         @Override
         public Object append(Object store, int index, Object value) {
             // TODO(CS): inject probability
-            if (value instanceof Double) {
+            if (store instanceof double[] && value instanceof Double) {
                 ((double[]) store)[index] = (double) value;
                 return store;
             } else {

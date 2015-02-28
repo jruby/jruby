@@ -22,11 +22,14 @@ import com.oracle.truffle.api.utilities.BranchProfile;
 
 import org.jcodings.Encoding;
 import org.jcodings.specific.ASCIIEncoding;
+import org.jcodings.specific.UTF8Encoding;
 import org.joni.Matcher;
 import org.joni.Option;
 import org.joni.Region;
 import org.jruby.runtime.Visibility;
 import org.jruby.truffle.nodes.RubyNode;
+import org.jruby.truffle.nodes.coerce.ToIntNode;
+import org.jruby.truffle.nodes.coerce.ToIntNodeFactory;
 import org.jruby.truffle.nodes.coerce.ToStrNode;
 import org.jruby.truffle.nodes.coerce.ToStrNodeFactory;
 import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
@@ -280,6 +283,9 @@ public abstract class StringNodes {
     @CoreMethod(names = {"[]", "slice"}, required = 1, optional = 1, lowerFixnumParameters = {0, 1})
     public abstract static class GetIndexNode extends CoreMethodNode {
 
+        @Child private ToIntNode toIntNode;
+        @Child private MatchDataNodes.GetIndexNode getMatchDataIndexNode;
+
         private final BranchProfile outOfBounds = BranchProfile.create();
 
         public GetIndexNode(RubyContext context, SourceSection sourceSection) {
@@ -313,6 +319,18 @@ public abstract class StringNodes {
             } else {
                 return getContext().makeString(bytes.charAt(normalizedIndex), string.getByteList().getEncoding());
             }
+        }
+
+        @Specialization(guards = { "!isRubyRange(index)", "!isRubyRegexp(index)" })
+        public Object getIndex(VirtualFrame frame, RubyString string, Object index, UndefinedPlaceholder undefined) {
+            notDesignedForCompilation();
+
+            if (toIntNode == null) {
+                CompilerDirectives.transferToInterpreter();
+                toIntNode = insert(ToIntNodeFactory.create(getContext(), getSourceSection(), null));
+            }
+
+            return getIndex(string, toIntNode.executeIntegerFixnum(frame, index), undefined);
         }
 
         @Specialization
@@ -352,6 +370,30 @@ public abstract class StringNodes {
             }
         }
 
+        @Specialization(guards = "!isUndefinedPlaceholder(length)")
+        public Object slice(VirtualFrame frame, RubyString string, int start, Object length) {
+            notDesignedForCompilation();
+
+            if (toIntNode == null) {
+                CompilerDirectives.transferToInterpreter();
+                toIntNode = insert(ToIntNodeFactory.create(getContext(), getSourceSection(), null));
+            }
+
+            return slice(string, start, toIntNode.executeIntegerFixnum(frame, length));
+        }
+
+        @Specialization(guards = { "!isRubyRange(start)", "!isRubyRegexp(start)", "!isUndefinedPlaceholder(length)" })
+        public Object slice(VirtualFrame frame, RubyString string, Object start, Object length) {
+            notDesignedForCompilation();
+
+            if (toIntNode == null) {
+                CompilerDirectives.transferToInterpreter();
+                toIntNode = insert(ToIntNodeFactory.create(getContext(), getSourceSection(), null));
+            }
+
+            return slice(string, toIntNode.executeIntegerFixnum(frame, start), toIntNode.executeIntegerFixnum(frame, length));
+        }
+
         @Specialization
         public Object slice(RubyString string, RubyRegexp regexp, UndefinedPlaceholder capture) {
             notDesignedForCompilation();
@@ -365,6 +407,66 @@ public abstract class StringNodes {
             return ((RubyMatchData) matchData).getValues()[0];
         }
 
+        @Specialization
+        public Object slice(RubyString string, RubyRegexp regexp, int capture) {
+            notDesignedForCompilation();
+
+            final Object matchData = regexp.matchCommon(string, false, false);
+
+            if (matchData == getContext().getCoreLibrary().getNilObject()) {
+                return matchData;
+            }
+
+            if (getMatchDataIndexNode == null) {
+                CompilerDirectives.transferToInterpreter();
+                getMatchDataIndexNode = insert(MatchDataNodesFactory.GetIndexNodeFactory.create(getContext(), getSourceSection(), new RubyNode[]{}));
+            }
+
+            return getMatchDataIndexNode.getIndex((RubyMatchData) matchData, capture);
+        }
+
+        @Specialization
+        public Object slice(VirtualFrame frame, RubyString string, RubyRegexp regexp, RubyString capture) {
+            notDesignedForCompilation();
+
+            final Object matchData = regexp.matchCommon(string, false, false);
+
+            if (matchData == getContext().getCoreLibrary().getNilObject()) {
+                return matchData;
+            }
+
+            if (getMatchDataIndexNode == null) {
+                CompilerDirectives.transferToInterpreter();
+                getMatchDataIndexNode = insert(MatchDataNodesFactory.GetIndexNodeFactory.create(getContext(), getSourceSection(), new RubyNode[]{}));
+            }
+
+            return getMatchDataIndexNode.getIndex((RubyMatchData) matchData, capture);
+        }
+
+        @Specialization(guards =  { "!isUndefinedPlaceholder(capture)", "!isRubyString(capture)" })
+        public Object slice(VirtualFrame frame, RubyString string, RubyRegexp regexp, Object capture) {
+            notDesignedForCompilation();
+
+            final Object matchData = regexp.matchCommon(string, false, false);
+
+            if (matchData == getContext().getCoreLibrary().getNilObject()) {
+                return matchData;
+            }
+
+            if (toIntNode == null) {
+                CompilerDirectives.transferToInterpreter();
+                toIntNode = insert(ToIntNodeFactory.create(getContext(), getSourceSection(), null));
+            }
+
+            if (getMatchDataIndexNode == null) {
+                CompilerDirectives.transferToInterpreter();
+                getMatchDataIndexNode = insert(MatchDataNodesFactory.GetIndexNodeFactory.create(getContext(), getSourceSection(), new RubyNode[]{}));
+            }
+
+            final int index = toIntNode.executeIntegerFixnum(frame, capture);
+
+            return getMatchDataIndexNode.getIndex((RubyMatchData) matchData, index);
+        }
     }
 
     @CoreMethod(names = "[]=", required = 2, lowerFixnumParameters = 0)
@@ -809,10 +911,11 @@ public abstract class StringNodes {
         }
     }
 
-    @CoreMethod(names = "encode", required = 1, optional = 1)
+    @CoreMethod(names = "encode", optional = 2)
     public abstract static class EncodeNode extends CoreMethodNode {
 
         @Child private ToStrNode toStrNode;
+        @Child private EncodingNodes.DefaultInternalNode defaultInternalNode;
 
         public EncodeNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -852,7 +955,7 @@ public abstract class StringNodes {
             return getContext().toTruffle(jrubyTranscoded);
         }
 
-        @Specialization(guards = { "!isRubyString(encoding)", "!isRubyEncoding(encoding)" })
+        @Specialization(guards = { "!isRubyString(encoding)", "!isRubyEncoding(encoding)", "!isUndefinedPlaceholder(encoding)" })
         public RubyString encode(VirtualFrame frame, RubyString string, Object encoding, UndefinedPlaceholder options) {
             notDesignedForCompilation();
 
@@ -862,6 +965,24 @@ public abstract class StringNodes {
             }
 
             return encode(string, toStrNode.executeRubyString(frame, encoding), options);
+        }
+
+        @Specialization
+        public RubyString encode(RubyString string, @SuppressWarnings("unused") UndefinedPlaceholder encoding, @SuppressWarnings("unused") UndefinedPlaceholder options) {
+            notDesignedForCompilation();
+
+            if (defaultInternalNode == null) {
+                CompilerDirectives.transferToInterpreter();
+                defaultInternalNode = insert(EncodingNodesFactory.DefaultInternalNodeFactory.create(getContext(), getSourceSection(), new RubyNode[]{}));
+            }
+
+            final Object defaultInternalEncoding = defaultInternalNode.defaultInternal();
+
+            if (defaultInternalEncoding == getContext().getCoreLibrary().getNilObject()) {
+                return encode(string, RubyEncoding.getEncoding("UTF-8"), UndefinedPlaceholder.INSTANCE);
+            }
+
+            return encode(string, (RubyEncoding) defaultInternalEncoding, UndefinedPlaceholder.INSTANCE);
         }
     }
 
@@ -1329,7 +1450,7 @@ public abstract class StringNodes {
                 last--;
             }
 
-            return getContext().makeString(str.substring(0, last+1));
+            return getContext().makeString(str.substring(0, last + 1));
         }
 
     }
@@ -1533,33 +1654,6 @@ public abstract class StringNodes {
             }
 
             return RubyArray.fromObjects(getContext().getCoreLibrary().getArrayClass(), objects);
-        }
-    }
-
-    @CoreMethod(names = "sub", required = 2)
-    public abstract static class SubNode extends RegexpNodes.EscapingNode {
-
-        public SubNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
-        public SubNode(SubNode prev) {
-            super(prev);
-        }
-
-        @Specialization
-        public RubyString sub(VirtualFrame frame, RubyString string, RubyString regexpString, RubyString replacement) {
-            notDesignedForCompilation();
-
-            final RubyRegexp regexp = new RubyRegexp(this, getContext().getCoreLibrary().getRegexpClass(), escape(frame, regexpString).getBytes(), Option.DEFAULT);
-            return sub(string, regexp, replacement);
-        }
-
-        @Specialization
-        public RubyString sub(RubyString string, RubyRegexp regexp, RubyString replacement) {
-            notDesignedForCompilation();
-
-            return regexp.sub(string.toString(), replacement.toString());
         }
     }
 

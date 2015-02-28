@@ -15,12 +15,15 @@ import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.Truffle;
 import com.oracle.truffle.api.nodes.InvalidAssumptionException;
 
+import com.oracle.truffle.api.nodes.Node;
 import org.jruby.RubyThread.Status;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyThread;
 import org.jruby.truffle.runtime.util.Consumer;
 
+import java.util.ArrayList;
 import java.util.Collections;
+import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Phaser;
@@ -30,13 +33,13 @@ public class SafepointManager {
 
     private final RubyContext context;
 
-    private final Set<Thread> runningThreads = Collections.newSetFromMap(new ConcurrentHashMap<Thread, Boolean>());
+    private final Set<RunningThread> runningThreads = Collections.newSetFromMap(new ConcurrentHashMap<RunningThread, Boolean>());
 
     @CompilerDirectives.CompilationFinal private Assumption assumption = Truffle.getRuntime().createAssumption();
     private final ReentrantLock lock = new ReentrantLock();
 
     private final Phaser phaser = new Phaser();
-    private volatile Consumer<RubyThread> action;
+    private volatile SafepointAction action;
 
     public SafepointManager(RubyContext context) {
         this.context = context;
@@ -45,12 +48,16 @@ public class SafepointManager {
     }
 
     public void enterThread() {
+        enterThread(true);
+    }
+
+    public void enterThread(boolean interruptible) {
         CompilerAsserts.neverPartOfCompilation();
 
         lock.lock();
         try {
             phaser.register();
-            runningThreads.add(Thread.currentThread());
+            runningThreads.add(new RunningThread(Thread.currentThread(), interruptible));
         } finally {
             lock.unlock();
         }
@@ -60,38 +67,51 @@ public class SafepointManager {
         CompilerAsserts.neverPartOfCompilation();
 
         phaser.arriveAndDeregister();
-        runningThreads.remove(Thread.currentThread());
+        runningThreads.remove(new RunningThread(Thread.currentThread(), false));
     }
 
-    public void poll() {
-        poll(true);
+    public void poll(Node currentNode) {
+        poll(currentNode, true);
     }
 
-    private void poll(boolean holdsGlobalLock) {
+    private void poll(Node currentNode, boolean holdsGlobalLock) {
         try {
             assumption.check();
         } catch (InvalidAssumptionException e) {
-            assumptionInvalidated(holdsGlobalLock, false);
+            assumptionInvalidated(currentNode, holdsGlobalLock, false);
         }
     }
 
-    private void assumptionInvalidated(boolean holdsGlobalLock, boolean isDrivingThread) {
+    private void assumptionInvalidated(Node currentNode, boolean holdsGlobalLock, boolean isDrivingThread) {
         RubyThread thread = null;
 
         if (holdsGlobalLock) {
             thread = context.getThreadManager().leaveGlobalLock();
         }
 
+        // TODO CS 27-Feb-15 how do we get thread if it wasn't holding the global lock?
+
         try {
-            step(thread, isDrivingThread);
+            step(currentNode, thread, isDrivingThread);
         } finally {
             if (holdsGlobalLock) {
                 context.getThreadManager().enterGlobalLock(thread);
             }
         }
+
+        // We're now running again normally, with the global lock, and can run deferred actions
+
+        if (thread != null) {
+            final List<Runnable> deferredActions = new ArrayList<>(thread.getDeferredSafepointActions());
+            thread.getDeferredSafepointActions().clear();
+
+            for (Runnable action : deferredActions) {
+                action.run();
+            }
+        }
     }
 
-    private void step(RubyThread thread, boolean isDrivingThread) {
+    private void step(Node currentNode, RubyThread thread, boolean isDrivingThread) {
         // wait other threads to reach their safepoint
         phaser.arriveAndAwaitAdvance();
 
@@ -104,7 +124,7 @@ public class SafepointManager {
 
         try {
             if (thread != null && thread.getStatus() != Status.ABORTING) {
-                action.accept(thread);
+                action.run(thread, currentNode);
             }
         } finally {
             // wait other threads to finish their action
@@ -112,20 +132,20 @@ public class SafepointManager {
         }
     }
 
-    public void pauseAllThreadsAndExecute(Consumer<RubyThread> action) {
-        pauseAllThreadsAndExecute(true, action);
+    public void pauseAllThreadsAndExecute(Node currentNode, SafepointAction action) {
+        pauseAllThreadsAndExecute(currentNode, true, action);
     }
 
-    public void pauseAllThreadsAndExecuteFromNonRubyThread(Consumer<RubyThread> action) {
-        enterThread();
+    public void pauseAllThreadsAndExecuteFromNonRubyThread(Node currentNode, SafepointAction action) {
+        enterThread(false);
         try {
-            pauseAllThreadsAndExecute(false, action);
+            pauseAllThreadsAndExecute(currentNode, false, action);
         } finally {
             leaveThread();
         }
     }
 
-    private void pauseAllThreadsAndExecute(boolean holdsGlobalLock, Consumer<RubyThread> action) {
+    public void pauseAllThreadsAndExecute(Node currentNode, boolean holdsGlobalLock, SafepointAction action) {
         CompilerDirectives.transferToInterpreter();
 
         if (lock.isHeldByCurrentThread()) {
@@ -137,7 +157,7 @@ public class SafepointManager {
                 lock.lockInterruptibly();
                 break;
             } catch (InterruptedException e) {
-                poll(holdsGlobalLock);
+                poll(currentNode, holdsGlobalLock);
             }
         }
 
@@ -151,16 +171,55 @@ public class SafepointManager {
             assumption.invalidate();
             interruptAllThreads();
 
-            assumptionInvalidated(holdsGlobalLock, true);
+            assumptionInvalidated(currentNode, holdsGlobalLock, true);
         } finally {
             lock.unlock();
         }
     }
 
     private void interruptAllThreads() {
-        for (Thread thread : runningThreads) {
-            thread.interrupt();
+        for (RunningThread thread : runningThreads) {
+            if (thread.isInterruptible()) {
+                thread.getThread().interrupt();
+            }
         }
+    }
+
+    private static class RunningThread {
+
+        private final Thread thread;
+        private final boolean interruptible;
+
+        public RunningThread(Thread thread, boolean interruptible) {
+            this.thread = thread;
+            this.interruptible = interruptible;
+        }
+
+        public Thread getThread() {
+            return thread;
+        }
+
+        public boolean isInterruptible() {
+            return interruptible;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+
+            RunningThread that = (RunningThread) o;
+
+            if (!thread.equals(that.thread)) return false;
+
+            return true;
+        }
+
+        @Override
+        public int hashCode() {
+            return thread.hashCode();
+        }
+
     }
 
 }

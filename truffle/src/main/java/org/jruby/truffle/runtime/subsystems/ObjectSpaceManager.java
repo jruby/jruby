@@ -18,6 +18,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.WeakHashMap;
 
+import com.oracle.truffle.api.nodes.Node;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
@@ -160,10 +161,10 @@ public class ObjectSpaceManager {
 
         };
 
-        context.getSafepointManager().pauseAllThreadsAndExecute(new Consumer<RubyThread>() {
+        context.getSafepointManager().pauseAllThreadsAndExecute(null, new SafepointAction() {
 
             @Override
-            public void accept(RubyThread currentThread) {
+            public void run(RubyThread currentThread, Node currentNode) {
                 synchronized (liveObjects) {
                     currentThread.visitObjectGraph(visitor);
                     context.getCoreLibrary().getGlobalVariablesObject().visitObjectGraph(visitor);

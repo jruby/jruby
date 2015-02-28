@@ -198,7 +198,10 @@
         font:normal 68% verdana,arial,helvetica;
         color:#000000;
         }
-        table tr td, table tr th {
+        table.details {
+        width: 95% !important;
+        }
+        table.summary tr th, table.summary tr td {
         font-size: 68%;
         }
         table.details tr th{
@@ -332,6 +335,7 @@
                 <xsl:call-template name="create.stylesheet.link">
                     <xsl:with-param name="package.name" select="$package.name"/>
                 </xsl:call-template>
+                <xsl:call-template name="create.sortable.tables" />
                 <script type="text/javascript" language="JavaScript">
                     var TestCases = new Array();
                     var cur;
@@ -391,7 +395,7 @@
                         <h2>Tests</h2>
                     </xsl:otherwise>
                 </xsl:choose>
-                <table class="details" border="0" cellpadding="5" cellspacing="2" width="95%">
+                <table class="details sortable" border="0" cellpadding="5" cellspacing="2" width="95%">
                     <xsl:call-template name="testcase.test.header"/>
                     <!--
                             test can even not be started at all (failure to load the class)
@@ -583,6 +587,7 @@
                 <xsl:call-template name="create.stylesheet.link">
                     <xsl:with-param name="package.name"/>
                 </xsl:call-template>
+                <xsl:call-template name="create.sortable.tables" />
             </head>
             <body>
                 <xsl:attribute name="onload">open('allclasses-frame.html','classListFrame')</xsl:attribute>
@@ -594,7 +599,7 @@
                 <xsl:variable name="skippedCount" select="sum(testsuite/@skipped)" />
                 <xsl:variable name="timeCount" select="sum(testsuite/@time)"/>
                 <xsl:variable name="successRate" select="($testCount - $failureCount - $errorCount - $skippedCount) div $testCount"/>
-                <table class="details" border="0" cellpadding="5" cellspacing="2" width="95%">
+                <table class="details summary" border="0" cellpadding="5" cellspacing="2" width="95%">
                     <tr valign="top">
                         <th>Tests</th>
                         <th>Failures</th>
@@ -636,7 +641,7 @@
                 </table>
 
                 <h2>Packages</h2>
-                <table class="details" border="0" cellpadding="5" cellspacing="2" width="95%">
+                <table class="details sortable" border="0" cellpadding="5" cellspacing="2" width="95%">
                     <xsl:call-template name="testsuite.test.header"/>
                     <xsl:for-each select="testsuite[not(./@package = preceding-sibling::testsuite/@package)]">
                         <xsl:sort select="@package" order="ascending"/>
@@ -660,11 +665,14 @@
                             <td><xsl:value-of select="sum($insamepackage/@failures)"/></td>
                             <td><xsl:value-of select="sum($insamepackage/@skipped)" /></td>
                             <td>
-                                <xsl:if test="sum($insamepackage/@skipped) > 0">
-                                    <xsl:call-template name="display-percent">
-                                        <xsl:with-param name="value" select="sum($insamepackage/@skipped) div sum($insamepackage/@tests)"/>
-                                    </xsl:call-template>
-                                </xsl:if>
+                                <xsl:choose>
+                                    <xsl:when test="sum($insamepackage/@skipped) > 0">
+                                        <xsl:call-template name="display-percent">
+                                            <xsl:with-param name="value" select="sum($insamepackage/@skipped) div sum($insamepackage/@tests)"/>
+                                        </xsl:call-template>
+                                    </xsl:when>
+                                    <xsl:otherwise>0%</xsl:otherwise>
+                                </xsl:choose>
                             </td>
                             <td>
                                 <xsl:call-template name="display-time">
@@ -686,6 +694,7 @@
                 <xsl:call-template name="create.stylesheet.link">
                     <xsl:with-param name="package.name" select="$name"/>
                 </xsl:call-template>
+                <xsl:call-template name="create.sortable.tables" />
             </head>
             <body>
                 <xsl:attribute name="onload">open('package-frame.html','classListFrame')</xsl:attribute>
@@ -701,7 +710,7 @@
                 <xsl:if test="count($insamepackage) &gt; 0">
                     <h2>Classes</h2>
                     <p>
-                        <table class="details" border="0" cellpadding="5" cellspacing="2" width="95%">
+                        <table class="details sortable" border="0" cellpadding="5" cellspacing="2" width="95%">
                             <xsl:call-template name="testsuite.test.header"/>
                             <xsl:apply-templates select="$insamepackage" mode="print.test">
                                 <xsl:sort select="@name"/>
@@ -738,6 +747,23 @@
         <link rel="stylesheet" type="text/css" title="Style"><xsl:attribute name="href"><xsl:if test="not($package.name = 'unnamed package')"><xsl:call-template name="path"><xsl:with-param name="path" select="$package.name"/></xsl:call-template></xsl:if>stylesheet.css</xsl:attribute></link>
     </xsl:template>
 
+    <xsl:template name="create.sortable.tables">
+        <link rel="stylesheet" type="text/css" href="https://cdnjs.cloudflare.com/ajax/libs/jquery.tablesorter/2.20.1/css/theme.default.min.css
+"></link>
+        <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/jquery/2.1.3/jquery.min.js"></script>
+        <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/jquery.tablesorter/2.20.1/js/jquery.tablesorter.min.js"></script>
+        <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/jquery.tablesorter/2.20.1/js/jquery.tablesorter.widgets.min.js"></script>
+
+        <script type="text/javascript">
+            jQuery(document).ready(function()
+            {
+            var table = jQuery(".sortable");
+
+            table.tablesorter( { widgets: ["zebra"] });
+            table.trigger("applyWidgets");
+            });
+        </script>
+    </xsl:template>
 
     <!-- Page HEADER -->
     <xsl:template name="pageHeader">
@@ -753,29 +779,33 @@
 
     <!-- class header -->
     <xsl:template name="testsuite.test.header">
-        <tr valign="top">
-            <th width="80%">Name</th>
-            <th>Tests</th>
-            <th>Errors</th>
-            <th>Failures</th>
-            <th>Skipped</th>
-            <th>Skip %</th>
-            <th nowrap="nowrap">Time(s)</th>
-        </tr>
+        <thead>
+            <tr valign="top">
+                <th width="80%">Name</th>
+                <th>Tests</th>
+                <th>Errors</th>
+                <th>Failures</th>
+                <th>Skipped</th>
+                <th>Skip %</th>
+                <th nowrap="nowrap">Time(s)</th>
+            </tr>
+        </thead>
     </xsl:template>
 
     <!-- method header -->
     <xsl:template name="testcase.test.header">
         <xsl:param name="show.class" select="''"/>
-        <tr valign="top">
-            <xsl:if test="boolean($show.class)">
-                <th>Class</th>
-            </xsl:if>
-            <th>Name</th>
-            <th>Status</th>
-            <th width="80%">Type</th>
-            <th nowrap="nowrap">Time(s)</th>
-        </tr>
+        <thead>
+            <tr valign="top">
+                <xsl:if test="boolean($show.class)">
+                    <th>Class</th>
+                </xsl:if>
+                <th>Name</th>
+                <th>Status</th>
+                <th width="80%">Type</th>
+                <th nowrap="nowrap">Time(s)</th>
+            </tr>
+        </thead>
     </xsl:template>
 
 
@@ -822,11 +852,14 @@
                 </xsl:choose>
             </td>
             <td>
-                <xsl:if test="@skipped > 0">
-                    <xsl:call-template name="display-percent">
-                        <xsl:with-param name="value" select="@skipped div @tests"/>
-                    </xsl:call-template>
-                </xsl:if>
+                <xsl:choose>
+                    <xsl:when test="@skipped > 0">
+                        <xsl:call-template name="display-percent">
+                            <xsl:with-param name="value" select="@skipped div @tests"/>
+                        </xsl:call-template>
+                    </xsl:when>
+                    <xsl:otherwise>0%</xsl:otherwise>
+                </xsl:choose>
             </td>
             <td><xsl:call-template name="display-time">
                 <xsl:with-param name="value" select="@time"/>

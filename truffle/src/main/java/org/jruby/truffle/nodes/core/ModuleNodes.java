@@ -17,6 +17,7 @@ import com.oracle.truffle.api.dsl.NodeChild;
 import com.oracle.truffle.api.dsl.NodeChildren;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
+import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.source.Source;
 import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.utilities.ConditionProfile;
@@ -392,7 +393,7 @@ public abstract class ModuleNodes {
             return getContext().getCoreLibrary().getNilObject();
         }
 
-        public static void attrReader(RubyNode currentNode, RubyContext context, SourceSection sourceSection, RubyModule module, String name) {
+        public static void attrReader(Node currentNode, RubyContext context, SourceSection sourceSection, RubyModule module, String name) {
             CompilerDirectives.transferToInterpreter();
 
             final CheckArityNode checkArity = new CheckArityNode(context, sourceSection, new Arity(0, 0, false, false));
@@ -444,7 +445,7 @@ public abstract class ModuleNodes {
             return getContext().getCoreLibrary().getNilObject();
         }
 
-        public static void attrWriter(RubyNode currentNode, RubyContext context, SourceSection sourceSection, RubyModule module, String name) {
+        public static void attrWriter(Node currentNode, RubyContext context, SourceSection sourceSection, RubyModule module, String name) {
             CompilerDirectives.transferToInterpreter();
 
             final CheckArityNode checkArity = new CheckArityNode(context, sourceSection, new Arity(1, 0, false, false));
@@ -497,7 +498,7 @@ public abstract class ModuleNodes {
             return getContext().getCoreLibrary().getNilObject();
         }
 
-        public static void attrAccessor(RubyNode currentNode, RubyContext context, SourceSection sourceSection, RubyModule module, String name) {
+        public static void attrAccessor(Node currentNode, RubyContext context, SourceSection sourceSection, RubyModule module, String name) {
             CompilerDirectives.transferToInterpreter();
             AttrReaderNode.attrReader(currentNode, context, sourceSection, module, name);
             AttrWriterNode.attrWriter(currentNode, context, sourceSection, module, name);
@@ -641,7 +642,7 @@ public abstract class ModuleNodes {
         private Object classEvalSource(VirtualFrame frame, RubyModule module, Source source, Encoding encoding) {
             RubyBinding binding = getCallerBinding(frame);
 
-            return getContext().execute(getContext(), source, encoding, TranslatorDriver.ParserContext.MODULE, module, binding.getFrame(), this, new NodeWrapper() {
+            return getContext().execute(source, encoding, TranslatorDriver.ParserContext.MODULE, module, binding.getFrame(), this, new NodeWrapper() {
                 @Override
                 public RubyNode wrap(RubyNode node) {
                     return new SetMethodDeclarationContext(node.getContext(), node.getSourceSection(), Visibility.PUBLIC, "class_eval", node);
