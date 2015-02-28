@@ -1,3 +1,1 @@
-fails:Regexp.union returns a Regexp with US-ASCII encoding if all arguments are ASCII-only
 fails:Regexp.union raises ArgumentError if the arguments include conflicting fixed encoding Regexps
-fails:Regexp.union returns a Regexp with the encoding of a String containing non-ASCII-compatible characters and another ASCII-only String

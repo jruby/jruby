@@ -48,7 +48,7 @@ public class InteroplatedRegexpNode extends RubyNode {
 
         final org.jruby.RubyString preprocessed = org.jruby.RubyRegexp.preprocessDRegexp(getContext().getRuntime(), strings, options);
 
-        final RubyRegexp regexp = new RubyRegexp(this, getContext().getCoreLibrary().getRegexpClass(), preprocessed.getByteList(), options.toOptions());
+        final RubyRegexp regexp = new RubyRegexp(this, getContext().getCoreLibrary().getRegexpClass(), preprocessed.getByteList(), options);
 
         if (options.isEncodingNone()) {
             if (!BodyTranslator.all7Bit(preprocessed.getByteList().bytes())) {
