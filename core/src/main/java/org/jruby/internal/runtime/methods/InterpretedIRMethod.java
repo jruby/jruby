@@ -91,12 +91,12 @@ public class InterpretedIRMethod extends DynamicMethod implements IRMethodArgs, 
     // FIXME: for subclasses we should override this method since it can be simple get
     // FIXME: to avoid cost of synch call in lazilyacquire we can save the ic here
     public InterpreterContext ensureInstrsReady() {
-        //if (interpreterContext == null) {
+        if (interpreterContext == null) {
             if (method instanceof IRMethod) {
                 interpreterContext = ((IRMethod) method).lazilyAcquireInterpreterContext();
             }
             interpreterContext = method.getInterpreterContext();
-        //}
+        }
 
         return interpreterContext;
     }
@@ -258,8 +258,7 @@ public class InterpretedIRMethod extends DynamicMethod implements IRMethodArgs, 
     }
 
     public void switchToFullBuild(InterpreterContext interpreterContext) {
-        //System.out.println("Promoted: " + getName());
-        //this.interpreterContext = interpreterContext;
+        this.interpreterContext = interpreterContext;
     }
 
     // Unlike JIT in MixedMode this will always successfully build but if using executor pool it may take a while
@@ -271,8 +270,7 @@ public class InterpretedIRMethod extends DynamicMethod implements IRMethodArgs, 
         if (runtime.isBooting()) return;
 
         if (callCount++ >= Options.JIT_THRESHOLD.load()) {
-            //System.out.println("Promoting: " + getName());
-            //runtime.getJITCompiler().fullBuildThresholdReached(this, context.runtime.getInstanceConfig());
+            runtime.getJITCompiler().fullBuildThresholdReached(this, context.runtime.getInstanceConfig());
         }
     }
 

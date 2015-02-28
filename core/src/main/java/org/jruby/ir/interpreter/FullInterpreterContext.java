@@ -97,6 +97,7 @@ public class FullInterpreterContext extends InterpreterContext {
         }
 
         instructions = linearizedInstrArray;
+        temporaryVariablecount = getScope().getTemporaryVariablesCount();
     }
 
     @Override

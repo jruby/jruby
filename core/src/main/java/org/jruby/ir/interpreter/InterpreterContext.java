@@ -16,7 +16,7 @@ import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 
 public class InterpreterContext {
-    private final int temporaryVariablecount;
+    protected int temporaryVariablecount;
 
     // startup interp will mark this at construction and not change but full interpreter will write it
     // much later after running compiler passes.  JIT will not use this field at all.
@@ -46,12 +46,14 @@ public class InterpreterContext {
         }
 
         this.scope = scope;
+
+        // FIXME: Hack null instructions means coming from FullInterpreterContext but this should be way cleaner
         // For impl testing - engine = determineInterpreterEngine(scope);
-        engine = STARTUP_INTERPRETER;
+        engine = instructions == null ? DEFAULT_INTERPRETER : STARTUP_INTERPRETER;
 
         this.metaClassBodyScope = scope instanceof IRMetaClassBody;
         this.temporaryVariablecount = scope.getTemporaryVariablesCount();
-        this.instructions = prepareBuildInstructions(instructions);
+        this.instructions = instructions != null ? prepareBuildInstructions(instructions) : null;
         this.hasExplicitCallProtocol = scope.getFlags().contains(IRFlags.HAS_EXPLICIT_CALL_PROTOCOL);
         this.reuseParentDynScope = scope.getFlags().contains(IRFlags.REUSE_PARENT_DYNSCOPE);
         this.pushNewDynScope = !scope.getFlags().contains(IRFlags.DYNSCOPE_ELIMINATED) && !reuseParentDynScope;

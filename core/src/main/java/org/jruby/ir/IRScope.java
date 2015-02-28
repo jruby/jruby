@@ -401,6 +401,9 @@ public abstract class IRScope implements ParseResult {
     }
 
     public CFG getCFG() {
+        // Closure/nested scopes may not have been built and some passes process all child scopes
+        if (fullInterpreterContext == null) prepareFullBuild();
+
         return fullInterpreterContext.getCFG();
     }
 
@@ -417,7 +420,8 @@ public abstract class IRScope implements ParseResult {
     }
 
     public List<CompilerPass> getExecutedPasses() {
-        return getFullInterpreterContext().getExecutedPasses();
+        // FIXME: Super annoying...because OptimizeTempVars is a pre-CFG pass we have no full build info yet
+        return fullInterpreterContext == null ? new ArrayList<CompilerPass>() : fullInterpreterContext.getExecutedPasses();
     }
 
     // SSS FIXME: We should configure different optimization levels
@@ -480,7 +484,7 @@ public abstract class IRScope implements ParseResult {
         // This is a complicating pseudo-pass which needs to be run before CFG is generated.  This
         // neccesitates us needing a clonedInstrs field on IRScope.  If we can rewrite this to a full
         // CFG using pass we can eliminate this intermediate save and field.
-        getManager().optimizeTemporaryVariablesIfEnabled(this);
+        //getManager().optimizeTemporaryVariablesIfEnabled(this);
 
         fullInterpreterContext = new FullInterpreterContext(this, clonedInstrs);
         clonedInstrs = null; // boo

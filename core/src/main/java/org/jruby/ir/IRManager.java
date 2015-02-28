@@ -25,7 +25,7 @@ import static org.jruby.ir.IRFlags.REQUIRES_DYNSCOPE;
 
 public class IRManager {
     public static final String SAFE_COMPILER_PASSES = "";
-    public static final String DEFAULT_COMPILER_PASSES = "OptimizeTempVarsPass,LocalOptimizationPass";
+    public static final String DEFAULT_COMPILER_PASSES = "LocalOptimizationPass";
     public static final String DEFAULT_JIT_PASSES = "OptimizeDelegationPass,DeadCodeElimination,AddLocalVarLoadStoreInstructions,OptimizeDynScopesPass,AddCallProtocolInstructions,EnsureTempsAssigned";
     public static final String DEFAULT_INLINING_COMPILER_PASSES = "LocalOptimizationPass";
 

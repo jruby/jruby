@@ -201,7 +201,17 @@ public class JITCompiler implements JITCompilerMBean {
         }
 
         public void run() {
-            method.switchToFullBuild(method.getIRMethod().prepareFullBuild());
+            try {
+                method.switchToFullBuild(method.getIRMethod().prepareFullBuild());
+            } catch (Throwable t) {
+                if (config.isJitLogging()) {
+                    log(method.getImplementationClass(), method.getFile(), method.getLine(), method.getName(),
+                            "Could not compile; passes run: " + method.getIRMethod().getExecutedPasses(), t.getMessage());
+                    if (config.isJitLoggingVerbose()) {
+                        t.printStackTrace();
+                    }
+                }
+            }
         }
     }
 
@@ -232,7 +242,7 @@ public class JITCompiler implements JITCompilerMBean {
                             || config.getExcludedMethods().contains(excludeModuleName + "#" + methodName)
                             || config.getExcludedMethods().contains(methodName))) {
                         method.setCallCount(-1);
-                        log(method, methodName, "skipping method: " + excludeModuleName + "#" + methodName);
+                        log(method.getImplementationClass(), method.getFile(), method.getLine(), methodName, "skipping method: " + excludeModuleName + "#" + methodName);
                         return;
                     }
                 }
@@ -264,12 +274,12 @@ public class JITCompiler implements JITCompilerMBean {
                 // logEvery n methods based on configuration
                 if (config.getJitLogEvery() > 0) {
                     if (methodCount % config.getJitLogEvery() == 0) {
-                        log(method, methodName, "live compiled methods: " + methodCount);
+                        log(method.getImplementationClass(), method.getFile(), method.getLine(), methodName, "live compiled methods: " + methodCount);
                     }
                 }
 
                 if (config.isJitLogging()) {
-                    log(method, className + "." + methodName, "done jitting");
+                    log(method.getImplementationClass(), method.getFile(), method.getLine(), className + "." + methodName, "done jitting");
                 }
 
                 Map<Integer, MethodType> signatures = ((IRMethod)method.getIRMethod()).getNativeSignatures();
@@ -302,7 +312,7 @@ public class JITCompiler implements JITCompilerMBean {
                 return;
             } catch (Throwable t) {
                 if (config.isJitLogging()) {
-                    log(method, className + "." + methodName, "Could not compile; passes run: " + method.getIRMethod().getExecutedPasses(), t.getMessage());
+                    log(method.getImplementationClass(), method.getFile(), method.getLine(), className + "." + methodName, "Could not compile; passes run: " + method.getIRMethod().getExecutedPasses(), t.getMessage());
                     if (config.isJitLoggingVerbose()) {
                         t.printStackTrace();
                     }
@@ -415,12 +425,12 @@ public class JITCompiler implements JITCompilerMBean {
         private String name;
     }
 
-    static void log(MixedModeIRMethod method, String name, String message, String... reason) {
-        String className = method.getImplementationClass().getBaseName();
+    static void log(RubyModule implementationClass, String file, int line, String name, String message, String... reason) {
+        String className = implementationClass.getBaseName();
         
         if (className == null) className = "<anon class>";
 
-        StringBuilder builder = new StringBuilder(message + ":" + className + "." + name + " at " + method.getIRMethod().getFileName() + ":" + method.getIRMethod().getLineNumber());
+        StringBuilder builder = new StringBuilder(message + ":" + className + "." + name + " at " + file + ":" + line);
         
         if (reason.length > 0) {
             builder.append(" because of: \"");
