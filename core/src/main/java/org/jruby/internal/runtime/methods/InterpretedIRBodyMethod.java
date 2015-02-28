@@ -18,7 +18,7 @@ public class InterpretedIRBodyMethod extends InterpretedIRMethod {
     public InterpretedIRBodyMethod(IRScope method, RubyModule implementationClass) {
         super(method, Visibility.PUBLIC, implementationClass);
 
-        this.box.callCount = -1;
+        callCount = -1;
     }
 
     @Override
@@ -40,10 +40,10 @@ public class InterpretedIRBodyMethod extends InterpretedIRMethod {
             return ic.engine.interpret(context, self, ic, getImplementationClass().getMethodLocation(), name, block, null);
         } else {
             try {
-                this.pre(ic, context, self, name, block, getImplementationClass());
+                pre(ic, context, self, name, block, getImplementationClass());
                 return ic.engine.interpret(context, self, ic, getImplementationClass().getMethodLocation(), name, block, null);
             } finally {
-                this.post(ic, context);
+                post(ic, context);
             }
         }
     }

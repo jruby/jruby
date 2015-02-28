@@ -472,7 +472,7 @@ public abstract class IRScope implements ParseResult {
      * This will initialize a more complete interpretercontext which if used in mixed mode will be
      * used by the JIT and if used in pure-interpreted mode it will be used by an interpreter engine.
      */
-    public synchronized void prepareFullBuild() {
+    public synchronized FullInterpreterContext prepareFullBuild() {
         // Clone instrs from startup interpreter so we do not change out instrs out from under the
         // startup interp as we are building.
         cloneInstrs();
@@ -498,6 +498,8 @@ public abstract class IRScope implements ParseResult {
         if (manager.getInstanceConfig().getCompileMode() == RubyInstanceConfig.CompileMode.OFF) {
             fullInterpreterContext.generateInstructionsForIntepretation();
         }
+
+        return fullInterpreterContext;
     }
 
     /** Run any necessary passes to get the IR ready for compilation */

@@ -36,10 +36,7 @@ public class InterpretedIRMetaClassBody extends InterpretedIRBodyMethod {
 
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, Block block) {
-        DynamicMethodBox box = this.box;
-        if (box.callCount >= 0) tryJit(context, box);
-        DynamicMethod actualMethod = box.actualMethod;
-        if (actualMethod != null) return actualMethod.call(context, self, clazz, name, block);
+        if (callCount >= 0) promoteToFullBuild(context);
 
         InterpreterContext ic = ensureInstrsReady();
 
@@ -56,13 +53,5 @@ public class InterpretedIRMetaClassBody extends InterpretedIRBodyMethod {
                 post(ic, context);
             }
         }
-    }
-
-    @Override
-    public DynamicMethod dup() {
-        InterpretedIRMetaClassBody x = new InterpretedIRMetaClassBody(method, implementationClass);
-        x.dupBox(this);
-
-        return x;
     }
 }
