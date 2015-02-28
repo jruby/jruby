@@ -5160,16 +5160,22 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
 
     @JRubyMethod(name = "lines")
     public IRubyObject lines20(ThreadContext context, Block block) {
+        if (block.isGiven()) {
+            context.runtime.getWarnings().warn("passing a block to String#lines is deprecated");
+            return each_lineCommon19(context, block);
+        }
         // FIXME: Inefficient; build array manually rather than via Enumerator
-        return block.isGiven() ? each_lineCommon19(context, block) :
-            enumeratorize(context.runtime, this, "lines").callMethod(context, "to_a");
+        return enumeratorize(context.runtime, this, "lines").callMethod(context, "to_a");
     }
 
     @JRubyMethod(name = "lines")
     public IRubyObject lines20(ThreadContext context, IRubyObject arg, Block block) {
+        if (block.isGiven()) {
+            context.runtime.getWarnings().warn("passing a block to String#lines is deprecated");
+            return each_lineCommon19(context, arg, block);
+        }
         // FIXME: Inefficient; build array manually rather than via Enumerator
-        return block.isGiven() ? each_lineCommon19(context, arg, block) :
-            enumeratorize(context.runtime, this, "lines", arg).callMethod(context, "to_a");
+        return enumeratorize(context.runtime, this, "lines", arg).callMethod(context, "to_a");
     }
 
     private IRubyObject each_lineCommon19(ThreadContext context, Block block) {
