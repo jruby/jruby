@@ -3,7 +3,7 @@ Building JRuby from Source
 
 Prerequisites:
 
-* A Java 7-compatible (or higher) Java development kit (JDK)
+* A Java 7-compatible (or higher) Java development kit (JDK).
   MAKE SURE JAVA_HOME IS SET ON OS X!
 * Maven 3+
 * Apache Ant 1.8+ (see https://github.com/jruby/jruby/issues/2236)
