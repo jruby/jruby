@@ -284,6 +284,7 @@ public abstract class StringNodes {
     public abstract static class GetIndexNode extends CoreMethodNode {
 
         @Child private ToIntNode toIntNode;
+        @Child private MatchDataNodes.GetIndexNode getMatchDataIndexNode;
 
         private final BranchProfile outOfBounds = BranchProfile.create();
 
@@ -406,6 +407,66 @@ public abstract class StringNodes {
             return ((RubyMatchData) matchData).getValues()[0];
         }
 
+        @Specialization
+        public Object slice(RubyString string, RubyRegexp regexp, int capture) {
+            notDesignedForCompilation();
+
+            final Object matchData = regexp.matchCommon(string, false, false);
+
+            if (matchData == getContext().getCoreLibrary().getNilObject()) {
+                return matchData;
+            }
+
+            if (getMatchDataIndexNode == null) {
+                CompilerDirectives.transferToInterpreter();
+                getMatchDataIndexNode = insert(MatchDataNodesFactory.GetIndexNodeFactory.create(getContext(), getSourceSection(), new RubyNode[]{}));
+            }
+
+            return getMatchDataIndexNode.getIndex((RubyMatchData) matchData, capture);
+        }
+
+        @Specialization
+        public Object slice(VirtualFrame frame, RubyString string, RubyRegexp regexp, RubyString capture) {
+            notDesignedForCompilation();
+
+            final Object matchData = regexp.matchCommon(string, false, false);
+
+            if (matchData == getContext().getCoreLibrary().getNilObject()) {
+                return matchData;
+            }
+
+            if (getMatchDataIndexNode == null) {
+                CompilerDirectives.transferToInterpreter();
+                getMatchDataIndexNode = insert(MatchDataNodesFactory.GetIndexNodeFactory.create(getContext(), getSourceSection(), new RubyNode[]{}));
+            }
+
+            return getMatchDataIndexNode.getIndex((RubyMatchData) matchData, capture);
+        }
+
+        @Specialization(guards =  { "!isUndefinedPlaceholder(arguments[2])", "!isRubyString(arguments[2])" })
+        public Object slice(VirtualFrame frame, RubyString string, RubyRegexp regexp, Object capture) {
+            notDesignedForCompilation();
+
+            final Object matchData = regexp.matchCommon(string, false, false);
+
+            if (matchData == getContext().getCoreLibrary().getNilObject()) {
+                return matchData;
+            }
+
+            if (toIntNode == null) {
+                CompilerDirectives.transferToInterpreter();
+                toIntNode = insert(ToIntNodeFactory.create(getContext(), getSourceSection(), null));
+            }
+
+            if (getMatchDataIndexNode == null) {
+                CompilerDirectives.transferToInterpreter();
+                getMatchDataIndexNode = insert(MatchDataNodesFactory.GetIndexNodeFactory.create(getContext(), getSourceSection(), new RubyNode[]{}));
+            }
+
+            final int index = toIntNode.executeIntegerFixnum(frame, capture);
+
+            return getMatchDataIndexNode.getIndex((RubyMatchData) matchData, index);
+        }
     }
 
     @CoreMethod(names = "[]=", required = 2, lowerFixnumParameters = 0)
