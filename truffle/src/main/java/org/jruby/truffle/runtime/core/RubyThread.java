@@ -9,6 +9,7 @@
  */
 package org.jruby.truffle.runtime.core;
 
+import com.oracle.truffle.api.nodes.Node;
 import org.jruby.RubyThread.Status;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.objects.Allocator;
@@ -61,7 +62,7 @@ public class RubyThread extends RubyBasicObject {
         threadLocals = new RubyBasicObject(rubyClass.getContext().getCoreLibrary().getObjectClass());
     }
 
-    public void initialize(RubyContext context, RubyNode currentNode, final RubyProc block) {
+    public void initialize(RubyContext context, Node currentNode, final RubyProc block) {
         String info = block.getSharedMethodInfo().getSourceSection().getShortDescription();
         initialize(context, currentNode, info, new Runnable() {
             @Override
@@ -71,7 +72,7 @@ public class RubyThread extends RubyBasicObject {
         });
     }
 
-    public void initialize(final RubyContext context, final RubyNode currentNode, final String info, final Runnable task) {
+    public void initialize(final RubyContext context, final Node currentNode, final String info, final Runnable task) {
         new Thread(new Runnable() {
             @Override
             public void run() {
@@ -80,7 +81,7 @@ public class RubyThread extends RubyBasicObject {
         }).start();
     }
 
-    public void run(final RubyContext context, RubyNode currentNode, String info, Runnable task) {
+    public void run(final RubyContext context, Node currentNode, String info, Runnable task) {
         name = "Ruby Thread@" + info;
         thread = Thread.currentThread();
         thread.setName(name);
@@ -192,7 +193,7 @@ public class RubyThread extends RubyBasicObject {
     public static class ThreadAllocator implements Allocator {
 
         @Override
-        public RubyBasicObject allocate(RubyContext context, RubyClass rubyClass, RubyNode currentNode) {
+        public RubyBasicObject allocate(RubyContext context, RubyClass rubyClass, Node currentNode) {
             return new RubyThread(rubyClass, context.getThreadManager());
         }
 

@@ -12,6 +12,7 @@ package org.jruby.truffle.runtime;
 import com.oracle.truffle.api.*;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.frame.MaterializedFrame;
+import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.object.Shape;
 import com.oracle.truffle.api.source.BytesDecoder;
 import com.oracle.truffle.api.source.Source;
@@ -122,7 +123,7 @@ public class RubyContext extends ExecutionContext {
         return emptyShape;
     }
 
-    public static String checkInstanceVariableName(RubyContext context, String name, RubyNode currentNode) {
+    public static String checkInstanceVariableName(RubyContext context, String name, Node currentNode) {
         RubyNode.notDesignedForCompilation();
 
         if (!name.startsWith("@")) {
@@ -133,7 +134,7 @@ public class RubyContext extends ExecutionContext {
         return name;
     }
 
-    public static String checkClassVariableName(RubyContext context, String name, RubyNode currentNode) {
+    public static String checkClassVariableName(RubyContext context, String name, Node currentNode) {
         RubyNode.notDesignedForCompilation();
 
         if (!name.startsWith("@@")) {
@@ -148,7 +149,7 @@ public class RubyContext extends ExecutionContext {
         return runningOnWindows;
     }
 
-    public void loadFile(String fileName, RubyNode currentNode) {
+    public void loadFile(String fileName, Node currentNode) {
         if (new File(fileName).isAbsolute()) {
             loadFileAbsolute(fileName, currentNode);
         } else {
@@ -156,7 +157,7 @@ public class RubyContext extends ExecutionContext {
         }
     }
 
-    private void loadFileAbsolute(String fileName, RubyNode currentNode) {
+    private void loadFileAbsolute(String fileName, Node currentNode) {
         final byte[] bytes = FileUtils.readAllBytesInterruptedly(this, fileName);
 
         // Assume UTF-8 for the moment
@@ -165,7 +166,7 @@ public class RubyContext extends ExecutionContext {
         load(source, currentNode, NodeWrapper.IDENTITY);
     }
 
-    public void load(Source source, RubyNode currentNode, final NodeWrapper nodeWrapper) {
+    public void load(Source source, Node currentNode, final NodeWrapper nodeWrapper) {
         final NodeWrapper loadWrapper = new NodeWrapper() {
             @Override
             public RubyNode wrap(RubyNode node) {
@@ -204,7 +205,7 @@ public class RubyContext extends ExecutionContext {
     }
 
     @TruffleBoundary
-    public Object instanceEval(ByteList code, Object self, String filename, RubyNode currentNode) {
+    public Object instanceEval(ByteList code, Object self, String filename, Node currentNode) {
         final Source source = Source.fromText(code, filename);
         return execute(source, code.getEncoding(), TranslatorDriver.ParserContext.EVAL, self, null, currentNode, new NodeWrapper() {
             @Override
@@ -214,26 +215,26 @@ public class RubyContext extends ExecutionContext {
         });
     }
 
-    public Object instanceEval(ByteList code, Object self, RubyNode currentNode) {
+    public Object instanceEval(ByteList code, Object self, Node currentNode) {
         return instanceEval(code, self, "(eval)", currentNode);
     }
 
     @TruffleBoundary
-    public Object eval(ByteList code, RubyBinding binding, boolean ownScopeForAssignments, String filename, RubyNode currentNode) {
+    public Object eval(ByteList code, RubyBinding binding, boolean ownScopeForAssignments, String filename, Node currentNode) {
         final Source source = Source.fromText(code, filename);
         return execute(source, code.getEncoding(), TranslatorDriver.ParserContext.EVAL, binding.getSelf(), binding.getFrame(), ownScopeForAssignments, currentNode, NodeWrapper.IDENTITY);
     }
 
-    public Object eval(ByteList code, RubyBinding binding, boolean ownScopeForAssignments, RubyNode currentNode) {
+    public Object eval(ByteList code, RubyBinding binding, boolean ownScopeForAssignments, Node currentNode) {
         return eval(code, binding, ownScopeForAssignments, "(eval)", currentNode);
     }
 
-    public Object execute(Source source, Encoding defaultEncoding, TranslatorDriver.ParserContext parserContext, Object self, MaterializedFrame parentFrame, RubyNode currentNode, NodeWrapper wrapper) {
+    public Object execute(Source source, Encoding defaultEncoding, TranslatorDriver.ParserContext parserContext, Object self, MaterializedFrame parentFrame, Node currentNode, NodeWrapper wrapper) {
         return execute(source, defaultEncoding, parserContext, self, parentFrame, true, currentNode, wrapper);
     }
 
     @TruffleBoundary
-    public Object execute(Source source, Encoding defaultEncoding, TranslatorDriver.ParserContext parserContext, Object self, MaterializedFrame parentFrame, boolean ownScopeForAssignments, RubyNode currentNode, NodeWrapper wrapper) {
+    public Object execute(Source source, Encoding defaultEncoding, TranslatorDriver.ParserContext parserContext, Object self, MaterializedFrame parentFrame, boolean ownScopeForAssignments, Node currentNode, NodeWrapper wrapper) {
         final RubyRootNode rootNode = translator.parse(this, source, defaultEncoding, parserContext, parentFrame, ownScopeForAssignments, currentNode, wrapper);
         final CallTarget callTarget = Truffle.getRuntime().createCallTarget(rootNode);
 

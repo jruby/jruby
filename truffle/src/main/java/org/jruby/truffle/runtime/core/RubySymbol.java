@@ -13,6 +13,7 @@ import com.oracle.truffle.api.CallTarget;
 import com.oracle.truffle.api.Truffle;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.frame.FrameDescriptor;
+import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.source.SourceSection;
 
 import org.jcodings.Encoding;
@@ -49,7 +50,7 @@ public class RubySymbol extends RubyBasicObject implements CodeRangeable {
         return runtime.getSymbolTable().getSymbol(name, ASCIIEncoding.INSTANCE);
     }
 
-    public RubyProc toProc(SourceSection sourceSection, final RubyNode currentNode) {
+    public RubyProc toProc(SourceSection sourceSection, final Node currentNode) {
         // TODO(CS): cache this?
 
         RubyNode.notDesignedForCompilation();

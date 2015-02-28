@@ -129,7 +129,7 @@ public class RubyClass extends RubyModule {
         return metaClass;
     }
 
-    public RubyBasicObject allocate(RubyNode currentNode) {
+    public RubyBasicObject allocate(Node currentNode) {
         return allocator.allocate(getContext(), this, currentNode);
     }
 
@@ -156,7 +156,7 @@ public class RubyClass extends RubyModule {
     public static class ClassAllocator implements Allocator {
 
         @Override
-        public RubyBasicObject allocate(RubyContext context, RubyClass rubyClass, RubyNode currentNode) {
+        public RubyBasicObject allocate(RubyContext context, RubyClass rubyClass, Node currentNode) {
             return new RubyClass(context, context.getCoreLibrary().getClassClass(), null, null, null, false);
         }
 

@@ -9,16 +9,18 @@
  */
 package org.jruby.truffle.runtime.subsystems;
 
-import com.oracle.truffle.api.Truffle;
-import com.oracle.truffle.api.frame.FrameInstance;
 import com.oracle.truffle.api.frame.MaterializedFrame;
+import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.source.Source;
 import org.jcodings.specific.UTF8Encoding;
 import org.jruby.truffle.nodes.RubyNode;
+import org.jruby.truffle.runtime.DebugOperations;
 import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyCallStack;
 import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.runtime.backtrace.Activation;
 import org.jruby.truffle.runtime.backtrace.Backtrace;
+import org.jruby.truffle.runtime.backtrace.DebugBacktraceFormatter;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.RubyException;
 import org.jruby.truffle.translator.NodeWrapper;
@@ -28,13 +30,19 @@ import java.util.StringTokenizer;
 
 public class SimpleShell {
 
+    private int currentFrameIndex;
+    private MaterializedFrame currentFrame;
+
     private final RubyContext context;
 
     public SimpleShell(RubyContext context) {
         this.context = context;
     }
 
-    public void run(MaterializedFrame frame, RubyNode currentNode) {
+    public void run(MaterializedFrame frame, Node currentNode) {
+        currentFrameIndex = 0;
+        currentFrame = frame;
+
         while (true) {
             final String shellLine = System.console().readLine("> ");
 
@@ -56,15 +64,20 @@ public class SimpleShell {
                     System.exit(0);
                     break;
 
+                case "frame":
+                    currentFrameIndex = Integer.parseInt(tokenizer.nextToken());
+                    currentFrame = RubyCallStack.getBacktrace(currentNode).getActivations().get(currentFrameIndex).getMaterializedFrame();
+                    break;
+
                 default:
                     try {
                         final Object result = context.execute(
                                 Source.fromText(shellLine, "shell"), UTF8Encoding.INSTANCE,
                                 TranslatorDriver.ParserContext.EVAL,
-                                RubyArguments.getSelf(frame.getArguments()), frame,
+                                RubyArguments.getSelf(currentFrame.getArguments()), currentFrame,
                                 false, currentNode, NodeWrapper.IDENTITY);
 
-                        System.console().writer().println(result);
+                        System.console().writer().println(DebugOperations.inspect(context, result));
                     } catch (RaiseException e) {
                         final RubyException rubyException = e.getRubyException();
 
@@ -76,9 +89,18 @@ public class SimpleShell {
         }
     }
 
-    private void backtrace(RubyNode currentNode) {
-        for (String line : Backtrace.DEBUG_FORMATTER.format(context, null, RubyCallStack.getBacktrace(currentNode))) {
-            System.err.println(line);
+    private void backtrace(Node currentNode) {
+        int n = 0;
+
+        for (Activation activation : RubyCallStack.getBacktrace(currentNode).getActivations()) {
+            if (n == currentFrameIndex) {
+                System.console().writer().print("  ▶");
+            } else {
+                System.console().writer().printf("%3d", n);
+            }
+
+            System.console().writer().println(DebugBacktraceFormatter.formatBasicLine(activation));
+            n++;
         }
     }
 

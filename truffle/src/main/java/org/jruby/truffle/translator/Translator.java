@@ -9,6 +9,7 @@
  */
 package org.jruby.truffle.translator;
 
+import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.source.Source;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.lexer.yacc.DetailedSourcePosition;
@@ -27,13 +28,13 @@ public abstract class Translator extends org.jruby.ast.visitor.AbstractNodeVisit
     public static final Set<String> PRINT_FULL_AST_METHOD_NAMES = new HashSet<>(Arrays.asList(Options.TRUFFLE_TRANSLATOR_PRINT_FULL_AST.load().split(",")));
     public static final Set<String> PRINT_PARSE_TREE_METHOD_NAMES = new HashSet<>(Arrays.asList(Options.TRUFFLE_TRANSLATOR_PRINT_PARSE_TREE.load().split(",")));
 
-    protected final RubyNode currentNode;
+    protected final Node currentNode;
     protected final RubyContext context;
     protected final Source source;
 
     protected SourceSection parentSourceSection;
 
-    public Translator(RubyNode currentNode, RubyContext context, Source source) {
+    public Translator(Node currentNode, RubyContext context, Source source) {
         this.currentNode = currentNode;
         this.context = context;
         this.source = source;

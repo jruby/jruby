@@ -9,6 +9,7 @@
  */
 package org.jruby.truffle.nodes.objects;
 
+import com.oracle.truffle.api.nodes.Node;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
@@ -17,6 +18,6 @@ import org.jruby.truffle.runtime.core.RubyClass;
 public interface Allocator {
 
     // TODO(CS): do we need all these parameters?
-    RubyBasicObject allocate(RubyContext context, RubyClass rubyClass, RubyNode currentNode);
+    RubyBasicObject allocate(RubyContext context, RubyClass rubyClass, Node currentNode);
 
 }

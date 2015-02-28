@@ -9,6 +9,7 @@
  */
 package org.jruby.truffle.runtime.subsystems;
 
+import com.oracle.truffle.api.nodes.Node;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.LexicalScope;
 import org.jruby.truffle.runtime.ModuleOperations;
@@ -37,7 +38,7 @@ public class FeatureManager {
         this.context = context;
     }
 
-    public boolean require(String path, String feature, RubyNode currentNode) throws IOException {
+    public boolean require(String path, String feature, Node currentNode) throws IOException {
         final RubyConstant dataConstantBefore = ModuleOperations.lookupConstant(context, LexicalScope.NONE, context.getCoreLibrary().getObjectClass(), "DATA");
 
         try {
@@ -85,7 +86,7 @@ public class FeatureManager {
         }
     }
 
-    private boolean requireInPath(String path, String feature, RubyNode currentNode) throws IOException {
+    private boolean requireInPath(String path, String feature, Node currentNode) throws IOException {
         String fullPath = new File(path, feature).getPath();
 
         if (requireFile(fullPath, currentNode)) {
@@ -99,7 +100,7 @@ public class FeatureManager {
         return false;
     }
 
-    private boolean requireFile(String path, RubyNode currentNode) throws IOException {
+    private boolean requireFile(String path, Node currentNode) throws IOException {
         // We expect '/' in various classpath URLs, so normalize Windows file paths to use '/'
         path = path.replace('\\', '/');
 

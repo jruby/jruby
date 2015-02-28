@@ -150,7 +150,7 @@ public class RubyBasicObject {
         return getOperations().getFieldNames(this);
     }
 
-    public void extend(RubyModule module, RubyNode currentNode) {
+    public void extend(RubyModule module, Node currentNode) {
         RubyNode.notDesignedForCompilation();
         getSingletonClass(currentNode).include(currentNode, module);
     }
@@ -217,7 +217,7 @@ public class RubyBasicObject {
         // TODO(CS): why on earth is this a boundary? Seems like a really bad thing.
         @CompilerDirectives.TruffleBoundary
         @Override
-        public RubyBasicObject allocate(RubyContext context, RubyClass rubyClass, RubyNode currentNode) {
+        public RubyBasicObject allocate(RubyContext context, RubyClass rubyClass, Node currentNode) {
             return new RubyBasicObject(rubyClass);
         }
 

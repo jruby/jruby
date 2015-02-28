@@ -11,6 +11,7 @@ package org.jruby.truffle.runtime.subsystems;
 
 import com.oracle.truffle.api.Truffle;
 import com.oracle.truffle.api.frame.FrameInstance;
+import com.oracle.truffle.api.nodes.Node;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
@@ -53,10 +54,10 @@ public class InstrumentationServerManager {
                 try {
                     final StringBuilder builder = new StringBuilder();
 
-                    context.getSafepointManager().pauseAllThreadsAndExecuteFromNonRubyThread(new Consumer<RubyThread>() {
+                    context.getSafepointManager().pauseAllThreadsAndExecuteFromNonRubyThread(null, new SafepointAction() {
 
                         @Override
-                        public void accept(RubyThread thread) {
+                        public void run(RubyThread thread, Node currentNode) {
                             try {
                                 Backtrace backtrace = RubyCallStack.getBacktrace(null);
 
@@ -99,17 +100,17 @@ public class InstrumentationServerManager {
             @Override
             public void handle(HttpExchange httpExchange) {
                 try {
-                    context.getSafepointManager().pauseAllThreadsAndExecuteFromNonRubyThread(new Consumer<RubyThread>() {
+                    context.getSafepointManager().pauseAllThreadsAndExecuteFromNonRubyThread(null, new SafepointAction() {
 
                         @Override
-                        public void accept(RubyThread thread) {
+                        public void run(RubyThread thread, final Node currentNode) {
                             if (thread.getName().equals("main")) {
                                 thread.getDeferredSafepointActions().add(new Runnable() {
 
                                     @Override
                                     public void run() {
                                         new SimpleShell(context).run(Truffle.getRuntime().getCurrentFrame()
-                                                .getFrame(FrameInstance.FrameAccess.MATERIALIZE, false).materialize(), null);
+                                                .getFrame(FrameInstance.FrameAccess.MATERIALIZE, false).materialize(), currentNode);
                                     }
 
                                 });

@@ -11,6 +11,7 @@ package org.jruby.truffle.runtime.subsystems;
 
 import com.oracle.truffle.api.CompilerDirectives;
 
+import com.oracle.truffle.api.nodes.Node;
 import org.jruby.RubyThread.Status;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyThread;
@@ -126,7 +127,7 @@ public class ThreadManager {
             }
         } catch (InterruptedException e) {
             // We were interrupted, possibly by the SafepointManager.
-            context.getSafepointManager().poll();
+            context.getSafepointManager().poll(null);
         }
         return result;
     }
@@ -146,9 +147,9 @@ public class ThreadManager {
 
     public void shutdown() {
         // kill all threads except main
-        context.getSafepointManager().pauseAllThreadsAndExecute(new Consumer<RubyThread>() {
+        context.getSafepointManager().pauseAllThreadsAndExecute(null, new SafepointAction() {
             @Override
-            public void accept(RubyThread thread) {
+            public void run(RubyThread thread, Node currentThread) {
                 if (thread != rootThread) {
                     thread.exit();
                 }

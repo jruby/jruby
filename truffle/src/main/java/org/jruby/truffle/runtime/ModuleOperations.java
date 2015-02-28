@@ -12,6 +12,7 @@ package org.jruby.truffle.runtime;
 import com.oracle.truffle.api.CompilerAsserts;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 
+import com.oracle.truffle.api.nodes.Node;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.core.RubyClass;
 import org.jruby.truffle.runtime.core.RubyModule;
@@ -248,7 +249,7 @@ public abstract class ModuleOperations {
     }
 
     @TruffleBoundary
-    public static void setClassVariable(RubyModule module, String name, Object value, RubyNode currentNode) {
+    public static void setClassVariable(RubyModule module, String name, Object value, Node currentNode) {
         CompilerAsserts.neverPartOfCompilation();
 
         // Look in the current module

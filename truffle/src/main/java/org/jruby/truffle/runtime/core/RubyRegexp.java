@@ -17,6 +17,7 @@ import com.oracle.truffle.api.frame.Frame;
 import com.oracle.truffle.api.frame.FrameInstance;
 import com.oracle.truffle.api.frame.FrameSlot;
 
+import com.oracle.truffle.api.nodes.Node;
 import org.jcodings.Encoding;
 import org.joni.*;
 import org.joni.exception.SyntaxException;
@@ -47,7 +48,7 @@ public class RubyRegexp extends RubyBasicObject {
         super(regexpClass);
     }
 
-    public RubyRegexp(RubyNode currentNode, RubyClass regexpClass, ByteList regex, int options) {
+    public RubyRegexp(Node currentNode, RubyClass regexpClass, ByteList regex, int options) {
         this(regexpClass);
         initialize(compile(currentNode, getContext(), regex, options), regex);
     }
@@ -57,7 +58,7 @@ public class RubyRegexp extends RubyBasicObject {
         initialize(regex, source);
     }
 
-    public void initialize(RubyNode currentNode, ByteList setSource, int options) {
+    public void initialize(Node currentNode, ByteList setSource, int options) {
         regex = compile(currentNode, getContext(), setSource, options);
         source = setSource;
     }
@@ -396,13 +397,13 @@ public class RubyRegexp extends RubyBasicObject {
         }
     }
 
-    public static Regex compile(RubyNode currentNode, RubyContext context, ByteList bytes, int options) {
+    public static Regex compile(Node currentNode, RubyContext context, ByteList bytes, int options) {
         RubyNode.notDesignedForCompilation();
         return compile(currentNode, context, bytes.bytes(), bytes.getEncoding(), options);
     }
 
     @TruffleBoundary
-    public static Regex compile(RubyNode currentNode, RubyContext context, byte[] bytes, Encoding encoding, int options) {
+    public static Regex compile(Node currentNode, RubyContext context, byte[] bytes, Encoding encoding, int options) {
         RubyNode.notDesignedForCompilation();
 
         try {
@@ -417,7 +418,7 @@ public class RubyRegexp extends RubyBasicObject {
     public static class RegexpAllocator implements Allocator {
 
         @Override
-        public RubyBasicObject allocate(RubyContext context, RubyClass rubyClass, RubyNode currentNode) {
+        public RubyBasicObject allocate(RubyContext context, RubyClass rubyClass, Node currentNode) {
             return new RubyRegexp(context.getCoreLibrary().getRegexpClass());
         }
 
