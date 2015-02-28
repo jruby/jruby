@@ -258,7 +258,7 @@ public abstract class RegexpNodes {
                 return regexp.getOptions().toOptions();
             }
 
-            return RegexpOptions.fromJoniOptions(regexp.getRegex().getOptions()).toJoniOptions();
+            return RegexpOptions.fromJoniOptions(regexp.getRegex().getOptions()).toOptions();
         }
 
     }
