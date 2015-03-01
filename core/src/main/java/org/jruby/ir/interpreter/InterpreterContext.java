@@ -81,7 +81,7 @@ public class InterpreterContext {
     public IRScope getScope() {
         return scope;
     }
-    
+
     public CFG getCFG() {
         return null;
     }

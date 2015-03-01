@@ -80,7 +80,10 @@ public class OptimizeTempVarsPass extends CompilerPass {
         // Pass 2: Transform code and do additional analysis:
         // * If the result of this instr. has not been used, mark it dead
         // * Find copies where constant values are set
-        ListIterator<Instr> instrs = Arrays.asList(s.getInterpreterContext().getInstructions()).listIterator();
+
+
+        List<Instr> instructions = new ArrayList<>(Arrays.asList(s.getClonedInstrs()));
+        ListIterator<Instr> instrs = instructions.listIterator();
         while (instrs.hasNext()) {
             Instr i = instrs.next();
 
@@ -258,7 +261,7 @@ public class OptimizeTempVarsPass extends CompilerPass {
             }
 
             // Free dead vars
-            if ((result instanceof TemporaryVariable) && lastVarUseOrDef.get((TemporaryVariable)result) == iCount) {
+            if ((result instanceof TemporaryVariable) && lastVarUseOrDef.get(result) == iCount) {
                 freeVar((TemporaryVariable)newVarMap.get(result), freeVarsList);
             }
             for (Variable v: i.getUsedVariables()) {
@@ -271,5 +274,9 @@ public class OptimizeTempVarsPass extends CompilerPass {
             // Rename
             i.renameVars(newVarMap);
         }
+
+        Instr[] newInstrs = new Instr[instructions.size()];
+        instructions.toArray(newInstrs);
+        s.setClonedInstrs(newInstrs);
     }
 }

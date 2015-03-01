@@ -94,8 +94,6 @@ public abstract class IRScope implements ParseResult {
     /** Local variables used in this scope */
     private Set<Variable> usedLocalVars;
 
-
-
     /** Startup interpretation depends on this */
     protected InterpreterContext interpreterContext;
 
@@ -460,7 +458,7 @@ public abstract class IRScope implements ParseResult {
     public void cloneInstrs(SimpleCloneInfo cloneInfo) {
         Instr[] instructions = interpreterContext.getInstructions();
         int length = instructions.length;
-        clonedInstrs = new Instr[length];
+        setClonedInstrs(new Instr[length]);
 
         for (int i = 0; i < length; i++) {
             clonedInstrs[i] = instructions[i].clone(cloneInfo);
@@ -487,7 +485,7 @@ public abstract class IRScope implements ParseResult {
         //getManager().optimizeTemporaryVariablesIfEnabled(this);
 
         fullInterpreterContext = new FullInterpreterContext(this, clonedInstrs);
-        clonedInstrs = null; // boo
+        setClonedInstrs(null); // boo
 
         runCompilerPasses(getManager().getCompilerPasses(this));
 
@@ -1057,5 +1055,13 @@ public abstract class IRScope implements ParseResult {
         // FIXME: Persistence is disconnected for now.
 //        instructionsOffsetInfoPersistenceBuffer = offset;
 //        persistenceStore = file;
+    }
+
+    public Instr[] getClonedInstrs() {
+        return clonedInstrs;
+    }
+
+    public void setClonedInstrs(Instr[] clonedInstrs) {
+        this.clonedInstrs = clonedInstrs;
     }
 }
