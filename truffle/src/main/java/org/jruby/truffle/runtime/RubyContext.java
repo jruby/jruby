@@ -333,7 +333,15 @@ public class RubyContext extends ExecutionContext {
     }
 
     public org.jruby.RubyString toJRuby(RubyString string) {
-        return runtime.newString(string.getBytes().dup());
+        final org.jruby.RubyString jrubyString = runtime.newString(string.getBytes().dup());
+
+        final Object tainted = string.getOperations().getInstanceVariable(string, RubyBasicObject.TAINTED_IDENTIFIER);
+
+        if (tainted instanceof Boolean && (boolean) tainted) {
+            jrubyString.setTaint(true);
+        }
+
+        return jrubyString;
     }
 
     public Object toTruffle(IRubyObject object) {
@@ -373,13 +381,30 @@ public class RubyContext extends ExecutionContext {
             }
 
             return new RubyArray(coreLibrary.getArrayClass(), truffleArray, truffleArray.length);
+        } else if (object instanceof org.jruby.RubyException) {
+            return toTruffle((org.jruby.RubyException) object, null);
         } else {
             throw object.getRuntime().newRuntimeError("cannot pass " + object.inspect() + " to Truffle");
         }
     }
 
-    public RubyString toTruffle(org.jruby.RubyString string) {
-        return new RubyString(getCoreLibrary().getStringClass(), string.getByteList().dup());
+    public RubyString toTruffle(org.jruby.RubyString jrubyString) {
+        final RubyString truffleString = new RubyString(getCoreLibrary().getStringClass(), jrubyString.getByteList().dup());
+
+        if (jrubyString.isTaint()) {
+            truffleString.getOperations().setInstanceVariable(truffleString, RubyBasicObject.TAINTED_IDENTIFIER, true);
+        }
+
+        return truffleString;
+    }
+
+    public RubyException toTruffle(org.jruby.RubyException jrubyException, RubyNode currentNode) {
+        switch (jrubyException.getMetaClass().getName()) {
+            case "ArgumentError":
+                return getCoreLibrary().argumentError(jrubyException.getMessage().toString(), currentNode);
+        }
+
+        throw new UnsupportedOperationException("Don't know how to translate " + jrubyException.getMetaClass().getName());
     }
 
     public Ruby getRuntime() {

@@ -386,6 +386,10 @@ public class RubyException extends RubyObject {
         return message.asString();
     }
 
+    public IRubyObject getMessage() {
+        return message;
+    }
+
     private BacktraceData backtraceData;
     private IRubyObject backtrace;
     public IRubyObject message;
