@@ -1589,6 +1589,13 @@ public abstract class KernelNodes {
         public boolean require(RubyString feature) {
             notDesignedForCompilation();
 
+            // TODO CS 1-Mar-15 ERB will use strscan if it's there, but strscan is not yet complete, so we need to hide it
+
+            if (feature.toString().equals("strscan") && Truffle.getRuntime().getCallerFrame().getCallNode()
+                    .getEncapsulatingSourceSection().getSource().getName().endsWith("erb.rb")) {
+                throw new RaiseException(getContext().getCoreLibrary().loadErrorCannotLoad(feature.toString(), this));
+            }
+
             try {
                 getContext().getFeatureManager().require(null, feature.toString(), this);
             } catch (IOException e) {
