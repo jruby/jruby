@@ -67,9 +67,9 @@ class MSpecScript
 
     # infinite loop on some examples
     # "^spec/ruby/core/string/gsub_spec.rb",
-]
+  ]
 
-core += [
+  core += [
     # Windows
     "^spec/ruby/core/method/source_location_spec.rb",
     "^spec/ruby/core/struct/each_spec.rb",
@@ -96,6 +96,7 @@ core += [
     "^spec/ruby/core/symbol/versions/encoding_1.9_spec.rb",
     "^spec/ruby/core/unboundmethod/source_location_spec.rb",
   ] if windows?
+  
   set :core, core
 
   set :rubysl, [
