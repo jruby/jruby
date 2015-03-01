@@ -1985,7 +1985,7 @@ public abstract class ArrayNodes {
                     } else if (result instanceof RubyString) {
                         jrubyObjects[n] = getContext().toJRuby((RubyString) result);
                     } else {
-                        throw new UnsupportedOperationException();
+                        throw new RaiseException(getContext().getCoreLibrary().typeErrorNoImplicitConversion(objects[n], "String", this));
                     }
                 }
             }
