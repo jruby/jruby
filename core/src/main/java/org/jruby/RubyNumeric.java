@@ -504,6 +504,24 @@ public class RubyNumeric extends RubyObject {
         return (ary.eltInternal(0)).callMethod(context, method, ary.eltInternal(1));
     }
     
+    /** rb_num_coerce_bit
+     *  coercion taking two arguments
+     */
+    protected final IRubyObject coerceBit(ThreadContext context, String method, IRubyObject other) {
+        if (!(other instanceof RubyFixnum) && !(other instanceof RubyBignum)) {
+            RubyArray ary = doCoerce(context, other, true);
+            IRubyObject x = ary.eltInternal(0);
+            IRubyObject y = ary.eltInternal(1);
+
+            if (!(x instanceof RubyFixnum) && !(x instanceof RubyBignum)
+                    && !(y instanceof RubyFixnum) && !(y instanceof RubyBignum)) {
+                coerceFailed(context, other);
+            }
+            return x.callMethod(context, method, y);
+        }
+        return callMethod(context, method, other);
+    }
+
     /** rb_num_coerce_cmp
      *  coercion used for comparisons
      */
