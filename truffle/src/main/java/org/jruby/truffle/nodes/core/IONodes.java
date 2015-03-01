@@ -16,10 +16,12 @@ import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.SourceSection;
 
+import org.jcodings.specific.ASCIIEncoding;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.cast.ToSNodeFactory;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.UndefinedPlaceholder;
+import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.RubyArray;
 import org.jruby.truffle.runtime.core.RubyFile;
 import org.jruby.truffle.runtime.core.RubyProc;
@@ -27,9 +29,14 @@ import org.jruby.truffle.runtime.core.RubyString;
 import org.jruby.truffle.runtime.subsystems.ThreadManager;
 import org.jruby.util.ByteList;
 
+import java.io.BufferedInputStream;
 import java.io.BufferedReader;
+import java.io.EOFException;
+import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.PrintStream;
 import java.nio.charset.StandardCharsets;
@@ -72,6 +79,103 @@ public abstract class IONodes {
             }
 
             return RubyArray.fromObjects(getContext().getCoreLibrary().getArrayClass(), lines.toArray(new Object[lines.size()]));
+        }
+
+    }
+
+    @CoreMethod(names = "binread", onSingleton = true, required = 1, optional = 2)
+    public abstract static class BinReadNode extends CoreMethodNode {
+
+        public BinReadNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public BinReadNode(BinReadNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public Object binaryRead(RubyString file, UndefinedPlaceholder size, UndefinedPlaceholder offset) {
+            notDesignedForCompilation();
+            return readFile(getContext(), file, null, null, this);
+        }
+
+        @Specialization
+        public Object binaryRead(RubyString file, int size, UndefinedPlaceholder offset) {
+            notDesignedForCompilation();
+            return readFile(getContext(), file, size, null, this);
+        }
+
+        @Specialization
+        public Object binaryRead(RubyString file, int size, int offset) {
+            notDesignedForCompilation();
+            return readFile(getContext(), file, size, offset, this);
+        }
+
+        private static Object readFile(RubyContext context, RubyString rubyString, Integer requestedLength, Integer offset, BinReadNode node) {
+            final File file = new File(RubyFile.expandPath(context, rubyString.toString()));
+            final int length;
+            if (offset != null) {
+                if (offset < 0) {
+                    throw new RaiseException(context.getCoreLibrary().invalidArgumentError(Integer.toString(offset), node));
+                }
+            } else {
+                offset = 0;
+            }
+            final int fileLength = longToInt(file.length());
+            if (requestedLength != null) {
+                if (requestedLength < 0) {
+                    throw new RaiseException(context.getCoreLibrary().argumentError("length cannot be negative", node));
+                } else if (requestedLength == 0) {
+                    return context.makeString("", ASCIIEncoding.INSTANCE);
+                }
+                if (offset > fileLength) {
+                    return context.getCoreLibrary().getNilObject();
+                } else if ((offset + requestedLength) > fileLength) {
+                    length = fileLength - offset;
+                } else {
+                    length = requestedLength;
+                }
+            } else {
+                length = fileLength;
+            }
+            try (InputStream in = new BufferedInputStream(new FileInputStream(file), length)) {
+                final ByteList byteList = new ByteList(readWithOffset(in, length, offset), ASCIIEncoding.INSTANCE);
+                return context.makeString(byteList);
+            } catch (EOFException e) {
+                return context.getCoreLibrary().getNilObject();
+            } catch (FileNotFoundException e) {
+                throw new RaiseException(context.getCoreLibrary().fileNotFoundError(rubyString.toString(), node));
+            } catch (IOException e) {
+                throw new RaiseException(context.getCoreLibrary().ioError(rubyString.toString(), node));
+            }
+        }
+
+        private static byte[] readWithOffset(InputStream input, int length, int offset) throws IOException {
+            int read = 0;
+            int n;
+            final byte[] bytes = new byte[length];
+            while (offset > 0) {
+                offset -= input.skip(offset);
+            }
+            for (int start = 0; read < length; read += n) {
+                n = input.read(bytes, start + read, length - read);
+                if (n == -1) {
+                    if (read == 0) {
+                        throw new EOFException();
+                    }
+                    break;
+                }
+            }
+            return bytes;
+        }
+
+        private static int longToInt(long lon) {
+            int integer = (int) lon;
+            if ((long) integer != lon) {
+                throw new IllegalArgumentException("size too large to fit in int");
+            }
+            return integer;
         }
 
     }
