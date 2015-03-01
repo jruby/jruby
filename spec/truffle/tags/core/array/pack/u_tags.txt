@@ -1,16 +1,8 @@
 fails:Array#pack with format 'U' ignores whitespace in the format string
 fails:Array#pack with format 'U' calls #to_str to coerce the directives string
 fails:Array#pack with format 'U' taints the output string if the format string is tainted
-fails:Array#pack with format 'U' raises an ArgumentError if there are fewer elements than the format requires
 fails:Array#pack with format 'U' calls #to_int to convert the pack argument to an Integer
 fails:Array#pack with format 'U' raises a TypeError if #to_int does not return an Integer
 fails:Array#pack with format 'U' raises a RangeError if passed a negative number
 fails:Array#pack with format 'U' raises a RangeError if passed a number larger than an unsigned 32-bit integer
-fails:Array#pack with format 'u' ignores whitespace in the format string
-fails:Array#pack with format 'u' calls #to_str to coerce the directives string
-fails:Array#pack with format 'u' taints the output string if the format string is tainted
-fails:Array#pack with format 'u' raises an ArgumentError if there are fewer elements than the format requires
-fails:Array#pack with format 'u' calls #to_str to convert an object to a String
-fails:Array#pack with format 'u' raises a TypeError if #to_str does not return a String
-fails:Array#pack with format 'u' raises a TypeError if passed nil
 fails:Array#pack with format 'u' raises a TypeError if passed an Integer

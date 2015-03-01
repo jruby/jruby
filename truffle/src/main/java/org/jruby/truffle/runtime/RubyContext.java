@@ -402,6 +402,8 @@ public class RubyContext extends ExecutionContext {
         switch (jrubyException.getMetaClass().getName()) {
             case "ArgumentError":
                 return getCoreLibrary().argumentError(jrubyException.getMessage().toString(), currentNode);
+            case "TypeError":
+                return getCoreLibrary().typeError(jrubyException.getMessage().toString(), currentNode);
         }
 
         throw new UnsupportedOperationException("Don't know how to translate " + jrubyException.getMetaClass().getName());

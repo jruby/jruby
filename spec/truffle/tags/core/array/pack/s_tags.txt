@@ -1,19 +1,9 @@
 fails:Array#pack with format 'S' ignores whitespace in the format string
 fails:Array#pack with format 'S' calls #to_str to coerce the directives string
 fails:Array#pack with format 'S' taints the output string if the format string is tainted
-fails:Array#pack with format 'S' raises an ArgumentError if there are fewer elements than the format requires
-fails:Array#pack with format 'S' raises a TypeError when passed true
-fails:Array#pack with format 'S' raises a TypeError when passed false
-fails:Array#pack with format 'S' raises a TypeError when the object does not respond to #to_int
-fails:Array#pack with format 'S' raises a TypeError when passed a String
 fails:Array#pack with format 's' ignores whitespace in the format string
 fails:Array#pack with format 's' calls #to_str to coerce the directives string
 fails:Array#pack with format 's' taints the output string if the format string is tainted
-fails:Array#pack with format 's' raises an ArgumentError if there are fewer elements than the format requires
-fails:Array#pack with format 's' raises a TypeError when passed true
-fails:Array#pack with format 's' raises a TypeError when passed false
-fails:Array#pack with format 's' raises a TypeError when the object does not respond to #to_int
-fails:Array#pack with format 's' raises a TypeError when passed a String
 fails:Array#pack with format 'S' with modifier '<' calls #to_int to convert the pack argument to an Integer
 fails:Array#pack with format 'S' with modifier '<' and '_' calls #to_int to convert the pack argument to an Integer
 fails:Array#pack with format 'S' with modifier '<' and '!' calls #to_int to convert the pack argument to an Integer
@@ -32,5 +22,3 @@ fails:Array#pack with format 'S' with modifier '!' calls #to_int to convert the 
 fails:Array#pack with format 's' calls #to_int to convert the pack argument to an Integer
 fails:Array#pack with format 's' with modifier '_' calls #to_int to convert the pack argument to an Integer
 fails:Array#pack with format 's' with modifier '!' calls #to_int to convert the pack argument to an Integer
-fails:Array#pack with format 'S' raises a TypeError when passed nil
-fails:Array#pack with format 's' raises a TypeError when passed nil
