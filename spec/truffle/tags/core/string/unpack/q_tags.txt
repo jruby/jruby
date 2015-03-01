@@ -1,64 +1,9 @@
-fails:String#unpack with format 'Q' with modifier '<' decodes one long for a single format character
-fails:String#unpack with format 'Q' with modifier '<' decodes two longs for two format characters
-fails:String#unpack with format 'Q' with modifier '<' decodes the number of longs requested by the count modifier
-fails:String#unpack with format 'Q' with modifier '<' decodes the remaining longs when passed the '*' modifier
-fails:String#unpack with format 'Q' with modifier '<' decodes the remaining longs when passed the '*' modifier after another directive
-fails:String#unpack with format 'Q' with modifier '<' does not decode a long when fewer bytes than a long remain and the '*' modifier is passed
-fails:String#unpack with format 'Q' with modifier '<' ignores NULL bytes between directives
-fails:String#unpack with format 'Q' with modifier '<' ignores spaces between directives
 fails:String#unpack with format 'Q' with modifier '<' decodes a long with most significant bit set as a positive number
-fails:String#unpack with format 'Q' with modifier '>' decodes one long for a single format character
-fails:String#unpack with format 'Q' with modifier '>' decodes two longs for two format characters
-fails:String#unpack with format 'Q' with modifier '>' decodes the number of longs requested by the count modifier
-fails:String#unpack with format 'Q' with modifier '>' decodes the remaining longs when passed the '*' modifier
-fails:String#unpack with format 'Q' with modifier '>' decodes the remaining longs when passed the '*' modifier after another directive
-fails:String#unpack with format 'Q' with modifier '>' does not decode a long when fewer bytes than a long remain and the '*' modifier is passed
-fails:String#unpack with format 'Q' with modifier '>' ignores NULL bytes between directives
-fails:String#unpack with format 'Q' with modifier '>' ignores spaces between directives
 fails:String#unpack with format 'Q' with modifier '>' decodes a long with most significant bit set as a positive number
-fails:String#unpack with format 'q' with modifier '<' decodes one long for a single format character
-fails:String#unpack with format 'q' with modifier '<' decodes two longs for two format characters
-fails:String#unpack with format 'q' with modifier '<' decodes the number of longs requested by the count modifier
-fails:String#unpack with format 'q' with modifier '<' decodes the remaining longs when passed the '*' modifier
-fails:String#unpack with format 'q' with modifier '<' decodes the remaining longs when passed the '*' modifier after another directive
-fails:String#unpack with format 'q' with modifier '<' does not decode a long when fewer bytes than a long remain and the '*' modifier is passed
-fails:String#unpack with format 'q' with modifier '<' ignores NULL bytes between directives
-fails:String#unpack with format 'q' with modifier '<' ignores spaces between directives
-fails:String#unpack with format 'q' with modifier '<' decodes a long with most significant bit set as a negative number
-fails:String#unpack with format 'q' with modifier '>' decodes one long for a single format character
-fails:String#unpack with format 'q' with modifier '>' decodes two longs for two format characters
-fails:String#unpack with format 'q' with modifier '>' decodes the number of longs requested by the count modifier
-fails:String#unpack with format 'q' with modifier '>' decodes the remaining longs when passed the '*' modifier
-fails:String#unpack with format 'q' with modifier '>' decodes the remaining longs when passed the '*' modifier after another directive
-fails:String#unpack with format 'q' with modifier '>' does not decode a long when fewer bytes than a long remain and the '*' modifier is passed
-fails:String#unpack with format 'q' with modifier '>' ignores NULL bytes between directives
-fails:String#unpack with format 'q' with modifier '>' ignores spaces between directives
-fails:String#unpack with format 'q' with modifier '>' decodes a long with most significant bit set as a negative number
 fails:String#unpack with format 'Q' ignores whitespace in the format string
 fails:String#unpack with format 'Q' calls #to_str to coerce the directives string
-fails:String#unpack with format 'Q' raises a TypeError when passed nil
-fails:String#unpack with format 'Q' raises a TypeError when passed an Integer
 fails:String#unpack with format 'q' ignores whitespace in the format string
 fails:String#unpack with format 'q' calls #to_str to coerce the directives string
-fails:String#unpack with format 'q' raises a TypeError when passed nil
-fails:String#unpack with format 'q' raises a TypeError when passed an Integer
-fails:String#unpack with format 'Q' decodes one long for a single format character
-fails:String#unpack with format 'Q' decodes two longs for two format characters
-fails:String#unpack with format 'Q' decodes the number of longs requested by the count modifier
-fails:String#unpack with format 'Q' decodes the remaining longs when passed the '*' modifier
-fails:String#unpack with format 'Q' decodes the remaining longs when passed the '*' modifier after another directive
-fails:String#unpack with format 'Q' does not decode a long when fewer bytes than a long remain and the '*' modifier is passed
-fails:String#unpack with format 'Q' ignores NULL bytes between directives
-fails:String#unpack with format 'Q' ignores spaces between directives
 fails:String#unpack with format 'Q' adds nil for each element requested beyond the end of the String
 fails:String#unpack with format 'Q' decodes a long with most significant bit set as a positive number
-fails:String#unpack with format 'q' decodes one long for a single format character
-fails:String#unpack with format 'q' decodes two longs for two format characters
-fails:String#unpack with format 'q' decodes the number of longs requested by the count modifier
-fails:String#unpack with format 'q' decodes the remaining longs when passed the '*' modifier
-fails:String#unpack with format 'q' decodes the remaining longs when passed the '*' modifier after another directive
-fails:String#unpack with format 'q' does not decode a long when fewer bytes than a long remain and the '*' modifier is passed
-fails:String#unpack with format 'q' ignores NULL bytes between directives
-fails:String#unpack with format 'q' ignores spaces between directives
 fails:String#unpack with format 'q' adds nil for each element requested beyond the end of the String
-fails:String#unpack with format 'q' decodes a long with most significant bit set as a negative number

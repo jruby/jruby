@@ -1,7 +1,4 @@
-fails:String#unpack with format 'H' ignores whitespace in the format string
 fails:String#unpack with format 'H' calls #to_str to coerce the directives string
-fails:String#unpack with format 'H' raises a TypeError when passed nil
-fails:String#unpack with format 'H' raises a TypeError when passed an Integer
 fails:String#unpack with format 'H' raises an ArgumentError when the format modifier is '_'
 fails:String#unpack with format 'H' raises an ArgumentError when the format modifier is '!'
 fails:String#unpack with format 'H' decodes one nibble from each byte for each format character starting with the most significant bit
@@ -14,10 +11,7 @@ fails:String#unpack with format 'H' decodes all the nibbles when passed the '*' 
 fails:String#unpack with format 'H' adds an empty string for each element requested beyond the end of the String
 fails:String#unpack with format 'H' ignores NULL bytes between directives
 fails:String#unpack with format 'H' ignores spaces between directives
-fails:String#unpack with format 'h' ignores whitespace in the format string
 fails:String#unpack with format 'h' calls #to_str to coerce the directives string
-fails:String#unpack with format 'h' raises a TypeError when passed nil
-fails:String#unpack with format 'h' raises a TypeError when passed an Integer
 fails:String#unpack with format 'h' raises an ArgumentError when the format modifier is '_'
 fails:String#unpack with format 'h' raises an ArgumentError when the format modifier is '!'
 fails:String#unpack with format 'h' decodes one nibble from each byte for each format character starting with the least significant bit

@@ -1,34 +1,6 @@
 fails:String#unpack with format 'G' ignores whitespace in the format string
 fails:String#unpack with format 'G' calls #to_str to coerce the directives string
-fails:String#unpack with format 'G' raises a TypeError when passed nil
-fails:String#unpack with format 'G' raises a TypeError when passed an Integer
-fails:String#unpack with format 'G' decodes one double for a single format character
-fails:String#unpack with format 'G' decodes a negative double
-fails:String#unpack with format 'G' decodes two doubles for two format characters
-fails:String#unpack with format 'G' decodes the number of doubles requested by the count modifier
-fails:String#unpack with format 'G' decodes the remaining doubles when passed the '*' modifier
-fails:String#unpack with format 'G' decodes the remaining doubles when passed the '*' modifier after another directive
-fails:String#unpack with format 'G' does not decode a double when fewer bytes than a double remain and the '*' modifier is passed
 fails:String#unpack with format 'G' adds nil for each element requested beyond the end of the String
-fails:String#unpack with format 'G' decodes positive Infinity
-fails:String#unpack with format 'G' decodes negative Infinity
-fails:String#unpack with format 'G' decodes NaN
-fails:String#unpack with format 'G' ignores NULL bytes between directives
-fails:String#unpack with format 'G' ignores spaces between directives
 fails:String#unpack with format 'g' ignores whitespace in the format string
 fails:String#unpack with format 'g' calls #to_str to coerce the directives string
-fails:String#unpack with format 'g' raises a TypeError when passed nil
-fails:String#unpack with format 'g' raises a TypeError when passed an Integer
-fails:String#unpack with format 'g' decodes one float for a single format character
-fails:String#unpack with format 'g' decodes a negative float
-fails:String#unpack with format 'g' decodes two floats for two format characters
-fails:String#unpack with format 'g' decodes the number of floats requested by the count modifier
-fails:String#unpack with format 'g' decodes the remaining floats when passed the '*' modifier
-fails:String#unpack with format 'g' decodes the remaining floats when passed the '*' modifier after another directive
-fails:String#unpack with format 'g' does not decode a float when fewer bytes than a float remain and the '*' modifier is passed
 fails:String#unpack with format 'g' adds nil for each element requested beyond the end of the String
-fails:String#unpack with format 'g' decodes positive Infinity
-fails:String#unpack with format 'g' decodes negative Infinity
-fails:String#unpack with format 'g' decodes NaN
-fails:String#unpack with format 'g' ignores NULL bytes between directives
-fails:String#unpack with format 'g' ignores spaces between directives

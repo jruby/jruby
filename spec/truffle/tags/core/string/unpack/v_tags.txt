@@ -1,32 +1,9 @@
 fails:String#unpack with format 'V' ignores whitespace in the format string
 fails:String#unpack with format 'V' calls #to_str to coerce the directives string
-fails:String#unpack with format 'V' raises a TypeError when passed nil
-fails:String#unpack with format 'V' raises a TypeError when passed an Integer
-fails:String#unpack with format 'V' decodes one int for a single format character
-fails:String#unpack with format 'V' decodes two ints for two format characters
-fails:String#unpack with format 'V' decodes the number of ints requested by the count modifier
-fails:String#unpack with format 'V' decodes the remaining ints when passed the '*' modifier
-fails:String#unpack with format 'V' decodes the remaining ints when passed the '*' modifier after another directive
-fails:String#unpack with format 'V' does not decode an int when fewer bytes than an int remain and the '*' modifier is passed
 fails:String#unpack with format 'V' adds nil for each element requested beyond the end of the String
-fails:String#unpack with format 'V' ignores NULL bytes between directives
-fails:String#unpack with format 'V' ignores spaces between directives
-fails:String#unpack with format 'V' decodes an int with most significant bit set as a positive number
 fails:String#unpack with format 'V' raises an ArgumentError when the format modifier is '_'
 fails:String#unpack with format 'V' raises an ArgumentError when the format modifier is '!'
-fails:String#unpack with format 'v' ignores whitespace in the format string
 fails:String#unpack with format 'v' calls #to_str to coerce the directives string
-fails:String#unpack with format 'v' raises a TypeError when passed nil
-fails:String#unpack with format 'v' raises a TypeError when passed an Integer
-fails:String#unpack with format 'v' decodes one short for a single format character
-fails:String#unpack with format 'v' decodes two shorts for two format characters
-fails:String#unpack with format 'v' decodes the number of shorts requested by the count modifier
-fails:String#unpack with format 'v' decodes the remaining shorts when passed the '*' modifier
-fails:String#unpack with format 'v' decodes the remaining shorts when passed the '*' modifier after another directive
-fails:String#unpack with format 'v' does not decode a short when fewer bytes than a short remain and the '*' modifier is passed
 fails:String#unpack with format 'v' adds nil for each element requested beyond the end of the String
-fails:String#unpack with format 'v' ignores NULL bytes between directives
-fails:String#unpack with format 'v' ignores spaces between directives
-fails:String#unpack with format 'v' decodes a short with most significant bit set as a positive number
 fails:String#unpack with format 'v' raises an ArgumentError when the format modifier is '_'
 fails:String#unpack with format 'v' raises an ArgumentError when the format modifier is '!'

@@ -1,24 +1,11 @@
-fails:String#unpack with format 'X' ignores whitespace in the format string
 fails:String#unpack with format 'X' calls #to_str to coerce the directives string
-fails:String#unpack with format 'X' raises a TypeError when passed nil
-fails:String#unpack with format 'X' raises a TypeError when passed an Integer
 fails:String#unpack with format 'X' raises an ArgumentError when the format modifier is '_'
 fails:String#unpack with format 'X' raises an ArgumentError when the format modifier is '!'
-fails:String#unpack with format 'X' moves the read index back by the number of bytes specified by count
-fails:String#unpack with format 'X' does not change the read index when passed a count of zero
-fails:String#unpack with format 'X' implicitly has a count of one when count is not specified
-fails:String#unpack with format 'X' moves the read index back by the remaining bytes when passed the '*' modifier
 fails:String#unpack with format 'X' raises an ArgumentError when passed the '*' modifier if the remaining bytes exceed the bytes from the index to the start of the String
 fails:String#unpack with format 'X' raises an ArgumentError if the count exceeds the bytes from current index to the start of the String
-fails:String#unpack with format 'x' ignores whitespace in the format string
 fails:String#unpack with format 'x' calls #to_str to coerce the directives string
-fails:String#unpack with format 'x' raises a TypeError when passed nil
-fails:String#unpack with format 'x' raises a TypeError when passed an Integer
 fails:String#unpack with format 'x' raises an ArgumentError when the format modifier is '_'
 fails:String#unpack with format 'x' raises an ArgumentError when the format modifier is '!'
-fails:String#unpack with format 'x' moves the read index forward by the number of bytes specified by count
-fails:String#unpack with format 'x' implicitly has a count of one when count is not specified
-fails:String#unpack with format 'x' does not change the read index when passed a count of zero
 fails:String#unpack with format 'x' moves the read index to the end of the string when passed the '*' modifier
 fails:String#unpack with format 'x' positions the read index one beyond the last readable byte in the String
 fails:String#unpack with format 'x' raises an ArgumentError if the count exceeds the size of the String

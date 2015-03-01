@@ -1,34 +1,6 @@
 fails:String#unpack with format 'D' ignores whitespace in the format string
 fails:String#unpack with format 'D' calls #to_str to coerce the directives string
-fails:String#unpack with format 'D' raises a TypeError when passed nil
-fails:String#unpack with format 'D' raises a TypeError when passed an Integer
-fails:String#unpack with format 'D' decodes one double for a single format character
-fails:String#unpack with format 'D' decodes a negative double
-fails:String#unpack with format 'D' decodes two doubles for two format characters
-fails:String#unpack with format 'D' decodes the number of doubles requested by the count modifier
-fails:String#unpack with format 'D' decodes the remaining doubles when passed the '*' modifier
-fails:String#unpack with format 'D' decodes the remaining doubles when passed the '*' modifier after another directive
-fails:String#unpack with format 'D' does not decode a double when fewer bytes than a double remain and the '*' modifier is passed
 fails:String#unpack with format 'D' adds nil for each element requested beyond the end of the String
-fails:String#unpack with format 'D' decodes positive Infinity
-fails:String#unpack with format 'D' decodes negative Infinity
-fails:String#unpack with format 'D' decodes NaN
-fails:String#unpack with format 'D' ignores NULL bytes between directives
-fails:String#unpack with format 'D' ignores spaces between directives
 fails:String#unpack with format 'd' ignores whitespace in the format string
 fails:String#unpack with format 'd' calls #to_str to coerce the directives string
-fails:String#unpack with format 'd' raises a TypeError when passed nil
-fails:String#unpack with format 'd' raises a TypeError when passed an Integer
-fails:String#unpack with format 'd' decodes one double for a single format character
-fails:String#unpack with format 'd' decodes a negative double
-fails:String#unpack with format 'd' decodes two doubles for two format characters
-fails:String#unpack with format 'd' decodes the number of doubles requested by the count modifier
-fails:String#unpack with format 'd' decodes the remaining doubles when passed the '*' modifier
-fails:String#unpack with format 'd' decodes the remaining doubles when passed the '*' modifier after another directive
-fails:String#unpack with format 'd' does not decode a double when fewer bytes than a double remain and the '*' modifier is passed
 fails:String#unpack with format 'd' adds nil for each element requested beyond the end of the String
-fails:String#unpack with format 'd' decodes positive Infinity
-fails:String#unpack with format 'd' decodes negative Infinity
-fails:String#unpack with format 'd' decodes NaN
-fails:String#unpack with format 'd' ignores NULL bytes between directives
-fails:String#unpack with format 'd' ignores spaces between directives
