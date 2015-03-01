@@ -38,19 +38,7 @@
     <dependency>
       <groupId>rubygems</groupId>
       <artifactId>jruby-readline</artifactId>
-      <version>1.0.dev-SNAPSHOT</version>
-      <type>gem</type>
-      <exclusions>
-        <exclusion>
-          <artifactId>jar-dependencies</artifactId>
-          <groupId>rubygems</groupId>
-        </exclusion>
-      </exclusions>
-    </dependency>
-    <dependency>
-      <groupId>rubygems</groupId>
-      <artifactId>jruby-ripper</artifactId>
-      <version>2.1.0.dev-SNAPSHOT</version>
+      <version>1.0</version>
       <type>gem</type>
       <exclusions>
         <exclusion>
