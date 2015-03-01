@@ -36,10 +36,7 @@ import org.jruby.truffle.nodes.core.KernelNodesFactory.SameOrEqualNodeFactory;
 import org.jruby.truffle.nodes.dispatch.*;
 import org.jruby.truffle.nodes.globals.WrapInThreadLocalNode;
 import org.jruby.truffle.nodes.literal.BooleanLiteralNode;
-import org.jruby.truffle.nodes.objects.ClassNode;
-import org.jruby.truffle.nodes.objects.ClassNodeFactory;
-import org.jruby.truffle.nodes.objects.SingletonClassNode;
-import org.jruby.truffle.nodes.objects.SingletonClassNodeFactory;
+import org.jruby.truffle.nodes.objects.*;
 import org.jruby.truffle.nodes.objectstorage.ReadHeadObjectFieldNode;
 import org.jruby.truffle.nodes.objectstorage.WriteHeadObjectFieldNode;
 import org.jruby.truffle.nodes.rubinius.ObjectPrimitiveNodes;
@@ -1991,96 +1988,50 @@ public abstract class KernelNodes {
     }
 
     @CoreMethod(names = "taint")
-    public abstract static class TaintNode extends CoreMethodNode {
+    public abstract static class KernelTaintNode extends CoreMethodNode {
 
-        @Child private WriteHeadObjectFieldNode writeTaintNode;
+        @Child private TaintNode taintNode;
 
-        public TaintNode(RubyContext context, SourceSection sourceSection) {
+        public KernelTaintNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            writeTaintNode = new WriteHeadObjectFieldNode(RubyBasicObject.TAINTED_IDENTIFIER);
         }
 
-        public TaintNode(TaintNode prev) {
+        public KernelTaintNode(KernelTaintNode prev) {
             super(prev);
-            writeTaintNode = prev.writeTaintNode;
         }
 
         @Specialization
-        public Object taint(boolean object) {
-            return frozen(object);
-        }
-
-        @Specialization
-        public Object taint(int object) {
-            return frozen(object);
-        }
-
-        @Specialization
-        public Object taint(long object) {
-            return frozen(object);
-        }
-
-        @Specialization
-        public Object taint(double object) {
-            return frozen(object);
-        }
-
-        private Object frozen(Object object) {
-            CompilerDirectives.transferToInterpreter();
-            throw new RaiseException(getContext().getCoreLibrary().frozenError(getContext().getCoreLibrary().getLogicalClass(object).getName(), this));
-        }
-
-
-        @Specialization
-        public Object taint(RubyBasicObject object) {
-            writeTaintNode.execute(object, true);
-            return object;
+        public Object taint(Object object) {
+            if (taintNode == null) {
+                CompilerDirectives.transferToInterpreter();
+                taintNode = insert(TaintNodeFactory.create(getContext(), getEncapsulatingSourceSection(), null));
+            }
+            return taintNode.executeTaint(object);
         }
 
     }
 
     @CoreMethod(names = "tainted?")
-    public abstract static class TaintedNode extends CoreMethodNode {
+    public abstract static class KernelIsTaintedNode extends CoreMethodNode {
 
-        @Child private ReadHeadObjectFieldNode readTaintNode;
+        @Child private IsTaintedNode isTaintedNode;
 
-        public TaintedNode(RubyContext context, SourceSection sourceSection) {
+        public KernelIsTaintedNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            readTaintNode = new ReadHeadObjectFieldNode(RubyBasicObject.TAINTED_IDENTIFIER);
         }
 
-        public TaintedNode(TaintedNode prev) {
+        public KernelIsTaintedNode(KernelIsTaintedNode prev) {
             super(prev);
-            readTaintNode = prev.readTaintNode;
+            isTaintedNode = prev.isTaintedNode;
         }
 
         @Specialization
-        public boolean tainted(boolean object) {
-            return false;
-        }
-
-        @Specialization
-        public boolean tainted(int object) {
-            return false;
-        }
-
-        @Specialization
-        public boolean tainted(long object) {
-            return false;
-        }
-
-        @Specialization
-        public boolean tainted(double object) {
-            return false;
-        }
-
-        @Specialization
-        public boolean tainted(RubyBasicObject object) {
-            try {
-                return readTaintNode.isSet(object) && readTaintNode.executeBoolean(object);
-            } catch (UnexpectedResultException e) {
-                throw new UnsupportedOperationException(readTaintNode.execute(object).toString());
+        public boolean isTainted(Object object) {
+            if (isTaintedNode == null) {
+                CompilerDirectives.transferToInterpreter();
+                isTaintedNode = insert(IsTaintedNodeFactory.create(getContext(), getEncapsulatingSourceSection(), null));
             }
+            return isTaintedNode.executeIsTainted(object);
         }
 
     }

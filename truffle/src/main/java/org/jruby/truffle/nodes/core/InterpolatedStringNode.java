@@ -16,6 +16,10 @@ import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.utilities.ConditionProfile;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.cast.ToSNode;
+import org.jruby.truffle.nodes.objects.IsTaintedNode;
+import org.jruby.truffle.nodes.objects.IsTaintedNodeFactory;
+import org.jruby.truffle.nodes.objects.TaintNode;
+import org.jruby.truffle.nodes.objects.TaintNodeFactory;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.RubyString;
@@ -27,16 +31,16 @@ public final class InterpolatedStringNode extends RubyNode {
 
     @Children private final ToSNode[] children;
 
-    @Child private KernelNodes.TaintedNode taintedNode;
-    @Child private KernelNodes.TaintNode taintNode;
+    @Child private IsTaintedNode isTaintedNode;
+    @Child private TaintNode taintNode;
 
     private final ConditionProfile taintProfile = ConditionProfile.createCountingProfile();
 
     public InterpolatedStringNode(RubyContext context, SourceSection sourceSection, ToSNode[] children) {
         super(context, sourceSection);
         this.children = children;
-        taintedNode = KernelNodesFactory.TaintedNodeFactory.create(context, sourceSection, new RubyNode[]{});
-        taintNode = KernelNodesFactory.TaintNodeFactory.create(context, sourceSection, new RubyNode[]{});
+        isTaintedNode = IsTaintedNodeFactory.create(context, sourceSection, null);
+        taintNode = TaintNodeFactory.create(context, sourceSection, null);
     }
 
     @ExplodeLoop
@@ -49,7 +53,7 @@ public final class InterpolatedStringNode extends RubyNode {
         for (int n = 0; n < children.length; n++) {
             final RubyString toInterpolate = children[n].executeRubyString(frame);
             strings[n] = toInterpolate;
-            tainted |= taintedNode.tainted(toInterpolate);
+            tainted |= isTaintedNode.isTainted(toInterpolate);
         }
 
         final RubyString string =  concat(strings);
