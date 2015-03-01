@@ -1,6 +1,3 @@
 fails:StringScanner#[] returns the n-th subgroup in the most recent match
 fails:StringScanner#[] returns nil if index is outside of self
 fails:StringScanner#[] calls to_int on the given index
-fails:StringScanner#[] raises a TypeError if the given index is nil
-fails:StringScanner#[] raises a TypeError when a String is as argument
-fails:StringScanner#[] raises a TypeError when a Range is as argument

@@ -1,5 +1,2 @@
-fails:StringScanner#getch scans one character and returns it
 fails:StringScanner#getch is multi-byte character sensitive
-fails:StringScanner#getch returns nil at the end of the string
-fails:StringScanner#getch returns an instance of String when passed a String subclass
 fails:StringScanner#getch taints the returned String if the input was tainted

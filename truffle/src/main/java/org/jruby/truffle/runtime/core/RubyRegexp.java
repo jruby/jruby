@@ -98,11 +98,16 @@ public class RubyRegexp extends RubyBasicObject {
 
     @CompilerDirectives.TruffleBoundary
     public Object matchCommon(RubyString source, boolean operator, boolean setNamedCaptures) {
+        return matchCommon(source, operator, setNamedCaptures, 0);
+    }
+
+    @CompilerDirectives.TruffleBoundary
+    public Object matchCommon(RubyString source, boolean operator, boolean setNamedCaptures, int startPos) {
         final byte[] stringBytes = source.getByteList().bytes();
         final Matcher matcher = regex.matcher(stringBytes);
         int range = stringBytes.length;
 
-        return matchCommon(source, operator, setNamedCaptures, matcher, 0, range);
+        return matchCommon(source, operator, setNamedCaptures, matcher, startPos, range);
     }
 
     @CompilerDirectives.TruffleBoundary

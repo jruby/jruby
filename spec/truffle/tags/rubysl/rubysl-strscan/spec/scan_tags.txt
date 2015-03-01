@@ -1,9 +1,2 @@
-fails:StringScanner#scan returns the matched string
 fails:StringScanner#scan returns the first character for a multi byte string with no KCODE
-fails:StringScanner#scan returns the matched string for a multi byte string with KCODE
-fails:StringScanner#scan returns the matched string for a multi byte string with unicode regexp
-fails:StringScanner#scan returns the matched string for a multi byte string
 fails:StringScanner#scan treats ^ as matching from the beginning of the current position
-fails:StringScanner#scan returns nil if there's no match
-fails:StringScanner#scan returns nil when there is no more to scan
-fails:StringScanner#scan returns an empty string when the pattern matches empty
