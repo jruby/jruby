@@ -1,0 +1,2 @@
+fails:StringScanner#matched_size returns the size of the most recent match
+fails:StringScanner#matched_size returns nil if there was no recent match

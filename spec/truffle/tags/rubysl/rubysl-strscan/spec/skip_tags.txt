@@ -1,0 +1,2 @@
+fails:StringScanner#skip returns length of the match
+fails:StringScanner#skip returns nil if there's no match

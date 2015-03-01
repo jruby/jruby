@@ -1,0 +1,3 @@
+fails:StringScanner#exist? returns the index of the first occurrence of the given pattern
+fails:StringScanner#exist? returns 0 if the pattern is empty
+fails:StringScanner#exist? returns nil if the pattern isn't found in the string

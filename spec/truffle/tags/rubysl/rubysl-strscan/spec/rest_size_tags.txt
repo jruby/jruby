@@ -1,0 +1,2 @@
+fails:StringScanner#rest_size Returns the length of the rest of the string
+fails:StringScanner#rest_size is equivalent to rest.size

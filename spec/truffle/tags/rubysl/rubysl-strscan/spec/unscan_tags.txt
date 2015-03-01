@@ -1,0 +1,3 @@
+fails:StringScanner#unscan set the scan pointer to the previous position
+fails:StringScanner#unscan remember only one previous position
+fails:StringScanner#unscan raises a ScanError when the previous match had failed

@@ -1,0 +1,2 @@
+fails:StringScanner#skip_until returns the number of bytes advanced and advances the scan pointer until pattern is matched and consumed
+fails:StringScanner#skip_until returns nil if no match was found

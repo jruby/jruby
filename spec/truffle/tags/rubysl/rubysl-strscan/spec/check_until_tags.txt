@@ -1,0 +1,1 @@
+fails:StringScanner#check_until returns the same value of scan_until, but don't advances the scan pointer

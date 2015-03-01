@@ -1,0 +1,3 @@
+fails:StringScanner#get_byte scans one byte and returns it
+fails:StringScanner#get_byte is not multi-byte character sensitive
+fails:StringScanner#get_byte returns nil at the end of the string
