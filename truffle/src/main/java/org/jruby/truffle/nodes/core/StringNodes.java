@@ -296,19 +296,6 @@ public abstract class StringNodes {
             super(prev);
         }
 
-        @Specialization(rewriteOn = UnexpectedResultException.class)
-        public RubyString getIndexInBounds(RubyString string, int index, UndefinedPlaceholder undefined) throws UnexpectedResultException {
-            final int normalizedIndex = string.normalizeIndex(index);
-            final ByteList bytes = string.getBytes();
-
-            if (normalizedIndex < 0 || normalizedIndex >= bytes.length()) {
-                throw new UnexpectedResultException(getContext().getCoreLibrary().getNilObject());
-            } else {
-                return getContext().makeString(bytes.charAt(normalizedIndex), string.getByteList().getEncoding());
-            }
-        }
-
-        @Specialization(contains = "getIndexInBounds")
         public Object getIndex(RubyString string, int index, UndefinedPlaceholder undefined) {
             int normalizedIndex = string.normalizeIndex(index);
             final ByteList bytes = string.getBytes();
