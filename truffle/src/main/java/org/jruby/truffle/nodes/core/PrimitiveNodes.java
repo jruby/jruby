@@ -381,19 +381,19 @@ public abstract class PrimitiveNodes {
 
     }
 
-    @CoreMethod(names = "version", onSingleton = true)
-    public abstract static class VersionNode extends CoreMethodNode {
+    @CoreMethod(names = "graal_version", onSingleton = true)
+    public abstract static class GraalVersionNode extends CoreMethodNode {
 
-        public VersionNode(RubyContext context, SourceSection sourceSection) {
+        public GraalVersionNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
         }
 
-        public VersionNode(VersionNode prev) {
+        public GraalVersionNode(GraalVersionNode prev) {
             super(prev);
         }
 
         @Specialization
-        public RubyString version() {
+        public RubyString graalVersion() {
             return getContext().makeString(System.getProperty("graal.version", "unknown"));
         }
 

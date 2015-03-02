@@ -12,10 +12,9 @@
 module Truffle
 
   # What is the version of Truffle/Graal being used?
-  # @return [String] a version string such as `"0.6"`, or `"undefined"` if
-  # running on a non-Graal JVM.
+  # @return [String] a version string such as `"0.6"`, or `"undefined"` if running on a non-Graal JVM.
   def self.version
-    Primitive.version
+    Primitive.graal_version
   end
 
   # Are we currently running on a Graal VM? If this returns false you are
