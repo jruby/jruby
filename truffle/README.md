@@ -7,7 +7,7 @@ be significantly faster, simpler and to have more functionality than other
 implementations of Ruby.
 
 JRuby+Truffle is a project of [Oracle Labs](https://labs.oracle.com) and
-academic colloborators at the [Institut für Systemsoftware at Johannes Kepler
+academic collaborators at the [Institut für Systemsoftware at Johannes Kepler
 University Linz](http://ssw.jku.at).
 
 ## Authors
