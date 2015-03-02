@@ -52,7 +52,6 @@ import org.jruby.compiler.NotCompilableException;
 import org.jruby.ext.thread.ThreadLibrary;
 import org.jruby.ir.IRScriptBody;
 import org.jruby.javasupport.JavaSupport;
-import org.jruby.javasupport.JavaSupportImpl;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.parser.StaticScope;
 import org.objectweb.asm.util.TraceClassVisitor;
@@ -1321,7 +1320,7 @@ public final class Ruby implements Constantizable {
     }
 
     public JavaSupport loadJavaSupport() {
-        return new JavaSupportImpl(this);
+        return new JavaSupport(this);
     }
 
     private void loadBundler() {

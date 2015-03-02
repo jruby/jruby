@@ -3,7 +3,6 @@ package org.jruby.java.invokers;
 import java.lang.reflect.Method;
 import java.util.List;
 
-import org.jruby.Ruby;
 import org.jruby.RubyModule;
 import org.jruby.RubyProc;
 import org.jruby.java.proxies.JavaProxy;
@@ -26,7 +25,7 @@ public class InstanceMethodInvoker extends MethodInvoker {
         JavaProxy proxy = castJavaProxy(self);
 
         int len = args.length;
-        Object[] convertedArgs = new Object[len];
+        final Object[] convertedArgs;
         JavaMethod method = (JavaMethod)findCallable(self, name, args, len);
         if (method.isVarArgs()) {
             len = method.getParameterTypes().length - 1;
@@ -82,6 +81,7 @@ public class InstanceMethodInvoker extends MethodInvoker {
         return method.invokeDirect(context, proxy.getObject(), cArg0, cArg1, cArg2);
     }
 
+    @Override
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args, Block block) {
         if (block.isGiven()) {
             JavaProxy proxy = castJavaProxy(self);
