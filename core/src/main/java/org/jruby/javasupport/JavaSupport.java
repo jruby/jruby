@@ -42,7 +42,6 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.locks.ReentrantLock;
 
 import org.jruby.Ruby;
 import org.jruby.RubyClass;
@@ -374,7 +373,7 @@ public class JavaSupport {
     }
 
     @Deprecated
-    private volatile Map<Object, Object[]> javaObjectVariables = new WeakIdentityHashMap();
+    private volatile Map<Object, Object[]> javaObjectVariables;
 
     @Deprecated
     public Object getJavaObjectVariable(Object o, int i) {
@@ -384,8 +383,6 @@ public class JavaSupport {
         if (variables == null) return null;
 
         synchronized (this) {
-            if (variables == null) return null;
-
             Object[] vars = variables.get(o);
             if (vars == null || vars.length <= i) return null;
             return vars[i];
@@ -399,13 +396,16 @@ public class JavaSupport {
         synchronized (this) {
             Map<Object, Object[]> variables = javaObjectVariables;
 
-            if (variables == null) javaObjectVariables = variables = new WeakIdentityHashMap();
+            if (variables == null) {
+                variables = javaObjectVariables = new WeakIdentityHashMap();
+            }
 
             Object[] vars = variables.get(o);
             if (vars == null) {
                 vars = new Object[i + 1];
                 variables.put(o, vars);
-            } else if (vars.length <= i) {
+            }
+            else if (vars.length <= i) {
                 Object[] newVars = new Object[i + 1];
                 System.arraycopy(vars, 0, newVars, 0, vars.length);
                 variables.put(o, newVars);
