@@ -1,3 +1,2 @@
 fails:StringScanner#[] returns the n-th subgroup in the most recent match
-fails:StringScanner#[] returns nil if index is outside of self
 fails:StringScanner#[] calls to_int on the given index
