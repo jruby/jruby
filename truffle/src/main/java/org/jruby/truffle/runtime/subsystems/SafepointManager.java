@@ -19,7 +19,6 @@ import com.oracle.truffle.api.nodes.Node;
 import org.jruby.RubyThread.Status;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyThread;
-import org.jruby.truffle.runtime.util.Consumer;
 
 import java.util.ArrayList;
 import java.util.Collections;
