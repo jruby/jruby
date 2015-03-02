@@ -296,20 +296,7 @@ public abstract class StringNodes {
             super(prev);
         }
 
-        @Specialization(rewriteOn = UnexpectedResultException.class)
-        public RubyString getIndexInBounds(RubyString string, int index, UndefinedPlaceholder undefined) throws UnexpectedResultException {
-            final int normalizedIndex = string.normalizeIndex(index);
-            final ByteList bytes = string.getBytes();
-
-            if (normalizedIndex < 0 || normalizedIndex >= bytes.length()) {
-                throw new UnexpectedResultException(getContext().getCoreLibrary().getNilObject());
-            } else {
-                return getContext().makeString(bytes.charAt(normalizedIndex), string.getByteList().getEncoding());
-            }
-        }
-
-        @Specialization(contains = "getIndexInBounds")
-        public Object getIndex(RubyString string, int index, UndefinedPlaceholder undefined) {
+        public Object getIndex(RubyString string, int index, @SuppressWarnings("unused") UndefinedPlaceholder undefined) {
             int normalizedIndex = string.normalizeIndex(index);
             final ByteList bytes = string.getBytes();
 
@@ -321,7 +308,7 @@ public abstract class StringNodes {
             }
         }
 
-        @Specialization(guards = { "!isRubyRange(arguments[1])", "!isRubyRegexp(arguments[1])" })
+        @Specialization(guards = { "!isRubyRange(arguments[1])", "!isRubyRegexp(arguments[1])", "!isRubyString(arguments[1])" })
         public Object getIndex(VirtualFrame frame, RubyString string, Object index, UndefinedPlaceholder undefined) {
             notDesignedForCompilation();
 
@@ -334,7 +321,7 @@ public abstract class StringNodes {
         }
 
         @Specialization
-        public Object slice(RubyString string, RubyRange.IntegerFixnumRange range, UndefinedPlaceholder undefined) {
+        public Object slice(RubyString string, RubyRange.IntegerFixnumRange range, @SuppressWarnings("unused") UndefinedPlaceholder undefined) {
             notDesignedForCompilation();
 
             final String javaString = string.toString();
@@ -382,7 +369,7 @@ public abstract class StringNodes {
             return slice(string, start, toIntNode.executeIntegerFixnum(frame, length));
         }
 
-        @Specialization(guards = { "!isRubyRange(arguments[1])", "!isRubyRegexp(arguments[1])", "!isUndefinedPlaceholder(arguments[2])" })
+        @Specialization(guards = { "!isRubyRange(arguments[1])", "!isRubyRegexp(arguments[1])", "!isRubyString(arguments[1])", "!isUndefinedPlaceholder(arguments[2])" })
         public Object slice(VirtualFrame frame, RubyString string, Object start, Object length) {
             notDesignedForCompilation();
 
@@ -395,7 +382,7 @@ public abstract class StringNodes {
         }
 
         @Specialization
-        public Object slice(RubyString string, RubyRegexp regexp, UndefinedPlaceholder capture) {
+        public Object slice(RubyString string, RubyRegexp regexp, @SuppressWarnings("unused") UndefinedPlaceholder capture) {
             notDesignedForCompilation();
 
             final Object matchData = regexp.matchCommon(string, false, false);
@@ -426,7 +413,7 @@ public abstract class StringNodes {
         }
 
         @Specialization
-        public Object slice(VirtualFrame frame, RubyString string, RubyRegexp regexp, RubyString capture) {
+        public Object slice(RubyString string, RubyRegexp regexp, RubyString capture) {
             notDesignedForCompilation();
 
             final Object matchData = regexp.matchCommon(string, false, false);
