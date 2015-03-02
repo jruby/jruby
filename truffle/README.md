@@ -39,7 +39,7 @@ Download a build of Graal:
 
 You can then run JRuby with GraalVM
 
-    JAVACMD=path/to/graal/java bin/jruby -X+T ...`
+    JAVACMD=path/to/graal/java bin/jruby -X+T ...
 
 If you want to develop against the latest version of Graal, you should use the
 `truffle-head` branch of JRuby. Follow the
