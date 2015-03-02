@@ -24,7 +24,7 @@ University Linz](http://ssw.jku.at).
 * Lucas Allan Amorim
 * Aditya Bhardwaj
 
-The best way to get in touch with us is to join us in `#jruby` on Freenode.
+The best way to get in touch with us is to join us in `#jruby` on Freenode, but you can also Tweet to @chrisgseaton, @nirvdrum or @eregontp, or email chris.seaton@oracle.com.
 
 ## Using Truffle
 
