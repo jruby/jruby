@@ -308,7 +308,7 @@ public abstract class StringNodes {
             }
         }
 
-        @Specialization(guards = { "!isRubyRange(arguments[1])", "!isRubyRegexp(arguments[1])" })
+        @Specialization(guards = { "!isRubyRange(arguments[1])", "!isRubyRegexp(arguments[1])", "!isRubyString(arguments[1])" })
         public Object getIndex(VirtualFrame frame, RubyString string, Object index, UndefinedPlaceholder undefined) {
             notDesignedForCompilation();
 
@@ -369,7 +369,7 @@ public abstract class StringNodes {
             return slice(string, start, toIntNode.executeIntegerFixnum(frame, length));
         }
 
-        @Specialization(guards = { "!isRubyRange(arguments[1])", "!isRubyRegexp(arguments[1])", "!isUndefinedPlaceholder(arguments[2])" })
+        @Specialization(guards = { "!isRubyRange(arguments[1])", "!isRubyRegexp(arguments[1])", "!isRubyString(arguments[1])", "!isUndefinedPlaceholder(arguments[2])" })
         public Object slice(VirtualFrame frame, RubyString string, Object start, Object length) {
             notDesignedForCompilation();
 
