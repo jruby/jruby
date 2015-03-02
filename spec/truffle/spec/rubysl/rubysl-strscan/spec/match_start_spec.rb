@@ -1,3 +1,4 @@
+require File.expand_path('../../../../../../ruby/spec_helper', __FILE__)
 
 describe "Regexp#match_start" do
   it "matches a string N bytes from the beginning" do
