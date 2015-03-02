@@ -161,11 +161,11 @@ public class RubyContext extends ExecutionContext {
         }
     }
 
-    private void loadFileAbsolute(String fileName, Node currentNode) {
-        final byte[] bytes = FileUtils.readAllBytesInterruptedly(this, fileName);
+    private void loadFileAbsolute(String path, Node currentNode) {
+        final byte[] bytes = FileUtils.readAllBytesInterruptedly(this, path);
 
         // Assume UTF-8 for the moment
-        final Source source = Source.fromBytes(bytes, fileName, new BytesDecoder.UTF8BytesDecoder());
+        final Source source = Source.fromBytes(bytes, path, new BytesDecoder.UTF8BytesDecoder());
 
         load(source, currentNode, NodeWrapper.IDENTITY);
     }
