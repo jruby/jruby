@@ -25,14 +25,19 @@ import org.jruby.runtime.builtin.IRubyObject;
 
 public abstract class RubyToJavaInvoker extends JavaMethod {
     protected static final Object[] EMPTY_OBJECT_ARRAY = new Object[0];
+
     protected final JavaCallable javaCallable;
     protected final JavaCallable[][] javaCallables;
     protected final JavaCallable[] javaVarargsCallables;
     protected final int minVarargsArity;
-    protected final Map cache;
-    protected final Ruby runtime;
-    private Member[] members;
-    
+
+    // initialize cache of parameter types to method
+    // FIXME: No real reason to use CHM, is there?
+    protected final Map cache = new ConcurrentHashMap(0, 0.75f, 1);
+
+    private final Ruby runtime;
+    private final Member[] members;
+
     RubyToJavaInvoker(RubyModule host, Member[] members) {
         super(host, Visibility.PUBLIC, CallConfiguration.FrameNoneScopeNone);
         this.members = members;
@@ -40,14 +45,12 @@ public abstract class RubyToJavaInvoker extends JavaMethod {
         // we set all Java methods to optional, since many/most have overloads
         setArity(Arity.OPTIONAL);
 
-        Ruby runtime = host.getRuntime();
-
         // initialize all the callables for this method
         JavaCallable callable = null;
         JavaCallable[][] callables = null;
         JavaCallable[] varargsCallables = null;
         int varargsArity = Integer.MAX_VALUE;
-        
+
         if (members.length == 1) {
             callable = createCallable(runtime, members[0]);
             if (callable.isVarArgs()) {
@@ -65,7 +68,7 @@ public abstract class RubyToJavaInvoker extends JavaMethod {
                     methodsForArity = new ArrayList<JavaCallable>();
                     methodsMap.put(currentArity,methodsForArity);
                 }
-                JavaCallable javaMethod = createCallable(runtime,method);
+                JavaCallable javaMethod = createCallable(runtime, method);
                 methodsForArity.add(javaMethod);
 
                 if (isMemberVarArgs(method)) {
@@ -88,17 +91,12 @@ public abstract class RubyToJavaInvoker extends JavaMethod {
                 varargsMethods.toArray(varargsCallables);
             }
         }
-        members = null;
-
-        // initialize cache of parameter types to method
-        // FIXME: No real reason to use CHM, is there?
-        cache = new ConcurrentHashMap(0, 0.75f, 1);
 
         this.javaCallable = callable;
         this.javaCallables = callables;
         this.javaVarargsCallables = varargsCallables;
         this.minVarargsArity = varargsArity;
-        
+
         // if it's not overloaded, set up a NativeCall
         if (javaCallable != null) {
             // no constructor support yet
@@ -203,27 +201,27 @@ public abstract class RubyToJavaInvoker extends JavaMethod {
                 if (javaVarargsCallables != null) {
                     callable = CallableSelector.matchingCallableArityN(runtime, cache, javaVarargsCallables, args, arity);
                     if (callable == null) {
-                        throw CallableSelector.argTypesDoNotMatch(self.getRuntime(), self, javaVarargsCallables, (Object[])args);
+                        throw CallableSelector.argTypesDoNotMatch(runtime, self, javaVarargsCallables, (Object[])args);
                     }
                     return callable;
                 } else {
-                    throw self.getRuntime().newArgumentError(args.length, javaCallables.length - 1);
+                    throw runtime.newArgumentError(args.length, javaCallables.length - 1);
                 }
             }
             callable = CallableSelector.matchingCallableArityN(runtime, cache, callablesForArity, args, arity);
             if (callable == null && javaVarargsCallables != null) {
                 callable = CallableSelector.matchingCallableArityN(runtime, cache, javaVarargsCallables, args, arity);
                 if (callable == null) {
-                    throw CallableSelector.argTypesDoNotMatch(self.getRuntime(), self, javaVarargsCallables, (Object[])args);
+                    throw CallableSelector.argTypesDoNotMatch(runtime, self, javaVarargsCallables, (Object[])args);
                 }
                 return callable;
             }
             if (callable == null) {
-                throw CallableSelector.argTypesDoNotMatch(self.getRuntime(), self, callablesForArity, (Object[])args);
+                throw CallableSelector.argTypesDoNotMatch(runtime, self, callablesForArity, (Object[])args);
             }
         } else {
             if (!callable.isVarArgs() && callable.getParameterTypes().length != args.length) {
-                throw self.getRuntime().newArgumentError(args.length, callable.getParameterTypes().length);
+                throw runtime.newArgumentError(args.length, callable.getParameterTypes().length);
             }
         }
         return callable;
@@ -240,7 +238,7 @@ public abstract class RubyToJavaInvoker extends JavaMethod {
             callable = callablesForArity[0];
         } else {
             if (callable.getParameterTypes().length != 0) {
-                throw self.getRuntime().newArgumentError(0, callable.getParameterTypes().length);
+                throw runtime.newArgumentError(0, callable.getParameterTypes().length);
             }
         }
         return callable;
@@ -252,15 +250,15 @@ public abstract class RubyToJavaInvoker extends JavaMethod {
             // TODO: varargs?
             JavaCallable[] callablesForArity = null;
             if (javaCallables.length <= 1 || (callablesForArity = javaCallables[1]) == null) {
-                throw self.getRuntime().newArgumentError(1, javaCallables.length - 1);
+                throw runtime.newArgumentError(1, javaCallables.length - 1);
             }
             callable = CallableSelector.matchingCallableArityOne(runtime, cache, callablesForArity, arg0);
             if (callable == null) {
-                throw CallableSelector.argTypesDoNotMatch(self.getRuntime(), self, callablesForArity, arg0);
+                throw CallableSelector.argTypesDoNotMatch(runtime, self, callablesForArity, arg0);
             }
         } else {
             if (callable.getParameterTypes().length != 1) {
-                throw self.getRuntime().newArgumentError(1, callable.getParameterTypes().length);
+                throw runtime.newArgumentError(1, callable.getParameterTypes().length);
             }
         }
         return callable;
@@ -272,15 +270,15 @@ public abstract class RubyToJavaInvoker extends JavaMethod {
             // TODO: varargs?
             JavaCallable[] callablesForArity = null;
             if (javaCallables.length <= 2 || (callablesForArity = javaCallables[2]) == null) {
-                throw self.getRuntime().newArgumentError(2, javaCallables.length - 1);
+                throw runtime.newArgumentError(2, javaCallables.length - 1);
             }
             callable = CallableSelector.matchingCallableArityTwo(runtime, cache, callablesForArity, arg0, arg1);
             if (callable == null) {
-                throw CallableSelector.argTypesDoNotMatch(self.getRuntime(), self, callablesForArity, arg0, arg1);
+                throw CallableSelector.argTypesDoNotMatch(runtime, self, callablesForArity, arg0, arg1);
             }
         } else {
             if (callable.getParameterTypes().length != 2) {
-                throw self.getRuntime().newArgumentError(2, callable.getParameterTypes().length);
+                throw runtime.newArgumentError(2, callable.getParameterTypes().length);
             }
         }
         return callable;
@@ -292,15 +290,15 @@ public abstract class RubyToJavaInvoker extends JavaMethod {
             // TODO: varargs?
             JavaCallable[] callablesForArity = null;
             if (javaCallables.length <= 3 || (callablesForArity = javaCallables[3]) == null) {
-                throw self.getRuntime().newArgumentError(3, javaCallables.length - 1);
+                throw runtime.newArgumentError(3, javaCallables.length - 1);
             }
             callable = CallableSelector.matchingCallableArityThree(runtime, cache, callablesForArity, arg0, arg1, arg2);
             if (callable == null) {
-                throw CallableSelector.argTypesDoNotMatch(self.getRuntime(), self, callablesForArity, arg0, arg1, arg2);
+                throw CallableSelector.argTypesDoNotMatch(runtime, self, callablesForArity, arg0, arg1, arg2);
             }
         } else {
             if (callable.getParameterTypes().length != 3) {
-                throw self.getRuntime().newArgumentError(3, callable.getParameterTypes().length);
+                throw runtime.newArgumentError(3, callable.getParameterTypes().length);
             }
         }
         return callable;
@@ -312,15 +310,15 @@ public abstract class RubyToJavaInvoker extends JavaMethod {
             // TODO: varargs?
             JavaCallable[] callablesForArity = null;
             if (javaCallables.length <= 4 || (callablesForArity = javaCallables[4]) == null) {
-                throw self.getRuntime().newArgumentError(4, javaCallables.length - 1);
+                throw runtime.newArgumentError(4, javaCallables.length - 1);
             }
             callable = CallableSelector.matchingCallableArityFour(runtime, cache, callablesForArity, arg0, arg1, arg2, arg3);
             if (callable == null) {
-                throw CallableSelector.argTypesDoNotMatch(self.getRuntime(), self, callablesForArity, arg0, arg1, arg2, arg3);
+                throw CallableSelector.argTypesDoNotMatch(runtime, self, callablesForArity, arg0, arg1, arg2, arg3);
             }
         } else {
             if (callable.getParameterTypes().length != 4) {
-                throw self.getRuntime().newArgumentError(4, callable.getParameterTypes().length);
+                throw runtime.newArgumentError(4, callable.getParameterTypes().length);
             }
         }
         return callable;
