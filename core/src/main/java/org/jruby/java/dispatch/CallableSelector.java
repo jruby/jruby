@@ -7,18 +7,10 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import org.jruby.Ruby;
-import org.jruby.RubyClass;
-import org.jruby.RubyModule;
-import org.jruby.exceptions.RaiseException;
-import org.jruby.java.proxies.ConcreteJavaProxy;
 import org.jruby.javasupport.JavaCallable;
 import org.jruby.javasupport.JavaClass;
-import org.jruby.javasupport.JavaConstructor;
-import org.jruby.javasupport.JavaMethod;
 import org.jruby.javasupport.JavaUtil;
 import org.jruby.javasupport.ParameterTypes;
-import org.jruby.javasupport.proxy.JavaProxyConstructor;
-import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.CodegenUtils;
 
@@ -26,6 +18,11 @@ import org.jruby.util.CodegenUtils;
  * Method selection logic for calling from Ruby to Java.
  */
 public class CallableSelector {
+
+    private CallableSelector() { /* no-instances */ }
+
+    //private static final boolean DEBUG = true;
+
     public static ParameterTypes matchingCallableArityN(Ruby runtime, Map cache, ParameterTypes[] methods, IRubyObject[] args, int argsLength) {
         int signatureCode = argsHashCode(args);
         ParameterTypes method = (ParameterTypes)cache.get(signatureCode);
@@ -83,30 +80,29 @@ public class CallableSelector {
         return method;
     }
 
-    private static final boolean DEBUG = true;
-
-    private static ParameterTypes findMatchingCallableForArgs(Ruby runtime, Map cache, int signatureCode, ParameterTypes[] methods, IRubyObject... args) {
+    private static ParameterTypes findMatchingCallableForArgs(final Ruby runtime,
+        Map cache, int signatureCode, ParameterTypes[] methods, IRubyObject... args) {
         ParameterTypes method = null;
 
         // try the new way first
-        List<ParameterTypes> newFinds = findCallable(methods, args);
-        if (newFinds.size() > 0) {
+        final List<ParameterTypes> candidates = findCallable(methods, args);
+
+        if ( candidates.size() > 0 ) {
             // new way found one, so let's go with that
-            if (newFinds.size() == 1) {
-                method = newFinds.get(0);
-            } else {
+            if ( candidates.size() == 1 ) method = candidates.get(0);
+            else {
                 // narrow to most specific version (or first version, if none are more specific
                 ParameterTypes mostSpecific = null;
-                Class[] msTypes = null;
+                Class<?>[] msTypes = null;
                 boolean ambiguous = false;
-                OUTER: for (ParameterTypes candidate : newFinds) {
+                OUTER: for ( ParameterTypes candidate : candidates ) {
                     if (mostSpecific == null) {
                         mostSpecific = candidate;
                         msTypes = mostSpecific.getParameterTypes();
                         continue;
                     }
 
-                    Class[] cTypes = candidate.getParameterTypes();
+                    final Class<?>[] cTypes = candidate.getParameterTypes();
 
                     for (int i = 0; i < msTypes.length; i++) {
                         if (msTypes[i] != cTypes[i] && msTypes[i].isAssignableFrom(cTypes[i])) {
@@ -138,51 +134,33 @@ public class CallableSelector {
         // fall back on old ways
         if (method == null) {
             method = findCallable(methods, Exact, args);
+            if (method == null) {
+                method = findCallable(methods, AssignableAndPrimitivable, args);
+                if (method == null) {
+                    method = findCallable(methods, AssignableOrDuckable, args);
+                    if (method == null) {
+                        method = findCallable(methods, AssignableOrDuckable, args);
+                        if (method == null) {
+                            method = findCallable(methods, AssignableAndPrimitivableWithVarargs, args);
+                        }
+                    }
+                }
+            }
         }
-        if (method == null) {
-            method = findCallable(methods, AssignableAndPrimitivable, args);
-        }
-        if (method == null) {
-            method = findCallable(methods, AssignableOrDuckable, args);
-        }
-        if (method == null) {
-            method = findCallable(methods, AssignableAndPrimitivableWithVarargs, args);
-        }
-        
+
         // cache found result
         if (method != null) cache.put(signatureCode, method);
-        
+
         return method;
     }
 
-    private static void warnMultipleMatches(IRubyObject[] args, List<ParameterTypes> newFinds) {
-        RubyClass[] argTypes = new RubyClass[args.length];
-        for (int i = 0; i < argTypes.length; i++) {
-            argTypes[i] = args[i].getMetaClass();
-        }
-        StringBuilder builder = new StringBuilder("multiple Java methods for arguments (");
-        boolean first = true;
-        for (RubyClass argType : argTypes) {
-            if (!first) {
-                builder.append(",");
-            }
-            first = false;
-            builder.append(argType);
-        }
-        builder.append("), using first:");
-        for (ParameterTypes types : newFinds) {
-            builder.append("\n  ").append(types);
-        }
-        args[0].getRuntime().getWarnings().warn(builder.toString());
-    }
-
-    private static ParameterTypes findCallable(ParameterTypes[] callables, CallableAcceptor acceptor, IRubyObject... args) {
+    private static ParameterTypes findCallable(ParameterTypes[] callables, CallableAcceptor acceptor, IRubyObject[] args) {
         ParameterTypes bestCallable = null;
         int bestScore = -1;
-        for (int k = 0; k < callables.length; k++) {
-            ParameterTypes callable = callables[k];
+        for ( int i = 0; i < callables.length; i++ ) {
+            ParameterTypes callable = callables[i];
 
-            if (acceptor.accept(callable, args)) {
+            if ( acceptor.accept(callable, args) ) {
                 int currentScore = getExactnessScore(callable, args);
                 if (currentScore > bestScore) {
                     bestCallable = callable;
@@ -193,18 +171,18 @@ public class CallableSelector {
         return bestCallable;
     }
 
-    private static List<ParameterTypes> findCallable(ParameterTypes[] callables, IRubyObject... args) {
-        List<ParameterTypes> retainedCallables = new ArrayList<ParameterTypes>(callables.length);
-        List<ParameterTypes> incomingCallables = new ArrayList<ParameterTypes>(Arrays.asList(callables));
-        
-        for (int currentArg = 0; currentArg < args.length; currentArg++) {
+    private static List<ParameterTypes> findCallable(ParameterTypes[] callables, IRubyObject[] args) {
+        ArrayList<ParameterTypes> retainedCallables = new ArrayList<ParameterTypes>(callables.length);
+        ArrayList<ParameterTypes> incomingCallables = new ArrayList<ParameterTypes>(Arrays.asList(callables));
+
+        for ( int i = 0; i < args.length; i++ ) {
             retainedCallables.clear();
-            for (Matcher matcher : MATCH_SEQUENCE) {
+            for ( final Matcher matcher : MATCH_SEQUENCE ) {
                 for (Iterator<ParameterTypes> callableIter = incomingCallables.iterator(); callableIter.hasNext();) {
                     ParameterTypes callable = callableIter.next();
                     Class[] types = callable.getParameterTypes();
 
-                    if (matcher.match(types[currentArg], args[currentArg])) {
+                    if ( matcher.match( types[i], args[i] ) ) {
                         callableIter.remove();
                         retainedCallables.add(callable);
                     }
@@ -218,7 +196,7 @@ public class CallableSelector {
     }
 
     private static int getExactnessScore(ParameterTypes paramTypes, IRubyObject[] args) {
-        Class[] types = paramTypes.getParameterTypes();
+        final Class[] types = paramTypes.getParameterTypes();
         int count = 0;
 
         if (paramTypes.isVarArgs()) {
@@ -227,30 +205,26 @@ public class CallableSelector {
 
             // dig out as many trailing args as possible that match varargs type
             int nonVarargs = types.length - 1;
-            
+
             // add one for vararg
             count += 1;
 
             // check remaining args
             for (int i = 0; i < nonVarargs && i < args.length; i++) {
-                if (types[i].equals(argClass(args[i]))) {
-                    count++;
-                }
+                if ( types[i].equals( getJavaClass(args[i]) ) ) count++;
             }
         } else {
             for (int i = 0; i < args.length; i++) {
-                if (types[i].equals(argClass(args[i]))) {
-                    count++;
-                }
+                if ( types[i].equals( getJavaClass(args[i]) ) ) count++;
             }
         }
         return count;
     }
 
     private static interface CallableAcceptor {
-
         public boolean accept(ParameterTypes types, IRubyObject[] args);
     }
+
     private static final CallableAcceptor Exact = new CallableAcceptor() {
 
         public boolean accept(ParameterTypes types, IRubyObject[] args) {
@@ -276,15 +250,42 @@ public class CallableSelector {
         }
     };
 
-    private interface Matcher {
+    private static interface Matcher {
         public boolean match(Class type, IRubyObject arg);
     }
 
+    private static final Matcher EXACT = new Matcher() {
+        public boolean match(Class type, IRubyObject arg) {
+            return type.equals(getJavaClass(arg))
+                    || (type.isPrimitive() && CodegenUtils.getBoxType(type) == getJavaClass(arg));
+        }
+    };
+
+    private static final Matcher ASSIGNABLE = new Matcher() {
+        public boolean match(Class type, IRubyObject arg) {
+            return assignable(type, arg);
+        }
+    };
+
+    private static final Matcher PRIMITIVABLE = new Matcher() {
+        public boolean match(Class type, IRubyObject arg) {
+            return primitivable(type, arg);
+        }
+    };
+
+    private static final Matcher DUCKABLE = new Matcher() {
+        public boolean match(Class type, IRubyObject arg) {
+            return duckable(type, arg);
+        }
+    };
+
+    private static final Matcher[] MATCH_SEQUENCE = new Matcher[] { EXACT, PRIMITIVABLE, ASSIGNABLE, DUCKABLE };
+
     private static boolean exactMatch(ParameterTypes paramTypes, IRubyObject... args) {
         Class[] types = paramTypes.getParameterTypes();
-        
+
         if (args.length != types.length) return false;
-        
+
         for (int i = 0; i < types.length; i++) {
             if (!EXACT.match(types[i], args[i])) {
                 return false;
@@ -293,38 +294,11 @@ public class CallableSelector {
         return true;
     }
 
-    private static Matcher EXACT = new Matcher() {
-        public boolean match(Class type, IRubyObject arg) {
-            return type.equals(argClass(arg))
-                    || (type.isPrimitive() && CodegenUtils.getBoxType(type) == argClass(arg));
-        }
-    };
-
-    private static Matcher ASSIGNABLE = new Matcher() {
-        public boolean match(Class type, IRubyObject arg) {
-            return assignable(type, arg);
-        }
-    };
-
-    private static Matcher PRIMITIVABLE = new Matcher() {
-        public boolean match(Class type, IRubyObject arg) {
-            return primitivable(type, arg);
-        }
-    };
-
-    private static Matcher DUCKABLE = new Matcher() {
-        public boolean match(Class type, IRubyObject arg) {
-            return duckable(type, arg);
-        }
-    };
-
-    private static final Matcher[] MATCH_SEQUENCE = new Matcher[] {EXACT, PRIMITIVABLE, ASSIGNABLE, DUCKABLE};
-
     private static boolean assignableAndPrimitivable(ParameterTypes paramTypes, IRubyObject... args) {
         Class[] types = paramTypes.getParameterTypes();
-        
+
         if (args.length != types.length) return false;
-        
+
         for (int i = 0; i < types.length; i++) {
             if (!(ASSIGNABLE.match(types[i], args[i]) && PRIMITIVABLE.match(types[i], args[i]))) {
                 return false;
@@ -335,9 +309,9 @@ public class CallableSelector {
 
     private static boolean assignableOrDuckable(ParameterTypes paramTypes, IRubyObject... args) {
         Class[] types = paramTypes.getParameterTypes();
-        
+
         if (args.length != types.length) return false;
-        
+
         for (int i = 0; i < types.length; i++) {
             if (!(ASSIGNABLE.match(types[i], args[i]) || DUCKABLE.match(types[i], args[i]))) {
                 return false;
@@ -349,12 +323,12 @@ public class CallableSelector {
     private static boolean assignableAndPrimitivableWithVarargs(ParameterTypes paramTypes, IRubyObject... args) {
         // bail out if this is not a varargs method
         if (!paramTypes.isVarArgs()) return false;
-        
+
         Class[] types = paramTypes.getParameterTypes();
 
         Class varArgArrayType = types[types.length - 1];
         Class varArgType = varArgArrayType.getComponentType();
-        
+
         // if there's no args, we only match when there's just varargs
         if (args.length == 0) {
             return types.length <= 1;
@@ -378,7 +352,7 @@ public class CallableSelector {
     }
 
     private static boolean assignable(Class type, IRubyObject arg) {
-        return JavaClass.assignable(type, argClass(arg));
+        return JavaClass.assignable(type, getJavaClass(arg));
     }
 
     /**
@@ -390,7 +364,7 @@ public class CallableSelector {
      * @return Whether the argument can be directly converted to the target primitive type
      */
     private static boolean primitivable(Class type, IRubyObject arg) {
-        Class argClass = argClass(arg);
+        Class argClass = getJavaClass(arg);
         if (type.isPrimitive()) {
             // TODO: This is where we would want to do precision checks to see
             // if it's non-destructive to coerce a given type into the target
@@ -420,7 +394,7 @@ public class CallableSelector {
     }
 
     private static boolean duckable(Class type, IRubyObject arg) {
-        return JavaUtil.isDuckTypeConvertable(argClass(arg), type);
+        return JavaUtil.isDuckTypeConvertable(getJavaClass(arg), type);
     }
 
     private static int argsHashCode(IRubyObject a0) {
@@ -440,9 +414,7 @@ public class CallableSelector {
     }
 
     private static int argsHashCode(IRubyObject[] a) {
-        if (a == null) {
-            return 0;
-        }
+        if (a == null) return 0;
 
         int result = 1;
 
@@ -453,66 +425,13 @@ public class CallableSelector {
         return result;
     }
 
-    private static int classHashCode(IRubyObject o) {
-        return o == null ? 0 : o.getJavaClass().hashCode();
+    private static int classHashCode(IRubyObject arg) {
+        return arg == null ? 0 : arg.getJavaClass().hashCode();
     }
 
-    private static Class argClass(IRubyObject a) {
-        if (a == null) {
-            return void.class;
-        }
-
-        return a.getJavaClass();
+    private static Class getJavaClass(IRubyObject arg) {
+        if ( arg == null ) return void.class;
+        return arg.getJavaClass();
     }
 
-    public static RaiseException argTypesDoNotMatch(Ruby runtime, IRubyObject receiver, JavaCallable[] methods, Object... args) {
-        Class[] argTypes = new Class[args.length];
-        for (int i = 0; i < args.length; i++) {
-            argTypes[i] = argClassTypeError(args[i]);
-        }
-
-        return argumentError(runtime.getCurrentContext(), methods, receiver, argTypes);
-    }
-
-    private static Class argClassTypeError(Object object) {
-        if (object == null) {
-            return void.class;
-        }
-        if (object instanceof ConcreteJavaProxy) {
-            return ((ConcreteJavaProxy)object).getJavaClass();
-        }
-
-        return object.getClass();
-    }
-
-    private static RaiseException argumentError(ThreadContext context, ParameterTypes[] methods, IRubyObject receiver, Class[] argTypes) {
-        boolean constructor = methods[0] instanceof JavaConstructor || methods[0] instanceof JavaProxyConstructor;
-        
-        StringBuffer fullError = new StringBuffer();
-        fullError.append("no ");
-        if (constructor) {
-            fullError.append("constructor");
-        } else {
-            fullError.append("method '")
-                    .append(((JavaMethod)methods[0]).name().toString())
-                    .append("' ");
-        }
-        fullError.append("for arguments ")
-                .append(CodegenUtils.prettyParams(argTypes))
-                .append(" on ");
-        if (receiver instanceof RubyModule) {
-            fullError.append(((RubyModule)receiver).getName());
-        } else {
-            fullError.append(receiver.getMetaClass().getRealClass().getName());
-        }
-        
-        if (methods.length > 1) {
-            fullError.append("\n  available overloads:");
-            for (ParameterTypes method : methods) {
-                fullError.append("\n    " + CodegenUtils.prettyParams(method.getParameterTypes()));
-            }
-        }
-        
-        return context.runtime.newNameError(fullError.toString(), null);
-    }
 }
