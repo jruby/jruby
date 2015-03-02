@@ -298,15 +298,17 @@ public class RubyProc extends RubyObject implements DataType {
     }
 
     private IRubyObject handleBreakJump(Ruby runtime, Block newBlock, JumpException.BreakJump bj, int jumpTarget) {
-        switch(newBlock.type) {
-            case LAMBDA: 
-                if (bj.getTarget() == jumpTarget) return (IRubyObject) bj.getValue();
-                
-                throw runtime.newLocalJumpError(RubyLocalJumpError.Reason.BREAK, (IRubyObject)bj.getValue(), "unexpected break");
-            case PROC:
-                if (newBlock.isEscaped()) throw runtime.newLocalJumpError(RubyLocalJumpError.Reason.BREAK, (IRubyObject)bj.getValue(), "break from proc-closure");
+        if (bj.getTarget() == jumpTarget) {
+            switch (newBlock.type) {
+                case LAMBDA:
+                    return (IRubyObject) bj.getValue();
+                case PROC:
+                    if (newBlock.isEscaped()) {
+                        throw runtime.newLocalJumpError(RubyLocalJumpError.Reason.BREAK, (IRubyObject) bj.getValue(), "break from proc-closure");
+                    }
+            }
         }
-        
+
         throw bj;
     }
 
