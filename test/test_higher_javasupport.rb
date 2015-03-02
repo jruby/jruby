@@ -880,7 +880,7 @@ CLASSDEF
   end
 
   # reproducing https://github.com/jruby/jruby/issues/2014
-  def test_concurrent_proxy_class_initialization
+  def test_concurrent_proxy_class_initialization_invalid_method_dispatch
     abort_on_exception = Thread.abort_on_exception
     begin
       Thread.abort_on_exception = true
@@ -898,7 +898,24 @@ CLASSDEF
     ensure
       Thread.abort_on_exception = abort_on_exception
     end
+  end
 
+  # reproducing https://github.com/jruby/jruby/issues/1621
+  def test_concurrent_proxy_class_initialization_dead_lock
+    timeout = 0.5; threads_to_kill = []
+    begin
+      threads = %w{ A B C D E F G H }.map do |sym|
+        Thread.new { Java::Default.const_get "Bug1621#{sym}" }
+      end
+      threads.each do |thread|
+        threads_to_kill << thread if thread.join(timeout).nil?
+      end
+      if threads_to_kill.any?
+        fail "threads: #{threads_to_kill.inspect} dead-locked!"
+      end
+    ensure
+      threads_to_kill.each { |thread| thread.exit rescue nil }
+    end
   end
 
 end
