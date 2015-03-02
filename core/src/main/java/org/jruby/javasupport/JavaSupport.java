@@ -33,10 +33,6 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.javasupport;
 
-import org.jruby.javasupport.binding.AssignedName;
-import org.jruby.util.collections.MapBasedClassValue;
-import java.lang.reflect.Constructor;
-import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Member;
 import java.util.Collections;
 import java.util.HashMap;
@@ -49,11 +45,11 @@ import org.jruby.RubyModule;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.exceptions.Unrescuable;
 import org.jruby.util.collections.ClassValue;
+import org.jruby.javasupport.binding.AssignedName;
 import org.jruby.javasupport.proxy.JavaProxyClass;
 import org.jruby.javasupport.util.ObjectProxyCache;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.WeakIdentityHashMap;
-import org.jruby.util.cli.Options;
 import org.jruby.util.collections.ClassValueCalculator;
 
 public class JavaSupport {
@@ -74,35 +70,6 @@ public class JavaSupport {
     private final ClassValue<ThreadLocal<RubyModule>> unfinishedProxyClassCache;
     private final ClassValue<Map<String, AssignedName>> staticAssignedNames;
     private final ClassValue<Map<String, AssignedName>> instanceAssignedNames;
-    private static final Constructor<? extends ClassValue> CLASS_VALUE_CONSTRUCTOR;
-
-    static {
-        Constructor constructor = null;
-
-        if (Options.INVOKEDYNAMIC_CLASS_VALUES.load()) {
-            try {
-                // try to load the ClassValue class. If it succeeds, we can use our
-                // ClassValue-based cache.
-                Class.forName("java.lang.ClassValue");
-                constructor = Class.forName("org.jruby.util.collections.Java7ClassValue").getConstructor(ClassValueCalculator.class);
-            }
-            catch (Exception ex) {
-                // fall through to Map version
-            }
-        }
-
-        if (constructor == null) {
-            try {
-                constructor = MapBasedClassValue.class.getConstructor(ClassValueCalculator.class);
-            }
-            catch (Exception ex) {
-                if ( ex instanceof RuntimeException ) throw (RuntimeException) ex;
-                throw new RuntimeException(ex);
-            }
-        }
-
-        CLASS_VALUE_CONSTRUCTOR = (Constructor<ClassValue>) constructor;
-    }
 
     private RubyModule javaModule;
     private RubyModule javaUtilitiesModule;
@@ -127,46 +94,39 @@ public class JavaSupport {
     // A cache of all JavaProxyClass objects created for this runtime
     private Map<Set<?>, JavaProxyClass> javaProxyClassCache = Collections.synchronizedMap(new HashMap<Set<?>, JavaProxyClass>());
 
-    public JavaSupport(final Ruby ruby) {
-        this.runtime = ruby;
+    public JavaSupport(final Ruby runtime) {
+        this.runtime = runtime;
 
-        try {
-            this.javaClassCache = CLASS_VALUE_CONSTRUCTOR.newInstance(new ClassValueCalculator<JavaClass>() {
-                @Override
-                public JavaClass computeValue(Class<?> cls) {
-                    return new JavaClass(runtime, cls);
-                }
-            });
-            this.proxyClassCache = CLASS_VALUE_CONSTRUCTOR.newInstance(new ClassValueCalculator<RubyModule>() {
-                @Override
-                public RubyModule computeValue(Class<?> cls) {
-                    return Java.createProxyClassForClass(runtime, cls);
-                }
-            });
-            this.unfinishedProxyClassCache = CLASS_VALUE_CONSTRUCTOR.newInstance(new ClassValueCalculator<ThreadLocal<RubyModule>>() {
-                @Override
-                public ThreadLocal<RubyModule> computeValue(Class<?> cls) {
-                    return new ThreadLocal<RubyModule>();
-                }
-            });
-            this.staticAssignedNames = CLASS_VALUE_CONSTRUCTOR.newInstance(new ClassValueCalculator<Map<String, AssignedName>>() {
-                @Override
-                public Map<String, AssignedName> computeValue(Class<?> cls) {
-                    return new HashMap<String, AssignedName>();
-                }
-            });
-            this.instanceAssignedNames = CLASS_VALUE_CONSTRUCTOR.newInstance(new ClassValueCalculator<Map<String, AssignedName>>() {
-                @Override
-                public Map<String, AssignedName> computeValue(Class<?> cls) {
-                    return new HashMap<String, AssignedName>();
-                }
-            });
-        }
-        catch (InstantiationException ex) { throw new RuntimeException(ex); }
-        catch (IllegalAccessException ex) { throw new RuntimeException(ex); }
-        catch (InvocationTargetException ex) {
-            throw new RuntimeException(ex.getTargetException());
-        }
+        this.javaClassCache = ClassValue.newInstance(new ClassValueCalculator<JavaClass>() {
+            @Override
+            public JavaClass computeValue(Class<?> cls) {
+                return new JavaClass(runtime, cls);
+            }
+        });
+        this.proxyClassCache = ClassValue.newInstance(new ClassValueCalculator<RubyModule>() {
+            @Override
+            public RubyModule computeValue(Class<?> cls) {
+                return Java.createProxyClassForClass(runtime, cls);
+            }
+        });
+        this.unfinishedProxyClassCache = ClassValue.newInstance(new ClassValueCalculator<ThreadLocal<RubyModule>>() {
+            @Override
+            public ThreadLocal<RubyModule> computeValue(Class<?> cls) {
+                return new ThreadLocal<RubyModule>();
+            }
+        });
+        this.staticAssignedNames =ClassValue.newInstance(new ClassValueCalculator<Map<String, AssignedName>>() {
+            @Override
+            public Map<String, AssignedName> computeValue(Class<?> cls) {
+                return new HashMap<String, AssignedName>();
+            }
+        });
+        this.instanceAssignedNames = ClassValue.newInstance(new ClassValueCalculator<Map<String, AssignedName>>() {
+            @Override
+            public Map<String, AssignedName> computeValue(Class<?> cls) {
+                return new HashMap<String, AssignedName>();
+            }
+        });
     }
 
     public Class loadJavaClass(String className) throws ClassNotFoundException {
