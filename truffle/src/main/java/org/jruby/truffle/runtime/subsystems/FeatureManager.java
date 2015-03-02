@@ -10,6 +10,8 @@
 package org.jruby.truffle.runtime.subsystems;
 
 import com.oracle.truffle.api.nodes.Node;
+import com.oracle.truffle.api.source.Source;
+
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.LexicalScope;
 import org.jruby.truffle.runtime.ModuleOperations;
@@ -33,6 +35,9 @@ import java.util.Arrays;
 public class FeatureManager {
 
     private final RubyContext context;
+
+    private Source mainScriptSource = null;
+    private String mainScriptFullPath = null;
 
     public FeatureManager(RubyContext context) {
         this.context = context;
@@ -168,6 +173,21 @@ public class FeatureManager {
         }
 
         return true;
+    }
+
+    public Source getMainScriptSource() {
+        return mainScriptSource;
+    }
+
+    public String getMainScriptFullPath() {
+        return mainScriptFullPath;
+    }
+
+    public void setMainScriptSource(Source source) {
+        this.mainScriptSource = source;
+        if (!source.getPath().equals("-e")) {
+            this.mainScriptFullPath = RubyFile.expandPath(context, source.getPath());
+        }
     }
 
 }

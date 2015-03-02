@@ -18,6 +18,7 @@ import com.oracle.truffle.api.dsl.NodeChildren;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.*;
 import com.oracle.truffle.api.nodes.UnexpectedResultException;
+import com.oracle.truffle.api.source.Source;
 import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.utilities.ConditionProfile;
 
@@ -52,6 +53,7 @@ import org.jruby.truffle.runtime.core.*;
 import org.jruby.truffle.runtime.hash.HashOperations;
 import org.jruby.truffle.runtime.hash.KeyValue;
 import org.jruby.truffle.runtime.methods.InternalMethod;
+import org.jruby.truffle.runtime.subsystems.FeatureManager;
 import org.jruby.truffle.runtime.subsystems.ThreadManager.BlockingActionWithoutGlobalLock;
 import org.jruby.util.ByteList;
 import org.jruby.util.cli.Options;
@@ -1618,11 +1620,26 @@ public abstract class KernelNodes {
         public boolean require(RubyString feature) {
             notDesignedForCompilation();
 
-            final String sourcePath = Truffle.getRuntime().getCallerFrame().getCallNode().getEncapsulatingSourceSection().getSource().getPath();
+            final FeatureManager featureManager = getContext().getFeatureManager();
+
+            final Source source = Truffle.getRuntime().getCallerFrame().getCallNode().getEncapsulatingSourceSection().getSource();
+
+            final String sourcePath;
+            if (source == featureManager.getMainScriptSource()) {
+                sourcePath = featureManager.getMainScriptFullPath();
+            } else {
+                sourcePath = source.getPath();
+            }
+
+            if (sourcePath == null) {
+                CompilerDirectives.transferToInterpreter();
+                throw new RaiseException(getContext().getCoreLibrary().loadError("cannot infer basepath", this));
+            }
+
             final String directoryPath = new File(sourcePath).getParent();
 
             try {
-                getContext().getFeatureManager().require(directoryPath, feature.toString(), this);
+                featureManager.require(directoryPath, feature.toString(), this);
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }

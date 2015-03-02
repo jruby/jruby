@@ -172,6 +172,8 @@ public class TruffleBridgeImpl implements TruffleBridge {
             source = Source.fromBytes(bytes, inputFile, new BytesDecoder.UTF8BytesDecoder());
         }
 
+        truffleContext.getFeatureManager().setMainScriptSource(source);
+
         truffleContext.load(source, null, new NodeWrapper() {
             @Override
             public RubyNode wrap(RubyNode node) {
