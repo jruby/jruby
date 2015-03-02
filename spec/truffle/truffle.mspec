@@ -102,7 +102,7 @@ class MSpecScript
   set :rubysl, [
     "spec/truffle/spec/rubysl/rubysl-erb/spec",
     "spec/truffle/spec/rubysl/rubysl-set/spec",
-    "spec/truffle/spec/rubysl/rubysl-rubysl/spec"
+    "spec/truffle/spec/rubysl/rubysl-strscan/spec"
   ]
 
   set :tags_patterns, [
