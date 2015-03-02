@@ -1,2 +1,0 @@
-fails:StringScanner#pointer returns the position of the scan pointer
-fails:StringScanner#pointer returns the position of the scan pointer for multibyte string

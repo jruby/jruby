@@ -1,1 +1,0 @@
-fails:StringScanner#beginning_of_line? returns true if the scan pointer is at the beginning of the line, false otherwise

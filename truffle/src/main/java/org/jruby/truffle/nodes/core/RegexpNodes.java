@@ -11,10 +11,12 @@ package org.jruby.truffle.nodes.core;
 
 import static org.jruby.util.StringSupport.CR_7BIT;
 
+import org.joni.Region;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
+import org.jruby.truffle.runtime.core.RubyMatchData;
 import org.jruby.truffle.runtime.core.RubyRegexp;
 import org.jruby.truffle.runtime.core.RubyString;
 import org.jruby.truffle.runtime.core.RubySymbol;
@@ -232,6 +234,28 @@ public abstract class RegexpNodes {
 
     }
 
+    @CoreMethod(names = "match_start", required = 2)
+    public abstract static class MatchStartNode extends CoreMethodNode {
+
+        public MatchStartNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public MatchStartNode(MatchStartNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public Object matchStart(RubyRegexp regexp, RubyString string, int startPos) {
+            final Object matchResult = regexp.matchCommon(string, false, false, startPos);
+            if (matchResult instanceof RubyMatchData && ((RubyMatchData) matchResult).getNumberOfRegions() > 0
+                && ((RubyMatchData) matchResult).getRegion().beg[0] == startPos) {
+                return matchResult;
+            }
+            return getContext().getCoreLibrary().getNilObject();
+        }
+    }
+
     @CoreMethod(names = "options")
     public abstract static class OptionsNode extends CoreMethodNode {
 
@@ -290,6 +314,23 @@ public abstract class RegexpNodes {
             return quote(raw.toRubyString());
         }
 
+    }
+
+    @CoreMethod(names = "search_from", required = 2)
+    public abstract static class SearchFromNode extends CoreMethodNode {
+
+        public SearchFromNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public SearchFromNode(SearchFromNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public Object searchFrom(RubyRegexp regexp, RubyString string, int startPos) {
+            return regexp.matchCommon(string, false, false, startPos);
+        }
     }
 
     @CoreMethod(names = "source")

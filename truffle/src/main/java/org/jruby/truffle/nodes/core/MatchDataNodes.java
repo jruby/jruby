@@ -44,7 +44,7 @@ public abstract class MatchDataNodes {
         public Object getIndex(RubyMatchData matchData, int index) {
             notDesignedForCompilation();
 
-            if (index >= matchData.getValues().length) {
+            if (index >= matchData.getValues().length || index < 0) {
                 return getContext().getCoreLibrary().getNilObject();
             } else {
                 return matchData.getValues()[index];

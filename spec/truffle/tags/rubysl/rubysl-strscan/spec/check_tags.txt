@@ -1,1 +1,0 @@
-fails:StringScanner#check returns the value that scan would return, without advancing the scan pointer
