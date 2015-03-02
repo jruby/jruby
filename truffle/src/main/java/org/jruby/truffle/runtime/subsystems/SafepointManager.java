@@ -128,48 +128,58 @@ public class SafepointManager {
     }
 
     public void pauseAllThreadsAndExecute(Node currentNode, SafepointAction action) {
-        pauseAllThreadsAndExecute(currentNode, true, action);
-    }
-
-    public void pauseAllThreadsAndExecuteFromNonRubyThread(Node currentNode, SafepointAction action) {
-        enterThread();
-        try {
-            pauseAllThreadsAndExecute(currentNode, false, action);
-        } finally {
-            leaveThread();
-        }
-    }
-
-    public void pauseAllThreadsAndExecute(Node currentNode, boolean holdsGlobalLock, SafepointAction action) {
-        CompilerDirectives.transferToInterpreter();
-
         if (lock.isHeldByCurrentThread()) {
             throw new IllegalStateException("Re-entered SafepointManager");
         }
 
+        // Need to lock interruptibly since we are in the registered threads.
         while (true) {
             try {
                 lock.lockInterruptibly();
                 break;
             } catch (InterruptedException e) {
-                poll(currentNode, holdsGlobalLock);
+                poll(currentNode);
             }
         }
 
         try {
-            this.action = action;
-
-            /* this is a potential cause for race conditions,
-             * but we need to invalidate first so the interrupted threads
-             * see the invalidation in poll() in their catch(InterruptedException) clause
-             * and wait on the barrier instead of retrying their blocking action. */
-            assumption.invalidate();
-            interruptOtherThreads();
-
-            assumptionInvalidated(currentNode, holdsGlobalLock, true);
+            pauseAllThreadsAndExecute(currentNode, true, action);
         } finally {
             lock.unlock();
         }
+    }
+
+    public void pauseAllThreadsAndExecuteFromNonRubyThread(Node currentNode, SafepointAction action) {
+        if (lock.isHeldByCurrentThread()) {
+            throw new IllegalStateException("Re-entered SafepointManager");
+        }
+
+        assert !runningThreads.contains(Thread.currentThread());
+        // Just wait to grab the lock, since we are not in the registered threads.
+        lock.lock();
+        try {
+            enterThread();
+            try {
+                pauseAllThreadsAndExecute(currentNode, false, action);
+            } finally {
+                leaveThread();
+            }
+        } finally {
+            lock.unlock();
+        }
+    }
+
+    private void pauseAllThreadsAndExecute(Node currentNode, boolean holdsGlobalLock, SafepointAction action) {
+        this.action = action;
+
+        /* this is a potential cause for race conditions,
+         * but we need to invalidate first so the interrupted threads
+         * see the invalidation in poll() in their catch(InterruptedException) clause
+         * and wait on the barrier instead of retrying their blocking action. */
+        assumption.invalidate();
+        interruptOtherThreads();
+
+        assumptionInvalidated(currentNode, holdsGlobalLock, true);
     }
 
     private void interruptOtherThreads() {
