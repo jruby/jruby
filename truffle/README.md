@@ -72,9 +72,8 @@ fannkuch, and also kernels from two real-word Ruby gems,
 * A. Wöß, C. Wirth, D. Bonetta, C. Seaton, C. Humer, and H. Mössenböck. [An object storage model for the Truffle language implementation framework](http://dl.acm.org/citation.cfm?id=2647517). In Proceedings of the International Conference on Principles and Practices of Programming on the Java Platform (PPPJ), 2014.
 * C. Seaton, M. L. Van De Vanter, and M. Haupt. [Debugging at full speed](http://www.lifl.fr/dyla14/papers/dyla14-3-Debugging_at_Full_Speed.pdf). In Proceedings of the 8th Workshop on Dynamic Languages and Applications (DYLA), 2014.
 
-Also see the [Ruby Bibliography](http://rubybib.org), and [publications
-specifically on Truffle and Graal](https://wiki.openjdk.java.net/display/Graal/P
-ublications+and+Presentations).
+Also see the [Ruby Bibliography](http://rubybib.org), and
+[publications specifically on Truffle and Graal](https://wiki.openjdk.java.net/display/Graal/Publications+and+Presentations).
 
 ## Truffle-Specific Functionality
 
