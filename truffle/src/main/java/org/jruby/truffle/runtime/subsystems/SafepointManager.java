@@ -33,7 +33,7 @@ public class SafepointManager {
 
     private final RubyContext context;
 
-    private final Set<RunningThread> runningThreads = Collections.newSetFromMap(new ConcurrentHashMap<RunningThread, Boolean>());
+    private final Set<Thread> runningThreads = Collections.newSetFromMap(new ConcurrentHashMap<Thread, Boolean>());
 
     @CompilerDirectives.CompilationFinal private Assumption assumption = Truffle.getRuntime().createAssumption();
     private final ReentrantLock lock = new ReentrantLock();
@@ -47,16 +47,12 @@ public class SafepointManager {
     }
 
     public void enterThread() {
-        enterThread(true);
-    }
-
-    public void enterThread(boolean interruptible) {
         CompilerAsserts.neverPartOfCompilation();
 
         lock.lock();
         try {
             phaser.register();
-            runningThreads.add(new RunningThread(Thread.currentThread(), interruptible));
+            runningThreads.add(Thread.currentThread());
         } finally {
             lock.unlock();
         }
@@ -66,7 +62,7 @@ public class SafepointManager {
         CompilerAsserts.neverPartOfCompilation();
 
         phaser.arriveAndDeregister();
-        runningThreads.remove(new RunningThread(Thread.currentThread(), false));
+        runningThreads.remove(Thread.currentThread());
     }
 
     public void poll(Node currentNode) {
@@ -136,7 +132,7 @@ public class SafepointManager {
     }
 
     public void pauseAllThreadsAndExecuteFromNonRubyThread(Node currentNode, SafepointAction action) {
-        enterThread(false);
+        enterThread();
         try {
             pauseAllThreadsAndExecute(currentNode, false, action);
         } finally {
@@ -168,7 +164,7 @@ public class SafepointManager {
              * see the invalidation in poll() in their catch(InterruptedException) clause
              * and wait on the barrier instead of retrying their blocking action. */
             assumption.invalidate();
-            interruptAllThreads();
+            interruptOtherThreads();
 
             assumptionInvalidated(currentNode, holdsGlobalLock, true);
         } finally {
@@ -176,49 +172,13 @@ public class SafepointManager {
         }
     }
 
-    private void interruptAllThreads() {
-        for (RunningThread thread : runningThreads) {
-            if (thread.isInterruptible()) {
-                thread.getThread().interrupt();
+    private void interruptOtherThreads() {
+        Thread current = Thread.currentThread();
+        for (Thread thread : runningThreads) {
+            if (thread != current) {
+                thread.interrupt();
             }
         }
-    }
-
-    private static class RunningThread {
-
-        private final Thread thread;
-        private final boolean interruptible;
-
-        public RunningThread(Thread thread, boolean interruptible) {
-            this.thread = thread;
-            this.interruptible = interruptible;
-        }
-
-        public Thread getThread() {
-            return thread;
-        }
-
-        public boolean isInterruptible() {
-            return interruptible;
-        }
-
-        @Override
-        public boolean equals(Object o) {
-            if (this == o) return true;
-            if (o == null || getClass() != o.getClass()) return false;
-
-            RunningThread that = (RunningThread) o;
-
-            if (!thread.equals(that.thread)) return false;
-
-            return true;
-        }
-
-        @Override
-        public int hashCode() {
-            return thread.hashCode();
-        }
-
     }
 
 }
