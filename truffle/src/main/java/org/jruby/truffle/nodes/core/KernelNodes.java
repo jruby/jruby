@@ -1636,7 +1636,7 @@ public abstract class KernelNodes {
                     throw new RaiseException(getContext().getCoreLibrary().loadError("cannot infer basepath", this));
                 }
 
-                featurePath = new File(new File(sourcePath).getParent(), featureString).toString();
+                featurePath = dirname(sourcePath) + "/" + featureString;
             }
 
             try {
@@ -1646,6 +1646,12 @@ public abstract class KernelNodes {
             }
 
             return true;
+        }
+
+        private String dirname(String path) {
+            int lastSlash = path.lastIndexOf('/');
+            assert lastSlash > 0;
+            return path.substring(0, lastSlash);
         }
     }
 
