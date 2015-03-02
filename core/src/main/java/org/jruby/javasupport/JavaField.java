@@ -18,7 +18,7 @@
  * Copyright (C) 2004 David Corbin <dcorbin@users.sourceforge.net>
  * Copyright (C) 2005 Charles O Nutter <headius@headius.com>
  * Copyright (C) 2007 William N Dortch <bill.dortch@gmail.com>
- * 
+ *
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
  * or the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
@@ -50,11 +50,10 @@ import org.jruby.runtime.builtin.IRubyObject;
 
 @JRubyClass(name="Java::JavaField")
 public class JavaField extends JavaAccessibleObject {
-    private Field field;
 
-    public Object getValue() {
-        return field;
-    }
+    private final Field field;
+
+    public final Field getValue() { return field; }
 
     public static RubyClass createJavaFieldClass(Ruby runtime, RubyModule javaModule) {
         // TODO: NOT_ALLOCATABLE_ALLOCATOR is probably ok here, since we don't intend for people to monkey with
@@ -62,7 +61,7 @@ public class JavaField extends JavaAccessibleObject {
         RubyClass result = javaModule.defineClassUnder("JavaField", runtime.getObject(), ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
 
         JavaAccessibleObject.registerRubyMethods(runtime, result);
-        
+
         result.defineAnnotatedMethods(JavaField.class);
 
         return result;
@@ -73,27 +72,17 @@ public class JavaField extends JavaAccessibleObject {
         this.field = field;
     }
 
-    public boolean equals(Object other) {
-        return other instanceof JavaField &&
-            this.field == ((JavaField)other).field;
+    public final boolean equals(Object other) {
+        return other instanceof JavaField && this.field.equals( ((JavaField) other).field );
     }
-    
-    public int hashCode() {
+
+    public final int hashCode() {
         return field.hashCode();
     }
 
     @JRubyMethod
     public RubyString value_type() {
         return getRuntime().newString(field.getType().getName());
-    }
-
-    @JRubyMethod(name = {"==", "==="})
-    public IRubyObject op_equal(IRubyObject other) {
-    	if (!(other instanceof JavaField)) {
-    		return getRuntime().getFalse();
-    	}
-    	
-        return getRuntime().newBoolean(field.equals(((JavaField) other).field));
     }
 
     @JRubyMethod(name = "public?")
@@ -105,7 +94,7 @@ public class JavaField extends JavaAccessibleObject {
     public RubyBoolean static_p() {
         return getRuntime().newBoolean(Modifier.isStatic(field.getModifiers()));
     }
-    
+
     @JRubyMethod(name = "enum_constant?")
     public RubyBoolean enum_constant_p() {
         return getRuntime().newBoolean(field.isEnumConstant());
@@ -115,7 +104,7 @@ public class JavaField extends JavaAccessibleObject {
     public RubyString to_generic_string() {
         return getRuntime().newString(field.toGenericString());
     }
-    
+
     @JRubyMethod(name = "type")
     public IRubyObject field_type() {
         return JavaClass.get(getRuntime(), field.getType());
@@ -207,13 +196,15 @@ public class JavaField extends JavaAccessibleObject {
         }
         return (JavaObject) value;
     }
-    
+
     @JRubyMethod
     public RubyString name() {
         return getRuntime().newString(field.getName());
     }
-    
+
+    @Override
     public AccessibleObject accessibleObject() {
         return field;
     }
+
 }

@@ -123,7 +123,7 @@ public abstract class JavaCallable extends JavaAccessibleObject implements Param
     }
 
     @JRubyMethod
-    public IRubyObject inspect() {
+    public RubyString inspect() {
         StringBuilder result = new StringBuilder();
         result.append(nameOnInspection());
         Class<?>[] parameterTypes = getParameterTypes();

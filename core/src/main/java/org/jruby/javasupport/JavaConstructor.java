@@ -19,7 +19,7 @@
  * Copyright (C) 2004 Stefan Matthias Aust <sma@3plus4.de>
  * Copyright (C) 2004 Thomas E Enebo <enebo@acm.org>
  * Copyright (C) 2004 David Corbin <dcorbin@users.sourceforge.net>
- * 
+ *
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
  * or the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
@@ -50,12 +50,11 @@ import org.jruby.runtime.builtin.IRubyObject;
 
 @JRubyClass(name="Java::JavaConstructor")
 public class JavaConstructor extends JavaCallable {
-    private final Constructor<?> constructor;
-    private final JavaUtil.JavaConverter objectConverter;
 
-    public Object getValue() {
-        return constructor;
-    }
+    private final Constructor<?> constructor;
+    //private final JavaUtil.JavaConverter objectConverter;
+
+    public final Constructor getValue() { return constructor; }
 
     public static RubyClass createJavaConstructorClass(Ruby runtime, RubyModule javaModule) {
         // TODO: NOT_ALLOCATABLE_ALLOCATOR is probably ok here, since we don't intend for people to monkey with
@@ -65,23 +64,22 @@ public class JavaConstructor extends JavaCallable {
 
         JavaAccessibleObject.registerRubyMethods(runtime, result);
         JavaCallable.registerRubyMethods(runtime, result);
-        
+
         result.defineAnnotatedMethods(JavaConstructor.class);
-        
+
         return result;
     }
 
     public JavaConstructor(Ruby runtime, Constructor<?> constructor) {
         super(runtime, runtime.getJavaSupport().getJavaConstructorClass(), constructor.getParameterTypes());
         this.constructor = constructor;
-        
-        this.objectConverter = JavaUtil.getJavaConverter(constructor.getDeclaringClass());
+        //this.objectConverter = JavaUtil.getJavaConverter(constructor.getDeclaringClass());
     }
 
     public static JavaConstructor create(Ruby runtime, Constructor<?> constructor) {
         return new JavaConstructor(runtime, constructor);
     }
-    
+
     public static JavaConstructor getMatchingConstructor(Ruby runtime, Class<?> javaClass, Class<?>[] argumentTypes) {
         try {
             return create(runtime, javaClass.getConstructor(argumentTypes));
@@ -89,7 +87,7 @@ public class JavaConstructor extends JavaCallable {
             // Java reflection does not allow retrieving constructors like methods
             CtorSearch: for (Constructor<?> ctor : javaClass.getConstructors()) {
                 Class<?>[] targetTypes = ctor.getParameterTypes();
-                
+
                 // for zero args case we can stop searching
                 if (targetTypes.length != argumentTypes.length) {
                     continue CtorSearch;
@@ -97,10 +95,10 @@ public class JavaConstructor extends JavaCallable {
                     return create(runtime, ctor);
                 } else {
                     boolean found = true;
-                    
+
                     TypeScan: for (int i = 0; i < argumentTypes.length; i++) {
                         if (i >= targetTypes.length) found = false;
-                        
+
                         if (targetTypes[i].isAssignableFrom(argumentTypes[i])) {
                             found = true;
                             continue TypeScan;
@@ -122,19 +120,19 @@ public class JavaConstructor extends JavaCallable {
         return null;
     }
 
-    public boolean equals(Object other) {
+    public final boolean equals(Object other) {
         return other instanceof JavaConstructor &&
-            this.constructor == ((JavaConstructor)other).constructor;
+            this.constructor.equals( ((JavaConstructor) other).constructor );
     }
-    
-    public int hashCode() {
+
+    public final int hashCode() {
         return constructor.hashCode();
     }
 
     public int getArity() {
         return parameterTypes.length;
     }
-    
+
     protected String nameOnInspection() {
         return getType().toString();
     }
@@ -158,7 +156,7 @@ public class JavaConstructor extends JavaCallable {
     public Annotation[][] getParameterAnnotations() {
         return constructor.getParameterAnnotations();
     }
-    
+
     public boolean isVarArgs() {
         return constructor.isVarArgs();
     }
@@ -166,7 +164,7 @@ public class JavaConstructor extends JavaCallable {
     public int getModifiers() {
         return constructor.getModifiers();
     }
-    
+
     public String toGenericString() {
         return constructor.toGenericString();
     }
@@ -174,7 +172,7 @@ public class JavaConstructor extends JavaCallable {
     public AccessibleObject accessibleObject() {
         return constructor;
     }
-    
+
     @JRubyMethod
     public IRubyObject type_parameters() {
         return Java.getInstance(getRuntime(), constructor.getTypeParameters());

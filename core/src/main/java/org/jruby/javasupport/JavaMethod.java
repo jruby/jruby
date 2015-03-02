@@ -64,19 +64,17 @@ import java.lang.reflect.Type;
 @JRubyClass(name="Java::JavaMethod")
 public class JavaMethod extends JavaCallable {
 
-    private static final Logger LOG = LoggerFactory.getLogger("JavaMethod");
+    //private static final Logger LOG = LoggerFactory.getLogger("JavaMethod");
 
-    private final static boolean USE_HANDLES = RubyInstanceConfig.USE_GENERATED_HANDLES;
-    private final static boolean HANDLE_DEBUG = false;
+    //private final static boolean USE_HANDLES = RubyInstanceConfig.USE_GENERATED_HANDLES;
+    //private final static boolean HANDLE_DEBUG = false;
 
     private final Method method;
     private final Class<?> boxedReturnType;
     private final boolean isFinal;
     private final JavaUtil.JavaConverter returnConverter;
 
-    public Object getValue() {
-        return method;
-    }
+    public final Method getValue() { return method; }
 
     public static RubyClass createJavaMethodClass(Ruby runtime, RubyModule javaModule) {
         // TODO: NOT_ALLOCATABLE_ALLOCATOR is probably ok here, since we don't intend for people to monkey with
@@ -185,13 +183,12 @@ public class JavaMethod extends JavaCallable {
     }
 
     @Override
-    public boolean equals(Object other) {
-        return other instanceof JavaMethod &&
-            this.method == ((JavaMethod)other).method;
+    public final boolean equals(Object other) {
+        return other instanceof JavaMethod && this.method.equals( ((JavaMethod)other).method );
     }
 
     @Override
-    public int hashCode() {
+    public final int hashCode() {
         return method.hashCode();
     }
 
