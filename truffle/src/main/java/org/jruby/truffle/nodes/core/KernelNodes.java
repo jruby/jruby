@@ -1596,7 +1596,7 @@ public abstract class KernelNodes {
             }
 
             try {
-                getContext().getFeatureManager().require(null, feature.toString(), this);
+                getContext().getFeatureManager().require(feature.toString(), this);
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
@@ -1622,24 +1622,25 @@ public abstract class KernelNodes {
 
             final FeatureManager featureManager = getContext().getFeatureManager();
 
-            final Source source = Truffle.getRuntime().getCallerFrame().getCallNode().getEncapsulatingSourceSection().getSource();
+            final String featureString = feature.toString();
+            final String featurePath;
 
-            final String sourcePath;
-            if (source == featureManager.getMainScriptSource()) {
-                sourcePath = featureManager.getMainScriptFullPath();
+            if (featureManager.isAbsolutePath(featureString)) {
+                featurePath = featureString;
             } else {
-                sourcePath = source.getPath();
-            }
+                final Source source = Truffle.getRuntime().getCallerFrame().getCallNode().getEncapsulatingSourceSection().getSource();
+                final String sourcePath = featureManager.getSourcePath(source);
 
-            if (sourcePath == null) {
-                CompilerDirectives.transferToInterpreter();
-                throw new RaiseException(getContext().getCoreLibrary().loadError("cannot infer basepath", this));
-            }
+                if (sourcePath == null) {
+                    CompilerDirectives.transferToInterpreter();
+                    throw new RaiseException(getContext().getCoreLibrary().loadError("cannot infer basepath", this));
+                }
 
-            final String directoryPath = new File(sourcePath).getParent();
+                featurePath = new File(new File(sourcePath).getParent(), featureString).toString();
+            }
 
             try {
-                featureManager.require(directoryPath, feature.toString(), this);
+                featureManager.require(featurePath, this);
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
