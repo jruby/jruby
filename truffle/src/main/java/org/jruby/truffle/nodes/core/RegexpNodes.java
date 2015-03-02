@@ -126,6 +126,13 @@ public abstract class RegexpNodes {
             return regexp.matchCommon(string, true, false) != getContext().getCoreLibrary().getNilObject();
         }
 
+        @Specialization
+        public Object match(RubyRegexp regexp, RubySymbol symbol) {
+            notDesignedForCompilation();
+
+            return regexp.matchCommon(symbol.toRubyString(), true, false) != getContext().getCoreLibrary().getNilObject();
+        }
+
     }
 
     @CoreMethod(names = "=~", required = 1)
