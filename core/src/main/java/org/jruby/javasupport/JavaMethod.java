@@ -152,7 +152,8 @@ public class JavaMethod extends JavaCallable {
         // we're running under a restrictive security policy.
         try {
             return create(runtime, javaClass.getDeclaredMethod(methodName, argumentTypes));
-        } catch (NoSuchMethodException e) {
+        }
+        catch (NoSuchMethodException e) {
             // search through all declared methods to find a closest match
             MethodSearch: for (Method method : javaClass.getDeclaredMethods()) {
                 if (method.getName().equals(methodName)) {
@@ -219,11 +220,11 @@ public class JavaMethod extends JavaCallable {
     @JRubyMethod(rest = true)
     public IRubyObject invoke(IRubyObject[] args) {
         checkArity(args.length - 1);
-        Object[] arguments = new Object[args.length - 1];
-        convertArguments(args, arguments, 1);
 
-        IRubyObject invokee = args[0];
-        if(invokee.isNil()) {
+        final IRubyObject invokee = args[0];
+        final Object[] arguments = convertArguments(args, 1);
+
+        if ( invokee.isNil() ) {
             return invokeWithExceptionHandling(method, null, arguments);
         }
 
@@ -232,24 +233,23 @@ public class JavaMethod extends JavaCallable {
         if (!isStatic()) {
             javaInvokee = JavaUtil.unwrapJavaValue(getRuntime(), invokee, "invokee not a java object");
 
-            if (! method.getDeclaringClass().isInstance(javaInvokee)) {
-                throw getRuntime().newTypeError("invokee not instance of method's class (" +
-                                                  "got" + javaInvokee.getClass().getName() + " wanted " +
-                                                  method.getDeclaringClass().getName() + ")");
+            if ( ! method.getDeclaringClass().isInstance(javaInvokee) ) {
+                throw getRuntime().newTypeError(
+                    "invokee not instance of method's class" +
+                    " (got" + javaInvokee.getClass().getName() +
+                    " wanted " + method.getDeclaringClass().getName() + ")");
             }
 
             //
             // this test really means, that this is a ruby-defined subclass of a java class
             //
-            if (javaInvokee instanceof InternalJavaProxy &&
-                    // don't bother to check if final method, it won't
-                    // be there (not generated, can't be!)
-                    !Modifier.isFinal(method.getModifiers())) {
-                JavaProxyClass jpc = ((InternalJavaProxy) javaInvokee)
-                        .___getProxyClass();
-                JavaProxyMethod jpm;
-                if ((jpm = jpc.getMethod(method.getName(), parameterTypes)) != null &&
-                        jpm.hasSuperImplementation()) {
+            if ( javaInvokee instanceof InternalJavaProxy &&
+                // don't bother to check if final method, it won't
+                // be there (not generated, can't be!)
+                ! isFinal ) {
+                JavaProxyClass jpc = ((InternalJavaProxy) javaInvokee).___getProxyClass();
+                JavaProxyMethod jpm = jpc.getMethod( method.getName(), parameterTypes );
+                if ( jpm != null && jpm.hasSuperImplementation() ) {
                     return invokeWithExceptionHandling(jpm.getSuperMethod(), javaInvokee, arguments);
                 }
             }
@@ -260,9 +260,8 @@ public class JavaMethod extends JavaCallable {
     @JRubyMethod(rest = true)
     public IRubyObject invoke_static(IRubyObject[] args) {
         checkArity(args.length);
-        Object[] arguments = new Object[args.length];
-        System.arraycopy(args, 0, arguments, 0, arguments.length);
-        convertArguments(args, arguments, 0);
+
+        final Object[] arguments = convertArguments(args, 0);
         return invokeWithExceptionHandling(method, null, arguments);
     }
 
@@ -537,11 +536,13 @@ public class JavaMethod extends JavaCallable {
                 iae.getMessage());
     }
 
-    private void convertArguments(IRubyObject[] argsIn, Object[] argsOut, int from) {
-        Class<?>[] types = parameterTypes;
-        for (int i = argsOut.length; --i >= 0; ) {
-            argsOut[i] = argsIn[i+from].toJava(types[i]);
+    private Object[] convertArguments(final IRubyObject[] args, int offset) {
+        final Object[] arguments = new Object[ args.length - offset ];
+        final Class<?>[] types = getParameterTypes();
+        for ( int i = arguments.length; --i >= 0; ) {
+            arguments[i] = args[ i + offset ].toJava(types[i]);
         }
+        return arguments;
     }
 
     @Override
