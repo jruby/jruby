@@ -296,7 +296,7 @@ public abstract class StringNodes {
             super(prev);
         }
 
-        public Object getIndex(RubyString string, int index, UndefinedPlaceholder undefined) {
+        public Object getIndex(RubyString string, int index, @SuppressWarnings("unused") UndefinedPlaceholder undefined) {
             int normalizedIndex = string.normalizeIndex(index);
             final ByteList bytes = string.getBytes();
 
@@ -321,7 +321,7 @@ public abstract class StringNodes {
         }
 
         @Specialization
-        public Object slice(RubyString string, RubyRange.IntegerFixnumRange range, UndefinedPlaceholder undefined) {
+        public Object slice(RubyString string, RubyRange.IntegerFixnumRange range, @SuppressWarnings("unused") UndefinedPlaceholder undefined) {
             notDesignedForCompilation();
 
             final String javaString = string.toString();
@@ -382,7 +382,7 @@ public abstract class StringNodes {
         }
 
         @Specialization
-        public Object slice(RubyString string, RubyRegexp regexp, UndefinedPlaceholder capture) {
+        public Object slice(RubyString string, RubyRegexp regexp, @SuppressWarnings("unused") UndefinedPlaceholder capture) {
             notDesignedForCompilation();
 
             final Object matchData = regexp.matchCommon(string, false, false);
@@ -413,7 +413,7 @@ public abstract class StringNodes {
         }
 
         @Specialization
-        public Object slice(VirtualFrame frame, RubyString string, RubyRegexp regexp, RubyString capture) {
+        public Object slice(RubyString string, RubyRegexp regexp, RubyString capture) {
             notDesignedForCompilation();
 
             final Object matchData = regexp.matchCommon(string, false, false);
