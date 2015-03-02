@@ -285,6 +285,8 @@ public abstract class StringNodes {
 
         @Child private ToIntNode toIntNode;
         @Child private MatchDataNodes.GetIndexNode getMatchDataIndexNode;
+        @Child private CallDispatchHeadNode includeNode;
+        @Child private KernelNodes.DupNode dupNode;
 
         private final BranchProfile outOfBounds = BranchProfile.create();
 
@@ -453,6 +455,29 @@ public abstract class StringNodes {
             final int index = toIntNode.executeIntegerFixnum(frame, capture);
 
             return getMatchDataIndexNode.getIndex((RubyMatchData) matchData, index);
+        }
+
+        @Specialization
+        public Object slice(VirtualFrame frame, RubyString string, RubyString matchStr, @SuppressWarnings("unused") UndefinedPlaceholder undefined) {
+            notDesignedForCompilation();
+
+            if (includeNode == null) {
+                CompilerDirectives.transferToInterpreter();
+                includeNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext()));
+            }
+
+            Boolean result = (Boolean) includeNode.call(frame, string, "include?", null, matchStr);
+
+            if (result) {
+                if (dupNode == null) {
+                    CompilerDirectives.transferToInterpreter();
+                    dupNode = insert(KernelNodesFactory.DupNodeFactory.create(getContext(), getSourceSection(), new RubyNode[]{}));
+                }
+
+                return dupNode.dup(frame, matchStr);
+            }
+
+            return getContext().getCoreLibrary().getNilObject();
         }
     }
 
