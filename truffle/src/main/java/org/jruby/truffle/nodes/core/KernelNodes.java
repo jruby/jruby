@@ -1617,7 +1617,7 @@ public abstract class KernelNodes {
         }
 
         @Specialization
-        public boolean require(RubyString feature) {
+        public boolean requireRelative(RubyString feature) {
             notDesignedForCompilation();
 
             final FeatureManager featureManager = getContext().getFeatureManager();
