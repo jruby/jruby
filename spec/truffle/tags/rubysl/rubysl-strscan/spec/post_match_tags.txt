@@ -1,2 +1,1 @@
-fails:StringScanner#post_match returns nil if there's no match
 fails:StringScanner#post_match taints the returned String if the input was tainted

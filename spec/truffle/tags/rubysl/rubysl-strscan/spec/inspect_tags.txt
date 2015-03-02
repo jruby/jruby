@@ -1,1 +1,0 @@
-fails:StringScanner#inspect returns a string that represents the StringScanner object

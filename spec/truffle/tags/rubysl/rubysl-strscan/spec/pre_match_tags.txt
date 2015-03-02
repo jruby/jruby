@@ -1,4 +1,1 @@
-fails:StringScanner#pre_match returns nil if there's no match
-fails:StringScanner#pre_match is more than just the data from the last match
-fails:StringScanner#pre_match is not changed when the scanner's position changes
 fails:StringScanner#pre_match taints the returned String if the input was tainted
