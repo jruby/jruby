@@ -71,4 +71,22 @@ class Hash
     self
   end
 
+  def keys
+    ary = []
+    each_item do |item|
+      ary << item.key
+    end
+    ary
+  end
+
+  def values
+    ary = []
+
+    each_item do |item|
+      ary << item.value
+    end
+
+    ary
+  end
+
 end

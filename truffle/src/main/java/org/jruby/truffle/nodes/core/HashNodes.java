@@ -830,57 +830,6 @@ public abstract class HashNodes {
 
     }
 
-    @CoreMethod(names = "keys")
-    public abstract static class KeysNode extends HashCoreMethodNode {
-
-        public KeysNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
-        public KeysNode(KeysNode prev) {
-            super(prev);
-        }
-
-        @Specialization(guards = "isNull")
-        public RubyArray keysNull(RubyHash hash) {
-            return new RubyArray(getContext().getCoreLibrary().getArrayClass(), null, 0);
-        }
-
-        @Specialization(guards = {"!isNull", "!isBuckets"})
-        public RubyArray keysPackedArray(RubyHash hash) {
-            notDesignedForCompilation();
-
-            final Object[] store = (Object[]) hash.getStore();
-
-            final Object[] keys = new Object[hash.getSize()];
-
-            for (int n = 0; n < keys.length; n++) {
-                keys[n] = store[n * 2];
-            }
-
-            return new RubyArray(getContext().getCoreLibrary().getArrayClass(), keys, keys.length);
-        }
-
-        @Specialization(guards = "isBuckets")
-        public RubyArray keysBuckets(RubyHash hash) {
-            notDesignedForCompilation();
-
-            final Object[] keys = new Object[hash.getSize()];
-
-            Entry entry = hash.getFirstInSequence();
-            int n = 0;
-
-            while (entry != null) {
-                keys[n] = entry.getKey();
-                n++;
-                entry = entry.getNextInSequence();
-            }
-
-            return new RubyArray(getContext().getCoreLibrary().getArrayClass(), keys, keys.length);
-        }
-
-    }
-
     @CoreMethod(names = {"map", "collect"}, needsBlock = true)
     @ImportGuards(HashGuards.class)
     public abstract static class MapNode extends YieldingCoreMethodNode {
@@ -1187,55 +1136,6 @@ public abstract class HashNodes {
         @Specialization(guards = "!isNull")
         public int sizePackedArray(RubyHash hash) {
             return hash.getSize();
-        }
-
-    }
-
-    @CoreMethod(names = "values")
-    public abstract static class ValuesNode extends HashCoreMethodNode {
-
-        public ValuesNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
-        public ValuesNode(ValuesNode prev) {
-            super(prev);
-        }
-
-        @Specialization(guards = "isNull")
-        public RubyArray valuesNull(RubyHash hash) {
-            return new RubyArray(getContext().getCoreLibrary().getArrayClass(), null, 0);
-        }
-
-        @Specialization(guards = {"!isNull", "!isBuckets"})
-        public RubyArray valuesPackedArray(RubyHash hash) {
-            final Object[] store = (Object[]) hash.getStore();
-
-            final Object[] values = new Object[hash.getSize()];
-
-            for (int n = 0; n < values.length; n++) {
-                values[n] = store[n * 2 + 1];
-            }
-
-            return new RubyArray(getContext().getCoreLibrary().getArrayClass(), values, values.length);
-        }
-
-        @Specialization(guards = "isBuckets")
-        public RubyArray valuesBuckets(RubyHash hash) {
-            notDesignedForCompilation();
-
-            final Object[] values = new Object[hash.getSize()];
-
-            Entry entry = hash.getFirstInSequence();
-            int n = 0;
-
-            while (entry != null) {
-                values[n] = entry.getValue();
-                n++;
-                entry = entry.getNextInSequence();
-            }
-
-            return new RubyArray(getContext().getCoreLibrary().getArrayClass(), values, values.length);
         }
 
     }
