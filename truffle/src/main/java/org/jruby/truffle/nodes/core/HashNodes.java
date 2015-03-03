@@ -542,12 +542,15 @@ public abstract class HashNodes {
     @ImportGuards(HashGuards.class)
     public abstract static class EachNode extends YieldingCoreMethodNode {
 
+        @Child private CallDispatchHeadNode toEnumNode;
+        
         public EachNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
         }
 
         public EachNode(EachNode prev) {
             super(prev);
+            toEnumNode = prev.toEnumNode;
         }
 
         @Specialization(guards = "isNull")
@@ -595,6 +598,18 @@ public abstract class HashNodes {
             }
 
             return hash;
+        }
+
+        @Specialization
+        public Object each(VirtualFrame frame, RubyHash hash, UndefinedPlaceholder block) {
+            notDesignedForCompilation();
+
+            if (toEnumNode == null) {
+                CompilerDirectives.transferToInterpreter();
+                toEnumNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext(), true));
+            }
+
+            return toEnumNode.call(frame, hash, "to_enum", null, getContext().getSymbolTable().getSymbol(getName()));
         }
 
     }
