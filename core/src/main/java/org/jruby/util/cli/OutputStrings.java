@@ -111,18 +111,10 @@ public class OutputStrings {
     }
 
     public static String getVersionString() {
-        String ver;
-        String patchDelimeter = "p";
-        int patchlevel;
-        String versionString = "";
-        ver = Constants.RUBY_VERSION;
-        patchlevel = Constants.RUBY_PATCHLEVEL;
-        versionString = String.format("%s%s%d", ver, patchDelimeter, patchlevel);
-
         String fullVersion = String.format(
                 "jruby %s (%s) %s %s %s %s on %s%s%s [%s-%s]",
                 Constants.VERSION,
-                versionString,
+                Constants.RUBY_VERSION,
                 Constants.COMPILE_DATE,
                 Constants.REVISION,
                 SafePropertyAccessor.getProperty("java.vm.name", "Unknown JVM"),
