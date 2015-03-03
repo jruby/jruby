@@ -1,6 +1,4 @@
 fails:String#slice with index, length returns subclass instances
-fails:String#slice with Range returns an empty string if range.begin is inside self and > real end
-fails:String#slice with Range always taints resulting strings when self is tainted
 fails:String#slice with Range returns subclass instances
 fails:String#slice with Range calls to_int on range arguments
 fails:String#slice with Range works with Range subclasses
@@ -21,7 +19,6 @@ fails:String#slice! with index, length always taints resulting strings when self
 fails:String#slice! with index, length calls to_int on idx and length
 fails:String#slice! with index, length returns subclass instances
 fails:String#slice! with index, length returns the substring given by the character offsets
-fails:String#slice! Range deletes and return the substring given by the offsets of the range
 fails:String#slice! Range returns subclass instances
 fails:String#slice! Range calls to_int on range arguments
 fails:String#slice! Range works with Range subclasses

@@ -336,6 +336,10 @@ public abstract class StringNodes {
                 final int end = string.normalizeIndex(range.getEnd());
                 final int excludingEnd = string.clampExclusiveIndex(range.doesExcludeEnd() ? end : end+1);
 
+                if (begin > excludingEnd) {
+                    return getContext().makeString("");
+                }
+
                 return getContext().makeString(javaString.substring(begin, excludingEnd), string.getByteList().getEncoding());
             }
         }
