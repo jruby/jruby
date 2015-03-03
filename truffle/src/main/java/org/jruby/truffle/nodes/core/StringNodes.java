@@ -200,7 +200,7 @@ public abstract class StringNodes {
         }
     }
 
-    @CoreMethod(names = { "<<", "concat" }, required = 1)
+    @CoreMethod(names = { "<<", "concat" }, required = 1, taintFrom = 1)
     @NodeChildren({
             @NodeChild(value = "string"),
             @NodeChild(value = "other")
