@@ -102,7 +102,7 @@ public abstract class HashNodes {
 
     }
 
-    @CoreMethod(names = "[]", onSingleton = true, argumentsAsArray = true)
+    @CoreMethod(names = "[]", onSingleton = true, argumentsAsArray = true, reallyDoesNeedSelf = true)
     public abstract static class ConstructNode extends HashCoreMethodNode {
 
         private final BranchProfile singleObject = BranchProfile.create();
@@ -112,6 +112,7 @@ public abstract class HashNodes {
         private final BranchProfile largePackedArray = BranchProfile.create();
         private final BranchProfile otherArray = BranchProfile.create();
         private final BranchProfile singleOther = BranchProfile.create();
+        private final BranchProfile otherHash = BranchProfile.create();
         private final BranchProfile keyValues = BranchProfile.create();
 
         public ConstructNode(RubyContext context, SourceSection sourceSection) {
@@ -124,7 +125,7 @@ public abstract class HashNodes {
 
         @ExplodeLoop
         @Specialization
-        public RubyHash construct(Object[] args) {
+        public RubyHash construct(RubyClass hashClass, Object[] args) {
             if (args.length == 1) {
                 singleObject.enter();
 
@@ -171,7 +172,7 @@ public abstract class HashNodes {
                                 }
                             }
 
-                            return new RubyHash(getContext().getCoreLibrary().getHashClass(), null, null, newStore, size, null);
+                            return new RubyHash(hashClass, null, null, newStore, size, null);
                         } else {
                             largePackedArray.enter();
 
@@ -198,12 +199,16 @@ public abstract class HashNodes {
                                 keyValues.add(new KeyValue(pairStore[0], pairStore[1]));
                             }
 
-                            return HashOperations.verySlowFromEntries(getContext(), keyValues);
+                            return HashOperations.verySlowFromEntries(hashClass, keyValues);
                         }
                     } else {
                         otherArray.enter();
                         throw new UnsupportedOperationException("other array");
                     }
+                } else if (arg instanceof RubyHash) {
+                    otherHash.enter();
+                    
+                    return HashOperations.verySlowFromEntries(hashClass, HashOperations.verySlowToKeyValues((RubyHash) arg));
                 } else {
                     singleOther.enter();
                     throw new UnsupportedOperationException("single other");
@@ -217,7 +222,7 @@ public abstract class HashNodes {
                     entries.add(new KeyValue(args[n], args[n + 1]));
                 }
 
-                return HashOperations.verySlowFromEntries(getContext(), entries);
+                return HashOperations.verySlowFromEntries(hashClass, entries);
             }
         }
 
@@ -947,7 +952,7 @@ public abstract class HashNodes {
             final Object[] store = (Object[]) hash.getStore();
             final Object[] copy = Arrays.copyOf(store, HashOperations.SMALL_HASH_SIZE * 2);
 
-            return new RubyHash(getContext().getCoreLibrary().getHashClass(), hash.getDefaultBlock(), hash.getDefaultValue(), copy, hash.getSize(), null);
+            return new RubyHash(hash.getLogicalClass(), hash.getDefaultBlock(), hash.getDefaultValue(), copy, hash.getSize(), null);
         }
 
         @ExplodeLoop
@@ -987,14 +992,14 @@ public abstract class HashNodes {
 
             if (mergeFromACount == 0) {
                 nothingFromFirstProfile.enter();
-                return new RubyHash(getContext().getCoreLibrary().getHashClass(), hash.getDefaultBlock(), hash.getDefaultValue(), Arrays.copyOf(storeB, HashOperations.SMALL_HASH_SIZE * 2), storeBSize, null);
+                return new RubyHash(hash.getLogicalClass(), hash.getDefaultBlock(), hash.getDefaultValue(), Arrays.copyOf(storeB, HashOperations.SMALL_HASH_SIZE * 2), storeBSize, null);
             }
 
             considerNothingFromSecondProfile.enter();
 
             if (mergeFromACount == storeB.length) {
                 nothingFromSecondProfile.enter();
-                return new RubyHash(getContext().getCoreLibrary().getHashClass(), hash.getDefaultBlock(), hash.getDefaultValue(), Arrays.copyOf(storeB, HashOperations.SMALL_HASH_SIZE * 2), storeBSize, null);
+                return new RubyHash(hash.getLogicalClass(), hash.getDefaultBlock(), hash.getDefaultValue(), Arrays.copyOf(storeB, HashOperations.SMALL_HASH_SIZE * 2), storeBSize, null);
             }
 
             considerResultIsSmallProfile.enter();
@@ -1022,7 +1027,7 @@ public abstract class HashNodes {
                     index += 2;
                 }
 
-                return new RubyHash(getContext().getCoreLibrary().getHashClass(), hash.getDefaultBlock(), hash.getDefaultValue(), merged, mergedSize, null);
+                return new RubyHash(hash.getLogicalClass(), hash.getDefaultBlock(), hash.getDefaultValue(), merged, mergedSize, null);
             }
 
             CompilerDirectives.transferToInterpreter();
@@ -1032,7 +1037,7 @@ public abstract class HashNodes {
 
         @Specialization
         public RubyHash mergeBucketsBuckets(RubyHash hash, RubyHash other) {
-            final RubyHash merged = new RubyHash(getContext().getCoreLibrary().getHashClass(), null, null, new Entry[HashOperations.capacityGreaterThan(hash.getSize() + other.getSize())], 0, null);
+            final RubyHash merged = new RubyHash(hash.getLogicalClass(), null, null, new Entry[HashOperations.capacityGreaterThan(hash.getSize() + other.getSize())], 0, null);
 
             int size = 0;
 

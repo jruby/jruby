@@ -40,6 +40,9 @@ public @interface CoreMethod {
 
     boolean needsSelf() default true;
 
+    // TODO CS 3-Mar-15 needsSelf() gets ignored in some cases - see CoreMethodNodeManager#addMethod
+    boolean reallyDoesNeedSelf() default false;
+
     int required() default 0;
 
     int optional() default 0;

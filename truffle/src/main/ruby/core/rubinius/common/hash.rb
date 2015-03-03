@@ -24,82 +24,37 @@
 # OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-# Only part of Rubinius' float.rb
+# Only part of Rubinius' hash.rb
 
-class Float < Numeric
+class Hash
 
-  def coerce(other)
-    return [other, self] if other.kind_of? Float
-    [Float(other), self]
-  end
+  alias_method :store, :[]=
 
-  def to_r
-    f, e = Math.frexp self
-    f = Math.ldexp(f, MANT_DIG).to_i
-    e -= MANT_DIG
+  # Used internally to get around subclasses redefining #[]=
+  alias_method :__store__, :[]=
 
-    (f * (RADIX ** e)).to_r
-  end
+  def merge!(other)
+    Rubinius.check_frozen
 
-  def arg
-    if nan?
-      self
-    elsif negative?
-      Math::PI
+    other = Rubinius::Type.coerce_to other, Hash, :to_hash
+
+    if block_given?
+      other.each_item do |item|
+        key = item.key
+        if key? key
+          __store__ key, yield(key, self[key], item.value)
+        else
+          __store__ key, item.value
+        end
+      end
     else
-      0
+      other.each_item do |item|
+        __store__ item.key, item.value
+      end
     end
-  end
-  alias_method :angle, :arg
-  alias_method :phase, :arg
-
-  def negative?
-    Rubinius.primitive :float_negative
-    raise PrimitiveFailure, "Float#negative primitive failed"
+    self
   end
 
-  def numerator
-    if nan?
-      NAN
-    elsif infinite? == 1
-      INFINITY
-    elsif infinite? == -1
-      -INFINITY
-    else
-      super
-    end
-  end
-
-  def denominator
-    if infinite? || nan?
-      1
-    else
-      super
-    end
-  end
-
-  alias_method :quo, :/
-  alias_method :modulo, :%
-
-  def finite?
-    not(nan? or infinite?)
-  end
-
-  def rationalize(eps=undefined)
-    if undefined.equal?(eps)
-      f, n = Math.frexp self
-      f = Math.ldexp(f, Float::MANT_DIG).to_i
-      n -= Float::MANT_DIG
-
-      Rational.new(2 * f, 1 << (1 - n)).rationalize(Rational.new(1, 1 << (1 - n)))
-    else
-      to_r.rationalize(eps)
-    end
-  end
-
-  def dtoa
-    Rubinius.primitive :float_dtoa
-    raise PrimitiveFailure, "Fload#dtoa primitive failed"
-  end
+  alias_method :update, :merge!
 
 end

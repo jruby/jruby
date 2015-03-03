@@ -20,4 +20,17 @@ class Hash
     self
   end
 
+  # Implementation of a fundamental Rubinius method that allows their Hash
+  # implementation to work. We probably want to remove uses of this in the long
+  # term, as it creates objects which already exist for them and we have to
+  # create, but for now it allows us to use more Rubinius code unmodified.
+
+  KeyValue = Struct.new(:key, :value)
+
+  def each_item
+    each do |key, value|
+      yield KeyValue.new(key, value)
+    end
+  end
+
 end
