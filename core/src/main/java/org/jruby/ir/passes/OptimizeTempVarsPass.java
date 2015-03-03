@@ -18,10 +18,6 @@ public class OptimizeTempVarsPass extends CompilerPass {
 
     @Override
     public Object execute(IRScope s, Object... data) {
-        for (IRClosure c: s.getClosures()) {
-            run(c, false, true);
-        }
-
         optimizeTmpVars(s);
 
         return null;
