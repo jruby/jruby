@@ -17,8 +17,8 @@ import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.object.Shape;
 import com.oracle.truffle.api.source.BytesDecoder;
 import com.oracle.truffle.api.source.Source;
-
 import com.oracle.truffle.api.tools.CoverageTracker;
+
 import org.jcodings.Encoding;
 import org.jcodings.specific.ASCIIEncoding;
 import org.jcodings.specific.UTF8Encoding;
@@ -51,6 +51,9 @@ import java.util.concurrent.atomic.AtomicLong;
  * The global state of a running Ruby system.
  */
 public class RubyContext extends ExecutionContext {
+
+    private static final boolean TRUFFLE_COVERAGE = Options.TRUFFLE_COVERAGE.load();
+    private static final int INSTRUMENTATION_SERVER_PORT = Options.TRUFFLE_INSTRUMENTATION_SERVER_PORT.load();
 
     private final Ruby runtime;
     private final TranslatorDriver translator;
@@ -96,7 +99,7 @@ public class RubyContext extends ExecutionContext {
 
         // TODO(CS, 28-Jan-15) this is global
         // TODO(CS, 28-Jan-15) maybe not do this for core?
-        if (Options.TRUFFLE_COVERAGE.load()) {
+        if (TRUFFLE_COVERAGE) {
             coverageTracker = new CoverageTracker();
         } else {
             coverageTracker = null;
@@ -130,8 +133,8 @@ public class RubyContext extends ExecutionContext {
 
         rubiniusPrimitiveManager = RubiniusPrimitiveManager.create();
 
-        if (Options.TRUFFLE_INSTRUMENTATION_SERVER_PORT.load() != 0) {
-            instrumentationServerManager = new InstrumentationServerManager(this, Options.TRUFFLE_INSTRUMENTATION_SERVER_PORT.load());
+        if (INSTRUMENTATION_SERVER_PORT != 0) {
+            instrumentationServerManager = new InstrumentationServerManager(this, INSTRUMENTATION_SERVER_PORT);
             instrumentationServerManager.start();
         } else {
             instrumentationServerManager = null;

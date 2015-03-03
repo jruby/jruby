@@ -77,6 +77,8 @@ import java.util.*;
  */
 public class BodyTranslator extends Translator {
 
+    private static final int PASS_A_LOT = Options.TRUFFLE_PASSALOT.load();
+
     protected final BodyTranslator parent;
     protected final TranslatorEnvironment environment;
 
@@ -2095,8 +2097,8 @@ public class BodyTranslator extends Translator {
 
         final List<RubyNode> lineSequence = new ArrayList<>();
 
-        if (Options.TRUFFLE_PASSALOT.load() > 0) {
-            if (Options.TRUFFLE_PASSALOT.load() > Math.random() * 100) {
+        if (PASS_A_LOT > 0) {
+            if (PASS_A_LOT > Math.random() * 100) {
                 lineSequence.add(new ThreadPassNode(context, sourceSection));
             }
         }

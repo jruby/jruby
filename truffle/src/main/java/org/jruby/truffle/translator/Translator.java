@@ -12,6 +12,7 @@ package org.jruby.truffle.translator;
 import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.source.Source;
 import com.oracle.truffle.api.source.SourceSection;
+
 import org.jruby.lexer.yacc.DetailedSourcePosition;
 import org.jruby.lexer.yacc.InvalidSourcePosition;
 import org.jruby.truffle.nodes.RubyNode;
@@ -23,6 +24,8 @@ import java.util.HashSet;
 import java.util.Set;
 
 public abstract class Translator extends org.jruby.ast.visitor.AbstractNodeVisitor<RubyNode> {
+
+    private static final boolean ALLOW_SIMPLE_SOURCE_SECTIONS = Options.TRUFFLE_ALLOW_SIMPLE_SOURCE_SECTIONS.load();
 
     public static final Set<String> PRINT_AST_METHOD_NAMES = new HashSet<>(Arrays.asList(Options.TRUFFLE_TRANSLATOR_PRINT_AST.load().split(",")));
     public static final Set<String> PRINT_FULL_AST_METHOD_NAMES = new HashSet<>(Arrays.asList(Options.TRUFFLE_TRANSLATOR_PRINT_FULL_AST.load().split(",")));
@@ -60,7 +63,7 @@ public abstract class Translator extends org.jruby.ast.visitor.AbstractNodeVisit
                 // In some cases we still get bad offsets with the detailed source positions
                 return source.createSection(getIdentifier(), sourcePosition.getLine() + 1);
             }
-        } else if (Options.TRUFFLE_ALLOW_SIMPLE_SOURCE_SECTIONS.load()) {
+        } else if (ALLOW_SIMPLE_SOURCE_SECTIONS) {
             return source.createSection(getIdentifier(), sourcePosition.getLine() + 1);
         } else {
             throw new UnsupportedOperationException("Truffle needs detailed source positions unless you know what you are doing and set truffle.allow_simple_source_sections - got " + sourcePosition.getClass());

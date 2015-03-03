@@ -49,6 +49,9 @@ import java.util.Map;
 
 public class CoreLibrary {
 
+    private static final boolean LOAD_CORE = Options.TRUFFLE_LOAD_CORE.load();
+    private static final String CLI_RECORD_SEPARATOR = Options.CLI_RECORD_SEPARATOR.load();
+
     private final RubyContext context;
 
     private final RubyClass argumentErrorClass;
@@ -376,7 +379,7 @@ public class CoreLibrary {
         Object value = context.getRuntime().warningsEnabled() ? context.getRuntime().isVerbose() : nilObject;
         globals.getOperations().setInstanceVariable(globals, "$VERBOSE", value);
 
-        final RubyString defaultRecordSeparator = RubyString.fromJavaString(stringClass, Options.CLI_RECORD_SEPARATOR.load());
+        final RubyString defaultRecordSeparator = RubyString.fromJavaString(stringClass, CLI_RECORD_SEPARATOR);
         defaultRecordSeparator.freeze();
 
         // TODO (nirvdrum 05-Feb-15) We need to support the $-0 alias as well.
@@ -470,7 +473,7 @@ public class CoreLibrary {
 
         // Load Ruby core
 
-        if (Options.TRUFFLE_LOAD_CORE.load()) {
+        if (LOAD_CORE) {
             try {
                 loadRubyCore("core.rb");
             } catch (RaiseException e) {

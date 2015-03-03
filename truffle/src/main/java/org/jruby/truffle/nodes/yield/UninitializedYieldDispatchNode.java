@@ -14,6 +14,8 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.NodeCost;
 import com.oracle.truffle.api.nodes.NodeInfo;
 import com.oracle.truffle.api.nodes.NodeUtil;
+
+import org.jruby.truffle.nodes.dispatch.DispatchNode;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyProc;
 import org.jruby.util.cli.Options;
@@ -33,7 +35,7 @@ public class UninitializedYieldDispatchNode extends YieldDispatchNode {
 
         depth++;
 
-        if (depth == Options.TRUFFLE_DISPATCH_POLYMORPHIC_MAX.load()) {
+        if (depth == DispatchNode.DISPATCH_POLYMORPHIC_MAX) {
             final YieldDispatchHeadNode dispatchHead = (YieldDispatchHeadNode) NodeUtil.getNthParent(this, depth);
             final GeneralYieldDispatchNode newGeneralYield = new GeneralYieldDispatchNode(getContext());
             dispatchHead.getDispatch().replace(newGeneralYield);
@@ -51,7 +53,7 @@ public class UninitializedYieldDispatchNode extends YieldDispatchNode {
 
         depth++;
 
-        if (depth == Options.TRUFFLE_DISPATCH_POLYMORPHIC_MAX.load()) {
+        if (depth == DispatchNode.DISPATCH_POLYMORPHIC_MAX) {
             final YieldDispatchHeadNode dispatchHead = (YieldDispatchHeadNode) NodeUtil.getNthParent(this, depth);
             final GeneralYieldDispatchNode newGeneralYield = new GeneralYieldDispatchNode(getContext());
             dispatchHead.getDispatch().replace(newGeneralYield);
@@ -69,7 +71,7 @@ public class UninitializedYieldDispatchNode extends YieldDispatchNode {
 
         depth++;
 
-        if (depth == Options.TRUFFLE_DISPATCH_POLYMORPHIC_MAX.load()) {
+        if (depth == DispatchNode.DISPATCH_POLYMORPHIC_MAX) {
             final YieldDispatchHeadNode dispatchHead = (YieldDispatchHeadNode) NodeUtil.getNthParent(this, depth);
             final GeneralYieldDispatchNode newGeneralYield = new GeneralYieldDispatchNode(getContext());
             dispatchHead.getDispatch().replace(newGeneralYield);

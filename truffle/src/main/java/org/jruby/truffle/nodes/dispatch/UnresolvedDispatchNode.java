@@ -12,6 +12,7 @@ package org.jruby.truffle.nodes.dispatch;
 import com.oracle.truffle.api.Assumption;
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.frame.VirtualFrame;
+
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.core.KernelNodes;
 import org.jruby.truffle.nodes.core.KernelNodesFactory;
@@ -58,7 +59,7 @@ public final class UnresolvedDispatchNode extends DispatchNode {
             Object argumentsObjects) {
         CompilerDirectives.transferToInterpreterAndInvalidate();
 
-        if (depth == Options.TRUFFLE_DISPATCH_POLYMORPHIC_MAX.load()) {
+        if (depth == DISPATCH_POLYMORPHIC_MAX) {
             return getHeadNode().getFirstDispatchNode()
                     .replace(new UncachedDispatchNode(getContext(), ignoreVisibility, getDispatchAction(), missingBehavior))
                     .executeDispatch(frame, receiverObject,
@@ -246,12 +247,12 @@ public final class UnresolvedDispatchNode extends DispatchNode {
                             receiverObject.toString() + " didn't have a #const_missing", this));
                 }
 
-                if (Options.TRUFFLE_DISPATCH_METAPROGRAMMING_ALWAYS_UNCACHED.load()) {
+                if (DISPATCH_METAPROGRAMMING_ALWAYS_UNCACHED) {
                     return first.replace(new UncachedDispatchNode(getContext(), ignoreVisibility, getDispatchAction(), missingBehavior));
                 }
 
                 return first.replace(new CachedBoxedMethodMissingDispatchNode(getContext(), methodName, first,
-                        receiverObject.getMetaClass(), method, Options.TRUFFLE_DISPATCH_METAPROGRAMMING_ALWAYS_INDIRECT.load(), getDispatchAction()));
+                        receiverObject.getMetaClass(), method, DISPATCH_METAPROGRAMMING_ALWAYS_INDIRECT, getDispatchAction()));
             }
 
             default: {
@@ -279,12 +280,12 @@ public final class UnresolvedDispatchNode extends DispatchNode {
                             receiverObject.toString() + " didn't have a #method_missing", this));
                 }
 
-                if (Options.TRUFFLE_DISPATCH_METAPROGRAMMING_ALWAYS_UNCACHED.load()) {
+                if (DISPATCH_METAPROGRAMMING_ALWAYS_UNCACHED) {
                     return first.replace(new UncachedDispatchNode(getContext(), ignoreVisibility, getDispatchAction(), missingBehavior));
                 }
 
                 return first.replace(new CachedBoxedMethodMissingDispatchNode(getContext(), methodName, first,
-                        getContext().getCoreLibrary().getMetaClass(receiverObject), method, Options.TRUFFLE_DISPATCH_METAPROGRAMMING_ALWAYS_INDIRECT.load(), getDispatchAction()));
+                        getContext().getCoreLibrary().getMetaClass(receiverObject), method, DISPATCH_METAPROGRAMMING_ALWAYS_INDIRECT, getDispatchAction()));
             }
 
             default: {
