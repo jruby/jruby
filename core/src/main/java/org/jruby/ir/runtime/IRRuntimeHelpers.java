@@ -440,7 +440,6 @@ public class IRRuntimeHelpers {
         if (blk instanceof RubyNil) blk = Block.NULL_BLOCK;
         Block b = (Block)blk;
         IRubyObject yieldVal = (IRubyObject)yieldArg;
-        System.out.println("yieldVal: " + yieldVal + "b: " + b.getBody());
         return (unwrapArray && (yieldVal instanceof RubyArray)) ? b.yieldArray(context, yieldVal, null) : b.yield(context, yieldVal);
     }
 
