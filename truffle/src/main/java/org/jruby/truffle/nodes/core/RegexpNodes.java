@@ -241,6 +241,7 @@ public abstract class RegexpNodes {
 
     }
 
+    @RubiniusOnly
     @CoreMethod(names = "match_start", required = 2)
     public abstract static class MatchStartNode extends CoreMethodNode {
 
@@ -323,6 +324,7 @@ public abstract class RegexpNodes {
 
     }
 
+    @RubiniusOnly
     @CoreMethod(names = "search_from", required = 2)
     public abstract static class SearchFromNode extends CoreMethodNode {
 
