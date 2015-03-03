@@ -640,44 +640,6 @@ public abstract class StringNodes {
 
     }
 
-    @CoreMethod(names = "byteslice", required = 1, optional = 1)
-    public abstract static class ByteSliceNode extends CoreMethodNode {
-
-        public ByteSliceNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
-        public ByteSliceNode(ByteSliceNode prev) {
-            super(prev);
-        }
-
-        @Specialization
-        public Object byteSlice(RubyString string, int index, UndefinedPlaceholder undefined) {
-            return byteSlice(string, index, 1);
-        }
-
-        @Specialization
-        public Object byteSlice(RubyString string, int index, int length) {
-            final ByteList bytes = string.getBytes();
-
-            final int normalizedIndex = string.normalizeIndex(index);
-
-            if (normalizedIndex > bytes.length()) {
-                return getContext().getCoreLibrary().getNilObject();
-            }
-
-            int rangeEnd = normalizedIndex + length;
-            if (rangeEnd > bytes.getRealSize()) {
-                rangeEnd = bytes.getRealSize();
-            }
-
-            final byte[] copiedBytes = Arrays.copyOfRange(bytes.getUnsafeBytes(), normalizedIndex, rangeEnd);
-
-            return new RubyString(getContext().getCoreLibrary().getStringClass(), new ByteList(copiedBytes, string.getBytes().getEncoding()));
-        }
-
-    }
-
     @CoreMethod(names = "chomp!", optional = 1)
     public abstract static class ChompBangNode extends CoreMethodNode {
 
