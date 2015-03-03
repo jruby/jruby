@@ -422,6 +422,8 @@ public abstract class KernelNodes {
     @CoreMethod(names = "clone")
     public abstract static class CloneNode extends CoreMethodNode {
 
+        private final ConditionProfile frozenProfile = ConditionProfile.createBinaryProfile();
+
         @Child private CallDispatchHeadNode initializeCloneNode;
 
         public CloneNode(RubyContext context, SourceSection sourceSection) {
@@ -448,6 +450,10 @@ public abstract class KernelNodes {
 
             newObject.getOperations().setInstanceVariables(newObject, self.getOperations().getInstanceVariables(self));
             initializeCloneNode.call(frame, newObject, "initialize_clone", null, self);
+
+            if (frozenProfile.profile(self.isFrozen())) {
+                newObject.freeze();
+            }
 
             return newObject;
         }
