@@ -1,4 +1,0 @@
-fails:Hash#invert returns a new hash where keys are values and vice versa
-fails:Hash#invert handles collisions by overriding with the key coming later in keys()
-fails:Hash#invert compares new keys with eql? semantics
-fails:Hash#invert does not return subclass instances for subclasses

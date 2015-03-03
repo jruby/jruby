@@ -89,4 +89,12 @@ class Hash
     ary
   end
 
+  def invert
+    inverted = {}
+    each_item do |item|
+      inverted[item.value] = item.key
+    end
+    inverted
+  end
+
 end
