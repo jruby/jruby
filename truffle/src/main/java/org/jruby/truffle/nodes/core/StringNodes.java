@@ -390,72 +390,10 @@ public abstract class StringNodes {
         public Object slice(VirtualFrame frame, RubyString string, RubyRegexp regexp, @SuppressWarnings("unused") UndefinedPlaceholder capture) {
             notDesignedForCompilation();
 
-            if (matchNode == null) {
-                CompilerDirectives.transferToInterpreter();
-                matchNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext()));
-            }
-
-            final Object matchData = matchNode.call(frame, regexp, "match", null, string);
-
-            if (matchData == getContext().getCoreLibrary().getNilObject()) {
-                return matchData;
-            }
-
-            if (getMatchDataIndexNode == null) {
-                CompilerDirectives.transferToInterpreter();
-                getMatchDataIndexNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext()));
-            }
-
-            return getMatchDataIndexNode.call(frame, matchData, "[]", null, 0);
+            return slice(frame, string, regexp, 0);
         }
 
-        @Specialization
-        public Object slice(VirtualFrame frame, RubyString string, RubyRegexp regexp, int capture) {
-            notDesignedForCompilation();
-
-            if (matchNode == null) {
-                CompilerDirectives.transferToInterpreter();
-                matchNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext()));
-            }
-
-            final Object matchData = matchNode.call(frame, regexp, "match", null, string);
-
-            if (matchData == getContext().getCoreLibrary().getNilObject()) {
-                return matchData;
-            }
-
-            if (getMatchDataIndexNode == null) {
-                CompilerDirectives.transferToInterpreter();
-                getMatchDataIndexNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext()));
-            }
-
-            return getMatchDataIndexNode.call(frame, matchData, "[]", null, capture);
-        }
-
-        @Specialization
-        public Object slice(VirtualFrame frame, RubyString string, RubyRegexp regexp, RubyString capture) {
-            notDesignedForCompilation();
-
-            if (matchNode == null) {
-                CompilerDirectives.transferToInterpreter();
-                matchNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext()));
-            }
-
-            final Object matchData = matchNode.call(frame, regexp, "match", null, string);
-
-            if (matchData == getContext().getCoreLibrary().getNilObject()) {
-                return matchData;
-            }
-
-            if (getMatchDataIndexNode == null) {
-                CompilerDirectives.transferToInterpreter();
-                getMatchDataIndexNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext()));
-            }
-
-            return getMatchDataIndexNode.call(frame, matchData, "[]", null, capture);
-        }
-
-        @Specialization(guards =  { "!isUndefinedPlaceholder(arguments[2])", "!isRubyString(arguments[2])" })
+        @Specialization(guards = "!isUndefinedPlaceholder(arguments[2])")
         public Object slice(VirtualFrame frame, RubyString string, RubyRegexp regexp, Object capture) {
             notDesignedForCompilation();
 
