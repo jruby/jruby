@@ -419,7 +419,7 @@ public abstract class KernelNodes {
 
     }
 
-    @CoreMethod(names = "clone")
+    @CoreMethod(names = "clone", taintFrom = 0)
     public abstract static class CloneNode extends CoreMethodNode {
 
         private final ConditionProfile frozenProfile = ConditionProfile.createBinaryProfile();

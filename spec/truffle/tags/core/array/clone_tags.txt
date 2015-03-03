@@ -1,2 +1,0 @@
-fails:Array#clone copies taint status from the original
-fails:Array#clone copies untrusted status from the original
