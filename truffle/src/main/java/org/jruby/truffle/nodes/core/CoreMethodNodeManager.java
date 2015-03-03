@@ -19,6 +19,7 @@ import org.jruby.runtime.Visibility;
 import org.jruby.truffle.nodes.CoreSourceSection;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.RubyRootNode;
+import org.jruby.truffle.nodes.cast.TaintResultNode;
 import org.jruby.truffle.nodes.control.SequenceNode;
 import org.jruby.truffle.nodes.methods.ExceptionTranslatingNode;
 import org.jruby.truffle.nodes.methods.arguments.*;
@@ -199,7 +200,13 @@ public abstract class CoreMethodNodeManager {
         verifyNoAmbiguousDefaultArguments(methodDetails);
 
         final CheckArityNode checkArity = new CheckArityNode(context, sourceSection, arity);
-        final RubyNode block = SequenceNode.sequence(context, sourceSection, checkArity, methodNode);
+        RubyNode block = SequenceNode.sequence(context, sourceSection, checkArity, methodNode);
+
+        final int taintSource = methodDetails.getMethodAnnotation().taintSource();
+        if (taintSource != -1) {
+            block = new TaintResultNode(context, sourceSection, needsSelf, taintSource, block);
+        }
+
         final ExceptionTranslatingNode exceptionTranslatingNode = new ExceptionTranslatingNode(context, sourceSection, block, methodDetails.getMethodAnnotation().unsupportedOperationBehavior());
 
         return new RubyRootNode(context, sourceSection, null, sharedMethodInfo, exceptionTranslatingNode);
