@@ -200,14 +200,14 @@ public abstract class CoreMethodNodeManager {
         verifyNoAmbiguousDefaultArguments(methodDetails);
 
         final CheckArityNode checkArity = new CheckArityNode(context, sourceSection, arity);
-        RubyNode block = SequenceNode.sequence(context, sourceSection, checkArity, methodNode);
+        RubyNode sequence = SequenceNode.sequence(context, sourceSection, checkArity, methodNode);
 
         final int taintSource = methodDetails.getMethodAnnotation().taintFrom();
         if (taintSource != -1) {
-            block = new TaintResultNode(context, sourceSection, needsSelf, taintSource, block);
+            sequence = new TaintResultNode(context, sourceSection, needsSelf, taintSource, sequence);
         }
 
-        final ExceptionTranslatingNode exceptionTranslatingNode = new ExceptionTranslatingNode(context, sourceSection, block, methodDetails.getMethodAnnotation().unsupportedOperationBehavior());
+        final ExceptionTranslatingNode exceptionTranslatingNode = new ExceptionTranslatingNode(context, sourceSection, sequence, methodDetails.getMethodAnnotation().unsupportedOperationBehavior());
 
         return new RubyRootNode(context, sourceSection, null, sharedMethodInfo, exceptionTranslatingNode);
     }
