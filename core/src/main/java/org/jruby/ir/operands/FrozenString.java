@@ -30,6 +30,10 @@ public class FrozenString extends ImmutableLiteral {
         this.bytelist = byteList;
     }
 
+    public FrozenString(String s) {
+        this(ByteList.create(s));
+    }
+
     @Override
     public Object createCacheObject(ThreadContext context) {
         return context.runtime.freezeAndDedupString(RubyString.newString(context.runtime, bytelist));
