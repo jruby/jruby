@@ -16,7 +16,12 @@ import com.oracle.truffle.api.frame.FrameInstance;
 import com.oracle.truffle.api.frame.FrameInstanceVisitor;
 import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.nodes.NodeUtil;
+import com.oracle.truffle.api.object.BooleanLocation;
+import com.oracle.truffle.api.object.Location;
+import com.oracle.truffle.api.object.Property;
+import com.oracle.truffle.api.object.Shape;
 import org.jruby.truffle.runtime.backtrace.Backtrace;
+import org.jruby.truffle.runtime.core.RubyBasicObject;
 import org.jruby.truffle.runtime.core.RubyProc;
 import org.jruby.truffle.runtime.methods.InternalMethod;
 
@@ -115,6 +120,21 @@ public abstract class DebugOperations {
         activeNodes.addAll(NodeUtil.findAllParents(currentNode, Node.class));
         activeNodes.add(currentNode);
         printASTForBacktrace(currentNode.getRootNode(), activeNodes, 0);
+    }
+
+    public static boolean isFrozen(Object object) {
+        return ((RubyBasicObject) object).isFrozen();
+    }
+
+    public static boolean isTainted(Object o) {
+        final RubyBasicObject object = (RubyBasicObject) o;
+
+        final Shape layout = object.getDynamicObject().getShape();
+        final Property property = layout.getProperty(RubyBasicObject.TAINTED_IDENTIFIER);
+
+        final Location storageLocation = property.getLocation();
+
+        return (boolean) storageLocation.get(object.getDynamicObject(), layout);
     }
 
     private static void printASTForBacktrace(Node node, List<Node> activeNodes, int indentation) {
