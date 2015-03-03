@@ -205,7 +205,7 @@ public class JVMVisitor extends IRVisitor {
 
     private static final Signature METHOD_SIGNATURE_BASE = Signature
             .returning(IRubyObject.class)
-            .appendArgs(new String[]{"context", "scope", "self", "block", "class"}, ThreadContext.class, StaticScope.class, IRubyObject.class, Block.class, RubyModule.class);
+            .appendArgs(new String[]{"context", "scope", "self", "block", "class", "callName"}, ThreadContext.class, StaticScope.class, IRubyObject.class, Block.class, RubyModule.class, String.class);
 
     public static final Signature signatureFor(IRScope method, boolean aritySplit) {
         if (aritySplit) {
@@ -1435,7 +1435,7 @@ public class JVMVisitor extends IRVisitor {
     public void PushFrameInstr(PushFrameInstr pushframeinstr) {
         jvmMethod().loadContext();
         jvmMethod().loadFrameClass();
-        jvmAdapter().ldc(pushframeinstr.getFrameName());
+        jvmMethod().loadFrameName();
         jvmMethod().loadSelf();
         jvmMethod().loadBlock();
         jvmMethod().invokeVirtual(Type.getType(ThreadContext.class), Method.getMethod("void preMethodFrameOnly(org.jruby.RubyModule, String, org.jruby.runtime.builtin.IRubyObject, org.jruby.runtime.Block)"));

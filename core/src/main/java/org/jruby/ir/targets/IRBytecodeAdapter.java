@@ -88,7 +88,12 @@ public abstract class IRBytecodeAdapter {
     }
 
     public void loadFrameClass() {
-        // when present, should be last element in signature
+        // when present, should be second-to-last element in signature
+        adapter.aload(signature.argCount() - 2);
+    }
+
+    public void loadFrameName() {
+        // when present, should be second-to-last element in signature
         adapter.aload(signature.argCount() - 1);
     }
 
