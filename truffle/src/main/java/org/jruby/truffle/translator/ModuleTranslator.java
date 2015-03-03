@@ -10,6 +10,7 @@
 package org.jruby.truffle.translator;
 
 import com.oracle.truffle.api.Truffle;
+import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.source.Source;
 import com.oracle.truffle.api.source.SourceSection;
 
@@ -36,7 +37,7 @@ import org.jruby.truffle.runtime.RubyContext;
  */
 class ModuleTranslator extends BodyTranslator {
 
-    public ModuleTranslator(RubyNode currentNode, RubyContext context, BodyTranslator parent, TranslatorEnvironment environment, Source source) {
+    public ModuleTranslator(Node currentNode, RubyContext context, BodyTranslator parent, TranslatorEnvironment environment, Source source) {
         super(currentNode, context, parent, environment, source, false);
         useClassVariablesAsIfInClass = true;
     }

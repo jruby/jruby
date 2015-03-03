@@ -15,7 +15,7 @@ class TestHigherJavasupport < Test::Unit::TestCase
   FinalMethodBaseTest = org.jruby.test.FinalMethodBaseTest
   Annotation = java.lang.annotation.Annotation
   ClassWithPrimitive = org.jruby.test.ClassWithPrimitive
-  
+
   def test_java_int_primitive_assignment
     assert_nothing_raised {
       cwp = ClassWithPrimitive.new
@@ -212,6 +212,7 @@ class TestHigherJavasupport < Test::Unit::TestCase
   end
 
   java_import 'org.jruby.javasupport.test.Color'
+
   def test_lazy_proxy_method_tests_for_alias_and_respond_to
     color = Color.new('green')
     assert_equal(true, color.respond_to?(:setColor))
@@ -240,6 +241,7 @@ class TestHigherJavasupport < Test::Unit::TestCase
   # No explicit test, but implicitly EMPTY_LIST.each should not blow up interpreter
   # Old error was EMPTY_LIST is a private class implementing a public interface with public methods
   java_import 'java.util.Collections'
+
   def test_empty_list_each_should_not_blow_up_interpreter
     assert_nothing_raised { Collections::EMPTY_LIST.each {|element| } }
   end
@@ -252,7 +254,7 @@ class TestHigherJavasupport < Test::Unit::TestCase
     end
     assert_equal(true, Foo::ArrayList.new.foo)
   end
-    
+
   def test_same_proxy_does_not_raise
     # JString already included and it is the same proxy, so do not throw an error
     # (e.g. intent of java_import already satisfied)
@@ -271,6 +273,7 @@ class TestHigherJavasupport < Test::Unit::TestCase
   end
 
   java_import 'java.util.Calendar'
+
   def test_date_time_conversion
     # Test java.util.Date <=> Time implicit conversion
     calendar = Calendar.getInstance
@@ -298,6 +301,7 @@ class TestHigherJavasupport < Test::Unit::TestCase
   end
 
   java_import 'java.math.BigDecimal'
+
   def test_big_decimal_interaction
     assert_equal(BigDecimal, BigDecimal.new("1.23").add(BigDecimal.new("2.34")).class)
   end
@@ -308,6 +312,7 @@ class TestHigherJavasupport < Test::Unit::TestCase
   end
 
   Properties = Java::java.util.Properties
+
   def test_declare_constant
     p = Properties.new
     p.setProperty("a", "b")
@@ -387,32 +392,33 @@ class TestHigherJavasupport < Test::Unit::TestCase
   end
 =end
 
-  unless (java.lang.System.getProperty("java.specification.version") == "1.4")
-    if javax.xml.namespace.NamespaceContext.instance_of?(Module)
-      class NSCT
-        include javax.xml.namespace.NamespaceContext
-        # JRUBY-66: No super here...make sure we still work.
-        def initialize(arg)
-        end
-        def getNamespaceURI(prefix)
-          'ape:sex'
-        end
-      end
-    else
-      class NSCT < javax.xml.namespace.NamespaceContext
-        # JRUBY-66: No super here...make sure we still work.
-        def initialize(arg)
-        end
-        def getNamespaceURI(prefix)
-          'ape:sex'
-        end
+  if javax.xml.namespace.NamespaceContext.instance_of?(Module)
+
+    class NSCT
+      include javax.xml.namespace.NamespaceContext
+      # JRUBY-66: No super here...make sure we still work.
+      def initialize(arg); end
+      def getNamespaceURI(prefix)
+        'ape:sex'
       end
     end
-    def test_no_need_to_call_super_in_initialize_when_implementing_java_interfaces
-      # No error is a pass here for JRUBY-66
-      assert_nothing_raised do
-        javax.xml.xpath.XPathFactory.newInstance.newXPath.setNamespaceContext(NSCT.new(1))
+
+  else
+
+    class NSCT < javax.xml.namespace.NamespaceContext
+      # JRUBY-66: No super here...make sure we still work.
+      def initialize(arg); end
+      def getNamespaceURI(prefix)
+        'ape:sex'
       end
+    end
+
+  end
+
+  def test_no_need_to_call_super_in_initialize_when_implementing_java_interfaces
+    # No error is a pass here for JRUBY-66
+    assert_nothing_raised do
+      javax.xml.xpath.XPathFactory.newInstance.newXPath.setNamespaceContext(NSCT.new(1))
     end
   end
 
@@ -513,11 +519,11 @@ class TestHigherJavasupport < Test::Unit::TestCase
     assert !defined?(OuterClass::DefaultInstanceInnerClass)
     assert !defined?(OuterClass::PrivateInstanceInnerClass)
   end
-  
+
   # Test the new "import" syntax
   def test_import
-    
-    assert_nothing_raised { 
+
+    assert_nothing_raised {
       import java.nio.ByteBuffer
       ByteBuffer.allocate(10)
     }
@@ -540,7 +546,7 @@ class TestHigherJavasupport < Test::Unit::TestCase
 
     assert_equal("", rn.returnNull.to_s)
   end
-  
+
   # test for JRUBY-664
   class FinalMethodChildClass < FinalMethodBaseTest
   end
@@ -574,27 +580,27 @@ class TestHigherJavasupport < Test::Unit::TestCase
   #     assert(m.updated)
   #   end
   # end
-  
+
   class A < java.lang.Object
     include org.jruby.javasupport.test.Interface1
-    
+
     def method1
     end
   end
   A.new
-  
+
   class B < A
   	include org.jruby.javasupport.test.Interface2
-  	
+
   	def method2
   	end
   end
   B.new
-  
+
   class C < B
   end
   C.new
- 
+
   def test_interface_methods_seen
      ci = org.jruby.javasupport.test.ConsumeInterfaces.new
      ci.addInterface1(A.new)
@@ -602,9 +608,9 @@ class TestHigherJavasupport < Test::Unit::TestCase
      ci.addInterface2(B.new)
      ci.addInterface1(C.new)
      ci.addInterface2(C.new)
-  	
+
   end
-  
+
   class LCTestA < java::lang::Object
     include org::jruby::javasupport::test::Interface1
 
@@ -612,21 +618,21 @@ class TestHigherJavasupport < Test::Unit::TestCase
     end
   end
   LCTestA.new
-  
+
   class LCTestB < LCTestA
   	include org::jruby::javasupport::test::Interface2
-  	
+
   	def method2
   	end
   end
   LCTestB.new
-  
+
   class java::lang::Object
     def boo
       'boo!'
     end
   end
-   
+
   def test_lowercase_colon_package_syntax
     assert_equal(java::lang::String, java.lang.String)
     assert_equal('boo!', java.lang.String.new('xxx').boo)
@@ -638,7 +644,7 @@ class TestHigherJavasupport < Test::Unit::TestCase
     ci.addInterface1(LCTestB.new)
     ci.addInterface2(LCTestB.new)
   end
-  
+
   def test_marsal_java_object_fails
     assert_raises(TypeError) { Marshal.dump(java::lang::Object.new) }
   end
@@ -646,25 +652,25 @@ class TestHigherJavasupport < Test::Unit::TestCase
   def test_string_from_bytes
     assert_equal('foo', String.from_java_bytes('foo'.to_java_bytes))
   end
-  
+
   # JRUBY-2088
   def test_package_notation_with_arguments
-    assert_raises(ArgumentError) do 
+    assert_raises(ArgumentError) do
       java.lang("ABC").String
     end
 
-    assert_raises(ArgumentError) do 
+    assert_raises(ArgumentError) do
       java.lang.String(123)
     end
-    
-    assert_raises(ArgumentError) do 
+
+    assert_raises(ArgumentError) do
       Java::se("foobar").com.Foobar
     end
   end
-  
+
   # JRUBY-1545
-  def test_creating_subclass_to_java_interface_raises_type_error 
-    assert_raises(TypeError) do 
+  def test_creating_subclass_to_java_interface_raises_type_error
+    assert_raises(TypeError) do
       eval(<<CLASSDEF)
 class FooXBarBarBar < Java::JavaLang::Runnable
 end
@@ -673,11 +679,11 @@ CLASSDEF
   end
 
   # JRUBY-781
-  def test_that_classes_beginning_with_small_letter_can_be_referenced 
+  def test_that_classes_beginning_with_small_letter_can_be_referenced
     assert_equal Module, org.jruby.test.smallLetterClazz.class
     assert_equal Class, org.jruby.test.smallLetterClass.class
   end
-  
+
   # JRUBY-1076
   def test_package_module_aliased_methods
     assert java.lang.respond_to?(:__constants__)
@@ -692,6 +698,7 @@ CLASSDEF
     $! = nil
     undo = javax.swing.undo
     assert_nil($!)
+    assert undo
   end
 
   # JRUBY-2106
@@ -704,7 +711,7 @@ CLASSDEF
     Java::Boom
     assert_nil($!)
   end
-  
+
   # JRUBY-2169
   def test_java_class_resource_methods
     path = 'test/org/jruby/javasupport/test/'
@@ -731,39 +738,39 @@ CLASSDEF
     str = jc.resource_as_string(file)
     assert(/^foo=bar/ =~ str)
   end
-  
+
   # JRUBY-2169
   def test_ji_extended_methods_for_java_1_5
     jc = java.lang.String.java_class
     ctor = jc.constructors[0]
     meth = jc.java_instance_methods[0]
     field = jc.fields[0]
-    
+
     # annotations
     assert(Annotation[] === jc.annotations)
     assert(Annotation[] === ctor.annotations)
     assert(Annotation[] === meth.annotations)
     assert(Annotation[] === field.annotations)
-    
+
     # TODO: more extended methods to test
-    
-    
+
+
   end
-  
+
   # JRUBY-2169
   def test_java_class_ruby_class
     assert java.lang.Object.java_class.ruby_class == java.lang.Object
     assert java.lang.Runnable.java_class.ruby_class == java.lang.Runnable
   end
-  
+
   def test_null_toString
     assert nil == org.jruby.javasupport.test.NullToString.new.to_s
   end
-  
+
   # JRUBY-2277
   # kind of a strange place for this test, but the error manifested
   # when JI was enabled.  the actual bug was a problem in alias_method,
-  # and not related to JI; see related test in test_methods.rb 
+  # and not related to JI; see related test in test_methods.rb
   def test_alias_method_with_JI_enabled_does_not_raise
     name = Object.new
     def name.to_str
@@ -784,7 +791,7 @@ CLASSDEF
     cls = Class.new(Java::DefaultPackageClass);
     assert_nothing_raised { cls.new }
   end
-  
+
   # JRUBY-3046
   def test_java_methods_have_arity
     assert_nothing_raised do
@@ -833,4 +840,82 @@ CLASSDEF
       end
     end
   end
+
+  def test_no_warnings_on_concurrent_package_const_initialization
+    stderr = $stderr; require 'stringio'
+    begin
+      $stderr = StringIO.new
+      threads = (0..10).map do # smt not yet initialized :
+        Thread.new { Java::JavaTextSpi::CollatorProvider }
+      end
+
+      threads.each { |thread| thread.join }
+
+      # expect no already initialized constant warning written e.g.
+      # file:/.../jruby.jar!/jruby/java/java_module.rb:4 warning: already initialized constant JavaTextSpi
+      assert ! $stderr.string.index('already initialized constant'), $stderr.string
+    ensure
+      $stderr = stderr
+    end
+  end
+
+  def test_no_warnings_on_concurrent_class_const_initialization
+    Java.send :remove_const, :DefaultPackageClass if Java.const_defined? :DefaultPackageClass
+
+    stderr = $stderr; require 'stringio'
+    begin
+      $stderr = StringIO.new
+      threads = (0..10).map do
+        Thread.new { Java::DefaultPackageClass }
+      end
+
+      threads.each { |thread| thread.join }
+
+      # expect no already initialized constant warning written e.g.
+      # ... warning: already initialized constant DefaultPackageClass
+      assert ! $stderr.string.index('already initialized constant'), $stderr.string
+    ensure
+      $stderr = stderr
+    end
+  end
+
+  # reproducing https://github.com/jruby/jruby/issues/2014
+  def test_concurrent_proxy_class_initialization_invalid_method_dispatch
+    abort_on_exception = Thread.abort_on_exception
+    begin
+      Thread.abort_on_exception = true
+      # some strange enough (un-initialized proxy) classes not used elsewhere
+      threads = (0..10).map do
+        Thread.new { Java::java.awt.Desktop::Action.valueOf('OPEN') }
+      end
+      threads.each { |thread| thread.join }
+
+      # same but top (package) level class and using an aliased method :
+      threads = (0..10).map do
+        Thread.new { java.lang.management.MemoryType.value_of('HEAP') }
+      end
+      threads.each { |thread| thread.join }
+    ensure
+      Thread.abort_on_exception = abort_on_exception
+    end
+  end
+
+  # reproducing https://github.com/jruby/jruby/issues/1621
+  def test_concurrent_proxy_class_initialization_dead_lock
+    timeout = 0.5; threads_to_kill = []
+    begin
+      threads = %w{ A B C D E F G H }.map do |sym|
+        Thread.new { Java::Default.const_get "Bug1621#{sym}" }
+      end
+      threads.each do |thread|
+        threads_to_kill << thread if thread.join(timeout).nil?
+      end
+      if threads_to_kill.any?
+        fail "threads: #{threads_to_kill.inspect} dead-locked!"
+      end
+    ensure
+      threads_to_kill.each { |thread| thread.exit rescue nil }
+    end
+  end
+
 end

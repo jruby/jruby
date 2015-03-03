@@ -86,7 +86,7 @@ public class DispatchHeadNode extends Node {
 
     public void forceUncached() {
         adoptChildren();
-        first.replace(new UncachedDispatchNode(context, ignoreVisibility, dispatchAction, argumentNodes, block, isSplatted));
+        first.replace(new UncachedDispatchNode(context, ignoreVisibility, dispatchAction, argumentNodes, block, isSplatted, missingBehavior));
     }
     
     public RubyNode[] getArgumentNodes() {

@@ -18,6 +18,7 @@ import com.oracle.truffle.api.dsl.NodeChildren;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.*;
 import com.oracle.truffle.api.nodes.UnexpectedResultException;
+import com.oracle.truffle.api.source.Source;
 import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.utilities.ConditionProfile;
 
@@ -33,10 +34,7 @@ import org.jruby.truffle.nodes.core.KernelNodesFactory.SameOrEqualNodeFactory;
 import org.jruby.truffle.nodes.dispatch.*;
 import org.jruby.truffle.nodes.globals.WrapInThreadLocalNode;
 import org.jruby.truffle.nodes.literal.BooleanLiteralNode;
-import org.jruby.truffle.nodes.objects.ClassNode;
-import org.jruby.truffle.nodes.objects.ClassNodeFactory;
-import org.jruby.truffle.nodes.objects.SingletonClassNode;
-import org.jruby.truffle.nodes.objects.SingletonClassNodeFactory;
+import org.jruby.truffle.nodes.objects.*;
 import org.jruby.truffle.nodes.objectstorage.ReadHeadObjectFieldNode;
 import org.jruby.truffle.nodes.objectstorage.WriteHeadObjectFieldNode;
 import org.jruby.truffle.nodes.rubinius.ObjectPrimitiveNodes;
@@ -51,6 +49,7 @@ import org.jruby.truffle.runtime.core.*;
 import org.jruby.truffle.runtime.hash.HashOperations;
 import org.jruby.truffle.runtime.hash.KeyValue;
 import org.jruby.truffle.runtime.methods.InternalMethod;
+import org.jruby.truffle.runtime.subsystems.FeatureManager;
 import org.jruby.truffle.runtime.subsystems.ThreadManager.BlockingActionWithoutGlobalLock;
 import org.jruby.util.ByteList;
 import org.jruby.util.cli.Options;
@@ -451,7 +450,7 @@ public abstract class KernelNodes {
 
     }
 
-    @CoreMethod(names = "dup")
+    @CoreMethod(names = "dup", taintFrom = 0)
     public abstract static class DupNode extends CoreMethodNode {
 
         @Child private CallDispatchHeadNode initializeDupNode;
@@ -1585,8 +1584,15 @@ public abstract class KernelNodes {
         public boolean require(RubyString feature) {
             notDesignedForCompilation();
 
+            // TODO CS 1-Mar-15 ERB will use strscan if it's there, but strscan is not yet complete, so we need to hide it
+
+            if (feature.toString().equals("strscan") && Truffle.getRuntime().getCallerFrame().getCallNode()
+                    .getEncapsulatingSourceSection().getSource().getName().endsWith("erb.rb")) {
+                throw new RaiseException(getContext().getCoreLibrary().loadErrorCannotLoad(feature.toString(), this));
+            }
+
             try {
-                getContext().getFeatureManager().require(null, feature.toString(), this);
+                getContext().getFeatureManager().require(feature.toString(), this);
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
@@ -1607,19 +1613,41 @@ public abstract class KernelNodes {
         }
 
         @Specialization
-        public boolean require(RubyString feature) {
+        public boolean requireRelative(RubyString feature) {
             notDesignedForCompilation();
 
-            final String sourcePath = Truffle.getRuntime().getCallerFrame().getCallNode().getEncapsulatingSourceSection().getSource().getPath();
-            final String directoryPath = new File(sourcePath).getParent();
+            final FeatureManager featureManager = getContext().getFeatureManager();
+
+            final String featureString = feature.toString();
+            final String featurePath;
+
+            if (featureManager.isAbsolutePath(featureString)) {
+                featurePath = featureString;
+            } else {
+                final Source source = Truffle.getRuntime().getCallerFrame().getCallNode().getEncapsulatingSourceSection().getSource();
+                final String sourcePath = featureManager.getSourcePath(source);
+
+                if (sourcePath == null) {
+                    CompilerDirectives.transferToInterpreter();
+                    throw new RaiseException(getContext().getCoreLibrary().loadError("cannot infer basepath", this));
+                }
+
+                featurePath = dirname(sourcePath) + "/" + featureString;
+            }
 
             try {
-                getContext().getFeatureManager().require(directoryPath, feature.toString(), this);
+                featureManager.require(featurePath, this);
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
 
             return true;
+        }
+
+        private String dirname(String path) {
+            int lastSlash = path.lastIndexOf('/');
+            assert lastSlash > 0;
+            return path.substring(0, lastSlash);
         }
     }
 
@@ -1980,96 +2008,50 @@ public abstract class KernelNodes {
     }
 
     @CoreMethod(names = "taint")
-    public abstract static class TaintNode extends CoreMethodNode {
+    public abstract static class KernelTaintNode extends CoreMethodNode {
 
-        @Child private WriteHeadObjectFieldNode writeTaintNode;
+        @Child private TaintNode taintNode;
 
-        public TaintNode(RubyContext context, SourceSection sourceSection) {
+        public KernelTaintNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            writeTaintNode = new WriteHeadObjectFieldNode(RubyBasicObject.TAINTED_IDENTIFIER);
         }
 
-        public TaintNode(TaintNode prev) {
+        public KernelTaintNode(KernelTaintNode prev) {
             super(prev);
-            writeTaintNode = prev.writeTaintNode;
         }
 
         @Specialization
-        public Object taint(boolean object) {
-            return frozen(object);
-        }
-
-        @Specialization
-        public Object taint(int object) {
-            return frozen(object);
-        }
-
-        @Specialization
-        public Object taint(long object) {
-            return frozen(object);
-        }
-
-        @Specialization
-        public Object taint(double object) {
-            return frozen(object);
-        }
-
-        private Object frozen(Object object) {
-            CompilerDirectives.transferToInterpreter();
-            throw new RaiseException(getContext().getCoreLibrary().frozenError(getContext().getCoreLibrary().getLogicalClass(object).getName(), this));
-        }
-
-
-        @Specialization
-        public Object taint(RubyBasicObject object) {
-            writeTaintNode.execute(object, true);
-            return object;
+        public Object taint(Object object) {
+            if (taintNode == null) {
+                CompilerDirectives.transferToInterpreter();
+                taintNode = insert(TaintNodeFactory.create(getContext(), getEncapsulatingSourceSection(), null));
+            }
+            return taintNode.executeTaint(object);
         }
 
     }
 
     @CoreMethod(names = "tainted?")
-    public abstract static class TaintedNode extends CoreMethodNode {
+    public abstract static class KernelIsTaintedNode extends CoreMethodNode {
 
-        @Child private ReadHeadObjectFieldNode readTaintNode;
+        @Child private IsTaintedNode isTaintedNode;
 
-        public TaintedNode(RubyContext context, SourceSection sourceSection) {
+        public KernelIsTaintedNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            readTaintNode = new ReadHeadObjectFieldNode(RubyBasicObject.TAINTED_IDENTIFIER);
         }
 
-        public TaintedNode(TaintedNode prev) {
+        public KernelIsTaintedNode(KernelIsTaintedNode prev) {
             super(prev);
-            readTaintNode = prev.readTaintNode;
+            isTaintedNode = prev.isTaintedNode;
         }
 
         @Specialization
-        public boolean tainted(boolean object) {
-            return false;
-        }
-
-        @Specialization
-        public boolean tainted(int object) {
-            return false;
-        }
-
-        @Specialization
-        public boolean tainted(long object) {
-            return false;
-        }
-
-        @Specialization
-        public boolean tainted(double object) {
-            return false;
-        }
-
-        @Specialization
-        public boolean tainted(RubyBasicObject object) {
-            try {
-                return readTaintNode.isSet(object) && readTaintNode.executeBoolean(object);
-            } catch (UnexpectedResultException e) {
-                throw new UnsupportedOperationException(readTaintNode.execute(object).toString());
+        public boolean isTainted(Object object) {
+            if (isTaintedNode == null) {
+                CompilerDirectives.transferToInterpreter();
+                isTaintedNode = insert(IsTaintedNodeFactory.create(getContext(), getEncapsulatingSourceSection(), null));
             }
+            return isTaintedNode.executeIsTainted(object);
         }
 
     }

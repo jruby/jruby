@@ -21,7 +21,7 @@
  * Copyright (C) 2004 David Corbin <dcorbin@users.sourceforge.net>
  * Copyright (C) 2005 Charles O Nutter <headius@headius.com>
  * Copyright (C) 2006 Kresten Krab Thorup <krab@gnu.org>
- * 
+ *
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
  * or the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
@@ -69,8 +69,9 @@ public class JavaMethod extends JavaCallable {
 
     private final static boolean USE_HANDLES = RubyInstanceConfig.USE_GENERATED_HANDLES;
     private final static boolean HANDLE_DEBUG = false;
+
     private final Method method;
-    private final Class boxedReturnType;
+    private final Class<?> boxedReturnType;
     private final boolean isFinal;
     private final JavaUtil.JavaConverter returnConverter;
 
@@ -81,12 +82,12 @@ public class JavaMethod extends JavaCallable {
     public static RubyClass createJavaMethodClass(Ruby runtime, RubyModule javaModule) {
         // TODO: NOT_ALLOCATABLE_ALLOCATOR is probably ok here, since we don't intend for people to monkey with
         // this type and it can't be marshalled. Confirm. JRUBY-415
-        RubyClass result = 
+        RubyClass result =
             javaModule.defineClassUnder("JavaMethod", runtime.getObject(), ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
 
         JavaAccessibleObject.registerRubyMethods(runtime, result);
         JavaCallable.registerRubyMethods(runtime, result);
-        
+
         result.defineAnnotatedMethods(JavaMethod.class);
 
         return result;
@@ -96,33 +97,31 @@ public class JavaMethod extends JavaCallable {
         super(runtime, runtime.getJavaSupport().getJavaMethodClass(), method.getParameterTypes());
         this.method = method;
         this.isFinal = Modifier.isFinal(method.getModifiers());
-        if (method.getReturnType().isPrimitive() && method.getReturnType() != void.class) {
-            this.boxedReturnType = CodegenUtils.getBoxType(method.getReturnType());
+        final Class<?> returnType = method.getReturnType();
+        if (returnType.isPrimitive() && returnType != void.class) {
+            this.boxedReturnType = CodegenUtils.getBoxType(returnType);
         } else {
-            this.boxedReturnType = method.getReturnType();
+            this.boxedReturnType = returnType;
         }
 
-        boolean methodIsPublic = Modifier.isPublic(method.getModifiers());
-        boolean classIsPublic = Modifier.isPublic(method.getDeclaringClass().getModifiers());
-
-        // Special classes like Collections.EMPTY_LIST are inner classes that are private but 
-        // implement public interfaces.  Their methods are all public methods for the public 
+        // Special classes like Collections.EMPTY_LIST are inner classes that are private but
+        // implement public interfaces.  Their methods are all public methods for the public
         // interface.  Let these public methods execute via setAccessible(true).
-        if (JavaClass.CAN_SET_ACCESSIBLE) {
+        if (JavaUtil.CAN_SET_ACCESSIBLE) {
             // we should be able to setAccessible ok...
             try {
-                if (methodIsPublic &&
-                    !Modifier.isPublic(method.getDeclaringClass().getModifiers())) {
-                    accessibleObject().setAccessible(true);
+                if ( Modifier.isPublic(method.getModifiers()) &&
+                    ! Modifier.isPublic(method.getDeclaringClass().getModifiers()) ) {
+                    method.setAccessible(true);
                 }
             } catch (SecurityException se) {
                 // we shouldn't get here if JavaClass.CAN_SET_ACCESSIBLE is doing
                 // what it should, so we warn.
-               runtime.getWarnings().warn("failed to setAccessible: " + accessibleObject() + ", exception follows: " + se.getMessage());
+               runtime.getWarnings().warn("failed to setAccessible: " + method + ", exception follows: " + se.getMessage());
             }
         }
-        
-        returnConverter = JavaUtil.getJavaConverter(method.getReturnType());
+
+        returnConverter = JavaUtil.getJavaConverter(returnType);
     }
 
     public static JavaMethod create(Ruby runtime, Method method) {
@@ -154,17 +153,18 @@ public class JavaMethod extends JavaCallable {
         // we're running under a restrictive security policy.
         try {
             return create(runtime, javaClass.getDeclaredMethod(methodName, argumentTypes));
-        } catch (NoSuchMethodException e) {
+        }
+        catch (NoSuchMethodException e) {
             // search through all declared methods to find a closest match
             MethodSearch: for (Method method : javaClass.getDeclaredMethods()) {
                 if (method.getName().equals(methodName)) {
                     Class<?>[] targetTypes = method.getParameterTypes();
-                
+
                     // for zero args case we can stop searching
                     if (targetTypes.length == 0 && argumentTypes.length == 0) {
                         return create(runtime, method);
                     }
-                    
+
                     TypeScan: for (int i = 0; i < argumentTypes.length; i++) {
                         if (i >= targetTypes.length) continue MethodSearch;
 
@@ -184,13 +184,13 @@ public class JavaMethod extends JavaCallable {
         // no matching method found
         return null;
     }
-    
+
     @Override
     public boolean equals(Object other) {
         return other instanceof JavaMethod &&
             this.method == ((JavaMethod)other).method;
     }
-    
+
     @Override
     public int hashCode() {
         return method.hashCode();
@@ -202,6 +202,7 @@ public class JavaMethod extends JavaCallable {
         return getRuntime().newString(method.getName());
     }
 
+    @Override
     public int getArity() {
         return parameterTypes.length;
     }
@@ -220,11 +221,11 @@ public class JavaMethod extends JavaCallable {
     @JRubyMethod(rest = true)
     public IRubyObject invoke(ThreadContext context, IRubyObject[] args) {
         checkArity(args.length - 1);
-        Object[] arguments = new Object[args.length - 1];
-        convertArguments(args, arguments, 1);
 
-        IRubyObject invokee = args[0];
-        if(invokee.isNil()) {
+        final IRubyObject invokee = args[0];
+        final Object[] arguments = convertArguments(args, 1);
+
+        if ( invokee.isNil() ) {
             return invokeWithExceptionHandling(context, method, null, arguments);
         }
 
@@ -233,24 +234,23 @@ public class JavaMethod extends JavaCallable {
         if (!isStatic()) {
             javaInvokee = JavaUtil.unwrapJavaValue(getRuntime(), invokee, "invokee not a java object");
 
-            if (! method.getDeclaringClass().isInstance(javaInvokee)) {
-                throw getRuntime().newTypeError("invokee not instance of method's class (" +
-                                                  "got" + javaInvokee.getClass().getName() + " wanted " +
-                                                  method.getDeclaringClass().getName() + ")");
+            if ( ! method.getDeclaringClass().isInstance(javaInvokee) ) {
+                throw getRuntime().newTypeError(
+                    "invokee not instance of method's class" +
+                    " (got" + javaInvokee.getClass().getName() +
+                    " wanted " + method.getDeclaringClass().getName() + ")");
             }
 
             //
             // this test really means, that this is a ruby-defined subclass of a java class
             //
-            if (javaInvokee instanceof InternalJavaProxy &&
-                    // don't bother to check if final method, it won't
-                    // be there (not generated, can't be!)
-                    !Modifier.isFinal(method.getModifiers())) {
-                JavaProxyClass jpc = ((InternalJavaProxy) javaInvokee)
-                        .___getProxyClass();
-                JavaProxyMethod jpm;
-                if ((jpm = jpc.getMethod(method.getName(), parameterTypes)) != null &&
-                        jpm.hasSuperImplementation()) {
+            if ( javaInvokee instanceof InternalJavaProxy &&
+                // don't bother to check if final method, it won't
+                // be there (not generated, can't be!)
+                ! isFinal ) {
+                JavaProxyClass jpc = ((InternalJavaProxy) javaInvokee).___getProxyClass();
+                JavaProxyMethod jpm = jpc.getMethod( method.getName(), parameterTypes );
+                if ( jpm != null && jpm.hasSuperImplementation() ) {
                     return invokeWithExceptionHandling(context, jpm.getSuperMethod(), javaInvokee, arguments);
                 }
             }
@@ -261,16 +261,15 @@ public class JavaMethod extends JavaCallable {
     @JRubyMethod(rest = true)
     public IRubyObject invoke_static(ThreadContext context, IRubyObject[] args) {
         checkArity(args.length);
-        Object[] arguments = new Object[args.length];
-        System.arraycopy(args, 0, arguments, 0, arguments.length);
-        convertArguments(args, arguments, 0);
+
+        final Object[] arguments = convertArguments(args, 0);
         return invokeWithExceptionHandling(context, method, null, arguments);
     }
 
     @JRubyMethod
     public IRubyObject return_type() {
         Class<?> klass = method.getReturnType();
-        
+
         if (klass.equals(void.class)) {
             return getRuntime().getNil();
         }
@@ -538,37 +537,46 @@ public class JavaMethod extends JavaCallable {
                 iae.getMessage());
     }
 
-    private void convertArguments(IRubyObject[] argsIn, Object[] argsOut, int from) {
-        Class<?>[] types = parameterTypes;
-        for (int i = argsOut.length; --i >= 0; ) {
-            argsOut[i] = argsIn[i+from].toJava(types[i]);
+    private Object[] convertArguments(final IRubyObject[] args, int offset) {
+        final Object[] arguments = new Object[ args.length - offset ];
+        final Class<?>[] types = getParameterTypes();
+        for ( int i = arguments.length; --i >= 0; ) {
+            arguments[i] = args[ i + offset ].toJava(types[i]);
         }
+        return arguments;
     }
 
+    @Override
     public Class<?>[] getParameterTypes() {
         return parameterTypes;
     }
 
+    @Override
     public Class<?>[] getExceptionTypes() {
         return method.getExceptionTypes();
     }
 
+    @Override
     public Type[] getGenericParameterTypes() {
         return method.getGenericParameterTypes();
     }
 
+    @Override
     public Type[] getGenericExceptionTypes() {
         return method.getGenericExceptionTypes();
     }
-    
+
+    @Override
     public Annotation[][] getParameterAnnotations() {
         return method.getParameterAnnotations();
     }
 
+    @Override
     public boolean isVarArgs() {
         return method.isVarArgs();
     }
 
+    @Override
     protected String nameOnInspection() {
         return "#<" + getType().toString() + "/" + method.getName() + "(";
     }
@@ -577,7 +585,7 @@ public class JavaMethod extends JavaCallable {
     public RubyBoolean static_p() {
         return getRuntime().newBoolean(isStatic());
     }
-    
+
     public RubyBoolean bridge_p() {
         return getRuntime().newBoolean(method.isBridge());
     }
@@ -586,14 +594,17 @@ public class JavaMethod extends JavaCallable {
         return Modifier.isStatic(method.getModifiers());
     }
 
+    @Override
     public int getModifiers() {
         return method.getModifiers();
     }
 
+    @Override
     public String toGenericString() {
         return method.toGenericString();
     }
 
+    @Override
     public AccessibleObject accessibleObject() {
         return method;
     }

@@ -53,7 +53,7 @@ class << STDOUT
   end
 
   def flush
-    Truffle::Debug.flush_stdout
+    Truffle::Primitive.flush_stdout
   end
 
   def sync

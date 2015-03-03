@@ -1,0 +1,3 @@
+fails:StringScanner#matchedsize returns the size of the most recent match
+fails:StringScanner#matchedsize returns nil if there was no recent match
+fails:StringScanner#matchedsize warns in verbose mode that the method is obsolete

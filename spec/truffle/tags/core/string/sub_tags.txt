@@ -1,72 +1,19 @@
-fails:String#sub with pattern, replacement returns a copy of self with all occurrences of pattern replaced with replacement
-fails:String#sub with pattern, replacement ignores a block if supplied
-fails:String#sub with pattern, replacement supports \G which matches at the beginning of the string
-fails:String#sub with pattern, replacement supports /i for ignoring case
-fails:String#sub with pattern, replacement doesn't interpret regexp metacharacters if pattern is a string
-fails:String#sub with pattern, replacement replaces \1 sequences with the regexp's corresponding capture
-fails:String#sub with pattern, replacement treats \1 sequences without corresponding captures as empty strings
-fails:String#sub with pattern, replacement replaces \& and \0 with the complete match
-fails:String#sub with pattern, replacement replaces \` with everything before the current match
-fails:String#sub with pattern, replacement replaces \' with everything after the current match
-fails:String#sub with pattern, replacement replaces \\\+ with \\+
-fails:String#sub with pattern, replacement replaces \+ with the last paren that actually matched
 fails:String#sub with pattern, replacement treats \+ as an empty string if there was no captures
-fails:String#sub with pattern, replacement maps \\ in replacement to \
-fails:String#sub with pattern, replacement leaves unknown \x escapes in replacement untouched
-fails:String#sub with pattern, replacement leaves \ at the end of replacement untouched
 fails:String#sub with pattern, replacement taints the result if the original string or replacement is tainted
-fails:String#sub with pattern, replacement tries to convert pattern to a string using to_str
-fails:String#sub with pattern, replacement raises a TypeError when pattern can't be converted to a string
-fails:String#sub with pattern, replacement tries to convert replacement to a string using to_str
-fails:String#sub with pattern, replacement raises a TypeError when replacement can't be converted to a string
 fails:String#sub with pattern, replacement returns subclass instances when called on a subclass
-fails:String#sub with pattern, replacement sets $~ to MatchData of match and nil when there's none
-fails:String#sub with pattern, replacement replaces \ with 
-fails:String#sub with pattern, replacement replaces \\1 with \1
-fails:String#sub with pattern, replacement replaces \\ with \
-fails:String#sub with pattern and block returns a copy of self with the first occurrences of pattern replaced with the block's return value
 fails:String#sub with pattern and block sets $~ for access from the block
-fails:String#sub with pattern and block sets $~ to MatchData of last match and nil when there's none for access from outside
-fails:String#sub with pattern and block doesn't raise a RuntimeError if the string is modified while substituting
-fails:String#sub with pattern and block doesn't interpolate special sequences like \1 for the block's return value
-fails:String#sub with pattern and block converts the block's return value to a string using to_s
 fails:String#sub with pattern and block taints the result if the original string or replacement is tainted
-fails:String#sub! with pattern, replacement modifies self in place and returns self
 fails:String#sub! with pattern, replacement taints self if replacement is tainted
-fails:String#sub! with pattern, replacement returns nil if no modifications were made
-fails:String#sub! with pattern, replacement raises a RuntimeError when self is frozen
-fails:String#sub! with pattern and block modifies self in place and returns self
 fails:String#sub! with pattern and block sets $~ for access from the block
 fails:String#sub! with pattern and block taints self if block's result is tainted
-fails:String#sub! with pattern and block returns nil if no modifications were made
 fails:String#sub! with pattern and block raises a RuntimeError if the string is modified while substituting
-fails:String#sub! with pattern and block raises a RuntimeError when self is frozen
-fails:String#sub with pattern and Hash returns a copy of self with the first occurrence of pattern replaced with the value of the corresponding hash key
-fails:String#sub with pattern and Hash removes keys that don't correspond to matches
-fails:String#sub with pattern and Hash ignores non-String keys
-fails:String#sub with pattern and Hash uses a key's value only a single time
 fails:String#sub with pattern and Hash uses the hash's default value for missing keys
 fails:String#sub with pattern and Hash coerces the hash values with #to_s
 fails:String#sub with pattern and Hash uses the hash's value set from default_proc for missing keys
-fails:String#sub with pattern and Hash sets $~ to MatchData of first match and nil when there's none for access from outside
-fails:String#sub with pattern and Hash doesn't interpolate special sequences like \1 for the block's return value
 fails:String#sub with pattern and Hash untrusts the result if the original string is untrusted
-fails:String#sub with pattern and Hash untrusts the result if a hash value is untrusted
 fails:String#sub with pattern and Hash taints the result if the original string is tainted
-fails:String#sub with pattern and Hash taints the result if a hash value is tainted
-fails:String#sub! with pattern and Hash returns self with the first occurrence of pattern replaced with the value of the corresponding hash key
-fails:String#sub! with pattern and Hash removes keys that don't correspond to matches
-fails:String#sub! with pattern and Hash ignores non-String keys
-fails:String#sub! with pattern and Hash uses a key's value only a single time
 fails:String#sub! with pattern and Hash uses the hash's default value for missing keys
 fails:String#sub! with pattern and Hash coerces the hash values with #to_s
 fails:String#sub! with pattern and Hash uses the hash's value set from default_proc for missing keys
-fails:String#sub! with pattern and Hash sets $~ to MatchData of first match and nil when there's none for access from outside
-fails:String#sub! with pattern and Hash doesn't interpolate special sequences like \1 for the block's return value
-fails:String#sub! with pattern and Hash keeps untrusted state
 fails:String#sub! with pattern and Hash untrusts self if a hash value is untrusted
-fails:String#sub! with pattern and Hash keeps tainted state
 fails:String#sub! with pattern and Hash taints self if a hash value is tainted
-fails:String#sub with pattern, replacement raises a TypeError when pattern is a Symbol
-fails:String#sub with pattern, replacement raises a TypeError when pattern is an Array
-fails:String#sub with pattern, replacement replaces \ with 

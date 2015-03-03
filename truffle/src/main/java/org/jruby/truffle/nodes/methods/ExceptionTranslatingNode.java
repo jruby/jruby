@@ -157,7 +157,11 @@ public class ExceptionTranslatingNode extends RubyNode {
             DebugOperations.panic(getContext(), this, throwable.toString());
         }
 
-        return getContext().getCoreLibrary().internalError(String.format("%s %s %s", throwable.getClass().getSimpleName(), throwable.getMessage(), throwable.getStackTrace()[0].toString()), this);
+        if (throwable.getStackTrace().length > 0) {
+            return getContext().getCoreLibrary().internalError(String.format("%s %s %s", throwable.getClass().getSimpleName(), throwable.getMessage(), throwable.getStackTrace()[0].toString()), this);
+        } else {
+            return getContext().getCoreLibrary().internalError(String.format("%s %s ???", throwable.getClass().getSimpleName(), throwable.getMessage()), this);
+        }
     }
 
 }

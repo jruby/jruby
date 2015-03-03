@@ -70,7 +70,7 @@ public final class UnresolvedDispatchNode extends DispatchNode {
 
         if (depth == Options.TRUFFLE_DISPATCH_POLYMORPHIC_MAX.load()) {
             return getHeadNode().getFirstDispatchNode()
-                    .replace(new UncachedDispatchNode(getContext(), ignoreVisibility, getDispatchAction(), argumentNodes, block, isSplatted))
+                    .replace(new UncachedDispatchNode(getContext(), ignoreVisibility, getDispatchAction(), argumentNodes, block, isSplatted, missingBehavior))
                     .executeDispatch(frame, receiverObject,
                             methodName, blockObject, argumentsObjects);
         }
@@ -259,7 +259,7 @@ public final class UnresolvedDispatchNode extends DispatchNode {
                 }
 
                 if (Options.TRUFFLE_DISPATCH_METAPROGRAMMING_ALWAYS_UNCACHED.load()) {
-                    return first.replace(new UncachedDispatchNode(getContext(), ignoreVisibility, getDispatchAction(), argumentNodes, block, isSplatted));
+                    return first.replace(new UncachedDispatchNode(getContext(), ignoreVisibility, getDispatchAction(), argumentNodes, block, isSplatted, missingBehavior));
                 }
 
                 return first.replace(new CachedBoxedMethodMissingDispatchNode(getContext(), methodName, first,
@@ -292,7 +292,7 @@ public final class UnresolvedDispatchNode extends DispatchNode {
                 }
 
                 if (Options.TRUFFLE_DISPATCH_METAPROGRAMMING_ALWAYS_UNCACHED.load()) {
-                    return first.replace(new UncachedDispatchNode(getContext(), ignoreVisibility, getDispatchAction(), argumentNodes, block, isSplatted));
+                    return first.replace(new UncachedDispatchNode(getContext(), ignoreVisibility, getDispatchAction(), argumentNodes, block, isSplatted, missingBehavior));
                 }
 
                 return first.replace(new CachedBoxedMethodMissingDispatchNode(getContext(), methodName, first,

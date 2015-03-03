@@ -10,7 +10,7 @@
 package org.jruby.truffle.translator;
 
 import com.oracle.truffle.api.frame.FrameSlot;
-import com.oracle.truffle.api.nodes.NodeUtil;
+import com.oracle.truffle.api.nodes.*;
 import com.oracle.truffle.api.source.Source;
 import com.oracle.truffle.api.source.SourceSection;
 
@@ -22,6 +22,7 @@ import org.joni.NameEntry;
 import org.joni.Regex;
 import org.joni.Syntax;
 import org.jruby.ast.*;
+import org.jruby.ast.Node;
 import org.jruby.common.IRubyWarnings;
 import org.jruby.lexer.yacc.InvalidSourcePosition;
 import org.jruby.runtime.Visibility;
@@ -100,7 +101,7 @@ public class BodyTranslator extends Translator {
     public static final Set<String> FRAME_LOCAL_GLOBAL_VARIABLES = new HashSet<>(Arrays.asList("$_", "$+", "$&", "$`", "$'"));
     public static final Set<String> THREAD_LOCAL_GLOBAL_VARIABLES = new HashSet<>(Arrays.asList("$~", "$1", "$2", "$3", "$4", "$5", "$6", "$7", "$8", "$9")); // "$_"
 
-    public BodyTranslator(RubyNode currentNode, RubyContext context, BodyTranslator parent, TranslatorEnvironment environment, Source source, boolean topLevel) {
+    public BodyTranslator(com.oracle.truffle.api.nodes.Node currentNode, RubyContext context, BodyTranslator parent, TranslatorEnvironment environment, Source source, boolean topLevel) {
         super(currentNode, context, source);
         this.parent = parent;
         this.environment = environment;
@@ -2348,9 +2349,9 @@ public class BodyTranslator extends Translator {
 
     @Override
     public RubyNode visitRegexpNode(org.jruby.ast.RegexpNode node) {
-        Regex regex = RubyRegexp.compile(currentNode, context, node.getValue().bytes(), node.getEncoding(), node.getOptions().toOptions());
+        Regex regex = RubyRegexp.compile(currentNode, context, node.getValue().bytes(), node.getEncoding(), node.getOptions().toJoniOptions());
 
-        final RubyRegexp regexp = new RubyRegexp(context.getCoreLibrary().getRegexpClass(), regex, node.getValue());
+        final RubyRegexp regexp = new RubyRegexp(context.getCoreLibrary().getRegexpClass(), regex, node.getValue(), node.getOptions());
 
         // This isn't quite right - we shouldn't be looking up by name, we need a real reference to this constants
         if (node.getOptions().isEncodingNone()) {

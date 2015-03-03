@@ -1,19 +1,9 @@
 fails:Array#pack with format 'Q' ignores whitespace in the format string
 fails:Array#pack with format 'Q' calls #to_str to coerce the directives string
 fails:Array#pack with format 'Q' taints the output string if the format string is tainted
-fails:Array#pack with format 'Q' raises an ArgumentError if there are fewer elements than the format requires
-fails:Array#pack with format 'Q' raises a TypeError when passed true
-fails:Array#pack with format 'Q' raises a TypeError when passed false
-fails:Array#pack with format 'Q' raises a TypeError when the object does not respond to #to_int
-fails:Array#pack with format 'Q' raises a TypeError when passed a String
 fails:Array#pack with format 'q' ignores whitespace in the format string
 fails:Array#pack with format 'q' calls #to_str to coerce the directives string
 fails:Array#pack with format 'q' taints the output string if the format string is tainted
-fails:Array#pack with format 'q' raises an ArgumentError if there are fewer elements than the format requires
-fails:Array#pack with format 'q' raises a TypeError when passed true
-fails:Array#pack with format 'q' raises a TypeError when passed false
-fails:Array#pack with format 'q' raises a TypeError when the object does not respond to #to_int
-fails:Array#pack with format 'q' raises a TypeError when passed a String
 fails:Array#pack with format 'Q' with modifier '<' calls #to_int to convert the pack argument to an Integer
 fails:Array#pack with format 'Q' with modifier '<' encodes the number of array elements specified by the count modifier
 fails:Array#pack with format 'Q' with modifier '<' encodes all remaining elements when passed the '*' modifier
@@ -44,5 +34,3 @@ fails:Array#pack with format 'q' encodes the number of array elements specified 
 fails:Array#pack with format 'q' encodes all remaining elements when passed the '*' modifier
 fails:Array#pack with format 'q' ignores NULL bytes between directives
 fails:Array#pack with format 'q' ignores spaces between directives
-fails:Array#pack with format 'Q' raises a TypeError when passed nil
-fails:Array#pack with format 'q' raises a TypeError when passed nil

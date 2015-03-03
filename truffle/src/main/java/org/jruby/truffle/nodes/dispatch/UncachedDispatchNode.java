@@ -33,6 +33,7 @@ import com.oracle.truffle.api.utilities.BranchProfile;
 public class UncachedDispatchNode extends DispatchNode {
 
     private final boolean ignoreVisibility;
+    private final MissingBehavior missingBehavior;
 
     @Child private IndirectCallNode callNode;
     @Child private ToSymbolNode toSymbolNode;
@@ -41,9 +42,10 @@ public class UncachedDispatchNode extends DispatchNode {
     private final BranchProfile constantMissingProfile = BranchProfile.create();
     private final BranchProfile methodMissingProfile = BranchProfile.create();
 
-    public UncachedDispatchNode(RubyContext context, boolean ignoreVisibility, DispatchAction dispatchAction, RubyNode[] argumentNodes, ProcOrNullNode block,boolean isSplatted) {
+    public UncachedDispatchNode(RubyContext context, boolean ignoreVisibility, DispatchAction dispatchAction, RubyNode[] argumentNodes, ProcOrNullNode block,boolean isSplatted, MissingBehavior missingBehavior) {
         super(context, dispatchAction, argumentNodes, block, isSplatted);
         this.ignoreVisibility = ignoreVisibility;
+        this.missingBehavior = missingBehavior;
         callNode = Truffle.getRuntime().createIndirectCallNode();
         toSymbolNode = ToSymbolNodeFactory.create(context, null, null);
         toJavaStringNode = ToJavaStringNodeFactory.create(context, null, null);
@@ -112,6 +114,10 @@ public class UncachedDispatchNode extends DispatchNode {
                 } else {
                     throw new UnsupportedOperationException();
                 }
+            }
+
+            if (dispatchAction == DispatchAction.CALL_METHOD && missingBehavior == MissingBehavior.RETURN_MISSING) {
+                return DispatchNode.MISSING;
             }
 
             methodMissingProfile.enter();

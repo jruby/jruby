@@ -119,6 +119,8 @@ public class CoreLibrary {
     private final RubyModule truffleModule;
     private final RubyModule truffleDebugModule;
     private final RubyClass edomClass;
+    private final RubyClass einvalClass;
+    private final RubyClass enoentClass;
     private final RubyClass encodingConverterClass;
     private final RubyClass encodingCompatibilityErrorClass;
     private final RubyClass methodClass;
@@ -223,10 +225,11 @@ public class CoreLibrary {
         new RubyClass(context, errnoModule, systemCallErrorClass, "EACCES");
         edomClass = new RubyClass(context, errnoModule, systemCallErrorClass, "EDOM");
         new RubyClass(context, errnoModule, systemCallErrorClass, "EEXIST");
-        new RubyClass(context, errnoModule, systemCallErrorClass, "ENOENT");
+        enoentClass = new RubyClass(context, errnoModule, systemCallErrorClass, "ENOENT");
         new RubyClass(context, errnoModule, systemCallErrorClass, "ENOTEMPTY");
         new RubyClass(context, errnoModule, systemCallErrorClass, "EPERM");
         new RubyClass(context, errnoModule, systemCallErrorClass, "EXDEV");
+        einvalClass = new RubyClass(context, errnoModule, systemCallErrorClass, "EINVAL");
 
         // ScriptError
         RubyClass scriptErrorClass = defineClass(exceptionClass, "ScriptError");
@@ -838,6 +841,21 @@ public class CoreLibrary {
     public RubyException mathDomainError(String method, Node currentNode) {
         CompilerAsserts.neverPartOfCompilation();
         return new RubyException(edomClass, context.makeString(String.format("Numerical argument is out of domain - \"%s\"", method)), RubyCallStack.getBacktrace(currentNode));
+    }
+
+    public RubyException invalidArgumentError(String value, Node currentNode) {
+        CompilerAsserts.neverPartOfCompilation();
+        return new RubyException(einvalClass, context.makeString(String.format("Invalid argument -  %s", value)), RubyCallStack.getBacktrace(currentNode));
+    }
+
+    public RubyException ioError(String fileName, Node currentNode) {
+        CompilerAsserts.neverPartOfCompilation();
+        return new RubyException(ioErrorClass, context.makeString(String.format("Error reading file -  %s", fileName)), RubyCallStack.getBacktrace(currentNode));
+    }
+
+    public RubyException fileNotFoundError(String fileName, Node currentNode) {
+        CompilerAsserts.neverPartOfCompilation();
+        return new RubyException(enoentClass, context.makeString(String.format("No such file or directory -  %s", fileName)), RubyCallStack.getBacktrace(currentNode));
     }
 
     public RubyException rangeError(int code, RubyEncoding encoding, Node currentNode) {

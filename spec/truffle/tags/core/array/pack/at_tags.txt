@@ -1,5 +1,0 @@
-fails:Array#pack with format '@' ignores whitespace in the format string
-fails:Array#pack with format '@' calls #to_str to coerce the directives string
-fails:Array#pack with format '@' taints the output string if the format string is tainted
-fails:Array#pack with format '@' raises ArgumentError when the format modifier is '_'
-fails:Array#pack with format '@' raises ArgumentError when the format modifier is '!'

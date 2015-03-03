@@ -12,8 +12,7 @@ package org.jruby.truffle.nodes.core;
 import com.oracle.truffle.api.CallTarget;
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.Truffle;
-import com.oracle.truffle.api.dsl.ImportGuards;
-import com.oracle.truffle.api.dsl.Specialization;
+import com.oracle.truffle.api.dsl.*;
 import com.oracle.truffle.api.frame.FrameDescriptor;
 import com.oracle.truffle.api.frame.FrameSlot;
 import com.oracle.truffle.api.frame.VirtualFrame;
@@ -23,10 +22,12 @@ import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.utilities.BranchProfile;
 
 import org.jruby.runtime.Visibility;
+import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.truffle.nodes.CoreSourceSection;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.RubyRootNode;
 import org.jruby.truffle.nodes.array.*;
+import org.jruby.truffle.nodes.cast.ToSNodeFactory;
 import org.jruby.truffle.nodes.dispatch.*;
 import org.jruby.truffle.nodes.methods.arguments.MissingArgumentBehaviour;
 import org.jruby.truffle.nodes.methods.arguments.ReadPreArgumentNode;
@@ -37,13 +38,7 @@ import org.jruby.truffle.runtime.control.BreakException;
 import org.jruby.truffle.runtime.control.NextException;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.control.RedoException;
-import org.jruby.truffle.runtime.core.RubyArray;
-import org.jruby.truffle.runtime.core.RubyModule;
-import org.jruby.truffle.runtime.core.RubyNilClass;
-import org.jruby.truffle.runtime.core.RubyProc;
-import org.jruby.truffle.runtime.core.RubyRange;
-import org.jruby.truffle.runtime.core.RubyString;
-import org.jruby.truffle.runtime.core.RubySymbol;
+import org.jruby.truffle.runtime.core.*;
 import org.jruby.truffle.runtime.methods.SharedMethodInfo;
 import org.jruby.truffle.runtime.util.ArrayUtils;
 import org.jruby.util.ByteList;
@@ -1934,12 +1929,39 @@ public abstract class ArrayNodes {
     @CoreMethod(names = "pack", required = 1)
     public abstract static class PackNode extends ArrayCoreMethodNode {
 
+        @Child private CallDispatchHeadNode toStringNode;
+
         public PackNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
         }
 
         public PackNode(PackNode prev) {
             super(prev);
+            toStringNode = prev.toStringNode;
+        }
+        
+        // TODO CS 3-Mar-15 to be honest these two specialisations are a bit sneaky - we'll get rid of them ASAP
+
+        @Specialization(guards = {"arrayIsInts", "formatIsXN2000"})
+        public RubyString packXN2000(RubyArray array, RubyString format) {
+            final int size = array.getSize();
+            final int[] store = (int[]) array.getStore();
+            final byte[] bytes = new byte[1 + size * 4];
+            
+            // bytes[0] = 0 is implicit
+
+            for (int n = 0; n < size; n++) {
+                final int value = store[n];
+                final int byteOffset = 1 + n * 4;
+                bytes[byteOffset + 3] = (byte) (value >>> 24);
+                bytes[byteOffset + 2] = (byte) (value >>> 16);
+                bytes[byteOffset + 1] = (byte) (value >>> 8);
+                bytes[byteOffset + 0] = (byte) value;
+            }
+
+            // TODO CS 3-Mar-15 should be tainting here - but ideally have a pack node, and then taint on top of that
+
+            return new RubyString(getContext().getCoreLibrary().getStringClass(), new ByteList(bytes));
         }
 
         @Specialization(guards = {"arrayIsLongs", "formatIsLStar"})
@@ -1951,26 +1973,84 @@ public abstract class ArrayNodes {
             for (int n = 0; n < size; n++) {
                 final int value = (int) store[n]; // happy to truncate
                 final int byteOffset = n * 4;
+                // TODO CS 3-Mar-15 this should be native endian
                 bytes[byteOffset + 3] = (byte) (value >>> 24);
                 bytes[byteOffset + 2] = (byte) (value >>> 16);
                 bytes[byteOffset + 1] = (byte) (value >>> 8);
                 bytes[byteOffset + 0] = (byte) value;
             }
 
+            // TODO CS 1-Mar-15 should be tainting here - but ideally have a pack node, and then taint on top of that
+
             return new RubyString(getContext().getCoreLibrary().getStringClass(), new ByteList(bytes));
         }
 
         @CompilerDirectives.TruffleBoundary
         @Specialization
-        public RubyString pack(RubyArray array, RubyString format) {
+        public RubyString pack(VirtualFrame frame, RubyArray array, RubyString format) {
             notDesignedForCompilation();
 
-            return new RubyString(
-                    getContext().getCoreLibrary().getStringClass(),
-                    org.jruby.util.Pack.pack(
-                            getContext().getRuntime(),
-                            getContext().toJRuby(array),
-                            getContext().toJRuby(format).getByteList()).getByteList());
+            final Object[] objects = array.slowToArray();
+            final IRubyObject[] jrubyObjects = new IRubyObject[objects.length];
+
+            for (int n = 0; n < objects.length; n++) {
+                if (objects[n] instanceof RubyNilClass || objects[n] instanceof Integer || objects[n] instanceof Long
+                        || objects[n] instanceof RubyBignum || objects[n] instanceof Double || objects[n] instanceof RubyString) {
+                    jrubyObjects[n] = getContext().toJRuby(objects[n]);
+                } else {
+                    if (toStringNode == null) {
+                        CompilerDirectives.transferToInterpreter();
+                        toStringNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext(), MissingBehavior.RETURN_MISSING));
+                    }
+
+                    final Object result = toStringNode.call(frame, objects[n], "to_str", null);
+
+                    if (result == DispatchNode.MISSING) {
+                        throw new RaiseException(getContext().getCoreLibrary().typeErrorNoImplicitConversion(objects[n], "String", this));
+                    } else if (result instanceof RubyString) {
+                        jrubyObjects[n] = getContext().toJRuby((RubyString) result);
+                    } else {
+                        throw new RaiseException(getContext().getCoreLibrary().typeErrorNoImplicitConversion(objects[n], "String", this));
+                    }
+                }
+            }
+
+            try {
+                return getContext().toTruffle(
+                        org.jruby.util.Pack.pack(
+                                getContext().getRuntime().getCurrentContext(),
+                                getContext().getRuntime(),
+                                getContext().getRuntime().newArray(jrubyObjects),
+                                getContext().toJRuby(format)));
+            } catch (org.jruby.exceptions.RaiseException e) {
+                throw new RaiseException(getContext().toTruffle(e.getException(), this));
+            }
+        }
+
+        @Specialization(guards = "!isRubyString(arguments[1])")
+        public RubyString pack(VirtualFrame frame, RubyArray array, Object format) {
+            // TODO CS 1-Mar-15 sloppy until I can get @CreateCast to work
+
+            if (toStringNode == null) {
+                CompilerDirectives.transferToInterpreter();
+                toStringNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext(), MissingBehavior.RETURN_MISSING));
+            }
+
+            final Object result = toStringNode.call(frame, format, "to_str", null);
+
+            if (result == DispatchNode.MISSING) {
+                throw new RaiseException(getContext().getCoreLibrary().typeErrorNoImplicitConversion(format, "String", this));
+            }
+
+            if (result instanceof RubyString) {
+                return pack(frame, array, (RubyString) result);
+            }
+
+            throw new UnsupportedOperationException();
+        }
+
+        protected boolean arrayIsInts(RubyArray array) {
+            return array.getStore() instanceof int[];
         }
 
         protected boolean arrayIsLongs(RubyArray array) {
@@ -1978,8 +2058,33 @@ public abstract class ArrayNodes {
         }
 
         protected boolean formatIsLStar(RubyArray array, RubyString format) {
-            final byte[] bytes = format.getBytes().unsafeBytes();
-            return format.getBytes().getEncoding().isAsciiCompatible() && format.length() == 2 && bytes[0] == 'L' && bytes[1] == '*';
+            final ByteList byteList = format.getByteList();
+            
+            if (!byteList.getEncoding().isAsciiCompatible()) {
+                return false;
+            }
+            
+            if (byteList.length() != 2) {
+                return false;
+            }
+            
+            final byte[] bytes = byteList.unsafeBytes();
+            return bytes[0] == 'L' && bytes[1] == '*';
+        }
+
+        protected boolean formatIsXN2000(RubyArray array, RubyString format) {
+            final ByteList byteList = format.getByteList();
+
+            if (!byteList.getEncoding().isAsciiCompatible()) {
+                return false;
+            }
+
+            if (byteList.length() != 6) {
+                return false;
+            }
+
+            final byte[] bytes = byteList.unsafeBytes();
+            return bytes[0] == 'x' && bytes[1] == 'N' && bytes[2] == '2' && bytes[3] == '0' && bytes[4] == '0' && bytes[5] == '0';
         }
 
     }

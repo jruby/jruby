@@ -70,7 +70,7 @@ public abstract class SymbolNodes {
         }
 
         @Specialization(guards = "!isRubySymbol(arguments[1])")
-        public RubyNilClass CompareNode(RubySymbol symbol,  Object other) {
+        public RubyNilClass compare(RubySymbol symbol,  Object other) {
             notDesignedForCompilation();
             return getContext().getCoreLibrary().getNilObject();
         }
@@ -336,6 +336,25 @@ public abstract class SymbolNodes {
         @Specialization
         public int size(RubySymbol symbol) {
             return symbol.getByteList().lengthEnc();
+        }
+
+    }
+
+    @CoreMethod(names = {"succ"})
+    public abstract static class SuccNode extends CoreMethodNode {
+
+        public SuccNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public SuccNode(SuccNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public RubySymbol succ(RubySymbol symbol) {
+            notDesignedForCompilation();
+            return getContext().newSymbol(StringSupport.succCommon(symbol.getByteList()));
         }
 
     }

@@ -9,6 +9,9 @@
  */
 package org.jruby.truffle.runtime.subsystems;
 
+import com.oracle.truffle.api.nodes.Node;
+import com.oracle.truffle.api.source.Source;
+
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.LexicalScope;
 import org.jruby.truffle.runtime.ModuleOperations;
@@ -33,18 +36,24 @@ public class FeatureManager {
 
     private final RubyContext context;
 
+    private Source mainScriptSource = null;
+    private String mainScriptFullPath = null;
+
     public FeatureManager(RubyContext context) {
         this.context = context;
     }
 
-    public boolean require(String path, String feature, RubyNode currentNode) throws IOException {
+    public boolean require(String feature, Node currentNode) throws IOException {
         final RubyConstant dataConstantBefore = ModuleOperations.lookupConstant(context, LexicalScope.NONE, context.getCoreLibrary().getObjectClass(), "DATA");
 
         try {
-            if (path != null) {
-                if (requireInPath(path, feature, currentNode)) {
+            if (isAbsolutePath(feature)) {
+                // Try as a full path
+
+                if (requireInPath(null, feature, currentNode)) {
                     return true;
                 }
+
             } else {
                 // Some features are handled specially
 
@@ -58,19 +67,13 @@ public class FeatureManager {
                     return true;
                 }
 
-                if (new File(feature).isAbsolute()) {
-                    // Try as a full path
-                    if (requireInPath(null, feature, currentNode)) {
-                        return true;
-                    }
-                } else {
-                    // Try each load path in turn
-                    for (Object pathObject : context.getCoreLibrary().getLoadPath().slowToArray()) {
-                        final String loadPath = pathObject.toString();
+                // Try each load path in turn
 
-                        if (requireInPath(loadPath, feature, currentNode)) {
-                            return true;
-                        }
+                for (Object pathObject : context.getCoreLibrary().getLoadPath().slowToArray()) {
+                    final String loadPath = pathObject.toString();
+
+                    if (requireInPath(loadPath, feature, currentNode)) {
+                        return true;
                     }
                 }
             }
@@ -85,7 +88,7 @@ public class FeatureManager {
         }
     }
 
-    private boolean requireInPath(String path, String feature, RubyNode currentNode) throws IOException {
+    private boolean requireInPath(String path, String feature, Node currentNode) throws IOException {
         String fullPath = new File(path, feature).getPath();
 
         if (requireFile(fullPath, currentNode)) {
@@ -99,7 +102,11 @@ public class FeatureManager {
         return false;
     }
 
-    private boolean requireFile(String path, RubyNode currentNode) throws IOException {
+    public boolean isAbsolutePath(String path) {
+        return path.startsWith("uri:classloader:") || path.startsWith("core:") || new File(path).isAbsolute();
+    }
+
+    private boolean requireFile(String path, Node currentNode) throws IOException {
         // We expect '/' in various classpath URLs, so normalize Windows file paths to use '/'
         path = path.replace('\\', '/');
 
@@ -167,6 +174,21 @@ public class FeatureManager {
         }
 
         return true;
+    }
+
+    public void setMainScriptSource(Source source) {
+        this.mainScriptSource = source;
+        if (!source.getPath().equals("-e")) {
+            this.mainScriptFullPath = RubyFile.expandPath(context, source.getPath());
+        }
+    }
+
+    public String getSourcePath(Source source) {
+        if (source == mainScriptSource) {
+            return mainScriptFullPath;
+        } else {
+            return source.getPath();
+        }
     }
 
 }

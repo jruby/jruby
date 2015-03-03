@@ -42,11 +42,13 @@ public abstract class DispatchNode extends RubyNode {
     @CompilerDirectives.CompilationFinal private boolean seenFloatInUnsplat = false;
     @CompilerDirectives.CompilationFinal private boolean seenObjectInUnsplat = false;
 
-
-    public static final Object MISSING = new Object();
-    
     @Children protected final RubyNode[] argumentNodes;
     @Child protected ProcOrNullNode block;
+
+    private static final class Missing {
+    }
+
+    public static final Object MISSING = new Missing();
 
     public DispatchNode(RubyContext context, DispatchAction dispatchAction, RubyNode[] argumentNodes, ProcOrNullNode block, boolean isSplatted) {
         super(context, null);

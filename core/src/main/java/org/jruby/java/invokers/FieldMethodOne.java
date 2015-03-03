@@ -7,7 +7,8 @@ import org.jruby.internal.runtime.methods.JavaMethod.JavaMethodOne;
 import org.jruby.runtime.Visibility;
 
 public abstract class FieldMethodOne extends JavaMethodOne {
-    Field field;
+
+    final Field field;
 
     FieldMethodOne(String name, RubyModule host, Field field) {
         super(host, Visibility.PUBLIC);

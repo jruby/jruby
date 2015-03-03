@@ -1,7 +1,4 @@
-fails:String#unpack with format 'A' ignores whitespace in the format string
 fails:String#unpack with format 'A' calls #to_str to coerce the directives string
-fails:String#unpack with format 'A' raises a TypeError when passed nil
-fails:String#unpack with format 'A' raises a TypeError when passed an Integer
 fails:String#unpack with format 'A' raises an ArgumentError when the format modifier is '_'
 fails:String#unpack with format 'A' raises an ArgumentError when the format modifier is '!'
 fails:String#unpack with format 'A' returns an empty string if the input is empty
@@ -15,10 +12,7 @@ fails:String#unpack with format 'A' decodes the number of bytes specified by the
 fails:String#unpack with format 'A' decodes past NULL bytes when passed the '*' modifier
 fails:String#unpack with format 'A' removes trailing space and NULL bytes from the decoded string
 fails:String#unpack with format 'A' does not remove whitespace other than space
-fails:String#unpack with format 'a' ignores whitespace in the format string
 fails:String#unpack with format 'a' calls #to_str to coerce the directives string
-fails:String#unpack with format 'a' raises a TypeError when passed nil
-fails:String#unpack with format 'a' raises a TypeError when passed an Integer
 fails:String#unpack with format 'a' raises an ArgumentError when the format modifier is '_'
 fails:String#unpack with format 'a' raises an ArgumentError when the format modifier is '!'
 fails:String#unpack with format 'a' returns an empty string if the input is empty

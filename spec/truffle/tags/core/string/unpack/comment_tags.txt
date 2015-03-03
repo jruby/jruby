@@ -1,5 +1,0 @@
-fails:String#unpack ignores directives text from '#' to the first newline
-fails:String#unpack ignores directives text from '#' to the end if no newline is present
-fails:String#unpack ignores comments at the start of the directives string
-fails:String#unpack ignores the entire directive string if it is a comment
-fails:String#unpack ignores multiple comments

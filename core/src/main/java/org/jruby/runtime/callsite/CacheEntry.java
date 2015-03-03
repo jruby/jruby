@@ -21,4 +21,12 @@ public class CacheEntry {
     public static final boolean typeOk(CacheEntry entry, RubyClass incomingType) {
         return entry.token == incomingType.getGeneration();
     }
+
+    @Override
+    public String toString() {
+        return getClass().getName() + '@' +
+            Integer.toHexString(System.identityHashCode(this)) +
+            "<method=" + method + ", token=" + token + ">";
+    }
+
 }

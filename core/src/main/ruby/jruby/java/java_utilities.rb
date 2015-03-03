@@ -1,7 +1,7 @@
 module JavaUtilities
   def self.extend_proxy(java_class_name, &block)
-    java_class = Java::JavaClass.for_name(java_class_name)
-    java_class.extend_proxy JavaInterfaceExtender.new(java_class_name, &block)
+    java_class = JavaUtilities.get_proxy_class(java_class_name)
+    java_class.class_eval &block
   end
 
   def self.print_class(java_type, indent="")

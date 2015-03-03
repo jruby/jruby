@@ -1,8 +1,4 @@
 fails:Encoding.default_external with command line options is not changed by the -U option
-fails:Encoding.default_external with command line options returns the encoding specified by '-E external'
-fails:Encoding.default_external with command line options returns the encoding specified by '-E external:'
-fails:Encoding.default_external= sets the default external encoding
-fails:Encoding.default_external= can accept a name of an encoding as a String
 fails:Encoding.default_external= calls #to_s on arguments that are neither Strings nor Encodings
-fails:Encoding.default_external= raises a TypeError unless the argument is an Encoding or convertible to a String
-fails:Encoding.default_external= raises an ArgumentError if the argument is nil
+windows:Encoding.default_external with command line options returns the encoding specified by '-E external'
+windows:Encoding.default_external with command line options returns the encoding specified by '-E external:'

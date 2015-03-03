@@ -1,0 +1,1 @@
+fails:StringScanner#rest taints the returned String if the input was tainted

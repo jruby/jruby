@@ -121,6 +121,10 @@ public class RubyMatchData extends RubyBasicObject {
         return global;
     }
 
+    public Region getRegion() {
+        return region;
+    }
+
     public RubyString getSource() {
         return source;
     }

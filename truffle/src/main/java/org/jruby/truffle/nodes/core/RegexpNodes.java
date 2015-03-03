@@ -11,10 +11,12 @@ package org.jruby.truffle.nodes.core;
 
 import static org.jruby.util.StringSupport.CR_7BIT;
 
+import org.joni.Region;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
+import org.jruby.truffle.runtime.core.RubyMatchData;
 import org.jruby.truffle.runtime.core.RubyRegexp;
 import org.jruby.truffle.runtime.core.RubyString;
 import org.jruby.truffle.runtime.core.RubySymbol;
@@ -25,6 +27,7 @@ import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.utilities.ConditionProfile;
+import org.jruby.util.RegexpOptions;
 
 @CoreClass(name = "Regexp")
 public abstract class RegexpNodes {
@@ -121,6 +124,13 @@ public abstract class RegexpNodes {
             notDesignedForCompilation();
 
             return regexp.matchCommon(string, true, false) != getContext().getCoreLibrary().getNilObject();
+        }
+
+        @Specialization
+        public Object match(RubyRegexp regexp, RubySymbol symbol) {
+            notDesignedForCompilation();
+
+            return regexp.matchCommon(symbol.toRubyString(), true, false) != getContext().getCoreLibrary().getNilObject();
         }
 
     }
@@ -231,6 +241,28 @@ public abstract class RegexpNodes {
 
     }
 
+    @CoreMethod(names = "match_start", required = 2)
+    public abstract static class MatchStartNode extends CoreMethodNode {
+
+        public MatchStartNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public MatchStartNode(MatchStartNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public Object matchStart(RubyRegexp regexp, RubyString string, int startPos) {
+            final Object matchResult = regexp.matchCommon(string, false, false, startPos);
+            if (matchResult instanceof RubyMatchData && ((RubyMatchData) matchResult).getNumberOfRegions() > 0
+                && ((RubyMatchData) matchResult).getRegion().beg[0] == startPos) {
+                return matchResult;
+            }
+            return getContext().getCoreLibrary().getNilObject();
+        }
+    }
+
     @CoreMethod(names = "options")
     public abstract static class OptionsNode extends CoreMethodNode {
 
@@ -253,8 +285,11 @@ public abstract class RegexpNodes {
 
                 throw new RaiseException(getContext().getCoreLibrary().typeError("uninitialized Regexp", this));
             }
+            if(regexp.getOptions() != null){
+                return regexp.getOptions().toOptions();
+            }
 
-            return regexp.getRegex().getOptions();
+            return RegexpOptions.fromJoniOptions(regexp.getRegex().getOptions()).toOptions();
         }
 
     }
@@ -286,6 +321,23 @@ public abstract class RegexpNodes {
             return quote(raw.toRubyString());
         }
 
+    }
+
+    @CoreMethod(names = "search_from", required = 2)
+    public abstract static class SearchFromNode extends CoreMethodNode {
+
+        public SearchFromNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public SearchFromNode(SearchFromNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public Object searchFrom(RubyRegexp regexp, RubyString string, int startPos) {
+            return regexp.matchCommon(string, false, false, startPos);
+        }
     }
 
     @CoreMethod(names = "source")

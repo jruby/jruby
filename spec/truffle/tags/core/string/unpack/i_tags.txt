@@ -1,188 +1,22 @@
-fails:String#unpack with format 'I' with modifier '<' decodes one int for a single format character
-fails:String#unpack with format 'I' with modifier '<' decodes two ints for two format characters
-fails:String#unpack with format 'I' with modifier '<' decodes the number of ints requested by the count modifier
-fails:String#unpack with format 'I' with modifier '<' decodes the remaining ints when passed the '*' modifier
-fails:String#unpack with format 'I' with modifier '<' decodes the remaining ints when passed the '*' modifier after another directive
-fails:String#unpack with format 'I' with modifier '<' does not decode an int when fewer bytes than an int remain and the '*' modifier is passed
 fails:String#unpack with format 'I' with modifier '<' adds nil for each element requested beyond the end of the String
-fails:String#unpack with format 'I' with modifier '<' ignores NULL bytes between directives
-fails:String#unpack with format 'I' with modifier '<' ignores spaces between directives
-fails:String#unpack with format 'I' with modifier '<' decodes an int with most significant bit set as a positive number
-fails:String#unpack with format 'I' with modifier '<' and '_' decodes one int for a single format character
-fails:String#unpack with format 'I' with modifier '<' and '_' decodes two ints for two format characters
-fails:String#unpack with format 'I' with modifier '<' and '_' decodes the number of ints requested by the count modifier
-fails:String#unpack with format 'I' with modifier '<' and '_' decodes the remaining ints when passed the '*' modifier
-fails:String#unpack with format 'I' with modifier '<' and '_' decodes the remaining ints when passed the '*' modifier after another directive
-fails:String#unpack with format 'I' with modifier '<' and '_' does not decode an int when fewer bytes than an int remain and the '*' modifier is passed
 fails:String#unpack with format 'I' with modifier '<' and '_' adds nil for each element requested beyond the end of the String
-fails:String#unpack with format 'I' with modifier '<' and '_' ignores NULL bytes between directives
-fails:String#unpack with format 'I' with modifier '<' and '_' ignores spaces between directives
-fails:String#unpack with format 'I' with modifier '<' and '_' decodes an int with most significant bit set as a positive number
-fails:String#unpack with format 'I' with modifier '<' and '!' decodes one int for a single format character
-fails:String#unpack with format 'I' with modifier '<' and '!' decodes two ints for two format characters
-fails:String#unpack with format 'I' with modifier '<' and '!' decodes the number of ints requested by the count modifier
-fails:String#unpack with format 'I' with modifier '<' and '!' decodes the remaining ints when passed the '*' modifier
-fails:String#unpack with format 'I' with modifier '<' and '!' decodes the remaining ints when passed the '*' modifier after another directive
-fails:String#unpack with format 'I' with modifier '<' and '!' does not decode an int when fewer bytes than an int remain and the '*' modifier is passed
 fails:String#unpack with format 'I' with modifier '<' and '!' adds nil for each element requested beyond the end of the String
-fails:String#unpack with format 'I' with modifier '<' and '!' ignores NULL bytes between directives
-fails:String#unpack with format 'I' with modifier '<' and '!' ignores spaces between directives
-fails:String#unpack with format 'I' with modifier '<' and '!' decodes an int with most significant bit set as a positive number
-fails:String#unpack with format 'I' with modifier '>' decodes one int for a single format character
-fails:String#unpack with format 'I' with modifier '>' decodes two ints for two format characters
-fails:String#unpack with format 'I' with modifier '>' decodes the number of ints requested by the count modifier
-fails:String#unpack with format 'I' with modifier '>' decodes the remaining ints when passed the '*' modifier
-fails:String#unpack with format 'I' with modifier '>' decodes the remaining ints when passed the '*' modifier after another directive
-fails:String#unpack with format 'I' with modifier '>' does not decode an int when fewer bytes than an int remain and the '*' modifier is passed
 fails:String#unpack with format 'I' with modifier '>' adds nil for each element requested beyond the end of the String
-fails:String#unpack with format 'I' with modifier '>' ignores NULL bytes between directives
-fails:String#unpack with format 'I' with modifier '>' ignores spaces between directives
-fails:String#unpack with format 'I' with modifier '>' decodes an int with most significant bit set as a positive number
-fails:String#unpack with format 'I' with modifier '>' and '_' decodes one int for a single format character
-fails:String#unpack with format 'I' with modifier '>' and '_' decodes two ints for two format characters
-fails:String#unpack with format 'I' with modifier '>' and '_' decodes the number of ints requested by the count modifier
-fails:String#unpack with format 'I' with modifier '>' and '_' decodes the remaining ints when passed the '*' modifier
-fails:String#unpack with format 'I' with modifier '>' and '_' decodes the remaining ints when passed the '*' modifier after another directive
-fails:String#unpack with format 'I' with modifier '>' and '_' does not decode an int when fewer bytes than an int remain and the '*' modifier is passed
 fails:String#unpack with format 'I' with modifier '>' and '_' adds nil for each element requested beyond the end of the String
-fails:String#unpack with format 'I' with modifier '>' and '_' ignores NULL bytes between directives
-fails:String#unpack with format 'I' with modifier '>' and '_' ignores spaces between directives
-fails:String#unpack with format 'I' with modifier '>' and '_' decodes an int with most significant bit set as a positive number
-fails:String#unpack with format 'I' with modifier '>' and '!' decodes one int for a single format character
-fails:String#unpack with format 'I' with modifier '>' and '!' decodes two ints for two format characters
-fails:String#unpack with format 'I' with modifier '>' and '!' decodes the number of ints requested by the count modifier
-fails:String#unpack with format 'I' with modifier '>' and '!' decodes the remaining ints when passed the '*' modifier
-fails:String#unpack with format 'I' with modifier '>' and '!' decodes the remaining ints when passed the '*' modifier after another directive
-fails:String#unpack with format 'I' with modifier '>' and '!' does not decode an int when fewer bytes than an int remain and the '*' modifier is passed
 fails:String#unpack with format 'I' with modifier '>' and '!' adds nil for each element requested beyond the end of the String
-fails:String#unpack with format 'I' with modifier '>' and '!' ignores NULL bytes between directives
-fails:String#unpack with format 'I' with modifier '>' and '!' ignores spaces between directives
-fails:String#unpack with format 'I' with modifier '>' and '!' decodes an int with most significant bit set as a positive number
-fails:String#unpack with format 'i' with modifier '<' decodes one int for a single format character
-fails:String#unpack with format 'i' with modifier '<' decodes two ints for two format characters
-fails:String#unpack with format 'i' with modifier '<' decodes the number of ints requested by the count modifier
-fails:String#unpack with format 'i' with modifier '<' decodes the remaining ints when passed the '*' modifier
-fails:String#unpack with format 'i' with modifier '<' decodes the remaining ints when passed the '*' modifier after another directive
-fails:String#unpack with format 'i' with modifier '<' does not decode an int when fewer bytes than an int remain and the '*' modifier is passed
 fails:String#unpack with format 'i' with modifier '<' adds nil for each element requested beyond the end of the String
-fails:String#unpack with format 'i' with modifier '<' ignores NULL bytes between directives
-fails:String#unpack with format 'i' with modifier '<' ignores spaces between directives
-fails:String#unpack with format 'i' with modifier '<' decodes an int with most significant bit set as a negative number
-fails:String#unpack with format 'i' with modifier '<' and '_' decodes one int for a single format character
-fails:String#unpack with format 'i' with modifier '<' and '_' decodes two ints for two format characters
-fails:String#unpack with format 'i' with modifier '<' and '_' decodes the number of ints requested by the count modifier
-fails:String#unpack with format 'i' with modifier '<' and '_' decodes the remaining ints when passed the '*' modifier
-fails:String#unpack with format 'i' with modifier '<' and '_' decodes the remaining ints when passed the '*' modifier after another directive
-fails:String#unpack with format 'i' with modifier '<' and '_' does not decode an int when fewer bytes than an int remain and the '*' modifier is passed
 fails:String#unpack with format 'i' with modifier '<' and '_' adds nil for each element requested beyond the end of the String
-fails:String#unpack with format 'i' with modifier '<' and '_' ignores NULL bytes between directives
-fails:String#unpack with format 'i' with modifier '<' and '_' ignores spaces between directives
-fails:String#unpack with format 'i' with modifier '<' and '_' decodes an int with most significant bit set as a negative number
-fails:String#unpack with format 'i' with modifier '<' and '!' decodes one int for a single format character
-fails:String#unpack with format 'i' with modifier '<' and '!' decodes two ints for two format characters
-fails:String#unpack with format 'i' with modifier '<' and '!' decodes the number of ints requested by the count modifier
-fails:String#unpack with format 'i' with modifier '<' and '!' decodes the remaining ints when passed the '*' modifier
-fails:String#unpack with format 'i' with modifier '<' and '!' decodes the remaining ints when passed the '*' modifier after another directive
-fails:String#unpack with format 'i' with modifier '<' and '!' does not decode an int when fewer bytes than an int remain and the '*' modifier is passed
 fails:String#unpack with format 'i' with modifier '<' and '!' adds nil for each element requested beyond the end of the String
-fails:String#unpack with format 'i' with modifier '<' and '!' ignores NULL bytes between directives
-fails:String#unpack with format 'i' with modifier '<' and '!' ignores spaces between directives
-fails:String#unpack with format 'i' with modifier '<' and '!' decodes an int with most significant bit set as a negative number
-fails:String#unpack with format 'i' with modifier '>' decodes one int for a single format character
-fails:String#unpack with format 'i' with modifier '>' decodes two ints for two format characters
-fails:String#unpack with format 'i' with modifier '>' decodes the number of ints requested by the count modifier
-fails:String#unpack with format 'i' with modifier '>' decodes the remaining ints when passed the '*' modifier
-fails:String#unpack with format 'i' with modifier '>' decodes the remaining ints when passed the '*' modifier after another directive
-fails:String#unpack with format 'i' with modifier '>' does not decode an int when fewer bytes than an int remain and the '*' modifier is passed
 fails:String#unpack with format 'i' with modifier '>' adds nil for each element requested beyond the end of the String
-fails:String#unpack with format 'i' with modifier '>' ignores NULL bytes between directives
-fails:String#unpack with format 'i' with modifier '>' ignores spaces between directives
-fails:String#unpack with format 'i' with modifier '>' decodes an int with most significant bit set as a negative number
-fails:String#unpack with format 'i' with modifier '>' and '_' decodes one int for a single format character
-fails:String#unpack with format 'i' with modifier '>' and '_' decodes two ints for two format characters
-fails:String#unpack with format 'i' with modifier '>' and '_' decodes the number of ints requested by the count modifier
-fails:String#unpack with format 'i' with modifier '>' and '_' decodes the remaining ints when passed the '*' modifier
-fails:String#unpack with format 'i' with modifier '>' and '_' decodes the remaining ints when passed the '*' modifier after another directive
-fails:String#unpack with format 'i' with modifier '>' and '_' does not decode an int when fewer bytes than an int remain and the '*' modifier is passed
 fails:String#unpack with format 'i' with modifier '>' and '_' adds nil for each element requested beyond the end of the String
-fails:String#unpack with format 'i' with modifier '>' and '_' ignores NULL bytes between directives
-fails:String#unpack with format 'i' with modifier '>' and '_' ignores spaces between directives
-fails:String#unpack with format 'i' with modifier '>' and '_' decodes an int with most significant bit set as a negative number
-fails:String#unpack with format 'i' with modifier '>' and '!' decodes one int for a single format character
-fails:String#unpack with format 'i' with modifier '>' and '!' decodes two ints for two format characters
-fails:String#unpack with format 'i' with modifier '>' and '!' decodes the number of ints requested by the count modifier
-fails:String#unpack with format 'i' with modifier '>' and '!' decodes the remaining ints when passed the '*' modifier
-fails:String#unpack with format 'i' with modifier '>' and '!' decodes the remaining ints when passed the '*' modifier after another directive
-fails:String#unpack with format 'i' with modifier '>' and '!' does not decode an int when fewer bytes than an int remain and the '*' modifier is passed
 fails:String#unpack with format 'i' with modifier '>' and '!' adds nil for each element requested beyond the end of the String
-fails:String#unpack with format 'i' with modifier '>' and '!' ignores NULL bytes between directives
-fails:String#unpack with format 'i' with modifier '>' and '!' ignores spaces between directives
-fails:String#unpack with format 'i' with modifier '>' and '!' decodes an int with most significant bit set as a negative number
 fails:String#unpack with format 'I' ignores whitespace in the format string
 fails:String#unpack with format 'I' calls #to_str to coerce the directives string
-fails:String#unpack with format 'I' raises a TypeError when passed nil
-fails:String#unpack with format 'I' raises a TypeError when passed an Integer
-fails:String#unpack with format 'I' decodes one int for a single format character
-fails:String#unpack with format 'I' decodes two ints for two format characters
-fails:String#unpack with format 'I' decodes the number of ints requested by the count modifier
-fails:String#unpack with format 'I' decodes the remaining ints when passed the '*' modifier
-fails:String#unpack with format 'I' decodes the remaining ints when passed the '*' modifier after another directive
-fails:String#unpack with format 'I' does not decode an int when fewer bytes than an int remain and the '*' modifier is passed
 fails:String#unpack with format 'I' adds nil for each element requested beyond the end of the String
-fails:String#unpack with format 'I' ignores NULL bytes between directives
-fails:String#unpack with format 'I' ignores spaces between directives
-fails:String#unpack with format 'I' decodes an int with most significant bit set as a positive number
-fails:String#unpack with format 'I' with modifier '_' decodes one int for a single format character
-fails:String#unpack with format 'I' with modifier '_' decodes two ints for two format characters
-fails:String#unpack with format 'I' with modifier '_' decodes the number of ints requested by the count modifier
-fails:String#unpack with format 'I' with modifier '_' decodes the remaining ints when passed the '*' modifier
-fails:String#unpack with format 'I' with modifier '_' decodes the remaining ints when passed the '*' modifier after another directive
-fails:String#unpack with format 'I' with modifier '_' does not decode an int when fewer bytes than an int remain and the '*' modifier is passed
 fails:String#unpack with format 'I' with modifier '_' adds nil for each element requested beyond the end of the String
-fails:String#unpack with format 'I' with modifier '_' ignores NULL bytes between directives
-fails:String#unpack with format 'I' with modifier '_' ignores spaces between directives
-fails:String#unpack with format 'I' with modifier '_' decodes an int with most significant bit set as a positive number
-fails:String#unpack with format 'I' with modifier '!' decodes one int for a single format character
-fails:String#unpack with format 'I' with modifier '!' decodes two ints for two format characters
-fails:String#unpack with format 'I' with modifier '!' decodes the number of ints requested by the count modifier
-fails:String#unpack with format 'I' with modifier '!' decodes the remaining ints when passed the '*' modifier
-fails:String#unpack with format 'I' with modifier '!' decodes the remaining ints when passed the '*' modifier after another directive
-fails:String#unpack with format 'I' with modifier '!' does not decode an int when fewer bytes than an int remain and the '*' modifier is passed
 fails:String#unpack with format 'I' with modifier '!' adds nil for each element requested beyond the end of the String
-fails:String#unpack with format 'I' with modifier '!' ignores NULL bytes between directives
-fails:String#unpack with format 'I' with modifier '!' ignores spaces between directives
-fails:String#unpack with format 'I' with modifier '!' decodes an int with most significant bit set as a positive number
 fails:String#unpack with format 'i' ignores whitespace in the format string
 fails:String#unpack with format 'i' calls #to_str to coerce the directives string
-fails:String#unpack with format 'i' raises a TypeError when passed nil
-fails:String#unpack with format 'i' raises a TypeError when passed an Integer
-fails:String#unpack with format 'i' decodes one int for a single format character
-fails:String#unpack with format 'i' decodes two ints for two format characters
-fails:String#unpack with format 'i' decodes the number of ints requested by the count modifier
-fails:String#unpack with format 'i' decodes the remaining ints when passed the '*' modifier
-fails:String#unpack with format 'i' decodes the remaining ints when passed the '*' modifier after another directive
-fails:String#unpack with format 'i' does not decode an int when fewer bytes than an int remain and the '*' modifier is passed
 fails:String#unpack with format 'i' adds nil for each element requested beyond the end of the String
-fails:String#unpack with format 'i' ignores NULL bytes between directives
-fails:String#unpack with format 'i' ignores spaces between directives
-fails:String#unpack with format 'i' decodes an int with most significant bit set as a negative number
-fails:String#unpack with format 'i' with modifier '_' decodes one int for a single format character
-fails:String#unpack with format 'i' with modifier '_' decodes two ints for two format characters
-fails:String#unpack with format 'i' with modifier '_' decodes the number of ints requested by the count modifier
-fails:String#unpack with format 'i' with modifier '_' decodes the remaining ints when passed the '*' modifier
-fails:String#unpack with format 'i' with modifier '_' decodes the remaining ints when passed the '*' modifier after another directive
-fails:String#unpack with format 'i' with modifier '_' does not decode an int when fewer bytes than an int remain and the '*' modifier is passed
 fails:String#unpack with format 'i' with modifier '_' adds nil for each element requested beyond the end of the String
-fails:String#unpack with format 'i' with modifier '_' ignores NULL bytes between directives
-fails:String#unpack with format 'i' with modifier '_' ignores spaces between directives
-fails:String#unpack with format 'i' with modifier '_' decodes an int with most significant bit set as a negative number
-fails:String#unpack with format 'i' with modifier '!' decodes one int for a single format character
-fails:String#unpack with format 'i' with modifier '!' decodes two ints for two format characters
-fails:String#unpack with format 'i' with modifier '!' decodes the number of ints requested by the count modifier
-fails:String#unpack with format 'i' with modifier '!' decodes the remaining ints when passed the '*' modifier
-fails:String#unpack with format 'i' with modifier '!' decodes the remaining ints when passed the '*' modifier after another directive
-fails:String#unpack with format 'i' with modifier '!' does not decode an int when fewer bytes than an int remain and the '*' modifier is passed
 fails:String#unpack with format 'i' with modifier '!' adds nil for each element requested beyond the end of the String
-fails:String#unpack with format 'i' with modifier '!' ignores NULL bytes between directives
-fails:String#unpack with format 'i' with modifier '!' ignores spaces between directives
-fails:String#unpack with format 'i' with modifier '!' decodes an int with most significant bit set as a negative number

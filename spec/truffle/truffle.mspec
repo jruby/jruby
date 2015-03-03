@@ -67,9 +67,9 @@ class MSpecScript
 
     # infinite loop on some examples
     # "^spec/ruby/core/string/gsub_spec.rb",
-]
+  ]
 
-core += [
+  core += [
     # Windows
     "^spec/ruby/core/method/source_location_spec.rb",
     "^spec/ruby/core/struct/each_spec.rb",
@@ -96,15 +96,13 @@ core += [
     "^spec/ruby/core/symbol/versions/encoding_1.9_spec.rb",
     "^spec/ruby/core/unboundmethod/source_location_spec.rb",
   ] if windows?
+  
   set :core, core
 
   set :rubysl, [
     "spec/truffle/spec/rubysl/rubysl-erb/spec",
     "spec/truffle/spec/rubysl/rubysl-set/spec",
-    "spec/truffle/spec/rubysl/rubysl-erb/spec",
-
-    # Can't load these - so tags aren't enough to exclude them. The problem is
-    # either fixtures or 'before' blocks.
+    "spec/truffle/spec/rubysl/rubysl-strscan/spec"
   ]
 
   set :tags_patterns, [

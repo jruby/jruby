@@ -19,7 +19,7 @@ EXTENSIONS = %w[.java .rb]
 truffle_paths = %w[
   truffle/src/main/java/org/jruby/truffle
   truffle/src/main/ruby
-  test/truffle
+  test/truffle/pe/pe.rb
 ] + [__FILE__]
 
 truffle_paths.each do |path|

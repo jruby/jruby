@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2014 Oracle and/or its affiliates. All rights reserved. This
+ * Copyright (c) 2013, 2015 Oracle and/or its affiliates. All rights reserved. This
  * code is released under a tri EPL/GPL/LGPL license. You can use it,
  * redistribute it and/or modify it under the terms of the:
  *
@@ -9,6 +9,7 @@
  */
 package org.jruby.truffle.runtime.core;
 
+import com.oracle.truffle.api.nodes.Node;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.objects.Allocator;
 import org.jruby.truffle.runtime.RubyContext;
@@ -63,7 +64,7 @@ public class RubyException extends RubyBasicObject {
     public static class ExceptionAllocator implements Allocator {
 
         @Override
-        public RubyBasicObject allocate(RubyContext context, RubyClass rubyClass, RubyNode currentNode) {
+        public RubyBasicObject allocate(RubyContext context, RubyClass rubyClass, Node currentNode) {
             return new RubyException(rubyClass);
         }
 

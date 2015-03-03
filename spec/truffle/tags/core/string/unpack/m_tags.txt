@@ -1,7 +1,4 @@
-fails:String#unpack with format 'M' ignores whitespace in the format string
 fails:String#unpack with format 'M' calls #to_str to coerce the directives string
-fails:String#unpack with format 'M' raises a TypeError when passed nil
-fails:String#unpack with format 'M' raises a TypeError when passed an Integer
 fails:String#unpack with format 'M' raises an ArgumentError when the format modifier is '_'
 fails:String#unpack with format 'M' raises an ArgumentError when the format modifier is '!'
 fails:String#unpack with format 'M' decodes an empty string
@@ -18,10 +15,7 @@ fails:String#unpack with format 'M' decodes pre-encoded byte values 33..60
 fails:String#unpack with format 'M' decodes pre-encoded byte values 62..126
 fails:String#unpack with format 'M' decodes pre-encoded byte values 0..31 except tab and newline
 fails:String#unpack with format 'M' decodes pre-encoded byte values 127..255
-fails:String#unpack with format 'm' ignores whitespace in the format string
 fails:String#unpack with format 'm' calls #to_str to coerce the directives string
-fails:String#unpack with format 'm' raises a TypeError when passed nil
-fails:String#unpack with format 'm' raises a TypeError when passed an Integer
 fails:String#unpack with format 'm' raises an ArgumentError when the format modifier is '_'
 fails:String#unpack with format 'm' raises an ArgumentError when the format modifier is '!'
 fails:String#unpack with format 'm' decodes an empty string
