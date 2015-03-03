@@ -1987,7 +1987,6 @@ public abstract class ArrayNodes {
             return new RubyString(getContext().getCoreLibrary().getStringClass(), new ByteList(bytes));
         }
 
-        @CompilerDirectives.TruffleBoundary
         @Specialization
         public RubyString pack(VirtualFrame frame, RubyArray array, RubyString format) {
             notDesignedForCompilation();
