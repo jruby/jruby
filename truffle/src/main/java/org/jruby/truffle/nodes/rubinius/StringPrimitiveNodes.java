@@ -53,12 +53,26 @@ public abstract class StringPrimitiveNodes {
 
         @Specialization
         public Object stringByteSubstring(RubyString string, int index, UndefinedPlaceholder length) {
-            return stringByteSubstring(string, index, 1);
+            final Object subString = stringByteSubstring(string, index, 1);
+
+            if (subString == getContext().getCoreLibrary().getNilObject()) {
+                return subString;
+            }
+
+            if (((RubyString) subString).getByteList().length() == 0) {
+                return getContext().getCoreLibrary().getNilObject();
+            }
+
+            return subString;
         }
 
         @Specialization
         public Object stringByteSubstring(RubyString string, int index, int length) {
             final ByteList bytes = string.getBytes();
+
+            if (length < 0) {
+                return getContext().getCoreLibrary().getNilObject();
+            }
 
             final int normalizedIndex = string.normalizeIndex(index);
 
@@ -67,8 +81,12 @@ public abstract class StringPrimitiveNodes {
             }
 
             int rangeEnd = normalizedIndex + length;
-            if (rangeEnd > bytes.getRealSize()) {
-                rangeEnd = bytes.getRealSize();
+            if (rangeEnd > bytes.length()) {
+                rangeEnd = bytes.length();
+            }
+
+            if (normalizedIndex < bytes.getBegin()) {
+                return getContext().getCoreLibrary().getNilObject();
             }
 
             final byte[] copiedBytes = Arrays.copyOfRange(bytes.getUnsafeBytes(), normalizedIndex, rangeEnd);
@@ -78,7 +96,32 @@ public abstract class StringPrimitiveNodes {
         }
 
         @Specialization
+        public Object stringByteSubstring(RubyString string, int index, double length) {
+            return stringByteSubstring(string, index, (int) length);
+        }
+
+        @Specialization
+        public Object stringByteSubstring(RubyString string, double index, UndefinedPlaceholder length) {
+            return stringByteSubstring(string, (int) index, 1);
+        }
+
+        @Specialization
+        public Object stringByteSubstring(RubyString string, double index, double length) {
+            return stringByteSubstring(string, (int) index, (int) length);
+        }
+
+        @Specialization
+        public Object stringByteSubstring(RubyString string, double index, int length) {
+            return stringByteSubstring(string, (int) index, length);
+        }
+
+        @Specialization
         public Object stringByteSubstring(RubyString string, RubyRange range, UndefinedPlaceholder unused) {
+            return null;
+        }
+
+        @Specialization(guards = "!isRubyRange(arguments[1])")
+        public Object stringByteSubstring(RubyString string, Object indexOrRange, Object length) {
             return null;
         }
 

@@ -1,9 +1,3 @@
-fails:String#byteslice returns nil if index is outside of self
-fails:String#byteslice calls to_int on the given index
-fails:String#byteslice with index, length returns nil if the offset falls outside of self
-fails:String#byteslice with index, length returns nil if the length is negative
-fails:String#byteslice with index, length calls to_int on the given index and the given length
 fails:String#byteslice with index, length returns subclass instances
-fails:String#byteslice with index, length handles repeated application
 fails:String#byteslice with Range returns subclass instances
 fails:String#byteslice with Range calls to_int on range arguments
