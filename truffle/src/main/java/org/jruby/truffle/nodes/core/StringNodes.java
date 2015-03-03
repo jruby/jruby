@@ -470,7 +470,7 @@ public abstract class StringNodes {
                 includeNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext()));
             }
 
-            Boolean result = (Boolean) includeNode.call(frame, string, "include?", null, matchStr);
+            boolean result = includeNode.callBoolean(frame, string, "include?", null, matchStr);
 
             if (result) {
                 if (dupNode == null) {
