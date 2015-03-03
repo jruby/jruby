@@ -454,7 +454,7 @@ public abstract class KernelNodes {
 
     }
 
-    @CoreMethod(names = "dup", taintSource = 0)
+    @CoreMethod(names = "dup", taintFrom = 0)
     public abstract static class DupNode extends CoreMethodNode {
 
         @Child private CallDispatchHeadNode initializeDupNode;

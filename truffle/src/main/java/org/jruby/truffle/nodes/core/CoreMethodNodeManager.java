@@ -202,7 +202,7 @@ public abstract class CoreMethodNodeManager {
         final CheckArityNode checkArity = new CheckArityNode(context, sourceSection, arity);
         RubyNode block = SequenceNode.sequence(context, sourceSection, checkArity, methodNode);
 
-        final int taintSource = methodDetails.getMethodAnnotation().taintSource();
+        final int taintSource = methodDetails.getMethodAnnotation().taintFrom();
         if (taintSource != -1) {
             block = new TaintResultNode(context, sourceSection, needsSelf, taintSource, block);
         }

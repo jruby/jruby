@@ -280,7 +280,7 @@ public abstract class StringNodes {
         }
     }
 
-    @CoreMethod(names = {"[]", "slice"}, required = 1, optional = 1, lowerFixnumParameters = {0, 1}, taintSource = 0)
+    @CoreMethod(names = {"[]", "slice"}, required = 1, optional = 1, lowerFixnumParameters = {0, 1}, taintFrom = 0)
     public abstract static class GetIndexNode extends CoreMethodNode {
 
         @Child private ToIntNode toIntNode;
