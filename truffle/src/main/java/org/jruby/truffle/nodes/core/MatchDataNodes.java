@@ -12,12 +12,15 @@ package org.jruby.truffle.nodes.core;
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.dsl.NodeChild;
 import com.oracle.truffle.api.dsl.Specialization;
+import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.utilities.ConditionProfile;
 
 import org.joni.exception.ValueException;
 import org.jruby.runtime.Visibility;
 import org.jruby.truffle.nodes.RubyNode;
+import org.jruby.truffle.nodes.coerce.ToIntNode;
+import org.jruby.truffle.nodes.coerce.ToIntNodeFactory;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.RubyArray;
@@ -31,6 +34,8 @@ public abstract class MatchDataNodes {
 
     @CoreMethod(names = "[]", required = 1, lowerFixnumParameters = 0, taintFrom = 0)
     public abstract static class GetIndexNode extends CoreMethodNode {
+
+        @Child private ToIntNode toIntNode;
 
         public GetIndexNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -85,6 +90,18 @@ public abstract class MatchDataNodes {
                 throw new RaiseException(
                         getContext().getCoreLibrary().indexError(String.format("undefined group name reference: %s", index.toString()), this));
             }
+        }
+
+        @Specialization(guards = { "!isRubySymbol(arguments[1])", "!isRubyString(arguments[1])" })
+        public Object getIndex(VirtualFrame frame, RubyMatchData matchData, Object index) {
+            notDesignedForCompilation();
+
+            if (toIntNode == null) {
+                CompilerDirectives.transferToInterpreter();
+                toIntNode = insert(ToIntNodeFactory.create(getContext(), getSourceSection(), null));
+            }
+
+            return getIndex(matchData, toIntNode.executeIntegerFixnum(frame, index));
         }
 
     }
