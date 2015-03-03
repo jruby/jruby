@@ -1,19 +1,14 @@
-fails:String#rindex with object raises a TypeError if obj isn't a String, Fixnum or Regexp
-fails:String#rindex with object doesn't try to convert obj to an integer via to_int
 fails:String#rindex with object tries to convert obj to a string via to_str
 fails:String#rindex with String behaves the same as String#rindex(char) for one-character strings
 fails:String#rindex with String behaves the same as String#rindex(?char) for one-character strings
 fails:String#rindex with String tries to convert start_offset to an integer via to_int
-fails:String#rindex with String raises a TypeError when given offset is nil
 fails:String#rindex with Regexp behaves the same as String#rindex(string) for escaped string regexps
 fails:String#rindex with Regexp returns the index of the first match from the end of string of regexp
 fails:String#rindex with Regexp sets $~ to MatchData of match and nil when there's none
 fails:String#rindex with Regexp starts the search at the given offset
-fails:String#rindex with Regexp starts the search at offset + self.length if offset is negative
 fails:String#rindex with Regexp returns nil if the substring isn't found
 fails:String#rindex with Regexp supports \G which matches at the given start offset
 fails:String#rindex with Regexp tries to convert start_offset to an integer via to_int
-fails:String#rindex with Regexp raises a TypeError when given offset is nil
 fails:String#rindex with Regexp returns the reverse character index of a multibyte character
 fails:String#rindex with Regexp returns the character index before the finish
 fails:String#rindex with Regexp raises an Encoding::CompatibilityError if the encodings are incompatible

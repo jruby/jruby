@@ -1,8 +1,6 @@
 fails:String#rjust with length, padding taints result when self or padstr is tainted
 fails:String#rjust with length, padding tries to convert length to an integer using to_int
-fails:String#rjust with length, padding raises a TypeError when length can't be converted to an integer
 fails:String#rjust with length, padding tries to convert padstr to a string using to_str
-fails:String#rjust with length, padding raises a TypeError when padstr can't be converted
 fails:String#rjust with length, padding raises an ArgumentError when padstr is empty
 fails:String#rjust with length, padding returns subclass instances when called on subclasses
 fails:String#rjust with length, padding when padding is tainted and self is untainted returns a tainted string if and only if length is longer than self

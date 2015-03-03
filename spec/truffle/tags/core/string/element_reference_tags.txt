@@ -1,34 +1,9 @@
-fails:String#[] calls to_int on the given index
-fails:String#[] with index, length always taints resulting strings when self is tainted
-fails:String#[] with index, length calls to_int on the given index and the given length
 fails:String#[] with index, length returns subclass instances
-fails:String#[] with Range returns an empty string if range.begin is inside self and > real end
-fails:String#[] with Range always taints resulting strings when self is tainted
 fails:String#[] with Range returns subclass instances
 fails:String#[] with Range calls to_int on range arguments
 fails:String#[] with Range works with Range subclasses
-fails:String#[] with Regexp always taints resulting strings when self or regexp is tainted
-fails:String#[] with Regexp returns an untrusted string if the regexp is untrusted
 fails:String#[] with Regexp returns subclass instances
-fails:String#[] with Regexp, index returns the capture for the given index
-fails:String#[] with Regexp, index always taints resulting strings when self or regexp is tainted
-fails:String#[] with Regexp, index returns an untrusted string if the regexp is untrusted
-fails:String#[] with Regexp, index returns nil if there is no match
 fails:String#[] with Regexp, index returns nil if there is no capture for the given index
-fails:String#[] with Regexp, index calls to_int on the given index
 fails:String#[] with Regexp, index returns subclass instances
-fails:String#[] with Regexp, index sets $~ to MatchData when there is a match and nil when there's none
-fails:String#[] with Regexp, group returns the capture for the given name
-fails:String#[] with Regexp, group returns the last capture for duplicate names
-fails:String#[] with Regexp, group returns the innermost capture for nested duplicate names
-fails:String#[] with Regexp, group always taints resulting strings when self or regexp is tainted
-fails:String#[] with Regexp, group returns nil if there is no match
-fails:String#[] with Regexp, group raises an IndexError if there is no capture for the given name
-fails:String#[] with Regexp, group raises an IndexError when given the empty String as a group name
 fails:String#[] with Regexp, group returns subclass instances
-fails:String#[] with Regexp, group sets $~ to MatchData when there is a match and nil when there's none
-fails:String#[] with String returns other_str if it occurs in self
 fails:String#[] with String taints resulting strings when other is tainted
-fails:String#[] with String doesn't set $~
-fails:String#[] with String returns nil if there is no match
-fails:String#[] with String returns a subclass instance when given a subclass instance

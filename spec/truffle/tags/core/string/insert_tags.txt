@@ -1,7 +1,4 @@
 fails:String#insert with index, other converts index to an integer using to_int
 fails:String#insert with index, other converts other to a string using to_str
 fails:String#insert with index, other taints self if string to insert is tainted
-fails:String#insert with index, other raises a TypeError if other can't be converted to string
 fails:String#insert with index, other inserts a character into a multibyte encoded string
-fails:String#insert with index, other returns a String in the compatible encoding
-fails:String#insert with index, other raises an Encoding::CompatibilityError if the encodings are incompatible
