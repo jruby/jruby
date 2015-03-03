@@ -17,14 +17,19 @@ import com.oracle.truffle.api.utilities.ConditionProfile;
 import org.jcodings.exception.EncodingException;
 import org.jcodings.specific.ASCIIEncoding;
 import org.jruby.truffle.nodes.RubyNode;
+import org.jruby.truffle.nodes.cast.TaintResultNode;
 import org.jruby.truffle.nodes.core.StringNodes;
 import org.jruby.truffle.nodes.core.StringNodesFactory;
+import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
+import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.UndefinedPlaceholder;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.*;
 import org.jruby.util.ByteList;
 import org.jruby.util.StringSupport;
+
+import java.util.Arrays;
 
 /**
  * Rubinius primitives associated with the Ruby {@code String} class.
@@ -34,21 +39,47 @@ public abstract class StringPrimitiveNodes {
     @RubiniusPrimitive(name = "string_byte_substring")
     public static abstract class StringByteSubstringPrimitiveNode extends RubiniusPrimitiveNode {
 
-        @Child private StringNodes.ByteSliceNode byteSliceNode;
+        @Child private TaintResultNode taintResultNode;
 
         public StringByteSubstringPrimitiveNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            byteSliceNode = StringNodesFactory.ByteSliceNodeFactory.create(context, sourceSection, new RubyNode[] {});
+            taintResultNode = new TaintResultNode(context, sourceSection, true, 0, null);
         }
 
         public StringByteSubstringPrimitiveNode(StringByteSubstringPrimitiveNode prev) {
             super(prev);
-            byteSliceNode = prev.byteSliceNode;
+            taintResultNode = prev.taintResultNode;
         }
 
         @Specialization
-        public Object stringByteSubstring(VirtualFrame frame, RubyString string, int index, int length) {
-            return byteSliceNode.byteSlice(string, index, length);
+        public Object stringByteSubstring(RubyString string, int index, UndefinedPlaceholder length) {
+            return stringByteSubstring(string, index, 1);
+        }
+
+        @Specialization
+        public Object stringByteSubstring(RubyString string, int index, int length) {
+            final ByteList bytes = string.getBytes();
+
+            final int normalizedIndex = string.normalizeIndex(index);
+
+            if (normalizedIndex > bytes.length()) {
+                return getContext().getCoreLibrary().getNilObject();
+            }
+
+            int rangeEnd = normalizedIndex + length;
+            if (rangeEnd > bytes.getRealSize()) {
+                rangeEnd = bytes.getRealSize();
+            }
+
+            final byte[] copiedBytes = Arrays.copyOfRange(bytes.getUnsafeBytes(), normalizedIndex, rangeEnd);
+            final RubyString result = new RubyString(getContext().getCoreLibrary().getStringClass(), new ByteList(copiedBytes, string.getBytes().getEncoding()));
+
+            return taintResultNode.maybeTaint(string, result);
+        }
+
+        @Specialization
+        public Object stringByteSubstring(RubyString string, RubyRange range, UndefinedPlaceholder unused) {
+            return null;
         }
 
     }
