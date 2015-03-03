@@ -13,6 +13,7 @@ package org.jruby.truffle.nodes.cast;
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.SourceSection;
+import com.oracle.truffle.api.utilities.ConditionProfile;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.core.KernelNodes;
 import org.jruby.truffle.nodes.core.KernelNodesFactory;
@@ -23,6 +24,8 @@ public class TaintResultNode extends RubyNode {
 
     private final boolean needsSelf;
     private final int taintSourceIndex;
+    private final ConditionProfile taintProfile = ConditionProfile.createBinaryProfile();
+
     @Child private RubyNode method;
     @Child private KernelNodes.KernelIsTaintedNode isTaintedNode;
     @Child private KernelNodes.KernelTaintNode taintNode;
@@ -46,9 +49,10 @@ public class TaintResultNode extends RubyNode {
     @Override
     public Object execute(VirtualFrame frame) {
         final Object result = method.execute(frame);
-        final Object taintSource;
 
         if (result != getContext().getCoreLibrary().getNilObject()) {
+            final Object taintSource;
+
             if (needsSelf && taintSourceIndex == 0) {
                 taintSource = RubyArguments.getSelf(frame.getArguments());
             } else {
@@ -56,7 +60,7 @@ public class TaintResultNode extends RubyNode {
                 taintSource = RubyArguments.getUserArgument(frame.getArguments(), adjustedIndex);
             }
 
-            if (isTaintedNode.isTainted(taintSource)) {
+            if (taintProfile.profile(isTaintedNode.isTainted(taintSource))) {
                 if (taintNode == null) {
                     CompilerDirectives.transferToInterpreter();
                     taintNode = insert(KernelNodesFactory.KernelTaintNodeFactory.create(getContext(), getSourceSection(), new RubyNode[]{}));
