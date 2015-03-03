@@ -29,7 +29,7 @@ import org.jruby.util.ByteList;
 @CoreClass(name = "MatchData")
 public abstract class MatchDataNodes {
 
-    @CoreMethod(names = "[]", required = 1, lowerFixnumParameters = 0)
+    @CoreMethod(names = "[]", required = 1, lowerFixnumParameters = 0, taintFrom = 0)
     public abstract static class GetIndexNode extends CoreMethodNode {
 
         public GetIndexNode(RubyContext context, SourceSection sourceSection) {
