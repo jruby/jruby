@@ -924,8 +924,9 @@ public abstract class HashNodes {
 
     }
 
-    @CoreMethod(names = "merge", required = 1)
-    public abstract static class MergeNode extends HashCoreMethodNode {
+    @ImportGuards(HashGuards.class)
+    @CoreMethod(names = "merge", required = 1, needsBlock = true)
+    public abstract static class MergeNode extends YieldingCoreMethodNode {
 
         @Child private CallDispatchHeadNode eqlNode;
 
@@ -948,7 +949,7 @@ public abstract class HashNodes {
         }
 
         @Specialization(guards = {"!isNull", "!isBuckets", "isNull(arguments[1])"})
-        public RubyHash mergePackedArrayNull(RubyHash hash, RubyHash other) {
+        public RubyHash mergePackedArrayNull(RubyHash hash, RubyHash other, UndefinedPlaceholder block) {
             final Object[] store = (Object[]) hash.getStore();
             final Object[] copy = Arrays.copyOf(store, HashOperations.SMALL_HASH_SIZE * 2);
 
@@ -957,7 +958,7 @@ public abstract class HashNodes {
 
         @ExplodeLoop
         @Specialization(guards = {"!isNull", "!isBuckets", "!isNull(arguments[1])", "!isBuckets(arguments[1])"})
-        public RubyHash mergePackedArrayPackedArray(VirtualFrame frame, RubyHash hash, RubyHash other) {
+        public RubyHash mergePackedArrayPackedArray(VirtualFrame frame, RubyHash hash, RubyHash other, UndefinedPlaceholder block) {
             // TODO(CS): what happens with the default block here? Which side does it get merged from?
 
             final Object[] storeA = (Object[]) hash.getStore();
@@ -1033,10 +1034,12 @@ public abstract class HashNodes {
             CompilerDirectives.transferToInterpreter();
             throw new UnsupportedOperationException();
         }
-
-
+        
+        // TODO CS 3-Mar-15 need negative guards on this
         @Specialization
-        public RubyHash mergeBucketsBuckets(RubyHash hash, RubyHash other) {
+        public RubyHash mergeBucketsBuckets(RubyHash hash, RubyHash other, UndefinedPlaceholder block) {
+            notDesignedForCompilation();
+
             final RubyHash merged = new RubyHash(hash.getLogicalClass(), null, null, new Entry[HashOperations.capacityGreaterThan(hash.getSize() + other.getSize())], 0, null);
 
             int size = 0;
@@ -1049,6 +1052,39 @@ public abstract class HashNodes {
             for (KeyValue keyValue : HashOperations.verySlowToKeyValues(other)) {
                 if (HashOperations.verySlowSetInBuckets(merged, keyValue.getKey(), keyValue.getValue())) {
                     size++;
+                }
+            }
+
+            merged.setSize(size);
+
+            return merged;
+        }
+
+        @Specialization
+        public RubyHash merge(VirtualFrame frame, RubyHash hash, RubyHash other, RubyProc block) {
+            notDesignedForCompilation();
+            
+            final RubyHash merged = new RubyHash(hash.getLogicalClass(), null, null, new Entry[HashOperations.capacityGreaterThan(hash.getSize() + other.getSize())], 0, null);
+
+            int size = 0;
+
+            for (KeyValue keyValue : HashOperations.verySlowToKeyValues(hash)) {
+                HashOperations.verySlowSetInBuckets(merged, keyValue.getKey(), keyValue.getValue());
+                size++;
+            }
+
+            for (KeyValue keyValue : HashOperations.verySlowToKeyValues(other)) {
+                final HashSearchResult searchResult = HashOperations.verySlowFindBucket(merged, keyValue.getKey());
+                
+                if (searchResult.getEntry() == null) {
+                    HashOperations.verySlowSetInBuckets(merged, keyValue.getKey(), keyValue.getValue());
+                    size++;
+                } else {
+                    final Object oldValue = searchResult.getEntry().getValue();
+                    final Object newValue = keyValue.getValue();
+                    final Object mergedValue = yield(frame, block, keyValue.getKey(), oldValue, newValue);
+                    
+                    HashOperations.verySlowSetInBuckets(merged, keyValue.getKey(), mergedValue);
                 }
             }
 

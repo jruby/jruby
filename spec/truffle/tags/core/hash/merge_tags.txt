@@ -1,4 +1,1 @@
-fails:Hash#merge sets any duplicate key to the value of block if passed a block
 fails:Hash#merge tries to convert the passed argument to a hash using #to_hash
-fails:Hash#merge processes entries with same order as each()
-fails:Hash#merge! processes entries with same order as merge()
