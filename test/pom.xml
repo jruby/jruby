@@ -1012,6 +1012,7 @@
                     <exec failonerror="true" dir="${jruby.home}" executable="${jruby.home}/bin/jruby">
                       <arg value="-J-server" />
                       <arg value="-J-G:+TruffleCompilationExceptionsAreThrown" />
+                      <arg value="-X+T" />
                       <arg value="test/truffle/pe/pe.rb" />
                     </exec>
                   </target>
