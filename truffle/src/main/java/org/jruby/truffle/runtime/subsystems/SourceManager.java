@@ -58,7 +58,7 @@ public class SourceManager {
 
         // TODO CS 28-Feb-15 only need the max value - don't need a full sort, but no convenient API?
 
-        matches.sort(new Comparator<Map.Entry<String, Source>>() {
+        Collections.sort(matches, new Comparator<Map.Entry<String, Source>>() {
 
             @Override
             public int compare(Map.Entry<String, Source> a, Map.Entry<String, Source> b) {
