@@ -173,7 +173,6 @@ public class InterpreterContext {
         for (int i = 0; i < length; i++) {
             if (i > 0) b.append("\n");
             b.append("  ").append(i).append('\t').append(instructions[i]);
-            i++;
         }
 
         Collection<IRClosure> nestedClosures = scope.getClosures();
