@@ -40,6 +40,7 @@ public interface IRubyWarnings {
     public enum ID {
         AMBIGUOUS_ARGUMENT,
         ACCESSOR_NOT_INITIALIZED,
+        ACCESSOR_MODULE_FUNCTION,
         ARGUMENT_AS_PREFIX,
         ARGUMENT_EXTRA_SPACE,
         ASSIGNMENT_IN_CONDITIONAL,
@@ -72,6 +73,7 @@ public interface IRubyWarnings {
         NOT_IMPLEMENTED,
         OBSOLETE_ARGUMENT,
         PARENTHISE_ARGUMENTS,
+        PRIVATE_ACCESSOR,
         PROXY_EXTENDED_LATE,
         STATEMENT_NOT_REACHED, 
         LITERAL_IN_CONDITIONAL_RANGE,
