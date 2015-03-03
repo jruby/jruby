@@ -576,7 +576,7 @@ public abstract class StringNodes {
         }
     }
 
-    @CoreMethod(names = "b")
+    @CoreMethod(names = "b", taintFrom = 0)
     public abstract static class BNode extends CoreMethodNode {
 
         public BNode(RubyContext context, SourceSection sourceSection) {
