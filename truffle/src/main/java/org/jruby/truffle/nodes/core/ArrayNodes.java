@@ -1939,6 +1939,30 @@ public abstract class ArrayNodes {
             super(prev);
             toStringNode = prev.toStringNode;
         }
+        
+        // TODO CS 3-Mar-15 to be honest these two specialisations are a bit sneaky - we'll get rid of them ASAP
+
+        @Specialization(guards = {"arrayIsInts", "formatIsXN2000"})
+        public RubyString packXN2000(RubyArray array, RubyString format) {
+            final int size = array.getSize();
+            final int[] store = (int[]) array.getStore();
+            final byte[] bytes = new byte[1 + size * 4];
+            
+            // bytes[0] = 0 is implicit
+
+            for (int n = 0; n < size; n++) {
+                final int value = store[n];
+                final int byteOffset = 1 + n * 4;
+                bytes[byteOffset + 3] = (byte) (value >>> 24);
+                bytes[byteOffset + 2] = (byte) (value >>> 16);
+                bytes[byteOffset + 1] = (byte) (value >>> 8);
+                bytes[byteOffset + 0] = (byte) value;
+            }
+
+            // TODO CS 3-Mar-15 should be tainting here - but ideally have a pack node, and then taint on top of that
+
+            return new RubyString(getContext().getCoreLibrary().getStringClass(), new ByteList(bytes));
+        }
 
         @Specialization(guards = {"arrayIsLongs", "formatIsLStar"})
         public RubyString packLStar(RubyArray array, RubyString format) {
@@ -1949,6 +1973,7 @@ public abstract class ArrayNodes {
             for (int n = 0; n < size; n++) {
                 final int value = (int) store[n]; // happy to truncate
                 final int byteOffset = n * 4;
+                // TODO CS 3-Mar-15 this should be native endian
                 bytes[byteOffset + 3] = (byte) (value >>> 24);
                 bytes[byteOffset + 2] = (byte) (value >>> 16);
                 bytes[byteOffset + 1] = (byte) (value >>> 8);
@@ -2024,13 +2049,42 @@ public abstract class ArrayNodes {
             throw new UnsupportedOperationException();
         }
 
+        protected boolean arrayIsInts(RubyArray array) {
+            return array.getStore() instanceof int[];
+        }
+
         protected boolean arrayIsLongs(RubyArray array) {
             return array.getStore() instanceof long[];
         }
 
         protected boolean formatIsLStar(RubyArray array, RubyString format) {
-            final byte[] bytes = format.getBytes().unsafeBytes();
-            return format.getBytes().getEncoding().isAsciiCompatible() && format.length() == 2 && bytes[0] == 'L' && bytes[1] == '*';
+            final ByteList byteList = format.getByteList();
+            
+            if (!byteList.getEncoding().isAsciiCompatible()) {
+                return false;
+            }
+            
+            if (byteList.length() != 2) {
+                return false;
+            }
+            
+            final byte[] bytes = byteList.unsafeBytes();
+            return bytes[0] == 'L' && bytes[1] == '*';
+        }
+
+        protected boolean formatIsXN2000(RubyArray array, RubyString format) {
+            final ByteList byteList = format.getByteList();
+
+            if (!byteList.getEncoding().isAsciiCompatible()) {
+                return false;
+            }
+
+            if (byteList.length() != 6) {
+                return false;
+            }
+
+            final byte[] bytes = byteList.unsafeBytes();
+            return bytes[0] == 'x' && bytes[1] == 'N' && bytes[2] == '2' && bytes[3] == '0' && bytes[4] == '0' && bytes[5] == '0';
         }
 
     }
