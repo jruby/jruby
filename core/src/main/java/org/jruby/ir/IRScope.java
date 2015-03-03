@@ -476,7 +476,7 @@ public abstract class IRScope implements ParseResult {
         // This is a complicating pseudo-pass which needs to be run before CFG is generated.  This
         // neccesitates us needing a clonedInstrs field on IRScope.  If we can rewrite this to a full
         // CFG using pass we can eliminate this intermediate save and field.
-        //getManager().optimizeTemporaryVariablesIfEnabled(this);
+        getManager().optimizeTemporaryVariablesIfEnabled(this);
 
         for (IRClosure cl: getClosures()) {
             if (cl.fullInterpreterContext == null) cl.fullInterpreterContext = new FullInterpreterContext(cl, cl.getClonedInstrs());
