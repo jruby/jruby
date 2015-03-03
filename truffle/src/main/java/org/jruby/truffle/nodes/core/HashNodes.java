@@ -929,6 +929,7 @@ public abstract class HashNodes {
     public abstract static class MergeNode extends YieldingCoreMethodNode {
 
         @Child private CallDispatchHeadNode eqlNode;
+        @Child private CallDispatchHeadNode fallbackCallNode;
 
         private final BranchProfile nothingFromFirstProfile = BranchProfile.create();
         private final BranchProfile considerNothingFromSecondProfile = BranchProfile.create();
@@ -946,6 +947,7 @@ public abstract class HashNodes {
         public MergeNode(MergeNode prev) {
             super(prev);
             eqlNode = prev.eqlNode;
+            fallbackCallNode = prev.fallbackCallNode;
         }
 
         @Specialization(guards = {"!isNull", "!isBuckets", "isNull(arguments[1])"})
@@ -1091,6 +1093,26 @@ public abstract class HashNodes {
             merged.setSize(size);
 
             return merged;
+        }
+
+        @Specialization(guards = "!isRubyHash(arguments[1])")
+        public Object merge(VirtualFrame frame, RubyHash hash, Object other, Object block) {
+            notDesignedForCompilation();
+
+            if (fallbackCallNode == null) {
+                CompilerDirectives.transferToInterpreter();
+                fallbackCallNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext(), true));
+            }
+            
+            final RubyProc blockProc;
+            
+            if (block == UndefinedPlaceholder.INSTANCE) {
+                blockProc = null;
+            } else {
+                blockProc = (RubyProc) block;
+            }
+
+            return fallbackCallNode.call(frame, hash, "merge_fallback", blockProc, other);
         }
 
     }

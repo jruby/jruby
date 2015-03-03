@@ -1,1 +1,0 @@
-fails:Hash#merge tries to convert the passed argument to a hash using #to_hash

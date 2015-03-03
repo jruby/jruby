@@ -33,4 +33,8 @@ class Hash
     end
   end
 
+  def merge_fallback(other, &block)
+    merge(Rubinius::Type.coerce_to other, Hash, :to_hash, &block)
+  end
+
 end
