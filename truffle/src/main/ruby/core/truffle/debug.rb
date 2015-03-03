@@ -11,10 +11,25 @@ module Truffle
   # Debug utilities specific to Truffle.
   module Debug
 
-    # Break and enter an interactive shell.
+    # Break and enter an interactive shell, or set a line breakpoint to enter
+    # the shell.
     # @return [nil]
     #
-    # # Usage
+    # # Examples
+    #
+    # ```
+    # Truffle::Debug.break
+    # ```
+    # 
+    # Enter the shell immediately.
+    # 
+    # ```
+    # Truffle::Debug.break 'foo.rb', 59
+    # ```
+    #
+    # Enter the shell every time the program reaches line 59 in `foo.rb` (see {#clear}).
+    #
+    # # Shell Usage
     #
     # In the shell you can type normal Ruby expressions and have them evaluated
     # in the current frame. Results will be printed via `#inspect`, like in
@@ -71,6 +86,7 @@ module Truffle
       end
     end
 
+    # Remove a breakpoint set in {#break}.
     def self.clear(file, line)
       Truffle::Primitive.detach file, line
     end
