@@ -1,3 +1,2 @@
 fails:String#byteslice with index, length returns subclass instances
 fails:String#byteslice with Range returns subclass instances
-fails:String#byteslice with Range calls to_int on range arguments
