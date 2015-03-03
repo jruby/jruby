@@ -1,0 +1,1 @@
+fails:StringScanner#getbyte taints the returned String if the input was tainted

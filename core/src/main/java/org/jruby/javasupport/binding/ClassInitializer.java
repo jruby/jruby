@@ -10,6 +10,7 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -20,6 +21,7 @@ public class ClassInitializer extends Initializer {
         super(runtime, javaClass);
     }
 
+    @Override
     public RubyModule initialize(RubyModule proxy) {
         RubyClass proxyClass = (RubyClass)proxy;
         Class<?> superclass = javaClass.getSuperclass();
@@ -86,6 +88,8 @@ public class ClassInitializer extends Initializer {
         installClassConstructors(proxyClass, state);
         installClassClasses(javaClass, proxyClass);
 
+        proxy.getName(); // trigger calculateName()
+
         return proxy;
     }
 
@@ -120,15 +124,15 @@ public class ClassInitializer extends Initializer {
 
     private void setupClassMethods(Class<?> javaClass, State state) {
         // TODO: protected methods.  this is going to require a rework of some of the mechanism.
-        Method[] methods = getMethods(javaClass);
+        final List<Method> methods = getMethods(javaClass);
 
-        for (int i = methods.length; --i >= 0;) {
+        for ( int i = methods.size(); --i >= 0; ) {
             // we need to collect all methods, though we'll only
             // install the ones that are named in this class
-            Method method = methods[i];
+            Method method = methods.get(i);
             String name = method.getName();
 
-            if (Modifier.isStatic(method.getModifiers())) {
+            if ( Modifier.isStatic( method.getModifiers() ) ) {
                 prepareStaticMethod(javaClass, state, method, name);
             } else {
                 prepareInstanceMethod(javaClass, state, method, name);

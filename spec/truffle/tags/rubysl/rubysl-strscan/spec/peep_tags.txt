@@ -1,0 +1,2 @@
+fails:StringScanner#peep raises a RangeError when the passed argument is a Bignum
+fails:StringScanner#peep taints the returned String if the input was tainted

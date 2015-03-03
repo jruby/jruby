@@ -452,24 +452,25 @@ public class RubyModule extends RubyObject {
      */
     public void setBaseName(String name) {
         baseName = name;
+        cachedName = null;
     }
 
     /**
      * Generate a fully-qualified class name or a #-style name for anonymous and singleton classes.
-     * 
+     *
      * Ruby C equivalent = "classname"
-     * 
+     *
      * @return The generated class name
      */
     public String getName() {
         if (cachedName != null) return cachedName;
         return calculateName();
     }
-    
+
     /**
      * Get the "simple" name for the class, which is either the "base" name or
      * the "anonymous" class name.
-     * 
+     *
      * @return the "simple" name of the class
      */
     public String getSimpleName() {

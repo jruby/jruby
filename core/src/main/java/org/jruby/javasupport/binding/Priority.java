@@ -1,7 +1,5 @@
 package org.jruby.javasupport.binding;
 
-import org.jruby.javasupport.JavaClass;
-
 /**
  * Assigned names only override based priority of an assigned type, the type must be less than
  * or equal to the assigned type. For example, field name (FIELD) in a subclass will override

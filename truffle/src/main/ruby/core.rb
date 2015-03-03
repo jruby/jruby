@@ -86,6 +86,7 @@ require_relative 'core/unbound_method'
 require_relative 'core/shims'
 
 # Load JRuby+Truffle specific classes
+require_relative 'core/truffle/truffle'
 require_relative 'core/truffle/debug'
 
 # Start running Ruby code outside classes

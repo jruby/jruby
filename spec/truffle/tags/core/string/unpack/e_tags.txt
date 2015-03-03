@@ -1,34 +1,6 @@
 fails:String#unpack with format 'E' ignores whitespace in the format string
 fails:String#unpack with format 'E' calls #to_str to coerce the directives string
-fails:String#unpack with format 'E' raises a TypeError when passed nil
-fails:String#unpack with format 'E' raises a TypeError when passed an Integer
-fails:String#unpack with format 'E' decodes one double for a single format character
-fails:String#unpack with format 'E' decodes a negative double
-fails:String#unpack with format 'E' decodes two doubles for two format characters
-fails:String#unpack with format 'E' decodes the number of doubles requested by the count modifier
-fails:String#unpack with format 'E' decodes the remaining doubles when passed the '*' modifier
-fails:String#unpack with format 'E' decodes the remaining doubles when passed the '*' modifier after another directive
-fails:String#unpack with format 'E' does not decode a double when fewer bytes than a double remain and the '*' modifier is passed
 fails:String#unpack with format 'E' adds nil for each element requested beyond the end of the String
-fails:String#unpack with format 'E' decodes positive Infinity
-fails:String#unpack with format 'E' decodes negative Infinity
-fails:String#unpack with format 'E' decodes NaN
-fails:String#unpack with format 'E' ignores NULL bytes between directives
-fails:String#unpack with format 'E' ignores spaces between directives
 fails:String#unpack with format 'e' ignores whitespace in the format string
 fails:String#unpack with format 'e' calls #to_str to coerce the directives string
-fails:String#unpack with format 'e' raises a TypeError when passed nil
-fails:String#unpack with format 'e' raises a TypeError when passed an Integer
-fails:String#unpack with format 'e' decodes one float for a single format character
-fails:String#unpack with format 'e' decodes a negative float
-fails:String#unpack with format 'e' decodes two floats for two format characters
-fails:String#unpack with format 'e' decodes the number of floats requested by the count modifier
-fails:String#unpack with format 'e' decodes the remaining floats when passed the '*' modifier
-fails:String#unpack with format 'e' decodes the remaining floats when passed the '*' modifier after another directive
-fails:String#unpack with format 'e' does not decode a float when fewer bytes than a float remain and the '*' modifier is passed
 fails:String#unpack with format 'e' adds nil for each element requested beyond the end of the String
-fails:String#unpack with format 'e' decodes positive Infinity
-fails:String#unpack with format 'e' decodes negative Infinity
-fails:String#unpack with format 'e' decodes NaN
-fails:String#unpack with format 'e' ignores NULL bytes between directives
-fails:String#unpack with format 'e' ignores spaces between directives

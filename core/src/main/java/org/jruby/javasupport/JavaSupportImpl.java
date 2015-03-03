@@ -18,7 +18,7 @@
  * Copyright (C) 2004 Stefan Matthias Aust <sma@3plus4.de>
  * Copyright (C) 2005 Charles O Nutter <headius@headius.com>
  * Copyright (C) 2007 William N Dortch <bill.dortch@gmail.com>
- * 
+ *
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
  * or the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
@@ -60,14 +60,14 @@ public class JavaSupportImpl extends JavaSupport {
     private final Ruby runtime;
 
     private final ObjectProxyCache<IRubyObject,RubyClass> objectProxyCache =
-            // TODO: specifying soft refs, may want to compare memory consumption,
-            // behavior with weak refs (specify WEAK in place of SOFT below)
-            new ObjectProxyCache<IRubyObject,RubyClass>(ObjectProxyCache.ReferenceType.WEAK) {
+        // TODO: specifying soft refs, may want to compare memory consumption,
+        // behavior with weak refs (specify WEAK in place of SOFT below)
+        new ObjectProxyCache<IRubyObject,RubyClass>(ObjectProxyCache.ReferenceType.WEAK) {
 
-                public IRubyObject allocateProxy(Object javaObject, RubyClass clazz) {
-                    return Java.allocateProxy(javaObject, clazz);
-                }
-            };
+        public IRubyObject allocateProxy(Object javaObject, RubyClass clazz) {
+            return Java.allocateProxy(javaObject, clazz);
+        }
+    };
 
     private final ClassValue<JavaClass> javaClassCache;
     private final ClassValue<RubyModule> proxyClassCache;
@@ -77,14 +77,14 @@ public class JavaSupportImpl extends JavaSupport {
     private static final Constructor<? extends ClassValue> CLASS_VALUE_CONSTRUCTOR;
 
     static {
-        Constructor<? extends ClassValue> constructor = null;
+        Constructor constructor = null;
 
         if (Options.INVOKEDYNAMIC_CLASS_VALUES.load()) {
             try {
                 // try to load the ClassValue class. If it succeeds, we can use our
                 // ClassValue-based cache.
                 Class.forName("java.lang.ClassValue");
-                constructor = (Constructor<ClassValue>)Class.forName("org.jruby.util.collections.Java7ClassValue").getConstructor(ClassValueCalculator.class);
+                constructor = Class.forName("org.jruby.util.collections.Java7ClassValue").getConstructor(ClassValueCalculator.class);
             }
             catch (Exception ex) {
                 // fall through to Map version
@@ -94,12 +94,14 @@ public class JavaSupportImpl extends JavaSupport {
         if (constructor == null) {
             try {
                 constructor = MapBasedClassValue.class.getConstructor(ClassValueCalculator.class);
-            } catch (Exception ex2) {
-                throw new RuntimeException(ex2);
+            }
+            catch (Exception ex) {
+                if ( ex instanceof RuntimeException ) throw (RuntimeException) ex;
+                throw new RuntimeException(ex);
             }
         }
 
-        CLASS_VALUE_CONSTRUCTOR = constructor;
+        CLASS_VALUE_CONSTRUCTOR = (Constructor<ClassValue>) constructor;
     }
 
     private RubyModule javaModule;
@@ -216,15 +218,17 @@ public class JavaSupportImpl extends JavaSupport {
     }
 
     public void handleNativeException(Throwable exception, Member target) {
-        if (exception instanceof RaiseException) {
+        if ( exception instanceof RaiseException ) {
             // allow RaiseExceptions to propagate
             throw (RaiseException) exception;
-        } else if (exception instanceof Unrescuable) {
+        }
+        if (exception instanceof Unrescuable) {
             // allow "unrescuable" flow-control exceptions to propagate
-            if (exception instanceof Error) {
-                throw (Error)exception;
-            } else if (exception instanceof RuntimeException) {
-                throw (RuntimeException)exception;
+            if ( exception instanceof Error ) {
+                throw (Error) exception;
+            }
+            if ( exception instanceof RuntimeException ) {
+                throw (RuntimeException) exception;
             }
         }
         throw createRaiseException(exception, target);
@@ -369,7 +373,7 @@ public class JavaSupportImpl extends JavaSupport {
     }
 
     @Deprecated
-    private volatile Map<Object, Object[]> javaObjectVariables = new WeakIdentityHashMap();
+    private volatile Map<Object, Object[]> javaObjectVariables;
 
     @Deprecated
     public Object getJavaObjectVariable(Object o, int i) {
@@ -379,8 +383,6 @@ public class JavaSupportImpl extends JavaSupport {
         if (variables == null) return null;
 
         synchronized (this) {
-            if (variables == null) return null;
-
             Object[] vars = variables.get(o);
             if (vars == null || vars.length <= i) return null;
             return vars[i];
@@ -394,13 +396,16 @@ public class JavaSupportImpl extends JavaSupport {
         synchronized (this) {
             Map<Object, Object[]> variables = javaObjectVariables;
 
-            if (variables == null) javaObjectVariables = variables = new WeakIdentityHashMap();
+            if (variables == null) {
+                variables = javaObjectVariables = new WeakIdentityHashMap();
+            }
 
             Object[] vars = variables.get(o);
             if (vars == null) {
                 vars = new Object[i + 1];
                 variables.put(o, vars);
-            } else if (vars.length <= i) {
+            }
+            else if (vars.length <= i) {
                 Object[] newVars = new Object[i + 1];
                 System.arraycopy(vars, 0, newVars, 0, vars.length);
                 variables.put(o, newVars);
@@ -414,5 +419,4 @@ public class JavaSupportImpl extends JavaSupport {
     public static Class getPrimitiveClass(String primitiveType) {
         return JavaUtil.PRIMITIVE_CLASSES.get(primitiveType);
     }
-
 }

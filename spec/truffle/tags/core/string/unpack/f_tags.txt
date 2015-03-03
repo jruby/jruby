@@ -1,34 +1,6 @@
 fails:String#unpack with format 'F' ignores whitespace in the format string
 fails:String#unpack with format 'F' calls #to_str to coerce the directives string
-fails:String#unpack with format 'F' raises a TypeError when passed nil
-fails:String#unpack with format 'F' raises a TypeError when passed an Integer
-fails:String#unpack with format 'F' decodes one float for a single format character
-fails:String#unpack with format 'F' decodes a negative float
-fails:String#unpack with format 'F' decodes two floats for two format characters
-fails:String#unpack with format 'F' decodes the number of floats requested by the count modifier
-fails:String#unpack with format 'F' decodes the remaining floats when passed the '*' modifier
-fails:String#unpack with format 'F' decodes the remaining floats when passed the '*' modifier after another directive
-fails:String#unpack with format 'F' does not decode a float when fewer bytes than a float remain and the '*' modifier is passed
 fails:String#unpack with format 'F' adds nil for each element requested beyond the end of the String
-fails:String#unpack with format 'F' decodes positive Infinity
-fails:String#unpack with format 'F' decodes negative Infinity
-fails:String#unpack with format 'F' decodes NaN
-fails:String#unpack with format 'F' ignores NULL bytes between directives
-fails:String#unpack with format 'F' ignores spaces between directives
 fails:String#unpack with format 'f' ignores whitespace in the format string
 fails:String#unpack with format 'f' calls #to_str to coerce the directives string
-fails:String#unpack with format 'f' raises a TypeError when passed nil
-fails:String#unpack with format 'f' raises a TypeError when passed an Integer
-fails:String#unpack with format 'f' decodes one float for a single format character
-fails:String#unpack with format 'f' decodes a negative float
-fails:String#unpack with format 'f' decodes two floats for two format characters
-fails:String#unpack with format 'f' decodes the number of floats requested by the count modifier
-fails:String#unpack with format 'f' decodes the remaining floats when passed the '*' modifier
-fails:String#unpack with format 'f' decodes the remaining floats when passed the '*' modifier after another directive
-fails:String#unpack with format 'f' does not decode a float when fewer bytes than a float remain and the '*' modifier is passed
 fails:String#unpack with format 'f' adds nil for each element requested beyond the end of the String
-fails:String#unpack with format 'f' decodes positive Infinity
-fails:String#unpack with format 'f' decodes negative Infinity
-fails:String#unpack with format 'f' decodes NaN
-fails:String#unpack with format 'f' ignores NULL bytes between directives
-fails:String#unpack with format 'f' ignores spaces between directives

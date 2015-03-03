@@ -268,9 +268,9 @@ public abstract class Initializer {
             final Object singleton = field.get(null);
             if ( singleton == null ) return;
 
-            final Method[] scalaMethods = getMethods(companionClass);
-            for ( int j = scalaMethods.length - 1; j >= 0; j-- ) {
-                final Method method = scalaMethods[j];
+            final List<Method> scalaMethods = getMethods(companionClass);
+            for ( int j = scalaMethods.size() - 1; j >= 0; j-- ) {
+                final Method method = scalaMethods.get(j);
                 String name = method.getName();
 
                 if (DEBUG_SCALA) LOG.debug("Companion object method {} for {}", name, companionClass);
@@ -427,47 +427,47 @@ public abstract class Initializer {
 
     }
 
-    public static Method[] getMethods(Class<?> javaClass) {
-        HashMap<String, List<Method>> nameMethods = new HashMap<String, List<Method>>(30);
+    static List<Method> getMethods(final Class<?> javaClass) {
+        HashMap<String, List<Method>> nameMethods = new HashMap<String, List<Method>>(32);
 
         // to better size the final ArrayList below
-        int total = 0;
+        int totalMethods = 0;
 
         // we scan all superclasses, but avoid adding superclass methods with
         // same name+signature as subclass methods (see JRUBY-3130)
-        for (Class c = javaClass; c != null; c = c.getSuperclass()) {
+        for ( Class<?> klass = javaClass; klass != null; klass = klass.getSuperclass() ) {
             // only add class's methods if it's public or we can set accessible
             // (see JRUBY-4799)
-            if (Modifier.isPublic(c.getModifiers()) || JavaUtil.CAN_SET_ACCESSIBLE) {
+            if (Modifier.isPublic(klass.getModifiers()) || JavaUtil.CAN_SET_ACCESSIBLE) {
                 // for each class, scan declared methods for new signatures
                 try {
                     // add methods, including static if this is the actual class,
                     // and replacing child methods with equivalent parent methods
-                    total += addNewMethods(nameMethods, c.getDeclaredMethods(), c == javaClass, true);
-                } catch (SecurityException e) {
+                    totalMethods += addNewMethods(nameMethods, klass.getDeclaredMethods(), klass == javaClass, true);
                 }
+                catch (SecurityException e) { /* ignored */ }
             }
 
             // then do the same for each interface
-            for (Class i : c.getInterfaces()) {
+            for ( Class iface : klass.getInterfaces() ) {
                 try {
                     // add methods, not including static (should be none on
                     // interfaces anyway) and not replacing child methods with
                     // parent methods
-                    total += addNewMethods(nameMethods, i.getMethods(), false, false);
-                } catch (SecurityException e) {
+                    totalMethods += addNewMethods(nameMethods, iface.getMethods(), false, false);
                 }
+                catch (SecurityException e) { /* ignored */ }
             }
         }
 
         // now only bind the ones that remain
-        ArrayList<Method> finalList = new ArrayList<Method>(total);
+        ArrayList<Method> finalList = new ArrayList<Method>(totalMethods);
 
-        for (Map.Entry<String, List<Method>> entry : nameMethods.entrySet()) {
-            finalList.addAll(entry.getValue());
+        for ( Map.Entry<String, List<Method>> entry : nameMethods.entrySet() ) {
+            finalList.addAll( entry.getValue() );
         }
 
-        return finalList.toArray(new Method[finalList.size()]);
+        return finalList;
     }
 
     private static boolean methodsAreEquivalent(Method child, Method parent) {
@@ -480,42 +480,49 @@ public abstract class Initializer {
                 && Arrays.equals(child.getParameterTypes(), parent.getParameterTypes());
     }
 
-    private static int addNewMethods(HashMap<String, List<Method>> nameMethods, Method[] methods, boolean includeStatic, boolean removeDuplicate) {
+    private static int addNewMethods(
+            final HashMap<String, List<Method>> nameMethods,
+            final Method[] methods,
+            final boolean includeStatic,
+            final boolean removeDuplicate) {
+
         int added = 0;
-        Methods: for (Method m : methods) {
+
+        Methods: for (final Method method : methods) {
+            final int mod = method.getModifiers();
             // Skip private methods, since they may mess with dispatch
-            if (Modifier.isPrivate(m.getModifiers())) continue;
+            if ( Modifier.isPrivate(mod) ) continue;
 
             // ignore bridge methods because we'd rather directly call methods that this method
             // is bridging (and such methods are by definition always available.)
-            if ((m.getModifiers()&ACC_BRIDGE)!=0)
-                continue;
+            if ( ( mod & ACC_BRIDGE ) != 0 ) continue;
 
-            if (!includeStatic && Modifier.isStatic(m.getModifiers())) {
+            if ( ! includeStatic && Modifier.isStatic(mod) ) {
                 // Skip static methods if we're not suppose to include them.
                 // Generally for superclasses; we only bind statics from the actual
                 // class.
                 continue;
             }
-            List<Method> childMethods = nameMethods.get(m.getName());
+
+            List<Method> childMethods = nameMethods.get(method.getName());
             if (childMethods == null) {
                 // first method of this name, add a collection for it
-                childMethods = new ArrayList<Method>(1);
-                childMethods.add(m);
-                nameMethods.put(m.getName(), childMethods);
-                added++;
-            } else {
-                // we have seen other methods; check if we already have
-                // an equivalent one
-                for (ListIterator<Method> iter = childMethods.listIterator(); iter.hasNext();) {
-                    Method m2 = iter.next();
-                    if (methodsAreEquivalent(m2, m)) {
+                childMethods = new ArrayList<Method>(4);
+                childMethods.add(method); added++;
+                nameMethods.put(method.getName(), childMethods);
+            }
+            else {
+                // we have seen other methods; check if we already have an equivalent one
+                final ListIterator<Method> childMethodsIterator = childMethods.listIterator();
+                while ( childMethodsIterator.hasNext() ) {
+                    final Method current = childMethodsIterator.next();
+                    if ( methodsAreEquivalent(current, method) ) {
                         if (removeDuplicate) {
                             // Replace the existing method, since the super call is more general
                             // and virtual dispatch will call the subclass impl anyway.
                             // Used for instance methods, for which we usually want to use the highest-up
                             // callable implementation.
-                            iter.set(m);
+                            childMethodsIterator.set(method);
                         } else {
                             // just skip the new method, since we don't need it (already found one)
                             // used for interface methods, which we want to add unconditionally
@@ -525,8 +532,7 @@ public abstract class Initializer {
                     }
                 }
                 // no equivalent; add it
-                childMethods.add(m);
-                added++;
+                childMethods.add(method); added++;
             }
         }
         return added;

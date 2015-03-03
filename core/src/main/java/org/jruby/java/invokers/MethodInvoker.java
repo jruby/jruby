@@ -9,33 +9,34 @@ import org.jruby.javasupport.JavaCallable;
 import org.jruby.javasupport.JavaMethod;
 
 public abstract class MethodInvoker extends RubyToJavaInvoker {
+
     MethodInvoker(RubyModule host, List<Method> methods) {
         super(host, methods.toArray(new Method[methods.size()]));
         trySetAccessible(getAccessibleObjects());
     }
 
     MethodInvoker(RubyModule host, Method method) {
-        super(host, new Method[] {method});
+        super(host, new Method[] { method });
         trySetAccessible(getAccessibleObjects());
     }
 
     @Override
-    protected JavaCallable createCallable(Ruby ruby, Member member) {
-        return JavaMethod.create(ruby, (Method)member);
+    protected final JavaCallable createCallable(Ruby runtime, Member member) {
+        return JavaMethod.create(runtime, (Method) member);
     }
 
     @Override
-    protected JavaCallable[] createCallableArray(JavaCallable callable) {
-        return new JavaMethod[] {(JavaMethod)callable};
+    protected final JavaCallable[] createCallableArray(JavaCallable callable) {
+        return new JavaMethod[] { (JavaMethod) callable };
     }
 
     @Override
-    protected JavaCallable[] createCallableArray(int size) {
+    protected final JavaCallable[] createCallableArray(int size) {
         return new JavaMethod[size];
     }
 
     @Override
-    protected JavaCallable[][] createCallableArrayArray(int size) {
+    protected final JavaCallable[][] createCallableArrayArray(int size) {
         return new JavaMethod[size][];
     }
 

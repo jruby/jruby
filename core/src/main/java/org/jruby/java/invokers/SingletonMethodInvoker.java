@@ -3,7 +3,6 @@ package org.jruby.java.invokers;
 import java.lang.reflect.Method;
 import java.util.List;
 
-import org.jruby.Ruby;
 import org.jruby.RubyClass;
 import org.jruby.RubyModule;
 import org.jruby.RubyProc;
@@ -28,7 +27,7 @@ public class SingletonMethodInvoker extends MethodInvoker {
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args) {
         int len = args.length;
-        Object[] convertedArgs = new Object[len];
+        final Object[] convertedArgs;
         JavaMethod method = (JavaMethod)findCallable(self, name, args, len);
         if (method.isVarArgs()) {
             len = method.getParameterTypes().length - 1;
@@ -85,6 +84,7 @@ public class SingletonMethodInvoker extends MethodInvoker {
         return method.invokeDirect(context, singleton, cArg0, cArg1, cArg2);
     }
 
+    @Override
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args, Block block) {
         if (block.isGiven()) {
             int len = args.length;

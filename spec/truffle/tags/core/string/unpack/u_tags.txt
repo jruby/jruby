@@ -1,22 +1,7 @@
-fails:String#unpack with format 'U' ignores whitespace in the format string
 fails:String#unpack with format 'U' calls #to_str to coerce the directives string
-fails:String#unpack with format 'U' raises a TypeError when passed nil
-fails:String#unpack with format 'U' raises a TypeError when passed an Integer
 fails:String#unpack with format 'U' raises an ArgumentError when the format modifier is '_'
 fails:String#unpack with format 'U' raises an ArgumentError when the format modifier is '!'
-fails:String#unpack with format 'U' decodes Unicode codepoints as ASCII values
-fails:String#unpack with format 'U' decodes the number of characters specified by the count modifier
-fails:String#unpack with format 'U' implicitly has a count of one when no count modifier is passed
-fails:String#unpack with format 'U' decodes all remaining characters when passed the '*' modifier
-fails:String#unpack with format 'U' decodes UTF-8 BMP codepoints
-fails:String#unpack with format 'U' decodes UTF-8 max codepoints
-fails:String#unpack with format 'U' does not decode any items for directives exceeding the input string size
-fails:String#unpack with format 'U' ignores NULL bytes between directives
-fails:String#unpack with format 'U' ignores spaces between directives
-fails:String#unpack with format 'u' ignores whitespace in the format string
 fails:String#unpack with format 'u' calls #to_str to coerce the directives string
-fails:String#unpack with format 'u' raises a TypeError when passed nil
-fails:String#unpack with format 'u' raises a TypeError when passed an Integer
 fails:String#unpack with format 'u' raises an ArgumentError when the format modifier is '_'
 fails:String#unpack with format 'u' raises an ArgumentError when the format modifier is '!'
 fails:String#unpack with format 'u' decodes an empty string as an empty string

@@ -139,6 +139,9 @@ public class TruffleBridgeImpl implements TruffleBridge {
         // Our own implementations
         loadPath.slowPush(truffleContext.makeString(new File(home, "lib/ruby/truffle/truffle").toString()));
 
+        // Libraries from RubySL
+        loadPath.slowPush(truffleContext.makeString(new File(home, "lib/ruby/truffle/rubysl/rubysl-strscan/lib").toString()));
+
         // Shims
         loadPath.slowPush(truffleContext.makeString(new File(home, "lib/ruby/truffle/shims").toString()));
 
@@ -168,6 +171,8 @@ public class TruffleBridgeImpl implements TruffleBridge {
         } else {
             source = truffleContext.getSourceManager().forFile(inputFile);
         }
+
+        truffleContext.getFeatureManager().setMainScriptSource(source);
 
         truffleContext.load(source, null, new NodeWrapper() {
             @Override

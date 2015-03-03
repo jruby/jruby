@@ -128,6 +128,10 @@ class Regexp
     source.encoding
   end
 
+  def casefold?
+    (options & IGNORECASE) > 0 ? true : false
+  end
+
   def match_from(str, count)
     return nil unless str
     search_region(str, count, str.bytesize, true)

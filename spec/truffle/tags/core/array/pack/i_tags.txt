@@ -1,19 +1,9 @@
 fails:Array#pack with format 'I' ignores whitespace in the format string
 fails:Array#pack with format 'I' calls #to_str to coerce the directives string
 fails:Array#pack with format 'I' taints the output string if the format string is tainted
-fails:Array#pack with format 'I' raises an ArgumentError if there are fewer elements than the format requires
-fails:Array#pack with format 'I' raises a TypeError when passed true
-fails:Array#pack with format 'I' raises a TypeError when passed false
-fails:Array#pack with format 'I' raises a TypeError when the object does not respond to #to_int
-fails:Array#pack with format 'I' raises a TypeError when passed a String
 fails:Array#pack with format 'i' ignores whitespace in the format string
 fails:Array#pack with format 'i' calls #to_str to coerce the directives string
 fails:Array#pack with format 'i' taints the output string if the format string is tainted
-fails:Array#pack with format 'i' raises an ArgumentError if there are fewer elements than the format requires
-fails:Array#pack with format 'i' raises a TypeError when passed true
-fails:Array#pack with format 'i' raises a TypeError when passed false
-fails:Array#pack with format 'i' raises a TypeError when the object does not respond to #to_int
-fails:Array#pack with format 'i' raises a TypeError when passed a String
 fails:Array#pack with format 'I' with modifier '<' calls #to_int to convert the pack argument to an Integer
 fails:Array#pack with format 'I' with modifier '<' and '_' calls #to_int to convert the pack argument to an Integer
 fails:Array#pack with format 'I' with modifier '<' and '!' calls #to_int to convert the pack argument to an Integer
@@ -28,5 +18,3 @@ fails:Array#pack with format 'i' with modifier '>' and '_' calls #to_int to conv
 fails:Array#pack with format 'i' with modifier '>' and '!' calls #to_int to convert the pack argument to an Integer
 fails:Array#pack with format 'I' calls #to_int to convert the pack argument to an Integer
 fails:Array#pack with format 'i' calls #to_int to convert the pack argument to an Integer
-fails:Array#pack with format 'I' raises a TypeError when passed nil
-fails:Array#pack with format 'i' raises a TypeError when passed nil

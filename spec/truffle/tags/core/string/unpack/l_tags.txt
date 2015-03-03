@@ -1,179 +1,19 @@
-fails:String#unpack with format 'L' with modifier '<' decodes one int for a single format character
-fails:String#unpack with format 'L' with modifier '<' decodes two ints for two format characters
-fails:String#unpack with format 'L' with modifier '<' decodes the number of ints requested by the count modifier
-fails:String#unpack with format 'L' with modifier '<' decodes the remaining ints when passed the '*' modifier
-fails:String#unpack with format 'L' with modifier '<' decodes the remaining ints when passed the '*' modifier after another directive
-fails:String#unpack with format 'L' with modifier '<' does not decode an int when fewer bytes than an int remain and the '*' modifier is passed
 fails:String#unpack with format 'L' with modifier '<' adds nil for each element requested beyond the end of the String
-fails:String#unpack with format 'L' with modifier '<' ignores NULL bytes between directives
-fails:String#unpack with format 'L' with modifier '<' ignores spaces between directives
-fails:String#unpack with format 'L' with modifier '<' decodes an int with most significant bit set as a positive number
-fails:String#unpack with format 'L' with modifier '>' decodes one int for a single format character
-fails:String#unpack with format 'L' with modifier '>' decodes two ints for two format characters
-fails:String#unpack with format 'L' with modifier '>' decodes the number of ints requested by the count modifier
-fails:String#unpack with format 'L' with modifier '>' decodes the remaining ints when passed the '*' modifier
-fails:String#unpack with format 'L' with modifier '>' decodes the remaining ints when passed the '*' modifier after another directive
-fails:String#unpack with format 'L' with modifier '>' does not decode an int when fewer bytes than an int remain and the '*' modifier is passed
 fails:String#unpack with format 'L' with modifier '>' adds nil for each element requested beyond the end of the String
-fails:String#unpack with format 'L' with modifier '>' ignores NULL bytes between directives
-fails:String#unpack with format 'L' with modifier '>' ignores spaces between directives
-fails:String#unpack with format 'L' with modifier '>' decodes an int with most significant bit set as a positive number
-fails:String#unpack with format 'L' with modifier '<' and '_' decodes one long for a single format character
-fails:String#unpack with format 'L' with modifier '<' and '_' decodes two longs for two format characters
-fails:String#unpack with format 'L' with modifier '<' and '_' decodes the number of longs requested by the count modifier
-fails:String#unpack with format 'L' with modifier '<' and '_' decodes the remaining longs when passed the '*' modifier
-fails:String#unpack with format 'L' with modifier '<' and '_' decodes the remaining longs when passed the '*' modifier after another directive
-fails:String#unpack with format 'L' with modifier '<' and '_' does not decode a long when fewer bytes than a long remain and the '*' modifier is passed
-fails:String#unpack with format 'L' with modifier '<' and '_' ignores NULL bytes between directives
-fails:String#unpack with format 'L' with modifier '<' and '_' ignores spaces between directives
 fails:String#unpack with format 'L' with modifier '<' and '_' decodes a long with most significant bit set as a positive number
-fails:String#unpack with format 'L' with modifier '<' and '!' decodes one long for a single format character
-fails:String#unpack with format 'L' with modifier '<' and '!' decodes two longs for two format characters
-fails:String#unpack with format 'L' with modifier '<' and '!' decodes the number of longs requested by the count modifier
-fails:String#unpack with format 'L' with modifier '<' and '!' decodes the remaining longs when passed the '*' modifier
-fails:String#unpack with format 'L' with modifier '<' and '!' decodes the remaining longs when passed the '*' modifier after another directive
-fails:String#unpack with format 'L' with modifier '<' and '!' does not decode a long when fewer bytes than a long remain and the '*' modifier is passed
-fails:String#unpack with format 'L' with modifier '<' and '!' ignores NULL bytes between directives
-fails:String#unpack with format 'L' with modifier '<' and '!' ignores spaces between directives
 fails:String#unpack with format 'L' with modifier '<' and '!' decodes a long with most significant bit set as a positive number
-fails:String#unpack with format 'L' with modifier '>' and '_' decodes one long for a single format character
-fails:String#unpack with format 'L' with modifier '>' and '_' decodes two longs for two format characters
-fails:String#unpack with format 'L' with modifier '>' and '_' decodes the number of longs requested by the count modifier
-fails:String#unpack with format 'L' with modifier '>' and '_' decodes the remaining longs when passed the '*' modifier
-fails:String#unpack with format 'L' with modifier '>' and '_' decodes the remaining longs when passed the '*' modifier after another directive
-fails:String#unpack with format 'L' with modifier '>' and '_' does not decode a long when fewer bytes than a long remain and the '*' modifier is passed
-fails:String#unpack with format 'L' with modifier '>' and '_' ignores NULL bytes between directives
-fails:String#unpack with format 'L' with modifier '>' and '_' ignores spaces between directives
 fails:String#unpack with format 'L' with modifier '>' and '_' decodes a long with most significant bit set as a positive number
-fails:String#unpack with format 'L' with modifier '>' and '!' decodes one long for a single format character
-fails:String#unpack with format 'L' with modifier '>' and '!' decodes two longs for two format characters
-fails:String#unpack with format 'L' with modifier '>' and '!' decodes the number of longs requested by the count modifier
-fails:String#unpack with format 'L' with modifier '>' and '!' decodes the remaining longs when passed the '*' modifier
-fails:String#unpack with format 'L' with modifier '>' and '!' decodes the remaining longs when passed the '*' modifier after another directive
-fails:String#unpack with format 'L' with modifier '>' and '!' does not decode a long when fewer bytes than a long remain and the '*' modifier is passed
-fails:String#unpack with format 'L' with modifier '>' and '!' ignores NULL bytes between directives
-fails:String#unpack with format 'L' with modifier '>' and '!' ignores spaces between directives
 fails:String#unpack with format 'L' with modifier '>' and '!' decodes a long with most significant bit set as a positive number
-fails:String#unpack with format 'l' with modifier '<' decodes one int for a single format character
-fails:String#unpack with format 'l' with modifier '<' decodes two ints for two format characters
-fails:String#unpack with format 'l' with modifier '<' decodes the number of ints requested by the count modifier
-fails:String#unpack with format 'l' with modifier '<' decodes the remaining ints when passed the '*' modifier
-fails:String#unpack with format 'l' with modifier '<' decodes the remaining ints when passed the '*' modifier after another directive
-fails:String#unpack with format 'l' with modifier '<' does not decode an int when fewer bytes than an int remain and the '*' modifier is passed
 fails:String#unpack with format 'l' with modifier '<' adds nil for each element requested beyond the end of the String
-fails:String#unpack with format 'l' with modifier '<' ignores NULL bytes between directives
-fails:String#unpack with format 'l' with modifier '<' ignores spaces between directives
-fails:String#unpack with format 'l' with modifier '<' decodes an int with most significant bit set as a negative number
-fails:String#unpack with format 'l' with modifier '>' decodes one int for a single format character
-fails:String#unpack with format 'l' with modifier '>' decodes two ints for two format characters
-fails:String#unpack with format 'l' with modifier '>' decodes the number of ints requested by the count modifier
-fails:String#unpack with format 'l' with modifier '>' decodes the remaining ints when passed the '*' modifier
-fails:String#unpack with format 'l' with modifier '>' decodes the remaining ints when passed the '*' modifier after another directive
-fails:String#unpack with format 'l' with modifier '>' does not decode an int when fewer bytes than an int remain and the '*' modifier is passed
 fails:String#unpack with format 'l' with modifier '>' adds nil for each element requested beyond the end of the String
-fails:String#unpack with format 'l' with modifier '>' ignores NULL bytes between directives
-fails:String#unpack with format 'l' with modifier '>' ignores spaces between directives
-fails:String#unpack with format 'l' with modifier '>' decodes an int with most significant bit set as a negative number
-fails:String#unpack with format 'l' with modifier '<' and '_' decodes one long for a single format character
-fails:String#unpack with format 'l' with modifier '<' and '_' decodes two longs for two format characters
-fails:String#unpack with format 'l' with modifier '<' and '_' decodes the number of longs requested by the count modifier
-fails:String#unpack with format 'l' with modifier '<' and '_' decodes the remaining longs when passed the '*' modifier
-fails:String#unpack with format 'l' with modifier '<' and '_' decodes the remaining longs when passed the '*' modifier after another directive
-fails:String#unpack with format 'l' with modifier '<' and '_' does not decode a long when fewer bytes than a long remain and the '*' modifier is passed
-fails:String#unpack with format 'l' with modifier '<' and '_' ignores NULL bytes between directives
-fails:String#unpack with format 'l' with modifier '<' and '_' ignores spaces between directives
-fails:String#unpack with format 'l' with modifier '<' and '_' decodes a long with most significant bit set as a negative number
-fails:String#unpack with format 'l' with modifier '<' and '!' decodes one long for a single format character
-fails:String#unpack with format 'l' with modifier '<' and '!' decodes two longs for two format characters
-fails:String#unpack with format 'l' with modifier '<' and '!' decodes the number of longs requested by the count modifier
-fails:String#unpack with format 'l' with modifier '<' and '!' decodes the remaining longs when passed the '*' modifier
-fails:String#unpack with format 'l' with modifier '<' and '!' decodes the remaining longs when passed the '*' modifier after another directive
-fails:String#unpack with format 'l' with modifier '<' and '!' does not decode a long when fewer bytes than a long remain and the '*' modifier is passed
-fails:String#unpack with format 'l' with modifier '<' and '!' ignores NULL bytes between directives
-fails:String#unpack with format 'l' with modifier '<' and '!' ignores spaces between directives
-fails:String#unpack with format 'l' with modifier '<' and '!' decodes a long with most significant bit set as a negative number
-fails:String#unpack with format 'l' with modifier '>' and '_' decodes one long for a single format character
-fails:String#unpack with format 'l' with modifier '>' and '_' decodes two longs for two format characters
-fails:String#unpack with format 'l' with modifier '>' and '_' decodes the number of longs requested by the count modifier
-fails:String#unpack with format 'l' with modifier '>' and '_' decodes the remaining longs when passed the '*' modifier
-fails:String#unpack with format 'l' with modifier '>' and '_' decodes the remaining longs when passed the '*' modifier after another directive
-fails:String#unpack with format 'l' with modifier '>' and '_' does not decode a long when fewer bytes than a long remain and the '*' modifier is passed
-fails:String#unpack with format 'l' with modifier '>' and '_' ignores NULL bytes between directives
-fails:String#unpack with format 'l' with modifier '>' and '_' ignores spaces between directives
-fails:String#unpack with format 'l' with modifier '>' and '_' decodes a long with most significant bit set as a negative number
-fails:String#unpack with format 'l' with modifier '>' and '!' decodes one long for a single format character
-fails:String#unpack with format 'l' with modifier '>' and '!' decodes two longs for two format characters
-fails:String#unpack with format 'l' with modifier '>' and '!' decodes the number of longs requested by the count modifier
-fails:String#unpack with format 'l' with modifier '>' and '!' decodes the remaining longs when passed the '*' modifier
-fails:String#unpack with format 'l' with modifier '>' and '!' decodes the remaining longs when passed the '*' modifier after another directive
-fails:String#unpack with format 'l' with modifier '>' and '!' does not decode a long when fewer bytes than a long remain and the '*' modifier is passed
-fails:String#unpack with format 'l' with modifier '>' and '!' ignores NULL bytes between directives
-fails:String#unpack with format 'l' with modifier '>' and '!' ignores spaces between directives
-fails:String#unpack with format 'l' with modifier '>' and '!' decodes a long with most significant bit set as a negative number
 fails:String#unpack with format 'L' ignores whitespace in the format string
 fails:String#unpack with format 'L' calls #to_str to coerce the directives string
-fails:String#unpack with format 'L' raises a TypeError when passed nil
-fails:String#unpack with format 'L' raises a TypeError when passed an Integer
-fails:String#unpack with format 'L' decodes one int for a single format character
-fails:String#unpack with format 'L' decodes two ints for two format characters
-fails:String#unpack with format 'L' decodes the number of ints requested by the count modifier
-fails:String#unpack with format 'L' decodes the remaining ints when passed the '*' modifier
-fails:String#unpack with format 'L' decodes the remaining ints when passed the '*' modifier after another directive
-fails:String#unpack with format 'L' does not decode an int when fewer bytes than an int remain and the '*' modifier is passed
 fails:String#unpack with format 'L' adds nil for each element requested beyond the end of the String
-fails:String#unpack with format 'L' ignores NULL bytes between directives
-fails:String#unpack with format 'L' ignores spaces between directives
-fails:String#unpack with format 'L' decodes an int with most significant bit set as a positive number
 fails:String#unpack with format 'l' ignores whitespace in the format string
 fails:String#unpack with format 'l' calls #to_str to coerce the directives string
-fails:String#unpack with format 'l' raises a TypeError when passed nil
-fails:String#unpack with format 'l' raises a TypeError when passed an Integer
-fails:String#unpack with format 'l' decodes one int for a single format character
-fails:String#unpack with format 'l' decodes two ints for two format characters
-fails:String#unpack with format 'l' decodes the number of ints requested by the count modifier
-fails:String#unpack with format 'l' decodes the remaining ints when passed the '*' modifier
-fails:String#unpack with format 'l' decodes the remaining ints when passed the '*' modifier after another directive
-fails:String#unpack with format 'l' does not decode an int when fewer bytes than an int remain and the '*' modifier is passed
 fails:String#unpack with format 'l' adds nil for each element requested beyond the end of the String
-fails:String#unpack with format 'l' ignores NULL bytes between directives
-fails:String#unpack with format 'l' ignores spaces between directives
-fails:String#unpack with format 'l' decodes an int with most significant bit set as a negative number
-fails:String#unpack with format 'L' with modifier '_' decodes one long for a single format character
-fails:String#unpack with format 'L' with modifier '_' decodes two longs for two format characters
-fails:String#unpack with format 'L' with modifier '_' decodes the number of longs requested by the count modifier
-fails:String#unpack with format 'L' with modifier '_' decodes the remaining longs when passed the '*' modifier
-fails:String#unpack with format 'L' with modifier '_' decodes the remaining longs when passed the '*' modifier after another directive
-fails:String#unpack with format 'L' with modifier '_' does not decode a long when fewer bytes than a long remain and the '*' modifier is passed
-fails:String#unpack with format 'L' with modifier '_' ignores NULL bytes between directives
-fails:String#unpack with format 'L' with modifier '_' ignores spaces between directives
 fails:String#unpack with format 'L' with modifier '_' decodes a long with most significant bit set as a positive number
-fails:String#unpack with format 'L' with modifier '!' decodes one long for a single format character
-fails:String#unpack with format 'L' with modifier '!' decodes two longs for two format characters
-fails:String#unpack with format 'L' with modifier '!' decodes the number of longs requested by the count modifier
-fails:String#unpack with format 'L' with modifier '!' decodes the remaining longs when passed the '*' modifier
-fails:String#unpack with format 'L' with modifier '!' decodes the remaining longs when passed the '*' modifier after another directive
-fails:String#unpack with format 'L' with modifier '!' does not decode a long when fewer bytes than a long remain and the '*' modifier is passed
-fails:String#unpack with format 'L' with modifier '!' ignores NULL bytes between directives
-fails:String#unpack with format 'L' with modifier '!' ignores spaces between directives
 fails:String#unpack with format 'L' with modifier '!' decodes a long with most significant bit set as a positive number
-fails:String#unpack with format 'l' with modifier '_' decodes one long for a single format character
-fails:String#unpack with format 'l' with modifier '_' decodes two longs for two format characters
-fails:String#unpack with format 'l' with modifier '_' decodes the number of longs requested by the count modifier
-fails:String#unpack with format 'l' with modifier '_' decodes the remaining longs when passed the '*' modifier
-fails:String#unpack with format 'l' with modifier '_' decodes the remaining longs when passed the '*' modifier after another directive
-fails:String#unpack with format 'l' with modifier '_' does not decode a long when fewer bytes than a long remain and the '*' modifier is passed
-fails:String#unpack with format 'l' with modifier '_' ignores NULL bytes between directives
-fails:String#unpack with format 'l' with modifier '_' ignores spaces between directives
-fails:String#unpack with format 'l' with modifier '_' decodes a long with most significant bit set as a negative number
-fails:String#unpack with format 'l' with modifier '!' decodes one long for a single format character
-fails:String#unpack with format 'l' with modifier '!' decodes two longs for two format characters
-fails:String#unpack with format 'l' with modifier '!' decodes the number of longs requested by the count modifier
-fails:String#unpack with format 'l' with modifier '!' decodes the remaining longs when passed the '*' modifier
-fails:String#unpack with format 'l' with modifier '!' decodes the remaining longs when passed the '*' modifier after another directive
-fails:String#unpack with format 'l' with modifier '!' does not decode a long when fewer bytes than a long remain and the '*' modifier is passed
-fails:String#unpack with format 'l' with modifier '!' ignores NULL bytes between directives
-fails:String#unpack with format 'l' with modifier '!' ignores spaces between directives
-fails:String#unpack with format 'l' with modifier '!' decodes a long with most significant bit set as a negative number
 fails:String#unpack with format 'L' with modifier '<' and '_' decodes one int for a single format character
 fails:String#unpack with format 'L' with modifier '<' and '_' decodes two ints for two format characters
 fails:String#unpack with format 'L' with modifier '<' and '_' decodes the number of ints requested by the count modifier

@@ -7,6 +7,7 @@ import org.jruby.javasupport.JavaClass;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -18,6 +19,7 @@ public class InterfaceInitializer extends Initializer {
         super(runtime, javaClass);
     }
 
+    @Override
     public RubyModule initialize(RubyModule proxy) {
         final State state = new State(runtime, null);
 
@@ -65,19 +67,21 @@ public class InterfaceInitializer extends Initializer {
         installClassStaticMethods(proxy, state);
         installClassClasses(javaClass, proxy);
 
+        proxy.getName(); // trigger calculateName()
+
         return proxy;
     }
 
     private static void setupInterfaceMethods(Class<?> javaClass, Initializer.State state) {
         // TODO: protected methods.  this is going to require a rework of some of the mechanism.
-        Method[] methods = getMethods(javaClass);
+        final List<Method> methods = getMethods(javaClass);
 
-        for (int i = methods.length; --i >= 0;) {
+        for ( int i = methods.size(); --i >= 0; ) {
             // Java 8 introduced static methods on interfaces, so we just look for those
-            Method method = methods[i];
+            Method method = methods.get(i);
             String name = method.getName();
 
-            if (!Modifier.isStatic(method.getModifiers())) continue;
+            if ( ! Modifier.isStatic( method.getModifiers() ) ) continue;
 
             prepareStaticMethod(javaClass, state, method, name);
         }

@@ -44,10 +44,13 @@ public abstract class MatchDataNodes {
         public Object getIndex(RubyMatchData matchData, int index) {
             notDesignedForCompilation();
 
-            if (index >= matchData.getValues().length) {
+            final Object[] values = matchData.getValues();
+            final int normalizedIndex = RubyArray.normalizeIndex(values.length, index);
+
+            if ((normalizedIndex < 0) || (normalizedIndex >= values.length)) {
                 return getContext().getCoreLibrary().getNilObject();
             } else {
-                return matchData.getValues()[index];
+                return values[normalizedIndex];
             }
         }
 

@@ -1,24 +1,8 @@
 fails:Array#pack with format 'N' ignores whitespace in the format string
 fails:Array#pack with format 'N' calls #to_str to coerce the directives string
 fails:Array#pack with format 'N' taints the output string if the format string is tainted
-fails:Array#pack with format 'N' raises an ArgumentError if there are fewer elements than the format requires
-fails:Array#pack with format 'N' raises a TypeError when passed true
-fails:Array#pack with format 'N' raises a TypeError when passed false
-fails:Array#pack with format 'N' raises a TypeError when the object does not respond to #to_int
-fails:Array#pack with format 'N' raises a TypeError when passed a String
-fails:Array#pack with format 'N' raises ArgumentError when the format modifier is '_'
-fails:Array#pack with format 'N' raises ArgumentError when the format modifier is '!'
 fails:Array#pack with format 'N' calls #to_int to convert the pack argument to an Integer
 fails:Array#pack with format 'n' ignores whitespace in the format string
 fails:Array#pack with format 'n' calls #to_str to coerce the directives string
 fails:Array#pack with format 'n' taints the output string if the format string is tainted
-fails:Array#pack with format 'n' raises an ArgumentError if there are fewer elements than the format requires
-fails:Array#pack with format 'n' raises a TypeError when passed true
-fails:Array#pack with format 'n' raises a TypeError when passed false
-fails:Array#pack with format 'n' raises a TypeError when the object does not respond to #to_int
-fails:Array#pack with format 'n' raises a TypeError when passed a String
-fails:Array#pack with format 'n' raises ArgumentError when the format modifier is '_'
-fails:Array#pack with format 'n' raises ArgumentError when the format modifier is '!'
 fails:Array#pack with format 'n' calls #to_int to convert the pack argument to an Integer
-fails:Array#pack with format 'N' raises a TypeError when passed nil
-fails:Array#pack with format 'n' raises a TypeError when passed nil

@@ -1,24 +1,8 @@
 fails:Array#pack with format 'V' ignores whitespace in the format string
 fails:Array#pack with format 'V' calls #to_str to coerce the directives string
 fails:Array#pack with format 'V' taints the output string if the format string is tainted
-fails:Array#pack with format 'V' raises an ArgumentError if there are fewer elements than the format requires
-fails:Array#pack with format 'V' raises a TypeError when passed true
-fails:Array#pack with format 'V' raises a TypeError when passed false
-fails:Array#pack with format 'V' raises a TypeError when the object does not respond to #to_int
-fails:Array#pack with format 'V' raises a TypeError when passed a String
-fails:Array#pack with format 'V' raises ArgumentError when the format modifier is '_'
-fails:Array#pack with format 'V' raises ArgumentError when the format modifier is '!'
 fails:Array#pack with format 'V' calls #to_int to convert the pack argument to an Integer
 fails:Array#pack with format 'v' ignores whitespace in the format string
 fails:Array#pack with format 'v' calls #to_str to coerce the directives string
 fails:Array#pack with format 'v' taints the output string if the format string is tainted
-fails:Array#pack with format 'v' raises an ArgumentError if there are fewer elements than the format requires
-fails:Array#pack with format 'v' raises a TypeError when passed true
-fails:Array#pack with format 'v' raises a TypeError when passed false
-fails:Array#pack with format 'v' raises a TypeError when the object does not respond to #to_int
-fails:Array#pack with format 'v' raises a TypeError when passed a String
-fails:Array#pack with format 'v' raises ArgumentError when the format modifier is '_'
-fails:Array#pack with format 'v' raises ArgumentError when the format modifier is '!'
 fails:Array#pack with format 'v' calls #to_int to convert the pack argument to an Integer
-fails:Array#pack with format 'V' raises a TypeError when passed nil
-fails:Array#pack with format 'v' raises a TypeError when passed nil

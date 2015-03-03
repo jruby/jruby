@@ -114,6 +114,9 @@ lib/ruby/1.9, and lib/ruby/site_ruby/1.8/rubygems*.
  copyright (c) 2007-2014, Evan Phoenix and contributors,
  and released under the 3-clause BSD license.
 
+ Some parts of the RubySL implementations of the stdlib in lib/ruby/truffle/rubysl
+ are copyright (c) 2013 Brian Shirai and are licensed under the 3-clause BSD license.
+
 The complete text of the Eclipse Public License is as follows:
 
   Eclipse Public License - v 1.0

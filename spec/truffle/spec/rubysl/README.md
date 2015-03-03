@@ -6,3 +6,4 @@ Commits for each library are:
 
 * rubysl-erb `feeac7a63117185be74f94b88acdbf6824a1c76c`
 * rubysl-set `f9f4f118523126fbafddc112c29529ac7bd5dedd`
+* rubysl-strscan `efab0248119cbb10b2b0ce2561eae269e052cdfe`

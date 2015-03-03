@@ -280,11 +280,13 @@ public abstract class StringNodes {
         }
     }
 
-    @CoreMethod(names = {"[]", "slice"}, required = 1, optional = 1, lowerFixnumParameters = {0, 1})
+    @CoreMethod(names = {"[]", "slice"}, required = 1, optional = 1, lowerFixnumParameters = {0, 1}, taintFrom = 0)
     public abstract static class GetIndexNode extends CoreMethodNode {
 
         @Child private ToIntNode toIntNode;
         @Child private MatchDataNodes.GetIndexNode getMatchDataIndexNode;
+        @Child private CallDispatchHeadNode includeNode;
+        @Child private KernelNodes.DupNode dupNode;
 
         private final BranchProfile outOfBounds = BranchProfile.create();
 
@@ -296,20 +298,7 @@ public abstract class StringNodes {
             super(prev);
         }
 
-        @Specialization(rewriteOn = UnexpectedResultException.class)
-        public RubyString getIndexInBounds(RubyString string, int index, UndefinedPlaceholder undefined) throws UnexpectedResultException {
-            final int normalizedIndex = string.normalizeIndex(index);
-            final ByteList bytes = string.getBytes();
-
-            if (normalizedIndex < 0 || normalizedIndex >= bytes.length()) {
-                throw new UnexpectedResultException(getContext().getCoreLibrary().getNilObject());
-            } else {
-                return getContext().makeString(bytes.charAt(normalizedIndex), string.getByteList().getEncoding());
-            }
-        }
-
-        @Specialization(contains = "getIndexInBounds")
-        public Object getIndex(RubyString string, int index, UndefinedPlaceholder undefined) {
+        public Object getIndex(RubyString string, int index, @SuppressWarnings("unused") UndefinedPlaceholder undefined) {
             int normalizedIndex = string.normalizeIndex(index);
             final ByteList bytes = string.getBytes();
 
@@ -321,10 +310,8 @@ public abstract class StringNodes {
             }
         }
 
-        @Specialization(guards = { "!isRubyRange(index)", "!isRubyRegexp(index)" })
+        @Specialization(guards = { "!isRubyRange(index)", "!isRubyRegexp(index)", "!isRubyString(index)" })
         public Object getIndex(VirtualFrame frame, RubyString string, Object index, UndefinedPlaceholder undefined) {
-            notDesignedForCompilation();
-
             if (toIntNode == null) {
                 CompilerDirectives.transferToInterpreter();
                 toIntNode = insert(ToIntNodeFactory.create(getContext(), getSourceSection(), null));
@@ -334,7 +321,7 @@ public abstract class StringNodes {
         }
 
         @Specialization
-        public Object slice(RubyString string, RubyRange.IntegerFixnumRange range, UndefinedPlaceholder undefined) {
+        public Object slice(RubyString string, RubyRange.IntegerFixnumRange range, @SuppressWarnings("unused") UndefinedPlaceholder undefined) {
             notDesignedForCompilation();
 
             final String javaString = string.toString();
@@ -346,6 +333,10 @@ public abstract class StringNodes {
             } else {
                 final int end = string.normalizeIndex(range.getEnd());
                 final int excludingEnd = string.clampExclusiveIndex(range.doesExcludeEnd() ? end : end+1);
+
+                if (begin > excludingEnd) {
+                    return getContext().makeString("");
+                }
 
                 return getContext().makeString(javaString.substring(begin, excludingEnd), string.getByteList().getEncoding());
             }
@@ -382,7 +373,7 @@ public abstract class StringNodes {
             return slice(string, start, toIntNode.executeIntegerFixnum(frame, length));
         }
 
-        @Specialization(guards = { "!isRubyRange(start)", "!isRubyRegexp(start)", "!isUndefinedPlaceholder(length)" })
+        @Specialization(guards = { "!isRubyRange(start)", "!isRubyRegexp(start)", "!isRubyString(start)", "!isUndefinedPlaceholder(length)" })
         public Object slice(VirtualFrame frame, RubyString string, Object start, Object length) {
             notDesignedForCompilation();
 
@@ -395,7 +386,7 @@ public abstract class StringNodes {
         }
 
         @Specialization
-        public Object slice(RubyString string, RubyRegexp regexp, UndefinedPlaceholder capture) {
+        public Object slice(RubyString string, RubyRegexp regexp, @SuppressWarnings("unused") UndefinedPlaceholder capture) {
             notDesignedForCompilation();
 
             final Object matchData = regexp.matchCommon(string, false, false);
@@ -426,7 +417,7 @@ public abstract class StringNodes {
         }
 
         @Specialization
-        public Object slice(VirtualFrame frame, RubyString string, RubyRegexp regexp, RubyString capture) {
+        public Object slice(RubyString string, RubyRegexp regexp, RubyString capture) {
             notDesignedForCompilation();
 
             final Object matchData = regexp.matchCommon(string, false, false);
@@ -466,6 +457,29 @@ public abstract class StringNodes {
             final int index = toIntNode.executeIntegerFixnum(frame, capture);
 
             return getMatchDataIndexNode.getIndex((RubyMatchData) matchData, index);
+        }
+
+        @Specialization
+        public Object slice(VirtualFrame frame, RubyString string, RubyString matchStr, @SuppressWarnings("unused") UndefinedPlaceholder undefined) {
+            notDesignedForCompilation();
+
+            if (includeNode == null) {
+                CompilerDirectives.transferToInterpreter();
+                includeNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext()));
+            }
+
+            boolean result = includeNode.callBoolean(frame, string, "include?", null, matchStr);
+
+            if (result) {
+                if (dupNode == null) {
+                    CompilerDirectives.transferToInterpreter();
+                    dupNode = insert(KernelNodesFactory.DupNodeFactory.create(getContext(), getSourceSection(), new RubyNode[]{}));
+                }
+
+                return dupNode.dup(frame, matchStr);
+            }
+
+            return getContext().getCoreLibrary().getNilObject();
         }
     }
 
@@ -851,6 +865,47 @@ public abstract class StringNodes {
                 return string;
             }
         }
+    }
+
+    @CoreMethod(names = "each_byte", needsBlock = true)
+    public abstract static class EachByteNode extends YieldingCoreMethodNode {
+
+        @Child private CallDispatchHeadNode toEnumNode;
+
+        public EachByteNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public EachByteNode(EachByteNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public Object eachByte(VirtualFrame frame, RubyString string, @SuppressWarnings("unused") UndefinedPlaceholder block) {
+            notDesignedForCompilation();
+
+            if (toEnumNode == null) {
+                CompilerDirectives.transferToInterpreter();
+                toEnumNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext()));
+            }
+
+            return toEnumNode.call(frame, string, "to_enum", null, getContext().newSymbol("each_byte"));
+        }
+
+        @Specialization
+        public RubyString eachByte(VirtualFrame frame, RubyString string, RubyProc block) {
+            notDesignedForCompilation();
+
+            final ByteList bytes = string.getBytes();
+            final int begin = bytes.getBegin();
+
+            for (int i = 0; i < bytes.getRealSize(); i++) {
+                yield(frame, block, bytes.get(begin + i));
+            }
+
+            return string;
+        }
+
     }
 
     @CoreMethod(names = "each_char", needsBlock = true)

@@ -1,10 +1,2 @@
-fails:String#unpack with format 'P' ignores whitespace in the format string
 fails:String#unpack with format 'P' calls #to_str to coerce the directives string
-fails:String#unpack with format 'P' raises a TypeError when passed nil
-fails:String#unpack with format 'P' raises a TypeError when passed an Integer
-fails:String#unpack with format 'P' returns a random object after consuming a size-of a machine word bytes
-fails:String#unpack with format 'p' ignores whitespace in the format string
 fails:String#unpack with format 'p' calls #to_str to coerce the directives string
-fails:String#unpack with format 'p' raises a TypeError when passed nil
-fails:String#unpack with format 'p' raises a TypeError when passed an Integer
-fails:String#unpack with format 'p' returns a random object after consuming a size-of a machine word bytes

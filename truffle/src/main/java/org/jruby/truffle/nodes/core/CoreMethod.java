@@ -55,6 +55,8 @@ public @interface CoreMethod {
 
     int[] lowerFixnumParameters() default {};
 
+    int taintFrom() default -1;
+
     UnsupportedOperationBehavior unsupportedOperationBehavior() default UnsupportedOperationBehavior.TYPE_ERROR;
 
 }

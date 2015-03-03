@@ -105,6 +105,7 @@ module Commands
     puts 'jt test pe                                   run partial evaluation tests'
     puts 'jt tag spec/ruby/language                    tag failing specs in this directory'
     puts 'jt tag spec/ruby/language/while_spec.rb      tag failing specs in this file'
+    puts 'jt tag all spec/ruby/language                tag all specs in this file, without running them'
     puts 'jt untag spec/ruby/language                  untag passing specs in this directory'
     puts 'jt untag spec/ruby/language/while_spec.rb    untag passing specs in this file'
     puts 'jt bench debug benchmark                     run a single benchmark with options for compiler debugging'
@@ -154,6 +155,10 @@ module Commands
 
     if args.delete('--asm')
       jruby_args += %w[-J-XX:+UnlockDiagnosticVMOptions -J-XX:CompileCommand=print,*::callRoot]
+    end
+
+    if args.delete('--jdebug')
+      jruby_args += %w[-J-agentlib:jdwp=transport=dt_socket,server=y,address=8000,suspend=y]
     end
 
     if args.delete('--server')
