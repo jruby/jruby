@@ -16,8 +16,6 @@ import org.jruby.ir.representations.CFG;
 import org.jruby.ir.transformations.inlining.CFGInliner;
 import org.jruby.ir.transformations.inlining.SimpleCloneInfo;
 import org.jruby.parser.StaticScope;
-import org.jruby.util.log.Logger;
-import org.jruby.util.log.LoggerFactory;
 
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -55,8 +53,6 @@ import static org.jruby.ir.IRFlags.*;
  */
 public abstract class IRScope implements ParseResult {
     private static final Collection<IRClosure> NO_CLOSURES = Collections.unmodifiableCollection(new ArrayList<IRClosure>(0));
-
-    private static final Logger LOG = LoggerFactory.getLogger("IRScope");
 
     private static AtomicInteger globalScopeCount = new AtomicInteger();
 
@@ -464,19 +460,17 @@ public abstract class IRScope implements ParseResult {
             clonedInstrs[i] = instructions[i].clone(cloneInfo);
         }
 
-        for (IRClosure cl : getClosures()) {
+        for (IRClosure cl: getClosures()) {
             // Closure may have independently been promoted to full build already
-            if (fullInterpreterContext != null) cl.cloneInstrs(cloneInfo.cloneForCloningClosure(cl));
+            if (cl.fullInterpreterContext == null) {
+                cl.cloneInstrs(cloneInfo.cloneForCloningClosure(cl));
+            }
         }
     }
 
-    /**
-     * This will initialize a more complete interpretercontext which if used in mixed mode will be
-     * used by the JIT and if used in pure-interpreted mode it will be used by an interpreter engine.
-     */
-    public synchronized FullInterpreterContext prepareFullBuild() {
-        // Clone instrs from startup interpreter so we do not change out instrs out from under the
-        // startup interp as we are building.
+    protected void prepareFullBuildCommon() {
+        // Clone instrs from startup interpreter so we do not swap out instrs out from under the
+        // startup interpreter as we are building the full interpreter.
         cloneInstrs();
 
         // This is a complicating pseudo-pass which needs to be run before CFG is generated.  This
@@ -484,40 +478,51 @@ public abstract class IRScope implements ParseResult {
         // CFG using pass we can eliminate this intermediate save and field.
         //getManager().optimizeTemporaryVariablesIfEnabled(this);
 
-        fullInterpreterContext = new FullInterpreterContext(this, clonedInstrs);
-        setClonedInstrs(null); // boo
-
-        runCompilerPasses(getManager().getCompilerPasses(this));
-
-        getManager().optimizeIfSimpleScope(this);
-
-        // Always add call protocol instructions now for both interpreter and JIT since we are removing support
-        // for implicit stuff in the interpreter. When JIT later runs this same pass, it will be a NOP there.
-        if (!isUnsafeScope()) new AddCallProtocolInstructions().run(this);
-
-        // In mixed mode we do not need to make these instructions at all and we deifnitely do not
-        // need to add ipc/rpc info the them.
-        if (manager.getInstanceConfig().getCompileMode() == RubyInstanceConfig.CompileMode.OFF) {
-            fullInterpreterContext.generateInstructionsForIntepretation();
+        for (IRClosure cl: getClosures()) {
+            if (cl.fullInterpreterContext == null) cl.fullInterpreterContext = new FullInterpreterContext(cl, cl.getClonedInstrs());
         }
 
+        fullInterpreterContext = new FullInterpreterContext(this, clonedInstrs);
+
+        setClonedInstrs(null); // boo. vestigial temporal field...because of opt tmp vars pass.
+    }
+    /**
+     * This initializes a more complete(full) InterpreterContext which if used in mixed mode will be
+     * used by the JIT and if used in pure-interpreted mode it will be used by an interpreter engine.
+     */
+    public synchronized FullInterpreterContext prepareFullBuild() {
+        // Don't run if same method was queued up in the tiny race for scheduling JIT/Full Build OR
+        // for any nested closures which got a a fullInterpreterContext but have not run any passes
+        // or generated instructions.
+        if (fullInterpreterContext != null && fullInterpreterContext.buildComplete()) return fullInterpreterContext;
+
+        prepareFullBuildCommon();
+        runCompilerPasses(getManager().getCompilerPasses(this));
+        getManager().optimizeIfSimpleScope(this);
+
+        // Always add call protocol instructions now since we are removing support for implicit stuff in interp.
+        if (!isUnsafeScope()) new AddCallProtocolInstructions().run(this);
+
+        fullInterpreterContext.generateInstructionsForIntepretation();
         return fullInterpreterContext;
     }
 
     /** Run any necessary passes to get the IR ready for compilation */
-    public synchronized List<BasicBlock> prepareForCompilation() {
-        // need to make JIT Context with all goodies we need for JIT or -X-C runtime
+    public synchronized BasicBlock[] prepareForInitialCompilation() {
+        // Don't run if same method was queued up in the tiny race for scheduling JIT/Full Build OR
+        // for any nested closures which got a a fullInterpreterContext but have not run any passes
+        // or generated instructions.
+        if (fullInterpreterContext != null && fullInterpreterContext.buildComplete()) return fullInterpreterContext.getLinearizedBBList();
 
-        // Reset linearization, if any exists
-        //resetLinearizationData();
+        prepareFullBuildCommon();
 
-        //initScope(true);
+        runCompilerPasses(getManager().getJITPasses(this));
 
-        //runCompilerPasses(getManager().getJITPasses(this));
-
-        //return Arrays.asList(buildLinearization());
-        return null;
+        return fullInterpreterContext.linearizeBasicBlocks();
     }
+
+    // FIXME: For inlining, culmulative or extra passes run based on profiled execution we need to re-init data or even
+    // construct a new fullInterpreterContext.  Primary obstacles is JITFlags and linearization of BBs.
 
     public Map<BasicBlock, Label> buildJVMExceptionTable() {
         Map<BasicBlock, Label> map = new HashMap<>();
@@ -533,14 +538,6 @@ public abstract class IRScope implements ParseResult {
         // This could be optimized either during generation or as another pass over the table.  But, if the JVM
         // does that already, do we need to bother with it?
         return map;
-    }
-
-    private static Label[] catLabels(Label[] labels, Label cat) {
-        if (labels == null) return new Label[] {cat};
-        Label[] newLabels = new Label[labels.length + 1];
-        System.arraycopy(labels, 0, newLabels, 0, labels.length);
-        newLabels[labels.length] = cat;
-        return newLabels;
     }
 
     public EnumSet<IRFlags> getFlags() {
@@ -627,28 +624,23 @@ public abstract class IRScope implements ParseResult {
     }
 
 
-    // This can help use eliminate writes to %block that are not used since this is
-    // a special local-variable, not programmer-defined local-variable
+    /**
+     * Calculate scope flags used by various passes to know things like whether a binding has escaped.
+     * We may recalculate flags in a few scenarios:
+     *  - once after IR generation and local optimizations propagates constants locally
+     *  - also potentially at later times after other opt passes
+     */
     public void computeScopeFlags() {
         if (flagsComputed) return;
 
         initScopeFlags();
         bindingEscapedScopeFlagsCheck();
 
-        // Recompute flags -- we could be calling this method different times.
-        // * once after IR generation and local optimizations propagates constants locally
-        // * also potentially at later times after other opt passes
-//        if (cfg == null) {
-        for (Instr i : interpreterContext.getInstructions()) {
-            i.computeScopeFlags(this);
+        if (fullInterpreterContext != null) {
+            fullInterpreterContext.computeScopeFlagsFromInstructions();
+        } else {
+            interpreterContext.computeScopeFlagsFromInstructions();
         }
-/*        } else {
-            for (BasicBlock b: cfg.getBasicBlocks()) {
-                for (Instr i: b.getInstrs()) {
-                    i.computeScopeFlags(this);
-                }
-            }
-        }*/
 
         calculateClosureScopeFlags();
         computeNeedsDynamicScopeFlag();
@@ -986,14 +978,6 @@ public abstract class IRScope implements ParseResult {
         nextVarIndex.put(prefix, index + 1);
 
         return index;
-    }
-
-    // This is how IR Persistence can re-read existing saved labels and reset
-    // scope back to proper index.
-    public void setPrefixedNameIndexTo(String prefix, int newIndex) {
-        int index = getPrefixCountSize(prefix);
-
-        nextVarIndex.put(prefix, index);
     }
 
     protected void resetVariableCounter(String prefix) {

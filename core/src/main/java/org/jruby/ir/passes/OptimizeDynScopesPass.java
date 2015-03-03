@@ -11,15 +11,11 @@ import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.Variable;
 import org.jruby.ir.representations.BasicBlock;
 
-import java.util.Arrays;
 import java.util.HashMap;
-import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
 
 public class OptimizeDynScopesPass extends CompilerPass {
-    public static List<Class<? extends CompilerPass>> DEPENDENCIES = Arrays.<Class<? extends CompilerPass>>asList(CFGBuilder.class);
-
     @Override
     public String getLabel() {
         return "Optimize Dynamic Scopes";

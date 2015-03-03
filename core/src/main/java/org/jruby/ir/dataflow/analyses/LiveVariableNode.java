@@ -111,7 +111,6 @@ public class LiveVariableNode extends FlowGraphNode<LiveVariablesProblem, LiveVa
                 if (cl_lvp == null) {
                     cl_lvp = new LiveVariablesProblem(cl, problem.getNonSelfLocalVars());
                     cl.getFullInterpreterContext().getDataFlowProblems().put(cl_lvp.getName(), cl_lvp);
-                    cl.computeScopeFlags();
                     needsInit = true;
                 }
 

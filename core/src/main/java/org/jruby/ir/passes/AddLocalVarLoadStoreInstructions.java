@@ -34,10 +34,7 @@ public class AddLocalVarLoadStoreInstructions extends CompilerPass {
 
         // Only run if we are pushing a scope or we are reusing the parents scope.
         if (!s.getFlags().contains(IRFlags.DYNSCOPE_ELIMINATED) || s.getFlags().contains(IRFlags.REUSE_PARENT_DYNSCOPE)) {
-            // Make sure flags are computed
-            s.computeScopeFlags();
-
-            Map<Operand, Operand> varRenameMap = new HashMap<Operand, Operand>();
+            Map<Operand, Operand> varRenameMap = new HashMap<>();
             // 1. Figure out required stores
             // 2. Add stores
             // 3. Figure out required loads

@@ -52,10 +52,10 @@ public class IRMethod extends IRScope {
         return interpreterContext;
     }
 
-    public synchronized List<BasicBlock> prepareForCompilation() {
+    public synchronized BasicBlock[] prepareForInitialCompilation() {
         if (defn != null) lazilyAcquireInterpreterContext();
 
-        return super.prepareForCompilation();
+        return super.prepareForInitialCompilation();
     }
 
     @Override
@@ -87,10 +87,6 @@ public class IRMethod extends IRScope {
     public void addNativeSignature(int arity, MethodType signature) {
         if (signatures == null) signatures = new HashMap<>();
         signatures.put(arity, signature);
-    }
-
-    public MethodType getNativeSignature(int arity) {
-        return signatures.get(arity);
     }
 
     public Map<Integer, MethodType> getNativeSignatures() {

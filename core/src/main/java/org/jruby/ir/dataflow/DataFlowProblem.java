@@ -7,7 +7,7 @@ import java.util.*;
 
 public abstract class DataFlowProblem<T extends DataFlowProblem<T, U>, U extends FlowGraphNode<T, U>> {
 /* -------------- Public fields and methods below ---------------- */
-    public enum DF_Direction { FORWARD, BACKWARD, BIDIRECTIONAL };
+    public enum DF_Direction { FORWARD, BACKWARD, BIDIRECTIONAL }
 
     public final DF_Direction direction;
 
@@ -62,7 +62,7 @@ public abstract class DataFlowProblem<T extends DataFlowProblem<T, U>, U extends
      * on direction.
      */
     protected LinkedList<U> generateWorkList() {
-        LinkedList<U> wl = new LinkedList<U>();
+        LinkedList<U> wl = new LinkedList<>();
         Iterator<BasicBlock> it = direction == DF_Direction.FORWARD ?
                 scope.getCFG().getReversePostOrderTraverser() : scope.getCFG().getPostOrderTraverser();
 
@@ -75,14 +75,6 @@ public abstract class DataFlowProblem<T extends DataFlowProblem<T, U>, U extends
 
     public int getDFVarsCount() {
         return nextVariableId + 1;
-    }
-
-    public Iterable<BasicBlock> getIncomingSourcesOf(BasicBlock bb) {
-        return scope.getCFG().getIncomingSources(bb);
-    }
-
-    public Iterable<BasicBlock> getOutgoingDestinationsOf(BasicBlock bb) {
-        return scope.getCFG().getOutgoingDestinations(bb);
     }
 
     /* Individual analyses should override this */
@@ -134,16 +126,8 @@ public abstract class DataFlowProblem<T extends DataFlowProblem<T, U>, U extends
     private Map<BasicBlock, U> basicBlockToFlowGraph;
 
     private void buildFlowGraph() {
-        flowGraphNodes = new LinkedList<U>();
-        basicBlockToFlowGraph = new HashMap<BasicBlock, U>();
-
-        // SSS FIXME: We need to do more work on our dependency setup.
-        // Since LVA runs analyses on nested closures, and dependencies aren't
-        // checked on nested scopes, it can happen that for closures,
-        // the cfg hasn't been built yet.
-        if (scope.getCFG() == null) {
-            scope.buildCFG();
-        }
+        flowGraphNodes = new LinkedList<>();
+        basicBlockToFlowGraph = new HashMap<>();
 
         for (BasicBlock bb: scope.getCFG().getBasicBlocks()) {
             U fgNode = buildFlowGraphNode(bb);

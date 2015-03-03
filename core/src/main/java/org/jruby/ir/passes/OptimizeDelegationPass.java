@@ -11,16 +11,9 @@ import org.jruby.ir.representations.BasicBlock;
 import java.util.*;
 
 public class OptimizeDelegationPass extends CompilerPass {
-    public static List<Class<? extends CompilerPass>> DEPENDENCIES = Arrays.<Class<? extends CompilerPass>>asList(CFGBuilder.class);
-
     @Override
     public String getLabel() {
         return "Delegated Variable Removal";
-    }
-
-    @Override
-    public List<Class<? extends CompilerPass>> getDependencies() {
-        return DEPENDENCIES;
     }
 
     @Override
@@ -29,13 +22,8 @@ public class OptimizeDelegationPass extends CompilerPass {
             run(c, false, true);
         }
 
-        s.computeScopeFlags();
-
-        if (s.getFlags().contains(IRFlags.BINDING_HAS_ESCAPED))
-            return null;
-
-        if (!s.getFlags().contains(IRFlags.RECEIVES_CLOSURE_ARG))
-            return null;
+        if (s.getFlags().contains(IRFlags.BINDING_HAS_ESCAPED)) return null;
+        if (!s.getFlags().contains(IRFlags.RECEIVES_CLOSURE_ARG)) return null;
 
         optimizeDelegatedVars(s);
 
@@ -49,7 +37,7 @@ public class OptimizeDelegationPass extends CompilerPass {
     }
 
     private static void optimizeDelegatedVars(IRScope s) {
-        Map<Operand, Operand> unusedExplicitBlocks = new HashMap<Operand, Operand>();
+        Map<Operand, Operand> unusedExplicitBlocks = new HashMap<>();
 
         for (BasicBlock bb: s.getCFG().getBasicBlocks()) {
             for (Instr i: bb.getInstrs()) {
@@ -92,8 +80,9 @@ public class OptimizeDelegationPass extends CompilerPass {
             if (i instanceof ClosureAcceptingInstr) {
                 return usedVariables.indexOf(v) != usedVariables.lastIndexOf(v) ||
                     v != ((ClosureAcceptingInstr) i).getClosureArg();
-            } else
+            } else {
                 return true;
+            }
         }
         return false;
     }

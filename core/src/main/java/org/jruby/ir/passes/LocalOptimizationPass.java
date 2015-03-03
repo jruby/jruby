@@ -14,16 +14,9 @@ import org.jruby.ir.representations.CFG;
 import java.util.*;
 
 public class LocalOptimizationPass extends CompilerPass {
-    public static List<Class<? extends CompilerPass>> DEPENDENCIES = Arrays.<Class<? extends CompilerPass>>asList(CFGBuilder.class);
-
     @Override
     public String getLabel() {
         return "Local Optimizations";
-    }
-
-    @Override
-    public List<Class<? extends CompilerPass>> getDependencies() {
-        return DEPENDENCIES;
     }
 
     @Override

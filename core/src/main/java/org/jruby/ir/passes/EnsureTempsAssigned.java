@@ -15,16 +15,9 @@ import java.util.List;
 import java.util.Set;
 
 public class EnsureTempsAssigned extends CompilerPass {
-    public static List<Class<? extends CompilerPass>> DEPENDENCIES = Arrays.<Class<? extends CompilerPass>>asList(CFGBuilder.class);
-
     @Override
     public String getLabel() {
         return "Ensure Temporary Variables Assigned";
-    }
-
-    @Override
-    public List<Class<? extends CompilerPass>> getDependencies() {
-        return DEPENDENCIES;
     }
 
     @Override

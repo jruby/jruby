@@ -14,14 +14,16 @@ import org.jruby.ir.passes.CompilerPass;
 import org.jruby.ir.representations.BasicBlock;
 import org.jruby.ir.representations.CFG;
 import org.jruby.ir.representations.CFGLinearizer;
-import org.jruby.ir.transformations.inlining.SimpleCloneInfo;
 
 /**
  * Created by enebo on 2/27/15.
  */
 public class FullInterpreterContext extends InterpreterContext {
     private CFG cfg;
-    private BasicBlock[] linearizedBBList;
+
+    // Creation of this field will happen in generateInstructionsForInterpretation or during IRScope.prepareForInitialCompilation.
+    // FIXME: At some point when we relinearize after running another phase of passes we should document that here to know how this field is changed
+    private BasicBlock[] linearizedBBList = null;
 
     /** Map of name -> dataflow problem */
     private Map<String, DataFlowProblem> dataFlowProblems;
@@ -34,9 +36,23 @@ public class FullInterpreterContext extends InterpreterContext {
         super(scope, null);
 
         cfg = buildCFG(instructions);
-        linearizedBBList = CFGLinearizer.linearize(cfg);
     }
 
+    /**
+     * have this interpretercontext fully built?  This is slightly more complicated than this simple check, but it
+     * should work.  In -X-C full builds we linearize at the beginning of our generateInstructionsForIntepretation
+     * method.  Last thing we do essentially is set instructions to be something.  For JIT builds last thing we
+     * need to check is whether we have linearized the BB list.
+     */
+    @Override
+    public boolean buildComplete() {
+        return instructions != null || linearizedBBList != null;
+    }
+
+    public BasicBlock[] linearizeBasicBlocks() {
+        linearizedBBList = CFGLinearizer.linearize(cfg);
+        return linearizedBBList;
+    }
 
     private CFG buildCFG(Instr[] instructions) {
         CFG newCFG = new CFG(getScope());
@@ -48,6 +64,7 @@ public class FullInterpreterContext extends InterpreterContext {
 
     /** We plan on running this in full interpreted mode.  This will fixup ipc, rpc, and generate instr list */
     public void generateInstructionsForIntepretation() {
+        linearizeBasicBlocks();
         boolean simple_method = getScope() instanceof IRMethod;
 
         // Pass 1. Set up IPCs for labels and instructions and build linear instr list
@@ -103,6 +120,15 @@ public class FullInterpreterContext extends InterpreterContext {
     @Override
     public CFG getCFG() {
         return cfg;
+    }
+
+    @Override
+    public void computeScopeFlagsFromInstructions() {
+        for (BasicBlock b: cfg.getBasicBlocks()) {
+            for (Instr i: b.getInstrs()) {
+                i.computeScopeFlags(getScope());
+            }
+        }
     }
 
     public Map<String, DataFlowProblem> getDataFlowProblems() {

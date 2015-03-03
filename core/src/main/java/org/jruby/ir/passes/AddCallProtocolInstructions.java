@@ -18,13 +18,6 @@ public class AddCallProtocolInstructions extends CompilerPass {
         return "Add Call Protocol Instructions (push/pop of dyn-scope, frame, impl-class values)";
     }
 
-    public static List<Class<? extends CompilerPass>> DEPENDENCIES = Arrays.<Class<? extends CompilerPass>>asList(CFGBuilder.class);
-
-    @Override
-    public List<Class<? extends CompilerPass>> getDependencies() {
-        return DEPENDENCIES;
-    }
-
     private boolean explicitCallProtocolSupported(IRScope scope) {
         return scope instanceof IRMethod || (scope instanceof IRModuleBody && !(scope instanceof IRMetaClassBody));
     }

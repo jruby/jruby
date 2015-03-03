@@ -82,6 +82,15 @@ public class InterpreterContext {
         return scope;
     }
 
+    /**
+     * Is the build complete?  For startup builds, which this class represents, we finish build in the constructor
+     * so it is always complete.  For FullInterpreterContext this is more complicated (see javadocs there for more
+     * info).
+     */
+    public boolean buildComplete() {
+        return true;
+    }
+
     public CFG getCFG() {
         return null;
     }
@@ -116,6 +125,12 @@ public class InterpreterContext {
 
     public Instr[] getInstructions() {
         return instructions;
+    }
+
+    public void computeScopeFlagsFromInstructions() {
+        for (Instr instr : getInstructions()) {
+            instr.computeScopeFlags(scope);
+        }
     }
 
     /**
@@ -156,11 +171,15 @@ public class InterpreterContext {
         buf.append(getFileName()).append(':').append(scope.getLineNumber());
         if (getName() != null) buf.append(' ').append(getName());
 
-        int i = 0;
-        for (Instr instr : instructions) {
-            if (i > 0) buf.append("\n");
-            buf.append("  ").append(i).append('\t').append(instr);
-            i++;
+        if (instructions == null) {
+            buf.append("No Instructions.  Full Build before linearizeInstr?");
+        } else {
+            int i = 0;
+            for (Instr instr : instructions) {
+                if (i > 0) buf.append("\n");
+                buf.append("  ").append(i).append('\t').append(instr);
+                i++;
+            }
         }
 
         return buf.toString();

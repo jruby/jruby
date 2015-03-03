@@ -7,7 +7,7 @@ import java.util.Arrays;
 import java.util.List;
 
 public class UnboxingPass extends CompilerPass {
-    public static List<Class<? extends CompilerPass>> DEPENDENCIES = Arrays.<Class<? extends CompilerPass>>asList(CFGBuilder.class, LiveVariableAnalysis.class);
+    public static List<Class<? extends CompilerPass>> DEPENDENCIES = Arrays.<Class<? extends CompilerPass>>asList(LiveVariableAnalysis.class);
 
     public String getLabel() {
         return "Unboxing Pass";
