@@ -1,26 +1,7 @@
 fails:Symbol#[] with an Integer index returns the character code of the element at the index
 fails:Symbol#[] with an Integer index returns nil if the index starts from the end and is greater than the length
 fails:Symbol#[] with an Integer index returns nil if the index is greater than the length
-fails:Symbol#[] with an Integer index and length and a positive index and length returns a slice
-fails:Symbol#[] with an Integer index and length and a positive index and length returns a blank slice if the length is 0
-fails:Symbol#[] with an Integer index and length and a positive index and length returns a slice of all remaining characters if the given length is greater than the actual length
-fails:Symbol#[] with an Integer index and length and a positive index and length returns nil if the index is greater than the length
-fails:Symbol#[] with an Integer index and length and a positive index and negative length returns nil
-fails:Symbol#[] with an Integer index and length and a negative index and positive length returns a slice starting from the end upto the length
-fails:Symbol#[] with an Integer index and length and a negative index and positive length returns a blank slice if the length is 0
-fails:Symbol#[] with an Integer index and length and a negative index and positive length returns a slice of all remaining characters if the given length is larger than the actual length
-fails:Symbol#[] with an Integer index and length and a negative index and positive length returns nil if the index is past the start
-fails:Symbol#[] with an Integer index and length and a negative index and negative length returns nil
-fails:Symbol#[] with an Integer index and length and a Float length converts the length to an Integer
-fails:Symbol#[] with an Integer index and length and a nil length raises a TypeError
-fails:Symbol#[] with an Integer index and length and a length that cannot be converted into an Integer raises a TypeError when given an Array
-fails:Symbol#[] with an Integer index and length and a length that cannot be converted into an Integer raises a TypeError when given an Hash
-fails:Symbol#[] with an Integer index and length and a length that cannot be converted into an Integer raises a TypeError when given an Object
 fails:Symbol#[] with a Float index converts the index to an Integer
-fails:Symbol#[] with a nil index raises a TypeError
-fails:Symbol#[] with an index that cannot be converted into an Integer raises a TypeError when given an Array
-fails:Symbol#[] with an index that cannot be converted into an Integer raises a TypeError when given an Hash
-fails:Symbol#[] with an index that cannot be converted into an Integer raises a TypeError when given an Object
 fails:Symbol#[] with a Range slice that is within bounds returns a slice if both range values begin at the start and are within bounds
 fails:Symbol#[] with a Range slice that is within bounds returns a slice if the first range value begins at the start and the last begins at the end
 fails:Symbol#[] with a Range slice that is within bounds returns a slice if the first range value begins at the end and the last begins at the end
