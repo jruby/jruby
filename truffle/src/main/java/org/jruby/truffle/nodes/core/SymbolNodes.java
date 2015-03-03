@@ -340,25 +340,6 @@ public abstract class SymbolNodes {
 
     }
 
-    @CoreMethod(names = {"succ"})
-    public abstract static class SuccNode extends CoreMethodNode {
-
-        public SuccNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
-        public SuccNode(SuccNode prev) {
-            super(prev);
-        }
-
-        @Specialization
-        public RubySymbol succ(RubySymbol symbol) {
-            notDesignedForCompilation();
-            return getContext().newSymbol(StringSupport.succCommon(symbol.getByteList()));
-        }
-
-    }
-
     @CoreMethod(names = { "swapcase"})
     public abstract static class SwapcaseNode extends CoreMethodNode {
 
