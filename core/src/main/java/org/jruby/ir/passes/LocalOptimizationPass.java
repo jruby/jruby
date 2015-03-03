@@ -26,7 +26,7 @@ public class LocalOptimizationPass extends CompilerPass {
             run(c, false, true);
         }
 
-        for (BasicBlock b: ((CFG) data[0]).getBasicBlocks()) {
+        for (BasicBlock b: s.getCFG().getBasicBlocks()) {
             runLocalOptsOnInstrList(s, b.getInstrs().listIterator(), false);
         }
 

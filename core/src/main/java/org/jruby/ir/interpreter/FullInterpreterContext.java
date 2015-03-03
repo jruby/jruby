@@ -93,9 +93,6 @@ public class FullInterpreterContext extends InterpreterContext {
 
         cfg.getExitBB().getLabel().setTargetPC(ipc + 1);  // Exit BB ipc
 
-        // System.out.println("SCOPE: " + getName());
-        // System.out.println("INSTRS: " + cfg().toStringInstrs());
-
         Instr[] linearizedInstrArray = newInstrs.toArray(new Instr[newInstrs.size()]);
 
         // Pass 2: Use ipc info from previous to mark all linearized instrs rpc
@@ -115,6 +112,9 @@ public class FullInterpreterContext extends InterpreterContext {
 
         instructions = linearizedInstrArray;
         temporaryVariablecount = getScope().getTemporaryVariablesCount();
+
+        // System.out.println("SCOPE: " + getScope().getName());
+        // System.out.println("INSTRS: " + cfg.toStringInstrs());
     }
 
     @Override
