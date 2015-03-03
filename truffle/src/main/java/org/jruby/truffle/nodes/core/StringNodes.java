@@ -1299,28 +1299,33 @@ public abstract class StringNodes {
 
     }
 
-    @CoreMethod(names = "match", required = 1)
+    @CoreMethod(names = "match", required = 1, taintFrom = 0)
     public abstract static class MatchNode extends CoreMethodNode {
+
+        @Child private CallDispatchHeadNode regexpMatchNode;
 
         public MatchNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
+            regexpMatchNode = DispatchHeadNodeFactory.createMethodCall(context);
         }
 
         public MatchNode(MatchNode prev) {
             super(prev);
+            regexpMatchNode = prev.regexpMatchNode;
         }
 
         @Specialization
-        public Object match(RubyString string, RubyString regexpString) {
+        public Object match(VirtualFrame frame, RubyString string, RubyString regexpString) {
             notDesignedForCompilation();
 
             final RubyRegexp regexp = new RubyRegexp(this, getContext().getCoreLibrary().getRegexpClass(), regexpString.getBytes(), Option.DEFAULT);
-            return regexp.matchCommon(string, false, false);
+
+            return regexpMatchNode.call(frame, regexp, "match", null, string);
         }
 
         @Specialization
-        public Object match(RubyString string, RubyRegexp regexp) {
-            return regexp.matchCommon(string, false, false);
+        public Object match(VirtualFrame frame, RubyString string, RubyRegexp regexp) {
+            return regexpMatchNode.call(frame, regexp, "match", null, string);
         }
     }
 
