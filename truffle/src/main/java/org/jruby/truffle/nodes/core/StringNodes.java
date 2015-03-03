@@ -284,8 +284,9 @@ public abstract class StringNodes {
     public abstract static class GetIndexNode extends CoreMethodNode {
 
         @Child private ToIntNode toIntNode;
-        @Child private MatchDataNodes.GetIndexNode getMatchDataIndexNode;
+        @Child private CallDispatchHeadNode getMatchDataIndexNode;
         @Child private CallDispatchHeadNode includeNode;
+        @Child private CallDispatchHeadNode matchNode;
         @Child private KernelNodes.DupNode dupNode;
 
         private final BranchProfile outOfBounds = BranchProfile.create();
@@ -386,23 +387,15 @@ public abstract class StringNodes {
         }
 
         @Specialization
-        public Object slice(RubyString string, RubyRegexp regexp, @SuppressWarnings("unused") UndefinedPlaceholder capture) {
+        public Object slice(VirtualFrame frame, RubyString string, RubyRegexp regexp, @SuppressWarnings("unused") UndefinedPlaceholder capture) {
             notDesignedForCompilation();
 
-            final Object matchData = regexp.matchCommon(string, false, false);
-
-            if (matchData == getContext().getCoreLibrary().getNilObject()) {
-                return matchData;
+            if (matchNode == null) {
+                CompilerDirectives.transferToInterpreter();
+                matchNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext()));
             }
 
-            return ((RubyMatchData) matchData).getValues()[0];
-        }
-
-        @Specialization
-        public Object slice(RubyString string, RubyRegexp regexp, int capture) {
-            notDesignedForCompilation();
-
-            final Object matchData = regexp.matchCommon(string, false, false);
+            final Object matchData = matchNode.call(frame, regexp, "match", null, string);
 
             if (matchData == getContext().getCoreLibrary().getNilObject()) {
                 return matchData;
@@ -410,17 +403,22 @@ public abstract class StringNodes {
 
             if (getMatchDataIndexNode == null) {
                 CompilerDirectives.transferToInterpreter();
-                getMatchDataIndexNode = insert(MatchDataNodesFactory.GetIndexNodeFactory.create(getContext(), getSourceSection(), new RubyNode[]{}));
+                getMatchDataIndexNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext()));
             }
 
-            return getMatchDataIndexNode.getIndex((RubyMatchData) matchData, capture);
+            return getMatchDataIndexNode.call(frame, matchData, "[]", null, 0);
         }
 
         @Specialization
-        public Object slice(RubyString string, RubyRegexp regexp, RubyString capture) {
+        public Object slice(VirtualFrame frame, RubyString string, RubyRegexp regexp, int capture) {
             notDesignedForCompilation();
 
-            final Object matchData = regexp.matchCommon(string, false, false);
+            if (matchNode == null) {
+                CompilerDirectives.transferToInterpreter();
+                matchNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext()));
+            }
+
+            final Object matchData = matchNode.call(frame, regexp, "match", null, string);
 
             if (matchData == getContext().getCoreLibrary().getNilObject()) {
                 return matchData;
@@ -428,35 +426,56 @@ public abstract class StringNodes {
 
             if (getMatchDataIndexNode == null) {
                 CompilerDirectives.transferToInterpreter();
-                getMatchDataIndexNode = insert(MatchDataNodesFactory.GetIndexNodeFactory.create(getContext(), getSourceSection(), new RubyNode[]{}));
+                getMatchDataIndexNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext()));
             }
 
-            return getMatchDataIndexNode.getIndex((RubyMatchData) matchData, capture);
+            return getMatchDataIndexNode.call(frame, matchData, "[]", null, capture);
+        }
+
+        @Specialization
+        public Object slice(VirtualFrame frame, RubyString string, RubyRegexp regexp, RubyString capture) {
+            notDesignedForCompilation();
+
+            if (matchNode == null) {
+                CompilerDirectives.transferToInterpreter();
+                matchNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext()));
+            }
+
+            final Object matchData = matchNode.call(frame, regexp, "match", null, string);
+
+            if (matchData == getContext().getCoreLibrary().getNilObject()) {
+                return matchData;
+            }
+
+            if (getMatchDataIndexNode == null) {
+                CompilerDirectives.transferToInterpreter();
+                getMatchDataIndexNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext()));
+            }
+
+            return getMatchDataIndexNode.call(frame, matchData, "[]", null, capture);
         }
 
         @Specialization(guards =  { "!isUndefinedPlaceholder(arguments[2])", "!isRubyString(arguments[2])" })
         public Object slice(VirtualFrame frame, RubyString string, RubyRegexp regexp, Object capture) {
             notDesignedForCompilation();
 
-            final Object matchData = regexp.matchCommon(string, false, false);
+            if (matchNode == null) {
+                CompilerDirectives.transferToInterpreter();
+                matchNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext()));
+            }
+
+            final Object matchData = matchNode.call(frame, regexp, "match", null, string);
 
             if (matchData == getContext().getCoreLibrary().getNilObject()) {
                 return matchData;
             }
 
-            if (toIntNode == null) {
-                CompilerDirectives.transferToInterpreter();
-                toIntNode = insert(ToIntNodeFactory.create(getContext(), getSourceSection(), null));
-            }
-
             if (getMatchDataIndexNode == null) {
                 CompilerDirectives.transferToInterpreter();
-                getMatchDataIndexNode = insert(MatchDataNodesFactory.GetIndexNodeFactory.create(getContext(), getSourceSection(), new RubyNode[]{}));
+                getMatchDataIndexNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext()));
             }
 
-            final int index = toIntNode.executeIntegerFixnum(frame, capture);
-
-            return getMatchDataIndexNode.getIndex((RubyMatchData) matchData, index);
+            return getMatchDataIndexNode.call(frame, matchData, "[]", null, capture);
         }
 
         @Specialization
