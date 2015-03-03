@@ -52,6 +52,19 @@ public class TaintResultNode extends RubyNode {
         isTaintedNode = prev.isTaintedNode;
     }
 
+    public Object maybeTaint(RubyBasicObject source, RubyBasicObject result) {
+        if (taintProfile.profile(isTaintedNode.isTainted(source))) {
+            if (taintNode == null) {
+                CompilerDirectives.transferToInterpreter();
+                taintNode = insert(TaintNodeFactory.create(getContext(), getSourceSection(), null));
+            }
+
+            taintNode.taint(result);
+        }
+
+        return result;
+    }
+
     @Override
     public Object execute(VirtualFrame frame) {
         final RubyBasicObject result;
@@ -72,14 +85,7 @@ public class TaintResultNode extends RubyNode {
                 taintSource = (RubyBasicObject) RubyArguments.getUserArgument(frame.getArguments(), adjustedIndex);
             }
 
-            if (taintProfile.profile(isTaintedNode.isTainted(taintSource))) {
-                if (taintNode == null) {
-                    CompilerDirectives.transferToInterpreter();
-                    taintNode = insert(TaintNodeFactory.create(getContext(), getSourceSection(), null));
-                }
-
-                taintNode.taint(result);
-            }
+            maybeTaint(taintSource, result);
         }
 
         return result;
