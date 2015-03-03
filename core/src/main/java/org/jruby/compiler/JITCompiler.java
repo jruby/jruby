@@ -203,10 +203,14 @@ public class JITCompiler implements JITCompilerMBean {
         public void run() {
             try {
                 method.switchToFullBuild(method.getIRMethod().prepareFullBuild());
+
+                if (config.isJitLogging()) {
+                    log(method.getImplementationClass(), method.getFile(), method.getLine(),  method.getName(), "done building");
+                }
             } catch (Throwable t) {
                 if (config.isJitLogging()) {
                     log(method.getImplementationClass(), method.getFile(), method.getLine(), method.getName(),
-                            "Could not compile; passes run: " + method.getIRMethod().getExecutedPasses(), t.getMessage());
+                            "Could not build; passes run: " + method.getIRMethod().getExecutedPasses(), t.getMessage());
                     if (config.isJitLoggingVerbose()) {
                         t.printStackTrace();
                     }
