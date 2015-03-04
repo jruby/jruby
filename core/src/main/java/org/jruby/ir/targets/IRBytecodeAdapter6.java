@@ -6,7 +6,6 @@ package org.jruby.ir.targets;
 
 import com.headius.invokebinder.Signature;
 import java.math.BigInteger;
-import java.util.concurrent.Callable;
 
 import org.jcodings.Encoding;
 import org.jruby.Ruby;
