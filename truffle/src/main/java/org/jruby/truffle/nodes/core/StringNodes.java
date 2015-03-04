@@ -1923,18 +1923,22 @@ public abstract class StringNodes {
         }
 
         @Specialization
-        public RubyString capitalizeBang(RubyString string) {
+        public RubyBasicObject capitalizeBang(RubyString string) {
             notDesignedForCompilation();
             String javaString = string.toString();
             if (javaString.isEmpty()) {
-                return string;
+                return getContext().getCoreLibrary().getNilObject();
             } else if (string.isFrozen()) {
                 throw new RaiseException(getContext().getCoreLibrary().runtimeError("can't modify frozen string", this));
             } else {
                 final ByteList byteListString = StringNodesHelper.capitalize(string);
-
-                string.set(byteListString);
-                return string;
+                
+                if (string.getByteList().equals(byteListString)) {
+                    return getContext().getCoreLibrary().getNilObject();
+                }else {
+                    string.set(byteListString);
+                    return string;
+                }
             }
         }
     }
