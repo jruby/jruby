@@ -778,6 +778,8 @@ public abstract class StringNodes {
 
             if (newByteList.equal(string.getBytes())) {
                 return getContext().getCoreLibrary().getNilObject();
+            } else if (string.isFrozen()) {
+                throw new RaiseException(getContext().getCoreLibrary().runtimeError("can't modify frozen string", this));
             } else {
                 string.set(newByteList);
                 return string;
