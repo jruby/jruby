@@ -1926,6 +1926,8 @@ public abstract class StringNodes {
             String javaString = string.toString();
             if (javaString.isEmpty()) {
                 return string;
+            } else if (string.isFrozen()) {
+                throw new RaiseException(getContext().getCoreLibrary().runtimeError("can't modify frozen string", this));
             } else {
                 final ByteList byteListString = StringNodesHelper.capitalize(string);
 
