@@ -184,6 +184,24 @@ public abstract class MatchDataNodes {
         }
     }
 
+    @CoreMethod(names = {"length", "size"})
+    public abstract static class LengthNode extends CoreMethodNode {
+
+        public LengthNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public LengthNode(LengthNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public int length(RubyMatchData matchData) {
+            return matchData.getValues().length;
+        }
+
+    }
+
     @CoreMethod(names = "pre_match")
     public abstract static class PreMatchNode extends CoreMethodNode {
 

@@ -76,4 +76,8 @@ class String
     raise PrimitiveFailure, "String#find_character primitive failed"
   end
 
+  def num_bytes
+    @num_bytes
+  end
+
 end

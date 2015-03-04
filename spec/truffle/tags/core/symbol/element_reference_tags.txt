@@ -12,19 +12,8 @@ fails:Symbol#[] with a Range slice that is out of bounds returns nil if the firs
 fails:Symbol#[] with a Range slice with Float values converts the first value to an Integer
 fails:Symbol#[] with a Range slice with Float values converts the last value to an Integer
 fails:Symbol#[] with a Range subclass slice returns a slice
-fails:Symbol#[] with a Regex slice without a capture index returns a string of the match
-fails:Symbol#[] with a Regex slice without a capture index returns nil if the expression does not match
-fails:Symbol#[] with a Regex slice without a capture index sets $~ to the MatchData if there is a match
-fails:Symbol#[] with a Regex slice without a capture index does not set $~ if there if there is not a match
 fails:Symbol#[] with a Regex slice without a capture index returns a tainted string if the regexp is tainted
 fails:Symbol#[] with a Regex slice without a capture index returns an untrusted string if the regexp is untrusted
-fails:Symbol#[] with a Regex slice with a capture index returns a string of the complete match if the capture index is 0
-fails:Symbol#[] with a Regex slice with a capture index returns a string for the matched capture at the given index
-fails:Symbol#[] with a Regex slice with a capture index returns nil if there is no capture for the index
-fails:Symbol#[] with a Regex slice with a capture index converts the index to an Integer
-fails:Symbol#[] with a Regex slice with a capture index returns a tainted string if the regexp is tainted
-fails:Symbol#[] with a Regex slice with a capture index returns an untrusted string if the regexp is untrusted
-fails:Symbol#[] with a Regex slice with a capture index sets $~ to the MatchData if there is a match
 fails:Symbol#[] with a String slice does not set $~
 fails:Symbol#[] with a String slice returns a string if there is match
 fails:Symbol#[] with a String slice returns nil if there is not a match
