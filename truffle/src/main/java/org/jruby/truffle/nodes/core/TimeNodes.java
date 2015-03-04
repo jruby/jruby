@@ -13,6 +13,7 @@ import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.source.SourceSection;
 import org.joda.time.DateTimeZone;
 import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.runtime.core.RubyNilClass;
 import org.jruby.truffle.runtime.core.RubyTime;
 
 @CoreClass(name = "Time")
@@ -65,8 +66,8 @@ public abstract class TimeNodes {
         }
 
         @Specialization
-        public Object internalOffset(RubyTime time) {
-            throw new UnsupportedOperationException("_offset");
+        public RubyNilClass internalOffset(RubyTime time) {
+            return getContext().getCoreLibrary().getNilObject();
         }
     }
 
