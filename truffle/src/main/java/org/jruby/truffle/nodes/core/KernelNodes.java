@@ -1945,10 +1945,9 @@ public abstract class KernelNodes {
             super(prev);
         }
 
+        @TruffleBoundary
         @Specialization
         public RubyString sprintf(Object[] args) {
-            notDesignedForCompilation();
-
             final ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
 
             final PrintStream printStream;
