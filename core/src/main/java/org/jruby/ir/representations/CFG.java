@@ -624,6 +624,7 @@ public class CFG {
             buf.append("BB ").append(bb.getID()).append(" --> BB ").append(rescuerMap.get(bb).getID()).append("\n");
         }
 
+        /*
         Collection<IRClosure> closures = scope.getClosures();
         if (!closures.isEmpty()) {
             buf.append("\n\n------ Closures encountered in this scope ------\n");
@@ -632,6 +633,7 @@ public class CFG {
             }
             buf.append("------------------------------------------------\n");
         }
+        */
 
         return buf.toString();
     }
