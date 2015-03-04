@@ -1026,5 +1026,11 @@ modes.each do |mode|
         expect(x).to be_instance_of(NoMethodError)
       end
     end
+
+    it "preserves 'encoding none' flag for literal regexp" do
+      run('/a/n.options') do |x|
+        expect(x).to eq(32)
+      end
+    end
   end
 end

@@ -174,6 +174,7 @@ public class RegexpOptions implements Cloneable {
         if (literal) options |= RubyRegexp.RE_LITERAL;
         if (kcodeDefault) options |= RubyRegexp.RE_DEFAULT;
         if (fixed) options |= RubyRegexp.RE_FIXED;
+        if (encodingNone) options |= RubyRegexp.ARG_ENCODING_NONE;
 
         return options;
     }
@@ -212,7 +213,8 @@ public class RegexpOptions implements Cloneable {
         options.kcodeDefault = (embeddedOptions & RubyRegexp.RE_DEFAULT) != 0;        
         options.setOnce((embeddedOptions & RubyRegexp.RE_OPTION_ONCE) != 0);
         options.setLiteral((embeddedOptions & RubyRegexp.RE_LITERAL) != 0);
-        options.setFixed((embeddedOptions & RubyRegexp.RE_FIXED) != 0);        
+        options.setFixed((embeddedOptions & RubyRegexp.RE_FIXED) != 0);
+        options.setEncodingNone((embeddedOptions & RubyRegexp.ARG_ENCODING_NONE) != 0);
         
         return options;
     }
