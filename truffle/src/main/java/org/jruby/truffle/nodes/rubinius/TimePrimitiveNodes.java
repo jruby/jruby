@@ -17,6 +17,7 @@ import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
 import org.jruby.truffle.nodes.objectstorage.ReadHeadObjectFieldNode;
 import org.jruby.truffle.nodes.objectstorage.WriteHeadObjectFieldNode;
+import org.jruby.truffle.nodes.time.ReadTimeZoneNode;
 import org.jruby.truffle.runtime.DebugOperations;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
@@ -33,20 +34,27 @@ public abstract class TimePrimitiveNodes {
     @RubiniusPrimitive(name = "time_s_now")
     public static abstract class TimeSNowPrimitiveNode extends RubiniusPrimitiveNode {
 
+        @Child private ReadTimeZoneNode readTimeZoneNode;
+        
         public TimeSNowPrimitiveNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
+            readTimeZoneNode = new ReadTimeZoneNode(context, sourceSection);
         }
 
         public TimeSNowPrimitiveNode(TimeSNowPrimitiveNode prev) {
             super(prev);
+            readTimeZoneNode = prev.readTimeZoneNode;
         }
 
         @Specialization
-        public RubyTime timeSNow(RubyClass timeClass) {
-            // TODO CS 14-Feb-15 uses debug send
-            final DateTimeZone zone = org.jruby.RubyTime.getTimeZoneFromTZString(getContext().getRuntime(),
-                    DebugOperations.send(getContext(), getContext().getCoreLibrary().getENV(), "[]", null, getContext().makeString("TZ")).toString());
-            return new RubyTime(timeClass, DateTime.now(zone), null);
+        public RubyTime timeSNow(VirtualFrame frame, RubyClass timeClass) {
+            // TODO CS 4-Mar-15 whenever we get time we have to convert lookup and time zone to a string and look it up - need to cache somehow...
+            return new RubyTime(timeClass, now(readTimeZoneNode.executeRubyString(frame)), null);
+        }
+        
+        @CompilerDirectives.TruffleBoundary
+        private DateTime now(RubyString timeZone) {
+            return DateTime.now(org.jruby.RubyTime.getTimeZoneFromTZString(getContext().getRuntime(), timeZone.toString()));
         }
 
     }
