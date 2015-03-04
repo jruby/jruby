@@ -14,6 +14,7 @@ public class InterpretedIRMetaClassBody extends InterpretedIRBodyMethod {
         super(metaClassBody, implementationClass);
     }
 
+    @Override
     protected void post(InterpreterContext ic, ThreadContext context) {
         // update call stacks (pop: ..)
         context.popFrame();
@@ -22,7 +23,8 @@ public class InterpretedIRMetaClassBody extends InterpretedIRBodyMethod {
         }
     }
 
-    protected void pre(InterpreterContext ic, ThreadContext context, IRubyObject self, String name, Block block) {
+    @Override
+    protected void pre(InterpreterContext ic, ThreadContext context, IRubyObject self, String name, Block block, RubyModule implClass) {
         // update call stacks (push: frame, class, scope, etc.)
         context.preMethodFrameOnly(getImplementationClass(), name, self, block);
         if (ic.pushNewDynScope()) {
@@ -41,21 +43,9 @@ public class InterpretedIRMetaClassBody extends InterpretedIRBodyMethod {
         DynamicMethod actualMethod = box.actualMethod;
         if (actualMethod != null) return actualMethod.call(context, self, clazz, name, block);
 
-        InterpreterContext ic = ensureInstrsReady();
-
         if (IRRuntimeHelpers.isDebug()) doDebug();
 
-        if (ic.hasExplicitCallProtocol()) {
-            return ic.engine.interpret(context, self, ic, getImplementationClass().getMethodLocation(), name, block, null);
-        } else {
-            try {
-                pre(ic, context, self, name, block);
-
-                return ic.engine.interpret(context, self, ic, getImplementationClass().getMethodLocation(), name, block, null);
-            } finally {
-                post(ic, context);
-            }
-        }
+        return callInternal(context, self, clazz, name, block);
     }
 
     @Override

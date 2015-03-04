@@ -235,26 +235,29 @@ public class JVMVisitor extends IRVisitor {
             .appendArgs(new String[]{"context", "scope", "self", "args", "block", "superName", "type"}, ThreadContext.class, StaticScope.class, IRubyObject.class, IRubyObject[].class, Block.class, String.class, Block.Type.class);
 
     public void emitScriptBody(IRScriptBody script) {
+        // Note: no index attached because there should be at most one script body per .class
+        String name = JavaNameMangler.encodeScopeForBacktrace(script);
         String clsName = jvm.scriptToClass(script.getFileName());
         jvm.pushscript(clsName, script.getFileName());
 
-        emitScope(script, "__script__", signatureFor(script, false), false);
+        emitScope(script, name, signatureFor(script, false), false);
 
         jvm.cls().visitEnd();
         jvm.popclass();
     }
 
     public void emitMethod(IRMethod method) {
-        String name = JavaNameMangler.mangleMethodName(method.getName() + "_" + methodIndex++);
+        String name = JavaNameMangler.encodeScopeForBacktrace(method) + "$" + methodIndex++;
 
         emitWithSignatures(method, name);
     }
 
     public void  emitMethodJIT(IRMethod method) {
         String clsName = jvm.scriptToClass(method.getFileName());
+        String name = JavaNameMangler.encodeScopeForBacktrace(method) + "$" + methodIndex++;
         jvm.pushscript(clsName, method.getFileName());
 
-        emitWithSignatures(method, "__script__");
+        emitWithSignatures(method, name);
 
         jvm.cls().visitEnd();
         jvm.popclass();
@@ -275,19 +278,13 @@ public class JVMVisitor extends IRVisitor {
     }
 
     public Handle emitModuleBodyJIT(IRModuleBody method) {
-        String baseName = method.getName() + "_" + methodIndex++;
-        String name;
+        String name = JavaNameMangler.encodeScopeForBacktrace(method) + "$" + methodIndex++;
 
-        if (baseName.indexOf("DUMMY_MC") != -1) {
-            name = "METACLASS_" + methodIndex++;
-        } else {
-            name = baseName + "_" + methodIndex++;
-        }
         String clsName = jvm.scriptToClass(method.getFileName());
         jvm.pushscript(clsName, method.getFileName());
 
         Signature signature = signatureFor(method, false);
-        emitScope(method, "__script__", signature, false);
+        emitScope(method, name, signature, false);
 
         Handle handle = new Handle(Opcodes.H_INVOKESTATIC, jvm.clsData().clsName, name, sig(signature.type().returnType(), signature.type().parameterArray()));
 
@@ -306,7 +303,7 @@ public class JVMVisitor extends IRVisitor {
 
     public Handle emitClosure(IRClosure closure) {
         /* Compile the closure like a method */
-        String name = JavaNameMangler.mangleMethodName(closure.getName() + "__" + closure.getLexicalParent().getName() + "_" + methodIndex++);
+        String name = JavaNameMangler.encodeScopeForBacktrace(closure) + "$" + methodIndex++;
 
         emitScope(closure, name, CLOSURE_SIGNATURE, false);
 
@@ -314,14 +311,7 @@ public class JVMVisitor extends IRVisitor {
     }
 
     public Handle emitModuleBody(IRModuleBody method) {
-        String baseName = method.getName() + "_" + methodIndex++;
-        String name;
-
-        if (baseName.indexOf("DUMMY_MC") != -1) {
-            name = "METACLASS_" + methodIndex++;
-        } else {
-            name = baseName + "_" + methodIndex++;
-        }
+        String name = JavaNameMangler.encodeScopeForBacktrace(method) + "$" + methodIndex++;
 
         Signature signature = signatureFor(method, false);
         emitScope(method, name, signature, false);

@@ -55,7 +55,7 @@ public class Compiler extends IRTranslator<ScriptAndCode, ClassDefininngJRubyCla
             bytecode = visitor.compileToBytecode(scope);
             compiled = visitor.defineFromBytecode(scope, bytecode, classLoader);
 
-            Method compiledMethod = compiled.getMethod("__script__", ThreadContext.class,
+            Method compiledMethod = compiled.getMethod("RUBY$script", ThreadContext.class,
                     StaticScope.class, IRubyObject.class, IRubyObject[].class, Block.class, RubyModule.class, String.class);
             _compiledHandle = MethodHandles.publicLookup().unreflect(compiledMethod);
         } catch (NotCompilableException nce) {
