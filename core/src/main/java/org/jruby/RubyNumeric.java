@@ -473,14 +473,18 @@ public class RubyNumeric extends RubyObject {
         try {
             result = coerceBody(context, other);
         } catch (RaiseException e) {
-            RubyWarnings warnings = context.runtime.getWarnings();
-            warnings.warn("Numerical comparison operators will no more rescue exceptions of #coerce");
-            warnings.warn("in the next release. Return nil in #coerce if the coercion is impossible.");
-            if (err) {
-                coerceFailed(context, other);
+            if (e.getException().kind_of_p(context, runtime.getStandardError()).isTrue()) {
+                RubyWarnings warnings = context.runtime.getWarnings();
+                warnings.warn("Numerical comparison operators will no more rescue exceptions of #coerce");
+                warnings.warn("in the next release. Return nil in #coerce if the coercion is impossible.");
+                if (err) {
+                    coerceFailed(context, other);
+                }
+                context.runtime.getGlobalVariables().set("$!", savedError); // Restore $!
+                return null;
+            } else {
+                throw e;
             }
-            context.runtime.getGlobalVariables().set("$!", savedError); // Restore $!
-            return null;
         }
     
         if (!(result instanceof RubyArray) || ((RubyArray) result).getLength() != 2) {
