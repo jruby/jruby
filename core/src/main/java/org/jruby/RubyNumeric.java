@@ -459,9 +459,17 @@ public class RubyNumeric extends RubyObject {
      * 
      */
     protected final RubyArray doCoerce(ThreadContext context, IRubyObject other, boolean err) {
+        Ruby runtime = context.runtime;
         IRubyObject result;
 
-        IRubyObject savedError = context.runtime.getGlobalVariables().get("$!"); // Svae $!
+        IRubyObject savedError = runtime.getGlobalVariables().get("$!"); // Svae $!
+
+        if (!other.respondsTo("coerce")) {
+            if (err) {
+                coerceRescue(context, other);
+            }
+            return null;
+        }
         try {
             result = coerceBody(context, other);
         } catch (RaiseException e) {
@@ -486,6 +494,14 @@ public class RubyNumeric extends RubyObject {
             return null;
         }
         return (RubyArray) result;
+    }
+
+    /** coerce_rescue
+     *
+     */
+    protected final IRubyObject coerceRescue(ThreadContext context, IRubyObject other) {
+        coerceFailed(context, other);
+        return context.runtime.getNil();
     }
 
     /** coerce_failed
