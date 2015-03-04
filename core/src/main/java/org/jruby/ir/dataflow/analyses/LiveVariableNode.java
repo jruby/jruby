@@ -8,6 +8,7 @@ import org.jruby.ir.dataflow.FlowGraphNode;
 import org.jruby.ir.instructions.ClosureAcceptingInstr;
 import org.jruby.ir.instructions.Instr;
 import org.jruby.ir.instructions.ResultInstr;
+import org.jruby.ir.interpreter.FullInterpreterContext;
 import org.jruby.ir.operands.LocalVariable;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.Variable;
@@ -106,7 +107,11 @@ public class LiveVariableNode extends FlowGraphNode<LiveVariablesProblem, LiveVa
             // System.out.println("Processing closure: " + o + "-------");
             if (o != null && o instanceof WrappedIRClosure) {
                 IRClosure cl = ((WrappedIRClosure)o).getClosure();
-                LiveVariablesProblem cl_lvp = (LiveVariablesProblem) cl.getFullInterpreterContext().getDataFlowProblems().get(DataFlowConstants.LVP_NAME);
+                FullInterpreterContext ic = cl.getFullInterpreterContext();
+                if (ic == null) {
+                    ic = cl.prepareFullBuild();
+                }
+                LiveVariablesProblem cl_lvp = (LiveVariablesProblem) ic.getDataFlowProblems().get(DataFlowConstants.LVP_NAME);
                 boolean needsInit = false;
                 if (cl_lvp == null) {
                     cl_lvp = new LiveVariablesProblem(cl, problem.getNonSelfLocalVars());
