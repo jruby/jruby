@@ -99,6 +99,12 @@ public abstract class DebugOperations {
         System.exit(1);
     }
 
+    public static void printBacktrace(RubyContext context, Node currentNode) {
+        for (String line : Backtrace.DISPLAY_FORMATTER.format(context, null, RubyCallStack.getBacktrace(currentNode))) {
+            System.err.println(line);
+        }
+    }
+
     public static void printASTBacktrace(final Node currentNode) {
         if (currentNode != null) {
             printMethodASTBacktrace(currentNode);
