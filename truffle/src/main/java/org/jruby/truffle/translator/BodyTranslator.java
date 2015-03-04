@@ -55,6 +55,7 @@ import org.jruby.truffle.nodes.methods.locals.*;
 import org.jruby.truffle.nodes.objects.*;
 import org.jruby.truffle.nodes.objects.SelfNode;
 import org.jruby.truffle.nodes.rubinius.CallRubiniusPrimitiveNode;
+import org.jruby.truffle.nodes.rubinius.InvokeRubiniusPrimitiveNode;
 import org.jruby.truffle.nodes.rubinius.RubiniusPrimitiveConstructor;
 import org.jruby.truffle.nodes.rubinius.RubiniusSingleBlockArgNode;
 import org.jruby.truffle.nodes.yield.YieldNode;
@@ -466,8 +467,8 @@ public class BodyTranslator extends Translator {
         while (childIterator.hasNext()) {
             arguments.add(childIterator.next().accept(this));
         }
-
-        return new CallRubiniusPrimitiveNode(context, sourceSection,
+        
+        return new InvokeRubiniusPrimitiveNode(context, sourceSection,
                 primitive.getFactory().createNode(context, sourceSection, arguments.toArray(new RubyNode[arguments.size()])),
                 environment.getReturnID());
     }
