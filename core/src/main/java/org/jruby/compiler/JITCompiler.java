@@ -163,6 +163,8 @@ public class JITCompiler implements JITCompilerMBean {
                 jitTask.run();
             }
         } else {
+            // Because are non-asynchonously build if the JIT threshold happens to be 0 we will have no ic yet.
+            method.ensureInstrsReady();
             // just run directly
             jitTask.run();
         }
@@ -186,6 +188,9 @@ public class JITCompiler implements JITCompilerMBean {
                 jitTask.run();
             }
         } else {
+            // Because are non-asynchonously build if the JIT threshold happens to be 0 we will have no ic yet.
+            method.ensureInstrsReady();
+
             // just run directly
             jitTask.run();
         }
