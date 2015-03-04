@@ -774,12 +774,11 @@ public abstract class StringNodes {
         public RubyBasicObject downcase(RubyString string) {
             notDesignedForCompilation();
 
+            string.checkFrozen(this);
             ByteList newByteList = StringNodesHelper.downcase(string);
 
             if (newByteList.equal(string.getBytes())) {
                 return getContext().getCoreLibrary().getNilObject();
-            } else if (string.isFrozen()) {
-                throw new RaiseException(getContext().getCoreLibrary().runtimeError("can't modify frozen string", this));
             } else {
                 string.set(newByteList);
                 return string;
@@ -1925,11 +1924,12 @@ public abstract class StringNodes {
         @Specialization
         public RubyBasicObject capitalizeBang(RubyString string) {
             notDesignedForCompilation();
+
+            string.checkFrozen(this);
             String javaString = string.toString();
+
             if (javaString.isEmpty()) {
                 return getContext().getCoreLibrary().getNilObject();
-            } else if (string.isFrozen()) {
-                throw new RaiseException(getContext().getCoreLibrary().runtimeError("can't modify frozen string", this));
             } else {
                 final ByteList byteListString = StringNodesHelper.capitalize(string);
                 
