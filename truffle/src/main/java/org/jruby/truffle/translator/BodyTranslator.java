@@ -1322,6 +1322,10 @@ public class BodyTranslator extends Translator {
 
     @Override
     public RubyNode visitGlobalAsgnNode(org.jruby.ast.GlobalAsgnNode node) {
+        return translateGlobalAsgnNode(node, node.getValueNode().accept(this));
+    }
+    
+    public RubyNode translateGlobalAsgnNode(org.jruby.ast.GlobalAsgnNode node, RubyNode rhs) {
         final SourceSection sourceSection = translate(node.getPosition());
 
         String name = node.getName();
@@ -1329,8 +1333,6 @@ public class BodyTranslator extends Translator {
         if (globalVariableAliases.containsKey(name)) {
             name = globalVariableAliases.get(name);
         }
-
-        RubyNode rhs = node.getValueNode().accept(this);
 
         if (name.equals("$~")) {
             rhs = new CheckMatchVariableTypeNode(context, sourceSection, rhs);
@@ -2082,6 +2084,8 @@ public class BodyTranslator extends Translator {
             } else {
                 translated = ((ReadNode) ((WriteLocalVariableNode) dummyTranslated.getNonProxyNode()).makeReadNode()).makeWriteNode(rhs);
             }
+        } else if (dummyAssignment instanceof org.jruby.ast.GlobalAsgnNode) {
+            return translateGlobalAsgnNode((org.jruby.ast.GlobalAsgnNode) dummyAssignment, rhs);
         } else {
             translated = ((ReadNode) environment.findLocalVarNode(environment.allocateLocalTemp("dummy"), sourceSection)).makeWriteNode(rhs);
         }
