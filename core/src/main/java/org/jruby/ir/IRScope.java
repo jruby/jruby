@@ -387,15 +387,7 @@ public abstract class IRScope implements ParseResult {
         return flags.contains(CAN_RECEIVE_NONLOCAL_RETURNS);
     }
 
-    // FIXME: Should always be built but if not it wil
-    public CFG buildCFG() {
-        return getCFG();
-    }
-
     public CFG getCFG() {
-        // Closure/nested scopes may not have been built and some passes process all child scopes
-        if (fullInterpreterContext == null) prepareFullBuild();
-
         return fullInterpreterContext.getCFG();
     }
 
@@ -459,7 +451,10 @@ public abstract class IRScope implements ParseResult {
         return newInstructions;
     }
 
-    protected void prepareFullBuildCommon() {
+    public void prepareFullBuildCommon() {
+        // We already made it.
+        if (fullInterpreterContext != null) return;
+
         // Clone instrs from startup interpreter so we do not swap out instrs out from under the
         // startup interpreter as we are building the full interpreter.
         Instr[] instrs = cloneInstrs();
