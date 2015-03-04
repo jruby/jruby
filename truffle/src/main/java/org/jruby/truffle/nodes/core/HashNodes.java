@@ -294,8 +294,6 @@ public abstract class HashNodes {
 
         @Specialization(guards = "isBuckets")
         public Object getBuckets(VirtualFrame frame, RubyHash hash, Object key) {
-            notDesignedForCompilation();
-
             final HashSearchResult hashSearchResult = findEntryNode.search(frame, hash, key);
 
             if (hashSearchResult.getEntry() != null) {
