@@ -31,6 +31,7 @@ import org.jruby.runtime.*;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.callsite.FunctionalCachingCallSite;
 import org.jruby.runtime.callsite.NormalCachingCallSite;
+import org.jruby.runtime.callsite.VariableCachingCallSite;
 import org.jruby.util.ByteList;
 import org.jruby.util.DefinedMessage;
 import org.jruby.util.RegexpOptions;
@@ -1308,5 +1309,10 @@ public class IRRuntimeHelpers {
     @JIT
     public static NormalCachingCallSite newNormalCachingCallSite(String name) {
         return new NormalCachingCallSite(name);
+    }
+
+    @JIT
+    public static VariableCachingCallSite newVariableCachingCallSite(String name) {
+        return new VariableCachingCallSite(name);
     }
 }

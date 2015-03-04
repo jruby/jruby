@@ -34,6 +34,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.callsite.CachingCallSite;
 import org.jruby.runtime.callsite.FunctionalCachingCallSite;
 import org.jruby.runtime.callsite.NormalCachingCallSite;
+import org.jruby.runtime.callsite.VariableCachingCallSite;
 import org.jruby.util.ByteList;
 import org.jruby.util.JavaNameMangler;
 import org.jruby.util.RegexpOptions;
@@ -286,7 +287,20 @@ public class IRBytecodeAdapter6 extends IRBytecodeAdapter{
         adapter2.ifnonnull(doCall);
         adapter2.pop();
         adapter2.ldc(name);
-        Class siteClass = callType == CallType.NORMAL ? NormalCachingCallSite.class : FunctionalCachingCallSite.class;
+        Class<? extends CachingCallSite> siteClass;
+        switch (callType) {
+            case NORMAL:
+                siteClass = NormalCachingCallSite.class;
+                break;
+            case FUNCTIONAL:
+                siteClass = FunctionalCachingCallSite.class;
+                break;
+            case VARIABLE:
+                siteClass = VariableCachingCallSite.class;
+                break;
+            default:
+                throw new RuntimeException("BUG: Unexpected call type " + callType + " in JVM6 invoke logic");
+        }
         adapter2.invokestatic(p(IRRuntimeHelpers.class), "new" + siteClass.getSimpleName(), sig(siteClass, String.class));
         adapter2.dup();
         adapter2.putstatic(getClassData().clsName, methodName, ci(CachingCallSite.class));
@@ -440,10 +454,10 @@ public class IRBytecodeAdapter6 extends IRBytecodeAdapter{
         adapter.invokestatic(getClassData().clsName, methodName, incomingSig);
     }
 
-    public void invokeSelf(String name, int arity, boolean hasClosure) {
+    public void invokeSelf(String name, int arity, boolean hasClosure, CallType callType) {
         if (arity > MAX_ARGUMENTS) throw new NotCompilableException("call to `" + name + "' has more than " + MAX_ARGUMENTS + " arguments");
 
-        invoke(name, arity, hasClosure, CallType.FUNCTIONAL);
+        invoke(name, arity, hasClosure, callType);
     }
 
     public void invokeInstanceSuper(String name, int arity, boolean hasClosure, boolean[] splatmap) {

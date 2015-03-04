@@ -670,7 +670,7 @@ public class JVMVisitor extends IRVisitor {
         jvmAdapter().invokeinterface(p(IRubyObject.class), "setFrozen", sig(void.class, boolean.class));
 
         // invoke the "`" method on self
-        jvmMethod().invokeSelf("`", 1, false);
+        jvmMethod().invokeSelf("`", 1, false, CallType.FUNCTIONAL);
         jvmStoreLocal(instr.getResult());
     }
 
@@ -832,8 +832,10 @@ public class JVMVisitor extends IRVisitor {
 
         switch (callType) {
             case FUNCTIONAL:
+                m.invokeSelf(name, arity, hasClosure, CallType.FUNCTIONAL);
+                break;
             case VARIABLE:
-                m.invokeSelf(name, arity, hasClosure);
+                m.invokeSelf(name, arity, hasClosure, CallType.VARIABLE);
                 break;
             case NORMAL:
                 m.invokeOther(name, arity, hasClosure);

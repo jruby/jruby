@@ -1009,5 +1009,22 @@ modes.each do |mode|
         x.should == [:a, :b]
       end
     end
+
+    it "raises appropriate missing-method error for call type" do
+      # Variable
+      run('begin; does_not_exist; rescue NameError; $!; end') do |x|
+        expect(x).to be_instance_of(NameError)
+      end
+
+      # Functional
+      run('begin; does_not_exist(); rescue NameError; $!; end') do |x|
+        expect(x).to be_instance_of(NoMethodError)
+      end
+
+      # Normal
+      run('begin; self.does_not_exist; rescue NameError; $!; end') do |x|
+        expect(x).to be_instance_of(NoMethodError)
+      end
+    end
   end
 end
