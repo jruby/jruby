@@ -45,7 +45,7 @@ class Symbol
       Regexp.last_match = match_data
       if match_data
         result = match_data.to_s
-        Rubinius::Type.infect str, pattern
+        Rubinius::Type.infect result, index
         return result
       end
     else
