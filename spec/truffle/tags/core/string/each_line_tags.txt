@@ -1,2 +1,1 @@
-fails:String#each_line uses $/ as the separator when none is given
 fails:String#each_line yields subclass instances for subclasses
