@@ -100,7 +100,7 @@ describe 'Dir globs (Dir.glob and Dir.[])' do
 
     lambda do
       # Need to sleep a little bit to make sure that modified time is updated
-      sleep 1
+      sleep 2
 
       # This should delete the /glob_target and /glob_target/bar.txt entries
       `zip -d #{jar_path} glob_target/bar.txt`
