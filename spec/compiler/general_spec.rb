@@ -996,7 +996,7 @@ modes.each do |mode|
              protected; def c; true; end
            end.new
            [obj.a, (obj.b rescue false), (obj.c rescue false)]') do |x|
-        x.should == [true, false, false]
+        expect(x).to eq([true, false, false])
       end
     end
 
@@ -1006,7 +1006,7 @@ modes.each do |mode|
              define_method :b, instance_method(:a)
            end.new
            [obj.a, obj.b]') do |x|
-        x.should == [:a, :b]
+        expect(x).to eq([:a, :b])
       end
     end
 
