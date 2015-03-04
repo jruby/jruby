@@ -96,8 +96,6 @@ public abstract class IRScope implements ParseResult {
     /** -X-C full interpretation OR JIT depends on this */
     protected FullInterpreterContext fullInterpreterContext;
 
-    private Instr[] clonedInstrs = null;
-
     protected int temporaryVariableIndex;
     protected int floatVariableIndex;
     protected int fixnumVariableIndex;
@@ -447,40 +445,31 @@ public abstract class IRScope implements ParseResult {
         return interpreterContext;
     }
 
-    protected void cloneInstrs() {
-        cloneInstrs(new SimpleCloneInfo(this, false));
-    }
+    private Instr[] cloneInstrs() {
+        SimpleCloneInfo cloneInfo = new SimpleCloneInfo(this, false);
 
-    public void cloneInstrs(SimpleCloneInfo cloneInfo) {
         Instr[] instructions = interpreterContext.getInstructions();
         int length = instructions.length;
-        setClonedInstrs(new Instr[length]);
+        Instr[] newInstructions = new Instr[length];
 
         for (int i = 0; i < length; i++) {
-            clonedInstrs[i] = instructions[i].clone(cloneInfo);
+            newInstructions[i] = instructions[i].clone(cloneInfo);
         }
 
-        for (IRClosure cl: getClosures()) {
-            // Closure may have independently been promoted to full build already
-            if (cl.fullInterpreterContext == null) {
-                cl.cloneInstrs(cloneInfo.cloneForCloningClosure(cl));
-            }
-        }
+        return newInstructions;
     }
 
     protected void prepareFullBuildCommon() {
         // Clone instrs from startup interpreter so we do not swap out instrs out from under the
         // startup interpreter as we are building the full interpreter.
-        cloneInstrs();
+        Instr[] instrs = cloneInstrs();
 
         // This is a complicating pseudo-pass which needs to be run before CFG is generated.  This
         // necessitates us needing a clonedInstrs field on IRScope.  If we can rewrite this to a full
         // CFG using pass we can eliminate this intermediate save and field.
-        getManager().optimizeTemporaryVariablesIfEnabled(this);
+        instrs = getManager().optimizeTemporaryVariablesIfEnabled(this, instrs);
 
-        fullInterpreterContext = new FullInterpreterContext(this, clonedInstrs);
-
-        setClonedInstrs(null); // boo. vestigial temporal field...because of opt tmp vars pass.
+        fullInterpreterContext = new FullInterpreterContext(this, instrs);
     }
     /**
      * This initializes a more complete(full) InterpreterContext which if used in mixed mode will be
@@ -1035,13 +1024,5 @@ public abstract class IRScope implements ParseResult {
         // FIXME: Persistence is disconnected for now.
 //        instructionsOffsetInfoPersistenceBuffer = offset;
 //        persistenceStore = file;
-    }
-
-    public Instr[] getClonedInstrs() {
-        return clonedInstrs;
-    }
-
-    public void setClonedInstrs(Instr[] clonedInstrs) {
-        this.clonedInstrs = clonedInstrs;
     }
 }

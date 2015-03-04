@@ -2,6 +2,7 @@ package org.jruby.ir;
 
 import java.util.EnumSet;
 import org.jruby.RubyInstanceConfig;
+import org.jruby.ir.instructions.Instr;
 import org.jruby.ir.listeners.IRScopeListener;
 import org.jruby.ir.listeners.InstructionsListener;
 import org.jruby.ir.operands.*;
@@ -31,7 +32,6 @@ public class IRManager {
 
     private final CompilerPass deadCodeEliminationPass = new DeadCodeElimination();
     private final CompilerPass optimizeDynScopesPass = new OptimizeDynScopesPass();
-    private final CompilerPass optimizeTempVarsPass = new OptimizeTempVarsPass();
     private final CompilerPass optimizeDelegationPass = new OptimizeDelegationPass();
 
     private int dummyMetaClassCount = 0;
@@ -219,9 +219,9 @@ public class IRManager {
         return tempVar;
     }
 
-    public void optimizeTemporaryVariablesIfEnabled(IRScope scope) {
+    public Instr[] optimizeTemporaryVariablesIfEnabled(IRScope scope, Instr[] instrs) {
         // FIXME: Make this check ir.passes and not run if ir.passes is set and does not contain opttempvars.
-        optimizeTempVarsPass.run(scope);
+        return OptimizeTempVarsPass.optimizeTmpVars(scope, instrs);
     }
 
     /**
