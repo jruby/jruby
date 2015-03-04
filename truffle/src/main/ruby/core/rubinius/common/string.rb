@@ -593,4 +593,20 @@ class String
     Rubinius::Type.try_convert obj, String, :to_str
   end
 
+  def subpattern(pattern, capture)
+    match = pattern.match(self)
+
+    return nil unless match
+
+    if index = Rubinius::Type.check_convert_type(capture, Fixnum, :to_int)
+      return nil if index >= match.size || -index >= match.size
+      capture = index
+    end
+
+    str = match[capture]
+    Rubinius::Type.infect str, pattern
+    [match, str]
+  end
+  private :subpattern
+
 end
