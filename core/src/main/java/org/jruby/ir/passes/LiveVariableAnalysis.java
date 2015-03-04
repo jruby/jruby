@@ -19,6 +19,11 @@ import java.util.Set;
 import java.util.List;
 
 public class LiveVariableAnalysis extends CompilerPass {
+    // For LVA to run independently on closures (without parent scopes), it needs info about whether 
+    // dyn scopes have been eliminated or not (see access to IRFlags.DYNSCOPE_ELIMINATED below).
+    // So, making that dependency explicit.
+    public static List<Class<? extends CompilerPass>> DEPENDENCIES = Arrays.<Class<? extends CompilerPass>>asList(OptimizeDynScopesPass.class);
+
     @Override
     public String getLabel() {
         return "Live Variable Analysis";
