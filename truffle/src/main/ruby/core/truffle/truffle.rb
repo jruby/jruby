@@ -11,19 +11,18 @@
 # runtime test for the program running in Truffle mode.
 module Truffle
 
-  # What is the version of Truffle/Graal being used?
+  # The version of Truffle and Graal in use.
   # @return [String] a version string such as `"0.6"`, or `"undefined"` if running on a non-Graal JVM.
   def self.version
     Primitive.graal_version
   end
 
-  # Are we currently running on a Graal VM? If this returns false you are
-  # running on a conventional JVM and performance will be much lower.
+  # Tests if the program is using the Graal VM.
   def self.graal?
     Primitive.graal?
   end
 
-  # Is this VM built on the SubstrateVM?
+  # Tests if this VM is a SubstrateVM build.
   def self.substrate?
     Primitive.substrate?
   end
