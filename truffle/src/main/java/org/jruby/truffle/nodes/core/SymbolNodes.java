@@ -295,8 +295,6 @@ public abstract class SymbolNodes {
 
         @Specialization
         public RubyString toS(RubySymbol symbol) {
-            notDesignedForCompilation();
-
             return getContext().makeString(symbol.getSymbolBytes().dup());
         }
 
