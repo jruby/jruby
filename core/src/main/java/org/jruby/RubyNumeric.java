@@ -544,7 +544,7 @@ public class RubyNumeric extends RubyObject {
     protected final IRubyObject coerceCmp(ThreadContext context, String method, IRubyObject other) {
         RubyArray ary = doCoerce(context, other, false);
         if (ary == null) {
-            return context.runtime.getNil(); // MRI does it!
+            return context.nil; // MRI does it!
         } 
         return (ary.eltInternal(0)).callMethod(context, method, ary.eltInternal(1));
     }
