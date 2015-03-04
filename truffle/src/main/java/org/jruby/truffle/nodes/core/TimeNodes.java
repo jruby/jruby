@@ -66,8 +66,14 @@ public abstract class TimeNodes {
         }
 
         @Specialization
-        public RubyNilClass internalOffset(RubyTime time) {
-            return getContext().getCoreLibrary().getNilObject();
+        public Object internalOffset(RubyTime time) {
+            final Object offset = time.getOffset();
+            
+            if (offset == null) {
+                return getContext().getCoreLibrary().getNilObject();
+            } else {
+                return offset;
+            }
         }
     }
 
@@ -83,8 +89,9 @@ public abstract class TimeNodes {
         }
 
         @Specialization
-        public boolean internalSetGMT(RubyTime time, Object setOffset) {
-            throw new UnsupportedOperationException("_set_offset " + setOffset.getClass());
+        public Object internalSetOffset(RubyTime time, Object offset) {
+            time.setOffset(offset);
+            return offset;
         }
     }
 
