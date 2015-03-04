@@ -5165,7 +5165,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
             return each_lineCommon19(context, block);
         }
         // FIXME: Inefficient; build array manually rather than via Enumerator
-        return enumeratorize(context.runtime, this, "lines").callMethod(context, "to_a");
+        return enumeratorize(context.runtime, this, "each_line").callMethod(context, "to_a");
     }
 
     @JRubyMethod(name = "lines")
@@ -5175,7 +5175,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
             return each_lineCommon19(context, arg, block);
         }
         // FIXME: Inefficient; build array manually rather than via Enumerator
-        return enumeratorize(context.runtime, this, "lines", arg).callMethod(context, "to_a");
+        return enumeratorize(context.runtime, this, "each_line", arg).callMethod(context, "to_a");
     }
 
     private IRubyObject each_lineCommon19(ThreadContext context, Block block) {
