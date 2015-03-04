@@ -24,12 +24,7 @@ fails:Symbol#[] with a Regex slice with a capture index returns nil if there is 
 fails:Symbol#[] with a Regex slice with a capture index converts the index to an Integer
 fails:Symbol#[] with a Regex slice with a capture index returns a tainted string if the regexp is tainted
 fails:Symbol#[] with a Regex slice with a capture index returns an untrusted string if the regexp is untrusted
-fails:Symbol#[] with a Regex slice with a capture index raises a TypeError if the index is nil
 fails:Symbol#[] with a Regex slice with a capture index sets $~ to the MatchData if there is a match
-fails:Symbol#[] with a Regex slice with a capture index does not set $~ to the MatchData if there is not a match
-fails:Symbol#[] with a Regex slice with a capture index and an index that cannot be converted to an Integer raises a TypeError when given an Hash
-fails:Symbol#[] with a Regex slice with a capture index and an index that cannot be converted to an Integer raises a TypeError when given an Array
-fails:Symbol#[] with a Regex slice with a capture index and an index that cannot be converted to an Integer raises a TypeError when given an Object
 fails:Symbol#[] with a String slice does not set $~
 fails:Symbol#[] with a String slice returns a string if there is match
 fails:Symbol#[] with a String slice returns nil if there is not a match
