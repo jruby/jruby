@@ -97,4 +97,15 @@ class Hash
     inverted
   end
 
+  def to_a
+    ary = []
+
+    each_item do |item|
+      ary << [item.key, item.value]
+    end
+
+    Rubinius::Type.infect ary, self
+    ary
+  end
+
 end

@@ -15,6 +15,10 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.SourceSection;
 
 import org.jruby.truffle.nodes.core.FixnumOrBignumNode;
+import org.jruby.truffle.nodes.objects.IsTaintedNode;
+import org.jruby.truffle.nodes.objects.IsTaintedNodeFactory;
+import org.jruby.truffle.nodes.objects.TaintNode;
+import org.jruby.truffle.nodes.objects.TaintNodeFactory;
 import org.jruby.truffle.runtime.ObjectIDOperations;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
@@ -103,18 +107,37 @@ public abstract class ObjectPrimitiveNodes {
     @RubiniusPrimitive(name = "object_infect", needsSelf = false)
     public static abstract class ObjectInfectPrimitiveNode extends RubiniusPrimitiveNode {
 
+        @Child private IsTaintedNode isTaintedNode;
+        @Child private TaintNode taintNode;
+        
         public ObjectInfectPrimitiveNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
         }
 
         public ObjectInfectPrimitiveNode(ObjectInfectPrimitiveNode prev) {
             super(prev);
+            isTaintedNode = prev.isTaintedNode;
+            taintNode = prev.taintNode;
         }
 
         @Specialization
         public Object objectInfect(Object host, Object source) {
-            notDesignedForCompilation();
-            // TODO(CS 26-Jan-15) infect
+            if (isTaintedNode == null) {
+                CompilerDirectives.transferToInterpreter();
+                isTaintedNode = insert(IsTaintedNodeFactory.create(getContext(), getSourceSection(), null));
+            }
+            
+            if (isTaintedNode.executeIsTainted(source)) {
+                // This lazy node allocation effectively gives us a branch profile
+                
+                if (taintNode == null) {
+                    CompilerDirectives.transferToInterpreter();
+                    taintNode = insert(TaintNodeFactory.create(getContext(), getSourceSection(), null));
+                }
+                
+                taintNode.executeTaint(host);
+            }
+            
             return host;
         }
 
