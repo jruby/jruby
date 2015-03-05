@@ -1,2 +1,0 @@
-fails:Hash#has_value? returns true if the value exists in the hash
-fails:Hash#has_value? uses == semantics for comparing values
