@@ -108,7 +108,7 @@ public abstract class HashLiteralNode extends RubyNode {
                         isFrozenNode = insert(IsFrozenNodeFactory.create(getContext(), getSourceSection(), null));
                     }
 
-                    if (isFrozenNode.executeIsFrozen(key)) {
+                    if (! isFrozenNode.executeIsFrozen(key)) {
                         key = freezeNode.call(frame, dupNode.call(frame, key, "dup", null), "freeze", null);
                     }
                 }
