@@ -131,27 +131,15 @@ public abstract class DebugOperations {
         printASTForBacktrace(currentNode.getRootNode(), activeNodes, 0);
     }
 
-    public static Object freeze(Boolean object) {
-        return object;
-    }
-
-    public static Object freeze(Integer object) {
-        return object;
-    }
-
-    public static Object freeze(Long object) {
-        return object;
-    }
-
-    public static Object freeze(Double object) {
-        return object;
-    }
-
-    public static Object freeze(RubySymbol object) {
-        return object;
-    }
-
     public static Object freeze(Object o) {
+        if ((o instanceof Boolean) ||
+                (o instanceof Integer) ||
+                (o instanceof Long) ||
+                (o instanceof Double) ||
+                (o instanceof RubySymbol)) {
+            return o;
+        }
+
         final RubyBasicObject object = (RubyBasicObject) o;
 
         object.getOperations().setInstanceVariable(object, RubyBasicObject.FROZEN_IDENTIFIER, true);
@@ -159,27 +147,15 @@ public abstract class DebugOperations {
         return o;
     }
 
-    public static boolean isFrozen(Boolean object) {
-        return true;
-    }
-
-    public static boolean isFrozen(Integer object) {
-        return true;
-    }
-
-    public static boolean isFrozen(Long object) {
-        return true;
-    }
-
-    public static boolean isFrozen(Double object) {
-        return true;
-    }
-
-    public static boolean isFrozen(RubySymbol object) {
-        return true;
-    }
-
     public static boolean isFrozen(Object o) {
+        if ((o instanceof Boolean) ||
+                (o instanceof Integer) ||
+                (o instanceof Long) ||
+                (o instanceof Double) ||
+                (o instanceof RubySymbol)) {
+            return true;
+        }
+
         final RubyBasicObject object = (RubyBasicObject) o;
 
         final Shape layout = object.getDynamicObject().getShape();
