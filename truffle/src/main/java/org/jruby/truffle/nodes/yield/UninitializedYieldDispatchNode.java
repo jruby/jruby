@@ -30,7 +30,7 @@ public class UninitializedYieldDispatchNode extends YieldDispatchNode {
     }
 
     @Override
-    public Object dispatch(VirtualFrame frame, RubyProc block, Object[] argumentsObjects) {
+    public Object dispatchWithSelfAndBlock(VirtualFrame frame, RubyProc block, Object self, RubyProc modifiedBlock, Object... argumentsObjects) {
         CompilerDirectives.transferToInterpreterAndInvalidate();
 
         depth++;
@@ -39,48 +39,12 @@ public class UninitializedYieldDispatchNode extends YieldDispatchNode {
             final YieldDispatchHeadNode dispatchHead = (YieldDispatchHeadNode) NodeUtil.getNthParent(this, depth);
             final GeneralYieldDispatchNode newGeneralYield = new GeneralYieldDispatchNode(getContext());
             dispatchHead.getDispatch().replace(newGeneralYield);
-            return newGeneralYield.dispatch(frame, block, argumentsObjects);
+            return newGeneralYield.dispatchWithSelfAndBlock(frame, block, self, modifiedBlock, argumentsObjects);
         }
 
         final CachedYieldDispatchNode dispatch = new CachedYieldDispatchNode(getContext(), block, this);
         replace(dispatch);
-        return dispatch.dispatch(frame, block, argumentsObjects);
-    }
-
-    @Override
-    public Object dispatchWithModifiedBlock(VirtualFrame frame, RubyProc block, RubyProc modifiedBlock, Object[] argumentsObjects) {
-        CompilerDirectives.transferToInterpreterAndInvalidate();
-
-        depth++;
-
-        if (depth == DispatchNode.DISPATCH_POLYMORPHIC_MAX) {
-            final YieldDispatchHeadNode dispatchHead = (YieldDispatchHeadNode) NodeUtil.getNthParent(this, depth);
-            final GeneralYieldDispatchNode newGeneralYield = new GeneralYieldDispatchNode(getContext());
-            dispatchHead.getDispatch().replace(newGeneralYield);
-            return newGeneralYield.dispatch(frame, block, argumentsObjects);
-        }
-
-        final CachedYieldDispatchNode dispatch = new CachedYieldDispatchNode(getContext(), block, this);
-        replace(dispatch);
-        return dispatch.dispatchWithModifiedBlock(frame, block, modifiedBlock, argumentsObjects);
-    }
-
-    @Override
-    public Object dispatchWithModifiedSelf(VirtualFrame frame, RubyProc block, Object self, Object... argumentsObjects) {
-        CompilerDirectives.transferToInterpreterAndInvalidate();
-
-        depth++;
-
-        if (depth == DispatchNode.DISPATCH_POLYMORPHIC_MAX) {
-            final YieldDispatchHeadNode dispatchHead = (YieldDispatchHeadNode) NodeUtil.getNthParent(this, depth);
-            final GeneralYieldDispatchNode newGeneralYield = new GeneralYieldDispatchNode(getContext());
-            dispatchHead.getDispatch().replace(newGeneralYield);
-            return newGeneralYield.dispatchWithModifiedSelf(frame, block, self, argumentsObjects);
-        }
-
-        final CachedYieldDispatchNode dispatch = new CachedYieldDispatchNode(getContext(), block, this);
-        replace(dispatch);
-        return dispatch.dispatchWithModifiedSelf(frame, block, self, argumentsObjects);
+        return dispatch.dispatchWithSelfAndBlock(frame, block, self, modifiedBlock, argumentsObjects);
     }
 
 }

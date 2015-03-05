@@ -47,30 +47,12 @@ public class CachedYieldDispatchNode extends YieldDispatchNode {
     }
 
     @Override
-    public Object dispatch(VirtualFrame frame, RubyProc block, Object[] argumentsObjects) {
+    public Object dispatchWithSelfAndBlock(VirtualFrame frame, RubyProc block, Object self, RubyProc modifiedBlock, Object... argumentsObjects) {
         if (block.getCallTargetForBlocks() != callNode.getCallTarget()) {
-            return next.dispatch(frame, block, argumentsObjects);
+            return next.dispatchWithSelfAndBlock(frame, block, self, modifiedBlock, argumentsObjects);
         }
 
-        return callNode.call(frame, RubyArguments.pack(block.getMethod(), block.getDeclarationFrame(), block.getSelfCapturedInScope(), block.getBlockCapturedInScope(), argumentsObjects));
-    }
-
-    @Override
-    public Object dispatchWithModifiedBlock(VirtualFrame frame, RubyProc block, RubyProc modifiedBlock, Object[] argumentsObjects) {
-        if (block.getCallTargetForBlocks() != callNode.getCallTarget()) {
-            return next.dispatch(frame, block, argumentsObjects);
-        }
-
-        return callNode.call(frame, RubyArguments.pack(block.getMethod(), block.getDeclarationFrame(), block.getSelfCapturedInScope(), modifiedBlock, argumentsObjects));
-    }
-
-    @Override
-    public Object dispatchWithModifiedSelf(VirtualFrame frame, RubyProc block, Object self, Object... argumentsObjects) {
-        if (block.getCallTargetForBlocks() != callNode.getCallTarget()) {
-            return next.dispatchWithModifiedSelf(frame, block, self, argumentsObjects);
-        }
-
-        return callNode.call(frame, RubyArguments.pack(block.getMethod(), block.getDeclarationFrame(), self, block.getBlockCapturedInScope(), argumentsObjects));
+        return callNode.call(frame, RubyArguments.pack(block.getMethod(), block.getDeclarationFrame(), self, modifiedBlock, argumentsObjects));
     }
 
     @Override
