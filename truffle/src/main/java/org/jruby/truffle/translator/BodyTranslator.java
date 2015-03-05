@@ -446,7 +446,7 @@ public class BodyTranslator extends Translator {
          *
          * into
          *
-         *   CallRubiniusPrimitiveNode(FooNode(arg1, arg2, ..., argN))
+         *   InvokeRubiniusPrimitiveNode(FooNode(arg1, arg2, ..., argN))
          */
 
         if (node.getArgsNode().childNodes().size() < 1 || !(node.getArgsNode().childNodes().get(0) instanceof org.jruby.ast.SymbolNode)) {
