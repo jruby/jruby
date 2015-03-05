@@ -43,6 +43,10 @@ class Regexp
   KCODE_UTF8 = (4 << 9)
   KCODE_MASK = KCODE_NONE | KCODE_EUC | KCODE_SJIS | KCODE_UTF8
 
+  class << self
+    alias_method :compile, :new
+  end
+
   def self.convert(pattern)
     return pattern if pattern.kind_of? Regexp
     if pattern.kind_of? Array
