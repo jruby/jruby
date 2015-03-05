@@ -9,6 +9,8 @@
  */
 package org.jruby.truffle.nodes.yield;
 
+import java.util.concurrent.Callable;
+
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.NodeCost;
@@ -18,7 +20,6 @@ import com.oracle.truffle.api.nodes.NodeUtil;
 import org.jruby.truffle.nodes.dispatch.DispatchNode;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyProc;
-import org.jruby.util.cli.Options;
 
 @NodeInfo(cost = NodeCost.UNINITIALIZED)
 public class UninitializedYieldDispatchNode extends YieldDispatchNode {
@@ -30,20 +31,43 @@ public class UninitializedYieldDispatchNode extends YieldDispatchNode {
     }
 
     @Override
-    public Object dispatchWithSelfAndBlock(VirtualFrame frame, RubyProc block, Object self, RubyProc modifiedBlock, Object... argumentsObjects) {
+    protected boolean guard(RubyProc block) {
+        return false;
+    }
+
+    @Override
+    public Object dispatchWithSelfAndBlock(VirtualFrame frame, final RubyProc block, Object self, RubyProc modifiedBlock, Object... argumentsObjects) {
         CompilerDirectives.transferToInterpreterAndInvalidate();
+        final UninitializedYieldDispatchNode currentNode = this;
 
-        depth++;
+        final YieldDispatchNode dispatch = atomic(new Callable<YieldDispatchNode>() {
+            @Override
+            public YieldDispatchNode call() {
+                // First try to see if we did not a miss a specialization added by another thread.
+                final YieldDispatchHeadNode dispatchHead = (YieldDispatchHeadNode) NodeUtil.getNthParent(currentNode, depth + 1);
 
-        if (depth == DispatchNode.DISPATCH_POLYMORPHIC_MAX) {
-            final YieldDispatchHeadNode dispatchHead = (YieldDispatchHeadNode) NodeUtil.getNthParent(this, depth);
-            final GeneralYieldDispatchNode newGeneralYield = new GeneralYieldDispatchNode(getContext());
-            dispatchHead.getDispatch().replace(newGeneralYield);
-            return newGeneralYield.dispatchWithSelfAndBlock(frame, block, self, modifiedBlock, argumentsObjects);
-        }
+                YieldDispatchNode lookupDispatch = dispatchHead.getDispatch();
+                while (lookupDispatch != null) {
+                    if (lookupDispatch.guard(block)) {
+                        // This one worked, no need to rewrite anything.
+                        return lookupDispatch;
+                    }
+                    lookupDispatch = lookupDispatch.getNext();
+                }
 
-        final CachedYieldDispatchNode dispatch = new CachedYieldDispatchNode(getContext(), block, this);
-        replace(dispatch);
+                depth++;
+                if (depth < DispatchNode.DISPATCH_POLYMORPHIC_MAX) {
+                    CachedYieldDispatchNode cachedDispatch = new CachedYieldDispatchNode(getContext(), block, currentNode);
+                    replace(cachedDispatch);
+                    return cachedDispatch;
+                } else {
+                    GeneralYieldDispatchNode newGeneralYield = new GeneralYieldDispatchNode(getContext());
+                    dispatchHead.getDispatch().replace(newGeneralYield);
+                    return newGeneralYield;
+                }
+            }
+        });
+
         return dispatch.dispatchWithSelfAndBlock(frame, block, self, modifiedBlock, argumentsObjects);
     }
 

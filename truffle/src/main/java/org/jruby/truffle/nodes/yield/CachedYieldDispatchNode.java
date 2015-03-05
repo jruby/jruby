@@ -47,12 +47,22 @@ public class CachedYieldDispatchNode extends YieldDispatchNode {
     }
 
     @Override
+    protected boolean guard(RubyProc block) {
+        return block.getCallTargetForBlocks() == callNode.getCallTarget();
+    }
+
+    @Override
+    protected YieldDispatchNode getNext() {
+        return next;
+    }
+
+    @Override
     public Object dispatchWithSelfAndBlock(VirtualFrame frame, RubyProc block, Object self, RubyProc modifiedBlock, Object... argumentsObjects) {
-        if (block.getCallTargetForBlocks() != callNode.getCallTarget()) {
+        if (guard(block)) {
+            return callNode.call(frame, RubyArguments.pack(block.getMethod(), block.getDeclarationFrame(), self, modifiedBlock, argumentsObjects));
+        } else {
             return next.dispatchWithSelfAndBlock(frame, block, self, modifiedBlock, argumentsObjects);
         }
-
-        return callNode.call(frame, RubyArguments.pack(block.getMethod(), block.getDeclarationFrame(), self, modifiedBlock, argumentsObjects));
     }
 
     @Override

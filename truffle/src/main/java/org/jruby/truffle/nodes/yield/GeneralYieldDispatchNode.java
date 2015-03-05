@@ -30,6 +30,11 @@ public class GeneralYieldDispatchNode extends YieldDispatchNode {
     }
 
     @Override
+    protected boolean guard(RubyProc block) {
+        return true;
+    }
+
+    @Override
     public Object dispatchWithSelfAndBlock(VirtualFrame frame, RubyProc block, Object self, RubyProc modifiedBlock, Object... argumentsObjects) {
         return callNode.call(frame, block.getCallTargetForBlocks(),
                 RubyArguments.pack(block.getMethod(), block.getDeclarationFrame(), self, modifiedBlock, argumentsObjects));

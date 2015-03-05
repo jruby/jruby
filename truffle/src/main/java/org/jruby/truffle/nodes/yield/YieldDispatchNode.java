@@ -23,6 +23,12 @@ public abstract class YieldDispatchNode extends Node {
         this.context = context;
     }
 
+    protected YieldDispatchNode getNext() {
+        return null;
+    }
+
+    protected abstract boolean guard(RubyProc block);
+
     public abstract Object dispatchWithSelfAndBlock(VirtualFrame frame, RubyProc block, Object self, RubyProc modifiedBlock, Object... argumentsObjects);
 
     public RubyContext getContext() {
