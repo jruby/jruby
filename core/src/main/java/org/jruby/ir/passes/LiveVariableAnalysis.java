@@ -83,7 +83,7 @@ public class LiveVariableAnalysis extends CompilerPass {
         }
 
         lvp.compute_MOP_Solution();
-        scope.getFullInterpreterContext().getDataFlowProblems().put(LiveVariablesProblem.NAME, lvp);
+        scope.putLiveVariablesProblem(lvp);
 
         return lvp;
     }
@@ -91,9 +91,7 @@ public class LiveVariableAnalysis extends CompilerPass {
     @Override
     public boolean invalidate(IRScope scope) {
         super.invalidate(scope);
-        if (scope.getFullInterpreterContext() != null) {
-            scope.getFullInterpreterContext().getDataFlowProblems().put(LiveVariablesProblem.NAME, null);
-        }
+        scope.putLiveVariablesProblem(null);
         return true;
     }
 }

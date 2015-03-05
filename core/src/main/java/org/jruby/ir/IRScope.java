@@ -389,6 +389,16 @@ public abstract class IRScope implements ParseResult {
         return flags.contains(CAN_RECEIVE_NONLOCAL_RETURNS);
     }
 
+    public void putLiveVariablesProblem(LiveVariablesProblem problem) {
+        // Technically this is if a pass is invalidated which has never run on a scope with no CFG/FIC yet.
+        if (fullInterpreterContext == null) {
+            // This should never trigger unless we got sloppy
+            if (problem != null) throw new IllegalStateException("LVP being stored when no FIC");
+            return;
+        }
+        fullInterpreterContext.getDataFlowProblems().put(LiveVariablesProblem.NAME, problem);
+    }
+
     public LiveVariablesProblem getLiveVariablesProblem() {
         if (fullInterpreterContext == null) return null; // no fic so no pass-related info
 
