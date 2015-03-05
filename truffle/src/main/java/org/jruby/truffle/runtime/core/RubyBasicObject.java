@@ -76,12 +76,12 @@ public class RubyBasicObject {
 
     @Deprecated
     public void freeze() {
-        DebugOperations.freeze(this);
+        DebugOperations.verySlowFreeze(this);
     }
 
     @Deprecated
     public void checkFrozen(Node currentNode) {
-        if (DebugOperations.isFrozen(this)) {
+        if (DebugOperations.verySlowIsFrozen(this)) {
             CompilerDirectives.transferToInterpreter();
             throw new RaiseException(getContext().getCoreLibrary().frozenError(getLogicalClass().getName(), currentNode));
         }
@@ -107,8 +107,8 @@ public class RubyBasicObject {
         metaClass = RubyClass.createSingletonClassOfObject(getContext(), logicalClass,
                 String.format("#<Class:#<%s:0x%x>>", logicalClass.getName(), getObjectID()));
 
-        if (DebugOperations.isFrozen(this)) {
-            DebugOperations.freeze(metaClass);
+        if (DebugOperations.verySlowIsFrozen(this)) {
+            DebugOperations.verySlowFreeze(metaClass);
         }
 
         return metaClass;

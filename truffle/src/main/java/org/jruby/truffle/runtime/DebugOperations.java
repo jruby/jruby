@@ -131,7 +131,7 @@ public abstract class DebugOperations {
         printASTForBacktrace(currentNode.getRootNode(), activeNodes, 0);
     }
 
-    public static Object freeze(Object o) {
+    public static Object verySlowFreeze(Object o) {
         if ((o instanceof Boolean) ||
                 (o instanceof Integer) ||
                 (o instanceof Long) ||
@@ -147,7 +147,7 @@ public abstract class DebugOperations {
         return o;
     }
 
-    public static boolean isFrozen(Object o) {
+    public static boolean verySlowIsFrozen(Object o) {
         if ((o instanceof Boolean) ||
                 (o instanceof Integer) ||
                 (o instanceof Long) ||
@@ -170,7 +170,7 @@ public abstract class DebugOperations {
         return (boolean) storageLocation.get(object.getDynamicObject(), layout);
     }
 
-    public static boolean isTainted(Object o) {
+    public static boolean verySlowIsTainted(Object o) {
         final RubyBasicObject object = (RubyBasicObject) o;
 
         final Shape layout = object.getDynamicObject().getShape();
