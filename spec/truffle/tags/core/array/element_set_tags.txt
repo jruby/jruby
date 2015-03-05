@@ -20,7 +20,6 @@ fails:Array#[]= tries to convert Range elements to Integers using #to_int with [
 fails:Array#[]= raises an IndexError when passed indexes out of bounds
 fails:Array#[]= calls to_ary on its rhs argument for multi-element sets
 fails:Array#[]= does not call to_ary on rhs array subclasses for multi-element sets
-fails:Array#[]= raises a RuntimeError on a frozen array
 fails:Array#[]= with [index, count] returns non-array value if non-array value assigned
 fails:Array#[]= with [index, count] returns array if array assigned
 fails:Array#[]= with [index, count] just sets the section defined by [start,length] to nil even if the rhs is nil

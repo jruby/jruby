@@ -358,6 +358,8 @@ public abstract class ArrayNodes {
 
         @Specialization
         public Object set(VirtualFrame frame, RubyArray array, int index, Object value, UndefinedPlaceholder unused) {
+            array.checkFrozen(this);
+
             if (writeNode == null) {
                 CompilerDirectives.transferToInterpreter();
                 writeNode = insert(ArrayWriteDenormalizedNodeFactory.create(getContext(), getSourceSection(), null, null, null));
@@ -376,6 +378,8 @@ public abstract class ArrayNodes {
                 CompilerDirectives.transferToInterpreter();
                 throw new RaiseException(getContext().getCoreLibrary().indexNegativeLength(length, this));
             }
+
+            array.checkFrozen(this);
 
             final int begin = array.normalizeIndex(start);
 
@@ -402,6 +406,8 @@ public abstract class ArrayNodes {
                 throw new RaiseException(getContext().getCoreLibrary().indexNegativeLength(length, this));
             }
 
+            array.checkFrozen(this);
+
             if (value.getSize() == 0) {
                 final int begin = array.normalizeIndex(start);
                 final int exclusiveEnd = begin + length;
@@ -427,6 +433,8 @@ public abstract class ArrayNodes {
 
         @Specialization(guards = "isIntegerFixnum")
         public Object setIntegerFixnumRange(VirtualFrame frame, RubyArray array, RubyRange.IntegerFixnumRange range, RubyArray other, UndefinedPlaceholder unused) {
+            array.checkFrozen(this);
+
             if (range.doesExcludeEnd()) {
                 CompilerDirectives.transferToInterpreter();
                 throw new UnsupportedOperationException();
