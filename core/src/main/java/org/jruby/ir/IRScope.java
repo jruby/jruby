@@ -388,6 +388,9 @@ public abstract class IRScope implements ParseResult {
     }
 
     public CFG getCFG() {
+        if (getFullInterpreterContext() == null) {
+            prepareFullBuildCommon();
+        }
         return fullInterpreterContext.getCFG();
     }
 

@@ -31,6 +31,10 @@ public class LiveVariableAnalysis extends CompilerPass {
 
     @Override
     public Object previouslyRun(IRScope scope) {
+        if (scope.getFullInterpreterContext() == null) {
+            scope.prepareFullBuildCommon();
+        }
+
         return scope.getFullInterpreterContext().getDataFlowProblems().get(LiveVariablesProblem.NAME);
     }
 
