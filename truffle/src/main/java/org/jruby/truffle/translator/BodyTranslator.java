@@ -1516,6 +1516,24 @@ public class BodyTranslator extends Translator {
             }
         }
 
+        if (sourceSection.getSource().getPath().equals("core:/core/rubinius/common/hash.rb")) {
+            if (nameWithoutSigil.equals("@default")) {
+                return new RubyCallNode(context, sourceSection,
+                        "_set_default_value",
+                        new SelfNode(context, sourceSection),
+                        null,
+                        false,
+                        rhs);
+            } else if (nameWithoutSigil.equals("@default_proc")) {
+                return new RubyCallNode(context, sourceSection,
+                        "_set_default_proc",
+                        new SelfNode(context, sourceSection),
+                        null,
+                        false,
+                        rhs);
+            }
+        }
+
         final RubyNode receiver = new SelfNode(context, sourceSection);
         return new WriteInstanceVariableNode(context, sourceSection, nameWithoutSigil, receiver, rhs, false);
     }
@@ -1591,6 +1609,22 @@ public class BodyTranslator extends Translator {
             } else if (nameWithoutSigil.equals("@offset")) {
                 return new RubyCallNode(context, sourceSection,
                         "_offset",
+                        new SelfNode(context, sourceSection),
+                        null,
+                        false);
+            }
+        }
+
+        if (sourceSection.getSource().getPath().equals("core:/core/rubinius/common/hash.rb")) {
+            if (nameWithoutSigil.equals("@default")) {
+                return new RubyCallNode(context, sourceSection,
+                        "_default_value",
+                        new SelfNode(context, sourceSection),
+                        null,
+                        false);
+            } else if (nameWithoutSigil.equals("@default_proc")) {
+                return new RubyCallNode(context, sourceSection,
+                        "default_proc",
                         new SelfNode(context, sourceSection),
                         null,
                         false);

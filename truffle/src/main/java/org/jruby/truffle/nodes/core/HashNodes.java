@@ -1075,39 +1075,26 @@ public abstract class HashNodes {
 
     }
 
-    @CoreMethod(names = "default", optional = 1)
-    public abstract static class DefaultNode extends HashCoreMethodNode {
+    @CoreMethod(names = "default=", required = 1)
+    public abstract static class SetDefaultNode extends HashCoreMethodNode {
 
-        public DefaultNode(RubyContext context, SourceSection sourceSection) {
+        public SetDefaultNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
         }
 
-        public DefaultNode(DefaultNode prev) {
+        public SetDefaultNode(SetDefaultNode prev) {
             super(prev);
         }
 
         @Specialization
-        public Object defaultElement(VirtualFrame frame, RubyHash hash, UndefinedPlaceholder undefined) {
-            Object ret = hash.getDefaultValue();
+        public Object setDefault(VirtualFrame frame, RubyHash hash, Object defaultValue) {
+            notDesignedForCompilation();
 
-            // TODO (nirvdrum Dec. 1, 2014): This needs to evaluate the defaultProc if it exists before it tries defaultValue.
-            if (ret != null) {
-                return ret;
-            } else {
-                return getContext().getCoreLibrary().getNilObject();
-            }
-        }
-
-        @Specialization(guards = "!isUndefinedPlaceholder(arguments[1])")
-        public Object defaultElement(VirtualFrame frame, RubyHash hash, Object key) {
-            Object ret = hash.getDefaultValue();
-
-            // TODO (nirvdrum Dec. 1, 2014): This really needs to do something with the key.  Dummy stub for now.
-            if (ret != null) {
-                return ret;
-            } else {
-                return getContext().getCoreLibrary().getNilObject();
-            }
+            ruby(frame, "Rubinius.check_frozen");
+            
+            hash.setDefaultValue(defaultValue);
+            hash.setDefaultBlock(null);
+            return defaultValue;
         }
     }
 
@@ -1163,6 +1150,78 @@ public abstract class HashNodes {
             notDesignedForCompilation();
 
             return ruby(frame, "replace(Rubinius::Type.coerce_to other, Hash, :to_hash)", "other", other);
+        }
+
+    }
+
+    @RubiniusOnly
+    @CoreMethod(names = "_default_value")
+    public abstract static class DefaultValueNode extends HashCoreMethodNode {
+
+        public DefaultValueNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public DefaultValueNode(DefaultValueNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public Object defaultValue(RubyHash hash) {
+            final Object value = hash.getDefaultValue();
+            
+            if (value == null) {
+                return getContext().getCoreLibrary().getNilObject();
+            } else {
+                return value;
+            }
+        }
+    }
+
+    @RubiniusOnly
+    @CoreMethod(names = "_set_default_value", required = 1)
+    public abstract static class SetDefaultValueNode extends HashCoreMethodNode {
+
+        public SetDefaultValueNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public SetDefaultValueNode(SetDefaultValueNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public Object setDefaultValue(RubyHash hash, Object defaultValue) {
+            hash.setDefaultValue(defaultValue);
+            return defaultValue;
+        }
+        
+    }
+
+    @RubiniusOnly
+    @CoreMethod(names = "_set_default_proc", required = 1)
+    public abstract static class SetDefaultProcNode extends HashCoreMethodNode {
+
+        public SetDefaultProcNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public SetDefaultProcNode(SetDefaultProcNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public RubyProc setDefaultProc(RubyHash hash, RubyProc defaultProc) {
+            hash.setDefaultValue(null);
+            hash.setDefaultBlock(defaultProc);
+            return defaultProc;
+        }
+
+        @Specialization
+        public RubyNilClass setDefaultProc(RubyHash hash, RubyNilClass nil) {
+            hash.setDefaultValue(null);
+            hash.setDefaultBlock(null);
+            return getContext().getCoreLibrary().getNilObject();
         }
 
     }
