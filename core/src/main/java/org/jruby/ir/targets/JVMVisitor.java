@@ -116,24 +116,8 @@ public class JVMVisitor extends IRVisitor {
     }
 
     private void logScope(IRScope scope) {
-        StringBuilder b = new StringBuilder();
-
-        b.append("\n\nLinearized instructions for JIT:\n");
-
-        int i = 0;
-        // FIXME: This
-        for (BasicBlock bb : scope.getFullInterpreterContext().getLinearizedBBList()) {
-            for (Instr instr : bb.getInstrs()) {
-                if (i > 0) b.append("\n");
-
-                b.append("  ").append(i).append('\t').append(instr);
-
-                i++;
-            }
-        }
-
         LOG.info("Starting JVM compilation on scope " + scope);
-        LOG.info(b.toString());
+        LOG.info("\n\nLinearized instructions for JIT:\n" + scope.toStringInstrs());
     }
 
     public void emitScope(IRScope scope, String name, Signature signature, boolean specificArity) {
