@@ -1090,7 +1090,7 @@ public abstract class HashNodes {
             return hash;
         }
 
-        @Specialization(guards = "!isRubyHash(hash)")
+        @Specialization(guards = "!isRubyHash(other)")
         public Object replace(VirtualFrame frame, RubyHash hash, Object other) {
             notDesignedForCompilation();
 
