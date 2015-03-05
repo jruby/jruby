@@ -21,15 +21,11 @@ public class LocalOptimizationPass extends CompilerPass {
 
     @Override
     public Object execute(IRScope s, Object... data) {
-        // This let us compute execute scope flags for a method based on what all nested closures do
-        for (IRClosure c: s.getClosures()) {
-            if (c.getFullInterpreterContext() == null) c.prepareFullBuildCommon();
-            run(c, false, true);
-        }
-
+        /*  FIXME: Ultimately we want to just delete this snippet but is left here so we can debug lifecycle issues with compiler passes
         for (BasicBlock b: s.getCFG().getBasicBlocks()) {
             runLocalOptsOnInstrList(s, b.getInstrs().listIterator(), false);
         }
+        */
 
         // SSS FIXME: What is this about? 
         // Why 'Only after running local opts'? Figure out and document.

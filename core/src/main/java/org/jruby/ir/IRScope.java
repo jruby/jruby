@@ -3,6 +3,8 @@ package org.jruby.ir;
 import org.jruby.ParseResult;
 import org.jruby.RubyInstanceConfig;
 import org.jruby.RubyModule;
+import org.jruby.ir.dataflow.DataFlowProblem;
+import org.jruby.ir.dataflow.analyses.LiveVariablesProblem;
 import org.jruby.ir.instructions.*;
 import org.jruby.ir.interpreter.FullInterpreterContext;
 import org.jruby.ir.interpreter.InterpreterContext;
@@ -387,10 +389,16 @@ public abstract class IRScope implements ParseResult {
         return flags.contains(CAN_RECEIVE_NONLOCAL_RETURNS);
     }
 
+    public DataFlowProblem getLiveVariablesProblem() {
+        if (fullInterpreterContext == null) return null; // no fic so no pass-related info
+
+        return fullInterpreterContext.getDataFlowProblems().get(LiveVariablesProblem.NAME);
+    }
+
     public CFG getCFG() {
-        if (getFullInterpreterContext() == null) {
-            prepareFullBuildCommon();
-        }
+        // A child scope may not have been prepared yet so we advance it to point of have a fresh CFG.
+        if (getFullInterpreterContext() == null) prepareFullBuildCommon();
+
         return fullInterpreterContext.getCFG();
     }
 

@@ -31,11 +31,7 @@ public class LiveVariableAnalysis extends CompilerPass {
 
     @Override
     public Object previouslyRun(IRScope scope) {
-        if (scope.getFullInterpreterContext() == null) {
-            scope.prepareFullBuildCommon();
-        }
-
-        return scope.getFullInterpreterContext().getDataFlowProblems().get(LiveVariablesProblem.NAME);
+        return scope.getLiveVariablesProblem();
     }
 
     private void collectNonLocalDirtyVars(IRClosure cl, Set<LocalVariable> vars, int minDepth) {
