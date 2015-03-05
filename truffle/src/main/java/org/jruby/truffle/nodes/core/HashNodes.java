@@ -1049,7 +1049,7 @@ public abstract class HashNodes {
         }
     }
 
-    @CoreMethod(names = "size")
+    @CoreMethod(names = {"size", "length"})
     public abstract static class SizeNode extends HashCoreMethodNode {
 
         public SizeNode(RubyContext context, SourceSection sourceSection) {
