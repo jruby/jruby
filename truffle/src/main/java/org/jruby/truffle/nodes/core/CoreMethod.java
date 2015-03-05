@@ -60,6 +60,10 @@ public @interface CoreMethod {
 
     int taintFrom() default -1;
 
+    boolean raiseIfFrozenSelf() default false;
+
+    int[] raiseIfFrozenParameters() default {};
+
     UnsupportedOperationBehavior unsupportedOperationBehavior() default UnsupportedOperationBehavior.TYPE_ERROR;
 
 }

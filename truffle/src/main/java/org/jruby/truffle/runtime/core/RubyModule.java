@@ -177,7 +177,7 @@ public class RubyModule extends RubyBasicObject implements ModuleChain {
     public void include(Node currentNode, RubyModule module) {
         RubyNode.notDesignedForCompilation();
 
-        checkFrozen(currentNode);
+        checkFrozen(this, currentNode);
 
         // We need to traverse the module chain in reverse order
         Stack<RubyModule> moduleAncestors = new Stack<>();
@@ -213,7 +213,7 @@ public class RubyModule extends RubyBasicObject implements ModuleChain {
     private void setConstantInternal(Node currentNode, String name, Object value, boolean autoload) {
         RubyNode.notDesignedForCompilation();
 
-        checkFrozen(currentNode);
+        checkFrozen(this ,currentNode);
 
         RubyConstant previous = constants.get(name);
         if (previous == null) {
@@ -231,7 +231,7 @@ public class RubyModule extends RubyBasicObject implements ModuleChain {
     public RubyConstant removeConstant(Node currentNode, String name) {
         RubyNode.notDesignedForCompilation();
 
-        checkFrozen(currentNode);
+        checkFrozen(this, currentNode);
         RubyConstant oldConstant = constants.remove(name);
         newLexicalVersion();
         return oldConstant;
@@ -241,7 +241,7 @@ public class RubyModule extends RubyBasicObject implements ModuleChain {
     public void setClassVariable(Node currentNode, String variableName, Object value) {
         RubyNode.notDesignedForCompilation();
 
-        checkFrozen(currentNode);
+        checkFrozen(this, currentNode);
 
         classVariables.put(variableName, value);
     }
@@ -250,7 +250,7 @@ public class RubyModule extends RubyBasicObject implements ModuleChain {
     public void removeClassVariable(Node currentNode, String variableName) {
         RubyNode.notDesignedForCompilation();
 
-        checkFrozen(currentNode);
+        checkFrozen(this, currentNode);
 
         classVariables.remove(variableName);
     }
@@ -261,7 +261,7 @@ public class RubyModule extends RubyBasicObject implements ModuleChain {
 
         assert method != null;
 
-        checkFrozen(currentNode);
+        checkFrozen(this, currentNode);
         methods.put(method.getName(), method.withDeclaringModule(this));
         newVersion();
     }
@@ -270,7 +270,7 @@ public class RubyModule extends RubyBasicObject implements ModuleChain {
     public void removeMethod(Node currentNode, String methodName) {
         RubyNode.notDesignedForCompilation();
 
-        checkFrozen(currentNode);
+        checkFrozen(this, currentNode);
 
         methods.remove(methodName);
         newVersion();
@@ -328,7 +328,7 @@ public class RubyModule extends RubyBasicObject implements ModuleChain {
         RubyNode.notDesignedForCompilation();
 
         RubyConstant rubyConstant = ModuleOperations.lookupConstant(getContext(), LexicalScope.NONE, this, constant.toString());
-        checkFrozen(currentNode);
+        checkFrozen(this, currentNode);
 
         if (rubyConstant != null) {
             rubyConstant.setPrivate(isPrivate);

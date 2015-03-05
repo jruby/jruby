@@ -157,6 +157,10 @@ public abstract class CoreMethodNodeManager {
                 readSelfNode = new FixnumLowerNode(readSelfNode);
             }
 
+            if (methodDetails.getMethodAnnotation().raiseIfFrozenSelf()) {
+                readSelfNode = new RaiseIfFrozenNode(readSelfNode);
+            }
+
             argumentsNodes.add(readSelfNode);
         }
 
@@ -167,6 +171,10 @@ public abstract class CoreMethodNodeManager {
                 RubyNode readArgumentNode = new ReadPreArgumentNode(context, sourceSection, n, MissingArgumentBehaviour.UNDEFINED);
 
                 if (ArrayUtils.contains(methodDetails.getMethodAnnotation().lowerFixnumParameters(), n)) {
+                    readArgumentNode = new FixnumLowerNode(readArgumentNode);
+                }
+
+                if (ArrayUtils.contains(methodDetails.getMethodAnnotation().raiseIfFrozenParameters(), n)) {
                     readArgumentNode = new FixnumLowerNode(readArgumentNode);
                 }
 

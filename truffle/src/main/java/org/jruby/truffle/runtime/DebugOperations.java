@@ -17,12 +17,15 @@ import com.oracle.truffle.api.frame.FrameInstanceVisitor;
 import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.nodes.NodeUtil;
 import com.oracle.truffle.api.object.BooleanLocation;
+import com.oracle.truffle.api.object.FinalLocationException;
+import com.oracle.truffle.api.object.IncompatibleLocationException;
 import com.oracle.truffle.api.object.Location;
 import com.oracle.truffle.api.object.Property;
 import com.oracle.truffle.api.object.Shape;
 import org.jruby.truffle.runtime.backtrace.Backtrace;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
 import org.jruby.truffle.runtime.core.RubyProc;
+import org.jruby.truffle.runtime.core.RubySymbol;
 import org.jruby.truffle.runtime.methods.InternalMethod;
 
 import java.util.ArrayList;
@@ -128,8 +131,67 @@ public abstract class DebugOperations {
         printASTForBacktrace(currentNode.getRootNode(), activeNodes, 0);
     }
 
-    public static boolean isFrozen(Object object) {
-        return ((RubyBasicObject) object).isFrozen();
+    public static Object freeze(Boolean object) {
+        return object;
+    }
+
+    public static Object freeze(Integer object) {
+        return object;
+    }
+
+    public static Object freeze(Long object) {
+        return object;
+    }
+
+    public static Object freeze(Double object) {
+        return object;
+    }
+
+    public static Object freeze(RubySymbol object) {
+        return object;
+    }
+
+    public static Object freeze(Object o) {
+        final RubyBasicObject object = (RubyBasicObject) o;
+
+        object.getOperations().setInstanceVariable(object, RubyBasicObject.FROZEN_IDENTIFIER, true);
+
+        return o;
+    }
+
+    public static boolean isFrozen(Boolean object) {
+        return true;
+    }
+
+    public static boolean isFrozen(Integer object) {
+        return true;
+    }
+
+    public static boolean isFrozen(Long object) {
+        return true;
+    }
+
+    public static boolean isFrozen(Double object) {
+        return true;
+    }
+
+    public static boolean isFrozen(RubySymbol object) {
+        return true;
+    }
+
+    public static boolean isFrozen(Object o) {
+        final RubyBasicObject object = (RubyBasicObject) o;
+
+        final Shape layout = object.getDynamicObject().getShape();
+        final Property property = layout.getProperty(RubyBasicObject.FROZEN_IDENTIFIER);
+
+        if (property == null) {
+            return false;
+        }
+
+        final Location storageLocation = property.getLocation();
+
+        return (boolean) storageLocation.get(object.getDynamicObject(), layout);
     }
 
     public static boolean isTainted(Object o) {

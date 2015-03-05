@@ -340,7 +340,7 @@ public abstract class ArrayNodes {
 
     }
 
-    @CoreMethod(names = "[]=", required = 2, optional = 1, lowerFixnumParameters = 0)
+    @CoreMethod(names = "[]=", required = 2, optional = 1, lowerFixnumParameters = 0, raiseIfFrozenSelf = true)
     public abstract static class IndexSetNode extends ArrayCoreMethodNode {
 
         @Child private ArrayWriteDenormalizedNode writeNode;
@@ -358,8 +358,6 @@ public abstract class ArrayNodes {
 
         @Specialization
         public Object set(VirtualFrame frame, RubyArray array, int index, Object value, UndefinedPlaceholder unused) {
-            array.checkFrozen(this);
-
             if (writeNode == null) {
                 CompilerDirectives.transferToInterpreter();
                 writeNode = insert(ArrayWriteDenormalizedNodeFactory.create(getContext(), getSourceSection(), null, null, null));
@@ -378,8 +376,6 @@ public abstract class ArrayNodes {
                 CompilerDirectives.transferToInterpreter();
                 throw new RaiseException(getContext().getCoreLibrary().indexNegativeLength(length, this));
             }
-
-            array.checkFrozen(this);
 
             final int begin = array.normalizeIndex(start);
 
@@ -406,8 +402,6 @@ public abstract class ArrayNodes {
                 throw new RaiseException(getContext().getCoreLibrary().indexNegativeLength(length, this));
             }
 
-            array.checkFrozen(this);
-
             if (value.getSize() == 0) {
                 final int begin = array.normalizeIndex(start);
                 final int exclusiveEnd = begin + length;
@@ -433,8 +427,6 @@ public abstract class ArrayNodes {
 
         @Specialization(guards = "isIntegerFixnum")
         public Object setIntegerFixnumRange(VirtualFrame frame, RubyArray array, RubyRange.IntegerFixnumRange range, RubyArray other, UndefinedPlaceholder unused) {
-            array.checkFrozen(this);
-
             if (range.doesExcludeEnd()) {
                 CompilerDirectives.transferToInterpreter();
                 throw new UnsupportedOperationException();
@@ -551,7 +543,7 @@ public abstract class ArrayNodes {
 
     }
 
-    @CoreMethod(names = "compact!")
+    @CoreMethod(names = "compact!", raiseIfFrozenSelf = true)
     public abstract static class CompactBangNode extends ArrayCoreMethodNode {
 
         public CompactBangNode(RubyContext context, SourceSection sourceSection) {
@@ -564,15 +556,11 @@ public abstract class ArrayNodes {
 
         @Specialization(guards = "!isObject")
         public RubyNilClass compactNotObjects(RubyArray array) {
-            array.checkFrozen(this);
-
             return getContext().getCoreLibrary().getNilObject();
         }
 
         @Specialization(guards = "isObject")
         public Object compactObjects(RubyArray array) {
-            array.checkFrozen(this);
-
             final Object[] store = (Object[]) array.getStore();
             final int size = array.getSize();
 

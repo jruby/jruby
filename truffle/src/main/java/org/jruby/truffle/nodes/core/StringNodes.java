@@ -200,7 +200,7 @@ public abstract class StringNodes {
         }
     }
 
-    @CoreMethod(names = { "<<", "concat" }, required = 1, taintFrom = 1)
+    @CoreMethod(names = { "<<", "concat" }, required = 1, taintFrom = 1, raiseIfFrozenSelf = true)
     @NodeChildren({
             @NodeChild(value = "string"),
             @NodeChild(value = "other")
@@ -224,8 +224,6 @@ public abstract class StringNodes {
         public RubyString concat(RubyString string, RubyString other) {
             // TODO (nirvdrum 06-Feb-15) This shouldn't be designed for compilation because we don't support all the String semantics yet, but a bench9000 benchmark has it on a hot path, so commenting out for now.
             //notDesignedForCompilation();
-
-            string.checkFrozen(this);
 
             final int codeRange = other.getCodeRange();
             final int[] ptr_cr_ret = { codeRange };
@@ -440,7 +438,7 @@ public abstract class StringNodes {
         }
     }
 
-    @CoreMethod(names = "[]=", required = 2, lowerFixnumParameters = 0)
+    @CoreMethod(names = "[]=", required = 2, lowerFixnumParameters = 0, raiseIfFrozenSelf = true)
     public abstract static class ElementSetNode extends CoreMethodNode {
 
         @Child private ToStrNode toStrNode;
@@ -458,8 +456,6 @@ public abstract class StringNodes {
         @Specialization
         public RubyString elementSet(VirtualFrame frame, RubyString string, int index, Object replacement) {
             notDesignedForCompilation();
-
-            string.checkFrozen(this);
 
             if (index < 0) {
                 if (-index > string.length()) {
@@ -485,8 +481,6 @@ public abstract class StringNodes {
         @Specialization
         public RubyString elementSet(VirtualFrame frame, RubyString string, RubyRange.IntegerFixnumRange range, Object replacement) {
             notDesignedForCompilation();
-
-            string.checkFrozen(this);
 
             int begin = range.getBegin();
             int end = range.getEnd();
@@ -759,7 +753,7 @@ public abstract class StringNodes {
         }
     }
 
-    @CoreMethod(names = "downcase!")
+    @CoreMethod(names = "downcase!", raiseIfFrozenSelf = true)
     public abstract static class DowncaseBangNode extends CoreMethodNode {
 
         public DowncaseBangNode(RubyContext context, SourceSection sourceSection) {
@@ -774,7 +768,6 @@ public abstract class StringNodes {
         public RubyBasicObject downcase(RubyString string) {
             notDesignedForCompilation();
 
-            string.checkFrozen(this);
             ByteList newByteList = StringNodesHelper.downcase(string);
 
             if (newByteList.equal(string.getBytes())) {
@@ -1132,7 +1125,7 @@ public abstract class StringNodes {
 
     }
 
-    @CoreMethod(names = "insert", required = 2, lowerFixnumParameters = 0)
+    @CoreMethod(names = "insert", required = 2, lowerFixnumParameters = 0, raiseIfFrozenSelf = true)
     public abstract static class InsertNode extends CoreMethodNode {
 
         @Child private ConcatNode concatNode;
@@ -1153,8 +1146,6 @@ public abstract class StringNodes {
         @Specialization
         public RubyString insert(RubyString string, int index, RubyString otherString) {
             notDesignedForCompilation();
-
-            string.checkFrozen(this);
 
             if (index == -1) {
                 concatNode.concat(string, otherString);
@@ -1267,7 +1258,7 @@ public abstract class StringNodes {
         }
     }
 
-    @CoreMethod(names = "replace", required = 1)
+    @CoreMethod(names = "replace", required = 1, raiseIfFrozenSelf = true)
     public abstract static class ReplaceNode extends CoreMethodNode {
 
         public ReplaceNode(RubyContext context, SourceSection sourceSection) {
@@ -1281,8 +1272,6 @@ public abstract class StringNodes {
         @Specialization
         public RubyString replace(RubyString string, RubyString other) {
             notDesignedForCompilation();
-
-            string.checkFrozen(this);
 
             if (string == other) {
                 return string;
@@ -1632,7 +1621,7 @@ public abstract class StringNodes {
         }
     }
 
-    @CoreMethod(names = "succ!")
+    @CoreMethod(names = "succ!", raiseIfFrozenSelf = true)
     public abstract static class SuccBangNode extends CoreMethodNode {
 
         public SuccBangNode(RubyContext context, SourceSection sourceSection) {
@@ -1646,8 +1635,6 @@ public abstract class StringNodes {
         @Specialization
         public RubyString succBang(RubyString string) {
             notDesignedForCompilation();
-
-            string.checkFrozen(this);
 
             if (string.length() > 0) {
                 string.set(StringSupport.succCommon(string.getBytes()));
@@ -1883,7 +1870,7 @@ public abstract class StringNodes {
 
     }
 
-    @CoreMethod(names = "capitalize!")
+    @CoreMethod(names = "capitalize!", raiseIfFrozenSelf = true)
     public abstract static class CapitalizeBangNode extends CoreMethodNode {
 
         public CapitalizeBangNode(RubyContext context, SourceSection sourceSection) {
@@ -1898,7 +1885,6 @@ public abstract class StringNodes {
         public RubyBasicObject capitalizeBang(RubyString string) {
             notDesignedForCompilation();
 
-            string.checkFrozen(this);
             String javaString = string.toString();
 
             if (javaString.isEmpty()) {

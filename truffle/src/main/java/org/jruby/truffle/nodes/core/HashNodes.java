@@ -316,7 +316,7 @@ public abstract class HashNodes {
 
     }
 
-    @CoreMethod(names = "[]=", required = 2)
+    @CoreMethod(names = "[]=", required = 2, raiseIfFrozenSelf = true)
     public abstract static class SetIndexNode extends HashCoreMethodNode {
 
         @Child private CallDispatchHeadNode eqlNode;
@@ -336,7 +336,6 @@ public abstract class HashNodes {
 
         @Specialization(guards = "isNull")
         public Object setNull(RubyHash hash, Object key, Object value) {
-            hash.checkFrozen(this);
             final Object[] store = new Object[HashOperations.SMALL_HASH_SIZE * 2];
             store[0] = key;
             store[1] = value;
@@ -347,8 +346,6 @@ public abstract class HashNodes {
         @ExplodeLoop
         @Specialization(guards = {"!isNull", "!isBuckets"})
         public Object setPackedArray(VirtualFrame frame, RubyHash hash, Object key, Object value) {
-            hash.checkFrozen(this);
-
             final Object[] store = (Object[]) hash.getStore();
             final int size = hash.getSize();
 
@@ -447,7 +444,7 @@ public abstract class HashNodes {
 
     }
 
-    @CoreMethod(names = "delete", required = 1)
+    @CoreMethod(names = "delete", required = 1, raiseIfFrozenSelf = true)
     public abstract static class DeleteNode extends HashCoreMethodNode {
 
         @Child private CallDispatchHeadNode eqlNode;
@@ -467,14 +464,11 @@ public abstract class HashNodes {
 
         @Specialization(guards = "isNull")
         public RubyNilClass deleteNull(RubyHash hash, Object key) {
-            hash.checkFrozen(this);
             return getContext().getCoreLibrary().getNilObject();
         }
 
         @Specialization(guards = {"!isNull", "!isBuckets"})
         public Object deletePackedArray(VirtualFrame frame, RubyHash hash, Object key) {
-            hash.checkFrozen(this);
-
             final Object[] store = (Object[]) hash.getStore();
             final int size = hash.getSize();
 
