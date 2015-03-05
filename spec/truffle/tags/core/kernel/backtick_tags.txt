@@ -1,8 +1,5 @@
-fails:Kernel#` is a private method
-fails:Kernel#` returns the standard output of the executed sub-process
 fails:Kernel#` tries to convert the given argument to String using #to_str
 fails:Kernel#` produces a String in the default external encoding
 fails:Kernel#` sets $? to the exit status of the executed sub-process
-fails:Kernel.` needs to be reviewed for spec completeness
 fails:Kernel#` raises an Errno::ENOENT if the command is not executable
 fails:Kernel.` tries to convert the given argument to String using #to_str

@@ -8,4 +8,3 @@ fails:Kernel.srand accepts a Bignum as a seed
 fails:Kernel.srand calls #to_int on seed
 fails:Kernel.srand raises a TypeError when passed nil
 fails:Kernel.srand raises a TypeError when passed a String
-fails:Kernel#srand needs to be reviewed for spec completeness

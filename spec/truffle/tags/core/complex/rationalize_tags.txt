@@ -1,3 +1,0 @@
-fails:Complex#rationalize raises RangeError if self has 0.0 imaginary part
-fails:Complex#rationalize returns a Rational if self has zero imaginary part
-fails:Complex#rationalize ignores a single argument

@@ -1,6 +1,0 @@
-fails:Enumerable#max max should return the maximum element
-fails:Enumerable#max returns the maximum element (basics cases)
-fails:Enumerable#max raises an ArgumentError for incomparable elements
-fails:Enumerable#max returns the maximum element (with block
-fails:Enumerable#max returns the minimum for enumerables that contain nils
-fails:Enumerable#max gathers whole arrays as elements when each yields multiple

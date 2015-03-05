@@ -1,1 +1,0 @@
-fails:Complex#numerator returns self's numerator

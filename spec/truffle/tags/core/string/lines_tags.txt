@@ -1,2 +1,1 @@
-fails:String#lines uses $/ as the separator when none is given
 fails:String#lines yields subclass instances for subclasses

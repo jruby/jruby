@@ -16,16 +16,9 @@ fails:Marshal.load loads a 1..2
 fails:Marshal.load loads a 1...2
 fails:Marshal.load loads a 'a'..'b'
 fails:Marshal.load loads a Struct
-fails:Marshal.load loads a Symbol
-fails:Marshal.load loads a String empty
-fails:Marshal.load loads a String small
-fails:Marshal.load loads a String big
 fails:Marshal.load loads a String extended
 fails:Marshal.load loads a String subclass
 fails:Marshal.load loads a String subclass extended
-fails:Marshal.load loads a Symbol small
-fails:Marshal.load loads a Symbol big
-fails:Marshal.load loads a Bignum -2**64
 fails:Marshal.load loads a Bignum -2**63
 fails:Marshal.load loads a Fixnum -2**24
 fails:Marshal.load loads a Fixnum -4516727
@@ -33,36 +26,22 @@ fails:Marshal.load loads a Fixnum -2**16
 fails:Marshal.load loads a Fixnum -2**8
 fails:Marshal.load loads a Fixnum -123
 fails:Marshal.load loads a Fixnum -124
-fails:Marshal.load loads a Bignum 2**64
-fails:Marshal.load loads a Bignum 2**90
 fails:Marshal.load loads a Class String
 fails:Marshal.load loads a Module Marshal
 fails:Marshal.load loads a Module nested
 fails:Marshal.load loads a _dump object
 fails:Marshal.load loads a _dump object extended
 fails:Marshal.load loads a marshal_dump object
-fails:Marshal.load loads a Regexp
-fails:Marshal.load loads a Regexp subclass /i
-fails:Marshal.load loads a Float Infinity
-fails:Marshal.load loads a Float -Infinity
 fails:Marshal.load loads a Float 8323434.342
 fails:Marshal.load loads a Random
 fails:Marshal.load raises an ArgumentError with full constant name when the dumped constant is missing
 fails:Marshal.load when source is tainted returns a tainted object
 fails:Marshal.load when source is tainted does not taint Symbols
-fails:Marshal.load when source is tainted does not taint Bignums
 fails:Marshal.load for an Array loads an array containing the same objects
-fails:Marshal.load for an Array loads an array having ivar
 fails:Marshal.load for a Hash loads an extended_user_hash with a parameter to initialize
 fails:Marshal.load for a Hash preserves hash ivars when hash contains a string having ivar
-fails:Marshal.load for a String loads a string having ivar with ref to self
 fails:Marshal.load for a String loads a string through StringIO stream
-fails:Marshal.load for a String loads a string with an ivar
 fails:Marshal.load for a String loads a String subclass with custom constructor
-fails:Marshal.load for a String loads a US-ASCII String
-fails:Marshal.load for a String loads a UTF-8 String
-fails:Marshal.load for a String loads a String in another encoding
-fails:Marshal.load for a String loads a String as ASCII-8BIT if no encoding is specified at the end
 fails:Marshal.load for a Struct loads a extended_struct having fields with same objects
 fails:Marshal.load for a Struct loads a struct having ivar
 fails:Marshal.load for a Struct loads a struct having fields
@@ -79,12 +58,9 @@ fails:Marshal.load for a user Class loads an object having ivar
 fails:Marshal.load for a user Class that extends a core type other than Object or BasicObject raises ArgumentError if the resulting class does not extend the same type
 fails:Marshal.load for a Regexp loads an extended Regexp
 fails:Marshal.load for a Regexp loads a extended_user_regexp having ivar
-fails:Marshal.load for a Float loads a Float NaN
 fails:Marshal.load for a Float loads a Float 1.3
 fails:Marshal.load for a Float loads a Float -5.1867345e-22
 fails:Marshal.load for a Float loads a Float 1.1867345e+22
-fails:Marshal.load for a Integer loads 0
-fails:Marshal.load for a Integer loads an Integer 8
 fails:Marshal.load for a Integer loads and Integer -8
 fails:Marshal.load for a Integer loads an Integer 1234
 fails:Marshal.load for a Integer loads an Integer -1234
@@ -100,9 +76,6 @@ fails:Marshal.load for a Time loads serialized instance variables
 fails:Marshal.load for a Time loads Time objects stored as links
 fails:Marshal.load for a Time loads the zone
 fails:Marshal.load for a Time loads nanoseconds
-fails:Marshal.load for nil loads
-fails:Marshal.load for true loads
-fails:Marshal.load for false loads
 fails:Marshal.load for a Class loads
 fails:Marshal.load for a Class raises ArgumentError if given the name of a non-Module
 fails:Marshal.load for a Class raises ArgumentError if given a nonexistent class
@@ -112,5 +85,4 @@ fails:Marshal.load for a Module loads an old module
 fails:Marshal.load for a wrapped C pointer loads
 fails:Marshal.load for a wrapped C pointer raises TypeError when the local class is missing _data_load
 fails:Marshal.load for a wrapped C pointer raises ArgumentError when the local class is a regular object
-fails:Marshal.load when a class with the same name as the dumped one exists outside the namespace raises a NameError
 fails:Marshal.load when a class with the same name as the dumped one exists outside the namespace invokes Module#const_missing

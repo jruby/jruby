@@ -1,9 +1,5 @@
-fails:Kernel.rand returns an integer for an integer argument
 fails:Kernel.rand returns an integer for a float argument greater than 1
 fails:Kernel.rand returns a float for an argument between -1 and 1
 fails:Kernel.rand ignores the sign of the argument
-fails:Kernel.rand never returns a value greater or equal to 1.0 with no arguments
-fails:Kernel.rand never returns a value greater or equal to any passed in max argument
 fails:Kernel.rand calls to_int on its argument
 fails:Kernel.rand returns a float for an range argument where max is < 1
-fails:Kernel#rand needs to be reviewed for spec completeness

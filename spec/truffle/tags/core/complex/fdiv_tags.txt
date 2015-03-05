@@ -1,15 +1,3 @@
-fails:Complex#fdiv sets the real part to NaN if self's real part is NaN
-fails:Complex#fdiv sets the imaginary part to NaN if self's imaginary part is NaN
-fails:Complex#fdiv sets the real and imaginary part to NaN if self's real and imaginary parts are NaN
-fails:Complex#fdiv sets the real and imaginary part to NaN if self's real part and the argument are both NaN
-fails:Complex#fdiv sets the real and imaginary part to NaN if self's real part, self's imaginary part, and the argument are NaN
-fails:Complex#fdiv sets the real part to Infinity if self's real part is Infinity
-fails:Complex#fdiv sets the imaginary part to Infinity if self's imaginary part is Infinity
-fails:Complex#fdiv sets the imaginary and real part to Infinity if self's imaginary and real parts are Infinity
-fails:Complex#fdiv sets the real part to NaN and the imaginary part to NaN if self's imaginary part, self's real part, and the argument are Infinity
-fails:Complex#fdiv with no imaginary part returns a Complex number
 fails:Complex#fdiv with no imaginary part sets the real part to self's real part fdiv'd with the argument
-fails:Complex#fdiv with no imaginary part sets the imaginary part to 0.0
-fails:Complex#fdiv with an imaginary part returns a Complex number
 fails:Complex#fdiv with an imaginary part sets the real part to self's real part fdiv'd with the argument
 fails:Complex#fdiv with an imaginary part sets the imaginary part to the imaginary part fdiv'd with the argument

@@ -1,7 +1,4 @@
 fails:Kernel.binding returns a binding for the caller
-fails:Kernel#binding is a private method
-fails:Kernel#binding returns a Binding object
 fails:Kernel#binding encapsulates the execution context properly
-fails:Kernel#binding raises a NameError on undefined variable
 fails:Kernel#binding uses the closure's self as self in the binding
 fails:Kernel#binding uses the class as self in a Class.new block

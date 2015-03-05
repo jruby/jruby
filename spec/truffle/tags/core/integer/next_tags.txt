@@ -1,1 +1,0 @@
-fails:Integer#next returns the next larger negative Bignum

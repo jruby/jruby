@@ -1,1 +1,0 @@
-fails:Encoding::InvalidByteSequenceError#error_bytes needs to be reviewed for spec completeness

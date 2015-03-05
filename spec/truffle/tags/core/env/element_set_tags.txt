@@ -1,5 +1,3 @@
-fails:ENV.[]= sets the environment variable to the given value
-fails:ENV.[]= returns the value
 fails:ENV.[]= deletes the environment variable when the value is nil
 fails:ENV.[]= coerces the key argument with #to_str
 fails:ENV.[]= coerces the value argument with #to_str

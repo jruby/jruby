@@ -1,11 +1,2 @@
-fails:Kernel#private_methods returns a list of the names of privately accessible methods in the object
-fails:Kernel#private_methods returns a list of the names of privately accessible methods in the object and its ancestors and mixed-in modules
-fails:Kernel#private_methods returns private methods mixed in to the metaclass
-fails:Kernel#private_methods when not passed an argument returns a unique list for an object extended by a module
-fails:Kernel#private_methods when not passed an argument returns a unique list for a class including a module
-fails:Kernel#private_methods when not passed an argument returns a unique list for a subclass of a class that includes a module
-fails:Kernel#private_methods when passed true returns a unique list for an object extended by a module
-fails:Kernel#private_methods when passed true returns a unique list for a class including a module
-fails:Kernel#private_methods when passed true returns a unique list for a subclass of a class that includes a module
 fails:Kernel#private_methods when passed false returns a list of private methods in without its ancestors
 fails:Kernel#private_methods when passed nil returns a list of private methods in without its ancestors

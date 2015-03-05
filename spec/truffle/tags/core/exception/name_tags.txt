@@ -1,1 +1,0 @@
-fails:NameError#name needs to be reviewed for spec completeness

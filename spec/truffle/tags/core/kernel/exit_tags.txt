@@ -1,4 +1,3 @@
-fails:Kernel#exit is a private method
 fails:Kernel#exit raises a SystemExit with status 0
 fails:Kernel#exit raises a SystemExit with the specified status
 fails:Kernel#exit raises a SystemExit with the specified boolean status

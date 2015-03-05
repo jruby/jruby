@@ -1,11 +1,3 @@
 fails:Marshal.dump with Float represents a Float much less than 1
 fails:Marshal.dump with Float represents a Float much greater than 1
 fails:Marshal.dump with Float represents a Float much greater than 1 with a very small fractional part
-fails:Marshal.load with Float loads NaN
-fails:Marshal.load with Float loads +Infinity
-fails:Marshal.load with Float loads -Infinity
-fails:Marshal.load with Float loads a Float less than 1
-fails:Marshal.load with Float loads a Float much less than 1
-fails:Marshal.load with Float loads a Float greater than 1
-fails:Marshal.load with Float loads a Float much greater than 1
-fails:Marshal.load with Float loads a Float much greater than 1 with a very small fractional part

@@ -1,6 +1,0 @@
-fails:Complex#to_s returns self as String
-fails:Complex#to_s returns 1+0.0i for Complex(1, 0.0)
-fails:Complex#to_s returns 1-0.0i for Complex(1, -0.0)
-fails:Complex#to_s returns 1+Infinity*i for Complex(1, Infinity)
-fails:Complex#to_s returns 1-Infinity*i for Complex(1, -Infinity)
-fails:Complex#to_s when self's real component is 0 returns both the real and imaginary component even when the real is 0

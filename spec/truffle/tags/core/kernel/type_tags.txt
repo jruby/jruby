@@ -1,1 +1,0 @@
-fails:Kernel#type needs to be reviewed for spec completeness

@@ -1,6 +1,0 @@
-fails:Enumerable#min min should return the minimum element
-fails:Enumerable#min returns the minimum (basic cases)
-fails:Enumerable#min raises an ArgumentError for incomparable elements
-fails:Enumerable#min returns the minimum when using a block rule
-fails:Enumerable#min returns the minimum for enumerables that contain nils
-fails:Enumerable#min gathers whole arrays as elements when each yields multiple

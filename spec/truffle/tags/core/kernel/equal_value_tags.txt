@@ -1,1 +1,0 @@
-fails:Kernel#== returns true only if obj and other are the same object

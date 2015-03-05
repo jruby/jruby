@@ -1,8 +1,3 @@
 fails:Kernel#extend requires multiple arguments
 fails:Kernel#extend calls extend_object on argument
-fails:Kernel#extend does not calls append_features on arguments metaclass
 fails:Kernel#extend calls extended on argument
-fails:Kernel#extend makes the class a kind_of? the argument
-fails:Kernel#extend raises an ArgumentError when no arguments given
-fails:Kernel#extend on frozen instance raises an ArgumentError when no arguments given
-fails:Kernel#extend on frozen instance raises a RuntimeError

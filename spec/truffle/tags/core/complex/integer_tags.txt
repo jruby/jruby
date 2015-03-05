@@ -1,2 +1,0 @@
-fails:Complex#integer? returns false for a Complex with no imaginary part
-fails:Complex#integer? returns false for a Complex with an imaginary part

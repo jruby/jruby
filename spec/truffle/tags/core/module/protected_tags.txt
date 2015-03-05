@@ -1,14 +1,10 @@
 fails:Module#protected is a private method
 fails:Module#protected makes a public Object instance method protected in a new module
 fails:Module#protected makes a public Object instance method protected in Kernel
-fails:Module#protected returns self
 fails:Module#protected raises a NameError when given an undefined name
 fails:Module#protected without arguments sets visibility to following method definitions
 fails:Module#protected without arguments stops setting visibility if the body encounters other visibility setters without arguments
 fails:Module#protected without arguments continues setting visibility if the body encounters other visibility setters with arguments
-fails:Module#protected without arguments does not affect module_evaled method definitions when itself is outside the eval
-fails:Module#protected without arguments does not affect outside method definitions when itself is inside a module_eval
 fails:Module#protected without arguments affects normally if itself and method definitions are inside a module_eval
-fails:Module#protected without arguments does not affect method definitions when itself is inside an eval and method definitions are outside
 fails:Module#protected without arguments affects evaled method definitions when itself is outside the eval
 fails:Module#protected without arguments affects normally if itself and following method definitions are inside a eval

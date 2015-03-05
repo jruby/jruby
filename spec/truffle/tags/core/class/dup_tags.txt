@@ -1,5 +1,3 @@
 fails:Class#dup duplicates both the class and the singleton class
 fails:Class#dup retains an included module in the ancestor chain for the singleton class
 fails:Class#dup retains the correct ancestor chain for the singleton class
-fails:Class#dup sets the name from the class to nil if not assigned to a constant
-fails:Class#dup stores the new name if assigned to a constant
