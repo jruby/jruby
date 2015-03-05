@@ -1,6 +1,5 @@
 package org.jruby.ir.passes;
 
-import org.jruby.ir.IRClosure;
 import org.jruby.ir.IRScope;
 import org.jruby.ir.Operation;
 import org.jruby.ir.instructions.CopyInstr;
@@ -8,8 +7,6 @@ import org.jruby.ir.instructions.Instr;
 import org.jruby.ir.instructions.ResultInstr;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.Variable;
-import org.jruby.ir.representations.BasicBlock;
-import org.jruby.ir.representations.CFG;
 
 import java.util.*;
 

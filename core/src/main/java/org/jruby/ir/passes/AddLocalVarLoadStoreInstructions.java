@@ -7,7 +7,6 @@ import org.jruby.ir.dataflow.analyses.LoadLocalVarPlacementProblem;
 import org.jruby.ir.dataflow.analyses.StoreLocalVarPlacementProblem;
 import org.jruby.ir.instructions.Instr;
 import org.jruby.ir.operands.Operand;
-import org.jruby.ir.operands.Variable;
 import org.jruby.ir.representations.BasicBlock;
 
 import java.util.Arrays;
@@ -70,20 +69,20 @@ public class AddLocalVarLoadStoreInstructions extends CompilerPass {
             (new LiveVariableAnalysis()).invalidate(s);
         }
 
-        s.getFullInterpreterContext().getDataFlowProblems().put(StoreLocalVarPlacementProblem.NAME, slvp);
+        s.putStoreLocalVarPlacementProblem(slvp);
 
         return slvp;
     }
 
     @Override
     public Object previouslyRun(IRScope scope) {
-        return scope.getFullInterpreterContext().getDataFlowProblems().get(StoreLocalVarPlacementProblem.NAME);
+        return scope.getStoreLocalVarPlacementProblem();
     }
 
     @Override
     public boolean invalidate(IRScope scope) {
         super.invalidate(scope);
-        scope.getFullInterpreterContext().getDataFlowProblems().put(StoreLocalVarPlacementProblem.NAME, null);
+        scope.putStoreLocalVarPlacementProblem(null);
         return true;
     }
 }

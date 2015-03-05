@@ -8,8 +8,6 @@ import org.jruby.ir.operands.Variable;
 import org.jruby.ir.representations.BasicBlock;
 import org.jruby.ir.representations.CFG;
 
-import java.util.Arrays;
-import java.util.List;
 import java.util.ListIterator;
 
 public class AddCallProtocolInstructions extends CompilerPass {
@@ -32,7 +30,7 @@ public class AddCallProtocolInstructions extends CompilerPass {
         // If the scope uses $_ or $~ family of vars, has local load/stores, or if its binding has escaped, we have
         // to allocate a dynamic scope for it and add binding push/pop instructions.
         if (explicitCallProtocolSupported(scope)) {
-            StoreLocalVarPlacementProblem slvpp = (StoreLocalVarPlacementProblem)scope.getFullInterpreterContext().getDataFlowProblems().get(StoreLocalVarPlacementProblem.NAME);
+            StoreLocalVarPlacementProblem slvpp = scope.getStoreLocalVarPlacementProblem();
             boolean scopeHasLocalVarStores = false;
             boolean bindingHasEscaped      = scope.bindingHasEscaped();
 

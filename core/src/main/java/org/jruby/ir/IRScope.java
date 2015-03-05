@@ -3,9 +3,8 @@ package org.jruby.ir;
 import org.jruby.ParseResult;
 import org.jruby.RubyInstanceConfig;
 import org.jruby.RubyModule;
-import org.jruby.ir.dataflow.DataFlowProblem;
 import org.jruby.ir.dataflow.analyses.LiveVariablesProblem;
-import org.jruby.ir.dataflow.analyses.UnboxableOpsAnalysisNode;
+import org.jruby.ir.dataflow.analyses.StoreLocalVarPlacementProblem;
 import org.jruby.ir.dataflow.analyses.UnboxableOpsAnalysisProblem;
 import org.jruby.ir.instructions.*;
 import org.jruby.ir.interpreter.FullInterpreterContext;
@@ -405,6 +404,22 @@ public abstract class IRScope implements ParseResult {
         if (fullInterpreterContext == null) return null; // no fic so no pass-related info
 
         return (LiveVariablesProblem) fullInterpreterContext.getDataFlowProblems().get(LiveVariablesProblem.NAME);
+    }
+
+    public void putStoreLocalVarPlacementProblem(StoreLocalVarPlacementProblem problem) {
+        // Technically this is if a pass is invalidated which has never run on a scope with no CFG/FIC yet.
+        if (fullInterpreterContext == null) {
+            // This should never trigger unless we got sloppy
+            if (problem != null) throw new IllegalStateException("StoreLocalVarPlacementProblem being stored when no FIC");
+            return;
+        }
+        fullInterpreterContext.getDataFlowProblems().put(StoreLocalVarPlacementProblem.NAME, problem);
+    }
+
+    public StoreLocalVarPlacementProblem getStoreLocalVarPlacementProblem() {
+        if (fullInterpreterContext == null) return null; // no fic so no pass-related info
+
+        return (StoreLocalVarPlacementProblem) fullInterpreterContext.getDataFlowProblems().get(UnboxableOpsAnalysisProblem.NAME);
     }
 
     public void putUnboxableOpsAnalysisProblem(UnboxableOpsAnalysisProblem problem) {
