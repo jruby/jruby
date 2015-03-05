@@ -734,8 +734,6 @@ public abstract class KernelNodes {
 
         @Specialization
         public RubyBasicObject freeze(RubyBasicObject self) {
-            notDesignedForCompilation();
-
             self.freeze();
             return self;
         }
