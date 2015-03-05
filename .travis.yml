@@ -24,7 +24,9 @@ env:
   matrix:
     - PHASE='-Ptest'
     - PHASE='-Prake -Dtask=test:jruby'
+    - PHASE='-Prake -Dtask=test:jruby:jit'
     - PHASE='-Prake -Dtask=test:mri'
+    - PHASE='-Prake -Dtask=test:mri:jit'
     - PHASE='-Prake -Dtask=test:slow_suites'
     - PHASE='-Prake -Dtask=test:tracing'
     - PHASE='-Prake -Dtask=spec:ji'
@@ -70,6 +72,7 @@ matrix:
     - env: PHASE='-Pmain'
     - env: PHASE='-Prake -Dtask=spec:jrubyc'
     - env: PHASE='-Prake -Dtask=spec:profiler'
+    - env: PHASE='-Prake -Dtask=test:mri:jit'
 
 branches:
   only:

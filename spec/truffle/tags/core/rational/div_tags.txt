@@ -1,6 +1,0 @@
-fails:Rational#div returns an Integer
-fails:Rational#div raises a TypeError if passed a non-numeric argument
-fails:Rational#div passed a Rational performs integer division and returns the result
-fails:Rational#div passed an Integer performs integer division and returns the result
-fails:Rational#div passed a Float performs integer division and returns the result
-fails:Rational#div passed a Rational raises a ZeroDivisionError when the argument has a numerator of 0.0

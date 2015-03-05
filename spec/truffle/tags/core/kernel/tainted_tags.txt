@@ -1,1 +1,0 @@
-fails:Kernel#tainted? returns true if Object is tainted

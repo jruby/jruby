@@ -16,16 +16,9 @@ fails:Marshal.restore loads a 1..2
 fails:Marshal.restore loads a 1...2
 fails:Marshal.restore loads a 'a'..'b'
 fails:Marshal.restore loads a Struct
-fails:Marshal.restore loads a Symbol
-fails:Marshal.restore loads a String empty
-fails:Marshal.restore loads a String small
-fails:Marshal.restore loads a String big
 fails:Marshal.restore loads a String extended
 fails:Marshal.restore loads a String subclass
 fails:Marshal.restore loads a String subclass extended
-fails:Marshal.restore loads a Symbol small
-fails:Marshal.restore loads a Symbol big
-fails:Marshal.restore loads a Bignum -2**64
 fails:Marshal.restore loads a Bignum -2**63
 fails:Marshal.restore loads a Fixnum -2**24
 fails:Marshal.restore loads a Fixnum -4516727
@@ -33,36 +26,22 @@ fails:Marshal.restore loads a Fixnum -2**16
 fails:Marshal.restore loads a Fixnum -2**8
 fails:Marshal.restore loads a Fixnum -123
 fails:Marshal.restore loads a Fixnum -124
-fails:Marshal.restore loads a Bignum 2**64
-fails:Marshal.restore loads a Bignum 2**90
 fails:Marshal.restore loads a Class String
 fails:Marshal.restore loads a Module Marshal
 fails:Marshal.restore loads a Module nested
 fails:Marshal.restore loads a _dump object
 fails:Marshal.restore loads a _dump object extended
 fails:Marshal.restore loads a marshal_dump object
-fails:Marshal.restore loads a Regexp
-fails:Marshal.restore loads a Regexp subclass /i
-fails:Marshal.restore loads a Float Infinity
-fails:Marshal.restore loads a Float -Infinity
 fails:Marshal.restore loads a Float 8323434.342
 fails:Marshal.restore loads a Random
 fails:Marshal.restore raises an ArgumentError with full constant name when the dumped constant is missing
 fails:Marshal.restore when source is tainted returns a tainted object
 fails:Marshal.restore when source is tainted does not taint Symbols
-fails:Marshal.restore when source is tainted does not taint Bignums
 fails:Marshal.restore for an Array loads an array containing the same objects
-fails:Marshal.restore for an Array loads an array having ivar
 fails:Marshal.restore for a Hash loads an extended_user_hash with a parameter to initialize
 fails:Marshal.restore for a Hash preserves hash ivars when hash contains a string having ivar
-fails:Marshal.restore for a String loads a string having ivar with ref to self
 fails:Marshal.restore for a String loads a string through StringIO stream
-fails:Marshal.restore for a String loads a string with an ivar
 fails:Marshal.restore for a String loads a String subclass with custom constructor
-fails:Marshal.restore for a String loads a US-ASCII String
-fails:Marshal.restore for a String loads a UTF-8 String
-fails:Marshal.restore for a String loads a String in another encoding
-fails:Marshal.restore for a String loads a String as ASCII-8BIT if no encoding is specified at the end
 fails:Marshal.restore for a Struct loads a extended_struct having fields with same objects
 fails:Marshal.restore for a Struct loads a struct having ivar
 fails:Marshal.restore for a Struct loads a struct having fields
@@ -79,12 +58,9 @@ fails:Marshal.restore for a user Class loads an object having ivar
 fails:Marshal.restore for a user Class that extends a core type other than Object or BasicObject raises ArgumentError if the resulting class does not extend the same type
 fails:Marshal.restore for a Regexp loads an extended Regexp
 fails:Marshal.restore for a Regexp loads a extended_user_regexp having ivar
-fails:Marshal.restore for a Float loads a Float NaN
 fails:Marshal.restore for a Float loads a Float 1.3
 fails:Marshal.restore for a Float loads a Float -5.1867345e-22
 fails:Marshal.restore for a Float loads a Float 1.1867345e+22
-fails:Marshal.restore for a Integer loads 0
-fails:Marshal.restore for a Integer loads an Integer 8
 fails:Marshal.restore for a Integer loads and Integer -8
 fails:Marshal.restore for a Integer loads an Integer 1234
 fails:Marshal.restore for a Integer loads an Integer -1234
@@ -100,9 +76,6 @@ fails:Marshal.restore for a Time loads serialized instance variables
 fails:Marshal.restore for a Time loads Time objects stored as links
 fails:Marshal.restore for a Time loads the zone
 fails:Marshal.restore for a Time loads nanoseconds
-fails:Marshal.restore for nil loads
-fails:Marshal.restore for true loads
-fails:Marshal.restore for false loads
 fails:Marshal.restore for a Class loads
 fails:Marshal.restore for a Class raises ArgumentError if given the name of a non-Module
 fails:Marshal.restore for a Class raises ArgumentError if given a nonexistent class
@@ -112,5 +85,4 @@ fails:Marshal.restore for a Module loads an old module
 fails:Marshal.restore for a wrapped C pointer loads
 fails:Marshal.restore for a wrapped C pointer raises TypeError when the local class is missing _data_load
 fails:Marshal.restore for a wrapped C pointer raises ArgumentError when the local class is a regular object
-fails:Marshal.restore when a class with the same name as the dumped one exists outside the namespace raises a NameError
 fails:Marshal.restore when a class with the same name as the dumped one exists outside the namespace invokes Module#const_missing

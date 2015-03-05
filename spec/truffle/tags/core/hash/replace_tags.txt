@@ -1,6 +1,0 @@
-fails:Hash#replace replaces the contents of self with other
-fails:Hash#replace tries to convert the passed argument to a hash using #to_hash
-fails:Hash#replace calls to_hash on hash subclasses
-fails:Hash#replace does not transfer default values
-fails:Hash#replace raises a RuntimeError if called on a frozen instance that is modified
-fails:Hash#replace raises a RuntimeError if called on a frozen instance that would not be modified

@@ -54,13 +54,14 @@ module JITSpecUtils
     compiler = oj.ir.targets.JVMVisitor.new
     compiled = compiler.compile(method, oj.util.OneShotClassLoader.new(JRuby.runtime.getJRubyClassLoader()))
     scriptMethod = compiled.getMethod(
-        "__script__",
+        "RUBY$script",
         oj.runtime.ThreadContext.java_class,
         oj.parser.StaticScope.java_class,
         oj.runtime.builtin.IRubyObject.java_class,
         oj.runtime.builtin.IRubyObject[].java_class,
         oj.runtime.Block.java_class,
-        oj.RubyModule.java_class);
+        oj.RubyModule.java_class,
+        java.lang.String.java_class);
     handle = java.lang.invoke.MethodHandles.publicLookup().unreflect(scriptMethod);
 
     return oj.internal.runtime.methods.CompiledIRMethod.new(
@@ -995,7 +996,40 @@ modes.each do |mode|
              protected; def c; true; end
            end.new
            [obj.a, (obj.b rescue false), (obj.c rescue false)]') do |x|
-        x.should == [true, false, false]
+        expect(x).to eq([true, false, false])
+      end
+    end
+
+    it "pushes call name into frame" do
+      run('obj = Class.new do
+             def a; __callee__; end
+             define_method :b, instance_method(:a)
+           end.new
+           [obj.a, obj.b]') do |x|
+        expect(x).to eq([:a, :b])
+      end
+    end
+
+    it "raises appropriate missing-method error for call type" do
+      # Variable
+      run('begin; does_not_exist; rescue NameError; $!; end') do |x|
+        expect(x).to be_instance_of(NameError)
+      end
+
+      # Functional
+      run('begin; does_not_exist(); rescue NameError; $!; end') do |x|
+        expect(x).to be_instance_of(NoMethodError)
+      end
+
+      # Normal
+      run('begin; self.does_not_exist; rescue NameError; $!; end') do |x|
+        expect(x).to be_instance_of(NoMethodError)
+      end
+    end
+
+    it "preserves 'encoding none' flag for literal regexp" do
+      run('/a/n.options') do |x|
+        expect(x).to eq(32)
       end
     end
   end

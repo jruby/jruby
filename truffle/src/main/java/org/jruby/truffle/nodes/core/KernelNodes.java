@@ -17,7 +17,6 @@ import com.oracle.truffle.api.dsl.NodeChild;
 import com.oracle.truffle.api.dsl.NodeChildren;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.*;
-import com.oracle.truffle.api.nodes.UnexpectedResultException;
 import com.oracle.truffle.api.source.Source;
 import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.utilities.ConditionProfile;
@@ -35,7 +34,6 @@ import org.jruby.truffle.nodes.dispatch.*;
 import org.jruby.truffle.nodes.globals.WrapInThreadLocalNode;
 import org.jruby.truffle.nodes.literal.BooleanLiteralNode;
 import org.jruby.truffle.nodes.objects.*;
-import org.jruby.truffle.nodes.objectstorage.ReadHeadObjectFieldNode;
 import org.jruby.truffle.nodes.objectstorage.WriteHeadObjectFieldNode;
 import org.jruby.truffle.nodes.rubinius.ObjectPrimitiveNodes;
 import org.jruby.truffle.nodes.rubinius.ObjectPrimitiveNodesFactory;
@@ -415,20 +413,28 @@ public abstract class KernelNodes {
 
     }
 
-    @CoreMethod(names = "clone")
+    @CoreMethod(names = "clone", taintFromSelf = true)
     public abstract static class CloneNode extends CoreMethodNode {
 
+        private final ConditionProfile frozenProfile = ConditionProfile.createBinaryProfile();
+
         @Child private CallDispatchHeadNode initializeCloneNode;
+        @Child private IsFrozenNode isFrozenNode;
+        @Child private FreezeNode freezeNode;
 
         public CloneNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
             // Calls private initialize_clone on the new copy.
             initializeCloneNode = DispatchHeadNodeFactory.createMethodCall(context, true, MissingBehavior.CALL_METHOD_MISSING);
+            isFrozenNode = IsFrozenNodeFactory.create(context, sourceSection, null);
+            freezeNode = FreezeNodeFactory.create(context, sourceSection, null);
         }
 
         public CloneNode(CloneNode prev) {
             super(prev);
             initializeCloneNode = prev.initializeCloneNode;
+            isFrozenNode = prev.isFrozenNode;
+            freezeNode = prev.freezeNode;
         }
 
         @Specialization
@@ -445,12 +451,16 @@ public abstract class KernelNodes {
             newObject.getOperations().setInstanceVariables(newObject, self.getOperations().getInstanceVariables(self));
             initializeCloneNode.call(frame, newObject, "initialize_clone", null, self);
 
+            if (frozenProfile.profile(isFrozenNode.executeIsFrozen(self))) {
+                freezeNode.executeFreeze(newObject);
+            }
+
             return newObject;
         }
 
     }
 
-    @CoreMethod(names = "dup", taintFrom = 0)
+    @CoreMethod(names = "dup", taintFromSelf = true)
     public abstract static class DupNode extends CoreMethodNode {
 
         @Child private CallDispatchHeadNode initializeDupNode;
@@ -712,55 +722,53 @@ public abstract class KernelNodes {
     }
 
     @CoreMethod(names = "freeze")
-    public abstract static class FreezeNode extends CoreMethodNode {
+    public abstract static class KernelFreezeNode extends CoreMethodNode {
 
-        public FreezeNode(RubyContext context, SourceSection sourceSection) {
+        @Child private FreezeNode freezeNode;
+
+        public KernelFreezeNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
         }
 
-        public FreezeNode(FreezeNode prev) {
+        public KernelFreezeNode(KernelFreezeNode prev) {
             super(prev);
+            freezeNode = prev.freezeNode;
         }
 
         @Specialization
-        public RubyBasicObject freeze(RubyBasicObject self) {
-            notDesignedForCompilation();
+        public Object freeze(Object self) {
+            if (freezeNode == null) {
+                CompilerDirectives.transferToInterpreter();
+                freezeNode = insert(FreezeNodeFactory.create(getContext(), getEncapsulatingSourceSection(), null));
+            }
 
-            self.freeze();
-            return self;
+            return freezeNode.executeFreeze(self);
         }
 
     }
 
     @CoreMethod(names = "frozen?")
-    public abstract static class FrozenNode extends CoreMethodNode {
+    public abstract static class KernelFrozenNode extends CoreMethodNode {
 
-        public FrozenNode(RubyContext context, SourceSection sourceSection) {
+        @Child private IsFrozenNode isFrozenNode;
+
+        public KernelFrozenNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
         }
 
-        public FrozenNode(FrozenNode prev) {
+        public KernelFrozenNode(KernelFrozenNode prev) {
             super(prev);
+            isFrozenNode = prev.isFrozenNode;
         }
 
         @Specialization
-        public boolean isFrozen(int self) {
-            return true;
-        }
+        public boolean isFrozen(Object self) {
+            if (isFrozenNode == null) {
+                CompilerDirectives.transferToInterpreter();
+                isFrozenNode = insert(IsFrozenNodeFactory.create(getContext(), getEncapsulatingSourceSection(), null));
+            }
 
-        @Specialization
-        public boolean isFrozen(long self) {
-            return true;
-        }
-
-        @Specialization
-        public boolean isFrozen(double self) {
-            return true;
-        }
-
-        @Specialization
-        public boolean isFrozen(RubyBasicObject self) {
-            return self.isFrozen();
+            return isFrozenNode.executeIsFrozen(self);
         }
 
     }
@@ -999,21 +1007,19 @@ public abstract class KernelNodes {
         public InstanceVariableSetNode(InstanceVariableSetNode prev) {
             super(prev);
         }
+        
+        // TODO CS 4-Mar-15 this badly needs to be cached
 
+        @TruffleBoundary
         @Specialization
-        public Object isInstanceVariableSet(RubyBasicObject object, RubyString name, Object value) {
-            notDesignedForCompilation();
-
-            notDesignedForCompilation();
+        public Object instanceVariableSet(RubyBasicObject object, RubyString name, Object value) {
             object.getOperations().setInstanceVariable(object, RubyContext.checkInstanceVariableName(getContext(), name.toString(), this), value);
             return value;
         }
 
+        @TruffleBoundary
         @Specialization
-        public Object isInstanceVariableSet(RubyBasicObject object, RubySymbol name, Object value) {
-            notDesignedForCompilation();
-
-            notDesignedForCompilation();
+        public Object instanceVariableSet(RubyBasicObject object, RubySymbol name, Object value) {
             object.getOperations().setInstanceVariable(object, RubyContext.checkInstanceVariableName(getContext(), name.toString(), this), value);
             return value;
         }
@@ -1937,10 +1943,9 @@ public abstract class KernelNodes {
             super(prev);
         }
 
+        @TruffleBoundary
         @Specialization
         public RubyString sprintf(Object[] args) {
-            notDesignedForCompilation();
-
             final ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
 
             final PrintStream printStream;

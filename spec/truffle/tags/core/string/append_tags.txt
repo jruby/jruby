@@ -1,7 +1,4 @@
-fails:String#<< taints self if other is tainted
-fails:String#<< untrusts self if other is untrusted
 fails:String#<< with Integer concatencates the argument interpreted as a codepoint
 fails:String#<< with Integer returns a ASCII-8BIT string if self is US-ASCII and the argument is between 128-255 (inclusive)
 fails:String#<< with Integer raises RangeError if the argument is an invalid codepoint for self's encoding
 fails:String#<< with Integer raises RangeError if the argument is negative
-fails:String#<< with Integer raises a RuntimeError when self is frozen

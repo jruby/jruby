@@ -16,8 +16,16 @@ import com.oracle.truffle.api.frame.FrameInstance;
 import com.oracle.truffle.api.frame.FrameInstanceVisitor;
 import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.nodes.NodeUtil;
+import com.oracle.truffle.api.object.BooleanLocation;
+import com.oracle.truffle.api.object.FinalLocationException;
+import com.oracle.truffle.api.object.IncompatibleLocationException;
+import com.oracle.truffle.api.object.Location;
+import com.oracle.truffle.api.object.Property;
+import com.oracle.truffle.api.object.Shape;
 import org.jruby.truffle.runtime.backtrace.Backtrace;
+import org.jruby.truffle.runtime.core.RubyBasicObject;
 import org.jruby.truffle.runtime.core.RubyProc;
+import org.jruby.truffle.runtime.core.RubySymbol;
 import org.jruby.truffle.runtime.methods.InternalMethod;
 
 import java.util.ArrayList;
@@ -94,6 +102,12 @@ public abstract class DebugOperations {
         System.exit(1);
     }
 
+    public static void printBacktrace(RubyContext context, Node currentNode) {
+        for (String line : Backtrace.DISPLAY_FORMATTER.format(context, null, RubyCallStack.getBacktrace(currentNode))) {
+            System.err.println(line);
+        }
+    }
+
     public static void printASTBacktrace(final Node currentNode) {
         if (currentNode != null) {
             printMethodASTBacktrace(currentNode);
@@ -115,6 +129,64 @@ public abstract class DebugOperations {
         activeNodes.addAll(NodeUtil.findAllParents(currentNode, Node.class));
         activeNodes.add(currentNode);
         printASTForBacktrace(currentNode.getRootNode(), activeNodes, 0);
+    }
+
+    public static Object verySlowFreeze(Object o) {
+        if ((o instanceof Boolean) ||
+                (o instanceof Integer) ||
+                (o instanceof Long) ||
+                (o instanceof Double) ||
+                (o instanceof RubySymbol)) {
+            return o;
+        }
+
+        final RubyBasicObject object = (RubyBasicObject) o;
+
+        object.getOperations().setInstanceVariable(object, RubyBasicObject.FROZEN_IDENTIFIER, true);
+
+        return o;
+    }
+
+    public static boolean verySlowIsFrozen(Object o) {
+        if ((o instanceof Boolean) ||
+                (o instanceof Integer) ||
+                (o instanceof Long) ||
+                (o instanceof Double) ||
+                (o instanceof RubySymbol)) {
+            return true;
+        }
+
+        final RubyBasicObject object = (RubyBasicObject) o;
+
+        final Shape layout = object.getDynamicObject().getShape();
+        final Property property = layout.getProperty(RubyBasicObject.FROZEN_IDENTIFIER);
+
+        if (property == null) {
+            return false;
+        }
+
+        final Location storageLocation = property.getLocation();
+
+        return (boolean) storageLocation.get(object.getDynamicObject(), layout);
+    }
+
+    public static boolean verySlowIsTainted(Object o) {
+        if ((o instanceof Boolean) ||
+                (o instanceof Integer) ||
+                (o instanceof Long) ||
+                (o instanceof Double) ||
+                (o instanceof RubySymbol)) {
+            return false;
+        }
+
+        final RubyBasicObject object = (RubyBasicObject) o;
+
+        final Shape layout = object.getDynamicObject().getShape();
+        final Property property = layout.getProperty(RubyBasicObject.TAINTED_IDENTIFIER);
+
+        final Location storageLocation = property.getLocation();
+
+        return (boolean) storageLocation.get(object.getDynamicObject(), layout);
     }
 
     private static void printASTForBacktrace(Node node, List<Node> activeNodes, int indentation) {

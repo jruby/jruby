@@ -1,9 +1,3 @@
-fails:Kernel#singleton_class returns class extended from an object
-fails:Kernel#singleton_class returns NilClass for nil
-fails:Kernel#singleton_class returns TrueClass for true
-fails:Kernel#singleton_class returns FalseClass for false
-fails:Kernel#singleton_class raises TypeError for Fixnum
-fails:Kernel#singleton_class raises TypeError for Symbol
 fails:Kernel#singleton_class? returns true for singleton classes
 fails:Kernel#singleton_class? returns false for other objects
 fails:Kernel#singleton_class? with singleton values returns false for nil's singleton class

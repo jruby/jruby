@@ -19,7 +19,7 @@ import java.util.Set;
 import java.util.List;
 
 public class LiveVariableAnalysis extends CompilerPass {
-    public static List<Class<? extends CompilerPass>> DEPENDENCIES = Arrays.<Class<? extends CompilerPass>>asList(CFGBuilder.class);
+    public static List<Class<? extends CompilerPass>> DEPENDENCIES = Arrays.<Class<? extends CompilerPass>>asList(CFGBuilder.class, OptimizeDynScopesPass.class);
 
     @Override
     public String getLabel() {
@@ -72,13 +72,8 @@ public class LiveVariableAnalysis extends CompilerPass {
         LiveVariablesProblem lvp = new LiveVariablesProblem(scope);
 
         if (scope instanceof IRClosure) {
-            // Go conservative! Normally, closure scopes are analyzed
-            // in the context of their outermost method scopes where we
-            // have better knowledge of aliveness in that global context.
-            //
-            // But, if we are analyzing closures standalone, we have to
-            // conservatively assume that any dirtied variables that
-            // belong to an outer scope are live on exit.
+            // We have to conservatively assume that any dirtied variables
+            // that belong to an outer scope are live on exit.
             Set<LocalVariable> nlVars = new HashSet<LocalVariable>();
             collectNonLocalDirtyVars((IRClosure)scope, nlVars, scope.getFlags().contains(IRFlags.DYNSCOPE_ELIMINATED) ? -1 : 0);
 

@@ -83,8 +83,8 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
     private ByteList str = ByteList.EMPTY_BYTELIST;
     private RegexpOptions options;
 
-    public static final int ARG_ENCODING_FIXED     =   16;
-    public static final int ARG_ENCODING_NONE      =   32;
+    public static final int ARG_ENCODING_FIXED     =   ReOptions.RE_FIXED;
+    public static final int ARG_ENCODING_NONE      =   ReOptions.RE_NONE;
 
     public void setLiteral() {
         options.setLiteral(true);
@@ -206,8 +206,8 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
         regexpClass.defineConstant("EXTENDED", runtime.newFixnum(RE_OPTION_EXTENDED));
         regexpClass.defineConstant("MULTILINE", runtime.newFixnum(RE_OPTION_MULTILINE));
 
-        regexpClass.defineConstant("FIXEDENCODING", runtime.newFixnum(ARG_ENCODING_FIXED));
-        regexpClass.defineConstant("NOENCODING", runtime.newFixnum(ARG_ENCODING_NONE));
+        regexpClass.defineConstant("FIXEDENCODING", runtime.newFixnum(RE_FIXED));
+        regexpClass.defineConstant("NOENCODING", runtime.newFixnum(RE_NONE));
 
         regexpClass.defineAnnotatedMethods(RubyRegexp.class);
         regexpClass.getSingletonClass().defineAlias("compile", "new");
@@ -2146,7 +2146,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
         
         int options = regexp.pattern.getOptions() & EMBEDDABLE;
 
-        if (regexp.getOptions().isFixed()) options |= ARG_ENCODING_FIXED;
+        if (regexp.getOptions().isFixed()) options |= RE_FIXED;
         
         output.writeByte(options);
     }

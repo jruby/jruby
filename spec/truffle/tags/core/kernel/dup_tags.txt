@@ -1,5 +1,0 @@
-fails:Kernel#dup calls #initialize_copy on the new instance
-fails:Kernel#dup copies instance variables
-fails:Kernel#dup does not copy singleton methods
-fails:Kernel#dup does not copy modules included in the singleton class
-fails:Kernel#dup does not copy constants defined in the singleton class

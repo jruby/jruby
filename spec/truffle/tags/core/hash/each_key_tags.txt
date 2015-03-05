@@ -1,5 +1,0 @@
-fails:Hash#each_key calls block once for each key, passing key
-fails:Hash#each_key processes keys in the same order as keys()
-fails:Hash#each_key returns an Enumerator if called on a non-empty hash without a block
-fails:Hash#each_key returns an Enumerator if called on an empty hash without a block
-fails:Hash#each_key returns an Enumerator if called on a frozen instance

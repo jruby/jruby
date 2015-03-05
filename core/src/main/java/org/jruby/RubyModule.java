@@ -1421,10 +1421,10 @@ public class RubyModule extends RubyObject {
         final Ruby runtime = context.runtime;
 
         if (visibility == PRIVATE) {
-            //FIXME warning
+            runtime.getWarnings().warn(ID.PRIVATE_ACCESSOR, "private attribute?");
         } else if (visibility == MODULE_FUNCTION) {
+            runtime.getWarnings().warn(ID.ACCESSOR_MODULE_FUNCTION, "attribute accessor as module_function");
             visibility = PRIVATE;
-            // FIXME warning
         }
 
         if (!(IdUtil.isLocal(internedName) || IdUtil.isConstant(internedName))) {

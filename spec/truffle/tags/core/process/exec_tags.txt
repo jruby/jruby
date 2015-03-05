@@ -5,11 +5,9 @@ fails:Process.exec raises Errno::EACCES when the file does not have execute perm
 fails:Process.exec raises Errno::EACCES when passed a directory
 fails:Process.exec runs the specified command, replacing current process
 fails:Process.exec sets the current directory when given the :chdir option
-fails:Process.exec flushes STDOUT upon exit when it's not set to sync
 fails:Process.exec flushes STDERR upon exit when it's not set to sync
 fails:Process.exec with a single argument subjects the specified command to shell expansion
 fails:Process.exec with a single argument creates an argument array with shell parsing semantics for whitespace
-fails:Process.exec with multiple arguments does not subject the arguments to shell expansion
 fails:Process.exec (environment variables) sets environment variables in the child environment
 fails:Process.exec (environment variables) unsets environment variables whose value is nil
 fails:Process.exec (environment variables) coerces environment argument using to_hash

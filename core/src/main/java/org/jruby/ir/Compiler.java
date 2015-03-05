@@ -11,6 +11,7 @@ import org.jruby.ast.executable.Script;
 import org.jruby.ast.executable.ScriptAndCode;
 import org.jruby.compiler.NotCompilableException;
 import org.jruby.ir.interpreter.BeginEndInterpreterContext;
+import org.jruby.ir.interpreter.Interpreter;
 import org.jruby.ir.operands.IRException;
 import org.jruby.ir.runtime.IRBreakJump;
 import org.jruby.ir.targets.JVMVisitor;
@@ -54,8 +55,8 @@ public class Compiler extends IRTranslator<ScriptAndCode, ClassDefininngJRubyCla
             bytecode = visitor.compileToBytecode(scope);
             compiled = visitor.defineFromBytecode(scope, bytecode, classLoader);
 
-            Method compiledMethod = compiled.getMethod("__script__", ThreadContext.class,
-                    StaticScope.class, IRubyObject.class, IRubyObject[].class, Block.class, RubyModule.class);
+            Method compiledMethod = compiled.getMethod("RUBY$script", ThreadContext.class,
+                    StaticScope.class, IRubyObject.class, IRubyObject[].class, Block.class, RubyModule.class, String.class);
             _compiledHandle = MethodHandles.publicLookup().unreflect(compiledMethod);
         } catch (NotCompilableException nce) {
             throw nce;
@@ -69,7 +70,7 @@ public class Compiler extends IRTranslator<ScriptAndCode, ClassDefininngJRubyCla
             @Override
             public IRubyObject __file__(ThreadContext context, IRubyObject self, IRubyObject[] args, Block block) {
                 try {
-                    return (IRubyObject) compiledHandle.invokeWithArguments(context, scope.getStaticScope(), self, IRubyObject.NULL_ARRAY, block, self.getMetaClass());
+                    return (IRubyObject) compiledHandle.invokeWithArguments(context, scope.getStaticScope(), self, IRubyObject.NULL_ARRAY, block, self.getMetaClass(), Interpreter.ROOT);
                 } catch (Throwable t) {
                     Helpers.throwException(t);
                     return null; // not reached
@@ -109,7 +110,7 @@ public class Compiler extends IRTranslator<ScriptAndCode, ClassDefininngJRubyCla
 
                 try {
 //                    runBeginEndBlocks(ic.getBeginBlocks(), context, self, scope, null);
-                    return (IRubyObject) compiledHandle.invokeWithArguments(context, sscope, self, IRubyObject.NULL_ARRAY, Block.NULL_BLOCK, currModule);
+                    return (IRubyObject) compiledHandle.invokeWithArguments(context, sscope, self, IRubyObject.NULL_ARRAY, Block.NULL_BLOCK, currModule, Interpreter.ROOT);
                 } catch (IRBreakJump bj) {
                     throw IRException.BREAK_LocalJumpError.getException(context.runtime);
                 } catch (Throwable t) {

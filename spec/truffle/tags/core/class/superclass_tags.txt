@@ -1,3 +1,1 @@
 fails:Class#superclass returns the superclass of self
-fails:Class#superclass for a singleton class of an object returns the class of the object
-fails:Class#superclass for a singleton class of a class returns the singleton class of its superclass

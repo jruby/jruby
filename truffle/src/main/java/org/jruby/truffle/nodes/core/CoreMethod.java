@@ -40,6 +40,9 @@ public @interface CoreMethod {
 
     boolean needsSelf() default true;
 
+    // TODO CS 3-Mar-15 needsSelf() gets ignored in some cases - see CoreMethodNodeManager#addMethod
+    boolean reallyDoesNeedSelf() default false;
+
     int required() default 0;
 
     int optional() default 0;
@@ -55,7 +58,13 @@ public @interface CoreMethod {
 
     int[] lowerFixnumParameters() default {};
 
-    int taintFrom() default -1;
+    boolean taintFromSelf() default false;
+
+    int[] taintFromParameters() default {};
+
+    boolean raiseIfFrozenSelf() default false;
+
+    int[] raiseIfFrozenParameters() default {};
 
     UnsupportedOperationBehavior unsupportedOperationBehavior() default UnsupportedOperationBehavior.TYPE_ERROR;
 

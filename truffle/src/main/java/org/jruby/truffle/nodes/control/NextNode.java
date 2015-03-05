@@ -27,8 +27,6 @@ public class NextNode extends RubyNode {
 
     @Override
     public Object execute(VirtualFrame frame) {
-        notDesignedForCompilation();
-
         throw new NextException(child.execute(frame));
     }
 

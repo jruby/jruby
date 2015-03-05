@@ -1,26 +1,7 @@
 fails:Symbol#slice with an Integer index returns the character code of the element at the index
 fails:Symbol#slice with an Integer index returns nil if the index starts from the end and is greater than the length
 fails:Symbol#slice with an Integer index returns nil if the index is greater than the length
-fails:Symbol#slice with an Integer index and length and a positive index and length returns a slice
-fails:Symbol#slice with an Integer index and length and a positive index and length returns a blank slice if the length is 0
-fails:Symbol#slice with an Integer index and length and a positive index and length returns a slice of all remaining characters if the given length is greater than the actual length
-fails:Symbol#slice with an Integer index and length and a positive index and length returns nil if the index is greater than the length
-fails:Symbol#slice with an Integer index and length and a positive index and negative length returns nil
-fails:Symbol#slice with an Integer index and length and a negative index and positive length returns a slice starting from the end upto the length
-fails:Symbol#slice with an Integer index and length and a negative index and positive length returns a blank slice if the length is 0
-fails:Symbol#slice with an Integer index and length and a negative index and positive length returns a slice of all remaining characters if the given length is larger than the actual length
-fails:Symbol#slice with an Integer index and length and a negative index and positive length returns nil if the index is past the start
-fails:Symbol#slice with an Integer index and length and a negative index and negative length returns nil
-fails:Symbol#slice with an Integer index and length and a Float length converts the length to an Integer
-fails:Symbol#slice with an Integer index and length and a nil length raises a TypeError
-fails:Symbol#slice with an Integer index and length and a length that cannot be converted into an Integer raises a TypeError when given an Array
-fails:Symbol#slice with an Integer index and length and a length that cannot be converted into an Integer raises a TypeError when given an Hash
-fails:Symbol#slice with an Integer index and length and a length that cannot be converted into an Integer raises a TypeError when given an Object
 fails:Symbol#slice with a Float index converts the index to an Integer
-fails:Symbol#slice with a nil index raises a TypeError
-fails:Symbol#slice with an index that cannot be converted into an Integer raises a TypeError when given an Array
-fails:Symbol#slice with an index that cannot be converted into an Integer raises a TypeError when given an Hash
-fails:Symbol#slice with an index that cannot be converted into an Integer raises a TypeError when given an Object
 fails:Symbol#slice with a Range slice that is within bounds returns a slice if both range values begin at the start and are within bounds
 fails:Symbol#slice with a Range slice that is within bounds returns a slice if the first range value begins at the start and the last begins at the end
 fails:Symbol#slice with a Range slice that is within bounds returns a slice if the first range value begins at the end and the last begins at the end
@@ -31,24 +12,8 @@ fails:Symbol#slice with a Range slice that is out of bounds returns nil if the f
 fails:Symbol#slice with a Range slice with Float values converts the first value to an Integer
 fails:Symbol#slice with a Range slice with Float values converts the last value to an Integer
 fails:Symbol#slice with a Range subclass slice returns a slice
-fails:Symbol#slice with a Regex slice without a capture index returns a string of the match
-fails:Symbol#slice with a Regex slice without a capture index returns nil if the expression does not match
-fails:Symbol#slice with a Regex slice without a capture index sets $~ to the MatchData if there is a match
-fails:Symbol#slice with a Regex slice without a capture index does not set $~ if there if there is not a match
 fails:Symbol#slice with a Regex slice without a capture index returns a tainted string if the regexp is tainted
 fails:Symbol#slice with a Regex slice without a capture index returns an untrusted string if the regexp is untrusted
-fails:Symbol#slice with a Regex slice with a capture index returns a string of the complete match if the capture index is 0
-fails:Symbol#slice with a Regex slice with a capture index returns a string for the matched capture at the given index
-fails:Symbol#slice with a Regex slice with a capture index returns nil if there is no capture for the index
-fails:Symbol#slice with a Regex slice with a capture index converts the index to an Integer
-fails:Symbol#slice with a Regex slice with a capture index returns a tainted string if the regexp is tainted
-fails:Symbol#slice with a Regex slice with a capture index returns an untrusted string if the regexp is untrusted
-fails:Symbol#slice with a Regex slice with a capture index raises a TypeError if the index is nil
-fails:Symbol#slice with a Regex slice with a capture index sets $~ to the MatchData if there is a match
-fails:Symbol#slice with a Regex slice with a capture index does not set $~ to the MatchData if there is not a match
-fails:Symbol#slice with a Regex slice with a capture index and an index that cannot be converted to an Integer raises a TypeError when given an Hash
-fails:Symbol#slice with a Regex slice with a capture index and an index that cannot be converted to an Integer raises a TypeError when given an Array
-fails:Symbol#slice with a Regex slice with a capture index and an index that cannot be converted to an Integer raises a TypeError when given an Object
 fails:Symbol#slice with a String slice does not set $~
 fails:Symbol#slice with a String slice returns a string if there is match
 fails:Symbol#slice with a String slice returns nil if there is not a match

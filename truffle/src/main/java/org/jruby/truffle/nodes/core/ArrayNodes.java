@@ -340,7 +340,7 @@ public abstract class ArrayNodes {
 
     }
 
-    @CoreMethod(names = "[]=", required = 2, optional = 1, lowerFixnumParameters = 0)
+    @CoreMethod(names = "[]=", required = 2, optional = 1, lowerFixnumParameters = 0, raiseIfFrozenSelf = true)
     public abstract static class IndexSetNode extends ArrayCoreMethodNode {
 
         @Child private ArrayWriteDenormalizedNode writeNode;
@@ -543,7 +543,7 @@ public abstract class ArrayNodes {
 
     }
 
-    @CoreMethod(names = "compact!")
+    @CoreMethod(names = "compact!", raiseIfFrozenSelf = true)
     public abstract static class CompactBangNode extends ArrayCoreMethodNode {
 
         public CompactBangNode(RubyContext context, SourceSection sourceSection) {
@@ -556,15 +556,11 @@ public abstract class ArrayNodes {
 
         @Specialization(guards = "!isObject")
         public RubyNilClass compactNotObjects(RubyArray array) {
-            array.checkFrozen(this);
-
             return getContext().getCoreLibrary().getNilObject();
         }
 
         @Specialization(guards = "isObject")
         public Object compactObjects(RubyArray array) {
-            array.checkFrozen(this);
-
             final Object[] store = (Object[]) array.getStore();
             final int size = array.getSize();
 
@@ -1301,11 +1297,11 @@ public abstract class ArrayNodes {
             dispatch = prev.dispatch;
         }
 
-        @Specialization(guards = "isObject")
-        public Object injectObject(VirtualFrame frame, RubyArray array, Object initial, RubyProc block) {
+        @Specialization(guards = "isIntegerFixnum")
+        public Object injectIntegerFixnum(VirtualFrame frame, RubyArray array, Object initial, RubyProc block) {
             int count = 0;
 
-            final Object[] store = (Object[]) array.getStore();
+            final int[] store = (int[]) array.getStore();
 
             Object accumulator = initial;
 
@@ -1326,20 +1322,76 @@ public abstract class ArrayNodes {
             return accumulator;
         }
 
-        @Specialization
-        public Object inject(VirtualFrame frame, RubyArray array, Object initial, RubyProc block) {
-            notDesignedForCompilation();
+        @Specialization(guards = "isLongFixnum")
+        public Object injectLongFixnum(VirtualFrame frame, RubyArray array, Object initial, RubyProc block) {
+            int count = 0;
 
-            final Object[] store = array.slowToArray();
-
-            if (store.length < 2) {
-                throw new UnsupportedOperationException();
-            }
+            final long[] store = (long[]) array.getStore();
 
             Object accumulator = initial;
 
-            for (int n = 0; n < array.getSize(); n++) {
-                accumulator = yield(frame, block, accumulator, store[n]);
+            try {
+                for (int n = 0; n < array.getSize(); n++) {
+                    if (CompilerDirectives.inInterpreter()) {
+                        count++;
+                    }
+
+                    accumulator = yield(frame, block, accumulator, store[n]);
+                }
+            } finally {
+                if (CompilerDirectives.inInterpreter()) {
+                    getRootNode().reportLoopCount(count);
+                }
+            }
+
+            return accumulator;
+        }
+
+        @Specialization(guards = "isFloat")
+        public Object injectFloat(VirtualFrame frame, RubyArray array, Object initial, RubyProc block) {
+            int count = 0;
+
+            final double[] store = (double[]) array.getStore();
+
+            Object accumulator = initial;
+
+            try {
+                for (int n = 0; n < array.getSize(); n++) {
+                    if (CompilerDirectives.inInterpreter()) {
+                        count++;
+                    }
+
+                    accumulator = yield(frame, block, accumulator, store[n]);
+                }
+            } finally {
+                if (CompilerDirectives.inInterpreter()) {
+                    getRootNode().reportLoopCount(count);
+                }
+            }
+
+            return accumulator;
+        }
+
+        @Specialization(guards = "isObject")
+        public Object injectObject(VirtualFrame frame, RubyArray array, Object initial, RubyProc block) {
+            int count = 0;
+
+            final Object[] store = (Object[]) array.getStore();
+
+            Object accumulator = initial;
+
+            try {
+                for (int n = 0; n < array.getSize(); n++) {
+                    if (CompilerDirectives.inInterpreter()) {
+                        count++;
+                    }
+
+                    accumulator = yield(frame, block, accumulator, store[n]);
+                }
+            } finally {
+                if (CompilerDirectives.inInterpreter()) {
+                    getRootNode().reportLoopCount(count);
+                }
             }
 
             return accumulator;

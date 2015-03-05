@@ -1,9 +1,3 @@
-fails:Kernel#block_given? returns true if and only if a block is supplied
 fails:Kernel#block_given? returns false when a method defined by define_method is called with a block
-fails:Kernel#block_given? returns false outside of a method
-fails:Kernel#block_given? is a private method
-fails:Kernel.block_given? returns true if and only if a block is supplied
 fails:Kernel.block_given? returns false when a method defined by define_method is called with a block
 fails:self.send(:block_given?) returns true if and only if a block is supplied
-fails:self.send(:block_given?) returns false when a method defined by define_method is called with a block
-fails:Kernel.block_given? needs to be reviewed for spec completeness

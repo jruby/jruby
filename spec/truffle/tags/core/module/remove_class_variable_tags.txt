@@ -1,4 +1,3 @@
-fails:Module#remove_class_variable removes class variable
 fails:Module#remove_class_variable returns the value of removing class variable
 fails:Module#remove_class_variable removes a class variable defined in a metaclass
 fails:Module#remove_class_variable raises a NameError when passed a symbol with one leading @

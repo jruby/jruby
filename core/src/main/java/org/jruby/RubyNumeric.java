@@ -459,20 +459,32 @@ public class RubyNumeric extends RubyObject {
      * 
      */
     protected final RubyArray doCoerce(ThreadContext context, IRubyObject other, boolean err) {
+        Ruby runtime = context.runtime;
         IRubyObject result;
 
-        IRubyObject savedError = context.runtime.getGlobalVariables().get("$!"); // Svae $!
+        IRubyObject savedError = runtime.getGlobalVariables().get("$!"); // Svae $!
+
+        if (!other.respondsTo("coerce")) {
+            if (err) {
+                coerceRescue(context, other);
+            }
+            return null;
+        }
         try {
             result = coerceBody(context, other);
         } catch (RaiseException e) {
-            RubyWarnings warnings = context.runtime.getWarnings();
-            warnings.warn("Numerical comparison operators will no more rescue exceptions of #coerce");
-            warnings.warn("in the next release. Return nil in #coerce if the coercion is impossible.");
-            if (err) {
-                coerceFailed(context, other);
+            if (e.getException().kind_of_p(context, runtime.getStandardError()).isTrue()) {
+                RubyWarnings warnings = context.runtime.getWarnings();
+                warnings.warn("Numerical comparison operators will no more rescue exceptions of #coerce");
+                warnings.warn("in the next release. Return nil in #coerce if the coercion is impossible.");
+                if (err) {
+                    coerceFailed(context, other);
+                }
+                context.runtime.getGlobalVariables().set("$!", savedError); // Restore $!
+                return null;
+            } else {
+                throw e;
             }
-            context.runtime.getGlobalVariables().set("$!", savedError); // Restore $!
-            return null;
         }
     
         if (!(result instanceof RubyArray) || ((RubyArray) result).getLength() != 2) {
@@ -486,6 +498,14 @@ public class RubyNumeric extends RubyObject {
             return null;
         }
         return (RubyArray) result;
+    }
+
+    /** coerce_rescue
+     *
+     */
+    protected final IRubyObject coerceRescue(ThreadContext context, IRubyObject other) {
+        coerceFailed(context, other);
+        return context.runtime.getNil();
     }
 
     /** coerce_failed
@@ -504,13 +524,31 @@ public class RubyNumeric extends RubyObject {
         return (ary.eltInternal(0)).callMethod(context, method, ary.eltInternal(1));
     }
     
+    /** rb_num_coerce_bit
+     *  coercion taking two arguments
+     */
+    protected final IRubyObject coerceBit(ThreadContext context, String method, IRubyObject other) {
+        if (!(other instanceof RubyFixnum) && !(other instanceof RubyBignum)) {
+            RubyArray ary = doCoerce(context, other, true);
+            IRubyObject x = ary.eltInternal(0);
+            IRubyObject y = ary.eltInternal(1);
+
+            if (!(x instanceof RubyFixnum) && !(x instanceof RubyBignum)
+                    && !(y instanceof RubyFixnum) && !(y instanceof RubyBignum)) {
+                coerceFailed(context, other);
+            }
+            return x.callMethod(context, method, y);
+        }
+        return callMethod(context, method, other);
+    }
+
     /** rb_num_coerce_cmp
      *  coercion used for comparisons
      */
     protected final IRubyObject coerceCmp(ThreadContext context, String method, IRubyObject other) {
         RubyArray ary = doCoerce(context, other, false);
         if (ary == null) {
-            return context.runtime.getNil(); // MRI does it!
+            return context.nil; // MRI does it!
         } 
         return (ary.eltInternal(0)).callMethod(context, method, ary.eltInternal(1));
     }

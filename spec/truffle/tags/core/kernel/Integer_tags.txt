@@ -1,50 +1,6 @@
-fails:Kernel.Integer raises an ArgumentError when the String contains digits out of range of radix 2
-fails:Kernel.Integer raises an ArgumentError when the String contains digits out of range of radix 3
-fails:Kernel.Integer raises an ArgumentError when the String contains digits out of range of radix 4
-fails:Kernel.Integer raises an ArgumentError when the String contains digits out of range of radix 5
-fails:Kernel.Integer raises an ArgumentError when the String contains digits out of range of radix 6
-fails:Kernel.Integer raises an ArgumentError when the String contains digits out of range of radix 7
-fails:Kernel.Integer raises an ArgumentError when the String contains digits out of range of radix 8
-fails:Kernel.Integer raises an ArgumentError when the String contains digits out of range of radix 9
-fails:Kernel.Integer raises an ArgumentError when the String contains digits out of range of radix 10
-fails:Kernel.Integer raises an ArgumentError when the String contains digits out of range of radix 11
-fails:Kernel.Integer raises an ArgumentError when the String contains digits out of range of radix 12
-fails:Kernel.Integer raises an ArgumentError when the String contains digits out of range of radix 13
-fails:Kernel.Integer raises an ArgumentError when the String contains digits out of range of radix 14
-fails:Kernel.Integer raises an ArgumentError when the String contains digits out of range of radix 15
-fails:Kernel.Integer raises an ArgumentError when the String contains digits out of range of radix 16
-fails:Kernel.Integer raises an ArgumentError when the String contains digits out of range of radix 17
-fails:Kernel.Integer raises an ArgumentError when the String contains digits out of range of radix 18
-fails:Kernel.Integer raises an ArgumentError when the String contains digits out of range of radix 19
-fails:Kernel.Integer raises an ArgumentError when the String contains digits out of range of radix 20
-fails:Kernel.Integer raises an ArgumentError when the String contains digits out of range of radix 21
-fails:Kernel.Integer raises an ArgumentError when the String contains digits out of range of radix 22
-fails:Kernel.Integer raises an ArgumentError when the String contains digits out of range of radix 23
-fails:Kernel.Integer raises an ArgumentError when the String contains digits out of range of radix 24
-fails:Kernel.Integer raises an ArgumentError when the String contains digits out of range of radix 25
-fails:Kernel.Integer raises an ArgumentError when the String contains digits out of range of radix 26
-fails:Kernel.Integer raises an ArgumentError when the String contains digits out of range of radix 27
-fails:Kernel.Integer raises an ArgumentError when the String contains digits out of range of radix 28
-fails:Kernel.Integer raises an ArgumentError when the String contains digits out of range of radix 29
-fails:Kernel.Integer raises an ArgumentError when the String contains digits out of range of radix 30
-fails:Kernel.Integer raises an ArgumentError when the String contains digits out of range of radix 31
-fails:Kernel.Integer raises an ArgumentError when the String contains digits out of range of radix 32
-fails:Kernel.Integer raises an ArgumentError when the String contains digits out of range of radix 33
-fails:Kernel.Integer raises an ArgumentError when the String contains digits out of range of radix 34
-fails:Kernel.Integer raises an ArgumentError when the String contains digits out of range of radix 35
-fails:Kernel.Integer raises an ArgumentError when the String contains digits out of range of radix 36
 fails:Kernel.Integer returns a Bignum for a Bignum
-fails:Kernel.Integer returns a Fixnum for a Fixnum
-fails:Kernel.Integer uncritically return the value of to_int even if it is not an Integer
-fails:Kernel.Integer raises a TypeError when passed nil
-fails:Kernel.Integer returns a Fixnum or Bignum object
-fails:Kernel.Integer truncates Floats
-fails:Kernel.Integer calls to_i on Rationals
-fails:Kernel.Integer returns the value of to_int if the result is a Fixnum
-fails:Kernel.Integer returns the value of to_int if the result is a Bignum
 fails:Kernel.Integer calls to_i on an object whose to_int returns nil
 fails:Kernel.Integer raises a TypeError if to_i returns a value that is not an Integer
-fails:Kernel.Integer raises a TypeError if no to_int or to_i methods exist
 fails:Kernel.Integer raises a TypeError if to_int returns nil and no to_i exists
 fails:Kernel.Integer raises a FloatDomainError when passed NaN
 fails:Kernel.Integer raises a FloatDomainError when passed Infinity
@@ -98,146 +54,37 @@ fails:Kernel.Integer raises an ArgumentError if the number cannot be parsed as d
 fails:Kernel.Integer parses the value as a decimal number if there's a leading 0d
 fails:Kernel.Integer is a positive decimal number if there's a leading +0d
 fails:Kernel.Integer is a negative decimal number if there's a leading -0d
-fails:Kernel.Integer raises an ArgumentError for a base of 1
-fails:Kernel.Integer raises an ArgumentError for a base of 37
 fails:Kernel.Integer accepts wholly lowercase alphabetic strings for bases > 10
 fails:Kernel.Integer accepts wholly uppercase alphabetic strings for bases > 10
 fails:Kernel.Integer accepts mixed-case alphabetic strings for bases > 10
 fails:Kernel.Integer accepts alphanumeric strings for bases > 10
-fails:Kernel.Integer raises an ArgumentError for letters invalid in the given base
 fails:Kernel.Integer parses the value as a hex number if there's a leading 0x and a base of 16
 fails:Kernel.Integer is a positive hex number if there's a leading +0x and base of 16
 fails:Kernel.Integer is a negative hex number if there's a leading -0x and a base of 16
-fails:Kernel.Integer raises an ArgumentError if the number begins with 0x and the base is 2
-fails:Kernel.Integer raises an ArgumentError if the number begins with 0x and the base is 3
-fails:Kernel.Integer raises an ArgumentError if the number begins with 0x and the base is 4
-fails:Kernel.Integer raises an ArgumentError if the number begins with 0x and the base is 5
-fails:Kernel.Integer raises an ArgumentError if the number begins with 0x and the base is 6
-fails:Kernel.Integer raises an ArgumentError if the number begins with 0x and the base is 7
-fails:Kernel.Integer raises an ArgumentError if the number begins with 0x and the base is 8
-fails:Kernel.Integer raises an ArgumentError if the number begins with 0x and the base is 9
-fails:Kernel.Integer raises an ArgumentError if the number begins with 0x and the base is 10
-fails:Kernel.Integer raises an ArgumentError if the number begins with 0x and the base is 11
-fails:Kernel.Integer raises an ArgumentError if the number begins with 0x and the base is 12
-fails:Kernel.Integer raises an ArgumentError if the number begins with 0x and the base is 13
-fails:Kernel.Integer raises an ArgumentError if the number begins with 0x and the base is 14
-fails:Kernel.Integer raises an ArgumentError if the number begins with 0x and the base is 15
-fails:Kernel.Integer raises an ArgumentError if the number cannot be parsed as hex and the base is 16
 fails:Kernel.Integer parses the value as a hex number if there's a leading 0X and a base of 16
 fails:Kernel.Integer is a positive hex number if there's a leading +0X and base of 16
 fails:Kernel.Integer is a negative hex number if there's a leading -0X and a base of 16
-fails:Kernel.Integer raises an ArgumentError if the number begins with 0X and the base is 2
-fails:Kernel.Integer raises an ArgumentError if the number begins with 0X and the base is 3
-fails:Kernel.Integer raises an ArgumentError if the number begins with 0X and the base is 4
-fails:Kernel.Integer raises an ArgumentError if the number begins with 0X and the base is 5
-fails:Kernel.Integer raises an ArgumentError if the number begins with 0X and the base is 6
-fails:Kernel.Integer raises an ArgumentError if the number begins with 0X and the base is 7
-fails:Kernel.Integer raises an ArgumentError if the number begins with 0X and the base is 8
-fails:Kernel.Integer raises an ArgumentError if the number begins with 0X and the base is 9
-fails:Kernel.Integer raises an ArgumentError if the number begins with 0X and the base is 10
-fails:Kernel.Integer raises an ArgumentError if the number begins with 0X and the base is 11
-fails:Kernel.Integer raises an ArgumentError if the number begins with 0X and the base is 12
-fails:Kernel.Integer raises an ArgumentError if the number begins with 0X and the base is 13
-fails:Kernel.Integer raises an ArgumentError if the number begins with 0X and the base is 14
-fails:Kernel.Integer raises an ArgumentError if the number begins with 0X and the base is 15
 fails:Kernel.Integer parses the value as a binary number if there's a leading 0b and the base is 2
 fails:Kernel.Integer is a positive binary number if there's a leading +0b and a base of 2
 fails:Kernel.Integer is a negative binary number if there's a leading -0b and a base of 2
-fails:Kernel.Integer raises an ArgumentError if the number cannot be parsed as binary and the base is 2
 fails:Kernel.Integer parses the value as a binary number if there's a leading 0B and the base is 2
 fails:Kernel.Integer is a positive binary number if there's a leading +0B and a base of 2
 fails:Kernel.Integer is a negative binary number if there's a leading -0B and a base of 2
 fails:Kernel.Integer parses the value as an octal number if there's a leading 0o and a base of 8
 fails:Kernel.Integer is a positive octal number if there's a leading +0o and a base of 8
 fails:Kernel.Integer is a negative octal number if there's a leading -0o and a base of 8
-fails:Kernel.Integer raises an ArgumentError if the number cannot be parsed as octal and the base is 8
-fails:Kernel.Integer raises an ArgumentError if the number begins with 0o and the base is 2
-fails:Kernel.Integer raises an ArgumentError if the number begins with 0o and the base is 3
-fails:Kernel.Integer raises an ArgumentError if the number begins with 0o and the base is 4
-fails:Kernel.Integer raises an ArgumentError if the number begins with 0o and the base is 5
-fails:Kernel.Integer raises an ArgumentError if the number begins with 0o and the base is 6
-fails:Kernel.Integer raises an ArgumentError if the number begins with 0o and the base is 7
 fails:Kernel.Integer parses the value as an octal number if there's a leading 0O and a base of 8
 fails:Kernel.Integer is a positive octal number if there's a leading +0O and a base of 8
 fails:Kernel.Integer is a negative octal number if there's a leading -0O and a base of 8
-fails:Kernel.Integer raises an ArgumentError if the number begins with 0O and the base is 2
-fails:Kernel.Integer raises an ArgumentError if the number begins with 0O and the base is 3
-fails:Kernel.Integer raises an ArgumentError if the number begins with 0O and the base is 4
-fails:Kernel.Integer raises an ArgumentError if the number begins with 0O and the base is 5
-fails:Kernel.Integer raises an ArgumentError if the number begins with 0O and the base is 6
-fails:Kernel.Integer raises an ArgumentError if the number begins with 0O and the base is 7
 fails:Kernel.Integer parses the value as a decimal number if there's a leading 0D and a base of 10
 fails:Kernel.Integer is a positive decimal number if there's a leading +0D and a base of 10
 fails:Kernel.Integer is a negative decimal number if there's a leading -0D and a base of 10
-fails:Kernel.Integer raises an ArgumentError if the number cannot be parsed as decimal and the base is 10
-fails:Kernel.Integer raises an ArgumentError if the number begins with 0D and the base is 2
-fails:Kernel.Integer raises an ArgumentError if the number begins with 0D and the base is 3
-fails:Kernel.Integer raises an ArgumentError if the number begins with 0D and the base is 4
-fails:Kernel.Integer raises an ArgumentError if the number begins with 0D and the base is 5
-fails:Kernel.Integer raises an ArgumentError if the number begins with 0D and the base is 6
-fails:Kernel.Integer raises an ArgumentError if the number begins with 0D and the base is 7
-fails:Kernel.Integer raises an ArgumentError if the number begins with 0D and the base is 8
-fails:Kernel.Integer raises an ArgumentError if the number begins with 0D and the base is 9
-fails:Kernel.Integer raises an ArgumentError if a base is given for a non-String value
 fails:Kernel.Integer parses the value as a decimal number if there's a leading 0d and a base of 10
 fails:Kernel.Integer is a positive decimal number if there's a leading +0d and a base of 10
 fails:Kernel.Integer is a negative decimal number if there's a leading -0d and a base of 10
-fails:Kernel.Integer raises an ArgumentError if the number begins with 0d and the base is 2
-fails:Kernel.Integer raises an ArgumentError if the number begins with 0d and the base is 3
-fails:Kernel.Integer raises an ArgumentError if the number begins with 0d and the base is 4
-fails:Kernel.Integer raises an ArgumentError if the number begins with 0d and the base is 5
-fails:Kernel.Integer raises an ArgumentError if the number begins with 0d and the base is 6
-fails:Kernel.Integer raises an ArgumentError if the number begins with 0d and the base is 7
-fails:Kernel.Integer raises an ArgumentError if the number begins with 0d and the base is 8
-fails:Kernel.Integer raises an ArgumentError if the number begins with 0d and the base is 9
-fails:Kernel.Integer is a public method
-fails:Kernel#Integer raises an ArgumentError when the String contains digits out of range of radix 2
-fails:Kernel#Integer raises an ArgumentError when the String contains digits out of range of radix 3
-fails:Kernel#Integer raises an ArgumentError when the String contains digits out of range of radix 4
-fails:Kernel#Integer raises an ArgumentError when the String contains digits out of range of radix 5
-fails:Kernel#Integer raises an ArgumentError when the String contains digits out of range of radix 6
-fails:Kernel#Integer raises an ArgumentError when the String contains digits out of range of radix 7
-fails:Kernel#Integer raises an ArgumentError when the String contains digits out of range of radix 8
-fails:Kernel#Integer raises an ArgumentError when the String contains digits out of range of radix 9
-fails:Kernel#Integer raises an ArgumentError when the String contains digits out of range of radix 10
-fails:Kernel#Integer raises an ArgumentError when the String contains digits out of range of radix 11
-fails:Kernel#Integer raises an ArgumentError when the String contains digits out of range of radix 12
-fails:Kernel#Integer raises an ArgumentError when the String contains digits out of range of radix 13
-fails:Kernel#Integer raises an ArgumentError when the String contains digits out of range of radix 14
-fails:Kernel#Integer raises an ArgumentError when the String contains digits out of range of radix 15
-fails:Kernel#Integer raises an ArgumentError when the String contains digits out of range of radix 16
-fails:Kernel#Integer raises an ArgumentError when the String contains digits out of range of radix 17
-fails:Kernel#Integer raises an ArgumentError when the String contains digits out of range of radix 18
-fails:Kernel#Integer raises an ArgumentError when the String contains digits out of range of radix 19
-fails:Kernel#Integer raises an ArgumentError when the String contains digits out of range of radix 20
-fails:Kernel#Integer raises an ArgumentError when the String contains digits out of range of radix 21
-fails:Kernel#Integer raises an ArgumentError when the String contains digits out of range of radix 22
-fails:Kernel#Integer raises an ArgumentError when the String contains digits out of range of radix 23
-fails:Kernel#Integer raises an ArgumentError when the String contains digits out of range of radix 24
-fails:Kernel#Integer raises an ArgumentError when the String contains digits out of range of radix 25
-fails:Kernel#Integer raises an ArgumentError when the String contains digits out of range of radix 26
-fails:Kernel#Integer raises an ArgumentError when the String contains digits out of range of radix 27
-fails:Kernel#Integer raises an ArgumentError when the String contains digits out of range of radix 28
-fails:Kernel#Integer raises an ArgumentError when the String contains digits out of range of radix 29
-fails:Kernel#Integer raises an ArgumentError when the String contains digits out of range of radix 30
-fails:Kernel#Integer raises an ArgumentError when the String contains digits out of range of radix 31
-fails:Kernel#Integer raises an ArgumentError when the String contains digits out of range of radix 32
-fails:Kernel#Integer raises an ArgumentError when the String contains digits out of range of radix 33
-fails:Kernel#Integer raises an ArgumentError when the String contains digits out of range of radix 34
-fails:Kernel#Integer raises an ArgumentError when the String contains digits out of range of radix 35
-fails:Kernel#Integer raises an ArgumentError when the String contains digits out of range of radix 36
 fails:Kernel#Integer returns a Bignum for a Bignum
-fails:Kernel#Integer returns a Fixnum for a Fixnum
-fails:Kernel#Integer uncritically return the value of to_int even if it is not an Integer
-fails:Kernel#Integer raises a TypeError when passed nil
-fails:Kernel#Integer returns a Fixnum or Bignum object
-fails:Kernel#Integer truncates Floats
-fails:Kernel#Integer calls to_i on Rationals
-fails:Kernel#Integer returns the value of to_int if the result is a Fixnum
-fails:Kernel#Integer returns the value of to_int if the result is a Bignum
 fails:Kernel#Integer calls to_i on an object whose to_int returns nil
 fails:Kernel#Integer raises a TypeError if to_i returns a value that is not an Integer
-fails:Kernel#Integer raises a TypeError if no to_int or to_i methods exist
 fails:Kernel#Integer raises a TypeError if to_int returns nil and no to_i exists
 fails:Kernel#Integer raises a FloatDomainError when passed NaN
 fails:Kernel#Integer raises a FloatDomainError when passed Infinity
@@ -291,96 +138,31 @@ fails:Kernel#Integer raises an ArgumentError if the number cannot be parsed as d
 fails:Kernel#Integer parses the value as a decimal number if there's a leading 0d
 fails:Kernel#Integer is a positive decimal number if there's a leading +0d
 fails:Kernel#Integer is a negative decimal number if there's a leading -0d
-fails:Kernel#Integer raises an ArgumentError for a base of 1
-fails:Kernel#Integer raises an ArgumentError for a base of 37
 fails:Kernel#Integer accepts wholly lowercase alphabetic strings for bases > 10
 fails:Kernel#Integer accepts wholly uppercase alphabetic strings for bases > 10
 fails:Kernel#Integer accepts mixed-case alphabetic strings for bases > 10
 fails:Kernel#Integer accepts alphanumeric strings for bases > 10
-fails:Kernel#Integer raises an ArgumentError for letters invalid in the given base
 fails:Kernel#Integer parses the value as a hex number if there's a leading 0x and a base of 16
 fails:Kernel#Integer is a positive hex number if there's a leading +0x and base of 16
 fails:Kernel#Integer is a negative hex number if there's a leading -0x and a base of 16
-fails:Kernel#Integer raises an ArgumentError if the number begins with 0x and the base is 2
-fails:Kernel#Integer raises an ArgumentError if the number begins with 0x and the base is 3
-fails:Kernel#Integer raises an ArgumentError if the number begins with 0x and the base is 4
-fails:Kernel#Integer raises an ArgumentError if the number begins with 0x and the base is 5
-fails:Kernel#Integer raises an ArgumentError if the number begins with 0x and the base is 6
-fails:Kernel#Integer raises an ArgumentError if the number begins with 0x and the base is 7
-fails:Kernel#Integer raises an ArgumentError if the number begins with 0x and the base is 8
-fails:Kernel#Integer raises an ArgumentError if the number begins with 0x and the base is 9
-fails:Kernel#Integer raises an ArgumentError if the number begins with 0x and the base is 10
-fails:Kernel#Integer raises an ArgumentError if the number begins with 0x and the base is 11
-fails:Kernel#Integer raises an ArgumentError if the number begins with 0x and the base is 12
-fails:Kernel#Integer raises an ArgumentError if the number begins with 0x and the base is 13
-fails:Kernel#Integer raises an ArgumentError if the number begins with 0x and the base is 14
-fails:Kernel#Integer raises an ArgumentError if the number begins with 0x and the base is 15
-fails:Kernel#Integer raises an ArgumentError if the number cannot be parsed as hex and the base is 16
 fails:Kernel#Integer parses the value as a hex number if there's a leading 0X and a base of 16
 fails:Kernel#Integer is a positive hex number if there's a leading +0X and base of 16
 fails:Kernel#Integer is a negative hex number if there's a leading -0X and a base of 16
-fails:Kernel#Integer raises an ArgumentError if the number begins with 0X and the base is 2
-fails:Kernel#Integer raises an ArgumentError if the number begins with 0X and the base is 3
-fails:Kernel#Integer raises an ArgumentError if the number begins with 0X and the base is 4
-fails:Kernel#Integer raises an ArgumentError if the number begins with 0X and the base is 5
-fails:Kernel#Integer raises an ArgumentError if the number begins with 0X and the base is 6
-fails:Kernel#Integer raises an ArgumentError if the number begins with 0X and the base is 7
-fails:Kernel#Integer raises an ArgumentError if the number begins with 0X and the base is 8
-fails:Kernel#Integer raises an ArgumentError if the number begins with 0X and the base is 9
-fails:Kernel#Integer raises an ArgumentError if the number begins with 0X and the base is 10
-fails:Kernel#Integer raises an ArgumentError if the number begins with 0X and the base is 11
-fails:Kernel#Integer raises an ArgumentError if the number begins with 0X and the base is 12
-fails:Kernel#Integer raises an ArgumentError if the number begins with 0X and the base is 13
-fails:Kernel#Integer raises an ArgumentError if the number begins with 0X and the base is 14
-fails:Kernel#Integer raises an ArgumentError if the number begins with 0X and the base is 15
 fails:Kernel#Integer parses the value as a binary number if there's a leading 0b and the base is 2
 fails:Kernel#Integer is a positive binary number if there's a leading +0b and a base of 2
 fails:Kernel#Integer is a negative binary number if there's a leading -0b and a base of 2
-fails:Kernel#Integer raises an ArgumentError if the number cannot be parsed as binary and the base is 2
 fails:Kernel#Integer parses the value as a binary number if there's a leading 0B and the base is 2
 fails:Kernel#Integer is a positive binary number if there's a leading +0B and a base of 2
 fails:Kernel#Integer is a negative binary number if there's a leading -0B and a base of 2
 fails:Kernel#Integer parses the value as an octal number if there's a leading 0o and a base of 8
 fails:Kernel#Integer is a positive octal number if there's a leading +0o and a base of 8
 fails:Kernel#Integer is a negative octal number if there's a leading -0o and a base of 8
-fails:Kernel#Integer raises an ArgumentError if the number cannot be parsed as octal and the base is 8
-fails:Kernel#Integer raises an ArgumentError if the number begins with 0o and the base is 2
-fails:Kernel#Integer raises an ArgumentError if the number begins with 0o and the base is 3
-fails:Kernel#Integer raises an ArgumentError if the number begins with 0o and the base is 4
-fails:Kernel#Integer raises an ArgumentError if the number begins with 0o and the base is 5
-fails:Kernel#Integer raises an ArgumentError if the number begins with 0o and the base is 6
-fails:Kernel#Integer raises an ArgumentError if the number begins with 0o and the base is 7
 fails:Kernel#Integer parses the value as an octal number if there's a leading 0O and a base of 8
 fails:Kernel#Integer is a positive octal number if there's a leading +0O and a base of 8
 fails:Kernel#Integer is a negative octal number if there's a leading -0O and a base of 8
-fails:Kernel#Integer raises an ArgumentError if the number begins with 0O and the base is 2
-fails:Kernel#Integer raises an ArgumentError if the number begins with 0O and the base is 3
-fails:Kernel#Integer raises an ArgumentError if the number begins with 0O and the base is 4
-fails:Kernel#Integer raises an ArgumentError if the number begins with 0O and the base is 5
-fails:Kernel#Integer raises an ArgumentError if the number begins with 0O and the base is 6
-fails:Kernel#Integer raises an ArgumentError if the number begins with 0O and the base is 7
 fails:Kernel#Integer parses the value as a decimal number if there's a leading 0D and a base of 10
 fails:Kernel#Integer is a positive decimal number if there's a leading +0D and a base of 10
 fails:Kernel#Integer is a negative decimal number if there's a leading -0D and a base of 10
-fails:Kernel#Integer raises an ArgumentError if the number cannot be parsed as decimal and the base is 10
-fails:Kernel#Integer raises an ArgumentError if the number begins with 0D and the base is 2
-fails:Kernel#Integer raises an ArgumentError if the number begins with 0D and the base is 3
-fails:Kernel#Integer raises an ArgumentError if the number begins with 0D and the base is 4
-fails:Kernel#Integer raises an ArgumentError if the number begins with 0D and the base is 5
-fails:Kernel#Integer raises an ArgumentError if the number begins with 0D and the base is 6
-fails:Kernel#Integer raises an ArgumentError if the number begins with 0D and the base is 7
-fails:Kernel#Integer raises an ArgumentError if the number begins with 0D and the base is 8
-fails:Kernel#Integer raises an ArgumentError if the number begins with 0D and the base is 9
-fails:Kernel#Integer raises an ArgumentError if a base is given for a non-String value
 fails:Kernel#Integer parses the value as a decimal number if there's a leading 0d and a base of 10
 fails:Kernel#Integer is a positive decimal number if there's a leading +0d and a base of 10
 fails:Kernel#Integer is a negative decimal number if there's a leading -0d and a base of 10
-fails:Kernel#Integer raises an ArgumentError if the number begins with 0d and the base is 2
-fails:Kernel#Integer raises an ArgumentError if the number begins with 0d and the base is 3
-fails:Kernel#Integer raises an ArgumentError if the number begins with 0d and the base is 4
-fails:Kernel#Integer raises an ArgumentError if the number begins with 0d and the base is 5
-fails:Kernel#Integer raises an ArgumentError if the number begins with 0d and the base is 6
-fails:Kernel#Integer raises an ArgumentError if the number begins with 0d and the base is 7
-fails:Kernel#Integer raises an ArgumentError if the number begins with 0d and the base is 8
-fails:Kernel#Integer raises an ArgumentError if the number begins with 0d and the base is 9
-fails:Kernel#Integer is a private method

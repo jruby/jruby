@@ -1,3 +1,2 @@
 fails:Float#rationalize returns self as a simplified Rational with no argument
 fails:Float#rationalize simplifies self to the degree specified by a Rational argument
-fails:Float#rationalize simplifies self to the degree specified by a Float argument

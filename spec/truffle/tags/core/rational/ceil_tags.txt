@@ -1,3 +1,0 @@
-fails:Rational#ceil with a precision < 0 returns an Integer
-fails:Rational#ceil with a precision < 0 moves the truncation point n decimal places left
-fails:Rational#ceil with precision > 0 moves the truncation point n decimal places right

@@ -1,6 +1,2 @@
-fails:String#ord returns a Fixnum
-fails:String#ord returns the codepoint of the first character in the String
-fails:String#ord ignores subsequent characters
-fails:String#ord understands multibyte characters
 fails:String#ord is equivalent to #codepoints.first
 fails:String#ord raises an ArgumentError if called on an empty String

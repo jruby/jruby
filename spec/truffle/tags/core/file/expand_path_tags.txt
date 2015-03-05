@@ -14,7 +14,6 @@ fails:File.expand_path does not modify a HOME string argument
 fails:File.expand_path when HOME is not set raises an ArgumentError when passed '~' if HOME is nil
 fails:File.expand_path when HOME is not set raises an ArgumentError when passed '~/' if HOME is nil
 fails:File.expand_path when HOME is not set raises an ArgumentError when passed '~' if HOME == ''
-fails(windows):File.expand_path does not return a frozen string
 fails(windows):File.expand_path expands C:/./dir to C:/dir
 windows:File.expand_path converts a pathname to an absolute pathname, Ruby-Talk:18512
 windows:File.expand_path converts a pathname to an absolute pathname, using a complete path

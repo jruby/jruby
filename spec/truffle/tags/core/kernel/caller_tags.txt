@@ -1,1 +1,0 @@
-fails:Kernel#caller is a private method

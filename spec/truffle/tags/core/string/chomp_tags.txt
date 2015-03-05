@@ -1,17 +1,10 @@
 fails:String#chomp when passed no argument removes one trailing carrige return, newline pair
-fails:String#chomp when passed no argument taints the result if self is tainted
-fails:String#chomp when passed nil taints the result if self is tainted
 fails:String#chomp when passed '' removes a final newline
 fails:String#chomp when passed '' removes a final carriage return, newline
 fails:String#chomp when passed '' removes more than one trailing newlines
 fails:String#chomp when passed '' removes more than one trailing carriage return, newline pairs
-fails:String#chomp when passed '' taints the result if self is tainted
 fails:String#chomp when passed '\n' removes one trailing carriage return
 fails:String#chomp when passed '\n' removes one trailing carrige return, newline pair
-fails:String#chomp when passed '\n' taints the result if self is tainted
-fails:String#chomp when passed a String taints the result if self is tainted
-fails:String#chomp! raises a RuntimeError on a frozen instance when it is modified
-fails:String#chomp! raises a RuntimeError on a frozen instance when it would not be modified
 fails:String#chomp! when passed no argument returns nil if self is not modified
 fails:String#chomp! when passed no argument removes one trailing newline
 fails:String#chomp! when passed no argument removes one trailing carrige return, newline pair

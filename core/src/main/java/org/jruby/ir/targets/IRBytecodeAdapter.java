@@ -12,6 +12,7 @@ import org.jruby.compiler.impl.SkinnyMethodAdapter;
 import org.jruby.ir.IRScope;
 import org.jruby.ir.operands.UndefinedValue;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
+import org.jruby.runtime.CallType;
 import org.jruby.runtime.CompiledIRBlockBody;
 import org.jruby.runtime.Helpers;
 import org.jruby.runtime.ThreadContext;
@@ -88,7 +89,12 @@ public abstract class IRBytecodeAdapter {
     }
 
     public void loadFrameClass() {
-        // when present, should be last element in signature
+        // when present, should be second-to-last element in signature
+        adapter.aload(signature.argCount() - 2);
+    }
+
+    public void loadFrameName() {
+        // when present, should be second-to-last element in signature
         adapter.aload(signature.argCount() - 1);
     }
 
@@ -330,8 +336,9 @@ public abstract class IRBytecodeAdapter {
      * @param name name of the method to invoke
      * @param arity arity of the call
      * @param hasClosure whether a closure will be on the stack for passing
+     * @param callType
      */
-    public abstract void invokeSelf(String name, int arity, boolean hasClosure);
+    public abstract void invokeSelf(String name, int arity, boolean hasClosure, CallType callType);
 
     /**
      * Invoke a superclass method from an instance context.

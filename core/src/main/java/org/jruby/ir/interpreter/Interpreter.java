@@ -35,6 +35,7 @@ import org.jruby.util.log.LoggerFactory;
 public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
     public static final Logger LOG = LoggerFactory.getLogger("Interpreter");
     private static final IRubyObject[] EMPTY_ARGS = new IRubyObject[]{};
+    public static final String ROOT = "(root)";
     static int interpInstrsCount = 0;
 
     // we do not need instances of Interpreter
@@ -76,7 +77,7 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
     protected IRubyObject execute(Ruby runtime, IRScriptBody irScope, IRubyObject self) {
         BeginEndInterpreterContext ic = (BeginEndInterpreterContext) irScope.prepareForInterpretation();
         ThreadContext context = runtime.getCurrentContext();
-        String name = "(root)";
+        String name = ROOT;
 
         if (IRRuntimeHelpers.isDebug()) LOG.info("Executing " + ic);
 

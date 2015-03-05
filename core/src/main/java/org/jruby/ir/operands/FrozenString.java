@@ -20,24 +20,18 @@ import java.util.List;
  * for example, and modify the contents of the string.
  * This is not like a Java string.
  */
-public class FrozenString extends ImmutableLiteral {
-    final private ByteList bytelist;
-    private RubyString cached;
-
+public class FrozenString extends StringLiteral {
     public FrozenString(ByteList byteList) {
-        super(OperandType.STRING_LITERAL);
+        super(byteList);
+    }
 
-        this.bytelist = byteList;
+    public FrozenString(String s) {
+        super(s);
     }
 
     @Override
-    public Object createCacheObject(ThreadContext context) {
+    public Object retrieve(ThreadContext context, IRubyObject self, StaticScope currScope, DynamicScope currDynScope, Object[] temp) {
         return context.runtime.freezeAndDedupString(RubyString.newString(context.runtime, bytelist));
-    }
-
-    @Override
-    public int hashCode() {
-        return bytelist.hashCode();
     }
 
     @Override
@@ -53,9 +47,5 @@ public class FrozenString extends ImmutableLiteral {
     @Override
     public void visit(IRVisitor visitor) {
         visitor.FrozenString(this);
-    }
-
-    public ByteList getByteList() {
-        return bytelist;
     }
 }

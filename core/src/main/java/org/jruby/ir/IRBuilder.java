@@ -1345,21 +1345,21 @@ public class IRBuilder {
         case DASGNNODE: case GLOBALASGNNODE: case LOCALASGNNODE: case MULTIPLEASGNNODE:
         case MULTIPLEASGN19NODE: case OPASGNNODE: case OPASGNANDNODE: case OPASGNORNODE:
         case OPELEMENTASGNNODE: case INSTASGNNODE:
-            return new ConstantStringLiteral("assignment");
+            return new FrozenString("assignment");
         case ORNODE: case ANDNODE:
-            return new ConstantStringLiteral("expression");
+            return new FrozenString("expression");
         case FALSENODE:
-            return new ConstantStringLiteral("false");
+            return new FrozenString("false");
         case LOCALVARNODE: case DVARNODE:
-            return new ConstantStringLiteral("local-variable");
+            return new FrozenString("local-variable");
         case MATCH2NODE: case MATCH3NODE:
-            return new ConstantStringLiteral("method");
+            return new FrozenString("method");
         case NILNODE:
-            return new ConstantStringLiteral("nil");
+            return new FrozenString("nil");
         case SELFNODE:
-            return new ConstantStringLiteral("self");
+            return new FrozenString("self");
         case TRUENODE:
-            return new ConstantStringLiteral("true");
+            return new FrozenString("true");
         case DREGEXPNODE: case DSTRNODE: {
             final Node dNode = node;
 
@@ -1368,7 +1368,7 @@ public class IRBuilder {
                 public Operand run() {
                     build(dNode);
                     // always an expression as long as we get through here without an exception!
-                    return new ConstantStringLiteral("expression");
+                    return new FrozenString("expression");
                 }
             };
             // rescue block
@@ -1381,7 +1381,7 @@ public class IRBuilder {
             Label doneLabel = getNewLabel();
             Variable tmpVar = getValueInTemporaryVariable(v);
             addInstr(BNEInstr.create(tmpVar, manager.getNil(), doneLabel));
-            addInstr(new CopyInstr(tmpVar, new ConstantStringLiteral("expression")));
+            addInstr(new CopyInstr(tmpVar, new FrozenString("expression")));
             addInstr(new LabelInstr(doneLabel));
 
             return tmpVar;
@@ -1398,7 +1398,7 @@ public class IRBuilder {
                 addInstr(BEQInstr.create(result, manager.getNil(), undefLabel));
             }
 
-            addInstr(new CopyInstr(tmpVar, new ConstantStringLiteral("expression")));
+            addInstr(new CopyInstr(tmpVar, new FrozenString("expression")));
             addInstr(new JumpInstr(doneLabel));
             addInstr(new LabelInstr(undefLabel));
             addInstr(new CopyInstr(tmpVar, manager.getNil()));
@@ -1449,7 +1449,7 @@ public class IRBuilder {
             addInstr(new CopyInstr(tmpVar, manager.getNil()));
             addInstr(new JumpInstr(doneLabel));
             addInstr(new LabelInstr(defLabel));
-            addInstr(new CopyInstr(tmpVar, new ConstantStringLiteral("constant")));
+            addInstr(new CopyInstr(tmpVar, new FrozenString("constant")));
             addInstr(new LabelInstr(doneLabel));
             return tmpVar;
         }
@@ -1472,7 +1472,7 @@ public class IRBuilder {
                             build(((Colon2Node)colon).getLeftNode()) : new ObjectClass();
 
                     Variable tmpVar = createTemporaryVariable();
-                    addInstr(new RuntimeHelperCall(tmpVar, IS_DEFINED_CONSTANT_OR_METHOD, new Operand[] {v, new ConstantStringLiteral(name)}));
+                    addInstr(new RuntimeHelperCall(tmpVar, IS_DEFINED_CONSTANT_OR_METHOD, new Operand[] {v, new FrozenString(name)}));
                     return tmpVar;
                 }
             };
@@ -1569,7 +1569,7 @@ public class IRBuilder {
             return protectCodeWithRescue(protectedCode, rescueBlock);
         }
         default:
-            return new ConstantStringLiteral("expression");
+            return new FrozenString("expression");
         }
     }
 
@@ -1587,13 +1587,13 @@ public class IRBuilder {
         Label undefLabel = getNewLabel();
         addInstr((Instr) definedInstr);
         addInstr(BEQInstr.create(definedInstr.getResult(), manager.getFalse(), undefLabel));
-        return buildDefnCheckIfThenPaths(undefLabel, new ConstantStringLiteral(definedReturnValue));
+        return buildDefnCheckIfThenPaths(undefLabel, new FrozenString(definedReturnValue));
     }
 
     public Operand buildGetArgumentDefinition(final Node node, String type) {
         if (node == null) return new StringLiteral(type);
 
-        Operand rv = new ConstantStringLiteral(type);
+        Operand rv = new FrozenString(type);
         boolean failPathReqd = false;
         Label failLabel = getNewLabel();
         if (node instanceof ArrayNode) {

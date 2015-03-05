@@ -55,6 +55,7 @@ import org.jruby.truffle.nodes.methods.locals.*;
 import org.jruby.truffle.nodes.objects.*;
 import org.jruby.truffle.nodes.objects.SelfNode;
 import org.jruby.truffle.nodes.rubinius.CallRubiniusPrimitiveNode;
+import org.jruby.truffle.nodes.rubinius.InvokeRubiniusPrimitiveNode;
 import org.jruby.truffle.nodes.rubinius.RubiniusPrimitiveConstructor;
 import org.jruby.truffle.nodes.rubinius.RubiniusSingleBlockArgNode;
 import org.jruby.truffle.nodes.yield.YieldNode;
@@ -445,7 +446,7 @@ public class BodyTranslator extends Translator {
          *
          * into
          *
-         *   CallRubiniusPrimitiveNode(FooNode(arg1, arg2, ..., argN))
+         *   InvokeRubiniusPrimitiveNode(FooNode(arg1, arg2, ..., argN))
          */
 
         if (node.getArgsNode().childNodes().size() < 1 || !(node.getArgsNode().childNodes().get(0) instanceof org.jruby.ast.SymbolNode)) {
@@ -466,10 +467,9 @@ public class BodyTranslator extends Translator {
         while (childIterator.hasNext()) {
             arguments.add(childIterator.next().accept(this));
         }
-
-        return new CallRubiniusPrimitiveNode(context, sourceSection,
-                primitive.getFactory().createNode(context, sourceSection, arguments.toArray(new RubyNode[arguments.size()])),
-                environment.getReturnID());
+        
+        return new InvokeRubiniusPrimitiveNode(context, sourceSection,
+                primitive.getFactory().createNode(context, sourceSection, arguments.toArray(new RubyNode[arguments.size()])));
     }
 
     private RubyNode translateRubiniusPrivately(SourceSection sourceSection, CallNode node) {
@@ -1322,6 +1322,10 @@ public class BodyTranslator extends Translator {
 
     @Override
     public RubyNode visitGlobalAsgnNode(org.jruby.ast.GlobalAsgnNode node) {
+        return translateGlobalAsgnNode(node, node.getValueNode().accept(this));
+    }
+    
+    public RubyNode translateGlobalAsgnNode(org.jruby.ast.GlobalAsgnNode node, RubyNode rhs) {
         final SourceSection sourceSection = translate(node.getPosition());
 
         String name = node.getName();
@@ -1329,8 +1333,6 @@ public class BodyTranslator extends Translator {
         if (globalVariableAliases.containsKey(name)) {
             name = globalVariableAliases.get(name);
         }
-
-        RubyNode rhs = node.getValueNode().accept(this);
 
         if (name.equals("$~")) {
             rhs = new CheckMatchVariableTypeNode(context, sourceSection, rhs);
@@ -1514,6 +1516,24 @@ public class BodyTranslator extends Translator {
             }
         }
 
+        if (sourceSection.getSource().getPath().equals("core:/core/rubinius/common/hash.rb")) {
+            if (nameWithoutSigil.equals("@default")) {
+                return new RubyCallNode(context, sourceSection,
+                        "_set_default_value",
+                        new SelfNode(context, sourceSection),
+                        null,
+                        false,
+                        rhs);
+            } else if (nameWithoutSigil.equals("@default_proc")) {
+                return new RubyCallNode(context, sourceSection,
+                        "_set_default_proc",
+                        new SelfNode(context, sourceSection),
+                        null,
+                        false,
+                        rhs);
+            }
+        }
+
         final RubyNode receiver = new SelfNode(context, sourceSection);
         return new WriteInstanceVariableNode(context, sourceSection, nameWithoutSigil, receiver, rhs, false);
     }
@@ -1560,7 +1580,9 @@ public class BodyTranslator extends Translator {
             }
         }
 
-        if (sourceSection.getSource().getPath().equals("core:/core/rubinius/common/string.rb")) {
+        if (sourceSection.getSource().getPath().equals("core:/core/rubinius/bootstrap/string.rb") ||
+                sourceSection.getSource().getPath().equals("core:/core/rubinius/common/string.rb")) {
+
             if (nameWithoutSigil.equals("@num_bytes")) {
                 return new RubyCallNode(context, sourceSection,
                         "bytesize",
@@ -1587,6 +1609,22 @@ public class BodyTranslator extends Translator {
             } else if (nameWithoutSigil.equals("@offset")) {
                 return new RubyCallNode(context, sourceSection,
                         "_offset",
+                        new SelfNode(context, sourceSection),
+                        null,
+                        false);
+            }
+        }
+
+        if (sourceSection.getSource().getPath().equals("core:/core/rubinius/common/hash.rb")) {
+            if (nameWithoutSigil.equals("@default")) {
+                return new RubyCallNode(context, sourceSection,
+                        "_default_value",
+                        new SelfNode(context, sourceSection),
+                        null,
+                        false);
+            } else if (nameWithoutSigil.equals("@default_proc")) {
+                return new RubyCallNode(context, sourceSection,
+                        "default_proc",
                         new SelfNode(context, sourceSection),
                         null,
                         false);
@@ -2080,6 +2118,8 @@ public class BodyTranslator extends Translator {
             } else {
                 translated = ((ReadNode) ((WriteLocalVariableNode) dummyTranslated.getNonProxyNode()).makeReadNode()).makeWriteNode(rhs);
             }
+        } else if (dummyAssignment instanceof org.jruby.ast.GlobalAsgnNode) {
+            return translateGlobalAsgnNode((org.jruby.ast.GlobalAsgnNode) dummyAssignment, rhs);
         } else {
             translated = ((ReadNode) environment.findLocalVarNode(environment.allocateLocalTemp("dummy"), sourceSection)).makeWriteNode(rhs);
         }

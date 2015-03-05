@@ -1,3 +1,0 @@
-fails:Object#clone preserves tainted state from the original
-fails:Object#clone preserves untrusted state from the original
-fails:Object#clone preserves frozen state from the original

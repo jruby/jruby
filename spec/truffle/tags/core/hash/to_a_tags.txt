@@ -1,4 +1,0 @@
-fails:Hash#to_a returns a list of [key, value] pairs with same order as each()
-fails:Hash#to_a is called for Enumerable#entries
-fails:Hash#to_a returns a tainted array if self is tainted
-fails:Hash#to_a returns an untrusted array if self is untrusted

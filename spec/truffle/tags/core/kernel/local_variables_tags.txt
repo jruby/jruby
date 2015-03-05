@@ -1,4 +1,2 @@
 fails:Kernel#local_variables is a private method
-fails:Kernel#local_variables contains locals as they are added
 fails:Kernel#local_variables is accessible from bindings
-fails:Kernel#local_variables is accessible in eval

@@ -674,8 +674,8 @@ class Resolv
         timelimit = start + tout
         begin
           sender.send
-        rescue Errno::EHOSTUNREACH
-          # multi-homed IPv6 may generate this
+        rescue Errno::EHOSTUNREACH, # multi-homed IPv6 may generate this
+               Errno::ENETUNREACH
           raise ResolvTimeout
         end
         while true
@@ -1240,7 +1240,8 @@ class Resolv
 
       def ==(other) # :nodoc:
         return false unless Name === other
-        return @labels.join == other.to_a.join && @absolute == other.absolute?
+        return false unless @absolute == other.absolute?
+        return @labels == other.to_a
       end
 
       alias eql? == # :nodoc:
@@ -1669,10 +1670,10 @@ class Resolv
         return false unless self.class == other.class
         s_ivars = self.instance_variables
         s_ivars.sort!
-        s_ivars.delete "@ttl"
+        s_ivars.delete :@ttl
         o_ivars = other.instance_variables
         o_ivars.sort!
-        o_ivars.delete "@ttl"
+        o_ivars.delete :@ttl
         return s_ivars == o_ivars &&
           s_ivars.collect {|name| self.instance_variable_get name} ==
             o_ivars.collect {|name| other.instance_variable_get name}
@@ -1685,7 +1686,7 @@ class Resolv
       def hash # :nodoc:
         h = 0
         vars = self.instance_variables
-        vars.delete "@ttl"
+        vars.delete :@ttl
         vars.each {|name|
           h ^= self.instance_variable_get(name).hash
         }
