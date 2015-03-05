@@ -1334,10 +1334,6 @@ public abstract class ArrayNodes {
 
             final Object[] store = array.slowToArray();
 
-            if (store.length < 2) {
-                throw new UnsupportedOperationException();
-            }
-
             Object accumulator = initial;
 
             for (int n = 0; n < array.getSize(); n++) {
@@ -1354,7 +1350,11 @@ public abstract class ArrayNodes {
             final Object[] store = array.slowToArray();
 
             if (store.length < 2) {
-                throw new UnsupportedOperationException();
+                if (store.length == 1) {
+                    return store[0];
+                } else {
+                    return getContext().getCoreLibrary().getNilObject();
+                }
             }
 
             Object accumulator = dispatch.call(frame, store[0], symbol, null, store[1]);
