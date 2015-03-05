@@ -413,7 +413,7 @@ public abstract class KernelNodes {
 
     }
 
-    @CoreMethod(names = "clone", taintFrom = 0)
+    @CoreMethod(names = "clone", taintFromSelf = true)
     public abstract static class CloneNode extends CoreMethodNode {
 
         private final ConditionProfile frozenProfile = ConditionProfile.createBinaryProfile();
@@ -460,7 +460,7 @@ public abstract class KernelNodes {
 
     }
 
-    @CoreMethod(names = "dup", taintFrom = 0)
+    @CoreMethod(names = "dup", taintFromSelf = true)
     public abstract static class DupNode extends CoreMethodNode {
 
         @Child private CallDispatchHeadNode initializeDupNode;

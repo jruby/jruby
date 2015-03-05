@@ -200,7 +200,7 @@ public abstract class StringNodes {
         }
     }
 
-    @CoreMethod(names = { "<<", "concat" }, required = 1, taintFrom = 1, raiseIfFrozenSelf = true)
+    @CoreMethod(names = { "<<", "concat" }, required = 1, taintFromParameters = 0, raiseIfFrozenSelf = true)
     @NodeChildren({
             @NodeChild(value = "string"),
             @NodeChild(value = "other")
@@ -278,7 +278,7 @@ public abstract class StringNodes {
         }
     }
 
-    @CoreMethod(names = {"[]", "slice"}, required = 1, optional = 1, lowerFixnumParameters = {0, 1}, taintFrom = 0)
+    @CoreMethod(names = {"[]", "slice"}, required = 1, optional = 1, lowerFixnumParameters = {0, 1}, taintFromSelf = true)
     public abstract static class GetIndexNode extends CoreMethodNode {
 
         @Child private ToIntNode toIntNode;
@@ -570,7 +570,7 @@ public abstract class StringNodes {
         }
     }
 
-    @CoreMethod(names = "b", taintFrom = 0)
+    @CoreMethod(names = "b", taintFromSelf = true)
     public abstract static class BNode extends CoreMethodNode {
 
         public BNode(RubyContext context, SourceSection sourceSection) {
@@ -1209,7 +1209,7 @@ public abstract class StringNodes {
 
     }
 
-    @CoreMethod(names = "match", required = 1, taintFrom = 0)
+    @CoreMethod(names = "match", required = 1, taintFromSelf = true)
     public abstract static class MatchNode extends CoreMethodNode {
 
         @Child private CallDispatchHeadNode regexpMatchNode;

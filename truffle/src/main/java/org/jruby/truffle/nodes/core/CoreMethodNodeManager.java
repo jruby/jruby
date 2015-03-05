@@ -210,9 +210,10 @@ public abstract class CoreMethodNodeManager {
         final CheckArityNode checkArity = new CheckArityNode(context, sourceSection, arity);
         RubyNode sequence = SequenceNode.sequence(context, sourceSection, checkArity, methodNode);
 
-        final int taintSource = methodDetails.getMethodAnnotation().taintFrom();
-        if (taintSource != -1) {
-            sequence = new TaintResultNode(context, sourceSection, needsSelf, taintSource, sequence);
+        if (methodDetails.getMethodAnnotation().taintFromSelf() || methodDetails.getMethodAnnotation().taintFromParameters().length > 0) {
+            sequence = new TaintResultNode(methodDetails.getMethodAnnotation().taintFromSelf(),
+                                           methodDetails.getMethodAnnotation().taintFromParameters(),
+                                           sequence);
         }
 
         final ExceptionTranslatingNode exceptionTranslatingNode = new ExceptionTranslatingNode(context, sourceSection, sequence, methodDetails.getMethodAnnotation().unsupportedOperationBehavior());

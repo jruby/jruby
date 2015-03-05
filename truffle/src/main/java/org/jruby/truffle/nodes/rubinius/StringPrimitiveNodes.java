@@ -73,7 +73,7 @@ public abstract class StringPrimitiveNodes {
 
         public StringByteSubstringPrimitiveNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            taintResultNode = new TaintResultNode(context, sourceSection, true, 0, null);
+            taintResultNode = new TaintResultNode(context, sourceSection, true, new int[]{});
         }
 
         public StringByteSubstringPrimitiveNode(StringByteSubstringPrimitiveNode prev) {

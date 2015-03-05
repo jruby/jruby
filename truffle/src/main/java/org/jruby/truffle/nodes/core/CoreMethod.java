@@ -58,7 +58,9 @@ public @interface CoreMethod {
 
     int[] lowerFixnumParameters() default {};
 
-    int taintFrom() default -1;
+    boolean taintFromSelf() default false;
+
+    int[] taintFromParameters() default {};
 
     boolean raiseIfFrozenSelf() default false;
 

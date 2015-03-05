@@ -223,7 +223,7 @@ public abstract class RegexpNodes {
 
     }
 
-    @CoreMethod(names = "match", required = 1, taintFrom = 0)
+    @CoreMethod(names = "match", required = 1, taintFromSelf = true)
     public abstract static class MatchNode extends CoreMethodNode {
 
         public MatchNode(RubyContext context, SourceSection sourceSection) {
