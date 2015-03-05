@@ -139,4 +139,22 @@ class Hash
     @default_proc = prc
   end
 
+  def inspect
+    out = []
+    return '{...}' if Thread.detect_recursion self do
+      each_item do |item|
+        str =  item.key.inspect
+        str << '=>'
+        str << item.value.inspect
+        out << str
+      end
+    end
+
+    ret = "{#{out.join ', '}}"
+    Rubinius::Type.infect(ret, self) unless empty?
+    ret
+  end
+
+  alias_method :to_s, :inspect
+
 end

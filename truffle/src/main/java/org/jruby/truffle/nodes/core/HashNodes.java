@@ -724,55 +724,6 @@ public abstract class HashNodes {
 
     }
 
-    @CoreMethod(names = {"inspect", "to_s"})
-    public abstract static class InspectNode extends HashCoreMethodNode {
-
-        @Child private CallDispatchHeadNode inspect;
-
-        public InspectNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-            inspect = DispatchHeadNodeFactory.createMethodCall(context);
-        }
-
-        public InspectNode(InspectNode prev) {
-            super(prev);
-            inspect = prev.inspect;
-        }
-
-        @Specialization(guards = "isNull")
-        public RubyString inspectNull(RubyHash hash) {
-            notDesignedForCompilation();
-
-            return getContext().makeString("{}");
-        }
-
-        @Specialization
-        public RubyString inspectPackedArray(VirtualFrame frame, RubyHash hash) {
-            notDesignedForCompilation();
-
-            final StringBuilder builder = new StringBuilder();
-
-            builder.append("{");
-
-            for (KeyValue keyValue : HashOperations.verySlowToKeyValues(hash)) {
-                if (builder.length() > 1) {
-                    builder.append(", ");
-                }
-
-                // TODO(CS): to string
-
-                builder.append(inspect.call(frame, keyValue.getKey(), "inspect", null));
-                builder.append("=>");
-                builder.append(inspect.call(frame, keyValue.getValue(), "inspect", null));
-            }
-
-            builder.append("}");
-
-            return getContext().makeString(builder.toString());
-        }
-
-    }
-
     @CoreMethod(names = { "has_key?", "key?", "include?", "member?" }, required = 1)
     public abstract static class KeyNode extends HashCoreMethodNode {
 
