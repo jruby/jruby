@@ -129,7 +129,7 @@ public class TruffleBridgeImpl implements TruffleBridge {
 
         for (IRubyObject path : ((org.jruby.RubyArray) runtime.getLoadService().getLoadPath()).toJavaArray()) {
             if (!excludedLibPaths.contains(path.toString())) {
-                loadPath.slowPush(truffleContext.makeString(path.toString()));
+                loadPath.slowPush(truffleContext.makeString(new File(path.toString()).getAbsolutePath()));
             }
         }
 

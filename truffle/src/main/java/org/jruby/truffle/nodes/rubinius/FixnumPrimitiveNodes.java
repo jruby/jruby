@@ -148,8 +148,14 @@ public abstract class FixnumPrimitiveNodes {
                 return null; // Primitive failure
             } else {
                 // TODO CS 15-Feb-15 - what to do about this cast?
-                return fixnumOrBignum(BigInteger.valueOf(a).pow((int) b));
+                return fixnumOrBignum(bigPow(a, (int) b));
             }
+        }
+        
+        @CompilerDirectives.TruffleBoundary
+        public BigInteger bigPow(long a, int b) {
+            return BigInteger.valueOf(a).pow(b);
+            
         }
 
         @Specialization

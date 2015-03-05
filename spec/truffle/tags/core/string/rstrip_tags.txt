@@ -1,6 +1,5 @@
 fails:String#rstrip returns a copy of self with trailing whitespace removed
 fails:String#rstrip returns a copy of self with all trailing whitespace and NULL bytes removed
-fails:String#rstrip taints the result when self is tainted
 fails:String#rstrip! modifies self in place and returns self
 fails:String#rstrip! modifies self removing trailing NULL bytes and whitespace
 fails:String#rstrip! returns nil if no modifications were made

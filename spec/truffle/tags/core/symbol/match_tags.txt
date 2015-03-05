@@ -1,5 +1,0 @@
-fails:Symbol#=~ returns the index of the beginning of the match
-fails:Symbol#=~ sets the last match pseudo-variables
-fails:Symbol#match returns the index of the beginning of the match
-fails:Symbol#match returns nil if there is no match
-fails:Symbol#match sets the last match pseudo-variables

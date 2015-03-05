@@ -23,6 +23,7 @@ import com.oracle.truffle.api.object.Shape;
 
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.objects.Allocator;
+import org.jruby.truffle.runtime.DebugOperations;
 import org.jruby.truffle.runtime.ModuleOperations;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.RubyOperations;
@@ -38,6 +39,7 @@ public class RubyBasicObject implements TruffleObject {
 
     public static final HiddenKey OBJECT_ID_IDENTIFIER = new HiddenKey("object_id");
     public static final HiddenKey TAINTED_IDENTIFIER = new HiddenKey("tainted?");
+    public static final HiddenKey FROZEN_IDENTIFIER = new HiddenKey("frozen?");
 
     public static final Layout LAYOUT = Layout.createLayout(Layout.INT_TO_LONG);
 
@@ -47,8 +49,6 @@ public class RubyBasicObject implements TruffleObject {
     @CompilationFinal protected RubyClass logicalClass;
     /** Either the singleton class if it exists or the logicalClass. */
     @CompilationFinal protected RubyClass metaClass;
-
-    private boolean frozen = false;
 
     public RubyBasicObject(RubyClass rubyClass) {
         this(rubyClass, rubyClass.getContext());
@@ -76,16 +76,14 @@ public class RubyBasicObject implements TruffleObject {
         return false;
     }
 
-    public boolean isFrozen() {
-        return frozen;
-    }
-
+    @Deprecated
     public void freeze() {
-        frozen = true;
+        DebugOperations.verySlowFreeze(this);
     }
 
+    @Deprecated
     public void checkFrozen(Node currentNode) {
-        if (frozen) {
+        if (DebugOperations.verySlowIsFrozen(this)) {
             CompilerDirectives.transferToInterpreter();
             throw new RaiseException(getContext().getCoreLibrary().frozenError(getLogicalClass().getName(), currentNode));
         }
@@ -111,8 +109,8 @@ public class RubyBasicObject implements TruffleObject {
         metaClass = RubyClass.createSingletonClassOfObject(getContext(), logicalClass,
                 String.format("#<Class:#<%s:0x%x>>", logicalClass.getName(), getObjectID()));
 
-        if (isFrozen()) {
-            metaClass.freeze();
+        if (DebugOperations.verySlowIsFrozen(this)) {
+            DebugOperations.verySlowFreeze(metaClass);
         }
 
         return metaClass;

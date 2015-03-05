@@ -296,8 +296,6 @@ public abstract class SymbolNodes {
 
         @Specialization
         public RubyString toS(RubySymbol symbol) {
-            notDesignedForCompilation();
-
             return getContext().makeString(symbol.getSymbolBytes().dup());
         }
 
@@ -337,25 +335,6 @@ public abstract class SymbolNodes {
         @Specialization
         public int size(RubySymbol symbol) {
             return symbol.getByteList().lengthEnc();
-        }
-
-    }
-
-    @CoreMethod(names = {"succ"})
-    public abstract static class SuccNode extends CoreMethodNode {
-
-        public SuccNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
-        public SuccNode(SuccNode prev) {
-            super(prev);
-        }
-
-        @Specialization
-        public RubySymbol succ(RubySymbol symbol) {
-            notDesignedForCompilation();
-            return getContext().newSymbol(StringSupport.succCommon(symbol.getByteList()));
         }
 
     }

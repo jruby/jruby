@@ -1,3 +1,2 @@
-fails:UnboundMethod#hash needs to be reviewed for spec completeness
 fails:UnboundMethod#hash returns the same value for user methods that are eql?
 fails:UnboundMethod#hash returns the same value for builtin methods that are eql?

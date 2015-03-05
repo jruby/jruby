@@ -1,5 +1,3 @@
 fails:Range#inspect provides a printable form, using #inspect to convert the start and end objects
 fails:Range#inspect returns a tainted string if either end is tainted
-fails:Range#inspect ignores own tainted status
 fails:Range#inspect returns a untrusted string if either end is untrusted
-fails:Range#inspect ignores own untrusted status

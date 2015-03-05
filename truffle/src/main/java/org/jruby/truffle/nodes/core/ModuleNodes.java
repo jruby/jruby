@@ -37,9 +37,7 @@ import org.jruby.truffle.nodes.methods.SetMethodDeclarationContext;
 import org.jruby.truffle.nodes.methods.arguments.CheckArityNode;
 import org.jruby.truffle.nodes.methods.arguments.MissingArgumentBehaviour;
 import org.jruby.truffle.nodes.methods.arguments.ReadPreArgumentNode;
-import org.jruby.truffle.nodes.objects.ReadInstanceVariableNode;
-import org.jruby.truffle.nodes.objects.SelfNode;
-import org.jruby.truffle.nodes.objects.WriteInstanceVariableNode;
+import org.jruby.truffle.nodes.objects.*;
 import org.jruby.truffle.nodes.yield.YieldDispatchHeadNode;
 import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.control.RaiseException;
@@ -61,26 +59,31 @@ public abstract class ModuleNodes {
     @CoreMethod(names = "===", required = 1)
     public abstract static class ContainsInstanceNode extends CoreMethodNode {
 
+        @Child private MetaClassNode metaClassNode;
+        
         public ContainsInstanceNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
+            metaClassNode = MetaClassNodeFactory.create(context, sourceSection, null);
         }
 
         public ContainsInstanceNode(ContainsInstanceNode prev) {
             super(prev);
+            metaClassNode = prev.metaClassNode;
         }
 
         @Specialization
         public boolean containsInstance(RubyModule module, RubyBasicObject instance) {
-            notDesignedForCompilation();
-
-            return ModuleOperations.includesModule(instance.getMetaClass(), module);
+            return includes(instance.getMetaClass(), module);
         }
 
-        @Specialization
-        public boolean containsInstance(RubyModule module, Object instance) {
-            notDesignedForCompilation();
-
-            return ModuleOperations.includesModule(getContext().getCoreLibrary().getMetaClass(instance), module);
+        @Specialization(guards = "!isRubyBasicObject(instance)")
+        public boolean containsInstance(VirtualFrame frame, RubyModule module, Object instance) {
+            return includes(metaClassNode.executeMetaClass(frame, instance), module);
+        }
+        
+        @CompilerDirectives.TruffleBoundary
+        public boolean includes(RubyModule metaClass, RubyModule module) {
+            return ModuleOperations.includesModule(metaClass, module);
         }
     }
 

@@ -36,10 +36,7 @@ import org.jruby.truffle.runtime.hash.KeyValue;
 import org.jruby.truffle.runtime.subsystems.SimpleShell;
 import org.jruby.util.Memo;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Locale;
-import java.util.Map;
+import java.util.*;
 
 @CoreClass(name = "Truffle::Primitive")
 public abstract class PrimitiveNodes {
@@ -465,7 +462,7 @@ public abstract class PrimitiveNodes {
                 throw new UnsupportedOperationException("coverage is disabled");
             }
 
-            final Collection<KeyValue> keyValues = new ArrayList<>();
+            final List<KeyValue> keyValues = new ArrayList<>();
 
             for (Map.Entry<Source, Long[]> source : getContext().getCoverageTracker().getCounts().entrySet()) {
                 final Object[] store = lineCountsStore(source.getValue());

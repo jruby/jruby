@@ -1,3 +1,2 @@
-fails:Hash#initialize can be used to reset default_proc
 fails:Hash#initialize returns self
 fails:Hash#initialize raises a RuntimeError if called on a frozen instance

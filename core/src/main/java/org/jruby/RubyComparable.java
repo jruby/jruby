@@ -145,8 +145,8 @@ public class RubyComparable {
 
             return RubyBoolean.newBoolean(runtime, cmpint(context, result, recv, other) == 0);
         } catch (RaiseException e) {
-            cmpFailed(context);
             if (e.getException().kind_of_p(context, runtime.getStandardError()).isTrue()) {
+                cmpFailed(context);
                 // clear error info resulting from failure to compare (JRUBY-3292)
                 runtime.getGlobalVariables().set("$!", savedError);
                 return returnValueOnError;

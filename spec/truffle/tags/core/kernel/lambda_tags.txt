@@ -1,10 +1,2 @@
-fails:Kernel.lambda returns a Proc object
 fails:Kernel.lambda raises an ArgumentError when no block is given
-fails:Kernel.lambda returns from the  itself, not the creation site of the 
 fails:Kernel.lambda allows long returns to flow through it
-fails:Kernel.lambda is a private method
-fails:Kernel.lambda checks the arity of the call when no args are specified
-fails:Kernel.lambda checks the arity when 1 arg is specified
-fails:Kernel.lambda does not check the arity when passing a Proc with &
-fails:Kernel.lambda accepts 0 arguments when used with ||
-fails:Kernel.lambda strictly checks the arity when 0 or 2..inf args are specified

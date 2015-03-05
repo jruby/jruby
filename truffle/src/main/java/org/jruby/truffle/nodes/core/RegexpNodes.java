@@ -223,7 +223,7 @@ public abstract class RegexpNodes {
 
     }
 
-    @CoreMethod(names = "match", required = 1)
+    @CoreMethod(names = "match", required = 1, taintFromSelf = true)
     public abstract static class MatchNode extends CoreMethodNode {
 
         public MatchNode(RubyContext context, SourceSection sourceSection) {
@@ -241,6 +241,7 @@ public abstract class RegexpNodes {
 
     }
 
+    @RubiniusOnly
     @CoreMethod(names = "match_start", required = 2)
     public abstract static class MatchStartNode extends CoreMethodNode {
 
@@ -323,6 +324,7 @@ public abstract class RegexpNodes {
 
     }
 
+    @RubiniusOnly
     @CoreMethod(names = "search_from", required = 2)
     public abstract static class SearchFromNode extends CoreMethodNode {
 

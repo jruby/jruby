@@ -1,3 +1,2 @@
 fails:Range#== returns true if other has same begin, end, and exclude_end? values
 fails:Range#== returns false if other is no Range
-fails:Range#== returns true for subclasses to Range

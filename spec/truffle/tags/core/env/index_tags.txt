@@ -1,3 +1,2 @@
-fails:ENV.index needs to be reviewed for completeness
 fails:ENV.index returns the index associated with the passed value
 fails:ENV.index returns nil if the passed value is not found

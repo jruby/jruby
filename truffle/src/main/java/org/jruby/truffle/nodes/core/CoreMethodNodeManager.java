@@ -101,7 +101,7 @@ public abstract class CoreMethodNodeManager {
 
         // Do not use needsSelf=true in module functions, it is either the module/class or the instance.
         // Usage of needsSelf is quite rare for singleton methods (except constructors).
-        final boolean needsSelf = !anno.isModuleFunction() && !anno.onSingleton() && anno.needsSelf();
+        final boolean needsSelf = !anno.isModuleFunction() && !anno.onSingleton() && anno.needsSelf() || anno.reallyDoesNeedSelf();
 
         final RubyRootNode rootNode = makeGenericMethod(context, methodDetails, needsSelf);
 
@@ -157,6 +157,10 @@ public abstract class CoreMethodNodeManager {
                 readSelfNode = new FixnumLowerNode(readSelfNode);
             }
 
+            if (methodDetails.getMethodAnnotation().raiseIfFrozenSelf()) {
+                readSelfNode = new RaiseIfFrozenNode(readSelfNode);
+            }
+
             argumentsNodes.add(readSelfNode);
         }
 
@@ -167,6 +171,10 @@ public abstract class CoreMethodNodeManager {
                 RubyNode readArgumentNode = new ReadPreArgumentNode(context, sourceSection, n, MissingArgumentBehaviour.UNDEFINED);
 
                 if (ArrayUtils.contains(methodDetails.getMethodAnnotation().lowerFixnumParameters(), n)) {
+                    readArgumentNode = new FixnumLowerNode(readArgumentNode);
+                }
+
+                if (ArrayUtils.contains(methodDetails.getMethodAnnotation().raiseIfFrozenParameters(), n)) {
                     readArgumentNode = new FixnumLowerNode(readArgumentNode);
                 }
 
@@ -203,9 +211,10 @@ public abstract class CoreMethodNodeManager {
         final CheckArityNode checkArity = new CheckArityNode(context, sourceSection, arity);
         RubyNode sequence = SequenceNode.sequence(context, sourceSection, checkArity, methodNode);
 
-        final int taintSource = methodDetails.getMethodAnnotation().taintFrom();
-        if (taintSource != -1) {
-            sequence = new TaintResultNode(context, sourceSection, needsSelf, taintSource, sequence);
+        if (methodDetails.getMethodAnnotation().taintFromSelf() || methodDetails.getMethodAnnotation().taintFromParameters().length > 0) {
+            sequence = new TaintResultNode(methodDetails.getMethodAnnotation().taintFromSelf(),
+                                           methodDetails.getMethodAnnotation().taintFromParameters(),
+                                           sequence);
         }
 
         final ExceptionTranslatingNode exceptionTranslatingNode = new ExceptionTranslatingNode(context, sourceSection, sequence, methodDetails.getMethodAnnotation().unsupportedOperationBehavior());

@@ -33,6 +33,11 @@ class String
     raise PrimitiveFailure, "String.from_codepoint primitive failed"
   end
 
+  def self.pattern(size, str)
+    Rubinius.primitive :string_pattern
+    raise PrimitiveFailure, "String.pattern primitive failed"
+  end
+
   def find_string(pattern, start)
     Rubinius.primitive :string_index
     raise PrimitiveFailure, "String#find_string primitive failed"
@@ -74,6 +79,10 @@ class String
   def find_character(offset)
     Rubinius.primitive :string_find_character
     raise PrimitiveFailure, "String#find_character primitive failed"
+  end
+
+  def num_bytes
+    @num_bytes
   end
 
 end

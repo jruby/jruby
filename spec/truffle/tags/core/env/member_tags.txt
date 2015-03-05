@@ -1,2 +1,0 @@
-fails:ENV.member? returns true if ENV has the key
-fails:ENV.member? returns false if ENV doesn't include the key

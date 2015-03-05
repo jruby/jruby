@@ -9,6 +9,7 @@
  */
 package org.jruby.truffle.nodes.rubinius;
 
+import com.oracle.truffle.api.CompilerDirectives;
 import org.jruby.truffle.runtime.RubyContext;
 
 import com.oracle.truffle.api.dsl.Specialization;
@@ -52,6 +53,7 @@ public abstract class BignumPrimitiveNodes {
             }
         }
 
+        @CompilerDirectives.TruffleBoundary
         @Specialization
         public double pow(RubyBignum a, double b) {
             return Math.pow(a.bigIntegerValue().doubleValue(), b);

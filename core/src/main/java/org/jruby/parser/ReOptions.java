@@ -30,21 +30,22 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.parser;
 
-import org.jruby.RubyRegexp;
-
 public interface ReOptions {
     int RE_OPTION_IGNORECASE   = 1;
     int RE_OPTION_EXTENDED     = 2;
     int RE_OPTION_MULTILINE    = 4;
     int RE_OPTION_SINGLELINE   = 8;
     int RE_OPTION_POSIXLINE    = (RE_OPTION_MULTILINE | RE_OPTION_SINGLELINE);
-    int RE_OPTION_LONGEST      = 16;
-    int RE_MAY_IGNORECASE      = 32;
+    int RE_FIXED               = 16;
+    int RE_NONE                = 32;
     int RE_UNICODE             = 64;
     int RE_OPTION_ONCE         = 128; // odd...but it is odd in ruby too.    
     int RE_LITERAL             = 256; // reusing regexp_options since we used 
                                       // and we won't escape regexp_options.
     int RE_DEFAULT = 512; // Only for RubyRegexp. for kcode default
-    int RE_FIXED = RubyRegexp.ARG_ENCODING_FIXED;
 
+    @Deprecated
+    int RE_OPTION_LONGEST      = 16;
+    @Deprecated
+    int RE_MAY_IGNORECASE      = 32;
 }

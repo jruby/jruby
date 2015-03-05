@@ -1,8 +1,3 @@
-fails:Kernel.loop is a private method
-fails:Kernel.loop calls block until it is terminated by a break
-fails:Kernel.loop returns value passed to break
-fails:Kernel.loop returns nil if no value passed to break
 fails:Kernel.loop returns an enumerator if no block given
 fails:Kernel.loop rescues StopIteration
 fails:Kernel.loop rescues StopIteration's subclasses
-fails:Kernel.loop does not rescue other errors

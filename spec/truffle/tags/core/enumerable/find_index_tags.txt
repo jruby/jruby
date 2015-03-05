@@ -1,10 +1,1 @@
-fails:Enumerable#find_index passes each entry in enum to block while block when block is false
-fails:Enumerable#find_index returns nil when the block is false
 fails:Enumerable#find_index returns the first index for which the block is not false
-fails:Enumerable#find_index returns the first index found
-fails:Enumerable#find_index returns nil when the element not found
-fails:Enumerable#find_index ignores the block if an argument is given
-fails:Enumerable#find_index returns an Enumerator if no block given
-fails:Enumerable#find_index without block gathers whole arrays as elements when each yields multiple
-fails:Enumerable#find_index with block given a single yield parameter passes first element to the parameter
-fails:Enumerable#find_index with block given a greedy yield parameter passes a gathered array to the parameter

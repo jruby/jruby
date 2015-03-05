@@ -1,7 +1,3 @@
-fails:Hash#key? returns true if argument is a key
-fails:Hash#key? returns true if the key's matching value was nil
-fails:Hash#key? returns true if the key's matching value was false
-fails:Hash#key? returns true if the key is nil
 fails:Hash#key? compares keys with the same #hash value via #eql?
 fails:Hash#key returns the corresponding key for value
 fails:Hash#key returns nil if the value is not found

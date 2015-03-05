@@ -1,5 +1,2 @@
-fails:String#reverse taints the result if self is tainted
-fails:String#reverse! raises a RuntimeError on a frozen instance that is modified
-fails:String#reverse! raises a RuntimeError on a frozen instance that would not be modified
 fails:String#reverse! reverses a string with multi byte characters
 fails:String#reverse reverses a string with multi byte characters

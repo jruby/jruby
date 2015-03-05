@@ -26,4 +26,3 @@ fails:Kernel.load sets the enclosing scope to an anonymous module if passed true
 fails:Kernel.load (shell expansion) expands a tilde to the HOME environment variable as the path to load
 windows:Kernel#load loads a file that recursively requires itself
 windows:Kernel.load loads a file that recursively requires itself
-

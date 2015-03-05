@@ -13,6 +13,7 @@ import com.oracle.truffle.api.CompilerDirectives;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.DebugOperations;
 import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.runtime.core.RubyClass;
 import org.jruby.truffle.runtime.core.RubyHash;
 import org.jruby.truffle.runtime.core.RubyString;
 import org.jruby.util.cli.Options;
@@ -39,11 +40,15 @@ public class HashOperations {
         return CAPACITIES[CAPACITIES.length - 1];
     }
 
+    public static RubyHash verySlowFromEntries(RubyContext context, List<KeyValue> entries) {
+        return verySlowFromEntries(context.getCoreLibrary().getHashClass(), entries);
+    }
+
     @CompilerDirectives.TruffleBoundary
-    public static RubyHash verySlowFromEntries(RubyContext context, Collection<KeyValue> entries) {
+    public static RubyHash verySlowFromEntries(RubyClass hashClass, List<KeyValue> entries) {
         RubyNode.notDesignedForCompilation();
 
-        final RubyHash hash = new RubyHash(context.getCoreLibrary().getHashClass(), null, null, null, 0, null);
+        final RubyHash hash = new RubyHash(hashClass, null, null, null, 0, null);
         verySlowSetKeyValues(hash, entries);
         return hash;
     }

@@ -3,4 +3,3 @@ fails:ENV.select! returns self if any changes were made
 fails:ENV.select! returns nil if no changes were made
 fails:ENV.select! returns an Enumerator if called without a block
 fails:ENV.select returns a Hash of names and values for which block return true
-fails:ENV.select returns an Enumerator when no block is given

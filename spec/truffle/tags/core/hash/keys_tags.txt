@@ -1,2 +1,0 @@
-fails:Hash#keys returns an array with the keys in the order they were inserted
-fails:Hash#keys uses the same order as #values

@@ -1,4 +1,0 @@
-fails:Array#partition returns two arrays
-fails:Array#partition returns in the left array values for which the block evaluates to true
-fails:Array#partition properly handles recursive arrays
-fails:Array#partition does not return subclass instances on Array subclasses

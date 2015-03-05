@@ -17,6 +17,7 @@ import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
 import org.jruby.truffle.nodes.objectstorage.ReadHeadObjectFieldNode;
 import org.jruby.truffle.nodes.objectstorage.WriteHeadObjectFieldNode;
+import org.jruby.truffle.nodes.time.ReadTimeZoneNode;
 import org.jruby.truffle.runtime.DebugOperations;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
@@ -33,20 +34,27 @@ public abstract class TimePrimitiveNodes {
     @RubiniusPrimitive(name = "time_s_now")
     public static abstract class TimeSNowPrimitiveNode extends RubiniusPrimitiveNode {
 
+        @Child private ReadTimeZoneNode readTimeZoneNode;
+        
         public TimeSNowPrimitiveNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
+            readTimeZoneNode = new ReadTimeZoneNode(context, sourceSection);
         }
 
         public TimeSNowPrimitiveNode(TimeSNowPrimitiveNode prev) {
             super(prev);
+            readTimeZoneNode = prev.readTimeZoneNode;
         }
 
         @Specialization
-        public RubyTime timeSNow(RubyClass timeClass) {
-            // TODO CS 14-Feb-15 uses debug send
-            final DateTimeZone zone = org.jruby.RubyTime.getTimeZoneFromTZString(getContext().getRuntime(),
-                    DebugOperations.send(getContext(), getContext().getCoreLibrary().getENV(), "[]", null, getContext().makeString("TZ")).toString());
-            return new RubyTime(timeClass, DateTime.now(zone), null);
+        public RubyTime timeSNow(VirtualFrame frame, RubyClass timeClass) {
+            // TODO CS 4-Mar-15 whenever we get time we have to convert lookup and time zone to a string and look it up - need to cache somehow...
+            return new RubyTime(timeClass, now(readTimeZoneNode.executeRubyString(frame)), null);
+        }
+        
+        @CompilerDirectives.TruffleBoundary
+        private DateTime now(RubyString timeZone) {
+            return DateTime.now(org.jruby.RubyTime.getTimeZoneFromTZString(getContext().getRuntime(), timeZone.toString()));
         }
 
     }
@@ -73,12 +81,16 @@ public abstract class TimePrimitiveNodes {
     @RubiniusPrimitive(name = "time_s_specific", needsSelf = false)
     public static abstract class TimeSSpecificPrimitiveNode extends RubiniusPrimitiveNode {
 
+        @Child private ReadTimeZoneNode readTimeZoneNode;
+
         public TimeSSpecificPrimitiveNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
+            readTimeZoneNode = new ReadTimeZoneNode(context, sourceSection);
         }
 
         public TimeSSpecificPrimitiveNode(TimeSSpecificPrimitiveNode prev) {
             super(prev);
+            readTimeZoneNode = prev.readTimeZoneNode;
         }
 
         @Specialization(guards = "isTrue(isUTC)")
@@ -90,22 +102,30 @@ public abstract class TimePrimitiveNodes {
         public RubyTime timeSSpecificUTC(int seconds, int nanoseconds, boolean isUTC, RubyNilClass offset) {
             // TODO(CS): overflow checks needed?
             final long milliseconds = seconds * 1_000L + (nanoseconds / 1_000_000);
-            return new RubyTime(getContext().getCoreLibrary().getTimeClass(), new DateTime(milliseconds, DateTimeZone.UTC), null);
+            return new RubyTime(getContext().getCoreLibrary().getTimeClass(), time(milliseconds), null);
+        }
+
+
+        @Specialization(guards = "!isTrue(isUTC)")
+        public RubyTime timeSSpecific(VirtualFrame frame, long seconds, long nanoseconds, boolean isUTC, RubyNilClass offset) {
+            return timeSSpecific(frame, (int) seconds, (int) nanoseconds, isUTC, offset);
         }
 
         @Specialization(guards = "!isTrue(isUTC)")
-        public RubyTime timeSSpecific(long seconds, long nanoseconds, boolean isUTC, RubyNilClass offset) {
-            return timeSSpecific((int) seconds, (int) nanoseconds, isUTC, offset);
-        }
-
-        @Specialization(guards = "!isTrue(isUTC)")
-        public RubyTime timeSSpecific(int seconds, int nanoseconds, boolean isUTC, RubyNilClass offset) {
-            // TODO CS 14-Feb-15 uses debug send
-            final DateTimeZone zone = org.jruby.RubyTime.getTimeZoneFromTZString(getContext().getRuntime(),
-                    DebugOperations.send(getContext(), getContext().getCoreLibrary().getENV(), "[]", null, getContext().makeString("TZ")).toString());
+        public RubyTime timeSSpecific(VirtualFrame frame, int seconds, int nanoseconds, boolean isUTC, RubyNilClass offset) {
             // TODO(CS): overflow checks needed?
             final long milliseconds = (long) seconds * 1_000 + ((long) nanoseconds / 1_000_000);
-            return new RubyTime(getContext().getCoreLibrary().getTimeClass(), new DateTime(milliseconds, zone), null);
+            return new RubyTime(getContext().getCoreLibrary().getTimeClass(), time(milliseconds, readTimeZoneNode.executeRubyString(frame)), null);
+        }
+
+        @CompilerDirectives.TruffleBoundary
+        public DateTime time(long milliseconds) {
+            return new DateTime(milliseconds, DateTimeZone.UTC);
+        }
+
+        @CompilerDirectives.TruffleBoundary
+        private DateTime time(long milliseconds, RubyString timeZone) {
+            return new DateTime(milliseconds, org.jruby.RubyTime.getTimeZoneFromTZString(getContext().getRuntime(), timeZone.toString()));
         }
 
     }

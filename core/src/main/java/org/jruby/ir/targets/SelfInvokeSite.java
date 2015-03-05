@@ -27,10 +27,6 @@ import static org.jruby.util.CodegenUtils.sig;
 * Created by headius on 10/23/14.
 */
 public class SelfInvokeSite extends InvokeSite {
-    public SelfInvokeSite(MethodType type, String name) {
-        super(type, name, CallType.FUNCTIONAL);
-    }
-
     public SelfInvokeSite(MethodType type, String name, CallType callType) {
         super(type, name, callType);
     }
@@ -38,7 +34,10 @@ public class SelfInvokeSite extends InvokeSite {
     public static Handle BOOTSTRAP = new Handle(Opcodes.H_INVOKESTATIC, p(SelfInvokeSite.class), "bootstrap", sig(CallSite.class, MethodHandles.Lookup.class, String.class, MethodType.class));
 
     public static CallSite bootstrap(MethodHandles.Lookup lookup, String name, MethodType type) {
-        InvokeSite site = new SelfInvokeSite(type, JavaNameMangler.demangleMethodName(name.split(":")[1]));
+        String[] nameComponents = name.split(":");
+        String methodName = JavaNameMangler.demangleMethodName(nameComponents[1]);
+        CallType callType = nameComponents[0].equals("callFunctional") ? CallType.FUNCTIONAL : CallType.VARIABLE;
+        InvokeSite site = new SelfInvokeSite(type, methodName, callType);
 
         return InvokeSite.bootstrap(site, lookup);
     }

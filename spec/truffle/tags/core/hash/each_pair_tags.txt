@@ -1,8 +1,1 @@
-fails:Hash#each_pair yields a [[key, value]] Array for each pair to a block expecting |*args|
-fails:Hash#each_pair yields the key and value of each pair to a block expecting |key, value|
-fails:Hash#each_pair yields the key only to a block expecting |key,|
-fails:Hash#each_pair uses the same order as keys() and values()
 fails:Hash#each_pair properly expands (or not) child class's 'each'-yielded args
-fails:Hash#each_pair returns an Enumerator if called on a non-empty hash without a block
-fails:Hash#each_pair returns an Enumerator if called on an empty hash without a block
-fails:Hash#each_pair returns an Enumerator if called on a frozen instance

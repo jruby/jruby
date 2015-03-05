@@ -89,18 +89,6 @@ class Hash
     end
   end
 
-  def each_key
-    each do |key, value|
-      yield key
-    end
-  end
-
-  def each_value
-    each do |key, value|
-      yield value
-    end
-  end
-
   def value?(value)
     values.any? { |v| v == value }
   end

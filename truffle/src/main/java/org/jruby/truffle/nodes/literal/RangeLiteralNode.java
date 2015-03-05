@@ -9,13 +9,18 @@
  */
 package org.jruby.truffle.nodes.literal;
 
+import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.dsl.NodeChild;
 import com.oracle.truffle.api.dsl.NodeChildren;
 import com.oracle.truffle.api.dsl.Specialization;
+import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.utilities.BranchProfile;
 import org.jruby.truffle.nodes.RubyNode;
+import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
+import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.RubyRange;
 
 @NodeChildren({@NodeChild("begin"), @NodeChild("end")})
@@ -28,6 +33,8 @@ public abstract class RangeLiteralNode extends RubyNode {
     private final BranchProfile endIntegerProfile = BranchProfile.create();
     private final BranchProfile endLongProfile = BranchProfile.create();
     private final BranchProfile objectProfile = BranchProfile.create();
+
+    @Child private CallDispatchHeadNode cmpNode;
 
     public RangeLiteralNode(RubyContext context, SourceSection sourceSection, boolean excludeEnd) {
         super(context, sourceSection);
@@ -59,7 +66,7 @@ public abstract class RangeLiteralNode extends RubyNode {
     }
 
     @Specialization
-    public Object doRange(Object begin, Object end) {
+    public Object doRange(VirtualFrame frame, Object begin, Object end) {
         if (begin instanceof Integer) {
             beginIntegerProfile.enter();
 
@@ -87,6 +94,23 @@ public abstract class RangeLiteralNode extends RubyNode {
         }
 
         objectProfile.enter();
+
+        if (cmpNode == null) {
+            CompilerDirectives.transferToInterpreter();
+            cmpNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext()));
+        }
+
+        final Object cmpResult;
+
+        try {
+            cmpResult = cmpNode.call(frame, begin, "<=>", null, end);
+        } catch (RaiseException e) {
+            throw new RaiseException(getContext().getCoreLibrary().argumentError("bad value for range", this));
+        }
+
+        if (cmpResult == getContext().getCoreLibrary().getNilObject()) {
+            throw new RaiseException(getContext().getCoreLibrary().argumentError("bad value for range", this));
+        }
 
         return new RubyRange.ObjectRange(getContext().getCoreLibrary().getRangeClass(), begin, end, excludeEnd);
     }

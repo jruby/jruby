@@ -1,5 +1,2 @@
-fails:Range#initialize initializes correctly the Range object when given 2 arguments
-fails:Range#initialize initializes correctly the Range object when given 3 arguments
-fails:Range#initialize raises an ArgumentError if passed without or with only one argument
 fails:Range#initialize raises a NameError if called on an already initialized Range
 fails:Range#initialize raises an ArgumentError if arguments don't respond to <=>

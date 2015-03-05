@@ -102,7 +102,7 @@ public abstract class HashNodes {
 
     }
 
-    @CoreMethod(names = "[]", onSingleton = true, argumentsAsArray = true)
+    @CoreMethod(names = "[]", onSingleton = true, argumentsAsArray = true, reallyDoesNeedSelf = true)
     public abstract static class ConstructNode extends HashCoreMethodNode {
 
         private final BranchProfile singleObject = BranchProfile.create();
@@ -112,6 +112,7 @@ public abstract class HashNodes {
         private final BranchProfile largePackedArray = BranchProfile.create();
         private final BranchProfile otherArray = BranchProfile.create();
         private final BranchProfile singleOther = BranchProfile.create();
+        private final BranchProfile otherHash = BranchProfile.create();
         private final BranchProfile keyValues = BranchProfile.create();
 
         public ConstructNode(RubyContext context, SourceSection sourceSection) {
@@ -124,7 +125,7 @@ public abstract class HashNodes {
 
         @ExplodeLoop
         @Specialization
-        public RubyHash construct(Object[] args) {
+        public RubyHash construct(RubyClass hashClass, Object[] args) {
             if (args.length == 1) {
                 singleObject.enter();
 
@@ -171,7 +172,7 @@ public abstract class HashNodes {
                                 }
                             }
 
-                            return new RubyHash(getContext().getCoreLibrary().getHashClass(), null, null, newStore, size, null);
+                            return new RubyHash(hashClass, null, null, newStore, size, null);
                         } else {
                             largePackedArray.enter();
 
@@ -198,12 +199,16 @@ public abstract class HashNodes {
                                 keyValues.add(new KeyValue(pairStore[0], pairStore[1]));
                             }
 
-                            return HashOperations.verySlowFromEntries(getContext(), keyValues);
+                            return HashOperations.verySlowFromEntries(hashClass, keyValues);
                         }
                     } else {
                         otherArray.enter();
                         throw new UnsupportedOperationException("other array");
                     }
+                } else if (arg instanceof RubyHash) {
+                    otherHash.enter();
+                    
+                    return HashOperations.verySlowFromEntries(hashClass, HashOperations.verySlowToKeyValues((RubyHash) arg));
                 } else {
                     singleOther.enter();
                     throw new UnsupportedOperationException("single other");
@@ -217,7 +222,7 @@ public abstract class HashNodes {
                     entries.add(new KeyValue(args[n], args[n + 1]));
                 }
 
-                return HashOperations.verySlowFromEntries(getContext(), entries);
+                return HashOperations.verySlowFromEntries(hashClass, entries);
             }
         }
 
@@ -289,8 +294,6 @@ public abstract class HashNodes {
 
         @Specialization(guards = "isBuckets(hash)")
         public Object getBuckets(VirtualFrame frame, RubyHash hash, Object key) {
-            notDesignedForCompilation();
-
             final HashSearchResult hashSearchResult = findEntryNode.search(frame, hash, key);
 
             if (hashSearchResult.getEntry() != null) {
@@ -313,7 +316,7 @@ public abstract class HashNodes {
 
     }
 
-    @CoreMethod(names = "[]=", required = 2)
+    @CoreMethod(names = "[]=", required = 2, raiseIfFrozenSelf = true)
     public abstract static class SetIndexNode extends HashCoreMethodNode {
 
         @Child private CallDispatchHeadNode eqlNode;
@@ -333,7 +336,6 @@ public abstract class HashNodes {
 
         @Specialization(guards = "isNull(hash)")
         public Object setNull(RubyHash hash, Object key, Object value) {
-            hash.checkFrozen(this);
             final Object[] store = new Object[HashOperations.SMALL_HASH_SIZE * 2];
             store[0] = key;
             store[1] = value;
@@ -344,8 +346,6 @@ public abstract class HashNodes {
         @ExplodeLoop
         @Specialization(guards = {"!isNull(hash)", "!isBuckets(hash)"})
         public Object setPackedArray(VirtualFrame frame, RubyHash hash, Object key, Object value) {
-            hash.checkFrozen(this);
-
             final Object[] store = (Object[]) hash.getStore();
             final int size = hash.getSize();
 
@@ -444,7 +444,7 @@ public abstract class HashNodes {
 
     }
 
-    @CoreMethod(names = "delete", required = 1)
+    @CoreMethod(names = "delete", required = 1, raiseIfFrozenSelf = true)
     public abstract static class DeleteNode extends HashCoreMethodNode {
 
         @Child private CallDispatchHeadNode eqlNode;
@@ -464,14 +464,11 @@ public abstract class HashNodes {
 
         @Specialization(guards = "isNull(hash)")
         public RubyNilClass deleteNull(RubyHash hash, Object key) {
-            hash.checkFrozen(this);
             return getContext().getCoreLibrary().getNilObject();
         }
 
         @Specialization(guards = {"!isNull(hash)", "!isBuckets(hash)"})
         public Object deletePackedArray(VirtualFrame frame, RubyHash hash, Object key) {
-            hash.checkFrozen(this);
-
             final Object[] store = (Object[]) hash.getStore();
             final int size = hash.getSize();
 
@@ -537,26 +534,25 @@ public abstract class HashNodes {
     @ImportStatic(HashGuards.class)
     public abstract static class EachNode extends YieldingCoreMethodNode {
 
+        @Child private CallDispatchHeadNode toEnumNode;
+        
         public EachNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
         }
 
         public EachNode(EachNode prev) {
             super(prev);
+            toEnumNode = prev.toEnumNode;
         }
 
         @Specialization(guards = "isNull(hash)")
         public RubyHash eachNull(RubyHash hash, RubyProc block) {
-            notDesignedForCompilation();
-
             return hash;
         }
 
         @ExplodeLoop
         @Specialization(guards = {"!isNull(hash)", "!isBuckets(hash)"})
         public RubyHash eachPackedArray(VirtualFrame frame, RubyHash hash, RubyProc block) {
-            notDesignedForCompilation();
-
             final Object[] store = (Object[]) hash.getStore();
             final int size = hash.getSize();
 
@@ -569,7 +565,7 @@ public abstract class HashNodes {
                     }
 
                     if (n < size) {
-                        yield(frame, block, RubyArray.fromObjects(getContext().getCoreLibrary().getArrayClass(), store[n * 2], store[n * 2 + 1]));
+                        yield(frame, block, new RubyArray(getContext().getCoreLibrary().getArrayClass(), new Object[]{store[n * 2], store[n * 2 + 1]}, 2));
                     }
                 }
             } finally {
@@ -590,6 +586,18 @@ public abstract class HashNodes {
             }
 
             return hash;
+        }
+
+        @Specialization
+        public Object each(VirtualFrame frame, RubyHash hash, UndefinedPlaceholder block) {
+            notDesignedForCompilation();
+
+            if (toEnumNode == null) {
+                CompilerDirectives.transferToInterpreter();
+                toEnumNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext(), true));
+            }
+
+            return toEnumNode.call(frame, hash, "to_enum", null, getContext().getSymbolTable().getSymbol(getName()));
         }
 
     }
@@ -710,55 +718,6 @@ public abstract class HashNodes {
 
     }
 
-    @CoreMethod(names = {"inspect", "to_s"})
-    public abstract static class InspectNode extends HashCoreMethodNode {
-
-        @Child private CallDispatchHeadNode inspect;
-
-        public InspectNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-            inspect = DispatchHeadNodeFactory.createMethodCall(context);
-        }
-
-        public InspectNode(InspectNode prev) {
-            super(prev);
-            inspect = prev.inspect;
-        }
-
-        @Specialization(guards = "isNull(hash)")
-        public RubyString inspectNull(RubyHash hash) {
-            notDesignedForCompilation();
-
-            return getContext().makeString("{}");
-        }
-
-        @Specialization
-        public RubyString inspectPackedArray(VirtualFrame frame, RubyHash hash) {
-            notDesignedForCompilation();
-
-            final StringBuilder builder = new StringBuilder();
-
-            builder.append("{");
-
-            for (KeyValue keyValue : HashOperations.verySlowToKeyValues(hash)) {
-                if (builder.length() > 1) {
-                    builder.append(", ");
-                }
-
-                // TODO(CS): to string
-
-                builder.append(inspect.call(frame, keyValue.getKey(), "inspect", null));
-                builder.append("=>");
-                builder.append(inspect.call(frame, keyValue.getValue(), "inspect", null));
-            }
-
-            builder.append("}");
-
-            return getContext().makeString(builder.toString());
-        }
-
-    }
-
     @CoreMethod(names = { "has_key?", "key?", "include?", "member?" }, required = 1)
     public abstract static class KeyNode extends HashCoreMethodNode {
 
@@ -806,57 +765,6 @@ public abstract class HashNodes {
             }
 
             return false;
-        }
-
-    }
-
-    @CoreMethod(names = "keys")
-    public abstract static class KeysNode extends HashCoreMethodNode {
-
-        public KeysNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
-        public KeysNode(KeysNode prev) {
-            super(prev);
-        }
-
-        @Specialization(guards = "isNull(hash)")
-        public RubyArray keysNull(RubyHash hash) {
-            return new RubyArray(getContext().getCoreLibrary().getArrayClass(), null, 0);
-        }
-
-        @Specialization(guards = {"!isNull(hash)", "!isBuckets(hash)"})
-        public RubyArray keysPackedArray(RubyHash hash) {
-            notDesignedForCompilation();
-
-            final Object[] store = (Object[]) hash.getStore();
-
-            final Object[] keys = new Object[hash.getSize()];
-
-            for (int n = 0; n < keys.length; n++) {
-                keys[n] = store[n * 2];
-            }
-
-            return new RubyArray(getContext().getCoreLibrary().getArrayClass(), keys, keys.length);
-        }
-
-        @Specialization(guards = "isBuckets(hash)")
-        public RubyArray keysBuckets(RubyHash hash) {
-            notDesignedForCompilation();
-
-            final Object[] keys = new Object[hash.getSize()];
-
-            Entry entry = hash.getFirstInSequence();
-            int n = 0;
-
-            while (entry != null) {
-                keys[n] = entry.getKey();
-                n++;
-                entry = entry.getNextInSequence();
-            }
-
-            return new RubyArray(getContext().getCoreLibrary().getArrayClass(), keys, keys.length);
         }
 
     }
@@ -919,10 +827,12 @@ public abstract class HashNodes {
 
     }
 
-    @CoreMethod(names = "merge", required = 1)
-    public abstract static class MergeNode extends HashCoreMethodNode {
+    @ImportStatic(HashGuards.class)
+    @CoreMethod(names = "merge", required = 1, needsBlock = true)
+    public abstract static class MergeNode extends YieldingCoreMethodNode {
 
         @Child private CallDispatchHeadNode eqlNode;
+        @Child private CallDispatchHeadNode fallbackCallNode;
 
         private final BranchProfile nothingFromFirstProfile = BranchProfile.create();
         private final BranchProfile considerNothingFromSecondProfile = BranchProfile.create();
@@ -940,19 +850,20 @@ public abstract class HashNodes {
         public MergeNode(MergeNode prev) {
             super(prev);
             eqlNode = prev.eqlNode;
+            fallbackCallNode = prev.fallbackCallNode;
         }
 
         @Specialization(guards = {"!isNull(hash)", "!isBuckets(hash)", "isNull(other)"})
-        public RubyHash mergePackedArrayNull(RubyHash hash, RubyHash other) {
+        public RubyHash mergePackedArrayNull(RubyHash hash, RubyHash other, UndefinedPlaceholder block) {
             final Object[] store = (Object[]) hash.getStore();
             final Object[] copy = Arrays.copyOf(store, HashOperations.SMALL_HASH_SIZE * 2);
 
-            return new RubyHash(getContext().getCoreLibrary().getHashClass(), hash.getDefaultBlock(), hash.getDefaultValue(), copy, hash.getSize(), null);
+            return new RubyHash(hash.getLogicalClass(), hash.getDefaultBlock(), hash.getDefaultValue(), copy, hash.getSize(), null);
         }
 
         @ExplodeLoop
         @Specialization(guards = {"!isNull(hash)", "!isBuckets(hash)", "!isNull(other)", "!isBuckets(other)"})
-        public RubyHash mergePackedArrayPackedArray(VirtualFrame frame, RubyHash hash, RubyHash other) {
+        public RubyHash mergePackedArrayPackedArray(VirtualFrame frame, RubyHash hash, RubyHash other, UndefinedPlaceholder block) {
             // TODO(CS): what happens with the default block here? Which side does it get merged from?
 
             final Object[] storeA = (Object[]) hash.getStore();
@@ -987,14 +898,14 @@ public abstract class HashNodes {
 
             if (mergeFromACount == 0) {
                 nothingFromFirstProfile.enter();
-                return new RubyHash(getContext().getCoreLibrary().getHashClass(), hash.getDefaultBlock(), hash.getDefaultValue(), Arrays.copyOf(storeB, HashOperations.SMALL_HASH_SIZE * 2), storeBSize, null);
+                return new RubyHash(hash.getLogicalClass(), hash.getDefaultBlock(), hash.getDefaultValue(), Arrays.copyOf(storeB, HashOperations.SMALL_HASH_SIZE * 2), storeBSize, null);
             }
 
             considerNothingFromSecondProfile.enter();
 
             if (mergeFromACount == storeB.length) {
                 nothingFromSecondProfile.enter();
-                return new RubyHash(getContext().getCoreLibrary().getHashClass(), hash.getDefaultBlock(), hash.getDefaultValue(), Arrays.copyOf(storeB, HashOperations.SMALL_HASH_SIZE * 2), storeBSize, null);
+                return new RubyHash(hash.getLogicalClass(), hash.getDefaultBlock(), hash.getDefaultValue(), Arrays.copyOf(storeB, HashOperations.SMALL_HASH_SIZE * 2), storeBSize, null);
             }
 
             considerResultIsSmallProfile.enter();
@@ -1022,17 +933,19 @@ public abstract class HashNodes {
                     index += 2;
                 }
 
-                return new RubyHash(getContext().getCoreLibrary().getHashClass(), hash.getDefaultBlock(), hash.getDefaultValue(), merged, mergedSize, null);
+                return new RubyHash(hash.getLogicalClass(), hash.getDefaultBlock(), hash.getDefaultValue(), merged, mergedSize, null);
             }
 
             CompilerDirectives.transferToInterpreter();
             throw new UnsupportedOperationException();
         }
-
-
+        
+        // TODO CS 3-Mar-15 need negative guards on this
         @Specialization
-        public RubyHash mergeBucketsBuckets(RubyHash hash, RubyHash other) {
-            final RubyHash merged = new RubyHash(getContext().getCoreLibrary().getHashClass(), null, null, new Entry[HashOperations.capacityGreaterThan(hash.getSize() + other.getSize())], 0, null);
+        public RubyHash mergeBucketsBuckets(RubyHash hash, RubyHash other, UndefinedPlaceholder block) {
+            notDesignedForCompilation();
+
+            final RubyHash merged = new RubyHash(hash.getLogicalClass(), null, null, new Entry[HashOperations.capacityGreaterThan(hash.getSize() + other.getSize())], 0, null);
 
             int size = 0;
 
@@ -1052,45 +965,85 @@ public abstract class HashNodes {
             return merged;
         }
 
+        @Specialization
+        public RubyHash merge(VirtualFrame frame, RubyHash hash, RubyHash other, RubyProc block) {
+            notDesignedForCompilation();
+            
+            final RubyHash merged = new RubyHash(hash.getLogicalClass(), null, null, new Entry[HashOperations.capacityGreaterThan(hash.getSize() + other.getSize())], 0, null);
+
+            int size = 0;
+
+            for (KeyValue keyValue : HashOperations.verySlowToKeyValues(hash)) {
+                HashOperations.verySlowSetInBuckets(merged, keyValue.getKey(), keyValue.getValue());
+                size++;
+            }
+
+            for (KeyValue keyValue : HashOperations.verySlowToKeyValues(other)) {
+                final HashSearchResult searchResult = HashOperations.verySlowFindBucket(merged, keyValue.getKey());
+                
+                if (searchResult.getEntry() == null) {
+                    HashOperations.verySlowSetInBuckets(merged, keyValue.getKey(), keyValue.getValue());
+                    size++;
+                } else {
+                    final Object oldValue = searchResult.getEntry().getValue();
+                    final Object newValue = keyValue.getValue();
+                    final Object mergedValue = yield(frame, block, keyValue.getKey(), oldValue, newValue);
+                    
+                    HashOperations.verySlowSetInBuckets(merged, keyValue.getKey(), mergedValue);
+                }
+            }
+
+            merged.setSize(size);
+
+            return merged;
+        }
+
+        @Specialization(guards = "!isRubyHash(other)")
+        public Object merge(VirtualFrame frame, RubyHash hash, Object other, Object block) {
+            notDesignedForCompilation();
+
+            if (fallbackCallNode == null) {
+                CompilerDirectives.transferToInterpreter();
+                fallbackCallNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext(), true));
+            }
+            
+            final RubyProc blockProc;
+            
+            if (block == UndefinedPlaceholder.INSTANCE) {
+                blockProc = null;
+            } else {
+                blockProc = (RubyProc) block;
+            }
+
+            return fallbackCallNode.call(frame, hash, "merge_fallback", blockProc, other);
+        }
+
     }
 
-    @CoreMethod(names = "default", optional = 1)
-    public abstract static class DefaultNode extends HashCoreMethodNode {
+    @CoreMethod(names = "default=", required = 1)
+    public abstract static class SetDefaultNode extends HashCoreMethodNode {
 
-        public DefaultNode(RubyContext context, SourceSection sourceSection) {
+        public SetDefaultNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
         }
 
-        public DefaultNode(DefaultNode prev) {
+        public SetDefaultNode(SetDefaultNode prev) {
             super(prev);
         }
 
         @Specialization
-        public Object defaultElement(VirtualFrame frame, RubyHash hash, UndefinedPlaceholder undefined) {
-            Object ret = hash.getDefaultValue();
+        public Object setDefault(VirtualFrame frame, RubyHash hash, Object defaultValue) {
+            notDesignedForCompilation();
 
-            // TODO (nirvdrum Dec. 1, 2014): This needs to evaluate the defaultProc if it exists before it tries defaultValue.
-            if (ret != null) {
-                return ret;
-            } else {
-                return getContext().getCoreLibrary().getNilObject();
-            }
-        }
-
-        @Specialization(guards = "!isUndefinedPlaceholder(key)")
-        public Object defaultElement(VirtualFrame frame, RubyHash hash, Object key) {
-            Object ret = hash.getDefaultValue();
-
-            // TODO (nirvdrum Dec. 1, 2014): This really needs to do something with the key.  Dummy stub for now.
-            if (ret != null) {
-                return ret;
-            } else {
-                return getContext().getCoreLibrary().getNilObject();
-            }
+            ruby(frame, "Rubinius.check_frozen");
+            
+            hash.setDefaultValue(defaultValue);
+            hash.setDefaultBlock(null);
+            return defaultValue;
         }
     }
 
-    @CoreMethod(names = "size")
+    @CoreMethod(names = {"size", "length"})
     public abstract static class SizeNode extends HashCoreMethodNode {
 
         public SizeNode(RubyContext context, SourceSection sourceSection) {
@@ -1113,103 +1066,107 @@ public abstract class HashNodes {
 
     }
 
-    @CoreMethod(names = "values")
-    public abstract static class ValuesNode extends HashCoreMethodNode {
+    @CoreMethod(names = "replace", required = 1)
+    public abstract static class ReplaceNode extends HashCoreMethodNode {
 
-        public ValuesNode(RubyContext context, SourceSection sourceSection) {
+        public ReplaceNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
         }
 
-        public ValuesNode(ValuesNode prev) {
+        public ReplaceNode(ReplaceNode prev) {
             super(prev);
         }
 
-        @Specialization(guards = "isNull(hash)")
-        public RubyArray valuesNull(RubyHash hash) {
-            return new RubyArray(getContext().getCoreLibrary().getArrayClass(), null, 0);
-        }
-
-        @Specialization(guards = {"!isNull(hash)", "!isBuckets(hash)"})
-        public RubyArray valuesPackedArray(RubyHash hash) {
-            final Object[] store = (Object[]) hash.getStore();
-
-            final Object[] values = new Object[hash.getSize()];
-
-            for (int n = 0; n < values.length; n++) {
-                values[n] = store[n * 2 + 1];
-            }
-
-            return new RubyArray(getContext().getCoreLibrary().getArrayClass(), values, values.length);
-        }
-
-        @Specialization(guards = "isBuckets(hash)")
-        public RubyArray valuesBuckets(RubyHash hash) {
+        @Specialization
+        public RubyHash replace(VirtualFrame frame, RubyHash hash, RubyHash other) {
             notDesignedForCompilation();
 
-            final Object[] values = new Object[hash.getSize()];
+            ruby(frame, "Rubinius.check_frozen");
+            
+            HashOperations.verySlowSetKeyValues(hash, HashOperations.verySlowToKeyValues(other));
+            hash.setDefaultBlock(other.getDefaultBlock());
+            hash.setDefaultValue(other.getDefaultValue());
+            
+            return hash;
+        }
 
-            Entry entry = hash.getFirstInSequence();
-            int n = 0;
+        @Specialization(guards = "!isRubyHash(hash)")
+        public Object replace(VirtualFrame frame, RubyHash hash, Object other) {
+            notDesignedForCompilation();
 
-            while (entry != null) {
-                values[n] = entry.getValue();
-                n++;
-                entry = entry.getNextInSequence();
-            }
-
-            return new RubyArray(getContext().getCoreLibrary().getArrayClass(), values, values.length);
+            return ruby(frame, "replace(Rubinius::Type.coerce_to other, Hash, :to_hash)", "other", other);
         }
 
     }
 
-    @CoreMethod(names = "to_a")
-    public abstract static class ToArrayNode extends HashCoreMethodNode {
+    @RubiniusOnly
+    @CoreMethod(names = "_default_value")
+    public abstract static class DefaultValueNode extends HashCoreMethodNode {
 
-        public ToArrayNode(RubyContext context, SourceSection sourceSection) {
+        public DefaultValueNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
         }
 
-        public ToArrayNode(ToArrayNode prev) {
+        public DefaultValueNode(DefaultValueNode prev) {
             super(prev);
         }
 
-        @Specialization(guards = "isNull(hash)")
-        public RubyArray toArrayNull(RubyHash hash) {
-            notDesignedForCompilation();
+        @Specialization
+        public Object defaultValue(RubyHash hash) {
+            final Object value = hash.getDefaultValue();
+            
+            if (value == null) {
+                return getContext().getCoreLibrary().getNilObject();
+            } else {
+                return value;
+            }
+        }
+    }
 
-            return new RubyArray(getContext().getCoreLibrary().getArrayClass(), null, 0);
+    @RubiniusOnly
+    @CoreMethod(names = "_set_default_value", required = 1)
+    public abstract static class SetDefaultValueNode extends HashCoreMethodNode {
+
+        public SetDefaultValueNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
         }
 
-        @Specialization(guards = {"!isNull(hash)", "!isBuckets(hash)"})
-        public RubyArray toArrayPackedArray(RubyHash hash) {
-            notDesignedForCompilation();
-
-            final Object[] store = (Object[]) hash.getStore();
-            final int size = hash.getSize();
-            final Object[] pairs = new Object[size];
-
-            for (int n = 0; n < size; n++) {
-                pairs[n] = RubyArray.fromObjects(getContext().getCoreLibrary().getArrayClass(), store[n * 2], store[n * 2 + 1]);
-            }
-
-            return new RubyArray(getContext().getCoreLibrary().getArrayClass(), pairs, size);
+        public SetDefaultValueNode(SetDefaultValueNode prev) {
+            super(prev);
         }
 
-        @Specialization(guards = "isBuckets(hash)")
-        public RubyArray toArrayBuckets(RubyHash hash) {
-            notDesignedForCompilation();
+        @Specialization
+        public Object setDefaultValue(RubyHash hash, Object defaultValue) {
+            hash.setDefaultValue(defaultValue);
+            return defaultValue;
+        }
+        
+    }
 
-            final int size = hash.getSize();
-            final Object[] pairs = new Object[size];
+    @RubiniusOnly
+    @CoreMethod(names = "_set_default_proc", required = 1)
+    public abstract static class SetDefaultProcNode extends HashCoreMethodNode {
 
-            int n = 0;
+        public SetDefaultProcNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
 
-            for (KeyValue keyValue : HashOperations.verySlowToKeyValues(hash)) {
-                pairs[n] = RubyArray.fromObjects(getContext().getCoreLibrary().getArrayClass(), keyValue.getValue(), keyValue.getValue());
-                n++;
-            }
+        public SetDefaultProcNode(SetDefaultProcNode prev) {
+            super(prev);
+        }
 
-            return new RubyArray(getContext().getCoreLibrary().getArrayClass(), pairs, size);
+        @Specialization
+        public RubyProc setDefaultProc(RubyHash hash, RubyProc defaultProc) {
+            hash.setDefaultValue(null);
+            hash.setDefaultBlock(defaultProc);
+            return defaultProc;
+        }
+
+        @Specialization
+        public RubyNilClass setDefaultProc(RubyHash hash, RubyNilClass nil) {
+            hash.setDefaultValue(null);
+            hash.setDefaultBlock(null);
+            return getContext().getCoreLibrary().getNilObject();
         }
 
     }

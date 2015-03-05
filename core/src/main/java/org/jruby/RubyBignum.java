@@ -632,56 +632,53 @@ public class RubyBignum extends RubyInteger {
      *
      */
     public IRubyObject op_and(ThreadContext context, IRubyObject other) {
-        other = other.convertToInteger();
         if (other instanceof RubyBignum) {
             return bignorm(getRuntime(), value.and(((RubyBignum) other).value));
         } else if (other instanceof RubyFixnum) {
             return bignorm(getRuntime(), value.and(fix2big((RubyFixnum)other)));
         }
-        return coerceBin(context, "&", other);
+        return coerceBit(context, "&", other);
     }
 
     @JRubyMethod(name = "&", required = 1)
     public IRubyObject op_and19(ThreadContext context, IRubyObject other) {
-        return op_and(context, convertToInteger(context, other));
+        return op_and(context, other);
     }
 
     /** rb_big_or
      *
      */
     public IRubyObject op_or(ThreadContext context, IRubyObject other) {
-        other = other.convertToInteger();
         if (other instanceof RubyBignum) {
             return bignorm(getRuntime(), value.or(((RubyBignum) other).value));
         }
         if (other instanceof RubyFixnum) { // no bignorm here needed
             return bignorm(getRuntime(), value.or(fix2big((RubyFixnum)other)));
         }
-        return coerceBin(context, "|", other);
+        return coerceBit(context, "|", other);
     }
 
     @JRubyMethod(name = "|", required = 1)
     public IRubyObject op_or19(ThreadContext context, IRubyObject other) {
-        return op_or(context, convertToInteger(context, other));
+        return op_or(context, other);
     }
 
     /** rb_big_xor
      *
      */
     public IRubyObject op_xor(ThreadContext context, IRubyObject other) {
-        other = other.convertToInteger();
         if (other instanceof RubyBignum) {
             return bignorm(getRuntime(), value.xor(((RubyBignum) other).value));
         }
         if (other instanceof RubyFixnum) {
             return bignorm(getRuntime(), value.xor(BigInteger.valueOf(((RubyFixnum) other).getLongValue())));
         }
-        return coerceBin(context, "^", other);
+        return coerceBit(context, "^", other);
     }
     
     @JRubyMethod(name = "^", required = 1)
     public IRubyObject op_xor19(ThreadContext context, IRubyObject other) {
-        return op_xor(context, convertToInteger(context, other));
+        return op_xor(context, other);
     }
 
     private IRubyObject convertToInteger(ThreadContext context, IRubyObject other) {

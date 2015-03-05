@@ -1,5 +1,0 @@
-fails:Hash#each_value calls block once for each key, passing value
-fails:Hash#each_value processes values in the same order as values()
-fails:Hash#each_value returns an Enumerator if called on a non-empty hash without a block
-fails:Hash#each_value returns an Enumerator if called on an empty hash without a block
-fails:Hash#each_value returns an Enumerator if called on a frozen instance

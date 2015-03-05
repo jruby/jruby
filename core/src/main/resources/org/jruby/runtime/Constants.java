@@ -38,7 +38,6 @@ public final class Constants {
 
     public static final String RUBY_MAJOR_VERSION = "@version.ruby.major@";
     public static final String RUBY_VERSION = "@version.ruby@";
-    public static final int    RUBY_PATCHLEVEL = Integer.parseInt("@version.ruby.patchlevel@");
     public static final int    RUBY_REVISION = Integer.parseInt("@version.ruby.revision@");
 
     public static final String COMPILE_DATE = "@build.date@";
@@ -90,4 +89,7 @@ public final class Constants {
     }
 
     private Constants() {}
+
+    @Deprecated
+    public static final int    RUBY_PATCHLEVEL = 0;
 }
