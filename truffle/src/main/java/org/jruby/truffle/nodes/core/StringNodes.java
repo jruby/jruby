@@ -733,7 +733,7 @@ public abstract class StringNodes {
         }
     }
 
-    @CoreMethod(names = "downcase")
+    @CoreMethod(names = "downcase", taintFromSelf = true)
     public abstract static class DowncaseNode extends CoreMethodNode {
 
         public DowncaseNode(RubyContext context, SourceSection sourceSection) {
@@ -1052,7 +1052,7 @@ public abstract class StringNodes {
 
     }
 
-    @CoreMethod(names = "inspect")
+    @CoreMethod(names = "inspect", taintFromSelf = true)
     public abstract static class InspectNode extends CoreMethodNode {
 
         public InspectNode(RubyContext context, SourceSection sourceSection) {
@@ -1073,7 +1073,7 @@ public abstract class StringNodes {
         }
     }
 
-    @CoreMethod(names = "initialize", optional = 1)
+    @CoreMethod(names = "initialize", optional = 1, taintFromParameters = 0)
     public abstract static class InitializeNode extends CoreMethodNode {
 
         public InitializeNode(RubyContext context, SourceSection sourceSection) {
@@ -1124,7 +1124,7 @@ public abstract class StringNodes {
 
     }
 
-    @CoreMethod(names = "insert", required = 2, lowerFixnumParameters = 0, raiseIfFrozenSelf = true)
+    @CoreMethod(names = "insert", required = 2, lowerFixnumParameters = 0, raiseIfFrozenSelf = true, taintFromParameters = 1)
     public abstract static class InsertNode extends CoreMethodNode {
 
         @Child private ConcatNode concatNode;
@@ -1257,7 +1257,7 @@ public abstract class StringNodes {
         }
     }
 
-    @CoreMethod(names = "replace", required = 1, raiseIfFrozenSelf = true)
+    @CoreMethod(names = "replace", required = 1, raiseIfFrozenSelf = true, taintFromParameters = 0)
     public abstract static class ReplaceNode extends CoreMethodNode {
 
         public ReplaceNode(RubyContext context, SourceSection sourceSection) {
@@ -1330,7 +1330,7 @@ public abstract class StringNodes {
         }
     }
 
-    @CoreMethod(names = "swapcase")
+    @CoreMethod(names = "swapcase", taintFromSelf = true)
     public abstract static class SwapcaseNode extends CoreMethodNode {
         public SwapcaseNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -1369,7 +1369,7 @@ public abstract class StringNodes {
         }
     }
 
-    @CoreMethod(names = "rstrip")
+    @CoreMethod(names = "rstrip", taintFromSelf = true)
     public abstract static class RStripNode extends CoreMethodNode {
 
         public RStripNode(RubyContext context, SourceSection sourceSection) {
@@ -1395,7 +1395,7 @@ public abstract class StringNodes {
 
     }
 
-    @CoreMethod(names = "dump")
+    @CoreMethod(names = "dump", taintFromSelf = true)
     public abstract static class DumpNode extends CoreMethodNode {
 
         public DumpNode(RubyContext context, SourceSection sourceSection) {
@@ -1415,7 +1415,7 @@ public abstract class StringNodes {
 
     }
 
-    @CoreMethod(names = "scan", required = 1, needsBlock = true)
+    @CoreMethod(names = "scan", required = 1, needsBlock = true, taintFromParameters = 0)
     public abstract static class ScanNode extends YieldingCoreMethodNode {
 
         public ScanNode(RubyContext context, SourceSection sourceSection) {
@@ -1545,7 +1545,7 @@ public abstract class StringNodes {
         }
     }
 
-    @CoreMethod(names = "split", optional = 2, lowerFixnumParameters = 2)
+    @CoreMethod(names = "split", optional = 2, lowerFixnumParameters = 2, taintFromSelf = true)
     public abstract static class SplitNode extends CoreMethodNode {
 
         public SplitNode(RubyContext context, SourceSection sourceSection) {
@@ -1597,7 +1597,7 @@ public abstract class StringNodes {
         }
     }
 
-    @CoreMethod(names = "succ")
+    @CoreMethod(names = "succ", taintFromSelf = true)
     public abstract static class SuccNode extends CoreMethodNode {
 
         public SuccNode(RubyContext context, SourceSection sourceSection) {
@@ -1750,7 +1750,7 @@ public abstract class StringNodes {
         }
     }
 
-    @CoreMethod(names = "reverse")
+    @CoreMethod(names = "reverse", taintFromSelf = true)
     public abstract static class ReverseNode extends CoreMethodNode {
 
         public ReverseNode(RubyContext context, SourceSection sourceSection) {
@@ -1809,7 +1809,7 @@ public abstract class StringNodes {
 
     }
 
-    @CoreMethod(names = "upcase")
+    @CoreMethod(names = "upcase", taintFromSelf = true)
     public abstract static class UpcaseNode extends CoreMethodNode {
 
         public UpcaseNode(RubyContext context, SourceSection sourceSection) {
@@ -1901,7 +1901,7 @@ public abstract class StringNodes {
         }
     }
 
-    @CoreMethod(names = "capitalize")
+    @CoreMethod(names = "capitalize", taintFromSelf = true)
     public abstract static class CapitalizeNode extends CoreMethodNode {
 
         public CapitalizeNode(RubyContext context, SourceSection sourceSection) {

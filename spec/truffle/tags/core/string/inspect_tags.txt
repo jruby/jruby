@@ -1,2 +1,0 @@
-fails:String#inspect taints the result if self is tainted
-fails:String#inspect untrusts the result if self is untrusted
