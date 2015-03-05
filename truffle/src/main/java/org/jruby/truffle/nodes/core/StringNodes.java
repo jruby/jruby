@@ -634,7 +634,7 @@ public abstract class StringNodes {
 
     }
 
-    @CoreMethod(names = "chomp!", optional = 1)
+    @CoreMethod(names = "chomp!", optional = 1, raiseIfFrozenSelf = true)
     public abstract static class ChompBangNode extends CoreMethodNode {
 
         @Child private ToStrNode toStrNode;
@@ -1349,7 +1349,7 @@ public abstract class StringNodes {
         }
     }
 
-    @CoreMethod(names = "swapcase!")
+    @CoreMethod(names = "swapcase!", raiseIfFrozenSelf = true)
     public abstract static class SwapcaseBangNode extends CoreMethodNode {
         public SwapcaseBangNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -1509,7 +1509,7 @@ public abstract class StringNodes {
         }
     }
 
-    @CoreMethod(names = "setbyte", required = 2)
+    @CoreMethod(names = "setbyte", required = 2, raiseIfFrozenSelf = true)
     public abstract static class SetByteNode extends CoreMethodNode {
 
         public SetByteNode(RubyContext context, SourceSection sourceSection) {
@@ -1769,7 +1769,7 @@ public abstract class StringNodes {
         }
     }
 
-    @CoreMethod(names = "reverse!")
+    @CoreMethod(names = "reverse!", raiseIfFrozenSelf = true)
     public abstract static class ReverseBangNode extends CoreMethodNode {
 
         public ReverseBangNode(RubyContext context, SourceSection sourceSection) {
@@ -1830,7 +1830,7 @@ public abstract class StringNodes {
 
     }
 
-    @CoreMethod(names = "upcase!")
+    @CoreMethod(names = "upcase!", raiseIfFrozenSelf = true)
     public abstract static class UpcaseBangNode extends CoreMethodNode {
 
         public UpcaseBangNode(RubyContext context, SourceSection sourceSection) {
@@ -1927,7 +1927,7 @@ public abstract class StringNodes {
 
     }
 
-    @CoreMethod(names = "clear")
+    @CoreMethod(names = "clear", raiseIfFrozenSelf = true)
     public abstract static class ClearNode extends CoreMethodNode {
 
         public ClearNode(RubyContext context, SourceSection sourceSection) {

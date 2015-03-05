@@ -1,4 +1,3 @@
 fails:String#upcase is locale insensitive (only replaces a-z)
 fails:String#upcase returns a subclass instance for subclasses
 fails:String#upcase! returns nil if no modifications were made
-fails:String#upcase! raises a RuntimeError when self is frozen

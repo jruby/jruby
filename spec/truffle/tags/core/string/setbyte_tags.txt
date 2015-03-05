@@ -8,5 +8,4 @@ fails:String#setbyte raises an IndexError if the index is greater than the Strin
 fails:String#setbyte raises an IndexError if the nexgative index is greater magnitude than the String bytesize
 fails:String#setbyte sets a byte at an index greater than String size
 fails:String#setbyte does not modify the original string when using String.new
-fails:String#setbyte raises a RuntimeError if self is frozen
 fails:String#setbyte raises a TypeError unless the second argument is an Integer
