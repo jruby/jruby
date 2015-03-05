@@ -157,4 +157,16 @@ class Hash
 
   alias_method :to_s, :inspect
 
+  def hash
+    val = size
+    Thread.detect_outermost_recursion self do
+      each_item do |item|
+        val ^= item.key.hash
+        val ^= item.value.hash
+      end
+    end
+
+    val
+  end
+
 end
