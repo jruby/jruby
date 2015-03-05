@@ -46,7 +46,7 @@ public class FullInterpreterContext extends InterpreterContext {
      */
     @Override
     public boolean buildComplete() {
-        return instructions != null || linearizedBBList != null;
+        return linearizedBBList != null;
     }
 
     public BasicBlock[] linearizeBasicBlocks() {
