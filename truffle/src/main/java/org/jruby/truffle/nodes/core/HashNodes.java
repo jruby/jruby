@@ -1134,4 +1134,37 @@ public abstract class HashNodes {
 
     }
 
+    @CoreMethod(names = "replace", required = 1)
+    public abstract static class ReplaceNode extends HashCoreMethodNode {
+
+        public ReplaceNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public ReplaceNode(ReplaceNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public RubyHash replace(VirtualFrame frame, RubyHash hash, RubyHash other) {
+            notDesignedForCompilation();
+
+            ruby(frame, "Rubinius.check_frozen");
+            
+            HashOperations.verySlowSetKeyValues(hash, HashOperations.verySlowToKeyValues(other));
+            hash.setDefaultBlock(other.getDefaultBlock());
+            hash.setDefaultValue(other.getDefaultValue());
+            
+            return hash;
+        }
+
+        @Specialization(guards = "!isRubyHash(arguments[1])")
+        public Object replace(VirtualFrame frame, RubyHash hash, Object other) {
+            notDesignedForCompilation();
+
+            return ruby(frame, "replace(Rubinius::Type.coerce_to other, Hash, :to_hash)", "other", other);
+        }
+
+    }
+
 }
