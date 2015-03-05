@@ -1,19 +1,6 @@
 fails:Module#module_function is a private method
 fails:Module#module_function on Class raises a TypeError if calling after rebinded to Class
-fails:Module#module_function with specific method names creates duplicates of the given instance methods on the Module object
-fails:Module#module_function with specific method names returns the current module
-fails:Module#module_function with specific method names makes the instance methods private
-fails:Module#module_function with specific method names makes the new Module methods public
 fails:Module#module_function with specific method names tries to convert the given names to strings using to_str
 fails:Module#module_function with specific method names raises a TypeError when the given names can't be converted to string using to_str
-fails:Module#module_function with specific method names can make accessible private methods
-fails:Module#module_function as a toggle (no arguments) in a Module body makes any subsequently defined methods module functions with the normal semantics
-fails:Module#module_function as a toggle (no arguments) in a Module body returns the current module
-fails:Module#module_function as a toggle (no arguments) in a Module body stops creating module functions if the body encounters another toggle like public/protected/private without arguments
-fails:Module#module_function as a toggle (no arguments) in a Module body does not stop creating module functions if the body encounters public/protected/private WITH arguments
-fails:Module#module_function as a toggle (no arguments) in a Module body functions normally if both toggle and definitions inside a module_eval
 fails:Module#module_function as a toggle (no arguments) in a Module body affects evaled method definitions also even when outside the eval itself
 fails:Module#module_function as a toggle (no arguments) in a Module body functions normally if both toggle and definitions inside a eval
-fails:Module#module_function as a toggle (no arguments) in a Module body does not affect module_evaled method definitions also if outside the eval itself
-fails:Module#module_function as a toggle (no arguments) in a Module body has no effect if inside a module_eval if the definitions are outside of it
-fails:Module#module_function as a toggle (no arguments) in a Module body does not affect definitions when inside an eval even if the definitions are outside of it

@@ -1,14 +1,5 @@
-fails:Kernel#require is a private method
-fails:Kernel#require (path resolution) loads an absolute path
 fails:Kernel#require (path resolution) loads a non-canonical absolute path
-fails:Kernel#require (path resolution) loads a file defining many methods
-fails:Kernel#require (path resolution) raises a LoadError if the file does not exist
 fails:Kernel#require (path resolution) calls #to_str on non-String objects
-fails:Kernel#require (path resolution) raises a TypeError if passed nil
-fails:Kernel#require (path resolution) raises a TypeError if passed a Fixnum
-fails:Kernel#require (path resolution) raises a TypeError if passed an Array
-fails:Kernel#require (path resolution) raises a TypeError if passed an object that does not provide #to_str
-fails:Kernel#require (path resolution) raises a TypeError if passed an object that has #to_s but not #to_str
 fails:Kernel#require (path resolution) raises a TypeError if #to_str does not return a String
 fails:Kernel#require (path resolution) calls #to_path on non-String objects
 fails:Kernel#require (path resolution) calls #to_path on a String
@@ -18,30 +9,22 @@ fails:Kernel#require (path resolution) loads a ../ relative path from the curren
 fails:Kernel#require (path resolution) loads a ./ relative path from the current working directory with non-empty $LOAD_PATH
 fails:Kernel#require (path resolution) loads a ../ relative path from the current working directory with non-empty $LOAD_PATH
 fails:Kernel#require (path resolution) loads a non-canonical path from the current working directory with non-empty $LOAD_PATH
-fails:Kernel#require (path resolution) resolves a filename against $LOAD_PATH entries
 fails:Kernel#require (path resolution) does not require file twice after $LOAD_PATH change
 fails:Kernel#require (path resolution) does not resolve a ./ relative path against $LOAD_PATH entries
 fails:Kernel#require (path resolution) does not resolve a ../ relative path against $LOAD_PATH entries
-fails:Kernel#require (path resolution) resolves a non-canonical path against $LOAD_PATH entries
 fails:Kernel#require (path resolution) loads a path with duplicate path separators
 fails:Kernel#require (path resolution) with an unreadable file raises a LoadError
-fails:Kernel#require (path resolution) does not load a bare filename unless the current working directory is in $LOAD_PATH
-fails:Kernel#require (path resolution) does not load a relative path unless the current working directory is in $LOAD_PATH
-fails:Kernel#require (path resolution) loads a file that recursively requires itself
-fails:Kernel#require (non-extensioned path) loads a .rb extensioned file when a C-extension file exists on an earlier load path
 fails:Kernel#require (file extensions) loads a .rb extensioned file when passed a non-extensioned path
 fails:Kernel#require (file extensions) loads a .rb extensioned file when a C-extension file of the same name is loaded
 fails:Kernel#require (file extensions) does not load a C-extension file if a .rb extensioned file is already loaded
 fails:Kernel#require (file extensions) loads a .rb extensioned file when passed a non-.rb extensioned path
 fails:Kernel#require (file extensions) loads a .rb extensioned file when a complex-extensioned C-extension file of the same name is loaded
 fails:Kernel#require (file extensions) does not load a C-extension file if a complex-extensioned .rb file is already loaded
-fails:Kernel#require ($LOAD_FEATURES) stores an absolute path
 fails:Kernel#require ($LOAD_FEATURES) does not store the path if the load fails
 fails:Kernel#require ($LOAD_FEATURES) does not load an absolute path that is already stored
 fails:Kernel#require ($LOAD_FEATURES) does not load a ./ relative path that is already stored
 fails:Kernel#require ($LOAD_FEATURES) does not load a ../ relative path that is already stored
 fails:Kernel#require ($LOAD_FEATURES) does not load a non-canonical path that is already stored
-fails:Kernel#require ($LOAD_FEATURES) respects being replaced with a new array
 fails:Kernel#require ($LOAD_FEATURES) does not load twice the same file with and without extension
 fails:Kernel#require ($LOAD_FEATURES) stores ../ relative paths as absolute paths
 fails:Kernel#require ($LOAD_FEATURES) stores ./ relative paths as absolute paths
@@ -57,16 +40,8 @@ fails:Kernel#require ($LOAD_FEATURES) when a non-extensioned file is in $LOADED_
 fails:Kernel#require ($LOAD_FEATURES) when a non-extensioned file is in $LOADED_FEATURES returns false when passed a path and the file is not found
 fails:Kernel#require (shell expansion) performs tilde expansion on a .rb file before storing paths in $LOADED_FEATURES
 fails:Kernel#require (shell expansion) performs tilde expansion on a non-extensioned file before storing paths in $LOADED_FEATURES
-fails:Kernel.require (path resolution) loads an absolute path
 fails:Kernel.require (path resolution) loads a non-canonical absolute path
-fails:Kernel.require (path resolution) loads a file defining many methods
-fails:Kernel.require (path resolution) raises a LoadError if the file does not exist
 fails:Kernel.require (path resolution) calls #to_str on non-String objects
-fails:Kernel.require (path resolution) raises a TypeError if passed nil
-fails:Kernel.require (path resolution) raises a TypeError if passed a Fixnum
-fails:Kernel.require (path resolution) raises a TypeError if passed an Array
-fails:Kernel.require (path resolution) raises a TypeError if passed an object that does not provide #to_str
-fails:Kernel.require (path resolution) raises a TypeError if passed an object that has #to_s but not #to_str
 fails:Kernel.require (path resolution) raises a TypeError if #to_str does not return a String
 fails:Kernel.require (path resolution) calls #to_path on non-String objects
 fails:Kernel.require (path resolution) calls #to_path on a String
@@ -76,30 +51,22 @@ fails:Kernel.require (path resolution) loads a ../ relative path from the curren
 fails:Kernel.require (path resolution) loads a ./ relative path from the current working directory with non-empty $LOAD_PATH
 fails:Kernel.require (path resolution) loads a ../ relative path from the current working directory with non-empty $LOAD_PATH
 fails:Kernel.require (path resolution) loads a non-canonical path from the current working directory with non-empty $LOAD_PATH
-fails:Kernel.require (path resolution) resolves a filename against $LOAD_PATH entries
 fails:Kernel.require (path resolution) does not require file twice after $LOAD_PATH change
 fails:Kernel.require (path resolution) does not resolve a ./ relative path against $LOAD_PATH entries
 fails:Kernel.require (path resolution) does not resolve a ../ relative path against $LOAD_PATH entries
-fails:Kernel.require (path resolution) resolves a non-canonical path against $LOAD_PATH entries
 fails:Kernel.require (path resolution) loads a path with duplicate path separators
 fails:Kernel.require (path resolution) with an unreadable file raises a LoadError
-fails:Kernel.require (path resolution) does not load a bare filename unless the current working directory is in $LOAD_PATH
-fails:Kernel.require (path resolution) does not load a relative path unless the current working directory is in $LOAD_PATH
-fails:Kernel.require (path resolution) loads a file that recursively requires itself
-fails:Kernel.require (non-extensioned path) loads a .rb extensioned file when a C-extension file exists on an earlier load path
 fails:Kernel.require (file extensions) loads a .rb extensioned file when passed a non-extensioned path
 fails:Kernel.require (file extensions) loads a .rb extensioned file when a C-extension file of the same name is loaded
 fails:Kernel.require (file extensions) does not load a C-extension file if a .rb extensioned file is already loaded
 fails:Kernel.require (file extensions) loads a .rb extensioned file when passed a non-.rb extensioned path
 fails:Kernel.require (file extensions) loads a .rb extensioned file when a complex-extensioned C-extension file of the same name is loaded
 fails:Kernel.require (file extensions) does not load a C-extension file if a complex-extensioned .rb file is already loaded
-fails:Kernel.require ($LOAD_FEATURES) stores an absolute path
 fails:Kernel.require ($LOAD_FEATURES) does not store the path if the load fails
 fails:Kernel.require ($LOAD_FEATURES) does not load an absolute path that is already stored
 fails:Kernel.require ($LOAD_FEATURES) does not load a ./ relative path that is already stored
 fails:Kernel.require ($LOAD_FEATURES) does not load a ../ relative path that is already stored
 fails:Kernel.require ($LOAD_FEATURES) does not load a non-canonical path that is already stored
-fails:Kernel.require ($LOAD_FEATURES) respects being replaced with a new array
 fails:Kernel.require ($LOAD_FEATURES) does not load twice the same file with and without extension
 fails:Kernel.require ($LOAD_FEATURES) stores ../ relative paths as absolute paths
 fails:Kernel.require ($LOAD_FEATURES) stores ./ relative paths as absolute paths

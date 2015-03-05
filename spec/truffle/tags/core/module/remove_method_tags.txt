@@ -3,7 +3,4 @@ fails:Module#remove_method requires multiple arguments
 fails:Module#remove_method does not remove any instance methods when argument not given
 fails:Module#remove_method raises a NameError when attempting to remove method further up the inheritance tree
 fails:Module#remove_method raises a NameError when attempting to remove a missing method
-fails:Module#remove_method on frozen instance raises a RuntimeError when passed a name
-fails:Module#remove_method on frozen instance raises a RuntimeError when passed a missing name
-fails:Module#remove_method on frozen instance raises a TypeError when passed a not name
 fails:Module#remove_method on frozen instance does not raise exceptions when no arguments given

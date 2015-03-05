@@ -1,2 +1,1 @@
-fails:Enumerable#find calls the ifnone proc when there are no elements
 fails:Enumerable#find passes through the values yielded by #each_with_index

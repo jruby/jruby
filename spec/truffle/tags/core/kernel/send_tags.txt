@@ -1,18 +1,1 @@
-fails:Kernel#send invokes the named public method
-fails:Kernel#send invokes the named alias of a public method
-fails:Kernel#send invokes the named protected method
-fails:Kernel#send invokes the named private method
-fails:Kernel#send invokes the named alias of a private method
-fails:Kernel#send invokes the named alias of a protected method
-fails:Kernel#send invokes the named method
-fails:Kernel#send accepts a String method name
-fails:Kernel#send invokes a class method if called on a class
-fails:Kernel#send raises a NameError if the corresponding method can't be found
-fails:Kernel#send raises a NameError if the corresponding singleton method can't be found
-fails:Kernel#send raises an ArgumentError if no arguments are given
-fails:Kernel#send raises an ArgumentError if called with more arguments than available parameters
-fails:Kernel#send raises an ArgumentError if called with fewer arguments than required parameters
-fails:Kernel#send succeeds if passed an arbitrary number of arguments as a splat parameter
-fails:Kernel#send succeeds when passing 1 or more arguments as a required and a splat parameter
-fails:Kernel#send succeeds when passing 0 arguments to a method with one parameter with a default
 fails:Kernel#send has an arity of -1

@@ -1,6 +1,0 @@
-fails:Array#take returns the first specified number of elements
-fails:Array#take returns all elements when the argument is greater than the Array size
-fails:Array#take returns all elements when the argument is less than the Array size
-fails:Array#take returns an empty Array when passed zero
-fails:Array#take returns an empty Array when called on an empty Array
-fails:Array#take raises an ArgumentError when the argument is negative

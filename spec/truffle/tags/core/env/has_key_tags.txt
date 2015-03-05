@@ -1,2 +1,0 @@
-fails:ENV.has_key? returns true if ENV has the key
-fails:ENV.has_key? returns false if ENV doesn't include the key

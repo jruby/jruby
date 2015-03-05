@@ -1,5 +1,3 @@
-fails:ENV.store sets the environment variable to the given value
-fails:ENV.store returns the value
 fails:ENV.store deletes the environment variable when the value is nil
 fails:ENV.store coerces the key argument with #to_str
 fails:ENV.store coerces the value argument with #to_str

@@ -1,2 +1,0 @@
-fails:Rational#coerce returns the passed argument, self as Float, when given a Float
-fails:Rational#coerce returns [argument, self] when given a Rational

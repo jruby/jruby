@@ -1,4 +1,2 @@
-fails:Exception#to_s returns the self's name if no message is set
 fails:Exception#to_s returns self's message if set
 fails:Exception#to_s calls #to_s on the message
-fails:NameError#to_s needs to be reviewed for spec completeness

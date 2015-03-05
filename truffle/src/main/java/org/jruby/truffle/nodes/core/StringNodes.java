@@ -1002,16 +1002,15 @@ public abstract class StringNodes {
             super(prev);
         }
 
+        @TruffleBoundary
         @Specialization
         public RubyString forceEncoding(RubyString string, RubyString encodingName) {
-            notDesignedForCompilation();
             final RubyEncoding encoding = RubyEncoding.getEncoding(encodingName.toString());
             return forceEncoding(string, encoding);
         }
 
         @Specialization
         public RubyString forceEncoding(RubyString string, RubyEncoding encoding) {
-            notDesignedForCompilation();
             string.forceEncoding(encoding.getEncoding());
             return string;
         }

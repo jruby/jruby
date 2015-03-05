@@ -1,1 +1,0 @@
-fails:Kernel#is_a? needs to be reviewed for spec completeness

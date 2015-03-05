@@ -1,12 +1,6 @@
-fails:Kernel#instance_variable_set sets the value of the specified instance variable
-fails:Kernel#instance_variable_set sets the value of the instance variable when no instance variables exist yet
-fails:Kernel#instance_variable_set raises a NameError exception if the argument is not of form '@x'
 fails:Kernel#instance_variable_set raises a NameError exception if the argument is an invalid instance variable name
 fails:Kernel#instance_variable_set raises a NameError when the argument is '@'
-fails:Kernel#instance_variable_set raises a TypeError if the instance variable name is a Fixnum
-fails:Kernel#instance_variable_set raises a TypeError if the instance variable name is an object that does not respond to to_str
 fails:Kernel#instance_variable_set raises a NameError if the passed object, when coerced with to_str, does not start with @
-fails:Kernel#instance_variable_set raises a NameError if pass an object that cannot be a symbol
 fails:Kernel#instance_variable_set accepts as instance variable name any instance of a class that responds to to_str
 fails:Kernel#instance_variable_set on frozen objects keeps stored object after any exceptions
 fails:Kernel#instance_variable_set on frozen objects raises a RuntimeError when passed replacement is identical to stored object

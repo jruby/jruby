@@ -1,1 +1,0 @@
-fails:Complex#to_r when the imaginary part is Float 0.0 raises RangeError

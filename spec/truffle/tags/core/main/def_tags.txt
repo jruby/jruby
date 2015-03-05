@@ -1,3 +1,1 @@
-fails:main#def sets the visibility of the given method to private for TOPLEVEL_BINDING
-fails:main#def sets the visibility of the given method to private for the script binding
 fails:main#def sets the visibility of the given method to private when defined in a block

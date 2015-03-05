@@ -1,7 +1,5 @@
 fails:Marshal.dump dumps an extended_object
 fails:Marshal.dump dumps an object that has had an ivar added and removed as though the ivar never was set
-fails:Marshal.dump Regexp returns a binary string
-fails:Marshal.dump Regexp subclass /i returns a binary string
 fails:Marshal.dump Hash returns a binary string
 fails:Marshal.dump Hash subclass returns a binary string
 fails:Marshal.dump raises an ArgumentError when the recursion limit is exceeded

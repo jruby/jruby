@@ -1,9 +1,5 @@
 fails:Module#undef_method is a private method
 fails:Module#undef_method requires multiple arguments
 fails:Module#undef_method does not undef any instance methods when argument not given
-fails:Module#undef_method returns self
-fails:Module#undef_method raises a NameError when passed a missing name
-fails:Module#undef_method on frozen instance raises a RuntimeError when passed a name
 fails:Module#undef_method on frozen instance raises a RuntimeError when passed a missing name
-fails:Module#undef_method on frozen instance raises a TypeError when passed a not name
 fails:Module#undef_method on frozen instance does not raise exceptions when no arguments given

@@ -1,9 +1,0 @@
-fails:Complex#quo with Complex divides according to the usual rule for complex numbers
-fails:Complex#quo with Fixnum divides both parts of the Complex number
-fails:Complex#quo with Fixnum raises a ZeroDivisionError when given zero
-fails:Complex#quo with Fixnum produces Rational parts
-fails:Complex#quo with Bignum divides both parts of the Complex number
-fails:Complex#quo with Float divides both parts of the Complex number
-fails:Complex#quo with Float returns Complex(Infinity, Infinity) when given zero
-fails:Complex#quo with Object tries to coerce self into other
-fails:Complex#quo with a Numeric which responds to #real? with false coerces the passed argument to Complex and divides the resulting elements
