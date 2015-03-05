@@ -1,4 +1,1 @@
-fails:Kernel#untaint returns self
-fails:Kernel#untaint clears the tainted bit
 fails:Kernel#untaint raises RuntimeError on a tainted, frozen object
-fails:Kernel#untaint does not raise an error on an untainted, frozen object

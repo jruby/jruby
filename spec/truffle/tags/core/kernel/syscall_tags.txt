@@ -1,2 +1,1 @@
 fails:Kernel#syscall is a private method
-fails:Kernel.syscall needs to be reviewed for spec completeness

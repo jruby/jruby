@@ -14,4 +14,3 @@ fails:Kernel#sprintf with format string that contains %<> sections formats value
 fails:Kernel#sprintf with format string that contains %<> sections raises KeyError when no matching key is in second argument
 fails:Kernel#sprintf with negative values with format %x precedes the number with '..'
 fails:Kernel#sprintf with negative values with format %b or %B precedes the number with '..'
-fails:Kernel.sprintf needs to be reviewed for spec completeness

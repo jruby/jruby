@@ -1,6 +1,0 @@
-fails:Kernel#equal? returns true only if obj and other are the same object
-fails:Kernel#equal? returns true if obj and anObject have the same value.
-fails:Kernel#equal? is unaffected by overriding object_id
-fails:Kernel#equal? is unaffected by overriding ==
-fails:Kernel#equal? is unaffected by overriding eql?
-fails:Kernel#equal? is unaffected by overriding __id__

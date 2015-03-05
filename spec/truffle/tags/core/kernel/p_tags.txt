@@ -1,5 +1,2 @@
 fails:Kernel#p flushes output if receiver is a File
-fails:Kernel#p prints obj.inspect followed by system record separator for each argument given
 fails:Kernel#p is not affected by setting $\, $/ or $,
-fails:Kernel#p prints nothing if no argument is given
-fails:Kernel#p prints nothing if called splatting an empty Array

@@ -1,2 +1,1 @@
 fails:Kernel#select is a private method
-fails:Kernel.select needs to be reviewed for spec completeness

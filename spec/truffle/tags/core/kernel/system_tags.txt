@@ -1,6 +1,4 @@
-fails:Kernel#system is a private method
 fails:Kernel#system executes the specified command in a subprocess
-fails:Kernel#system returns true when the command exits with a zero exit status
 fails:Kernel#system returns false when the command exits with a non-zero exit status
 fails:Kernel#system returns nil when command execution fails
 fails:Kernel#system does not write to stderr when command execution fails
@@ -9,7 +7,6 @@ fails:Kernel#system ignores SHELL env var and always uses `sh`
 fails:Kernel#system expands shell variables when given a single string argument
 fails:Kernel#system does not expand shell variables when given multiples arguments
 fails:Kernel.system executes the specified command in a subprocess
-fails:Kernel.system returns true when the command exits with a zero exit status
 fails:Kernel.system returns false when the command exits with a non-zero exit status
 fails:Kernel.system returns nil when command execution fails
 fails:Kernel.system does not write to stderr when command execution fails

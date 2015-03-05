@@ -1,2 +1,0 @@
-fails:Object#dup preserves tainted state from the original
-fails:Object#dup preserves untrusted state from the original

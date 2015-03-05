@@ -1,2 +1,0 @@
-fails:Kernel#set_trace_func is a private method
-fails:Kernel.set_trace_func needs to be reviewed for spec completeness

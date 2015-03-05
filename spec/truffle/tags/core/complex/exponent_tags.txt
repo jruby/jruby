@@ -1,2 +1,0 @@
-fails:Complex#** with Integer returns self raised to the given power
-fails:Complex#** with Rational returns self raised to the given power

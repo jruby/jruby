@@ -10,7 +10,6 @@ fails:Array#* with an integer copies the untrusted status of the original array 
 fails:Array#* with an integer copies the untrusted status of the original array even if the array is empty
 fails:Array#* with an integer copies the untrusted status of the original array if the passed count is not 0
 fails:Array#* with an integer with a subclass of Array returns a subclass instance
-fails:Array#* with an integer with a subclass of Array does not call #initialize on the subclass instance
 fails:Array#* with a string returns a string formed by concatenating each element.to_str separated by separator
 fails:Array#* with a string uses the same separator with nested arrays
 fails:Array#* with a string with a tainted separator does not taint the result if the array is empty

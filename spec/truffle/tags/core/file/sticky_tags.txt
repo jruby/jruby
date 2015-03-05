@@ -3,5 +3,4 @@ fails:File.sticky? returns false if file does not exist
 fails:File.sticky? returns false if the file has not sticky bit set
 fails:File.sticky? returns true if the file has sticky bit set
 fails:File.sticky? returns true if the named file has the sticky bit, otherwise false
-fails:File.sticky? accepts an object that has a #to_path method
 fails:File.sticky? cannot set sticky bit to a normal file

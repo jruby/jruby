@@ -1,1 +1,0 @@
-fails:UnboundMethod#eql? needs to be reviewed for spec completeness

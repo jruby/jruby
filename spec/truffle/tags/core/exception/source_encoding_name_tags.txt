@@ -1,2 +1,0 @@
-fails:Encoding::UndefinedConversionError#source_encoding_name needs to be reviewed for spec completeness
-fails:Encoding::InvalidByteSequenceError#source_encoding_name needs to be reviewed for spec completeness

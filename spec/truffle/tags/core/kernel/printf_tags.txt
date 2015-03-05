@@ -1,3 +1,2 @@
-fails:Kernel#printf is a private method
 fails:Kernel.printf writes to stdout when a string is the first argument
 fails:Kernel.printf calls write on the first argument when it is not a string

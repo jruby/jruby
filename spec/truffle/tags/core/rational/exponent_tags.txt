@@ -1,7 +1,3 @@
-fails:Rational#** when passed Rational returns self raised to the argument as a Float if the exponent's denominator is not 1
-fails:Rational#** when passed Rational returns a complex number when self is negative and the passed argument is not 0
-fails:Rational#** when passed Float returns a complex number if self is negative and the passed argument is not 0
-fails:Rational#** when passed Float returns Complex(1.0) when the passed argument is 0.0
 fails:Rational#** when passed Bignum returns 0.0 when self is > 1 and the exponent is negative
 fails:Rational#** when passed Bignum returns 0.0 when self is < -1 and the exponent is negative
 fails:Rational#** when passed Bignum returns 0.0 when self is > 1
