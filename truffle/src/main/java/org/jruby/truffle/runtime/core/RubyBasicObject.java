@@ -80,8 +80,8 @@ public class RubyBasicObject {
     }
 
     @Deprecated
-    public void checkFrozen(Object self, Node currentNode) {
-        if (DebugOperations.isFrozen(self)) {
+    public void checkFrozen(Node currentNode) {
+        if (DebugOperations.isFrozen(this)) {
             CompilerDirectives.transferToInterpreter();
             throw new RaiseException(getContext().getCoreLibrary().frozenError(getLogicalClass().getName(), currentNode));
         }
