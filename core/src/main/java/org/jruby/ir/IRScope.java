@@ -389,10 +389,10 @@ public abstract class IRScope implements ParseResult {
         return flags.contains(CAN_RECEIVE_NONLOCAL_RETURNS);
     }
 
-    public DataFlowProblem getLiveVariablesProblem() {
+    public LiveVariablesProblem getLiveVariablesProblem() {
         if (fullInterpreterContext == null) return null; // no fic so no pass-related info
 
-        return fullInterpreterContext.getDataFlowProblems().get(LiveVariablesProblem.NAME);
+        return (LiveVariablesProblem) fullInterpreterContext.getDataFlowProblems().get(LiveVariablesProblem.NAME);
     }
 
     public CFG getCFG() {
