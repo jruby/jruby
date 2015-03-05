@@ -1342,33 +1342,6 @@ public abstract class StringNodes {
         }
     }
 
-    @CoreMethod(names = "rjust", required = 1, optional = 1, lowerFixnumParameters = 0)
-    public abstract static class RjustNode extends CoreMethodNode {
-
-        public RjustNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
-        public RjustNode(RjustNode prev) {
-            super(prev);
-        }
-
-        @Specialization
-        public RubyString rjust(RubyString string, int length, @SuppressWarnings("unused") UndefinedPlaceholder padding) {
-            notDesignedForCompilation();
-
-            return getContext().makeString(RubyString.rjust(string.toString(), length, " "));
-        }
-
-        @Specialization
-        public RubyString rjust(RubyString string, int length, RubyString padding) {
-            notDesignedForCompilation();
-
-            return getContext().makeString(RubyString.rjust(string.toString(), length, padding.toString()));
-        }
-
-    }
-
     @CoreMethod(names = "swapcase")
     public abstract static class SwapcaseNode extends CoreMethodNode {
         public SwapcaseNode(RubyContext context, SourceSection sourceSection) {

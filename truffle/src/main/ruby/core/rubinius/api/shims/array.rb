@@ -7,7 +7,7 @@
 # GNU Lesser General Public License version 2.1
 
 module Rubinius
-  module Mirror
+  class Mirror
     class Array
 
       def self.reflect(array)

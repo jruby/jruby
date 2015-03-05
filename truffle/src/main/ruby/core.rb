@@ -12,6 +12,7 @@ require_relative 'core/rubinius/api/kernel/common/thread'
 require_relative 'core/rubinius/api/kernel/common/type'
 
 # Patch rubinius-core-api to make it work for us
+require_relative 'core/rubinius/api/shims/lookuptable'
 require_relative 'core/rubinius/api/shims/array'
 require_relative 'core/rubinius/api/shims/rubinius'
 require_relative 'core/rubinius/api/shims/lookuptable'
@@ -22,6 +23,7 @@ require_relative 'core/rubinius/api/shims/metrics'
 
 # Load bootstrap (ordered according to Rubinius' load_order.txt)
 require_relative 'core/rubinius/bootstrap/basic_object'
+require_relative 'core/rubinius/bootstrap/mirror'
 require_relative 'core/rubinius/bootstrap/false'
 require_relative 'core/rubinius/bootstrap/gc'
 require_relative 'core/rubinius/bootstrap/kernel'
@@ -35,6 +37,7 @@ require_relative 'core/rubinius/bootstrap/true'
 require_relative 'core/rubinius/bootstrap/type'
 
 # Load common (ordered according to Rubinius' load_order.txt)
+require_relative 'core/rubinius/common/string_mirror'
 require_relative 'core/rubinius/common/enumerator'
 require_relative 'core/rubinius/common/enumerable'
 require_relative 'core/rubinius/common/exception'

@@ -33,6 +33,11 @@ class String
     raise PrimitiveFailure, "String.from_codepoint primitive failed"
   end
 
+  def self.pattern(size, str)
+    Rubinius.primitive :string_pattern
+    raise PrimitiveFailure, "String.pattern primitive failed"
+  end
+
   def find_string(pattern, start)
     Rubinius.primitive :string_index
     raise PrimitiveFailure, "String#find_string primitive failed"

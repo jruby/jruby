@@ -6,6 +6,35 @@
  * Eclipse Public License version 1.0
  * GNU General Public License version 2
  * GNU Lesser General Public License version 2.1
+ * 
+ * Some of the code in this class is transliterated from C++ code in Rubinius.
+ * 
+ * Copyright (c) 2007-2014, Evan Phoenix and contributors
+ * All rights reserved.
+ * 
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ * 
+ * * Redistributions of source code must retain the above copyright notice, this
+ *   list of conditions and the following disclaimer.
+ * * Redistributions in binary form must reproduce the above copyright notice
+ *   this list of conditions and the following disclaimer in the documentation
+ *   and/or other materials provided with the distribution.
+ * * Neither the name of Rubinius nor the names of its contributors
+ *   may be used to endorse or promote products derived from this software
+ *   without specific prior written permission.
+ * 
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+ * DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE
+ * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+ * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+ * SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+ * CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+ * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+ * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ *  
  */
 package org.jruby.truffle.nodes.rubinius;
 
@@ -14,6 +43,7 @@ import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.utilities.ConditionProfile;
+import org.jcodings.Encoding;
 import org.jcodings.exception.EncodingException;
 import org.jcodings.specific.ASCIIEncoding;
 import org.jruby.truffle.nodes.RubyNode;
@@ -317,6 +347,199 @@ public abstract class StringPrimitiveNodes {
             }
 
             return index;
+        }
+
+    }
+
+    @RubiniusPrimitive(name = "string_character_byte_index", needsSelf = false)
+    public static abstract class StringCharacterByteIndexPrimitiveNode extends RubiniusPrimitiveNode {
+
+        public StringCharacterByteIndexPrimitiveNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public StringCharacterByteIndexPrimitiveNode(StringCharacterByteIndexPrimitiveNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public Object stringCharacterByteIndex(RubyString string, Object index, Object start) {
+            throw new UnsupportedOperationException("string_character_byte_index");
+        }
+
+    }
+
+    @RubiniusPrimitive(name = "string_byte_character_index", needsSelf = false)
+    public static abstract class StringByteCharacterIndexPrimitiveNode extends RubiniusPrimitiveNode {
+
+        public StringByteCharacterIndexPrimitiveNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public StringByteCharacterIndexPrimitiveNode(StringByteCharacterIndexPrimitiveNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public Object stringByteCharacterIndex(RubyString string, Object index, Object start) {
+            throw new UnsupportedOperationException("string_byte_character_index");
+        }
+
+    }
+
+    @RubiniusPrimitive(name = "string_character_index", needsSelf = false)
+    public static abstract class StringCharacterIndexPrimitiveNode extends RubiniusPrimitiveNode {
+
+        public StringCharacterIndexPrimitiveNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public StringCharacterIndexPrimitiveNode(StringCharacterIndexPrimitiveNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public Object stringCharacterIndex(RubyString string, Object indexedString, Object start) {
+            throw new UnsupportedOperationException("string_character_index");
+        }
+
+    }
+
+    @RubiniusPrimitive(name = "string_byte_index", needsSelf = false)
+    public static abstract class StringByteIndexPrimitiveNode extends RubiniusPrimitiveNode {
+
+        public StringByteIndexPrimitiveNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public StringByteIndexPrimitiveNode(StringByteIndexPrimitiveNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public Object stringByteIndex(RubyString string, int characters, int start) {
+            if (string.getByteList().getEncoding().isSingleByte()) {
+                return characters - start;
+            } else {
+                final Encoding encoding = string.getByteList().getEncoding();
+                final int length = string.getByteList().length();
+
+                int count = 0;
+
+                int i;
+
+                for(i = 0; i < characters && count < length; i++) {
+                    if(!encoding.isMbcHead(string.getByteList().getUnsafeBytes(), count, length)) {
+                        count++;
+                    } else {
+                        count += encoding.codeToMbcLength(string.getByteList().getUnsafeBytes()[count]);
+                    }
+                }
+
+                if(i < characters) {
+                    return getContext().getCoreLibrary().getNilObject();
+                } else {
+                    return count;
+                }
+            }
+        }
+
+    }
+
+    @RubiniusPrimitive(name = "string_previous_byte_index", needsSelf = false)
+    public static abstract class StringPreviousByteIndexPrimitiveNode extends RubiniusPrimitiveNode {
+
+        public StringPreviousByteIndexPrimitiveNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public StringPreviousByteIndexPrimitiveNode(StringPreviousByteIndexPrimitiveNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public Object stringPreviousByteIndex(RubyString string, Object indexedString, Object start) {
+            throw new UnsupportedOperationException("string_previous_byte_index");
+        }
+
+    }
+
+    @RubiniusPrimitive(name = "string_copy_from", needsSelf = false)
+    public static abstract class StringCopyFromPrimitiveNode extends RubiniusPrimitiveNode {
+
+        public StringCopyFromPrimitiveNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public StringCopyFromPrimitiveNode(StringCopyFromPrimitiveNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public RubyString stringCopyFrom(RubyString string, RubyString other, int start, int size, int dest) {
+            int src = start;
+            int dst = dest;
+            int cnt = size;
+
+            int osz = other.getByteList().length();
+            if(src >= osz) return string;
+            if(cnt < 0) return string;
+            if(src < 0) src = 0;
+            if(cnt > osz - src) cnt = osz - src;
+
+            int sz = string.getByteList().length();
+            if(dst >= sz) return string;
+            if(dst < 0) dst = 0;
+            if(cnt > sz - dst) cnt = sz - dst;
+
+            System.arraycopy(other.getByteList().unsafeBytes(), src, string.getByteList().getUnsafeBytes(), dest, cnt);
+
+            return string;
+        }
+
+    }
+
+    @RubiniusPrimitive(name = "string_resize_capacity", needsSelf = false)
+    public static abstract class StringResizeCapacityPrimitiveNode extends RubiniusPrimitiveNode {
+
+        public StringResizeCapacityPrimitiveNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public StringResizeCapacityPrimitiveNode(StringResizeCapacityPrimitiveNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public Object stringResizeCapacity(RubyString string, Object capacity) {
+            throw new UnsupportedOperationException("string_resize_capacity");
+        }
+
+    }
+
+    @RubiniusPrimitive(name = "string_pattern")
+    public static abstract class StringPatternPrimitiveNode extends RubiniusPrimitiveNode {
+
+        public StringPatternPrimitiveNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public StringPatternPrimitiveNode(StringPatternPrimitiveNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public RubyString stringPattern(RubyClass stringClass, int size, RubyString string) {
+            final byte[] bytes = new byte[size];
+            final byte[] stringBytes = string.getByteList().unsafeBytes();
+
+            if (string.getByteList().length() > 0) {
+                for (int n = 0; n < size; n += string.getByteList().length()) {
+                    System.arraycopy(stringBytes, 0, bytes, n, Math.min(string.getByteList().length(), size - n));
+                }
+            }
+            
+            return new RubyString(stringClass, new ByteList(bytes));
         }
 
     }

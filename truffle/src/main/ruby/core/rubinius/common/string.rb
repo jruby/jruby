@@ -609,4 +609,88 @@ class String
   end
   private :subpattern
 
+  def rjust(width, padding=" ")
+    padding = StringValue(padding)
+    raise ArgumentError, "zero width padding" if padding.size == 0
+
+    enc = Rubinius::Type.compatible_encoding self, padding
+
+    width = Rubinius::Type.coerce_to width, Fixnum, :to_int
+    return dup if width <= size
+
+    width -= size
+
+    bs = bytesize
+    pbs = padding.bytesize
+
+    if pbs > 1
+      ps = padding.size
+      pm = Rubinius::Mirror.reflect padding
+
+      x = width / ps
+      y = width % ps
+
+      bytes = x * pbs + pm.byte_index(y)
+    else
+      bytes = width
+    end
+
+    str = self.class.pattern bytes + bs, padding
+    m = Rubinius::Mirror.reflect str
+
+    m.copy_from self, 0, bs, bytes
+
+    str.taint if tainted? or padding.tainted?
+    str.force_encoding enc
+  end
+
+  def ljust(width, padding=" ")
+    padding = StringValue(padding)
+    raise ArgumentError, "zero width padding" if padding.size == 0
+
+    enc = Rubinius::Type.compatible_encoding self, padding
+
+    width = Rubinius::Type.coerce_to width, Fixnum, :to_int
+    return dup if width <= size
+
+    width -= size
+
+    bs = bytesize
+    pbs = padding.bytesize
+
+    if pbs > 1
+      ps = padding.size
+      pm = Rubinius::Mirror.reflect padding
+
+      x = width / ps
+      y = width % ps
+
+      pbi = pm.byte_index(y)
+      bytes = x * pbs + pbi
+
+      str = self.class.pattern bytes + bs, self
+      m = Rubinius::Mirror.reflect str
+
+      i = 0
+      bi = bs
+
+      while i < x
+        m.copy_from padding, 0, pbs, bi
+
+        bi += pbs
+        i += 1
+      end
+
+      m.copy_from padding, 0, pbi, bi
+    else
+      str = self.class.pattern width + bs, padding
+      m = Rubinius::Mirror.reflect str
+
+      m.copy_from self, 0, bs, 0
+    end
+
+    str.taint if tainted? or padding.tainted?
+    str.force_encoding enc
+  end
+
 end
