@@ -171,6 +171,14 @@ public abstract class DebugOperations {
     }
 
     public static boolean verySlowIsTainted(Object o) {
+        if ((o instanceof Boolean) ||
+                (o instanceof Integer) ||
+                (o instanceof Long) ||
+                (o instanceof Double) ||
+                (o instanceof RubySymbol)) {
+            return false;
+        }
+
         final RubyBasicObject object = (RubyBasicObject) o;
 
         final Shape layout = object.getDynamicObject().getShape();
