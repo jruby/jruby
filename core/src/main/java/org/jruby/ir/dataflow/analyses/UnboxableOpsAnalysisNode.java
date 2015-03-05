@@ -281,11 +281,11 @@ public class UnboxableOpsAnalysisNode extends FlowGraphNode<UnboxableOpsAnalysis
             } else if (o instanceof WrappedIRClosure) {
                 // Fetch the nested unboxing-analysis problem, creating one if necessary
                 IRClosure cl = ((WrappedIRClosure)o).getClosure();
-                UnboxableOpsAnalysisProblem subProblem = (UnboxableOpsAnalysisProblem)cl.getFullInterpreterContext().getDataFlowProblems().get(UnboxableOpsAnalysisProblem.NAME);
+                UnboxableOpsAnalysisProblem subProblem = cl.getUnboxableOpsAnalysisProblem();
                 if (subProblem == null) {
                     subProblem = new UnboxableOpsAnalysisProblem();
                     subProblem.setup(cl);
-                    cl.getFullInterpreterContext().getDataFlowProblems().put(UnboxableOpsAnalysisProblem.NAME, subProblem);
+                    cl.putUnboxableOpsAnalysisProblem(subProblem);
                 }
 
                 UnboxableOpsAnalysisNode exitNode  = subProblem.getExitNode();
@@ -654,7 +654,7 @@ public class UnboxableOpsAnalysisNode extends FlowGraphNode<UnboxableOpsAnalysis
 
                             // Fetch the nested unboxing-analysis problem, creating one if necessary
                             IRClosure cl = ((WrappedIRClosure)o).getClosure();
-                            UnboxableOpsAnalysisProblem subProblem = (UnboxableOpsAnalysisProblem)cl.getFullInterpreterContext().getDataFlowProblems().get(UnboxableOpsAnalysisProblem.NAME);
+                            UnboxableOpsAnalysisProblem subProblem = cl.getUnboxableOpsAnalysisProblem();
                             UnboxableOpsAnalysisNode exitNode  = subProblem.getExitNode();
 
                             // Compute solution
