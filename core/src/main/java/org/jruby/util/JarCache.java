@@ -25,6 +25,14 @@ import java.util.jar.JarFile;
   *     The implementation pays attention to lastModified timestamp of the jar and will invalidate
   *     the cache entry if jar has been updated since the snapshot calculation.
   * </p>
+  *
+  * ******************************************************************************************
+  * DANGER DANGER DANGER DANGER DANGER DANGER DANGER DANGER DANGER DANGER DANGER DANGER DANGER
+  * ******************************************************************************************
+  *
+  * The spec for this cache is disabled currently for #2655, because of last-modified time
+  * oddities on CloudBees. Please be cautious modifying this code and make sure you run the
+  * associated spec locally.
   */
 class JarCache {
     static class JarIndex {
