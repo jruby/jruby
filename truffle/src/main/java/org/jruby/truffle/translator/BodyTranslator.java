@@ -2422,13 +2422,26 @@ public class BodyTranslator extends Translator {
             }
 
             if (bytes[n] == '\\' && n + 1 < bytes.length && bytes[n + 1] == 'x') {
-                int b = Integer.parseInt(new String(Arrays.copyOfRange(bytes, n + 2, n + 4), StandardCharsets.UTF_8), 16);
+                final String num;
+                final boolean isSecondHex = n + 3 < bytes.length && Character.digit(bytes[n + 3], 16) != -1;
+                if (isSecondHex) {
+                    num = new String(Arrays.copyOfRange(bytes, n + 2, n + 4), StandardCharsets.UTF_8);
+                } else {
+                    num = new String(Arrays.copyOfRange(bytes, n + 2, n + 3), StandardCharsets.UTF_8);
+                }
+
+                int b = Integer.parseInt(num, 16);
 
                 if (b > 0x7F) {
                     return false;
                 }
 
-                n += 3;
+                if (isSecondHex) {
+                    n += 3;
+                } else {
+                    n += 2;
+                }
+
             }
         }
 
