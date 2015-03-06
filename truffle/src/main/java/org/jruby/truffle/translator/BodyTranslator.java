@@ -2616,8 +2616,17 @@ public class BodyTranslator extends Translator {
 
         RubyNode condition = node.getConditionNode().accept(this);
         RubyNode conditionInversed = new NotNode(context, sourceSection, condition);
+        
+        final boolean oldTranslatingWhile = translatingWhile;
+        translatingWhile = true;
 
-        RubyNode body = node.getBodyNode().accept(this);
+        final RubyNode body;
+
+        try {
+            body = node.getBodyNode().accept(this);
+        } finally {
+            translatingWhile = oldTranslatingWhile;
+        }
 
         if (node.evaluateAtStart()) {
             return WhileNode.createWhile(context, sourceSection, conditionInversed, body);
