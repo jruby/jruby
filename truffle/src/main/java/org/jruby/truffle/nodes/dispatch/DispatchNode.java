@@ -52,6 +52,12 @@ public abstract class DispatchNode extends RubyNode {
         dispatchAction = prev.dispatchAction;
     }
 
+    protected abstract boolean guard(Object methodName, Object receiver);
+
+    protected DispatchNode getNext() {
+        return null;
+    }
+
     public abstract Object executeDispatch(
             VirtualFrame frame,
             Object receiverObject,

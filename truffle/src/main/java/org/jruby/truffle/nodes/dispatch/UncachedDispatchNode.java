@@ -14,6 +14,7 @@ import com.oracle.truffle.api.Truffle;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.IndirectCallNode;
 import com.oracle.truffle.api.utilities.BranchProfile;
+
 import org.jruby.truffle.nodes.conversion.ToJavaStringNode;
 import org.jruby.truffle.nodes.conversion.ToJavaStringNodeFactory;
 import org.jruby.truffle.nodes.conversion.ToSymbolNode;
@@ -47,6 +48,11 @@ public class UncachedDispatchNode extends DispatchNode {
         callNode = Truffle.getRuntime().createIndirectCallNode();
         toSymbolNode = ToSymbolNodeFactory.create(context, null, null);
         toJavaStringNode = ToJavaStringNodeFactory.create(context, null, null);
+    }
+
+    @Override
+    protected boolean guard(Object methodName, Object receiver) {
+        return true;
     }
 
     @Override

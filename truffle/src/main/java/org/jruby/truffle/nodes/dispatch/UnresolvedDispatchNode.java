@@ -9,6 +9,8 @@
  */
 package org.jruby.truffle.nodes.dispatch;
 
+import java.util.concurrent.Callable;
+
 import com.oracle.truffle.api.Assumption;
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.frame.VirtualFrame;
@@ -48,6 +50,11 @@ public final class UnresolvedDispatchNode extends DispatchNode {
         this.ignoreVisibility = ignoreVisibility;
         this.indirect = indirect;
         this.missingBehavior = missingBehavior;
+    }
+
+    @Override
+    protected boolean guard(Object methodName, Object receiver) {
+        return false;
     }
 
     @Override

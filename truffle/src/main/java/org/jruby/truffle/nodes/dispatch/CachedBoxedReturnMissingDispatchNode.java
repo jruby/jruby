@@ -15,6 +15,7 @@ import com.oracle.truffle.api.dsl.Fallback;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.InvalidAssumptionException;
+
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
 import org.jruby.truffle.runtime.core.RubyClass;
@@ -40,13 +41,20 @@ public class CachedBoxedReturnMissingDispatchNode extends CachedDispatchNode {
     }
 
     @Override
+    protected boolean guard(Object methodName, Object receiver) {
+        return guardName(methodName) &&
+                (receiver instanceof RubyBasicObject) &&
+                ((RubyBasicObject) receiver).getMetaClass() == expectedClass;
+    }
+
+    @Override
     public Object executeDispatch(
             VirtualFrame frame,
             Object receiverObject,
             Object methodName,
             Object blockObject,
             Object argumentsObjects) {
-        if (!guardName(methodName) || !(receiverObject instanceof RubyBasicObject) || ((RubyBasicObject) receiverObject).getMetaClass() != expectedClass) {
+        if (!guard(methodName, receiverObject)) {
             return next.executeDispatch(
                     frame,
                     receiverObject,

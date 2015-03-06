@@ -10,6 +10,7 @@
 package org.jruby.truffle.nodes.dispatch;
 
 import com.oracle.truffle.api.utilities.BranchProfile;
+
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyString;
 import org.jruby.truffle.runtime.core.RubySymbol;
@@ -56,6 +57,11 @@ public abstract class CachedDispatchNode extends DispatchNode {
         cachedNameAsSymbol = prev.cachedNameAsSymbol;
         next = prev.next;
         indirect = prev.indirect;
+    }
+
+    @Override
+    protected DispatchNode getNext() {
+        return next;
     }
 
     protected final boolean guardName(Object methodName) {
