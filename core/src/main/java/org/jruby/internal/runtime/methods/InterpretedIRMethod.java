@@ -3,6 +3,7 @@ package org.jruby.internal.runtime.methods;
 import java.util.List;
 import org.jruby.Ruby;
 import org.jruby.RubyModule;
+import org.jruby.compiler.FullBuildSource;
 import org.jruby.ir.IRMethod;
 import org.jruby.ir.IRScope;
 import org.jruby.ir.interpreter.InterpreterContext;
@@ -22,7 +23,7 @@ import org.jruby.util.log.LoggerFactory;
 /**
  * Method for -X-C (interpreted only execution).  See MixedModeIRMethod for inter/JIT method impl.
  */
-public class InterpretedIRMethod extends DynamicMethod implements IRMethodArgs, PositionAware {
+public class InterpretedIRMethod extends DynamicMethod implements IRMethodArgs, PositionAware, FullBuildSource {
     private static final Logger LOG = LoggerFactory.getLogger("InterpretedIRMethod");
 
     private Arity arity;
@@ -42,7 +43,7 @@ public class InterpretedIRMethod extends DynamicMethod implements IRMethodArgs, 
         // FIXME: Enable no full build promotion option (perhaps piggy back JIT threshold)
     }
 
-    public IRScope getIRMethod() {
+    public IRScope getIRScope() {
         return method;
     }
 

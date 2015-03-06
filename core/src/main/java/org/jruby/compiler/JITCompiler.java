@@ -36,7 +36,6 @@ import org.jruby.RubyInstanceConfig;
 import org.jruby.RubyModule;
 import org.jruby.ast.util.SexpMaker;
 import org.jruby.internal.runtime.methods.CompiledIRMethod;
-import org.jruby.internal.runtime.methods.InterpretedIRMethod;
 import org.jruby.internal.runtime.methods.MixedModeIRMethod;
 import org.jruby.ir.IRMethod;
 import org.jruby.ir.targets.JVMVisitor;
@@ -147,7 +146,7 @@ public class JITCompiler implements JITCompilerMBean {
         }
     }
 
-    public void fullBuildThresholdReached(final InterpretedIRMethod method, final RubyInstanceConfig config) {
+    public void fullBuildThresholdReached(final FullBuildSource method, final RubyInstanceConfig config) {
         // Disable any other jit tasks from entering queue
         method.setCallCount(-1);
 
@@ -199,15 +198,15 @@ public class JITCompiler implements JITCompilerMBean {
     private static final MethodHandles.Lookup PUBLIC_LOOKUP = MethodHandles.publicLookup().in(Ruby.class);
 
     private class FullBuildTask implements Runnable {
-        private final InterpretedIRMethod method;
+        private final FullBuildSource method;
 
-        public FullBuildTask(InterpretedIRMethod method) {
+        public FullBuildTask(FullBuildSource method) {
             this.method = method;
         }
 
         public void run() {
             try {
-                method.switchToFullBuild(method.getIRMethod().prepareFullBuild());
+                method.switchToFullBuild(method.getIRScope().prepareFullBuild());
 
                 if (config.isJitLogging()) {
                     log(method.getImplementationClass(), method.getFile(), method.getLine(),  method.getName(), "done building");
@@ -215,7 +214,7 @@ public class JITCompiler implements JITCompilerMBean {
             } catch (Throwable t) {
                 if (config.isJitLogging()) {
                     log(method.getImplementationClass(), method.getFile(), method.getLine(), method.getName(),
-                            "Could not build; passes run: " + method.getIRMethod().getExecutedPasses(), t.getMessage());
+                            "Could not build; passes run: " + method.getIRScope().getExecutedPasses(), t.getMessage());
                     if (config.isJitLoggingVerbose()) {
                         t.printStackTrace();
                     }
@@ -435,11 +434,13 @@ public class JITCompiler implements JITCompilerMBean {
     }
 
     static void log(RubyModule implementationClass, String file, int line, String name, String message, String... reason) {
-        String className = implementationClass.getBaseName();
-        
+        boolean isBlock = implementationClass == null;
+        String className = isBlock ? "<block>" : implementationClass.getBaseName();
         if (className == null) className = "<anon class>";
 
-        StringBuilder builder = new StringBuilder(message + ":" + className + "." + name + " at " + file + ":" + line);
+        name = isBlock ? "" : "." + name;
+
+        StringBuilder builder = new StringBuilder(message + ":" + className + name + " at " + file + ":" + line);
         
         if (reason.length > 0) {
             builder.append(" because of: \"");

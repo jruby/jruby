@@ -62,6 +62,26 @@ public class FullInterpreterContext extends InterpreterContext {
         return newCFG;
     }
 
+    @Override
+    public boolean hasExplicitCallProtocol() {
+        return getScope().getFlags().contains(IRFlags.HAS_EXPLICIT_CALL_PROTOCOL);
+    }
+
+    @Override
+    public boolean pushNewDynScope() {
+        return !getScope().getFlags().contains(IRFlags.DYNSCOPE_ELIMINATED) && !reuseParentDynScope();
+    }
+
+    @Override
+    public boolean popDynScope() {
+        return pushNewDynScope() || reuseParentDynScope();
+    }
+
+    @Override
+    public boolean reuseParentDynScope() {
+        return getScope().getFlags().contains(IRFlags.REUSE_PARENT_DYNSCOPE);
+    }
+
     /** We plan on running this in full interpreted mode.  This will fixup ipc, rpc, and generate instr list */
     public void generateInstructionsForIntepretation() {
         linearizeBasicBlocks();
