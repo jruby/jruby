@@ -106,6 +106,9 @@ describe 'Dir globs (Dir.glob and Dir.[])' do
     # This should delete the /glob_target and /glob_target/bar.txt entries
     `zip -d #{jar_path} glob_target/bar.txt`
 
+    # Explicitly touch the file in case mtime and zip don't agree
+    `touch #{jar_path}`
+
     after = Dir.glob("#{jar_path}!/**/*").size
 
     expect(after - before).to eq(-2)
