@@ -5,15 +5,21 @@ import org.jruby.ir.IRVisitor;
 import org.jruby.ir.transformations.inlining.SimpleCloneInfo;
 
 /**
- * This represents a variable used in a closure that is
- * local to the closure and is not defined in any ancestor lexical scope
+ * This represents a non-temporary variable used in a closure
+ * and defined in this or a parent closure.
  */
 public class ClosureLocalVariable extends LocalVariable {
-    final public IRClosure definingScope;
+    // Note that we cannot use (scopeDepth > 0) check to detect this.
+    // When a dyn-scope is eliminated for a leaf scope, depths for all
+    // closure local vars are decremented by 1 => a non-local variable
+    // can have scope depth 0.
+    //
+    // Can only transition in one direction (from true to false)
+    private boolean definedLocally;
 
-    public ClosureLocalVariable(IRClosure scope, String name, int scopeDepth, int location) {
+    public ClosureLocalVariable(String name, int scopeDepth, int location) {
         super(name, scopeDepth, location);
-        this.definingScope = scope;
+        this.definedLocally = true;
     }
 
     @Override
@@ -32,13 +38,23 @@ public class ClosureLocalVariable extends LocalVariable {
         return a < b ? -1 : (a == b ? 0 : 1);
     }
 
+    public boolean isDefinedLocally() {
+        return definedLocally;
+    }
+
     @Override
     public Variable clone(SimpleCloneInfo ii) {
-        return new ClosureLocalVariable((IRClosure) ii.getScope(), name, scopeDepth, offset);
+        ClosureLocalVariable lv = new ClosureLocalVariable(name, scopeDepth, offset);
+        lv.definedLocally = definedLocally;
+        return lv;
     }
 
     public LocalVariable cloneForDepth(int n) {
-        return new ClosureLocalVariable(definingScope, name, n, offset);
+        ClosureLocalVariable lv = new ClosureLocalVariable(name, n, offset);
+        if (definedLocally && n > 0) {
+            lv.definedLocally = false;
+        }
+        return lv;
     }
 
     @Override
@@ -48,6 +64,6 @@ public class ClosureLocalVariable extends LocalVariable {
 
     @Override
     public String toString() {
-        return "<" + name + "(" + scopeDepth + ":" + offset + ")>";
+        return "<" + name + "(" + scopeDepth + ":" + offset + ":local=" + definedLocally + ")>";
     }
 }

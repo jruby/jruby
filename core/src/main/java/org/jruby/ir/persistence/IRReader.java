@@ -92,7 +92,8 @@ public class IRReader {
             int offset = decoder.decodeInt();
 
             localVariables.put(name, scope instanceof IRClosure ?
-                    new ClosureLocalVariable((IRClosure) scope, name, 0, offset) : new LocalVariable(name, 0, offset));
+                    // SSS FIXME: do we need to read back locallyDefined boolean?
+                    new ClosureLocalVariable(name, 0, offset) : new LocalVariable(name, 0, offset));
         }
 
         return localVariables;
