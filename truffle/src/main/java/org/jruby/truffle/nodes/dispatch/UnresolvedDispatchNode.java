@@ -78,17 +78,13 @@ public final class UnresolvedDispatchNode extends DispatchNode {
                     frame,
                         first,
                         receiverObject,
-                        methodName,
-                        blockObject,
-                        argumentsObjects);
+                        methodName);
             } else {
                 newDispathNode = doUnboxedObject(
                         frame,
                         first,
                         receiverObject,
-                        methodName,
-                        blockObject,
-                        argumentsObjects);
+                        methodName);
             }
         }
 
@@ -100,9 +96,7 @@ public final class UnresolvedDispatchNode extends DispatchNode {
             VirtualFrame frame,
             DispatchNode first,
             Object receiverObject,
-            Object methodName,
-            Object blockObject,
-            Object argumentsObjects) {
+            Object methodName) {
         final DispatchAction dispatchAction = getDispatchAction();
 
         final RubyClass callerClass;
@@ -157,9 +151,7 @@ public final class UnresolvedDispatchNode extends DispatchNode {
             VirtualFrame frame,
             DispatchNode first,
             Object receiverObject,
-            Object methodName,
-            Object blockObject,
-            Object argumentsObjects) {
+            Object methodName) {
         final DispatchAction dispatchAction = getDispatchAction();
 
         final RubyClass callerClass = ignoreVisibility ? null : getContext().getCoreLibrary().getMetaClass(RubyArguments.getSelf(frame.getArguments()));
@@ -195,7 +187,7 @@ public final class UnresolvedDispatchNode extends DispatchNode {
 
                 requireNode.require((RubyString) constant.getValue());
 
-                return doRubyBasicObject(frame, first, receiverObject, methodName, blockObject, argumentsObjects);
+                return doRubyBasicObject(frame, first, receiverObject, methodName);
             }
 
             // The module, the "receiver" is an instance of its singleton class.
