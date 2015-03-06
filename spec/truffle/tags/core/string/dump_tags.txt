@@ -1,2 +1,1 @@
-fails:String#dump returns a subclass instance
 fails:String#dump includes .force_encoding(name) if the encoding isn't ASCII compatible
