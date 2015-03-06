@@ -77,6 +77,14 @@ class String
     result
   end
 
+  def to_c
+    Complexifier.new(self).convert
+  end
+
+  def to_r
+    Rationalizer.new(self).convert
+  end
+
   def each_line(sep=$/)
     return to_enum(:each_line, sep) unless block_given?
 
