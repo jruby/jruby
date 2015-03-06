@@ -26,7 +26,7 @@ public class IsNilNode extends RubyNode {
 
     @Override
     public boolean executeBoolean(VirtualFrame frame) {
-        notDesignedForCompilation();
+        notDesignedForCompilation("8abacff0491148dfa08b9250223e2bc7");
 
         return child.execute(frame) instanceof RubyNilClass;
     }

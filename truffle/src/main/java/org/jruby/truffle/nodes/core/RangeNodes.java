@@ -54,35 +54,35 @@ public abstract class RangeNodes {
 
         @Specialization
         public boolean equal(RubyRange.IntegerFixnumRange a, RubyRange.IntegerFixnumRange b) {
-            notDesignedForCompilation();
+            notDesignedForCompilation("f889c8fbc18749d48b52b9d6344a246f");
 
             return a.doesExcludeEnd() == b.doesExcludeEnd() && a.getBegin() == b.getBegin() && a.getEnd() == b.getEnd();
         }
 
         @Specialization
         public boolean equal(RubyRange.IntegerFixnumRange a, RubyRange.LongFixnumRange b) {
-            notDesignedForCompilation();
+            notDesignedForCompilation("171f15758655487ea7e2967c525e33a9");
 
             return a.doesExcludeEnd() == b.doesExcludeEnd() && a.getBegin() == b.getBegin() && a.getEnd() == b.getEnd();
         }
 
         @Specialization
         public boolean equal(RubyRange.LongFixnumRange a, RubyRange.LongFixnumRange b) {
-            notDesignedForCompilation();
+            notDesignedForCompilation("ff48597bf2924b5aabbc093753bdc55e");
 
             return a.doesExcludeEnd() == b.doesExcludeEnd() && a.getBegin() == b.getBegin() && a.getEnd() == b.getEnd();
         }
 
         @Specialization
         public boolean equal(RubyRange.LongFixnumRange a, RubyRange.IntegerFixnumRange b) {
-            notDesignedForCompilation();
+            notDesignedForCompilation("08ca4c2434b34a47a1abbc2fc163af69");
 
             return a.doesExcludeEnd() == b.doesExcludeEnd() && a.getBegin() == b.getBegin() && a.getEnd() == b.getEnd();
         }
 
         @Specialization
         public boolean equal(VirtualFrame frame, RubyRange.ObjectRange a, RubyRange.ObjectRange b) {
-            notDesignedForCompilation();
+            notDesignedForCompilation("7f7b0fe552fa439299e27655f2dba7d3");
 
             return a.doesExcludeEnd() == b.doesExcludeEnd() &&
                     equal(frame, a.getBegin(), b.getBegin()) &&
@@ -257,7 +257,7 @@ public abstract class RangeNodes {
 
         @Specialization
         public boolean include(VirtualFrame frame, RubyRange.ObjectRange range, Object value) {
-            notDesignedForCompilation();
+            notDesignedForCompilation("28d87eb3e7c6420a9dc81cc98c5e2d6a");
 
             if (callLess.callBoolean(frame, value, "<", null, range.getBegin())) {
                 return false;
@@ -424,14 +424,14 @@ public abstract class RangeNodes {
 
         @Specialization
         public RubyString toS(RubyRange.IntegerFixnumRange range) {
-            notDesignedForCompilation();
+            notDesignedForCompilation("0939ca805b7f45bb9f331023e0dc356c");
 
             return getContext().makeString(range.getBegin() + (range.doesExcludeEnd() ? "..." : "..") + range.getEnd());
         }
 
         @Specialization
         public RubyString toS(VirtualFrame frame, RubyRange.ObjectRange range) {
-            notDesignedForCompilation();
+            notDesignedForCompilation("52727df87a90409fbe6c6b2e40b5a25c");
 
             // TODO(CS): cast?
             final RubyString begin = (RubyString) toS.call(frame, range.getBegin(), "to_s", null);

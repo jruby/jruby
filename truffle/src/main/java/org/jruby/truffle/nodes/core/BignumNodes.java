@@ -630,7 +630,7 @@ public abstract class BignumNodes {
 
         @Specialization
         public RubyArray coerce(RubyBignum a, int b) {
-            notDesignedForCompilation();
+            notDesignedForCompilation("1485f132e6684087a674da9f2183f9c9");
 
             // TODO (eregon, 16 Feb. 2015): This is NOT spec, but let's try to see if we can make it work.
             // b is converted to a Bignum here in other implementations.
@@ -640,7 +640,7 @@ public abstract class BignumNodes {
 
         @Specialization
         public RubyArray coerce(RubyBignum a, long b) {
-            notDesignedForCompilation();
+            notDesignedForCompilation("1ab830a4b3944528b2376bb48a91fb3e");
 
             // TODO (eregon, 16 Feb. 2015): This is NOT spec, but let's try to see if we can make it work.
             // b is converted to a Bignum here in other implementations.
@@ -650,7 +650,7 @@ public abstract class BignumNodes {
 
         @Specialization
         public RubyArray coerce(RubyBignum a, RubyBignum b) {
-            notDesignedForCompilation();
+            notDesignedForCompilation("b7d0c2e1a34a430fa00f9a24269ec9e3");
 
             Object[] store = new Object[] { b, a };
             return new RubyArray(getContext().getCoreLibrary().getArrayClass(), store, store.length);

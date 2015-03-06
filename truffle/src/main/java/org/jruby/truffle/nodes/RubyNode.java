@@ -220,6 +220,10 @@ public abstract class RubyNode extends Node implements ProbeNode.Instrumentable 
         CompilerAsserts.neverPartOfCompilation();
     }
 
+    public static void notDesignedForCompilation(String message) {
+        CompilerAsserts.neverPartOfCompilation(message);
+    }
+
     public boolean isTrue(boolean value) {
         return value;
     }
@@ -472,7 +476,7 @@ public abstract class RubyNode extends Node implements ProbeNode.Instrumentable 
     }
 
     protected Object ruby(VirtualFrame frame, String expression, Object... arguments) {
-        notDesignedForCompilation();
+        notDesignedForCompilation("e80c2dc007c54ff5b598c02f7681f757");
         
         final MaterializedFrame evalFrame = Truffle.getRuntime().createMaterializedFrame(
                 RubyArguments.pack(null, null, RubyArguments.getSelf(frame.getArguments()), null, new Object[]{}));

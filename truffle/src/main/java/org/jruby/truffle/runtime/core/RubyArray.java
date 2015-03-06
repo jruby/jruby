@@ -52,7 +52,7 @@ public final class RubyArray extends RubyBasicObject {
     }
 
     public static RubyArray fromObject(RubyClass arrayClass, Object object) {
-        RubyNode.notDesignedForCompilation();
+        RubyNode.notDesignedForCompilation("721ea93c573d4d50a9f58ccd7edeab11");
 
         final Object store;
 
@@ -74,7 +74,7 @@ public final class RubyArray extends RubyBasicObject {
     }
 
     private static Object storeFromObjects(Object... objects) {
-        RubyNode.notDesignedForCompilation();
+        RubyNode.notDesignedForCompilation("13e60b9919d14f12974a28dbbd0d0666");
 
         if (objects.length == 0) {
             return null;
@@ -144,7 +144,7 @@ public final class RubyArray extends RubyBasicObject {
     }
 
     public Object[] slowToArray() {
-        RubyNode.notDesignedForCompilation();
+        RubyNode.notDesignedForCompilation("9715bce0e9094ce5af14df95c1a96252");
 
         return Arrays.copyOf(ArrayUtils.box(store), size);
     }
@@ -164,7 +164,7 @@ public final class RubyArray extends RubyBasicObject {
     }
 
     public void slowUnshift(Object... values) {
-        RubyNode.notDesignedForCompilation();
+        RubyNode.notDesignedForCompilation("0427c12eae8a45e18cf85ce73172a054");
 
         final Object[] newStore = new Object[size + values.length];
         System.arraycopy(values, 0, newStore, 0, values.length);
@@ -173,7 +173,7 @@ public final class RubyArray extends RubyBasicObject {
     }
 
     public void slowPush(Object value) {
-        RubyNode.notDesignedForCompilation();
+        RubyNode.notDesignedForCompilation("13870ba674234122b2c75a855b4a4ad3");
 
         store = Arrays.copyOf(ArrayUtils.box(store), size + 1);
         ((Object[]) store)[size] = value;

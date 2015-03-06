@@ -34,7 +34,7 @@ public abstract class FloatPrimitiveNodes {
 
         @Specialization
         public RubyArray dToA(double value) {
-            notDesignedForCompilation();
+            notDesignedForCompilation("53b6d5b8677f42249f892391195e1697");
 
             String string = String.format(Locale.ENGLISH, "%.9f", value);
 

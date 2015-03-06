@@ -134,7 +134,7 @@ public class RubyString extends RubyBasicObject implements CodeRangeable {
     @Override
     @TruffleBoundary
     public String toString() {
-        RubyNode.notDesignedForCompilation();
+        RubyNode.notDesignedForCompilation("302d9649e24146e8a255dd11fefe3303");
 
         return Helpers.decodeByteList(getContext().getRuntime(), bytes);
     }

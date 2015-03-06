@@ -30,7 +30,7 @@ public class RubyFile extends RubyBasicObject {
     }
 
     public void close() {
-        RubyNode.notDesignedForCompilation();
+        RubyNode.notDesignedForCompilation("d4a1f84d684d44b288ff8d3dd7204460");
 
         if (reader != null) {
             try {
@@ -50,7 +50,7 @@ public class RubyFile extends RubyBasicObject {
     }
 
     public static String expandPath(RubyContext context, String fileName) {
-        RubyNode.notDesignedForCompilation();
+        RubyNode.notDesignedForCompilation("4c6bd8a5f04d459eb2a1a2861a32559e");
 
         // TODO (nirvdrum 11-Feb-15) This needs to work on Windows without calling into non-Truffle JRuby.
         if (context.isRunningOnWindows()) {
@@ -67,7 +67,7 @@ public class RubyFile extends RubyBasicObject {
     }
 
     public static String expandPath(String fileName, String dir) {
-        RubyNode.notDesignedForCompilation();
+        RubyNode.notDesignedForCompilation("eef172efc44a407eb63ecf24e3d18296");
 
         /*
          * TODO(cs): this isn't quite correct - I think we want to collapse .., but we don't want to
@@ -79,7 +79,7 @@ public class RubyFile extends RubyBasicObject {
     }
 
     public static RubyFile open(RubyContext context, String fileName, String mode) {
-        RubyNode.notDesignedForCompilation();
+        RubyNode.notDesignedForCompilation("56b832a968c241dbb9119014fde9e9f3");
 
         Reader reader;
         Writer writer;

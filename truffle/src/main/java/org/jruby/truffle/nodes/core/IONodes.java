@@ -59,7 +59,7 @@ public abstract class IONodes {
 
         @Specialization
         public RubyArray readLines(RubyString file) {
-            notDesignedForCompilation();
+            notDesignedForCompilation("0697c45e1e55419e963c19cde666f24f");
 
             final List<Object> lines = new ArrayList<>();
 
@@ -96,19 +96,19 @@ public abstract class IONodes {
 
         @Specialization
         public Object binaryRead(RubyString file, UndefinedPlaceholder size, UndefinedPlaceholder offset) {
-            notDesignedForCompilation();
+            notDesignedForCompilation("5d7024b111e640c78b3c76349b22da13");
             return readFile(getContext(), file, null, null, this);
         }
 
         @Specialization
         public Object binaryRead(RubyString file, int size, UndefinedPlaceholder offset) {
-            notDesignedForCompilation();
+            notDesignedForCompilation("f866a3fc7a4e420c8f15ebae39337993");
             return readFile(getContext(), file, size, null, this);
         }
 
         @Specialization
         public Object binaryRead(RubyString file, int size, int offset) {
-            notDesignedForCompilation();
+            notDesignedForCompilation("f277fda05a3f4d43bd425c34f80bc089");
             return readFile(getContext(), file, size, offset, this);
         }
 

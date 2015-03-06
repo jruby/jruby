@@ -40,7 +40,7 @@ public abstract class BindingNodes {
 
         @Specialization
         public Object initializeCopy(RubyBinding self, RubyBinding from) {
-            notDesignedForCompilation();
+            notDesignedForCompilation("69d3c5ca6161491991f722151c8fb1cb");
 
             if (self == from) {
                 return self;
@@ -75,7 +75,7 @@ public abstract class BindingNodes {
 
         @Specialization
         public Object localVariableGet(RubyBinding binding, RubySymbol symbol) {
-            notDesignedForCompilation();
+            notDesignedForCompilation("69fa8c9c0a324f2c8fd870e414e04b8f");
 
             final MaterializedFrame frame = binding.getFrame();
 
@@ -103,7 +103,7 @@ public abstract class BindingNodes {
 
         @Specialization
         public Object localVariableSetNode(RubyBinding binding, RubySymbol symbol, Object value) {
-            notDesignedForCompilation();
+            notDesignedForCompilation("9135edb69eef4411b80cd0c3066481b9");
 
             // TODO(CS): temporary hack for $_
             if (symbol.toString().equals("$_")) {
@@ -142,7 +142,7 @@ public abstract class BindingNodes {
 
         @Specialization
         public RubyArray localVariables(RubyBinding binding) {
-            notDesignedForCompilation();
+            notDesignedForCompilation("30a3b013a4e545749911e9a422582101");
 
             final RubyArray array = new RubyArray(getContext().getCoreLibrary().getArrayClass());
 

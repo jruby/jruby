@@ -96,7 +96,7 @@ public abstract class AbstractGeneralSuperCallNode extends RubyNode {
 
     @Override
     public Object isDefined(VirtualFrame frame) {
-        notDesignedForCompilation();
+        notDesignedForCompilation("a0f9ad13058540ab8d0d03222ae3de85");
 
         final Object self = RubyArguments.getSelf(frame.getArguments());
 

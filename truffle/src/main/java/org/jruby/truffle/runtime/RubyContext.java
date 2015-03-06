@@ -128,7 +128,7 @@ public class RubyContext extends ExecutionContext {
     }
 
     public static String checkInstanceVariableName(RubyContext context, String name, Node currentNode) {
-        RubyNode.notDesignedForCompilation();
+        RubyNode.notDesignedForCompilation("02f1c8ed033f40399b4a7e46f0047f5a");
 
         if (!name.startsWith("@")) {
             CompilerDirectives.transferToInterpreter();
@@ -139,7 +139,7 @@ public class RubyContext extends ExecutionContext {
     }
 
     public static String checkClassVariableName(RubyContext context, String name, Node currentNode) {
-        RubyNode.notDesignedForCompilation();
+        RubyNode.notDesignedForCompilation("aa866657d46244f08bc94b8050a161f7");
 
         if (!name.startsWith("@@")) {
             CompilerDirectives.transferToInterpreter();
@@ -310,7 +310,7 @@ public class RubyContext extends ExecutionContext {
     }
 
     public IRubyObject toJRuby(Object object) {
-        RubyNode.notDesignedForCompilation();
+        RubyNode.notDesignedForCompilation("bd0a901a599e48c396a187bfabf2c30d");
 
         if (object instanceof RubyNilClass) {
             return runtime.getNil();
@@ -336,7 +336,7 @@ public class RubyContext extends ExecutionContext {
     }
 
     public org.jruby.RubyArray toJRuby(RubyArray array) {
-        RubyNode.notDesignedForCompilation();
+        RubyNode.notDesignedForCompilation("53c812e112e344b0b425eb9f1bd38f1e");
 
         final Object[] objects = array.slowToArray();
         final IRubyObject[] store = new IRubyObject[objects.length];
@@ -361,7 +361,7 @@ public class RubyContext extends ExecutionContext {
     }
 
     public Object toTruffle(IRubyObject object) {
-        RubyNode.notDesignedForCompilation();
+        RubyNode.notDesignedForCompilation("f4fcadf9e85f48c68adfeeffa9510895");
 
         if (object == runtime.getTopSelf()) {
             return getCoreLibrary().getMainObject();

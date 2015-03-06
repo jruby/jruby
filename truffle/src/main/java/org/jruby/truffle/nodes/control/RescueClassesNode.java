@@ -33,7 +33,7 @@ public class RescueClassesNode extends RescueNode {
     @ExplodeLoop
     @Override
     public boolean canHandle(VirtualFrame frame, RubyException exception) {
-        notDesignedForCompilation();
+        notDesignedForCompilation("73cf6c2d3e614b57bbc5a42279e3f0e2");
 
         final RubyClass exceptionRubyClass = exception.getLogicalClass();
 

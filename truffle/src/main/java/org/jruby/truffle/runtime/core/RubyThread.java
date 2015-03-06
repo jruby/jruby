@@ -147,7 +147,7 @@ public class RubyThread extends RubyBasicObject {
     }
 
     public void releasedLock(Lock lock) {
-        RubyNode.notDesignedForCompilation();
+        RubyNode.notDesignedForCompilation("475f58dfbb7f4e499a9734e3e63aad97");
 
         // TODO: this is O(ownedLocks.length).
         ownedLocks.remove(lock);

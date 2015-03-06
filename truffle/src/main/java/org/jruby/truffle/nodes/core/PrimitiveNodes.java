@@ -51,7 +51,7 @@ public abstract class PrimitiveNodes {
              * this method, that is then the binding of the caller of the caller.
              */
 
-            notDesignedForCompilation();
+            notDesignedForCompilation("65cfab79b2ac40d4bc39edbbc928f6b7");
 
             final Memo<Integer> frameCount = new Memo<>(0);
 
@@ -126,7 +126,7 @@ public abstract class PrimitiveNodes {
 
         @Specialization
         public RubyNilClass dumpCallStack() {
-            notDesignedForCompilation();
+            notDesignedForCompilation("38e9ebc407c14bbe870b8552adcca5f6");
 
             for (String line : Backtrace.DEBUG_FORMATTER.format(getContext(), null, RubyCallStack.getBacktrace(this))) {
                 System.err.println(line);
@@ -169,7 +169,7 @@ public abstract class PrimitiveNodes {
 
         @Specialization
         public RubyString fullTree() {
-            notDesignedForCompilation();
+            notDesignedForCompilation("ff6a46e3c72f42cb90ec8dad75244975");
 
             return getContext().makeString(NodeUtil.printTreeToString(Truffle.getRuntime().getCallerFrame().getCallNode().getRootNode()));
         }
@@ -189,7 +189,7 @@ public abstract class PrimitiveNodes {
 
         @Specialization
         public RubyString javaClassOf(Object value) {
-            notDesignedForCompilation();
+            notDesignedForCompilation("9607cd475289496bb19402e237b68810");
 
             return getContext().makeString(value.getClass().getName());
         }
@@ -209,7 +209,7 @@ public abstract class PrimitiveNodes {
 
         @Specialization
         public RubyString dumpString(RubyString string) {
-            notDesignedForCompilation();
+            notDesignedForCompilation("5a401f3f58c047a694ad551172446330");
 
             final StringBuilder builder = new StringBuilder();
             builder.append("\"");
@@ -238,7 +238,7 @@ public abstract class PrimitiveNodes {
 
         @Specialization
         public RubyString sourceAttributionTree() {
-            notDesignedForCompilation();
+            notDesignedForCompilation("e6b34ce906254c85aa27e481845bad7c");
 
             return getContext().makeString(NodeUtil.printSourceAttributionTree(Truffle.getRuntime().getCallerFrame().getCallNode().getRootNode()));
         }
@@ -258,7 +258,7 @@ public abstract class PrimitiveNodes {
 
         @Specialization
         public RubyString storageClass(RubyArray array) {
-            notDesignedForCompilation();
+            notDesignedForCompilation("08e2f93a31754638a6d44db2a501d622");
 
             if (array.getStore() == null) {
                 return getContext().makeString("null");
@@ -269,7 +269,7 @@ public abstract class PrimitiveNodes {
 
         @Specialization
         public RubyString storageClass(RubyHash hash) {
-            notDesignedForCompilation();
+            notDesignedForCompilation("c1bc4fd709394e3684c55a61357a9545");
 
             if (hash.getStore() == null) {
                 return getContext().makeString("null");
@@ -312,7 +312,7 @@ public abstract class PrimitiveNodes {
 
         @Specialization
         public Object parseTree(VirtualFrame frame) {
-            notDesignedForCompilation();
+            notDesignedForCompilation("64fed10cf37947ca80e7ce34666b272c");
 
             final org.jruby.ast.Node parseTree = RubyCallStack.getCallingMethod(frame).getSharedMethodInfo().getParseTree();
 
@@ -338,7 +338,7 @@ public abstract class PrimitiveNodes {
 
         @Specialization
         public RubyString tree() {
-            notDesignedForCompilation();
+            notDesignedForCompilation("b1f6a1cd91454f5c92e9dd90168864c1");
 
             return getContext().makeString(NodeUtil.printCompactTreeToString(Truffle.getRuntime().getCallerFrame().getCallNode().getRootNode()));
         }

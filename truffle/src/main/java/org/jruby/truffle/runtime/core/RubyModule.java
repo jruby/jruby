@@ -145,7 +145,7 @@ public class RubyModule extends RubyBasicObject implements ModuleChain {
     }
 
     private void updateAnonymousChildrenModules() {
-        RubyNode.notDesignedForCompilation();
+        RubyNode.notDesignedForCompilation("2d9f64b69c8d4adc84cd28c7229b049e");
 
         for (Entry<String, RubyConstant> entry : constants.entrySet()) {
             RubyConstant constant = entry.getValue();
@@ -174,7 +174,7 @@ public class RubyModule extends RubyBasicObject implements ModuleChain {
 
     @TruffleBoundary
     public void include(Node currentNode, RubyModule module) {
-        RubyNode.notDesignedForCompilation();
+        RubyNode.notDesignedForCompilation("fb601538ced148a29447c1980a9f0e25");
 
         checkFrozen(currentNode);
 
@@ -210,7 +210,7 @@ public class RubyModule extends RubyBasicObject implements ModuleChain {
     }
 
     private void setConstantInternal(Node currentNode, String name, Object value, boolean autoload) {
-        RubyNode.notDesignedForCompilation();
+        RubyNode.notDesignedForCompilation("19542d6d685b4fa48280d774e28589af");
 
         checkFrozen(currentNode);
 
@@ -228,7 +228,7 @@ public class RubyModule extends RubyBasicObject implements ModuleChain {
 
     @TruffleBoundary
     public RubyConstant removeConstant(Node currentNode, String name) {
-        RubyNode.notDesignedForCompilation();
+        RubyNode.notDesignedForCompilation("838fb230b46b47899680bb9da1b3b42d");
 
         checkFrozen(currentNode);
         RubyConstant oldConstant = constants.remove(name);
@@ -238,7 +238,7 @@ public class RubyModule extends RubyBasicObject implements ModuleChain {
 
     @TruffleBoundary
     public void setClassVariable(Node currentNode, String variableName, Object value) {
-        RubyNode.notDesignedForCompilation();
+        RubyNode.notDesignedForCompilation("e5e58e513ffb47c983a7850dda99741a");
 
         checkFrozen(currentNode);
 
@@ -247,7 +247,7 @@ public class RubyModule extends RubyBasicObject implements ModuleChain {
 
     @TruffleBoundary
     public void removeClassVariable(Node currentNode, String variableName) {
-        RubyNode.notDesignedForCompilation();
+        RubyNode.notDesignedForCompilation("98b79a2639124c8dbd48486d77302b8f");
 
         checkFrozen(currentNode);
 
@@ -256,7 +256,7 @@ public class RubyModule extends RubyBasicObject implements ModuleChain {
 
     @TruffleBoundary
     public void addMethod(Node currentNode, InternalMethod method) {
-        RubyNode.notDesignedForCompilation();
+        RubyNode.notDesignedForCompilation("14fea16da3744bfc8cbe09098f761101");
 
         assert method != null;
 
@@ -267,7 +267,7 @@ public class RubyModule extends RubyBasicObject implements ModuleChain {
 
     @TruffleBoundary
     public void removeMethod(Node currentNode, String methodName) {
-        RubyNode.notDesignedForCompilation();
+        RubyNode.notDesignedForCompilation("0ca00262894042e0a6ba556639f2a2a8");
 
         checkFrozen(currentNode);
 
@@ -277,7 +277,7 @@ public class RubyModule extends RubyBasicObject implements ModuleChain {
 
     @TruffleBoundary
     public void undefMethod(Node currentNode, String methodName) {
-        RubyNode.notDesignedForCompilation();
+        RubyNode.notDesignedForCompilation("a984af057e624742a02bb8b2e5cb5b4d");
         final InternalMethod method = ModuleOperations.lookupMethod(this, methodName);
         if (method == null) {
             throw new UnsupportedOperationException();
@@ -288,7 +288,7 @@ public class RubyModule extends RubyBasicObject implements ModuleChain {
 
     @TruffleBoundary
     public void undefMethod(Node currentNode, InternalMethod method) {
-        RubyNode.notDesignedForCompilation();
+        RubyNode.notDesignedForCompilation("44295f2e1bba4ebea3297d0c5a2c7d04");
         addMethod(currentNode, method.undefined());
     }
 
@@ -310,7 +310,7 @@ public class RubyModule extends RubyBasicObject implements ModuleChain {
 
     @TruffleBoundary
     public void alias(Node currentNode, String newName, String oldName) {
-        RubyNode.notDesignedForCompilation();
+        RubyNode.notDesignedForCompilation("206a8325a9a846228fe4951534067ce6");
 
         InternalMethod method = deepMethodSearch(oldName);
 
@@ -324,7 +324,7 @@ public class RubyModule extends RubyBasicObject implements ModuleChain {
 
     @TruffleBoundary
     public void changeConstantVisibility(Node currentNode, RubySymbol constant, boolean isPrivate) {
-        RubyNode.notDesignedForCompilation();
+        RubyNode.notDesignedForCompilation("f56c670b1e174fd28d6c1f2b754bd201");
 
         RubyConstant rubyConstant = ModuleOperations.lookupConstant(getContext(), LexicalScope.NONE, this, constant.toString());
         checkFrozen(currentNode);
@@ -339,7 +339,7 @@ public class RubyModule extends RubyBasicObject implements ModuleChain {
 
     @TruffleBoundary
     public void appendFeatures(Node currentNode, RubyModule other) {
-        RubyNode.notDesignedForCompilation();
+        RubyNode.notDesignedForCompilation("4aeeb4829438414f9a5425aa995e395c");
 
         // TODO(CS): check only run once
         other.include(currentNode, this);
@@ -367,13 +367,13 @@ public class RubyModule extends RubyBasicObject implements ModuleChain {
     }
 
     public void newVersion() {
-        RubyNode.notDesignedForCompilation();
+        RubyNode.notDesignedForCompilation("72e30b43cbd44caaadd3ad833dddc2d3");
 
         newVersion(new HashSet<RubyModule>(), false);
     }
 
     public void newLexicalVersion() {
-        RubyNode.notDesignedForCompilation();
+        RubyNode.notDesignedForCompilation("ddf723a763d945f4b9d85937b338ad9d");
 
         newVersion(new HashSet<RubyModule>(), true);
     }
@@ -398,26 +398,26 @@ public class RubyModule extends RubyBasicObject implements ModuleChain {
     }
 
     public void addDependent(RubyModule dependent) {
-        RubyNode.notDesignedForCompilation();
+        RubyNode.notDesignedForCompilation("e223f65ac4f84e6b8c6173ecb8e366fb");
 
         dependents.add(dependent);
     }
 
     public void addLexicalDependent(RubyModule lexicalChild) {
-        RubyNode.notDesignedForCompilation();
+        RubyNode.notDesignedForCompilation("b851a4d2cef9449398cbad4aa7399add");
 
         if (lexicalChild != this)
             lexicalDependents.add(lexicalChild);
     }
 
     public Assumption getUnmodifiedAssumption() {
-        RubyNode.notDesignedForCompilation();
+        RubyNode.notDesignedForCompilation("2feca56bc3ac40f6a5e9bb2b0b20912f");
 
         return unmodifiedAssumption.getAssumption();
     }
 
     public static void setCurrentVisibility(Visibility visibility) {
-        RubyNode.notDesignedForCompilation();
+        RubyNode.notDesignedForCompilation("36eca2a85e584df49043d0303de6f18d");
 
         final Frame callerFrame = Truffle.getRuntime().getCallerFrame().getFrame(FrameInstance.FrameAccess.READ_WRITE, false);
 
@@ -431,7 +431,7 @@ public class RubyModule extends RubyBasicObject implements ModuleChain {
     }
 
     public void visibilityMethod(Node currentNode, Object[] arguments, Visibility visibility) {
-        RubyNode.notDesignedForCompilation();
+        RubyNode.notDesignedForCompilation("4f9cf35573a64c3fba0aeb033e678361");
 
         if (arguments.length == 0) {
             setCurrentVisibility(visibility);

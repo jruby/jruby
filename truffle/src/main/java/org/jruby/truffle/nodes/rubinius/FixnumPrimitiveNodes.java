@@ -169,7 +169,7 @@ public abstract class FixnumPrimitiveNodes {
 
         @Specialization
         public Object pow(long a, RubyBignum b) {
-            notDesignedForCompilation();
+            notDesignedForCompilation("f51d5c80387b41cb837bbab1630aa0fb");
 
             if (a == 0) {
                 return 0;

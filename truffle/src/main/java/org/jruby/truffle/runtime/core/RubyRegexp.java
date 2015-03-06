@@ -231,7 +231,7 @@ public class RubyRegexp extends RubyBasicObject {
     public void setThread(String name, Object value) {
         assert value != null;
 
-        RubyNode.notDesignedForCompilation();
+        RubyNode.notDesignedForCompilation("137e4b42c3e34238a153dcccfce5504f");
         getContext().getThreadManager().getCurrentThread().getThreadLocals().getOperations().setInstanceVariable(getContext().getThreadManager().getCurrentThread().getThreadLocals(), name, value);
     }
 
@@ -423,13 +423,13 @@ public class RubyRegexp extends RubyBasicObject {
     }
 
     public static Regex compile(Node currentNode, RubyContext context, ByteList bytes, int options) {
-        RubyNode.notDesignedForCompilation();
+        RubyNode.notDesignedForCompilation("834af7f50ca34b79a682b3b76e21fd29");
         return compile(currentNode, context, bytes.bytes(), bytes.getEncoding(), options);
     }
 
     @TruffleBoundary
     public static Regex compile(Node currentNode, RubyContext context, byte[] bytes, Encoding encoding, int options) {
-        RubyNode.notDesignedForCompilation();
+        RubyNode.notDesignedForCompilation("762da4040f154670ae277e43181ecdf9");
 
         try {
             return new Regex(bytes, 0, bytes.length, options, encoding, Syntax.RUBY);

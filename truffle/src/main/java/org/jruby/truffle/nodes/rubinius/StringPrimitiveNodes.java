@@ -253,7 +253,7 @@ public abstract class StringPrimitiveNodes {
 
         @Specialization(guards = "!isSimple")
         public RubyString stringFromCodepoint(int code, RubyEncoding encoding) {
-            notDesignedForCompilation();
+            notDesignedForCompilation("5e69bd40595942e99dfad127629b0daa");
 
             final int length;
 
@@ -285,7 +285,7 @@ public abstract class StringPrimitiveNodes {
 
         @Specialization
         public RubyString stringFromCodepointSimple(long code, RubyEncoding encoding) {
-            notDesignedForCompilation();
+            notDesignedForCompilation("b802851dd5174e6f90536626272af829");
 
             if (code < Integer.MIN_VALUE || code > Integer.MAX_VALUE) {
                 CompilerDirectives.transferToInterpreter();
@@ -314,7 +314,7 @@ public abstract class StringPrimitiveNodes {
 
         @Specialization
         public Object stringToF(RubyString string) {
-            notDesignedForCompilation();
+            notDesignedForCompilation("cfd4fa72c1a046b6aa1155031f88b846");
 
             try {
                 return Double.parseDouble(string.toString());

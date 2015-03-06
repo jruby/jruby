@@ -79,7 +79,7 @@ public abstract class HashCastNode extends RubyNode {
 
     @Specialization(guards = {"!isRubyNilClass", "!isRubyHash"})
     public Object cast(VirtualFrame frame, RubyBasicObject object) {
-        notDesignedForCompilation();
+        notDesignedForCompilation("c5cd0603a4654e75842bd15e5bdd7eab");
 
         final Object result = toHashNode.call(frame, object, "to_hash", null, new Object[]{});
 

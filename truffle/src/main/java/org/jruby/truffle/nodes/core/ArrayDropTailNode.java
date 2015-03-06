@@ -40,14 +40,14 @@ public abstract class ArrayDropTailNode extends RubyNode {
 
     @Specialization(guards = "isNull")
     public RubyArray getHeadNull(RubyArray array) {
-        notDesignedForCompilation();
+        notDesignedForCompilation("9c291f2f102a4771940d411b95db7cbe");
 
         return new RubyArray(getContext().getCoreLibrary().getArrayClass());
     }
 
     @Specialization(guards = "isIntegerFixnum")
     public RubyArray getHeadIntegerFixnum(RubyArray array) {
-        notDesignedForCompilation();
+        notDesignedForCompilation("d1e3cffe2d2d43a683d87321c62722c9");
 
         if (index >= array.getSize()) {
             return new RubyArray(getContext().getCoreLibrary().getArrayClass());
@@ -58,7 +58,7 @@ public abstract class ArrayDropTailNode extends RubyNode {
 
     @Specialization(guards = "isLongFixnum")
     public RubyArray geHeadLongFixnum(RubyArray array) {
-        notDesignedForCompilation();
+        notDesignedForCompilation("bcdd1245344c462eabb3635ec2aca694");
 
         if (index >= array.getSize()) {
             return new RubyArray(getContext().getCoreLibrary().getArrayClass());
@@ -70,7 +70,7 @@ public abstract class ArrayDropTailNode extends RubyNode {
 
     @Specialization(guards = "isFloat")
     public RubyArray getHeadFloat(RubyArray array) {
-        notDesignedForCompilation();
+        notDesignedForCompilation("3ace4793fe2e431b896868ab629f75b9");
 
         if (index >= array.getSize()) {
             return new RubyArray(getContext().getCoreLibrary().getArrayClass());
@@ -82,7 +82,7 @@ public abstract class ArrayDropTailNode extends RubyNode {
 
     @Specialization(guards = "isObject")
     public RubyArray getHeadObject(RubyArray array) {
-        notDesignedForCompilation();
+        notDesignedForCompilation("19de3661b5d34abd8b4696f381b44684");
 
         if (index >= array.getSize()) {
             return new RubyArray(getContext().getCoreLibrary().getArrayClass());

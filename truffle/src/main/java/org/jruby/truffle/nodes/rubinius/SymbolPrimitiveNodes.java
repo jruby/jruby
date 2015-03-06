@@ -41,7 +41,7 @@ public abstract class SymbolPrimitiveNodes {
 
         @Specialization
         public boolean symbolIsConstant(RubySymbol symbol) {
-            notDesignedForCompilation();
+            notDesignedForCompilation("33362b7e5e2f49008a9e5a1f5bd4fb51");
             final String string = symbol.toString();
             return string.length() > 0 && Character.isUpperCase(string.charAt(0));
         }

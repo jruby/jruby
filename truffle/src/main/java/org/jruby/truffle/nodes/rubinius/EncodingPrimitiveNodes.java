@@ -33,14 +33,14 @@ public abstract class EncodingPrimitiveNodes {
 
         @Specialization
         public RubyEncoding encodingGetObjectEncoding(RubyString string) {
-            notDesignedForCompilation();
+            notDesignedForCompilation("6df4861e2bae4b85b64ae82c80aa9c3b");
 
             return RubyEncoding.getEncoding(string.getBytes().getEncoding());
         }
 
         @Specialization
         public RubyEncoding encodingGetObjectEncoding(RubySymbol symbol) {
-            notDesignedForCompilation();
+            notDesignedForCompilation("8288a84085a84e9ebe2e2e592ad693a0");
 
             return RubyEncoding.getEncoding(symbol.getSymbolBytes().getEncoding());
         }

@@ -56,7 +56,7 @@ public abstract class UnboundMethodNodes {
 
         @Specialization
         public RubySymbol name(RubyUnboundMethod unboundMethod) {
-            notDesignedForCompilation();
+            notDesignedForCompilation("6df6469de8e342f8bcd73591a39cbb27");
 
             return getContext().newSymbol(unboundMethod.getMethod().getName());
         }
@@ -113,7 +113,7 @@ public abstract class UnboundMethodNodes {
 
         @Specialization
         public Object sourceLocation(RubyUnboundMethod unboundMethod) {
-            notDesignedForCompilation();
+            notDesignedForCompilation("e16737f582574084b7ac748f695253d3");
 
             SourceSection sourceSection = unboundMethod.getMethod().getSharedMethodInfo().getSourceSection();
 

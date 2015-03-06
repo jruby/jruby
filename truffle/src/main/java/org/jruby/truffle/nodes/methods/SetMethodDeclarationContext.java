@@ -35,7 +35,7 @@ public class SetMethodDeclarationContext extends RubyNode {
 
     @Override
     public Object execute(VirtualFrame frame) {
-        notDesignedForCompilation();
+        notDesignedForCompilation("37c4dfb5f27643fbb24f07f80e369f43");
 
         FrameSlot slot = frame.getFrameDescriptor().findOrAddFrameSlot(RubyModule.VISIBILITY_FRAME_SLOT_ID, "visibility for " + what, FrameSlotKind.Object);
         Object oldVisibility = frame.getValue(slot);

@@ -53,7 +53,7 @@ public class YieldNode extends RubyNode {
         }
 
         if (unsplat) {
-            notDesignedForCompilation();
+            notDesignedForCompilation("d41ae5686eae4f23bd0d9ebbdb0fc002");
 
             // TOOD(CS): what is the error behaviour here?
             assert argumentsObjects.length == 1;
@@ -66,7 +66,7 @@ public class YieldNode extends RubyNode {
 
     @Override
     public Object isDefined(VirtualFrame frame) {
-        notDesignedForCompilation();
+        notDesignedForCompilation("73d218aff82b4cc88c23520f3ba8c38f");
 
         if (RubyArguments.getBlock(frame.getArguments()) == null) {
             return getContext().getCoreLibrary().getNilObject();

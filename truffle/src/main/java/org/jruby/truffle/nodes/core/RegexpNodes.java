@@ -121,14 +121,14 @@ public abstract class RegexpNodes {
 
         @Specialization
         public Object match(RubyRegexp regexp, RubyString string) {
-            notDesignedForCompilation();
+            notDesignedForCompilation("2a9af6a2feb1498b8b9f599731f8709a");
 
             return regexp.matchCommon(string, true, false) != getContext().getCoreLibrary().getNilObject();
         }
 
         @Specialization
         public Object match(RubyRegexp regexp, RubySymbol symbol) {
-            notDesignedForCompilation();
+            notDesignedForCompilation("0283d0d2687d4073a781e4cb0ab92080");
 
             return regexp.matchCommon(symbol.toRubyString(), true, false) != getContext().getCoreLibrary().getNilObject();
         }
@@ -153,7 +153,7 @@ public abstract class RegexpNodes {
 
         @Specialization
         public Object match(RubyRegexp regexp, RubyBasicObject other) {
-            notDesignedForCompilation();
+            notDesignedForCompilation("96226c24245042e5996ed8626c7522c9");
 
             if (other instanceof RubyString) {
                 return match(regexp, (RubyString) other);
@@ -179,7 +179,7 @@ public abstract class RegexpNodes {
 
         @Specialization
         public RubyString escape(RubyString pattern) {
-            notDesignedForCompilation();
+            notDesignedForCompilation("c541e57ac22540158cd8d33e74306a5f");
 
             return getContext().makeString(org.jruby.RubyRegexp.quote19(new ByteList(pattern.getBytes()), true).toString());
         }
@@ -279,7 +279,7 @@ public abstract class RegexpNodes {
 
         @Specialization
         public int options(RubyRegexp regexp) {
-            notDesignedForCompilation();
+            notDesignedForCompilation("d5ad583bab9e4200b717b2ef29ad9fb7");
 
             if (notYetInitializedProfile.profile(regexp.getRegex() == null)) {
                 CompilerDirectives.transferToInterpreter();
@@ -308,7 +308,7 @@ public abstract class RegexpNodes {
 
         @Specialization
         public RubyString quote(RubyString raw) {
-            notDesignedForCompilation();
+            notDesignedForCompilation("76d3e9addd8d4c1c9c244592ac09968a");
 
             boolean isAsciiOnly = raw.getByteList().getEncoding().isAsciiCompatible() && raw.scanForCodeRange() == CR_7BIT;
 
@@ -317,7 +317,7 @@ public abstract class RegexpNodes {
 
         @Specialization
         public RubyString quote(RubySymbol raw) {
-            notDesignedForCompilation();
+            notDesignedForCompilation("a64b74b4888f4e16a9116cf2465f7c7d");
 
             return quote(raw.toRubyString());
         }

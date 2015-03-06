@@ -26,7 +26,7 @@ public class CheckStdoutVariableTypeNode extends RubyNode {
     }
 
     public Object execute(VirtualFrame frame) {
-        notDesignedForCompilation();
+        notDesignedForCompilation("b4100a0cfc2e4bfa91f018274990f507");
 
         final Object childValue = child.execute(frame);
 

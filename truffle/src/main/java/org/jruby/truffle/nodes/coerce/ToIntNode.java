@@ -66,7 +66,7 @@ public abstract class ToIntNode extends RubyNode {
 
     @Specialization(guards = "!isRubyBignum")
     public Object coerceObject(VirtualFrame frame, Object object) {
-        notDesignedForCompilation();
+        notDesignedForCompilation("2afba555165e4881bfcf6f04dd37bd01");
 
         if (toIntNode == null) {
             CompilerDirectives.transferToInterpreter();

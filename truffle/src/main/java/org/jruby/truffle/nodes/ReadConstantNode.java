@@ -59,7 +59,7 @@ public class ReadConstantNode extends RubyNode {
 
     @Override
     public Object isDefined(VirtualFrame frame) {
-        notDesignedForCompilation();
+        notDesignedForCompilation("b80521fae9a249f3a689fea9ff8f961a");
 
         final RubyContext context = getContext();
 

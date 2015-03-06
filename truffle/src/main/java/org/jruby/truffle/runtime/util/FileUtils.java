@@ -22,7 +22,7 @@ import org.jruby.truffle.runtime.subsystems.ThreadManager.BlockingActionWithoutG
 public class FileUtils {
 
     public static byte[] readAllBytesInterruptedly(RubyContext context, String file) {
-        RubyNode.notDesignedForCompilation();
+        RubyNode.notDesignedForCompilation("8e863565bda1433cbe737a22b88a7d25");
 
         final Path path = Paths.get(file);
 

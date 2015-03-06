@@ -27,7 +27,7 @@ public class CheckRecordSeparatorVariableTypeNode extends RubyNode {
     }
 
     public Object execute(VirtualFrame frame) {
-        notDesignedForCompilation();
+        notDesignedForCompilation("05d44e71067d44f7828399a3ff8f9281");
 
         final Object childValue = child.execute(frame);
 

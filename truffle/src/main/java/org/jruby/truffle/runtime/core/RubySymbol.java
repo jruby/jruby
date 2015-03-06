@@ -53,7 +53,7 @@ public class RubySymbol extends RubyBasicObject implements CodeRangeable {
     public RubyProc toProc(SourceSection sourceSection, final Node currentNode) {
         // TODO(CS): cache this?
 
-        RubyNode.notDesignedForCompilation();
+        RubyNode.notDesignedForCompilation("5056e524858248aea4a721b08213729e");
 
         final RubyContext context = getContext();
 
@@ -73,7 +73,7 @@ public class RubySymbol extends RubyBasicObject implements CodeRangeable {
     }
 
     public org.jruby.RubySymbol getJRubySymbol() {
-        RubyNode.notDesignedForCompilation();
+        RubyNode.notDesignedForCompilation("a090897d3705470ebc70f1de91e477e8");
 
         return getContext().getRuntime().newSymbol(bytes);
     }

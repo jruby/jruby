@@ -32,7 +32,7 @@ public class ConcatHashLiteralNode extends RubyNode {
 
     @Override
     public RubyHash executeRubyHash(VirtualFrame frame) {
-        notDesignedForCompilation();
+        notDesignedForCompilation("c5d5ccbf626d4426ad9bb324927dfb75");
 
         final List<KeyValue> keyValues = new ArrayList<>();
 

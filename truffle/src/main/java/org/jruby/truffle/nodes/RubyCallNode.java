@@ -123,7 +123,7 @@ public class RubyCallNode extends RubyNode {
 
         if (!(argument instanceof RubyArray)) {
             splatNotArrayProfile.enter();
-            notDesignedForCompilation();
+            notDesignedForCompilation("79b09fd7a8b04bf2a0b3a0c76ff7e211");
             throw new UnsupportedOperationException();
         }
 
@@ -167,7 +167,7 @@ public class RubyCallNode extends RubyNode {
 
     @Override
     public Object isDefined(VirtualFrame frame) {
-        notDesignedForCompilation();
+        notDesignedForCompilation("1d502192d87b4c7eb0f48064ed4f5f06");
 
         if (receiver.isDefined(frame) == getContext().getCoreLibrary().getNilObject()) {
             return getContext().getCoreLibrary().getNilObject();

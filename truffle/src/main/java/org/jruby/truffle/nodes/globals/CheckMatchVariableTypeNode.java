@@ -28,7 +28,7 @@ public class CheckMatchVariableTypeNode extends RubyNode {
     }
 
     public Object execute(VirtualFrame frame) {
-        notDesignedForCompilation();
+        notDesignedForCompilation("72384556187c4585a8cbc51fe3f6d7fc");
 
         final Object childValue = child.execute(frame);
 

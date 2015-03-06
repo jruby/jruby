@@ -29,7 +29,7 @@ public class UndefNode extends RubyNode {
 
     @Override
     public void executeVoid(VirtualFrame frame) {
-        notDesignedForCompilation();
+        notDesignedForCompilation("5699ff5c257f434bbba912853c761db4");
 
         final RubyModule moduleObject;
 
