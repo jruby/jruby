@@ -381,6 +381,12 @@ class String
     self
   end
 
+  def each_codepoint
+    return to_enum :each_codepoint unless block_given?
+
+    each_char { |c| yield c.ord }
+    self
+  end
 
   def to_sub_replacement(result, match)
     index = 0
