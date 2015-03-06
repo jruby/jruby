@@ -419,7 +419,7 @@ public abstract class IRScope implements ParseResult {
     public StoreLocalVarPlacementProblem getStoreLocalVarPlacementProblem() {
         if (fullInterpreterContext == null) return null; // no fic so no pass-related info
 
-        return (StoreLocalVarPlacementProblem) fullInterpreterContext.getDataFlowProblems().get(UnboxableOpsAnalysisProblem.NAME);
+        return (StoreLocalVarPlacementProblem) fullInterpreterContext.getDataFlowProblems().get(StoreLocalVarPlacementProblem.NAME);
     }
 
     public void putUnboxableOpsAnalysisProblem(UnboxableOpsAnalysisProblem problem) {
