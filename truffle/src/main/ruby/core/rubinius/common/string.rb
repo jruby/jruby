@@ -660,6 +660,33 @@ class String
     str.force_encoding enc
   end
 
+  def upto(stop, exclusive=false)
+    return to_enum :upto, stop, exclusive unless block_given?
+    stop = StringValue(stop)
+
+    if stop.size == 1 && size == 1
+      return self if self > stop
+      after_stop = stop.getbyte(0) + (exclusive ? 0 : 1)
+      current = getbyte(0)
+      until current == after_stop
+        yield current.chr
+        current += 1
+      end
+    else
+      unless stop.size < size
+        after_stop = exclusive ? stop : stop.succ
+        current = self
+
+        until current == after_stop
+          yield current
+          current = StringValue(current.succ)
+          break if current.size > stop.size || current.size == 0
+        end
+      end
+    end
+    self
+  end
+
   def ljust(width, padding=" ")
     padding = StringValue(padding)
     raise ArgumentError, "zero width padding" if padding.size == 0
