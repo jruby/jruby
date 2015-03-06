@@ -310,7 +310,7 @@
                       <arg value="test/mri/ruby/test_file.rb" />
                       <arg value="test/mri/ruby/test_file_exhaustive.rb" />
                       <arg value="test/mri/ruby/test_fixnum.rb" />
-                      <arg value="test/mri/ruby/test_flip.rb" />
+<!--                      <arg value="test/mri/ruby/test_flip.rb" /> -->
                       <arg value="test/mri/ruby/test_float.rb" />
                       <arg value="test/mri/ruby/test_fnmatch.rb" />
                       <arg value="test/mri/ruby/test_gc.rb" />
