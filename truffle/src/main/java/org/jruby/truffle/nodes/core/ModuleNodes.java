@@ -102,7 +102,7 @@ public abstract class ModuleNodes {
 
         @Specialization
         public Object isSubclassOf(VirtualFrame frame, RubyModule self, RubyModule other) {
-            notDesignedForCompilation();
+            notDesignedForCompilation("5198b4d15b08423499fd677f735b7f41");
 
             if (self == other) {
                 return false;
@@ -121,7 +121,7 @@ public abstract class ModuleNodes {
 
         @Specialization
         public Object isSubclassOf(VirtualFrame frame, RubyModule self, RubyBasicObject other) {
-            notDesignedForCompilation();
+            notDesignedForCompilation("d1bb53f5164343619c11d1f69600c428");
 
             throw new RaiseException(getContext().getCoreLibrary().typeError("compared with non class/module", this));
         }
@@ -143,7 +143,7 @@ public abstract class ModuleNodes {
 
         @Specialization
         public Object isSubclassOfOrEqualTo(VirtualFrame frame, RubyModule self, RubyModule other) {
-            notDesignedForCompilation();
+            notDesignedForCompilation("f17ac0072e6140bbb5fb868ce35494c5");
 
             if (self == other || ModuleOperations.includesModule(self, other)) {
                 return true;
@@ -158,7 +158,7 @@ public abstract class ModuleNodes {
 
         @Specialization
         public Object isSubclassOfOrEqualTo(VirtualFrame frame, RubyModule self, RubyBasicObject other) {
-            notDesignedForCompilation();
+            notDesignedForCompilation("e2ebc8ef84ac42d59d8afb1d548f2f2c");
 
             throw new RaiseException(getContext().getCoreLibrary().typeError("compared with non class/module", this));
         }
@@ -180,7 +180,7 @@ public abstract class ModuleNodes {
 
         @Specialization
         public Object isSuperclassOf(VirtualFrame frame, RubyModule self, RubyModule other) {
-            notDesignedForCompilation();
+            notDesignedForCompilation("2c4abf17e460443697e4870ecab9ce3e");
 
             if (self == other) {
                 return false;
@@ -199,7 +199,7 @@ public abstract class ModuleNodes {
 
         @Specialization
         public Object isSuperclassOf(VirtualFrame frame, RubyModule self, RubyBasicObject other) {
-            notDesignedForCompilation();
+            notDesignedForCompilation("d8ac468507bd4af08d495f1b1cfdddb8");
 
             throw new RaiseException(getContext().getCoreLibrary().typeError("compared with non class/module", this));
         }
@@ -221,7 +221,7 @@ public abstract class ModuleNodes {
 
         @Specialization
         public Object isSuperclassOfOrEqualTo(VirtualFrame frame, RubyModule self, RubyModule other) {
-            notDesignedForCompilation();
+            notDesignedForCompilation("6d9fb2610a884fe98cdfddfa1466bc17");
 
             if (self == other || ModuleOperations.includesModule(other, self)) {
                 return true;
@@ -236,7 +236,7 @@ public abstract class ModuleNodes {
 
         @Specialization
         public Object isSuperclassOfOrEqualTo(VirtualFrame frame, RubyModule self, RubyBasicObject other) {
-            notDesignedForCompilation();
+            notDesignedForCompilation("4219c729049d4847a5922974d7dc9d32");
 
             throw new RaiseException(getContext().getCoreLibrary().typeError("compared with non class/module", this));
         }
@@ -275,7 +275,7 @@ public abstract class ModuleNodes {
 
         @Specialization
         public Object compare(VirtualFrame frame, RubyModule self, RubyModule other) {
-            notDesignedForCompilation();
+            notDesignedForCompilation("02cead72dfa74a8a929fa68c2daf3b9f");
 
             if (self == other) {
                 return 0;
@@ -293,7 +293,7 @@ public abstract class ModuleNodes {
 
         @Specialization
         public Object compare(VirtualFrame frame, RubyModule self, RubyBasicObject other) {
-            notDesignedForCompilation();
+            notDesignedForCompilation("e4782cb159d74b3e886327864da757ac");
 
             return getContext().getCoreLibrary().getNilObject();
         }
@@ -313,7 +313,7 @@ public abstract class ModuleNodes {
 
         @Specialization
         public RubyModule aliasMethod(RubyModule module, RubySymbol newName, RubySymbol oldName) {
-            notDesignedForCompilation();
+            notDesignedForCompilation("3644aceef0ce45a4849ff2701a539500");
 
             module.alias(this, newName.toString(), oldName.toString());
             return module;
@@ -333,7 +333,7 @@ public abstract class ModuleNodes {
 
         @Specialization
         public RubyArray ancestors(RubyModule self) {
-            notDesignedForCompilation();
+            notDesignedForCompilation("31854e8926db474c9a6b070d9618144f");
 
             final List<RubyModule> ancestors = new ArrayList<>();
             for (RubyModule module : self.ancestors()) {
@@ -357,7 +357,7 @@ public abstract class ModuleNodes {
 
         @Specialization
         public RubyNilClass appendFeatures(RubyModule module, RubyModule other) {
-            notDesignedForCompilation();
+            notDesignedForCompilation("67ff7193ce9944b49882d2b7d9704a47");
 
             module.appendFeatures(this, other);
             return getContext().getCoreLibrary().getNilObject();
@@ -377,7 +377,7 @@ public abstract class ModuleNodes {
 
         @Specialization
         public RubyNilClass attrReader(RubyModule module, Object[] args) {
-            notDesignedForCompilation();
+            notDesignedForCompilation("984a666c79db4aabb531a2b6a95d822e");
 
             final SourceSection sourceSection = Truffle.getRuntime().getCallerFrame().getCallNode().getEncapsulatingSourceSection();
 
@@ -429,7 +429,7 @@ public abstract class ModuleNodes {
 
         @Specialization
         public RubyNilClass attrWriter(RubyModule module, Object[] args) {
-            notDesignedForCompilation();
+            notDesignedForCompilation("7a9e9935f7604621869e7401f797a9c4");
 
             final SourceSection sourceSection = Truffle.getRuntime().getCallerFrame().getCallNode().getEncapsulatingSourceSection();
 
@@ -482,7 +482,7 @@ public abstract class ModuleNodes {
 
         @Specialization
         public RubyNilClass attrAccessor(RubyModule module, Object[] args) {
-            notDesignedForCompilation();
+            notDesignedForCompilation("56d1b482ed824b72a11439ce34e76050");
 
             final SourceSection sourceSection = Truffle.getRuntime().getCallerFrame().getCallNode().getEncapsulatingSourceSection();
 
@@ -620,7 +620,7 @@ public abstract class ModuleNodes {
 
         @Specialization
         public Object classEval(VirtualFrame frame, RubyModule module, RubyString code, @SuppressWarnings("unused") UndefinedPlaceholder file, @SuppressWarnings("unused") UndefinedPlaceholder line, @SuppressWarnings("unused") UndefinedPlaceholder block) {
-            notDesignedForCompilation();
+            notDesignedForCompilation("2e784f78806746d6a7ba85c7a290ce4d");
 
             final Source source = Source.fromText(code.toString(), "(eval)");
             return classEvalSource(frame, module, source, code.getBytes().getEncoding());
@@ -628,7 +628,7 @@ public abstract class ModuleNodes {
 
         @Specialization
         public Object classEval(VirtualFrame frame, RubyModule module, RubyString code, RubyString file, @SuppressWarnings("unused") UndefinedPlaceholder line, @SuppressWarnings("unused") UndefinedPlaceholder block) {
-            notDesignedForCompilation();
+            notDesignedForCompilation("1baf86f1618447279db51f5097c4a9cb");
 
             final Source source = Source.asPseudoFile(code.toString(), file.toString());
             return classEvalSource(frame, module, source, code.getBytes().getEncoding());
@@ -636,7 +636,7 @@ public abstract class ModuleNodes {
 
         @Specialization
         public Object classEval(VirtualFrame frame, RubyModule module, RubyString code, RubyString file, @SuppressWarnings("unused") int line, @SuppressWarnings("unused") UndefinedPlaceholder block) {
-            notDesignedForCompilation();
+            notDesignedForCompilation("f0c26f50f23c465cbb9ebc996623138f");
 
             final Source source = Source.asPseudoFile(code.toString(), file.toString());
             return classEvalSource(frame, module, source, code.getBytes().getEncoding());
@@ -655,14 +655,14 @@ public abstract class ModuleNodes {
 
         @Specialization
         public Object classEval(VirtualFrame frame, RubyModule self, @SuppressWarnings("unused") UndefinedPlaceholder code, @SuppressWarnings("unused") UndefinedPlaceholder file, @SuppressWarnings("unused") UndefinedPlaceholder line, RubyProc block) {
-            notDesignedForCompilation();
+            notDesignedForCompilation("1e17e8986aaa458694cb8695f335ba3f");
 
             return yield.dispatchWithModifiedSelf(frame, block, self);
         }
 
         @Specialization
         public Object classEval(RubyModule self, UndefinedPlaceholder code, UndefinedPlaceholder file, UndefinedPlaceholder line, UndefinedPlaceholder block) {
-            notDesignedForCompilation();
+            notDesignedForCompilation("7c3ec8ebaaee4b18a3cb4df6da0deb6e");
 
             throw new RaiseException(getContext().getCoreLibrary().argumentError(0, 1, 2, this));
         }
@@ -688,7 +688,7 @@ public abstract class ModuleNodes {
 
         @Specialization
         public Object classExec(VirtualFrame frame, RubyModule self, Object[] args, RubyProc block) {
-            notDesignedForCompilation();
+            notDesignedForCompilation("53489176d5654167845f939f621413ad");
 
             // TODO: deal with args
 
@@ -710,14 +710,14 @@ public abstract class ModuleNodes {
 
         @Specialization
         public boolean isClassVariableDefined(RubyModule module, RubyString name) {
-            notDesignedForCompilation();
+            notDesignedForCompilation("bf19b1bf42924a149a2d46e4d974ffb8");
 
             return module.getClassVariables().containsKey(name.toString());
         }
 
         @Specialization
         public boolean isClassVariableDefined(RubyModule module, RubySymbol name) {
-            notDesignedForCompilation();
+            notDesignedForCompilation("2e8847399ed64f5398f18fdd26d372b0");
 
             return module.getClassVariables().containsKey(name.toString());
         }
@@ -737,13 +737,13 @@ public abstract class ModuleNodes {
 
         @Specialization
         public Object getClassVariable(RubyModule module, RubyString name) {
-            notDesignedForCompilation();
+            notDesignedForCompilation("d089b2e5ea2942beac76618102c77d0d");
             return ModuleOperations.lookupClassVariable(module, RubyContext.checkClassVariableName(getContext(), name.toString(), this));
         }
 
         @Specialization
         public Object getClassVariable(RubyModule module, RubySymbol name) {
-            notDesignedForCompilation();
+            notDesignedForCompilation("1bbd8c25e290404980dbdbf491cb0039");
             return ModuleOperations.lookupClassVariable(module, RubyContext.checkClassVariableName(getContext(), name.toString(), this));
         }
 
@@ -762,7 +762,7 @@ public abstract class ModuleNodes {
 
         @Specialization
         public RubyArray getClassVariables(RubyModule module) {
-            notDesignedForCompilation();
+            notDesignedForCompilation("3721249ac75c4a2d9a9b868db9143e82");
 
             final RubyArray array = new RubyArray(module.getContext().getCoreLibrary().getArrayClass());
 
@@ -791,7 +791,7 @@ public abstract class ModuleNodes {
 
         @Specialization
         public RubyArray constants(RubyModule module, boolean inherit) {
-            notDesignedForCompilation();
+            notDesignedForCompilation("64953a749b8f429ca0ae90fd525a8ecd");
 
             final RubyArray array = new RubyArray(getContext().getCoreLibrary().getArrayClass());
 
@@ -817,14 +817,14 @@ public abstract class ModuleNodes {
 
         @Specialization
         public boolean isConstDefined(RubyModule module, RubyString name, @SuppressWarnings("unused") UndefinedPlaceholder inherit) {
-            notDesignedForCompilation();
+            notDesignedForCompilation("8f21a99f59814df8bf2cfd04a77c90c6");
 
             return ModuleOperations.lookupConstant(getContext(), LexicalScope.NONE, module, name.toString()) != null;
         }
 
         @Specialization
         public boolean isConstDefined(RubyModule module, RubyString name, boolean inherit) {
-            notDesignedForCompilation();
+            notDesignedForCompilation("b84d1f8fcf6e4da9942da26c8e5bd692");
 
             if (inherit) {
                 return ModuleOperations.lookupConstant(getContext(), LexicalScope.NONE, module, name.toString()) != null;
@@ -835,7 +835,7 @@ public abstract class ModuleNodes {
 
         @Specialization
         public boolean isConstDefined(RubyModule module, RubySymbol name, @SuppressWarnings("unused") UndefinedPlaceholder inherit) {
-            notDesignedForCompilation();
+            notDesignedForCompilation("b8aaa4f1b7c44cf4bc7a321f734f94e5");
 
             return ModuleOperations.lookupConstant(getContext(), LexicalScope.NONE, module, name.toString()) != null;
         }
@@ -859,7 +859,7 @@ public abstract class ModuleNodes {
 
         @Specialization
         public Object getConstant(VirtualFrame frame, RubyModule module, RubyString name) {
-            notDesignedForCompilation();
+            notDesignedForCompilation("27257bbe647242b09170fa43b3f29fcb");
 
             return dispatch.dispatch(
                     frame,
@@ -871,7 +871,7 @@ public abstract class ModuleNodes {
 
         @Specialization
         public Object getConstant(VirtualFrame frame, RubyModule module, RubySymbol name) {
-            notDesignedForCompilation();
+            notDesignedForCompilation("8b8487df8a004b2683179f51445ec167");
 
             return dispatch.dispatch(
                     frame,
@@ -919,7 +919,7 @@ public abstract class ModuleNodes {
 
         @Specialization
         public Object setConstant(RubyModule module, String name, Object value) {
-            notDesignedForCompilation();
+            notDesignedForCompilation("5d5e3d320e66445aa664e77dbcc0f980");
 
             if (!IdUtil.isValidConstantName19(name)) {
                 throw new RaiseException(getContext().getCoreLibrary().nameError(String.format("wrong constant name %s", name), this));
@@ -950,7 +950,7 @@ public abstract class ModuleNodes {
 
         @Specialization
         public RubySymbol defineMethod(RubyModule module, String name, UndefinedPlaceholder proc, RubyProc block) {
-            notDesignedForCompilation();
+            notDesignedForCompilation("9c9e0b73b02546c980b4d7a41d026bf4");
 
             return defineMethod(module, name, block, UndefinedPlaceholder.INSTANCE);
         }
@@ -962,7 +962,7 @@ public abstract class ModuleNodes {
 
         @Specialization
         public RubySymbol defineMethod(RubyModule module, String name, RubyMethod method, UndefinedPlaceholder block) {
-            notDesignedForCompilation();
+            notDesignedForCompilation("6ece38c5801d4e3ba78f6c31946d193d");
 
             module.addMethod(this, method.getMethod().withNewName(name));
 
@@ -970,7 +970,7 @@ public abstract class ModuleNodes {
         }
 
         private RubySymbol defineMethod(RubyModule module, String name, RubyProc proc) {
-            notDesignedForCompilation();
+            notDesignedForCompilation("1bf0a463a53c4e1d87da91a4a82fb447");
 
             final CallTarget modifiedCallTarget = proc.getCallTargetForMethods();
             final InternalMethod modifiedMethod = new InternalMethod(proc.getSharedMethodInfo(), name, module, Visibility.PUBLIC, false, modifiedCallTarget, proc.getDeclarationFrame());
@@ -1030,7 +1030,7 @@ public abstract class ModuleNodes {
 
         @Specialization
         public Object initializeCopy(RubyModule self, RubyModule other) {
-            notDesignedForCompilation();
+            notDesignedForCompilation("8768834a8ee44e7eabc5dedab9e6f4d0");
 
             self.initCopy(other);
             return getContext().getCoreLibrary().getNilObject();
@@ -1058,7 +1058,7 @@ public abstract class ModuleNodes {
 
         @Specialization
         public RubyNilClass include(VirtualFrame frame, RubyModule module, Object[] args) {
-            notDesignedForCompilation();
+            notDesignedForCompilation("de92a03ba9b847608416013c6c4aa75d");
 
             // Note that we traverse the arguments backwards
 
@@ -1092,7 +1092,7 @@ public abstract class ModuleNodes {
 
         @Specialization
         public boolean include(RubyModule module, RubyModule included) {
-            notDesignedForCompilation();
+            notDesignedForCompilation("b053f8d8b4584fc1bba07d2addb1571a");
 
             ModuleChain ancestor = module.getParentModule();
 
@@ -1139,14 +1139,14 @@ public abstract class ModuleNodes {
 
         @Specialization
         public boolean isMethodDefined(RubyModule module, RubyString name, @SuppressWarnings("unused") UndefinedPlaceholder inherit) {
-            notDesignedForCompilation();
+            notDesignedForCompilation("e014bea79a6343ffb76a4ae3a2778f44");
 
             return ModuleOperations.lookupMethod(module, name.toString()) != null;
         }
 
         @Specialization
         public boolean isMethodDefined(RubyModule module, RubyString name, boolean inherit) {
-            notDesignedForCompilation();
+            notDesignedForCompilation("1b6de8686885484a93a784fd2ac2de15");
 
             if (inherit) {
                 return ModuleOperations.lookupMethod(module, name.toString()) != null;
@@ -1157,7 +1157,7 @@ public abstract class ModuleNodes {
 
         @Specialization
         public boolean isMethodDefined(RubyModule module, RubySymbol name, @SuppressWarnings("unused") UndefinedPlaceholder inherit) {
-            notDesignedForCompilation();
+            notDesignedForCompilation("b91aea21b24744a19fa1d584f6d3a663");
 
             return ModuleOperations.lookupMethod(module, name.toString()) != null;
         }
@@ -1176,7 +1176,7 @@ public abstract class ModuleNodes {
 
         @Specialization
         public RubyModule moduleFunction(RubyModule module, Object... args) {
-            notDesignedForCompilation();
+            notDesignedForCompilation("d05688b66333485e818f644a99c1703f");
 
             module.visibilityMethod(this, args, Visibility.MODULE_FUNCTION);
             return module;
@@ -1196,7 +1196,7 @@ public abstract class ModuleNodes {
 
         @Specialization
         public Object name(RubyModule module) {
-            notDesignedForCompilation();
+            notDesignedForCompilation("f6ac6e8598ee4ac6a9ea2599a5f5bdb6");
 
             if (!module.hasName()) {
                 return getContext().getCoreLibrary().getNilObject();
@@ -1219,7 +1219,7 @@ public abstract class ModuleNodes {
 
         @Specialization
         public RubyArray nesting(VirtualFrame frame) {
-            notDesignedForCompilation();
+            notDesignedForCompilation("2e0c8d8326de4b8b8a50ec6c2c0f0c3e");
 
             final List<RubyModule> modules = new ArrayList<>();
 
@@ -1254,7 +1254,7 @@ public abstract class ModuleNodes {
 
         @Specialization
         public RubyModule doPublic(RubyModule module, Object[] args) {
-            notDesignedForCompilation();
+            notDesignedForCompilation("a106cb1100cb427da5c787c8013857d5");
 
             module.visibilityMethod(this, args, Visibility.PUBLIC);
             return module;
@@ -1274,7 +1274,7 @@ public abstract class ModuleNodes {
 
         @Specialization
         public RubyModule publicClassMethod(RubyModule module, Object... args) {
-            notDesignedForCompilation();
+            notDesignedForCompilation("b3a39129eec445bf943499193782501f");
 
             final RubyClass moduleSingleton = module.getSingletonClass(this);
 
@@ -1315,7 +1315,7 @@ public abstract class ModuleNodes {
 
         @Specialization
         public RubyModule doPrivate(RubyModule module, Object[] args) {
-            notDesignedForCompilation();
+            notDesignedForCompilation("f38264029ae747d4b0b6e4039b4bd129");
 
             module.visibilityMethod(this, args, Visibility.PRIVATE);
             return module;
@@ -1335,7 +1335,7 @@ public abstract class ModuleNodes {
 
         @Specialization
         public RubyModule privateClassMethod(RubyModule module, Object... args) {
-            notDesignedForCompilation();
+            notDesignedForCompilation("1e81428c6d494f7e9cc40d87d841d0c2");
 
             final RubyClass moduleSingleton = module.getSingletonClass(this);
 
@@ -1379,7 +1379,7 @@ public abstract class ModuleNodes {
 
         @Specialization
         public RubyArray privateInstanceMethods(RubyModule module, boolean includeAncestors) {
-            notDesignedForCompilation();
+            notDesignedForCompilation("c7298aff05534cfcb6296497b4baeeb1");
 
             final RubyArray array = new RubyArray(getContext().getCoreLibrary().getArrayClass());
             final List<InternalMethod> methods = new ArrayList<>(module.getMethods().values());
@@ -1417,7 +1417,7 @@ public abstract class ModuleNodes {
 
         @Specialization
         public RubyArray publicInstanceMethods(RubyModule module, boolean includeAncestors) {
-            notDesignedForCompilation();
+            notDesignedForCompilation("bd477c46284e4a2592ca53d2ba09e078");
 
             final RubyArray array = new RubyArray(getContext().getCoreLibrary().getArrayClass());
             final List<InternalMethod> methods = new ArrayList<>(module.getMethods().values());
@@ -1449,14 +1449,14 @@ public abstract class ModuleNodes {
 
         @Specialization
         public RubyArray instanceMethods(RubyModule module, UndefinedPlaceholder argument) {
-            notDesignedForCompilation();
+            notDesignedForCompilation("df85e37b123b488194df0266fb9cb8b7");
 
             return instanceMethods(module, true);
         }
 
         @Specialization
         public RubyArray instanceMethods(RubyModule module, boolean includeAncestors) {
-            notDesignedForCompilation();
+            notDesignedForCompilation("e4117b864a944de3a7fd8201867b64b6");
 
             Map<String, InternalMethod> methods;
 
@@ -1491,7 +1491,7 @@ public abstract class ModuleNodes {
 
         @Specialization
         public RubyUnboundMethod instanceMethod(RubyModule module, RubySymbol name) {
-            notDesignedForCompilation();
+            notDesignedForCompilation("b5e6817224264ad787305283b170d139");
 
             // TODO(CS, 11-Jan-15) cache this lookup
 
@@ -1519,7 +1519,7 @@ public abstract class ModuleNodes {
 
         @Specialization
         public RubyModule privateConstant(RubyModule module, Object[] args) {
-            notDesignedForCompilation();
+            notDesignedForCompilation("636ca542510d4336a8764f4a47a837e3");
 
             for (Object ob : args) {
                 if (ob instanceof RubySymbol){
@@ -1543,7 +1543,7 @@ public abstract class ModuleNodes {
 
         @Specialization
         public RubyModule publicConstant(RubyModule module, Object[] args) {
-            notDesignedForCompilation();
+            notDesignedForCompilation("6ec37a77cdbb4eb8b1f54e8df6b677c7");
 
             for (Object ob : args) {
                 if (ob instanceof RubySymbol){
@@ -1567,7 +1567,7 @@ public abstract class ModuleNodes {
 
         @Specialization
         public RubyModule doProtected(VirtualFrame frame, RubyModule module, Object... args) {
-            notDesignedForCompilation();
+            notDesignedForCompilation("5e4bde10a4794873bbebd5b958ca4605");
 
             module.visibilityMethod(this, args, Visibility.PROTECTED);
             return module;
@@ -1587,7 +1587,7 @@ public abstract class ModuleNodes {
 
         @Specialization
         public RubyModule removeClassVariable(RubyModule module, RubyString name) {
-            notDesignedForCompilation();
+            notDesignedForCompilation("341bb83e587e4cc493e80c1894fd313a");
 
             module.removeClassVariable(this, name.toString());
             return module;
@@ -1595,7 +1595,7 @@ public abstract class ModuleNodes {
 
         @Specialization
         public RubyModule removeClassVariable(RubyModule module, RubySymbol name) {
-            notDesignedForCompilation();
+            notDesignedForCompilation("714c68634661428197f057204411f50a");
 
             module.removeClassVariable(this, name.toString());
             return module;
@@ -1646,7 +1646,7 @@ public abstract class ModuleNodes {
 
         @Specialization
         public RubyModule removeMethod(RubyModule module, RubyString name) {
-            notDesignedForCompilation();
+            notDesignedForCompilation("c5385ad4c9294a2da674652aae95ac12");
 
             module.removeMethod(this, name.toString());
             return module;
@@ -1654,7 +1654,7 @@ public abstract class ModuleNodes {
 
         @Specialization
         public RubyModule removeMethod(RubyModule module, RubySymbol name) {
-            notDesignedForCompilation();
+            notDesignedForCompilation("9d5e4ccb54e74c06ad0aca90412c1cd9");
 
             module.removeMethod(this, name.toString());
             return module;
@@ -1684,7 +1684,7 @@ public abstract class ModuleNodes {
         }
 
         private RubyModule undefMethod(RubyModule module, String name) {
-            notDesignedForCompilation();
+            notDesignedForCompilation("391152635e2a43b9b8e08ec8fb5b8566");
 
             final InternalMethod method = ModuleOperations.lookupMethod(module, name);
             if (method == null) {

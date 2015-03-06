@@ -34,7 +34,7 @@ public class SymbolProcNode extends RubyNode {
 
     @Override
     public Object execute(VirtualFrame frame) {
-        notDesignedForCompilation();
+        notDesignedForCompilation("77f260bbaedf44b4a986ae06a7527327");
 
         final Object[] args = frame.getArguments();
         final Object receiver = RubyArguments.getUserArgument(args, 0);

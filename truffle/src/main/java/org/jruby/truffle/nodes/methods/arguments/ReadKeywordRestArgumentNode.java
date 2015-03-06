@@ -34,7 +34,7 @@ public class ReadKeywordRestArgumentNode extends RubyNode {
 
     @Override
     public Object execute(VirtualFrame frame) {
-        notDesignedForCompilation();
+        notDesignedForCompilation("86050d9905bb45d993351ede36b17ec1");
 
         final RubyHash hash = RubyArguments.getUserKeywordsHash(frame.getArguments(), minimum);
 

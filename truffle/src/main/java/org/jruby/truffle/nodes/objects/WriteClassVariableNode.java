@@ -32,7 +32,7 @@ public class WriteClassVariableNode extends RubyNode {
 
     @Override
     public Object execute(VirtualFrame frame) {
-        notDesignedForCompilation();
+        notDesignedForCompilation("8d240896a29f432a969fc5cc09f994e4");
 
         final RubyModule moduleObject = lexicalScope.getLiveModule();
 

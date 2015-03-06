@@ -73,7 +73,7 @@ public abstract class StringNodes {
 
         @Specialization
         public RubyString add(RubyString a, RubyString b) {
-            notDesignedForCompilation();
+            notDesignedForCompilation("0f0cec4333a8482485c2524785740bec");
 
             return (RubyString) getContext().toTruffle(getContext().toJRuby(a).op_plus(getContext().getRuntime().getCurrentContext(), getContext().toJRuby(b)));
         }
@@ -92,7 +92,7 @@ public abstract class StringNodes {
 
         @Specialization
         public RubyString add(RubyString string, int times) {
-            notDesignedForCompilation();
+            notDesignedForCompilation("236c0eaafbb94f1c903bef6c92713fe0");
 
             final ByteList inputBytes = string.getBytes();
             final ByteList outputBytes = new ByteList(string.getBytes().length() * times);
@@ -164,7 +164,7 @@ public abstract class StringNodes {
 
         @Specialization
         public int compare(RubyString a, RubyString b) {
-            notDesignedForCompilation();
+            notDesignedForCompilation("0b66f438a0dc432eb47ab19c66bfc4a8");
 
             final int result = a.toString().compareTo(b.toString());
 
@@ -179,7 +179,7 @@ public abstract class StringNodes {
 
         @Specialization(guards = "!isRubyString(arguments[1])")
         public Object compare(VirtualFrame frame, RubyString a, Object b) {
-            notDesignedForCompilation();
+            notDesignedForCompilation("871960dc292d47a287df570419125f9e");
 
             if (toStrNode == null) {
                 CompilerDirectives.transferToInterpreter();
@@ -223,7 +223,7 @@ public abstract class StringNodes {
         @Specialization
         public RubyString concat(RubyString string, RubyString other) {
             // TODO (nirvdrum 06-Feb-15) This shouldn't be designed for compilation because we don't support all the String semantics yet, but a bench9000 benchmark has it on a hot path, so commenting out for now.
-            //notDesignedForCompilation();
+            //notDesignedForCompilation("99d625d210b04d73a1361616222a3c68");
 
             final int codeRange = other.getCodeRange();
             final int[] ptr_cr_ret = { codeRange };
@@ -321,7 +321,7 @@ public abstract class StringNodes {
 
         @Specialization
         public Object slice(RubyString string, RubyRange.IntegerFixnumRange range, @SuppressWarnings("unused") UndefinedPlaceholder undefined) {
-            notDesignedForCompilation();
+            notDesignedForCompilation("6c44fe3a71a34c5b9694a66f04fcb313");
 
             final String javaString = string.toString();
             final int begin = string.normalizeIndex(range.getBegin());
@@ -364,7 +364,7 @@ public abstract class StringNodes {
 
         @Specialization(guards = "!isUndefinedPlaceholder(arguments[2])")
         public Object slice(VirtualFrame frame, RubyString string, int start, Object length) {
-            notDesignedForCompilation();
+            notDesignedForCompilation("d6d18adb928b4a2fb2619e5ccc20c626");
 
             if (toIntNode == null) {
                 CompilerDirectives.transferToInterpreter();
@@ -376,7 +376,7 @@ public abstract class StringNodes {
 
         @Specialization(guards = { "!isRubyRange(arguments[1])", "!isRubyRegexp(arguments[1])", "!isRubyString(arguments[1])", "!isUndefinedPlaceholder(arguments[2])" })
         public Object slice(VirtualFrame frame, RubyString string, Object start, Object length) {
-            notDesignedForCompilation();
+            notDesignedForCompilation("a13a220a970b453389d6ffad4624e5cb");
 
             if (toIntNode == null) {
                 CompilerDirectives.transferToInterpreter();
@@ -388,14 +388,14 @@ public abstract class StringNodes {
 
         @Specialization
         public Object slice(VirtualFrame frame, RubyString string, RubyRegexp regexp, @SuppressWarnings("unused") UndefinedPlaceholder capture) {
-            notDesignedForCompilation();
+            notDesignedForCompilation("20773c84c7fe472285f0b32859af1b17");
 
             return slice(frame, string, regexp, 0);
         }
 
         @Specialization(guards = "!isUndefinedPlaceholder(arguments[2])")
         public Object slice(VirtualFrame frame, RubyString string, RubyRegexp regexp, Object capture) {
-            notDesignedForCompilation();
+            notDesignedForCompilation("294452c9be5c4d32b3a132220a4c375a");
 
             if (matchNode == null) {
                 CompilerDirectives.transferToInterpreter();
@@ -418,7 +418,7 @@ public abstract class StringNodes {
 
         @Specialization
         public Object slice(VirtualFrame frame, RubyString string, RubyString matchStr, @SuppressWarnings("unused") UndefinedPlaceholder undefined) {
-            notDesignedForCompilation();
+            notDesignedForCompilation("b1fd93e13ffe44a6bdda783565d61b64");
 
             if (includeNode == null) {
                 CompilerDirectives.transferToInterpreter();
@@ -457,7 +457,7 @@ public abstract class StringNodes {
 
         @Specialization
         public RubyString elementSet(VirtualFrame frame, RubyString string, int index, Object replacement) {
-            notDesignedForCompilation();
+            notDesignedForCompilation("2ea902019a77430c93ec5ca9e0d2741b");
 
             if (index < 0) {
                 if (-index > string.length()) {
@@ -482,7 +482,7 @@ public abstract class StringNodes {
 
         @Specialization
         public RubyString elementSet(VirtualFrame frame, RubyString string, RubyRange.IntegerFixnumRange range, Object replacement) {
-            notDesignedForCompilation();
+            notDesignedForCompilation("4c1b605b411c4bfaa3cc69c0dbcee74e");
 
             int begin = range.getBegin();
             int end = range.getEnd();
@@ -556,7 +556,7 @@ public abstract class StringNodes {
 
         @Specialization
         public boolean asciiOnly(RubyString string) {
-            notDesignedForCompilation();
+            notDesignedForCompilation("7c7dbac99f6e4343b8592be0fa14fbca");
 
             if (!string.getBytes().getEncoding().isAsciiCompatible()) {
                 return false;
@@ -651,7 +651,7 @@ public abstract class StringNodes {
 
         @Specialization
         public Object chompBang(RubyString string, UndefinedPlaceholder undefined) {
-            notDesignedForCompilation();
+            notDesignedForCompilation("5bf23da5baa34f34a597b6533c614963");
 
             if (string.length() == 0) {
                 return getContext().getCoreLibrary().getNilObject();
@@ -668,7 +668,7 @@ public abstract class StringNodes {
 
         @Specialization(guards = { "!isUndefinedPlaceholder(arguments[1])", "!isRubyNilClass(arguments[1])" })
         public RubyString chompBangWithString(VirtualFrame frame, RubyString string, Object stringToChomp) {
-            notDesignedForCompilation();
+            notDesignedForCompilation("a7dd103387a947cd8b6c0c74c6b2296d");
 
             if (toStrNode == null) {
                 CompilerDirectives.transferToInterpreter();
@@ -697,7 +697,7 @@ public abstract class StringNodes {
 
         @Specialization
         public int count(VirtualFrame frame, RubyString string, Object[] otherStrings) {
-            notDesignedForCompilation();
+            notDesignedForCompilation("bcf20fb9c8ea40d8849270ed41795d76");
 
             if (otherStrings.length == 0) {
                 throw new RaiseException(getContext().getCoreLibrary().argumentErrorEmptyVarargs(this));
@@ -748,7 +748,7 @@ public abstract class StringNodes {
 
         @Specialization
         public RubyString downcase(RubyString string) {
-            notDesignedForCompilation();
+            notDesignedForCompilation("e92b802dd0494b07857642ba0d298971");
             ByteList newByteList = StringNodesHelper.downcase(string);
 
             return string.getContext().makeString(string.getLogicalClass(), newByteList);
@@ -768,7 +768,7 @@ public abstract class StringNodes {
 
         @Specialization
         public RubyBasicObject downcase(RubyString string) {
-            notDesignedForCompilation();
+            notDesignedForCompilation("b9354c9f2a264ae99c82612414ac421c");
 
             ByteList newByteList = StringNodesHelper.downcase(string);
 
@@ -796,7 +796,7 @@ public abstract class StringNodes {
 
         @Specialization
         public Object eachByte(VirtualFrame frame, RubyString string, @SuppressWarnings("unused") UndefinedPlaceholder block) {
-            notDesignedForCompilation();
+            notDesignedForCompilation("5b68fffad20c44d896c7332f1900fd2d");
 
             if (toEnumNode == null) {
                 CompilerDirectives.transferToInterpreter();
@@ -808,7 +808,7 @@ public abstract class StringNodes {
 
         @Specialization
         public RubyString eachByte(VirtualFrame frame, RubyString string, RubyProc block) {
-            notDesignedForCompilation();
+            notDesignedForCompilation("06bfb4b293e949cfb3af83e4fee8c15c");
 
             final ByteList bytes = string.getBytes();
             final int begin = bytes.getBegin();
@@ -837,7 +837,7 @@ public abstract class StringNodes {
 
         @Specialization
         public Object eachChar(VirtualFrame frame, RubyString string, @SuppressWarnings("unused") UndefinedPlaceholder block) {
-            notDesignedForCompilation();
+            notDesignedForCompilation("40815b9e450f4fa4ac9d1cc0321eb270");
 
             if (toEnumNode == null) {
                 CompilerDirectives.transferToInterpreter();
@@ -849,7 +849,7 @@ public abstract class StringNodes {
 
         @Specialization
         public RubyString eachChar(VirtualFrame frame, RubyString string, RubyProc block) {
-            notDesignedForCompilation();
+            notDesignedForCompilation("3961901ed0f742f5b03af1b0f81a36b2");
 
             // TODO (nirvdrum 04-Feb-15): This needs to support Ruby' encoding and code range semantics.  For now, this hack will suffice for very simple Strings.
             final String javaString = string.toString();
@@ -896,7 +896,7 @@ public abstract class StringNodes {
 
         @Specialization
         public RubyString encode(RubyString string, RubyString encoding, @SuppressWarnings("unused") UndefinedPlaceholder options) {
-            notDesignedForCompilation();
+            notDesignedForCompilation("dd2a9ba3617a4055a8ca682ec410a222");
 
             final org.jruby.RubyString jrubyString = getContext().toJRuby(string);
             final org.jruby.RubyString jrubyEncodingString = getContext().toJRuby(encoding);
@@ -907,7 +907,7 @@ public abstract class StringNodes {
 
         @Specialization
         public RubyString encode(RubyString string, RubyString encoding, @SuppressWarnings("unused") RubyHash options) {
-            notDesignedForCompilation();
+            notDesignedForCompilation("acaece54da3941f89917726053dbb2e9");
 
             // TODO (nirvdrum 20-Feb-15) We need to do something with the options hash. I'm stubbing this out just to get the jUnit mspec formatter running.
             return encode(string, encoding, UndefinedPlaceholder.INSTANCE);
@@ -915,7 +915,7 @@ public abstract class StringNodes {
 
         @Specialization
         public RubyString encode(RubyString string, RubyEncoding encoding, @SuppressWarnings("unused") UndefinedPlaceholder options) {
-            notDesignedForCompilation();
+            notDesignedForCompilation("3eaf32eb396f44d0ac5af0c87fb52d52");
 
             final org.jruby.RubyString jrubyString = getContext().toJRuby(string);
             final org.jruby.RubyString jrubyEncodingString = getContext().toJRuby(getContext().makeString(encoding.getName()));
@@ -926,7 +926,7 @@ public abstract class StringNodes {
 
         @Specialization(guards = { "!isRubyString(arguments[1])", "!isRubyEncoding(arguments[1])", "!isUndefinedPlaceholder(arguments[1])" })
         public RubyString encode(VirtualFrame frame, RubyString string, Object encoding, UndefinedPlaceholder options) {
-            notDesignedForCompilation();
+            notDesignedForCompilation("d8b9f28c1a764b3cb16c7603715bbb7b");
 
             if (toStrNode == null) {
                 CompilerDirectives.transferToInterpreter();
@@ -938,7 +938,7 @@ public abstract class StringNodes {
 
         @Specialization
         public RubyString encode(RubyString string, @SuppressWarnings("unused") UndefinedPlaceholder encoding, @SuppressWarnings("unused") UndefinedPlaceholder options) {
-            notDesignedForCompilation();
+            notDesignedForCompilation("d081eaf21305436c9c97424f1a386d10");
 
             if (defaultInternalNode == null) {
                 CompilerDirectives.transferToInterpreter();
@@ -968,7 +968,7 @@ public abstract class StringNodes {
 
         @Specialization
         public RubyEncoding encoding(RubyString string) {
-            notDesignedForCompilation();
+            notDesignedForCompilation("0ff24aa05411419b984a17bfd2e8d346");
 
             return RubyEncoding.getEncoding(string.getBytes().getEncoding());
         }
@@ -987,7 +987,7 @@ public abstract class StringNodes {
 
         @Specialization
         public boolean endWith(RubyString string, RubyString b) {
-            notDesignedForCompilation();
+            notDesignedForCompilation("816130e5ef93419dae46074b051f901e");
 
             return string.toString().endsWith(b.toString());
         }
@@ -1068,7 +1068,7 @@ public abstract class StringNodes {
         @TruffleBoundary
         @Specialization
         public RubyString inspect(RubyString string) {
-            notDesignedForCompilation();
+            notDesignedForCompilation("490207339dba46a4bfe18944b17a9150");
 
             final org.jruby.RubyString inspected = (org.jruby.RubyString) org.jruby.RubyString.inspect19(getContext().getRuntime(), string.getBytes());
             return getContext().makeString(inspected.getByteList());
@@ -1093,7 +1093,7 @@ public abstract class StringNodes {
 
         @Specialization
         public RubyString initialize(RubyString self, RubyString from) {
-            notDesignedForCompilation();
+            notDesignedForCompilation("9fa4ac7f035b4fca8c09c1921dc39dae");
 
             self.set(from.getBytes());
             return self;
@@ -1113,7 +1113,7 @@ public abstract class StringNodes {
 
         @Specialization
         public Object initializeCopy(RubyString self, RubyString from) {
-            notDesignedForCompilation();
+            notDesignedForCompilation("7b63739c0be04c36bb1c8d4a3624df0f");
 
             if (self == from) {
                 return self;
@@ -1146,7 +1146,7 @@ public abstract class StringNodes {
 
         @Specialization
         public RubyString insert(RubyString string, int index, RubyString otherString) {
-            notDesignedForCompilation();
+            notDesignedForCompilation("7c7f18d7034f4d13883abd5dc5b35fe1");
 
             if (index == -1) {
                 concatNode.concat(string, otherString);
@@ -1197,14 +1197,14 @@ public abstract class StringNodes {
 
         @Specialization
         public RubyString ljust(RubyString string, int length, @SuppressWarnings("unused") UndefinedPlaceholder padding) {
-            notDesignedForCompilation();
+            notDesignedForCompilation("e95deace77ec4c509bd328afbec35a55");
 
             return getContext().makeString(RubyString.ljust(string.toString(), length, " "));
         }
 
         @Specialization
         public RubyString ljust(RubyString string, int length, RubyString padding) {
-            notDesignedForCompilation();
+            notDesignedForCompilation("064c4c2219254b1aa5f1262a47d8c126");
 
             return getContext().makeString(RubyString.ljust(string.toString(), length, padding.toString()));
         }
@@ -1228,7 +1228,7 @@ public abstract class StringNodes {
 
         @Specialization
         public Object match(VirtualFrame frame, RubyString string, RubyString regexpString) {
-            notDesignedForCompilation();
+            notDesignedForCompilation("bc68095dde0d48288085403cc019a5ff");
 
             final RubyRegexp regexp = new RubyRegexp(this, getContext().getCoreLibrary().getRegexpClass(), regexpString.getBytes(), Option.DEFAULT);
 
@@ -1254,7 +1254,7 @@ public abstract class StringNodes {
 
         @Specialization
         public int ord(RubyString string) {
-            notDesignedForCompilation();
+            notDesignedForCompilation("c508279c3cf6480b9c9bb6b8c76d786b");
             return ((org.jruby.RubyFixnum) getContext().toJRuby(string).ord(getContext().getRuntime().getCurrentContext())).getIntValue();
         }
     }
@@ -1272,7 +1272,7 @@ public abstract class StringNodes {
 
         @Specialization
         public RubyString replace(RubyString string, RubyString other) {
-            notDesignedForCompilation();
+            notDesignedForCompilation("f061c621f86d410cb9d2b3a3e6998769");
 
             if (string == other) {
                 return string;
@@ -1299,14 +1299,14 @@ public abstract class StringNodes {
 
         @Specialization
         public Object rindex(RubyString string, RubyString subString, @SuppressWarnings("unused") UndefinedPlaceholder endPosition) {
-            notDesignedForCompilation();
+            notDesignedForCompilation("a581847887b346539f090b16b9b51988");
 
             return rindex(string, subString, string.length());
         }
 
         @Specialization
         public Object rindex(RubyString string, RubyString subString, int endPosition) {
-            notDesignedForCompilation();
+            notDesignedForCompilation("8d7f3050ec0440e891a1d481939ad05c");
 
             int normalizedEndPosition = endPosition;
 
@@ -1344,7 +1344,7 @@ public abstract class StringNodes {
 
         @Specialization
         public RubyString swapcase(RubyString string) {
-            notDesignedForCompilation();
+            notDesignedForCompilation("db6e002c1e5b44c8af450cea23e78a2e");
 
             ByteList byteList = StringNodesHelper.swapcase(string);
             return getContext().makeString(string.getLogicalClass(), byteList);
@@ -1363,7 +1363,7 @@ public abstract class StringNodes {
 
         @Specialization
         public RubyString swapcase(RubyString string) {
-            notDesignedForCompilation();
+            notDesignedForCompilation("f356c17d83984fbda3ad5fc00a42151d");
 
             ByteList byteList = StringNodesHelper.swapcase(string);
             string.set(byteList);
@@ -1384,7 +1384,7 @@ public abstract class StringNodes {
 
         @Specialization
         public RubyString rstrip(RubyString string) {
-            notDesignedForCompilation();
+            notDesignedForCompilation("f8efda2e7fb0458799d73ba3c838556d");
 
             String str = string.toString();
             int last = str.length()-1;
@@ -1410,7 +1410,7 @@ public abstract class StringNodes {
 
         @Specialization
         public RubyString rstrip(RubyString string) {
-            notDesignedForCompilation();
+            notDesignedForCompilation("1bca8e0e696c4bf3b5bbf2f2f9bfce7b");
 
             return string.dump();
         }
@@ -1430,7 +1430,7 @@ public abstract class StringNodes {
 
         @Specialization
         public RubyArray scan(RubyString string, RubyString regexpString, UndefinedPlaceholder block) {
-            notDesignedForCompilation();
+            notDesignedForCompilation("762e35303996454f9b03fc322c455acb");
 
             final RubyRegexp regexp = new RubyRegexp(this, getContext().getCoreLibrary().getRegexpClass(), regexpString.getBytes(), Option.DEFAULT);
             return scan(string, regexp, block);
@@ -1438,7 +1438,7 @@ public abstract class StringNodes {
 
         @Specialization
         public RubyString scan(VirtualFrame frame, RubyString string, RubyString regexpString, RubyProc block) {
-            notDesignedForCompilation();
+            notDesignedForCompilation("3533394a12fd4ef9b6d2cd8547bb27b4");
 
             final RubyRegexp regexp = new RubyRegexp(this, getContext().getCoreLibrary().getRegexpClass(), regexpString.getBytes(), Option.DEFAULT);
             return scan(frame, string, regexp, block);
@@ -1446,14 +1446,14 @@ public abstract class StringNodes {
 
         @Specialization
         public RubyArray scan(RubyString string, RubyRegexp regexp, UndefinedPlaceholder block) {
-            notDesignedForCompilation();
+            notDesignedForCompilation("d1632e25faeb457990a5888b54aea240");
 
             return RubyArray.fromObjects(getContext().getCoreLibrary().getArrayClass(), (Object[]) regexp.scan(string));
         }
 
         @Specialization
         public RubyString scan(VirtualFrame frame, RubyString string, RubyRegexp regexp, RubyProc block) {
-            notDesignedForCompilation();
+            notDesignedForCompilation("9916f46c62034775913b67fa0e098400");
 
             // TODO (nirvdrum 12-Jan-15) Figure out a way to make this not just a complete copy & paste of RubyRegexp#scan.
 
@@ -1524,7 +1524,7 @@ public abstract class StringNodes {
 
         @Specialization
         public Object setByte(RubyString string, int index, Object value) {
-            notDesignedForCompilation();
+            notDesignedForCompilation("c78d22ac50eb460997c37e4200771c82");
 
             throw new UnsupportedOperationException("getbyte not implemented");
         }
@@ -1560,28 +1560,28 @@ public abstract class StringNodes {
 
         @Specialization
         public RubyArray split(RubyString string, RubyString sep, @SuppressWarnings("unused") UndefinedPlaceholder limit) {
-            notDesignedForCompilation();
+            notDesignedForCompilation("a58afba963874dabb41b37c2af8b32b3");
 
             return splitHelper(string, sep.toString());
         }
 
         @Specialization
         public RubyArray split(RubyString string, RubyRegexp sep, @SuppressWarnings("unused") UndefinedPlaceholder limit) {
-            notDesignedForCompilation();
+            notDesignedForCompilation("7cfd453c48824786977c0b1a084b95bf");
 
             return RubyArray.fromObjects(getContext().getCoreLibrary().getArrayClass(), (Object[]) sep.split(string, false, 0));
         }
 
         @Specialization
         public RubyArray split(RubyString string, RubyRegexp sep, int limit) {
-            notDesignedForCompilation();
+            notDesignedForCompilation("a0b16be291b7457999aeab8c5ec0dfdb");
 
             return RubyArray.fromObjects(getContext().getCoreLibrary().getArrayClass(), (Object[]) sep.split(string, limit > 0, limit));
         }
 
         @Specialization
         public RubyArray split(RubyString string, @SuppressWarnings("unused") UndefinedPlaceholder sep, @SuppressWarnings("unused") UndefinedPlaceholder limit) {
-            notDesignedForCompilation();
+            notDesignedForCompilation("f5f9ee26b4044b3badfc1d1380ba8f19");
 
             return splitHelper(string, " ");
         }
@@ -1612,7 +1612,7 @@ public abstract class StringNodes {
 
         @Specialization
         public RubyString succ(RubyString string) {
-            notDesignedForCompilation();
+            notDesignedForCompilation("bbd5fd3ae00c48ac9256e43b9ddb2c87");
 
             if (string.length() > 0) {
                 return getContext().makeString(string.getLogicalClass(), StringSupport.succCommon(string.getBytes()));
@@ -1635,7 +1635,7 @@ public abstract class StringNodes {
 
         @Specialization
         public RubyString succBang(RubyString string) {
-            notDesignedForCompilation();
+            notDesignedForCompilation("a2a325d9ce8441e8888fa8f538907ec7");
 
             if (string.length() > 0) {
                 string.set(StringSupport.succCommon(string.getBytes()));
@@ -1658,7 +1658,7 @@ public abstract class StringNodes {
 
         @Specialization
         public int sum(RubyString string) {
-            notDesignedForCompilation();
+            notDesignedForCompilation("540da901858e4472b1f4b149862eae3b");
 
             return (int) getContext().toTruffle(getContext().toJRuby(string).sum(getContext().getRuntime().getCurrentContext()));
         }
@@ -1702,7 +1702,7 @@ public abstract class StringNodes {
 
         @Specialization
         public Object toI(RubyString string) {
-            notDesignedForCompilation();
+            notDesignedForCompilation("5c6145cebc6045dfb7637784a3733e9d");
 
             if (string.toString().length() == 0) {
                 return 0;
@@ -1756,7 +1756,7 @@ public abstract class StringNodes {
 
         @Specialization
         public RubySymbol toSym(RubyString string) {
-            notDesignedForCompilation();
+            notDesignedForCompilation("c08d5d722cbb417d85511af490695ba0");
 
             return getContext().newSymbol(string.getByteList());
         }
@@ -1775,7 +1775,7 @@ public abstract class StringNodes {
 
         @Specialization
         public RubyString reverse(RubyString string) {
-            notDesignedForCompilation();
+            notDesignedForCompilation("955e69b32a26434ca658083c661280e5");
 
             return RubyString.fromByteList(string.getLogicalClass(), StringNodesHelper.reverse(string));
         }
@@ -1794,7 +1794,7 @@ public abstract class StringNodes {
 
         @Specialization
         public RubyString reverse(RubyString string) {
-            notDesignedForCompilation();
+            notDesignedForCompilation("a791d782d63b4a9196dea392dcfac86f");
 
             string.set(StringNodesHelper.reverse(string));
             return string;
@@ -1834,7 +1834,7 @@ public abstract class StringNodes {
 
         @Specialization
         public RubyString upcase(RubyString string) {
-            notDesignedForCompilation();
+            notDesignedForCompilation("0221fe64f737479d9264bcd61541c49e");
             final ByteList byteListString = StringNodesHelper.upcase(string);
 
             return string.getContext().makeString(string.getLogicalClass(), byteListString);
@@ -1855,7 +1855,7 @@ public abstract class StringNodes {
 
         @Specialization
         public RubyString upcaseBang(RubyString string) {
-            notDesignedForCompilation();
+            notDesignedForCompilation("af529f463a8f4d0e85c1cf7e8fcb6831");
             final ByteList byteListString = StringNodesHelper.upcase(string);
             string.set(byteListString);
 
@@ -1894,7 +1894,7 @@ public abstract class StringNodes {
 
         @Specialization
         public RubyBasicObject capitalizeBang(RubyString string) {
-            notDesignedForCompilation();
+            notDesignedForCompilation("e20b487db881408dab2c0c42857f975e");
 
             String javaString = string.toString();
 
@@ -1926,7 +1926,7 @@ public abstract class StringNodes {
 
         @Specialization
         public RubyString capitalize(RubyString string) {
-            notDesignedForCompilation();
+            notDesignedForCompilation("32d491f3b2b142a3b30674bddfa0d489");
             String javaString = string.toString();
 
             if (javaString.isEmpty()) {
@@ -1952,7 +1952,7 @@ public abstract class StringNodes {
 
         @Specialization
         public RubyString clear(RubyString string) {
-            notDesignedForCompilation();
+            notDesignedForCompilation("987d4650096a43f5bd5a2722755330ee");
             ByteList empty = ByteList.EMPTY_BYTELIST;
             empty.setEncoding(string.getBytes().getEncoding());
 
@@ -1974,7 +1974,7 @@ public abstract class StringNodes {
 
         @Specialization
         public RubyString chr(RubyString string) {
-            notDesignedForCompilation();
+            notDesignedForCompilation("ea4ed85689fa427ba3b50cdc13f9f5ab");
             if (string.toString().isEmpty()) {
                 return string;
             } else {

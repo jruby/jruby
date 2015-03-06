@@ -130,7 +130,7 @@ public class RubyBasicObject {
 
     @CompilerDirectives.TruffleBoundary
     public void setInstanceVariables(Map<Object, Object> instanceVariables) {
-        RubyNode.notDesignedForCompilation();
+        RubyNode.notDesignedForCompilation("008fbda1e1084278939d97d227a7020a");
 
         assert instanceVariables != null;
 
@@ -139,7 +139,7 @@ public class RubyBasicObject {
 
 
     public Map<Object, Object>  getInstanceVariables() {
-        RubyNode.notDesignedForCompilation();
+        RubyNode.notDesignedForCompilation("738af770e8054dda87dd0937c8c3fa34");
 
         return getOperations().getInstanceVariables(this);
     }
@@ -149,12 +149,12 @@ public class RubyBasicObject {
     }
 
     public void extend(RubyModule module, Node currentNode) {
-        RubyNode.notDesignedForCompilation();
+        RubyNode.notDesignedForCompilation("1c82267e10064ec2a55f86cd86598e1e");
         getSingletonClass(currentNode).include(currentNode, module);
     }
 
     public Object getInstanceVariable(String name) {
-        RubyNode.notDesignedForCompilation();
+        RubyNode.notDesignedForCompilation("aaf61c62c2c44a559e86853549f73397");
 
         final Object value = getOperations().getInstanceVariable(this, name);
 

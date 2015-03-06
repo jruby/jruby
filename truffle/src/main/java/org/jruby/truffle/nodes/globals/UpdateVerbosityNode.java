@@ -26,7 +26,7 @@ public class UpdateVerbosityNode extends RubyNode {
     }
 
     public Object execute(VirtualFrame frame) {
-        notDesignedForCompilation();
+        notDesignedForCompilation("f5e853e9a6cd4d17a405ce1775cbe7da");
 
         final Object childValue = child.execute(frame);
 

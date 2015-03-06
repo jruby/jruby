@@ -43,7 +43,7 @@ public abstract class SingleValueCastNode extends RubyNode {
     
     @Specialization(guards = { "!noArguments", "!singleArgument" })
     protected RubyArray castMany(Object[] args) {
-        notDesignedForCompilation();
+        notDesignedForCompilation("a1ad0fbb7a8b41f794efc97a99691c3e");
 
         return RubyArray.fromObjects(getContext().getCoreLibrary().getArrayClass(), args);
     }

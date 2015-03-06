@@ -35,7 +35,7 @@ public abstract class ExceptionNodes {
 
         @Specialization
         public RubyNilClass initialize(RubyException exception, UndefinedPlaceholder message) {
-            notDesignedForCompilation();
+            notDesignedForCompilation("d42a66cf3cb749f2921dfc6a9996317a");
 
             exception.initialize(getContext().makeString(" "), RubyCallStack.getBacktrace(this));
             return getContext().getCoreLibrary().getNilObject();
@@ -43,7 +43,7 @@ public abstract class ExceptionNodes {
 
         @Specialization
         public RubyNilClass initialize(RubyException exception, RubyString message) {
-            notDesignedForCompilation();
+            notDesignedForCompilation("4b471cbba81c445cb8b3211900999854");
 
             exception.initialize(message, RubyCallStack.getBacktrace(this));
             return getContext().getCoreLibrary().getNilObject();

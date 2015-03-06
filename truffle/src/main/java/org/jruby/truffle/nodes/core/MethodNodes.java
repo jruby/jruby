@@ -119,7 +119,7 @@ public abstract class MethodNodes {
 
         @Specialization
         public RubySymbol name(RubyMethod method) {
-            notDesignedForCompilation();
+            notDesignedForCompilation("7dcb61de46ae4c328aa154f6ee674220");
 
             return getContext().newSymbol(method.getMethod().getName());
         }
@@ -175,7 +175,7 @@ public abstract class MethodNodes {
 
         @Specialization
         public Object sourceLocation(RubyMethod method) {
-            notDesignedForCompilation();
+            notDesignedForCompilation("381cb0489df94ea5bac74d9e35d91457");
 
             SourceSection sourceSection = method.getMethod().getSharedMethodInfo().getSourceSection();
 
@@ -207,7 +207,7 @@ public abstract class MethodNodes {
 
         @Specialization
         public RubyUnboundMethod unbind(RubyMethod method) {
-            notDesignedForCompilation();
+            notDesignedForCompilation("8415b8f3c3b44624b6218a956dc54c0e");
 
             RubyClass receiverClass = classNode.executeGetClass(method.getReceiver());
             return new RubyUnboundMethod(getContext().getCoreLibrary().getUnboundMethodClass(), receiverClass, method.getMethod());

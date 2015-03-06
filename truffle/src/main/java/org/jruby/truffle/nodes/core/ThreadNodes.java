@@ -60,7 +60,7 @@ public abstract class ThreadNodes {
 
         @Specialization
         public RubyThread current() {
-            notDesignedForCompilation();
+            notDesignedForCompilation("b8806f6cd39b46858ddfa712a3c02a2a");
 
             return getContext().getThreadManager().getCurrentThread();
         }
@@ -128,7 +128,7 @@ public abstract class ThreadNodes {
 
         @Specialization
         public RubyNilClass initialize(RubyThread thread, RubyProc block) {
-            notDesignedForCompilation();
+            notDesignedForCompilation("f5cebf345edf4021a4bf539aa491aaf6");
 
             thread.initialize(getContext(), this, block);
             return getContext().getCoreLibrary().getNilObject();
@@ -149,7 +149,7 @@ public abstract class ThreadNodes {
 
         @Specialization
         public RubyThread join(RubyThread self) {
-            notDesignedForCompilation();
+            notDesignedForCompilation("15232f040c614184bd9246ea6871233f");
 
             self.join();
             return self;
@@ -246,7 +246,7 @@ public abstract class ThreadNodes {
 
         @Specialization
         public RubyThread run(final RubyThread thread) {
-            notDesignedForCompilation();
+            notDesignedForCompilation("1bb060eac0f6421b861185d50337085c");
 
             thread.interrupt();
 
@@ -268,7 +268,7 @@ public abstract class ThreadNodes {
 
         @Specialization
         public Object status(RubyThread self) {
-            notDesignedForCompilation();
+            notDesignedForCompilation("75532ef659e7468085ee67c904a6f7a4");
 
             // TODO: slightly hackish
             if (self.getStatus() == Status.DEAD) {
@@ -297,7 +297,7 @@ public abstract class ThreadNodes {
 
         @Specialization
         public boolean stop(RubyThread self) {
-            notDesignedForCompilation();
+            notDesignedForCompilation("81baab84c8d64ae6b1eee0f440691b6a");
 
             return self.getStatus() == Status.DEAD || self.getStatus() == Status.SLEEP;
         }
@@ -317,7 +317,7 @@ public abstract class ThreadNodes {
 
         @Specialization
         public Object value(RubyThread self) {
-            notDesignedForCompilation();
+            notDesignedForCompilation("9b9296a70d3c4778a27029d9c30bbe82");
 
             self.join();
 
@@ -339,7 +339,7 @@ public abstract class ThreadNodes {
 
         @Specialization
         public RubyThread wakeup(final RubyThread thread) {
-            notDesignedForCompilation();
+            notDesignedForCompilation("5cca9bf91b3446388adf2b8863e86d94");
 
             // TODO: should only interrupt sleep
             thread.interrupt();

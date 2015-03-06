@@ -35,7 +35,7 @@ public abstract class StringToSymbolNode extends RubyNode {
     @CompilerDirectives.TruffleBoundary
     @Specialization
     public RubySymbol doString(RubyString string) {
-        notDesignedForCompilation();
+        notDesignedForCompilation("e0c932f09d02468a84500753baf885e8");
 
         return getContext().newSymbol(string.toString());
     }

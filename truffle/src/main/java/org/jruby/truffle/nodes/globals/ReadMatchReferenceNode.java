@@ -31,7 +31,7 @@ public class ReadMatchReferenceNode extends RubyNode {
 
     @Override
     public Object execute(VirtualFrame frame) {
-        notDesignedForCompilation();
+        notDesignedForCompilation("32398dd7c22e4fbfb973cf9a3a993ccb");
 
         final Object match = getContext().getThreadManager().getCurrentThread().getThreadLocals().getInstanceVariable("$~");
 
@@ -71,7 +71,7 @@ public class ReadMatchReferenceNode extends RubyNode {
 
     @Override
     public Object isDefined(VirtualFrame frame) {
-        notDesignedForCompilation();
+        notDesignedForCompilation("c1c9966653594c748ea2f94e3e51c352");
 
         if (execute(frame) != getContext().getCoreLibrary().getNilObject()) {
             return getContext().makeString("global-variable");

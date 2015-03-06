@@ -64,14 +64,14 @@ public abstract class SymbolNodes {
 
         @Specialization
         public int compare(RubySymbol a, RubySymbol b) {
-            notDesignedForCompilation();
+            notDesignedForCompilation("d3e6e1f834404ccdb20dbafe8620cbe0");
 
             return a.getByteList().cmp(b.getByteList());
         }
 
         @Specialization(guards = "!isRubySymbol(arguments[1])")
         public RubyNilClass compare(RubySymbol symbol,  Object other) {
-            notDesignedForCompilation();
+            notDesignedForCompilation("eae053a72630425a992ab0daeb393532");
             return getContext().getCoreLibrary().getNilObject();
         }
     }
@@ -89,7 +89,7 @@ public abstract class SymbolNodes {
 
         @Specialization
         public RubyArray allSymbols() {
-            notDesignedForCompilation();
+            notDesignedForCompilation("c45a4898b5124b019a02e6cf398497e3");
 
             final RubyArray array = new RubyArray(getContext().getCoreLibrary().getArrayClass());
 
@@ -114,7 +114,7 @@ public abstract class SymbolNodes {
 
         @Specialization
         public RubySymbol capitalize(RubySymbol symbol) {
-            notDesignedForCompilation();
+            notDesignedForCompilation("403b73865a08485381c8d0e8fffc2b4b");
             final ByteList byteList = SymbolNodesHelper.capitalize(symbol.getByteList());
             return getContext().newSymbol(byteList);
         }
@@ -134,14 +134,14 @@ public abstract class SymbolNodes {
 
         @Specialization
         public int caseCompare(RubySymbol symbol, RubySymbol other) {
-            notDesignedForCompilation();
+            notDesignedForCompilation("c4028afca7f347118f699623ea48a220");
 
             return symbol.getByteList().caseInsensitiveCmp(other.getByteList());
         }
 
         @Specialization(guards = "!isRubySymbol(arguments[1])")
         public RubyNilClass caseCompare(RubySymbol symbol,  Object other) {
-            notDesignedForCompilation();
+            notDesignedForCompilation("29ebb45ee2a24e60b2e39d913a4d0bf4");
             return getContext().getCoreLibrary().getNilObject();
         }
 
@@ -160,7 +160,7 @@ public abstract class SymbolNodes {
 
         @Specialization
         public RubySymbol downcase(RubySymbol symbol) {
-            notDesignedForCompilation();
+            notDesignedForCompilation("2259040231114681b4870f81ec6d28d6");
 
             final ByteList byteList = SymbolNodesHelper.downcase(symbol.getByteList());
             return getContext().newSymbol(byteList);
@@ -181,7 +181,7 @@ public abstract class SymbolNodes {
 
         @Specialization
         public boolean empty(RubySymbol symbol) {
-            notDesignedForCompilation();
+            notDesignedForCompilation("667dd5a059384c1189cc4d48eaa8feb2");
 
             return symbol.toString().isEmpty();
         }
@@ -201,7 +201,7 @@ public abstract class SymbolNodes {
 
         @Specialization
         public RubyEncoding encoding(RubySymbol symbol) {
-            notDesignedForCompilation();
+            notDesignedForCompilation("632912202f934a6d90aa74b4d99dbf61");
 
             return RubyEncoding.getEncoding(symbol.getByteList().getEncoding());
         }
@@ -257,7 +257,7 @@ public abstract class SymbolNodes {
 
         @Specialization
         public RubyProc toProc(RubySymbol symbol) {
-            notDesignedForCompilation();
+            notDesignedForCompilation("c9c68bef78e743cd90a894c6294e447a");
 
             // TODO(CS): this should be doing all kinds of caching
             return symbol.toProc(Truffle.getRuntime().getCallerFrame().getCallNode().getEncapsulatingSourceSection(), this);
@@ -313,7 +313,7 @@ public abstract class SymbolNodes {
 
         @Specialization
         public RubyString inspect(RubySymbol symbol) {
-            notDesignedForCompilation();
+            notDesignedForCompilation("60788c6d748c4d8aa6e41632a19fe21c");
 
             return getContext().makeString(symbol.getJRubySymbol().inspect(getContext().getRuntime().getCurrentContext()).asString().decodeString());
         }
@@ -351,7 +351,7 @@ public abstract class SymbolNodes {
 
         @Specialization
         public RubySymbol swapcase(RubySymbol symbol) {
-            notDesignedForCompilation();
+            notDesignedForCompilation("81d76debcc7b482b8a5233a7f9e3e113");
 
             final ByteList byteList = SymbolNodesHelper.swapcase(symbol.getByteList());
             return getContext().newSymbol(byteList);
@@ -372,7 +372,7 @@ public abstract class SymbolNodes {
 
         @Specialization
         public RubySymbol upcase(RubySymbol symbol) {
-            notDesignedForCompilation();
+            notDesignedForCompilation("32bc877616044421bdb64d98e0343eaa");
 
             final ByteList byteList = SymbolNodesHelper.upcase(symbol.getByteList());
             return getContext().newSymbol(byteList);

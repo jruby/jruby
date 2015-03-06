@@ -99,7 +99,7 @@ public abstract class ProcessNodes {
 
         @Specialization
         public int kill(RubySymbol signalName, int pid) {
-            notDesignedForCompilation();
+            notDesignedForCompilation("7d7ea483d671490497f72a8c2d3454e4");
 
             int self = getContext().getRuntime().getPosix().getpid();
 
@@ -128,7 +128,7 @@ public abstract class ProcessNodes {
 
         @Specialization
         public int pid() {
-            notDesignedForCompilation();
+            notDesignedForCompilation("20e260ef11a242438615839efdf11890");
 
             return getContext().getRuntime().getPosix().getpid();
         }

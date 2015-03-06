@@ -27,7 +27,7 @@ public class CheckOutputSeparatorVariableTypeNode extends RubyNode {
     }
 
     public Object execute(VirtualFrame frame) {
-        notDesignedForCompilation();
+        notDesignedForCompilation("7d6349becbfa447980fb0dd382c5f733");
 
         final Object childValue = child.execute(frame);
 

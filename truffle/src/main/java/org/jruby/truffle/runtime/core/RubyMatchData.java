@@ -43,7 +43,7 @@ public class RubyMatchData extends RubyBasicObject {
     }
 
     public Object[] valuesAt(int... indices) {
-        RubyNode.notDesignedForCompilation();
+        RubyNode.notDesignedForCompilation("241f7f8842524fb88d23a39b362e3526");
 
         final Object[] result = new Object[indices.length];
 

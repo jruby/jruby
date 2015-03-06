@@ -79,7 +79,7 @@ public class RubyClass extends RubyModule {
      * used.
      */
     protected void unsafeSetSuperclass(RubyClass superClass) {
-        RubyNode.notDesignedForCompilation();
+        RubyNode.notDesignedForCompilation("80eee317713f4fb0adb40b1946baab26");
 
         assert parentModule == null;
 

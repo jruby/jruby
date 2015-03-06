@@ -51,7 +51,7 @@ public abstract class SymbolOrToStrNode extends RubyNode {
 
     @Specialization(guards = { "!isRubySymbol", "!isRubyString" })
     public String coerceObject(VirtualFrame frame, Object object) {
-        notDesignedForCompilation();
+        notDesignedForCompilation("aca14f46fab84e6ca13a83e7b9010633");
 
         final Object coerced;
 

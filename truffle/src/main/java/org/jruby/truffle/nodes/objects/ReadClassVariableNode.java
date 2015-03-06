@@ -30,7 +30,7 @@ public class ReadClassVariableNode extends RubyNode {
 
     @Override
     public Object execute(VirtualFrame frame) {
-        notDesignedForCompilation();
+        notDesignedForCompilation("d3a3817c043b4862ba0ebe93be3b7d98");
 
         final RubyModule moduleObject = lexicalScope.getLiveModule();
 

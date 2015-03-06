@@ -29,7 +29,7 @@ public class ReadPostArgumentNode extends RubyNode {
 
     @Override
     public Object execute(VirtualFrame frame) {
-        notDesignedForCompilation();
+        notDesignedForCompilation("6cfb9f9855be45f292cd848ed1b695bd");
 
         int count = RubyArguments.getUserArgumentsCount(frame.getArguments());
         final int effectiveIndex = count + negativeIndex;

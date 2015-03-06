@@ -29,7 +29,7 @@ public class OnceNode extends RubyNode {
 
     @Override
     public Object execute(VirtualFrame frame) {
-        notDesignedForCompilation();
+        notDesignedForCompilation("b77c45152fde4915bfa76a249b0e83b9");
 
         Object value = valueMemo.get();
 

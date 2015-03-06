@@ -35,7 +35,7 @@ public class WriteConstantNode extends RubyNode {
 
     @Override
     public Object execute(VirtualFrame frame) {
-        notDesignedForCompilation();
+        notDesignedForCompilation("da206b46fb5d431195c0f42c17a652b4");
 
         // Evaluate RHS first.
         final Object rhsValue = rhs.execute(frame);

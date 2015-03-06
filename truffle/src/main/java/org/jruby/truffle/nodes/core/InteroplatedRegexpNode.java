@@ -37,7 +37,7 @@ public class InteroplatedRegexpNode extends RubyNode {
 
     @Override
     public RubyRegexp executeRubyRegexp(VirtualFrame frame) {
-        notDesignedForCompilation();
+        notDesignedForCompilation("204cd3a93f2e4649afae29e67150ce76");
 
         final org.jruby.RubyString[] strings = new org.jruby.RubyString[children.length];
 

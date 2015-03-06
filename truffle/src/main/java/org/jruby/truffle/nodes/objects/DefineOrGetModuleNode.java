@@ -43,7 +43,7 @@ public class DefineOrGetModuleNode extends RubyNode {
 
     @Override
     public Object execute(VirtualFrame frame) {
-        notDesignedForCompilation();
+        notDesignedForCompilation("980de2b345a643afa5914da1e80f89ef");
 
         // Look for a current definition of the module, or create a new one
 

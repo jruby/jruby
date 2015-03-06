@@ -42,7 +42,7 @@ public class MethodDefinitionNode extends RubyNode {
     }
 
     public InternalMethod executeMethod(VirtualFrame frame) {
-        notDesignedForCompilation();
+        notDesignedForCompilation("73e5ad2abf57483791141073dcc8e797");
 
         final MaterializedFrame declarationFrame;
 
@@ -56,7 +56,7 @@ public class MethodDefinitionNode extends RubyNode {
     }
 
     public InternalMethod executeMethod(VirtualFrame frame, MaterializedFrame declarationFrame) {
-        notDesignedForCompilation();
+        notDesignedForCompilation("091103b383754bab9a46e961bf69372d");
 
         return new InternalMethod(sharedMethodInfo, name, null, null, false, callTarget, declarationFrame);
     }

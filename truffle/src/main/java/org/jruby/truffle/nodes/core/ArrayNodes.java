@@ -370,7 +370,7 @@ public abstract class ArrayNodes {
 
         @Specialization(guards = { "isObject", "!isRubyArray(arguments[3])", "!isUndefinedPlaceholder(arguments[3])" })
         public Object setObject(VirtualFrame frame, RubyArray array, int start, int length, Object value) {
-            notDesignedForCompilation();
+            notDesignedForCompilation("85fe1ed77970449e896ea7e99d460839");
 
             if (length < 0) {
                 CompilerDirectives.transferToInterpreter();
@@ -395,7 +395,7 @@ public abstract class ArrayNodes {
 
         @Specialization(guards = "isIntegerFixnum")
         public Object setIntegerFixnum(VirtualFrame frame, RubyArray array, int start, int length, RubyArray value) {
-            notDesignedForCompilation();
+            notDesignedForCompilation("1a0f8ddd891d44d5b9c735f63c302432");
 
             if (length < 0) {
                 CompilerDirectives.transferToInterpreter();
@@ -602,7 +602,7 @@ public abstract class ArrayNodes {
 
         @Specialization(guards = "areBothIntegerFixnum")
         public RubyArray concatIntegerFixnum(RubyArray array, RubyArray other) {
-            notDesignedForCompilation();
+            notDesignedForCompilation("053bf35c15bb4808b70d7d35ddab3fd9");
 
             // TODO(CS): is there already space in array?
             System.arraycopy(other.getStore(), 0, array.getStore(), array.getSize(), other.getSize());
@@ -612,7 +612,7 @@ public abstract class ArrayNodes {
 
         @Specialization(guards = "areBothLongFixnum")
         public RubyArray concatLongFixnum(RubyArray array, RubyArray other) {
-            notDesignedForCompilation();
+            notDesignedForCompilation("b6d119403faa4fc5b9c2158b1695ed46");
 
             // TODO(CS): is there already space in array?
             System.arraycopy(other.getStore(), 0, array.getStore(), array.getSize(), other.getSize());
@@ -622,7 +622,7 @@ public abstract class ArrayNodes {
 
         @Specialization(guards = "areBothFloat")
         public RubyArray concatDouble(RubyArray array, RubyArray other) {
-            notDesignedForCompilation();
+            notDesignedForCompilation("760d9f0cfe644b89b3be9eacab989de9");
 
             // TODO(CS): is there already space in array?
             System.arraycopy(other.getStore(), 0, array.getStore(), array.getSize(), other.getSize());
@@ -632,7 +632,7 @@ public abstract class ArrayNodes {
 
         @Specialization(guards = "areBothObject")
         public RubyArray concatObject(RubyArray array, RubyArray other) {
-            notDesignedForCompilation();
+            notDesignedForCompilation("70d25239ba8248c2b6a40bda09342a59");
 
             int size = array.getSize();
             int newSize = size + other.getSize();
@@ -649,7 +649,7 @@ public abstract class ArrayNodes {
 
         @Specialization
         public RubyArray concat(RubyArray array, RubyArray other) {
-            notDesignedForCompilation();
+            notDesignedForCompilation("22fbb45fd128470ea13625eff662ca41");
 
             // TODO(CS): is there already space in array?
             // TODO(CS): if array is Object[], use Arrays.copyOf
@@ -766,7 +766,7 @@ public abstract class ArrayNodes {
 
         @Specialization(contains = "deleteAtIntegerFixnumInBounds", guards = "isIntegerFixnum")
         public Object deleteAtIntegerFixnum(RubyArray array, int index) {
-            notDesignedForCompilation();
+            notDesignedForCompilation("e43ccbd6ad104acd9f9c74cf0464cb96");
 
             int normalizedIndex = index;
 
@@ -1063,7 +1063,7 @@ public abstract class ArrayNodes {
             for (int n = 0; n < array.getSize(); n++) {
                 final Object stored = store[n];
 
-                notDesignedForCompilation();
+                notDesignedForCompilation("669b0bc0399f4c93b06c8bd93b03900d");
 
                 if (equalNode.executeSameOrEqual(frame, stored, value)) {
                     return true;
@@ -1080,7 +1080,7 @@ public abstract class ArrayNodes {
             for (int n = 0; n < array.getSize(); n++) {
                 final Object stored = store[n];
 
-                notDesignedForCompilation();
+                notDesignedForCompilation("4f0b3b0cb3744d4ebe16f90490d52990");
 
                 if (equalNode.executeSameOrEqual(frame, stored, value)) {
                     return true;
@@ -1097,7 +1097,7 @@ public abstract class ArrayNodes {
             for (int n = 0; n < array.getSize(); n++) {
                 final Object stored = store[n];
 
-                notDesignedForCompilation();
+                notDesignedForCompilation("06effcc904cb462f93a5ac326329248e");
 
                 if (equalNode.executeSameOrEqual(frame, stored, value)) {
                     return true;
@@ -1215,7 +1215,7 @@ public abstract class ArrayNodes {
 
         @Specialization
         public RubyArray initialize(RubyArray array, RubyArray copy, UndefinedPlaceholder defaultValue, UndefinedPlaceholder block) {
-            notDesignedForCompilation();
+            notDesignedForCompilation("25eedae9cb2e4b499944e5aa6baec606");
             array.setStore(copy.slowToArray(), copy.getSize());
             return array;
         }
@@ -1399,7 +1399,7 @@ public abstract class ArrayNodes {
 
         @Specialization
         public Object inject(VirtualFrame frame, RubyArray array, RubySymbol symbol, UndefinedPlaceholder unused) {
-            notDesignedForCompilation();
+            notDesignedForCompilation("a41dfbc9a8984d1195fb52e95a4556ee");
 
             final Object[] store = array.slowToArray();
 
@@ -1433,7 +1433,7 @@ public abstract class ArrayNodes {
 
         @Specialization(guards = "isNull")
         public Object insert(RubyArray array, int index, Object value) {
-            notDesignedForCompilation();
+            notDesignedForCompilation("680a5a365edf48da8fccb5a99366329f");
 
             final Object[] store = new Object[index + 1];
             Arrays.fill(store, getContext().getCoreLibrary().getNilObject());
@@ -1481,7 +1481,7 @@ public abstract class ArrayNodes {
 
         @Specialization
         public RubyString inspect(VirtualFrame frame, RubyArray array) {
-            notDesignedForCompilation();
+            notDesignedForCompilation("0d5f678ce5af49d196258b78a310bb80");
 
             final StringBuilder builder = new StringBuilder();
             final Object[] objects = array.slowToArray();
@@ -1533,7 +1533,7 @@ public abstract class ArrayNodes {
 
         @Specialization
         public RubyString join(RubyArray array, RubyString separator) {
-            notDesignedForCompilation();
+            notDesignedForCompilation("6b85bc2eb48c4ce6af4d1109370798d0");
 
             final StringBuilder builder = new StringBuilder();
 
@@ -2040,7 +2040,7 @@ public abstract class ArrayNodes {
         @CompilerDirectives.TruffleBoundary
         @Specialization
         public RubyString pack(VirtualFrame frame, RubyArray array, RubyString format) {
-            notDesignedForCompilation();
+            notDesignedForCompilation("c4b0ff63c88746459a2d08d85a169e3d");
 
             final Object[] objects = array.slowToArray();
             final IRubyObject[] jrubyObjects = new IRubyObject[objects.length];
@@ -2548,7 +2548,7 @@ public abstract class ArrayNodes {
 
                     final Object value = store[n];
 
-                    notDesignedForCompilation();
+                    notDesignedForCompilation("f3e9a5acaa824e8aa1ded54be24abffb");
 
                     if (! yieldIsTruthy(frame, block,  new Object[]{value})) {
                         selectedStore = arrayBuilder.append(selectedStore, selectedSize, value);
@@ -2581,7 +2581,7 @@ public abstract class ArrayNodes {
 
                     final Object value = store[n];
 
-                    notDesignedForCompilation();
+                    notDesignedForCompilation("805e532a4f3c4c42aa5843eccfab4517");
 
                     if (! yieldIsTruthy(frame, block, value)) {
                         selectedStore = arrayBuilder.append(selectedStore, selectedSize, value);
@@ -2653,7 +2653,7 @@ public abstract class ArrayNodes {
 
         @Specialization(guards = "isOtherNull")
         public RubyArray replace(RubyArray array, RubyArray other) {
-            notDesignedForCompilation();
+            notDesignedForCompilation("272ff179e35d41c39dc8f4fc54923ed0");
 
             array.setStore(null, 0);
             return array;
@@ -2661,7 +2661,7 @@ public abstract class ArrayNodes {
 
         @Specialization(guards = "isOtherIntegerFixnum")
         public RubyArray replaceIntegerFixnum(RubyArray array, RubyArray other) {
-            notDesignedForCompilation();
+            notDesignedForCompilation("8de35cd1b3464e8c902b3153f965f869");
 
             array.setStore(Arrays.copyOf((int[]) other.getStore(), other.getSize()), other.getSize());
             return array;
@@ -2669,7 +2669,7 @@ public abstract class ArrayNodes {
 
         @Specialization(guards = "isOtherLongFixnum")
         public RubyArray replaceLongFixnum(RubyArray array, RubyArray other) {
-            notDesignedForCompilation();
+            notDesignedForCompilation("3e9bdd1e9a89448eb4b6bdc5a772bbfd");
 
             array.setStore(Arrays.copyOf((long[]) other.getStore(), other.getSize()), other.getSize());
             return array;
@@ -2677,7 +2677,7 @@ public abstract class ArrayNodes {
 
         @Specialization(guards = "isOtherFloat")
         public RubyArray replaceFloat(RubyArray array, RubyArray other) {
-            notDesignedForCompilation();
+            notDesignedForCompilation("a89e0e6c6b0d493cb59f0e784368f5f8");
 
             array.setStore(Arrays.copyOf((double[]) other.getStore(), other.getSize()), other.getSize());
             return array;
@@ -2685,7 +2685,7 @@ public abstract class ArrayNodes {
 
         @Specialization(guards = "isOtherObject")
         public RubyArray replaceObject(RubyArray array, RubyArray other) {
-            notDesignedForCompilation();
+            notDesignedForCompilation("5ae89b2fafb54e8fa9998082b90096aa");
 
             array.setStore(Arrays.copyOf((Object[]) other.getStore(), other.getSize()), other.getSize());
             return array;
@@ -2731,7 +2731,7 @@ public abstract class ArrayNodes {
 
                     final Object value = store[n];
 
-                    notDesignedForCompilation();
+                    notDesignedForCompilation("36e5123cac1440808e1c19100e0dd889");
 
                     if (yieldIsTruthy(frame, block,  new Object[]{value})) {
                         selectedStore = arrayBuilder.append(selectedStore, selectedSize, value);
@@ -2764,7 +2764,7 @@ public abstract class ArrayNodes {
 
                     final Object value = store[n];
 
-                    notDesignedForCompilation();
+                    notDesignedForCompilation("3d6752b348d74d599ee28885d6e07524");
 
                     if (yieldIsTruthy(frame, block, value)) {
                         selectedStore = arrayBuilder.append(selectedStore, selectedSize, value);
@@ -2795,7 +2795,7 @@ public abstract class ArrayNodes {
 
         @Specialization
         public Object shift(RubyArray array) {
-            notDesignedForCompilation();
+            notDesignedForCompilation("04bbf485efa546e6ba742acf761f2b1f");
 
             return array.slowShift();
         }
@@ -2840,7 +2840,7 @@ public abstract class ArrayNodes {
 
         @Specialization(guards = "isNull")
         public RubyArray sortNull(RubyArray array, UndefinedPlaceholder block) {
-            notDesignedForCompilation();
+            notDesignedForCompilation("ffbb0dd00c3f465cad8c4cea8618e767");
 
             return new RubyArray(getContext().getCoreLibrary().getArrayClass());
         }
@@ -2875,7 +2875,7 @@ public abstract class ArrayNodes {
 
         @Specialization(guards = "isIntegerFixnum")
         public RubyArray sortIntegerFixnum(VirtualFrame frame, RubyArray array, UndefinedPlaceholder block) {
-            notDesignedForCompilation();
+            notDesignedForCompilation("6849f608cf604a2f8e442a19fa512c99");
 
             final Object[] boxed = ArrayUtils.box((int[]) array.getStore());
             sort(frame, boxed);
@@ -2913,7 +2913,7 @@ public abstract class ArrayNodes {
 
         @Specialization(guards = "isLongFixnum")
         public RubyArray sortLongFixnum(VirtualFrame frame, RubyArray array, UndefinedPlaceholder block) {
-            notDesignedForCompilation();
+            notDesignedForCompilation("02a4daba09fd47a89924e86048799021");
 
             final Object[] boxed = ArrayUtils.box((long[]) array.getStore());
             sort(frame, boxed);
@@ -2923,7 +2923,7 @@ public abstract class ArrayNodes {
 
         @Specialization(guards = "isFloat")
         public RubyArray sortDouble(VirtualFrame frame, RubyArray array, UndefinedPlaceholder block) {
-            notDesignedForCompilation();
+            notDesignedForCompilation("3986bc8ec67a4f38afc26b17dfe75ec6");
 
             final Object[] boxed = ArrayUtils.box((double[]) array.getStore());
             sort(frame, boxed);
@@ -2956,7 +2956,7 @@ public abstract class ArrayNodes {
 
         @Specialization(guards = "isObject")
         public RubyArray sortObject(VirtualFrame frame, RubyArray array, UndefinedPlaceholder block) {
-            notDesignedForCompilation();
+            notDesignedForCompilation("db1d1aef99a44500aaa927a27dacf83f");
 
             final Object[] store = Arrays.copyOf((Object[]) array.getStore(), array.getSize());
             sort(frame, store);
@@ -2965,7 +2965,7 @@ public abstract class ArrayNodes {
 
         @Specialization(guards = "isObject")
         public RubyArray sortWithCompareBlock(VirtualFrame frame, RubyArray array, RubyProc block) {
-            notDesignedForCompilation();
+            notDesignedForCompilation("53be2bbb95ef446fa027b37196b056c2");
 
             final Object[] store = Arrays.copyOf((Object[]) array.getStore(), array.getSize());
             sort(frame, store, block);
@@ -3024,7 +3024,7 @@ public abstract class ArrayNodes {
 
         @Specialization
         public RubyArray sort(VirtualFrame frame, RubyArray array) {
-            notDesignedForCompilation();
+            notDesignedForCompilation("38623d73f34844c69588af8b02f5f61d");
 
             final Object[] store = array.slowToArray();
             sort(frame, store);
@@ -3063,7 +3063,7 @@ public abstract class ArrayNodes {
 
         @Specialization
         public RubyArray uniq(RubyArray array) {
-            notDesignedForCompilation();
+            notDesignedForCompilation("64672d5df3144212b21b7d5bdf96ee46");
 
             final RubyArray uniq = new RubyArray(getContext().getCoreLibrary().getArrayClass(), null, 0);
 
@@ -3100,7 +3100,7 @@ public abstract class ArrayNodes {
 
         @Specialization
         public RubyArray unshift(RubyArray array, Object... args) {
-            notDesignedForCompilation();
+            notDesignedForCompilation("d01092fece72475881267e10e6ffbbac");
 
             array.slowUnshift(args);
             return array;

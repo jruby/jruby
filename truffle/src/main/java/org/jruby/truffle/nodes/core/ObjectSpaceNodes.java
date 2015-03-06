@@ -46,7 +46,7 @@ public abstract class ObjectSpaceNodes {
 
         @Specialization
         public Object id2Ref(long id) {
-            notDesignedForCompilation();
+            notDesignedForCompilation("d6ec019c1b0d4863a56464aff5fe27ca");
 
             if (id == ObjectIDOperations.NIL) {
                 return getContext().getCoreLibrary().getNilObject();
@@ -100,7 +100,7 @@ public abstract class ObjectSpaceNodes {
 
         @Specialization
         public int eachObject(VirtualFrame frame, @SuppressWarnings("unused") UndefinedPlaceholder ofClass, RubyProc block) {
-            notDesignedForCompilation();
+            notDesignedForCompilation("bf71caeeea294c33bbaf4f82473a4ef4");
 
             int count = 0;
 
@@ -116,7 +116,7 @@ public abstract class ObjectSpaceNodes {
 
         @Specialization
         public int eachObject(VirtualFrame frame, RubyClass ofClass, RubyProc block) {
-            notDesignedForCompilation();
+            notDesignedForCompilation("0b86c8c5708b48ad8a85b0085cb9d86e");
 
             int count = 0;
 
@@ -149,7 +149,7 @@ public abstract class ObjectSpaceNodes {
 
         @Specialization
         public RubyArray defineFinalizer(Object object, RubyProc finalizer) {
-            notDesignedForCompilation();
+            notDesignedForCompilation("53b1d77a37bf44a9ab33fce6c6f6332f");
 
             getContext().getObjectSpaceManager().defineFinalizer((RubyBasicObject) object, finalizer);
             return RubyArray.fromObjects(getContext().getCoreLibrary().getArrayClass(), 0, finalizer);
@@ -169,7 +169,7 @@ public abstract class ObjectSpaceNodes {
 
         @Specialization
         public Object undefineFinalizer(Object object) {
-            notDesignedForCompilation();
+            notDesignedForCompilation("25afe808f2ad45acac676122c7d73ebd");
 
             getContext().getObjectSpaceManager().undefineFinalizer((RubyBasicObject) object);
             return object;

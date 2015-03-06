@@ -124,7 +124,7 @@ public abstract class ProcNodes {
 
         @Specialization
         public RubyNilClass initialize(VirtualFrame frame, RubyProc proc, @SuppressWarnings("unused") UndefinedPlaceholder block) {
-            notDesignedForCompilation();
+            notDesignedForCompilation("f767fd425cbc4bf09d275028b1cb3d20");
 
             final Memo<Integer> frameCount = new Memo<>(0);
 
@@ -213,7 +213,7 @@ public abstract class ProcNodes {
 
         @Specialization
         public Object sourceLocation(RubyProc proc) {
-            notDesignedForCompilation();
+            notDesignedForCompilation("f770503fcb114f07be77adf67e78937a");
 
             SourceSection sourceSection = proc.getSharedMethodInfo().getSourceSection();
 

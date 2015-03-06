@@ -27,7 +27,7 @@ public class CheckProgramNameVariableTypeNode extends RubyNode {
     }
 
     public Object execute(VirtualFrame frame) {
-        notDesignedForCompilation();
+        notDesignedForCompilation("615d363522df4abda9107bff43fdafed");
 
         final Object childValue = child.execute(frame);
 

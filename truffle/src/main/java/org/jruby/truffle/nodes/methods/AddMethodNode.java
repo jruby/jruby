@@ -41,7 +41,7 @@ public class AddMethodNode extends RubyNode {
 
     @Override
     public RubySymbol execute(VirtualFrame frame) {
-        notDesignedForCompilation();
+        notDesignedForCompilation("5d56b9f6cfb34b1cbd69f9de08b91dfa");
 
         final Object receiverObject = receiver.execute(frame);
 
@@ -69,7 +69,7 @@ public class AddMethodNode extends RubyNode {
     }
 
     private static Visibility getVisibility(Frame frame, String name) {
-        notDesignedForCompilation();
+        notDesignedForCompilation("54177ed5af1b406381d31c1cf763f623");
 
         if (name.equals("initialize") || name.equals("initialize_copy") || name.equals("initialize_clone") || name.equals("initialize_dup") || name.equals("respond_to_missing?")) {
             return Visibility.PRIVATE;
@@ -79,7 +79,7 @@ public class AddMethodNode extends RubyNode {
     }
 
     private static Visibility getVisibility(Frame frame) {
-        notDesignedForCompilation();
+        notDesignedForCompilation("a05f87ceef294350970cb1db8c20bed8");
 
         while (frame != null) {
             Visibility visibility = findVisibility(frame);

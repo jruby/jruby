@@ -39,7 +39,7 @@ public abstract class RegexpPrimitiveNodes {
 
         @Specialization
         public RubyRegexp initialize(RubyRegexp regexp, RubyString pattern, int options) {
-            notDesignedForCompilation();
+            notDesignedForCompilation("1ea8707d2af444a7b348e049345361ee");
 
             regexp.initialize(this, pattern.getBytes(), options);
             return regexp;
@@ -60,7 +60,7 @@ public abstract class RegexpPrimitiveNodes {
 
         @Specialization
         public Object searchRegion(RubyRegexp regexp, RubyString string, int start, int end, boolean forward) {
-            notDesignedForCompilation();
+            notDesignedForCompilation("112e05e7cc9048a2bfb3a93d1c6b9e7d");
 
             final Matcher matcher = regexp.getRegex().matcher(string.getBytes().bytes());
 
@@ -82,7 +82,7 @@ public abstract class RegexpPrimitiveNodes {
 
         @Specialization
         public Object setLastMatch(RubyClass regexpClass, Object matchData) {
-            notDesignedForCompilation();
+            notDesignedForCompilation("50ccd29854f84c51ab8b57d2c17deb1e");
 
             getContext().getThreadManager().getCurrentThread().getThreadLocals().getOperations().setInstanceVariable(
                     getContext().getThreadManager().getCurrentThread().getThreadLocals(), "$~", matchData);

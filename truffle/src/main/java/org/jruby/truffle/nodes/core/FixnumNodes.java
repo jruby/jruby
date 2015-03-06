@@ -637,7 +637,7 @@ public abstract class FixnumNodes {
 
         @Specialization
         public Object mod(long a, RubyBignum b) {
-            notDesignedForCompilation();
+            notDesignedForCompilation("9ed25ea61ce24851818ae68747fc4bc3");
 
             // TODO(CS): why are we getting this case?
 

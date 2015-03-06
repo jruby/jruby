@@ -41,7 +41,7 @@ public abstract class DirNodes {
 
         @Specialization
         public Object chdir(VirtualFrame frame, RubyString path, RubyProc block) {
-            notDesignedForCompilation();
+            notDesignedForCompilation("d05345246ade4bcfbcc24374e54f3df3");
 
             final RubyContext context = getContext();
 
@@ -74,7 +74,7 @@ public abstract class DirNodes {
 
         @Specialization
         public int delete(RubyString path) {
-            notDesignedForCompilation();
+            notDesignedForCompilation("b326028c2da145baa9064ce6cd479a2a");
 
             File dir = new File(path.toString());
             if (!dir.isDirectory()) {
@@ -104,7 +104,7 @@ public abstract class DirNodes {
 
         @Specialization
         public boolean exists(RubyString path) {
-            notDesignedForCompilation();
+            notDesignedForCompilation("7ceff2ed3768426b9d7ef9c6bdfc1699");
 
             return new File(path.toString()).isDirectory();
         }
@@ -203,7 +203,7 @@ public abstract class DirNodes {
 
         @Specialization
         public int mkdir(RubyString path) {
-            notDesignedForCompilation();
+            notDesignedForCompilation("9b10b64f010b43c68029c5a9da7d7251");
 
             if (!new File(path.toString()).mkdir()) {
                 // TODO(CS, 12-Jan-15) handle failure
@@ -228,7 +228,7 @@ public abstract class DirNodes {
 
         @Specialization
         public RubyString pwd() {
-            notDesignedForCompilation();
+            notDesignedForCompilation("3df3a1932cbd4b00be7720ebbbbbd68b");
 
             return getContext().makeString(getContext().getRuntime().getCurrentDirectory());
         }

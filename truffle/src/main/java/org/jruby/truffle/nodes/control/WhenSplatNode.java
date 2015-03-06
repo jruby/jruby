@@ -32,7 +32,7 @@ public class WhenSplatNode extends RubyNode {
 
     @Override
     public boolean executeBoolean(VirtualFrame frame) {
-        notDesignedForCompilation();
+        notDesignedForCompilation("a8c4b019064e46019b5cab496a73a9cc");
 
         final Object caseExpression = readCaseExpression.execute(frame);
 

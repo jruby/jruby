@@ -40,14 +40,14 @@ public abstract class ArrayGetTailNode extends RubyNode {
 
     @Specialization(guards = "isNull")
     public RubyArray getTailNull(RubyArray array) {
-        notDesignedForCompilation();
+        notDesignedForCompilation("f579a3c89ba34824b0c0e7ca91152832");
 
         return new RubyArray(getContext().getCoreLibrary().getArrayClass());
     }
 
     @Specialization(guards = "isIntegerFixnum")
     public RubyArray getTailIntegerFixnum(RubyArray array) {
-        notDesignedForCompilation();
+        notDesignedForCompilation("8444b38aec6b4d17b5269edccb7efb03");
 
         if (index >= array.getSize()) {
             return new RubyArray(getContext().getCoreLibrary().getArrayClass());
@@ -58,7 +58,7 @@ public abstract class ArrayGetTailNode extends RubyNode {
 
     @Specialization(guards = "isLongFixnum")
     public RubyArray getTailLongFixnum(RubyArray array) {
-        notDesignedForCompilation();
+        notDesignedForCompilation("0a070cbce56948439e034aab71990185");
 
         if (index >= array.getSize()) {
             return new RubyArray(getContext().getCoreLibrary().getArrayClass());
@@ -69,7 +69,7 @@ public abstract class ArrayGetTailNode extends RubyNode {
 
     @Specialization(guards = "isFloat")
     public RubyArray getTailFloat(RubyArray array) {
-        notDesignedForCompilation();
+        notDesignedForCompilation("01519fbb5bb3492dae36477370567998");
 
         if (index >= array.getSize()) {
             return new RubyArray(getContext().getCoreLibrary().getArrayClass());
@@ -80,7 +80,7 @@ public abstract class ArrayGetTailNode extends RubyNode {
 
     @Specialization(guards = "isObject")
     public RubyArray getTailObject(RubyArray array) {
-        notDesignedForCompilation();
+        notDesignedForCompilation("20b05b9f7652490790f94ac1e00d5996");
 
         if (index >= array.getSize()) {
             return new RubyArray(getContext().getCoreLibrary().getArrayClass());

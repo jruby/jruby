@@ -59,7 +59,7 @@ public abstract class HashNodes {
 
         @Specialization
         public boolean equal(RubyHash a, RubyHash b) {
-            notDesignedForCompilation();
+            notDesignedForCompilation("da3dd4c847b94c8bb8417ba8d4e832a3");
 
             final List<KeyValue> aEntries = HashOperations.verySlowToKeyValues(a);
             final List<KeyValue> bEntries = HashOperations.verySlowToKeyValues(a);
@@ -254,7 +254,7 @@ public abstract class HashNodes {
 
         @Specialization(guards = "isNull")
         public Object getNull(VirtualFrame frame, RubyHash hash, Object key) {
-            notDesignedForCompilation();
+            notDesignedForCompilation("da6b001ec6824bf98939ef6e4c6b64d3");
 
             if (hash.getDefaultBlock() != null) {
                 return yield.dispatch(frame, hash.getDefaultBlock(), hash, key);
@@ -387,7 +387,7 @@ public abstract class HashNodes {
 
         @Specialization(guards = "isBuckets")
         public Object setBuckets(RubyHash hash, Object key, Object value) {
-            notDesignedForCompilation();
+            notDesignedForCompilation("b250ac94c13541fb852e4245401a002d");
 
             if (HashOperations.verySlowSetInBuckets(hash, key, value)) {
                 hash.setSize(hash.getSize() + 1);
@@ -491,7 +491,7 @@ public abstract class HashNodes {
 
         @Specialization(guards = "isBuckets")
         public Object delete(VirtualFrame frame, RubyHash hash, Object key) {
-            notDesignedForCompilation();
+            notDesignedForCompilation("b93257de23b545e1bc97638a4fcae84d");
 
             final HashSearchResult hashSearchResult = findEntryNode.search(frame, hash, key);
 
@@ -579,7 +579,7 @@ public abstract class HashNodes {
 
         @Specialization(guards = "isBuckets")
         public RubyHash eachBuckets(VirtualFrame frame, RubyHash hash, RubyProc block) {
-            notDesignedForCompilation();
+            notDesignedForCompilation("fa3f49ae4cc64207a5d57f30c943bab3");
 
             for (KeyValue keyValue : HashOperations.verySlowToKeyValues(hash)) {
                 yield(frame, block, RubyArray.fromObjects(getContext().getCoreLibrary().getArrayClass(), keyValue.getKey(), keyValue.getValue()));
@@ -590,7 +590,7 @@ public abstract class HashNodes {
 
         @Specialization
         public Object each(VirtualFrame frame, RubyHash hash, UndefinedPlaceholder block) {
-            notDesignedForCompilation();
+            notDesignedForCompilation("e826e42244f94c8891f6167af3762efd");
 
             if (toEnumNode == null) {
                 CompilerDirectives.transferToInterpreter();
@@ -638,7 +638,7 @@ public abstract class HashNodes {
 
         @Specialization
         public RubyNilClass initialize(RubyHash hash, UndefinedPlaceholder defaultValue, UndefinedPlaceholder block) {
-            notDesignedForCompilation();
+            notDesignedForCompilation("f5e9acd064e245d5b35a193003490752");
             hash.setStore(null, 0, null, null);
             hash.setDefaultBlock(null);
             return getContext().getCoreLibrary().getNilObject();
@@ -646,7 +646,7 @@ public abstract class HashNodes {
 
         @Specialization
         public RubyNilClass initialize(RubyHash hash, UndefinedPlaceholder defaultValue, RubyProc block) {
-            notDesignedForCompilation();
+            notDesignedForCompilation("7d4be2eab4c74f03b1c41ece5c984386");
             hash.setStore(null, 0, null, null);
             hash.setDefaultBlock(block);
             return getContext().getCoreLibrary().getNilObject();
@@ -654,7 +654,7 @@ public abstract class HashNodes {
 
         @Specialization
         public RubyNilClass initialize(RubyHash hash, Object defaultValue, UndefinedPlaceholder block) {
-            notDesignedForCompilation();
+            notDesignedForCompilation("0f3cd337b3aa46d6b922ce077cbb30d6");
             hash.setDefaultValue(defaultValue);
             return getContext().getCoreLibrary().getNilObject();
         }
@@ -674,7 +674,7 @@ public abstract class HashNodes {
 
         @Specialization(guards = "isNull(arguments[1])")
         public RubyHash dupNull(RubyHash self, RubyHash from) {
-            notDesignedForCompilation();
+            notDesignedForCompilation("5e0924cf9dd544209fb3e5d1c14d5d72");
 
             if (self == from) {
                 return self;
@@ -689,7 +689,7 @@ public abstract class HashNodes {
 
         @Specialization(guards = {"!isNull(arguments[1])", "!isBuckets(arguments[1])"})
         public RubyHash dupPackedArray(RubyHash self, RubyHash from) {
-            notDesignedForCompilation();
+            notDesignedForCompilation("db5e964bb3e14f719e4860548bec0898");
 
             if (self == from) {
                 return self;
@@ -705,7 +705,7 @@ public abstract class HashNodes {
 
         @Specialization(guards = "isBuckets(arguments[1])")
         public RubyHash dupBuckets(RubyHash self, RubyHash from) {
-            notDesignedForCompilation();
+            notDesignedForCompilation("3163ef8a403a463abad8dc17d6f9681f");
 
             if (self == from) {
                 return self;
@@ -740,7 +740,7 @@ public abstract class HashNodes {
 
         @Specialization(guards = {"!isNull", "!isBuckets"})
         public boolean keyPackedArray(VirtualFrame frame, RubyHash hash, Object key) {
-            notDesignedForCompilation();
+            notDesignedForCompilation("e5b1b3c9fab141828a8437f6a6b8a3ed");
 
             final int size = hash.getSize();
             final Object[] store = (Object[]) hash.getStore();
@@ -756,7 +756,7 @@ public abstract class HashNodes {
 
         @Specialization(guards = "isBuckets")
         public boolean keyBuckets(VirtualFrame frame, RubyHash hash, Object key) {
-            notDesignedForCompilation();
+            notDesignedForCompilation("c6a9382450344cd99bcbe20d42a921ad");
 
             for (KeyValue keyValue : HashOperations.verySlowToKeyValues(hash)) {
                 if (eqlNode.callBoolean(frame, keyValue.getKey(), "eql?", null, key)) {
@@ -814,7 +814,7 @@ public abstract class HashNodes {
 
         @Specialization(guards = "isBuckets")
         public RubyArray mapBuckets(VirtualFrame frame, RubyHash hash, RubyProc block) {
-            notDesignedForCompilation();
+            notDesignedForCompilation("c77838e60abf4258958a2564e8de80a2");
 
             final RubyArray array = new RubyArray(getContext().getCoreLibrary().getArrayClass(), null, 0);
 
@@ -943,7 +943,7 @@ public abstract class HashNodes {
         // TODO CS 3-Mar-15 need negative guards on this
         @Specialization
         public RubyHash mergeBucketsBuckets(RubyHash hash, RubyHash other, UndefinedPlaceholder block) {
-            notDesignedForCompilation();
+            notDesignedForCompilation("cb6b9099beb7474a83e89bce38a91786");
 
             final RubyHash merged = new RubyHash(hash.getLogicalClass(), null, null, new Entry[HashOperations.capacityGreaterThan(hash.getSize() + other.getSize())], 0, null);
 
@@ -967,7 +967,7 @@ public abstract class HashNodes {
 
         @Specialization
         public RubyHash merge(VirtualFrame frame, RubyHash hash, RubyHash other, RubyProc block) {
-            notDesignedForCompilation();
+            notDesignedForCompilation("38b07d3d11c94719859578dd88ca7247");
             
             final RubyHash merged = new RubyHash(hash.getLogicalClass(), null, null, new Entry[HashOperations.capacityGreaterThan(hash.getSize() + other.getSize())], 0, null);
 
@@ -1000,7 +1000,7 @@ public abstract class HashNodes {
 
         @Specialization(guards = "!isRubyHash(arguments[1])")
         public Object merge(VirtualFrame frame, RubyHash hash, Object other, Object block) {
-            notDesignedForCompilation();
+            notDesignedForCompilation("49459e13fd4647fbb99191e2b314d0f7");
 
             if (fallbackCallNode == null) {
                 CompilerDirectives.transferToInterpreter();
@@ -1033,7 +1033,7 @@ public abstract class HashNodes {
 
         @Specialization
         public Object setDefault(VirtualFrame frame, RubyHash hash, Object defaultValue) {
-            notDesignedForCompilation();
+            notDesignedForCompilation("5df152d36bc24cf7aa1aec955015b63d");
 
             ruby(frame, "Rubinius.check_frozen");
             
@@ -1079,7 +1079,7 @@ public abstract class HashNodes {
 
         @Specialization
         public RubyHash replace(VirtualFrame frame, RubyHash hash, RubyHash other) {
-            notDesignedForCompilation();
+            notDesignedForCompilation("6481e026442e47acba9b94599402fca9");
 
             ruby(frame, "Rubinius.check_frozen");
             
@@ -1092,7 +1092,7 @@ public abstract class HashNodes {
 
         @Specialization(guards = "!isRubyHash(arguments[1])")
         public Object replace(VirtualFrame frame, RubyHash hash, Object other) {
-            notDesignedForCompilation();
+            notDesignedForCompilation("db91c8faf2b549f4a1c06d914f36f3da");
 
             return ruby(frame, "replace(Rubinius::Type.coerce_to other, Hash, :to_hash)", "other", other);
         }

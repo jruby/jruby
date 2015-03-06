@@ -63,7 +63,7 @@ public abstract class EncodingNodes {
         @TruffleBoundary
         @Specialization
         public RubyHash aliases() {
-            notDesignedForCompilation();
+            notDesignedForCompilation("928879087c7c4031b9d6413fc8e9a47f");
 
             final List<KeyValue> aliases = new ArrayList<>();
 
@@ -104,7 +104,7 @@ public abstract class EncodingNodes {
 
         @Specialization
         public Object isCompatible(RubyEncoding encoding) {
-            notDesignedForCompilation();
+            notDesignedForCompilation("478079b71e8e49b79bdefd3e6f75dae5");
             return encoding.getEncoding().isAsciiCompatible();
         }
     }
@@ -243,7 +243,7 @@ public abstract class EncodingNodes {
 
         @Specialization
         public RubyEncoding defaultExternal() {
-            notDesignedForCompilation();
+            notDesignedForCompilation("eb5079544af749a5b1c06fd9ddc0fcbe");
 
             Encoding encoding = getContext().getRuntime().getDefaultExternalEncoding();
 
@@ -269,7 +269,7 @@ public abstract class EncodingNodes {
 
         @Specialization
         public Object defaultInternal() {
-            notDesignedForCompilation();
+            notDesignedForCompilation("7ea7e0d04c804e14b1190eec4a91a414");
 
             Encoding encoding = getContext().getRuntime().getDefaultInternalEncoding();
 
@@ -296,7 +296,7 @@ public abstract class EncodingNodes {
 
         @Specialization
         public RubyEncoding defaultExternal(RubyEncoding encoding) {
-            notDesignedForCompilation();
+            notDesignedForCompilation("ebe558eafb8546c3b977f6ef01547a90");
 
             getContext().getRuntime().setDefaultExternalEncoding(encoding.getEncoding());
 
@@ -305,7 +305,7 @@ public abstract class EncodingNodes {
 
         @Specialization
         public RubyEncoding defaultExternal(RubyString encodingString) {
-            notDesignedForCompilation();
+            notDesignedForCompilation("21da8b1a85b548cfa28142f27e8073ea");
 
             final RubyEncoding rubyEncoding = RubyEncoding.getEncoding(encodingString.toString());
             getContext().getRuntime().setDefaultExternalEncoding(rubyEncoding.getEncoding());
@@ -335,7 +335,7 @@ public abstract class EncodingNodes {
 
         @Specialization
         public RubyEncoding defaultInternal(RubyEncoding encoding) {
-            notDesignedForCompilation();
+            notDesignedForCompilation("6171e51f3f8042e98a25105299dd7bd8");
 
             getContext().getRuntime().setDefaultInternalEncoding(encoding.getEncoding());
 
@@ -344,7 +344,7 @@ public abstract class EncodingNodes {
 
         @Specialization
         public RubyNilClass defaultInternal(RubyNilClass encoding) {
-            notDesignedForCompilation();
+            notDesignedForCompilation("5d9564eaa36b4d0baf679b89bb102ef2");
 
             getContext().getRuntime().setDefaultInternalEncoding(null);
 
@@ -353,7 +353,7 @@ public abstract class EncodingNodes {
 
         @Specialization(guards = { "!isRubyEncoding", "!isRubyNilClass" })
         public RubyString defaultInternal(VirtualFrame frame, Object encoding) {
-            notDesignedForCompilation();
+            notDesignedForCompilation("55cd16dfb40e43fa99c5bea06c75b1b7");
 
             if (toStrNode == null) {
                 CompilerDirectives.transferToInterpreter();
@@ -386,7 +386,7 @@ public abstract class EncodingNodes {
 
         @Specialization
         public RubyEncoding find(RubyString name) {
-            notDesignedForCompilation();
+            notDesignedForCompilation("ccdf35e5393e4186baa1adaf00b18ed3");
 
             return RubyEncoding.getEncoding(name.toString());
         }
@@ -407,7 +407,7 @@ public abstract class EncodingNodes {
         @TruffleBoundary
         @Specialization
         public RubyArray find() {
-            notDesignedForCompilation();
+            notDesignedForCompilation("d79ea060f1f44c50952de64005291b2a");
 
             final EncodingService service = getContext().getRuntime().getEncodingService();
 
@@ -454,7 +454,7 @@ public abstract class EncodingNodes {
 
         @Specialization
         public RubyArray list() {
-            notDesignedForCompilation();
+            notDesignedForCompilation("339ee35e79e44deaaac98e811e4295f3");
 
             final RubyEncoding[] encodings = RubyEncoding.cloneEncodingList();
 
@@ -476,7 +476,7 @@ public abstract class EncodingNodes {
 
         @Specialization
         public RubyString localeCharacterMap() {
-            notDesignedForCompilation();
+            notDesignedForCompilation("adc5242336984be8b873372d9a2b7749");
             final ByteList name = new ByteList(getContext().getRuntime().getEncodingService().getLocaleEncoding().getName());
             return getContext().makeString(name);
         }
@@ -495,7 +495,7 @@ public abstract class EncodingNodes {
 
         @Specialization
         public boolean isDummy(RubyEncoding encoding) {
-            notDesignedForCompilation();
+            notDesignedForCompilation("0802944db0ab4f68ae768384d8410509");
 
             return encoding.isDummy();
         }

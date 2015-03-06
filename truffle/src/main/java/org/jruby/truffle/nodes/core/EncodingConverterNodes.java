@@ -42,7 +42,7 @@ public abstract class EncodingConverterNodes {
         @TruffleBoundary
         @Specialization
         public RubyArray convpath(RubyEncodingConverter converter) {
-            notDesignedForCompilation();
+            notDesignedForCompilation("9bf85bce166c42bcadb311a2ddea05b5");
 
             // Adapated from RubyConverter - see attribution there
 
@@ -90,7 +90,7 @@ public abstract class EncodingConverterNodes {
         @TruffleBoundary
         @Specialization
         public RubyNilClass initialize(RubyEncodingConverter self, RubyString source, RubyString destination) {
-            notDesignedForCompilation();
+            notDesignedForCompilation("abec11ac33b74a339d552173e00b181e");
 
             // Adapted from RubyConverter - see attribution there
 
@@ -128,7 +128,7 @@ public abstract class EncodingConverterNodes {
         @TruffleBoundary
         @Specialization
         public RubyArray searchConvpath(RubyString source, RubyString destination) {
-            notDesignedForCompilation();
+            notDesignedForCompilation("04a111ce6b8b44558b06701d9bc8b222");
 
             // Adapted from RubyConverter - see attribution there
 

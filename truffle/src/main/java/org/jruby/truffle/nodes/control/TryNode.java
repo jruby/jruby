@@ -83,7 +83,7 @@ public class TryNode extends RubyNode {
     private Object handleException(VirtualFrame frame, RaiseException exception) {
         CompilerAsserts.neverPartOfCompilation();
 
-        notDesignedForCompilation();
+        notDesignedForCompilation("61870f95310c41c1980acd3aa875e297");
         getContext().getCoreLibrary().getGlobalVariablesObject().getOperations().setInstanceVariable(getContext().getCoreLibrary().getGlobalVariablesObject(), "$!", exception.getRubyException());
 
         for (RescueNode rescue : rescueParts) {

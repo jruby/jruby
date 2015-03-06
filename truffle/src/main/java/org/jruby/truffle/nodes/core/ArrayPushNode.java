@@ -28,7 +28,7 @@ public class ArrayPushNode extends RubyNode {
 
     @Override
     public Object execute(VirtualFrame frame) {
-        notDesignedForCompilation();
+        notDesignedForCompilation("fbe5421584f3452f8b101ec272ed4835");
 
         final Object arrayObject = array.execute(frame);
         assert arrayObject instanceof RubyArray : getSourceSection();

@@ -49,7 +49,7 @@ public abstract class FileNodes {
 
         @Specialization
         public RubyString absolutePath(RubyString path) {
-            notDesignedForCompilation();
+            notDesignedForCompilation("54aca6ddaf024ab6ab3f9ec6592940bc");
 
             String absolute = new File(path.toString()).getAbsolutePath();
 
@@ -75,14 +75,14 @@ public abstract class FileNodes {
 
         @Specialization
         public RubyString basename(RubyString path, @SuppressWarnings("unused") UndefinedPlaceholder extension) {
-            notDesignedForCompilation();
+            notDesignedForCompilation("f413bcc84c4d4c12b20cab1c8b7ac6eb");
 
             return getContext().makeString(new File(path.toString()).getName());
         }
 
         @Specialization
         public RubyString basename(RubyString path, RubyString extension) {
-            notDesignedForCompilation();
+            notDesignedForCompilation("3a17b9612dd24dcd8a9d83c1b0141960");
 
             final String extensionAsString = extension.toString();
             final String name = new File(path.toString()).getName();
@@ -113,7 +113,7 @@ public abstract class FileNodes {
 
         @Specialization
         public RubyNilClass close(RubyFile file) {
-            notDesignedForCompilation();
+            notDesignedForCompilation("45608ec41d6d4efaa151ae365d6eced3");
 
             file.close();
             return getContext().getCoreLibrary().getNilObject();
@@ -134,7 +134,7 @@ public abstract class FileNodes {
 
         @Specialization
         public int delete(RubyString file) {
-            notDesignedForCompilation();
+            notDesignedForCompilation("24874325a1964ef2892aef020bb2f133");
 
             if (!new File(file.toString()).delete()) {
                 // TODO(CS, 12-Jan-15) handle failure
@@ -159,7 +159,7 @@ public abstract class FileNodes {
 
         @Specialization
         public boolean directory(RubyString path) {
-            notDesignedForCompilation();
+            notDesignedForCompilation("31e972cbc26e46bc8b9206edf50a7746");
 
             return new File(path.toString()).isDirectory();
         }
@@ -179,7 +179,7 @@ public abstract class FileNodes {
 
         @Specialization
         public RubyString dirname(RubyString path) {
-            notDesignedForCompilation();
+            notDesignedForCompilation("63a4cd330cba4abeb89ce55b00736ab1");
 
             final String parent = new File(path.toString()).getParent();
 
@@ -205,7 +205,7 @@ public abstract class FileNodes {
 
         @Specialization
         public RubyNilClass eachLine(VirtualFrame frame, RubyFile file, RubyProc block) {
-            notDesignedForCompilation();
+            notDesignedForCompilation("c4117aec4e6e471bba74a87ab3b5ad2f");
 
             final RubyContext context = getContext();
 
@@ -247,7 +247,7 @@ public abstract class FileNodes {
 
         @Specialization
         public boolean executable(RubyString path) {
-            notDesignedForCompilation();
+            notDesignedForCompilation("a8f12864dcea43d698d58cb279dbe0ef");
 
             return new File(path.toString()).canExecute();
         }
@@ -272,7 +272,7 @@ public abstract class FileNodes {
 
         @Specialization
         public boolean exists(RubyString path) {
-            notDesignedForCompilation();
+            notDesignedForCompilation("e23054559d2240e5894a53bb61988448");
 
             return new File(path.toString()).exists();
         }
@@ -297,7 +297,7 @@ public abstract class FileNodes {
 
         @Specialization
         public RubyString expandPath(RubyString path, RubyString dir) {
-            notDesignedForCompilation();
+            notDesignedForCompilation("e7d20f354c3c474198fc70ab739353c8");
 
             return getContext().makeString(RubyFile.expandPath(path.toString(), dir.toString()));
         }
@@ -317,7 +317,7 @@ public abstract class FileNodes {
 
         @Specialization
         public boolean file(RubyString path) {
-            notDesignedForCompilation();
+            notDesignedForCompilation("839ad168f2864a4f837c7a2d24cdbbe7");
 
             return new File(path.toString()).isFile();
         }
@@ -337,7 +337,7 @@ public abstract class FileNodes {
 
         @Specialization
         public RubyString join(Object[] parts) {
-            notDesignedForCompilation();
+            notDesignedForCompilation("b76af81bb0014322882b76a8ab10c033");
 
             final StringBuilder builder = new StringBuilder();
             join(builder, parts);
@@ -346,7 +346,7 @@ public abstract class FileNodes {
 
         @TruffleBoundary
         public static void join(StringBuilder builder, Object[] parts) {
-            notDesignedForCompilation();
+            notDesignedForCompilation("4eee475447134cc09367d507905b5e89");
 
             for (int n = 0; n < parts.length; n++) {
                 if (n > 0) {
@@ -375,14 +375,14 @@ public abstract class FileNodes {
 
         @Specialization
         public Object open(RubyString fileName, RubyString mode, UndefinedPlaceholder block) {
-            notDesignedForCompilation();
+            notDesignedForCompilation("2454385906e845d18f8e133cd3637cd4");
 
             return RubyFile.open(getContext(), fileName.toString(), mode.toString());
         }
 
         @Specialization
         public Object open(VirtualFrame frame, RubyString fileName, RubyString mode, RubyProc block) {
-            notDesignedForCompilation();
+            notDesignedForCompilation("214cd52051b44c35a89fecfb5ac71ec2");
 
             final RubyFile file = RubyFile.open(getContext(), fileName.toString(), mode.toString());
 
@@ -412,7 +412,7 @@ public abstract class FileNodes {
 
         @Specialization
         public RubyString path(RubyString path) {
-            notDesignedForCompilation();
+            notDesignedForCompilation("02091a273c56406b98a535c24823e881");
 
             return getContext().makeString(path.toString());
         }
@@ -432,7 +432,7 @@ public abstract class FileNodes {
 
         @Specialization
         public RubyNilClass puts(RubyFile file, RubyString string) {
-            notDesignedForCompilation();
+            notDesignedForCompilation("11356e06cc7e4d2fb3c904fece38adf6");
 
             try {
                 final Writer writer = file.getWriter();
@@ -461,7 +461,7 @@ public abstract class FileNodes {
 
         @Specialization
         public RubyString read(RubyString file) {
-            notDesignedForCompilation();
+            notDesignedForCompilation("aa0e6fc652144b929c65dd1e81ac0984");
 
             return new RubyString(getContext().getCoreLibrary().getStringClass(),
                     new ByteList(FileUtils.readAllBytesInterruptedly(getContext(), file.toString())));
@@ -482,7 +482,7 @@ public abstract class FileNodes {
 
         @Specialization
         public RubyString read(RubyFile file) {
-            notDesignedForCompilation();
+            notDesignedForCompilation("ee3cc36589d5466d9677058589719cde");
 
             try {
                 final Reader reader = file.getReader();
@@ -520,7 +520,7 @@ public abstract class FileNodes {
 
         @Specialization
         public boolean isReadable(RubyString file) {
-            notDesignedForCompilation();
+            notDesignedForCompilation("86e687ab30a44210a42779593d824b00");
 
             return new File(file.toString()).canRead();
         }
@@ -540,7 +540,7 @@ public abstract class FileNodes {
 
         @Specialization
         public Object read(RubyString file) {
-            notDesignedForCompilation();
+            notDesignedForCompilation("60c10f14f07f431ebd2fe586d2f9845a");
 
             final File f = new File(file.toString());
 
@@ -572,7 +572,7 @@ public abstract class FileNodes {
 
         @Specialization
         public boolean symlinkQuery(RubyString fileName) {
-            notDesignedForCompilation();
+            notDesignedForCompilation("b1e87df4e5b040c7a45a175bda4b4da5");
 
             try {
                 // Note: We can't use file.exists() to check whether the symlink
@@ -606,7 +606,7 @@ public abstract class FileNodes {
 
         @Specialization
         public RubyNilClass write(RubyFile file, RubyString string) {
-            notDesignedForCompilation();
+            notDesignedForCompilation("018a3637ffb84aefaba155673b27803b");
 
             try {
                 final Writer writer = file.getWriter();

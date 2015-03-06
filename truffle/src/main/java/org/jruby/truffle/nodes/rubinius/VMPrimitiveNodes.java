@@ -67,13 +67,13 @@ public abstract class VMPrimitiveNodes {
 
         @Specialization
         public Object doCatch(VirtualFrame frame, Object tag, RubyProc block) {
-            notDesignedForCompilation();
+            notDesignedForCompilation("b5a2b1eb7074409a88e0f37dbd1859ee");
 
             try {
                 return dispatchNode.dispatch(frame, block, tag);
             } catch (ThrowException e) {
                 if (areSame(frame, e.getTag(), tag)) {
-                    notDesignedForCompilation();
+                    notDesignedForCompilation("cb21b2464d6e47c2a888c985279c5e87");
                     RubyBasicObject globals = getContext().getCoreLibrary().getGlobalVariablesObject();
                     globals.getOperations().setInstanceVariable(globals, "$!", getContext().getCoreLibrary().getNilObject());
                     return e.getValue();
@@ -123,7 +123,7 @@ public abstract class VMPrimitiveNodes {
 
         @Specialization
         public RubyString vmGetModuleName(RubyModule module) {
-            notDesignedForCompilation();
+            notDesignedForCompilation("66928ca75f514d5b8ec2f5ef3902cf76");
             return getContext().makeString(module.getName());
         }
 
@@ -286,7 +286,7 @@ public abstract class VMPrimitiveNodes {
 
         @Specialization
         public Object vmSingletonClassObject(Object object) {
-            notDesignedForCompilation();
+            notDesignedForCompilation("aba1dab9149d4f9d902e3d07c28c211c");
             return object instanceof RubyClass && ((RubyClass) object).isSingleton();
         }
 
@@ -305,7 +305,7 @@ public abstract class VMPrimitiveNodes {
 
         @Specialization
         public Object doThrow(Object tag, Object value) {
-            notDesignedForCompilation();
+            notDesignedForCompilation("46ba2083c54749e79f91c0085ce6d64b");
 
             throw new ThrowException(tag, value);
         }

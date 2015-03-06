@@ -41,7 +41,7 @@ public class OpenModuleNode extends RubyNode {
 
     @Override
     public Object execute(VirtualFrame frame) {
-        notDesignedForCompilation();
+        notDesignedForCompilation("880005e895e842eeaf727d7924f55bde");
 
         // TODO(CS): cast
         final RubyModule module = (RubyModule) definingModule.execute(frame);

@@ -31,7 +31,7 @@ public class CatchReturnAsErrorNode extends RubyNode {
 
     @Override
     public Object execute(VirtualFrame frame) {
-        notDesignedForCompilation();
+        notDesignedForCompilation("4981e67b94254a73ac0f735a5d6d6155");
 
         try {
             return body.execute(frame);

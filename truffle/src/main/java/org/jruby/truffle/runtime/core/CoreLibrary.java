@@ -361,7 +361,7 @@ public class CoreLibrary {
     }
 
     private void initializeGlobalVariables() {
-        RubyNode.notDesignedForCompilation();
+        RubyNode.notDesignedForCompilation("2db3a0cd089944109a793e8af4affc4f");
 
         RubyBasicObject globals = globalVariablesObject;
 
@@ -423,7 +423,7 @@ public class CoreLibrary {
     }
 
     private void initializeSignalConstants() {
-        RubyNode.notDesignedForCompilation();
+        RubyNode.notDesignedForCompilation("3747e25e92d34c88ac019a6d1278e034");
 
         Object[] signals = new Object[SignalOperations.SIGNALS_LIST.size()];
 
@@ -546,7 +546,7 @@ public class CoreLibrary {
     }
 
     public RubyClass getMetaClass(Object object) {
-        RubyNode.notDesignedForCompilation();
+        RubyNode.notDesignedForCompilation("ab5ec2ab205c428b91df0d70dd271570");
 
         if (object instanceof RubyBasicObject) {
             return ((RubyBasicObject) object).getMetaClass();
@@ -571,7 +571,7 @@ public class CoreLibrary {
     }
 
     public RubyClass getLogicalClass(Object object) {
-        RubyNode.notDesignedForCompilation();
+        RubyNode.notDesignedForCompilation("7971ace29976458591b86ddde4bd45b2");
 
         if (object instanceof RubyBasicObject) {
             return ((RubyBasicObject) object).getLogicalClass();
@@ -599,7 +599,7 @@ public class CoreLibrary {
      * Convert a value to a {@code Float}, without doing any lookup.
      */
     public static double toDouble(Object value) {
-        RubyNode.notDesignedForCompilation();
+        RubyNode.notDesignedForCompilation("75a0bccac4524d318a8e0f2088cbd5eb");
 
         assert value != null;
 

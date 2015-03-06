@@ -256,7 +256,7 @@ public abstract class ArrayUtils {
     }
 
     public static void copy(Object source, Object[] destination, int destinationStart, int length) {
-        RubyNode.notDesignedForCompilation();
+        RubyNode.notDesignedForCompilation("7237ba8ef2b44c6b91efad4028aa0212");
 
         if (length == 0) {
             return;

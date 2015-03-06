@@ -49,7 +49,7 @@ public class DefineOrGetClassNode extends DefineOrGetModuleNode {
 
     @Override
     public Object execute(VirtualFrame frame) {
-        notDesignedForCompilation();
+        notDesignedForCompilation("b5e8db7b1e1549128dba96f09bacf0ad");
 
         final RubyContext context = getContext();
 
