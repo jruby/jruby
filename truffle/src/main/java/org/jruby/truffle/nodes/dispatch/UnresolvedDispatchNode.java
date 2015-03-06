@@ -59,37 +59,50 @@ public final class UnresolvedDispatchNode extends DispatchNode {
 
     @Override
     public Object executeDispatch(
-            VirtualFrame frame,
-            Object receiverObject,
-            Object methodName,
+            final VirtualFrame frame,
+            final Object receiverObject,
+            final Object methodName,
             Object blockObject,
             Object argumentsObjects) {
         CompilerDirectives.transferToInterpreterAndInvalidate();
 
-        final DispatchNode first = getHeadNode().getFirstDispatchNode();
-        final DispatchNode newDispathNode;
+        final DispatchNode dispatch = atomic(new Callable<DispatchNode>() {
+            @Override
+            public DispatchNode call() throws Exception {
+                final DispatchNode first = getHeadNode().getFirstDispatchNode();
 
-        if (depth == DISPATCH_POLYMORPHIC_MAX) {
-            newDispathNode = new UncachedDispatchNode(getContext(), ignoreVisibility, getDispatchAction(), missingBehavior);
-        } else {
-            depth++;
-            if (isRubyBasicObject(receiverObject)) {
-                newDispathNode = doRubyBasicObject(
-                    frame,
-                        first,
-                        receiverObject,
-                        methodName);
-            } else {
-                newDispathNode = doUnboxedObject(
-                        frame,
-                        first,
-                        receiverObject,
-                        methodName);
+                // First try to see if we did not a miss a specialization added by another thread.
+
+                DispatchNode lookupDispatch = first;
+                while (lookupDispatch != null) {
+                    if (lookupDispatch.guard(methodName, receiverObject)) {
+                        // This one worked, no need to rewrite anything.
+                        return lookupDispatch;
+                    }
+                    lookupDispatch = lookupDispatch.getNext();
+                }
+
+                // We need a new node to handle this case.
+
+                final DispatchNode newDispathNode;
+
+                if (depth == DISPATCH_POLYMORPHIC_MAX) {
+                    newDispathNode = new UncachedDispatchNode(getContext(), ignoreVisibility, getDispatchAction(), missingBehavior);
+                } else {
+                    depth++;
+                    if (isRubyBasicObject(receiverObject)) {
+                        newDispathNode = doRubyBasicObject(frame, first, receiverObject, methodName);
+                    } else {
+                        newDispathNode = doUnboxedObject(frame, first, receiverObject, methodName);
+                    }
+                }
+
+                first.replace(newDispathNode);
+                return newDispathNode;
             }
-        }
+        });
 
-        first.replace(newDispathNode);
-        return newDispathNode.executeDispatch(frame, receiverObject, methodName, blockObject, argumentsObjects);
+        return dispatch.executeDispatch(frame, receiverObject, methodName, blockObject, argumentsObjects);
     }
 
     private DispatchNode doUnboxedObject(
