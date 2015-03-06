@@ -1727,10 +1727,20 @@ public abstract class StringNodes {
             super(prev);
         }
 
-        @Specialization
+        @Specialization(guards = "!isStringSubclass")
         public RubyString toS(RubyString string) {
             return string;
         }
+
+        @Specialization(guards = "isStringSubclass")
+        public Object toSOnSubclass(VirtualFrame frame, RubyString string) {
+            return ruby(frame, "''.replace(self)", "self", string);
+        }
+
+        public boolean isStringSubclass(RubyString string) {
+            return string.getLogicalClass() != getContext().getCoreLibrary().getStringClass();
+        }
+
     }
 
     @CoreMethod(names = {"to_sym", "intern"})
