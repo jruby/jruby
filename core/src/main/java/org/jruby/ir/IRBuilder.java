@@ -2314,6 +2314,19 @@ public class IRBuilder {
 
         // Create a variable to hold the flip state
         IRBuilder nearestNonClosureBuilder = getNearestFlipVariableScopeBuilder();
+
+        // Flip is completely broken atm and it was semi-broken in its last incarnation.
+        // Method and closures (or evals) are not built at the same time and if -X-C or JIT or AOT
+        // and jit.threshold=0 then the non-closure where we want to store the hidden flip variable
+        // is unable to get more instrs added to it (not quite true for -X-C but definitely true
+        // for JIT/AOT.  Also it means needing to grow the size of any heap scope for variables.
+        if (nearestNonClosureBuilder == null) {
+            Variable excType = createTemporaryVariable();
+            addInstr(new InheritanceSearchConstInstr(excType, new ObjectClass(), "NotImplementedError", false));
+            Variable exc = addResultInstr(CallInstr.create(createTemporaryVariable(), "new", excType, new Operand[] {new ConstantStringLiteral("Flip support currently broken")}, null));
+            addInstr(new ThrowExceptionInstr(exc));
+            return buildNil();
+        }
         Variable flipState = nearestNonClosureBuilder.scope.getNewFlipStateVariable();
         nearestNonClosureBuilder.initFlipStateVariable(flipState, s1);
         if (scope instanceof IRClosure) {
