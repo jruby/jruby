@@ -363,7 +363,7 @@ public class RubyModule extends RubyBasicObject implements ModuleChain {
 
     @Override
     public String toString() {
-        return super.toString() + "(" + name + ")";
+        return super.toString() + "(" + getName() + ")";
     }
 
     public void newVersion() {
