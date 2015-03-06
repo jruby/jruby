@@ -55,8 +55,8 @@ public class UninitializedYieldDispatchNode extends YieldDispatchNode {
                     lookupDispatch = lookupDispatch.getNext();
                 }
 
-                depth++;
                 if (depth < DispatchNode.DISPATCH_POLYMORPHIC_MAX) {
+                    depth++;
                     CachedYieldDispatchNode cachedDispatch = new CachedYieldDispatchNode(getContext(), block, currentNode);
                     replace(cachedDispatch);
                     return cachedDispatch;
