@@ -66,8 +66,10 @@ public final class UnresolvedDispatchNode extends DispatchNode {
             Object argumentsObjects) {
         CompilerDirectives.transferToInterpreterAndInvalidate();
 
+        final DispatchNode first = getHeadNode().getFirstDispatchNode();
+
         if (depth == DISPATCH_POLYMORPHIC_MAX) {
-            return getHeadNode().getFirstDispatchNode()
+            return first
                     .replace(new UncachedDispatchNode(getContext(), ignoreVisibility, getDispatchAction(), missingBehavior))
                     .executeDispatch(frame, receiverObject,
                             methodName, blockObject, argumentsObjects);
@@ -75,7 +77,6 @@ public final class UnresolvedDispatchNode extends DispatchNode {
 
         depth++;
 
-        final DispatchNode first = getHeadNode().getFirstDispatchNode();
         final DispatchNode newDispathNode;
 
         if (isRubyBasicObject(receiverObject)) {
@@ -120,7 +121,7 @@ public final class UnresolvedDispatchNode extends DispatchNode {
             final InternalMethod method = lookup(callerClass, receiverObject, methodName.toString(), ignoreVisibility);
 
             if (method == null) {
-                return createMethodMissingNode(methodName, receiverObject);
+                return createMethodMissingNode(first, methodName, receiverObject);
             }
 
             if (receiverObject instanceof Boolean) {
@@ -175,7 +176,7 @@ public final class UnresolvedDispatchNode extends DispatchNode {
             final InternalMethod method = lookup(callerClass, receiverObject, methodName.toString(), ignoreVisibility);
 
             if (method == null) {
-                return createMethodMissingNode(methodName, receiverObject);
+                return createMethodMissingNode(first, methodName, receiverObject);
             }
 
             final DispatchNode newDispatch;
@@ -195,7 +196,7 @@ public final class UnresolvedDispatchNode extends DispatchNode {
                     ignoreVisibility);
 
             if (constant == null) {
-                return createConstantMissingNode(methodName, callerClass, module);
+                return createConstantMissingNode(first, methodName, callerClass, module);
             }
 
             if (constant.isAutoload()) {
@@ -222,11 +223,10 @@ public final class UnresolvedDispatchNode extends DispatchNode {
     }
 
     private DispatchNode createConstantMissingNode(
+            DispatchNode first,
             Object methodName,
             RubyClass callerClass,
             RubyBasicObject receiverObject) {
-        final DispatchNode first = getHeadNode().getFirstDispatchNode();
-
         switch (missingBehavior) {
             case RETURN_MISSING: {
                 return first.replace(new CachedBoxedReturnMissingDispatchNode(getContext(), methodName, first,
@@ -256,10 +256,9 @@ public final class UnresolvedDispatchNode extends DispatchNode {
     }
 
     private DispatchNode createMethodMissingNode(
+            DispatchNode first,
             Object methodName,
             Object receiverObject) {
-        final DispatchNode first = getHeadNode().getFirstDispatchNode();
-
         switch (missingBehavior) {
             case RETURN_MISSING: {
                 return first.replace(new CachedBoxedReturnMissingDispatchNode(getContext(), methodName, first,
