@@ -100,11 +100,15 @@ describe 'Dir globs (Dir.glob and Dir.[])' do
 
     before = Dir.glob("#{jar_path}!/**/*").size
 
+    puts File.mtime(jar_path)
+
     # Need to sleep a little bit to make sure that modified time is updated
     sleep 2
 
     # This should delete the /glob_target and /glob_target/bar.txt entries
     `zip -d #{jar_path} glob_target/bar.txt`
+
+    puts File.mtime(jar_path)
 
     # Explicitly touch the file in case mtime and zip don't agree
     `touch #{jar_path}`
