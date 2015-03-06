@@ -59,11 +59,6 @@ public class LiveVariableAnalysis extends CompilerPass {
 
     @Override
     public Object execute(IRScope scope, Object... data) {
-        // Should never be invoked directly on IRClosures
-        // if (scope instanceof IRClosure && !(scope instanceof IREvalScript)) {
-        //     System.out.println("Hmm .. should not run lvp directly on closure scope: " + scope);
-        // }
-
         // Make sure flags are computed
         scope.computeScopeFlags();
 

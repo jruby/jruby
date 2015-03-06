@@ -48,10 +48,5 @@ public class EnsureTempsAssigned extends CompilerPass {
                 bb.getInstrs().add(index++, new CopyInstr(name, first));
             }
         }
-
-        // recurse
-        for (IRScope childScope : cfg.getScope().getClosures()) {
-            run(childScope, false, true);
-        }
     }
 }

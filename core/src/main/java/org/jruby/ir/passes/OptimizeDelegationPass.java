@@ -18,9 +18,15 @@ public class OptimizeDelegationPass extends CompilerPass {
 
     @Override
     public Object execute(IRScope s, Object... data) {
+        /**
+         * SSS FIXME: too late at night to think straight if this
+         * is required to run on all nested scopes or not. Doesn't
+         * look like it, but leaving behind in case it is.
+         *
         for (IRClosure c: s.getClosures()) {
             run(c, false, true);
         }
+         **/
 
         if (s.getFlags().contains(IRFlags.BINDING_HAS_ESCAPED)) return null;
         if (!s.getFlags().contains(IRFlags.RECEIVES_CLOSURE_ARG)) return null;

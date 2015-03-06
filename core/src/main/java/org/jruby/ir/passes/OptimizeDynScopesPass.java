@@ -126,6 +126,9 @@ public class OptimizeDynScopesPass extends CompilerPass {
         }
 
         eliminateLocalVars(scope);
+
+        // SSS FIXME: Why null? Return a non-null value so that we don't
+        // run this repeatedly on the same scope.
         return null;
     }
 
