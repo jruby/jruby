@@ -1716,7 +1716,7 @@ public abstract class StringNodes {
         }
     }
 
-    @CoreMethod(names = "to_s")
+    @CoreMethod(names = { "to_s", "to_str" })
     public abstract static class ToSNode extends CoreMethodNode {
 
         public ToSNode(RubyContext context, SourceSection sourceSection) {
