@@ -388,6 +388,16 @@ class String
     self
   end
 
+  def codepoints
+    if block_given?
+      each_codepoint do |codepoint|
+        yield codepoint
+      end
+    else
+      each_codepoint.to_a
+    end
+  end
+
   def to_sub_replacement(result, match)
     index = 0
     while index < @num_bytes
