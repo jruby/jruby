@@ -1,1 +1,0 @@
-fails:Hash#values_at returns an array of values for the given keys

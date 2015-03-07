@@ -217,4 +217,17 @@ class Hash
     to_a.sort(&block)
   end
 
+  def values_at(*args)
+    args.map do |key|
+      if item = find_item(key)
+        item.value
+      else
+        default key
+      end
+    end
+  end
+
+  alias_method :indices, :values_at
+  alias_method :indexes, :values_at
+
 end
