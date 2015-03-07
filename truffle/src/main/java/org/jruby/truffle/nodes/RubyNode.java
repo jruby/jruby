@@ -493,8 +493,4 @@ public abstract class RubyNode extends Node implements ProbeNode.Instrumentable 
         return getContext().eval(ByteList.create(expression), binding, true, "inline-ruby", this);
     }
 
-    public boolean isSingleArgument(Object[] arguments) {
-        return arguments.length == 1;
-    }
-
 }

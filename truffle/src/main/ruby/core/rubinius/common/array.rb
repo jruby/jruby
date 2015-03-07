@@ -415,8 +415,4 @@ class Array
     at(idx)
   end
 
-  def to_ary
-    self
-  end
-
 end

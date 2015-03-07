@@ -313,18 +313,4 @@ class Hash
 
   alias_method :has_value?, :value?
 
-  def self.new_from_associate_array(associate_array)
-    hash = new
-    associate_array.each do |array|
-      next unless array.respond_to? :to_ary
-      array = array.to_ary
-      unless (1..2).cover? array.size
-        raise ArgumentError, "invalid number of elements (#{array.size} for 1..2)"
-      end
-      hash[array.at(0)] = array.at(1)
-    end
-    hash
-  end
-  private_class_method :new_from_associate_array
-
 end

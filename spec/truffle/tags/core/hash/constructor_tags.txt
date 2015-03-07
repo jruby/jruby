@@ -1,3 +1,8 @@
+fails:Hash.[] coerces a single argument which responds to #to_ary
+fails:Hash.[] ignores elements that are not arrays
 fails:Hash.[] raises an ArgumentError for arrays of more than 2 elements
+fails:Hash.[] raises an ArgumentError when passed a list of value-invalid-pairs in an array
 fails:Hash.[] raises an ArgumentError when passed an odd number of arguments
+fails:Hash.[] calls to_hash
+fails:Hash.[] passed an array treats elements that are 1 element arrays as keys with value nil
 fails:Hash.[] passed a single argument which responds to #to_hash coerces it and returns a copy
