@@ -894,9 +894,9 @@ public abstract class StringNodes {
             super(prev);
         }
 
+        @TruffleBoundary
         @Specialization
         public RubyString encode(RubyString string, RubyString encoding, @SuppressWarnings("unused") UndefinedPlaceholder options) {
-            notDesignedForCompilation();
 
             final org.jruby.RubyString jrubyString = getContext().toJRuby(string);
             final org.jruby.RubyString jrubyEncodingString = getContext().toJRuby(encoding);
@@ -905,17 +905,17 @@ public abstract class StringNodes {
             return getContext().toTruffle(jrubyTranscoded);
         }
 
+        @TruffleBoundary
         @Specialization
         public RubyString encode(RubyString string, RubyString encoding, @SuppressWarnings("unused") RubyHash options) {
-            notDesignedForCompilation();
 
             // TODO (nirvdrum 20-Feb-15) We need to do something with the options hash. I'm stubbing this out just to get the jUnit mspec formatter running.
             return encode(string, encoding, UndefinedPlaceholder.INSTANCE);
         }
 
+        @TruffleBoundary
         @Specialization
         public RubyString encode(RubyString string, RubyEncoding encoding, @SuppressWarnings("unused") UndefinedPlaceholder options) {
-            notDesignedForCompilation();
 
             final org.jruby.RubyString jrubyString = getContext().toJRuby(string);
             final org.jruby.RubyString jrubyEncodingString = getContext().toJRuby(getContext().makeString(encoding.getName()));
@@ -924,9 +924,9 @@ public abstract class StringNodes {
             return getContext().toTruffle(jrubyTranscoded);
         }
 
+        @TruffleBoundary
         @Specialization(guards = { "!isRubyString(arguments[1])", "!isRubyEncoding(arguments[1])", "!isUndefinedPlaceholder(arguments[1])" })
         public RubyString encode(VirtualFrame frame, RubyString string, Object encoding, UndefinedPlaceholder options) {
-            notDesignedForCompilation();
 
             if (toStrNode == null) {
                 CompilerDirectives.transferToInterpreter();
@@ -936,9 +936,9 @@ public abstract class StringNodes {
             return encode(string, toStrNode.executeRubyString(frame, encoding), options);
         }
 
+        @TruffleBoundary
         @Specialization
         public RubyString encode(RubyString string, @SuppressWarnings("unused") UndefinedPlaceholder encoding, @SuppressWarnings("unused") UndefinedPlaceholder options) {
-            notDesignedForCompilation();
 
             if (defaultInternalNode == null) {
                 CompilerDirectives.transferToInterpreter();
