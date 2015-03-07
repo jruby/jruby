@@ -1,2 +1,1 @@
 fails:Hash#rehash reorganizes the hash by recomputing all key hash codes
-fails:Hash#rehash raises a RuntimeError if called on a frozen instance

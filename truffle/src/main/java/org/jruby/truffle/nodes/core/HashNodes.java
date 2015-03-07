@@ -1160,6 +1160,39 @@ public abstract class HashNodes {
 
     }
 
+    @CoreMethod(names = "rehash", raiseIfFrozenSelf = true)
+    public abstract static class RehashNode extends HashCoreMethodNode {
+
+        public RehashNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public RehashNode(RehashNode prev) {
+            super(prev);
+        }
+
+        @Specialization(guards = "isNull")
+        public RubyHash rehashNull(RubyHash hash) {
+            return hash;
+        }
+
+        @Specialization(guards = {"!isNull", "!isBuckets"})
+        public RubyHash rehashPackedArray(RubyHash hash) {
+            // Nothing to do as we weren't using the hash code anyway
+            return hash;
+        }
+
+        @Specialization(guards = "isBuckets")
+        public RubyHash rehashBuckets(RubyHash hash) {
+            notDesignedForCompilation();
+            
+            HashOperations.verySlowSetKeyValues(hash, HashOperations.verySlowToKeyValues(hash), hash.isCompareByIdentity());
+            
+            return hash;
+        }
+
+    }
+
     @CoreMethod(names = "replace", required = 1)
     public abstract static class ReplaceNode extends HashCoreMethodNode {
 
