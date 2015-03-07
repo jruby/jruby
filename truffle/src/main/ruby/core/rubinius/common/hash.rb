@@ -290,4 +290,8 @@ class Hash
     self
   end
 
+  def flatten(level=1)
+    to_a.flatten(level)
+  end
+
 end
