@@ -1137,6 +1137,106 @@ public abstract class HashNodes {
         }
     }
 
+    @CoreMethod(names = "shift", raiseIfFrozenSelf = true)
+    public abstract static class ShiftNode extends HashCoreMethodNode {
+
+        public ShiftNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public ShiftNode(ShiftNode prev) {
+            super(prev);
+        }
+
+        @Specialization(guards = {"isEmpty", "!hasDefaultValue", "!hasDefaultBlock"})
+        public RubyNilClass shiftEmpty(RubyHash hash) {
+            return getContext().getCoreLibrary().getNilObject();
+        }
+
+        @Specialization(guards = {"isEmpty", "hasDefaultValue", "!hasDefaultBlock"})
+        public Object shiftEmpyDefaultValue(RubyHash hash) {
+            return hash.getDefaultValue();
+        }
+
+        @Specialization(guards = {"isEmpty", "!hasDefaultValue", "hasDefaultBlock"})
+        public Object shiftEmptyDefaultProc(RubyHash hash) {
+            notDesignedForCompilation();
+            
+            return hash.getDefaultBlock().rootCall(hash, getContext().getCoreLibrary().getNilObject());
+        }
+
+        @Specialization(guards = {"!isEmpty", "!isNull", "!isBuckets"})
+        public RubyArray shiftPackedArray(RubyHash hash) {
+            notDesignedForCompilation();
+            
+            final Object[] store = (Object[]) hash.getStore();
+            
+            final Object key = store[0];
+            final Object value = store[1];
+            
+            System.arraycopy(store, 2, store, 0, HashOperations.SMALL_HASH_SIZE * 2 - 2);
+            
+            hash.setSize(hash.getSize() - 1);
+            
+            return RubyArray.fromObjects(getContext().getCoreLibrary().getArrayClass(), key, value);
+        }
+
+        @Specialization(guards = {"!isEmpty", "isBuckets"})
+        public RubyArray shiftBuckets(RubyHash hash) {
+            notDesignedForCompilation();
+            
+            final Entry first = hash.getFirstInSequence();
+
+            final Object key = first.getKey();
+            final Object value = first.getValue();
+            
+            hash.setFirstInSequence(first.getNextInSequence());
+            
+            if (first.getPreviousInSequence() != null) {
+                first.getNextInSequence().setPreviousInSequence(null);
+            }
+
+            if (hash.getLastInSequence() == first) {
+                hash.setLastInSequence(null);
+            }
+            
+            /*
+             * TODO CS 7-Mar-15 this isn't great - we need to remove from the
+             * lookup sequence for which we need the previous entry in the
+             * bucket. However we normally get that from the search result, and
+             * we haven't done a search here - we've just taken the first
+             * result. For the moment we'll just do a manual search.
+             */
+            
+            final Entry[] store = (Entry[]) hash.getStore();
+            
+            bucketLoop: for (int n = 0; n < store.length; n++) {
+                Entry previous = null;
+                Entry entry = store[n];
+                
+                while (entry != null) {
+                    if (entry == first) {
+                        if (previous == null) {
+                            store[n] = first.getNextInLookup();
+                        } else {
+                            previous.setNextInLookup(first.getNextInLookup());
+                        }
+                        
+                        break bucketLoop;
+                    }
+                    
+                    previous = entry;
+                    entry = entry.getNextInLookup();
+                }
+            }
+            
+            hash.setSize(hash.getSize() - 1);
+
+            return RubyArray.fromObjects(getContext().getCoreLibrary().getArrayClass(), key, value);
+        }
+
+    }
+    
     @CoreMethod(names = {"size", "length"})
     public abstract static class SizeNode extends HashCoreMethodNode {
 
