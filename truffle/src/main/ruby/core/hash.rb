@@ -39,8 +39,8 @@ class Hash
   end
 
   def find_item(key)
-    value = self[key]
-    if value.nil?
+    value = _get_or_undefined(key)
+    if undefined == value
       nil
     else
       # TODO CS 7-Mar-15 maybe we should return the stored key?

@@ -18,6 +18,7 @@ import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.utilities.BranchProfile;
 import com.oracle.truffle.api.utilities.ConditionProfile;
 import org.jruby.runtime.Visibility;
+import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.dispatch.*;
 import org.jruby.truffle.nodes.hash.FindEntryNode;
 import org.jruby.truffle.nodes.yield.YieldDispatchHeadNode;
@@ -244,7 +245,7 @@ public abstract class HashNodes {
 
     @CoreMethod(names = "[]", required = 1)
     public abstract static class GetIndexNode extends HashCoreMethodNode {
-
+        
         @Child private CallDispatchHeadNode eqlNode;
         @Child private CallDispatchHeadNode equalNode;
         @Child private YieldDispatchHeadNode yield;
@@ -253,6 +254,8 @@ public abstract class HashNodes {
         private final ConditionProfile byIdentityProfile = ConditionProfile.createBinaryProfile();
         private final BranchProfile notInHashProfile = BranchProfile.create();
         private final BranchProfile useDefaultProfile = BranchProfile.create();
+        
+        @CompilerDirectives.CompilationFinal private Object undefinedValue;
 
         public GetIndexNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -268,13 +271,18 @@ public abstract class HashNodes {
             equalNode = prev.equalNode;
             yield = prev.yield;
             findEntryNode = prev.findEntryNode;
+            undefinedValue = prev.undefinedValue;
         }
+        
+        public abstract Object executeGet(VirtualFrame frame, RubyHash hash, Object key);
 
         @Specialization(guards = "isNull")
         public Object getNull(VirtualFrame frame, RubyHash hash, Object key) {
             notDesignedForCompilation();
 
-            if (hash.getDefaultBlock() != null) {
+            if (undefinedValue != null) {
+                return undefinedValue;
+            } else if (hash.getDefaultBlock() != null) {
                 return yield.dispatch(frame, hash.getDefaultBlock(), hash, key);
             } else if (hash.getDefaultValue() != null) {
                 return hash.getDefaultValue();
@@ -306,6 +314,10 @@ public abstract class HashNodes {
             }
 
             notInHashProfile.enter();
+            
+            if (undefinedValue != null) {
+                return undefinedValue;
+            }
 
             if (hash.getDefaultBlock() != null) {
                 useDefaultProfile.enter();
@@ -330,6 +342,10 @@ public abstract class HashNodes {
 
             notInHashProfile.enter();
 
+            if (undefinedValue != null) {
+                return undefinedValue;
+            }
+
             if (hash.getDefaultBlock() != null) {
                 useDefaultProfile.enter();
                 return yield.dispatch(frame, hash.getDefaultBlock(), hash, key);
@@ -340,6 +356,34 @@ public abstract class HashNodes {
             }
 
             return getContext().getCoreLibrary().getNilObject();
+        }
+        
+        public void setUndefinedValue(Object undefinedValue) {
+            this.undefinedValue = undefinedValue;
+            
+        }
+
+    }
+    
+    @CoreMethod(names = "_get_or_undefined", required = 1)
+    public abstract static class GetOrUndefinedNode extends HashCoreMethodNode {
+
+        @Child private GetIndexNode getIndexNode;
+        
+        public GetOrUndefinedNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+            getIndexNode = HashNodesFactory.GetIndexNodeFactory.create(context, sourceSection, new RubyNode[]{null, null});
+            getIndexNode.setUndefinedValue(context.getCoreLibrary().getRubiniusUndefined());
+        }
+
+        public GetOrUndefinedNode(GetOrUndefinedNode prev) {
+            super(prev);
+            getIndexNode = prev.getIndexNode;
+        }
+
+        @Specialization
+        public Object getOrUndefined(VirtualFrame frame, RubyHash hash, Object key) {
+            return getIndexNode.executeGet(frame, hash, key);
         }
 
     }

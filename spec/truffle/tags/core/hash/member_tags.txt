@@ -1,1 +1,0 @@
-fails:Hash#member? compares keys with the same #hash value via #eql?

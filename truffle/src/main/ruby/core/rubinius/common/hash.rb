@@ -264,4 +264,20 @@ class Hash
     self
   end
 
+  def key?(key)
+    find_item(key) != nil
+  end
+
+  alias_method :has_key?, :key?
+  alias_method :include?, :key?
+  alias_method :member?, :key?
+
+  def index(value)
+    each_item do |item|
+      return item.key if item.value == value
+    end
+  end
+
+  alias_method :key, :index
+
 end

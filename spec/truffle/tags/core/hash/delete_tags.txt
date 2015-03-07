@@ -1,2 +1,1 @@
 fails:Hash#delete calls supplied block if the key is not found
-fails:Hash#delete accepts keys with private #hash method
