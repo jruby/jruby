@@ -280,4 +280,14 @@ class Hash
 
   alias_method :key, :index
 
+  def keep_if
+    return to_enum(:keep_if) unless block_given?
+
+    Rubinius.check_frozen
+
+    each_item { |e| delete e.key unless yield(e.key, e.value) }
+
+    self
+  end
+
 end
