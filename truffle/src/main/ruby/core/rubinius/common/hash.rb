@@ -169,4 +169,40 @@ class Hash
     val
   end
 
+  def reject(&block)
+    return to_enum(:reject) unless block_given?
+
+    hsh = dup.delete_if(&block)
+    hsh.taint if tainted?
+    hsh
+  end
+
+  def reject!(&block)
+    return to_enum(:reject!) unless block_given?
+
+    Rubinius.check_frozen
+
+    unless empty?
+      size = @size
+      delete_if(&block)
+      return self if size != @size
+    end
+
+    nil
+  end
+
+  def delete_if(&block)
+    return to_enum(:delete_if) unless block_given?
+
+    Rubinius.check_frozen
+
+    select(&block).each { |k, v| delete k }
+    self
+  end
+
+  # Returns true if there are no entries.
+  def empty?
+    @size == 0
+  end
+
 end

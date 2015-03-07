@@ -703,7 +703,7 @@ public abstract class HashNodes {
             }
 
             final Object[] store = (Object[]) from.getStore();
-            self.setStore(Arrays.copyOf(store, HashOperations.SMALL_HASH_SIZE * 2), store.length, null, null);
+            self.setStore(Arrays.copyOf(store, HashOperations.SMALL_HASH_SIZE * 2), from.getSize(), null, null);
             self.setDefaultBlock(from.getDefaultBlock());
             self.setDefaultValue(from.getDefaultValue());
 

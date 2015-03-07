@@ -103,6 +103,16 @@ public class RubyHash extends RubyBasicObject {
             assert lastInSequence == null || foundLast;
         } else if (store instanceof Object[]) {
             assert ((Object[]) store).length == HashOperations.SMALL_HASH_SIZE * 2 : ((Object[]) store).length;
+            
+            final Object[] packedStore = (Object[]) store;
+            
+            for (int n = 0; n < HashOperations.SMALL_HASH_SIZE; n++) {
+                if (n < storeSize) {
+                    assert packedStore[n * 2] != null;
+                    assert packedStore[n * 2 + 1] != null;
+                }
+            }
+            
             assert firstInSequence == null;
             assert lastInSequence == null;
         }

@@ -1628,6 +1628,12 @@ public class BodyTranslator extends Translator {
                         new SelfNode(context, sourceSection),
                         null,
                         false);
+            } else if (nameWithoutSigil.equals("@size")) {
+                return new RubyCallNode(context, sourceSection,
+                        "size",
+                        new SelfNode(context, sourceSection),
+                        null,
+                        false);
             }
         }
 
