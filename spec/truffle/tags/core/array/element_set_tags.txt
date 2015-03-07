@@ -7,7 +7,6 @@ fails:Array#[]= replaces the section defined by range with the given values
 fails:Array#[]= just sets the section defined by range to other even if other is nil
 fails:Array#[]= expands and nil-pads the array if section assigned by range is outside array boundaries
 fails:Array#[]= calls to_int on its start and length arguments
-fails:Array#[]= checks frozen before attempting to coerce arguments
 fails:Array#[]= sets elements in the range arguments when passed ranges
 fails:Array#[]= inserts the given elements with [range] which the range is zero-width
 fails:Array#[]= inserts the given elements with [start, length] which length is zero
