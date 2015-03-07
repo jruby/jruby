@@ -152,20 +152,20 @@ public class JITCompiler implements JITCompilerMBean {
 
         Runnable jitTask = new FullBuildTask(method);
 
-        // if background JIT is enabled and threshold is > 0 and we have an executor...
-        if (config.getJitBackground() && config.getJitThreshold() > 0 && executor != null) {
-            // JIT in background
-            try {
-                executor.submit(jitTask);
-            } catch (RejectedExecutionException ree) {
-                // failed to submit, just run it directly
+        if (config.getJitThreshold() > 0) {
+            if (config.getJitBackground() && executor != null) {
+                try {
+                    executor.submit(jitTask);
+                } catch (RejectedExecutionException ree) {
+                    // failed to submit, just run it directly
+                    jitTask.run();
+                }
+            } else {
+                // Because are non-asynchonously build if the JIT threshold happens to be 0 we will have no ic yet.
+                method.ensureInstrsReady();
+                // just run directly
                 jitTask.run();
             }
-        } else {
-            // Because are non-asynchonously build if the JIT threshold happens to be 0 we will have no ic yet.
-            method.ensureInstrsReady();
-            // just run directly
-            jitTask.run();
         }
     }
     
