@@ -139,7 +139,7 @@ public abstract class HashNodes {
         }
 
         @ExplodeLoop
-        @Specialization
+        @Specialization(guards = {"!isSingleArgument(arguments[1])", "isEvenArguments(arguments[1])"})
         public RubyHash construct(RubyClass hashClass, Object[] args) {
             if (args.length == 1) {
                 singleObject.enter();
@@ -239,6 +239,24 @@ public abstract class HashNodes {
 
                 return HashOperations.verySlowFromEntries(hashClass, entries, false);
             }
+        }
+
+        @Specialization(guards = {"!isSingleArgument(arguments[1])", "!isEvenArguments(arguments[1])"})
+        public Object construct(VirtualFrame frame, RubyClass hashClass, Object[] args) {
+            notDesignedForCompilation();
+
+            return ruby(frame, "_construct_fallback(args)", "args", RubyArray.fromObjects(getContext().getCoreLibrary().getArrayClass(), args));
+        }
+
+        @Specialization(guards = "isSingleArgument(arguments[1])")
+        public Object constructSingle(VirtualFrame frame, RubyClass hashClass, Object[] args) {
+            notDesignedForCompilation();
+
+            return ruby(frame, "_construct_fallback(args)", "args", RubyArray.fromObjects(getContext().getCoreLibrary().getArrayClass(), args));
+        }
+
+        protected boolean isEvenArguments(Object[] arguments) {
+            return arguments.length % 2 == 0;
         }
 
     }
