@@ -24,6 +24,7 @@ import org.jruby.truffle.nodes.yield.YieldDispatchHeadNode;
 import org.jruby.truffle.runtime.DebugOperations;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.UndefinedPlaceholder;
+import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.*;
 import org.jruby.truffle.runtime.hash.Entry;
 import org.jruby.truffle.runtime.hash.HashOperations;
@@ -657,6 +658,12 @@ public abstract class HashNodes {
             notDesignedForCompilation();
             hash.setDefaultValue(defaultValue);
             return getContext().getCoreLibrary().getNilObject();
+        }
+
+        @Specialization(guards = "!isUndefinedPlaceholder(arguments[1])")
+        public Object initialize(RubyHash hash, Object defaultValue, RubyProc block) {
+            CompilerDirectives.transferToInterpreter();
+            throw new RaiseException(getContext().getCoreLibrary().argumentError("wrong number of arguments (1 for 0)", this));
         }
 
     }
