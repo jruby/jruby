@@ -213,4 +213,8 @@ class Hash
     each_item { |e| return e.key, e.value if value == e.value }
   end
 
+  def sort(&block)
+    to_a.sort(&block)
+  end
+
 end
