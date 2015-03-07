@@ -398,7 +398,7 @@ public abstract class HashNodes {
 
     }
 
-    @CoreMethod(names = "clear")
+    @CoreMethod(names = "clear", raiseIfFrozenSelf = true)
     public abstract static class ClearNode extends HashCoreMethodNode {
 
         public ClearNode(RubyContext context, SourceSection sourceSection) {

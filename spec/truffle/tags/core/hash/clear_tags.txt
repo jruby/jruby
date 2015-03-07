@@ -1,1 +1,0 @@
-fails:Hash#clear raises a RuntimeError if called on a frozen instance
