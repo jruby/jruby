@@ -230,4 +230,8 @@ class Hash
   alias_method :indices, :values_at
   alias_method :indexes, :values_at
 
+  def self.try_convert(obj)
+    Rubinius::Type.try_convert obj, Hash, :to_hash
+  end
+
 end
