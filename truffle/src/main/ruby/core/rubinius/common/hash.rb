@@ -234,4 +234,6 @@ class Hash
     Rubinius::Type.try_convert obj, Hash, :to_hash
   end
 
+  alias_method :store, :[]=
+
 end

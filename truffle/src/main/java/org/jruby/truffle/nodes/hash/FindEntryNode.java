@@ -31,7 +31,7 @@ public class FindEntryNode extends RubyNode {
 
     public FindEntryNode(RubyContext context, SourceSection sourceSection) {
         super(context, sourceSection);
-        hashNode = DispatchHeadNodeFactory.createMethodCall(context);
+        hashNode = DispatchHeadNodeFactory.createMethodCall(context, true);
         eqlNode = DispatchHeadNodeFactory.createMethodCall(context, false, false, null);
         equalNode = DispatchHeadNodeFactory.createMethodCall(context, false, false, null);
     }

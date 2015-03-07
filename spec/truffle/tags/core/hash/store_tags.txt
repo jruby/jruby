@@ -1,2 +1,1 @@
-fails:Hash#store accepts keys with private #hash method
 fails:Hash#store doesn't duplicate and freeze already frozen string keys
