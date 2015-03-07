@@ -2817,11 +2817,13 @@ public class Helpers {
         return parms;
     }
 
-    public static String[] irMethodArgsToParameters(List<String[]> argDesc) {
-        String[] tmp = new String[argDesc.size()];
+    public static String[] irMethodArgsToParameters(String[] argDesc) {
+        String[] tmp = new String[argDesc.length];
         for (int i = 0; i < tmp.length; i++) {
-            String[] arg = argDesc.get(i);
-            String encoded = arg[0].charAt(0) + arg[1];
+            String type = argDesc[i];
+            i++;
+            String name = argDesc[i];
+            String encoded = type.charAt(0) + name;
             tmp[i] = encoded;
         }
 

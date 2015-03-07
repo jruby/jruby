@@ -222,10 +222,17 @@ public class JRubyLibrary implements Library {
                     argsArray.append(RubyArray.newArray(runtime, block, getNameFrom(runtime, args.getBlock())));
                 }
             } else if (method instanceof IRMethodArgs) {
-                for (String[] argParam: ((IRMethodArgs)method).getParameterList()) {
-                    RubySymbol argType = runtime.newSymbol(argParam[0]);
-                    if (argParam[1] == "") argsArray.append(RubyArray.newArray(runtime, argType));
-                    else argsArray.append(RubyArray.newArray(runtime, argType, runtime.newSymbol(argParam[1])));
+                String[] argsDesc = ((IRMethodArgs) method).getParameterList();
+
+                for (int i = 0; i < argsDesc.length; i++) {
+                    RubySymbol argType = runtime.newSymbol(argsDesc[i]);
+                    i++;
+                    String argName = argsDesc[i];
+                    if (argName.isEmpty()) {
+                        argsArray.append(RubyArray.newArray(runtime, argType));
+                    } else {
+                        argsArray.append(RubyArray.newArray(runtime, argType, runtime.newSymbol(argName)));
+                    }
                 }
             } else {
                 if (method.getArity() == Arity.OPTIONAL) {
@@ -287,10 +294,17 @@ public class JRubyLibrary implements Library {
                     argsArray.add("b" + getNameFrom(runtime, args.getBlock()));
                 }
             } else if (method instanceof IRMethodArgs) {
-                for (String[] argParam: ((IRMethodArgs)method).getParameterList()) {
-                    RubySymbol argType = runtime.newSymbol(argParam[0]);
-                    if (argParam[1] == "") argsArray.add(argParam[0]);
-                    else argsArray.add(argParam[0] + argParam[1]);
+                String[] argsDesc = ((IRMethodArgs) method).getParameterList();
+
+                for (int i = 0; i < argsDesc.length; i++) {
+                    String argType = argsDesc[i];
+                    i++;
+                    String argName = argsDesc[i];
+                    if (argName.isEmpty()) {
+                        argsArray.add(argType);
+                    } else {
+                        argsArray.add(argType + argName);
+                    }
                 }
             } else {
                 if (method.getArity() == Arity.OPTIONAL) {

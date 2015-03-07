@@ -282,6 +282,7 @@ public class IRBuilder {
     protected IRManager manager;
     protected IRScope scope;
     protected List<Instr> instructions;
+    protected List<String> argumentDescriptions;
 
     public IRBuilder(IRManager manager, IRScope scope, IRBuilder parent) {
         this.manager = manager;
@@ -289,6 +290,13 @@ public class IRBuilder {
         this.parent = parent;
         instructions = new ArrayList<>(50);
         this.activeRescuers.push(Label.UNRESCUED_REGION_LABEL);
+    }
+
+    public void addArgumentDescription(IRMethodArgs.ArgType type, String name) {
+        if (argumentDescriptions == null) argumentDescriptions = new ArrayList<>();
+
+        argumentDescriptions.add(type.toString());
+        argumentDescriptions.add(name);
     }
 
     public void addInstr(Instr instr) {
@@ -1716,8 +1724,20 @@ public class IRBuilder {
         // If the method can receive non-local returns
         if (scope.canReceiveNonlocalReturns()) handleNonlocalReturnInMethod();
 
+        String[] argDesc;
+        if (argumentDescriptions == null) {
+            argDesc = NO_ARG_DESCS;
+        } else {
+            argDesc = new String[argumentDescriptions.size()];
+            argumentDescriptions.toArray(argDesc);
+        }
+
+        ((IRMethod) scope).setArgDesc(argDesc);
+
         return scope.allocateInterpreterContext(instructions);
     }
+
+    static final String[] NO_ARG_DESCS = new String[0];
 
     private IRMethod defineNewMethod(MethodDefNode defNode, boolean isInstanceMethod) {
         return new IRMethod(manager, scope, defNode, defNode.getName(), isInstanceMethod, defNode.getPosition().getLine(), defNode.getScope());
@@ -1758,7 +1778,7 @@ public class IRBuilder {
             case ARGUMENTNODE: {
                 ArgumentNode a = (ArgumentNode)node;
                 String argName = a.getName();
-                if (scope instanceof IRMethod) ((IRMethod) scope).addArgDesc(IRMethodArgs.ArgType.req, argName);
+                if (scope instanceof IRMethod) addArgumentDescription(IRMethodArgs.ArgType.req, argName);
                 // Ignore duplicate "_" args in blocks
                 // (duplicate _ args are named "_$0")
                 if (!argName.equals("_$0")) {
@@ -1770,7 +1790,7 @@ public class IRBuilder {
                 MultipleAsgn19Node childNode = (MultipleAsgn19Node) node;
                 Variable v = createTemporaryVariable();
                 addArgReceiveInstr(v, argIndex, post, numPreReqd, numPostRead);
-                if (scope instanceof IRMethod) ((IRMethod) scope).addArgDesc(IRMethodArgs.ArgType.req, "");
+                if (scope instanceof IRMethod) addArgumentDescription(IRMethodArgs.ArgType.req, "");
                 Variable tmp = createTemporaryVariable();
                 addInstr(new ToAryInstr(tmp, v));
                 buildMultipleAsgn19Assignment(childNode, tmp, null);
@@ -1829,7 +1849,7 @@ public class IRBuilder {
                 OptArgNode n = (OptArgNode)optArgs.get(j);
                 String argName = n.getName();
                 Variable av = getNewLocalVariable(argName, 0);
-                if (scope instanceof IRMethod) ((IRMethod)scope).addArgDesc(IRMethodArgs.ArgType.opt, argName);
+                if (scope instanceof IRMethod) addArgumentDescription(IRMethodArgs.ArgType.opt, argName);
                 // You need at least required+j+1 incoming args for this opt arg to get an arg at all
                 addInstr(new ReceiveOptArgInstr(av, required, numPreReqd, j));
                 addInstr(BNEInstr.create(av, UndefinedValue.UNDEFINED, l)); // if 'av' is not undefined, go to default
@@ -1844,7 +1864,7 @@ public class IRBuilder {
             // For this code, there is no argument name available from the ruby code.
             // So, we generate an implicit arg name
             String argName = argsNode.getRestArgNode().getName();
-            if (scope instanceof IRMethod) ((IRMethod)scope).addArgDesc(IRMethodArgs.ArgType.rest, argName == null ? "" : argName);
+            if (scope instanceof IRMethod) addArgumentDescription(IRMethodArgs.ArgType.rest, argName == null ? "" : argName);
             argName = (argName == null || argName.equals("")) ? "*" : argName;
 
             // You need at least required+opt+1 incoming args for the rest arg to get any args at all
@@ -1872,7 +1892,7 @@ public class IRBuilder {
         if (blockArg != null) {
             String blockArgName = blockArg.getName();
             Variable blockVar = getLocalVariable(blockArgName, 0);
-            if (scope instanceof IRMethod) ((IRMethod) scope).addArgDesc(IRMethodArgs.ArgType.block, blockArgName);
+            if (scope instanceof IRMethod) addArgumentDescription(IRMethodArgs.ArgType.block, blockArgName);
             Variable tmp = createTemporaryVariable();
             addInstr(new LoadImplicitClosureInstr(tmp));
             addInstr(new ReifyClosureInstr(blockVar, tmp));
@@ -1936,7 +1956,7 @@ public class IRBuilder {
         if (keyRest != null) {
             String argName = keyRest.getName();
             Variable av = getNewLocalVariable(argName, 0);
-            if (scope instanceof IRMethod) ((IRMethod) scope).addArgDesc(IRMethodArgs.ArgType.keyrest, argName);
+            if (scope instanceof IRMethod) addArgumentDescription(IRMethodArgs.ArgType.keyrest, argName);
             addInstr(new ReceiveKeywordRestArgInstr(av, required));
         }
 
@@ -1946,9 +1966,9 @@ public class IRBuilder {
 
     private void addKeyArgDesc(AssignableNode kasgn, String argName) {
         if (isRequiredKeywordArgumentValue(kasgn)) {
-            ((IRMethod) scope).addArgDesc(IRMethodArgs.ArgType.keyreq, argName);
+            addArgumentDescription(IRMethodArgs.ArgType.keyreq, argName);
         } else {
-            ((IRMethod) scope).addArgDesc(IRMethodArgs.ArgType.key, argName);
+            addArgumentDescription(IRMethodArgs.ArgType.key, argName);
         }
     }
 

@@ -22,8 +22,8 @@ public class InterpretedIRBodyMethod extends InterpretedIRMethod {
     }
 
     @Override
-    public List<String[]> getParameterList() {
-        return new ArrayList<>();
+    public String[] getParameterList() {
+        return new String[0];
     }
 
     @Override

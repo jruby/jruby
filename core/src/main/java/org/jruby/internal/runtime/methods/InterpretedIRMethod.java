@@ -55,7 +55,7 @@ public class InterpretedIRMethod extends DynamicMethod implements IRMethodArgs, 
         return method.getStaticScope();
     }
 
-    public List<String[]> getParameterList() {
+    public String[] getParameterList() {
         ensureInstrsReady(); // Make sure method is minimally built before returning this info
         return ((IRMethod) method).getArgDesc();
     }
