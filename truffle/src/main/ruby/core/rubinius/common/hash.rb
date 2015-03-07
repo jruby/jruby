@@ -209,4 +209,8 @@ class Hash
     each_item { |e| return e.key, e.value if key == e.key }
   end
 
+  def rassoc(value)
+    each_item { |e| return e.key, e.value if value == e.value }
+  end
+
 end
