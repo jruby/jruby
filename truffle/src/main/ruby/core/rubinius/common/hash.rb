@@ -304,4 +304,13 @@ class Hash
     raise KeyError, "key #{key} not found"
   end
 
+  def value?(value)
+    each_item do |item|
+      return true if item.value == value
+    end
+    false
+  end
+
+  alias_method :has_value?, :value?
+
 end

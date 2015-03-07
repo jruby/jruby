@@ -75,16 +75,6 @@ end
 
 ARGF = Object.new
 
-class Hash
-
-  def value?(value)
-    values.any? { |v| v == value }
-  end
-
-  alias_method :has_value?, :value?
-
-end
-
 class Regexp
   def self.last_match(n = nil)
     if n
