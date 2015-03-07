@@ -236,4 +236,32 @@ class Hash
 
   alias_method :store, :[]=
 
+  def select
+    return to_enum(:select) unless block_given?
+
+    selected = Hash.allocate
+
+    each_item do |item|
+      if yield(item.key, item.value)
+        selected[item.key] = item.value
+      end
+    end
+
+    selected
+  end
+
+  def select!
+    return to_enum(:select!) unless block_given?
+
+    Rubinius.check_frozen
+
+    return nil if empty?
+
+    size = @size
+    each_item { |e| delete e.key unless yield(e.key, e.value) }
+    return nil if size == @size
+
+    self
+  end
+
 end
