@@ -31,6 +31,7 @@ class Hash
     each do |key, value|
       yield KeyValue.new(key, value)
     end
+    nil
   end
 
   def merge_fallback(other, &block)

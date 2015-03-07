@@ -1,8 +1,0 @@
-fails:Hash#assoc returns an Array if the argument is == to a key of the Hash
-fails:Hash#assoc returns a 2-element Array if the argument is == to a key of the Hash
-fails:Hash#assoc sets the first element of the Array to the located key
-fails:Hash#assoc sets the last element of the Array to the value of the located key
-fails:Hash#assoc only returns the first matching key-value pair for identity hashes
-fails:Hash#assoc uses #== to compare the argument to the keys
-fails:Hash#assoc returns nil if the argument is not a key of the Hash
-fails:Hash#assoc returns nil if the argument is not a key of the Hash even when there is a default
