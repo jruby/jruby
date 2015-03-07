@@ -11,6 +11,8 @@ package org.jruby.truffle.nodes.hash;
 
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.SourceSection;
+import com.oracle.truffle.api.utilities.BranchProfile;
+import com.oracle.truffle.api.utilities.ConditionProfile;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.dispatch.*;
 import org.jruby.truffle.runtime.RubyContext;
@@ -22,13 +24,16 @@ import org.jruby.truffle.runtime.hash.HashSearchResult;
 public class FindEntryNode extends RubyNode {
 
     @Child CallDispatchHeadNode hashNode;
-    @Child
-    CallDispatchHeadNode eqlNode;
+    @Child CallDispatchHeadNode eqlNode;
+    @Child CallDispatchHeadNode equalNode;
+    
+    private final ConditionProfile byIdentityProfile = ConditionProfile.createBinaryProfile();
 
     public FindEntryNode(RubyContext context, SourceSection sourceSection) {
         super(context, sourceSection);
         hashNode = DispatchHeadNodeFactory.createMethodCall(context);
         eqlNode = DispatchHeadNodeFactory.createMethodCall(context, false, false, null);
+        equalNode = DispatchHeadNodeFactory.createMethodCall(context, false, false, null);
     }
 
     public HashSearchResult search(VirtualFrame frame, RubyHash hash, Object key) {
@@ -51,8 +56,14 @@ public class FindEntryNode extends RubyNode {
         Entry previousEntry = null;
 
         while (entry != null) {
-            if (eqlNode.callBoolean(frame, key, "eql?", null, entry.getKey())) {
-                return new HashSearchResult(index, previousEntry, entry);
+            if (byIdentityProfile.profile(hash.isCompareByIdentity())) {
+                if (equalNode.callBoolean(frame, key, "equal?", null, entry.getKey())) {
+                    return new HashSearchResult(index, previousEntry, entry);
+                }
+            } else {
+                if (eqlNode.callBoolean(frame, key, "eql?", null, entry.getKey())) {
+                    return new HashSearchResult(index, previousEntry, entry);
+                }
             }
 
             previousEntry = entry;

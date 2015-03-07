@@ -26,6 +26,7 @@ public class RubyHash extends RubyBasicObject {
     private int storeSize;
     private Entry firstInSequence;
     private Entry lastInSequence;
+    private boolean compareByIdentity;
 
     public RubyHash(RubyClass rubyClass, RubyProc defaultBlock, Object defaultValue, Object store, int storeSize, Entry firstInSequence) {
         super(rubyClass);
@@ -50,6 +51,14 @@ public class RubyHash extends RubyBasicObject {
 
     public void setDefaultValue(Object defaultValue) {
         this.defaultValue = defaultValue;
+    }
+    
+    public boolean isCompareByIdentity() {
+        return compareByIdentity;
+    }
+    
+    public void setCompareByIdentity(boolean compareByIdentity) {
+        this.compareByIdentity = compareByIdentity;
     }
 
     public Object getStore() {

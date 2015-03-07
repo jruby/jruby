@@ -87,7 +87,7 @@ public abstract class EncodingNodes {
             aliases.add(new KeyValue(getContext().makeString("locale"),
                     getContext().makeString(new ByteList(getContext().getRuntime().getEncodingService().getLocaleEncoding().getName()))));
 
-            return HashOperations.verySlowFromEntries(getContext(), aliases);
+            return HashOperations.verySlowFromEntries(getContext(), aliases, false);
         }
     }
 
