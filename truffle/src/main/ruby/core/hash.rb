@@ -40,7 +40,7 @@ class Hash
 
   def find_item(key)
     value = _get_or_undefined(key)
-    if undefined == value
+    if undefined.equal?(value)
       nil
     else
       # TODO CS 7-Mar-15 maybe we should return the stored key?

@@ -1,1 +1,0 @@
-fails:Hash#fetch returns default if key is not found when passed a default

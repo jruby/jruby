@@ -77,18 +77,6 @@ ARGF = Object.new
 
 class Hash
 
-  def fetch(key, default=nil)
-    if key?(key)
-      self[key]
-    elsif block_given?
-      yield(key)
-    elsif default
-      default
-    else
-      raise(KeyError, "key not found: #{key}")
-    end
-  end
-
   def value?(value)
     values.any? { |v| v == value }
   end

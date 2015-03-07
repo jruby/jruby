@@ -294,4 +294,14 @@ class Hash
     to_a.flatten(level)
   end
 
+  def fetch(key, default=undefined)
+    if item = find_item(key)
+      return item.value
+    end
+
+    return yield(key) if block_given?
+    return default unless undefined.equal?(default)
+    raise KeyError, "key #{key} not found"
+  end
+
 end
