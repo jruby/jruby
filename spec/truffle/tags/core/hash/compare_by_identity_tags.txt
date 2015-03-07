@@ -1,2 +1,0 @@
-fails:Hash#compare_by_identity uses #equal? semantics, but doesn't actually call #equal? to determine identity
-fails:Hash#compare_by_identity does not copy string keys

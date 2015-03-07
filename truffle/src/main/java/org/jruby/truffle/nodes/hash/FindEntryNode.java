@@ -14,6 +14,8 @@ import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.utilities.BranchProfile;
 import com.oracle.truffle.api.utilities.ConditionProfile;
 import org.jruby.truffle.nodes.RubyNode;
+import org.jruby.truffle.nodes.core.BasicObjectNodes;
+import org.jruby.truffle.nodes.core.BasicObjectNodesFactory;
 import org.jruby.truffle.nodes.dispatch.*;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyHash;
@@ -25,7 +27,7 @@ public class FindEntryNode extends RubyNode {
 
     @Child CallDispatchHeadNode hashNode;
     @Child CallDispatchHeadNode eqlNode;
-    @Child CallDispatchHeadNode equalNode;
+    @Child BasicObjectNodes.ReferenceEqualNode equalNode;
     
     private final ConditionProfile byIdentityProfile = ConditionProfile.createBinaryProfile();
 
@@ -33,7 +35,7 @@ public class FindEntryNode extends RubyNode {
         super(context, sourceSection);
         hashNode = DispatchHeadNodeFactory.createMethodCall(context, true);
         eqlNode = DispatchHeadNodeFactory.createMethodCall(context, false, false, null);
-        equalNode = DispatchHeadNodeFactory.createMethodCall(context, false, false, null);
+        equalNode = BasicObjectNodesFactory.ReferenceEqualNodeFactory.create(context, sourceSection, null, null);
     }
 
     public HashSearchResult search(VirtualFrame frame, RubyHash hash, Object key) {
@@ -57,7 +59,7 @@ public class FindEntryNode extends RubyNode {
 
         while (entry != null) {
             if (byIdentityProfile.profile(hash.isCompareByIdentity())) {
-                if (equalNode.callBoolean(frame, key, "equal?", null, entry.getKey())) {
+                if (equalNode.executeReferenceEqual(frame, key, entry.getKey())) {
                     return new HashSearchResult(index, previousEntry, entry);
                 }
             } else {

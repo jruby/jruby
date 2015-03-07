@@ -201,7 +201,7 @@ public class HashOperations {
 
     @CompilerDirectives.TruffleBoundary
     public static boolean verySlowSetInBuckets(RubyHash hash, Object key, Object value, boolean byIdentity) {
-        if (key instanceof RubyString) {
+        if (!byIdentity && key instanceof RubyString) {
             key = DebugOperations.send(hash.getContext(), DebugOperations.send(hash.getContext(), key, "dup", null), "freeze", null);
         }
 

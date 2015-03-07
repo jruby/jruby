@@ -43,14 +43,14 @@ public abstract class HashNodes {
     public abstract static class EqualNode extends HashCoreMethodNode {
 
         @Child private CallDispatchHeadNode eqlNode;
-        @Child private CallDispatchHeadNode equalNode;
+        @Child private BasicObjectNodes.ReferenceEqualNode equalNode;
         
         private final ConditionProfile byIdentityProfile = ConditionProfile.createBinaryProfile();
 
         public EqualNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
             eqlNode = DispatchHeadNodeFactory.createMethodCall(context, false, false, null);
-            equalNode = DispatchHeadNodeFactory.createMethodCall(context, false, false, null);
+            equalNode = equalNode = BasicObjectNodesFactory.ReferenceEqualNodeFactory.create(context, sourceSection, null, null);
         }
 
         public EqualNode(EqualNode prev) {
@@ -247,7 +247,7 @@ public abstract class HashNodes {
     public abstract static class GetIndexNode extends HashCoreMethodNode {
         
         @Child private CallDispatchHeadNode eqlNode;
-        @Child private CallDispatchHeadNode equalNode;
+        @Child private BasicObjectNodes.ReferenceEqualNode equalNode;
         @Child private YieldDispatchHeadNode yield;
         @Child private FindEntryNode findEntryNode;
 
@@ -260,7 +260,7 @@ public abstract class HashNodes {
         public GetIndexNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
             eqlNode = DispatchHeadNodeFactory.createMethodCall(context, false, false, null);
-            equalNode = DispatchHeadNodeFactory.createMethodCall(context, false, false, null);
+            equalNode = equalNode = BasicObjectNodesFactory.ReferenceEqualNodeFactory.create(context, sourceSection, null, null);
             yield = new YieldDispatchHeadNode(context);
             findEntryNode = new FindEntryNode(context, sourceSection);
         }
@@ -302,7 +302,7 @@ public abstract class HashNodes {
                     final boolean equal;
 
                     if (byIdentityProfile.profile(hash.isCompareByIdentity())) {
-                        equal = equalNode.callBoolean(frame, store[n * 2], "equal?", null, key);
+                        equal = equalNode.executeReferenceEqual(frame, store[n * 2], key);
                     } else {
                         equal = eqlNode.callBoolean(frame, store[n * 2], "eql?", null, key);
                     }
@@ -392,7 +392,7 @@ public abstract class HashNodes {
     public abstract static class SetIndexNode extends HashCoreMethodNode {
 
         @Child private CallDispatchHeadNode eqlNode;
-        @Child private CallDispatchHeadNode equalNode;
+        @Child private BasicObjectNodes.ReferenceEqualNode equalNode;
 
         private final ConditionProfile byIdentityProfile = ConditionProfile.createBinaryProfile();
         private final BranchProfile considerExtendProfile = BranchProfile.create();
@@ -401,7 +401,7 @@ public abstract class HashNodes {
         public SetIndexNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
             eqlNode = DispatchHeadNodeFactory.createMethodCall(context, false, false, null);
-            equalNode = DispatchHeadNodeFactory.createMethodCall(context, false, false, null);
+            equalNode = BasicObjectNodesFactory.ReferenceEqualNodeFactory.create(context, sourceSection, null, null);
         }
 
         public SetIndexNode(SetIndexNode prev) {
@@ -430,7 +430,7 @@ public abstract class HashNodes {
                     final boolean equal;
                     
                     if (byIdentityProfile.profile(hash.isCompareByIdentity())) {
-                        equal = equalNode.callBoolean(frame, store[n * 2], "equal?", null, key);
+                        equal = equalNode.executeReferenceEqual(frame, store[n * 2], key);
                     } else {
                         equal = eqlNode.callBoolean(frame, store[n * 2], "eql?", null, key);
                     }
