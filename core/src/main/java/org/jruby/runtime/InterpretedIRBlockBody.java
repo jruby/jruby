@@ -2,6 +2,7 @@ package org.jruby.runtime;
 
 import org.jruby.EvalType;
 import org.jruby.Ruby;
+import org.jruby.RubyInstanceConfig;
 import org.jruby.RubyModule;
 import org.jruby.compiler.FullBuildSource;
 import org.jruby.ir.IRClosure;
@@ -29,6 +30,12 @@ public class InterpretedIRBlockBody extends IRBlockBody implements FullBuildSour
         this.closure = closure;
         this.pushScope = true;
         this.reuseParentScope = false;
+
+        // JIT currently JITs blocks along with their method and no on-demand by themselves.  We only
+        // promote to full build here if we are -X-C.
+        if (closure.getManager().getInstanceConfig().getCompileMode() != RubyInstanceConfig.CompileMode.OFF) {
+            callCount = -1;
+        }
     }
 
     @Override
