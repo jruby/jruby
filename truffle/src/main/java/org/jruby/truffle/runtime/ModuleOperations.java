@@ -243,6 +243,14 @@ public abstract class ModuleOperations {
             }
         }
 
+        if (module instanceof RubyClass) {
+            RubyClass klass = (RubyClass) module;
+
+            if (klass.isSingleton()) {
+                return lookupClassVariable(((RubyClass) module).getAttached(), name);
+            }
+        }
+
         // Nothing found
 
         return null;

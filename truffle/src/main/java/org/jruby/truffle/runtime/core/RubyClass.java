@@ -33,6 +33,7 @@ public class RubyClass extends RubyModule {
 
     private final boolean isSingleton;
     private final Set<RubyClass> subClasses = Collections.newSetFromMap(new WeakHashMap<RubyClass, Boolean>());
+    @CompilationFinal private RubyModule attached;
 
     /**
      * This constructor supports initialization and solves boot-order problems and should not
@@ -48,10 +49,10 @@ public class RubyClass extends RubyModule {
         ensureSingletonConsistency();
     }
 
-    protected static RubyClass createSingletonClassOfObject(RubyContext context, RubyClass superclass, String name) {
+    protected static RubyClass createSingletonClassOfObject(RubyContext context, RubyClass superclass, RubyModule attached, String name) {
         // We also need to create the singleton class of a singleton class for proper lookup and consistency.
         // See rb_singleton_class() documentation in MRI.
-        return new RubyClass(context, superclass.getLogicalClass(), null, superclass, name, true).ensureSingletonConsistency();
+        return new RubyClass(context, superclass.getLogicalClass(), null, superclass, name, true, attached).ensureSingletonConsistency();
     }
 
     protected RubyClass(RubyContext context, RubyClass classClass, RubyModule lexicalParent, RubyClass superclass, String name, boolean isSingleton) {
@@ -62,6 +63,14 @@ public class RubyClass extends RubyModule {
             unsafeSetSuperclass(superclass);
             allocator = superclass.allocator;
         }
+    }
+
+    protected RubyClass(RubyContext context, RubyClass classClass, RubyModule lexicalParent, RubyClass superclass, String name, boolean isSingleton, RubyModule attached) {
+        this(context, classClass, lexicalParent, superclass, name, isSingleton);
+
+        assert isSingleton == true;
+
+        this.attached = attached;
     }
 
     public void initialize(RubyClass superclass) {
@@ -124,7 +133,7 @@ public class RubyClass extends RubyModule {
         }
 
         metaClass = new RubyClass(getContext(),
-                getLogicalClass(), null, singletonSuperclass, String.format("#<Class:%s>", getName()), true);
+                getLogicalClass(), null, singletonSuperclass, String.format("#<Class:%s>", getName()), true, this);
 
         return metaClass;
     }
@@ -135,6 +144,10 @@ public class RubyClass extends RubyModule {
 
     public boolean isSingleton() {
         return isSingleton;
+    }
+
+    public RubyModule getAttached() {
+        return attached;
     }
 
     public RubyClass getSuperClass() {
