@@ -62,14 +62,14 @@ matrix:
       jdk: oraclejdk8
     - env: COMMAND=test/check_versions.sh
       jdk: oraclejdk8
-    - env: COMMAND=tool/truffle-findbugs.sh
-      jdk: oraclejdk8
   fast_finish: true
   allow_failures:
     - env: PHASE='-Pcomplete'
     - env: PHASE='-Pmain'
     - env: PHASE='-Prake -Dtask=spec:jrubyc'
     - env: PHASE='-Prake -Dtask=spec:profiler'
+    - env: COMMAND=tool/truffle-findbugs.sh
+      jdk: oraclejdk8
 
 branches:
   only:
