@@ -1,1 +1,0 @@
-fails:Hash#sort uses block to sort array if passed a block

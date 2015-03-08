@@ -44,7 +44,7 @@ public class ConcatHashLiteralNode extends RubyNode {
             }
         }
 
-        return HashOperations.verySlowFromEntries(getContext(), keyValues);
+        return HashOperations.verySlowFromEntries(getContext(), keyValues, false);
     }
 
     @Override

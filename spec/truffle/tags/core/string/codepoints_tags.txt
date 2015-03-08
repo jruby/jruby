@@ -1,11 +1,7 @@
 fails:String#codepoints raises an ArgumentError when self has an invalid encoding and a method is called on the returned Enumerator
-fails:String#codepoints yields each codepoint to the block if one is given
 fails:String#codepoints raises an ArgumentError if self's encoding is invalid and a block is given
-fails:String#codepoints returns codepoints as Fixnums
 fails:String#codepoints returns one codepoint for each character
 fails:String#codepoints works for multibyte characters
 fails:String#codepoints returns the codepoint corresponding to the character's position in the String's encoding
 fails:String#codepoints round-trips to the original String using Integer#chr
-fails:String#codepoints is synonomous with #bytes for Strings which are single-byte optimisable
-fails:String#codepoints returns an Array when no block is given
 fails:String#codepoints raises an ArgumentError when no block is given if self has an invalid encoding

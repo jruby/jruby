@@ -127,7 +127,7 @@ public class RubyString extends RubyBasicObject implements CodeRangeable {
     public RubyString dump() {
         ByteList outputBytes = StringSupport.dumpCommon(getContext().getRuntime(), bytes);
 
-        final RubyString result = getContext().makeString(outputBytes);
+        final RubyString result = getContext().makeString(getLogicalClass(), outputBytes);
 
         return result;
     }

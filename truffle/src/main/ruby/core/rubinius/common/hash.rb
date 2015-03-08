@@ -169,4 +169,148 @@ class Hash
     val
   end
 
+  def reject(&block)
+    return to_enum(:reject) unless block_given?
+
+    hsh = dup.delete_if(&block)
+    hsh.taint if tainted?
+    hsh
+  end
+
+  def reject!(&block)
+    return to_enum(:reject!) unless block_given?
+
+    Rubinius.check_frozen
+
+    unless empty?
+      size = @size
+      delete_if(&block)
+      return self if size != @size
+    end
+
+    nil
+  end
+
+  def delete_if(&block)
+    return to_enum(:delete_if) unless block_given?
+
+    Rubinius.check_frozen
+
+    select(&block).each { |k, v| delete k }
+    self
+  end
+
+  # Returns true if there are no entries.
+  def empty?
+    @size == 0
+  end
+
+  def assoc(key)
+    each_item { |e| return e.key, e.value if key == e.key }
+  end
+
+  def rassoc(value)
+    each_item { |e| return e.key, e.value if value == e.value }
+  end
+
+  def sort(&block)
+    to_a.sort(&block)
+  end
+
+  def values_at(*args)
+    args.map do |key|
+      if item = find_item(key)
+        item.value
+      else
+        default key
+      end
+    end
+  end
+
+  alias_method :indices, :values_at
+  alias_method :indexes, :values_at
+
+  def self.try_convert(obj)
+    Rubinius::Type.try_convert obj, Hash, :to_hash
+  end
+
+  alias_method :store, :[]=
+
+  def select
+    return to_enum(:select) unless block_given?
+
+    selected = Hash.allocate
+
+    each_item do |item|
+      if yield(item.key, item.value)
+        selected[item.key] = item.value
+      end
+    end
+
+    selected
+  end
+
+  def select!
+    return to_enum(:select!) unless block_given?
+
+    Rubinius.check_frozen
+
+    return nil if empty?
+
+    size = @size
+    each_item { |e| delete e.key unless yield(e.key, e.value) }
+    return nil if size == @size
+
+    self
+  end
+
+  def key?(key)
+    find_item(key) != nil
+  end
+
+  alias_method :has_key?, :key?
+  alias_method :include?, :key?
+  alias_method :member?, :key?
+
+  def index(value)
+    each_item do |item|
+      return item.key if item.value == value
+    end
+  end
+
+  alias_method :key, :index
+
+  def keep_if
+    return to_enum(:keep_if) unless block_given?
+
+    Rubinius.check_frozen
+
+    each_item { |e| delete e.key unless yield(e.key, e.value) }
+
+    self
+  end
+
+  def flatten(level=1)
+    to_a.flatten(level)
+  end
+
+  def fetch(key, default=undefined)
+    if item = find_item(key)
+      return item.value
+    end
+
+    return yield(key) if block_given?
+    return default unless undefined.equal?(default)
+    raise KeyError, "key #{key} not found"
+  end
+
+  def value?(value)
+    each_item do |item|
+      return true if item.value == value
+    end
+    false
+  end
+
+  alias_method :has_value?, :value?
+
 end

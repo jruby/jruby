@@ -1,7 +1,0 @@
-fails:Hash#keep_if yields two arguments: key and value
-fails:Hash#keep_if keeps every entry for which block is true and returns self
-fails:Hash#keep_if returns self even if unmodified
-fails:Hash#keep_if raises a RuntimeError if called on a frozen instance
-fails:Hash#keep_if returns an Enumerator if called on a non-empty hash without a block
-fails:Hash#keep_if returns an Enumerator if called on an empty hash without a block
-fails:Hash#keep_if returns an Enumerator if called on a frozen instance

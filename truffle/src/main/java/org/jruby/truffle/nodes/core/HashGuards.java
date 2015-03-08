@@ -21,5 +21,21 @@ public class HashGuards {
     public static boolean isBuckets(RubyHash hash) {
         return hash.getStore() instanceof Entry[];
     }
+    
+    public static boolean isCompareByIdentity(RubyHash hash) {
+        return hash.isCompareByIdentity();
+    }
+    
+    public static boolean isEmpty(RubyHash hash) {
+        return hash.getSize() == 0;
+    }
+
+    public static boolean hasDefaultValue(RubyHash hash) {
+        return hash.getDefaultValue() != null;
+    }
+
+    public static boolean hasDefaultBlock(RubyHash hash) {
+        return hash.getDefaultBlock() != null;
+    }
 
 }

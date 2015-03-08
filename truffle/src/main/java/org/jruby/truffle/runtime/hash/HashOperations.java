@@ -40,16 +40,16 @@ public class HashOperations {
         return CAPACITIES[CAPACITIES.length - 1];
     }
 
-    public static RubyHash verySlowFromEntries(RubyContext context, List<KeyValue> entries) {
-        return verySlowFromEntries(context.getCoreLibrary().getHashClass(), entries);
+    public static RubyHash verySlowFromEntries(RubyContext context, List<KeyValue> entries, boolean byIdentity) {
+        return verySlowFromEntries(context.getCoreLibrary().getHashClass(), entries, byIdentity);
     }
 
     @CompilerDirectives.TruffleBoundary
-    public static RubyHash verySlowFromEntries(RubyClass hashClass, List<KeyValue> entries) {
+    public static RubyHash verySlowFromEntries(RubyClass hashClass, List<KeyValue> entries, boolean byIdentity) {
         RubyNode.notDesignedForCompilation();
 
         final RubyHash hash = new RubyHash(hashClass, null, null, null, 0, null);
-        verySlowSetKeyValues(hash, entries);
+        verySlowSetKeyValues(hash, entries, byIdentity);
         return hash;
     }
 
@@ -129,7 +129,7 @@ public class HashOperations {
     }
 
     @CompilerDirectives.TruffleBoundary
-    public static HashSearchResult verySlowFindBucket(RubyHash hash, Object key) {
+    public static HashSearchResult verySlowFindBucket(RubyHash hash, Object key, boolean byIdentity) {
         final Object hashValue = DebugOperations.send(hash.getContext(), key, "hash", null);
 
         final int hashed;
@@ -150,8 +150,16 @@ public class HashOperations {
 
         while (entry != null) {
             // TODO: cast
+            
+            final String method;
+            
+            if (byIdentity) {
+                method = "equal?";
+            } else {
+                method = "eql?";
+            }
 
-            if ((boolean) DebugOperations.send(hash.getContext(), key, "eql?", null, entry.getKey())) {
+            if ((boolean) DebugOperations.send(hash.getContext(), key, method, null, entry.getKey())) {
                 return new HashSearchResult(bucketIndex, previousEntry, entry);
             }
 
@@ -193,25 +201,25 @@ public class HashOperations {
     }
 
     @CompilerDirectives.TruffleBoundary
-    public static boolean verySlowSetInBuckets(RubyHash hash, Object key, Object value) {
-        if (key instanceof RubyString) {
+    public static boolean verySlowSetInBuckets(RubyHash hash, Object key, Object value, boolean byIdentity) {
+        if (!byIdentity && key instanceof RubyString) {
             key = DebugOperations.send(hash.getContext(), DebugOperations.send(hash.getContext(), key, "dup", null), "freeze", null);
         }
 
-        final HashSearchResult hashSearchResult = verySlowFindBucket(hash, key);
+        final HashSearchResult hashSearchResult = verySlowFindBucket(hash, key, byIdentity);
         setAtBucket(hash, hashSearchResult, key, value);
         return hashSearchResult.getEntry() == null;
     }
 
     @CompilerDirectives.TruffleBoundary
-    public static void verySlowSetKeyValues(RubyHash hash, Collection<KeyValue> keyValues) {
+    public static void verySlowSetKeyValues(RubyHash hash, List<KeyValue> keyValues, boolean byIdentity) {
         final int size = keyValues.size();
         hash.setStore(new Entry[capacityGreaterThan(size)], 0, null, null);
 
         int actualSize = 0;
 
         for (KeyValue keyValue : keyValues) {
-            if (verySlowSetInBuckets(hash, keyValue.getKey(), keyValue.getValue())) {
+            if (verySlowSetInBuckets(hash, keyValue.getKey(), keyValue.getValue(), byIdentity)) {
                 actualSize++;
             }
         }

@@ -1,2 +1,0 @@
-fails:String#byteslice with index, length returns subclass instances
-fails:String#byteslice with Range returns subclass instances

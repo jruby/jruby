@@ -1042,15 +1042,18 @@ public abstract class ModuleNodes {
     public abstract static class IncludeNode extends CoreMethodNode {
 
         @Child private CallDispatchHeadNode appendFeaturesNode;
+        @Child private CallDispatchHeadNode includedNode;
 
         public IncludeNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
             appendFeaturesNode = DispatchHeadNodeFactory.createMethodCall(context);
+            includedNode = DispatchHeadNodeFactory.createMethodCall(context, true);
         }
 
         public IncludeNode(IncludeNode prev) {
             super(prev);
             appendFeaturesNode = prev.appendFeaturesNode;
+            includedNode = prev.includedNode;
         }
 
         @Specialization
@@ -1064,8 +1067,7 @@ public abstract class ModuleNodes {
                     final RubyModule included = (RubyModule) args[n];
 
                     appendFeaturesNode.call(frame, included, "append_features", null, module);
-
-                    // TODO(cs): call included hook
+                    includedNode.call(frame, included, "included", null, module);
                 }
             }
 
@@ -1104,6 +1106,24 @@ public abstract class ModuleNodes {
 
             return false;
         }
+    }
+
+    @CoreMethod(names = "included", required = 1, visibility = Visibility.PRIVATE)
+    public abstract static class IncludedNode extends CoreMethodNode {
+
+        public IncludedNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public IncludedNode(IncludedNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public RubyNilClass included(Object subclass) {
+            return getContext().getCoreLibrary().getNilObject();
+        }
+
     }
 
     @CoreMethod(names = "method_defined?", required = 1, optional = 1)

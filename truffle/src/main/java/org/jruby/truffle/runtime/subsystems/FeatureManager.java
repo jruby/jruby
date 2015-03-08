@@ -70,7 +70,10 @@ public class FeatureManager {
                 // Try each load path in turn
 
                 for (Object pathObject : context.getCoreLibrary().getLoadPath().slowToArray()) {
-                    final String loadPath = pathObject.toString();
+                    String loadPath = pathObject.toString();
+                    if (!isAbsolutePath(loadPath)) {
+                        loadPath = RubyFile.expandPath(context, loadPath);
+                    }
 
                     if (requireInPath(loadPath, feature, currentNode)) {
                         return true;

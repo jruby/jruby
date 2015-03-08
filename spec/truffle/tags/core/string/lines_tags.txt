@@ -1,1 +1,0 @@
-fails:String#lines yields subclass instances for subclasses

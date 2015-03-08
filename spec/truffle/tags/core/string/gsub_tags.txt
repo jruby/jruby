@@ -9,4 +9,3 @@ fails:String#gsub! with pattern and block uses the compatible encoding if they a
 fails:String#gsub! with pattern and block replaces the incompatible part properly even if the encodings are not compatible
 fails:String#gsub with pattern and replacement respects $KCODE when the pattern collapses
 fails:String#gsub with pattern and replacement handles pattern collapse without $KCODE
-fails:String#gsub with pattern and replacement returns subclass instances when called on a subclass

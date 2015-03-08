@@ -1,1 +1,0 @@
-fails:Hash#include? compares keys with the same #hash value via #eql?

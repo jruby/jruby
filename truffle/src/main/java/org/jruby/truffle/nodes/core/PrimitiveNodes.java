@@ -470,7 +470,7 @@ public abstract class PrimitiveNodes {
                 keyValues.add(new KeyValue(getContext().makeString(source.getKey().getPath()), array));
             }
 
-            return HashOperations.verySlowFromEntries(getContext(), keyValues);
+            return HashOperations.verySlowFromEntries(getContext(), keyValues, false);
         }
 
         private Object[] lineCountsStore(Long[] array) {
