@@ -22,6 +22,7 @@ import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.RubyRootNode;
 import org.jruby.truffle.nodes.methods.SymbolProcNode;
 import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.runtime.methods.Arity;
 import org.jruby.truffle.runtime.methods.SharedMethodInfo;
 import org.jruby.util.ByteList;
 import org.jruby.util.ByteListHolder;
@@ -57,7 +58,7 @@ public class RubySymbol extends RubyBasicObject implements CodeRangeable {
 
         final RubyContext context = getContext();
 
-        final SharedMethodInfo sharedMethodInfo = new SharedMethodInfo(sourceSection, null, symbol, true, null, false);
+        final SharedMethodInfo sharedMethodInfo = new SharedMethodInfo(sourceSection, null, Arity.NO_ARGUMENTS, symbol, true, null, false);
 
         final RubyRootNode rootNode = new RubyRootNode(context, sourceSection, new FrameDescriptor(), sharedMethodInfo,
                 new SymbolProcNode(context, sourceSection, symbol));
