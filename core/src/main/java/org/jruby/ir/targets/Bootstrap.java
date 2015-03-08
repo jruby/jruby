@@ -342,7 +342,8 @@ public class Bootstrap {
 
             binder = binder
                     .insert(1, "scope", StaticScope.class, compiledIRMethod.getStaticScope())
-                    .append("class", RubyModule.class, compiledIRMethod.getImplementationClass());
+                    .append("class", RubyModule.class, compiledIRMethod.getImplementationClass())
+                    .append("frameName", String.class, site.name());
 
             mh = binder.invoke(mh).handle();
         }

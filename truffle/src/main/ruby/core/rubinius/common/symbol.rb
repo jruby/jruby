@@ -26,10 +26,50 @@
 
 class Symbol
 
+  def match(pattern)
+    str = to_s
+
+    case pattern
+      when Regexp
+        match_data = pattern.search_region(str, 0, str.bytesize, true)
+        Regexp.last_match = match_data
+        return match_data.full[0] if match_data
+      when String
+        raise TypeError, "type mismatch: String given"
+      else
+        pattern =~ str
+    end
+  end
+
+  alias_method :=~, :match
+
   def succ
     to_s.succ.to_sym
   end
 
   alias_method :next, :succ
+
+  def [](index, other = undefined)
+    if index.kind_of?(Regexp)
+      unless undefined.equal?(other)
+        match, str = to_s.send(:subpattern, index, other)
+        Regexp.last_match = match
+        return str
+      end
+
+      str = to_s
+      match_data = index.search_region(str, 0, str.num_bytes, true)
+      Regexp.last_match = match_data
+      if match_data
+        result = match_data.to_s
+        Rubinius::Type.infect result, index
+        return result
+      end
+    else
+      to_s[index, other]
+    end
+  end
+
+  alias_method :slice, :[]
 
 end

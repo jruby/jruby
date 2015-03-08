@@ -419,8 +419,10 @@ public abstract class KernelNodes {
 
     }
 
-    @CoreMethod(names = "clone")
+    @CoreMethod(names = "clone", taintFrom = 0)
     public abstract static class CloneNode extends CoreMethodNode {
+
+        private final ConditionProfile frozenProfile = ConditionProfile.createBinaryProfile();
 
         @Child private CallDispatchHeadNode initializeCloneNode;
 
@@ -448,6 +450,10 @@ public abstract class KernelNodes {
 
             newObject.getOperations().setInstanceVariables(newObject, self.getOperations().getInstanceVariables(self));
             initializeCloneNode.call(frame, newObject, "initialize_clone", null, self);
+
+            if (frozenProfile.profile(self.isFrozen())) {
+                newObject.freeze();
+            }
 
             return newObject;
         }
@@ -1003,21 +1009,19 @@ public abstract class KernelNodes {
         public InstanceVariableSetNode(InstanceVariableSetNode prev) {
             super(prev);
         }
+        
+        // TODO CS 4-Mar-15 this badly needs to be cached
 
+        @TruffleBoundary
         @Specialization
-        public Object isInstanceVariableSet(RubyBasicObject object, RubyString name, Object value) {
-            notDesignedForCompilation();
-
-            notDesignedForCompilation();
+        public Object instanceVariableSet(RubyBasicObject object, RubyString name, Object value) {
             object.getOperations().setInstanceVariable(object, RubyContext.checkInstanceVariableName(getContext(), name.toString(), this), value);
             return value;
         }
 
+        @TruffleBoundary
         @Specialization
-        public Object isInstanceVariableSet(RubyBasicObject object, RubySymbol name, Object value) {
-            notDesignedForCompilation();
-
-            notDesignedForCompilation();
+        public Object instanceVariableSet(RubyBasicObject object, RubySymbol name, Object value) {
             object.getOperations().setInstanceVariable(object, RubyContext.checkInstanceVariableName(getContext(), name.toString(), this), value);
             return value;
         }

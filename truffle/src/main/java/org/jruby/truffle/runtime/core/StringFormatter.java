@@ -146,8 +146,7 @@ public class StringFormatter {
                     }
                     case 's': {
                         formatBuilder.append("s");
-                        assert formatBuilder.toString().equals("%s");
-                        stream.print(DebugOperations.send(context, values.get(v), "to_s", null));
+                        stream.printf(formatBuilder.toString(), DebugOperations.send(context, values.get(v), "to_s", null));
                         break;
                     }
 

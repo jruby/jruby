@@ -1,5 +1,4 @@
 fails:String#% formats multiple expressions
-fails:String#% formats %% into %
 fails:String#% formats single % characters before a newline or NULL as literal %s
 fails:String#% raises an error if single % appears anywhere else
 fails:String#% raises an error if NULL or \n appear anywhere else in the format string
@@ -54,7 +53,6 @@ fails:String#% calls inspect on arguments for %p format
 fails:String#% taints result for %p when argument.inspect is tainted
 fails:String#% supports string formats using %s
 fails:String#% respects a space padding request not as part of the width
-fails:String#% calls to_s on non-String arguments for %s format
 fails:String#% taints result for %s when argument is tainted
 fails:String#% raises an ArgumentError for huge precisions for %s
 fails:String#% supports unsigned formats using %u

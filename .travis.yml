@@ -25,6 +25,7 @@ env:
     - PHASE='-Ptest'
     - PHASE='-Prake -Dtask=test:jruby'
     - PHASE='-Prake -Dtask=test:mri'
+    - PHASE='-Prake -Dtask=test:mri:jit'
     - PHASE='-Prake -Dtask=test:slow_suites'
     - PHASE='-Prake -Dtask=test:tracing'
     - PHASE='-Prake -Dtask=spec:ji'
@@ -62,14 +63,15 @@ matrix:
       jdk: oraclejdk8
     - env: COMMAND=test/check_versions.sh
       jdk: oraclejdk8
+    - env: COMMAND=tool/truffle-findbugs.sh
+      jdk: oraclejdk8
   fast_finish: true
   allow_failures:
     - env: PHASE='-Pcomplete'
     - env: PHASE='-Pmain'
     - env: PHASE='-Prake -Dtask=spec:jrubyc'
     - env: PHASE='-Prake -Dtask=spec:profiler'
-    - env: COMMAND=tool/truffle-findbugs.sh
-      jdk: oraclejdk8
+    - env: PHASE='-Prake -Dtask=test:mri:jit'
 
 branches:
   only:

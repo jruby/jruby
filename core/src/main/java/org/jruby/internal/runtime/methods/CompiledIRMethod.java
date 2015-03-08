@@ -103,7 +103,7 @@ public class CompiledIRMethod extends JavaMethod implements MethodArgs2, Positio
         pre(context, self, name, block);
 
         try {
-            return (IRubyObject)this.variable.invokeExact(context, method.getStaticScope(), self, args, block, implementationClass);
+            return (IRubyObject)this.variable.invokeExact(context, method.getStaticScope(), self, args, block, implementationClass, name);
         } catch (Throwable t) {
             Helpers.throwException(t);
             // not reached
@@ -119,7 +119,7 @@ public class CompiledIRMethod extends JavaMethod implements MethodArgs2, Positio
         pre(context, self, name, block);
 
         try {
-            return (IRubyObject)this.specific.invokeExact(context, method.getStaticScope(), self, block, implementationClass);
+            return (IRubyObject)this.specific.invokeExact(context, method.getStaticScope(), self, block, implementationClass, name);
         } catch (Throwable t) {
             Helpers.throwException(t);
             // not reached
@@ -135,7 +135,7 @@ public class CompiledIRMethod extends JavaMethod implements MethodArgs2, Positio
         pre(context, self, name, block);
 
         try {
-            return (IRubyObject)this.specific.invokeExact(context, method.getStaticScope(), self, arg0, block, implementationClass);
+            return (IRubyObject)this.specific.invokeExact(context, method.getStaticScope(), self, arg0, block, implementationClass, name);
         } catch (Throwable t) {
             Helpers.throwException(t);
             // not reached
@@ -151,7 +151,7 @@ public class CompiledIRMethod extends JavaMethod implements MethodArgs2, Positio
         pre(context, self, name, block);
 
         try {
-            return (IRubyObject)this.specific.invokeExact(context, method.getStaticScope(), self, arg0, arg1, block, implementationClass);
+            return (IRubyObject)this.specific.invokeExact(context, method.getStaticScope(), self, arg0, arg1, block, implementationClass, name);
         } catch (Throwable t) {
             Helpers.throwException(t);
             // not reached
@@ -167,7 +167,7 @@ public class CompiledIRMethod extends JavaMethod implements MethodArgs2, Positio
         pre(context, self, name, block);
 
         try {
-            return (IRubyObject)this.specific.invokeExact(context, method.getStaticScope(), self, arg0, arg1, arg2, block, implementationClass);
+            return (IRubyObject)this.specific.invokeExact(context, method.getStaticScope(), self, arg0, arg1, arg2, block, implementationClass, name);
         } catch (Throwable t) {
             Helpers.throwException(t);
             // not reached

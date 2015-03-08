@@ -774,6 +774,7 @@ public abstract class StringNodes {
         public RubyBasicObject downcase(RubyString string) {
             notDesignedForCompilation();
 
+            string.checkFrozen(this);
             ByteList newByteList = StringNodesHelper.downcase(string);
 
             if (newByteList.equal(string.getBytes())) {
@@ -1921,16 +1922,23 @@ public abstract class StringNodes {
         }
 
         @Specialization
-        public RubyString capitalizeBang(RubyString string) {
+        public RubyBasicObject capitalizeBang(RubyString string) {
             notDesignedForCompilation();
+
+            string.checkFrozen(this);
             String javaString = string.toString();
+
             if (javaString.isEmpty()) {
-                return string;
+                return getContext().getCoreLibrary().getNilObject();
             } else {
                 final ByteList byteListString = StringNodesHelper.capitalize(string);
-
-                string.set(byteListString);
-                return string;
+                
+                if (string.getByteList().equals(byteListString)) {
+                    return getContext().getCoreLibrary().getNilObject();
+                }else {
+                    string.set(byteListString);
+                    return string;
+                }
             }
         }
     }

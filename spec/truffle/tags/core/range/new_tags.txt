@@ -1,3 +1,2 @@
-fails:Range.new constructs a range using the given start and end
 fails:Range.new includes the end object when the third parameter is omitted or false
 fails:Range.new raises an ArgumentError when the given start and end can't be compared by using #<=>

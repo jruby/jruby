@@ -1,2 +1,0 @@
-fails:Range#exclude_end? returns false if the range does not exclude the end value
-fails:Range#exclude_end? returns true if the range excludes the end value

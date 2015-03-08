@@ -555,16 +555,12 @@ public abstract class HashNodes {
 
         @Specialization(guards = "isNull")
         public RubyHash eachNull(RubyHash hash, RubyProc block) {
-            notDesignedForCompilation();
-
             return hash;
         }
 
         @ExplodeLoop
         @Specialization(guards = {"!isNull", "!isBuckets"})
         public RubyHash eachPackedArray(VirtualFrame frame, RubyHash hash, RubyProc block) {
-            notDesignedForCompilation();
-
             final Object[] store = (Object[]) hash.getStore();
             final int size = hash.getSize();
 
@@ -577,7 +573,7 @@ public abstract class HashNodes {
                     }
 
                     if (n < size) {
-                        yield(frame, block, RubyArray.fromObjects(getContext().getCoreLibrary().getArrayClass(), store[n * 2], store[n * 2 + 1]));
+                        yield(frame, block, new RubyArray(getContext().getCoreLibrary().getArrayClass(), new Object[]{store[n * 2], store[n * 2 + 1]}, 2));
                     }
                 }
             } finally {

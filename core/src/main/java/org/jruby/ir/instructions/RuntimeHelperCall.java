@@ -94,7 +94,7 @@ public class RuntimeHelperCall extends ResultBaseInstr {
                 return IRRuntimeHelpers.isDefinedCall(context, self, (IRubyObject) arg1, ((StringLiteral) operands[1]).getString());
             case IS_DEFINED_CONSTANT_OR_METHOD:
                 return IRRuntimeHelpers.isDefinedConstantOrMethod(context, (IRubyObject) arg1,
-                        ((StringLiteral) operands[1]).getString());
+                        ((FrozenString) operands[1]).getString());
             case IS_DEFINED_INSTANCE_VAR:
                 return IRRuntimeHelpers.isDefinedInstanceVar(context, (IRubyObject) arg1, ((StringLiteral) operands[1]).getString());
             case IS_DEFINED_CLASS_VAR:
