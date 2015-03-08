@@ -569,31 +569,38 @@ public abstract class HashNodes {
 
     }
 
-    @CoreMethod(names = "delete", required = 1, raiseIfFrozenSelf = true)
+    @CoreMethod(names = "delete", required = 1, needsBlock = true, raiseIfFrozenSelf = true)
     public abstract static class DeleteNode extends HashCoreMethodNode {
 
         @Child private CallDispatchHeadNode eqlNode;
         @Child private FindEntryNode findEntryNode;
+        @Child private YieldDispatchHeadNode yieldNode;
 
         public DeleteNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
             eqlNode = DispatchHeadNodeFactory.createMethodCall(context, false, false, null);
             findEntryNode = new FindEntryNode(context, sourceSection);
+            yieldNode = new YieldDispatchHeadNode(context);
         }
 
         public DeleteNode(DeleteNode prev) {
             super(prev);
             eqlNode = prev.eqlNode;
             findEntryNode = prev.findEntryNode;
+            yieldNode = prev.yieldNode;
         }
 
         @Specialization(guards = "isNull")
-        public RubyNilClass deleteNull(RubyHash hash, Object key) {
-            return getContext().getCoreLibrary().getNilObject();
+        public Object deleteNull(VirtualFrame frame, RubyHash hash, Object key, Object block) {
+            if (block == UndefinedPlaceholder.INSTANCE) {
+                return getContext().getCoreLibrary().getNilObject();
+            } else {
+                return yieldNode.dispatch(frame, (RubyProc) block, key);
+            }
         }
 
         @Specialization(guards = {"!isNull", "!isBuckets", "!isCompareByIdentity(arguments[0])"})
-        public Object deletePackedArray(VirtualFrame frame, RubyHash hash, Object key) {
+        public Object deletePackedArray(VirtualFrame frame, RubyHash hash, Object key, Object block) {
             final Object[] store = (Object[]) hash.getStore();
             final int size = hash.getSize();
 
@@ -611,17 +618,25 @@ public abstract class HashNodes {
                 }
             }
 
-            return getContext().getCoreLibrary().getNilObject();
+            if (block == UndefinedPlaceholder.INSTANCE) {
+                return getContext().getCoreLibrary().getNilObject();
+            } else {
+                return yieldNode.dispatch(frame, (RubyProc) block, key);
+            }
         }
 
         @Specialization(guards = "isBuckets")
-        public Object delete(VirtualFrame frame, RubyHash hash, Object key) {
+        public Object delete(VirtualFrame frame, RubyHash hash, Object key, Object block) {
             notDesignedForCompilation();
 
             final HashSearchResult hashSearchResult = findEntryNode.search(frame, hash, key);
 
             if (hashSearchResult.getEntry() == null) {
-                return getContext().getCoreLibrary().getNilObject();
+                if (block == UndefinedPlaceholder.INSTANCE) {
+                    return getContext().getCoreLibrary().getNilObject();
+                } else {
+                    return yieldNode.dispatch(frame, (RubyProc) block, key);
+                }
             }
 
             final Entry entry = hashSearchResult.getEntry();
