@@ -39,7 +39,7 @@ class OperandEncoderMap extends IRVisitor {
     @Override public void Boolean(Boolean booleanliteral) { encoder.encode(booleanliteral.isTrue()); }
 
     @Override public void ClosureLocalVariable(ClosureLocalVariable variable) {
-        // We can refigure out closure scope it is in.
+        // SSS FIXME: Need to dump definedLocally?
         encoder.encode(variable.getName());
         encoder.encode(variable.getScopeDepth());
     }

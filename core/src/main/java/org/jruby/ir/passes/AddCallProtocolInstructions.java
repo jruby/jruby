@@ -8,21 +8,12 @@ import org.jruby.ir.operands.Variable;
 import org.jruby.ir.representations.BasicBlock;
 import org.jruby.ir.representations.CFG;
 
-import java.util.Arrays;
-import java.util.List;
 import java.util.ListIterator;
 
 public class AddCallProtocolInstructions extends CompilerPass {
     @Override
     public String getLabel() {
         return "Add Call Protocol Instructions (push/pop of dyn-scope, frame, impl-class values)";
-    }
-
-    public static List<Class<? extends CompilerPass>> DEPENDENCIES = Arrays.<Class<? extends CompilerPass>>asList(CFGBuilder.class);
-
-    @Override
-    public List<Class<? extends CompilerPass>> getDependencies() {
-        return DEPENDENCIES;
     }
 
     private boolean explicitCallProtocolSupported(IRScope scope) {
@@ -39,11 +30,11 @@ public class AddCallProtocolInstructions extends CompilerPass {
         // If the scope uses $_ or $~ family of vars, has local load/stores, or if its binding has escaped, we have
         // to allocate a dynamic scope for it and add binding push/pop instructions.
         if (explicitCallProtocolSupported(scope)) {
-            StoreLocalVarPlacementProblem slvpp = (StoreLocalVarPlacementProblem)scope.getDataFlowSolution(StoreLocalVarPlacementProblem.NAME);
+            StoreLocalVarPlacementProblem slvpp = scope.getStoreLocalVarPlacementProblem();
             boolean scopeHasLocalVarStores = false;
             boolean bindingHasEscaped      = scope.bindingHasEscaped();
 
-            CFG cfg = scope.cfg();
+            CFG cfg = scope.getCFG();
 
             if (slvpp != null && bindingHasEscaped) {
                 scopeHasLocalVarStores = slvpp.scopeHasLocalVarStores();
@@ -118,10 +109,6 @@ public class AddCallProtocolInstructions extends CompilerPass {
             // This scope has an explicit call protocol flag now
             scope.setExplicitCallProtocolFlag();
         }
-
-        // FIXME: Useless for now
-        // Run on all nested closures.
-        for (IRClosure c: scope.getClosures()) run(c, false, true);
 
         // LVA information is no longer valid after the pass
         // FIXME: Grrr ... this seems broken to have to create a new object to invalidate

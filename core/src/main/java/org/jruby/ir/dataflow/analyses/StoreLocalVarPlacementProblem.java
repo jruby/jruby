@@ -67,7 +67,7 @@ public class StoreLocalVarPlacementProblem extends DataFlowProblem<StoreLocalVar
         boolean addedStores  = false;
         boolean isEvalScript = scope instanceof IREvalScript;
         for (LocalVariable v : dirtyVars) {
-            if (isEvalScript || !(v instanceof ClosureLocalVariable) || (scope != ((ClosureLocalVariable)v).definingScope)) {
+            if (isEvalScript || !(v instanceof ClosureLocalVariable) || !((ClosureLocalVariable)v).isDefinedLocally()) {
                 addedStores = true;
                 instrs.add(new StoreLocalVarInstr(getLocalVarReplacement(v, varRenameMap), scope, v));
             }
@@ -89,7 +89,7 @@ public class StoreLocalVarPlacementProblem extends DataFlowProblem<StoreLocalVar
 
         Set<LocalVariable> dirtyVars = null;
         IRScope cfgScope = getScope();
-        CFG     cfg      = cfgScope.cfg();
+        CFG     cfg      = cfgScope.getCFG();
 
         this.scopeHasLocalVarStores      = false;
         this.scopeHasUnrescuedExceptions = false;

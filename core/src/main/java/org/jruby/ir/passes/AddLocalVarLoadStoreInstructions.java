@@ -7,7 +7,6 @@ import org.jruby.ir.dataflow.analyses.LoadLocalVarPlacementProblem;
 import org.jruby.ir.dataflow.analyses.StoreLocalVarPlacementProblem;
 import org.jruby.ir.instructions.Instr;
 import org.jruby.ir.operands.Operand;
-import org.jruby.ir.operands.Variable;
 import org.jruby.ir.representations.BasicBlock;
 
 import java.util.Arrays;
@@ -34,10 +33,7 @@ public class AddLocalVarLoadStoreInstructions extends CompilerPass {
 
         // Only run if we are pushing a scope or we are reusing the parents scope.
         if (!s.getFlags().contains(IRFlags.DYNSCOPE_ELIMINATED) || s.getFlags().contains(IRFlags.REUSE_PARENT_DYNSCOPE)) {
-            // Make sure flags are computed
-            s.computeScopeFlags();
-
-            Map<Operand, Operand> varRenameMap = new HashMap<Operand, Operand>();
+            Map<Operand, Operand> varRenameMap = new HashMap<>();
             // 1. Figure out required stores
             // 2. Add stores
             // 3. Figure out required loads
@@ -63,30 +59,25 @@ public class AddLocalVarLoadStoreInstructions extends CompilerPass {
                 for (Instr i: b.getInstrs()) i.renameVars(varRenameMap);
             }
 
-            // Run on all nested closures.
-            //
-            // In the current implementation, nested scopes are processed independently (unlike Live Variable Analysis)
-            for (IRClosure c: s.getClosures()) run(c, false, true);
-
             // LVA information is no longer valid after this pass
             // FIXME: Grrr ... this seems broken to have to create a new object to invalidate
             (new LiveVariableAnalysis()).invalidate(s);
         }
 
-        s.setDataFlowSolution(StoreLocalVarPlacementProblem.NAME, slvp);
+        s.putStoreLocalVarPlacementProblem(slvp);
 
         return slvp;
     }
 
     @Override
     public Object previouslyRun(IRScope scope) {
-        return scope.getDataFlowSolution(StoreLocalVarPlacementProblem.NAME);
+        return scope.getStoreLocalVarPlacementProblem();
     }
 
     @Override
     public boolean invalidate(IRScope scope) {
         super.invalidate(scope);
-        scope.setDataFlowSolution(StoreLocalVarPlacementProblem.NAME, null);
+        scope.putStoreLocalVarPlacementProblem(null);
         return true;
     }
 }

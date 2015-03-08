@@ -1,9 +1,7 @@
 package org.jruby.ir.dataflow.analyses;
 
 import org.jruby.dirgra.Edge;
-import org.jruby.ir.IRClosure;
 import org.jruby.ir.IRScope;
-import org.jruby.ir.dataflow.DataFlowConstants;
 import org.jruby.ir.dataflow.FlowGraphNode;
 import org.jruby.ir.instructions.ClosureAcceptingInstr;
 import org.jruby.ir.instructions.Instr;

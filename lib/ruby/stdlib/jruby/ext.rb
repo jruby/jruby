@@ -59,9 +59,9 @@ module JRuby
       when MethodArgs2
         return Helpers.parameter_list_to_parameters(JRuby.runtime, method.parameter_list, true)
       when IRMethodArgs
-        arg_desc = method.parameter_list
-        for a in arg_desc
-          args_ary << (a[1] == "" ? [a[0].to_sym] : [a[0].to_sym, a[1].to_sym])
+        a = method.parameter_list
+        (0...(a.size)).step(2) do |i|
+          args_ary << (a[i+1] == "" ? [a[i].to_sym] : [a[i].to_sym, a[i+1].to_sym])
         end
       when MethodArgs
         args_node = method.args_node

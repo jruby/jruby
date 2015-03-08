@@ -1254,7 +1254,7 @@ public final class Ruby implements Constantizable {
         initThreadStatuses();
 
         // Create an IR manager and a top-level IR scope and bind it to the top-level static-scope object
-        irManager = new IRManager();
+        irManager = new IRManager(getInstanceConfig());
         // FIXME: This registers itself into static scope as a side-effect.  Let's make this
         // relationship handled either more directly or through a descriptice method
         // FIXME: We need a failing test case for this since removing it did not regress tests

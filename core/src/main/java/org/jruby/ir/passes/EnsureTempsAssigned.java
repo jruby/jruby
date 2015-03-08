@@ -9,22 +9,13 @@ import org.jruby.ir.operands.Variable;
 import org.jruby.ir.representations.BasicBlock;
 import org.jruby.ir.representations.CFG;
 
-import java.util.Arrays;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Set;
 
 public class EnsureTempsAssigned extends CompilerPass {
-    public static List<Class<? extends CompilerPass>> DEPENDENCIES = Arrays.<Class<? extends CompilerPass>>asList(CFGBuilder.class);
-
     @Override
     public String getLabel() {
         return "Ensure Temporary Variables Assigned";
-    }
-
-    @Override
-    public List<Class<? extends CompilerPass>> getDependencies() {
-        return DEPENDENCIES;
     }
 
     @Override
@@ -56,11 +47,6 @@ public class EnsureTempsAssigned extends CompilerPass {
             } else {
                 bb.getInstrs().add(index++, new CopyInstr(name, first));
             }
-        }
-
-        // recurse
-        for (IRScope childScope : cfg.getScope().getClosures()) {
-            run(childScope, false, true);
         }
     }
 }

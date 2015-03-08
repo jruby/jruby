@@ -18,12 +18,12 @@ public class InterpretedIRBodyMethod extends InterpretedIRMethod {
     public InterpretedIRBodyMethod(IRScope method, RubyModule implementationClass) {
         super(method, Visibility.PUBLIC, implementationClass);
 
-        this.box.callCount = -1;
+        callCount = -1;
     }
 
     @Override
-    public List<String[]> getParameterList() {
-        return new ArrayList<String[]>();
+    public String[] getParameterList() {
+        return new String[0];
     }
 
     @Override
@@ -40,9 +40,9 @@ public class InterpretedIRBodyMethod extends InterpretedIRMethod {
 
     protected IRubyObject callInternal(ThreadContext context, IRubyObject self, RubyModule clazz, String name, Block block) {
         InterpreterContext ic = ensureInstrsReady();
-        if (!ic.hasExplicitCallProtocol()) {
-            this.pre(ic, context, self, name, block, getImplementationClass());
-        }
+
+        if (!ic.hasExplicitCallProtocol()) this.pre(ic, context, self, name, block, getImplementationClass());
+
         try {
             switch (method.getScopeType()) {
                 case MODULE_BODY: return INTERPRET_MODULE(ic, context, self, clazz, method.getName(), block);
@@ -51,9 +51,7 @@ public class InterpretedIRBodyMethod extends InterpretedIRMethod {
                 default: throw new RuntimeException("invalid body method type: " + method);
             }
         } finally {
-            if (!ic.hasExplicitCallProtocol()) {
-                this.post(ic, context);
-            }
+            if (!ic.hasExplicitCallProtocol()) this.post(ic, context);
         }
     }
 

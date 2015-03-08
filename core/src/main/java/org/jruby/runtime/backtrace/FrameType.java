@@ -8,6 +8,7 @@ import java.util.Set;
 import org.jruby.internal.runtime.methods.InterpretedIRBodyMethod;
 import org.jruby.internal.runtime.methods.InterpretedIRMetaClassBody;
 import org.jruby.internal.runtime.methods.InterpretedIRMethod;
+import org.jruby.internal.runtime.methods.MixedModeIRMethod;
 import org.jruby.ir.interpreter.Interpreter;
 import org.jruby.runtime.InterpretedIRBlockBody;
 
@@ -18,6 +19,7 @@ public enum FrameType {
 
     static {
         INTERPRETED_CLASSES.add(Interpreter.class.getName());
+        INTERPRETED_CLASSES.add(MixedModeIRMethod.class.getName());
         INTERPRETED_CLASSES.add(InterpretedIRMethod.class.getName());
         INTERPRETED_CLASSES.add(InterpretedIRBodyMethod.class.getName());
 
