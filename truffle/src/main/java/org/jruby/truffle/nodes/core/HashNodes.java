@@ -50,7 +50,7 @@ public abstract class HashNodes {
         public EqualNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
             eqlNode = DispatchHeadNodeFactory.createMethodCall(context, false, false, null);
-            equalNode = equalNode = BasicObjectNodesFactory.ReferenceEqualNodeFactory.create(context, sourceSection, null, null);
+            equalNode = BasicObjectNodesFactory.ReferenceEqualNodeFactory.create(context, sourceSection, null, null);
         }
 
         public EqualNode(EqualNode prev) {
@@ -260,7 +260,7 @@ public abstract class HashNodes {
         public GetIndexNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
             eqlNode = DispatchHeadNodeFactory.createMethodCall(context, false, false, null);
-            equalNode = equalNode = BasicObjectNodesFactory.ReferenceEqualNodeFactory.create(context, sourceSection, null, null);
+            equalNode = BasicObjectNodesFactory.ReferenceEqualNodeFactory.create(context, sourceSection, null, null);
             yield = new YieldDispatchHeadNode(context);
             findEntryNode = new FindEntryNode(context, sourceSection);
         }
