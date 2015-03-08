@@ -765,7 +765,7 @@ public abstract class HashNodes {
 
     }
 
-    @CoreMethod(names = "initialize", needsBlock = true, optional = 1)
+    @CoreMethod(names = "initialize", needsBlock = true, optional = 1, raiseIfFrozenSelf = true)
     public abstract static class InitializeNode extends HashCoreMethodNode {
 
         public InitializeNode(RubyContext context, SourceSection sourceSection) {
@@ -777,26 +777,26 @@ public abstract class HashNodes {
         }
 
         @Specialization
-        public RubyNilClass initialize(RubyHash hash, UndefinedPlaceholder defaultValue, UndefinedPlaceholder block) {
+        public RubyHash initialize(RubyHash hash, UndefinedPlaceholder defaultValue, UndefinedPlaceholder block) {
             notDesignedForCompilation();
             hash.setStore(null, 0, null, null);
             hash.setDefaultBlock(null);
-            return getContext().getCoreLibrary().getNilObject();
+            return hash;
         }
 
         @Specialization
-        public RubyNilClass initialize(RubyHash hash, UndefinedPlaceholder defaultValue, RubyProc block) {
+        public RubyHash initialize(RubyHash hash, UndefinedPlaceholder defaultValue, RubyProc block) {
             notDesignedForCompilation();
             hash.setStore(null, 0, null, null);
             hash.setDefaultBlock(block);
-            return getContext().getCoreLibrary().getNilObject();
+            return hash;
         }
 
         @Specialization
-        public RubyNilClass initialize(RubyHash hash, Object defaultValue, UndefinedPlaceholder block) {
+        public RubyHash initialize(RubyHash hash, Object defaultValue, UndefinedPlaceholder block) {
             notDesignedForCompilation();
             hash.setDefaultValue(defaultValue);
-            return getContext().getCoreLibrary().getNilObject();
+            return hash;
         }
 
         @Specialization(guards = "!isUndefinedPlaceholder(arguments[1])")
