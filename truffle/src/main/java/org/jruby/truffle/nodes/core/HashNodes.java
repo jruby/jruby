@@ -807,7 +807,8 @@ public abstract class HashNodes {
 
     }
 
-    @CoreMethod(names = "initialize_copy", visibility = Visibility.PRIVATE, required = 1)
+    // TODO CS 8-Mar-15 visibility = Visibility.PRIVATE
+    @CoreMethod(names = {"initialize_copy", "replace"}, required = 1, raiseIfFrozenSelf = true)
     public abstract static class InitializeCopyNode extends HashCoreMethodNode {
 
         public InitializeCopyNode(RubyContext context, SourceSection sourceSection) {
@@ -861,6 +862,11 @@ public abstract class HashNodes {
             copyOther(self, from);
 
             return self;
+        }
+
+        @Specialization(guards = "!isRubyHash(arguments[1])")
+        public Object dupBuckets(VirtualFrame frame, RubyHash self, Object other) {
+            return ruby(frame, "replace(Rubinius::Type.coerce_to other, Hash, :to_hash)", "other", other);
         }
         
         private void copyOther(RubyHash self, RubyHash from) {
@@ -1348,39 +1354,6 @@ public abstract class HashNodes {
             HashOperations.verySlowSetKeyValues(hash, HashOperations.verySlowToKeyValues(hash), hash.isCompareByIdentity());
             
             return hash;
-        }
-
-    }
-
-    @CoreMethod(names = "replace", required = 1)
-    public abstract static class ReplaceNode extends HashCoreMethodNode {
-
-        public ReplaceNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
-        public ReplaceNode(ReplaceNode prev) {
-            super(prev);
-        }
-
-        @Specialization
-        public RubyHash replace(VirtualFrame frame, RubyHash hash, RubyHash other) {
-            notDesignedForCompilation();
-
-            ruby(frame, "Rubinius.check_frozen");
-            
-            HashOperations.verySlowSetKeyValues(hash, HashOperations.verySlowToKeyValues(other), false);
-            hash.setDefaultBlock(other.getDefaultBlock());
-            hash.setDefaultValue(other.getDefaultValue());
-            
-            return hash;
-        }
-
-        @Specialization(guards = "!isRubyHash(arguments[1])")
-        public Object replace(VirtualFrame frame, RubyHash hash, Object other) {
-            notDesignedForCompilation();
-
-            return ruby(frame, "replace(Rubinius::Type.coerce_to other, Hash, :to_hash)", "other", other);
         }
 
     }
