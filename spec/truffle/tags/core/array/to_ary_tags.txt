@@ -1,2 +1,0 @@
-fails:Array#to_ary returns self
-fails:Array#to_ary properly handles recursive arrays
