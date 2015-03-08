@@ -25,6 +25,24 @@ import org.jruby.truffle.runtime.core.RubyUnboundMethod;
 @CoreClass(name = "UnboundMethod")
 public abstract class UnboundMethodNodes {
 
+    @CoreMethod(names = "arity")
+    public abstract static class ArityNode extends CoreMethodNode {
+
+        public ArityNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public ArityNode(ArityNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public int arity(RubyUnboundMethod method) {
+            return method.getMethod().getSharedMethodInfo().getArity().getArityNumber();
+        }
+
+    }
+
     @CoreMethod(names = "bind", required = 1)
     public abstract static class BindNode extends CoreMethodNode {
 

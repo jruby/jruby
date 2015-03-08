@@ -42,4 +42,28 @@ public class Arity {
         return hasKeywords;
     }
 
+    public int getArityNumber() {
+        int count = required;
+
+        if (hasKeywords) {
+            count++;
+        }
+
+        if (optional > 0 || allowsMore) {
+            count = -count - 1;
+        }
+
+        return count;
+    }
+
+    @Override
+    public String toString() {
+        return "Arity{" +
+                "required=" + required +
+                ", optional=" + optional +
+                ", allowsMore=" + allowsMore +
+                ", hasKeywords=" + hasKeywords +
+                '}';
+    }
+
 }

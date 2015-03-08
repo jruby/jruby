@@ -69,6 +69,24 @@ public abstract class MethodNodes {
 
     }
 
+    @CoreMethod(names = "arity")
+    public abstract static class ArityNode extends CoreMethodNode {
+
+        public ArityNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public ArityNode(ArityNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public int arity(RubyMethod method) {
+            return method.getMethod().getSharedMethodInfo().getArity().getArityNumber();
+        }
+
+    }
+
     @CoreMethod(names = "call", needsBlock = true, argumentsAsArray = true)
     public abstract static class CallNode extends CoreMethodNode {
 
