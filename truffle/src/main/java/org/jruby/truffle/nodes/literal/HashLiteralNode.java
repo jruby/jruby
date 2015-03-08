@@ -162,7 +162,7 @@ public abstract class HashLiteralNode extends RubyNode {
                 entries.add(new KeyValue(key, value));
             }
 
-            return HashOperations.verySlowFromEntries(getContext(), entries);
+            return HashOperations.verySlowFromEntries(getContext(), entries, false);
         }
 
     }

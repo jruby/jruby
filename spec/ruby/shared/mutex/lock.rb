@@ -36,15 +36,9 @@ describe :mutex_lock, :shared => true do
       th = Thread.new do
         m.lock
         m.lock
-        v = 1
       end
 
-      Thread.pass while th.status and th.status != "sleep"
-
-      ScratchPad.recorded.should be_nil
-
       lambda do
-        th.kill
         th.join
       end.should raise_error(ThreadError)
     end

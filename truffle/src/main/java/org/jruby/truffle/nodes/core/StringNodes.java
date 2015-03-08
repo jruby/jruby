@@ -305,7 +305,7 @@ public abstract class StringNodes {
                 outOfBounds.enter();
                 return getContext().getCoreLibrary().getNilObject();
             } else {
-                return getContext().makeString(bytes.charAt(normalizedIndex), string.getByteList().getEncoding());
+                return getContext().makeString(string.getLogicalClass(), bytes.charAt(normalizedIndex), string.getByteList().getEncoding());
             }
         }
 
@@ -337,7 +337,9 @@ public abstract class StringNodes {
                     return getContext().makeString("");
                 }
 
-                return getContext().makeString(javaString.substring(begin, excludingEnd), string.getByteList().getEncoding());
+                return getContext().makeString(string.getLogicalClass(),
+                        javaString.substring(begin, excludingEnd),
+                        string.getByteList().getEncoding());
             }
         }
 
@@ -356,7 +358,7 @@ public abstract class StringNodes {
                 final ByteList byteList = new ByteList(bytes, begin, end - begin);
                 byteList.setEncoding(string.getByteList().getEncoding());
 
-                return getContext().makeString(byteList);
+                return getContext().makeString(string.getLogicalClass(), byteList);
             }
         }
 
@@ -749,7 +751,7 @@ public abstract class StringNodes {
             notDesignedForCompilation();
             ByteList newByteList = StringNodesHelper.downcase(string);
 
-            return string.getContext().makeString(newByteList);
+            return string.getContext().makeString(string.getLogicalClass(), newByteList);
         }
     }
 
@@ -892,9 +894,9 @@ public abstract class StringNodes {
             super(prev);
         }
 
+        @TruffleBoundary
         @Specialization
         public RubyString encode(RubyString string, RubyString encoding, @SuppressWarnings("unused") UndefinedPlaceholder options) {
-            notDesignedForCompilation();
 
             final org.jruby.RubyString jrubyString = getContext().toJRuby(string);
             final org.jruby.RubyString jrubyEncodingString = getContext().toJRuby(encoding);
@@ -903,17 +905,17 @@ public abstract class StringNodes {
             return getContext().toTruffle(jrubyTranscoded);
         }
 
+        @TruffleBoundary
         @Specialization
         public RubyString encode(RubyString string, RubyString encoding, @SuppressWarnings("unused") RubyHash options) {
-            notDesignedForCompilation();
 
             // TODO (nirvdrum 20-Feb-15) We need to do something with the options hash. I'm stubbing this out just to get the jUnit mspec formatter running.
             return encode(string, encoding, UndefinedPlaceholder.INSTANCE);
         }
 
+        @TruffleBoundary
         @Specialization
         public RubyString encode(RubyString string, RubyEncoding encoding, @SuppressWarnings("unused") UndefinedPlaceholder options) {
-            notDesignedForCompilation();
 
             final org.jruby.RubyString jrubyString = getContext().toJRuby(string);
             final org.jruby.RubyString jrubyEncodingString = getContext().toJRuby(getContext().makeString(encoding.getName()));
@@ -922,9 +924,9 @@ public abstract class StringNodes {
             return getContext().toTruffle(jrubyTranscoded);
         }
 
+        @TruffleBoundary
         @Specialization(guards = { "!isRubyString(arguments[1])", "!isRubyEncoding(arguments[1])", "!isUndefinedPlaceholder(arguments[1])" })
         public RubyString encode(VirtualFrame frame, RubyString string, Object encoding, UndefinedPlaceholder options) {
-            notDesignedForCompilation();
 
             if (toStrNode == null) {
                 CompilerDirectives.transferToInterpreter();
@@ -934,9 +936,9 @@ public abstract class StringNodes {
             return encode(string, toStrNode.executeRubyString(frame, encoding), options);
         }
 
+        @TruffleBoundary
         @Specialization
         public RubyString encode(RubyString string, @SuppressWarnings("unused") UndefinedPlaceholder encoding, @SuppressWarnings("unused") UndefinedPlaceholder options) {
-            notDesignedForCompilation();
 
             if (defaultInternalNode == null) {
                 CompilerDirectives.transferToInterpreter();
@@ -1345,7 +1347,7 @@ public abstract class StringNodes {
             notDesignedForCompilation();
 
             ByteList byteList = StringNodesHelper.swapcase(string);
-            return getContext().makeString(byteList);
+            return getContext().makeString(string.getLogicalClass(), byteList);
         }
     }
 
@@ -1590,7 +1592,7 @@ public abstract class StringNodes {
             final Object[] objects = new Object[components.length];
 
             for (int n = 0; n < objects.length; n++) {
-                objects[n] = getContext().makeString(components[n]);
+                objects[n] = getContext().makeString(string.getLogicalClass(), components[n]);
             }
 
             return RubyArray.fromObjects(getContext().getCoreLibrary().getArrayClass(), objects);
@@ -1613,9 +1615,9 @@ public abstract class StringNodes {
             notDesignedForCompilation();
 
             if (string.length() > 0) {
-                return getContext().makeString(StringSupport.succCommon(string.getBytes()));
+                return getContext().makeString(string.getLogicalClass(), StringSupport.succCommon(string.getBytes()));
             } else {
-                return getContext().makeString("");
+                return getContext().makeString(string.getLogicalClass(), "");
             }
         }
     }
@@ -1714,7 +1716,7 @@ public abstract class StringNodes {
         }
     }
 
-    @CoreMethod(names = "to_s")
+    @CoreMethod(names = { "to_s", "to_str" })
     public abstract static class ToSNode extends CoreMethodNode {
 
         public ToSNode(RubyContext context, SourceSection sourceSection) {
@@ -1725,10 +1727,20 @@ public abstract class StringNodes {
             super(prev);
         }
 
-        @Specialization
+        @Specialization(guards = "!isStringSubclass")
         public RubyString toS(RubyString string) {
             return string;
         }
+
+        @Specialization(guards = "isStringSubclass")
+        public Object toSOnSubclass(VirtualFrame frame, RubyString string) {
+            return ruby(frame, "''.replace(self)", "self", string);
+        }
+
+        public boolean isStringSubclass(RubyString string) {
+            return string.getLogicalClass() != getContext().getCoreLibrary().getStringClass();
+        }
+
     }
 
     @CoreMethod(names = {"to_sym", "intern"})
@@ -1825,7 +1837,7 @@ public abstract class StringNodes {
             notDesignedForCompilation();
             final ByteList byteListString = StringNodesHelper.upcase(string);
 
-            return string.getContext().makeString(byteListString);
+            return string.getContext().makeString(string.getLogicalClass(), byteListString);
         }
 
     }
@@ -1921,7 +1933,7 @@ public abstract class StringNodes {
                 return string;
             } else {
                 final ByteList byteListString = StringNodesHelper.capitalize(string);
-                return string.getContext().makeString(byteListString);
+                return string.getContext().makeString(string.getLogicalClass(), byteListString);
             }
         }
 

@@ -11,7 +11,9 @@ package org.jruby.truffle.nodes.dispatch;
 
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.cast.ProcOrNullNode;
+import java.util.concurrent.Callable;
 import com.oracle.truffle.api.Assumption;
+import com.oracle.truffle.api.CompilerAsserts;
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import org.jruby.truffle.nodes.RubyNode;
@@ -28,7 +30,6 @@ import org.jruby.truffle.runtime.core.RubyString;
 import org.jruby.truffle.runtime.core.RubySymbol;
 import org.jruby.truffle.runtime.methods.InternalMethod;
 import org.jruby.util.cli.Options;
-
 import com.oracle.truffle.api.Assumption;
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.frame.VirtualFrame;
@@ -60,51 +61,73 @@ public final class UnresolvedDispatchNode extends DispatchNode {
     }
 
     @Override
-    public Object executeDispatch(
-            VirtualFrame frame,
-            Object receiverObject,
-            Object methodName,
-            Object blockObject,
-            Object argumentsObjects) {
-        CompilerDirectives.transferToInterpreterAndInvalidate();
-
-        if (depth == Options.TRUFFLE_DISPATCH_POLYMORPHIC_MAX.load()) {
-            return getHeadNode().getFirstDispatchNode()
-                    .replace(new UncachedDispatchNode(getContext(), ignoreVisibility, getDispatchAction(), argumentNodes, block, isSplatted, missingBehavior))
-                    .executeDispatch(frame, receiverObject,
-                            methodName, blockObject, argumentsObjects);
-        }
-
-        depth++;
-
-        final DispatchNode first = getHeadNode().getFirstDispatchNode();
-
-        if (isRubyBasicObject(receiverObject)) {
-            return doRubyBasicObject(
-                    frame,
-                    first,
-                    receiverObject,
-                    methodName,
-                    blockObject,
-                    argumentsObjects);
-        } else {
-            return doUnboxedObject(
-                    frame,
-                    first,
-                    receiverObject,
-                    methodName,
-                    blockObject,
-                    argumentsObjects);
-        }
+    protected boolean guard(Object methodName, Object receiver) {
+        return false;
     }
 
-    private Object doUnboxedObject(
+    @Override
+    public Object executeDispatch(
+            final VirtualFrame frame,
+            final Object receiverObject,
+            final Object methodName,
+            Object blockObject,
+            final Object argumentsObjects) {
+        CompilerDirectives.transferToInterpreterAndInvalidate();
+
+        final DispatchNode dispatch = atomic(new Callable<DispatchNode>() {
+            @Override
+            public DispatchNode call() throws Exception {
+                final DispatchNode first = getHeadNode().getFirstDispatchNode();
+
+
+                DispatchNode lookupDispatch = first;
+                while (lookupDispatch != null) {
+                    if (lookupDispatch.guard(methodName, receiverObject)) {
+                        // This one worked, no need to rewrite anything.
+                        return lookupDispatch;
+                    }
+                    lookupDispatch = lookupDispatch.getNext();
+                }
+
+                // We need a new node to handle this case.
+
+                final DispatchNode newDispathNode;
+
+                if (depth == DISPATCH_POLYMORPHIC_MAX) {
+                    newDispathNode = new UncachedDispatchNode(getContext(), ignoreVisibility, getDispatchAction(), argumentNodes, block, isSplatted, missingBehavior);
+                } else {
+                    depth++;
+                    if (isRubyBasicObject(receiverObject)) {
+                        newDispathNode = doRubyBasicObject(frame, first, receiverObject, methodName, argumentsObjects);
+                    }
+                    else if (isForeign(receiverObject)) {
+                        return createForeign(argumentsObjects, first, methodName);
+                    } else {
+                        newDispathNode = doUnboxedObject(frame, first, receiverObject, methodName);
+                    }
+                }
+
+                first.replace(newDispathNode);
+                return newDispathNode;
+            }
+        });
+
+        return dispatch.executeDispatch(frame, receiverObject, methodName, blockObject, argumentsObjects);
+    }
+
+    private boolean isForeign(Object receiverObject) {
+        return false;
+    }
+
+    private DispatchNode createForeign(Object argumentsObjects, DispatchNode first, Object methodName) {
+        throw new UnsupportedOperationException();
+    }
+
+    private DispatchNode doUnboxedObject(
             VirtualFrame frame,
             DispatchNode first,
             Object receiverObject,
-            Object methodName,
-            Object blockObject,
-            Object argumentsObjects) {
+            Object methodName) {
         final DispatchAction dispatchAction = getDispatchAction();
 
         final RubyClass callerClass;
@@ -119,9 +142,7 @@ public final class UnresolvedDispatchNode extends DispatchNode {
             final InternalMethod method = lookup(callerClass, receiverObject, methodName.toString(), ignoreVisibility);
 
             if (method == null) {
-                final DispatchNode newDispatch = createMethodMissingNode(methodName, receiverObject);
-                return newDispatch.executeDispatch(frame, receiverObject,
-                        methodName, blockObject, argumentsObjects);
+                return createMethodMissingNode(first, methodName, receiverObject);
             }
 
             if (receiverObject instanceof Boolean) {
@@ -143,38 +164,28 @@ public final class UnresolvedDispatchNode extends DispatchNode {
                     throw new UnsupportedOperationException();
                 }
 
-                final CachedBooleanDispatchNode newDispatch = new CachedBooleanDispatchNode(getContext(),
+                return new CachedBooleanDispatchNode(getContext(),
                         methodName, first,
                         falseUnmodifiedAssumption, null, falseMethod,
                         trueUnmodifiedAssumption, null, trueMethod, indirect, getDispatchAction(),
                         argumentNodes, block, isSplatted);
-
-                first.replace(newDispatch);
-
-                return newDispatch.executeDispatch(frame, receiverObject,
-                        methodName, blockObject, argumentsObjects);
             } else {
-                final CachedUnboxedDispatchNode newDispatch = new CachedUnboxedDispatchNode(getContext(),
+                return new CachedUnboxedDispatchNode(getContext(),
                         methodName, first, receiverObject.getClass(),
                         getContext().getCoreLibrary().getLogicalClass(receiverObject).getUnmodifiedAssumption(), null, method, indirect, getDispatchAction(),
                         argumentNodes, block, isSplatted);
 
-                first.replace(newDispatch);
-
-                return newDispatch.executeDispatch(frame, receiverObject, methodName,
-                        blockObject, argumentsObjects);
             }
         } else {
             throw new UnsupportedOperationException();
         }
     }
 
-    private Object doRubyBasicObject(
+    private DispatchNode doRubyBasicObject(
             VirtualFrame frame,
             DispatchNode first,
             Object receiverObject,
             Object methodName,
-            Object blockObject,
             Object argumentsObjects) {
         final DispatchAction dispatchAction = getDispatchAction();
 
@@ -184,23 +195,20 @@ public final class UnresolvedDispatchNode extends DispatchNode {
             final InternalMethod method = lookup(callerClass, receiverObject, methodName.toString(), ignoreVisibility);
 
             if (method == null) {
-                final DispatchNode newDispatch = createMethodMissingNode(methodName, receiverObject);
-                return newDispatch.executeDispatch(frame, receiverObject,
-                        methodName, blockObject, argumentsObjects);
-            }
+                final DispatchNode multilanguage = tryMultilanguage(frame, first, methodName, argumentsObjects);
+                if (multilanguage != null) {
+                    return multilanguage;
+                }
 
-            final DispatchNode newDispatch;
+                return createMethodMissingNode(first, methodName, receiverObject);
+            }
 
             if (receiverObject instanceof RubySymbol) {
-                newDispatch = new CachedBoxedSymbolDispatchNode(getContext(), methodName, first, null, method, indirect, getDispatchAction(), argumentNodes, block, isSplatted);
+                return new CachedBoxedSymbolDispatchNode(getContext(), methodName, first, null, method, indirect, getDispatchAction(), argumentNodes, block, isSplatted);
             } else {
-                newDispatch = new CachedBoxedDispatchNode(getContext(), methodName, first,
+                return new CachedBoxedDispatchNode(getContext(), methodName, first,
                         getContext().getCoreLibrary().getMetaClass(receiverObject), null, method, indirect, getDispatchAction(), argumentNodes, block, isSplatted);
             }
-
-            first.replace(newDispatch);
-            return newDispatch.executeDispatch(frame, receiverObject,
-                    methodName, blockObject, argumentsObjects);
 
         } else if (dispatchAction == DispatchAction.READ_CONSTANT) {
             final RubyModule module = (RubyModule) receiverObject;
@@ -208,9 +216,7 @@ public final class UnresolvedDispatchNode extends DispatchNode {
                     ignoreVisibility);
 
             if (constant == null) {
-                final DispatchNode newDispatch = createConstantMissingNode(methodName, callerClass, module);
-                return newDispatch.executeDispatch(frame, module,
-                        methodName, blockObject, argumentsObjects);
+                return createConstantMissingNode(first, methodName, callerClass, module);
             }
 
             if (constant.isAutoload()) {
@@ -221,33 +227,32 @@ public final class UnresolvedDispatchNode extends DispatchNode {
 
                 requireNode.require((RubyString) constant.getValue());
 
-                return doRubyBasicObject(frame, first, receiverObject, methodName, blockObject, argumentsObjects);
+                return doRubyBasicObject(frame, first, receiverObject, methodName, argumentsObjects);
             }
 
             // The module, the "receiver" is an instance of its singleton class.
             // But we want to check the module assumption, not its singleton class assumption.
-            final DispatchNode newDispatch = new CachedBoxedDispatchNode(getContext(), methodName, first,
+            return new CachedBoxedDispatchNode(getContext(), methodName, first,
                     module.getSingletonClass(null), module.getUnmodifiedAssumption(), constant.getValue(),
                     null, indirect, getDispatchAction(), argumentNodes, block, isSplatted);
-
-            first.replace(newDispatch);
-            return newDispatch.executeDispatch(frame, receiverObject,
-                    methodName, blockObject, argumentsObjects);
         } else {
             throw new UnsupportedOperationException();
         }
     }
 
+    private DispatchNode tryMultilanguage(VirtualFrame frame, DispatchNode first,  Object methodName, Object argumentsObjects) {
+        return null;
+    }
+
     private DispatchNode createConstantMissingNode(
+            DispatchNode first,
             Object methodName,
             RubyClass callerClass,
             RubyBasicObject receiverObject) {
-        final DispatchNode first = getHeadNode().getFirstDispatchNode();
-
         switch (missingBehavior) {
             case RETURN_MISSING: {
-                return first.replace(new CachedBoxedReturnMissingDispatchNode(getContext(), methodName, first,
-                        receiverObject.getMetaClass(), indirect, getDispatchAction(), argumentNodes, block, isSplatted));
+                return new CachedBoxedReturnMissingDispatchNode(getContext(), methodName, first,
+                        receiverObject.getMetaClass(), indirect, getDispatchAction(), argumentNodes, block, isSplatted);
             }
 
             case CALL_CONST_MISSING: {
@@ -258,12 +263,12 @@ public final class UnresolvedDispatchNode extends DispatchNode {
                             receiverObject.toString() + " didn't have a #const_missing", this));
                 }
 
-                if (Options.TRUFFLE_DISPATCH_METAPROGRAMMING_ALWAYS_UNCACHED.load()) {
-                    return first.replace(new UncachedDispatchNode(getContext(), ignoreVisibility, getDispatchAction(), argumentNodes, block, isSplatted, missingBehavior));
+                if (DISPATCH_METAPROGRAMMING_ALWAYS_UNCACHED) {
+                    return new UncachedDispatchNode(getContext(), ignoreVisibility, getDispatchAction(), argumentNodes, block, isSplatted, missingBehavior);
                 }
 
-                return first.replace(new CachedBoxedMethodMissingDispatchNode(getContext(), methodName, first,
-                        receiverObject.getMetaClass(), method, Options.TRUFFLE_DISPATCH_METAPROGRAMMING_ALWAYS_INDIRECT.load(), getDispatchAction(), argumentNodes, block, isSplatted));
+                return new CachedBoxedMethodMissingDispatchNode(getContext(), methodName, first,
+                        receiverObject.getMetaClass(), method, DISPATCH_METAPROGRAMMING_ALWAYS_INDIRECT, getDispatchAction(), argumentNodes, block, isSplatted);
             }
 
             default: {
@@ -273,14 +278,13 @@ public final class UnresolvedDispatchNode extends DispatchNode {
     }
 
     private DispatchNode createMethodMissingNode(
+            DispatchNode first,
             Object methodName,
             Object receiverObject) {
-        final DispatchNode first = getHeadNode().getFirstDispatchNode();
-
         switch (missingBehavior) {
             case RETURN_MISSING: {
-                return first.replace(new CachedBoxedReturnMissingDispatchNode(getContext(), methodName, first,
-                        getContext().getCoreLibrary().getMetaClass(receiverObject), indirect, getDispatchAction(), argumentNodes, block, isSplatted));
+                return new CachedBoxedReturnMissingDispatchNode(getContext(), methodName, first,
+                        getContext().getCoreLibrary().getMetaClass(receiverObject), indirect, getDispatchAction(), argumentNodes, block, isSplatted);
             }
 
             case CALL_METHOD_MISSING: {
@@ -291,12 +295,12 @@ public final class UnresolvedDispatchNode extends DispatchNode {
                             receiverObject.toString() + " didn't have a #method_missing", this));
                 }
 
-                if (Options.TRUFFLE_DISPATCH_METAPROGRAMMING_ALWAYS_UNCACHED.load()) {
-                    return first.replace(new UncachedDispatchNode(getContext(), ignoreVisibility, getDispatchAction(), argumentNodes, block, isSplatted, missingBehavior));
+                if (DISPATCH_METAPROGRAMMING_ALWAYS_UNCACHED) {
+                    return new UncachedDispatchNode(getContext(), ignoreVisibility, getDispatchAction(), argumentNodes, block, isSplatted, missingBehavior);
                 }
 
-                return first.replace(new CachedBoxedMethodMissingDispatchNode(getContext(), methodName, first,
-                        getContext().getCoreLibrary().getMetaClass(receiverObject), method, Options.TRUFFLE_DISPATCH_METAPROGRAMMING_ALWAYS_INDIRECT.load(), getDispatchAction(), argumentNodes, block, isSplatted));
+                return new CachedBoxedMethodMissingDispatchNode(getContext(), methodName, first,
+                        getContext().getCoreLibrary().getMetaClass(receiverObject), method, Options.TRUFFLE_DISPATCH_METAPROGRAMMING_ALWAYS_INDIRECT.load(), getDispatchAction(), argumentNodes, block, isSplatted);
             }
 
             default: {

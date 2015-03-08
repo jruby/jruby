@@ -9,6 +9,12 @@
  */
 package org.jruby.truffle.nodes.dispatch;
 
+import com.oracle.truffle.api.CompilerDirectives;
+import com.oracle.truffle.api.dsl.NodeChild;
+import com.oracle.truffle.api.dsl.NodeChildren;
+import com.oracle.truffle.api.frame.VirtualFrame;
+import com.oracle.truffle.api.nodes.Node;
+import com.oracle.truffle.api.nodes.NodeUtil;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.cast.ProcOrNullNode;
 import org.jruby.truffle.runtime.LexicalScope;
@@ -22,14 +28,18 @@ import org.jruby.truffle.runtime.core.RubyModule;
 import org.jruby.truffle.runtime.core.RubyProc;
 import org.jruby.truffle.runtime.methods.InternalMethod;
 import org.jruby.truffle.runtime.util.ArrayUtils;
-
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.ExplodeLoop;
 import com.oracle.truffle.api.nodes.NodeUtil;
 import com.oracle.truffle.api.utilities.BranchProfile;
+import org.jruby.util.cli.Options;
 
 public abstract class DispatchNode extends RubyNode {
+
+    public static final int DISPATCH_POLYMORPHIC_MAX = Options.TRUFFLE_DISPATCH_POLYMORPHIC_MAX.load();
+    public static final boolean DISPATCH_METAPROGRAMMING_ALWAYS_UNCACHED = Options.TRUFFLE_DISPATCH_METAPROGRAMMING_ALWAYS_UNCACHED.load();
+    public static final boolean DISPATCH_METAPROGRAMMING_ALWAYS_INDIRECT = Options.TRUFFLE_DISPATCH_METAPROGRAMMING_ALWAYS_INDIRECT.load();
 
     private final DispatchAction dispatchAction;
     
@@ -65,6 +75,12 @@ public abstract class DispatchNode extends RubyNode {
         block = prev.getHeadNode().getBlock();
         isSplatted = prev.isSplatted;
         dispatchAction = prev.dispatchAction;
+    }
+
+    protected abstract boolean guard(Object methodName, Object receiver);
+
+    protected DispatchNode getNext() {
+        return null;
     }
 
     public abstract Object executeDispatch(

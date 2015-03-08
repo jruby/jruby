@@ -65,6 +65,11 @@ public abstract class CachedDispatchNode extends DispatchNode {
         indirect = prev.indirect;
     }
 
+    @Override
+    protected DispatchNode getNext() {
+        return next;
+    }
+
     protected final boolean guardName(Object methodName) {
         if (cachedName == methodName) {
             return true;

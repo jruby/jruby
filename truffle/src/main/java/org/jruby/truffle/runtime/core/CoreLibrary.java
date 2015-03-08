@@ -1096,7 +1096,7 @@ public class CoreLibrary {
             entries.add(new KeyValue(context.makeString(variable.getKey()), context.makeString(variable.getValue())));
         }
 
-        return HashOperations.verySlowFromEntries(context, entries);
+        return HashOperations.verySlowFromEntries(context, entries, false);
     }
 
     public ArrayNodes.MinBlock getArrayMinBlock() {

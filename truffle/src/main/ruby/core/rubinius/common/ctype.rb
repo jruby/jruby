@@ -1,11 +1,3 @@
-# Copyright (c) 2015 Oracle and/or its affiliates. All rights reserved. This
-# code is released under a tri EPL/GPL/LGPL license. You can use it,
-# redistribute it and/or modify it under the terms of the:
-#
-# Eclipse Public License version 1.0
-# GNU General Public License version 2
-# GNU Lesser General Public License version 2.1
-
 # Copyright (c) 2007-2014, Evan Phoenix and contributors
 # All rights reserved.
 #
@@ -32,38 +24,54 @@
 # OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-# Only part of Rubinius' regexp.rb
+##
+# Mixin containing byte classification methods.
+#--
+# isspace, islower, ... are not in MRI core library.
 
-class Regexp
+module Rubinius::CType
+  # The character literals (?x) are Fixnums in 1.8 and Strings in 1.9
+  # so we use literal values instead so this is 1.8/1.9 compatible.
 
-  ##
-  # See Regexp.new. This may be overridden by subclasses.
-
-  def compile(pattern, opts)
-    Rubinius.primitive :regexp_initialize
-    raise PrimitiveFailure, "Regexp.compile(#{pattern.inspect}, #{opts}) primitive failed"
+  # \n \r \t \f \v \a \b \e
+  def self.isctrl(num)
+    (num >= 7 and num <= 13) or num == 27
   end
 
-  private :compile
-
-  def search_region(str, start, finish, forward) # equiv to MRI's re_search
-    Rubinius.primitive :regexp_search_region
-    raise PrimitiveFailure, "Regexp#search_region primitive failed"
+  # ' ' \n \t \r \f \v
+  def self.isspace(num)
+    num == 32 or (num >= 9 and num <= 13)
   end
 
-  def self.last_match=(match)
-    Rubinius.primitive :regexp_set_last_match
-
-    unless match.kind_of? MatchData
-      raise TypeError, "Expected MatchData, got #{match.inspect}"
-    end
-
-    raise PrimitiveFailure, "Regexp#set_last_match primitive failed"
+  def self.isupper(num)
+    num >= 65 and num <= 90
   end
 
-  def self.set_block_last_match
-    Rubinius.primitive :regexp_set_block_last_match
-    raise PrimitiveFailure, "Regexp#set_block_last_match primitive failed"
+  def self.islower(num)
+    num >= 97 and num <= 122
   end
 
+  def self.isdigit(num)
+    num >= 48 and num <= 57
+  end
+
+  def self.isalnum(num)
+    islower(num) or isupper(num) or isdigit(num)
+  end
+
+  def self.toupper!(num)
+    num - 32
+  end
+
+  def self.toupper(num)
+    islower(num) ? toupper!(num) : num
+  end
+
+  def self.tolower!(num)
+    num + 32
+  end
+
+  def self.tolower(num)
+    isupper(num) ? tolower!(num) : num
+  end
 end

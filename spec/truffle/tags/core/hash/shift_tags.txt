@@ -1,4 +1,0 @@
-fails:Hash#shift removes a pair from hash and return it
-fails:Hash#shift returns nil from an empty hash
-fails:Hash#shift returns (computed) default for empty hashes
-fails:Hash#shift raises a RuntimeError if called on a frozen instance

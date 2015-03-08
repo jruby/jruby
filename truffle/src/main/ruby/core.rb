@@ -49,6 +49,7 @@ require_relative 'core/rubinius/common/kernel'
 require_relative 'core/rubinius/common/identity_map'
 require_relative 'core/rubinius/common/comparable'
 require_relative 'core/rubinius/common/numeric'
+require_relative 'core/rubinius/common/ctype'
 require_relative 'core/rubinius/common/integer'
 require_relative 'core/rubinius/common/bignum'
 require_relative 'core/rubinius/common/fixnum'
@@ -71,7 +72,9 @@ require_relative 'core/rubinius/common/time'
 require_relative 'core/rubinius/common/true'
 
 require_relative 'core/rubinius/common/rational'
+require_relative 'core/rubinius/common/rationalizer'
 require_relative 'core/rubinius/common/complex'
+require_relative 'core/rubinius/common/complexifier'
 require_relative 'core/rubinius/common/gc'
 
 # Load JRuby+Truffle classes

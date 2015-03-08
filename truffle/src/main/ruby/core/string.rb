@@ -11,8 +11,4 @@
 
 class String
 
-  def to_str
-    self
-  end
-
 end

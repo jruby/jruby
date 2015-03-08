@@ -29,6 +29,9 @@ import com.oracle.truffle.api.nodes.InvalidAssumptionException;
 
 public class CachedBoxedMethodMissingDispatchNode extends CachedDispatchNode {
 
+    private static final boolean DISPATCH_METHODMISSING_ALWAYS_CLONED = Options.TRUFFLE_DISPATCH_METHODMISSING_ALWAYS_CLONED.load();
+    private static final boolean DISPATCH_METHODMISSING_ALWAYS_INLINED = Options.TRUFFLE_DISPATCH_METHODMISSING_ALWAYS_INLINED.load();
+
     private final RubyClass expectedClass;
     private final Assumption unmodifiedAssumption;
     private final InternalMethod method;
@@ -65,17 +68,23 @@ public class CachedBoxedMethodMissingDispatchNode extends CachedDispatchNode {
              */
 
             if (callNode.isCallTargetCloningAllowed()
-                    && (Options.TRUFFLE_DISPATCH_METHODMISSING_ALWAYS_CLONED.load()
-                    || method.getSharedMethodInfo().shouldAlwaysSplit())) {
+                    && (DISPATCH_METHODMISSING_ALWAYS_CLONED || method.getSharedMethodInfo().shouldAlwaysSplit())) {
                 insert(callNode);
                 callNode.cloneCallTarget();
             }
 
-            if (callNode.isInlinable() && Options.TRUFFLE_DISPATCH_METHODMISSING_ALWAYS_INLINED.load()) {
+            if (callNode.isInlinable() && DISPATCH_METHODMISSING_ALWAYS_INLINED) {
                 insert(callNode);
                 callNode.forceInlining();
             }
         }
+    }
+
+    @Override
+    protected boolean guard(Object methodName, Object receiver) {
+        return guardName(methodName) &&
+                (receiver instanceof RubyBasicObject) &&
+                ((RubyBasicObject) receiver).getMetaClass() == expectedClass;
     }
 
     @Override
@@ -85,7 +94,7 @@ public class CachedBoxedMethodMissingDispatchNode extends CachedDispatchNode {
             Object methodName,
             Object blockObject,
             Object argumentsObjects) {
-        if (!guardName(methodName) || !(receiverObject instanceof RubyBasicObject) || ((RubyBasicObject) receiverObject).getMetaClass() != expectedClass) {
+        if (!guard(methodName, receiverObject)) {
             return next.executeDispatch(
                     frame,
                     receiverObject,

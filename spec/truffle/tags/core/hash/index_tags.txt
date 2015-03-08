@@ -1,4 +1,0 @@
-fails:Hash#index returns the corresponding key for value
-fails:Hash#index returns nil if the value is not found
-fails:Hash#index doesn't return default value if the value is not found
-fails:Hash#index compares values using ==

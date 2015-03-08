@@ -1,11 +1,3 @@
-# Copyright (c) 2015 Oracle and/or its affiliates. All rights reserved. This
-# code is released under a tri EPL/GPL/LGPL license. You can use it,
-# redistribute it and/or modify it under the terms of the:
-#
-# Eclipse Public License version 1.0
-# GNU General Public License version 2
-# GNU Lesser General Public License version 2.1
-
 # Copyright (c) 2007-2014, Evan Phoenix and contributors
 # All rights reserved.
 #
@@ -32,38 +24,69 @@
 # OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-# Only part of Rubinius' regexp.rb
+class String
+  class Complexifier
+    SPACE = Rationalizer::SPACE
+    NUMERATOR = Rationalizer::NUMERATOR
+    DENOMINATOR = Rationalizer::DENOMINATOR
+    NUMBER = "[-+]?#{NUMERATOR}(?:\\/#{DENOMINATOR})?"
+    NUMBERNOS = "#{NUMERATOR}(?:\\/#{DENOMINATOR})?"
+    PATTERN0 = Regexp.new "\\A#{SPACE}(#{NUMBER})@(#{NUMBER})#{SPACE}"
+    PATTERN1 = Regexp.new "\\A#{SPACE}([-+])?(#{NUMBER})?[iIjJ]#{SPACE}"
+    PATTERN2 = Regexp.new "\\A#{SPACE}(#{NUMBER})(([-+])(#{NUMBERNOS})?[iIjJ])?#{SPACE}"
 
-class Regexp
-
-  ##
-  # See Regexp.new. This may be overridden by subclasses.
-
-  def compile(pattern, opts)
-    Rubinius.primitive :regexp_initialize
-    raise PrimitiveFailure, "Regexp.compile(#{pattern.inspect}, #{opts}) primitive failed"
-  end
-
-  private :compile
-
-  def search_region(str, start, finish, forward) # equiv to MRI's re_search
-    Rubinius.primitive :regexp_search_region
-    raise PrimitiveFailure, "Regexp#search_region primitive failed"
-  end
-
-  def self.last_match=(match)
-    Rubinius.primitive :regexp_set_last_match
-
-    unless match.kind_of? MatchData
-      raise TypeError, "Expected MatchData, got #{match.inspect}"
+    def initialize(value)
+      @value = value
     end
 
-    raise PrimitiveFailure, "Regexp#set_last_match primitive failed"
-  end
+    def convert
+      if m = PATTERN0.match(@value)
+        sr = m[1]
+        si = m[2]
+        re = m.post_match
+        po = true
+      elsif m = PATTERN1.match(@value)
+        sr = nil
+        si = (m[1] || "") + (m[2] || "1")
+        re = m.post_match
+        po = false
+      elsif m = PATTERN2.match(@value)
+        sr = m[1]
+        si = m[2] ? m[3] + (m[4] || "1") : nil
+        re = m.post_match
+        po = false
+      else
+        return Complex.new(0, 0)
+      end
 
-  def self.set_block_last_match
-    Rubinius.primitive :regexp_set_block_last_match
-    raise PrimitiveFailure, "Regexp#set_block_last_match primitive failed"
-  end
+      r = 0
+      i = 0
 
+      if sr
+        if sr.include?("/")
+          r = sr.to_r
+        elsif sr.match(/[.eE]/)
+          r = sr.to_f
+        else
+          r = sr.to_i
+        end
+      end
+
+      if si
+        if si.include?("/")
+          i = si.to_r
+        elsif si.match(/[.eE]/)
+          i = si.to_f
+        else
+          i = si.to_i
+        end
+      end
+
+      if po
+        Complex.polar(r, i)
+      else
+        Complex.rect(r, i)
+      end
+    end
+  end
 end

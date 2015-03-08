@@ -1,8 +1,0 @@
-fails:Hash.try_convert returns the argument if it's a Hash
-fails:Hash.try_convert returns the argument if it's a kind of Hash
-fails:Hash.try_convert returns nil when the argument does not respond to #to_hash
-fails:Hash.try_convert sends #to_hash to the argument and returns the result if it's nil
-fails:Hash.try_convert sends #to_hash to the argument and returns the result if it's a Hash
-fails:Hash.try_convert sends #to_hash to the argument and returns the result if it's a kind of Hash
-fails:Hash.try_convert sends #to_hash to the argument and raises TypeError if it's not a kind of Hash
-fails:Hash.try_convert does not rescue exceptions raised by #to_hash

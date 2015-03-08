@@ -1,11 +1,3 @@
-# Copyright (c) 2015 Oracle and/or its affiliates. All rights reserved. This
-# code is released under a tri EPL/GPL/LGPL license. You can use it,
-# redistribute it and/or modify it under the terms of the:
-#
-# Eclipse Public License version 1.0
-# GNU General Public License version 2
-# GNU Lesser General Public License version 2.1
-
 # Copyright (c) 2007-2014, Evan Phoenix and contributors
 # All rights reserved.
 #
@@ -32,38 +24,60 @@
 # OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-# Only part of Rubinius' regexp.rb
+# Float#rationalize and String#to_r require complex algorithms. The Regexp
+# required for String#to_r cannot be created at class scope when loading the
+# kernel because Regexp needs to load after String and making a simpler
+# Regexp#initialize for bootstrapping isn't really feasible. So these
+# algorithms are located here.
+#
+class String
+  class Rationalizer
+    SPACE = "\\s*"
+    DIGITS = "(?:[0-9](?:_[0-9]|[0-9])*)"
+    NUMERATOR = "(?:#{DIGITS}?\\.)?#{DIGITS}(?:[eE][-+]?#{DIGITS})?"
+    DENOMINATOR = DIGITS
+    RATIONAL = "\\A#{SPACE}([-+])?(#{NUMERATOR})(?:\\/(#{DENOMINATOR}))?#{SPACE}"
+    PATTERN = Regexp.new RATIONAL
 
-class Regexp
-
-  ##
-  # See Regexp.new. This may be overridden by subclasses.
-
-  def compile(pattern, opts)
-    Rubinius.primitive :regexp_initialize
-    raise PrimitiveFailure, "Regexp.compile(#{pattern.inspect}, #{opts}) primitive failed"
-  end
-
-  private :compile
-
-  def search_region(str, start, finish, forward) # equiv to MRI's re_search
-    Rubinius.primitive :regexp_search_region
-    raise PrimitiveFailure, "Regexp#search_region primitive failed"
-  end
-
-  def self.last_match=(match)
-    Rubinius.primitive :regexp_set_last_match
-
-    unless match.kind_of? MatchData
-      raise TypeError, "Expected MatchData, got #{match.inspect}"
+    def initialize(value)
+      @value = value
     end
 
-    raise PrimitiveFailure, "Regexp#set_last_match primitive failed"
-  end
+    def convert
+      if m = PATTERN.match(@value)
+        si = m[1]
+        nu = m[2]
+        de = m[3]
+        re = m.post_match
 
-  def self.set_block_last_match
-    Rubinius.primitive :regexp_set_block_last_match
-    raise PrimitiveFailure, "Regexp#set_block_last_match primitive failed"
-  end
+        ifp, exp = nu.split /[eE]/
+        ip, fp = ifp.split /\./
 
+        value = Rational.new(ip.to_i, 1)
+
+        if fp
+          ctype = Rubinius::CType
+          i = count = 0
+          size = fp.size
+          while i < size
+            count += 1 if ctype.isdigit fp.getbyte(i)
+            i += 1
+          end
+
+          l = 10 ** count
+          value *= l
+          value += fp.to_i
+          value = value.quo(l)
+        end
+
+        value = -value if si == "-"
+        value *= 10 ** exp.to_i if exp
+        value = value.quo(de.to_i) if de
+
+        value
+      else
+        Rational(0, 1)
+      end
+    end
+  end
 end
