@@ -419,4 +419,26 @@ class Array
     self
   end
 
+  def transpose
+    return [] if empty?
+
+    out = []
+    max = nil
+
+    each do |ary|
+      ary = Rubinius::Type.coerce_to ary, Array, :to_ary
+      max ||= ary.size
+
+      # Catches too-large as well as too-small (for which #fetch would suffice)
+      raise IndexError, "All arrays must be same length" if ary.size != max
+
+      ary.size.times do |i|
+        entry = (out[i] ||= [])
+        entry << ary.at(i)
+      end
+    end
+
+    out
+  end
+
 end
