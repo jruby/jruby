@@ -12,9 +12,10 @@ package org.jruby.truffle.nodes.dispatch;
 import java.util.concurrent.Callable;
 
 import com.oracle.truffle.api.Assumption;
+import com.oracle.truffle.api.CompilerAsserts;
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.frame.VirtualFrame;
-
+import com.oracle.truffle.api.interop.TruffleObject;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.core.KernelNodes;
 import org.jruby.truffle.nodes.core.KernelNodesFactory;
@@ -63,7 +64,7 @@ public final class UnresolvedDispatchNode extends DispatchNode {
             final Object receiverObject,
             final Object methodName,
             Object blockObject,
-            Object argumentsObjects) {
+            final Object argumentsObjects) {
         CompilerDirectives.transferToInterpreterAndInvalidate();
 
         final DispatchNode dispatch = atomic(new Callable<DispatchNode>() {
@@ -91,7 +92,10 @@ public final class UnresolvedDispatchNode extends DispatchNode {
                 } else {
                     depth++;
                     if (isRubyBasicObject(receiverObject)) {
-                        newDispathNode = doRubyBasicObject(frame, first, receiverObject, methodName);
+                        newDispathNode = doRubyBasicObject(frame, first, receiverObject, methodName, argumentsObjects);
+                    }
+                    else if (isForeign(receiverObject)) {
+                        return createForeign(argumentsObjects, first, methodName);
                     } else {
                         newDispathNode = doUnboxedObject(frame, first, receiverObject, methodName);
                     }
@@ -103,6 +107,14 @@ public final class UnresolvedDispatchNode extends DispatchNode {
         });
 
         return dispatch.executeDispatch(frame, receiverObject, methodName, blockObject, argumentsObjects);
+    }
+
+    private boolean isForeign(Object receiverObject) {
+        return false;
+    }
+
+    private DispatchNode createForeign(Object argumentsObjects, DispatchNode first, Object methodName) {
+        throw new UnsupportedOperationException();
     }
 
     private DispatchNode doUnboxedObject(
@@ -164,7 +176,8 @@ public final class UnresolvedDispatchNode extends DispatchNode {
             VirtualFrame frame,
             DispatchNode first,
             Object receiverObject,
-            Object methodName) {
+            Object methodName,
+            Object argumentsObjects) {
         final DispatchAction dispatchAction = getDispatchAction();
 
         final RubyClass callerClass = ignoreVisibility ? null : getContext().getCoreLibrary().getMetaClass(RubyArguments.getSelf(frame.getArguments()));
@@ -173,6 +186,11 @@ public final class UnresolvedDispatchNode extends DispatchNode {
             final InternalMethod method = lookup(callerClass, receiverObject, methodName.toString(), ignoreVisibility);
 
             if (method == null) {
+                final DispatchNode multilanguage = tryMultilanguage(frame, first, methodName, argumentsObjects);
+                if (multilanguage != null) {
+                    return multilanguage;
+                }
+
                 return createMethodMissingNode(first, methodName, receiverObject);
             }
 
@@ -200,7 +218,7 @@ public final class UnresolvedDispatchNode extends DispatchNode {
 
                 requireNode.require((RubyString) constant.getValue());
 
-                return doRubyBasicObject(frame, first, receiverObject, methodName);
+                return doRubyBasicObject(frame, first, receiverObject, methodName, argumentsObjects);
             }
 
             // The module, the "receiver" is an instance of its singleton class.
@@ -211,6 +229,10 @@ public final class UnresolvedDispatchNode extends DispatchNode {
         } else {
             throw new UnsupportedOperationException();
         }
+    }
+
+    private DispatchNode tryMultilanguage(VirtualFrame frame, DispatchNode first,  Object methodName, Object argumentsObjects) {
+        return null;
     }
 
     private DispatchNode createConstantMissingNode(
