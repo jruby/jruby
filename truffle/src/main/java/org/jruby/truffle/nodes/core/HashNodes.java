@@ -569,31 +569,38 @@ public abstract class HashNodes {
 
     }
 
-    @CoreMethod(names = "delete", required = 1, raiseIfFrozenSelf = true)
+    @CoreMethod(names = "delete", required = 1, needsBlock = true, raiseIfFrozenSelf = true)
     public abstract static class DeleteNode extends HashCoreMethodNode {
 
         @Child private CallDispatchHeadNode eqlNode;
         @Child private FindEntryNode findEntryNode;
+        @Child private YieldDispatchHeadNode yieldNode;
 
         public DeleteNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
             eqlNode = DispatchHeadNodeFactory.createMethodCall(context, false, false, null);
             findEntryNode = new FindEntryNode(context, sourceSection);
+            yieldNode = new YieldDispatchHeadNode(context);
         }
 
         public DeleteNode(DeleteNode prev) {
             super(prev);
             eqlNode = prev.eqlNode;
             findEntryNode = prev.findEntryNode;
+            yieldNode = prev.yieldNode;
         }
 
         @Specialization(guards = "isNull")
-        public RubyNilClass deleteNull(RubyHash hash, Object key) {
-            return getContext().getCoreLibrary().getNilObject();
+        public Object deleteNull(VirtualFrame frame, RubyHash hash, Object key, Object block) {
+            if (block == UndefinedPlaceholder.INSTANCE) {
+                return getContext().getCoreLibrary().getNilObject();
+            } else {
+                return yieldNode.dispatch(frame, (RubyProc) block, key);
+            }
         }
 
         @Specialization(guards = {"!isNull", "!isBuckets", "!isCompareByIdentity(arguments[0])"})
-        public Object deletePackedArray(VirtualFrame frame, RubyHash hash, Object key) {
+        public Object deletePackedArray(VirtualFrame frame, RubyHash hash, Object key, Object block) {
             final Object[] store = (Object[]) hash.getStore();
             final int size = hash.getSize();
 
@@ -611,17 +618,25 @@ public abstract class HashNodes {
                 }
             }
 
-            return getContext().getCoreLibrary().getNilObject();
+            if (block == UndefinedPlaceholder.INSTANCE) {
+                return getContext().getCoreLibrary().getNilObject();
+            } else {
+                return yieldNode.dispatch(frame, (RubyProc) block, key);
+            }
         }
 
         @Specialization(guards = "isBuckets")
-        public Object delete(VirtualFrame frame, RubyHash hash, Object key) {
+        public Object delete(VirtualFrame frame, RubyHash hash, Object key, Object block) {
             notDesignedForCompilation();
 
             final HashSearchResult hashSearchResult = findEntryNode.search(frame, hash, key);
 
             if (hashSearchResult.getEntry() == null) {
-                return getContext().getCoreLibrary().getNilObject();
+                if (block == UndefinedPlaceholder.INSTANCE) {
+                    return getContext().getCoreLibrary().getNilObject();
+                } else {
+                    return yieldNode.dispatch(frame, (RubyProc) block, key);
+                }
             }
 
             final Entry entry = hashSearchResult.getEntry();
@@ -750,7 +765,7 @@ public abstract class HashNodes {
 
     }
 
-    @CoreMethod(names = "initialize", needsBlock = true, optional = 1)
+    @CoreMethod(names = "initialize", needsBlock = true, optional = 1, raiseIfFrozenSelf = true)
     public abstract static class InitializeNode extends HashCoreMethodNode {
 
         public InitializeNode(RubyContext context, SourceSection sourceSection) {
@@ -762,26 +777,26 @@ public abstract class HashNodes {
         }
 
         @Specialization
-        public RubyNilClass initialize(RubyHash hash, UndefinedPlaceholder defaultValue, UndefinedPlaceholder block) {
+        public RubyHash initialize(RubyHash hash, UndefinedPlaceholder defaultValue, UndefinedPlaceholder block) {
             notDesignedForCompilation();
             hash.setStore(null, 0, null, null);
             hash.setDefaultBlock(null);
-            return getContext().getCoreLibrary().getNilObject();
+            return hash;
         }
 
         @Specialization
-        public RubyNilClass initialize(RubyHash hash, UndefinedPlaceholder defaultValue, RubyProc block) {
+        public RubyHash initialize(RubyHash hash, UndefinedPlaceholder defaultValue, RubyProc block) {
             notDesignedForCompilation();
             hash.setStore(null, 0, null, null);
             hash.setDefaultBlock(block);
-            return getContext().getCoreLibrary().getNilObject();
+            return hash;
         }
 
         @Specialization
-        public RubyNilClass initialize(RubyHash hash, Object defaultValue, UndefinedPlaceholder block) {
+        public RubyHash initialize(RubyHash hash, Object defaultValue, UndefinedPlaceholder block) {
             notDesignedForCompilation();
             hash.setDefaultValue(defaultValue);
-            return getContext().getCoreLibrary().getNilObject();
+            return hash;
         }
 
         @Specialization(guards = "!isUndefinedPlaceholder(arguments[1])")
@@ -792,7 +807,8 @@ public abstract class HashNodes {
 
     }
 
-    @CoreMethod(names = "initialize_copy", visibility = Visibility.PRIVATE, required = 1)
+    // TODO CS 8-Mar-15 visibility = Visibility.PRIVATE
+    @CoreMethod(names = {"initialize_copy", "replace"}, required = 1, raiseIfFrozenSelf = true)
     public abstract static class InitializeCopyNode extends HashCoreMethodNode {
 
         public InitializeCopyNode(RubyContext context, SourceSection sourceSection) {
@@ -846,6 +862,11 @@ public abstract class HashNodes {
             copyOther(self, from);
 
             return self;
+        }
+
+        @Specialization(guards = "!isRubyHash(arguments[1])")
+        public Object dupBuckets(VirtualFrame frame, RubyHash self, Object other) {
+            return ruby(frame, "replace(Rubinius::Type.coerce_to other, Hash, :to_hash)", "other", other);
         }
         
         private void copyOther(RubyHash self, RubyHash from) {
@@ -1333,39 +1354,6 @@ public abstract class HashNodes {
             HashOperations.verySlowSetKeyValues(hash, HashOperations.verySlowToKeyValues(hash), hash.isCompareByIdentity());
             
             return hash;
-        }
-
-    }
-
-    @CoreMethod(names = "replace", required = 1)
-    public abstract static class ReplaceNode extends HashCoreMethodNode {
-
-        public ReplaceNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
-        public ReplaceNode(ReplaceNode prev) {
-            super(prev);
-        }
-
-        @Specialization
-        public RubyHash replace(VirtualFrame frame, RubyHash hash, RubyHash other) {
-            notDesignedForCompilation();
-
-            ruby(frame, "Rubinius.check_frozen");
-            
-            HashOperations.verySlowSetKeyValues(hash, HashOperations.verySlowToKeyValues(other), false);
-            hash.setDefaultBlock(other.getDefaultBlock());
-            hash.setDefaultValue(other.getDefaultValue());
-            
-            return hash;
-        }
-
-        @Specialization(guards = "!isRubyHash(arguments[1])")
-        public Object replace(VirtualFrame frame, RubyHash hash, Object other) {
-            notDesignedForCompilation();
-
-            return ruby(frame, "replace(Rubinius::Type.coerce_to other, Hash, :to_hash)", "other", other);
         }
 
     }

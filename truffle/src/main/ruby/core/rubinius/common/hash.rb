@@ -313,4 +313,59 @@ class Hash
 
   alias_method :has_value?, :value?
 
+  def eql?(other)
+    # Just like ==, but uses eql? to compare values.
+    return true if self.equal? other
+    unless other.kind_of? Hash
+      return false unless other.respond_to? :to_hash
+      return other.eql?(self)
+    end
+
+    return false unless other.size == size
+
+    Thread.detect_recursion self, other do
+      each_item do |item|
+        other_item = other.find_item(item.key)
+
+        # Other doesn't even have this key
+        return false unless other_item
+
+        # Order of the comparison matters! We must compare our value with
+        # the other Hash's value and not the other way around.
+        unless Rubinius::Type::object_equal(item.value, other_item.value) or
+               item.value.eql?(other_item.value)
+          return false
+        end
+      end
+    end
+    true
+  end
+
+  def ==(other)
+    return true if self.equal? other
+    unless other.kind_of? Hash
+      return false unless other.respond_to? :to_hash
+      return other == self
+    end
+
+    return false unless other.size == size
+
+    Thread.detect_recursion self, other do
+      each_item do |item|
+        other_item = other.find_item(item.key)
+
+        # Other doesn't even have this key
+        return false unless other_item
+
+        # Order of the comparison matters! We must compare our value with
+        # the other Hash's value and not the other way around.
+        unless Rubinius::Type::object_equal(item.value, other_item.value) or
+               item.value == other_item.value
+          return false
+        end
+      end
+    end
+    true
+  end
+
 end
