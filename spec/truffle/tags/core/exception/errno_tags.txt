@@ -1,2 +1,1 @@
-fails:SystemCallError#errno needs to be reviewed for spec completeness
 fails:Errno::EAGAIN is the same class as Errno::EWOULDBLOCK if they represent the same errno value

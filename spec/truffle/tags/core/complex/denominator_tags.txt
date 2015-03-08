@@ -1,1 +1,0 @@
-fails:Complex#denominator returns the least common multiple denominator of the real and imaginary parts

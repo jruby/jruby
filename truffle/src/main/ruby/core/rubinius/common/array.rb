@@ -396,4 +396,23 @@ class Array
     end
   end
 
+  def fetch(idx, default=undefined)
+    orig = idx
+    idx = Rubinius::Type.coerce_to_collection_index idx
+
+    idx += @total if idx < 0
+
+    if idx < 0 or idx >= @total
+      if block_given?
+        return yield(orig)
+      end
+
+      return default unless undefined.equal?(default)
+
+      raise IndexError, "index #{idx} out of bounds"
+    end
+
+    at(idx)
+  end
+
 end

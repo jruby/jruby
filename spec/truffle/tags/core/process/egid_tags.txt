@@ -1,4 +1,3 @@
 fails:Process.egid returns the effective group ID for this process
 fails:Process.egid also goes by Process::GID.eid
 fails:Process.egid also goes by Process::Sys.getegid
-fails:Process.egid= needs to be reviewed for spec completeness

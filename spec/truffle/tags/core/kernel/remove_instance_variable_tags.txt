@@ -1,6 +1,4 @@
 fails:Kernel#remove_instance_variable is a public method
-fails:Kernel#remove_instance_variable raises a NameError if the instance variable is not defined
-fails:Kernel#remove_instance_variable raises a NameError if the argument is not a valid instance variable name
 fails:Kernel#remove_instance_variable raises a TypeError if passed an Object not defining #to_str
 fails:Kernel#remove_instance_variable when passed a String returns the instance variable's value
 fails:Kernel#remove_instance_variable when passed a String removes the instance variable

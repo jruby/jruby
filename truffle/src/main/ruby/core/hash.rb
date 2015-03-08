@@ -31,10 +31,21 @@ class Hash
     each do |key, value|
       yield KeyValue.new(key, value)
     end
+    nil
   end
 
   def merge_fallback(other, &block)
     merge(Rubinius::Type.coerce_to other, Hash, :to_hash, &block)
+  end
+
+  def find_item(key)
+    value = _get_or_undefined(key)
+    if undefined.equal?(value)
+      nil
+    else
+      # TODO CS 7-Mar-15 maybe we should return the stored key?
+      KeyValue.new(key, value)
+    end
   end
 
 end

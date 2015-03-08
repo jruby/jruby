@@ -1,9 +1,2 @@
-fails:Hash#[] returns the value for key
-fails:Hash#[] returns nil as default default value
 fails:Hash#[] calls subclass implementations of default
-fails:Hash#[] returns the default (dynamic) value for missing keys
-fails:Hash#[] compares keys with eql? semantics
-fails:Hash#[] does not compare keys with different #hash values via #eql?
-fails:Hash#[] compares keys with the same #hash value via #eql?
 fails:Hash#[] finds a value via an identical key even when its #eql? isn't reflexive
-fails:Hash#[] supports keys with private #hash method

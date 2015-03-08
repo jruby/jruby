@@ -54,7 +54,7 @@ public class ReadKeywordRestArgumentNode extends RubyNode {
             entries.add(new KeyValue(keyValue.getKey(), keyValue.getValue()));
         }
 
-        return HashOperations.verySlowFromEntries(getContext(), entries);
+        return HashOperations.verySlowFromEntries(getContext(), entries, hash.isCompareByIdentity());
     }
 
 }

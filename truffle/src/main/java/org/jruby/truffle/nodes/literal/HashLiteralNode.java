@@ -9,11 +9,15 @@
  */
 package org.jruby.truffle.nodes.literal;
 
+import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.ExplodeLoop;
 import com.oracle.truffle.api.source.SourceSection;
+import com.oracle.truffle.api.utilities.ConditionProfile;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.dispatch.*;
+import org.jruby.truffle.nodes.objects.IsFrozenNode;
+import org.jruby.truffle.nodes.objects.IsFrozenNodeFactory;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyHash;
 import org.jruby.truffle.runtime.core.RubyString;
@@ -78,7 +82,10 @@ public abstract class HashLiteralNode extends RubyNode {
 
     public static class SmallHashLiteralNode extends HashLiteralNode {
 
+        private final ConditionProfile stringKeyProfile = ConditionProfile.createBinaryProfile();
+
         @Child private CallDispatchHeadNode equalNode;
+        @Child private IsFrozenNode isFrozenNode;
 
         public SmallHashLiteralNode(RubyContext context, SourceSection sourceSection, RubyNode[] keyValues) {
             super(context, sourceSection, keyValues);
@@ -95,8 +102,15 @@ public abstract class HashLiteralNode extends RubyNode {
             initializers: for (int n = 0; n < keyValues.length; n += 2) {
                 Object key = keyValues[n].execute(frame);
 
-                if (key instanceof RubyString && !((RubyString) key).isFrozen()) {
-                    key = freezeNode.call(frame, dupNode.call(frame, key, "dup", null), "freeze", null);
+                if (stringKeyProfile.profile(key instanceof RubyString)) {
+                    if (isFrozenNode == null) {
+                        CompilerDirectives.transferToInterpreter();
+                        isFrozenNode = insert(IsFrozenNodeFactory.create(getContext(), getSourceSection(), null));
+                    }
+
+                    if (! isFrozenNode.executeIsFrozen(key)) {
+                        key = freezeNode.call(frame, dupNode.call(frame, key, "dup", null), "freeze", null);
+                    }
                 }
 
                 final Object value = keyValues[n + 1].execute(frame);
@@ -136,7 +150,7 @@ public abstract class HashLiteralNode extends RubyNode {
                 entries.add(new KeyValue(key, value));
             }
 
-            return HashOperations.verySlowFromEntries(getContext(), entries);
+            return HashOperations.verySlowFromEntries(getContext(), entries, false);
         }
 
     }

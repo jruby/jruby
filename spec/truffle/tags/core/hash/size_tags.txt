@@ -1,1 +1,0 @@
-fails:Hash#size returns the number of entries

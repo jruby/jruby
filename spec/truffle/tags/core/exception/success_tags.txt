@@ -1,1 +1,0 @@
-fails:SystemExit#success? needs to be reviewed for spec completeness

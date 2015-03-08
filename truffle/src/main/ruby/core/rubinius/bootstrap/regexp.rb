@@ -61,4 +61,9 @@ class Regexp
     raise PrimitiveFailure, "Regexp#set_last_match primitive failed"
   end
 
+  def self.set_block_last_match
+    Rubinius.primitive :regexp_set_block_last_match
+    raise PrimitiveFailure, "Regexp#set_block_last_match primitive failed"
+  end
+
 end

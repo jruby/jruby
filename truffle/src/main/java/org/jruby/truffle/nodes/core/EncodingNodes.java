@@ -87,7 +87,7 @@ public abstract class EncodingNodes {
             aliases.add(new KeyValue(getContext().makeString("locale"),
                     getContext().makeString(new ByteList(getContext().getRuntime().getEncodingService().getLocaleEncoding().getName()))));
 
-            return HashOperations.verySlowFromEntries(getContext(), aliases);
+            return HashOperations.verySlowFromEntries(getContext(), aliases, false);
         }
     }
 
@@ -112,8 +112,6 @@ public abstract class EncodingNodes {
     @CoreMethod(names = "compatible?", needsSelf = false, onSingleton = true, required = 2)
     public abstract static class CompatibleQueryNode extends CoreMethodNode {
 
-        ConditionProfile compatibleEncodingProfile = ConditionProfile.createBinaryProfile();
-
         public CompatibleQueryNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
         }
@@ -122,117 +120,108 @@ public abstract class EncodingNodes {
             super(prev);
         }
 
+        @TruffleBoundary
         @Specialization
         public Object isCompatible(RubyString first, RubyString second) {
-            notDesignedForCompilation();
+            final Encoding compatibleEncoding = org.jruby.RubyEncoding.areCompatible(first, second);
 
-            Encoding compatibleEncoding = org.jruby.RubyEncoding.areCompatible(first, second);
-
-            if (compatibleEncodingProfile.profile(compatibleEncoding != null)) {
+            if (compatibleEncoding != null) {
                 return RubyEncoding.getEncoding(compatibleEncoding);
             } else {
                 return getContext().getCoreLibrary().getNilObject();
             }
         }
 
+        @TruffleBoundary
         @Specialization
         public Object isCompatible(RubyEncoding first, RubyEncoding second) {
-            notDesignedForCompilation();
+            final Encoding compatibleEncoding = org.jruby.RubyEncoding.areCompatible(first.getEncoding(), second.getEncoding());
 
-            Encoding compatibleEncoding = org.jruby.RubyEncoding.areCompatible(first.getEncoding(), second.getEncoding());
-
-            if (compatibleEncodingProfile.profile(compatibleEncoding != null)) {
+            if (compatibleEncoding != null) {
                 return RubyEncoding.getEncoding(compatibleEncoding);
             } else {
                 return getContext().getCoreLibrary().getNilObject();
             }
         }
 
+        @TruffleBoundary
         @Specialization
         public Object isCompatible(RubyString first, RubyRegexp second) {
-            notDesignedForCompilation();
+            final Encoding compatibleEncoding = org.jruby.RubyEncoding.areCompatible(first.getByteList().getEncoding(), second.getRegex().getEncoding());
 
-            Encoding compatibleEncoding = org.jruby.RubyEncoding.areCompatible(first.getByteList().getEncoding(), second.getRegex().getEncoding());
-
-            if (compatibleEncodingProfile.profile(compatibleEncoding != null)) {
+            if (compatibleEncoding != null) {
                 return RubyEncoding.getEncoding(compatibleEncoding);
             } else {
                 return getContext().getCoreLibrary().getNilObject();
             }
         }
 
+        @TruffleBoundary
         @Specialization
         public Object isCompatible(RubyRegexp first, RubyString second) {
-            notDesignedForCompilation();
+            final Encoding compatibleEncoding = org.jruby.RubyEncoding.areCompatible(first.getRegex().getEncoding(), second.getByteList().getEncoding());
 
-            Encoding compatibleEncoding = org.jruby.RubyEncoding.areCompatible(first.getRegex().getEncoding(), second.getByteList().getEncoding());
-
-            if (compatibleEncodingProfile.profile(compatibleEncoding != null)) {
+            if (compatibleEncoding != null) {
                 return RubyEncoding.getEncoding(compatibleEncoding);
             } else {
                 return getContext().getCoreLibrary().getNilObject();
             }
         }
 
+        @TruffleBoundary
         @Specialization
         public Object isCompatible(RubyRegexp first, RubyRegexp second) {
-            notDesignedForCompilation();
+            final Encoding compatibleEncoding = org.jruby.RubyEncoding.areCompatible(first.getRegex().getEncoding(), second.getRegex().getEncoding());
 
-            Encoding compatibleEncoding = org.jruby.RubyEncoding.areCompatible(first.getRegex().getEncoding(), second.getRegex().getEncoding());
-
-            if (compatibleEncodingProfile.profile(compatibleEncoding != null)) {
+            if (compatibleEncoding != null) {
                 return RubyEncoding.getEncoding(compatibleEncoding);
             } else {
                 return getContext().getCoreLibrary().getNilObject();
             }
         }
 
+        @TruffleBoundary
         @Specialization
         public Object isCompatible(RubyRegexp first, RubySymbol second) {
-            notDesignedForCompilation();
+            final Encoding compatibleEncoding = org.jruby.RubyEncoding.areCompatible(first.getRegex().getEncoding(), second.getByteList().getEncoding());
 
-            Encoding compatibleEncoding = org.jruby.RubyEncoding.areCompatible(first.getRegex().getEncoding(), second.getByteList().getEncoding());
-
-            if (compatibleEncodingProfile.profile(compatibleEncoding != null)) {
+            if (compatibleEncoding != null) {
                 return RubyEncoding.getEncoding(compatibleEncoding);
             } else {
                 return getContext().getCoreLibrary().getNilObject();
             }
         }
 
+        @TruffleBoundary
         @Specialization
         public Object isCompatible(RubySymbol first, RubyRegexp second) {
-            notDesignedForCompilation();
+            final Encoding compatibleEncoding = org.jruby.RubyEncoding.areCompatible(first.getByteList().getEncoding(), second.getRegex().getEncoding());
 
-            Encoding compatibleEncoding = org.jruby.RubyEncoding.areCompatible(first.getByteList().getEncoding(), second.getRegex().getEncoding());
-
-            if (compatibleEncodingProfile.profile(compatibleEncoding != null)) {
+            if (compatibleEncoding != null) {
                 return RubyEncoding.getEncoding(compatibleEncoding);
             } else {
                 return getContext().getCoreLibrary().getNilObject();
             }
         }
 
+        @TruffleBoundary
         @Specialization
         public Object isCompatible(RubyString first, RubySymbol second) {
-            notDesignedForCompilation();
+            final Encoding compatibleEncoding = org.jruby.RubyEncoding.areCompatible(first, second);
 
-            Encoding compatibleEncoding = org.jruby.RubyEncoding.areCompatible(first, second);
-
-            if (compatibleEncodingProfile.profile(compatibleEncoding != null)) {
+            if (compatibleEncoding != null) {
                 return RubyEncoding.getEncoding(compatibleEncoding);
             } else {
                 return getContext().getCoreLibrary().getNilObject();
             }
         }
 
+        @TruffleBoundary
         @Specialization
         public Object isCompatible(RubySymbol first, RubySymbol second) {
-            notDesignedForCompilation();
+            final Encoding compatibleEncoding = org.jruby.RubyEncoding.areCompatible(first, second);
 
-            Encoding compatibleEncoding = org.jruby.RubyEncoding.areCompatible(first, second);
-
-            if (compatibleEncodingProfile.profile(compatibleEncoding != null)) {
+            if (compatibleEncoding != null) {
                 return RubyEncoding.getEncoding(compatibleEncoding);
             } else {
                 return getContext().getCoreLibrary().getNilObject();

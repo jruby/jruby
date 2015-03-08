@@ -11,10 +11,7 @@ package org.jruby.truffle.nodes.rubinius;
 
 import org.joni.Matcher;
 import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.core.RubyClass;
-import org.jruby.truffle.runtime.core.RubyMatchData;
-import org.jruby.truffle.runtime.core.RubyRegexp;
-import org.jruby.truffle.runtime.core.RubyString;
+import org.jruby.truffle.runtime.core.*;
 
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.source.SourceSection;
@@ -91,4 +88,24 @@ public abstract class RegexpPrimitiveNodes {
         }
 
     }
+
+    @RubiniusPrimitive(name = "regexp_set_block_last_match")
+    public static abstract class RegexpSetBlockLastMatchPrimitiveNode extends RubiniusPrimitiveNode {
+
+        public RegexpSetBlockLastMatchPrimitiveNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public RegexpSetBlockLastMatchPrimitiveNode(RegexpSetBlockLastMatchPrimitiveNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public RubyNilClass setBlockLastMatch(RubyClass regexpClass) {
+            // TODO CS 7-Mar-15 what does this do?
+            return getContext().getCoreLibrary().getNilObject();
+        }
+
+    }
+    
 }

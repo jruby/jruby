@@ -1,4 +1,3 @@
-fails:Kernel#exec is a private method
 fails:Kernel#exec raises Errno::ENOENT for an empty string
 fails:Kernel#exec raises Errno::ENOENT for a command which does not exist
 fails:Kernel#exec raises an ArgumentError if the command includes a null byte
@@ -6,11 +5,9 @@ fails:Kernel#exec raises Errno::EACCES when the file does not have execute permi
 fails:Kernel#exec raises Errno::EACCES when passed a directory
 fails:Kernel#exec runs the specified command, replacing current process
 fails:Kernel#exec sets the current directory when given the :chdir option
-fails:Kernel#exec flushes STDOUT upon exit when it's not set to sync
 fails:Kernel#exec flushes STDERR upon exit when it's not set to sync
 fails:Kernel#exec with a single argument subjects the specified command to shell expansion
 fails:Kernel#exec with a single argument creates an argument array with shell parsing semantics for whitespace
-fails:Kernel#exec with multiple arguments does not subject the arguments to shell expansion
 fails:Kernel#exec (environment variables) sets environment variables in the child environment
 fails:Kernel#exec (environment variables) unsets environment variables whose value is nil
 fails:Kernel#exec (environment variables) coerces environment argument using to_hash
@@ -25,11 +22,9 @@ fails:Kernel.exec raises Errno::EACCES when the file does not have execute permi
 fails:Kernel.exec raises Errno::EACCES when passed a directory
 fails:Kernel.exec runs the specified command, replacing current process
 fails:Kernel.exec sets the current directory when given the :chdir option
-fails:Kernel.exec flushes STDOUT upon exit when it's not set to sync
 fails:Kernel.exec flushes STDERR upon exit when it's not set to sync
 fails:Kernel.exec with a single argument subjects the specified command to shell expansion
 fails:Kernel.exec with a single argument creates an argument array with shell parsing semantics for whitespace
-fails:Kernel.exec with multiple arguments does not subject the arguments to shell expansion
 fails:Kernel.exec (environment variables) sets environment variables in the child environment
 fails:Kernel.exec (environment variables) unsets environment variables whose value is nil
 fails:Kernel.exec (environment variables) coerces environment argument using to_hash

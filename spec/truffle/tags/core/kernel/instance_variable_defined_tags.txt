@@ -1,5 +1,0 @@
-fails:Kernel#instance_variable_defined? raises a TypeError if passed an Object not defining #to_str
-fails:Kernel#instance_variable_defined? when passed a String returns false if the instance variable is not defined
-fails:Kernel#instance_variable_defined? when passed a String returns true if the instance variable is defined
-fails:Kernel#instance_variable_defined? when passed a Symbol returns false if the instance variable is not defined
-fails:Kernel#instance_variable_defined? when passed a Symbol returns true if the instance variable is defined

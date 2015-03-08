@@ -60,13 +60,20 @@ public class CachedUnboxedDispatchNode extends CachedDispatchNode {
     }
 
     @Override
+    protected boolean guard(Object methodName, Object receiver) {
+        return guardName(methodName) &&
+                !(receiver instanceof RubyBasicObject) &&
+                (receiver.getClass() == expectedClass);
+    }
+
+    @Override
     public Object executeDispatch(
             VirtualFrame frame,
             Object receiverObject,
             Object methodName,
             Object blockObject,
             Object argumentsObjects) {
-        if (!guardName(methodName) || receiverObject instanceof RubyBasicObject || receiverObject.getClass() != expectedClass) {
+        if (!guard(methodName, receiverObject)) {
             return next.executeDispatch(
                     frame,
                     receiverObject,

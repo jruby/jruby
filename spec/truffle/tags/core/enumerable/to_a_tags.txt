@@ -1,5 +1,1 @@
-fails:Enumerable#to_a returns a tainted array if self is tainted
-fails:Enumerable#to_a returns an untrusted array if self is untrusted
-fails:Enumerable#to_a returns an array containing the elements
 fails:Enumerable#to_a passes through the values yielded by #each_with_index
-fails:Enumerable#to_a passes arguments to each

@@ -1,2 +1,0 @@
-fails:ENV.include? returns true if ENV has the key
-fails:ENV.include? returns false if ENV doesn't include the key

@@ -1,2 +1,0 @@
-fails:String#succ returns subclass instances when called on a subclass
-fails:String#succ taints the result if self is tainted

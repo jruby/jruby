@@ -1,13 +1,4 @@
-fails:Module#instance_method is a public method
 fails:Module#instance_method requires an argument
-fails:Module#instance_method returns an UnboundMethod corresponding to the given name
-fails:Module#instance_method returns an UnboundMethod corresponding to the given name from a superclass
-fails:Module#instance_method returns an UnboundMethod corresponding to the given name from an included Module
-fails:Module#instance_method returns an UnboundMethod when given a protected method name
-fails:Module#instance_method returns an UnboundMethod when given a private method name
-fails:Module#instance_method gives UnboundMethod method name, Module defined in and Module extracted from
-fails:Module#instance_method raises a TypeError if not passed a symbol
-fails:Module#instance_method raises a TypeError if the given name is not a string/symbol
 fails:Module#instance_method raises a NameError if the method has been undefined
 fails:Module#instance_method raises a NameError if the method does not exist
 fails:Module#instance_method sets the NameError#name attribute to the name of the missing method

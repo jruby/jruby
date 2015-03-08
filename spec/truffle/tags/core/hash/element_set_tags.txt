@@ -1,5 +1,1 @@
-fails:Hash#[]= associates the key with the value and return the value
-fails:Hash#[]= accepts keys with private #hash method
-fails:Hash#[]= duplicates and freezes string keys
 fails:Hash#[]= doesn't duplicate and freeze already frozen string keys
-fails:Hash#[]= raises a RuntimeError if called on a frozen instance

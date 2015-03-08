@@ -13,4 +13,3 @@ fails:Kernel#open when given an object that responds to to_open calls #to_open o
 fails:Kernel#open when given an object that responds to to_open returns the value from #to_open
 fails:Kernel#open when given an object that responds to to_open passes its arguments onto #to_open
 fails:Kernel#open when given an object that responds to to_open passes the return value from #to_open to a block
-fails:Kernel.open needs to be reviewed for spec completeness

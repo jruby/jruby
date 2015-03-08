@@ -35,16 +35,44 @@ public class InterpretedIRBodyMethod extends InterpretedIRMethod {
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, Block block) {
         if (IRRuntimeHelpers.isDebug()) doDebug();
 
+        return callInternal(context, self, clazz, name, block);
+    }
+
+    protected IRubyObject callInternal(ThreadContext context, IRubyObject self, RubyModule clazz, String name, Block block) {
         InterpreterContext ic = ensureInstrsReady();
-        if (ic.hasExplicitCallProtocol()) {
-            return ic.engine.interpret(context, self, ic, getImplementationClass().getMethodLocation(), name, block, null);
-        } else {
-            try {
-                pre(ic, context, self, name, block, getImplementationClass());
-                return ic.engine.interpret(context, self, ic, getImplementationClass().getMethodLocation(), name, block, null);
-            } finally {
-                post(ic, context);
+
+        if (!ic.hasExplicitCallProtocol()) this.pre(ic, context, self, name, block, getImplementationClass());
+
+        try {
+            switch (method.getScopeType()) {
+                case MODULE_BODY: return INTERPRET_MODULE(ic, context, self, clazz, method.getName(), block);
+                case CLASS_BODY: return INTERPRET_CLASS(ic, context, self, clazz, method.getName(), block);
+                case METACLASS_BODY: return INTERPRET_METACLASS(ic, context, self, clazz, "singleton class", block);
+                default: throw new RuntimeException("invalid body method type: " + method);
             }
+        } finally {
+            if (!ic.hasExplicitCallProtocol()) this.post(ic, context);
+        }
+    }
+
+    private IRubyObject INTERPRET_METACLASS(InterpreterContext ic, ThreadContext context, IRubyObject self, RubyModule clazz, String name, Block block) {
+        return interpretWithBacktrace(ic, context, self, name, block);
+    }
+
+    private IRubyObject INTERPRET_MODULE(InterpreterContext ic, ThreadContext context, IRubyObject self, RubyModule clazz, String name, Block block) {
+        return interpretWithBacktrace(ic, context, self, name, block);
+    }
+
+    private IRubyObject INTERPRET_CLASS(InterpreterContext ic, ThreadContext context, IRubyObject self, RubyModule clazz, String name, Block block) {
+        return interpretWithBacktrace(ic, context, self, name, block);
+    }
+
+    private IRubyObject interpretWithBacktrace(InterpreterContext ic, ThreadContext context, IRubyObject self, String name, Block block) {
+        try {
+            ThreadContext.pushBacktrace(context, name, ic.getFileName(), context.getLine());
+            return ic.engine.interpret(context, self, ic, getImplementationClass().getMethodLocation(), name, block, null);
+        } finally {
+            ThreadContext.popBacktrace(context);
         }
     }
 

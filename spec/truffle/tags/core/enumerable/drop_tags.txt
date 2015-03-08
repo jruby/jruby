@@ -1,2 +1,0 @@
-fails:Enumerable#drop passed a number n as an argument returns [] for empty enumerables
-fails:Enumerable#drop passed a number n as an argument returns [] if dropping all

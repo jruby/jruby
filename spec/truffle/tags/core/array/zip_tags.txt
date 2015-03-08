@@ -4,4 +4,3 @@ fails:Array#zip properly handles recursive arrays
 fails:Array#zip calls #to_ary to convert the argument to an Array
 fails:Array#zip uses #each to extract arguments' elements when #to_ary fails
 fails:Array#zip calls block if supplied
-fails:Array#zip does not return subclass instance on Array subclasses

@@ -1,5 +1,4 @@
 fails:Enumerable#cycle passed no argument or nil loops indefinitely
-fails:Enumerable#cycle passed no argument or nil returns nil if there are no elements
 fails:Enumerable#cycle passed no argument or nil yields successive elements of the array repeatedly
 fails:Enumerable#cycle passed no argument or nil calls each at most once
 fails:Enumerable#cycle passed no argument or nil yields only when necessary

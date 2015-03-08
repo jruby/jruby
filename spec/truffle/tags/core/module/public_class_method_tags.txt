@@ -1,5 +1,3 @@
-fails:Module#public_class_method accepts more than one method at a time
 fails:Module#public_class_method raises a NameError if class method doesn't exist
-fails:Module#public_class_method makes a class method public
 fails:Module#public_class_method raises a NameError when the given name is not a method
 fails:Module#public_class_method raises a NameError when the given name is an instance method

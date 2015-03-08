@@ -1,3 +1,0 @@
-fails:Hash#clear removes all key, value pairs
-fails:Hash#clear does not remove default values
-fails:Hash#clear raises a RuntimeError if called on a frozen instance

@@ -1,6 +1,4 @@
 fails:Kernel.fail is a private method
 fails:Kernel.fail raises a RuntimeError
-fails:Kernel.fail accepts an Object with an exception method returning an Exception
 fails:Kernel.fail instantiates the specified exception class
 fails:Kernel.fail uses the specified message
-fails:Kernel#fail needs to be reviewed for spec completeness

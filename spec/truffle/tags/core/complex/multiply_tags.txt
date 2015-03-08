@@ -1,2 +1,0 @@
-fails:Complex#* with Object tries to coerce self into other
-fails:Complex#* with a Numeric which responds to #real? with true with a Numeric which responds to #real? with false coerces the passed argument to Complex and multiplies the resulting elements

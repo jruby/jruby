@@ -23,7 +23,6 @@ import com.oracle.truffle.api.utilities.CyclicAssumption;
 
 import org.jruby.runtime.Visibility;
 import org.jruby.truffle.nodes.RubyNode;
-import org.jruby.truffle.nodes.methods.AddMethodNode;
 import org.jruby.truffle.nodes.objects.Allocator;
 import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.control.RaiseException;
@@ -364,7 +363,7 @@ public class RubyModule extends RubyBasicObject implements ModuleChain {
 
     @Override
     public String toString() {
-        return super.toString() + "(" + name + ")";
+        return super.toString() + "(" + getName() + ")";
     }
 
     public void newVersion() {

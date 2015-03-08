@@ -1,3 +1,0 @@
-fails:Hash#hash returns a value which doesn't depend on the hash order
-fails:Hash#hash returns the same hash for recursive hashes
-fails:Hash#hash returns the same hash for recursive hashes through arrays

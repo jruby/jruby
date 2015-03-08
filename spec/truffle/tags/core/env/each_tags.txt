@@ -1,4 +1,3 @@
 fails:ENV.each returns each pair
-fails:ENV.each returns an Enumerator if called without a block
 fails:ENV.each with encoding uses the locale encoding when Encoding.default_internal is nil
 fails:ENV.each with encoding transcodes from the locale encoding to Encoding.default_internal if set

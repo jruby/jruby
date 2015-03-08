@@ -1,16 +1,8 @@
 fails:Kernel#public_send invokes the named public method
 fails:Kernel#public_send invokes the named alias of a public method
-fails:Kernel#public_send raises a NoMethodError if the method is protected
-fails:Kernel#public_send raises a NoMethodError if the named method is private
-fails:Kernel#public_send raises a NoMethodError if the named method is an alias of a private method
-fails:Kernel#public_send raises a NoMethodError if the named method is an alias of a protected method
 fails:Kernel#public_send invokes the named method
 fails:Kernel#public_send accepts a String method name
 fails:Kernel#public_send invokes a class method if called on a class
-fails:Kernel#public_send raises a NameError if the corresponding method can't be found
-fails:Kernel#public_send raises a NameError if the corresponding singleton method can't be found
-fails:Kernel#public_send raises an ArgumentError if no arguments are given
-fails:Kernel#public_send raises an ArgumentError if called with more arguments than available parameters
 fails:Kernel#public_send raises an ArgumentError if called with fewer arguments than required parameters
 fails:Kernel#public_send succeeds if passed an arbitrary number of arguments as a splat parameter
 fails:Kernel#public_send succeeds when passing 1 or more arguments as a required and a splat parameter

@@ -1,7 +1,0 @@
-fails:Numeric#step returns an Enumerator when step is 0
-fails:Numeric#step returns an Enumerator when not passed a block and self > stop
-fails:Numeric#step returns an Enumerator when not passed a block and self < stop
-fails:Numeric#step returns an Enumerator that uses the given step
-fails:Numeric#step Numeric#step with [stop, step] when self and stop are Fixnums but step is a String returns an Enumerator if not given a block
-fails:Numeric#step Numeric#step with [stop, step] when self and stop are Fixnums but step is a String raises an ArgumentError if given a block
-fails:Numeric#step Numeric#step with [stop, step] when self and stop are Floats but step is a String returns an Enumerator if not given a block

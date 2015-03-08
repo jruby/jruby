@@ -1,3 +1,0 @@
-fails:Hash#sort converts self to a nested array of [key, value] arrays and sort with Array#sort
-fails:Hash#sort works when some of the keys are themselves arrays
-fails:Hash#sort uses block to sort array if passed a block

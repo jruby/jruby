@@ -1,8 +1,0 @@
-fails:Hash#rassoc returns an Array if the argument is a value of the Hash
-fails:Hash#rassoc returns a 2-element Array if the argument is a value of the Hash
-fails:Hash#rassoc sets the first element of the Array to the key of the located value
-fails:Hash#rassoc sets the last element of the Array to the located value
-fails:Hash#rassoc only returns the first matching key-value pair
-fails:Hash#rassoc uses #== to compare the argument to the values
-fails:Hash#rassoc returns nil if the argument is not a value of the Hash
-fails:Hash#rassoc returns nil if the argument is not a value of the Hash even when there is a default

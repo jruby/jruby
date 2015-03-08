@@ -1,2 +1,1 @@
 fails:String#clear preserves its encoding
-fails:String#clear raises a RuntimeError if self is frozen

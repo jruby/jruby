@@ -1,15 +1,6 @@
 fails:String#sub with pattern, replacement treats \+ as an empty string if there was no captures
-fails:String#sub with pattern, replacement returns subclass instances when called on a subclass
 fails:String#sub with pattern and block sets $~ for access from the block
-fails:String#sub! with pattern, replacement taints self if replacement is tainted
 fails:String#sub! with pattern and block sets $~ for access from the block
-fails:String#sub! with pattern and block taints self if block's result is tainted
 fails:String#sub! with pattern and block raises a RuntimeError if the string is modified while substituting
-fails:String#sub with pattern and Hash uses the hash's default value for missing keys
-fails:String#sub with pattern and Hash coerces the hash values with #to_s
 fails:String#sub with pattern and Hash uses the hash's value set from default_proc for missing keys
-fails:String#sub! with pattern and Hash uses the hash's default value for missing keys
-fails:String#sub! with pattern and Hash coerces the hash values with #to_s
 fails:String#sub! with pattern and Hash uses the hash's value set from default_proc for missing keys
-fails:String#sub! with pattern and Hash untrusts self if a hash value is untrusted
-fails:String#sub! with pattern and Hash taints self if a hash value is tainted

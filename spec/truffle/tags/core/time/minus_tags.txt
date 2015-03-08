@@ -5,10 +5,7 @@ fails:Time#- tracks nanoseconds
 fails:Time#- maintains microseconds precision
 fails:Time#- maintains nanoseconds precision
 fails:Time#- maintains subseconds precision
-fails:Time#- returns a UTC time if self is UTC
 fails:Time#- returns a non-UTC time if self is non-UTC
 fails:Time#- returns a time with the same fixed offset as self
 fails:Time#- returns a time with nanoseconds precision between two time objects
 fails:Time#- maintains precision
-fails:Time#- decrements the time by the specified amount
-fails:Time#- does not return a subclass instance

@@ -135,8 +135,6 @@ public abstract class CoreMethodNodeManager {
     private static RubyRootNode makeGenericMethod(RubyContext context, MethodDetails methodDetails, boolean needsSelf) {
         final CoreSourceSection sourceSection = new CoreSourceSection(methodDetails.getClassAnnotation().name(), methodDetails.getMethodAnnotation().names()[0]);
 
-        final SharedMethodInfo sharedMethodInfo = new SharedMethodInfo(sourceSection, null, methodDetails.getIndicativeName(), false, null, true);
-
         final int required = methodDetails.getMethodAnnotation().required();
         final int optional;
 
@@ -148,6 +146,8 @@ public abstract class CoreMethodNodeManager {
 
         final Arity arity = new Arity(required,  optional, methodDetails.getMethodAnnotation().argumentsAsArray(), false);
 
+        final SharedMethodInfo sharedMethodInfo = new SharedMethodInfo(sourceSection, null, arity, methodDetails.getIndicativeName(), false, null, true);
+
         final List<RubyNode> argumentsNodes = new ArrayList<>();
 
         if (needsSelf) {
@@ -155,6 +155,10 @@ public abstract class CoreMethodNodeManager {
 
             if (methodDetails.getMethodAnnotation().lowerFixnumSelf()) {
                 readSelfNode = new FixnumLowerNode(readSelfNode);
+            }
+
+            if (methodDetails.getMethodAnnotation().raiseIfFrozenSelf()) {
+                readSelfNode = new RaiseIfFrozenNode(readSelfNode);
             }
 
             argumentsNodes.add(readSelfNode);
@@ -167,6 +171,10 @@ public abstract class CoreMethodNodeManager {
                 RubyNode readArgumentNode = new ReadPreArgumentNode(context, sourceSection, n, MissingArgumentBehaviour.UNDEFINED);
 
                 if (ArrayUtils.contains(methodDetails.getMethodAnnotation().lowerFixnumParameters(), n)) {
+                    readArgumentNode = new FixnumLowerNode(readArgumentNode);
+                }
+
+                if (ArrayUtils.contains(methodDetails.getMethodAnnotation().raiseIfFrozenParameters(), n)) {
                     readArgumentNode = new FixnumLowerNode(readArgumentNode);
                 }
 
@@ -202,9 +210,10 @@ public abstract class CoreMethodNodeManager {
         final CheckArityNode checkArity = new CheckArityNode(context, sourceSection, arity);
         RubyNode sequence = SequenceNode.sequence(context, sourceSection, checkArity, methodNode);
 
-        final int taintSource = methodDetails.getMethodAnnotation().taintFrom();
-        if (taintSource != -1) {
-            sequence = new TaintResultNode(context, sourceSection, needsSelf, taintSource, sequence);
+        if (methodDetails.getMethodAnnotation().taintFromSelf() || methodDetails.getMethodAnnotation().taintFromParameters().length > 0) {
+            sequence = new TaintResultNode(methodDetails.getMethodAnnotation().taintFromSelf(),
+                                           methodDetails.getMethodAnnotation().taintFromParameters(),
+                                           sequence);
         }
 
         final ExceptionTranslatingNode exceptionTranslatingNode = new ExceptionTranslatingNode(context, sourceSection, sequence, methodDetails.getMethodAnnotation().unsupportedOperationBehavior());

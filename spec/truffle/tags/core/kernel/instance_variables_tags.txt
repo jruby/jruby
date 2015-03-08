@@ -1,4 +1,2 @@
 fails:Kernel#instance_variables immediate values returns an empty array if no instance variables are defined
 fails:Kernel#instance_variables immediate values returns the correct array if an instance variable is added
-fails:Kernel#instance_variables regular objects returns an empty array if no instance variables are defined
-fails:Kernel#instance_variables regular objects returns the correct array if an instance variable is added

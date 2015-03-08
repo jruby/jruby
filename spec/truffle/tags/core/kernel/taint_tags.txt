@@ -1,9 +1,4 @@
-fails:Kernel#taint returns self
-fails:Kernel#taint sets the tainted bit
 fails:Kernel#taint raises RuntimeError on an untainted, frozen object
-fails:Kernel#taint does not raise an error on a tainted, frozen object
 fails:Kernel#taint has no effect on immediate values
-fails:Kernel#taint on a Fixnum raises a RuntimeError
 fails:Kernel#taint on a Bignum raises a RuntimeError
-fails:Kernel#taint on a Float raises a RuntimeError
 fails:Kernel#taint on a Symbol raises a RuntimeError

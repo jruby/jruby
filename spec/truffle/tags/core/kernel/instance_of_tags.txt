@@ -1,1 +1,0 @@
-fails:Kernel#instance_of? needs to be reviewed for spec completeness
