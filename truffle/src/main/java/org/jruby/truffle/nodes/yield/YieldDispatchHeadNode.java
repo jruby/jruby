@@ -31,11 +31,11 @@ public class YieldDispatchHeadNode extends Node {
     }
 
     public Object dispatch(VirtualFrame frame, RubyProc block, Object... argumentsObjects) {
-        return dispatch.dispatch(frame, block, argumentsObjects);
+        return dispatch.dispatchWithSelfAndBlock(frame, block, block.getSelfCapturedInScope(), block.getBlockCapturedInScope(), argumentsObjects);
     }
 
     public Object dispatchWithModifiedBlock(VirtualFrame frame, RubyProc block, RubyProc modifiedBlock, Object... argumentsObjects) {
-        return dispatch.dispatchWithModifiedBlock(frame, block, modifiedBlock, argumentsObjects);
+        return dispatch.dispatchWithSelfAndBlock(frame, block, block.getSelfCapturedInScope(), modifiedBlock, argumentsObjects);
     }
 
     public Object dispatchWithModifiedSelf(VirtualFrame currentFrame, RubyProc block, Object self, Object... argumentsObjects) {
@@ -48,7 +48,7 @@ public class YieldDispatchHeadNode extends Node {
         try {
             frame.setObject(slot, Visibility.PUBLIC);
 
-            return dispatch.dispatchWithModifiedSelf(currentFrame, block, self, argumentsObjects);
+            return dispatch.dispatchWithSelfAndBlock(currentFrame, block, self, block.getBlockCapturedInScope(), argumentsObjects);
         } finally {
             frame.setObject(slot, oldVisibility);
         }

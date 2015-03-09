@@ -14,6 +14,7 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.DirectCallNode;
 import com.oracle.truffle.api.nodes.NodeCost;
 import com.oracle.truffle.api.nodes.NodeInfo;
+
 import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyProc;
@@ -21,6 +22,9 @@ import org.jruby.util.cli.Options;
 
 @NodeInfo(cost = NodeCost.POLYMORPHIC)
 public class CachedYieldDispatchNode extends YieldDispatchNode {
+
+    private static final boolean INLINER_ALWAYS_CLONE_YIELD = Options.TRUFFLE_INLINER_ALWAYS_CLONE_YIELD.load();
+    private static final boolean INLINER_ALWAYS_INLINE_YIELD = Options.TRUFFLE_INLINER_ALWAYS_INLINE_YIELD.load();
 
     @Child private DirectCallNode callNode;
     @Child private YieldDispatchNode next;
@@ -31,11 +35,11 @@ public class CachedYieldDispatchNode extends YieldDispatchNode {
         callNode = Truffle.getRuntime().createDirectCallNode(block.getCallTargetForBlocks());
         insert(callNode);
 
-        if (Options.TRUFFLE_INLINER_ALWAYS_CLONE_YIELD.load() && callNode.isCallTargetCloningAllowed()) {
+        if (INLINER_ALWAYS_CLONE_YIELD && callNode.isCallTargetCloningAllowed()) {
             callNode.cloneCallTarget();
         }
 
-        if (Options.TRUFFLE_INLINER_ALWAYS_INLINE_YIELD.load() && callNode.isInlinable()) {
+        if (INLINER_ALWAYS_INLINE_YIELD && callNode.isInlinable()) {
             callNode.forceInlining();
         }
 
@@ -43,30 +47,22 @@ public class CachedYieldDispatchNode extends YieldDispatchNode {
     }
 
     @Override
-    public Object dispatch(VirtualFrame frame, RubyProc block, Object[] argumentsObjects) {
-        if (block.getCallTargetForBlocks() != callNode.getCallTarget()) {
-            return next.dispatch(frame, block, argumentsObjects);
-        }
-
-        return callNode.call(frame, RubyArguments.pack(block.getMethod(), block.getDeclarationFrame(), block.getSelfCapturedInScope(), block.getBlockCapturedInScope(), argumentsObjects));
+    protected boolean guard(RubyProc block) {
+        return block.getCallTargetForBlocks() == callNode.getCallTarget();
     }
 
     @Override
-    public Object dispatchWithModifiedBlock(VirtualFrame frame, RubyProc block, RubyProc modifiedBlock, Object[] argumentsObjects) {
-        if (block.getCallTargetForBlocks() != callNode.getCallTarget()) {
-            return next.dispatch(frame, block, argumentsObjects);
-        }
-
-        return callNode.call(frame, RubyArguments.pack(block.getMethod(), block.getDeclarationFrame(), block.getSelfCapturedInScope(), modifiedBlock, argumentsObjects));
+    protected YieldDispatchNode getNext() {
+        return next;
     }
 
     @Override
-    public Object dispatchWithModifiedSelf(VirtualFrame frame, RubyProc block, Object self, Object... argumentsObjects) {
-        if (block.getCallTargetForBlocks() != callNode.getCallTarget()) {
-            return next.dispatchWithModifiedSelf(frame, block, self, argumentsObjects);
+    public Object dispatchWithSelfAndBlock(VirtualFrame frame, RubyProc block, Object self, RubyProc modifiedBlock, Object... argumentsObjects) {
+        if (guard(block)) {
+            return callNode.call(frame, RubyArguments.pack(block.getMethod(), block.getDeclarationFrame(), self, modifiedBlock, argumentsObjects));
+        } else {
+            return next.dispatchWithSelfAndBlock(frame, block, self, modifiedBlock, argumentsObjects);
         }
-
-        return callNode.call(frame, RubyArguments.pack(block.getMethod(), block.getDeclarationFrame(), self, block.getBlockCapturedInScope(), argumentsObjects));
     }
 
     @Override
