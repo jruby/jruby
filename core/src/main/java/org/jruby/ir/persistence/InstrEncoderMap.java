@@ -43,7 +43,8 @@ public class InstrEncoderMap {
             case B_NIL: encodeBNilInstr((BNilInstr) instr); break;
             case B_TRUE: encodeBTrueInstr((BTrueInstr) instr); break;
             case B_UNDEF: encodeBUndefInstr((BUndefInstr) instr); break;
-            case CALL: encodeCallBaseInstr((CallInstr) instr); break;
+            case CALL: case CALL_1F: case CALL_1D: case CALL_1O: case CALL_1OB: case CALL_0O: case NORESULT_CALL_1O:
+                encodeCallBaseInstr((CallInstr) instr); break;
             case CHECK_ARGS_ARRAY_ARITY: encodeCheckArgsArrayArityInstr((CheckArgsArrayArityInstr) instr); break;
             case CHECK_ARITY: encodeCheckArityInstr((CheckArityInstr) instr); break;
             case CLASS_VAR_MODULE: encodeGetClassVarContainerModuleInstr((GetClassVarContainerModuleInstr) instr); break;

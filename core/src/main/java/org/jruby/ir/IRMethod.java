@@ -41,8 +41,13 @@ public class IRMethod extends IRScope {
         }
     }
 
+    @Override
+    public boolean hasBeenBuilt() {
+        return defn == null;
+    }
+
     public synchronized InterpreterContext lazilyAcquireInterpreterContext() {
-        if (defn != null) {
+        if (!hasBeenBuilt()) {
             IRBuilder.topIRBuilder(getManager(), this).defineMethodInner(defn, getLexicalParent());
 
             defn = null;
@@ -52,7 +57,7 @@ public class IRMethod extends IRScope {
     }
 
     public synchronized BasicBlock[] prepareForInitialCompilation() {
-        if (defn != null) lazilyAcquireInterpreterContext();
+        if (!hasBeenBuilt()) lazilyAcquireInterpreterContext();
 
         return super.prepareForInitialCompilation();
     }

@@ -2,6 +2,7 @@ package org.jruby.ir.persistence;
 
 import org.jruby.RubyInstanceConfig;
 import org.jruby.ir.IRClosure;
+import org.jruby.ir.IRMethod;
 import org.jruby.ir.IRScope;
 import org.jruby.ir.IRScriptBody;
 import org.jruby.ir.instructions.Instr;
@@ -41,6 +42,11 @@ public class IRWriter {
     // {operation, [operands]}*
     private static void persistScopeInstrs(IRWriterEncoder file, IRScope scope) {
         file.startEncodingScopeInstrs(scope);
+
+        // Currently methods are only lazy scopes so we need to build them if we decide to persist them.
+        if (scope instanceof IRMethod && !scope.hasBeenBuilt()) {
+            ((IRMethod) scope).lazilyAcquireInterpreterContext();
+        }
 
         for (Instr instr: scope.getInterpreterContext().getInstructions()) {
             file.encode(instr);
