@@ -1,5 +1,6 @@
 package org.jruby.ir.instructions;
 
+import org.jruby.ir.IRScope;
 import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Operation;
 import org.jruby.ir.instructions.specialized.OneFixnumArgNoBlockCallInstr;
@@ -18,11 +19,15 @@ import org.jruby.runtime.CallType;
 public class CallInstr extends CallBase implements ResultInstr {
     protected Variable result;
 
-    public static CallInstr create(Variable result, String name, Operand receiver, Operand[] args, Operand closure) {
-        return create(CallType.NORMAL, result, name, receiver, args, closure);
+    public static CallInstr create(IRScope scope, Variable result, String name, Operand receiver, Operand[] args, Operand closure) {
+        return create(scope, CallType.NORMAL, result, name, receiver, args, closure);
     }
 
-    public static CallInstr create(CallType callType, Variable result, String name, Operand receiver, Operand[] args, Operand closure) {
+    public static CallInstr create(IRScope scope, CallType callType, Variable result, String name, Operand receiver, Operand[] args, Operand closure) {
+        if (scope.maybeUsingRefinements()) {
+            // FIXME: Make same instr with refined callSite here or push though all path below
+        }
+
         if (!containsArgSplat(args)) {
             boolean hasClosure = closure != null;
 

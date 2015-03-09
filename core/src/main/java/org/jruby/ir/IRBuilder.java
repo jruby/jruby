@@ -85,6 +85,8 @@ public class IRBuilder {
     static final Operand[] NO_ARGS = new Operand[]{};
     static final UnexecutableNil U_NIL = UnexecutableNil.U_NIL;
 
+    public static final String USING_METHOD = "using";
+
     public static Node buildAST(boolean isCommandLineScript, String arg) {
         Ruby ruby = Ruby.getGlobalRuntime();
 
@@ -1015,7 +1017,7 @@ public class IRBuilder {
         Operand[] args       = setupCallArgs(callArgsNode);
         Operand   block      = setupCallClosure(callNode.getIterNode());
         Variable  callResult = createTemporaryVariable();
-        CallInstr callInstr  = CallInstr.create(callResult, callNode.getName(), receiver, args, block);
+        CallInstr callInstr  = CallInstr.create(scope, callResult, callNode.getName(), receiver, args, block);
 
         // This is to support the ugly Proc.new with no block, which must see caller's frame
         if ( callNode.getName().equals("new") &&
@@ -2283,7 +2285,10 @@ public class IRBuilder {
         Operand[] args         = setupCallArgs(callArgsNode);
         Operand   block        = setupCallClosure(fcallNode.getIterNode());
         Variable  callResult   = createTemporaryVariable();
-        CallInstr callInstr    = CallInstr.create(CallType.FUNCTIONAL, callResult, fcallNode.getName(), buildSelf(), args, block);
+
+        determineIfMaybeUsingMethod(fcallNode.getName(), args);
+
+        CallInstr callInstr    = CallInstr.create(scope, CallType.FUNCTIONAL, callResult, fcallNode.getName(), buildSelf(), args, block);
         receiveBreakException(block, callInstr);
         return callResult;
     }
@@ -2298,6 +2303,16 @@ public class IRBuilder {
                 return build(((BlockPassNode)node).getBodyNode());
             default:
                 throw new NotCompilableException("ERROR: Encountered a method with a non-block, non-blockpass iter node at: " + node);
+        }
+    }
+
+    // FIXME: This needs to be called on super/zsuper too
+    private void determineIfMaybeUsingMethod(String methodName, Operand[] args) {
+        IRScope outerScope = scope.getNearestTopLocalVariableScope();
+
+        // 'using single_mod_arg' possible nearly everywhere but method scopes.
+        if (USING_METHOD.equals(methodName) && !(outerScope instanceof IRMethod) && args.length == 1) {
+            scope.setIsMaybeUsingRefinements();
         }
     }
 
@@ -2343,7 +2358,7 @@ public class IRBuilder {
         if (nearestNonClosureBuilder == null) {
             Variable excType = createTemporaryVariable();
             addInstr(new InheritanceSearchConstInstr(excType, new ObjectClass(), "NotImplementedError", false));
-            Variable exc = addResultInstr(CallInstr.create(createTemporaryVariable(), "new", excType, new Operand[] {new FrozenString("Flip support currently broken")}, null));
+            Variable exc = addResultInstr(CallInstr.create(scope, createTemporaryVariable(), "new", excType, new Operand[] {new FrozenString("Flip support currently broken")}, null));
             addInstr(new ThrowExceptionInstr(exc));
             return buildNil();
         }
@@ -2751,7 +2766,7 @@ public class IRBuilder {
 
         // get attr
         Operand  v1 = build(opAsgnNode.getReceiverNode());
-        addInstr(CallInstr.create(readerValue, opAsgnNode.getVariableName(), v1, NO_ARGS, null));
+        addInstr(CallInstr.create(scope, readerValue, opAsgnNode.getVariableName(), v1, NO_ARGS, null));
 
         // Ex: e.val ||= n
         //     e.val &&= n
@@ -2762,7 +2777,7 @@ public class IRBuilder {
 
             // compute value and set it
             Operand  v2 = build(opAsgnNode.getValueNode());
-            addInstr(CallInstr.create(writerValue, opAsgnNode.getVariableNameAsgn(), v1, new Operand[] {v2}, null));
+            addInstr(CallInstr.create(scope, writerValue, opAsgnNode.getVariableNameAsgn(), v1, new Operand[] {v2}, null));
             // It is readerValue = v2.
             // readerValue = writerValue is incorrect because the assignment method
             // might return something else other than the value being set!
@@ -2776,10 +2791,10 @@ public class IRBuilder {
             // call operator
             Operand  v2 = build(opAsgnNode.getValueNode());
             Variable setValue = createTemporaryVariable();
-            addInstr(CallInstr.create(setValue, opAsgnNode.getOperatorName(), readerValue, new Operand[]{v2}, null));
+            addInstr(CallInstr.create(scope, setValue, opAsgnNode.getOperatorName(), readerValue, new Operand[]{v2}, null));
 
             // set attr
-            addInstr(CallInstr.create(writerValue, opAsgnNode.getVariableNameAsgn(), v1, new Operand[] {setValue}, null));
+            addInstr(CallInstr.create(scope, writerValue, opAsgnNode.getVariableNameAsgn(), v1, new Operand[] {setValue}, null));
             // Returning writerValue is incorrect becuase the assignment method
             // might return something else other than the value being set!
             return setValue;
@@ -2856,12 +2871,12 @@ public class IRBuilder {
         Label endLabel = getNewLabel();
         Variable elt = createTemporaryVariable();
         Operand[] argList = setupCallArgs(opElementAsgnNode.getArgsNode());
-        addInstr(CallInstr.create(elt, "[]", array, argList, null));
+        addInstr(CallInstr.create(scope, elt, "[]", array, argList, null));
         addInstr(BEQInstr.create(elt, truthy, endLabel));
         Operand value = build(opElementAsgnNode.getValueNode());
 
         argList = addArg(argList, value);
-        addInstr(CallInstr.create(elt, "[]=", array, argList, null));
+        addInstr(CallInstr.create(scope, elt, "[]=", array, argList, null));
         addInstr(new CopyInstr(elt, value));
 
         addInstr(new LabelInstr(endLabel));
@@ -2873,15 +2888,15 @@ public class IRBuilder {
         Operand array = buildWithOrder(opElementAsgnNode.getReceiverNode(), opElementAsgnNode.containsVariableAssignment());
         Operand[] argList = setupCallArgs(opElementAsgnNode.getArgsNode());
         Variable elt = createTemporaryVariable();
-        addInstr(CallInstr.create(elt, "[]", array, argList, null)); // elt = a[args]
+        addInstr(CallInstr.create(scope, elt, "[]", array, argList, null)); // elt = a[args]
         Operand value = build(opElementAsgnNode.getValueNode());                                       // Load 'value'
         String  operation = opElementAsgnNode.getOperatorName();
-        addInstr(CallInstr.create(elt, operation, elt, new Operand[] { value }, null)); // elt = elt.OPERATION(value)
+        addInstr(CallInstr.create(scope, elt, operation, elt, new Operand[] { value }, null)); // elt = elt.OPERATION(value)
         // SSS: do not load the call result into 'elt' to eliminate the RAW dependency on the call
         // We already know what the result is going be .. we are just storing it back into the array
         Variable tmp = createTemporaryVariable();
         argList = addArg(argList, elt);
-        addInstr(CallInstr.create(tmp, "[]=", array, argList, null));   // a[args] = elt
+        addInstr(CallInstr.create(scope, tmp, "[]=", array, argList, null));   // a[args] = elt
         return elt;
     }
 
@@ -3374,7 +3389,7 @@ public class IRBuilder {
     }
 
     public Operand buildVCall(VCallNode node) {
-        return addResultInstr(CallInstr.create(CallType.VARIABLE, createTemporaryVariable(),
+        return addResultInstr(CallInstr.create(scope, CallType.VARIABLE, createTemporaryVariable(),
                 node.getName(), buildSelf(), NO_ARGS, null));
     }
 

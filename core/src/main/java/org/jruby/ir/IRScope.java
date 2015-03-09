@@ -252,6 +252,24 @@ public abstract class IRScope implements ParseResult {
         return manager;
     }
 
+    public void setIsMaybeUsingRefinements() {
+        flags.add(MAYBE_USING_REFINEMENTS);
+    }
+
+    // FIXME: This is somewhat expensive to walk all parent scopes for refined scopes but
+    // the life cycle of when to do this walking makes wonder if I can just stuff this into
+    // computeScopeFlags?
+    public boolean maybeUsingRefinements() {
+        for (IRScope s = this; s != null; s = s.getLexicalParent()) {
+            if (s.getFlags().contains(MAYBE_USING_REFINEMENTS)) return true;
+
+            // Evals cannot see outer scope 'using'
+            if (s instanceof IREvalScript) return false;
+        }
+
+        return false;
+    }
+
     /**
      *  Returns the lexical scope that contains this scope definition
      */
