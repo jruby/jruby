@@ -159,6 +159,16 @@ class BasicObject
 
 end
 
+class Method
+
+  def to_proc
+    proc { |*args|
+      self.call(*args)
+    }
+  end
+
+end
+
 class MatchData
   def full
     @cached_full ||= begin
