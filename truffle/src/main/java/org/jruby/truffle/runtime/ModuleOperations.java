@@ -234,7 +234,7 @@ public abstract class ModuleOperations {
         // If singleton class, check attached module.
         if (module instanceof RubyClass) {
             RubyClass klass = (RubyClass) module;
-            if (klass.isSingleton() && klass.getAttached() instanceof RubyModule) {
+            if (klass.isSingleton() && klass.getAttached() != null) {
                 module = klass.getAttached();
 
                 value = module.getClassVariables().get(name);
