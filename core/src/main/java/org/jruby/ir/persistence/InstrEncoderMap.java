@@ -50,6 +50,7 @@ public class InstrEncoderMap {
             case CHECK_ARGS_ARRAY_ARITY: encodeCheckArgsArrayArityInstr((CheckArgsArrayArityInstr) instr); break;
             case CHECK_ARITY: encodeCheckArityInstr((CheckArityInstr) instr); break;
             case CLASS_VAR_MODULE: encodeGetClassVarContainerModuleInstr((GetClassVarContainerModuleInstr) instr); break;
+            case BUILD_COMPOUND_ARRAY: encodeBuildCompoundArrayInstr((BuildCompoundArrayInstr) instr); break;
             case BUILD_COMPOUND_STRING: encodeBuildCompoundStringInstr((BuildCompoundStringInstr) instr); break;
             case BUILD_DREGEXP: encodeBuildDynRegExpInstr((BuildDynRegExpInstr) instr); break;
             case BUILD_RANGE: encodeBuildRangeInstr((BuildRangeInstr) instr); break;
@@ -204,6 +205,12 @@ public class InstrEncoderMap {
     private void encodeGetClassVarContainerModuleInstr(GetClassVarContainerModuleInstr instr) {
         e.encode(instr.getStartingScope());
         e.encode(instr.getObject());
+    }
+
+    private void encodeBuildCompoundArrayInstr(BuildCompoundArrayInstr instr) {
+        e.encode(instr.getAppendingArg());
+        e.encode(instr.getAppendedArg());
+        e.encode(instr.isArgsPush());
     }
 
     private void encodeBuildCompoundStringInstr(BuildCompoundStringInstr instr) {
