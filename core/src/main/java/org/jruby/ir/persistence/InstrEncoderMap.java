@@ -6,6 +6,8 @@
 
 package org.jruby.ir.persistence;
 
+import java.util.List;
+import org.jcodings.Encoding;
 import org.jruby.RubyInstanceConfig;
 import org.jruby.ir.instructions.*;
 import org.jruby.ir.instructions.defined.RestoreErrorInfoInstr;
@@ -48,7 +50,7 @@ public class InstrEncoderMap {
             case CHECK_ARGS_ARRAY_ARITY: encodeCheckArgsArrayArityInstr((CheckArgsArrayArityInstr) instr); break;
             case CHECK_ARITY: encodeCheckArityInstr((CheckArityInstr) instr); break;
             case CLASS_VAR_MODULE: encodeGetClassVarContainerModuleInstr((GetClassVarContainerModuleInstr) instr); break;
-            // case BUILD_COMPOUND_STRING: encodeBuildCompoundStringInstr((BuildCompoundStringInstr) instr); break;
+            case BUILD_COMPOUND_STRING: encodeBuildCompoundStringInstr((BuildCompoundStringInstr) instr); break;
             // case BUILD_DREGEXP: return encodeBuildDynRegExpInstr();
             // case BUILD_RANGE: return encodeBuildRangeInstr();
             case CONST_MISSING: encodeConstMissingInstr((ConstMissingInstr) instr); break;
@@ -203,23 +205,17 @@ public class InstrEncoderMap {
         e.encode(instr.getObject());
     }
 
-/**
     private void encodeBuildCompoundStringInstr(BuildCompoundStringInstr instr) {
-        Encoding encoding = compoundstring.getEncoding();
+        Encoding encoding = instr.getEncoding();
 
-        if (encoding == null) {
-            encoder.encode("");
-        } else {
-            encoder.encode(encoding.toString());
-        }
-        List<Operand> pieces = compoundstring.getPieces();
-        encoder.encode(pieces.size());
+        e.encode(encoding == null ? "" : encoding.toString());
+        Operand[] pieces = instr.getPieces();
+        e.encode(pieces.length);
 
         for (Operand piece: pieces) {
-            encode(piece);
+            e.encode(piece);
         }
     }
-**/
 
     private void encodeConstMissingInstr(ConstMissingInstr instr) {
         e.encode(instr.getReceiver());
