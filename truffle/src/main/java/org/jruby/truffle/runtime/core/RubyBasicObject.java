@@ -103,14 +103,14 @@ public class RubyBasicObject {
         }
 
         final RubyClass logicalClass = metaClass;
+        RubyModule attached = null;
 
         if (this instanceof RubyModule) {
-            metaClass = RubyClass.createSingletonClassOfObject(getContext(), logicalClass, (RubyModule) this,
-                    String.format("#<Class:#<%s:0x%x>>", logicalClass.getName(), getObjectID()));
-        } else {
-            metaClass = RubyClass.createSingletonClassOfObject(getContext(), logicalClass, null,
-                    String.format("#<Class:#<%s:0x%x>>", logicalClass.getName(), getObjectID()));
+            attached = (RubyModule) this;
         }
+
+        metaClass = RubyClass.createSingletonClassOfObject(getContext(), logicalClass, attached,
+                String.format("#<Class:#<%s:0x%x>>", logicalClass.getName(), getObjectID()));
 
         if (DebugOperations.verySlowIsFrozen(this)) {
             DebugOperations.verySlowFreeze(metaClass);
