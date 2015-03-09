@@ -348,6 +348,16 @@ class Array
 
   private :recursively_flatten
 
+  def assoc(obj)
+    each do |x|
+      if x.kind_of? Array and x.first == obj
+        return x
+      end
+    end
+
+    nil
+  end
+
   def bsearch
     return to_enum :bsearch unless block_given?
 
