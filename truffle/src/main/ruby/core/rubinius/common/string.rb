@@ -85,6 +85,16 @@ class String
     Rationalizer.new(self).convert
   end
 
+  def to_i(base=10)
+    base = Rubinius::Type.coerce_to base, Integer, :to_int
+
+    if base < 0 || base == 1 || base > 36
+      raise ArgumentError, "illegal radix #{base}"
+    end
+
+    to_inum(base, false)
+  end
+
   def each_line(sep=$/)
     return to_enum(:each_line, sep) unless block_given?
 
