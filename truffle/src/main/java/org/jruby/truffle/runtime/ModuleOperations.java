@@ -225,6 +225,15 @@ public abstract class ModuleOperations {
     public static Object lookupClassVariable(RubyModule module, String name) {
         CompilerAsserts.neverPartOfCompilation();
 
+        // If singleton class, check attached module.
+        if (module instanceof RubyClass) {
+            RubyClass klass = (RubyClass) module;
+
+            if (klass.isSingleton() && klass.getAttached() != null) {
+                module = klass.getAttached();
+            }
+        }
+
         Object value;
 
         // Look in the current module
@@ -240,30 +249,6 @@ public abstract class ModuleOperations {
 
             if (value != null) {
                 return value;
-            }
-        }
-
-        // If singleton class, check attached module as well.
-        if (module instanceof RubyClass) {
-            RubyClass klass = (RubyClass) module;
-
-            if (klass.isSingleton() && klass.getAttached() != null) {
-
-                // Look in the attached module.
-                value = klass.getAttached().getClassVariables().get(name);
-
-                if (value != null) {
-                    return value;
-                }
-
-                // Look in the attached module's ancestors.
-                for (RubyModule ancestor : klass.getAttached().parentAncestors()) {
-                    value = ancestor.getClassVariables().get(name);
-
-                    if (value != null) {
-                        return value;
-                    }
-                }
             }
         }
 
