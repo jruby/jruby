@@ -391,6 +391,24 @@ class Array
     nil
   end
 
+  def cycle(n=nil)
+    return to_enum(:cycle, n) unless block_given?
+    return nil if empty?
+
+    # Don't use nil? because, historically, lame code has overridden that method
+    if n.equal? nil
+      while true
+        each { |x| yield x }
+      end
+    else
+      n = Rubinius::Type.coerce_to_collection_index n
+      n.times do
+        each { |x| yield x }
+      end
+    end
+    nil
+  end
+
   def flatten(level=-1)
     level = Rubinius::Type.coerce_to_collection_index level
     return self.dup if level == 0

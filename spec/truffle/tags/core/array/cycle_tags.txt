@@ -1,11 +1,2 @@
 fails:Array#cycle iterates indefinitely when not passed a count
 fails:Array#cycle iterates indefinitely when passed nil
-fails:Array#cycle does not rescue StopIteration when not passed a count
-fails:Array#cycle does not rescue StopIteration when passed a count
-fails:Array#cycle iterates the array Integer(count) times when passed a Float count
-fails:Array#cycle calls #to_int to convert count to an Integer
-fails:Array#cycle raises a TypeError if #to_int does not return an Integer
-fails:Array#cycle raises a TypeError if passed a String
-fails:Array#cycle raises a TypeError if passed an Object
-fails:Array#cycle raises a TypeError if passed true
-fails:Array#cycle raises a TypeError if passed false
