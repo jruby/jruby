@@ -77,12 +77,12 @@ class MethodTranslator extends BodyTranslator {
         RubyNode body;
 
         if (bodyNode != null) {
-            parentSourceSection = sourceSection;
+            parentSourceSection.push(sourceSection);
 
             try {
                 body = bodyNode.accept(this);
             } finally {
-                parentSourceSection = null;
+                parentSourceSection.pop();
             }
         } else {
             body = new ObjectLiteralNode(context, sourceSection, context.getCoreLibrary().getNilObject());
