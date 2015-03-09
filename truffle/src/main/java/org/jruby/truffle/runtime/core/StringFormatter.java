@@ -194,7 +194,7 @@ public class StringFormatter {
                         final double value = CoreLibrary.toDouble(values.get(v));
 
                         // If the value is a long value stuffed in a double, cast it so we don't print a trailing ".0".
-                        if (value == (long) value) {
+                        if ((value - Math.rint(value)) == 0) {
                             stream.print(String.valueOf((long) value));
                         } else {
                             stream.print(String.valueOf(value));
