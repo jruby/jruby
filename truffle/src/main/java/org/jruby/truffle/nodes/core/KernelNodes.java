@@ -650,6 +650,15 @@ public abstract class KernelNodes {
             return null;
         }
 
+        @Specialization
+        public Object exit(boolean status) {
+            notDesignedForCompilation();
+
+            getContext().shutdown();
+            System.exit(status ? 0 : -1);
+            return null;
+        }
+
     }
 
     @CoreMethod(names = "exit!", isModuleFunction = true, optional = 1)
