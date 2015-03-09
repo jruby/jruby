@@ -2,4 +2,3 @@ fails:The super keyword passes along modified rest args when they weren't origin
 fails:The super keyword passes along modified rest args when they were originally empty
 fails:The super keyword raises a RuntimeError when called with implicit arguments from a method defined with define_method
 fails:The super keyword calls method_missing when a superclass method is not found
-fails:The super keyword sees the included version of a module a method is alias from

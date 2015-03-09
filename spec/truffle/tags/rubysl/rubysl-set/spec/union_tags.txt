@@ -1,2 +1,0 @@
-fails:Set#union returns a new Set containing all elements of self and the passed Enumerable
-fails:Set#| returns a new Set containing all elements of self and the passed Enumerable

@@ -1,5 +1,6 @@
 package org.jruby.ir.interpreter;
 
+import java.util.List;
 import org.jruby.ir.IRClosure;
 import org.jruby.ir.instructions.Instr;
 import org.jruby.runtime.DynamicScope;
@@ -9,8 +10,8 @@ import org.jruby.runtime.ThreadContext;
  * Interpreter knowledge needed to interpret a closure.
  */
 public class ClosureInterpreterContext extends InterpreterContext {
-    public ClosureInterpreterContext(IRClosure scope, Instr[] instructions, boolean rebuild) {
-        super(scope, instructions, rebuild);
+    public ClosureInterpreterContext(IRClosure scope, List<Instr> instructions) {
+        super(scope, instructions);
     }
 
     /**

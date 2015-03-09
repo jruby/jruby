@@ -1,6 +1,8 @@
 package org.jruby.ir;
 
+import java.util.EnumSet;
 import org.jruby.RubyInstanceConfig;
+import org.jruby.ir.instructions.Instr;
 import org.jruby.ir.listeners.IRScopeListener;
 import org.jruby.ir.listeners.InstructionsListener;
 import org.jruby.ir.operands.*;
@@ -14,12 +16,23 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
+import org.jruby.ir.passes.DeadCodeElimination;
+import org.jruby.ir.passes.OptimizeDelegationPass;
+import org.jruby.ir.passes.OptimizeDynScopesPass;
+import org.jruby.ir.passes.OptimizeTempVarsPass;
+
+import static org.jruby.ir.IRFlags.RECEIVES_CLOSURE_ARG;
+import static org.jruby.ir.IRFlags.REQUIRES_DYNSCOPE;
 
 public class IRManager {
     public static final String SAFE_COMPILER_PASSES = "";
-    public static final String DEFAULT_COMPILER_PASSES = "OptimizeTempVarsPass,LocalOptimizationPass";
-    public static final String DEFAULT_JIT_PASSES = "OptimizeDelegationPass,DeadCodeElimination,AddLocalVarLoadStoreInstructions,OptimizeDynScopesPass,AddCallProtocolInstructions,EnsureTempsAssigned";
+    public static final String DEFAULT_BUILD_PASSES = "LocalOptimizationPass";
+    public static final String DEFAULT_JIT_PASSES = "LocalOptimizationPass,OptimizeDelegationPass,DeadCodeElimination,AddLocalVarLoadStoreInstructions,OptimizeDynScopesPass,AddCallProtocolInstructions,EnsureTempsAssigned";
     public static final String DEFAULT_INLINING_COMPILER_PASSES = "LocalOptimizationPass";
+
+    private final CompilerPass deadCodeEliminationPass = new DeadCodeElimination();
+    private final CompilerPass optimizeDynScopesPass = new OptimizeDynScopesPass();
+    private final CompilerPass optimizeDelegationPass = new OptimizeDelegationPass();
 
     private int dummyMetaClassCount = 0;
     private final IRModuleBody object = new IRClassBody(this, null, "Object", "", 0, null);
@@ -40,12 +53,14 @@ public class IRManager {
     private List<CompilerPass> inliningCompilerPasses;
     private List<CompilerPass> jitPasses;
     private List<CompilerPass> safePasses;
+    private final RubyInstanceConfig config;
 
     // If true then code will not execute (see ir/ast tool)
     private boolean dryRun = false;
 
-    public IRManager() {
-        compilerPasses = CompilerPass.getPassesFromString(RubyInstanceConfig.IR_COMPILER_PASSES, DEFAULT_COMPILER_PASSES);
+    public IRManager(RubyInstanceConfig config) {
+        this.config = config;
+        compilerPasses = CompilerPass.getPassesFromString(RubyInstanceConfig.IR_COMPILER_PASSES, DEFAULT_BUILD_PASSES);
         inliningCompilerPasses = CompilerPass.getPassesFromString(RubyInstanceConfig.IR_COMPILER_PASSES, DEFAULT_INLINING_COMPILER_PASSES);
         jitPasses = CompilerPass.getPassesFromString(RubyInstanceConfig.IR_JIT_PASSES, DEFAULT_JIT_PASSES);
         safePasses = CompilerPass.getPassesFromString(null, SAFE_COMPILER_PASSES);
@@ -202,5 +217,31 @@ public class IRManager {
         }
 
         return tempVar;
+    }
+
+    public Instr[] optimizeTemporaryVariablesIfEnabled(IRScope scope, Instr[] instrs) {
+        // FIXME: Make this check ir.passes and not run if ir.passes is set and does not contain opttempvars.
+        return OptimizeTempVarsPass.optimizeTmpVars(scope, instrs);
+    }
+
+    /**
+     * For scopes that don't require a dynamic scope we can run DCE and some other passes which cannot
+     * be stymied by escaped bindings.
+     */
+    protected void optimizeIfSimpleScope(IRScope scope) {
+        // We cannot pick the passes if we want an explicit set to run.
+        if (RubyInstanceConfig.IR_COMPILER_PASSES != null) return;
+
+        EnumSet<IRFlags> flags = scope.getFlags();
+
+        if (!scope.isUnsafeScope() && !flags.contains(REQUIRES_DYNSCOPE)) {
+            if (flags.contains(RECEIVES_CLOSURE_ARG)) optimizeDelegationPass.run(scope);
+            deadCodeEliminationPass.run(scope);
+            optimizeDynScopesPass.run(scope);
+        }
+    }
+
+    public RubyInstanceConfig getInstanceConfig() {
+        return config;
     }
 }

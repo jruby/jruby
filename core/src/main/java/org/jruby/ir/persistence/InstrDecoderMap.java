@@ -163,7 +163,7 @@ class InstrDecoderMap implements IRPersistenceValues {
 
         Operand closure = hasClosureArg ? d.decodeOperand() : null;
 
-        return CallInstr.create(CallType.fromOrdinal(callTypeOrdinal), result, methAddr, receiver, args, closure);
+        return CallInstr.create(d.getCurrentScope(), CallType.fromOrdinal(callTypeOrdinal), result, methAddr, receiver, args, closure);
     }
 
     private Instr decodeFrame() {

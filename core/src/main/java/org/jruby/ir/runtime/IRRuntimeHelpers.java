@@ -12,10 +12,9 @@ import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.internal.runtime.methods.InterpretedIRBodyMethod;
 import org.jruby.internal.runtime.methods.InterpretedIRMetaClassBody;
 import org.jruby.internal.runtime.methods.InterpretedIRMethod;
+import org.jruby.internal.runtime.methods.MixedModeIRMethod;
 import org.jruby.internal.runtime.methods.UndefinedMethod;
-import org.jruby.ir.IRClassBody;
 import org.jruby.ir.IRMetaClassBody;
-import org.jruby.ir.IRModuleBody;
 import org.jruby.ir.IRScope;
 import org.jruby.ir.IRScopeType;
 import org.jruby.ir.Interp;
@@ -25,7 +24,6 @@ import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.Splat;
 import org.jruby.ir.operands.UndefinedValue;
 import org.jruby.javasupport.JavaUtil;
-import org.jruby.parser.StaticScope;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.*;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -41,7 +39,6 @@ import org.jruby.util.log.LoggerFactory;
 import org.objectweb.asm.Type;
 
 import java.lang.invoke.MethodHandle;
-import java.util.Arrays;
 
 public class IRRuntimeHelpers {
     private static final Logger LOG = LoggerFactory.getLogger("IRRuntimeHelpers");
@@ -1149,7 +1146,13 @@ public class IRRuntimeHelpers {
     public static void defInterpretedClassMethod(ThreadContext context, IRScope method, IRubyObject obj) {
         RubyClass rubyClass = checkClassForDef(context, method, obj);
 
-        rubyClass.addMethod(method.getName(), new InterpretedIRMethod(method, Visibility.PUBLIC, rubyClass));
+        DynamicMethod newMethod;
+        if (context.runtime.getInstanceConfig().getCompileMode() == RubyInstanceConfig.CompileMode.OFF) {
+            newMethod = new InterpretedIRMethod(method, Visibility.PUBLIC, rubyClass);
+        } else {
+            newMethod = new MixedModeIRMethod(method, Visibility.PUBLIC, rubyClass);
+        }
+        rubyClass.addMethod(method.getName(), newMethod);
         obj.callMethod(context, "singleton_method_added", context.runtime.fastNewSymbol(method.getName()));
     }
 
@@ -1182,14 +1185,19 @@ public class IRRuntimeHelpers {
     @Interp
     public static void defInterpretedInstanceMethod(ThreadContext context, IRScope method, DynamicScope currDynScope, IRubyObject self) {
         Ruby runtime = context.runtime;
-        RubyModule clazz = findInstanceMethodContainer(context, currDynScope, self);
+        RubyModule rubyClass = findInstanceMethodContainer(context, currDynScope, self);
 
         Visibility currVisibility = context.getCurrentVisibility();
-        Visibility newVisibility = Helpers.performNormalMethodChecksAndDetermineVisibility(runtime, clazz, method.getName(), currVisibility);
+        Visibility newVisibility = Helpers.performNormalMethodChecksAndDetermineVisibility(runtime, rubyClass, method.getName(), currVisibility);
 
-        DynamicMethod newMethod = new InterpretedIRMethod(method, newVisibility, clazz);
+        DynamicMethod newMethod;
+        if (context.runtime.getInstanceConfig().getCompileMode() == RubyInstanceConfig.CompileMode.OFF) {
+            newMethod = new InterpretedIRMethod(method, newVisibility, rubyClass);
+        } else {
+            newMethod = new MixedModeIRMethod(method, newVisibility, rubyClass);
+        }
 
-        Helpers.addInstanceMethod(clazz, method.getName(), newMethod, currVisibility, context, runtime);
+        Helpers.addInstanceMethod(rubyClass, method.getName(), newMethod, currVisibility, context, runtime);
     }
 
     @JIT

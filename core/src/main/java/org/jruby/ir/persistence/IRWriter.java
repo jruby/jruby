@@ -42,9 +42,7 @@ public class IRWriter {
     private static void persistScopeInstrs(IRWriterEncoder file, IRScope scope) {
         file.startEncodingScopeInstrs(scope);
 
-        List<Instr> instrs = scope.getInstrs();
-
-        for (Instr instr: instrs) {
+        for (Instr instr: scope.getInterpreterContext().getInstructions()) {
             file.encode(instr);
         }
 
@@ -85,7 +83,6 @@ public class IRWriter {
             IRClosure closure = (IRClosure) scope;
 
             file.encode(closure.getSignature().encode());
-            file.encode(closure.getArgumentType());
         }
 
         persistStaticScope(file, scope.getStaticScope());

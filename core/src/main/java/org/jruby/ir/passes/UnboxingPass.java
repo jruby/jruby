@@ -7,7 +7,7 @@ import java.util.Arrays;
 import java.util.List;
 
 public class UnboxingPass extends CompilerPass {
-    public static List<Class<? extends CompilerPass>> DEPENDENCIES = Arrays.<Class<? extends CompilerPass>>asList(CFGBuilder.class, LiveVariableAnalysis.class);
+    public static List<Class<? extends CompilerPass>> DEPENDENCIES = Arrays.<Class<? extends CompilerPass>>asList(LiveVariableAnalysis.class);
 
     public String getLabel() {
         return "Unboxing Pass";
@@ -34,7 +34,7 @@ public class UnboxingPass extends CompilerPass {
 
     @Override
     public Object previouslyRun(IRScope scope) {
-        return scope.getDataFlowSolution(UnboxableOpsAnalysisProblem.NAME);
+        return scope.getUnboxableOpsAnalysisProblem();
     }
 
     public boolean invalidate(IRScope scope) {

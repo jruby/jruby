@@ -1,0 +1,3 @@
+fails:Hash literal calls #to_hash to convert an '**obj' element
+fails:Hash literal merges the containing Hash into the **obj before importing obj's items
+fails:Hash literal merges multiple nested '**obj' in Hash literals

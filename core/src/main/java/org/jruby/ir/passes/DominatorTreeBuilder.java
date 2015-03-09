@@ -12,16 +12,10 @@ import java.util.*;
 public class DominatorTreeBuilder extends CompilerPass {
     private static int NULL = -1;
     private static final Logger LOG = LoggerFactory.getLogger("DominatorTreeBuilder");
-    public static List<Class<? extends CompilerPass>> DEPENDENCIES = Arrays.<Class<? extends CompilerPass>>asList(CFGBuilder.class);
 
     @Override
     public String getLabel() {
         return "Build Dominator Tree";
-    }
-
-    @Override
-    public List<Class<? extends CompilerPass>> getDependencies() {
-        return DEPENDENCIES;
     }
 
     @Override
@@ -31,7 +25,7 @@ public class DominatorTreeBuilder extends CompilerPass {
         try {
             buildDominatorTree(cfg, cfg.postOrderList(), cfg.getMaxNodeID());
         } catch (Exception e) {
-            LOG.debug("Caught exception building dom tree for {}", scope.cfg());
+            LOG.debug("Caught exception building dom tree for {}", scope.getCFG());
         }
 
         return null;

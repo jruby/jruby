@@ -1,33 +1,29 @@
 package org.jruby.ir.interpreter;
 
-import org.jruby.ir.IRClassBody;
-import org.jruby.ir.IREvalScript;
+import java.util.Collection;
+import java.util.List;
+import org.jruby.ir.IRClosure;
 import org.jruby.ir.IRFlags;
 import org.jruby.ir.IRMetaClassBody;
 import org.jruby.ir.IRMethod;
 import org.jruby.ir.IRModuleBody;
 import org.jruby.ir.IRScope;
 import org.jruby.ir.instructions.Instr;
+import org.jruby.ir.instructions.LabelInstr;
 import org.jruby.ir.representations.CFG;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 
 public class InterpreterContext {
-    private final int temporaryVariablecount;
-    private final int temporaryBooleanVariablecount;
-    private final int temporaryFixnumVariablecount;
-    private final int temporaryFloatVariablecount;
+    protected int temporaryVariablecount;
 
-    private final String name;
-    private final String fileName;
-    private final int lineNumber;
-    private final StaticScope staticScope;
-    private final Instr[] instructions;
+    // startup interp will mark this at construction and not change but full interpreter will write it
+    // much later after running compiler passes.  JIT will not use this field at all.
+    protected Instr[] instructions;
 
     // Cached computed fields
     private final boolean hasExplicitCallProtocol;
-    private final boolean isDynscopeEliminated;
     private final boolean pushNewDynScope;
     private final boolean reuseParentDynScope;
     private final boolean popDynScope;
@@ -36,68 +32,67 @@ public class InterpreterContext {
 
     private final static InterpreterEngine BODY_INTERPRETER = new BodyInterpreterEngine();
     private final static InterpreterEngine DEFAULT_INTERPRETER = new InterpreterEngine();
+    private final static InterpreterEngine STARTUP_INTERPRETER = new StartupInterpreterEngine();
     private final static InterpreterEngine SIMPLE_METHOD_INTERPRETER = new InterpreterEngine();
     public final InterpreterEngine engine;
 
-    // FIXME: Hack this should be a clone eventually since JIT might change this.  Comment for it reflects what it should be.
-    // View of CFG at time of creating this context.
-    private CFG cfg = null;
+    private IRScope scope;
 
-    private int runCount = 0;
-    private boolean rebuilt = false;
+    public InterpreterContext(IRScope scope, List<Instr> instructions) {
+        this.scope = scope;
 
-    public InterpreterContext(IRScope scope, Instr[] instructions, boolean rebuild) {
-        //FIXME: Remove once we conditionally plug in CFG on debug-only
-        this.cfg = scope.getCFG();
-        this.rebuilt = rebuild;
-        if (this.rebuilt) {
-            this.runCount = 30;
-        }
+        // FIXME: Hack null instructions means coming from FullInterpreterContext but this should be way cleaner
+        // For impl testing - engine = determineInterpreterEngine(scope);
+        engine = instructions == null ? DEFAULT_INTERPRETER : STARTUP_INTERPRETER;
 
-/*
-        if (scope instanceof IRModuleBody || scope instanceof IRClassBody) {
-            engine = BODY_INTERPRETER;
-        // ENEBO: Playing with unboxable and subset instruction sets
-        //} else if (scope instanceof IRMethod && scope.getFlags().contains(IRFlags.SIMPLE_METHOD)) {
-        //    engine = SIMPLE_METHOD_INTERPRETER;
-        } else {
-            engine = DEFAULT_INTERPRETER;
-        }
-*/
-        engine = DEFAULT_INTERPRETER;
-
-        this.name = scope.getName();
-        this.fileName = scope.getFileName();
-        this.lineNumber = scope.getLineNumber();
-        this.staticScope = scope.getStaticScope();
         this.metaClassBodyScope = scope instanceof IRMetaClassBody;
         this.temporaryVariablecount = scope.getTemporaryVariablesCount();
-        this.temporaryBooleanVariablecount = scope.getBooleanVariablesCount();
-        this.temporaryFixnumVariablecount = scope.getFixnumVariablesCount();
-        this.temporaryFloatVariablecount = scope.getFloatVariablesCount();
-        this.instructions = instructions;
+        this.instructions = instructions != null ? prepareBuildInstructions(instructions) : null;
         this.hasExplicitCallProtocol = scope.getFlags().contains(IRFlags.HAS_EXPLICIT_CALL_PROTOCOL);
         this.reuseParentDynScope = scope.getFlags().contains(IRFlags.REUSE_PARENT_DYNSCOPE);
-        this.isDynscopeEliminated = scope.getFlags().contains(IRFlags.DYNSCOPE_ELIMINATED);
-        this.pushNewDynScope = !isDynscopeEliminated && !reuseParentDynScope;
+        this.pushNewDynScope = !scope.getFlags().contains(IRFlags.DYNSCOPE_ELIMINATED) && !reuseParentDynScope;
         this.popDynScope = this.pushNewDynScope || this.reuseParentDynScope;
         this.receivesKeywordArguments = scope.getFlags().contains(IRFlags.RECEIVES_KEYWORD_ARGS);
     }
 
+    private InterpreterEngine determineInterpreterEngine(IRScope scope) {
+        if (scope instanceof IRModuleBody) {
+            return BODY_INTERPRETER;
+        } else if (scope instanceof IRMethod && scope.getFlags().contains(IRFlags.SIMPLE_METHOD)) {
+            return SIMPLE_METHOD_INTERPRETER; // ENEBO: Playing with unboxable and subset instruction sets
+        } else {
+            return DEFAULT_INTERPRETER;
+        }
+    }
+
+    private Instr[] prepareBuildInstructions(List<Instr> instructions) {
+        int length = instructions.size();
+        Instr[] linearizedInstrArray = instructions.toArray(new Instr[length]);
+        for (int ipc = 0; ipc < length; ipc++) {
+            Instr i = linearizedInstrArray[ipc];
+            i.setIPC(ipc);
+
+            if (i instanceof LabelInstr) ((LabelInstr) i).getLabel().setTargetPC(ipc + 1);
+        }
+
+        return linearizedInstrArray;
+    }
+
+    public IRScope getScope() {
+        return scope;
+    }
+
+    /**
+     * Is the build complete?  For startup builds, which this class represents, we finish build in the constructor
+     * so it is always complete.  For FullInterpreterContext this is more complicated (see javadocs there for more
+     * info).
+     */
+    public boolean buildComplete() {
+        return true;
+    }
+
     public CFG getCFG() {
-        return this.cfg;
-    }
-
-    public boolean isRebuilt() {
-        return this.rebuilt;
-    }
-
-    public void incrementRunCount() {
-        this.runCount++;
-    }
-
-    public boolean needsRebuilding() {
-        return this.runCount == 30;
+        return null;
     }
 
     public Object[] allocateTemporaryVariables() {
@@ -105,47 +100,37 @@ public class InterpreterContext {
     }
 
     public boolean[] allocateTemporaryBooleanVariables() {
-        return temporaryBooleanVariablecount > 0 ? new boolean[temporaryBooleanVariablecount] : null;
+        return null;
     }
 
     public long[] allocateTemporaryFixnumVariables() {
-        return temporaryFixnumVariablecount > 0 ? new long[temporaryFixnumVariablecount] : null;
+        return null;
     }
 
     public double[] allocateTemporaryFloatVariables() {
-        return temporaryFloatVariablecount > 0 ? new double[temporaryFloatVariablecount] : null;
-    }
-
-    public String getFileName() {
-        return fileName;
+        return null;
     }
 
     public StaticScope getStaticScope() {
-        return staticScope;
+        return scope.getStaticScope();
     }
 
-    public int getTemporaryVariablecount() {
-        return temporaryVariablecount;
+    public String getFileName() {
+        return scope.getFileName();
     }
 
-    public int getTemporaryBooleanVariablecount() {
-        return temporaryBooleanVariablecount;
-    }
-
-    public int getTemporaryFixnumVariablecount() {
-        return temporaryFixnumVariablecount;
-    }
-
-    public int getTemporaryFloatVariablecount() {
-        return temporaryFloatVariablecount;
+    public String getName() {
+        return scope.getName();
     }
 
     public Instr[] getInstructions() {
         return instructions;
     }
 
-    public boolean isDynscopeEliminated() {
-        return isDynscopeEliminated;
+    public void computeScopeFlagsFromInstructions() {
+        for (Instr instr : getInstructions()) {
+            instr.computeScopeFlags(scope);
+        }
     }
 
     /**
@@ -154,9 +139,9 @@ public class InterpreterContext {
     public DynamicScope newDynamicScope(ThreadContext context) {
         // Add a parent-link to current dynscope to support non-local returns cheaply. This doesn't
         // affect variable scoping since local variables will all have the right scope depth.
-        if (metaClassBodyScope) return DynamicScope.newDynamicScope(staticScope, context.getCurrentScope());
+        if (metaClassBodyScope) return DynamicScope.newDynamicScope(getStaticScope(), context.getCurrentScope());
 
-        return DynamicScope.newDynamicScope(staticScope);
+        return DynamicScope.newDynamicScope(getStaticScope());
     }
 
     public boolean hasExplicitCallProtocol() {
@@ -183,11 +168,11 @@ public class InterpreterContext {
     public String toString() {
         StringBuilder buf = new StringBuilder();
 
-        buf.append(fileName).append(':').append(lineNumber);
-        if (name != null) buf.append(' ').append(name);
+        buf.append(getFileName()).append(':').append(scope.getLineNumber());
+        if (getName() != null) buf.append(' ').append(getName());
 
-        if (cfg != null) {
-            buf.append("\nCFG:\n").append(cfg.toStringInstrs());
+        if (instructions == null) {
+            buf.append("No Instructions.  Full Build before linearizeInstr?");
         } else {
             int i = 0;
             for (Instr instr : instructions) {
@@ -198,5 +183,25 @@ public class InterpreterContext {
         }
 
         return buf.toString();
+    }
+
+    public String toStringInstrs() {
+        StringBuilder b = new StringBuilder();
+        int length = instructions.length;
+
+        for (int i = 0; i < length; i++) {
+            if (i > 0) b.append("\n");
+            b.append("  ").append(i).append('\t').append(instructions[i]);
+        }
+
+        Collection<IRClosure> nestedClosures = scope.getClosures();
+        if (nestedClosures != null && !nestedClosures.isEmpty()) {
+            b.append("\n\n------ Closures encountered in this scope ------\n");
+            for (IRClosure c: nestedClosures)
+                b.append(c.toStringBody());
+            b.append("------------------------------------------------\n");
+        }
+
+        return b.toString();
     }
 }

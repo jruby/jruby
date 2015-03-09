@@ -313,4 +313,105 @@ class Hash
 
   alias_method :has_value?, :value?
 
+  def eql?(other)
+    # Just like ==, but uses eql? to compare values.
+    return true if self.equal? other
+    unless other.kind_of? Hash
+      return false unless other.respond_to? :to_hash
+      return other.eql?(self)
+    end
+
+    return false unless other.size == size
+
+    Thread.detect_recursion self, other do
+      each_item do |item|
+        other_item = other.find_item(item.key)
+
+        # Other doesn't even have this key
+        return false unless other_item
+
+        # Order of the comparison matters! We must compare our value with
+        # the other Hash's value and not the other way around.
+        unless Rubinius::Type::object_equal(item.value, other_item.value) or
+               item.value.eql?(other_item.value)
+          return false
+        end
+      end
+    end
+    true
+  end
+
+  def ==(other)
+    return true if self.equal? other
+    unless other.kind_of? Hash
+      return false unless other.respond_to? :to_hash
+      return other == self
+    end
+
+    return false unless other.size == size
+
+    Thread.detect_recursion self, other do
+      each_item do |item|
+        other_item = other.find_item(item.key)
+
+        # Other doesn't even have this key
+        return false unless other_item
+
+        # Order of the comparison matters! We must compare our value with
+        # the other Hash's value and not the other way around.
+        unless Rubinius::Type::object_equal(item.value, other_item.value) or
+               item.value == other_item.value
+          return false
+        end
+      end
+    end
+    true
+  end
+
+  # Renamed version of the Rubinius Hash#[] method
+  #def self.[](*args)
+  def self._constructor_fallback(*args)
+    if args.size == 1
+      obj = args.first
+      if hash = Rubinius::Type.check_convert_type(obj, Hash, :to_hash)
+        new_hash = allocate.replace(hash)
+        new_hash.default = nil
+        return new_hash
+      elsif associate_array = Rubinius::Type.check_convert_type(obj, Array, :to_ary)
+        return new_from_associate_array(associate_array)
+      end
+    end
+
+    return new if args.empty?
+
+    if args.size & 1 == 1
+      raise ArgumentError, "Expected an even number, got #{args.length}"
+    end
+
+    hash = new
+    i = 0
+    total = args.size
+
+    while i < total
+      hash[args[i]] = args[i+1]
+      i += 2
+    end
+
+    hash
+  end
+
+  def self.new_from_associate_array(associate_array)
+    hash = new
+    associate_array.each do |array|
+      next unless array.respond_to? :to_ary
+      array = array.to_ary
+      unless (1..2).cover? array.size
+        raise ArgumentError, "invalid number of elements (#{array.size} for 1..2)"
+      end
+      hash[array.at(0)] = array.at(1)
+    end
+    hash
+  end
+  private_class_method :new_from_associate_array
+
 end

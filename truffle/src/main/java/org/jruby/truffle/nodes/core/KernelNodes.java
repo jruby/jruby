@@ -217,7 +217,7 @@ public abstract class KernelNodes {
 
         public CompareNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            equalNode = SameOrEqualNodeFactory.create(context, sourceSection, new RubyNode[] { null, null });
+            equalNode = SameOrEqualNodeFactory.create(context, sourceSection, new RubyNode[]{null, null});
         }
 
         public CompareNode(CompareNode prev) {
@@ -1267,6 +1267,25 @@ public abstract class KernelNodes {
         }
     }
 
+    @CoreMethod(names = "__method__", needsSelf = false)
+    public abstract static class MethodNameNode extends CoreMethodNode {
+
+        public MethodNameNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public MethodNameNode(MethodNameNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public RubySymbol methodName(VirtualFrame frame) {
+            notDesignedForCompilation();
+            return getContext().getSymbolTable().getSymbol(RubyCallStack.getCallingMethod(frame).getSharedMethodInfo().getName());
+        }
+
+    }
+
     @CoreMethod(names = "method", required = 1)
     public abstract static class MethodNode extends CoreMethodNode {
 
@@ -1515,6 +1534,15 @@ public abstract class KernelNodes {
             }
 
             throw new RaiseException((RubyException) exception);
+        }
+
+        // This provokes an error under standard Ruby:
+        //   TypeError: backtrace must be Array of String
+        // but is used in Rubinius in coerce_to_failed for instance.
+        @Specialization
+        public Object raise(VirtualFrame frame, RubyClass exceptionClass, RubyString message, RubyException backtrace) {
+            // TODO (9 Mar. 2015): handle "backtrace" as an MRI "cause".
+            return raise(frame, exceptionClass, message, UndefinedPlaceholder.INSTANCE);
         }
 
         @Specialization

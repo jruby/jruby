@@ -135,8 +135,6 @@ public abstract class CoreMethodNodeManager {
     private static RubyRootNode makeGenericMethod(RubyContext context, MethodDetails methodDetails, boolean needsSelf) {
         final CoreSourceSection sourceSection = new CoreSourceSection(methodDetails.getClassAnnotation().name(), methodDetails.getMethodAnnotation().names()[0]);
 
-        final SharedMethodInfo sharedMethodInfo = new SharedMethodInfo(sourceSection, null, methodDetails.getIndicativeName(), false, null, true);
-
         final int required = methodDetails.getMethodAnnotation().required();
         final int optional;
 
@@ -147,6 +145,8 @@ public abstract class CoreMethodNodeManager {
         }
 
         final Arity arity = new Arity(required,  optional, methodDetails.getMethodAnnotation().argumentsAsArray(), false);
+
+        final SharedMethodInfo sharedMethodInfo = new SharedMethodInfo(sourceSection, null, arity, methodDetails.getIndicativeName(), false, null, true);
 
         final List<RubyNode> argumentsNodes = new ArrayList<>();
 

@@ -22,7 +22,7 @@ public abstract class FlowGraphNode<T extends DataFlowProblem<T, U>, U extends F
         this.basicBlock = basicBlock;
 
         // Cache the rescuer node for easy access
-        rescuer = problem.getScope().cfg().getRescuerBBFor(basicBlock);
+        rescuer = problem.getScope().getCFG().getRescuerBBFor(basicBlock);
     }
 
     /**

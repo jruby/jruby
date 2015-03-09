@@ -1,5 +1,7 @@
 package org.jruby.ir;
 
+import java.util.ArrayList;
+import java.util.List;
 import org.jruby.ir.instructions.*;
 import org.jruby.ir.interpreter.ClosureInterpreterContext;
 import org.jruby.ir.interpreter.InterpreterContext;
@@ -24,15 +26,12 @@ public class IRClosure extends IRScope {
     public final Label endLabel;   // Label for the end of the closure (used to implement retry)
     public final int closureId;    // Unique id for this closure within the nearest ancestor method.
 
-    private int nestingDepth;      // How many nesting levels within a method is this closure nested in?
-
     private boolean isBeginEndBlock;
 
     /** The parameter names, for Proc#parameters */
     private String[] parameterList;
 
     private Signature signature;
-    private int argumentType;
 
     /** Added for interp/JIT purposes */
     private IRBlockBody body;
@@ -50,15 +49,6 @@ public class IRClosure extends IRScope {
         setName(prefix + closureId);
         this.body = null;
         this.parameterList = new String[] {};
-
-        // set nesting depth
-        int n = 0;
-        IRScope s = this.getLexicalParent();
-        while (s instanceof IRClosure) {
-            n++;
-            s = s.getLexicalParent();
-        }
-        this.nestingDepth = n;
     }
 
     /** Used by cloning code */
@@ -78,17 +68,16 @@ public class IRClosure extends IRScope {
         this.signature = c.signature;
     }
 
-    public IRClosure(IRManager manager, IRScope lexicalParent, int lineNumber, StaticScope staticScope, Signature signature, int argumentType) {
-        this(manager, lexicalParent, lineNumber, staticScope, signature, argumentType, "_CLOSURE_");
+    public IRClosure(IRManager manager, IRScope lexicalParent, int lineNumber, StaticScope staticScope, Signature signature) {
+        this(manager, lexicalParent, lineNumber, staticScope, signature, "_CLOSURE_");
     }
 
-    public IRClosure(IRManager manager, IRScope lexicalParent, int lineNumber, StaticScope staticScope, Signature signature, int argumentType, String prefix) {
-        this(manager, lexicalParent, lineNumber, staticScope, signature, argumentType, prefix, false);
+    public IRClosure(IRManager manager, IRScope lexicalParent, int lineNumber, StaticScope staticScope, Signature signature, String prefix) {
+        this(manager, lexicalParent, lineNumber, staticScope, signature, prefix, false);
     }
 
-    public IRClosure(IRManager manager, IRScope lexicalParent, int lineNumber, StaticScope staticScope, Signature signature, int argumentType, String prefix, boolean isBeginEndBlock) {
+    public IRClosure(IRManager manager, IRScope lexicalParent, int lineNumber, StaticScope staticScope, Signature signature, String prefix, boolean isBeginEndBlock) {
         this(manager, lexicalParent, lexicalParent.getFileName(), lineNumber, staticScope, prefix);
-        this.argumentType = argumentType;
         this.signature = signature;
         lexicalParent.addClosure(this);
 
@@ -101,13 +90,13 @@ public class IRClosure extends IRScope {
                 staticScope.setScopeType(this.getScopeType());
             }
         }
-
-        this.nestingDepth++;
     }
 
     @Override
-    public InterpreterContext allocateInterpreterContext(Instr[] instructionList, boolean rebuild) {
-        return new ClosureInterpreterContext(this, instructionList, rebuild);
+    public InterpreterContext allocateInterpreterContext(List<Instr> instructions) {
+        interpreterContext = new ClosureInterpreterContext(this, instructions);
+
+        return interpreterContext;
     }
 
     public void setBeginEndBlock() {
@@ -174,17 +163,7 @@ public class IRClosure extends IRScope {
     }
 
     public String toStringBody() {
-        StringBuilder buf = new StringBuilder();
-        buf.append(getName()).append(" = { \n");
-
-        CFG c = getCFG();
-        if (c != null) {
-            buf.append("\nCFG:\n").append(c.toStringGraph()).append("\nInstructions:\n").append(c.toStringInstrs());
-        } else {
-            buf.append(toStringInstrs());
-        }
-        buf.append("\n}\n\n");
-        return buf.toString();
+        return new StringBuilder(getName()).append(" = {\n").append(toStringInstrs()).append("\n}\n\n").toString();
     }
 
     public BlockBody getBlockBody() {
@@ -203,7 +182,7 @@ public class IRClosure extends IRScope {
 
     public LocalVariable getNewLocalVariable(String name, int depth) {
         if (depth == 0 && !(this instanceof IRFor)) {
-            LocalVariable lvar = new ClosureLocalVariable(this, name, 0, getStaticScope().addVariableThisScope(name));
+            LocalVariable lvar = new ClosureLocalVariable(name, 0, getStaticScope().addVariableThisScope(name));
             localVars.put(name, lvar);
             return lvar;
         } else {
@@ -268,12 +247,7 @@ public class IRClosure extends IRScope {
         return lvar;
     }
 
-    public int getNestingDepth() {
-        return nestingDepth;
-    }
-
     protected IRClosure cloneForInlining(CloneInfo ii, IRClosure clone) {
-        clone.nestingDepth  = this.nestingDepth;
         // SSS FIXME: This is fragile. Untangle this state.
         // Why is this being copied over to InterpretedIRBlockBody?
         clone.setParameterList(this.parameterList);
@@ -281,13 +255,18 @@ public class IRClosure extends IRScope {
 
         SimpleCloneInfo clonedII = ii.cloneForCloningClosure(clone);
 
-        if (getCFG() != null) {
-            clone.setCFG(getCFG().clone(clonedII, clone));
-        } else {
-            for (Instr i: getInstrs()) {
-                clone.addInstr(i.clone(clonedII));
-            }
+//        if (getCFG() != null) {
+//            clone.setCFG(getCFG().clone(clonedII, clone));
+//        } else {
+        List<Instr> newInstrs = new ArrayList<>(interpreterContext.getInstructions().length);
+
+        for (Instr i: interpreterContext.getInstructions()) {
+            newInstrs.add(i.clone(clonedII));
         }
+
+        clone.allocateInterpreterContext(newInstrs);
+
+//        }
 
         return clone;
     }
@@ -323,10 +302,6 @@ public class IRClosure extends IRScope {
 
     public Signature getSignature() {
         return signature;
-    }
-
-    public int getArgumentType() {
-        return argumentType;
     }
 
     public void setHandle(Handle handle) {

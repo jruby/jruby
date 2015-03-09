@@ -8,7 +8,6 @@ import org.jcodings.Encoding;
 import org.jcodings.EncodingDB;
 import org.jruby.*;
 import org.jruby.common.IRubyWarnings;
-import org.jruby.compiler.Constantizable;
 import org.jruby.internal.runtime.methods.*;
 import org.jruby.ir.JIT;
 import org.jruby.ir.operands.UndefinedValue;
@@ -24,7 +23,6 @@ import org.jruby.runtime.ivars.FieldVariableAccessor;
 import org.jruby.runtime.ivars.VariableAccessor;
 import org.jruby.runtime.opto.OptoFactory;
 import org.jruby.util.ByteList;
-import org.jruby.util.RegexpOptions;
 import org.jruby.util.cli.Options;
 import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
@@ -303,8 +301,8 @@ public class Bootstrap {
 
         if (method instanceof CompiledIRMethod) {
             compiledIRMethod = (CompiledIRMethod)method;
-        } else if (method instanceof InterpretedIRMethod) {
-            DynamicMethod actualMethod = ((InterpretedIRMethod)method).getActualMethod();
+        } else if (method instanceof MixedModeIRMethod) {
+            DynamicMethod actualMethod = ((MixedModeIRMethod)method).getActualMethod();
             if (actualMethod instanceof CompiledIRMethod) {
                 compiledIRMethod = (CompiledIRMethod)actualMethod;
             }

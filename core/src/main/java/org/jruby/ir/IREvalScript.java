@@ -35,8 +35,10 @@ public class IREvalScript extends IRClosure {
     }
 
     @Override
-    public InterpreterContext allocateInterpreterContext(Instr[] instructionList, boolean rebuild) {
-        return new BeginEndInterpreterContext(this, instructionList, rebuild);
+    public InterpreterContext allocateInterpreterContext(List<Instr> instructions) {
+        interpreterContext =  new BeginEndInterpreterContext(this, instructions);
+
+        return interpreterContext;
     }
 
     @Override

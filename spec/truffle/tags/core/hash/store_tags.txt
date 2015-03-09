@@ -1,1 +1,0 @@
-fails:Hash#store doesn't duplicate and freeze already frozen string keys

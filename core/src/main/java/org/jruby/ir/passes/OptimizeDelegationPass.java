@@ -11,31 +11,25 @@ import org.jruby.ir.representations.BasicBlock;
 import java.util.*;
 
 public class OptimizeDelegationPass extends CompilerPass {
-    public static List<Class<? extends CompilerPass>> DEPENDENCIES = Arrays.<Class<? extends CompilerPass>>asList(CFGBuilder.class);
-
     @Override
     public String getLabel() {
         return "Delegated Variable Removal";
     }
 
     @Override
-    public List<Class<? extends CompilerPass>> getDependencies() {
-        return DEPENDENCIES;
-    }
-
-    @Override
     public Object execute(IRScope s, Object... data) {
+        /**
+         * SSS FIXME: too late at night to think straight if this
+         * is required to run on all nested scopes or not. Doesn't
+         * look like it, but leaving behind in case it is.
+         *
         for (IRClosure c: s.getClosures()) {
             run(c, false, true);
         }
+         **/
 
-        s.computeScopeFlags();
-
-        if (s.getFlags().contains(IRFlags.BINDING_HAS_ESCAPED))
-            return null;
-
-        if (!s.getFlags().contains(IRFlags.RECEIVES_CLOSURE_ARG))
-            return null;
+        if (s.getFlags().contains(IRFlags.BINDING_HAS_ESCAPED)) return null;
+        if (!s.getFlags().contains(IRFlags.RECEIVES_CLOSURE_ARG)) return null;
 
         optimizeDelegatedVars(s);
 
@@ -49,9 +43,9 @@ public class OptimizeDelegationPass extends CompilerPass {
     }
 
     private static void optimizeDelegatedVars(IRScope s) {
-        Map<Operand, Operand> unusedExplicitBlocks = new HashMap<Operand, Operand>();
+        Map<Operand, Operand> unusedExplicitBlocks = new HashMap<>();
 
-        for (BasicBlock bb: s.cfg().getBasicBlocks()) {
+        for (BasicBlock bb: s.getCFG().getBasicBlocks()) {
             for (Instr i: bb.getInstrs()) {
                 if (i instanceof ReifyClosureInstr) {
                     ReifyClosureInstr ri = (ReifyClosureInstr) i;
@@ -68,7 +62,7 @@ public class OptimizeDelegationPass extends CompilerPass {
             }
         }
 
-        for (BasicBlock bb: s.cfg().getBasicBlocks()) {
+        for (BasicBlock bb: s.getCFG().getBasicBlocks()) {
             ListIterator<Instr> instrs = bb.getInstrs().listIterator();
             while (instrs.hasNext()) {
                 Instr i = instrs.next();
@@ -92,8 +86,9 @@ public class OptimizeDelegationPass extends CompilerPass {
             if (i instanceof ClosureAcceptingInstr) {
                 return usedVariables.indexOf(v) != usedVariables.lastIndexOf(v) ||
                     v != ((ClosureAcceptingInstr) i).getClosureArg();
-            } else
+            } else {
                 return true;
+            }
         }
         return false;
     }

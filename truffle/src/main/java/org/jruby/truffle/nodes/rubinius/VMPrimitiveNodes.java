@@ -163,28 +163,63 @@ public abstract class VMPrimitiveNodes {
         }
 
         @Specialization
-        public Object vmObjectEqual(boolean a, boolean b) {
+        public boolean vmObjectEqual(boolean a, boolean b) {
+            return a == b;
+        }
+
+        @Specialization(guards = "!isBoolean(b)")
+        public boolean vmObjectEqual(boolean a, Object b) {
+            return false;
+        }
+
+        @Specialization
+        public boolean vmObjectEqual(int a, int b) {
             return a == b;
         }
 
         @Specialization
-        public Object vmObjectEqual(int a, int b) {
+        public boolean vmObjectEqual(int a, long b) {
+            return a == b;
+        }
+
+        @Specialization(guards = { "!isInteger(b)", "!isLong(b)" })
+        public boolean vmObjectEqual(int a, Object b) {
+            return false;
+        }
+
+        @Specialization
+        public boolean vmObjectEqual(long a, int b) {
             return a == b;
         }
 
         @Specialization
-        public Object vmObjectEqual(long a, long b) {
+        public boolean vmObjectEqual(long a, long b) {
             return a == b;
         }
 
-        @Specialization
-        public Object vmObjectEqual(double a, double b) {
-            return a == b;
+        @Specialization(guards = { "!isInteger(b)", "!isLong(b)" })
+        public boolean vmObjectEqual(long a, Object b) {
+            return false;
         }
 
         @Specialization
-        public Object vmObjectEqual(RubyBasicObject a, RubyBasicObject b) {
+        public boolean vmObjectEqual(double a, double b) {
             return a == b;
+        }
+
+        @Specialization(guards = "!isDouble(b)")
+        public boolean vmObjectEqual(double a, Object b) {
+            return false;
+        }
+
+        @Specialization
+        public boolean vmObjectEqual(RubyBasicObject a, RubyBasicObject b) {
+            return a == b;
+        }
+
+        @Specialization(guards = "!isRubyBasicObject(b)")
+        public boolean vmObjectEqual(RubyBasicObject a, Object b) {
+            return false;
         }
 
     }

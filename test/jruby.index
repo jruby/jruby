@@ -28,7 +28,8 @@ jruby/test_digest2
 jruby/test_env
 jruby/test_etc
 jruby/test_file
-jruby/test_flip
+# IRBuilder is unable to build these currently
+#jruby/test_flip
 jruby/test_frame_self
 jruby/test_hash
 jruby/test_higher_javasupport

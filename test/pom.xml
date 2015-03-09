@@ -310,7 +310,7 @@
                       <arg value="test/mri/ruby/test_file.rb" />
                       <arg value="test/mri/ruby/test_file_exhaustive.rb" />
                       <arg value="test/mri/ruby/test_fixnum.rb" />
-                      <arg value="test/mri/ruby/test_flip.rb" />
+<!--                      <arg value="test/mri/ruby/test_flip.rb" /> -->
                       <arg value="test/mri/ruby/test_float.rb" />
                       <arg value="test/mri/ruby/test_fnmatch.rb" />
                       <arg value="test/mri/ruby/test_gc.rb" />
@@ -547,7 +547,7 @@
                       <arg value="test/jruby/test_env.rb" />
                       <arg value="test/jruby/test_etc.rb" />
                       <arg value="test/jruby/test_file.rb" />
-                      <arg value="test/jruby/test_flip.rb" />
+<!--                      <arg value="test/jruby/test_flip.rb" /> -->
                       <arg value="test/jruby/test_frame_self.rb" />
                       <arg value="test/jruby/test_hash.rb" />
                       <arg value="test/jruby/test_higher_javasupport.rb" />

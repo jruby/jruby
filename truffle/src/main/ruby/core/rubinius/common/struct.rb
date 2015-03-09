@@ -33,11 +33,16 @@ class Struct
 
   def self.new(klass_name, *attrs, &block)
     if klass_name
-      begin
-        klass_name = StringValue klass_name
-      rescue TypeError
+      if klass_name.kind_of? Symbol # Truffle: added to avoid exception and match MRI
         attrs.unshift klass_name
         klass_name = nil
+      else
+        begin
+          klass_name = StringValue klass_name
+        rescue TypeError
+          attrs.unshift klass_name
+          klass_name = nil
+        end
       end
     end
 

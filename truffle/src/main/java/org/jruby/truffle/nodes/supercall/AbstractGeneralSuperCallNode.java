@@ -67,7 +67,7 @@ public abstract class AbstractGeneralSuperCallNode extends RubyNode {
 
         currentMethod = RubyArguments.getMethod(frame.getArguments());
 
-        String name = currentMethod.getName();
+        String name = currentMethod.getSharedMethodInfo().getName(); // use the original name
         RubyModule declaringModule = currentMethod.getDeclaringModule();
 
         selfMetaClass = getContext().getCoreLibrary().getMetaClass(RubyArguments.getSelf(frame.getArguments()));

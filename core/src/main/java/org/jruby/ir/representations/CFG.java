@@ -3,6 +3,7 @@ package org.jruby.ir.representations;
 import org.jruby.dirgra.DirectedGraph;
 import org.jruby.dirgra.Edge;
 import org.jruby.ir.IRClosure;
+import org.jruby.ir.IRManager;
 import org.jruby.ir.IRScope;
 import org.jruby.ir.Operation;
 import org.jruby.ir.instructions.*;
@@ -67,6 +68,10 @@ public class CFG {
     public int getNextBBID() {
         nextBBId++;
         return nextBBId;
+    }
+
+    public IRManager getManager() {
+        return scope.getManager();
     }
 
     public int getMaxNodeID() {
@@ -152,24 +157,8 @@ public class CFG {
         return graph.findVertexFor(block).getIncomingEdges();
     }
 
-    public BasicBlock getIncomingSource(BasicBlock block) {
-        return graph.findVertexFor(block).getIncomingSourceData();
-    }
-
     public BasicBlock getIncomingSourceOfType(BasicBlock block, Object type) {
         return graph.findVertexFor(block).getIncomingSourceDataOfType(type);
-    }
-
-    public Edge<BasicBlock> getIncomingEdgeOfType(BasicBlock block, Object type) {
-        return graph.findVertexFor(block).getIncomingEdgeOfType(type);
-    }
-
-    public Edge<BasicBlock> getOutgoingEdgeOfType(BasicBlock block, Object type) {
-        return graph.findVertexFor(block).getOutgoingEdgeOfType(type);
-    }
-
-    public BasicBlock getOutgoingDestination(BasicBlock block) {
-        return graph.findVertexFor(block).getOutgoingDestinationData();
     }
 
     public BasicBlock getOutgoingDestinationOfType(BasicBlock block, Object type) {
@@ -190,10 +179,6 @@ public class CFG {
 
     public Collection<Edge<BasicBlock>> getOutgoingEdges(BasicBlock block) {
         return graph.findVertexFor(block).getOutgoingEdges();
-    }
-
-    public Iterable<Edge<BasicBlock>> getOutgoingEdgesNotOfType(BasicBlock block, Object type) {
-        return graph.findVertexFor(block).getOutgoingEdgesNotOfType(type);
     }
 
     public BasicBlock getRescuerBBFor(BasicBlock block) {
@@ -224,7 +209,7 @@ public class CFG {
     /**
      *  Build the Control Flow Graph
      */
-    public DirectedGraph<BasicBlock> build(List<Instr> instrs) {
+    public DirectedGraph<BasicBlock> build(Instr[] instrs) {
         // Map of label & basic blocks which are waiting for a bb with that label
         Map<Label, List<BasicBlock>> forwardRefs = new HashMap<>();
 
@@ -251,7 +236,7 @@ public class CFG {
         BasicBlock newBB;
         boolean bbEnded = false;
         boolean nextBBIsFallThrough = true;
-        for (Instr i : instrs) {
+        for (Instr i: instrs) {
             // System.out.println("Processing: " + i);
             Operation iop = i.getOperation();
             if (iop == Operation.LABEL) {
@@ -422,10 +407,6 @@ public class CFG {
         postOrderList = null;
     }
 
-    public void removeEdge(Edge edge) {
-        graph.removeEdge(edge);
-    }
-
     public void removeAllOutgoingEdgesForBB(BasicBlock b) {
         graph.findVertexFor(b).removeAllOutgoingEdges();
     }
@@ -550,7 +531,7 @@ public class CFG {
         //
         // If a jump intervenes in 'x', skip over it and if merge succeeds,
         // delete the jump.
-        List<Edge> toRemove = new ArrayList<>();
+        List<Edge<BasicBlock>> toRemove = new ArrayList<>();
         for (BasicBlock retBB: returnBBs) {
             List<Instr> rbInstrs = retBB.getInstrs();
             Instr first = rbInstrs.get(0);
@@ -587,7 +568,7 @@ public class CFG {
                 }
             }
         }
-        for (Edge edge: toRemove) {
+        for (Edge<BasicBlock> edge: toRemove) {
             graph.removeEdge(edge);
         }
 
@@ -615,7 +596,7 @@ public class CFG {
         }
 
         if (!toRemove.isEmpty()) {
-            for (Edge edge: toRemove) {
+            for (Edge<BasicBlock> edge: toRemove) {
                 graph.removeEdge(edge);
             }
         }
@@ -643,7 +624,8 @@ public class CFG {
             buf.append("BB ").append(bb.getID()).append(" --> BB ").append(rescuerMap.get(bb).getID()).append("\n");
         }
 
-        List<IRClosure> closures = scope.getClosures();
+        /*
+        Collection<IRClosure> closures = scope.getClosures();
         if (!closures.isEmpty()) {
             buf.append("\n\n------ Closures encountered in this scope ------\n");
             for (IRClosure c : closures) {
@@ -651,6 +633,7 @@ public class CFG {
             }
             buf.append("------------------------------------------------\n");
         }
+        */
 
         return buf.toString();
     }

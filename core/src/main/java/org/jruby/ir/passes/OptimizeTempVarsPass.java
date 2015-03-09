@@ -1,6 +1,11 @@
 package org.jruby.ir.passes;
 
-import org.jruby.ir.IRClosure;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.ListIterator;
+import java.util.Map;
 import org.jruby.ir.IRScope;
 import org.jruby.ir.instructions.*;
 import org.jruby.ir.operands.ImmutableLiteral;
@@ -8,32 +13,16 @@ import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.TemporaryVariable;
 import org.jruby.ir.operands.Variable;
 
-import java.util.*;
 
-public class OptimizeTempVarsPass extends CompilerPass {
-    @Override
-    public String getLabel() {
-        return "Temporary Variable Reduction";
-    }
-
-    @Override
-    public Object execute(IRScope s, Object... data) {
-        for (IRClosure c: s.getClosures()) {
-            run(c, false, true);
-        }
-
-        optimizeTmpVars(s);
-
-        return null;
-    }
-
-    @Override
-    public boolean invalidate(IRScope s) {
-        // This runs after IR is built and before CFG is built.
-        // Not reversible in the form it is written right now.
-        return false;
-    }
-
+/**
+ * Takes multiple single def-use temporary variables and reduces them to share the same temp variable.
+ * This ends up reducing the amount of allocation and most likely helps hotspot warm up in some way quicker.
+ *
+ * This traditionally was a compiler pass (extends CompilerPass) but it is special in that it is the only
+ * pass which does not require any supplementary datastructures.  In fact, it cannot be run by the time
+ * a CFG is created.  So it was de-CompilerPassed and called directly.
+ */
+public class OptimizeTempVarsPass {
     private static void allocVar(Operand oldVar, IRScope s, List<TemporaryVariable> freeVarsList, Map<Operand, Operand> newVarMap) {
         // If we dont have a var mapping, get a new var -- try the free list first
         // and if none available, allocate a fresh one
@@ -47,14 +36,13 @@ public class OptimizeTempVarsPass extends CompilerPass {
         if (!freeVarsList.contains(newVar)) freeVarsList.add(0, newVar);
     }
 
-    private static void optimizeTmpVars(IRScope s) {
-        // Cannot run after CFG has been built in the form it has been written here.
-        if (s.getCFG() != null) return;
+    public static Instr[] optimizeTmpVars(IRScope s, Instr[] initialInstrs) {
+        List<Instr> instructions = new ArrayList<>(Arrays.asList(initialInstrs));
 
         // Pass 1: Analyze instructions and find use and def count of temporary variables
         Map<TemporaryVariable, Instr> tmpVarUses = new HashMap<>();
         Map<TemporaryVariable, Instr> tmpVarDefs = new HashMap<>();
-        for (Instr i: s.getInstrs()) {
+        for (Instr i: instructions) {
             for (Variable v: i.getUsedVariables()) {
                  if (v instanceof TemporaryVariable) {
                      TemporaryVariable tv = (TemporaryVariable)v;
@@ -83,7 +71,8 @@ public class OptimizeTempVarsPass extends CompilerPass {
         // Pass 2: Transform code and do additional analysis:
         // * If the result of this instr. has not been used, mark it dead
         // * Find copies where constant values are set
-        ListIterator<Instr> instrs = s.getInstrs().listIterator();
+
+        ListIterator<Instr> instrs = instructions.listIterator();
         while (instrs.hasNext()) {
             Instr i = instrs.next();
 
@@ -212,9 +201,9 @@ public class OptimizeTempVarsPass extends CompilerPass {
         //
         // NOTE: It is sufficient to just track last use for renaming purposes.
         // At the first definition, we allocate a variable which then starts the live range
-        Map<TemporaryVariable, Integer> lastVarUseOrDef = new HashMap<TemporaryVariable, Integer>();
+        Map<TemporaryVariable, Integer> lastVarUseOrDef = new HashMap<>();
         int iCount = -1;
-        for (Instr i: s.getInstrs()) {
+        for (Instr i: instructions) {
             iCount++;
 
             // update last use/def
@@ -242,12 +231,12 @@ public class OptimizeTempVarsPass extends CompilerPass {
         // Pass 4: Reallocate temporaries based on last uses to minimize # of unique vars.
         // Replace all single use operands with constants they were assigned to.
         // Using operand -> operand signature because simplifyOperands works on operands
-        Map<Operand, Operand>   newVarMap    = new HashMap<Operand, Operand>();
-        List<TemporaryVariable> freeVarsList = new ArrayList<TemporaryVariable>();
+        Map<Operand, Operand>   newVarMap    = new HashMap<>();
+        List<TemporaryVariable> freeVarsList = new ArrayList<>();
         iCount = -1;
         s.resetTemporaryVariables();
 
-        for (Instr i: s.getInstrs()) {
+        for (Instr i: instructions) {
             iCount++;
 
             // Assign new vars
@@ -261,7 +250,7 @@ public class OptimizeTempVarsPass extends CompilerPass {
             }
 
             // Free dead vars
-            if ((result instanceof TemporaryVariable) && lastVarUseOrDef.get((TemporaryVariable)result) == iCount) {
+            if ((result instanceof TemporaryVariable) && lastVarUseOrDef.get(result) == iCount) {
                 freeVar((TemporaryVariable)newVarMap.get(result), freeVarsList);
             }
             for (Variable v: i.getUsedVariables()) {
@@ -274,5 +263,9 @@ public class OptimizeTempVarsPass extends CompilerPass {
             // Rename
             i.renameVars(newVarMap);
         }
+
+        Instr[] newInstrs = new Instr[instructions.size()];
+        instructions.toArray(newInstrs);
+        return newInstrs;
     }
 }

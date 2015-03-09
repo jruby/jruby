@@ -1,6 +1,5 @@
 package org.jruby.ir.passes;
 
-import org.jruby.ir.IRClosure;
 import org.jruby.ir.IRScope;
 import org.jruby.ir.Operation;
 import org.jruby.ir.instructions.CopyInstr;
@@ -8,35 +7,17 @@ import org.jruby.ir.instructions.Instr;
 import org.jruby.ir.instructions.ResultInstr;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.Variable;
-import org.jruby.ir.representations.BasicBlock;
-import org.jruby.ir.representations.CFG;
 
 import java.util.*;
 
 public class LocalOptimizationPass extends CompilerPass {
-    public static List<Class<? extends CompilerPass>> DEPENDENCIES = Arrays.<Class<? extends CompilerPass>>asList(CFGBuilder.class);
-
     @Override
     public String getLabel() {
         return "Local Optimizations";
     }
 
     @Override
-    public List<Class<? extends CompilerPass>> getDependencies() {
-        return DEPENDENCIES;
-    }
-
-    @Override
     public Object execute(IRScope s, Object... data) {
-        // This let us compute execute scope flags for a method based on what all nested closures do
-        for (IRClosure c: s.getClosures()) {
-            run(c, false, true);
-        }
-
-        for (BasicBlock b: ((CFG) data[0]).getBasicBlocks()) {
-            runLocalOptsOnInstrList(s, b.getInstrs().listIterator(), false);
-        }
-
         // SSS FIXME: What is this about? 
         // Why 'Only after running local opts'? Figure out and document.
         //

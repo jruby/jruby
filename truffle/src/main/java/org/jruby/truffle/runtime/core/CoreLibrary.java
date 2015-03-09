@@ -154,7 +154,7 @@ public class CoreLibrary {
 
         // Create the cyclic classes and modules
 
-        classClass = new RubyClass(context, null, null, null, "Class", false);
+        classClass = new RubyClass(context, null, null, null, "Class", false, null);
         classClass.setAllocator(new RubyClass.ClassAllocator());
 
         basicObjectClass = RubyClass.createBootClass(context, classClass, "BasicObject");
@@ -163,7 +163,7 @@ public class CoreLibrary {
         objectClass = RubyClass.createBootClass(context, classClass, "Object");
         objectClass.setAllocator(basicObjectClass.getAllocator());
 
-        moduleClass = new RubyClass(context, classClass, null, null, "Module", false);
+        moduleClass = new RubyClass(context, classClass, null, null, "Module", false, null);
         moduleClass.setAllocator(new RubyModule.ModuleAllocator());
 
         // Close the cycles

@@ -38,15 +38,15 @@ public class UninitializedYieldDispatchNode extends YieldDispatchNode {
     @Override
     public Object dispatchWithSelfAndBlock(VirtualFrame frame, final RubyProc block, Object self, RubyProc modifiedBlock, Object... argumentsObjects) {
         CompilerDirectives.transferToInterpreterAndInvalidate();
-        final UninitializedYieldDispatchNode currentNode = this;
 
         final YieldDispatchNode dispatch = atomic(new Callable<YieldDispatchNode>() {
             @Override
             public YieldDispatchNode call() {
                 // First try to see if we did not a miss a specialization added by another thread.
-                final YieldDispatchHeadNode dispatchHead = (YieldDispatchHeadNode) NodeUtil.getNthParent(currentNode, depth + 1);
+                final YieldDispatchHeadNode dispatchHead = getHeadNode();
+                final YieldDispatchNode first = dispatchHead.getDispatch();
 
-                YieldDispatchNode lookupDispatch = dispatchHead.getDispatch();
+                YieldDispatchNode lookupDispatch = first;
                 while (lookupDispatch != null) {
                     if (lookupDispatch.guard(block)) {
                         // This one worked, no need to rewrite anything.
@@ -55,20 +55,24 @@ public class UninitializedYieldDispatchNode extends YieldDispatchNode {
                     lookupDispatch = lookupDispatch.getNext();
                 }
 
+                final YieldDispatchNode newDispatchNode;
                 if (depth < DispatchNode.DISPATCH_POLYMORPHIC_MAX) {
                     depth++;
-                    CachedYieldDispatchNode cachedDispatch = new CachedYieldDispatchNode(getContext(), block, currentNode);
-                    replace(cachedDispatch);
-                    return cachedDispatch;
+                    newDispatchNode = new CachedYieldDispatchNode(getContext(), block, first);
                 } else {
-                    GeneralYieldDispatchNode newGeneralYield = new GeneralYieldDispatchNode(getContext());
-                    dispatchHead.getDispatch().replace(newGeneralYield);
-                    return newGeneralYield;
+                    newDispatchNode = new GeneralYieldDispatchNode(getContext());
                 }
+
+                first.replace(newDispatchNode);
+                return first;
             }
         });
 
         return dispatch.dispatchWithSelfAndBlock(frame, block, self, modifiedBlock, argumentsObjects);
+    }
+
+    private YieldDispatchHeadNode getHeadNode() {
+        return NodeUtil.findParent(this, YieldDispatchHeadNode.class);
     }
 
 }

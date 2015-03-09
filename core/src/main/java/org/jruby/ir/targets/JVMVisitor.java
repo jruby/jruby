@@ -116,27 +116,12 @@ public class JVMVisitor extends IRVisitor {
     }
 
     private void logScope(IRScope scope) {
-        StringBuilder b = new StringBuilder();
-
-        b.append("\n\nLinearized instructions for JIT:\n");
-
-        int i = 0;
-        for (BasicBlock bb : scope.buildLinearization()) {
-            for (Instr instr : bb.getInstrs()) {
-                if (i > 0) b.append("\n");
-
-                b.append("  ").append(i).append('\t').append(instr);
-
-                i++;
-            }
-        }
-
         LOG.info("Starting JVM compilation on scope " + scope);
-        LOG.info(b.toString());
+        LOG.info("\n\nLinearized instructions for JIT:\n" + scope.toStringInstrs());
     }
 
     public void emitScope(IRScope scope, String name, Signature signature, boolean specificArity) {
-        List <BasicBlock> bbs = scope.prepareForCompilation();
+        BasicBlock[] bbs = scope.prepareForInitialCompilation();
 
         Map <BasicBlock, Label> exceptionTable = scope.buildJVMExceptionTable();
 
@@ -163,10 +148,10 @@ public class JVMVisitor extends IRVisitor {
 
         IRBytecodeAdapter m = jvmMethod();
 
-        int numberOfLabels = bbs.size();
+        int numberOfBasicBlocks = bbs.length;
         int ipc = 0; // synthetic, used for debug traces that show which instr failed
-        for (int i = 0; i < numberOfLabels; i++) {
-            BasicBlock bb = bbs.get(i);
+        for (int i = 0; i < numberOfBasicBlocks; i++) {
+            BasicBlock bb = bbs[i];
             org.objectweb.asm.Label start = jvm.methodData().getLabel(bb.getLabel());
             Label rescueLabel = exceptionTable.get(bb);
             org.objectweb.asm.Label end = null;
@@ -175,8 +160,8 @@ public class JVMVisitor extends IRVisitor {
 
             boolean newEnd = false;
             if (rescueLabel != null) {
-                if (i+1 < numberOfLabels) {
-                    end = jvm.methodData().getLabel(bbs.get(i+1).getLabel());
+                if (i+1 < numberOfBasicBlocks) {
+                    end = jvm.methodData().getLabel(bbs[i+1].getLabel());
                 } else {
                     newEnd = true;
                     end = new org.objectweb.asm.Label();

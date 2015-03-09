@@ -5,7 +5,6 @@ import org.jruby.RubyFixnum;
 import org.jruby.RubyFloat;
 import org.jruby.RubyModule;
 import org.jruby.common.IRubyWarnings;
-import org.jruby.exceptions.RaiseException;
 import org.jruby.exceptions.Unrescuable;
 import org.jruby.ir.IRScope;
 import org.jruby.ir.Operation;
@@ -53,8 +52,6 @@ import org.jruby.ir.operands.UnboxedBoolean;
 import org.jruby.ir.operands.UnboxedFixnum;
 import org.jruby.ir.operands.UnboxedFloat;
 import org.jruby.ir.operands.Variable;
-import org.jruby.ir.runtime.IRBreakJump;
-import org.jruby.ir.runtime.IRReturnJump;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.Block;
@@ -69,7 +66,8 @@ import org.jruby.runtime.opto.ConstantCache;
 import java.util.Stack;
 
 /**
- * Base full interpreter.  Subclasses can use utility methods here and override what they want.
+ * Base full interpreter.  Subclasses can use utility methods here and override what they want.  This method requires
+ * that it has fully built and has had a CFG made, etc...
  */
 public class InterpreterEngine {
 
@@ -120,18 +118,10 @@ public class InterpreterEngine {
         IRScope scope = currScope.getIRScope();
         boolean      acceptsKeywordArgument = interpreterContext.receivesKeywordArguments();
 
-        Stack<Integer> rescuePCs = null;
-        if (interpreterContext.getCFG() == null) {
-            rescuePCs = new Stack<Integer>();
-        }
-
         // Init profiling this scope
         boolean debug   = IRRuntimeHelpers.isDebug();
         boolean profile = IRRuntimeHelpers.inProfileMode();
         Integer scopeVersion = profile ? Profiler.initProfiling(scope) : 0;
-
-        // Update profile
-        interpreterContext.incrementRunCount();
 
         // Enter the looooop!
         while (ipc < n) {
@@ -177,7 +167,7 @@ public class InterpreterEngine {
                             currDynScope = interpreterContext.newDynamicScope(context);
                             context.pushScope(currDynScope);
                         } else {
-                            processBookKeepingOp(context, instr, operation, name, args, self, block, implClass, rescuePCs);
+                            processBookKeepingOp(context, instr, operation, name, args, self, block, implClass, null);
                         }
                         break;
                     case OTHER_OP:
@@ -185,24 +175,9 @@ public class InterpreterEngine {
                         break;
                 }
             } catch (Throwable t) {
-                if (debug) {
-                    extractToMethodToAvoidC2Crash(context, instr, t);
-                }
+                if (debug) extractToMethodToAvoidC2Crash(instr, t);
 
-                if (rescuePCs == null) {
-                    // When CFG is present
-                    ipc = instr.getRPC();
-                } else {
-                    // When CFG is absent
-                    if (rescuePCs.empty()
-                        || (t instanceof IRBreakJump && (instr instanceof BreakInstr))
-                        || (t instanceof IRReturnJump && (instr instanceof NonlocalReturnInstr)))
-                    {
-                        ipc = -1;
-                    } else {
-                        ipc = rescuePCs.pop();
-                    }
-                }
+                ipc = instr.getRPC();
 
                 if (debug) {
                     Interpreter.LOG.info("in : " + interpreterContext.getStaticScope().getIRScope() + ", caught Java throwable: " + t + "; excepting instr: " + instr);
@@ -221,7 +196,7 @@ public class InterpreterEngine {
         throw context.runtime.newRuntimeError("BUG: interpreter fell through to end unexpectedly");
     }
 
-    private static void interpretIntOp(AluInstr instr, Operation op, long[] fixnums, boolean[] booleans) {
+    protected static void interpretIntOp(AluInstr instr, Operation op, long[] fixnums, boolean[] booleans) {
         TemporaryLocalVariable dst = (TemporaryLocalVariable)instr.getResult();
         long i1 = getFixnumArg(fixnums, instr.getArg1());
         long i2 = getFixnumArg(fixnums, instr.getArg2());
@@ -242,7 +217,7 @@ public class InterpreterEngine {
         }
     }
 
-    private static void interpretFloatOp(AluInstr instr, Operation op, double[] floats, boolean[] booleans) {
+    protected static void interpretFloatOp(AluInstr instr, Operation op, double[] floats, boolean[] booleans) {
         TemporaryLocalVariable dst = (TemporaryLocalVariable)instr.getResult();
         double a1 = getFloatArg(floats, instr.getArg1());
         double a2 = getFloatArg(floats, instr.getArg2());
@@ -258,7 +233,7 @@ public class InterpreterEngine {
         }
     }
 
-    private static void receiveArg(ThreadContext context, Instr i, Operation operation, IRubyObject[] args, boolean acceptsKeywordArgument, DynamicScope currDynScope, Object[] temp, Object exception, Block block) {
+    protected static void receiveArg(ThreadContext context, Instr i, Operation operation, IRubyObject[] args, boolean acceptsKeywordArgument, DynamicScope currDynScope, Object[] temp, Object exception, Block block) {
         Object result;
         ResultInstr instr = (ResultInstr)i;
 
@@ -288,7 +263,7 @@ public class InterpreterEngine {
         }
     }
 
-    private static void processCall(ThreadContext context, Instr instr, Operation operation, DynamicScope currDynScope, StaticScope currScope, Object[] temp, IRubyObject self) {
+    protected static void processCall(ThreadContext context, Instr instr, Operation operation, DynamicScope currDynScope, StaticScope currScope, Object[] temp, IRubyObject self) {
         Object result;
 
         switch(operation) {
@@ -348,7 +323,7 @@ public class InterpreterEngine {
         }
     }
 
-    private static void processBookKeepingOp(ThreadContext context, Instr instr, Operation operation,
+    protected static void processBookKeepingOp(ThreadContext context, Instr instr, Operation operation,
                                              String name, IRubyObject[] args, IRubyObject self, Block block,
                                              RubyModule implClass, Stack<Integer> rescuePCs) {
         switch(operation) {
@@ -397,8 +372,9 @@ public class InterpreterEngine {
         }
     }
 
-    private static IRubyObject processReturnOp(ThreadContext context, Instr instr, Operation operation, DynamicScope currDynScope, Object[] temp, IRubyObject self, Block.Type blockType, StaticScope currScope)
-    {
+    protected static IRubyObject processReturnOp(ThreadContext context, Instr instr, Operation operation,
+                                                 DynamicScope currDynScope, Object[] temp, IRubyObject self,
+                                                 Block.Type blockType, StaticScope currScope) {
         switch(operation) {
             // --------- Return flavored instructions --------
             case RETURN: {
@@ -423,8 +399,9 @@ public class InterpreterEngine {
         return null;
     }
 
-    private static void processOtherOp(ThreadContext context, Instr instr, Operation operation, DynamicScope currDynScope, StaticScope currScope, Object[] temp, IRubyObject self, Block.Type blockType, double[] floats, long[] fixnums, boolean[] booleans)
-    {
+    protected static void processOtherOp(ThreadContext context, Instr instr, Operation operation, DynamicScope currDynScope,
+                                         StaticScope currScope, Object[] temp, IRubyObject self, Block.Type blockType,
+                                         double[] floats, long[] fixnums, boolean[] booleans) {
         Object result;
         switch(operation) {
             case RECV_SELF:
@@ -537,7 +514,7 @@ public class InterpreterEngine {
      * If you put this code into the method above it will hard crash some production builds of C2 in Java 8. We aren't
      * sure exactly which builds, but it seems to appear more often in Linux builds than Mac. - Chris Seaton
      */
-    private static void extractToMethodToAvoidC2Crash(ThreadContext context, Instr instr, Throwable t) {
+    protected static void extractToMethodToAvoidC2Crash(Instr instr, Throwable t) {
         if (!(t instanceof Unrescuable) && !instr.canRaiseException()) {
             System.err.println("BUG: Got exception " + t + " but instr " + instr + " is not supposed to be raising exceptions!");
         }
