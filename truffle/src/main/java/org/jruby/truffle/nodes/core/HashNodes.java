@@ -123,7 +123,7 @@ public abstract class HashNodes {
         @Child private CallDispatchHeadNode hashNode;
         @Child private CallDispatchHeadNode eqlNode;
         @Child private BasicObjectNodes.ReferenceEqualNode equalNode;
-        @Child private YieldDispatchHeadNode yield;
+        @Child private CallDispatchHeadNode callDefaultNode;
         @Child private FindEntryNode findEntryNode;
 
         private final ConditionProfile byIdentityProfile = ConditionProfile.createBinaryProfile();
@@ -137,7 +137,7 @@ public abstract class HashNodes {
             hashNode = DispatchHeadNodeFactory.createMethodCall(context, true);
             eqlNode = DispatchHeadNodeFactory.createMethodCall(context, false, false, null);
             equalNode = BasicObjectNodesFactory.ReferenceEqualNodeFactory.create(context, sourceSection, null, null);
-            yield = new YieldDispatchHeadNode(context);
+            callDefaultNode = DispatchHeadNodeFactory.createMethodCall(context);
             findEntryNode = new FindEntryNode(context, sourceSection);
         }
 
@@ -146,7 +146,7 @@ public abstract class HashNodes {
             hashNode = prev.hashNode;
             eqlNode = prev.eqlNode;
             equalNode = prev.equalNode;
-            yield = prev.yield;
+            callDefaultNode = prev.callDefaultNode;
             findEntryNode = prev.findEntryNode;
             undefinedValue = prev.undefinedValue;
         }
@@ -161,12 +161,8 @@ public abstract class HashNodes {
 
             if (undefinedValue != null) {
                 return undefinedValue;
-            } else if (hash.getDefaultBlock() != null) {
-                return yield.dispatch(frame, hash.getDefaultBlock(), hash, key);
-            } else if (hash.getDefaultValue() != null) {
-                return hash.getDefaultValue();
             } else {
-                return getContext().getCoreLibrary().getNilObject();
+                return callDefaultNode.call(frame, hash, "default", null, key);
             }
         }
 
@@ -200,16 +196,8 @@ public abstract class HashNodes {
                 return undefinedValue;
             }
 
-            if (hash.getDefaultBlock() != null) {
-                useDefaultProfile.enter();
-                return yield.dispatch(frame, hash.getDefaultBlock(), hash, key);
-            }
-
-            if (hash.getDefaultValue() != null) {
-                return hash.getDefaultValue();
-            }
-
-            return getContext().getCoreLibrary().getNilObject();
+            useDefaultProfile.enter();
+            return callDefaultNode.call(frame, hash, "default", null, key);
 
         }
 
@@ -227,16 +215,8 @@ public abstract class HashNodes {
                 return undefinedValue;
             }
 
-            if (hash.getDefaultBlock() != null) {
-                useDefaultProfile.enter();
-                return yield.dispatch(frame, hash.getDefaultBlock(), hash, key);
-            }
-
-            if (hash.getDefaultValue() != null) {
-                return hash.getDefaultValue();
-            }
-
-            return getContext().getCoreLibrary().getNilObject();
+            useDefaultProfile.enter();
+            return callDefaultNode.call(frame, hash, "default", null, key);
         }
         
         public void setUndefinedValue(Object undefinedValue) {
@@ -309,7 +289,7 @@ public abstract class HashNodes {
             if (hash.isCompareByIdentity()) {
                 return setNull(frame, hash, (Object) key, value);
             } else {
-                return setNull(frame, hash, ruby(frame, "key.dup.freeze", "key", key), value);
+                return setNull(frame, hash, ruby(frame, "key.frozen? ? key : key.dup.freeze", "key", key), value);
             }
         }
 
@@ -373,7 +353,7 @@ public abstract class HashNodes {
             if (hash.isCompareByIdentity()) {
                 return setPackedArray(frame, hash, (Object) key, value);
             } else {
-                return setPackedArray(frame, hash, ruby(frame, "key.dup.freeze", "key", key), value);
+                return setPackedArray(frame, hash, ruby(frame, "key.frozen? ? key : key.dup.freeze", "key", key), value);
             }
         }
 
@@ -391,7 +371,11 @@ public abstract class HashNodes {
         @Specialization(guards = "isBuckets")
         public Object setBuckets(VirtualFrame frame, RubyHash hash, RubyString key, Object value) {
             notDesignedForCompilation();
-            return setBuckets(hash, ruby(frame, "key.dup.freeze", "key", key), value);
+            if (hash.isCompareByIdentity()) {
+                return setBuckets(hash, key, value);
+            } else {
+                return setBuckets(hash, ruby(frame, "key.frozen? ? key : key.dup.freeze", "key", key), value);
+            }
         }
 
     }
