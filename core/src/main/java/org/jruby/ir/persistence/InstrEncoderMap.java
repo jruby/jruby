@@ -34,6 +34,7 @@ public class InstrEncoderMap {
 
         switch(instr.getOperation()) {
             case ALIAS: encodeAliasInstr((AliasInstr) instr); break;
+            case ARG_SCOPE_DEPTH: /* no state */ break;
             case ATTR_ASSIGN: encodeAttrAssignInstr((AttrAssignInstr) instr); break;
             case BEQ: encodeBEQInstr((BEQInstr) instr); break;
             case BINDING_LOAD: encodeLoadLocalVarInstr((LoadLocalVarInstr) instr); break;
@@ -116,6 +117,7 @@ public class InstrEncoderMap {
             case RETURN: encodeReturnInstr((ReturnInstr) instr); break;
             case RUNTIME_HELPER: encodeRuntimeHelperCall((RuntimeHelperCall) instr); break;
             case SEARCH_CONST: encodeSearchConstInstr((SearchConstInstr) instr); break;
+            case SET_CAPTURED_VAR: encodeSetCapturedVarInstr((SetCapturedVarInstr) instr); break;
             case CLASS_SUPER: encodeClassSuperInstr((ClassSuperInstr) instr); break;
             case INSTANCE_SUPER: encodeInstanceSuperInstr((InstanceSuperInstr) instr); break;
             case UNRESOLVED_SUPER: encodeUnresolvedSuperInstr((UnresolvedSuperInstr) instr); break;
@@ -498,6 +500,11 @@ public class InstrEncoderMap {
         e.encode(instr.getConstName());
         e.encode(instr.getStartingScope());
         e.encode(instr.isNoPrivateConsts());
+    }
+
+    private void encodeSetCapturedVarInstr(SetCapturedVarInstr instr) {
+        e.encode(instr.getMatch2Result());
+        e.encode(instr.getVarName());
     }
 
     private void encodeClassSuperInstr(ClassSuperInstr instr) {
