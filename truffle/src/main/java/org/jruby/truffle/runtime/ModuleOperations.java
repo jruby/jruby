@@ -243,6 +243,30 @@ public abstract class ModuleOperations {
             }
         }
 
+        // If singleton class, check attached module as well.
+        if (module instanceof RubyClass) {
+            RubyClass klass = (RubyClass) module;
+
+            if (klass.isSingleton() && klass.getAttached() != null) {
+
+                // Look in the attached module.
+                value = klass.getAttached().getClassVariables().get(name);
+
+                if (value != null) {
+                    return value;
+                }
+
+                // Look in the attached module's ancestors.
+                for (RubyModule ancestor : klass.getAttached().parentAncestors()) {
+                    value = ancestor.getClassVariables().get(name);
+
+                    if (value != null) {
+                        return value;
+                    }
+                }
+            }
+        }
+
         // Nothing found
 
         return null;
