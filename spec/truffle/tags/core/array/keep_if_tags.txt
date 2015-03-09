@@ -1,6 +1,0 @@
-fails:Array#keep_if returns the same array if no changes were made
-fails:Array#keep_if deletes elements for which the block returns a false value
-fails:Array#keep_if returns an enumerator if no block is given
-fails:Array#keep_if on frozen objects returns an Enumerator if no block is given
-fails:Array#keep_if on frozen objects with truthy block raises a RuntimeError
-fails:Array#keep_if on frozen objects with falsy block raises a RuntimeError
