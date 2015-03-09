@@ -120,6 +120,14 @@ class Array
 
     index
   end
+
+  def reverse
+    res = []
+
+    each { |x| res.unshift x }
+
+    res
+  end
 end
 
 module Kernel
