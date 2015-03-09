@@ -51,8 +51,9 @@ public class InstrEncoderMap {
             case CHECK_ARITY: encodeCheckArityInstr((CheckArityInstr) instr); break;
             case CLASS_VAR_MODULE: encodeGetClassVarContainerModuleInstr((GetClassVarContainerModuleInstr) instr); break;
             case BUILD_COMPOUND_STRING: encodeBuildCompoundStringInstr((BuildCompoundStringInstr) instr); break;
-            // case BUILD_DREGEXP: return encodeBuildDynRegExpInstr();
+            case BUILD_DREGEXP: encodeBuildDynRegExpInstr((BuildDynRegExpInstr) instr); break;
             case BUILD_RANGE: encodeBuildRangeInstr((BuildRangeInstr) instr); break;
+            case BUILD_SPLAT: encodeBuildSplatInstr((BuildSplatInstr) instr); break;
             case CONST_MISSING: encodeConstMissingInstr((ConstMissingInstr) instr); break;
             case COPY: encodeCopyInstr((CopyInstr) instr); break;
             case DEF_CLASS: encodeDefineClassInstr((DefineClassInstr) instr); break;
@@ -388,10 +389,24 @@ public class InstrEncoderMap {
         e.encode(instr.getValue());
     }
 
+    private void encodeBuildDynRegExpInstr(BuildDynRegExpInstr instr) {
+        Operand[] pieces = instr.getPieces();
+        e.encode(pieces.length);
+
+        for (Operand piece: pieces) {
+            e.encode(piece);
+        }
+        e.encode(instr.getOptions().toEmbeddedOptions());
+    }
+
     private void encodeBuildRangeInstr(BuildRangeInstr instr) {
         e.encode(instr.getBegin());
         e.encode(instr.getEnd());
         e.encode(instr.isExclusive());
+    }
+
+    private void encodeBuildSplatInstr(BuildSplatInstr instr) {
+        e.encode(instr.getArray());
     }
 
     private void encodeRaiseArgumentErrorInstr(RaiseArgumentErrorInstr instr) {
