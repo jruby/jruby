@@ -458,6 +458,14 @@ class Array
     nil
   end
 
+  def keep_if(&block)
+    return to_enum :keep_if unless block_given?
+
+    Rubinius.check_frozen
+
+    replace select(&block)
+  end
+
   def reverse_each
     return to_enum(:reverse_each) unless block_given?
 
