@@ -38,6 +38,10 @@ class Array
     ary
   end
 
+  def self.try_convert(obj)
+    Rubinius::Type.try_convert obj, Array, :to_ary
+  end
+
   def &(other)
     other = Rubinius::Type.coerce_to other, Array, :to_ary
 
