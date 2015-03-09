@@ -368,4 +368,48 @@ class Hash
     true
   end
 
+  def self.[](*args)
+    if args.size == 1
+      obj = args.first
+      if hash = Rubinius::Type.check_convert_type(obj, Hash, :to_hash)
+        new_hash = allocate.replace(hash)
+        new_hash.default = nil
+        return new_hash
+      elsif associate_array = Rubinius::Type.check_convert_type(obj, Array, :to_ary)
+        return new_from_associate_array(associate_array)
+      end
+    end
+
+    return new if args.empty?
+
+    if args.size & 1 == 1
+      raise ArgumentError, "Expected an even number, got #{args.length}"
+    end
+
+    hash = new
+    i = 0
+    total = args.size
+
+    while i < total
+      hash[args[i]] = args[i+1]
+      i += 2
+    end
+
+    hash
+  end
+
+  def self.new_from_associate_array(associate_array)
+    hash = new
+    associate_array.each do |array|
+      next unless array.respond_to? :to_ary
+      array = array.to_ary
+      unless (1..2).cover? array.size
+        raise ArgumentError, "invalid number of elements (#{array.size} for 1..2)"
+      end
+      hash[array.at(0)] = array.at(1)
+    end
+    hash
+  end
+  private_class_method :new_from_associate_array
+
 end

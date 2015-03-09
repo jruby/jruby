@@ -1,0 +1,1 @@
+fails:Hash#== does not compare keys with different hash codes via eql?

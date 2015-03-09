@@ -117,135 +117,10 @@ public abstract class HashNodes {
 
     }
 
-    @CoreMethod(names = "[]", onSingleton = true, argumentsAsArray = true, reallyDoesNeedSelf = true)
-    public abstract static class ConstructNode extends HashCoreMethodNode {
-
-        private final BranchProfile singleObject = BranchProfile.create();
-        private final BranchProfile singleArray = BranchProfile.create();
-        private final BranchProfile objectArray = BranchProfile.create();
-        private final BranchProfile smallPackedArray = BranchProfile.create();
-        private final BranchProfile largePackedArray = BranchProfile.create();
-        private final BranchProfile otherArray = BranchProfile.create();
-        private final BranchProfile singleOther = BranchProfile.create();
-        private final BranchProfile otherHash = BranchProfile.create();
-        private final BranchProfile keyValues = BranchProfile.create();
-
-        public ConstructNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
-        public ConstructNode(ConstructNode prev) {
-            super(prev);
-        }
-
-        @ExplodeLoop
-        @Specialization
-        public RubyHash construct(RubyClass hashClass, Object[] args) {
-            if (args.length == 1) {
-                singleObject.enter();
-
-                final Object arg = args[0];
-
-                if (arg instanceof RubyArray) {
-                    singleArray.enter();
-
-                    final RubyArray array = (RubyArray) arg;
-
-                    if (array.getStore() instanceof Object[]) {
-                        objectArray.enter();
-
-                        final Object[] store = (Object[]) array.getStore();
-
-                        // TODO(CS): zero length arrays might be a good specialisation
-
-                        if (store.length <= HashOperations.SMALL_HASH_SIZE) {
-                            smallPackedArray.enter();
-
-                            final int size = array.getSize();
-                            final Object[] newStore = new Object[HashOperations.SMALL_HASH_SIZE * 2];
-
-                            for (int n = 0; n < HashOperations.SMALL_HASH_SIZE; n++) {
-                                if (n < size) {
-                                    final Object pair = store[n];
-
-                                    if (!(pair instanceof RubyArray)) {
-                                        CompilerDirectives.transferToInterpreter();
-                                        throw new UnsupportedOperationException();
-                                    }
-
-                                    final RubyArray pairArray = (RubyArray) pair;
-
-                                    if (!(pairArray.getStore() instanceof Object[])) {
-                                        CompilerDirectives.transferToInterpreter();
-                                        throw new UnsupportedOperationException();
-                                    }
-
-                                    final Object[] pairStore = (Object[]) pairArray.getStore();
-
-                                    newStore[n * 2] = pairStore[0];
-                                    newStore[n * 2 + 1] = pairStore[1];
-                                }
-                            }
-
-                            return new RubyHash(hashClass, null, null, newStore, size, null);
-                        } else {
-                            largePackedArray.enter();
-
-                            final List<KeyValue> keyValues = new ArrayList<>();
-
-                            final int size = array.getSize();
-
-                            for (int n = 0; n < size; n++) {
-                                final Object pair = store[n];
-
-                                if (!(pair instanceof RubyArray)) {
-                                    CompilerDirectives.transferToInterpreter();
-                                    throw new UnsupportedOperationException();
-                                }
-
-                                final RubyArray pairArray = (RubyArray) pair;
-
-                                if (!(pairArray.getStore() instanceof Object[])) {
-                                    CompilerDirectives.transferToInterpreter();
-                                    throw new UnsupportedOperationException();
-                                }
-
-                                final Object[] pairStore = (Object[]) pairArray.getStore();
-                                keyValues.add(new KeyValue(pairStore[0], pairStore[1]));
-                            }
-
-                            return HashOperations.verySlowFromEntries(hashClass, keyValues, false);
-                        }
-                    } else {
-                        otherArray.enter();
-                        throw new UnsupportedOperationException("other array");
-                    }
-                } else if (arg instanceof RubyHash) {
-                    otherHash.enter();
-                    
-                    return HashOperations.verySlowFromEntries(hashClass, HashOperations.verySlowToKeyValues((RubyHash) arg), false);
-                } else {
-                    singleOther.enter();
-                    throw new UnsupportedOperationException("single other");
-                }
-            } else {
-                keyValues.enter();
-
-                final List<KeyValue> entries = new ArrayList<>();
-
-                for (int n = 0; n < args.length; n += 2) {
-                    entries.add(new KeyValue(args[n], args[n + 1]));
-                }
-
-                return HashOperations.verySlowFromEntries(hashClass, entries, false);
-            }
-        }
-
-    }
-
     @CoreMethod(names = "[]", required = 1)
     public abstract static class GetIndexNode extends HashCoreMethodNode {
-        
+
+        @Child private CallDispatchHeadNode hashNode;
         @Child private CallDispatchHeadNode eqlNode;
         @Child private BasicObjectNodes.ReferenceEqualNode equalNode;
         @Child private YieldDispatchHeadNode yield;
@@ -259,6 +134,7 @@ public abstract class HashNodes {
 
         public GetIndexNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
+            hashNode = DispatchHeadNodeFactory.createMethodCall(context, true);
             eqlNode = DispatchHeadNodeFactory.createMethodCall(context, false, false, null);
             equalNode = BasicObjectNodesFactory.ReferenceEqualNodeFactory.create(context, sourceSection, null, null);
             yield = new YieldDispatchHeadNode(context);
@@ -267,6 +143,7 @@ public abstract class HashNodes {
 
         public GetIndexNode(GetIndexNode prev) {
             super(prev);
+            hashNode = prev.hashNode;
             eqlNode = prev.eqlNode;
             equalNode = prev.equalNode;
             yield = prev.yield;
@@ -279,6 +156,8 @@ public abstract class HashNodes {
         @Specialization(guards = "isNull")
         public Object getNull(VirtualFrame frame, RubyHash hash, Object key) {
             notDesignedForCompilation();
+
+            hashNode.call(frame, key, "hash", null);
 
             if (undefinedValue != null) {
                 return undefinedValue;
@@ -294,6 +173,8 @@ public abstract class HashNodes {
         @ExplodeLoop
         @Specialization(guards = {"!isNull", "!isBuckets"})
         public Object getPackedArray(VirtualFrame frame, RubyHash hash, Object key) {
+            hashNode.call(frame, key, "hash", null);
+
             final Object[] store = (Object[]) hash.getStore();
             final int size = hash.getSize();
 
@@ -302,9 +183,9 @@ public abstract class HashNodes {
                     final boolean equal;
 
                     if (byIdentityProfile.profile(hash.isCompareByIdentity())) {
-                        equal = equalNode.executeReferenceEqual(frame, store[n * 2], key);
+                        equal = equalNode.executeReferenceEqual(frame, key, store[n * 2]);
                     } else {
-                        equal = eqlNode.callBoolean(frame, store[n * 2], "eql?", null, key);
+                        equal = eqlNode.callBoolean(frame, key, "eql?", null, store[n * 2]);
                     }
                     
                     if (equal) {
@@ -360,7 +241,6 @@ public abstract class HashNodes {
         
         public void setUndefinedValue(Object undefinedValue) {
             this.undefinedValue = undefinedValue;
-            
         }
 
     }
@@ -391,6 +271,7 @@ public abstract class HashNodes {
     @CoreMethod(names = "[]=", required = 2, raiseIfFrozenSelf = true)
     public abstract static class SetIndexNode extends HashCoreMethodNode {
 
+        @Child private CallDispatchHeadNode hashNode;
         @Child private CallDispatchHeadNode eqlNode;
         @Child private BasicObjectNodes.ReferenceEqualNode equalNode;
 
@@ -400,28 +281,43 @@ public abstract class HashNodes {
 
         public SetIndexNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
+            hashNode = DispatchHeadNodeFactory.createMethodCall(context, true);
             eqlNode = DispatchHeadNodeFactory.createMethodCall(context, false, false, null);
             equalNode = BasicObjectNodesFactory.ReferenceEqualNodeFactory.create(context, sourceSection, null, null);
         }
 
         public SetIndexNode(SetIndexNode prev) {
             super(prev);
+            hashNode = prev.hashNode;
             eqlNode = prev.eqlNode;
             equalNode = prev.equalNode;
         }
 
-        @Specialization(guards = "isNull")
-        public Object setNull(RubyHash hash, Object key, Object value) {
+        @Specialization(guards = {"isNull", "!isRubyString(arguments[1])"})
+        public Object setNull(VirtualFrame frame, RubyHash hash, Object key, Object value) {
             final Object[] store = new Object[HashOperations.SMALL_HASH_SIZE * 2];
+            hashNode.call(frame, key, "hash", null);
             store[0] = key;
             store[1] = value;
             hash.setStore(store, 1, null, null);
             return value;
         }
 
+        @Specialization(guards = "isNull")
+        public Object setNull(VirtualFrame frame, RubyHash hash, RubyString key, Object value) {
+            notDesignedForCompilation();
+            if (hash.isCompareByIdentity()) {
+                return setNull(frame, hash, (Object) key, value);
+            } else {
+                return setNull(frame, hash, ruby(frame, "key.dup.freeze", "key", key), value);
+            }
+        }
+
         @ExplodeLoop
-        @Specialization(guards = {"!isNull", "!isBuckets"})
+        @Specialization(guards = {"!isNull", "!isBuckets", "!isRubyString(arguments[1])"})
         public Object setPackedArray(VirtualFrame frame, RubyHash hash, Object key, Object value) {
+            hashNode.call(frame, key, "hash", null);
+
             final Object[] store = (Object[]) hash.getStore();
             final int size = hash.getSize();
 
@@ -430,9 +326,9 @@ public abstract class HashNodes {
                     final boolean equal;
                     
                     if (byIdentityProfile.profile(hash.isCompareByIdentity())) {
-                        equal = equalNode.executeReferenceEqual(frame, store[n * 2], key);
+                        equal = equalNode.executeReferenceEqual(frame, key, store[n * 2]);
                     } else {
-                        equal = eqlNode.callBoolean(frame, store[n * 2], "eql?", null, key);
+                        equal = eqlNode.callBoolean(frame, key, "eql?", null, store[n * 2]);
                     }
                     
                     if (equal) {
@@ -463,7 +359,7 @@ public abstract class HashNodes {
             hash.setStore(new Entry[HashOperations.capacityGreaterThan(newSize)], newSize, null, null);
 
             for (KeyValue keyValue : entries) {
-                HashOperations.verySlowSetInBuckets(hash, keyValue.getKey(), keyValue.getValue(), false);
+                HashOperations.verySlowSetInBuckets(hash, keyValue.getKey(), keyValue.getValue(), hash.isCompareByIdentity());
             }
 
             HashOperations.verySlowSetInBuckets(hash, key, value, false);
@@ -471,7 +367,17 @@ public abstract class HashNodes {
             return value;
         }
 
-        @Specialization(guards = "isBuckets")
+        @Specialization(guards = {"!isNull", "!isBuckets"})
+        public Object setPackedArray(VirtualFrame frame, RubyHash hash, RubyString key, Object value) {
+            notDesignedForCompilation();
+            if (hash.isCompareByIdentity()) {
+                return setPackedArray(frame, hash, (Object) key, value);
+            } else {
+                return setPackedArray(frame, hash, ruby(frame, "key.dup.freeze", "key", key), value);
+            }
+        }
+
+        @Specialization(guards = {"isBuckets", "!isRubyString(arguments[1])"})
         public Object setBuckets(RubyHash hash, Object key, Object value) {
             notDesignedForCompilation();
 
@@ -480,6 +386,12 @@ public abstract class HashNodes {
             }
 
             return value;
+        }
+
+        @Specialization(guards = "isBuckets")
+        public Object setBuckets(VirtualFrame frame, RubyHash hash, RubyString key, Object value) {
+            notDesignedForCompilation();
+            return setBuckets(hash, ruby(frame, "key.dup.freeze", "key", key), value);
         }
 
     }
@@ -792,10 +704,11 @@ public abstract class HashNodes {
             return hash;
         }
 
-        @Specialization
+        @Specialization(guards = "!isUndefinedPlaceholder(arguments[1])")
         public RubyHash initialize(RubyHash hash, Object defaultValue, UndefinedPlaceholder block) {
             notDesignedForCompilation();
             hash.setDefaultValue(defaultValue);
+            hash.setDefaultBlock(null);
             return hash;
         }
 
@@ -1029,10 +942,12 @@ public abstract class HashNodes {
             final int storeASize = hash.getSize();
 
             final Object[] storeB = (Object[]) other.getStore();
-            final int storeBSize = hash.getSize();
+            final int storeBSize = other.getSize();
 
             final boolean[] mergeFromA = new boolean[storeASize];
             int mergeFromACount = 0;
+
+            int conflictsCount = 0;
 
             for (int a = 0; a < HashOperations.SMALL_HASH_SIZE; a++) {
                 if (a < storeASize) {
@@ -1041,6 +956,7 @@ public abstract class HashNodes {
                     for (int b = 0; b < HashOperations.SMALL_HASH_SIZE; b++) {
                         if (b < storeBSize) {
                             if (eqlNode.callBoolean(frame, storeA[a * 2], "eql?", null, storeB[b * 2])) {
+                                conflictsCount++;
                                 merge = false;
                                 break;
                             }
@@ -1062,9 +978,9 @@ public abstract class HashNodes {
 
             considerNothingFromSecondProfile.enter();
 
-            if (mergeFromACount == storeB.length) {
+            if (conflictsCount == storeBSize) {
                 nothingFromSecondProfile.enter();
-                return new RubyHash(hash.getLogicalClass(), hash.getDefaultBlock(), hash.getDefaultValue(), Arrays.copyOf(storeB, HashOperations.SMALL_HASH_SIZE * 2), storeBSize, null);
+                return new RubyHash(hash.getLogicalClass(), hash.getDefaultBlock(), hash.getDefaultValue(), Arrays.copyOf(storeA, HashOperations.SMALL_HASH_SIZE * 2), storeASize, null);
             }
 
             considerResultIsSmallProfile.enter();
@@ -1096,7 +1012,8 @@ public abstract class HashNodes {
             }
 
             CompilerDirectives.transferToInterpreter();
-            throw new UnsupportedOperationException();
+
+            return mergeBucketsBuckets(hash, other, block);
         }
         
         // TODO CS 3-Mar-15 need negative guards on this
