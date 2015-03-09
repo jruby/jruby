@@ -31,6 +31,7 @@ import org.jruby.util.cli.Options;
 public class ExceptionTranslatingNode extends RubyNode {
 
     private static final boolean PRINT_JAVA_EXCEPTIONS = Options.TRUFFLE_EXCEPTIONS_PRINT_JAVA.load();
+    private static final boolean PRINT_UNCAUGHT_JAVA_EXCEPTIONS = Options.TRUFFLE_EXCEPTIONS_PRINT_UNCAUGHT_JAVA.load();
     private static final boolean PANIC_ON_JAVA_ASSERT = Options.TRUFFLE_PANIC_ON_JAVA_ASSERT.load();
 
     private final UnsupportedOperationBehavior unsupportedOperationBehavior;
@@ -150,7 +151,7 @@ public class ExceptionTranslatingNode extends RubyNode {
     }
 
     public RubyException translate(Throwable throwable) {
-        if (PRINT_JAVA_EXCEPTIONS) {
+        if (PRINT_JAVA_EXCEPTIONS || PRINT_UNCAUGHT_JAVA_EXCEPTIONS) {
             throwable.printStackTrace();
         }
 
