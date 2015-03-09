@@ -675,7 +675,7 @@ public abstract class HashNodes {
         @Specialization
         public RubyHash initialize(RubyHash hash, UndefinedPlaceholder defaultValue, UndefinedPlaceholder block) {
             hash.setStore(null, 0, null, null);
-            hash.setDefaultBlock(null);
+            hash.setDefaultValue(null);
             hash.setDefaultBlock(null);
             return hash;
         }
@@ -683,7 +683,7 @@ public abstract class HashNodes {
         @Specialization
         public RubyHash initialize(RubyHash hash, UndefinedPlaceholder defaultValue, RubyProc block) {
             hash.setStore(null, 0, null, null);
-            hash.setDefaultBlock(null);
+            hash.setDefaultValue(null);
             hash.setDefaultBlock(block);
             return hash;
         }
