@@ -225,6 +225,15 @@ public abstract class ModuleOperations {
     public static Object lookupClassVariable(RubyModule module, String name) {
         CompilerAsserts.neverPartOfCompilation();
 
+        // If singleton class, check attached module.
+        if (module instanceof RubyClass) {
+            RubyClass klass = (RubyClass) module;
+
+            if (klass.isSingleton() && klass.getAttached() != null) {
+                module = klass.getAttached();
+            }
+        }
+
         Object value;
 
         // Look in the current module
