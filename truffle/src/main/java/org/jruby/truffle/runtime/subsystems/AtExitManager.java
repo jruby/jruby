@@ -30,7 +30,9 @@ public class AtExitManager {
         final ListIterator<RubyProc> iterator = blocks.listIterator(blocks.size());
 
         while (iterator.hasPrevious()) {
-            iterator.previous().rootCall();
+            RubyProc hook = iterator.previous();
+            iterator.remove();
+            hook.rootCall();
         }
     }
 }
