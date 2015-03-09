@@ -117,6 +117,86 @@ public abstract class HashNodes {
 
     }
 
+    @CoreMethod(names = "[]", onSingleton = true, argumentsAsArray = true, reallyDoesNeedSelf = true)
+    public abstract static class ConstructNode extends HashCoreMethodNode {
+
+        public ConstructNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public ConstructNode(ConstructNode prev) {
+            super(prev);
+        }
+
+        @ExplodeLoop
+        @Specialization(guards = "isSmallArrayOfPairs")
+        public Object construct(VirtualFrame frame, RubyClass hashClass, Object[] args) {
+            final RubyArray array = (RubyArray) args[0];
+
+            final Object[] store = (Object[]) array.getStore();
+
+            final int size = array.getSize();
+            final Object[] newStore = new Object[HashOperations.SMALL_HASH_SIZE * 2];
+
+            for (int n = 0; n < HashOperations.SMALL_HASH_SIZE; n++) {
+                if (n < size) {
+                    final Object pair = store[n];
+
+                    if (!(pair instanceof RubyArray)) {
+                        CompilerDirectives.transferToInterpreter();
+                        return constructFallback(frame, hashClass, args);
+                    }
+
+                    final RubyArray pairArray = (RubyArray) pair;
+
+                    if (!(pairArray.getStore() instanceof Object[])) {
+                        CompilerDirectives.transferToInterpreter();
+                        return constructFallback(frame, hashClass, args);
+                    }
+
+                    final Object[] pairStore = (Object[]) pairArray.getStore();
+
+                    newStore[n * 2] = pairStore[0];
+                    newStore[n * 2 + 1] = pairStore[1];
+                }
+            }
+
+            return new RubyHash(hashClass, null, null, newStore, size, null);
+        }
+
+        @Specialization
+        public Object constructFallback(VirtualFrame frame, RubyClass hashClass, Object[] args) {
+            return ruby(frame, "_constructor_fallback(*args)", "args", RubyArray.fromObjects(getContext().getCoreLibrary().getArrayClass(), args));
+        }
+
+        public static boolean isSmallArrayOfPairs(RubyClass hashClass, Object[] args) {
+            if (args.length != 1) {
+                return false;
+            }
+
+            final Object arg = args[0];
+
+            if (!(arg instanceof RubyArray)) {
+                return false;
+            }
+
+            final RubyArray array = (RubyArray) arg;
+
+            if (!(array.getStore() instanceof Object[])) {
+                return false;
+            }
+
+            final Object[] store = (Object[]) array.getStore();
+
+            if (store.length > HashOperations.SMALL_HASH_SIZE) {
+                return false;
+            }
+
+            return true;
+        }
+
+    }
+
     @CoreMethod(names = "[]", required = 1)
     public abstract static class GetIndexNode extends HashCoreMethodNode {
 
