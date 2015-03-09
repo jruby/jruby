@@ -674,23 +674,23 @@ public abstract class HashNodes {
 
         @Specialization
         public RubyHash initialize(RubyHash hash, UndefinedPlaceholder defaultValue, UndefinedPlaceholder block) {
-            notDesignedForCompilation();
             hash.setStore(null, 0, null, null);
+            hash.setDefaultBlock(null);
             hash.setDefaultBlock(null);
             return hash;
         }
 
         @Specialization
         public RubyHash initialize(RubyHash hash, UndefinedPlaceholder defaultValue, RubyProc block) {
-            notDesignedForCompilation();
             hash.setStore(null, 0, null, null);
+            hash.setDefaultBlock(null);
             hash.setDefaultBlock(block);
             return hash;
         }
 
         @Specialization(guards = "!isUndefinedPlaceholder(arguments[1])")
         public RubyHash initialize(RubyHash hash, Object defaultValue, UndefinedPlaceholder block) {
-            notDesignedForCompilation();
+            hash.setStore(null, 0, null, null);
             hash.setDefaultValue(defaultValue);
             hash.setDefaultBlock(null);
             return hash;
