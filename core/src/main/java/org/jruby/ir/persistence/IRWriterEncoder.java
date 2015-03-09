@@ -7,6 +7,7 @@ import org.jruby.ir.instructions.Instr;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.OperandType;
 import org.jruby.parser.StaticScope.Type;
+import org.jruby.util.ByteList;
 
 /**
  * Names are tough to find.  Encodes values destined to be written to a persisted space.
@@ -16,6 +17,7 @@ import org.jruby.parser.StaticScope.Type;
  */
 public interface IRWriterEncoder {
 
+    public void encode(ByteList bytelist);
     public void encode(String value);
     public void encode(String[] values);
     public void encode(Instr value);

@@ -21,6 +21,7 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.HashMap;
 import java.util.Map;
+import org.jruby.util.ByteList;
 
 // FIXME: Make into a base class at some point to play with different formats
 
@@ -114,6 +115,16 @@ public class IRWriterFile implements IRWriterEncoder, IRPersistenceValues {
     public void encode(double value) {
 //        buf.put(DOUBLE);
         buf.putDouble(value);
+    }
+
+    @Override
+    public void encode(ByteList value) {
+        byte[] bytes = value.bytes();
+
+        encode(bytes.length);
+        buf.put(bytes);
+        // FIXME: Consider writing this out differently?
+        encode(value.getEncoding().toString());
     }
 
     @Override
