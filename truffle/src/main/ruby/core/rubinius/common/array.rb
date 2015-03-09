@@ -419,6 +419,20 @@ class Array
     nil
   end
 
+  def each_index
+    return to_enum(:each_index) unless block_given?
+
+    i = 0
+    total = @total
+
+    while i < total
+      yield i
+      i += 1
+    end
+
+    self
+  end
+
   def flatten(level=-1)
     level = Rubinius::Type.coerce_to_collection_index level
     return self.dup if level == 0
