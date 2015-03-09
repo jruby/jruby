@@ -18,10 +18,11 @@ import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.util.cli.Options;
 
+import java.util.ArrayDeque;
 import java.util.Arrays;
+import java.util.Deque;
 import java.util.HashSet;
 import java.util.Set;
-import java.util.Stack;
 
 public abstract class Translator extends org.jruby.ast.visitor.AbstractNodeVisitor<RubyNode> {
 
@@ -33,7 +34,7 @@ public abstract class Translator extends org.jruby.ast.visitor.AbstractNodeVisit
     protected final RubyContext context;
     protected final Source source;
 
-    protected Stack<SourceSection> parentSourceSection = new Stack<>();
+    protected Deque<SourceSection> parentSourceSection = new ArrayDeque<>();
 
     public Translator(Node currentNode, RubyContext context, Source source) {
         this.currentNode = currentNode;
