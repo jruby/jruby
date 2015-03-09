@@ -459,6 +459,12 @@ class Array
     self
   end
 
+  def find_index(obj=undefined)
+    super
+  end
+
+  alias_method :index, :find_index
+
   def to_a
     if self.instance_of? Array
       self
