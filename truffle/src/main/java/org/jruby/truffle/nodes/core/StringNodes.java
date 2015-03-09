@@ -905,7 +905,6 @@ public abstract class StringNodes {
             return getContext().toTruffle(jrubyTranscoded);
         }
 
-        @TruffleBoundary
         @Specialization
         public RubyString encode(RubyString string, RubyString encoding, @SuppressWarnings("unused") RubyHash options) {
 
@@ -924,7 +923,6 @@ public abstract class StringNodes {
             return getContext().toTruffle(jrubyTranscoded);
         }
 
-        @TruffleBoundary
         @Specialization(guards = { "!isRubyString(arguments[1])", "!isRubyEncoding(arguments[1])", "!isUndefinedPlaceholder(arguments[1])" })
         public RubyString encode(VirtualFrame frame, RubyString string, Object encoding, UndefinedPlaceholder options) {
 
@@ -936,7 +934,6 @@ public abstract class StringNodes {
             return encode(string, toStrNode.executeRubyString(frame, encoding), options);
         }
 
-        @TruffleBoundary
         @Specialization
         public RubyString encode(RubyString string, @SuppressWarnings("unused") UndefinedPlaceholder encoding, @SuppressWarnings("unused") UndefinedPlaceholder options) {
 
