@@ -50,11 +50,13 @@ public class InstrEncoderMap {
             case CHECK_ARGS_ARRAY_ARITY: encodeCheckArgsArrayArityInstr((CheckArgsArrayArityInstr) instr); break;
             case CHECK_ARITY: encodeCheckArityInstr((CheckArityInstr) instr); break;
             case CLASS_VAR_MODULE: encodeGetClassVarContainerModuleInstr((GetClassVarContainerModuleInstr) instr); break;
+            case BACKTICK_STRING: encodeBacktickInstr((BacktickInstr) instr); break;
             case BUILD_COMPOUND_ARRAY: encodeBuildCompoundArrayInstr((BuildCompoundArrayInstr) instr); break;
             case BUILD_COMPOUND_STRING: encodeBuildCompoundStringInstr((BuildCompoundStringInstr) instr); break;
             case BUILD_DREGEXP: encodeBuildDynRegExpInstr((BuildDynRegExpInstr) instr); break;
             case BUILD_RANGE: encodeBuildRangeInstr((BuildRangeInstr) instr); break;
             case BUILD_SPLAT: encodeBuildSplatInstr((BuildSplatInstr) instr); break;
+            case CHECK_FOR_LJE: encodeCheckForLJEInstr((CheckForLJEInstr) instr); break;
             case CONST_MISSING: encodeConstMissingInstr((ConstMissingInstr) instr); break;
             case COPY: encodeCopyInstr((CopyInstr) instr); break;
             case DEF_CLASS: encodeDefineClassInstr((DefineClassInstr) instr); break;
@@ -138,9 +140,17 @@ public class InstrEncoderMap {
         Operand[] args = instr.getCallArgs();
 
         e.encode(args.length);
+        for(Operand arg: args) {
+            e.encode(arg);
+        }
+    }
 
-        for (int i = 0; i < args.length; i++) {
-            e.encode(args[i]);
+    private void encodeBacktickInstr(BacktickInstr instr) {
+        Operand[] pieces = instr.getPieces();
+
+        e.encode(pieces.length);
+        for (Operand piece: pieces) {
+            e.encode(piece);
         }
     }
 
@@ -200,6 +210,10 @@ public class InstrEncoderMap {
         e.encode(instr.opt);
         e.encode(instr.rest);
         e.encode(instr.receivesKeywords);
+    }
+
+    private void encodeCheckForLJEInstr(CheckForLJEInstr instr) {
+        e.encode(instr.maybeLambda());
     }
 
     private void encodeGetClassVarContainerModuleInstr(GetClassVarContainerModuleInstr instr) {
