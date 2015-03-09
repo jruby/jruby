@@ -71,6 +71,8 @@ public class InstrEncoderMap {
             case LABEL: encodeLabelInstr((LabelInstr) instr); break;
             case LAMBDA: encodeBuildLambdaInstr((BuildLambdaInstr) instr); break;
             case LEXICAL_SEARCH_CONST: encodeLexicalSearchConstInstr((LexicalSearchConstInstr) instr); break;
+            case LOAD_FRAME_CLOSURE: /* no state */ break;
+            case LOAD_IMPLICIT_CLOSURE: /* no state */ break;
             case LINE_NUM: encodeLineNumberInstr((LineNumberInstr) instr); break;
             case MASGN_OPT: encodeOptArgMultipleAsgnInstr((OptArgMultipleAsgnInstr) instr); break;
             case MASGN_REQD: encodeReqdArgMultipleAsgnInstr((ReqdArgMultipleAsgnInstr) instr); break;
