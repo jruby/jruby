@@ -1533,6 +1533,15 @@ public abstract class KernelNodes {
             throw new RaiseException((RubyException) exception);
         }
 
+        // This provokes an error under standard Ruby:
+        //   TypeError: backtrace must be Array of String
+        // but is used in Rubinius in coerce_to_failed for instance.
+        @Specialization
+        public Object raise(VirtualFrame frame, RubyClass exceptionClass, RubyString message, RubyException backtrace) {
+            // TODO (9 Mar. 2015): handle "backtrace" as an MRI "cause".
+            return raise(frame, exceptionClass, message, UndefinedPlaceholder.INSTANCE);
+        }
+
         @Specialization
         public Object raise(RubyException exception, UndefinedPlaceholder undefined1, UndefinedPlaceholder undefined2) {
             throw new RaiseException(exception);
