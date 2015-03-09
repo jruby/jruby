@@ -108,7 +108,7 @@ public class StringFormatter {
 
                     precision = Integer.parseInt(format.substring(precisionStart, n));
                 } else {
-                    precision = 5;
+                    precision = 6;
                 }
 
                 if (format.charAt(n) == ' ') {
