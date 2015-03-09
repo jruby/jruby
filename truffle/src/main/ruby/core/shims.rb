@@ -169,6 +169,14 @@ class Method
 
 end
 
+class IO
+
+  def tty?
+    false
+  end
+
+end
+
 class MatchData
   def full
     @cached_full ||= begin
