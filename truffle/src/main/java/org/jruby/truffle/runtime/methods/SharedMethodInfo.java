@@ -22,6 +22,7 @@ public class SharedMethodInfo {
     private final SourceSection sourceSection;
     private final LexicalScope lexicalScope;
     private final Arity arity;
+    /** The original name of the method. Does not change when aliased. */
     private final String name;
     private final boolean isBlock;
     private final org.jruby.ast.Node parseTree;
@@ -66,6 +67,10 @@ public class SharedMethodInfo {
 
     public boolean shouldAlwaysSplit() {
         return alwaysSplit;
+    }
+
+    public SharedMethodInfo withName(String newName) {
+        return new SharedMethodInfo(sourceSection, lexicalScope, arity, newName, isBlock, parseTree, alwaysSplit);
     }
 
     @Override

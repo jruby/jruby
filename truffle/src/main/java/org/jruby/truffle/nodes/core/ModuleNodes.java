@@ -973,7 +973,8 @@ public abstract class ModuleNodes {
             notDesignedForCompilation();
 
             final CallTarget modifiedCallTarget = proc.getCallTargetForMethods();
-            final InternalMethod modifiedMethod = new InternalMethod(proc.getSharedMethodInfo(), name, module, Visibility.PUBLIC, false, modifiedCallTarget, proc.getDeclarationFrame());
+            final SharedMethodInfo info = proc.getSharedMethodInfo().withName(name);
+            final InternalMethod modifiedMethod = new InternalMethod(info, name, module, Visibility.PUBLIC, false, modifiedCallTarget, proc.getDeclarationFrame());
             module.addMethod(this, modifiedMethod);
 
             return getContext().getSymbolTable().getSymbol(name);
