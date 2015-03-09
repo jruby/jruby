@@ -16,6 +16,7 @@ import org.jruby.parser.StaticScope;
 
 import java.util.HashMap;
 import java.util.Map;
+import org.jruby.util.ByteList;
 
 /**
  *
@@ -33,6 +34,10 @@ public class IRWriterAnalzer implements IRWriterEncoder {
         for (Operand operand: instr.getOperands()) {
             increment(operand);
         }
+    }
+
+    @Override
+    public void encode(ByteList value) {
     }
 
     @Override
