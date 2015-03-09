@@ -613,6 +613,11 @@ class String
     false
   end
 
+  def to_inum(base, check)
+    Rubinius.primitive :string_to_inum
+    raise ArgumentError, "invalid value for Integer"
+  end
+
   def self.try_convert(obj)
     Rubinius::Type.try_convert obj, String, :to_str
   end
