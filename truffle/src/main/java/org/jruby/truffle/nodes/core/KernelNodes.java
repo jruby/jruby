@@ -217,7 +217,7 @@ public abstract class KernelNodes {
 
         public CompareNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            equalNode = SameOrEqualNodeFactory.create(context, sourceSection, new RubyNode[] { null, null });
+            equalNode = SameOrEqualNodeFactory.create(context, sourceSection, new RubyNode[]{null, null});
         }
 
         public CompareNode(CompareNode prev) {
@@ -1262,6 +1262,25 @@ public abstract class KernelNodes {
         public Object loop(VirtualFrame frame) {
             return whileNode.execute(frame);
         }
+    }
+
+    @CoreMethod(names = "__method__", needsSelf = false)
+    public abstract static class MethodNameNode extends CoreMethodNode {
+
+        public MethodNameNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public MethodNameNode(MethodNameNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public RubySymbol methodName(VirtualFrame frame) {
+            notDesignedForCompilation();
+            return getContext().getSymbolTable().getSymbol(RubyCallStack.getCallingMethod(frame).getSharedMethodInfo().getName());
+        }
+
     }
 
     @CoreMethod(names = "method", required = 1)
