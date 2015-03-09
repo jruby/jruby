@@ -52,7 +52,7 @@ public class InstrEncoderMap {
             case CLASS_VAR_MODULE: encodeGetClassVarContainerModuleInstr((GetClassVarContainerModuleInstr) instr); break;
             case BUILD_COMPOUND_STRING: encodeBuildCompoundStringInstr((BuildCompoundStringInstr) instr); break;
             // case BUILD_DREGEXP: return encodeBuildDynRegExpInstr();
-            // case BUILD_RANGE: return encodeBuildRangeInstr();
+            case BUILD_RANGE: encodeBuildRangeInstr((BuildRangeInstr) instr); break;
             case CONST_MISSING: encodeConstMissingInstr((ConstMissingInstr) instr); break;
             case COPY: encodeCopyInstr((CopyInstr) instr); break;
             case DEF_CLASS: encodeDefineClassInstr((DefineClassInstr) instr); break;
@@ -386,6 +386,12 @@ public class InstrEncoderMap {
     private void encodePutGlobalVarInstr(PutGlobalVarInstr instr) {
         e.encode(((GlobalVariable) instr.getTarget()).getName());
         e.encode(instr.getValue());
+    }
+
+    private void encodeBuildRangeInstr(BuildRangeInstr instr) {
+        e.encode(instr.getBegin());
+        e.encode(instr.getEnd());
+        e.encode(instr.isExclusive());
     }
 
     private void encodeRaiseArgumentErrorInstr(RaiseArgumentErrorInstr instr) {
