@@ -163,6 +163,10 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
     public static final int USER6_F = (1<<(FL_USHIFT+6));
     public static final int USER7_F = (1<<(FL_USHIFT+7));
     public static final int USER8_F = (1<<(FL_USHIFT+8));
+    public static final int USER9_F = (1<<(FL_USHIFT+9));
+    public static final int USERA_F = (1<<(FL_USHIFT+10));
+    public static final int REFINED_MODULE_F = USER9_F;
+    public static final int IS_OVERLAID_F = USERA_F;
 
     public static final int COMPARE_BY_IDENTITY_F = USER8_F;
 
