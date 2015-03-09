@@ -1,2 +1,0 @@
-fails:Set#initialize adds all elements of the passed Enumerable to self
-fails:Set#initialize preprocesses all elements by a passed block before adding to self

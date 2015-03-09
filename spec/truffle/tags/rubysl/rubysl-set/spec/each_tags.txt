@@ -1,1 +1,0 @@
-fails:Set#each returns an Enumerator when not passed a block

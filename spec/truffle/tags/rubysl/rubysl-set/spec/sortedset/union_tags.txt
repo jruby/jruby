@@ -1,4 +1,0 @@
-fails:SortedSet#union returns a new SortedSet containing all elements of self and the passed Enumerable
-fails:SortedSet#union raises an ArgumentError when passed a non-Enumerable
-fails:SortedSet#| returns a new SortedSet containing all elements of self and the passed Enumerable
-fails:SortedSet#| raises an ArgumentError when passed a non-Enumerable

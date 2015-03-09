@@ -1,1 +1,0 @@
-fails:Set#classify returns an Enumerator when passed no block

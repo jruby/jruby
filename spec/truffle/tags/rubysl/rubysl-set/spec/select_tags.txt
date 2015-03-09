@@ -1,5 +1,0 @@
-fails:Set#select! yields every element of self
-fails:Set#select! keeps every element from self for which the passed block returns true
-fails:Set#select! returns self when self was modified
-fails:Set#select! returns nil when self was not modified
-fails:Set#select! returns an Enumerator when passed no block

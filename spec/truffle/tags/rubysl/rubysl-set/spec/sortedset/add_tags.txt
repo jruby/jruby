@@ -1,6 +1,0 @@
-fails:SortedSet#add adds the passed Object to self
-fails:SortedSet#add returns self
-fails:SortedSet#add takes only values which responds <=>
-fails:SortedSet#add? adds the passed Object to self
-fails:SortedSet#add? returns self when the Object has not yet been added to self
-fails:SortedSet#add? returns nil when the Object has already been added to self

@@ -1,3 +1,0 @@
-fails:Set#map! yields each Object in self
-fails:Set#map! returns self
-fails:Set#map! replaces self with the return values of the block

@@ -1,1 +1,0 @@
-fails:Set#- returns a new Set containting self's elements excluding the elements in the passed Enumerable

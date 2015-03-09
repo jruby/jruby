@@ -1,4 +1,0 @@
-fails:Set#delete_if yields every element of self
-fails:Set#delete_if deletes every element from self for which the passed block returns true
-fails:Set#delete_if returns self
-fails:Set#delete_if returns an Enumerator when passed no block
