@@ -1361,6 +1361,44 @@ public abstract class ModuleNodes {
         }
     }
 
+    @CoreMethod(names = "protected_instance_methods", optional = 1)
+    public abstract static class ProtectedInstanceMethodsNode extends CoreMethodNode {
+
+        public ProtectedInstanceMethodsNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public ProtectedInstanceMethodsNode(ProtectedInstanceMethodsNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public RubyArray protectedInstanceMethods(RubyModule module, UndefinedPlaceholder argument) {
+            return protectedInstanceMethods(module, false);
+        }
+
+        @Specialization
+        public RubyArray protectedInstanceMethods(RubyModule module, boolean includeAncestors) {
+            notDesignedForCompilation();
+
+            final RubyArray array = new RubyArray(getContext().getCoreLibrary().getArrayClass());
+            final List<InternalMethod> methods = new ArrayList<>(module.getMethods().values());
+
+            if (includeAncestors) {
+                for (RubyModule parent : module.parentAncestors()) {
+                    methods.addAll(parent.getMethods().values());
+                }
+            }
+            for (InternalMethod method : methods) {
+                if (method.getVisibility() == Visibility.PROTECTED){
+                    RubySymbol m = getContext().newSymbol(method.getName());
+                    array.slowPush(m);
+                }
+            }
+            return array;
+        }
+    }
+
     @CoreMethod(names = "private_instance_methods", optional = 1)
     public abstract static class PrivateInstanceMethodsNode extends CoreMethodNode {
 
