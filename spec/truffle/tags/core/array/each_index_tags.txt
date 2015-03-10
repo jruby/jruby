@@ -1,4 +1,0 @@
-fails:Array#each_index passes the index of each element to the block
-fails:Array#each_index returns self
-fails:Array#each_index is not confused by removing elements from the front
-fails:Array#each_index returns an Enumerator if no block given

@@ -38,6 +38,10 @@ class Array
     ary
   end
 
+  def self.try_convert(obj)
+    Rubinius::Type.try_convert obj, Array, :to_ary
+  end
+
   def &(other)
     other = Rubinius::Type.coerce_to other, Array, :to_ary
 
@@ -419,6 +423,20 @@ class Array
     nil
   end
 
+  def each_index
+    return to_enum(:each_index) unless block_given?
+
+    i = 0
+    total = @total
+
+    while i < total
+      yield i
+      i += 1
+    end
+
+    self
+  end
+
   def flatten(level=-1)
     level = Rubinius::Type.coerce_to_collection_index level
     return self.dup if level == 0
@@ -442,6 +460,14 @@ class Array
     end
 
     nil
+  end
+
+  def keep_if(&block)
+    return to_enum :keep_if unless block_given?
+
+    Rubinius.check_frozen
+
+    replace select(&block)
   end
 
   def reverse_each
