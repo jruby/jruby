@@ -53,7 +53,8 @@ import org.jruby.truffle.runtime.rubinius.RubiniusByteArray;
                 RubyEncoding.class, //
                 RubySymbol.class, //
                 RubyThread.class, //
-                RubyTime.class, //
+                RubyTime.class,
+                RubyRandom.class, //
                 RubyEncodingConverter.class, //
                 RubyMethod.class, //
                 RubyUnboundMethod.class, //

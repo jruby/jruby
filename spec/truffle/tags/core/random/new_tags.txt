@@ -1,4 +1,3 @@
-fails:Random.new returns a new instance of Random
 fails:Random.new uses a random seed value if none is supplied
 fails:Random.new returns Random instances initialized with different seeds
 fails:Random.new accepts an Integer seed value as an argument
