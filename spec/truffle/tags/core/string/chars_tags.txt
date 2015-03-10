@@ -1,6 +1,0 @@
-fails:String#chars is unicode aware
-fails:String#chars returns characters in the same encoding as self
-fails:String#chars works with multibyte characters
-fails:String#chars works if the String's contents is invalid for its encoding
-fails:String#chars returns a different character if the String is transcoded
-fails:String#chars uses the String's encoding to determine what characters it contains
