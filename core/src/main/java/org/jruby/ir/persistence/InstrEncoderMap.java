@@ -6,7 +6,6 @@
 
 package org.jruby.ir.persistence;
 
-import java.util.List;
 import org.jcodings.Encoding;
 import org.jruby.RubyInstanceConfig;
 import org.jruby.ir.instructions.*;
@@ -32,6 +31,8 @@ public class InstrEncoderMap {
             e.encode(((ResultInstr) instr).getResult());
         }
 
+        // FIXME Add unbox* and i* f* instrs eventually so we can persist later more optimized code
+        // ^-- This is a ways out since this persistence mechanism happens before CFG is built.
         switch(instr.getOperation()) {
             case ALIAS: encodeAliasInstr((AliasInstr) instr); break;
             case ARG_SCOPE_DEPTH: /* no state */ break;
@@ -46,17 +47,17 @@ public class InstrEncoderMap {
             case B_NIL: encodeBNilInstr((BNilInstr) instr); break;
             case B_TRUE: encodeBTrueInstr((BTrueInstr) instr); break;
             case B_UNDEF: encodeBUndefInstr((BUndefInstr) instr); break;
-            case CALL: case CALL_1F: case CALL_1D: case CALL_1O: case CALL_1OB: case CALL_0O: case NORESULT_CALL_1O:
-                encodeCallBaseInstr((CallInstr) instr); break;
-            case CHECK_ARGS_ARRAY_ARITY: encodeCheckArgsArrayArityInstr((CheckArgsArrayArityInstr) instr); break;
-            case CHECK_ARITY: encodeCheckArityInstr((CheckArityInstr) instr); break;
-            case CLASS_VAR_MODULE: encodeGetClassVarContainerModuleInstr((GetClassVarContainerModuleInstr) instr); break;
             case BACKTICK_STRING: encodeBacktickInstr((BacktickInstr) instr); break;
             case BUILD_COMPOUND_ARRAY: encodeBuildCompoundArrayInstr((BuildCompoundArrayInstr) instr); break;
             case BUILD_COMPOUND_STRING: encodeBuildCompoundStringInstr((BuildCompoundStringInstr) instr); break;
             case BUILD_DREGEXP: encodeBuildDynRegExpInstr((BuildDynRegExpInstr) instr); break;
             case BUILD_RANGE: encodeBuildRangeInstr((BuildRangeInstr) instr); break;
             case BUILD_SPLAT: encodeBuildSplatInstr((BuildSplatInstr) instr); break;
+            case CALL: case CALL_1F: case CALL_1D: case CALL_1O: case CALL_1OB: case CALL_0O: case NORESULT_CALL_1O:
+                encodeCallBaseInstr((CallInstr) instr); break;
+            case CHECK_ARGS_ARRAY_ARITY: encodeCheckArgsArrayArityInstr((CheckArgsArrayArityInstr) instr); break;
+            case CHECK_ARITY: encodeCheckArityInstr((CheckArityInstr) instr); break;
+            case CLASS_VAR_MODULE: encodeGetClassVarContainerModuleInstr((GetClassVarContainerModuleInstr) instr); break;
             case CHECK_FOR_LJE: encodeCheckForLJEInstr((CheckForLJEInstr) instr); break;
             case CONST_MISSING: encodeConstMissingInstr((ConstMissingInstr) instr); break;
             case COPY: encodeCopyInstr((CopyInstr) instr); break;
@@ -88,6 +89,8 @@ public class InstrEncoderMap {
             case MATCH: encodeMatchInstr((MatchInstr) instr); break;
             case MATCH2: encodeMatch2Instr((Match2Instr) instr); break;
             case MATCH3: encodeMatch3Instr((Match3Instr) instr); break;
+            // FIXME: If we ever persist more optimized code we need to impl this.
+            //case MODULE_GUARD: encodeModuleGuardInstr((ModuleVersionGuardInstr) instr); break;
             case NONLOCAL_RETURN: encodeNonlocalReturnInstr((NonlocalReturnInstr) instr); break;
             case NOP: /* no state */ break;
             case NORESULT_CALL: encodeCallBaseInstr((NoResultCallInstr) instr); break;
@@ -101,6 +104,7 @@ public class InstrEncoderMap {
             case PUT_FIELD: encodePutFieldInstr((PutFieldInstr) instr); break;
             case PUT_GLOBAL_VAR: encodePutGlobalVarInstr((PutGlobalVarInstr) instr); break;
             case RAISE_ARGUMENT_ERROR: encodeRaiseArgumentErrorInstr((RaiseArgumentErrorInstr) instr); break;
+            case RAISE_REQUIRED_KEYWORD_ARGUMENT_ERROR: encodeRaiseRequiredKeywordArgumentErrorInstr((RaiseRequiredKeywordArgumentError) instr); break;
             case RECORD_END_BLOCK: encodeRecordEndBlockInstr((RecordEndBlockInstr) instr); break;
             case REIFY_CLOSURE: encodeReifyClosureInstr((ReifyClosureInstr) instr); break;
             case RECV_RUBY_EXC: encodeReceiveRubyExceptionInstr((ReceiveRubyExceptionInstr) instr); break;
@@ -124,6 +128,8 @@ public class InstrEncoderMap {
             case THREAD_POLL: encodeThreadPollInstr((ThreadPollInstr) instr); break;
             case THROW: encodeThrowExceptionInstr((ThrowExceptionInstr) instr); break;
             case TO_ARY: encodeToAryInstr((ToAryInstr) instr); break;
+            // Should we really be emitting trace instrs?
+            case TRACE: encodeTraceInstr((TraceInstr) instr); break;
             case UNDEF_METHOD: encodeUndefMethodInstr((UndefMethodInstr) instr); break;
             case YIELD: encodeYieldInstr((YieldInstr) instr); break;
             case ZSUPER: encodeZSuperInstr((ZSuperInstr) instr); break;
@@ -341,6 +347,9 @@ public class InstrEncoderMap {
         e.encode(instr.getIndex());
         e.encode(instr.getMinArgsLength());
     }
+    private void encodeRaiseRequiredKeywordArgumentErrorInstr(RaiseRequiredKeywordArgumentError instr) {
+        e.encode(instr.getName());
+    }
 
     private void encodeReqdArgMultipleAsgnInstr(ReqdArgMultipleAsgnInstr instr) {
         e.encode(instr.getArray());
@@ -505,6 +514,13 @@ public class InstrEncoderMap {
     private void encodeSetCapturedVarInstr(SetCapturedVarInstr instr) {
         e.encode(instr.getMatch2Result());
         e.encode(instr.getVarName());
+    }
+
+    private void encodeTraceInstr(TraceInstr instr) {
+        e.encode(instr.getEvent().ordinal());
+        e.encode(instr.getName());
+        e.encode(instr.getFilename());
+        e.encode(instr.getLinenumber());
     }
 
     private void encodeClassSuperInstr(ClassSuperInstr instr) {
