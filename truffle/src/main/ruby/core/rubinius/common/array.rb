@@ -588,12 +588,4 @@ class Array
     out
   end
 
-  # from tuple.rb
-  def swap(a, b)
-    temp = at(a)
-    self[a] = at(b)
-    self[b] = temp
-  end
-  private :swap
-
 end

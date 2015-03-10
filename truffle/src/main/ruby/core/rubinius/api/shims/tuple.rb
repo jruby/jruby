@@ -20,3 +20,15 @@ module Rubinius
   end
 
 end
+
+
+class Array
+
+  def swap(a, b)
+    temp = at(a)
+    self[a] = at(b)
+    self[b] = temp
+  end
+  private :swap
+
+end
