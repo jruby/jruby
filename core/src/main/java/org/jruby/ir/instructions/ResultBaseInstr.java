@@ -22,7 +22,6 @@ public abstract class ResultBaseInstr extends Instr implements ResultInstr {
     @Override
     public void encode(IRWriterEncoder e) {
         super.encode(e);
-
         e.encode(getResult());
     }
 

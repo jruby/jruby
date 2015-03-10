@@ -1,6 +1,7 @@
 package org.jruby.ir.operands;
 
 import org.jruby.ir.IRVisitor;
+import org.jruby.ir.persistence.IRWriterEncoder;
 import org.jruby.ir.transformations.inlining.SimpleCloneInfo;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.DynamicScope;
@@ -59,6 +60,13 @@ public class TemporaryLocalVariable extends TemporaryVariable {
         // I dont like this at all.  This feels ugly!
         Object o = temp[offset];
         return o == null ? context.nil : o;
+    }
+
+    @Override
+    public void encode(IRWriterEncoder e) {
+        super.encode(e);
+        e.encode(offset);
+        e.encode((byte) getType().ordinal());
     }
 
     @Override

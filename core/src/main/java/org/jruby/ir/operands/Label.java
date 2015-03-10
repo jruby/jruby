@@ -1,6 +1,7 @@
 package org.jruby.ir.operands;
 
 import org.jruby.ir.IRVisitor;
+import org.jruby.ir.persistence.IRWriterEncoder;
 import org.jruby.ir.transformations.inlining.CloneInfo;
 
 import java.util.List;
@@ -74,6 +75,13 @@ public class Label extends Operand {
 
     public int getTargetPC() {
         return this.targetPC;
+    }
+
+    @Override
+    public void encode(IRWriterEncoder e) {
+        super.encode(e);
+        e.encode(prefix);
+        e.encode(id);
     }
 
     @Override

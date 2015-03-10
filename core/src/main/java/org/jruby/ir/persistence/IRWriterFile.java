@@ -31,11 +31,10 @@ import org.jruby.util.ByteList;
 public class IRWriterFile implements IRWriterEncoder, IRPersistenceValues {
     private static final int VERSION = 0;
 
-    private final Map<IRScope, Integer> scopeInstructionOffsets = new HashMap<IRScope, Integer>();
+    private final Map<IRScope, Integer> scopeInstructionOffsets = new HashMap<>();
     // FIXME: Allocate direct and use one per thread?
     private final ByteBuffer buf = ByteBuffer.allocate(TWO_MEGS);
     private final File file;
-    private final OperandEncoderMap operandEncoder;
     private final IRWriterAnalzer analyzer;
 
     int headersOffset = -1;
@@ -43,7 +42,6 @@ public class IRWriterFile implements IRWriterEncoder, IRPersistenceValues {
 
     public IRWriterFile(File file) throws FileNotFoundException {
         this.file = file;
-        this.operandEncoder = new OperandEncoderMap(this);
         this.analyzer = new IRWriterAnalzer();
     }
 
@@ -149,7 +147,7 @@ public class IRWriterFile implements IRWriterEncoder, IRPersistenceValues {
 
     @Override
     public void encode(Operand operand) {
-        operandEncoder.encode(operand);
+        operand.encode(this);
     }
 
     @Override
@@ -167,7 +165,7 @@ public class IRWriterFile implements IRWriterEncoder, IRPersistenceValues {
 
     @Override
     public void encode(IRScope value) {
-        encode((int) analyzer.getScopeID(value));
+        encode(analyzer.getScopeID(value));
     }
 
     @Override

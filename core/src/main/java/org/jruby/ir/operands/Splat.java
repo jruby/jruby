@@ -1,7 +1,7 @@
 package org.jruby.ir.operands;
 
 import org.jruby.ir.IRVisitor;
-import org.jruby.ir.runtime.IRRuntimeHelpers;
+import org.jruby.ir.persistence.IRWriterEncoder;
 import org.jruby.ir.transformations.inlining.CloneInfo;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.DynamicScope;
@@ -75,7 +75,13 @@ public class Splat extends Operand implements DepthCloneable {
         // a java array. So, a dup is not required either.
         //
         // So, besides retrieving the array, nothing more to be done here!
-        return (IRubyObject) array.retrieve(context, self, currScope, currDynScope, temp);
+        return array.retrieve(context, self, currScope, currDynScope, temp);
+    }
+
+    @Override
+    public void encode(IRWriterEncoder e) {
+        super.encode(e);
+        e.encode(getArray());
     }
 
     @Override

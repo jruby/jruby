@@ -2,6 +2,7 @@ package org.jruby.ir.operands;
 
 import org.jruby.ir.IRClosure;
 import org.jruby.ir.IRVisitor;
+import org.jruby.ir.persistence.IRWriterEncoder;
 import org.jruby.ir.transformations.inlining.CloneInfo;
 import org.jruby.ir.transformations.inlining.SimpleCloneInfo;
 import org.jruby.parser.StaticScope;
@@ -74,6 +75,13 @@ public class WrappedIRClosure extends Operand {
         Binding binding = context.currentBinding(selfVal, currDynScope);
 
         return new Block(body, binding);
+    }
+
+    @Override
+    public void encode(IRWriterEncoder e) {
+        super.encode(e);
+        e.encode(self);
+        e.encode(closure);
     }
 
     @Override

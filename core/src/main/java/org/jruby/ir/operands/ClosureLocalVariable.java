@@ -2,6 +2,7 @@ package org.jruby.ir.operands;
 
 import org.jruby.ir.IRClosure;
 import org.jruby.ir.IRVisitor;
+import org.jruby.ir.persistence.IRWriterEncoder;
 import org.jruby.ir.transformations.inlining.SimpleCloneInfo;
 
 /**
@@ -60,6 +61,12 @@ public class ClosureLocalVariable extends LocalVariable {
     @Override
     public void visit(IRVisitor visitor) {
         visitor.ClosureLocalVariable(this);
+    }
+
+    @Override
+    public void encode(IRWriterEncoder e) {
+        super.encode(e);
+        e.encode(definedLocally);
     }
 
     @Override

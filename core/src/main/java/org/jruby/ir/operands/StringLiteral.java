@@ -2,6 +2,7 @@ package org.jruby.ir.operands;
 
 import org.jruby.RubyString;
 import org.jruby.ir.IRVisitor;
+import org.jruby.ir.persistence.IRWriterEncoder;
 import org.jruby.ir.transformations.inlining.CloneInfo;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.DynamicScope;
@@ -107,6 +108,13 @@ public class StringLiteral extends Operand {
 
     public String getString() {
         return string;
+    }
+
+    @Override
+    public void encode(IRWriterEncoder e) {
+        super.encode(e);
+        e.encode(bytelist);
+        e.encode(coderange);
     }
 
     public int getCodeRange() { return coderange; }

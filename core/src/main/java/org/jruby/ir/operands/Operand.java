@@ -2,6 +2,7 @@ package org.jruby.ir.operands;
 
 import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Interp;
+import org.jruby.ir.persistence.IRWriterEncoder;
 import org.jruby.ir.transformations.inlining.CloneInfo;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.DynamicScope;
@@ -81,6 +82,10 @@ public abstract class Operand {
     public abstract void addUsedVariables(List<Variable> l);
 
     public abstract Operand cloneForInlining(CloneInfo ii);
+
+    public void encode(IRWriterEncoder e) {
+        e.encode(getOperandType().getCoded());
+    }
 
     @Interp
     public Object retrieve(ThreadContext context, IRubyObject self, StaticScope currScope, DynamicScope currDynScope, Object[] temp) {
