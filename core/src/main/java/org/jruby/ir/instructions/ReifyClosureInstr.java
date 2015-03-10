@@ -7,6 +7,7 @@ import org.jruby.ir.Operation;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.Variable;
 import org.jruby.ir.operands.WrappedIRClosure;
+import org.jruby.ir.persistence.IRWriterEncoder;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.ir.transformations.inlining.CloneInfo;
 import org.jruby.ir.transformations.inlining.InlineCloneInfo;
@@ -49,7 +50,14 @@ public class ReifyClosureInstr extends ResultBaseInstr implements FixedArityInst
 
         return new CopyInstr(ii.getRenamedVariable(result), ii.getCallClosure());
     }
-    
+
+    @Override
+    public void encode(IRWriterEncoder e) {
+        super.encode(e);
+        e.encode(getSource());
+        e.encode(getResult());
+    }
+
     @Override
     public Object interpret(ThreadContext context, StaticScope currScope, DynamicScope currDynScope, IRubyObject self, Object[] temp) {
         Block block = (Block) getSource().retrieve(context, self, currScope, currDynScope, temp);

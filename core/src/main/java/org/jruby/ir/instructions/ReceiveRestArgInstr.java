@@ -3,6 +3,7 @@ package org.jruby.ir.instructions;
 import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Operation;
 import org.jruby.ir.operands.Variable;
+import org.jruby.ir.persistence.IRWriterEncoder;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.ir.transformations.inlining.CloneInfo;
 import org.jruby.ir.transformations.inlining.InlineCloneInfo;
@@ -37,6 +38,13 @@ public class ReceiveRestArgInstr extends ReceiveArgBase implements FixedArityIns
         if (ii.canMapArgsStatically()) return new CopyInstr(ii.getRenamedVariable(result), ii.getArg(argIndex, true));
 
         return new RestArgMultipleAsgnInstr(ii.getRenamedVariable(result), ii.getArgs(), argIndex, (required - argIndex), argIndex);
+    }
+
+    @Override
+    public void encode(IRWriterEncoder e) {
+        super.encode(e);
+        e.encode(required);
+        e.encode(getArgIndex());
     }
 
     @Override

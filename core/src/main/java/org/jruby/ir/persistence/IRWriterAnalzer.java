@@ -73,6 +73,10 @@ public class IRWriterAnalzer implements IRWriterEncoder {
     }
 
     @Override
+    public void encode(Operand[] operand) {
+    }
+
+    @Override
     public void encode(boolean value) {
     }
 

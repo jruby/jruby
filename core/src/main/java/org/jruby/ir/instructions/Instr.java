@@ -2,6 +2,7 @@ package org.jruby.ir.instructions;
 
 // A generic IR instruction is of the form: v = OP(arg_array, attribute_array)
 
+import org.jruby.RubyInstanceConfig;
 import org.jruby.ir.IRScope;
 import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Interp;
@@ -9,6 +10,7 @@ import org.jruby.ir.Operation;
 import org.jruby.ir.operands.LocalVariable;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.Variable;
+import org.jruby.ir.persistence.IRWriterEncoder;
 import org.jruby.ir.transformations.inlining.CloneInfo;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.DynamicScope;
@@ -52,6 +54,11 @@ public abstract class Instr {
     private String[] EMPTY_STRINGS = new String[0];
     public String[] toStringNonOperandArgs() {
         return EMPTY_STRINGS;
+    }
+
+    public void encode(IRWriterEncoder e) {
+        if (RubyInstanceConfig.IR_WRITING_DEBUG) System.out.println("Instr(" + getOperation() + "): " + this);
+        e.encode(getOperation());
     }
 
     /**

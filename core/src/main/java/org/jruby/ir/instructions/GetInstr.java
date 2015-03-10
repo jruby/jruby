@@ -3,6 +3,7 @@ package org.jruby.ir.instructions;
 import org.jruby.ir.Operation;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.Variable;
+import org.jruby.ir.persistence.IRWriterEncoder;
 
 // Represents result = source.ref or result = source where source is not a stack variable
 public abstract class GetInstr extends ResultBaseInstr implements FixedArityInstr {
@@ -22,6 +23,13 @@ public abstract class GetInstr extends ResultBaseInstr implements FixedArityInst
 
     public Operand getSource() {
         return operands[0];
+    }
+
+    @Override
+    public void encode(IRWriterEncoder e) {
+        super.encode(e);
+        e.encode(getSource());
+        e.encode(getRef());
     }
 
     @Override

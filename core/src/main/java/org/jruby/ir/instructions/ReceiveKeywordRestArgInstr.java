@@ -5,6 +5,7 @@ import org.jruby.ir.IRScope;
 import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Operation;
 import org.jruby.ir.operands.Variable;
+import org.jruby.ir.persistence.IRWriterEncoder;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.ir.transformations.inlining.CloneInfo;
 import org.jruby.runtime.ThreadContext;
@@ -32,6 +33,12 @@ public class ReceiveKeywordRestArgInstr extends ReceiveArgBase implements FixedA
     @Override
     public Instr clone(CloneInfo ii) {
         return new ReceiveKeywordRestArgInstr(ii.getRenamedVariable(result), required);
+    }
+
+    @Override
+    public void encode(IRWriterEncoder e) {
+        super.encode(e);
+        e.encode(required);
     }
 
     @Override

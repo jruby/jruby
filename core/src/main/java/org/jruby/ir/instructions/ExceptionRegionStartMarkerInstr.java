@@ -4,6 +4,7 @@ import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Operation;
 import org.jruby.ir.operands.Label;
 import org.jruby.ir.operands.Operand;
+import org.jruby.ir.persistence.IRWriterEncoder;
 import org.jruby.ir.transformations.inlining.CloneInfo;
 
 public class ExceptionRegionStartMarkerInstr extends Instr implements FixedArityInstr {
@@ -18,6 +19,12 @@ public class ExceptionRegionStartMarkerInstr extends Instr implements FixedArity
     @Override
     public Instr clone(CloneInfo ii) {
         return new ExceptionRegionStartMarkerInstr(ii.getRenamedLabel((Label) operands[0]));
+    }
+
+    @Override
+    public void encode(IRWriterEncoder e) {
+        super.encode(e);
+        e.encode(getFirstRescueBlockLabel());
     }
 
     @Override

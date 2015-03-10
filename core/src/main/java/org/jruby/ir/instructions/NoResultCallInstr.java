@@ -4,6 +4,7 @@ import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Operation;
 import org.jruby.ir.instructions.specialized.OneOperandArgNoBlockNoResultCallInstr;
 import org.jruby.ir.operands.Operand;
+import org.jruby.ir.persistence.IRWriterEncoder;
 import org.jruby.ir.transformations.inlining.CloneInfo;
 import org.jruby.runtime.CallType;
 
@@ -25,6 +26,14 @@ public class NoResultCallInstr extends CallBase {
     public Instr clone(CloneInfo ii) {
         return new NoResultCallInstr(getOperation(), getCallType(), getName(), getReceiver().cloneForInlining(ii),
                 cloneCallArgs(ii), getClosureArg() == null ? null : getClosureArg().cloneForInlining(ii));
+    }
+
+    @Override
+    public void encode(IRWriterEncoder e) {
+        super.encode(e);
+        e.encode(getReceiver());
+        e.encode(getName());
+        e.encode(getCallArgs());
     }
 
     @Override

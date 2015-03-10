@@ -5,6 +5,7 @@ import org.jruby.ir.IRScope;
 import org.jruby.ir.Operation;
 import org.jruby.ir.operands.*;
 import org.jruby.ir.operands.Float;
+import org.jruby.ir.persistence.IRWriterEncoder;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.ir.transformations.inlining.CloneInfo;
 import org.jruby.parser.StaticScope;
@@ -52,6 +53,29 @@ public abstract class CallBase extends Instr implements ClosureAcceptingInstr {
         targetRequiresCallersFrame = true;
         dontInline = false;
         procNew = false;
+    }
+
+    @Override
+    public void encode(IRWriterEncoder e) {
+        super.encode(e);
+
+        e.encode(getCallType().ordinal());
+        e.encode(getName());
+        e.encode(getReceiver());
+        e.encode(calculateArity(getCallArgs(), hasClosure));
+
+        for (Operand arg: getCallArgs()) {
+            e.encode(arg);
+        }
+
+        if (hasClosure) e.encode(getClosureArg(null));
+
+    }
+
+    // FIXME: Convert this to some Signature/Arity method
+    // -0 is not possible so we add 1 to arguments with closure so we get a valid negative value.
+    private int calculateArity(Operand[] arguments, boolean hasClosure) {
+        return hasClosure ? -1*(arguments.length + 1) : arguments.length;
     }
 
     private static Operand[] getOperands(Operand receiver, Operand[] arguments, Operand closure) {

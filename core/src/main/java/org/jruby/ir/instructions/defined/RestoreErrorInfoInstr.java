@@ -5,6 +5,7 @@ import org.jruby.ir.Operation;
 import org.jruby.ir.instructions.FixedArityInstr;
 import org.jruby.ir.instructions.Instr;
 import org.jruby.ir.operands.Operand;
+import org.jruby.ir.persistence.IRWriterEncoder;
 import org.jruby.ir.transformations.inlining.CloneInfo;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.DynamicScope;
@@ -23,6 +24,12 @@ public class RestoreErrorInfoInstr extends Instr implements FixedArityInstr {
     @Override
     public Instr clone(CloneInfo ii) {
         return new RestoreErrorInfoInstr(getArg().cloneForInlining(ii));
+    }
+
+    @Override
+    public void encode(IRWriterEncoder e) {
+        super.encode(e);
+        e.encode(getArg());
     }
 
     @Override

@@ -4,6 +4,7 @@ import org.jruby.ir.IRMethod;
 import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Operation;
 import org.jruby.ir.operands.Operand;
+import org.jruby.ir.persistence.IRWriterEncoder;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.ir.transformations.inlining.CloneInfo;
 import org.jruby.parser.StaticScope;
@@ -37,6 +38,13 @@ public class DefineClassMethodInstr extends Instr implements FixedArityInstr {
     @Override
     public Instr clone(CloneInfo ii) {
         return new DefineClassMethodInstr(getContainer().cloneForInlining(ii), method);
+    }
+
+    @Override
+    public void encode(IRWriterEncoder e) {
+        super.encode(e);
+        e.encode(getContainer());
+        e.encode(getMethod());
     }
 
     @Override

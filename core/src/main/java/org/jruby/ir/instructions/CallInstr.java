@@ -10,6 +10,7 @@ import org.jruby.ir.instructions.specialized.OneOperandArgNoBlockCallInstr;
 import org.jruby.ir.instructions.specialized.ZeroOperandArgNoBlockCallInstr;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.Variable;
+import org.jruby.ir.persistence.IRWriterEncoder;
 import org.jruby.ir.transformations.inlining.CloneInfo;
 import org.jruby.runtime.CallType;
 
@@ -62,6 +63,13 @@ public class CallInstr extends CallBase implements ResultInstr {
         this(op, ordinary.getCallType(), ordinary.getResult(),
                 ordinary.getName(), ordinary.getReceiver(), ordinary.getCallArgs(),
                 ordinary.getClosureArg(null));
+    }
+
+    @Override
+    public void encode(IRWriterEncoder e) {
+        super.encode(e);
+
+        e.encode(getResult());
     }
 
     public Variable getResult() {

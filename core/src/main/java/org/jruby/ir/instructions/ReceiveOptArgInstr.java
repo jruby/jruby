@@ -4,6 +4,7 @@ import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Operation;
 import org.jruby.ir.operands.UndefinedValue;
 import org.jruby.ir.operands.Variable;
+import org.jruby.ir.persistence.IRWriterEncoder;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.ir.transformations.inlining.CloneInfo;
 import org.jruby.ir.transformations.inlining.InlineCloneInfo;
@@ -55,6 +56,14 @@ public class ReceiveOptArgInstr extends ReceiveArgBase implements FixedArityInst
         }
 
         return new OptArgMultipleAsgnInstr(ii.getRenamedVariable(result), ii.getArgs(), preArgs + optArgIndex, minReqdArgs);
+    }
+
+    @Override
+    public void encode(IRWriterEncoder e) {
+        super.encode(e);
+        e.encode(requiredArgs);
+        e.encode(getPreArgs());
+        e.encode(getArgIndex());
     }
 
     @Override

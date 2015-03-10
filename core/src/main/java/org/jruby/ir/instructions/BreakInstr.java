@@ -7,6 +7,7 @@ import org.jruby.ir.Operation;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.StringLiteral;
 import org.jruby.ir.operands.Variable;
+import org.jruby.ir.persistence.IRWriterEncoder;
 import org.jruby.ir.transformations.inlining.CloneInfo;
 import org.jruby.ir.transformations.inlining.InlineCloneInfo;
 import org.jruby.ir.transformations.inlining.SimpleCloneInfo;
@@ -93,6 +94,13 @@ public class BreakInstr extends Instr implements FixedArityInstr {
         } else {
             throw new UnsupportedOperationException("Break instructions shouldn't show up outside closures.");
         }
+    }
+
+    @Override
+    public void encode(IRWriterEncoder e) {
+        super.encode(e);
+        e.encode(getReturnValue());
+        e.encode(getScopeName());
     }
 
     @Override

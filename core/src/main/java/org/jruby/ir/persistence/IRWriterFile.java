@@ -36,7 +36,6 @@ public class IRWriterFile implements IRWriterEncoder, IRPersistenceValues {
     private final ByteBuffer buf = ByteBuffer.allocate(TWO_MEGS);
     private final File file;
     private final OperandEncoderMap operandEncoder;
-    private final InstrEncoderMap instrEncoder;
     private final IRWriterAnalzer analyzer;
 
     int headersOffset = -1;
@@ -45,7 +44,6 @@ public class IRWriterFile implements IRWriterEncoder, IRPersistenceValues {
     public IRWriterFile(File file) throws FileNotFoundException {
         this.file = file;
         this.operandEncoder = new OperandEncoderMap(this);
-        this.instrEncoder = new InstrEncoderMap(this);
         this.analyzer = new IRWriterAnalzer();
     }
 
@@ -155,8 +153,16 @@ public class IRWriterFile implements IRWriterEncoder, IRPersistenceValues {
     }
 
     @Override
+    public void encode(Operand[] operands) {
+        encode(operands.length);
+        for(Operand arg: operands) {
+            encode(arg);
+        }
+    }
+
+    @Override
     public void encode(Instr instr) {
-        instrEncoder.encode(instr);
+        instr.encode(this);
     }
 
     @Override
