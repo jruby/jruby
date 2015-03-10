@@ -1093,6 +1093,8 @@ public abstract class StringNodes {
             notDesignedForCompilation();
 
             self.set(from.getBytes());
+            self.setCodeRange(from.getCodeRange());
+
             return self;
         }
     }
