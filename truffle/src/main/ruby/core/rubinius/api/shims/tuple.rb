@@ -29,6 +29,5 @@ class Array
     self[a] = at(b)
     self[b] = temp
   end
-  private :swap
 
 end
