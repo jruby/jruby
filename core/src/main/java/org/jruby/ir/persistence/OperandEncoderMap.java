@@ -55,6 +55,8 @@ class OperandEncoderMap extends IRVisitor {
 
     @Override public void Float(Float flote) { encoder.encode(flote.value); }
 
+    @Override public void FrozenString(FrozenString operand) { StringLiteral(operand); }
+
     @Override public void GlobalVariable(GlobalVariable variable) { encoder.encode(variable.getName()); }
 
     @Override public void Hash(Hash hash) {
@@ -100,7 +102,10 @@ class OperandEncoderMap extends IRVisitor {
 
     @Override public void StandardError(StandardError standarderror) {} // No data
 
-    @Override public void StringLiteral(StringLiteral stringliteral) { encoder.encode(stringliteral.string); }
+    @Override public void StringLiteral(StringLiteral stringliteral) {
+        encoder.encode(stringliteral.getByteList());
+        encoder.encode(stringliteral.getCodeRange());
+    }
 
     @Override public void SValue(SValue svalue) { encode(svalue.getArray()); }
 

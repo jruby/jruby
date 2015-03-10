@@ -19,7 +19,9 @@ import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.util.cli.Options;
 
+import java.util.ArrayDeque;
 import java.util.Arrays;
+import java.util.Deque;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -35,7 +37,7 @@ public abstract class Translator extends org.jruby.ast.visitor.AbstractNodeVisit
     protected final RubyContext context;
     protected final Source source;
 
-    protected SourceSection parentSourceSection;
+    protected Deque<SourceSection> parentSourceSection = new ArrayDeque<>();
 
     public Translator(Node currentNode, RubyContext context, Source source) {
         this.currentNode = currentNode;
@@ -49,10 +51,10 @@ public abstract class Translator extends org.jruby.ast.visitor.AbstractNodeVisit
 
     public SourceSection translate(Source source, org.jruby.lexer.yacc.ISourcePosition sourcePosition) {
         if (sourcePosition == InvalidSourcePosition.INSTANCE) {
-            if (parentSourceSection == null) {
+            if (parentSourceSection.peek() == null) {
                 throw new UnsupportedOperationException("Truffle doesn't want invalid positions - find a way to give me a real position!");
             } else {
-                return parentSourceSection;
+                return parentSourceSection.peek();
             }
         } else if (sourcePosition instanceof DetailedSourcePosition) {
             final DetailedSourcePosition detailedSourcePosition = (DetailedSourcePosition) sourcePosition;

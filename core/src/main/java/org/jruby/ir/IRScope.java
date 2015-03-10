@@ -955,6 +955,13 @@ public abstract class IRScope implements ParseResult {
         return false;
     }
 
+    /**
+     * For lazy scopes which IRBuild on demand we can ask this method whether it has been built yet...
+     */
+    public boolean hasBeenBuilt() {
+        return true;
+    }
+
     public InterpreterContext getInterpreterContext() {
         return interpreterContext;
     }

@@ -22,6 +22,10 @@ public class BacktickInstr extends ResultBaseInstr {
         super(Operation.BACKTICK_STRING, result, pieces);
     }
 
+    public Operand[] getPieces() {
+        return getOperands();
+    }
+
     @Override
     public Instr clone(CloneInfo ii) {
         return new BacktickInstr(ii.getRenamedVariable(result), cloneOperands(ii));

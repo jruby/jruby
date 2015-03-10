@@ -324,7 +324,7 @@ public class BodyTranslator extends Translator {
 
         for (org.jruby.ast.Node child : node.childNodes()) {
             if (child.getPosition() == InvalidSourcePosition.INSTANCE) {
-                parentSourceSection = sourceSection;
+                parentSourceSection.push(sourceSection);
             }
 
             final RubyNode translatedChild;
@@ -333,7 +333,7 @@ public class BodyTranslator extends Translator {
                 translatedChild = child.accept(this);
             } finally {
                 if (child.getPosition() == InvalidSourcePosition.INSTANCE) {
-                    parentSourceSection = null;
+                    parentSourceSection.pop();
                 }
             }
 
@@ -363,12 +363,12 @@ public class BodyTranslator extends Translator {
         RubyNode resultNode;
 
         if (node.getValueNode().getPosition() == InvalidSourcePosition.INSTANCE) {
-            parentSourceSection = sourceSection;
+            parentSourceSection.push(sourceSection);
 
             try {
                 resultNode = node.getValueNode().accept(this);
             } finally {
-                parentSourceSection = null;
+                parentSourceSection.pop();
             }
         } else {
             resultNode = node.getValueNode().accept(this);
@@ -1746,14 +1746,14 @@ public class BodyTranslator extends Translator {
             rhs = new DeadNode(context, sourceSection, "null RHS of local variable assignment");
         } else {
             if (node.getValueNode().getPosition() == InvalidSourcePosition.INSTANCE) {
-                parentSourceSection = sourceSection;
+                parentSourceSection.push(sourceSection);
             }
 
             try {
                 rhs = node.getValueNode().accept(this);
             } finally {
                 if (node.getValueNode().getPosition() == InvalidSourcePosition.INSTANCE) {
-                    parentSourceSection = null;
+                    parentSourceSection.pop();
                 }
             }
         }
@@ -2190,14 +2190,14 @@ public class BodyTranslator extends Translator {
         translatingNextExpression = true;
 
         if (node.getValueNode().getPosition() == InvalidSourcePosition.INSTANCE) {
-            parentSourceSection = sourceSection;
+            parentSourceSection.push(sourceSection);
         }
 
         try {
             resultNode = node.getValueNode().accept(this);
         } finally {
             if (node.getValueNode().getPosition() == InvalidSourcePosition.INSTANCE) {
-                parentSourceSection = null;
+                parentSourceSection.pop();
             }
 
             translatingNextExpression = t;
@@ -2208,7 +2208,7 @@ public class BodyTranslator extends Translator {
 
     @Override
     public RubyNode visitNilNode(org.jruby.ast.NilNode node) {
-        if (node.getPosition() == InvalidSourcePosition.INSTANCE && parentSourceSection == null) {
+        if (node.getPosition() == InvalidSourcePosition.INSTANCE && parentSourceSection.peek() == null) {
             return new DeadNode(context, null, "nil node with no invalid source position - assumed to be implicit null");
         }
 

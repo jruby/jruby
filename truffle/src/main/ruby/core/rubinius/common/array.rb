@@ -38,6 +38,10 @@ class Array
     ary
   end
 
+  def self.try_convert(obj)
+    Rubinius::Type.try_convert obj, Array, :to_ary
+  end
+
   def &(other)
     other = Rubinius::Type.coerce_to other, Array, :to_ary
 
@@ -348,6 +352,16 @@ class Array
 
   private :recursively_flatten
 
+  def assoc(obj)
+    each do |x|
+      if x.kind_of? Array and x.first == obj
+        return x
+      end
+    end
+
+    nil
+  end
+
   def bsearch
     return to_enum :bsearch unless block_given?
 
@@ -409,6 +423,20 @@ class Array
     nil
   end
 
+  def each_index
+    return to_enum(:each_index) unless block_given?
+
+    i = 0
+    total = @total
+
+    while i < total
+      yield i
+      i += 1
+    end
+
+    self
+  end
+
   def flatten(level=-1)
     level = Rubinius::Type.coerce_to_collection_index level
     return self.dup if level == 0
@@ -434,6 +462,14 @@ class Array
     nil
   end
 
+  def keep_if(&block)
+    return to_enum :keep_if unless block_given?
+
+    Rubinius.check_frozen
+
+    replace select(&block)
+  end
+
   def reverse_each
     return to_enum(:reverse_each) unless block_given?
 
@@ -448,6 +484,12 @@ class Array
 
     self
   end
+
+  def find_index(obj=undefined)
+    super
+  end
+
+  alias_method :index, :find_index
 
   def to_a
     if self.instance_of? Array
