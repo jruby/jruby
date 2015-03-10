@@ -21,6 +21,8 @@ import org.jruby.parser.StaticScope;
 
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
+import org.jruby.util.log.Logger;
+import org.jruby.util.log.LoggerFactory;
 
 import static org.jruby.ir.IRFlags.*;
 
@@ -54,6 +56,8 @@ import static org.jruby.ir.IRFlags.*;
  * and so on ...
  */
 public abstract class IRScope implements ParseResult {
+    public static final Logger LOG = LoggerFactory.getLogger("IRScope");
+
     private static final Collection<IRClosure> NO_CLOSURES = Collections.unmodifiableCollection(new ArrayList<IRClosure>(0));
 
     private static AtomicInteger globalScopeCount = new AtomicInteger();
@@ -501,6 +505,8 @@ public abstract class IRScope implements ParseResult {
     /** Make version specific to scope which needs it (e.g. Closure vs non-closure). */
     public InterpreterContext allocateInterpreterContext(List<Instr> instructions) {
         interpreterContext = new InterpreterContext(this, instructions);
+
+        if (RubyInstanceConfig.IR_COMPILER_DEBUG) LOG.info("" + interpreterContext);
 
         return interpreterContext;
     }
