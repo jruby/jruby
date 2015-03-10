@@ -66,6 +66,7 @@ import org.jruby.truffle.runtime.methods.Arity;
 import org.jruby.truffle.runtime.methods.SharedMethodInfo;
 import org.jruby.util.ByteList;
 import org.jruby.util.KeyValuePair;
+import org.jruby.util.StringSupport;
 import org.jruby.util.cli.Options;
 
 import java.math.BigInteger;
@@ -541,7 +542,7 @@ public class BodyTranslator extends Translator {
         final RubyNode constructException = new RubyCallNode(context, sourceSection, "new",
                 new ObjectLiteralNode(context, sourceSection, context.getCoreLibrary().getRuntimeErrorClass()),
                 null, false,
-                new StringLiteralNode(context, sourceSection, ByteList.create("FrozenError: can't modify frozen TODO")));
+                new StringLiteralNode(context, sourceSection, ByteList.create("FrozenError: can't modify frozen TODO"), StringSupport.CR_UNKNOWN));
 
         final RubyNode raise = new RubyCallNode(context, sourceSection, "raise", new SelfNode(context, sourceSection), null, false, true, false, constructException);
 
@@ -2619,7 +2620,7 @@ public class BodyTranslator extends Translator {
 
     @Override
     public RubyNode visitStrNode(org.jruby.ast.StrNode node) {
-        return new StringLiteralNode(context, translate(node.getPosition()), node.getValue());
+        return new StringLiteralNode(context, translate(node.getPosition()), node.getValue(), node.getCodeRange());
     }
 
     @Override
