@@ -79,7 +79,8 @@ public class IRReader {
 
         decoder.addScope(scope);
 
-        scope.savePersistenceInfo(decoder.decodeInt(), decoder);
+        int instructionsOffset = decoder.decodeInt();
+        decoder.decodeInstructionsAt(scope, instructionsOffset);
 
         return scope;
     }

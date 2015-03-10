@@ -7,8 +7,10 @@ import org.jruby.ir.instructions.*;
 import org.jruby.ir.instructions.defined.GetErrorInfoInstr;
 import org.jruby.ir.instructions.defined.RestoreErrorInfoInstr;
 import org.jruby.ir.operands.*;
+import org.jruby.ir.persistence.read.parser.NonIRObjectFactory;
 import org.jruby.lexer.yacc.SimpleSourcePosition;
 import org.jruby.runtime.CallType;
+import org.jruby.util.RegexpOptions;
 
 /**
  *
@@ -53,10 +55,10 @@ class InstrDecoderMap implements IRPersistenceValues {
             case CHECK_ARITY: return new CheckArityInstr(d.decodeInt(), d.decodeInt(), d.decodeInt(), d.decodeBoolean(), d.decodeInt());
             case CLASS_VAR_MODULE: return new GetClassVarContainerModuleInstr(d.decodeVariable(), d.decodeOperand(), d.decodeVariable());
             case CONST_MISSING: return decodeConstMissingInstr();
-            // SSS FIXME: TODO
-            // case BUILD_COMPOUND_INSTR: return decodeBuildCompoundStringInstr();
-            // case BUILD_DREGEXP: return decodeBuildDynRegExpInstr();
-            // case BUILD_RANGE: return new Range(d.decodeOperand(), d.decodeOperand(), d.decodeBoolean());
+            case BUILD_COMPOUND_ARRAY: return new BuildCompoundArrayInstr(d.decodeVariable(), d.decodeOperand(), d.decodeOperand(), d.decodeBoolean());
+            case BUILD_COMPOUND_STRING: return decodeBuildCompoundStringInstr();
+            case BUILD_DREGEXP: return decodeBuildDynRegExpInstr();
+            case BUILD_RANGE: return new BuildRangeInstr(d.decodeVariable(), d.decodeOperand(), d.decodeOperand(), d.decodeBoolean());
             case COPY: return decodeCopy();
             case DEF_CLASS: return new DefineClassInstr((d.decodeVariable()), (IRClassBody) d.decodeScope(), d.decodeOperand(), d.decodeOperand());
             case DEF_CLASS_METH: return new DefineClassMethodInstr(d.decodeOperand(), (IRMethod) d.decodeScope());
@@ -78,6 +80,8 @@ class InstrDecoderMap implements IRPersistenceValues {
             case LABEL: return new LabelInstr((Label) d.decodeOperand());
             case LAMBDA: return decodeLambda();
             case LEXICAL_SEARCH_CONST: return new LexicalSearchConstInstr(d.decodeVariable(), d.decodeOperand(), d.decodeString());
+            case LOAD_FRAME_CLOSURE: return new LoadFrameClosureInstr(d.decodeVariable());
+            case LOAD_IMPLICIT_CLOSURE: return new LoadImplicitClosureInstr(d.decodeVariable());
             case LINE_NUM: return decodeLineNumber();
             case MASGN_OPT: return new OptArgMultipleAsgnInstr(d.decodeVariable(), d.decodeOperand(), d.decodeInt(), d.decodeInt());
             case MASGN_REQD: return new ReqdArgMultipleAsgnInstr(d.decodeVariable(), d.decodeOperand(), d.decodeInt(), d.decodeInt(), d.decodeInt());
@@ -140,6 +144,22 @@ class InstrDecoderMap implements IRPersistenceValues {
         }
 
         return AttrAssignInstr.create(op, methAddr, args);
+    }
+
+    private Instr decodeBuildCompoundStringInstr() {
+        Variable result = d.decodeVariable();
+        Operand[] pieces = d.decodeOperandArray();
+        Encoding encoding = NonIRObjectFactory.createEncoding(d.decodeString());
+
+        return new BuildCompoundStringInstr(result, pieces, encoding);
+    }
+
+    private Instr decodeBuildDynRegExpInstr() {
+        Variable result = d.decodeVariable();
+        Operand[] pieces = d.decodeOperandArray();
+        int embeddedOptions = d.decodeInt();
+
+        return new BuildDynRegExpInstr(result, pieces, RegexpOptions.fromEmbeddedOptions(embeddedOptions));
     }
 
     private Instr decodeCall() {

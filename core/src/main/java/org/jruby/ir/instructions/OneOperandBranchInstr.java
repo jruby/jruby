@@ -19,7 +19,7 @@ public abstract class OneOperandBranchInstr extends BranchInstr {
     @Override
     public void encode(IRWriterEncoder e) {
         super.encode(e);
-        e.encode(getArg1());
         e.encode(getJumpTarget());
+        e.encode(getArg1());
     }
 }
