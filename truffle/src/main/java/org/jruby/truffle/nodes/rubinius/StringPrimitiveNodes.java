@@ -363,11 +363,22 @@ public abstract class StringPrimitiveNodes {
             super(prev);
         }
 
-        @Specialization
-        public Object stringCharacterByteIndex(RubyString string, Object index, Object start) {
-            throw new UnsupportedOperationException("string_character_byte_index");
+        @Specialization(guards = "isSingleByteOptimizable")
+        public int stringCharacterByteIndex(RubyString string, int index, int start) {
+            return start + index;
         }
 
+        @Specialization(guards = "!isSingleByteOptimizable")
+        public int stringCharacterByteIndexMultiByteEncoding(RubyString string, int index, int start) {
+            final ByteList bytes = string.getBytes();
+
+            return StringSupport.nth(bytes.getEncoding(), bytes.getUnsafeBytes(), bytes.getBegin(),
+                    bytes.getBegin() + bytes.getRealSize(), start + index);
+        }
+
+        public static boolean isSingleByteOptimizable(RubyString string) {
+            return StringSupport.isSingleByteOptimizable(string, string.getBytes().getEncoding());
+        }
     }
 
     @RubiniusPrimitive(name = "string_byte_character_index", needsSelf = false)

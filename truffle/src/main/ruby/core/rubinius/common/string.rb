@@ -699,6 +699,41 @@ class String
     str.force_encoding enc
   end
 
+  def index(str, start=undefined)
+    if undefined.equal?(start)
+      start = 0
+    else
+      start = Rubinius::Type.coerce_to start, Fixnum, :to_int
+
+      start += size if start < 0
+      return if start < 0 or start > size
+    end
+
+    if str.kind_of? Regexp
+      Rubinius::Type.compatible_encoding self, str
+
+      m = Rubinius::Mirror.reflect self
+      start = m.character_to_byte_index start
+      if match = str.match_from(self, start)
+        Regexp.last_match = match
+        return match.begin(0)
+      else
+        Regexp.last_match = nil
+        return
+      end
+    end
+
+    str = StringValue(str)
+    return start if str == ""
+
+    Rubinius::Type.compatible_encoding self, str
+
+    return if str.size > size
+
+    m = Rubinius::Mirror.reflect self
+    m.character_index str, start
+  end
+
   def upto(stop, exclusive=false)
     return to_enum :upto, stop, exclusive unless block_given?
     stop = StringValue(stop)
