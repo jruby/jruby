@@ -538,6 +538,30 @@ class Array
     at(idx)
   end
 
+
+  def shuffle(options = undefined)
+    return dup.shuffle!(options) if instance_of? Array
+    Array.new(self).shuffle!(options)
+  end
+
+  def shuffle!(options = undefined)
+    Rubinius.check_frozen
+
+    random_generator = Kernel
+
+    unless undefined.equal? options
+      options = Rubinius::Type.coerce_to options, Hash, :to_hash
+      random_generator = options[:random] if options[:random].respond_to?(:rand)
+    end
+
+    size.times do |i|
+      r = i + random_generator.rand(size - i).to_int
+      raise RangeError, "random number too big #{r - i}" if r < 0 || r >= size
+      swap(@start + i, @start + r)
+    end
+    self
+  end
+
   def to_ary
     self
   end
@@ -563,5 +587,13 @@ class Array
 
     out
   end
+
+  # from tuple.rb
+  def swap(a, b)
+    temp = at(a)
+    self[a] = at(b)
+    self[b] = temp
+  end
+  private :swap
 
 end
