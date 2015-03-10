@@ -485,6 +485,26 @@ class Array
     self
   end
 
+  def rotate(n=1)
+    n = Rubinius::Type.coerce_to_collection_index n
+    return Array.new(self) if length == 1
+    return []       if empty?
+
+    ary = Array.new(self)
+    idx = n % ary.size
+
+    ary[idx..-1].concat ary[0...idx]
+  end
+
+  def rotate!(cnt=1)
+    Rubinius.check_frozen
+
+    return self if length == 0 || length == 1
+
+    ary = rotate(cnt)
+    replace ary
+  end
+
   def find_index(obj=undefined)
     super
   end
