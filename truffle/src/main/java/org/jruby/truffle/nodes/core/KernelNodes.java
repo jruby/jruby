@@ -353,6 +353,25 @@ public abstract class KernelNodes {
         }
     }
 
+    @CoreMethod(names = "__callee__", needsSelf = false)
+    public abstract static class CalleeNameNode extends CoreMethodNode {
+
+        public CalleeNameNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public CalleeNameNode(CalleeNameNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public RubySymbol calleeName(VirtualFrame frame) {
+            notDesignedForCompilation();
+            // the "called name" of a method.
+            return getContext().getSymbolTable().getSymbol(RubyCallStack.getCallingMethod(frame).getName());
+        }
+    }
+
     @CoreMethod(names = "caller", isModuleFunction = true, optional = 1)
     public abstract static class CallerNode extends CoreMethodNode {
 
@@ -1287,6 +1306,7 @@ public abstract class KernelNodes {
         @Specialization
         public RubySymbol methodName(VirtualFrame frame) {
             notDesignedForCompilation();
+            // the "original/definition name" of the method.
             return getContext().getSymbolTable().getSymbol(RubyCallStack.getCallingMethod(frame).getSharedMethodInfo().getName());
         }
 
