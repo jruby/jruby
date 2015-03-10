@@ -6,6 +6,8 @@
 
 package org.jruby.ir.persistence;
 
+import java.util.List;
+import org.jcodings.Encoding;
 import org.jruby.RubyInstanceConfig;
 import org.jruby.ir.instructions.*;
 import org.jruby.ir.instructions.defined.RestoreErrorInfoInstr;
@@ -32,6 +34,7 @@ public class InstrEncoderMap {
 
         switch(instr.getOperation()) {
             case ALIAS: encodeAliasInstr((AliasInstr) instr); break;
+            case ARG_SCOPE_DEPTH: /* no state */ break;
             case ATTR_ASSIGN: encodeAttrAssignInstr((AttrAssignInstr) instr); break;
             case BEQ: encodeBEQInstr((BEQInstr) instr); break;
             case BINDING_LOAD: encodeLoadLocalVarInstr((LoadLocalVarInstr) instr); break;
@@ -43,13 +46,18 @@ public class InstrEncoderMap {
             case B_NIL: encodeBNilInstr((BNilInstr) instr); break;
             case B_TRUE: encodeBTrueInstr((BTrueInstr) instr); break;
             case B_UNDEF: encodeBUndefInstr((BUndefInstr) instr); break;
-            case CALL: encodeCallBaseInstr((CallInstr) instr); break;
+            case CALL: case CALL_1F: case CALL_1D: case CALL_1O: case CALL_1OB: case CALL_0O: case NORESULT_CALL_1O:
+                encodeCallBaseInstr((CallInstr) instr); break;
             case CHECK_ARGS_ARRAY_ARITY: encodeCheckArgsArrayArityInstr((CheckArgsArrayArityInstr) instr); break;
             case CHECK_ARITY: encodeCheckArityInstr((CheckArityInstr) instr); break;
             case CLASS_VAR_MODULE: encodeGetClassVarContainerModuleInstr((GetClassVarContainerModuleInstr) instr); break;
-            // case BUILD_COMPOUND_STRING: encodeBuildCompoundStringInstr((BuildCompoundStringInstr) instr); break;
-            // case BUILD_DREGEXP: return encodeBuildDynRegExpInstr();
-            // case BUILD_RANGE: return encodeBuildRangeInstr();
+            case BACKTICK_STRING: encodeBacktickInstr((BacktickInstr) instr); break;
+            case BUILD_COMPOUND_ARRAY: encodeBuildCompoundArrayInstr((BuildCompoundArrayInstr) instr); break;
+            case BUILD_COMPOUND_STRING: encodeBuildCompoundStringInstr((BuildCompoundStringInstr) instr); break;
+            case BUILD_DREGEXP: encodeBuildDynRegExpInstr((BuildDynRegExpInstr) instr); break;
+            case BUILD_RANGE: encodeBuildRangeInstr((BuildRangeInstr) instr); break;
+            case BUILD_SPLAT: encodeBuildSplatInstr((BuildSplatInstr) instr); break;
+            case CHECK_FOR_LJE: encodeCheckForLJEInstr((CheckForLJEInstr) instr); break;
             case CONST_MISSING: encodeConstMissingInstr((ConstMissingInstr) instr); break;
             case COPY: encodeCopyInstr((CopyInstr) instr); break;
             case DEF_CLASS: encodeDefineClassInstr((DefineClassInstr) instr); break;
@@ -71,6 +79,8 @@ public class InstrEncoderMap {
             case LABEL: encodeLabelInstr((LabelInstr) instr); break;
             case LAMBDA: encodeBuildLambdaInstr((BuildLambdaInstr) instr); break;
             case LEXICAL_SEARCH_CONST: encodeLexicalSearchConstInstr((LexicalSearchConstInstr) instr); break;
+            case LOAD_FRAME_CLOSURE: /* no state */ break;
+            case LOAD_IMPLICIT_CLOSURE: /* no state */ break;
             case LINE_NUM: encodeLineNumberInstr((LineNumberInstr) instr); break;
             case MASGN_OPT: encodeOptArgMultipleAsgnInstr((OptArgMultipleAsgnInstr) instr); break;
             case MASGN_REQD: encodeReqdArgMultipleAsgnInstr((ReqdArgMultipleAsgnInstr) instr); break;
@@ -107,6 +117,7 @@ public class InstrEncoderMap {
             case RETURN: encodeReturnInstr((ReturnInstr) instr); break;
             case RUNTIME_HELPER: encodeRuntimeHelperCall((RuntimeHelperCall) instr); break;
             case SEARCH_CONST: encodeSearchConstInstr((SearchConstInstr) instr); break;
+            case SET_CAPTURED_VAR: encodeSetCapturedVarInstr((SetCapturedVarInstr) instr); break;
             case CLASS_SUPER: encodeClassSuperInstr((ClassSuperInstr) instr); break;
             case INSTANCE_SUPER: encodeInstanceSuperInstr((InstanceSuperInstr) instr); break;
             case UNRESOLVED_SUPER: encodeUnresolvedSuperInstr((UnresolvedSuperInstr) instr); break;
@@ -131,9 +142,17 @@ public class InstrEncoderMap {
         Operand[] args = instr.getCallArgs();
 
         e.encode(args.length);
+        for(Operand arg: args) {
+            e.encode(arg);
+        }
+    }
 
-        for (int i = 0; i < args.length; i++) {
-            e.encode(args[i]);
+    private void encodeBacktickInstr(BacktickInstr instr) {
+        Operand[] pieces = instr.getPieces();
+
+        e.encode(pieces.length);
+        for (Operand piece: pieces) {
+            e.encode(piece);
         }
     }
 
@@ -195,28 +214,32 @@ public class InstrEncoderMap {
         e.encode(instr.receivesKeywords);
     }
 
+    private void encodeCheckForLJEInstr(CheckForLJEInstr instr) {
+        e.encode(instr.maybeLambda());
+    }
+
     private void encodeGetClassVarContainerModuleInstr(GetClassVarContainerModuleInstr instr) {
         e.encode(instr.getStartingScope());
         e.encode(instr.getObject());
     }
 
-/**
-    private void encodeBuildCompoundStringInstr(BuildCompoundStringInstr instr) {
-        Encoding encoding = compoundstring.getEncoding();
+    private void encodeBuildCompoundArrayInstr(BuildCompoundArrayInstr instr) {
+        e.encode(instr.getAppendingArg());
+        e.encode(instr.getAppendedArg());
+        e.encode(instr.isArgsPush());
+    }
 
-        if (encoding == null) {
-            encoder.encode("");
-        } else {
-            encoder.encode(encoding.toString());
-        }
-        List<Operand> pieces = compoundstring.getPieces();
-        encoder.encode(pieces.size());
+    private void encodeBuildCompoundStringInstr(BuildCompoundStringInstr instr) {
+        Encoding encoding = instr.getEncoding();
+
+        e.encode(encoding == null ? "" : encoding.toString());
+        Operand[] pieces = instr.getPieces();
+        e.encode(pieces.length);
 
         for (Operand piece: pieces) {
-            encode(piece);
+            e.encode(piece);
         }
     }
-**/
 
     private void encodeConstMissingInstr(ConstMissingInstr instr) {
         e.encode(instr.getReceiver());
@@ -389,6 +412,26 @@ public class InstrEncoderMap {
         e.encode(instr.getValue());
     }
 
+    private void encodeBuildDynRegExpInstr(BuildDynRegExpInstr instr) {
+        Operand[] pieces = instr.getPieces();
+        e.encode(pieces.length);
+
+        for (Operand piece: pieces) {
+            e.encode(piece);
+        }
+        e.encode(instr.getOptions().toEmbeddedOptions());
+    }
+
+    private void encodeBuildRangeInstr(BuildRangeInstr instr) {
+        e.encode(instr.getBegin());
+        e.encode(instr.getEnd());
+        e.encode(instr.isExclusive());
+    }
+
+    private void encodeBuildSplatInstr(BuildSplatInstr instr) {
+        e.encode(instr.getArray());
+    }
+
     private void encodeRaiseArgumentErrorInstr(RaiseArgumentErrorInstr instr) {
         e.encode(instr.getRequired());
         e.encode(instr.getOpt());
@@ -457,6 +500,11 @@ public class InstrEncoderMap {
         e.encode(instr.getConstName());
         e.encode(instr.getStartingScope());
         e.encode(instr.isNoPrivateConsts());
+    }
+
+    private void encodeSetCapturedVarInstr(SetCapturedVarInstr instr) {
+        e.encode(instr.getMatch2Result());
+        e.encode(instr.getVarName());
     }
 
     private void encodeClassSuperInstr(ClassSuperInstr instr) {

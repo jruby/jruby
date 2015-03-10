@@ -1,7 +1,7 @@
 package org.jruby.ir.interpreter;
 
 import org.jruby.RubyModule;
-import org.jruby.internal.runtime.methods.InterpretedIRMethod;
+import org.jruby.internal.runtime.methods.MixedModeIRMethod;
 import org.jruby.ir.*;
 import org.jruby.ir.instructions.CallBase;
 import org.jruby.ir.instructions.Instr;
@@ -19,7 +19,7 @@ public class Profiler {
         int      v; // scope version
         CallBase call;
         long     count;
-        InterpretedIRMethod tgtM;
+        MixedModeIRMethod tgtM;
 
         public IRCallSite() {}
 
@@ -111,12 +111,12 @@ public class Profiler {
                     CachingCallSite ccs = (CachingCallSite)runtimeCS;
                     CacheEntry ce = ccs.getCache();
 
-                    if (!(ce.method instanceof InterpretedIRMethod)) {
+                    if (!(ce.method instanceof MixedModeIRMethod)) {
                         // System.out.println("NOT IR-M!");
                         continue;
                     } else {
                         callSites.add(cs);
-                        cs.tgtM = (InterpretedIRMethod)ce.method;
+                        cs.tgtM = (MixedModeIRMethod)ce.method;
                     }
                 }
             }

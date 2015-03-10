@@ -1,65 +1,14 @@
-fails:Proc#arity returns -1 for a block taking |a = 0, *b| argument
-fails:Proc#arity returns -1 for a lambda taking one optional argument
-fails:Proc#arity returns -2 for a lambda taking |a, b = 0| argument
-fails:Proc#arity returns -2 for a lambda taking |a, b = 0, c = 0| argument
-fails:Proc#arity returns -2 for a lambda taking |(a, b), c = 0| argument
-fails:Proc#arity returns 0 for a Proc taking one optional argument
-fails:Proc#arity returns 1 for a Proc taking |a, b = 0| argument
-fails:Proc#arity returns 1 for a Proc taking |a, b = 0, c = 0| argument
-fails:Proc#arity returns 1 for a Proc taking |(a, b), c = 0| argument
-fails:Proc#arity returns 0 for a block taking no arguments
-fails:Proc#arity returns 0 for a block taking || arguments
-fails:Proc#arity returns 1 for a block taking |a| arguments
-fails:Proc#arity returns 1 for a block taking |a, | arguments
-fails:Proc#arity returns -2 for a block taking |a, *| arguments
-fails:Proc#arity returns -2 for a block taking |a, *b| arguments
-fails:Proc#arity returns -3 for a block taking |a, b, *c| arguments
-fails:Proc#arity returns 2 for a block taking |a, b| arguments
-fails:Proc#arity returns 3 for a block taking |a, b, c| arguments
-fails:Proc#arity returns -1 for a block taking |*| arguments
-fails:Proc#arity returns -1 for a block taking |*a| arguments
-fails:Proc#arity returns 1 for a block taking |(a, b)| arguments
-fails:Proc#arity returns 1 for a block taking |(a, *)| arguments
-fails:Proc#arity returns 1 for a block taking |(a, *b)| arguments
-fails:Proc#arity returns 2 for a block taking |a, (b, c)| arguments
-fails:Proc#arity returns 2 for a block taking |a, (b, *c)| arguments
-fails:Proc#arity returns 2 for a block taking |(a, b), c| arguments
-fails:Proc#arity returns -2 for a block taking |(a, b), *c| arguments
-fails:Proc#arity returns 2 for a block taking |(a, *b), c| arguments
-fails:"Proc#arity for instances created with -> () { } returns zero for definition \n    @a = -> () {}"
-fails:"Proc#arity for instances created with -> () { } returns zero for definition \n    @a = -> (&b) {}"
-fails:"Proc#arity for instances created with -> () { } returns positive values for definition \n    @a = -> (a) { }\n    @b = -> (a, b) { }\n    @c = -> (a, b, c) { }\n    @d = -> (a, b, c, d) { }"
 fails:"Proc#arity for instances created with -> () { } returns positive values for definition \n    @a = -> (a:) { }\n    @b = -> (a:, b:) { }\n    @c = -> (a: 1, b:, c:, d: 2) { }"
 fails:"Proc#arity for instances created with -> () { } returns positive values for definition \n    @a = -> (a, b:) { }\n    @b = -> (a, b:, &l) { }"
 fails:"Proc#arity for instances created with -> () { } returns positive values for definition \n    @a = -> (a, b, c:, d: 1) { }\n    @b = -> (a, b, c:, d: 1, **k, &l) { }"
-fails:"Proc#arity for instances created with -> () { } returns positive values for definition \n    @a = -> ((a, (*b, c))) { }\n    @b = -> (a, (*b, c), d, (*e), (*)) { }"
-fails:"Proc#arity for instances created with -> () { } returns negative values for definition \n    @a = -> (a=1) { }\n    @b = -> (a=1, b=2) { }"
-fails:"Proc#arity for instances created with -> () { } returns negative values for definition \n    @a = -> (a, b=1) { }\n    @b = -> (a, b, c=1, d=2) { }"
-fails:"Proc#arity for instances created with -> () { } returns negative values for definition \n    @a = -> (a=1, *b) { }\n    @b = -> (a=1, b=2, *c) { }"
-fails:"Proc#arity for instances created with -> () { } returns negative values for definition \n    @a = -> (*) { }\n    @b = -> (*a) { }"
-fails:"Proc#arity for instances created with -> () { } returns negative values for definition \n    @a = -> (a, *) { }\n    @b = -> (a, *b) { }\n    @c = -> (a, b, *c) { }\n    @d = -> (a, b, c, *d) { }"
-fails:"Proc#arity for instances created with -> () { } returns negative values for definition \n    @a = -> (*a, b) { }\n    @b = -> (*a, b, c) { }\n    @c = -> (*a, b, c, d) { }"
-fails:"Proc#arity for instances created with -> () { } returns negative values for definition \n    @a = -> (a, *b, c) { }\n    @b = -> (a, b, *c, d, e) { }"
-fails:"Proc#arity for instances created with -> () { } returns negative values for definition \n    @a = -> (a, b=1, c=2, *d, e, f) { }\n    @b = -> (a, b, c=1, *d, e, f, g) { }"
 fails:"Proc#arity for instances created with -> () { } returns negative values for definition \n    @a = -> (a: 1) { }\n    @b = -> (a: 1, b: 2) { }"
 fails:"Proc#arity for instances created with -> () { } returns negative values for definition \n    @a = -> (a=1, b: 2) { }\n    @b = -> (*a, b: 1) { }\n    @c = -> (a=1, b: 2) { }\n    @d = -> (a=1, *b, c: 2, &l) { }"
 fails:"Proc#arity for instances created with -> () { } returns negative values for definition \n    @a = -> (**k, &l) { }\n    @b= -> (*a, **k) { }\n    @c = ->(a: 1, b: 2, **k) { }"
 fails:"Proc#arity for instances created with -> () { } returns negative values for definition \n    @a = -> (a=1, *b, c:, d: 2, **k, &l) { }"
 fails:"Proc#arity for instances created with -> () { } returns negative values for definition \n    @a = -> (a, b=1, *c, d, e:, f: 2, **k, &l) { }\n    @b = -> (a, b=1, *c, d:, e:, f: 2, **k, &l) { }\n    @c = -> (a=0, b=1, *c, d, e:, f: 2, **k, &l) { }\n    @d = -> (a=0, b=1, *c, d:, e:, f: 2, **k, &l) { }"
-fails:"Proc#arity for instances created with lambda { || } returns zero for definition \n    @a = lambda { }\n    @b = lambda { || }"
-fails:"Proc#arity for instances created with lambda { || } returns zero for definition \n    @a = lambda { |&b| }"
-fails:"Proc#arity for instances created with lambda { || } returns positive values for definition \n    @a = lambda { |a| }\n    @b = lambda { |a, b| }\n    @c = lambda { |a, b, c| }\n    @d = lambda { |a, b, c, d| }"
 fails:"Proc#arity for instances created with lambda { || } returns positive values for definition \n    @a = lambda { |a:| }\n    @b = lambda { |a:, b:| }\n    @c = lambda { |a: 1, b:, c:, d: 2| }"
 fails:"Proc#arity for instances created with lambda { || } returns positive values for definition \n    @a = lambda { |a, b:| }\n    @b = lambda { |a, b:, &l| }"
 fails:"Proc#arity for instances created with lambda { || } returns positive values for definition \n    @a = lambda { |a, b, c:, d: 1| }\n    @b = lambda { |a, b, c:, d: 1, **k, &l| }"
-fails:"Proc#arity for instances created with lambda { || } returns negative values for definition \n    @a = lambda { |a=1| }\n    @b = lambda { |a=1, b=2| }"
-fails:"Proc#arity for instances created with lambda { || } returns negative values for definition \n    @a = lambda { |a, b=1| }\n    @b = lambda { |a, b, c=1, d=2| }"
-fails:"Proc#arity for instances created with lambda { || } returns negative values for definition \n    @a = lambda { |a=1, *b| }\n    @b = lambda { |a=1, b=2, *c| }"
-fails:"Proc#arity for instances created with lambda { || } returns negative values for definition \n    @a = lambda { |*| }\n    @b = lambda { |*a| }"
-fails:"Proc#arity for instances created with lambda { || } returns negative values for definition \n    @a = lambda { |a, *| }\n    @b = lambda { |a, *b| }\n    @c = lambda { |a, b, *c| }\n    @d = lambda { |a, b, c, *d| }"
-fails:"Proc#arity for instances created with lambda { || } returns negative values for definition \n    @a = lambda { |*a, b| }\n    @b = lambda { |*a, b, c| }\n    @c = lambda { |*a, b, c, d| }"
-fails:"Proc#arity for instances created with lambda { || } returns negative values for definition \n    @a = lambda { |a, *b, c| }\n    @b = lambda { |a, b, *c, d, e| }"
-fails:"Proc#arity for instances created with lambda { || } returns negative values for definition \n    @a = lambda { |a, b=1, c=2, *d, e, f| }\n    @b = lambda { |a, b, c=1, *d, e, f, g| }"
 fails:"Proc#arity for instances created with lambda { || } returns negative values for definition \n    @a = lambda { |a: 1| }\n    @b = lambda { |a: 1, b: 2| }"
 fails:"Proc#arity for instances created with lambda { || } returns negative values for definition \n    @a = lambda { |a=1, b: 2| }\n    @b = lambda { |*a, b: 1| }\n    @c = lambda { |a=1, b: 2| }\n    @d = lambda { |a=1, *b, c: 2, &l| }"
 fails:"Proc#arity for instances created with lambda { || } returns negative values for definition \n    @a = lambda { |**k, &l| }\n    @b = lambda { |*a, **k| }\n    @c = lambda { |a: 1, b: 2, **k| }"

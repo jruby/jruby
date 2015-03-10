@@ -11,12 +11,12 @@ import org.jruby.runtime.Signature;
  * Represents a 'for' loop
  */
 public class IRFor extends IRClosure {
-    public IRFor(IRManager manager, IRScope lexicalParent, int lineNumber, StaticScope staticScope, Signature signature, int argumentType, String labelPrefix) {
-        super(manager, lexicalParent, lineNumber, StaticScopeFactory.newIRBlockScope(staticScope), signature, argumentType, labelPrefix, labelPrefix == "_BEGIN_");
+    public IRFor(IRManager manager, IRScope lexicalParent, int lineNumber, StaticScope staticScope, Signature signature, String labelPrefix) {
+        super(manager, lexicalParent, lineNumber, StaticScopeFactory.newIRBlockScope(staticScope), signature, labelPrefix, labelPrefix == "_BEGIN_");
     }
 
-    public IRFor(IRManager manager, IRScope lexicalParent, int lineNumber, StaticScope staticScope, Signature signature, int argumentType) {
-        this(manager, lexicalParent, lineNumber, StaticScopeFactory.newIRBlockScope(staticScope), signature, argumentType, "_FOR_LOOP_");
+    public IRFor(IRManager manager, IRScope lexicalParent, int lineNumber, StaticScope staticScope, Signature signature) {
+        this(manager, lexicalParent, lineNumber, StaticScopeFactory.newIRBlockScope(staticScope), signature, "_FOR_LOOP_");
     }
 
     /** Used by cloning code */

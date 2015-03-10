@@ -44,6 +44,7 @@ public enum IRFlags {
     HAS_EXPLICIT_CALL_PROTOCOL,   // contains call protocol instrs => we don't need to manage bindings frame implicitly
     HAS_LOOPS,                    // has a loop
     HAS_NONLOCAL_RETURNS,         // has a non-local return
+    MAYBE_USING_REFINEMENTS,      // a call to 'using' discovered...is it "the" using...maybe?
     RECEIVES_CLOSURE_ARG,         // This scope (or parent receives a closure
     RECEIVES_KEYWORD_ARGS,        // receives keyword args
     REQUIRES_DYNSCOPE,            // does this scope require a dynamic scope?

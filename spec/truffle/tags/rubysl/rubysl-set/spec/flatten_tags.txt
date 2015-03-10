@@ -1,4 +1,0 @@
-fails:Set#flatten! flattens self
-fails:Set#flatten! returns self when self was modified
-fails:Set#flatten! returns nil when self was not modified
-fails:Set#flatten! raises an ArgumentError when self is recursive

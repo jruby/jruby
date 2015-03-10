@@ -1,1 +1,0 @@
-fails:SortedSet#size returns the number of elements in the set

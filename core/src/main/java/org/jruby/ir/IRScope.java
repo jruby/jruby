@@ -1,13 +1,14 @@
 package org.jruby.ir;
 
-import org.jcodings.specific.USASCIIEncoding;
 import org.jruby.ParseResult;
 import org.jruby.RubyInstanceConfig;
 import org.jruby.RubyModule;
-import org.jruby.ir.dataflow.DataFlowProblem;
+import org.jruby.ir.dataflow.analyses.LiveVariablesProblem;
+import org.jruby.ir.dataflow.analyses.StoreLocalVarPlacementProblem;
+import org.jruby.ir.dataflow.analyses.UnboxableOpsAnalysisProblem;
 import org.jruby.ir.instructions.*;
+import org.jruby.ir.interpreter.FullInterpreterContext;
 import org.jruby.ir.interpreter.InterpreterContext;
-import org.jruby.ir.interpreter.SimpleMethodInterpreterEngine;
 import org.jruby.ir.operands.*;
 import org.jruby.ir.operands.Float;
 import org.jruby.ir.operands.Boolean;
@@ -15,13 +16,9 @@ import org.jruby.ir.passes.*;
 import org.jruby.ir.persistence.IRReaderDecoder;
 import org.jruby.ir.representations.BasicBlock;
 import org.jruby.ir.representations.CFG;
-import org.jruby.ir.representations.CFGLinearizer;
 import org.jruby.ir.transformations.inlining.CFGInliner;
 import org.jruby.ir.transformations.inlining.SimpleCloneInfo;
 import org.jruby.parser.StaticScope;
-import org.jruby.util.KeyValuePair;
-import org.jruby.util.log.Logger;
-import org.jruby.util.log.LoggerFactory;
 
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -58,8 +55,7 @@ import static org.jruby.ir.IRFlags.*;
  * and so on ...
  */
 public abstract class IRScope implements ParseResult {
-
-    private static final Logger LOG = LoggerFactory.getLogger("IRScope");
+    private static final Collection<IRClosure> NO_CLOSURES = Collections.unmodifiableCollection(new ArrayList<IRClosure>(0));
 
     private static AtomicInteger globalScopeCount = new AtomicInteger();
 
@@ -89,13 +85,7 @@ public abstract class IRScope implements ParseResult {
     private List<IRScope> lexicalChildren;
 
     /** Parser static-scope that this IR scope corresponds to */
-    private StaticScope staticScope;
-
-    /** List of IR instructions for this method */
-    private List<Instr> instrList;
-
-    /** Control flow graph representation of this method's instructions */
-    private CFG cfg;
+    private final StaticScope staticScope;
 
     /** Local variables defined in this scope */
     private Set<Variable> definedLocalVars;
@@ -103,15 +93,12 @@ public abstract class IRScope implements ParseResult {
     /** Local variables used in this scope */
     private Set<Variable> usedLocalVars;
 
-    /** Map of name -> dataflow problem */
-    private Map<String, DataFlowProblem> dfProbs;
-
-    /** What passes have been run on this scope? */
-    private List<CompilerPass> executedPasses;
-
-    /** What the interpreter depends on to interpret this IRScope */
+    /** Startup interpretation depends on this */
     protected InterpreterContext interpreterContext;
-    private BasicBlock[] linearizedBBList;
+
+    /** -X-C full interpretation OR JIT depends on this */
+    protected FullInterpreterContext fullInterpreterContext;
+
     protected int temporaryVariableIndex;
     protected int floatVariableIndex;
     protected int fixnumVariableIndex;
@@ -120,8 +107,9 @@ public abstract class IRScope implements ParseResult {
     /** Keeps track of types of prefix indexes for variables and labels */
     private Map<String, Integer> nextVarIndex;
 
-    private int instructionsOffsetInfoPersistenceBuffer = -1;
-    private IRReaderDecoder persistenceStore = null;
+    // FIXME: Persistence is completely disconnected for now
+    //private int instructionsOffsetInfoPersistenceBuffer = -1;
+    //private IRReaderDecoder persistenceStore = null;
     private TemporaryLocalVariable currentModuleVariable;
     private TemporaryLocalVariable currentScopeVariable;
 
@@ -134,18 +122,11 @@ public abstract class IRScope implements ParseResult {
     private boolean flagsComputed;
 
     /** # of thread poll instrs added to this scope */
-    private int threadPollInstrsCount;
+    protected int threadPollInstrsCount;
 
     private IRManager manager;
 
     private TemporaryVariable yieldClosureVariable;
-
-    // What state is this scope in?
-    enum ScopeState {
-        INIT, INTERPED, INSTRS_CLONED, CFG_BUILT
-    };
-
-    private ScopeState state = ScopeState.INIT;
 
     // Used by cloning code
     protected IRScope(IRScope s, IRScope lexicalParent) {
@@ -158,22 +139,14 @@ public abstract class IRScope implements ParseResult {
         this.nextClosureIndex = s.nextClosureIndex;
         this.temporaryVariableIndex = s.temporaryVariableIndex;
         this.floatVariableIndex = s.floatVariableIndex;
-        this.instrList = new ArrayList<Instr>();
-        this.nestedClosures = new ArrayList<IRClosure>();
-        this.dfProbs = new HashMap<String, DataFlowProblem>();
-        this.nextVarIndex = new HashMap<String, Integer>(); // SSS FIXME: clone!
-        this.cfg = null;
+        this.nextVarIndex = new HashMap<>(); // SSS FIXME: clone!
         this.interpreterContext = null;
-        this.linearizedBBList = null;
 
         this.flagsComputed = s.flagsComputed;
         this.flags = s.flags.clone();
 
-        this.localVars = new HashMap<String, LocalVariable>(s.localVars);
+        this.localVars = new HashMap<>(s.localVars);
         this.scopeId = globalScopeCount.getAndIncrement();
-        this.state = ScopeState.INIT; // SSS FIXME: Is this correct?
-
-        this.executedPasses = new ArrayList<CompilerPass>();
 
         setupLexicalContainment();
     }
@@ -190,13 +163,8 @@ public abstract class IRScope implements ParseResult {
         this.nextClosureIndex = 0;
         this.temporaryVariableIndex = -1;
         this.floatVariableIndex = -1;
-        this.instrList = new ArrayList<Instr>();
-        this.nestedClosures = new ArrayList<IRClosure>();
-        this.dfProbs = new HashMap<String, DataFlowProblem>();
-        this.nextVarIndex = new HashMap<String, Integer>();
-        this.cfg = null;
+        this.nextVarIndex = new HashMap<>();
         this.interpreterContext = null;
-        this.linearizedBBList = null;
         this.flagsComputed = false;
         flags.remove(CAN_RECEIVE_BREAKS);
         flags.remove(CAN_RECEIVE_NONLOCAL_RETURNS);
@@ -215,24 +183,17 @@ public abstract class IRScope implements ParseResult {
         flags.add(REQUIRES_DYNSCOPE);
         flags.add(USES_ZSUPER);
 
-        this.localVars = new HashMap<String, LocalVariable>();
+        this.localVars = new HashMap<>();
         this.scopeId = globalScopeCount.getAndIncrement();
-        this.state = ScopeState.INIT;
-
-        this.executedPasses = new ArrayList<CompilerPass>();
 
         setupLexicalContainment();
     }
 
-    private final void setupLexicalContainment() {
+    private void setupLexicalContainment() {
         if (manager.isDryRun() || RubyInstanceConfig.IR_WRITING) {
-            lexicalChildren = new ArrayList<IRScope>();
+            lexicalChildren = new ArrayList<>();
             if (lexicalParent != null) lexicalParent.addChildScope(this);
         }
-    }
-
-    private boolean hasListener() {
-        return manager.getIRScopeListener() != null;
     }
 
     public int getScopeId() {
@@ -242,6 +203,10 @@ public abstract class IRScope implements ParseResult {
     @Override
     public int hashCode() {
         return scopeId;
+    }
+
+    public void setInterpreterContext(InterpreterContext interpreterContext) {
+        this.interpreterContext = interpreterContext;
     }
 
     @Override
@@ -258,42 +223,17 @@ public abstract class IRScope implements ParseResult {
         return lexicalChildren;
     }
 
-    public void initNestedClosures() {
-        this.nestedClosures = new ArrayList<IRClosure>();
-    }
-
     public void addClosure(IRClosure closure) {
+        if (nestedClosures == null) nestedClosures = new ArrayList<>();
         nestedClosures.add(closure);
     }
 
     public void removeClosure(IRClosure closure) {
-        nestedClosures.remove(closure);
-    }
-
-    public void addInstrAtBeginning(Instr instr) {
-        instr.computeScopeFlags(this);
-
-        if (hasListener()) manager.getIRScopeListener().addedInstr(this, instr, 0);
-
-        instrList.add(0, instr);
-    }
-
-    public void addInstr(Instr instr) {
-        if (instr instanceof ThreadPollInstr) threadPollInstrsCount++;
-
-        instr.computeScopeFlags(this);
-
-        if (hasListener()) manager.getIRScopeListener().addedInstr(this, instr, instrList.size());
-
-        instrList.add(instr);
+        if (nestedClosures != null) nestedClosures.remove(closure);
     }
 
     public LocalVariable getNewFlipStateVariable() {
         return getLocalVariable("%flip_" + allocateNextPrefixedName("%flip"), 0);
-    }
-
-    public void initFlipStateVariable(Variable v, Operand initState) {
-        addInstrAtBeginning(new CopyInstr(v, initState));
     }
 
     public Label getNewLabel(String prefix) {
@@ -304,12 +244,30 @@ public abstract class IRScope implements ParseResult {
         return getNewLabel("LBL");
     }
 
-    public List<IRClosure> getClosures() {
-        return nestedClosures;
+    public Collection<IRClosure> getClosures() {
+        return nestedClosures == null ? NO_CLOSURES : nestedClosures;
     }
 
     public IRManager getManager() {
         return manager;
+    }
+
+    public void setIsMaybeUsingRefinements() {
+        flags.add(MAYBE_USING_REFINEMENTS);
+    }
+
+    // FIXME: This is somewhat expensive to walk all parent scopes for refined scopes but
+    // the life cycle of when to do this walking makes wonder if I can just stuff this into
+    // computeScopeFlags?
+    public boolean maybeUsingRefinements() {
+        for (IRScope s = this; s != null; s = s.getLexicalParent()) {
+            if (s.getFlags().contains(MAYBE_USING_REFINEMENTS)) return true;
+
+            // Evals cannot see outer scope 'using'
+            if (s instanceof IREvalScript) return false;
+        }
+
+        return false;
     }
 
     /**
@@ -450,110 +408,62 @@ public abstract class IRScope implements ParseResult {
         return flags.contains(CAN_RECEIVE_NONLOCAL_RETURNS);
     }
 
-    public CFG buildCFG() {
-        if (getCFG() != null) {
-            return getCFG();
+    public void putLiveVariablesProblem(LiveVariablesProblem problem) {
+        // Technically this is if a pass is invalidated which has never run on a scope with no CFG/FIC yet.
+        if (fullInterpreterContext == null) {
+            // This should never trigger unless we got sloppy
+            if (problem != null) throw new IllegalStateException("LVP being stored when no FIC");
+            return;
         }
-
-        CFG newCFG = new CFG(this);
-        newCFG.build(getInstrs());
-        // Clear out instruction list after CFG has been built.
-        instrList = null;
-
-        setCFG(newCFG);
-        state = ScopeState.CFG_BUILT;
-
-        return newCFG;
+        fullInterpreterContext.getDataFlowProblems().put(LiveVariablesProblem.NAME, problem);
     }
 
-    protected void setCFG(CFG cfg) {
-        this.cfg = cfg;
+    public LiveVariablesProblem getLiveVariablesProblem() {
+        if (fullInterpreterContext == null) return null; // no fic so no pass-related info
+
+        return (LiveVariablesProblem) fullInterpreterContext.getDataFlowProblems().get(LiveVariablesProblem.NAME);
+    }
+
+    public void putStoreLocalVarPlacementProblem(StoreLocalVarPlacementProblem problem) {
+        // Technically this is if a pass is invalidated which has never run on a scope with no CFG/FIC yet.
+        if (fullInterpreterContext == null) {
+            // This should never trigger unless we got sloppy
+            if (problem != null) throw new IllegalStateException("StoreLocalVarPlacementProblem being stored when no FIC");
+            return;
+        }
+        fullInterpreterContext.getDataFlowProblems().put(StoreLocalVarPlacementProblem.NAME, problem);
+    }
+
+    public StoreLocalVarPlacementProblem getStoreLocalVarPlacementProblem() {
+        if (fullInterpreterContext == null) return null; // no fic so no pass-related info
+
+        return (StoreLocalVarPlacementProblem) fullInterpreterContext.getDataFlowProblems().get(StoreLocalVarPlacementProblem.NAME);
+    }
+
+    public void putUnboxableOpsAnalysisProblem(UnboxableOpsAnalysisProblem problem) {
+        // Technically this is if a pass is invalidated which has never run on a scope with no CFG/FIC yet.
+        if (fullInterpreterContext == null) {
+            // This should never trigger unless we got sloppy
+            if (problem != null) throw new IllegalStateException("UboxableOpsAnalysisProblem being stored when no FIC");
+            return;
+        }
+        fullInterpreterContext.getDataFlowProblems().put(UnboxableOpsAnalysisProblem.NAME, problem);
+    }
+
+    public UnboxableOpsAnalysisProblem getUnboxableOpsAnalysisProblem() {
+        if (fullInterpreterContext == null) return null; // no fic so no pass-related info
+
+        return (UnboxableOpsAnalysisProblem) fullInterpreterContext.getDataFlowProblems().get(UnboxableOpsAnalysisProblem.NAME);
     }
 
     public CFG getCFG() {
-        return cfg;
+        // A child scope may not have been prepared yet so we advance it to point of have a fresh CFG.
+        if (getFullInterpreterContext() == null) prepareFullBuildCommon();
+
+        return fullInterpreterContext.getCFG();
     }
 
-    @Interp
-    protected Instr[] prepareInstructions() {
-        if (getCFG() == null) {
-            int n = instrList.size();
-            Instr[] linearizedInstrArray = instrList.toArray(new Instr[n]);
-            for (int ipc = 0; ipc < n; ipc++) {
-                Instr i = linearizedInstrArray[ipc];
-                i.setIPC(ipc);
-                if (i instanceof LabelInstr) {
-                    ((LabelInstr)i).getLabel().setTargetPC(ipc+1);
-                }
-            }
-
-            return linearizedInstrArray;
-        }
-
-        setupLinearization();
-
-        boolean simple_method = this instanceof IRMethod;
-
-        SimpleCloneInfo cloneInfo = new SimpleCloneInfo(this, false);
-
-        // FIXME: If CFG (or linearizedBBList) knew number of instrs we could end up allocing better
-        // FIXME: Clone CFG in debug mode so interpreter can get matching info to instrs it is interp'ing
-
-        // Pass 1. Set up IPCs for labels and instructions and build linear instr list
-        List<Instr> newInstrs = new ArrayList<>();
-        int ipc = 0;
-        for (BasicBlock b: linearizedBBList) {
-            // All same-named labels must be same Java instance for this to work or we would need
-            // to examine all Label operands and update this as well which would be expensive.
-            b.getLabel().setTargetPC(ipc);
-            // Set all renamed labels (simple clone makes a new copy) to their proper ipc
-            cloneInfo.getRenamedLabel(b.getLabel()).setTargetPC(ipc);
-
-            List<Instr> bbInstrs = b.getInstrs();
-            int bbInstrsLength = bbInstrs.size();
-            // FIXME: Can be replaced with System.arrayCopy or clone() once we stop cloning individual instrs
-            for (int i = 0; i < bbInstrsLength; i++) {
-                Instr instr = bbInstrs.get(i);
-                if (simple_method && SimpleMethodInterpreterEngine.OPERATIONS.get(instr.getOperation()) == null) simple_method = false;
-                if (!(instr instanceof ReceiveSelfInstr)) {
-                    // FIXME: Can be removed once ipc and rpc are stored in table(s) in IC
-                    Instr newInstr = instr.clone(cloneInfo);
-
-                    newInstr.setIPC(ipc);
-                    newInstrs.add(newInstr);
-                    ipc++;
-                }
-            }
-        }
-
-        if (simple_method) flags.add(IRFlags.SIMPLE_METHOD);
-
-        cfg().getExitBB().getLabel().setTargetPC(ipc + 1);  // Exit BB ipc
-
-        // System.out.println("SCOPE: " + getName());
-        // System.out.println("INSTRS: " + cfg().toStringInstrs());
-
-        Instr[] linearizedInstrArray = newInstrs.toArray(new Instr[newInstrs.size()]);
-
-        // Pass 2: Use ipc info from previous to mark all linearized instrs rpc
-        ipc = 0;
-        for (BasicBlock b : linearizedBBList) {
-            BasicBlock rescuerBB = cfg().getRescuerBBFor(b);
-            int rescuerPC = rescuerBB == null ? -1 : rescuerBB.getLabel().getTargetPC();
-            for (Instr instr : b.getInstrs()) {
-                // FIXME: If we did not omit instrs from previous pass, we could end up just doing
-                // a size and for loop this n times instead of walking an examining each instr
-                if (!(instr instanceof ReceiveSelfInstr)) {
-                    linearizedInstrArray[ipc].setRPC(rescuerPC);
-                    ipc++;
-                }
-            }
-        }
-
-        return linearizedInstrArray;
-    }
-
-    private boolean isUnsafeScope() {
+    protected boolean isUnsafeScope() {
         if (this.isBeginEndBlock()) return true;                        // this is a BEGIN block
 
         List beginBlocks = getBeginBlocks();
@@ -566,16 +476,13 @@ public abstract class IRScope implements ParseResult {
     }
 
     public List<CompilerPass> getExecutedPasses() {
-        return executedPasses;
+        // FIXME: Super annoying...because OptimizeTempVars is a pre-CFG pass we have no full build info yet
+        return fullInterpreterContext == null ? new ArrayList<CompilerPass>() : fullInterpreterContext.getExecutedPasses();
     }
 
     // SSS FIXME: We should configure different optimization levels
     // and run different kinds of analysis depending on time budget.
     // Accordingly, we need to set IR levels/states (basic, optimized, etc.)
-    // ENEBO: If we use a MT optimization mechanism we cannot mutate CFG
-    // while another thread is using it.  This may need to happen on a clone()
-    // and we may need to update the method to return the new method.  Also,
-    // if this scope is held in multiple locations how do we update all references?
     private void runCompilerPasses(List<CompilerPass> passes) {
         // All passes are disabled in scopes where BEGIN and END scopes might
         // screw around with escaped variables. Optimizing for them is not
@@ -585,8 +492,8 @@ public abstract class IRScope implements ParseResult {
             passes = getManager().getSafePasses(this);
         }
 
-        CompilerPassScheduler scheduler = getManager().schedulePasses(passes);
-        for (CompilerPass pass: scheduler) {
+        CompilerPassScheduler scheduler = IRManager.schedulePasses(passes);
+        for (CompilerPass pass : scheduler) {
             pass.run(this);
         }
 
@@ -595,136 +502,85 @@ public abstract class IRScope implements ParseResult {
         }
     }
 
-    private void optimizeSimpleScopes() {
-        // For safe scopes that don't require a dynamic scope,
-        // run DCE since the analysis is less likely to be
-        // stymied by escaped bindings. We can also eliminate
-        // dynscopes for these scopes.
-        if (!isUnsafeScope() && !flags.contains(REQUIRES_DYNSCOPE)) {
-            if (flags.contains(RECEIVES_CLOSURE_ARG))
-                (new OptimizeDelegationPass()).run(this);
-            (new DeadCodeElimination()).run(this);
-            (new OptimizeDynScopesPass()).run(this);
-        }
-    }
-
-    protected void initScope(boolean jitMode) {
-        // FIXME: This is messy and prepareForInterpretation and prepareForCompilation need to
-        // clean up the lifecycle aspects of creating CFG from instrList and running passes in
-        // a consistent and predictable way.  This is a hack atm to unbreak the fact JIT
-        // may happen before IC.build count and thus not have cloned the instrs (which then
-        // modifies instrs IC is using causing weird blowups.
-        //
-        // If the scope has already been interpreted once,
-        // the scope can be on the call stack right now.
-        // So, clone instructions before modifying them!
-        if (state != ScopeState.INIT && getCFG() == null) {
-            cloneInstrs();
-        }
-
-        runCompilerPasses(getManager().getCompilerPasses(this));
-
-        if (!jitMode && RubyInstanceConfig.IR_COMPILER_PASSES == null) {
-            // Skip this if:
-            // * we are in JIT mode since they are being run as part
-            //   of JIT passes in a way that minimizes LVA invalidations.
-            // * we have been passed in a list of passes to run on the
-            //   commandline (so as to honor the commandline request).
-            optimizeSimpleScopes();
-        }
-
-        // If at the end, the cfg is still not build, build it.
-        // (ex: unsafe scopes for which passes don't run).
-        if (getCFG() == null) {
-            buildCFG();
-        }
-    }
-
     /** Make version specific to scope which needs it (e.g. Closure vs non-closure). */
-    public InterpreterContext allocateInterpreterContext(Instr[] instructionList, boolean rebuild) {
-        return new InterpreterContext(this, instructionList, rebuild);
-    }
-
-    public InterpreterContext prepareForInterpretation() {
-        return prepareForInterpretation(false);
-    }
-
-    protected void cloneInstrs() {
-        cloneInstrs(new SimpleCloneInfo(this, false));
-    }
-
-    protected void cloneInstrs(SimpleCloneInfo cloneInfo) {
-        // FIXME: not cloning if we happen to have a CFG violates the spirit of this method name.
-        // We do this currently because in a scenario where a nested closure is called much more than
-        // an outer scope we will process that closure first independently.  If at a later point we
-        // process the outer scope then the inner scope will have nuked instrList and explode if we
-        // try to clone the non-existent instrList.
-        if (getCFG() != null) return;
-
-        List<Instr> newInstrList = new ArrayList<>(instrList.size());
-
-        for (Instr instr: this.instrList) {
-            newInstrList.add(instr.clone(cloneInfo));
-        }
-
-        instrList = newInstrList;
-        state = ScopeState.INSTRS_CLONED;
-        for (IRClosure cl : getClosures()) {
-            cl.cloneInstrs(cloneInfo.cloneForCloningClosure(cl));
-        }
-    }
-
-    /** Run any necessary passes to get the IR ready for interpretation */
-    public synchronized InterpreterContext prepareForInterpretation(boolean rebuild) {
-        if (interpreterContext == null) {
-            this.state = ScopeState.INTERPED;
-        } else if (!rebuild || getCFG() != null) {
-            return interpreterContext; // Already prepared/rebuilt
-        } else {
-            // Build CFG, run passes, etc.
-            initScope(false);
-
-            // Always add call protocol instructions now for both interpreter and JIT
-            // since we are removing support for implicit stuff in the interpreter.
-            // When JIT later runs this same pass, it will be a NOP there.
-            if (!isUnsafeScope()) {
-                (new AddCallProtocolInstructions()).run(this);
-            }
-        }
-
-        interpreterContext = allocateInterpreterContext(prepareInstructions(), rebuild);
+    public InterpreterContext allocateInterpreterContext(List<Instr> instructions) {
+        interpreterContext = new InterpreterContext(this, instructions);
 
         return interpreterContext;
     }
 
-    /** Run any necessary passes to get the IR ready for compilation */
-    public synchronized List<BasicBlock> prepareForCompilation() {
-        // Reset linearization, if any exists
-        resetLinearizationData();
+    private Instr[] cloneInstrs() {
+        SimpleCloneInfo cloneInfo = new SimpleCloneInfo(this, false);
 
-        initScope(true);
+        Instr[] instructions = interpreterContext.getInstructions();
+        int length = instructions.length;
+        Instr[] newInstructions = new Instr[length];
+
+        for (int i = 0; i < length; i++) {
+            newInstructions[i] = instructions[i].clone(cloneInfo);
+        }
+
+        return newInstructions;
+    }
+
+    public void prepareFullBuildCommon() {
+        // We already made it.
+        if (fullInterpreterContext != null) return;
+
+        // Clone instrs from startup interpreter so we do not swap out instrs out from under the
+        // startup interpreter as we are building the full interpreter.
+        Instr[] instrs = cloneInstrs();
+
+        // This is a complicating pseudo-pass which needs to be run before CFG is generated.  This
+        // necessitates us needing a clonedInstrs field on IRScope.  If we can rewrite this to a full
+        // CFG using pass we can eliminate this intermediate save and field.
+        instrs = getManager().optimizeTemporaryVariablesIfEnabled(this, instrs);
+
+        fullInterpreterContext = new FullInterpreterContext(this, instrs);
+    }
+    /**
+     * This initializes a more complete(full) InterpreterContext which if used in mixed mode will be
+     * used by the JIT and if used in pure-interpreted mode it will be used by an interpreter engine.
+     */
+    public synchronized FullInterpreterContext prepareFullBuild() {
+        // Don't run if same method was queued up in the tiny race for scheduling JIT/Full Build OR
+        // for any nested closures which got a a fullInterpreterContext but have not run any passes
+        // or generated instructions.
+        if (fullInterpreterContext != null && fullInterpreterContext.buildComplete()) return fullInterpreterContext;
+
+        prepareFullBuildCommon();
+        runCompilerPasses(getManager().getCompilerPasses(this));
+        getManager().optimizeIfSimpleScope(this);
+
+        // Always add call protocol instructions now since we are removing support for implicit stuff in interp.
+        if (!isUnsafeScope()) new AddCallProtocolInstructions().run(this);
+
+        fullInterpreterContext.generateInstructionsForIntepretation();
+        return fullInterpreterContext;
+    }
+
+    /** Run any necessary passes to get the IR ready for compilation */
+    public synchronized BasicBlock[] prepareForInitialCompilation() {
+        // Don't run if same method was queued up in the tiny race for scheduling JIT/Full Build OR
+        // for any nested closures which got a a fullInterpreterContext but have not run any passes
+        // or generated instructions.
+        if (fullInterpreterContext != null && fullInterpreterContext.buildComplete()) return fullInterpreterContext.getLinearizedBBList();
+
+        prepareFullBuildCommon();
 
         runCompilerPasses(getManager().getJITPasses(this));
 
-        return Arrays.asList(buildLinearization());
+        return fullInterpreterContext.linearizeBasicBlocks();
     }
 
-    private void setupLinearization() {
-        try {
-            buildLinearization(); // FIXME: compiler passes should have done this
-            depends(linearization());
-        } catch (RuntimeException e) {
-            LOG.error("Error linearizing cfg: ", e);
-            LOG.error(this.debugOutput());
-            throw e;
-        }
-    }
+    // FIXME: For inlining, culmulative or extra passes run based on profiled execution we need to re-init data or even
+    // construct a new fullInterpreterContext.  Primary obstacles is JITFlags and linearization of BBs.
 
     public Map<BasicBlock, Label> buildJVMExceptionTable() {
-        Map<BasicBlock, Label> map = new HashMap<BasicBlock, Label>();
+        Map<BasicBlock, Label> map = new HashMap<>();
 
-        for (BasicBlock bb: buildLinearization()) {
-            BasicBlock rescueBB = cfg().getRescuerBBFor(bb);
+        for (BasicBlock bb: fullInterpreterContext.getLinearizedBBList()) {
+            BasicBlock rescueBB = getCFG().getRescuerBBFor(bb);
             if (rescueBB != null) {
                 map.put(bb, rescueBB.getLabel());
             }
@@ -736,24 +592,11 @@ public abstract class IRScope implements ParseResult {
         return map;
     }
 
-    private static Label[] catLabels(Label[] labels, Label cat) {
-        if (labels == null) return new Label[] {cat};
-        Label[] newLabels = new Label[labels.length + 1];
-        System.arraycopy(labels, 0, newLabels, 0, labels.length);
-        newLabels[labels.length] = cat;
-        return newLabels;
-    }
-
     public EnumSet<IRFlags> getFlags() {
         return flags;
     }
 
-    // This can help use eliminate writes to %block that are not used since this is
-    // a special local-variable, not programmer-defined local-variable
-    public void computeScopeFlags() {
-        if (flagsComputed) return;
-
-        // init
+    private void initScopeFlags() {
         flags.remove(CAN_CAPTURE_CALLERS_BINDING);
         flags.remove(CAN_RECEIVE_BREAKS);
         flags.remove(CAN_RECEIVE_NONLOCAL_RETURNS);
@@ -763,6 +606,9 @@ public abstract class IRScope implements ParseResult {
         flags.remove(USES_EVAL);
         flags.remove(USES_BACKREF_OR_LASTLINE);
         flags.remove(REQUIRES_DYNSCOPE);
+    }
+
+    private void bindingEscapedScopeFlagsCheck() {
         // NOTE: bindingHasEscaped is the crucial flag and it effectively is
         // unconditionally true whenever it has a call that receives a closure.
         // See CallBase.computeRequiresCallersBindingFlag
@@ -775,22 +621,9 @@ public abstract class IRScope implements ParseResult {
         } else {
             flags.remove(BINDING_HAS_ESCAPED);
         }
+    }
 
-        // Recompute flags -- we could be calling this method different times.
-        // * once after IR generation and local optimizations propagates constants locally
-        // * also potentially at later times after other opt passes
-        if (cfg == null) {
-            for (Instr i: getInstrs()) {
-                i.computeScopeFlags(this);
-            }
-        } else {
-            for (BasicBlock b: cfg.getBasicBlocks()) {
-                for (Instr i: b.getInstrs()) {
-                    i.computeScopeFlags(this);
-                }
-            }
-        }
-
+    private void calculateClosureScopeFlags() {
         // Compute flags for nested closures (recursively) and set derived flags.
         for (IRClosure cl: getClosures()) {
             cl.computeScopeFlags();
@@ -810,21 +643,59 @@ public abstract class IRScope implements ParseResult {
                 }
             }
         }
+    }
 
-        if (flags.contains(CAN_RECEIVE_BREAKS)
-            || flags.contains(HAS_NONLOCAL_RETURNS)
-            || flags.contains(CAN_RECEIVE_NONLOCAL_RETURNS)
-            || flags.contains(BINDING_HAS_ESCAPED)
-            || flags.contains(USES_ZSUPER)
-               // SSS FIXME: checkArity for keyword args
-               // looks up a keyword arg in the static scope
-               // which currently requires a dynamic scope to
-               // be recovered. If there is another way to do this,
-               // we can get rid of this.
-            || flags.contains(RECEIVES_KEYWORD_ARGS))
-        {
+    private void computeNeedsDynamicScopeFlag() {
+        // SSS FIXME: checkArity for keyword args looks up a keyword arg in the static scope which
+        // currently requires a dynamic scope to be recovered. If there is another way to do this,
+        // we can get rid of this.
+        if (flags.contains(CAN_RECEIVE_BREAKS) || flags.contains(HAS_NONLOCAL_RETURNS) ||
+                flags.contains(CAN_RECEIVE_NONLOCAL_RETURNS) || flags.contains(BINDING_HAS_ESCAPED) ||
+                flags.contains(USES_ZSUPER) || flags.contains(RECEIVES_KEYWORD_ARGS)) {
             flags.add(REQUIRES_DYNSCOPE);
         }
+    }
+
+    // ENEBO: IRBuild adds more instrs after this so should we force a recompute?
+    /**
+     * This is called when building an IRMethod before it has completed the build and made an IC
+     * yet.
+     */
+    public void computeScopeFlagsEarly(List<Instr> instructions) {
+        initScopeFlags();
+        bindingEscapedScopeFlagsCheck();
+
+        for (Instr i : instructions) {
+            i.computeScopeFlags(this);
+        }
+
+        calculateClosureScopeFlags();
+        computeNeedsDynamicScopeFlag();
+
+        flagsComputed = true;
+    }
+
+
+    /**
+     * Calculate scope flags used by various passes to know things like whether a binding has escaped.
+     * We may recalculate flags in a few scenarios:
+     *  - once after IR generation and local optimizations propagates constants locally
+     *  - also potentially at later times after other opt passes
+     */
+    public void computeScopeFlags() {
+        if (flagsComputed) return;
+
+        initScopeFlags();
+        bindingEscapedScopeFlagsCheck();
+
+        if (fullInterpreterContext != null) {
+            fullInterpreterContext.computeScopeFlagsFromInstructions();
+        } else {
+            interpreterContext.computeScopeFlagsFromInstructions();
+        }
+
+        calculateClosureScopeFlags();
+        computeNeedsDynamicScopeFlag();
 
         flagsComputed = true;
     }
@@ -837,35 +708,15 @@ public abstract class IRScope implements ParseResult {
     }
 
     public String debugOutput() {
-        if (this.cfg == null) {
-            return "Instructions:\n" + this.toStringInstrs();
-        } else {
-            return
-                "\nCFG:\n" + this.cfg.toStringGraph() +
-                "\nInstructions:\n" + this.cfg.toStringInstrs();
-        }
+        return toStringInstrs();
     }
 
     public String toStringInstrs() {
-        StringBuilder b = new StringBuilder();
-
-        int i = 0;
-        for (Instr instr : instrList) {
-            if (i > 0) b.append("\n");
-
-            b.append("  ").append(i).append('\t').append(instr);
-
-            i++;
+        if (fullInterpreterContext != null) { // JIT or Full interpreter
+            return "Instructions:\n" + fullInterpreterContext.toStringInstrs();
+        } else {                             // Startup interpreter
+            return interpreterContext.toStringInstrs();
         }
-
-        if (!nestedClosures.isEmpty()) {
-            b.append("\n\n------ Closures encountered in this scope ------\n");
-            for (IRClosure c: nestedClosures)
-                b.append(c.toStringBody());
-            b.append("------------------------------------------------\n");
-        }
-
-        return b.toString();
     }
 
     public LocalVariable getSelf() {
@@ -1061,9 +912,9 @@ public abstract class IRScope implements ParseResult {
     }
 
     public void setUpUseDefLocalVarMaps() {
-        definedLocalVars = new java.util.HashSet<Variable>();
-        usedLocalVars = new java.util.HashSet<Variable>();
-        for (BasicBlock bb : cfg().getBasicBlocks()) {
+        definedLocalVars = new java.util.HashSet<>();
+        usedLocalVars = new java.util.HashSet<>();
+        for (BasicBlock bb : getCFG().getBasicBlocks()) {
             for (Instr i : bb.getInstrs()) {
                 for (Variable v : i.getUsedVariables()) {
                     if (v instanceof LocalVariable) usedLocalVars.add(v);
@@ -1105,103 +956,18 @@ public abstract class IRScope implements ParseResult {
     }
 
     /**
-     * Extract all call arguments from the specified scope (only useful for Closures and Methods) so that
-     * we can convert zsupers to supers with explicit arguments.
-     *
-     * Note: This is fairly expensive because we walk entire scope when we could potentially stop earlier
-     * if we knew when recv_* were done.
+     * For lazy scopes which IRBuild on demand we can ask this method whether it has been built yet...
      */
-    public Operand[] getCallArgs() {
-        List<Operand> callArgs = new ArrayList<>(5);
-        List<KeyValuePair<Operand, Operand>> keywordArgs = new ArrayList<>(3);
-
-        // We have two paths.  eval and non-eval.
-        if (instrList == null) {  // CFG already made.  eval has zsuper and we walk back to some executing method/script
-            // FIXME: Need to verify this can never re-order recvs in a way to swap order to zsuper
-            for (BasicBlock bb: getCFG().getBasicBlocks()) {
-                for (Instr instr: bb.getInstrs()) {
-                    extractCallOperands(callArgs, keywordArgs, instr);
-                }
-            }
-        } else {                  // common zsuper case.  non-eval and at build time entirely.
-            for (Instr instr : getInstrs()) {
-                extractCallOperands(callArgs, keywordArgs, instr);
-            }
-        }
-
-        return getCallOperands(callArgs, keywordArgs);
-    }
-
-
-    private void extractCallOperands(List<Operand> callArgs, List<KeyValuePair<Operand, Operand>> keywordArgs, Instr instr) {
-        if (instr instanceof ReceiveKeywordRestArgInstr) {
-            // Always add the keyword rest arg to the beginning
-            keywordArgs.add(0, new KeyValuePair<Operand, Operand>(Symbol.KW_REST_ARG_DUMMY, ((ReceiveArgBase) instr).getResult()));
-        } else if (instr instanceof ReceiveKeywordArgInstr) {
-            ReceiveKeywordArgInstr rkai = (ReceiveKeywordArgInstr) instr;
-            // FIXME: This lost encoding information when name was converted to string earlier in IRBuilder
-            keywordArgs.add(new KeyValuePair<Operand, Operand>(new Symbol(rkai.argName, USASCIIEncoding.INSTANCE), rkai.getResult()));
-        } else if (instr instanceof ReceiveRestArgInstr) {
-            callArgs.add(new Splat(((ReceiveRestArgInstr) instr).getResult()));
-        } else if (instr instanceof ReceiveArgBase) {
-            callArgs.add(((ReceiveArgBase) instr).getResult());
-        }
-    }
-
-    private Operand[] getCallOperands(List<Operand> callArgs, List<KeyValuePair<Operand, Operand>> keywordArgs) {
-        if (receivesKeywordArgs()) {
-            int i = 0;
-            Operand[] args = new Operand[callArgs.size() + 1];
-            for (Operand arg: callArgs) {
-                args[i++] = arg;
-            }
-            args[i] = new Hash(keywordArgs, true);
-            return args;
-        }
-
-        return callArgs.toArray(new Operand[callArgs.size()]);
-    }
-
-    public void setDataFlowSolution(String name, DataFlowProblem p) {
-        dfProbs.put(name, p);
-    }
-
-    public DataFlowProblem getDataFlowSolution(String name) {
-        return dfProbs.get(name);
-    }
-
-    // This should only be used to do pre-cfg opts and to build the CFG.
-    // Everyone else should use the CFG.
-    public List<Instr> getInstrs() {
-        if (persistenceStore != null) {
-            instrList = persistenceStore.decodeInstructionsAt(this, instructionsOffsetInfoPersistenceBuffer);
-        }
-        if (cfg != null) throw new RuntimeException("Please use the CFG to access this scope's instructions: " + this);
-        return instrList;
+    public boolean hasBeenBuilt() {
+        return true;
     }
 
     public InterpreterContext getInterpreterContext() {
         return interpreterContext;
     }
 
-    public void resetLinearizationData() {
-        linearizedBBList = null;
-    }
-
-    public BasicBlock[] buildLinearization() {
-        if (linearizedBBList != null) return linearizedBBList; // Already linearized
-
-        linearizedBBList = CFGLinearizer.linearize(cfg);
-
-        return linearizedBBList;
-    }
-
-    public BasicBlock[] linearization() {
-        depends(cfg());
-
-        assert linearizedBBList != null: "You have not run linearization";
-
-        return linearizedBBList;
+    public FullInterpreterContext getFullInterpreterContext() {
+        return fullInterpreterContext;
     }
 
     protected void depends(Object obj) {
@@ -1209,16 +975,9 @@ public abstract class IRScope implements ParseResult {
                 "up wrong.  Use depends(build()) not depends(build).";
     }
 
-    // SSS FIXME: Why do we have cfg() with this assertion and a getCFG() without an assertion??
-    public CFG cfg() {
-        assert cfg != null: "Trying to access build before build started";
-        return cfg;
-    }
-
     public void resetState() {
         interpreterContext = null;
-        resetLinearizationData();
-        cfg.resetState();
+        fullInterpreterContext = null;
 
         // reset flags
         flagsComputed = false;
@@ -1238,8 +997,8 @@ public abstract class IRScope implements ParseResult {
         // since CompilerPass.invalidate modifies this, but some passes
         // cannot be invalidated.
         int i = 0;
-        while (i < executedPasses.size()) {
-            if (!executedPasses.get(i).invalidate(this)) {
+        while (i < getFullInterpreterContext().getExecutedPasses().size()) {
+            if (!getFullInterpreterContext().getExecutedPasses().get(i).invalidate(this)) {
                 i++;
             }
         }
@@ -1247,8 +1006,7 @@ public abstract class IRScope implements ParseResult {
 
     public void inlineMethod(IRScope method, RubyModule implClass, int classToken, BasicBlock basicBlock, CallBase call, boolean cloneHost) {
         // Inline
-        depends(cfg());
-        new CFGInliner(cfg).inlineMethod(method, implClass, classToken, basicBlock, call, cloneHost);
+        new CFGInliner(getCFG()).inlineMethod(method, implClass, classToken, basicBlock, call, cloneHost);
 
         // Reset state
         resetState();
@@ -1279,14 +1037,6 @@ public abstract class IRScope implements ParseResult {
         nextVarIndex.put(prefix, index + 1);
 
         return index;
-    }
-
-    // This is how IR Persistence can re-read existing saved labels and reset
-    // scope back to proper index.
-    public void setPrefixedNameIndexTo(String prefix, int newIndex) {
-        int index = getPrefixCountSize(prefix);
-
-        nextVarIndex.put(prefix, index);
     }
 
     protected void resetVariableCounter(String prefix) {
@@ -1345,7 +1095,8 @@ public abstract class IRScope implements ParseResult {
     }
 
     public void savePersistenceInfo(int offset, IRReaderDecoder file) {
-        instructionsOffsetInfoPersistenceBuffer = offset;
-        persistenceStore = file;
+        // FIXME: Persistence is disconnected for now.
+//        instructionsOffsetInfoPersistenceBuffer = offset;
+//        persistenceStore = file;
     }
 }

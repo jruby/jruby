@@ -1,2 +1,0 @@
-fails:SortedSet#<< adds the passed Object to self
-fails:SortedSet#<< returns self

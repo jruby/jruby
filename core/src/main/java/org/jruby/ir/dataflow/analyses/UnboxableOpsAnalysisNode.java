@@ -3,7 +3,6 @@ package org.jruby.ir.dataflow.analyses;
 import org.jruby.dirgra.Edge;
 import org.jruby.ir.IRClosure;
 import org.jruby.ir.Operation;
-import org.jruby.ir.dataflow.DataFlowConstants;
 import org.jruby.ir.dataflow.FlowGraphNode;
 import org.jruby.ir.instructions.*;
 import org.jruby.ir.instructions.boxing.*;
@@ -282,11 +281,11 @@ public class UnboxableOpsAnalysisNode extends FlowGraphNode<UnboxableOpsAnalysis
             } else if (o instanceof WrappedIRClosure) {
                 // Fetch the nested unboxing-analysis problem, creating one if necessary
                 IRClosure cl = ((WrappedIRClosure)o).getClosure();
-                UnboxableOpsAnalysisProblem subProblem = (UnboxableOpsAnalysisProblem)cl.getDataFlowSolution(DataFlowConstants.UNBOXING);
+                UnboxableOpsAnalysisProblem subProblem = cl.getUnboxableOpsAnalysisProblem();
                 if (subProblem == null) {
                     subProblem = new UnboxableOpsAnalysisProblem();
                     subProblem.setup(cl);
-                    cl.setDataFlowSolution(DataFlowConstants.UNBOXING, subProblem);
+                    cl.putUnboxableOpsAnalysisProblem(subProblem);
                 }
 
                 UnboxableOpsAnalysisNode exitNode  = subProblem.getExitNode();
@@ -565,7 +564,7 @@ public class UnboxableOpsAnalysisNode extends FlowGraphNode<UnboxableOpsAnalysis
         }
 
         // Only worry about vars live on exit from the BB
-        LiveVariablesProblem lvp = (LiveVariablesProblem)problem.getScope().getDataFlowSolution(DataFlowConstants.LVP_NAME);
+        LiveVariablesProblem lvp = problem.getScope().getLiveVariablesProblem();
         BitSet liveVarsSet = lvp.getFlowGraphNode(basicBlock).getLiveInBitSet();
 
         List<Instr> newInstrs = new ArrayList<Instr>();
@@ -655,7 +654,7 @@ public class UnboxableOpsAnalysisNode extends FlowGraphNode<UnboxableOpsAnalysis
 
                             // Fetch the nested unboxing-analysis problem, creating one if necessary
                             IRClosure cl = ((WrappedIRClosure)o).getClosure();
-                            UnboxableOpsAnalysisProblem subProblem = (UnboxableOpsAnalysisProblem)cl.getDataFlowSolution(DataFlowConstants.UNBOXING);
+                            UnboxableOpsAnalysisProblem subProblem = cl.getUnboxableOpsAnalysisProblem();
                             UnboxableOpsAnalysisNode exitNode  = subProblem.getExitNode();
 
                             // Compute solution

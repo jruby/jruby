@@ -11,6 +11,9 @@ package org.jruby.truffle.runtime.methods;
 
 public class Arity {
 
+    public static final Arity NO_ARGUMENTS = new Arity(0, 0, false, false, false, 0);
+    public static final Arity ONE_REQUIRED = new Arity(1, 0, false, false, false, 0);
+
     private final int required;
     private final int optional;
     private final boolean allowsMore;
@@ -51,4 +54,29 @@ public class Arity {
         return hasKeyRest;
     }
 
+    public int getArityNumber() {
+        int count = required;
+
+        if (hasKeywords) {
+            count++;
+        }
+
+        if (optional > 0 || allowsMore) {
+            count = -count - 1;
+        }
+
+        return count;
+    }
+
+    @Override
+    public String toString() {
+        return "Arity{" +
+                "required=" + required +
+                ", optional=" + optional +
+                ", allowsMore=" + allowsMore +
+                ", definedKeywords=" + definedKeywords +
+                ", hasKeywords=" + hasKeywords +
+                ", hasKeyRest=" + hasKeyRest +
+                '}';
+    }
 }

@@ -1,1 +1,0 @@
-fails:Hash#[]= doesn't duplicate and freeze already frozen string keys

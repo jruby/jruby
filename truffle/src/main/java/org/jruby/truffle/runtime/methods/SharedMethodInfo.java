@@ -20,6 +20,7 @@ import org.jruby.ast.LocalAsgnNode;
 import org.jruby.ast.Node;
 
 import com.oracle.truffle.api.source.SourceSection;
+import org.jruby.ast.Node;
 import org.jruby.truffle.runtime.LexicalScope;
 
 /**
@@ -30,36 +31,38 @@ public class SharedMethodInfo {
 
     private final SourceSection sourceSection;
     private final LexicalScope lexicalScope;
+    private final Arity arity;
+    /** The original name of the method. Does not change when aliased. */
     private final String name;
     private final boolean isBlock;
     private final org.jruby.ast.Node parseTree;
     private final boolean alwaysSplit;
     
     private final List<String> keywordArguments;
-    private final Arity arity;
 
-    public SharedMethodInfo(SourceSection sourceSection, LexicalScope lexicalScope, String name, boolean isBlock, org.jruby.ast.Node parseTree, boolean alwaysSplit) {
+    public SharedMethodInfo(SourceSection sourceSection, LexicalScope lexicalScope, Arity arity, String name, boolean isBlock, Node parseTree, boolean alwaysSplit) {
         assert sourceSection != null;
         assert name != null;
 
         this.sourceSection = sourceSection;
         this.lexicalScope = lexicalScope;
+        this.arity = arity;
         this.name = name;
         this.isBlock = isBlock;
         this.parseTree = parseTree;
         this.alwaysSplit = alwaysSplit;
         this.keywordArguments = null;
-        this.arity = null;
     }
     
     public SharedMethodInfo(SourceSection sourceSection,
-            LexicalScope lexicalScope, String name, boolean isBlock,
+            LexicalScope lexicalScope, Arity arity, String name, boolean isBlock,
             org.jruby.ast.Node parseTree, boolean alwaysSplit, ArgsNode argsNode) {
         assert sourceSection != null;
         assert name != null;
 
         this.sourceSection = sourceSection;
         this.lexicalScope = lexicalScope;
+        this.arity = arity;
         this.name = name;
         this.isBlock = isBlock;
         this.parseTree = parseTree;
@@ -87,20 +90,6 @@ public class SharedMethodInfo {
         } else {
             keywordArguments = null;
         }
-        
-        this.arity = getArity(argsNode);
-    }
-
-    // TODO: copied from MethodTranslator
-    private static Arity getArity(org.jruby.ast.ArgsNode argsNode) {
-        final int minimum = argsNode.getRequiredArgsCount();
-        final int maximum = argsNode.getMaxArgumentsCount();
-        return new Arity(minimum, argsNode.getOptionalArgsCount(),
-                maximum == -1, argsNode.hasKwargs(), argsNode.hasKeyRest(), argsNode.countKeywords());
-    }
-
-    public Arity getArity() {
-        return arity;
     }
 
     public SourceSection getSourceSection() {
@@ -109,6 +98,10 @@ public class SharedMethodInfo {
 
     public LexicalScope getLexicalScope() {
         return lexicalScope;
+    }
+
+    public Arity getArity() {
+        return arity;
     }
 
     public String getName() {
@@ -125,6 +118,10 @@ public class SharedMethodInfo {
 
     public boolean shouldAlwaysSplit() {
         return alwaysSplit;
+    }
+
+    public SharedMethodInfo withName(String newName) {
+        return new SharedMethodInfo(sourceSection, lexicalScope, arity, newName, isBlock, parseTree, alwaysSplit);
     }
 
     @Override

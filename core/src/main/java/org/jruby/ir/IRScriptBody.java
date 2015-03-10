@@ -31,8 +31,10 @@ public class IRScriptBody extends IRScope {
     }
 
     @Override
-    public InterpreterContext allocateInterpreterContext(Instr[] instructionList, boolean rebuild) {
-        return new BeginEndInterpreterContext(this, instructionList, rebuild);
+    public InterpreterContext allocateInterpreterContext(List<Instr> instructions) {
+        interpreterContext = new BeginEndInterpreterContext(this, instructions);
+
+        return interpreterContext;
     }
 
     @Override
@@ -53,7 +55,7 @@ public class IRScriptBody extends IRScope {
     /* Record a begin block -- not all scope implementations can handle them */
     @Override
     public void recordBeginBlock(IRClosure beginBlockClosure) {
-        if (beginBlocks == null) beginBlocks = new ArrayList<IRClosure>();
+        if (beginBlocks == null) beginBlocks = new ArrayList<>();
         beginBlockClosure.setBeginEndBlock();
         beginBlocks.add(beginBlockClosure);
     }

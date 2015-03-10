@@ -3,7 +3,7 @@ package org.jruby.internal.runtime.methods;
 import java.util.List;
 
 public interface IRMethodArgs {
-    public List<String[]> getParameterList();
+    public String[] getParameterList();
 
     public enum ArgType {
         key, keyreq, keyrest, block, opt, rest, req

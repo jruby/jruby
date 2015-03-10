@@ -120,6 +120,14 @@ class Array
 
     index
   end
+
+  def reverse
+    res = []
+
+    each { |x| res.unshift x }
+
+    res
+  end
 end
 
 module Kernel
@@ -155,6 +163,24 @@ class BasicObject
 
   def instance_exec(*args)
     # TODO (nirvdrum 06-Mar-15) Properly implement this.  The stub is just to get the specs even loading.
+  end
+
+end
+
+class Method
+
+  def to_proc
+    proc { |*args|
+      self.call(*args)
+    }
+  end
+
+end
+
+class IO
+
+  def tty?
+    false
   end
 
 end

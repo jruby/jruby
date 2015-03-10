@@ -1,5 +1,0 @@
-fails:Set#reject! yields every element of self
-fails:Set#reject! deletes every element from self for which the passed block returns true
-fails:Set#reject! returns self when self was modified
-fails:Set#reject! returns nil when self was not modified
-fails:Set#reject! returns an Enumerator when passed no block

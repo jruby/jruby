@@ -1,4 +1,0 @@
-fails:Set#keep_if yields every element of self
-fails:Set#keep_if keeps every element from self for which the passed block returns true
-fails:Set#keep_if returns self
-fails:Set#keep_if returns an Enumerator when passed no block

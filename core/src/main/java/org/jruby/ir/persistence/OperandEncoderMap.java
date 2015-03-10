@@ -39,7 +39,7 @@ class OperandEncoderMap extends IRVisitor {
     @Override public void Boolean(Boolean booleanliteral) { encoder.encode(booleanliteral.isTrue()); }
 
     @Override public void ClosureLocalVariable(ClosureLocalVariable variable) {
-        // We can refigure out closure scope it is in.
+        // SSS FIXME: Need to dump definedLocally?
         encoder.encode(variable.getName());
         encoder.encode(variable.getScopeDepth());
     }
@@ -54,6 +54,8 @@ class OperandEncoderMap extends IRVisitor {
     @Override public void Fixnum(Fixnum fixnum) { encoder.encode(fixnum.value); }
 
     @Override public void Float(Float flote) { encoder.encode(flote.value); }
+
+    @Override public void FrozenString(FrozenString operand) { StringLiteral(operand); }
 
     @Override public void GlobalVariable(GlobalVariable variable) { encoder.encode(variable.getName()); }
 
@@ -100,7 +102,10 @@ class OperandEncoderMap extends IRVisitor {
 
     @Override public void StandardError(StandardError standarderror) {} // No data
 
-    @Override public void StringLiteral(StringLiteral stringliteral) { encoder.encode(stringliteral.string); }
+    @Override public void StringLiteral(StringLiteral stringliteral) {
+        encoder.encode(stringliteral.getByteList());
+        encoder.encode(stringliteral.getCodeRange());
+    }
 
     @Override public void SValue(SValue svalue) { encode(svalue.getArray()); }
 

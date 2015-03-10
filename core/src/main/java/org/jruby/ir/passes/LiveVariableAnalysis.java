@@ -19,7 +19,7 @@ import java.util.Set;
 import java.util.List;
 
 public class LiveVariableAnalysis extends CompilerPass {
-    public static List<Class<? extends CompilerPass>> DEPENDENCIES = Arrays.<Class<? extends CompilerPass>>asList(CFGBuilder.class, OptimizeDynScopesPass.class);
+    public static List<Class<? extends CompilerPass>> DEPENDENCIES = Arrays.<Class<? extends CompilerPass>>asList(OptimizeDynScopesPass.class);
 
     @Override
     public String getLabel() {
@@ -27,17 +27,12 @@ public class LiveVariableAnalysis extends CompilerPass {
     }
 
     @Override
-    public List<Class<? extends CompilerPass>> getDependencies() {
-        return DEPENDENCIES;
-    }
-
-    @Override
     public Object previouslyRun(IRScope scope) {
-        return scope.getDataFlowSolution(LiveVariablesProblem.NAME);
+        return scope.getLiveVariablesProblem();
     }
 
     private void collectNonLocalDirtyVars(IRClosure cl, Set<LocalVariable> vars, int minDepth) {
-        for (BasicBlock bb: cl.cfg().getBasicBlocks()) {
+        for (BasicBlock bb: cl.getCFG().getBasicBlocks()) {
             for (Instr i: bb.getInstrs()) {
                 // Collect local vars belonging to an outer scope dirtied here
                 if (i instanceof ResultInstr) {
@@ -61,11 +56,6 @@ public class LiveVariableAnalysis extends CompilerPass {
 
     @Override
     public Object execute(IRScope scope, Object... data) {
-        // Should never be invoked directly on IRClosures
-        // if (scope instanceof IRClosure && !(scope instanceof IREvalScript)) {
-        //     System.out.println("Hmm .. should not run lvp directly on closure scope: " + scope);
-        // }
-
         // Make sure flags are computed
         scope.computeScopeFlags();
 
@@ -85,7 +75,7 @@ public class LiveVariableAnalysis extends CompilerPass {
         }
 
         lvp.compute_MOP_Solution();
-        scope.setDataFlowSolution(LiveVariablesProblem.NAME, lvp);
+        scope.putLiveVariablesProblem(lvp);
 
         return lvp;
     }
@@ -93,7 +83,7 @@ public class LiveVariableAnalysis extends CompilerPass {
     @Override
     public boolean invalidate(IRScope scope) {
         super.invalidate(scope);
-        scope.setDataFlowSolution(LiveVariablesProblem.NAME, null);
+        scope.putLiveVariablesProblem(null);
         return true;
     }
 }

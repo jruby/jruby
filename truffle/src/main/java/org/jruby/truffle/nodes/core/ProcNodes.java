@@ -48,7 +48,7 @@ public abstract class ProcNodes {
 
         @Specialization
         public int arity(RubyProc proc) {
-            return 1;
+            return proc.getSharedMethodInfo().getArity().getArityNumber();
         }
 
     }

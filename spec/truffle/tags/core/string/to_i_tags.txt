@@ -1,20 +1,4 @@
-fails:String#to_i returns 0 for strings with leading underscores
-fails:String#to_i ignores underscores in between the digits
-fails:String#to_i ignores leading whitespaces
-fails:String#to_i ignores subsequent invalid characters
-fails:String#to_i returns 0 if self is no valid integer-representation
 fails:String#to_i interprets leading characters as a number in the given base
-fails:String#to_i auto-detects base 8 via leading 0 when base = 0
-fails:String#to_i auto-detects base 2 via 0b when base = 0
-fails:String#to_i auto-detects base 10 via 0d when base = 0
-fails:String#to_i auto-detects base 8 via 0o when base = 0
-fails:String#to_i auto-detects base 16 via 0x when base = 0
-fails:String#to_i auto-detects base 10 with no base specifier when base = 0
-fails:String#to_i doesn't handle foreign base specifiers when base is > 0
-fails:String#to_i tries to convert the base to an integer using to_int
-fails:String#to_i requires that the sign if any appears before the base specifier
-fails:String#to_i returns a Fixnum for long strings with trailing spaces
-fails:String#to_i returns a Fixnum for long strings with leading spaces
 fails:String#to_i with bases parses a String in base 2
 fails:String#to_i with bases parses a String in base 3
 fails:String#to_i with bases parses a String in base 4

@@ -1,24 +1,22 @@
 package org.jruby.ir;
 
-import org.jruby.ast.MethodDefNode;
-import org.jruby.internal.runtime.methods.IRMethodArgs;
-import org.jruby.ir.interpreter.InterpreterContext;
-import org.jruby.ir.operands.LocalVariable;
-import org.jruby.ir.representations.BasicBlock;
-import org.jruby.parser.StaticScope;
-
 import java.lang.invoke.MethodType;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import org.jruby.ast.MethodDefNode;
+import org.jruby.ir.interpreter.InterpreterContext;
+import org.jruby.ir.operands.LocalVariable;
+import org.jruby.ir.representations.BasicBlock;
+import org.jruby.parser.StaticScope;
 
 public class IRMethod extends IRScope {
     public final boolean isInstanceMethod;
 
     // Argument description of the form [:req, "a"], [:opt, "b"] ..
-    private List<String[]> argDesc;
+    private String[] argDesc;
 
     // Signatures to the jitted versions of this method
     private Map<Integer, MethodType> signatures;
@@ -34,8 +32,8 @@ public class IRMethod extends IRScope {
 
         this.defn = defn;
         this.isInstanceMethod = isInstanceMethod;
-        this.argDesc = new ArrayList<>();
-        this.signatures = new HashMap<>();
+        this.argDesc = null;
+        this.signatures = null;
 
         if (!getManager().isDryRun() && staticScope != null) {
             staticScope.setIRScope(this);
@@ -43,21 +41,25 @@ public class IRMethod extends IRScope {
         }
     }
 
-    /** Run any necessary passes to get the IR ready for interpretation */
-    public synchronized InterpreterContext prepareForInterpretation() {
-        if (defn != null) {
+    @Override
+    public boolean hasBeenBuilt() {
+        return defn == null;
+    }
+
+    public synchronized InterpreterContext lazilyAcquireInterpreterContext() {
+        if (!hasBeenBuilt()) {
             IRBuilder.topIRBuilder(getManager(), this).defineMethodInner(defn, getLexicalParent());
 
             defn = null;
         }
 
-        return super.prepareForInterpretation();
+        return interpreterContext;
     }
 
-    public synchronized List<BasicBlock> prepareForCompilation() {
-        if (defn != null) prepareForInterpretation();
+    public synchronized BasicBlock[] prepareForInitialCompilation() {
+        if (!hasBeenBuilt()) lazilyAcquireInterpreterContext();
 
-        return super.prepareForCompilation();
+        return super.prepareForInitialCompilation();
     }
 
     @Override
@@ -65,12 +67,15 @@ public class IRMethod extends IRScope {
         return isInstanceMethod ? IRScopeType.INSTANCE_METHOD : IRScopeType.CLASS_METHOD;
     }
 
-    public void addArgDesc(IRMethodArgs.ArgType type, String argName) {
-        argDesc.add(new String[]{type.name(), argName});
+    public String[] getArgDesc() {
+        return argDesc;
     }
 
-    public List<String[]> getArgDesc() {
-        return argDesc;
+    /**
+     * Set upon completion of IRBuild of this IRMethod.
+     */
+    public void setArgDesc(String[] argDesc) {
+        this.argDesc = argDesc;
     }
 
     @Override
@@ -87,11 +92,8 @@ public class IRMethod extends IRScope {
     }
 
     public void addNativeSignature(int arity, MethodType signature) {
+        if (signatures == null) signatures = new HashMap<>();
         signatures.put(arity, signature);
-    }
-
-    public MethodType getNativeSignature(int arity) {
-        return signatures.get(arity);
     }
 
     public Map<Integer, MethodType> getNativeSignatures() {

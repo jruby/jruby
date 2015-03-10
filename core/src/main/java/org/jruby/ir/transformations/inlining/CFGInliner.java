@@ -22,8 +22,6 @@ public class CFGInliner {
     }
 
     private SimpleCloneInfo cloneHostInstrs(CFG cfg) {
-        cfg.getScope().initNestedClosures();
-
         SimpleCloneInfo ii = new SimpleCloneInfo(cfg.getScope(), false);
         for (BasicBlock b : cfg.getBasicBlocks()) {
             b.cloneInstrs(ii);

@@ -1,1 +1,0 @@
-fails:Set#^ returns a new Set containing elements that are not in both self and the passed Enumberable

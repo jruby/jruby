@@ -21,6 +21,7 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.HashMap;
 import java.util.Map;
+import org.jruby.util.ByteList;
 
 // FIXME: Make into a base class at some point to play with different formats
 
@@ -117,6 +118,16 @@ public class IRWriterFile implements IRWriterEncoder, IRPersistenceValues {
     }
 
     @Override
+    public void encode(ByteList value) {
+        byte[] bytes = value.bytes();
+
+        encode(bytes.length);
+        buf.put(bytes);
+        // FIXME: Consider writing this out differently?
+        encode(value.getEncoding().toString());
+    }
+
+    @Override
     public void encode(String value) {
         encode(value.length());
         buf.put(value.getBytes());
@@ -185,7 +196,7 @@ public class IRWriterFile implements IRWriterEncoder, IRPersistenceValues {
     @Override
     public void startEncodingScopeInstrs(IRScope scope) {
         addScopeInstructionOffset(scope); // Record offset so we add this value to scope headers entry
-        encode(scope.getInstrs().size()); // Allows us to right-size when reconstructing instr list.
+        encode(scope.getInterpreterContext().getInstructions().length); // Allows us to right-size when reconstructing instr list.
     }
 
     @Override

@@ -72,7 +72,7 @@ module JRuby
       end
 
       runtime = JRuby.runtime
-      irscope = org.jruby.ir.IRBuilder.build_root runtime.getIRManager(), node
+      irscope = org.jruby.ir.IRBuilder.build_root(runtime.getIRManager(), node).scope
 
       visitor = org.jruby.ir.targets.JVMVisitor.new
       bytes = visitor.compile_to_bytecode(irscope);

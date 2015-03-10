@@ -36,12 +36,9 @@ import org.jruby.RubyInstanceConfig;
 import org.jruby.RubyModule;
 import org.jruby.ast.util.SexpMaker;
 import org.jruby.internal.runtime.methods.CompiledIRMethod;
-import org.jruby.internal.runtime.methods.InterpretedIRMethod;
+import org.jruby.internal.runtime.methods.MixedModeIRMethod;
 import org.jruby.ir.IRMethod;
 import org.jruby.ir.targets.JVMVisitor;
-import org.jruby.parser.StaticScope;
-import org.jruby.runtime.Block;
-import org.jruby.runtime.Helpers;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.threading.DaemonThreadFactory;
@@ -52,10 +49,8 @@ import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
 import org.objectweb.asm.Opcodes;
 
-import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
-import java.lang.reflect.Method;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.Locale;
@@ -150,8 +145,31 @@ public class JITCompiler implements JITCompilerMBean {
             }
         }
     }
+
+    public void fullBuildThresholdReached(final FullBuildSource method, final RubyInstanceConfig config) {
+        // Disable any other jit tasks from entering queue
+        method.setCallCount(-1);
+
+        Runnable jitTask = new FullBuildTask(method);
+
+        if (config.getJitThreshold() > 0) {
+            if (config.getJitBackground() && executor != null) {
+                try {
+                    executor.submit(jitTask);
+                } catch (RejectedExecutionException ree) {
+                    // failed to submit, just run it directly
+                    jitTask.run();
+                }
+            } else {
+                // Because are non-asynchonously build if the JIT threshold happens to be 0 we will have no ic yet.
+                method.ensureInstrsReady();
+                // just run directly
+                jitTask.run();
+            }
+        }
+    }
     
-    public void jitThresholdReached(final InterpretedIRMethod method, final RubyInstanceConfig config, ThreadContext context, final String className, final String methodName) {
+    public void jitThresholdReached(final MixedModeIRMethod method, final RubyInstanceConfig config, ThreadContext context, final String className, final String methodName) {
         // Disable any other jit tasks from entering queue
         method.setCallCount(-1);
         
@@ -169,6 +187,9 @@ public class JITCompiler implements JITCompilerMBean {
                 jitTask.run();
             }
         } else {
+            // Because are non-asynchonously build if the JIT threshold happens to be 0 we will have no ic yet.
+            method.ensureInstrsReady();
+
             // just run directly
             jitTask.run();
         }
@@ -176,12 +197,38 @@ public class JITCompiler implements JITCompilerMBean {
 
     private static final MethodHandles.Lookup PUBLIC_LOOKUP = MethodHandles.publicLookup().in(Ruby.class);
 
+    private class FullBuildTask implements Runnable {
+        private final FullBuildSource method;
+
+        public FullBuildTask(FullBuildSource method) {
+            this.method = method;
+        }
+
+        public void run() {
+            try {
+                method.switchToFullBuild(method.getIRScope().prepareFullBuild());
+
+                if (config.isJitLogging()) {
+                    log(method.getImplementationClass(), method.getFile(), method.getLine(),  method.getName(), "done building");
+                }
+            } catch (Throwable t) {
+                if (config.isJitLogging()) {
+                    log(method.getImplementationClass(), method.getFile(), method.getLine(), method.getName(),
+                            "Could not build; passes run: " + method.getIRScope().getExecutedPasses(), t.getMessage());
+                    if (config.isJitLoggingVerbose()) {
+                        t.printStackTrace();
+                    }
+                }
+            }
+        }
+    }
+
     private class JITTask implements Runnable {
         private final String className;
-        private final InterpretedIRMethod method;
+        private final MixedModeIRMethod method;
         private final String methodName;
 
-        public JITTask(String className, InterpretedIRMethod method, String methodName) {
+        public JITTask(String className, MixedModeIRMethod method, String methodName) {
             this.className = className;
             this.method = method;
             this.methodName = methodName;
@@ -203,7 +250,7 @@ public class JITCompiler implements JITCompilerMBean {
                             || config.getExcludedMethods().contains(excludeModuleName + "#" + methodName)
                             || config.getExcludedMethods().contains(methodName))) {
                         method.setCallCount(-1);
-                        log(method, methodName, "skipping method: " + excludeModuleName + "#" + methodName);
+                        log(method.getImplementationClass(), method.getFile(), method.getLine(), methodName, "skipping method: " + excludeModuleName + "#" + methodName);
                         return;
                     }
                 }
@@ -235,12 +282,12 @@ public class JITCompiler implements JITCompilerMBean {
                 // logEvery n methods based on configuration
                 if (config.getJitLogEvery() > 0) {
                     if (methodCount % config.getJitLogEvery() == 0) {
-                        log(method, methodName, "live compiled methods: " + methodCount);
+                        log(method.getImplementationClass(), method.getFile(), method.getLine(), methodName, "live compiled methods: " + methodCount);
                     }
                 }
 
                 if (config.isJitLogging()) {
-                    log(method, className + "." + methodName, "done jitting");
+                    log(method.getImplementationClass(), method.getFile(), method.getLine(), className + "." + methodName, "done jitting");
                 }
 
                 Map<Integer, MethodType> signatures = ((IRMethod)method.getIRMethod()).getNativeSignatures();
@@ -273,7 +320,7 @@ public class JITCompiler implements JITCompilerMBean {
                 return;
             } catch (Throwable t) {
                 if (config.isJitLogging()) {
-                    log(method, className + "." + methodName, "Could not compile; passes run: " + method.getIRMethod().getExecutedPasses(), t.getMessage());
+                    log(method.getImplementationClass(), method.getFile(), method.getLine(), className + "." + methodName, "Could not compile; passes run: " + method.getIRMethod().getExecutedPasses(), t.getMessage());
                     if (config.isJitLoggingVerbose()) {
                         t.printStackTrace();
                     }
@@ -305,7 +352,7 @@ public class JITCompiler implements JITCompilerMBean {
     }
     
     public static class JITClassGenerator {
-        public JITClassGenerator(String className, String methodName, String key, Ruby ruby, InterpretedIRMethod method, JVMVisitor visitor) {
+        public JITClassGenerator(String className, String methodName, String key, Ruby ruby, MixedModeIRMethod method, JVMVisitor visitor) {
             this.packageName = JITCompiler.RUBY_JIT_PREFIX;
             if (RubyInstanceConfig.JAVA_VERSION == Opcodes.V1_7 || Options.COMPILE_INVOKEDYNAMIC.load() == true) {
                 // Some versions of Java 7 seems to have a bug that leaks definitions across cousin classloaders
@@ -378,7 +425,7 @@ public class JITCompiler implements JITCompilerMBean {
         private final String className;
         private final String methodName;
         private final String digestString;
-        private final InterpretedIRMethod method;
+        private final MixedModeIRMethod method;
         private final JVMVisitor visitor;
 
         private byte[] bytecode;
@@ -386,12 +433,14 @@ public class JITCompiler implements JITCompilerMBean {
         private String name;
     }
 
-    static void log(InterpretedIRMethod method, String name, String message, String... reason) {
-        String className = method.getImplementationClass().getBaseName();
-        
+    static void log(RubyModule implementationClass, String file, int line, String name, String message, String... reason) {
+        boolean isBlock = implementationClass == null;
+        String className = isBlock ? "<block>" : implementationClass.getBaseName();
         if (className == null) className = "<anon class>";
 
-        StringBuilder builder = new StringBuilder(message + ":" + className + "." + name + " at " + method.getIRMethod().getFileName() + ":" + method.getIRMethod().getLineNumber());
+        name = isBlock ? "" : "." + name;
+
+        StringBuilder builder = new StringBuilder(message + ":" + className + name + " at " + file + ":" + line);
         
         if (reason.length > 0) {
             builder.append(" because of: \"");

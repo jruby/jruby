@@ -90,7 +90,7 @@ public class CFGLinearizer {
             BasicBlock current = list[i];
 
             if (current.isExitBB()) { // exit not last
-                current.addInstr(new ReturnInstr(cfg.getScope().getManager().getNil()));
+                current.addInstr(new ReturnInstr(cfg.getManager().getNil()));
                 continue;
             }
 

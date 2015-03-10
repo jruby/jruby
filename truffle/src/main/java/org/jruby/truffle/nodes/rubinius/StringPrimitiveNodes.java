@@ -57,6 +57,7 @@ import org.jruby.truffle.runtime.UndefinedPlaceholder;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.*;
 import org.jruby.util.ByteList;
+import org.jruby.util.ConvertBytes;
 import org.jruby.util.StringSupport;
 
 import java.util.Arrays;
@@ -540,6 +541,36 @@ public abstract class StringPrimitiveNodes {
             }
             
             return new RubyString(stringClass, new ByteList(bytes));
+        }
+
+    }
+
+    @RubiniusPrimitive(name = "string_to_inum")
+    public static abstract class StringToInumPrimitiveNode extends RubiniusPrimitiveNode {
+
+        public StringToInumPrimitiveNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public StringToInumPrimitiveNode(StringToInumPrimitiveNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public Object stringToInum(RubyString string, int fixBase, boolean strict) {
+            notDesignedForCompilation();
+
+            try {
+                final org.jruby.RubyInteger result = ConvertBytes.byteListToInum19(getContext().getRuntime(),
+                        string.getBytes(),
+                        fixBase,
+                        strict);
+
+                return getContext().toTruffle(result);
+
+            } catch (org.jruby.exceptions.RaiseException e) {
+                throw new RaiseException(getContext().toTruffle(e.getException(), this));
+            }
         }
 
     }

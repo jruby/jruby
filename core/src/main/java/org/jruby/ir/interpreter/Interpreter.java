@@ -7,7 +7,6 @@ import org.jruby.RubyInstanceConfig;
 import org.jruby.RubyModule;
 import org.jruby.RubyString;
 import org.jruby.ast.RootNode;
-import org.jruby.internal.runtime.methods.InterpretedIRMethod;
 import org.jruby.ir.IRBindingEvalScript;
 import org.jruby.ir.IRBuilder;
 import org.jruby.ir.IRClosure;
@@ -17,7 +16,6 @@ import org.jruby.ir.IRScriptBody;
 import org.jruby.ir.IRTranslator;
 import org.jruby.ir.operands.IRException;
 import org.jruby.ir.operands.WrappedIRClosure;
-import org.jruby.ir.representations.CFG;
 import org.jruby.ir.runtime.IRBreakJump;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.parser.StaticScope;
@@ -67,7 +65,6 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
 
         for (IRClosure b: beBlocks) {
             // SSS FIXME: Should I piggyback on WrappedIRClosure.retrieve or just copy that code here?
-            b.prepareForInterpretation();
             Block blk = (Block)(new WrappedIRClosure(b.getSelf(), b)).retrieve(context, self, currScope, context.getCurrentScope(), temp);
             blk.yield(context, null);
         }
@@ -75,7 +72,7 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
 
     @Override
     protected IRubyObject execute(Ruby runtime, IRScriptBody irScope, IRubyObject self) {
-        BeginEndInterpreterContext ic = (BeginEndInterpreterContext) irScope.prepareForInterpretation();
+        BeginEndInterpreterContext ic = (BeginEndInterpreterContext) irScope.getInterpreterContext();
         ThreadContext context = runtime.getCurrentContext();
         String name = ROOT;
 
@@ -233,12 +230,9 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
         // we end up growing dynamicscope potentially based on any changes made.
         staticScope.setIRScope(script);
 
-        IRBuilder.topIRBuilder(runtime.getIRManager(), script).buildEvalRoot(rootNode);
-        BeginEndInterpreterContext ic = (BeginEndInterpreterContext) script.prepareForInterpretation();
+        BeginEndInterpreterContext ic = (BeginEndInterpreterContext) IRBuilder.topIRBuilder(runtime.getIRManager(), script).buildEvalRoot(rootNode);
 
-        if (IRRuntimeHelpers.isDebug()) {
-            LOG.info(script.debugOutput());
-        }
+        if (IRRuntimeHelpers.isDebug()) LOG.info(script.debugOutput());
 
         return ic;
     }

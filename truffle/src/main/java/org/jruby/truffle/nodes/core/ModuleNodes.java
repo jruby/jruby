@@ -408,7 +408,7 @@ public abstract class ModuleNodes {
 
             final String indicativeName = name + "(attr_reader)";
 
-            final SharedMethodInfo sharedMethodInfo = new SharedMethodInfo(sourceSection, null, indicativeName, false, null, false);
+            final SharedMethodInfo sharedMethodInfo = new SharedMethodInfo(sourceSection, null, Arity.NO_ARGUMENTS, indicativeName, false, null, false);
             final RubyRootNode rootNode = new RubyRootNode(context, sourceSection, null, sharedMethodInfo, block);
             final CallTarget callTarget = Truffle.getRuntime().createCallTarget(rootNode);
             final InternalMethod method = new InternalMethod(sharedMethodInfo, name, module, Visibility.PUBLIC, false, callTarget, null);
@@ -461,7 +461,7 @@ public abstract class ModuleNodes {
 
             final String indicativeName = name + "(attr_writer)";
 
-            final SharedMethodInfo sharedMethodInfo = new SharedMethodInfo(sourceSection, null, indicativeName, false, null, false);
+            final SharedMethodInfo sharedMethodInfo = new SharedMethodInfo(sourceSection, null, Arity.ONE_REQUIRED, indicativeName, false, null, false);
             final RubyRootNode rootNode = new RubyRootNode(context, sourceSection, null, sharedMethodInfo, block);
             final CallTarget callTarget = Truffle.getRuntime().createCallTarget(rootNode);
             final InternalMethod method = new InternalMethod(sharedMethodInfo, name + "=", module, Visibility.PUBLIC, false, callTarget, null);
@@ -973,7 +973,8 @@ public abstract class ModuleNodes {
             notDesignedForCompilation();
 
             final CallTarget modifiedCallTarget = proc.getCallTargetForMethods();
-            final InternalMethod modifiedMethod = new InternalMethod(proc.getSharedMethodInfo(), name, module, Visibility.PUBLIC, false, modifiedCallTarget, proc.getDeclarationFrame());
+            final SharedMethodInfo info = proc.getSharedMethodInfo().withName(name);
+            final InternalMethod modifiedMethod = new InternalMethod(info, name, module, Visibility.PUBLIC, false, modifiedCallTarget, proc.getDeclarationFrame());
             module.addMethod(this, modifiedMethod);
 
             return getContext().getSymbolTable().getSymbol(name);
@@ -1358,6 +1359,44 @@ public abstract class ModuleNodes {
             }
 
             return module;
+        }
+    }
+
+    @CoreMethod(names = "protected_instance_methods", optional = 1)
+    public abstract static class ProtectedInstanceMethodsNode extends CoreMethodNode {
+
+        public ProtectedInstanceMethodsNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public ProtectedInstanceMethodsNode(ProtectedInstanceMethodsNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public RubyArray protectedInstanceMethods(RubyModule module, UndefinedPlaceholder argument) {
+            return protectedInstanceMethods(module, false);
+        }
+
+        @Specialization
+        public RubyArray protectedInstanceMethods(RubyModule module, boolean includeAncestors) {
+            notDesignedForCompilation();
+
+            final RubyArray array = new RubyArray(getContext().getCoreLibrary().getArrayClass());
+            final List<InternalMethod> methods = new ArrayList<>(module.getMethods().values());
+
+            if (includeAncestors) {
+                for (RubyModule parent : module.parentAncestors()) {
+                    methods.addAll(parent.getMethods().values());
+                }
+            }
+            for (InternalMethod method : methods) {
+                if (method.getVisibility() == Visibility.PROTECTED){
+                    RubySymbol m = getContext().newSymbol(method.getName());
+                    array.slowPush(m);
+                }
+            }
+            return array;
         }
     }
 

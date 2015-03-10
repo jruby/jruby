@@ -33,6 +33,7 @@ import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.RubyException;
 import org.jruby.truffle.runtime.core.RubyFile;
+import org.jruby.truffle.runtime.methods.Arity;
 import org.jruby.truffle.runtime.methods.SharedMethodInfo;
 
 import java.io.IOException;
@@ -49,7 +50,7 @@ public class TranslatorDriver {
 
     public RubyNode parse(RubyContext context, org.jruby.ast.Node parseTree, org.jruby.ast.ArgsNode argsNode, org.jruby.ast.Node bodyNode, Node currentNode) {
         final LexicalScope lexicalScope = context.getRootLexicalScope(); // TODO(eregon): figure out how to get the lexical scope from JRuby
-        final SharedMethodInfo sharedMethod = new SharedMethodInfo(null, lexicalScope, "(unknown)", false, parseTree, false);
+        final SharedMethodInfo sharedMethod = new SharedMethodInfo(null, lexicalScope, Arity.NO_ARGUMENTS, "(unknown)", false, parseTree, false);
 
         final TranslatorEnvironment environment = new TranslatorEnvironment(
                 context, environmentForFrame(context, null), this, allocateReturnID(), true, true, sharedMethod, sharedMethod.getName(), false);
@@ -107,7 +108,7 @@ public class TranslatorDriver {
         try {
             node = (org.jruby.ast.RootNode) parser.parse(source.getName(), source.getCode().getBytes(StandardCharsets.UTF_8), new ManyVarsDynamicScope(staticScope), parserConfiguration);
         } catch (org.jruby.exceptions.RaiseException e) {
-            String message = e.getException().message.asJavaString();
+            String message = e.getException().getMessage().asJavaString();
 
             if (message == null) {
                 message = "(no message)";
@@ -123,7 +124,7 @@ public class TranslatorDriver {
         final SourceSection sourceSection = source.createSection("<main>", 0, source.getCode().length());
         // The important thing here is to reset the lexical scope.
         // TODO (10 Feb. 2015): name should be "<top (required)> for the require-d/load-ed files.
-        final SharedMethodInfo sharedMethodInfo = new SharedMethodInfo(sourceSection, context.getRootLexicalScope(), "<main>", false, rootNode, false);
+        final SharedMethodInfo sharedMethodInfo = new SharedMethodInfo(sourceSection, context.getRootLexicalScope(), Arity.NO_ARGUMENTS, "<main>", false, rootNode, false);
 
         final TranslatorEnvironment environment = new TranslatorEnvironment(context, environmentForFrame(context, parentFrame), this, allocateReturnID(), ownScopeForAssignments, false, sharedMethodInfo, sharedMethodInfo.getName(), false);
 
@@ -148,12 +149,12 @@ public class TranslatorDriver {
         RubyNode truffleNode;
 
         if (rootNode.getBodyNode() == null || rootNode.getBodyNode() instanceof org.jruby.ast.NilNode) {
-            translator.parentSourceSection = sharedMethodInfo.getSourceSection();
+            translator.parentSourceSection.push(sharedMethodInfo.getSourceSection());
             
             try {
                 truffleNode = new ObjectLiteralNode(context, null, context.getCoreLibrary().getNilObject());
             } finally {
-                translator.parentSourceSection = null;
+                translator.parentSourceSection.pop();
             }
         } else {
             truffleNode = rootNode.getBodyNode().accept(translator);
@@ -218,7 +219,7 @@ public class TranslatorDriver {
             return null;
         } else {
             SourceSection sourceSection = new NullSourceSection("Unknown source section", "(unknown)");
-            final SharedMethodInfo sharedMethodInfo = new SharedMethodInfo(sourceSection, context.getRootLexicalScope(), "(unknown)", false, null, false);
+            final SharedMethodInfo sharedMethodInfo = new SharedMethodInfo(sourceSection, context.getRootLexicalScope(), Arity.NO_ARGUMENTS, "(unknown)", false, null, false);
             final MaterializedFrame parent = RubyArguments.getDeclarationFrame(frame.getArguments());
             // TODO(CS): how do we know if the frame is a block or not?
             return new TranslatorEnvironment(context, environmentForFrame(context, parent), frame.getFrameDescriptor(), this, allocateReturnID(), true, true, sharedMethodInfo, sharedMethodInfo.getName(), false);

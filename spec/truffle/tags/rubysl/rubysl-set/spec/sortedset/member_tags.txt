@@ -1,1 +1,0 @@
-fails:SortedSet#member? returns true when self contains the passed Object

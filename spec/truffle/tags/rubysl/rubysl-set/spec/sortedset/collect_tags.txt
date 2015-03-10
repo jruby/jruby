@@ -1,3 +1,0 @@
-fails:SortedSet#collect! yields each Object in self in sorted order
-fails:SortedSet#collect! returns self
-fails:SortedSet#collect! replaces self with the return values of the block

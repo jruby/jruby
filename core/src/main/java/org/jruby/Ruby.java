@@ -907,12 +907,13 @@ public final class Ruby implements Constantizable {
         return jitCompiler;
     }
 
-    public synchronized TruffleBridge getTruffleBridge() {
-        if (truffleBridge == null) {
-            truffleBridge = loadTruffleBridge();
+    public TruffleBridge getTruffleBridge() {
+        synchronized (truffleBridgeMutex) {
+            if (truffleBridge == null) {
+                truffleBridge = loadTruffleBridge();
+            }
+            return truffleBridge;
         }
-
-        return truffleBridge;
     }
 
     private TruffleBridge loadTruffleBridge() {
@@ -943,9 +944,11 @@ public final class Ruby implements Constantizable {
         return truffleBridge;
     }
 
-    public synchronized void shutdownTruffleBridge() {
-        if (truffleBridge != null) {
-            truffleBridge.shutdown();
+    public void shutdownTruffleBridge() {
+        synchronized (truffleBridgeMutex) {
+            if (truffleBridge != null) {
+                truffleBridge.shutdown();
+            }
         }
     }
 
@@ -1254,7 +1257,7 @@ public final class Ruby implements Constantizable {
         initThreadStatuses();
 
         // Create an IR manager and a top-level IR scope and bind it to the top-level static-scope object
-        irManager = new IRManager();
+        irManager = new IRManager(getInstanceConfig());
         // FIXME: This registers itself into static scope as a side-effect.  Let's make this
         // relationship handled either more directly or through a descriptice method
         // FIXME: We need a failing test case for this since removing it did not regress tests
@@ -4912,6 +4915,7 @@ public final class Ruby implements Constantizable {
     private final JITCompiler jitCompiler;
 
     private TruffleBridge truffleBridge;
+    private final Object truffleBridgeMutex = new Object();
 
     // Note: this field and the following static initializer
     // must be located be in this order!

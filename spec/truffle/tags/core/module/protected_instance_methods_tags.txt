@@ -1,7 +1,4 @@
 fails:Module#protected_instance_methods returns a list of protected methods in module and its ancestors
-fails:Module#protected_instance_methods when passed false as a parameter, should return only methods defined in that module
 fails:Module#protected_instance_methods default list should be the same as passing true as an argument
-fails:Module#protected_instance_methods when not passed an argument returns a unique list for a class including a module
-fails:Module#protected_instance_methods when not passed an argument returns a unique list for a subclass
 fails:Module#protected_instance_methods when passed true returns a unique list for a class including a module
 fails:Module#protected_instance_methods when passed true returns a unique list for a subclass

@@ -32,6 +32,22 @@ class String
     !!find_string(StringValue(needle), 0)
   end
 
+  def oct
+    to_inum(-8, false)
+  end
+
+  # Treats leading characters from <i>self</i> as a string of hexadecimal digits
+  # (with an optional sign and an optional <code>0x</code>) and returns the
+  # corresponding number. Zero is returned on error.
+  #
+  #    "0x0a".hex     #=> 10
+  #    "-1234".hex    #=> -4660
+  #    "0".hex        #=> 0
+  #    "wombat".hex   #=> 0
+  def hex
+    to_inum(16, false)
+  end
+
   def chars
     if block_given?
       each_char do |char|
@@ -83,6 +99,16 @@ class String
 
   def to_r
     Rationalizer.new(self).convert
+  end
+
+  def to_i(base=10)
+    base = Rubinius::Type.coerce_to base, Integer, :to_int
+
+    if base < 0 || base == 1 || base > 36
+      raise ArgumentError, "illegal radix #{base}"
+    end
+
+    to_inum(base, false)
   end
 
   def each_line(sep=$/)
@@ -611,6 +637,11 @@ class String
       return true if self[0, prefix.length] == prefix
     end
     false
+  end
+
+  def to_inum(base, check)
+    Rubinius.primitive :string_to_inum
+    raise ArgumentError, "invalid value for Integer"
   end
 
   def self.try_convert(obj)

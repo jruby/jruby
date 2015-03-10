@@ -2,7 +2,6 @@ package org.jruby.ir.instructions;
 
 import org.jruby.RubyModule;
 import org.jruby.internal.runtime.methods.InterpretedIRBodyMethod;
-import org.jruby.internal.runtime.methods.InterpretedIRMethod;
 import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Operation;
 import org.jruby.ir.operands.Operand;
