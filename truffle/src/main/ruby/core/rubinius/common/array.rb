@@ -470,6 +470,16 @@ class Array
     replace select(&block)
   end
 
+  def rassoc(obj)
+    each do |elem|
+      if elem.kind_of? Array and elem.at(1) == obj
+        return elem
+      end
+    end
+
+    nil
+  end
+
   def reverse_each
     return to_enum(:reverse_each) unless block_given?
 
