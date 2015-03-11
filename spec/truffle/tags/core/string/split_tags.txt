@@ -1,23 +1,7 @@
 fails:String#split with String throws an ArgumentError if the pattern is not a valid string
 fails:String#split with String splits on multibyte characters
-fails:String#split with String suppresses trailing empty fields when limit isn't given or 0
-fails:String#split with String returns an array with one entry if limit is 1: the original string
-fails:String#split with String returns at most limit fields when limit > 1
-fails:String#split with String doesn't suppress or limit fields when limit is negative
-fails:String#split with String defaults to $; when string isn't given or nil
-fails:String#split with String ignores leading and continuous whitespace when string is a single space
-fails:String#split with String splits between characters when its argument is an empty string
-fails:String#split with String tries converting its pattern argument to a string via to_str
-fails:String#split with String tries converting limit to an integer via to_int
 fails:String#split with String returns subclass instances based on self
 fails:String#split with String taints the resulting strings if self is tainted
-fails:String#split with Regexp defaults to $; when regexp isn't given or nil
-fails:String#split with Regexp includes all captures in the result array
-fails:String#split with Regexp does not include non-matching captures in the result array
-fails:String#split with Regexp tries converting limit to an integer via to_int
 fails:String#split with Regexp returns subclass instances based on self
 fails:String#split with Regexp taints the resulting strings if self is tainted
-fails:String#split with Regexp taints an empty string if self is tainted
-fails:String#split with Regexp retains the encoding of the source string
-fails:String#split with Regexp splits a string on each character for a multibyte encoding and empty split
 fails:String#split with Regexp returns an ArgumentError if an invalid UTF-8 string is supplied

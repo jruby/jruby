@@ -48,6 +48,10 @@ class String
     to_inum(16, false)
   end
 
+  def split(pattern=nil, limit=undefined)
+    Rubinius::Splitter.split(self, pattern, limit)
+  end
+
   def chars
     if block_given?
       each_char do |char|

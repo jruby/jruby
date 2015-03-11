@@ -1601,58 +1601,6 @@ public abstract class StringNodes {
         }
     }
 
-    @CoreMethod(names = "split", optional = 2, lowerFixnumParameters = 2, taintFromSelf = true)
-    public abstract static class SplitNode extends CoreMethodNode {
-
-        public SplitNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
-        public SplitNode(SplitNode prev) {
-            super(prev);
-        }
-
-        @Specialization
-        public RubyArray split(RubyString string, RubyString sep, @SuppressWarnings("unused") UndefinedPlaceholder limit) {
-            notDesignedForCompilation();
-
-            return splitHelper(string, sep.toString());
-        }
-
-        @Specialization
-        public RubyArray split(RubyString string, RubyRegexp sep, @SuppressWarnings("unused") UndefinedPlaceholder limit) {
-            notDesignedForCompilation();
-
-            return RubyArray.fromObjects(getContext().getCoreLibrary().getArrayClass(), (Object[]) sep.split(string, false, 0));
-        }
-
-        @Specialization
-        public RubyArray split(RubyString string, RubyRegexp sep, int limit) {
-            notDesignedForCompilation();
-
-            return RubyArray.fromObjects(getContext().getCoreLibrary().getArrayClass(), (Object[]) sep.split(string, limit > 0, limit));
-        }
-
-        @Specialization
-        public RubyArray split(RubyString string, @SuppressWarnings("unused") UndefinedPlaceholder sep, @SuppressWarnings("unused") UndefinedPlaceholder limit) {
-            notDesignedForCompilation();
-
-            return splitHelper(string, " ");
-        }
-
-        private RubyArray splitHelper(RubyString string, String sep) {
-            final String[] components = string.toString().split(Pattern.quote(sep));
-
-            final Object[] objects = new Object[components.length];
-
-            for (int n = 0; n < objects.length; n++) {
-                objects[n] = getContext().makeString(string.getLogicalClass(), components[n]);
-            }
-
-            return RubyArray.fromObjects(getContext().getCoreLibrary().getArrayClass(), objects);
-        }
-    }
-
     @CoreMethod(names = "succ", taintFromSelf = true)
     public abstract static class SuccNode extends CoreMethodNode {
 
