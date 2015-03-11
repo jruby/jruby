@@ -50,7 +50,7 @@ class InstrDecoderMap implements IRPersistenceValues {
             case B_NIL: return createBNil();
             case B_TRUE: return createBTrue();
             case B_UNDEF: return createBUndef();
-            case CALL: return decodeCall();
+            case CALL_1F: case CALL_1D: case CALL_1O: case CALL_1OB: case CALL_0O: case CALL: return decodeCall();
             case CHECK_ARGS_ARRAY_ARITY: return new CheckArgsArrayArityInstr(d.decodeOperand(), d.decodeInt(), d.decodeInt(), d.decodeInt());
             case CHECK_ARITY: return new CheckArityInstr(d.decodeInt(), d.decodeInt(), d.decodeInt(), d.decodeBoolean(), d.decodeInt());
             case CLASS_VAR_MODULE: return new GetClassVarContainerModuleInstr(d.decodeVariable(), d.decodeOperand(), d.decodeVariable());
@@ -91,7 +91,7 @@ class InstrDecoderMap implements IRPersistenceValues {
             case MATCH3: return new Match3Instr(d.decodeVariable(), d.decodeOperand(), d.decodeOperand());
             case NONLOCAL_RETURN: return new NonlocalReturnInstr(d.decodeOperand(), d.decodeString());
             case NOP: return NopInstr.NOP;
-            case NORESULT_CALL: return decodeNoResultCall();
+            case NORESULT_CALL: case NORESULT_CALL_1O: return decodeNoResultCall();
             case POP_BINDING: return new PopBindingInstr();
             case POP_FRAME: return new PopFrameInstr();
             case PROCESS_MODULE_BODY: return new ProcessModuleBodyInstr(d.decodeVariable(), d.decodeOperand(), d.decodeOperand());
@@ -164,8 +164,6 @@ class InstrDecoderMap implements IRPersistenceValues {
 
     private Instr decodeCall() {
         if (RubyInstanceConfig.IR_READING_DEBUG) System.out.println("decoding call");
-        Variable result = d.decodeVariable();
-        if (RubyInstanceConfig.IR_READING_DEBUG) System.out.println("decoding call, result:  "+ result);
         int callTypeOrdinal = d.decodeInt();
         if (RubyInstanceConfig.IR_READING_DEBUG) System.out.println("decoding call, calltype(ord):  "+ callTypeOrdinal);
         String methAddr = d.decodeString();
@@ -182,6 +180,9 @@ class InstrDecoderMap implements IRPersistenceValues {
         }
 
         Operand closure = hasClosureArg ? d.decodeOperand() : null;
+
+        Variable result = d.decodeVariable();
+        if (RubyInstanceConfig.IR_READING_DEBUG) System.out.println("decoding call, result:  "+ result);
 
         return CallInstr.create(d.getCurrentScope(), CallType.fromOrdinal(callTypeOrdinal), result, methAddr, receiver, args, closure);
     }
