@@ -68,7 +68,6 @@ matrix:
       jdk: oraclejdk8
   fast_finish: true
   allow_failures:
-    - env: PHASE='-Pcomplete'
     - env: PHASE='-Prake -Dtask=spec:profiler'
     - env: PHASE='-Prake -Dtask=test:mri:jit'
 
