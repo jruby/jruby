@@ -18,6 +18,7 @@ import org.jruby.parser.StaticScope;
 
 import java.util.List;
 import java.util.Map;
+import org.jruby.util.ByteList;
 
 /**
  *
@@ -36,6 +37,7 @@ public interface IRReaderDecoder {
     public OperandType decodeOperandType();
     public boolean decodeBoolean();
     public byte decodeByte();
+    public ByteList decodeByteList();
     public char decodeChar();
     public int decodeInt();
     public int decodeIntRaw();

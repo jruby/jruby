@@ -1,6 +1,7 @@
 package org.jruby.ir.operands;
 
 import org.jruby.ir.IRVisitor;
+import org.jruby.ir.persistence.IRReaderDecoder;
 import org.jruby.ir.persistence.IRWriterEncoder;
 import org.jruby.ir.transformations.inlining.SimpleCloneInfo;
 import org.jruby.parser.StaticScope;
@@ -65,8 +66,22 @@ public class TemporaryLocalVariable extends TemporaryVariable {
     @Override
     public void encode(IRWriterEncoder e) {
         super.encode(e);
-        e.encode(offset);
         e.encode((byte) getType().ordinal());
+        e.encode(offset);
+    }
+
+    public static TemporaryLocalVariable decode(IRReaderDecoder d) {
+        TemporaryVariableType type = d.decodeTemporaryVariableType();
+
+        switch(type) {
+            case CLOSURE: return TemporaryClosureVariable.decode(d);
+            case CURRENT_MODULE: return TemporaryCurrentModuleVariable.decode(d);
+            case CURRENT_SCOPE: return TemporaryCurrentScopeVariable.decode(d);
+            case FLOAT: return TemporaryFloatVariable.decode(d);
+            case FIXNUM: return TemporaryFixnumVariable.decode(d);
+            case LOCAL: return new TemporaryLocalVariable(d.decodeInt());
+        }
+        return null; // Should not reach here.
     }
 
     @Override

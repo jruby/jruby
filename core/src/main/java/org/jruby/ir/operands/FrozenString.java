@@ -2,6 +2,7 @@ package org.jruby.ir.operands;
 
 import org.jruby.RubyString;
 import org.jruby.ir.IRVisitor;
+import org.jruby.ir.persistence.IRReaderDecoder;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
@@ -16,8 +17,8 @@ import org.jruby.util.ByteList;
  * This is not like a Java string.
  */
 public class FrozenString extends StringLiteral {
-    public FrozenString(ByteList byteList) {
-        super(byteList);
+    public FrozenString(ByteList byteList, int cr) {
+        super(byteList, cr);
     }
 
     public FrozenString(String s) {
@@ -42,5 +43,9 @@ public class FrozenString extends StringLiteral {
     @Override
     public void visit(IRVisitor visitor) {
         visitor.FrozenString(this);
+    }
+
+    public static FrozenString decode(IRReaderDecoder d) {
+        new FrozenString(d.decodeByteList(), d.decodeInt());
     }
 }

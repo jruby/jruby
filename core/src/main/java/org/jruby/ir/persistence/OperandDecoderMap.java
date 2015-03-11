@@ -59,7 +59,7 @@ class OperandDecoderMap {
             case SVALUE: return new SValue(d.decodeOperand());
             // FIXME: This is broken since there is no encode/decode for encoding
             case SYMBOL: return new Symbol(d.decodeString(), USASCIIEncoding.INSTANCE);
-            case TEMPORARY_VARIABLE: return decodeTemporaryVariable();
+            case TEMPORARY_VARIABLE: return TemporaryLocalVariable.decode(d);
             case UNBOXED_BOOLEAN: return new UnboxedBoolean(d.decodeBoolean());
             case UNBOXED_FIXNUM: return new UnboxedFixnum(d.decodeLong());
             case UNBOXED_FLOAT: return new UnboxedFloat(d.decodeDouble());
@@ -112,26 +112,5 @@ class OperandDecoderMap {
         RegexpOptions options = RegexpOptions.fromEmbeddedOptions(d.decodeInt());
         options.setEncodingNone(isNone);
         return new Regexp(new ByteList(source.getBytes(RubyEncoding.UTF8), UTF8Encoding.INSTANCE), options);
-    }
-
-    private Operand decodeTemporaryVariable() {
-        TemporaryVariableType type = d.decodeTemporaryVariableType();
-
-        switch(type) {
-            case CLOSURE:
-                return new TemporaryClosureVariable(d.decodeInt(), d.decodeInt());
-            case CURRENT_MODULE:
-                return TemporaryCurrentModuleVariable.ModuleVariableFor(d.decodeInt());
-            case CURRENT_SCOPE:
-                return TemporaryCurrentScopeVariable.ScopeVariableFor(d.decodeInt());
-            case FLOAT:
-                return new TemporaryFloatVariable(d.decodeInt());
-            case FIXNUM:
-                return new TemporaryFixnumVariable(d.decodeInt());
-            case LOCAL:
-                return new TemporaryLocalVariable(d.decodeInt());
-        }
-
-        return null;
     }
 }

@@ -27,6 +27,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.*;
+import org.jruby.util.StringSupport;
 
 import static org.jruby.ir.instructions.RuntimeHelperCall.Methods.*;
 
@@ -1006,7 +1007,7 @@ public class IRBuilder {
         // check for "string".freeze
         if (receiverNode instanceof StrNode && callNode.getName().equals("freeze")) {
             // frozen string optimization
-            return new FrozenString(((StrNode)receiverNode).getValue());
+            return new FrozenString(((StrNode)receiverNode).getValue(), StringSupport.CR_7BIT);
         }
 
         // Though you might be tempted to move this build into the CallInstr as:

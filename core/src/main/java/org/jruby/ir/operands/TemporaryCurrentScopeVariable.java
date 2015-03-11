@@ -1,5 +1,6 @@
 package org.jruby.ir.operands;
 
+import org.jruby.ir.persistence.IRReaderDecoder;
 import org.jruby.ir.transformations.inlining.SimpleCloneInfo;
 
 public class TemporaryCurrentScopeVariable extends TemporaryLocalVariable {
@@ -29,5 +30,9 @@ public class TemporaryCurrentScopeVariable extends TemporaryLocalVariable {
     @Override
     public Variable clone(SimpleCloneInfo ii) {
         return this;
+    }
+
+    public static TemporaryCurrentScopeVariable decode(IRReaderDecoder d) {
+        return ScopeVariableFor(d.decodeInt());
     }
 }
