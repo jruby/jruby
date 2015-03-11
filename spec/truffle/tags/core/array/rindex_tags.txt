@@ -1,9 +1,1 @@
-fails:Array#rindex returns the first index backwards from the end where element == to object
-fails:Array#rindex returns size-1 if last element == to object
-fails:Array#rindex returns 0 if only first element == to object
-fails:Array#rindex returns nil if no element == to object
 fails:Array#rindex returns correct index even after delete_at
-fails:Array#rindex accepts a block instead of an argument
-fails:Array#rindex ignores the block if there is an argument
-fails:Array#rindex rechecks the array size during iteration
-fails:Array#rindex given no argument and no block produces an Enumerator

@@ -480,6 +480,38 @@ class Array
     nil
   end
 
+  def repeated_permutation(combination_size, &block)
+    combination_size = combination_size.to_i
+    unless block_given?
+      return Enumerator.new(self, :repeated_permutation, combination_size)
+    end
+
+    if combination_size < 0
+      # yield nothing
+    elsif combination_size == 0
+      yield []
+    else
+      Rubinius.privately do
+        dup.compile_repeated_permutations(combination_size, [], 0, &block)
+      end
+    end
+
+    return self
+  end
+
+  def compile_repeated_permutations(combination_size, place, index, &block)
+    length.times do |i|
+      place[index] = i
+      if index < (combination_size-1)
+        compile_repeated_permutations(combination_size, place, index + 1, &block)
+      else
+        yield place.map { |element| self[element] }
+      end
+    end
+  end
+
+  private :compile_repeated_permutations
+
   def reverse_each
     return to_enum(:reverse_each) unless block_given?
 
@@ -493,6 +525,32 @@ class Array
     end
 
     self
+  end
+
+  def rindex(obj=undefined)
+    if undefined.equal?(obj)
+      return to_enum(:rindex, obj) unless block_given?
+
+      i = @total - 1
+      while i >= 0
+        return i if yield @tuple.at(@start + i)
+
+        # Compensate for the array being modified by the block
+        i = @total if i > @total
+
+        i -= 1
+      end
+    else
+      stop = @start - 1
+      i = stop + @total
+      tuple = @tuple
+
+      while i > stop
+        return i - @start if tuple.at(i) == obj
+        i -= 1
+      end
+    end
+    nil
   end
 
   def rotate(n=1)
