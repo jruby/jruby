@@ -46,6 +46,6 @@ public class FrozenString extends StringLiteral {
     }
 
     public static FrozenString decode(IRReaderDecoder d) {
-        new FrozenString(d.decodeByteList(), d.decodeInt());
+       return new FrozenString(d.decodeByteList(), d.decodeInt());
     }
 }

@@ -119,7 +119,7 @@ public class StringLiteral extends Operand {
     }
 
     public static StringLiteral decode(IRReaderDecoder d) {
-        new StringLiteral(d.decodeByteList(), d.decodeInt());
+        return new StringLiteral(d.decodeByteList(), d.decodeInt());
     }
 
     public int getCodeRange() { return coderange; }
