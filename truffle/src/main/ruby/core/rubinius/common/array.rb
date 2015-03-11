@@ -405,6 +405,43 @@ class Array
     nil
   end
 
+
+  def combination(num)
+    num = Rubinius::Type.coerce_to_collection_index num
+    return to_enum(:combination, num) unless block_given?
+
+    if num == 0
+      yield []
+    elsif num == 1
+      each do |i|
+        yield [i]
+      end
+    elsif num == size
+      yield self.dup
+    elsif num >= 0 && num < size
+      stack = Rubinius::Tuple.pattern num + 1, 0
+      chosen = Rubinius::Tuple.new num
+      lev = 0
+      done = false
+      stack[0] = -1
+      until done
+        chosen[lev] = self.at(stack[lev+1])
+        while lev < num - 1
+          lev += 1
+          chosen[lev] = self.at(stack[lev+1] = stack[lev] + 1)
+        end
+        yield chosen.to_a
+        lev += 1
+        begin
+          done = lev == 0
+          stack[lev] += 1
+          lev -= 1
+        end while stack[lev+1] + num == size + lev + 1
+      end
+    end
+    self
+  end
+
   def cycle(n=nil)
     return to_enum(:cycle, n) unless block_given?
     return nil if empty?
@@ -432,6 +469,83 @@ class Array
     while i < total
       yield i
       i += 1
+    end
+
+    self
+  end
+
+  def fill(a=undefined, b=undefined, c=undefined)
+    Rubinius.check_frozen
+
+    if block_given?
+      unless undefined.equal?(c)
+        raise ArgumentError, "wrong number of arguments"
+      end
+      one, two = a, b
+    else
+      if undefined.equal?(a)
+        raise ArgumentError, "wrong number of arguments"
+      end
+      obj, one, two = a, b, c
+    end
+
+    if one.kind_of? Range
+      raise TypeError, "length invalid with range" unless undefined.equal?(two)
+
+      left = Rubinius::Type.coerce_to_collection_length one.begin
+      left += size if left < 0
+      raise RangeError, "#{one.inspect} out of range" if left < 0
+
+      right = Rubinius::Type.coerce_to_collection_length one.end
+      right += size if right < 0
+      right += 1 unless one.exclude_end?
+      return self if right <= left           # Nothing to modify
+
+    elsif one and !undefined.equal?(one)
+      left = Rubinius::Type.coerce_to_collection_length one
+      left += size if left < 0
+      left = 0 if left < 0
+
+      if two and !undefined.equal?(two)
+        begin
+          right = Rubinius::Type.coerce_to_collection_length two
+        rescue TypeError
+          raise ArgumentError, "second argument must be a Fixnum"
+        end
+
+        return self if right == 0
+        right += left
+      else
+        right = size
+      end
+    else
+      left = 0
+      right = size
+    end
+
+    total = @start + right
+
+    if right > @total
+      #reallocate total # I don't believe this is necessary since Tuple isn't used internally
+      @total = right
+    end
+
+    # Must be after the potential call to reallocate, since
+    # reallocate might change @tuple
+    tuple = @tuple
+
+    i = @start + left
+
+    if block_given?
+      while i < total
+        tuple.put i, yield(i-@start)
+        i += 1
+      end
+    else
+      while i < total
+        tuple.put i, obj
+        i += 1
+      end
     end
 
     self
@@ -511,6 +625,25 @@ class Array
   end
 
   private :compile_repeated_permutations
+
+  def reverse
+    Array.new dup.reverse!
+  end
+
+  def reverse!
+    Rubinius.check_frozen
+    return self unless @total > 1
+
+    i = 0
+    while i < self.length / 2
+      temp = self[i]
+      self[i] = self[self.length - i - 1]
+      self[self.length - i - 1] = temp
+      i += 1
+    end
+
+    return self
+  end
 
   def reverse_each
     return to_enum(:reverse_each) unless block_given?

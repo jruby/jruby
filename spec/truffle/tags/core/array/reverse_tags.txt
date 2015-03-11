@@ -1,3 +1,0 @@
-fails:Array#reverse! reverses the elements in place
-fails:Array#reverse! properly handles recursive arrays
-fails:Array#reverse! raises a RuntimeError on a frozen array

@@ -110,17 +110,6 @@ class String
   end
 end
 
-class Array
-
-  def reverse
-    res = []
-
-    each { |x| res.unshift x }
-
-    res
-  end
-end
-
 module Kernel
   def inspect
     ivars = instance_variables
