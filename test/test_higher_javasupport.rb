@@ -130,6 +130,12 @@ class TestHigherJavasupport < Test::Unit::TestCase
 
     #array[ IntLike.new(1) ] = 1
     #assert_equal 1, array[1]
+
+    assert_nil array.at(3)
+    assert_equal 21, array.at( 1.0 )
+    assert_nil array.at( IntLike.new(2) )
+    assert_equal 42, array.at( IntLike.new(0) )
+    #assert_equal array.at( -2.to_java(:int) )
   end
 
   Pipe = java.nio.channels.Pipe
