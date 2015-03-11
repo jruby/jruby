@@ -114,7 +114,8 @@ public abstract class KernelNodes {
                 throw new RuntimeException(e);
             }
 
-            return context.makeString(resultBuilder.toString());
+            // TODO (nirvdrum 10-Mar-15) This should be using the default external encoding, rather than hard-coded to UTF-8.
+            return context.makeString(resultBuilder.toString(), RubyEncoding.getEncoding("UTF-8").getEncoding());
         }
 
     }
