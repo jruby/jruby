@@ -4,6 +4,7 @@ import java.lang.reflect.Array;
 import java.util.Arrays;
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
+import org.jruby.RubyBoolean;
 import org.jruby.RubyClass;
 import org.jruby.RubyFixnum;
 import org.jruby.RubyInteger;
@@ -184,6 +185,95 @@ public class ArrayJavaProxy extends JavaProxy {
         }
         buffer.append('@').append(Integer.toHexString(inspectHashCode()));
         return context.runtime.newString(buffer.toString());
+    }
+
+    @JRubyMethod(name = "==")
+    @Override
+    public RubyBoolean op_eqq(ThreadContext context, IRubyObject other) {
+        return eql_p(context, other);
+    }
+
+    @JRubyMethod(name = "eql?")
+    public RubyBoolean eql_p(ThreadContext context, IRubyObject obj) {
+        boolean equals = false;
+        if ( obj instanceof ArrayJavaProxy ) {
+            final ArrayJavaProxy that = (ArrayJavaProxy) obj;
+            equals = arraysEquals(this.getObject(), that.getObject());
+        }
+        if ( obj.getClass().isArray() ) {
+            equals = arraysEquals(getObject(), obj);
+        }
+        return context.runtime.newBoolean(equals);
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if ( obj instanceof ArrayJavaProxy ) {
+            final ArrayJavaProxy that = (ArrayJavaProxy) obj;
+            final Object thisArray = this.getObject();
+            final Object thatArray = that.getObject();
+            return arraysEquals(thisArray, thatArray);
+        }
+        return false;
+    }
+
+    private static boolean arraysEquals(final Object thisArray, final Object thatArray) {
+        final Class<?> componentType = thisArray.getClass().getComponentType();
+        if ( ! componentType.equals(thatArray.getClass().getComponentType()) ) {
+            return false;
+        }
+        if ( componentType.isPrimitive() ) {
+            switch ( componentType.getName().charAt(0) ) {
+                case 'b':
+                    if (componentType == byte.class) return Arrays.equals((byte[]) thisArray, (byte[]) thatArray);
+                    if (componentType == boolean.class) return Arrays.equals((boolean[]) thisArray, (boolean[]) thatArray);
+                case 's':
+                    if (componentType == short.class) return Arrays.equals((short[]) thisArray, (short[]) thatArray);
+                case 'c':
+                    if (componentType == char.class) return Arrays.equals((char[]) thisArray, (char[]) thatArray);
+                case 'i':
+                    if (componentType == int.class) return Arrays.equals((int[]) thisArray, (int[]) thatArray);
+                case 'l':
+                    if (componentType == long.class) return Arrays.equals((long[]) thisArray, (long[]) thatArray);
+                case 'f':
+                    if (componentType == float.class) return Arrays.equals((float[]) thisArray, (float[]) thatArray);
+                case 'd':
+                    if (componentType == double.class) return Arrays.equals((double[]) thisArray, (double[]) thatArray);
+            }
+        }
+        return Arrays.equals((Object[]) thisArray, (Object[]) thatArray);
+    }
+
+    @JRubyMethod
+    @Override
+    public RubyFixnum hash() {
+        return getRuntime().newFixnum( hashCode() );
+    }
+
+    @Override
+    public int hashCode() {
+        final Object array = getObject();
+        final Class<?> componentType = array.getClass().getComponentType();
+        if ( componentType.isPrimitive() ) {
+            switch ( componentType.getName().charAt(0) ) {
+                case 'b':
+                    if (componentType == byte.class) return 11 * Arrays.hashCode((byte[]) array);
+                    if (componentType == boolean.class) return 11 * Arrays.hashCode((boolean[]) array);
+                case 's':
+                    if (componentType == short.class) return 11 * Arrays.hashCode((short[]) array);
+                case 'c':
+                    if (componentType == char.class) return 11 * Arrays.hashCode((char[]) array);
+                case 'i':
+                    if (componentType == int.class) return 11 * Arrays.hashCode((int[]) array);
+                case 'l':
+                    if (componentType == long.class) return 11 * Arrays.hashCode((long[]) array);
+                case 'f':
+                    if (componentType == float.class) return 11 * Arrays.hashCode((float[]) array);
+                case 'd':
+                    if (componentType == double.class) return 11 * Arrays.hashCode((double[]) array);
+            }
+        }
+        return 11 * Arrays.hashCode((Object[]) array);
     }
 
     public IRubyObject getRange(ThreadContext context, IRubyObject[] args) {

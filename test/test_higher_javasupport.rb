@@ -138,6 +138,45 @@ class TestHigherJavasupport < Test::Unit::TestCase
     assert_equal 41, array.at( -1.to_java(:int) )
   end
 
+  def test_array_eql_and_hash
+    array1 = java.lang.Long[4].new
+    array2 = java.lang.Long[4].new
+
+    do_test_eql_arrays(array1, array2)
+
+    array1 = Java::long[5].new
+    array2 = Java::long[5].new
+
+    do_test_eql_arrays(array1, array2)
+
+    array1 = Java::long[4].new
+    array2 = Java::long[5].new
+    assert_equal false, array1 == array2
+  end
+
+  def do_test_eql_arrays(array1, array2)
+    assert_equal(array1, array2)
+    assert array1.eql?(array2)
+
+    array1[0] = 1
+    assert_equal false, array1.eql?(array2)
+
+    array2[0] = 1
+    array2[1] = 2
+    array2[2] = 3
+    array1[1] = 2
+    array1[2] = 3
+
+    assert_equal(array2, array1)
+    assert_equal(array2.hash, array1.hash)
+    assert array2.eql?(array1)
+    assert_equal true, array1 == array2
+
+    assert ! array2.equal?(array1)
+    assert array2.equal?(array2)
+  end
+  private :do_test_eql_arrays
+
   Pipe = java.nio.channels.Pipe
   def test_inner_classes
     assert_equal("java.nio.channels.Pipe$SinkChannel",
