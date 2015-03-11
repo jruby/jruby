@@ -8,6 +8,7 @@ import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
+import org.jruby.util.StringSupport;
 
 /**
  * Represents a literal string value.
@@ -18,11 +19,11 @@ import org.jruby.util.ByteList;
  */
 public class FrozenString extends StringLiteral {
     public FrozenString(ByteList byteList, int cr) {
-        super(byteList, cr);
+        super(OperandType.FROZEN_STRING, byteList, cr);
     }
 
     public FrozenString(String s) {
-        super(s);
+        this(ByteList.create(s), StringSupport.CR_7BIT);
     }
 
     @Override

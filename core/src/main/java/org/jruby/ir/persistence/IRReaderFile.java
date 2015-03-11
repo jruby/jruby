@@ -7,6 +7,7 @@
 package org.jruby.ir.persistence;
 
 import org.jcodings.Encoding;
+import org.jcodings.EncodingDB;
 import org.jruby.RubyInstanceConfig;
 import org.jruby.ir.IRManager;
 import org.jruby.ir.IRScope;
@@ -64,15 +65,20 @@ public class IRReaderFile implements IRReaderDecoder, IRPersistenceValues {
 
     @Override
     public ByteList decodeByteList() {
+        return new ByteList(decodeByteArray(), decodeEncoding());
+    }
+
+    @Override
+    public byte[] decodeByteArray() {
         int size = decodeInt();
         byte[] bytes = new byte[size];
         buf.get(bytes);
-        // FIXME: This is horrible :)
-        // FIXME: Add direct encode/decode support for Encoding
-        String encoding = decodeString();
-        Encoding actualEncoding = Encoding.load(encoding);
+        return bytes;
+    }
 
-        return new ByteList(bytes, actualEncoding);
+    @Override
+    public Encoding decodeEncoding() {
+        return EncodingDB.getEncodings().get(decodeByteArray()).getEncoding();
     }
 
     @Override

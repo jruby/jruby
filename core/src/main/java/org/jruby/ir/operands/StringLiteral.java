@@ -33,11 +33,15 @@ public class StringLiteral extends Operand {
     final public int      coderange;
 
     public StringLiteral(ByteList val) {
-        this(val, StringSupport.CR_7BIT);
+        this(OperandType.STRING_LITERAL, val, StringSupport.CR_7BIT);
     }
 
     public StringLiteral(ByteList val, int coderange) {
-        super(OperandType.STRING_LITERAL);
+        this(OperandType.STRING_LITERAL, val, coderange);
+    }
+
+    protected StringLiteral(OperandType type, ByteList val, int coderange) {
+        super(type);
 
         bytelist = val;
         this.coderange = coderange;

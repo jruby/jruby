@@ -6,6 +6,7 @@
 
 package org.jruby.ir.persistence;
 
+import org.jcodings.Encoding;
 import org.jruby.ir.IRScope;
 import org.jruby.ir.IRScopeType;
 import org.jruby.ir.Operation;
@@ -115,12 +116,19 @@ public class IRWriterFile implements IRWriterEncoder, IRPersistenceValues {
 
     @Override
     public void encode(ByteList value) {
-        byte[] bytes = value.bytes();
+        encode(value.bytes());
+        encode(value.getEncoding());
+    }
 
+    @Override
+    public void encode(byte[] bytes) {
         encode(bytes.length);
         buf.put(bytes);
-        // FIXME: Consider writing this out differently?
-        encode(value.getEncoding().toString());
+    }
+
+    @Override
+    public void encode(Encoding encoding) {
+        encode(encoding.getName());
     }
 
     @Override

@@ -42,6 +42,7 @@ class OperandDecoderMap {
             case DYNAMIC_SYMBOL: return new DynamicSymbol(d.decodeOperand());
             case FIXNUM: return new Fixnum(d.decodeLong());
             case FLOAT: return new org.jruby.ir.operands.Float(d.decodeDouble());
+            case FROZEN_STRING: return FrozenString.decode(d);
             case GLOBAL_VARIABLE: return new GlobalVariable(d.decodeString());
             case HASH: return decodeHash();
             case IR_EXCEPTION: return IRException.getExceptionFromOrdinal(d.decodeByte());
@@ -55,7 +56,7 @@ class OperandDecoderMap {
             case SELF: return Self.SELF;
             case SPLAT: return new Splat(d.decodeOperand());
             case STANDARD_ERROR: return new StandardError();
-            case STRING_LITERAL: return new StringLiteral(d.decodeString());
+            case STRING_LITERAL: return StringLiteral.decode(d);
             case SVALUE: return new SValue(d.decodeOperand());
             // FIXME: This is broken since there is no encode/decode for encoding
             case SYMBOL: return new Symbol(d.decodeString(), USASCIIEncoding.INSTANCE);
