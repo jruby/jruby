@@ -1,6 +1,4 @@
 fails:String#rindex with object tries to convert obj to a string via to_str
-fails:String#rindex with String behaves the same as String#rindex(char) for one-character strings
-fails:String#rindex with String behaves the same as String#rindex(?char) for one-character strings
 fails:String#rindex with String tries to convert start_offset to an integer via to_int
 fails:String#rindex with Regexp behaves the same as String#rindex(string) for escaped string regexps
 fails:String#rindex with Regexp returns the index of the first match from the end of string of regexp
