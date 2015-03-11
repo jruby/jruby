@@ -474,6 +474,83 @@ class Array
     self
   end
 
+  def fill(a=undefined, b=undefined, c=undefined)
+    Rubinius.check_frozen
+
+    if block_given?
+      unless undefined.equal?(c)
+        raise ArgumentError, "wrong number of arguments"
+      end
+      one, two = a, b
+    else
+      if undefined.equal?(a)
+        raise ArgumentError, "wrong number of arguments"
+      end
+      obj, one, two = a, b, c
+    end
+
+    if one.kind_of? Range
+      raise TypeError, "length invalid with range" unless undefined.equal?(two)
+
+      left = Rubinius::Type.coerce_to_collection_length one.begin
+      left += size if left < 0
+      raise RangeError, "#{one.inspect} out of range" if left < 0
+
+      right = Rubinius::Type.coerce_to_collection_length one.end
+      right += size if right < 0
+      right += 1 unless one.exclude_end?
+      return self if right <= left           # Nothing to modify
+
+    elsif one and !undefined.equal?(one)
+      left = Rubinius::Type.coerce_to_collection_length one
+      left += size if left < 0
+      left = 0 if left < 0
+
+      if two and !undefined.equal?(two)
+        begin
+          right = Rubinius::Type.coerce_to_collection_length two
+        rescue TypeError
+          raise ArgumentError, "second argument must be a Fixnum"
+        end
+
+        return self if right == 0
+        right += left
+      else
+        right = size
+      end
+    else
+      left = 0
+      right = size
+    end
+
+    total = @start + right
+
+    if right > @total
+      #reallocate total # I don't believe this is necessary since Tuple isn't used internally
+      @total = right
+    end
+
+    # Must be after the potential call to reallocate, since
+    # reallocate might change @tuple
+    tuple = @tuple
+
+    i = @start + left
+
+    if block_given?
+      while i < total
+        tuple.put i, yield(i-@start)
+        i += 1
+      end
+    else
+      while i < total
+        tuple.put i, obj
+        i += 1
+      end
+    end
+
+    self
+  end
+
   def flatten(level=-1)
     level = Rubinius::Type.coerce_to_collection_index level
     return self.dup if level == 0

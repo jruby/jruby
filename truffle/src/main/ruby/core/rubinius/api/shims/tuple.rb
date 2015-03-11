@@ -34,4 +34,6 @@ class Array
     self[b] = temp
   end
 
+  alias_method :put, :[]=
+
 end
