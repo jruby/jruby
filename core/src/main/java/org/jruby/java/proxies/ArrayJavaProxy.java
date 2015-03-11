@@ -3,6 +3,7 @@ package org.jruby.java.proxies;
 import java.lang.reflect.Array;
 import java.util.Arrays;
 import org.jruby.Ruby;
+import org.jruby.RubyArray;
 import org.jruby.RubyClass;
 import org.jruby.RubyFixnum;
 import org.jruby.RubyInteger;
@@ -40,10 +41,7 @@ public class ArrayJavaProxy extends JavaProxy {
                 ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
 
         RubyClass singleton = arrayJavaProxy.getSingletonClass();
-
-        final DynamicMethod oldNew = singleton.searchMethod("new");
-
-        singleton.addMethod("new", new ArrayNewMethod(singleton, Visibility.PUBLIC, oldNew));
+        singleton.addMethod("new", new ArrayNewMethod(singleton, Visibility.PUBLIC));
 
         arrayJavaProxy.defineAnnotatedMethods(ArrayJavaProxy.class);
         arrayJavaProxy.includeModule(runtime.getEnumerable());
@@ -52,7 +50,7 @@ public class ArrayJavaProxy extends JavaProxy {
     }
 
     public JavaArray getJavaArray() {
-        JavaArray javaArray = (JavaArray)dataGetStruct();
+        JavaArray javaArray = (JavaArray) dataGetStruct();
 
         if (javaArray == null) {
             javaArray = new JavaArray(getRuntime(), getObject());
@@ -62,7 +60,7 @@ public class ArrayJavaProxy extends JavaProxy {
         return javaArray;
     }
 
-    @JRubyMethod(name = {"length","size"})
+    @JRubyMethod(name = {"length", "size"})
     public IRubyObject length(ThreadContext context) {
         return context.runtime.newFixnum( Array.getLength( getObject() ) );
     }
@@ -74,15 +72,9 @@ public class ArrayJavaProxy extends JavaProxy {
 
     @JRubyMethod(name = "[]")
     public IRubyObject op_aref(ThreadContext context, IRubyObject arg) {
-        if ( arg instanceof RubyInteger ) {
-            final int index = (int) ((RubyInteger) arg).getLongValue();
-            return ArrayUtils.arefDirect(context.runtime, getObject(), converter, index);
-        }
-        if ( arg instanceof RubyRange ) {
-            return arrayRange(context, (RubyRange) arg);
-        }
-        final int index = (Integer) arg.toJava(Integer.class);
-        return ArrayUtils.arefDirect(context.runtime, getObject(), converter, index);
+        if ( arg instanceof RubyRange ) return arrayRange(context, (RubyRange) arg);
+        final int i = convertArrayIndex(arg);
+        return ArrayUtils.arefDirect(context.runtime, getObject(), converter, i);
     }
 
     @JRubyMethod(name = "[]", required = 1, rest = true)
@@ -93,61 +85,63 @@ public class ArrayJavaProxy extends JavaProxy {
 
     @JRubyMethod(name = "[]=")
     public IRubyObject op_aset(ThreadContext context, IRubyObject index, IRubyObject value) {
-        final int i;
-        if ( index instanceof RubyInteger ) {
-            i = (int) ((RubyInteger) index).getLongValue();
-        }
-        else {
-            i = (Integer) index.toJava(Integer.class);
-        }
+        final int i = convertArrayIndex(index);
         return ArrayUtils.asetDirect(context.runtime, getObject(), converter, i, value);
     }
 
+    private static int convertArrayIndex(final IRubyObject index) {
+        if ( index instanceof RubyInteger ) {
+            return (int) ((RubyInteger) index).getLongValue();
+        }
+        return (Integer) index.toJava(Integer.class);
+    }
+
     @JRubyMethod
-    public IRubyObject at(ThreadContext context, IRubyObject indexObj) {
-        Ruby runtime = context.runtime;
-        Object array = getObject();
-        int length = Array.getLength(array);
-        long index = indexObj.convertToInteger().getLongValue();
+    public IRubyObject at(ThreadContext context, IRubyObject index) {
+        final Ruby runtime = context.runtime;
+        final Object array = getObject();
+        final int length = Array.getLength(array);
 
-        if (index < 0) {
-            index = index + length;
-        }
+        long i = index.convertToInteger().getLongValue();
 
-        if (index >= 0 && index < length) {
-            return ArrayUtils.arefDirect(runtime, array, converter, (int)index);
-        } else {
-            return context.nil;
+        if ( i < 0 ) i = i + length;
+
+        if ( i >= 0 && i < length ) {
+            return ArrayUtils.arefDirect(runtime, array, converter, (int) i);
         }
+        return context.nil;
     }
 
     @JRubyMethod(name = "+")
     public IRubyObject op_plus(ThreadContext context, IRubyObject other) {
-        if (other instanceof ArrayJavaProxy) {
-            Object otherArray = ((ArrayJavaProxy)other).getObject();
-
-            if (getObject().getClass().getComponentType().isAssignableFrom(otherArray.getClass().getComponentType())) {
-                return ArrayUtils.concatArraysDirect(context, getObject(), otherArray);
+        final Object array = getObject();
+        if ( other instanceof ArrayJavaProxy ) {
+            final Object otherArray = ((ArrayJavaProxy) other).getObject();
+            final Class<?> componentType = array.getClass().getComponentType();
+            if ( componentType.isAssignableFrom( otherArray.getClass().getComponentType() ) ) {
+                return ArrayUtils.concatArraysDirect(context, array, otherArray);
             }
         }
-        return ArrayUtils.concatArraysDirect(context, getObject(), other);
+        return ArrayUtils.concatArraysDirect(context, array, other);
     }
 
     @JRubyMethod
     public IRubyObject each(ThreadContext context, Block block) {
-        Ruby runtime = context.runtime;
-        int length = Array.getLength(getObject());
+        final Ruby runtime = context.runtime;
+        final Object array = getObject();
+        final int length = Array.getLength(array);
 
-        for (int i = 0; i < length; i++) {
-            IRubyObject rubyObj = ArrayUtils.arefDirect(runtime, getObject(), converter, i);
-            block.yield(context, rubyObj);
+        for ( int i = 0; i < length; i++ ) {
+            IRubyObject element = ArrayUtils.arefDirect(runtime, array, converter, i);
+            block.yield(context, element);
         }
         return this;
     }
 
-    @JRubyMethod(name = {"to_a","to_ary"})
-    public IRubyObject to_a(ThreadContext context) {
-        return JavaUtil.convertJavaArrayToRubyWithNesting(context, this.getObject());
+    @JRubyMethod(name = {"to_a", "to_ary"})
+    public RubyArray to_a(ThreadContext context) {
+        final Object array = getObject();
+        return JavaUtil.convertJavaArrayToRubyWithNesting(context, array);
     }
 
     @JRubyMethod
@@ -258,24 +252,30 @@ public class ArrayJavaProxy extends JavaProxy {
     }
 
     public static class ArrayNewMethod extends org.jruby.internal.runtime.methods.JavaMethod.JavaMethodOne {
-        private DynamicMethod oldNew;
+
+        private final DynamicMethod newMethod;
+
+        ArrayNewMethod(RubyModule implClass, Visibility visibility) {
+            this(implClass, visibility, implClass.searchMethod("new"));
+        }
 
         public ArrayNewMethod(RubyModule implClass, Visibility visibility, DynamicMethod oldNew) {
             super(implClass, visibility);
-            this.oldNew = oldNew;
+            this.newMethod = oldNew;
         }
 
         @Override
-        public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0) {
-            Ruby runtime = context.runtime;
-            IRubyObject proxy = oldNew.call(context, self, clazz, "new_proxy");
+        public final IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0) {
+            final Ruby runtime = context.runtime;
 
-            if (arg0 instanceof JavaArray) {
-                proxy.dataWrapStruct(arg0);
-                return proxy;
-            } else {
+            if ( ! ( arg0 instanceof JavaArray ) ) {
                 throw runtime.newTypeError(arg0, runtime.getJavaSupport().getJavaArrayClass());
             }
+
+            IRubyObject proxy = newMethod.call(context, self, clazz, "new_proxy");
+            proxy.dataWrapStruct(arg0);
+            return proxy;
         }
+
     }
 }

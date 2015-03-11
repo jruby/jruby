@@ -107,6 +107,31 @@ class TestHigherJavasupport < Test::Unit::TestCase
     assert_equal(17.0, array[2])
   end
 
+  class IntLike
+    def initialize(value)
+      @value = value
+    end
+    def to_int; @value end
+  end
+
+  def test_array_with_non_ruby_integer_indexes
+    size = IntLike.new(2)
+    array = Java::byte[size].new
+
+    array[ 0 ] = 42.to_java(:byte)
+    assert_equal 42, array[ 0.to_java(:int) ]
+    # TODO: this should work as well, right?!
+    #assert_equal 42, array[ 0.to_java(:short) ]
+
+    #assert_equal 42, array[ IntLike.new(0) ]
+
+    array[ 1.to_java('java.lang.Integer') ] = 21
+    assert_equal 21, array[1]
+
+    #array[ IntLike.new(1) ] = 1
+    #assert_equal 1, array[1]
+  end
+
   Pipe = java.nio.channels.Pipe
   def test_inner_classes
     assert_equal("java.nio.channels.Pipe$SinkChannel",
