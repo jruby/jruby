@@ -29,7 +29,7 @@ import org.jruby.util.ByteList;
 /**
  * Represents a file which is persisted to storage.
  */
-public class IRWriterFile implements IRWriterEncoder, IRPersistenceValues {
+public class IRWriterStream implements IRWriterEncoder, IRPersistenceValues {
     private static final int VERSION = 0;
 
     private final Map<IRScope, Integer> scopeInstructionOffsets = new HashMap<>();
@@ -41,7 +41,7 @@ public class IRWriterFile implements IRWriterEncoder, IRPersistenceValues {
     int headersOffset = -1;
     int poolOffset = -1;
 
-    public IRWriterFile(File file) throws FileNotFoundException {
+    public IRWriterStream(File file) throws FileNotFoundException {
         this.file = file;
         this.analyzer = new IRWriterAnalzer();
     }

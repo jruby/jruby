@@ -10,7 +10,6 @@ import org.jruby.ast.executable.AbstractScript;
 import org.jruby.ast.executable.Script;
 import org.jruby.ast.executable.ScriptAndCode;
 import org.jruby.compiler.NotCompilableException;
-import org.jruby.ir.interpreter.BeginEndInterpreterContext;
 import org.jruby.ir.interpreter.Interpreter;
 import org.jruby.ir.operands.IRException;
 import org.jruby.ir.runtime.IRBreakJump;
@@ -22,14 +21,13 @@ import org.jruby.runtime.Helpers;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.util.ClassDefininngJRubyClassLoader;
+import org.jruby.util.ClassDefiningClassLoader;
 
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
-import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 
-public class Compiler extends IRTranslator<ScriptAndCode, ClassDefininngJRubyClassLoader> {
+public class Compiler extends IRTranslator<ScriptAndCode, ClassDefiningClassLoader> {
 
     // Compiler is singleton
     private Compiler() {}
@@ -44,7 +42,7 @@ public class Compiler extends IRTranslator<ScriptAndCode, ClassDefininngJRubyCla
     }
 
     @Override
-    protected ScriptAndCode execute(final Ruby runtime, final IRScriptBody scope, ClassDefininngJRubyClassLoader classLoader) {
+    protected ScriptAndCode execute(final Ruby runtime, final IRScriptBody scope, ClassDefiningClassLoader classLoader) {
         JVMVisitor visitor;
         byte[] bytecode;
         Class compiled;
