@@ -634,6 +634,36 @@ class Array
     nil
   end
 
+  def repeated_combination(combination_size, &block)
+    combination_size = combination_size.to_i
+    unless block_given?
+      return Enumerator.new(self, :repeated_combination, combination_size)
+    end
+
+    if combination_size < 0
+      # yield nothing
+    else
+      Rubinius.privately do
+        dup.compile_repeated_combinations(combination_size, [], 0, combination_size, &block)
+      end
+    end
+
+    return self
+  end
+
+  def compile_repeated_combinations(combination_size, place, index, depth, &block)
+    if depth > 0
+      (length - index).times do |i|
+        place[combination_size-depth] = index + i
+        compile_repeated_combinations(combination_size,place,index + i,depth-1, &block)
+      end
+    else
+      yield place.map { |element| self[element] }
+    end
+  end
+
+  private :compile_repeated_combinations
+
   def repeated_permutation(combination_size, &block)
     combination_size = combination_size.to_i
     unless block_given?
