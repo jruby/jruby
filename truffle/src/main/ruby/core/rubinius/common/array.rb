@@ -626,6 +626,25 @@ class Array
 
   private :compile_repeated_permutations
 
+  def reverse
+    Array.new dup.reverse!
+  end
+
+  def reverse!
+    Rubinius.check_frozen
+    return self unless @total > 1
+
+    i = 0
+    while i < self.length / 2
+      temp = self[i]
+      self[i] = self[self.length - i - 1]
+      self[self.length - i - 1] = temp
+      i += 1
+    end
+
+    return self
+  end
+
   def reverse_each
     return to_enum(:reverse_each) unless block_given?
 
