@@ -123,19 +123,19 @@ class TestHigherJavasupport < Test::Unit::TestCase
     # TODO: this should work as well, right?!
     #assert_equal 42, array[ 0.to_java(:short) ]
 
-    #assert_equal 42, array[ IntLike.new(0) ]
+    assert_equal 42, array[ IntLike.new(0) ]
 
     array[ 1.to_java('java.lang.Integer') ] = 21
     assert_equal 21, array[1]
 
-    #array[ IntLike.new(1) ] = 1
-    #assert_equal 1, array[1]
+    array[ IntLike.new(1) ] = 41
+    assert_equal 41, array[1]
 
     assert_nil array.at(3)
-    assert_equal 21, array.at( 1.0 )
+    assert_equal 41, array.at( 1.0 )
     assert_nil array.at( IntLike.new(2) )
-    assert_equal 42, array.at( IntLike.new(0) )
-    #assert_equal array.at( -2.to_java(:int) )
+    assert_equal 42, array.at( IntLike.new(-2) )
+    assert_equal 41, array.at( -1.to_java(:int) )
   end
 
   Pipe = java.nio.channels.Pipe

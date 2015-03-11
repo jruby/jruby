@@ -93,7 +93,10 @@ public class ArrayJavaProxy extends JavaProxy {
         if ( index instanceof RubyInteger ) {
             return (int) ((RubyInteger) index).getLongValue();
         }
-        return (Integer) index.toJava(Integer.class);
+        if ( index instanceof JavaProxy ) {
+            return (Integer) index.toJava(Integer.class);
+        }
+        return (int) index.convertToInteger().getLongValue();
     }
 
     @JRubyMethod
@@ -102,12 +105,12 @@ public class ArrayJavaProxy extends JavaProxy {
         final Object array = getObject();
         final int length = Array.getLength(array);
 
-        long i = index.convertToInteger().getLongValue();
+        int i = convertArrayIndex(index);
 
         if ( i < 0 ) i = i + length;
 
         if ( i >= 0 && i < length ) {
-            return ArrayUtils.arefDirect(runtime, array, converter, (int) i);
+            return ArrayUtils.arefDirect(runtime, array, converter, i);
         }
         return context.nil;
     }
