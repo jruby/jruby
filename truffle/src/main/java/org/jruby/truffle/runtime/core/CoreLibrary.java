@@ -98,7 +98,6 @@ public class CoreLibrary {
     private final RubyClass securityErrorClass;
     private final RubyClass standardErrorClass;
     private final RubyClass stringClass;
-    private final RubyClass randomClass;
     private final RubyClass stringDataClass;
     private final RubyClass symbolClass;
     private final RubyClass syntaxErrorClass;
@@ -285,7 +284,6 @@ public class CoreLibrary {
         rangeClass = defineClass("Range", new RubyRange.RangeAllocator());
         regexpClass = defineClass("Regexp", new RubyRegexp.RegexpAllocator());
         stringClass = defineClass("String", new RubyString.StringAllocator());
-        randomClass = defineClass("Random");
         symbolClass = defineClass("Symbol");
         threadClass = defineClass("Thread", new RubyThread.ThreadAllocator());
         timeClass = defineClass("Time", new RubyTime.TimeAllocator());
