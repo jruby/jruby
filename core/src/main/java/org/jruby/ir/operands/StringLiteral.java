@@ -51,7 +51,8 @@ public class StringLiteral extends Operand {
         } catch (UnsupportedCharsetException e) {
             stringTemp = bytelist.toString();
         }
-        string = stringTemp;
+        // FIXME:
+        string = stringTemp.intern();
     }
 
     public StringLiteral(String s) {
