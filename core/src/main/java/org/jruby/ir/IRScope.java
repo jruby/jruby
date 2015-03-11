@@ -220,6 +220,7 @@ public abstract class IRScope implements ParseResult {
     }
 
     public List<IRScope> getLexicalScopes() {
+        if (lexicalChildren == null) lexicalChildren = new ArrayList<>();
         return lexicalChildren;
     }
 
