@@ -1,1 +1,0 @@
-fails:Array#sample returns nil for an empty Array
