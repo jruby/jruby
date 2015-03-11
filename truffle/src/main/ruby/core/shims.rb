@@ -111,15 +111,6 @@ class String
 end
 
 class Array
-  def rindex(obj)
-    index = nil
-
-    each_with_index do |e, i|
-      index = i if e == obj
-    end
-
-    index
-  end
 
   def reverse
     res = []

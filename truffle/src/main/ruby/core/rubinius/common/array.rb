@@ -527,6 +527,32 @@ class Array
     self
   end
 
+  def rindex(obj=undefined)
+    if undefined.equal?(obj)
+      return to_enum(:rindex, obj) unless block_given?
+
+      i = @total - 1
+      while i >= 0
+        return i if yield @tuple.at(@start + i)
+
+        # Compensate for the array being modified by the block
+        i = @total if i > @total
+
+        i -= 1
+      end
+    else
+      stop = @start - 1
+      i = stop + @total
+      tuple = @tuple
+
+      while i > stop
+        return i - @start if tuple.at(i) == obj
+        i -= 1
+      end
+    end
+    nil
+  end
+
   def rotate(n=1)
     n = Rubinius::Type.coerce_to_collection_index n
     return Array.new(self) if length == 1
