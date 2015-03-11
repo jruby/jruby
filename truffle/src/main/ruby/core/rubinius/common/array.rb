@@ -405,6 +405,43 @@ class Array
     nil
   end
 
+
+  def combination(num)
+    num = Rubinius::Type.coerce_to_collection_index num
+    return to_enum(:combination, num) unless block_given?
+
+    if num == 0
+      yield []
+    elsif num == 1
+      each do |i|
+        yield [i]
+      end
+    elsif num == size
+      yield self.dup
+    elsif num >= 0 && num < size
+      stack = Rubinius::Tuple.pattern num + 1, 0
+      chosen = Rubinius::Tuple.new num
+      lev = 0
+      done = false
+      stack[0] = -1
+      until done
+        chosen[lev] = self.at(stack[lev+1])
+        while lev < num - 1
+          lev += 1
+          chosen[lev] = self.at(stack[lev+1] = stack[lev] + 1)
+        end
+        yield chosen.to_a
+        lev += 1
+        begin
+          done = lev == 0
+          stack[lev] += 1
+          lev -= 1
+        end while stack[lev+1] + num == size + lev + 1
+      end
+    end
+    self
+  end
+
   def cycle(n=nil)
     return to_enum(:cycle, n) unless block_given?
     return nil if empty?
