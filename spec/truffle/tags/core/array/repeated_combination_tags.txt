@@ -1,9 +1,0 @@
-fails:Array#repeated_combination returns an enumerator when no block is provided
-fails:Array#repeated_combination returns self when a block is given
-fails:Array#repeated_combination yields nothing for negative length and return self
-fails:Array#repeated_combination yields the expected repeated_combinations
-fails:Array#repeated_combination yields [] when length is 0
-fails:Array#repeated_combination yields nothing when the array is empty and num is non zero
-fails:Array#repeated_combination yields a partition consisting of only singletons
-fails:Array#repeated_combination accepts sizes larger than the original array
-fails:Array#repeated_combination generates from a defensive copy, ignoring mutations

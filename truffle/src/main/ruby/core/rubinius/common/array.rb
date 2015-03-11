@@ -584,6 +584,46 @@ class Array
     replace select(&block)
   end
 
+  # Implementation notes: We build a block that will generate all the
+  # combinations by building it up successively using "inject" and starting
+  # with one responsible to append the values.
+  def product(*args)
+    args.map! { |x| Rubinius::Type.coerce_to(x, Array, :to_ary) }
+
+    # Check the result size will fit in an Array.
+    sum = args.inject(size) { |n, x| n * x.size }
+
+    if sum > Fixnum::MAX
+      raise RangeError, "product result is too large"
+    end
+
+    # TODO rewrite this to not use a tree of Proc objects.
+
+    # to get the results in the same order as in MRI, vary the last argument first
+    args.reverse!
+
+    result = []
+    args.push self
+
+    outer_lambda = args.inject(result.method(:push)) do |trigger, values|
+      lambda do |partial|
+        values.each do |val|
+          trigger.call(partial.dup << val)
+        end
+      end
+    end
+
+    outer_lambda.call([])
+
+    if block_given?
+      block_result = self
+      result.each { |v| block_result << yield(v) }
+      block_result
+    else
+      result
+    end
+  end
+
   def rassoc(obj)
     each do |elem|
       if elem.kind_of? Array and elem.at(1) == obj
@@ -593,6 +633,36 @@ class Array
 
     nil
   end
+
+  def repeated_combination(combination_size, &block)
+    combination_size = combination_size.to_i
+    unless block_given?
+      return Enumerator.new(self, :repeated_combination, combination_size)
+    end
+
+    if combination_size < 0
+      # yield nothing
+    else
+      Rubinius.privately do
+        dup.compile_repeated_combinations(combination_size, [], 0, combination_size, &block)
+      end
+    end
+
+    return self
+  end
+
+  def compile_repeated_combinations(combination_size, place, index, depth, &block)
+    if depth > 0
+      (length - index).times do |i|
+        place[combination_size-depth] = index + i
+        compile_repeated_combinations(combination_size,place,index + i,depth-1, &block)
+      end
+    else
+      yield place.map { |element| self[element] }
+    end
+  end
+
+  private :compile_repeated_combinations
 
   def repeated_permutation(combination_size, &block)
     combination_size = combination_size.to_i
