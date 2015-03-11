@@ -1,5 +1,0 @@
-fails:Random#seed returns an Integer
-fails:Random#seed returns an arbitrary seed if the constructor was called without arguments
-fails:Random#seed returns the same generated seed when repeatedly called on the same object
-fails:Random#seed returns the seed given in the constructor
-fails:Random#seed returns the given seed coerced with #to_int
