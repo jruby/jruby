@@ -61,4 +61,8 @@ namespace :spec do
   permute_specs "jruby", compile_flags do |t|
     t.pattern = 'spec/jruby/**/*_spec.rb'
   end
+
+  permute_specs "jrubyc", compile_flags do |t|
+    t.pattern = 'spec/jrubyc/**/*_spec.rb'
+  end
 end

@@ -70,7 +70,6 @@ matrix:
   allow_failures:
     - env: PHASE='-Pcomplete'
     - env: PHASE='-Pmain'
-    - env: PHASE='-Prake -Dtask=spec:jrubyc'
     - env: PHASE='-Prake -Dtask=spec:profiler'
     - env: PHASE='-Prake -Dtask=test:mri:jit'
 
