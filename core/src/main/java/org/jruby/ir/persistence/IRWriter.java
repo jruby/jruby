@@ -34,8 +34,10 @@ public class IRWriter {
     private static void persistScopeInstructions(IRWriterEncoder file, IRScope parent) {
         persistScopeInstrs(file, parent);
 
-        for (IRScope scope: parent.getLexicalScopes()) {
-            persistScopeInstructions(file, scope);
+        if (parent.getLexicalScopes() != null) {
+            for (IRScope scope: parent.getLexicalScopes()) {
+                persistScopeInstructions(file, scope);
+            }
         }
     }
 
@@ -60,8 +62,10 @@ public class IRWriter {
     private static void persistScopeHeaders(IRWriterEncoder file, IRScope parent) {
         persistScopeHeader(file, parent);
 
-        for (IRScope scope: parent.getLexicalScopes()) {
-            persistScopeHeaders(file, scope);
+        if (parent.getLexicalScopes() != null) {
+            for (IRScope scope : parent.getLexicalScopes()) {
+                persistScopeHeaders(file, scope);
+            }
         }
     }
 
