@@ -765,6 +765,56 @@ class String
     self
   end
 
+  def center(width, padding=" ")
+    padding = StringValue(padding)
+    raise ArgumentError, "zero width padding" if padding.size == 0
+
+    enc = Rubinius::Type.compatible_encoding self, padding
+
+    width = Rubinius::Type.coerce_to width, Fixnum, :to_int
+    return dup if width <= size
+
+    width -= size
+    left = width / 2
+
+    bs = bytesize
+    pbs = padding.bytesize
+
+    if pbs > 1
+      ps = padding.size
+      pm = Rubinius::Mirror.reflect padding
+
+      x = left / ps
+      y = left % ps
+
+      lpbi = pm.byte_index(y)
+      lbytes = x * pbs + lpbi
+
+      right = left + (width & 0x1)
+
+      x = right / ps
+      y = right % ps
+
+      rpbi = pm.byte_index(y)
+      rbytes = x * pbs + rpbi
+
+      pad = self.class.pattern rbytes, padding
+      str = self.class.pattern lbytes + bs + rbytes, ""
+      m = Rubinius::Mirror.reflect str
+
+      m.copy_from self, 0, bs, lbytes
+      m.copy_from pad, 0, lbytes, 0
+      m.copy_from pad, 0, rbytes, lbytes + bs
+    else
+      str = self.class.pattern width + bs, padding
+      m = Rubinius::Mirror.reflect str
+      m.copy_from self, 0, bs, left
+    end
+
+    str.taint if tainted? or padding.tainted?
+    str.force_encoding enc
+  end
+
   def ljust(width, padding=" ")
     padding = StringValue(padding)
     raise ArgumentError, "zero width padding" if padding.size == 0
