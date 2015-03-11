@@ -177,6 +177,32 @@ class TestHigherJavasupport < Test::Unit::TestCase
   end
   private :do_test_eql_arrays
 
+  def test_bare_eql_and_hash
+    l1 = java.lang.Long.valueOf 100_000_000
+    l2 = java.lang.Long.valueOf 100_000_000
+    assert l1.eql? l2
+    assert l1 == l2
+
+    s1 = Java::JavaLang::String.new 'a-string'
+    s2 = 'a-string'.to_java
+    assert ! s1.equal?(s2)
+    assert s1.eql? s2
+    assert s1 == s2
+
+    a1 = java.util.Arrays.asList(1, 2, 3)
+    a2 = java.util.ArrayList.new
+    a2 << 0; a2 << 2; a2 << 3
+    assert_equal false, a1.eql?(a2)
+    assert_equal false, a2 == a1
+    assert_not_equal a1.hash, a2.hash
+    a2[0] = 1
+    assert_equal true, a2.eql?(a1)
+    assert_equal true, a1 == a2
+    assert_equal true, a2 == a1
+    assert_equal a1.hash, a2.hash
+    assert_equal false, a2.equal?(a1)
+  end
+
   Pipe = java.nio.channels.Pipe
   def test_inner_classes
     assert_equal("java.nio.channels.Pipe$SinkChannel",
