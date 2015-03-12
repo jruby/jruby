@@ -142,7 +142,7 @@
     <dependency>
       <groupId>org.jruby.jcodings</groupId>
       <artifactId>jcodings</artifactId>
-      <version>1.0.12</version>
+      <version>1.0.13-SNAPSHOT</version>
     </dependency>
     <dependency>
       <groupId>org.jruby</groupId>
