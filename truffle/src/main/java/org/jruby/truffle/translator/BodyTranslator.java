@@ -1491,7 +1491,7 @@ public class BodyTranslator extends Translator {
     @Override
     public RubyNode visitInstAsgnNode(org.jruby.ast.InstAsgnNode node) {
         final SourceSection sourceSection = translate(node.getPosition());
-        final String nameWithoutSigil = node.getName();
+        final String name = node.getName();
 
         RubyNode rhs;
 
@@ -1502,14 +1502,14 @@ public class BodyTranslator extends Translator {
         }
 
         if (sourceSection.getSource().getPath().equals("core:/core/rubinius/common/time.rb")) {
-            if (nameWithoutSigil.equals("@is_gmt")) {
+            if (name.equals("@is_gmt")) {
                 return new RubyCallNode(context, sourceSection,
                         "_set_gmt",
                         new SelfNode(context, sourceSection),
                         null,
                         false,
                         rhs);
-            } else if (nameWithoutSigil.equals("@offset")) {
+            } else if (name.equals("@offset")) {
                 return new RubyCallNode(context, sourceSection,
                         "_set_offset",
                         new SelfNode(context, sourceSection),
@@ -1520,14 +1520,14 @@ public class BodyTranslator extends Translator {
         }
 
         if (sourceSection.getSource().getPath().equals("core:/core/rubinius/common/hash.rb")) {
-            if (nameWithoutSigil.equals("@default")) {
+            if (name.equals("@default")) {
                 return new RubyCallNode(context, sourceSection,
                         "_set_default_value",
                         new SelfNode(context, sourceSection),
                         null,
                         false,
                         rhs);
-            } else if (nameWithoutSigil.equals("@default_proc")) {
+            } else if (name.equals("@default_proc")) {
                 return new RubyCallNode(context, sourceSection,
                         "_set_default_proc",
                         new SelfNode(context, sourceSection),
@@ -1538,16 +1538,13 @@ public class BodyTranslator extends Translator {
         }
 
         final RubyNode receiver = new SelfNode(context, sourceSection);
-        return new WriteInstanceVariableNode(context, sourceSection, nameWithoutSigil, receiver, rhs, false);
+        return new WriteInstanceVariableNode(context, sourceSection, name, receiver, rhs, false);
     }
 
     @Override
     public RubyNode visitInstVarNode(org.jruby.ast.InstVarNode node) {
         final SourceSection sourceSection = translate(node.getPosition());
-
-        // TODO CS 6-Feb-15 - this appears to be the name *with* sigil - need to clarify this
-
-        final String nameWithoutSigil = node.getName();
+        final String name = node.getName();
 
         /*
          * Rubinius uses the instance variable @total to store the size of an array. In order to use code that
@@ -1556,25 +1553,25 @@ public class BodyTranslator extends Translator {
          */
 
         if (sourceSection.getSource().getPath().equals("core:/core/rubinius/common/array.rb")) {
-            if (nameWithoutSigil.equals("@total")) {
+            if (name.equals("@total")) {
                 return new RubyCallNode(context, sourceSection,
                         "size",
                         new SelfNode(context, sourceSection),
                         null,
                         false);
-            } else if (nameWithoutSigil.equals("@tuple")) {
+            } else if (name.equals("@tuple")) {
                 return new SelfNode(context, sourceSection);
-            } else if (nameWithoutSigil.equals("@start")) {
+            } else if (name.equals("@start")) {
                 return new FixnumLiteralNode.IntegerFixnumLiteralNode(context, sourceSection, 0);
             }
         }
 
         if (sourceSection.getSource().getPath().equals("core:/core/rubinius/common/regexp.rb")) {
-            if (nameWithoutSigil.equals("@source")) {
+            if (name.equals("@source")) {
                 return MatchDataNodesFactory.RubiniusSourceNodeFactory.create(
                         context, sourceSection,
                         new SelfNode(context, sourceSection));
-            } else if (nameWithoutSigil.equals("@full")) {
+            } else if (name.equals("@full")) {
                 return new RubyCallNode(context, sourceSection,
                         "full",
                         new SelfNode(context, sourceSection),
@@ -1586,13 +1583,13 @@ public class BodyTranslator extends Translator {
         if (sourceSection.getSource().getPath().equals("core:/core/rubinius/bootstrap/string.rb") ||
                 sourceSection.getSource().getPath().equals("core:/core/rubinius/common/string.rb")) {
 
-            if (nameWithoutSigil.equals("@num_bytes")) {
+            if (name.equals("@num_bytes")) {
                 return new RubyCallNode(context, sourceSection,
                         "bytesize",
                         new SelfNode(context, sourceSection),
                         null,
                         false);
-            } else if (nameWithoutSigil.equals("@data")) {
+            } else if (name.equals("@data")) {
                 final RubyNode bytes = new RubyCallNode(context, sourceSection, "bytes",
                         new SelfNode(context, sourceSection), null, false);
 
@@ -1603,13 +1600,13 @@ public class BodyTranslator extends Translator {
         }
 
         if (sourceSection.getSource().getPath().equals("core:/core/rubinius/common/time.rb")) {
-            if (nameWithoutSigil.equals("@is_gmt")) {
+            if (name.equals("@is_gmt")) {
                 return new RubyCallNode(context, sourceSection,
                         "_gmt?",
                         new SelfNode(context, sourceSection),
                         null,
                         false);
-            } else if (nameWithoutSigil.equals("@offset")) {
+            } else if (name.equals("@offset")) {
                 return new RubyCallNode(context, sourceSection,
                         "_offset",
                         new SelfNode(context, sourceSection),
@@ -1619,19 +1616,19 @@ public class BodyTranslator extends Translator {
         }
 
         if (sourceSection.getSource().getPath().equals("core:/core/rubinius/common/hash.rb")) {
-            if (nameWithoutSigil.equals("@default")) {
+            if (name.equals("@default")) {
                 return new RubyCallNode(context, sourceSection,
                         "_default_value",
                         new SelfNode(context, sourceSection),
                         null,
                         false);
-            } else if (nameWithoutSigil.equals("@default_proc")) {
+            } else if (name.equals("@default_proc")) {
                 return new RubyCallNode(context, sourceSection,
                         "default_proc",
                         new SelfNode(context, sourceSection),
                         null,
                         false);
-            } else if (nameWithoutSigil.equals("@size")) {
+            } else if (name.equals("@size")) {
                 return new RubyCallNode(context, sourceSection,
                         "size",
                         new SelfNode(context, sourceSection),
@@ -1641,19 +1638,19 @@ public class BodyTranslator extends Translator {
         }
 
         if (sourceSection.getSource().getPath().equals("core:/core/rubinius/common/range.rb")) {
-            if (nameWithoutSigil.equals("@begin")) {
+            if (name.equals("@begin")) {
                 return new RubyCallNode(context, sourceSection,
                         "begin",
                         new SelfNode(context, sourceSection),
                         null,
                         false);
-            } else if (nameWithoutSigil.equals("@end")) {
+            } else if (name.equals("@end")) {
                 return new RubyCallNode(context, sourceSection,
                         "end",
                         new SelfNode(context, sourceSection),
                         null,
                         false);
-            } else if (nameWithoutSigil.equals("@excl")) {
+            } else if (name.equals("@excl")) {
                 return new RubyCallNode(context, sourceSection,
                         "exclude_end?",
                         new SelfNode(context, sourceSection),
@@ -1664,7 +1661,7 @@ public class BodyTranslator extends Translator {
 
         final RubyNode receiver = new SelfNode(context, sourceSection);
 
-        return new ReadInstanceVariableNode(context, sourceSection, nameWithoutSigil, receiver, false);
+        return new ReadInstanceVariableNode(context, sourceSection, name, receiver, false);
     }
 
     @Override
