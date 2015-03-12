@@ -1310,6 +1310,7 @@ public class BodyTranslator extends Translator {
         s.add("$-a");
         s.add("$-l");
         s.add("$-p");
+        s.add("$!");
     }
 
     private void initGlobalVariableAliases() {
