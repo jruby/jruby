@@ -8,7 +8,6 @@ import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
-import org.jruby.util.StringSupport;
 
 /**
  * Represents a literal string value.
@@ -18,12 +17,18 @@ import org.jruby.util.StringSupport;
  * This is not like a Java string.
  */
 public class FrozenString extends StringLiteral {
+    /**
+     * Used by persistence and by .freeze optimization
+     */
     public FrozenString(ByteList byteList, int cr) {
         super(OperandType.FROZEN_STRING, byteList, cr);
     }
 
+    /**
+     * IRBuild.buildGetDefinition returns a frozen string and this is for all intern'd Java strings.
+     */
     public FrozenString(String s) {
-        this(ByteList.create(s), StringSupport.CR_7BIT);
+        super(s);
     }
 
     @Override

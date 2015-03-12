@@ -32,27 +32,31 @@ public class StringLiteral extends Operand {
     final public String   string;
     final public int      coderange;
 
-    public StringLiteral(ByteList val) {
-        this(OperandType.STRING_LITERAL, val, StringSupport.CR_7BIT);
-    }
-
     public StringLiteral(ByteList val, int coderange) {
         this(OperandType.STRING_LITERAL, val, coderange);
     }
 
     protected StringLiteral(OperandType type, ByteList val, int coderange) {
+        this(type, internedStringFromByteList(val), val, coderange);
+
+    }
+
+    protected StringLiteral(OperandType type, String string, ByteList bytelist, int coderange) {
         super(type);
 
-        bytelist = val;
+        this.bytelist = bytelist;
         this.coderange = coderange;
-        String stringTemp;
+        this.string = string;
+    }
+
+    // If Encoding has an instance of a Charset can it ever raise unsupportedcharsetexception? because this
+    // helper called copes with charset == null...
+    private static String internedStringFromByteList(ByteList val) {
         try {
-            stringTemp = Helpers.byteListToString(bytelist);
+            return Helpers.byteListToString(val).intern();
         } catch (UnsupportedCharsetException e) {
-            stringTemp = bytelist.toString();
+            return val.toString().intern();
         }
-        // FIXME:
-        string = stringTemp.intern();
     }
 
     public StringLiteral(String s) {
