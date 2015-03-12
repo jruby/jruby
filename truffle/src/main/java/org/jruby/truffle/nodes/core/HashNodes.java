@@ -11,12 +11,14 @@ package org.jruby.truffle.nodes.core;
 
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.dsl.ImportGuards;
+import com.oracle.truffle.api.dsl.NodeChild;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.ExplodeLoop;
 import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.utilities.BranchProfile;
 import com.oracle.truffle.api.utilities.ConditionProfile;
+
 import org.jruby.runtime.Visibility;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.dispatch.*;
@@ -1339,9 +1341,9 @@ public abstract class HashNodes {
 
     }
 
-    @RubiniusOnly
-    @CoreMethod(names = "_default_value")
-    public abstract static class DefaultValueNode extends HashCoreMethodNode {
+    // Not a core method, used to simulate Rubinius @default.
+    @NodeChild(value = "self")
+    public abstract static class DefaultValueNode extends RubyNode {
 
         public DefaultValueNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
