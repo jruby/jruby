@@ -49,7 +49,7 @@ class InstrDecoderMap implements IRPersistenceValues {
             case B_TRUE: return BTrueInstr.decode(d);
             case B_UNDEF: return BUndefInstr.decode(d);
             case CALL_1F: case CALL_1D: case CALL_1O: case CALL_1OB: case CALL_0O: case CALL: return decodeCall();
-            case CHECK_ARGS_ARRAY_ARITY: return new CheckArgsArrayArityInstr(d.decodeOperand(), d.decodeInt(), d.decodeInt(), d.decodeInt());
+            case CHECK_ARGS_ARRAY_ARITY: return CheckArgsArrayArityInstr.decode(d);
             case CHECK_ARITY: return CheckArityInstr.decode(d);
             case CLASS_VAR_MODULE: return new GetClassVarContainerModuleInstr(d.decodeVariable(), d.decodeOperand(), d.decodeVariable());
             case CONST_MISSING: return decodeConstMissingInstr();
@@ -57,7 +57,7 @@ class InstrDecoderMap implements IRPersistenceValues {
             case BUILD_COMPOUND_STRING: return decodeBuildCompoundStringInstr();
             case BUILD_DREGEXP: return decodeBuildDynRegExpInstr();
             case BUILD_RANGE: return new BuildRangeInstr(d.decodeVariable(), d.decodeOperand(), d.decodeOperand(), d.decodeBoolean());
-            case COPY: return decodeCopy();
+            case COPY: return CopyInstr.decode(d);
             case DEF_CLASS: return new DefineClassInstr((d.decodeVariable()), (IRClassBody) d.decodeScope(), d.decodeOperand(), d.decodeOperand());
             case DEF_CLASS_METH: return new DefineClassMethodInstr(d.decodeOperand(), (IRMethod) d.decodeScope());
             case DEF_INST_METH: return new DefineInstanceMethodInstr((IRMethod) d.decodeScope());
@@ -75,7 +75,7 @@ class InstrDecoderMap implements IRPersistenceValues {
             case GVAR_ALIAS: return new GVarAliasInstr(d.decodeOperand(), d.decodeOperand());
             case INHERITANCE_SEARCH_CONST: return new InheritanceSearchConstInstr(d.decodeVariable(), d.decodeOperand(), d.decodeString(), d.decodeBoolean());
             case JUMP: return new JumpInstr((Label) d.decodeOperand());
-            case LABEL: return new LabelInstr((Label) d.decodeOperand());
+            case LABEL: return LabelInstr.decode(d);
             case LAMBDA: return decodeLambda();
             case LEXICAL_SEARCH_CONST: return new LexicalSearchConstInstr(d.decodeVariable(), d.decodeOperand(), d.decodeString());
             case LOAD_FRAME_CLOSURE: return new LoadFrameClosureInstr(d.decodeVariable());
@@ -220,10 +220,6 @@ class InstrDecoderMap implements IRPersistenceValues {
         Operand closure = hasClosureArg ? d.decodeOperand() : null;
 
         return NoResultCallInstr.create(CallType.fromOrdinal(callTypeOrdinal), methAddr, receiver, args, closure);
-    }
-
-    private Instr decodeCopy() {
-        return new CopyInstr(d.decodeVariable(), d.decodeOperand());
     }
 
     private Instr decodeLineNumber() {
