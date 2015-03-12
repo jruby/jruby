@@ -29,6 +29,7 @@ import com.oracle.truffle.api.frame.FrameInstanceVisitor;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Lock;
 
 /**
@@ -126,6 +127,20 @@ public class RubyThread extends RubyBasicObject {
             @Override
             public Boolean block() throws InterruptedException {
                 finished.await();
+                return SUCCESS;
+            }
+        });
+
+        if (exception != null) {
+            throw new RaiseException(exception);
+        }
+    }
+
+    public void join(final int timeout) {
+        getContext().getThreadManager().runUntilResult(new BlockingActionWithoutGlobalLock<Boolean>() {
+            @Override
+            public Boolean block() throws InterruptedException {
+                finished.await(timeout, TimeUnit.SECONDS);
                 return SUCCESS;
             }
         });

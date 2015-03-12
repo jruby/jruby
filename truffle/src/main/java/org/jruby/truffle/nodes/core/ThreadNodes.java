@@ -136,7 +136,7 @@ public abstract class ThreadNodes {
 
     }
 
-    @CoreMethod(names = "join")
+    @CoreMethod(names = "join", optional = 1)
     public abstract static class JoinNode extends CoreMethodNode {
 
         public JoinNode(RubyContext context, SourceSection sourceSection) {
@@ -148,10 +148,18 @@ public abstract class ThreadNodes {
         }
 
         @Specialization
-        public RubyThread join(RubyThread self) {
+        public RubyThread join(RubyThread self, UndefinedPlaceholder timeout) {
             notDesignedForCompilation();
 
             self.join();
+            return self;
+        }
+
+        @Specialization
+        public RubyThread join(RubyThread self, int timeout) {
+            notDesignedForCompilation();
+
+            self.join(timeout);
             return self;
         }
 
