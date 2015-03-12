@@ -11,12 +11,15 @@ package org.jruby.truffle.nodes.core;
 
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.dsl.ImportGuards;
+import com.oracle.truffle.api.dsl.NodeChild;
+import com.oracle.truffle.api.dsl.NodeChildren;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.ExplodeLoop;
 import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.utilities.BranchProfile;
 import com.oracle.truffle.api.utilities.ConditionProfile;
+
 import org.jruby.runtime.Visibility;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.dispatch.*;
@@ -917,6 +920,11 @@ public abstract class HashNodes {
             super(prev);
         }
 
+        @Specialization(guards = "isNull")
+        public RubyArray mapNull(VirtualFrame frame, RubyHash hash, RubyProc block) {
+            return new RubyArray(getContext().getCoreLibrary().getArrayClass(), null, 0);
+        }
+
         @ExplodeLoop
         @Specialization(guards = {"!isNull", "!isBuckets"})
         public RubyArray mapPackedArray(VirtualFrame frame, RubyHash hash, RubyProc block) {
@@ -1339,9 +1347,9 @@ public abstract class HashNodes {
 
     }
 
-    @RubiniusOnly
-    @CoreMethod(names = "_default_value")
-    public abstract static class DefaultValueNode extends HashCoreMethodNode {
+    // Not a core method, used to simulate Rubinius @default.
+    @NodeChild(value = "self")
+    public abstract static class DefaultValueNode extends RubyNode {
 
         public DefaultValueNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -1363,9 +1371,9 @@ public abstract class HashNodes {
         }
     }
 
-    @RubiniusOnly
-    @CoreMethod(names = "_set_default_value", required = 1)
-    public abstract static class SetDefaultValueNode extends HashCoreMethodNode {
+    // Not a core method, used to simulate Rubinius @default.
+    @NodeChildren({ @NodeChild("self"), @NodeChild("defaultValue") })
+    public abstract static class SetDefaultValueNode extends RubyNode {
 
         public SetDefaultValueNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -1383,9 +1391,9 @@ public abstract class HashNodes {
         
     }
 
-    @RubiniusOnly
-    @CoreMethod(names = "_set_default_proc", required = 1)
-    public abstract static class SetDefaultProcNode extends HashCoreMethodNode {
+    // Not a core method, used to simulate Rubinius @default_proc.
+    @NodeChildren({ @NodeChild("self"), @NodeChild("defaultProc") })
+    public abstract static class SetDefaultProcNode extends RubyNode {
 
         public SetDefaultProcNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);

@@ -2,6 +2,8 @@ package org.jruby.ir.operands;
 
 import org.jruby.RubyString;
 import org.jruby.ir.IRVisitor;
+import org.jruby.ir.persistence.IRReaderDecoder;
+import org.jruby.ir.persistence.IRWriterEncoder;
 import org.jruby.ir.transformations.inlining.CloneInfo;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.DynamicScope;
@@ -30,22 +32,31 @@ public class StringLiteral extends Operand {
     final public String   string;
     final public int      coderange;
 
-    public StringLiteral(ByteList val) {
-        this(val, StringSupport.CR_7BIT);
+    public StringLiteral(ByteList val, int coderange) {
+        this(OperandType.STRING_LITERAL, val, coderange);
     }
 
-    public StringLiteral(ByteList val, int coderange) {
-        super(OperandType.STRING_LITERAL);
+    protected StringLiteral(OperandType type, ByteList val, int coderange) {
+        this(type, internedStringFromByteList(val), val, coderange);
 
-        bytelist = val;
+    }
+
+    protected StringLiteral(OperandType type, String string, ByteList bytelist, int coderange) {
+        super(type);
+
+        this.bytelist = bytelist;
         this.coderange = coderange;
-        String stringTemp;
+        this.string = string;
+    }
+
+    // If Encoding has an instance of a Charset can it ever raise unsupportedcharsetexception? because this
+    // helper called copes with charset == null...
+    private static String internedStringFromByteList(ByteList val) {
         try {
-            stringTemp = Helpers.byteListToString(bytelist);
+            return Helpers.byteListToString(val).intern();
         } catch (UnsupportedCharsetException e) {
-            stringTemp = bytelist.toString();
+            return val.toString().intern();
         }
-        string = stringTemp;
     }
 
     public StringLiteral(String s) {
@@ -107,6 +118,17 @@ public class StringLiteral extends Operand {
 
     public String getString() {
         return string;
+    }
+
+    @Override
+    public void encode(IRWriterEncoder e) {
+        super.encode(e);
+        e.encode(bytelist);
+        e.encode(coderange);
+    }
+
+    public static StringLiteral decode(IRReaderDecoder d) {
+        return new StringLiteral(d.decodeByteList(), d.decodeInt());
     }
 
     public int getCodeRange() { return coderange; }

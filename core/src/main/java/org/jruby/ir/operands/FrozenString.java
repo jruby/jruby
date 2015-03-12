@@ -2,16 +2,12 @@ package org.jruby.ir.operands;
 
 import org.jruby.RubyString;
 import org.jruby.ir.IRVisitor;
-import org.jruby.ir.transformations.inlining.CloneInfo;
+import org.jruby.ir.persistence.IRReaderDecoder;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.DynamicScope;
-import org.jruby.runtime.Helpers;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
-
-import java.nio.charset.UnsupportedCharsetException;
-import java.util.List;
 
 /**
  * Represents a literal string value.
@@ -21,10 +17,16 @@ import java.util.List;
  * This is not like a Java string.
  */
 public class FrozenString extends StringLiteral {
-    public FrozenString(ByteList byteList) {
-        super(byteList);
+    /**
+     * Used by persistence and by .freeze optimization
+     */
+    public FrozenString(ByteList byteList, int cr) {
+        super(OperandType.FROZEN_STRING, byteList, cr);
     }
 
+    /**
+     * IRBuild.buildGetDefinition returns a frozen string and this is for all intern'd Java strings.
+     */
     public FrozenString(String s) {
         super(s);
     }
@@ -47,5 +49,9 @@ public class FrozenString extends StringLiteral {
     @Override
     public void visit(IRVisitor visitor) {
         visitor.FrozenString(this);
+    }
+
+    public static FrozenString decode(IRReaderDecoder d) {
+       return new FrozenString(d.decodeByteList(), d.decodeInt());
     }
 }

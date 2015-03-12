@@ -4,6 +4,7 @@ import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Operation;
 import org.jruby.ir.operands.Label;
 import org.jruby.ir.operands.Operand;
+import org.jruby.ir.persistence.IRWriterEncoder;
 import org.jruby.ir.transformations.inlining.CloneInfo;
 
 public class JumpInstr extends Instr implements FixedArityInstr {
@@ -18,6 +19,11 @@ public class JumpInstr extends Instr implements FixedArityInstr {
     @Override
     public Instr clone(CloneInfo ii) {
         return new JumpInstr(ii.getRenamedLabel(getJumpTarget()));
+    }
+
+    @Override
+    public void encode(IRWriterEncoder e) {
+        e.encode(getJumpTarget());
     }
 
     @Override

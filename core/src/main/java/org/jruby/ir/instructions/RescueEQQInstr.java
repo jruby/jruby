@@ -4,6 +4,7 @@ import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Operation;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.Variable;
+import org.jruby.ir.persistence.IRWriterEncoder;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.ir.transformations.inlining.CloneInfo;
 import org.jruby.parser.StaticScope;
@@ -35,6 +36,13 @@ public class RescueEQQInstr extends ResultBaseInstr implements FixedArityInstr {
     public Instr clone(CloneInfo ii) {
         return new RescueEQQInstr(ii.getRenamedVariable(result),
                 getArg1().cloneForInlining(ii), getArg2().cloneForInlining(ii));
+    }
+
+    @Override
+    public void encode(IRWriterEncoder e) {
+        super.encode(e);
+        e.encode(getArg1());
+        e.encode(getArg2());
     }
 
     @Override

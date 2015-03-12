@@ -2,6 +2,7 @@ package org.jruby.ir.instructions;
 
 import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Operation;
+import org.jruby.ir.persistence.IRWriterEncoder;
 import org.jruby.ir.transformations.inlining.CloneInfo;
 import org.jruby.ir.transformations.inlining.InlineCloneInfo;
 
@@ -34,6 +35,12 @@ public class LineNumberInstr extends Instr implements FixedArityInstr {
         // If a simple clone then we can share this instance since it cannot cause flow
         // control to change (ipc and rpc should never be accessed).
         return this;
+    }
+
+    @Override
+    public void encode(IRWriterEncoder e) {
+        super.encode(e);
+        e.encode(getLineNumber());
     }
 
     @Override

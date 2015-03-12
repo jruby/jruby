@@ -29,6 +29,7 @@
 package org.jruby.ir.operands;
 
 import org.jruby.ir.IRVisitor;
+import org.jruby.ir.persistence.IRReaderDecoder;
 import org.jruby.ir.transformations.inlining.SimpleCloneInfo;
 
 /**
@@ -58,5 +59,9 @@ public class TemporaryFloatVariable extends TemporaryLocalVariable {
     @Override
     public void visit(IRVisitor visitor) {
         visitor.TemporaryFloatVariable(this);
+    }
+
+    public static TemporaryFloatVariable decode(IRReaderDecoder d) {
+        return new TemporaryFloatVariable(d.decodeInt());
     }
 }

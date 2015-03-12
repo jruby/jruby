@@ -5,6 +5,7 @@ import org.jruby.RubyModule;
 import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Operation;
 import org.jruby.ir.operands.*;
+import org.jruby.ir.persistence.IRWriterEncoder;
 import org.jruby.ir.transformations.inlining.CloneInfo;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.DynamicScope;
@@ -67,6 +68,14 @@ public class InheritanceSearchConstInstr extends ResultBaseInstr implements Fixe
             cache = new ConstantCache((IRubyObject)constant, invalidator.getData(), invalidator, module.hashCode());
         }
         return constant;
+    }
+
+    @Override
+    public void encode(IRWriterEncoder e) {
+        super.encode(e);
+        e.encode(getCurrentModule());
+        e.encode(getConstName());
+        e.encode(isNoPrivateConsts());
     }
 
     @Override

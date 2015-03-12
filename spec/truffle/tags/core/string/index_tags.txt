@@ -1,9 +1,5 @@
-fails:String#index raises a TypeError if passed nil
-fails:String#index raises a TypeError if passed a boolean
-fails:String#index raises a TypeError if passed a Symbol
 fails:String#index calls #to_str to convert the first argument
 fails:String#index calls #to_int to convert the second argument
-fails:String#index raises a TypeError if passed a Fixnum
 fails:String#index with String behaves the same as String#index(char) for one-character strings
 fails:String#index with String returns the index of the first occurrence of the given substring
 fails:String#index with String doesn't set $~
@@ -14,17 +10,9 @@ fails:String#index with String returns nil if the substring isn't found
 fails:String#index with String returns the character index of a multibyte character
 fails:String#index with String returns the character index after offset
 fails:String#index with String returns the character index after a partial first match
-fails:String#index with String raises an Encoding::CompatibilityError if the encodings are incompatible
 fails:String#index with Regexp behaves the same as String#index(string) for escaped string regexps
-fails:String#index with Regexp returns the index of the first match of regexp
-fails:String#index with Regexp sets $~ to MatchData of match and nil when there's none
-fails:String#index with Regexp starts the search at the given offset
 fails:String#index with Regexp starts the search at offset + self.length if offset is negative
-fails:String#index with Regexp returns nil if the substring isn't found
-fails:String#index with Regexp returns nil if the Regexp matches the empty string and the offset is out of range
 fails:String#index with Regexp supports \G which matches at the given start offset
-fails:String#index with Regexp converts start_offset to an integer via to_int
 fails:String#index with Regexp returns the character index of a multibyte character
 fails:String#index with Regexp returns the character index after offset
 fails:String#index with Regexp treats the offset as a character index
-fails:String#index with Regexp raises an Encoding::CompatibilityError if the encodings are incompatible

@@ -405,6 +405,43 @@ class Array
     nil
   end
 
+
+  def combination(num)
+    num = Rubinius::Type.coerce_to_collection_index num
+    return to_enum(:combination, num) unless block_given?
+
+    if num == 0
+      yield []
+    elsif num == 1
+      each do |i|
+        yield [i]
+      end
+    elsif num == size
+      yield self.dup
+    elsif num >= 0 && num < size
+      stack = Rubinius::Tuple.pattern num + 1, 0
+      chosen = Rubinius::Tuple.new num
+      lev = 0
+      done = false
+      stack[0] = -1
+      until done
+        chosen[lev] = self.at(stack[lev+1])
+        while lev < num - 1
+          lev += 1
+          chosen[lev] = self.at(stack[lev+1] = stack[lev] + 1)
+        end
+        yield chosen.to_a
+        lev += 1
+        begin
+          done = lev == 0
+          stack[lev] += 1
+          lev -= 1
+        end while stack[lev+1] + num == size + lev + 1
+      end
+    end
+    self
+  end
+
   def cycle(n=nil)
     return to_enum(:cycle, n) unless block_given?
     return nil if empty?
@@ -432,6 +469,83 @@ class Array
     while i < total
       yield i
       i += 1
+    end
+
+    self
+  end
+
+  def fill(a=undefined, b=undefined, c=undefined)
+    Rubinius.check_frozen
+
+    if block_given?
+      unless undefined.equal?(c)
+        raise ArgumentError, "wrong number of arguments"
+      end
+      one, two = a, b
+    else
+      if undefined.equal?(a)
+        raise ArgumentError, "wrong number of arguments"
+      end
+      obj, one, two = a, b, c
+    end
+
+    if one.kind_of? Range
+      raise TypeError, "length invalid with range" unless undefined.equal?(two)
+
+      left = Rubinius::Type.coerce_to_collection_length one.begin
+      left += size if left < 0
+      raise RangeError, "#{one.inspect} out of range" if left < 0
+
+      right = Rubinius::Type.coerce_to_collection_length one.end
+      right += size if right < 0
+      right += 1 unless one.exclude_end?
+      return self if right <= left           # Nothing to modify
+
+    elsif one and !undefined.equal?(one)
+      left = Rubinius::Type.coerce_to_collection_length one
+      left += size if left < 0
+      left = 0 if left < 0
+
+      if two and !undefined.equal?(two)
+        begin
+          right = Rubinius::Type.coerce_to_collection_length two
+        rescue TypeError
+          raise ArgumentError, "second argument must be a Fixnum"
+        end
+
+        return self if right == 0
+        right += left
+      else
+        right = size
+      end
+    else
+      left = 0
+      right = size
+    end
+
+    total = @start + right
+
+    if right > @total
+      #reallocate total # I don't believe this is necessary since Tuple isn't used internally
+      @total = right
+    end
+
+    # Must be after the potential call to reallocate, since
+    # reallocate might change @tuple
+    tuple = @tuple
+
+    i = @start + left
+
+    if block_given?
+      while i < total
+        tuple.put i, yield(i-@start)
+        i += 1
+      end
+    else
+      while i < total
+        tuple.put i, obj
+        i += 1
+      end
     end
 
     self
@@ -470,6 +584,137 @@ class Array
     replace select(&block)
   end
 
+  # Implementation notes: We build a block that will generate all the
+  # combinations by building it up successively using "inject" and starting
+  # with one responsible to append the values.
+  def product(*args)
+    args.map! { |x| Rubinius::Type.coerce_to(x, Array, :to_ary) }
+
+    # Check the result size will fit in an Array.
+    sum = args.inject(size) { |n, x| n * x.size }
+
+    if sum > Fixnum::MAX
+      raise RangeError, "product result is too large"
+    end
+
+    # TODO rewrite this to not use a tree of Proc objects.
+
+    # to get the results in the same order as in MRI, vary the last argument first
+    args.reverse!
+
+    result = []
+    args.push self
+
+    outer_lambda = args.inject(result.method(:push)) do |trigger, values|
+      lambda do |partial|
+        values.each do |val|
+          trigger.call(partial.dup << val)
+        end
+      end
+    end
+
+    outer_lambda.call([])
+
+    if block_given?
+      block_result = self
+      result.each { |v| block_result << yield(v) }
+      block_result
+    else
+      result
+    end
+  end
+
+  def rassoc(obj)
+    each do |elem|
+      if elem.kind_of? Array and elem.at(1) == obj
+        return elem
+      end
+    end
+
+    nil
+  end
+
+  def repeated_combination(combination_size, &block)
+    combination_size = combination_size.to_i
+    unless block_given?
+      return Enumerator.new(self, :repeated_combination, combination_size)
+    end
+
+    if combination_size < 0
+      # yield nothing
+    else
+      Rubinius.privately do
+        dup.compile_repeated_combinations(combination_size, [], 0, combination_size, &block)
+      end
+    end
+
+    return self
+  end
+
+  def compile_repeated_combinations(combination_size, place, index, depth, &block)
+    if depth > 0
+      (length - index).times do |i|
+        place[combination_size-depth] = index + i
+        compile_repeated_combinations(combination_size,place,index + i,depth-1, &block)
+      end
+    else
+      yield place.map { |element| self[element] }
+    end
+  end
+
+  private :compile_repeated_combinations
+
+  def repeated_permutation(combination_size, &block)
+    combination_size = combination_size.to_i
+    unless block_given?
+      return Enumerator.new(self, :repeated_permutation, combination_size)
+    end
+
+    if combination_size < 0
+      # yield nothing
+    elsif combination_size == 0
+      yield []
+    else
+      Rubinius.privately do
+        dup.compile_repeated_permutations(combination_size, [], 0, &block)
+      end
+    end
+
+    return self
+  end
+
+  def compile_repeated_permutations(combination_size, place, index, &block)
+    length.times do |i|
+      place[index] = i
+      if index < (combination_size-1)
+        compile_repeated_permutations(combination_size, place, index + 1, &block)
+      else
+        yield place.map { |element| self[element] }
+      end
+    end
+  end
+
+  private :compile_repeated_permutations
+
+  def reverse
+    Array.new dup.reverse!
+  end
+
+  def reverse!
+    Rubinius.check_frozen
+    return self unless @total > 1
+
+    i = 0
+    while i < self.length / 2
+      temp = self[i]
+      self[i] = self[self.length - i - 1]
+      self[self.length - i - 1] = temp
+      i += 1
+    end
+
+    return self
+  end
+
   def reverse_each
     return to_enum(:reverse_each) unless block_given?
 
@@ -483,6 +728,98 @@ class Array
     end
 
     self
+  end
+
+  def rindex(obj=undefined)
+    if undefined.equal?(obj)
+      return to_enum(:rindex, obj) unless block_given?
+
+      i = @total - 1
+      while i >= 0
+        return i if yield @tuple.at(@start + i)
+
+        # Compensate for the array being modified by the block
+        i = @total if i > @total
+
+        i -= 1
+      end
+    else
+      stop = @start - 1
+      i = stop + @total
+      tuple = @tuple
+
+      while i > stop
+        return i - @start if tuple.at(i) == obj
+        i -= 1
+      end
+    end
+    nil
+  end
+
+  def rotate(n=1)
+    n = Rubinius::Type.coerce_to_collection_index n
+    return Array.new(self) if length == 1
+    return []       if empty?
+
+    ary = Array.new(self)
+    idx = n % ary.size
+
+    ary[idx..-1].concat ary[0...idx]
+  end
+
+  def rotate!(cnt=1)
+    Rubinius.check_frozen
+
+    return self if length == 0 || length == 1
+
+    ary = rotate(cnt)
+    replace ary
+  end
+
+  def sample(count=undefined, options=undefined)
+    return at Kernel.rand(size) if undefined.equal? count
+
+    if undefined.equal? options
+      if o = Rubinius::Type.check_convert_type(count, Hash, :to_hash)
+        options = o
+        count = nil
+      else
+        options = nil
+        count = Rubinius::Type.coerce_to_collection_index count
+      end
+    else
+      count = Rubinius::Type.coerce_to_collection_index count
+      options = Rubinius::Type.coerce_to options, Hash, :to_hash
+    end
+
+    if count and count < 0
+      raise ArgumentError, "count must be greater than 0"
+    end
+
+    rng = options[:random] if options
+    rng = Kernel unless rng and rng.respond_to? :rand
+
+    unless count
+      random = Rubinius::Type.coerce_to_collection_index rng.rand(size)
+      raise RangeError, "random value must be >= 0" if random < 0
+      raise RangeError, "random value must be less than Array size" unless random < size
+
+      return at random
+    end
+
+    count = size if count > size
+    result = Array.new self
+    tuple = Rubinius::Mirror::Array.reflect(result).tuple
+
+    count.times do |i|
+      random = Rubinius::Type.coerce_to_collection_index rng.rand(size)
+      raise RangeError, "random value must be >= 0" if random < 0
+      raise RangeError, "random value must be less than Array size" unless random < size
+
+      tuple.swap i, random
+    end
+
+    return count == size ? result : result[0, count]
   end
 
   def find_index(obj=undefined)
@@ -516,6 +853,30 @@ class Array
     end
 
     at(idx)
+  end
+
+
+  def shuffle(options = undefined)
+    return dup.shuffle!(options) if instance_of? Array
+    Array.new(self).shuffle!(options)
+  end
+
+  def shuffle!(options = undefined)
+    Rubinius.check_frozen
+
+    random_generator = Kernel
+
+    unless undefined.equal? options
+      options = Rubinius::Type.coerce_to options, Hash, :to_hash
+      random_generator = options[:random] if options[:random].respond_to?(:rand)
+    end
+
+    size.times do |i|
+      r = i + random_generator.rand(size - i).to_int
+      raise RangeError, "random number too big #{r - i}" if r < 0 || r >= size
+      @tuple.swap(@start + i, @start + r)
+    end
+    self
   end
 
   def to_ary

@@ -206,14 +206,14 @@ public abstract class RangeNodes {
 
     }
 
-    @CoreMethod(names = {"first", "begin"})
-    public abstract static class FirstNode extends CoreMethodNode {
+    @CoreMethod(names = { "begin", "first" })
+    public abstract static class BeginNode extends CoreMethodNode {
 
-        public FirstNode(RubyContext context, SourceSection sourceSection) {
+        public BeginNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
         }
 
-        public FirstNode(FirstNode prev) {
+        public BeginNode(BeginNode prev) {
             super(prev);
         }
 
@@ -301,14 +301,14 @@ public abstract class RangeNodes {
 
     }
 
-    @CoreMethod(names = {"last", "end"})
-    public abstract static class LastNode extends CoreMethodNode {
+    @CoreMethod(names = { "end", "last" })
+    public abstract static class EndNode extends CoreMethodNode {
 
-        public LastNode(RubyContext context, SourceSection sourceSection) {
+        public EndNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
         }
 
-        public LastNode(LastNode prev) {
+        public EndNode(EndNode prev) {
             super(prev);
         }
 

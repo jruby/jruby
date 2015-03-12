@@ -2,6 +2,7 @@ package org.jruby.ir.operands;
 
 import org.jruby.RubyComplex;
 import org.jruby.ir.IRVisitor;
+import org.jruby.ir.persistence.IRWriterEncoder;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
@@ -31,6 +32,12 @@ public class Complex extends ImmutableLiteral {
     @Override
     public void visit(IRVisitor visitor) {
         visitor.Complex(this);
+    }
+
+    @Override
+    public void encode(IRWriterEncoder e) {
+        super.encode(e);
+        e.encode(number);
     }
 
     public Operand getNumber() {

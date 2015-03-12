@@ -13,7 +13,6 @@ import org.jruby.ir.operands.*;
 import org.jruby.ir.operands.Float;
 import org.jruby.ir.operands.Boolean;
 import org.jruby.ir.passes.*;
-import org.jruby.ir.persistence.IRReaderDecoder;
 import org.jruby.ir.representations.BasicBlock;
 import org.jruby.ir.representations.CFG;
 import org.jruby.ir.transformations.inlining.CFGInliner;
@@ -22,6 +21,8 @@ import org.jruby.parser.StaticScope;
 
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
+import org.jruby.util.log.Logger;
+import org.jruby.util.log.LoggerFactory;
 
 import static org.jruby.ir.IRFlags.*;
 
@@ -55,6 +56,8 @@ import static org.jruby.ir.IRFlags.*;
  * and so on ...
  */
 public abstract class IRScope implements ParseResult {
+    public static final Logger LOG = LoggerFactory.getLogger("IRScope");
+
     private static final Collection<IRClosure> NO_CLOSURES = Collections.unmodifiableCollection(new ArrayList<IRClosure>(0));
 
     private static AtomicInteger globalScopeCount = new AtomicInteger();
@@ -107,9 +110,6 @@ public abstract class IRScope implements ParseResult {
     /** Keeps track of types of prefix indexes for variables and labels */
     private Map<String, Integer> nextVarIndex;
 
-    // FIXME: Persistence is completely disconnected for now
-    //private int instructionsOffsetInfoPersistenceBuffer = -1;
-    //private IRReaderDecoder persistenceStore = null;
     private TemporaryLocalVariable currentModuleVariable;
     private TemporaryLocalVariable currentScopeVariable;
 
@@ -220,6 +220,7 @@ public abstract class IRScope implements ParseResult {
     }
 
     public List<IRScope> getLexicalScopes() {
+        if (lexicalChildren == null) lexicalChildren = new ArrayList<>();
         return lexicalChildren;
     }
 
@@ -505,6 +506,8 @@ public abstract class IRScope implements ParseResult {
     /** Make version specific to scope which needs it (e.g. Closure vs non-closure). */
     public InterpreterContext allocateInterpreterContext(List<Instr> instructions) {
         interpreterContext = new InterpreterContext(this, instructions);
+
+        if (RubyInstanceConfig.IR_COMPILER_DEBUG) LOG.info("" + interpreterContext);
 
         return interpreterContext;
     }
@@ -1092,11 +1095,5 @@ public abstract class IRScope implements ParseResult {
      */
     public boolean isScriptScope() {
         return false;
-    }
-
-    public void savePersistenceInfo(int offset, IRReaderDecoder file) {
-        // FIXME: Persistence is disconnected for now.
-//        instructionsOffsetInfoPersistenceBuffer = offset;
-//        persistenceStore = file;
     }
 }

@@ -4,6 +4,7 @@ import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Operation;
 import org.jruby.ir.operands.Fixnum;
 import org.jruby.ir.operands.Operand;
+import org.jruby.ir.persistence.IRWriterEncoder;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.ir.transformations.inlining.CloneInfo;
 import org.jruby.ir.transformations.inlining.InlineCloneInfo;
@@ -48,6 +49,15 @@ public class CheckArityInstr extends Instr implements FixedArityInstr {
         }
 
         return new CheckArgsArrayArityInstr(ii.getArgs(), required, opt, rest);
+    }
+
+    @Override
+    public void encode(IRWriterEncoder e) {
+        super.encode(e);
+        e.encode(required);
+        e.encode(opt);
+        e.encode(rest);
+        e.encode(receivesKeywords);
     }
 
     public void checkArity(ThreadContext context, Object[] args) {

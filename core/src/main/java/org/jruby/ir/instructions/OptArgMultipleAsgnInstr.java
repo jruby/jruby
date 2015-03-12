@@ -5,6 +5,7 @@ import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Operation;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.Variable;
+import org.jruby.ir.persistence.IRWriterEncoder;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.ir.transformations.inlining.CloneInfo;
 import org.jruby.parser.StaticScope;
@@ -37,6 +38,14 @@ public class OptArgMultipleAsgnInstr extends MultipleAsgnBase implements FixedAr
     @Override
     public Instr clone(CloneInfo ii) {
         return new OptArgMultipleAsgnInstr(ii.getRenamedVariable(result), getArray().cloneForInlining(ii), index, minArgsLength);
+    }
+
+    @Override
+    public void encode(IRWriterEncoder e) {
+        super.encode(e);
+        e.encode(getArray());
+        e.encode(getIndex());
+        e.encode(getMinArgsLength());
     }
 
     @Override

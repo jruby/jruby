@@ -3,6 +3,7 @@ package org.jruby.ir.instructions;
 import org.jruby.ir.*;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.WrappedIRClosure;
+import org.jruby.ir.persistence.IRWriterEncoder;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.ir.transformations.inlining.CloneInfo;
 import org.jruby.parser.StaticScope;
@@ -38,6 +39,13 @@ public class RecordEndBlockInstr extends Instr implements FixedArityInstr {
     public Instr clone(CloneInfo ii) {
         // SSS FIXME: Correct in all situations??
         return new RecordEndBlockInstr(declaringScope, (WrappedIRClosure) getEndBlockClosure().cloneForInlining(ii));
+    }
+
+    @Override
+    public void encode(IRWriterEncoder e) {
+        super.encode(e);
+        e.encode(getDeclaringScope());
+        e.encode(getEndBlockClosure());
     }
 
     @Override

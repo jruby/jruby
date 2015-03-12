@@ -6,6 +6,7 @@ import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Operation;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.Variable;
+import org.jruby.ir.persistence.IRWriterEncoder;
 import org.jruby.ir.transformations.inlining.CloneInfo;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.DynamicScope;
@@ -41,6 +42,13 @@ public class Match2Instr extends ResultBaseInstr implements FixedArityInstr {
     public Instr clone(CloneInfo ii) {
         return new Match2Instr((Variable) result.cloneForInlining(ii),
                 getReceiver().cloneForInlining(ii), getArg().cloneForInlining(ii));
+    }
+
+    @Override
+    public void encode(IRWriterEncoder e) {
+        super.encode(e);
+        e.encode(getReceiver());
+        e.encode(getArg());
     }
 
     @Override

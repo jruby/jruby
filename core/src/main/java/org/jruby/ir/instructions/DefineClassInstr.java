@@ -6,6 +6,7 @@ import org.jruby.ir.Operation;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.UndefinedValue;
 import org.jruby.ir.operands.Variable;
+import org.jruby.ir.persistence.IRWriterEncoder;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.ir.transformations.inlining.CloneInfo;
 import org.jruby.parser.StaticScope;
@@ -45,6 +46,14 @@ public class DefineClassInstr extends ResultBaseInstr implements FixedArityInstr
     @Override
     public String[] toStringNonOperandArgs() {
         return new String[] {"name: " + newIRClassBody.getName() };
+    }
+
+    @Override
+    public void encode(IRWriterEncoder e) {
+        super.encode(e);
+        e.encode(getNewIRClassBody());
+        e.encode(getContainer());
+        e.encode(getSuperClass());
     }
 
     @Override

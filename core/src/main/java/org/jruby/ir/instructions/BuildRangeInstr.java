@@ -5,6 +5,7 @@ import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Operation;
 import org.jruby.ir.operands.Variable;
 import org.jruby.ir.operands.Operand;
+import org.jruby.ir.persistence.IRWriterEncoder;
 import org.jruby.ir.transformations.inlining.CloneInfo;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.DynamicScope;
@@ -46,6 +47,14 @@ public class BuildRangeInstr extends ResultBaseInstr {
     public Instr clone(CloneInfo ii) {
         return new BuildRangeInstr(ii.getRenamedVariable(result), getBegin().cloneForInlining(ii),
                 getEnd().cloneForInlining(ii), exclusive);
+    }
+
+    @Override
+    public void encode(IRWriterEncoder e) {
+        super.encode(e);
+        e.encode(getBegin());
+        e.encode(getEnd());
+        e.encode(isExclusive());
     }
 
     @Override

@@ -19,16 +19,21 @@ import org.jruby.util.ByteList;
 public class StringLiteralNode extends RubyNode {
 
     private final ByteList bytes;
+    private final int codeRange;
 
-    public StringLiteralNode(RubyContext context, SourceSection sourceSection, ByteList bytes) {
+    public StringLiteralNode(RubyContext context, SourceSection sourceSection, ByteList bytes, int codeRange) {
         super(context, sourceSection);
         assert bytes != null;
         this.bytes = bytes;
+        this.codeRange = codeRange;
     }
 
     @Override
     public RubyString execute(VirtualFrame frame) {
-        return new RubyString(getContext().getCoreLibrary().getStringClass(), bytes.dup());
+        final RubyString string = new RubyString(getContext().getCoreLibrary().getStringClass(), bytes.dup());
+        string.setCodeRange(codeRange);
+
+        return string;
     }
 
 }

@@ -6,6 +6,7 @@ import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Operation;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.Variable;
+import org.jruby.ir.persistence.IRWriterEncoder;
 import org.jruby.ir.transformations.inlining.CloneInfo;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.DynamicScope;
@@ -52,6 +53,14 @@ public class SearchConstInstr extends ResultBaseInstr implements FixedArityInstr
     @Override
     public Instr clone(CloneInfo ii) {
         return new SearchConstInstr(ii.getRenamedVariable(result), constName, getStartingScope().cloneForInlining(ii), noPrivateConsts);
+    }
+
+    @Override
+    public void encode(IRWriterEncoder e) {
+        super.encode(e);
+        e.encode(getConstName());
+        e.encode(getStartingScope());
+        e.encode(isNoPrivateConsts());
     }
 
     @Override

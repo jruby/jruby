@@ -10,6 +10,10 @@ module Rubinius
 
   class Tuple < Array
 
+    def self.pattern(num, val)
+       Tuple.new(num, val)
+    end
+
     def copy_from(other, start, length, dest)
       # TODO CS 6-Feb-15 use higher level indexing when it works
       length.times do |n|
@@ -18,5 +22,18 @@ module Rubinius
     end
 
   end
+
+end
+
+
+class Array
+
+  def swap(a, b)
+    temp = at(a)
+    self[a] = at(b)
+    self[b] = temp
+  end
+
+  alias_method :put, :[]=
 
 end

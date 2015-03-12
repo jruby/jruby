@@ -6,6 +6,8 @@
 
 package org.jruby.ir.persistence;
 
+import org.jcodings.Encoding;
+import org.jcodings.EncodingDB;
 import org.jruby.RubyInstanceConfig;
 import org.jruby.ir.IRManager;
 import org.jruby.ir.IRScope;
@@ -29,6 +31,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import org.jruby.util.ByteList;
 
 /**
  *
@@ -58,6 +61,24 @@ public class IRReaderFile implements IRReaderDecoder, IRPersistenceValues {
 
         instrDecoderMap = new InstrDecoderMap(manager, this);
         operandDecoderMap = new OperandDecoderMap(manager, this);
+    }
+
+    @Override
+    public ByteList decodeByteList() {
+        return new ByteList(decodeByteArray(), decodeEncoding());
+    }
+
+    @Override
+    public byte[] decodeByteArray() {
+        int size = decodeInt();
+        byte[] bytes = new byte[size];
+        buf.get(bytes);
+        return bytes;
+    }
+
+    @Override
+    public Encoding decodeEncoding() {
+        return EncodingDB.getEncodings().get(decodeByteArray()).getEncoding();
     }
 
     @Override

@@ -1,6 +1,7 @@
 package org.jruby.ir.operands;
 
 import org.jruby.ir.IRVisitor;
+import org.jruby.ir.persistence.IRWriterEncoder;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.util.ByteList;
@@ -32,6 +33,13 @@ public class Regexp extends ImmutableLiteral {
     @Override
     public Object createCacheObject(ThreadContext context) {
         return IRRuntimeHelpers.newLiteralRegexp(context, source, options);
+    }
+
+    @Override
+    public void encode(IRWriterEncoder e) {
+        super.encode(e);
+        e.encode(source);
+        e.encode(options.toEmbeddedOptions());
     }
 
     @Override

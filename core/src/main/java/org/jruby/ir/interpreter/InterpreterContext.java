@@ -169,17 +169,12 @@ public class InterpreterContext {
         StringBuilder buf = new StringBuilder();
 
         buf.append(getFileName()).append(':').append(scope.getLineNumber());
-        if (getName() != null) buf.append(' ').append(getName());
+        if (getName() != null) buf.append(' ').append(getName()).append("\n");
 
         if (instructions == null) {
-            buf.append("No Instructions.  Full Build before linearizeInstr?");
+            buf.append("  No Instructions.  Full Build before linearizeInstr?");
         } else {
-            int i = 0;
-            for (Instr instr : instructions) {
-                if (i > 0) buf.append("\n");
-                buf.append("  ").append(i).append('\t').append(instr);
-                i++;
-            }
+            buf.append(toStringInstrs()).append("\n");
         }
 
         return buf.toString();
@@ -194,13 +189,14 @@ public class InterpreterContext {
             b.append("  ").append(i).append('\t').append(instructions[i]);
         }
 
+        /* ENEBO: I this this is too much output espectially for ic and not fic
         Collection<IRClosure> nestedClosures = scope.getClosures();
         if (nestedClosures != null && !nestedClosures.isEmpty()) {
             b.append("\n\n------ Closures encountered in this scope ------\n");
             for (IRClosure c: nestedClosures)
                 b.append(c.toStringBody());
             b.append("------------------------------------------------\n");
-        }
+        }*/
 
         return b.toString();
     }

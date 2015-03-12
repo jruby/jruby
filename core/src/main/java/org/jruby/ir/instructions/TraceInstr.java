@@ -1,6 +1,7 @@
 package org.jruby.ir.instructions;
 
 import org.jruby.ir.Operation;
+import org.jruby.ir.persistence.IRWriterEncoder;
 import org.jruby.ir.transformations.inlining.CloneInfo;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.DynamicScope;
@@ -52,6 +53,15 @@ public class TraceInstr extends Instr {
     @Override
     public String[] toStringNonOperandArgs() {
         return new String[] {"ev: " + event, "name: " + name, "file: " + filename, "line: " + linenumber};
+    }
+
+    @Override
+    public void encode(IRWriterEncoder e) {
+        super.encode(e);
+        e.encode(getEvent().ordinal());
+        e.encode(getName());
+        e.encode(getFilename());
+        e.encode(getLinenumber());
     }
 
     @Override

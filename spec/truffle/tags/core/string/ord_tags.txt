@@ -1,2 +1,1 @@
-fails:String#ord is equivalent to #codepoints.first
 fails:String#ord raises an ArgumentError if called on an empty String

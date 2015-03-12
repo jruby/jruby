@@ -125,7 +125,8 @@ import org.jruby.lexer.yacc.SyntaxException.PID;
 import org.jruby.util.ByteList;
 import org.jruby.util.KeyValuePair;
 import org.jruby.util.cli.Options;
-
+import org.jruby.util.StringSupport;
+ 
 public class RubyParser {
     protected ParserSupport support;
     protected RubyLexer lexer;
@@ -1885,9 +1886,9 @@ xstring         : tXSTRING_BEG xstring_contents tSTRING_END {
                     ISourcePosition position = support.getPosition($2);
 
                     if ($2 == null) {
-                        $$ = new XStrNode(position, null);
+                        $$ = new XStrNode(position, null, StringSupport.CR_7BIT);
                     } else if ($2 instanceof StrNode) {
-                        $$ = new XStrNode(position, (ByteList) $<StrNode>2.getValue().clone());
+                        $$ = new XStrNode(position, (ByteList) $<StrNode>2.getValue().clone(), $<StrNode>2.getCodeRange());
                     } else if ($2 instanceof DStrNode) {
                         $$ = new DXStrNode(position, $<DStrNode>2);
 

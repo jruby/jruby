@@ -6,6 +6,7 @@ import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Operation;
 import org.jruby.ir.operands.LocalVariable;
 import org.jruby.ir.operands.Operand;
+import org.jruby.ir.persistence.IRWriterEncoder;
 import org.jruby.ir.transformations.inlining.CloneInfo;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.DynamicScope;
@@ -61,6 +62,14 @@ public class StoreLocalVarInstr extends Instr implements FixedArityInstr {
         // SSS FIXME: Do we need to rename lvar really?  It is just a name-proxy!
         return new StoreLocalVarInstr(getValue().cloneForInlining(ii), scope,
                 (LocalVariable) getLocalVar().cloneForInlining(ii));
+    }
+
+    @Override
+    public void encode(IRWriterEncoder e) {
+        super.encode(e);
+        e.encode(getScope());
+        e.encode(getLocalVar());
+        e.encode(getValue());
     }
 
     @Override

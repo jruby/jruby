@@ -2,7 +2,7 @@ require 'jbundler'
 
 describe "something" do
   it "does something" do
-    $CLASSPATH.size.should == 4
+    $CLASSPATH.size.should == 6
     Jars.home.should == 'uri:classloader://'
     Dir.pwd.should == 'uri:classloader://'
     $LOAD_PATH.each do |lp|

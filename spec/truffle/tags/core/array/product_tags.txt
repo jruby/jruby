@@ -1,8 +1,0 @@
-fails:Array#product returns converted arguments using :to_ary
-fails:Array#product returns the expected result
-fails:Array#product has no required argument
-fails:Array#product returns an empty array when the argument is an empty array
-fails:Array#product does not attempt to produce an unreasonable number of products
-fails:Array#product when given a block yields all combinations in turn
-fails:Array#product when given a block will ignore unreasonable numbers of products and yield anyway
-fails:Array#product when given an empty block returns self

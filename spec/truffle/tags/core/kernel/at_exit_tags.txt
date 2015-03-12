@@ -1,1 +1,5 @@
 fails:Kernel.at_exit allows calling exit inside at_exit handler
+slow:Kernel.at_exit runs after all other code
+slow:Kernel.at_exit runs in reverse order of registration
+slow:Kernel.at_exit allows calling exit inside at_exit handler
+slow:Kernel.at_exit gives access to the last raised exception

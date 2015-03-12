@@ -2,6 +2,7 @@ package org.jruby.ir.instructions;
 
 import org.jruby.ir.Operation;
 import org.jruby.ir.operands.Operand;
+import org.jruby.ir.persistence.IRWriterEncoder;
 
 // Represents target.ref = value or target = value where target is not a stack variable
 public abstract class PutInstr extends Instr implements FixedArityInstr {
@@ -23,6 +24,14 @@ public abstract class PutInstr extends Instr implements FixedArityInstr {
 
     public Operand getValue() {
         return operands[1];
+    }
+
+    @Override
+    public void encode(IRWriterEncoder e) {
+        super.encode(e);
+        e.encode(getTarget());
+        e.encode(getRef());
+        e.encode(getValue());
     }
 
     @Override

@@ -1,6 +1,7 @@
 package org.jruby.ir.instructions;
 
 import org.jruby.ir.*;
+import org.jruby.ir.persistence.IRWriterEncoder;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.ir.transformations.inlining.CloneInfo;
 import org.jruby.parser.StaticScope;
@@ -37,6 +38,12 @@ public class DefineInstanceMethodInstr extends Instr implements FixedArityInstr 
     @Override
     public Instr clone(CloneInfo ii) {
         return new DefineInstanceMethodInstr(method);
+    }
+
+    @Override
+    public void encode(IRWriterEncoder e) {
+        super.encode(e);
+        e.encode(getMethod());
     }
 
     @Override
