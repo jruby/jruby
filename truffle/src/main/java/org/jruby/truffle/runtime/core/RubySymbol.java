@@ -122,6 +122,13 @@ public class RubySymbol extends RubyBasicObject implements CodeRangeable {
     }
 
     @Override
+    public final void keepCodeRange() {
+        if (getCodeRange() == StringSupport.CR_BROKEN) {
+            clearCodeRange();
+        }
+    }
+
+    @Override
     public final void modify() {
         throw new UnsupportedOperationException();
     }

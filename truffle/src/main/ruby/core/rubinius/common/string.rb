@@ -67,6 +67,11 @@ class String
     str.chomp!(separator) || str
   end
 
+  def delete(*strings)
+    str = dup
+    str.delete!(*strings) || str
+  end
+
   def slice!(one, two=undefined)
     Rubinius.check_frozen
     # This is un-DRY, but it's a simple manual argument splitting. Keeps

@@ -206,7 +206,8 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
         flags &= ~CR_MASK;
     }
 
-    private void keepCodeRange() {
+    @Override
+    public final void keepCodeRange() {
         if (getCodeRange() == CR_BROKEN) clearCodeRange();
     }
 
@@ -4608,7 +4609,12 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
         Encoding enc = checkEncoding(otherStr);
         final boolean[]squeeze = new boolean[StringSupport.TRANS_SIZE + 1];
         StringSupport.TrTables tables = StringSupport.trSetupTable(otherStr.value, runtime, squeeze, null, true, enc);
-        return delete_bangCommon19(runtime, squeeze, tables, enc);
+
+        if (StringSupport.delete_bangCommon19(this, runtime, squeeze, tables, enc) == null) {
+            return runtime.getNil();
+        }
+
+        return this;
     }
 
     @JRubyMethod(name = "delete!", required = 1, rest = true)
@@ -4626,46 +4632,11 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
             tables = StringSupport.trSetupTable(otherStr.value, runtime, squeeze, tables, false, enc);
         }
 
-        return delete_bangCommon19(runtime, squeeze, tables, enc);
-    }
-
-    private IRubyObject delete_bangCommon19(Ruby runtime, boolean[]squeeze, StringSupport.TrTables tables, Encoding enc) {
-        modifyAndKeepCodeRange();
-
-        int s = value.getBegin();
-        int t = s;
-        int send = s + value.getRealSize();
-        byte[]bytes = value.getUnsafeBytes();
-        boolean modify = false;
-        boolean asciiCompatible = enc.isAsciiCompatible();
-        int cr = asciiCompatible ? CR_7BIT : CR_VALID;
-        while (s < send) {
-            int c;
-            if (asciiCompatible && Encoding.isAscii(c = bytes[s] & 0xff)) {
-                if (squeeze[c]) {
-                    modify = true;
-                } else {
-                    if (t != s) bytes[t] = (byte)c;
-                    t++;
-                }
-                s++;
-            } else {
-                c = codePoint(runtime, enc, bytes, s, send);
-                int cl = codeLength(runtime, enc, c);
-                if (StringSupport.trFind(c, squeeze, tables)) {
-                    modify = true;
-                } else {
-                    if (t != s) enc.codeToMbc(c, bytes, t);
-                    t += cl;
-                    if (cr == CR_7BIT) cr = CR_VALID;
-                }
-                s += cl;
-            }
+        if (StringSupport.delete_bangCommon19(this, runtime, squeeze, tables, enc) == null) {
+            return runtime.getNil();
         }
-        value.setRealSize(t - value.getBegin());
-        setCodeRange(cr);
 
-        return modify ? this : runtime.getNil();
+        return this;
     }
 
     /** rb_str_squeeze / rb_str_squeeze_bang
