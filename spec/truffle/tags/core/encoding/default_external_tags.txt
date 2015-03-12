@@ -2,3 +2,6 @@ fails:Encoding.default_external with command line options is not changed by the 
 fails:Encoding.default_external= calls #to_s on arguments that are neither Strings nor Encodings
 windows:Encoding.default_external with command line options returns the encoding specified by '-E external'
 windows:Encoding.default_external with command line options returns the encoding specified by '-E external:'
+slow:Encoding.default_external with command line options is not changed by the -U option
+slow:Encoding.default_external with command line options returns the encoding specified by '-E external'
+slow:Encoding.default_external with command line options returns the encoding specified by '-E external:'
