@@ -1509,18 +1509,22 @@ public class BodyTranslator extends Translator {
             rhs = node.getValueNode().accept(this);
         }
 
+        // Every case will use a SelfNode, just don't it use more than once.
+        // Also note the check for frozen.
+        final RubyNode self = new RaiseIfFrozenNode(new SelfNode(context, sourceSection));
+
         if (sourceSection.getSource().getPath().equals("core:/core/rubinius/common/time.rb")) {
             if (name.equals("@is_gmt")) {
                 return new RubyCallNode(context, sourceSection,
                         "_set_gmt",
-                        new SelfNode(context, sourceSection),
+                        self,
                         null,
                         false,
                         rhs);
             } else if (name.equals("@offset")) {
                 return new RubyCallNode(context, sourceSection,
                         "_set_offset",
-                        new SelfNode(context, sourceSection),
+                        self,
                         null,
                         false,
                         rhs);
@@ -1531,7 +1535,7 @@ public class BodyTranslator extends Translator {
             if (name.equals("@default")) {
                 return new RubyCallNode(context, sourceSection,
                         "_set_default_value",
-                        new SelfNode(context, sourceSection),
+                        self,
                         null,
                         false,
                         rhs);
@@ -1545,8 +1549,7 @@ public class BodyTranslator extends Translator {
             }
         }
 
-        final RubyNode receiver = new SelfNode(context, sourceSection);
-        return new WriteInstanceVariableNode(context, sourceSection, name, receiver, rhs, false);
+        return new WriteInstanceVariableNode(context, sourceSection, name, self, rhs, false);
     }
 
     @Override

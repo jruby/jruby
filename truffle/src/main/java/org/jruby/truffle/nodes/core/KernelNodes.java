@@ -1026,7 +1026,7 @@ public abstract class KernelNodes {
 
     }
 
-    @CoreMethod(names = {"instance_variable_set", "__instance_variable_set__"}, required = 2)
+    @CoreMethod(names = { "instance_variable_set", "__instance_variable_set__" }, raiseIfFrozenSelf = true, required = 2)
     public abstract static class InstanceVariableSetNode extends CoreMethodNode {
 
         public InstanceVariableSetNode(RubyContext context, SourceSection sourceSection) {
