@@ -920,6 +920,11 @@ public abstract class HashNodes {
             super(prev);
         }
 
+        @Specialization(guards = "isNull")
+        public RubyArray mapNull(VirtualFrame frame, RubyHash hash, RubyProc block) {
+            return new RubyArray(getContext().getCoreLibrary().getArrayClass(), null, 0);
+        }
+
         @ExplodeLoop
         @Specialization(guards = {"!isNull", "!isBuckets"})
         public RubyArray mapPackedArray(VirtualFrame frame, RubyHash hash, RubyProc block) {
