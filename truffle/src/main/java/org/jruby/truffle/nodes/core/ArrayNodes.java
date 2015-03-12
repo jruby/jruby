@@ -18,6 +18,7 @@ import com.oracle.truffle.api.dsl.*;
 import com.oracle.truffle.api.frame.FrameDescriptor;
 import com.oracle.truffle.api.frame.FrameSlot;
 import com.oracle.truffle.api.frame.VirtualFrame;
+import com.oracle.truffle.api.nodes.DirectCallNode;
 import com.oracle.truffle.api.nodes.ExplodeLoop;
 import com.oracle.truffle.api.nodes.UnexpectedResultException;
 import com.oracle.truffle.api.source.SourceSection;
@@ -38,6 +39,7 @@ import org.jruby.truffle.nodes.methods.arguments.MissingArgumentBehaviour;
 import org.jruby.truffle.nodes.methods.arguments.ReadPreArgumentNode;
 import org.jruby.truffle.nodes.methods.locals.ReadLevelVariableNodeFactory;
 import org.jruby.truffle.nodes.yield.YieldDispatchHeadNode;
+import org.jruby.truffle.pack.parser.PackParser;
 import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.control.BreakException;
 import org.jruby.truffle.runtime.control.NextException;
@@ -2175,6 +2177,34 @@ public abstract class ArrayNodes {
         }
 
     }
+
+    @CoreMethod(names = "pack_fast", required = 1)
+    public abstract static class PackFastNode extends ArrayCoreMethodNode {
+
+        @Child private DirectCallNode callPackNode;
+
+        public PackFastNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public PackFastNode(PackFastNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public RubyString pack(VirtualFrame frame, RubyArray array, RubyString format) {
+            if (callPackNode == null) {
+                CompilerDirectives.transferToInterpreter();
+                final CallTarget packCallTarget = new PackParser().parse(format.toString());
+                callPackNode = insert(Truffle.getRuntime().createDirectCallNode(packCallTarget));
+                callPackNode.forceInlining();
+            }
+
+            return getContext().makeString((ByteList) callPackNode.call(frame, new Object[]{array.getStore(), array.getSize()}));
+        }
+
+    }
+
 
     @CoreMethod(names = "pop", raiseIfFrozenSelf = true)
     public abstract static class PopNode extends ArrayCoreMethodNode {
