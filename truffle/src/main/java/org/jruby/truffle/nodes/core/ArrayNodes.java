@@ -29,6 +29,7 @@ import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.RubyRootNode;
 import org.jruby.truffle.nodes.array.*;
 import org.jruby.truffle.nodes.coerce.ToIntNode;
+import org.jruby.truffle.nodes.coerce.ToAryNodeFactory;
 import org.jruby.truffle.nodes.coerce.ToIntNodeFactory;
 import org.jruby.truffle.nodes.dispatch.*;
 import org.jruby.truffle.nodes.methods.arguments.MissingArgumentBehaviour;
@@ -2652,7 +2653,12 @@ public abstract class ArrayNodes {
     }
 
     @CoreMethod(names = "replace", required = 1, raiseIfFrozenSelf = true)
-    public abstract static class ReplaceNode extends ArrayCoreMethodNode {
+    @NodeChildren({
+        @NodeChild(value = "array"),
+        @NodeChild(value = "other")
+    })
+    @ImportGuards(ArrayGuards.class)
+    public abstract static class ReplaceNode extends RubyNode {
 
         public ReplaceNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -2660,6 +2666,11 @@ public abstract class ArrayNodes {
 
         public ReplaceNode(ReplaceNode prev) {
             super(prev);
+        }
+
+
+        @CreateCast("other") public RubyNode coerceOtherToAry(RubyNode index) {
+            return ToAryNodeFactory.create(getContext(), getSourceSection(), index);
         }
 
         @Specialization(guards = "isOtherNull")
