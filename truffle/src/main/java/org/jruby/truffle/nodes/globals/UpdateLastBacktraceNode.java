@@ -14,36 +14,35 @@ import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jruby.truffle.nodes.RubyNode;
+import org.jruby.truffle.nodes.ThreadLocalObjectNode;
 import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
+import org.jruby.truffle.nodes.objects.ReadInstanceVariableNode;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
-import org.jruby.truffle.runtime.core.RubyBasicObject;
 
 public class UpdateLastBacktraceNode extends RubyNode {
 
     @Child private RubyNode child;
+    @Child private ReadInstanceVariableNode getLastExceptionNode;
     @Child private CallDispatchHeadNode setBacktraceNode;
 
     public UpdateLastBacktraceNode(RubyContext context, SourceSection sourceSection, RubyNode child) {
         super(context, sourceSection);
         this.child = child;
+        getLastExceptionNode = new ReadInstanceVariableNode(getContext(), getSourceSection(), "$!",
+                new ThreadLocalObjectNode(getContext(), getSourceSection()),
+                true);
+        setBacktraceNode = DispatchHeadNodeFactory.createMethodCall(getContext());
     }
 
     @Override
     public Object execute(VirtualFrame frame) {
-        // TODO (nirvdrum 12-Mar-15) $! should be thread-local.
-        final RubyBasicObject globals = getContext().getCoreLibrary().getGlobalVariablesObject();
-        final Object lastException = globals.getOperations().getInstanceVariable(globals, "$!");
+        final Object lastException = getLastExceptionNode.execute(frame);
 
         if (lastException == getContext().getCoreLibrary().getNilObject()) {
             CompilerDirectives.transferToInterpreter();
             throw new RaiseException(getContext().getCoreLibrary().argumentError("$! is not set", this));
-        }
-
-        if (setBacktraceNode == null) {
-            CompilerDirectives.transferToInterpreter();
-            setBacktraceNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext()));
         }
 
         final Object newBacktrace = child.execute(frame);

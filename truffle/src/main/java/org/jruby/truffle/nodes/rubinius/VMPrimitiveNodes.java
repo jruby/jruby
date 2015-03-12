@@ -14,8 +14,10 @@ import org.jruby.truffle.nodes.core.BasicObjectNodes;
 import org.jruby.truffle.nodes.core.BasicObjectNodesFactory;
 import org.jruby.truffle.nodes.core.KernelNodes;
 import org.jruby.truffle.nodes.core.KernelNodesFactory;
+import org.jruby.truffle.nodes.literal.ObjectLiteralNode;
 import org.jruby.truffle.nodes.objects.ClassNode;
 import org.jruby.truffle.nodes.objects.ClassNodeFactory;
+import org.jruby.truffle.nodes.objects.WriteInstanceVariableNode;
 import org.jruby.truffle.nodes.yield.YieldDispatchHeadNode;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.ThrowException;
@@ -46,6 +48,7 @@ public abstract class VMPrimitiveNodes {
 
         @Child private YieldDispatchHeadNode dispatchNode;
         @Child private BasicObjectNodes.ReferenceEqualNode referenceEqualNode;
+        @Child private WriteInstanceVariableNode clearExceptionVariableNode;
 
         public CatchNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -74,8 +77,18 @@ public abstract class VMPrimitiveNodes {
             } catch (ThrowException e) {
                 if (areSame(frame, e.getTag(), tag)) {
                     notDesignedForCompilation();
-                    RubyBasicObject globals = getContext().getCoreLibrary().getGlobalVariablesObject();
-                    globals.getOperations().setInstanceVariable(globals, "$!", getContext().getCoreLibrary().getNilObject());
+
+                    if (clearExceptionVariableNode == null) {
+                        CompilerDirectives.transferToInterpreter();
+                        clearExceptionVariableNode = insert(
+                                new WriteInstanceVariableNode(getContext(), getSourceSection(), "$!",
+                                        new ObjectLiteralNode(getContext(), getSourceSection(), getContext().getThreadManager().getCurrentThread().getThreadLocals()),
+                                        new ObjectLiteralNode(getContext(), getSourceSection(), getContext().getCoreLibrary().getNilObject()),
+                                        true)
+                        );
+                    }
+
+                    clearExceptionVariableNode.execute(frame);
                     return e.getValue();
                 } else {
                     throw e;
