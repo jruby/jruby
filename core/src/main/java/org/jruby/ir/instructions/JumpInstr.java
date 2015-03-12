@@ -23,6 +23,7 @@ public class JumpInstr extends Instr implements FixedArityInstr {
 
     @Override
     public void encode(IRWriterEncoder e) {
+        super.encode(e);
         e.encode(getJumpTarget());
     }
 

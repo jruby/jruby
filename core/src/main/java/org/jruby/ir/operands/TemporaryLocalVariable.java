@@ -73,7 +73,6 @@ public class TemporaryLocalVariable extends TemporaryVariable {
     public static TemporaryLocalVariable decode(IRReaderDecoder d) {
         TemporaryVariableType type = d.decodeTemporaryVariableType();
 
-        System.out.println("TYPe: " + type);
         switch(type) {
             case CLOSURE: return TemporaryClosureVariable.decode(d);
             case CURRENT_MODULE: return TemporaryCurrentModuleVariable.decode(d);

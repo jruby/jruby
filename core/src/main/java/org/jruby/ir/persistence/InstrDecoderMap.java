@@ -54,7 +54,7 @@ class InstrDecoderMap implements IRPersistenceValues {
             case CLASS_VAR_MODULE: return new GetClassVarContainerModuleInstr(d.decodeVariable(), d.decodeOperand(), d.decodeVariable());
             case CONST_MISSING: return decodeConstMissingInstr();
             case BUILD_COMPOUND_ARRAY: return new BuildCompoundArrayInstr(d.decodeVariable(), d.decodeOperand(), d.decodeOperand(), d.decodeBoolean());
-            case BUILD_COMPOUND_STRING: return decodeBuildCompoundStringInstr();
+            case BUILD_COMPOUND_STRING: return BuildCompoundStringInstr.decode(d);
             case BUILD_DREGEXP: return decodeBuildDynRegExpInstr();
             case BUILD_RANGE: return new BuildRangeInstr(d.decodeVariable(), d.decodeOperand(), d.decodeOperand(), d.decodeBoolean());
             case COPY: return CopyInstr.decode(d);
@@ -142,14 +142,6 @@ class InstrDecoderMap implements IRPersistenceValues {
         }
 
         return AttrAssignInstr.create(op, methAddr, args);
-    }
-
-    private Instr decodeBuildCompoundStringInstr() {
-        Variable result = d.decodeVariable();
-        Operand[] pieces = d.decodeOperandArray();
-        Encoding encoding = NonIRObjectFactory.createEncoding(d.decodeString());
-
-        return new BuildCompoundStringInstr(result, pieces, encoding);
     }
 
     private Instr decodeBuildDynRegExpInstr() {
