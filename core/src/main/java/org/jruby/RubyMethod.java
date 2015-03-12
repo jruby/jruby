@@ -197,7 +197,17 @@ public class RubyMethod extends AbstractRubyMethod {
                 return RubyMethod.this.getLine();
             }
         };
-        BlockBody body = CompiledBlockLight19.newCompiledBlockLight(method.getArity(), runtime.getStaticScopeFactory().getDummyScope(), callback, false, 0, JRubyLibrary.MethodExtensions.methodParameters(runtime, method));
+        int argumentType;
+        if (method.getArity().isFixed()) {
+            if (method.getArity().required() > 0) {
+                argumentType = BlockBody.MULTIPLE_ASSIGNMENT;
+            } else {
+                argumentType = BlockBody.ZERO_ARGS;
+            }
+        } else {
+            argumentType = BlockBody.MULTIPLE_ASSIGNMENT;
+        }
+        BlockBody body = CompiledBlockLight19.newCompiledBlockLight(method.getArity(), runtime.getStaticScopeFactory().getDummyScope(), callback, false, argumentType, JRubyLibrary.MethodExtensions.methodParameters(runtime, method));
         Block b = new Block(body, context.currentBinding(receiver, Visibility.PUBLIC));
         
         return RubyProc.newProc(runtime, b, Block.Type.LAMBDA);

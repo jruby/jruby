@@ -55,6 +55,7 @@ import org.jruby.javasupport.JavaSupport;
 import org.jruby.javasupport.JavaSupportImpl;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.parser.StaticScope;
+import org.jruby.util.ClassDefiningClassLoader;
 import org.objectweb.asm.util.TraceClassVisitor;
 
 import jnr.constants.Constant;
@@ -96,7 +97,7 @@ import org.jruby.ir.Compiler;
 import org.jruby.ir.IRManager;
 import org.jruby.ir.interpreter.Interpreter;
 import org.jruby.ir.persistence.IRReader;
-import org.jruby.ir.persistence.IRReaderFile;
+import org.jruby.ir.persistence.IRReaderStream;
 import org.jruby.ir.persistence.util.IRFileExpert;
 import org.jruby.javasupport.proxy.JavaProxyClassFactory;
 import org.jruby.management.BeanManager;
@@ -143,7 +144,7 @@ import org.jruby.util.JRubyClassLoader;
 import org.jruby.util.SelfFirstJRubyClassLoader;
 import org.jruby.util.IOInputStream;
 import org.jruby.util.IOOutputStream;
-import org.jruby.util.ClassDefininngJRubyClassLoader;
+import org.jruby.util.ClassDefiningJRubyClassLoader;
 import org.jruby.util.KCode;
 import org.jruby.util.SafePropertyAccessor;
 import org.jruby.util.cli.Options;
@@ -762,7 +763,7 @@ public final class Ruby implements Constantizable {
         // IR JIT does not handle all scripts yet, so let those that fail run in interpreter instead
         // FIXME: restore error once JIT should handle everything
         try {
-            scriptAndCode = tryCompile(scriptNode, new ClassDefininngJRubyClassLoader(getJRubyClassLoader()));
+            scriptAndCode = tryCompile(scriptNode, new ClassDefiningJRubyClassLoader(getJRubyClassLoader()));
             if (scriptAndCode != null && Options.JIT_LOGGING.load()) {
                 LOG.info("done compiling target script: " + scriptNode.getPosition().getFile());
             }
@@ -786,7 +787,7 @@ public final class Ruby implements Constantizable {
      * @return an instance of the successfully-compiled Script, or null.
      */
     public Script tryCompile(Node node) {
-        return tryCompile(node, new ClassDefininngJRubyClassLoader(getJRubyClassLoader())).script();
+        return tryCompile(node, new ClassDefiningJRubyClassLoader(getJRubyClassLoader())).script();
     }
 
     private void failForcedCompile(Node scriptNode) throws RaiseException {
@@ -802,7 +803,7 @@ public final class Ruby implements Constantizable {
         }
     }
 
-    private ScriptAndCode tryCompile(Node node, ClassDefininngJRubyClassLoader classLoader) {
+    private ScriptAndCode tryCompile(Node node, ClassDefiningClassLoader classLoader) {
         try {
             return Compiler.getInstance().execute(this, node, classLoader);
         } catch (NotCompilableException e) {
@@ -2697,7 +2698,7 @@ public final class Ruby implements Constantizable {
 
         try {
             // Get IR from .ir file
-            return IRReader.load(getIRManager(), new IRReaderFile(getIRManager(), IRFileExpert.getIRPersistedFile(file)));
+            return IRReader.load(getIRManager(), new IRReaderStream(getIRManager(), IRFileExpert.getIRPersistedFile(file)));
         } catch (IOException e) {
             // FIXME: What is something actually throws IOException
             return parseFileAndGetAST(in, file, scope, lineNumber, false);
@@ -2718,7 +2719,7 @@ public final class Ruby implements Constantizable {
         if (!RubyInstanceConfig.IR_READING) return parseFileFromMainAndGetAST(in, file, scope);
 
         try {
-            return IRReader.load(getIRManager(), new IRReaderFile(getIRManager(), IRFileExpert.getIRPersistedFile(file)));
+            return IRReader.load(getIRManager(), new IRReaderStream(getIRManager(), IRFileExpert.getIRPersistedFile(file)));
         } catch (IOException e) {
             System.out.println(e);
             e.printStackTrace();
@@ -2968,7 +2969,7 @@ public final class Ruby implements Constantizable {
             // script was not found in cache above, so proceed to compile
             Node scriptNode = parseFile(readStream, filename, null);
             if (script == null) {
-                scriptAndCode = tryCompile(scriptNode, new ClassDefininngJRubyClassLoader(jrubyClassLoader));
+                scriptAndCode = tryCompile(scriptNode, new ClassDefiningJRubyClassLoader(jrubyClassLoader));
                 if (scriptAndCode != null) script = scriptAndCode.script();
             }
 

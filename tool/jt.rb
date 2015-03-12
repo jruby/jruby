@@ -181,10 +181,7 @@ module Commands
   end
 
   def test_pe
-    run(*%w[
-            --graal
-            -J-G:+TruffleCompilationExceptionsAreThrown
-            test/truffle/pe/pe.rb])
+    run(*%w[--graal test/truffle/pe/pe.rb])
   end
   private :test_pe
 

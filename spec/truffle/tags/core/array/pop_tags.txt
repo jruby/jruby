@@ -1,5 +1,3 @@
-fails:Array#pop raises a RuntimeError on a frozen array
-fails:Array#pop raises a RuntimeError on an empty frozen array
 fails:Array#pop passed a number n as an argument removes and returns an array with the last n elements of the array
 fails:Array#pop passed a number n as an argument returns an array with the last n elements even if shift was invoked
 fails:Array#pop passed a number n as an argument returns a new empty array if there are no more elements

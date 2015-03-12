@@ -19,6 +19,7 @@ import org.jruby.runtime.Signature;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
+import org.jruby.util.KeyValuePair;
 
 /**
  *
@@ -35,15 +36,23 @@ public class IRReader {
         int scopesToRead  = file.decodeInt();
         if (RubyInstanceConfig.IR_READING_DEBUG) System.out.println("scopes to read = " + scopesToRead);
 
-        IRScope script = decodeScopeHeader(manager, file);
-        for (int i = 1; i < scopesToRead; i++) {
-            decodeScopeHeader(manager, file);
+        KeyValuePair<IRScope, Integer>[] scopes = new KeyValuePair[scopesToRead];
+        for (int i = 0; i < scopesToRead; i++) {
+            scopes[i] = decodeScopeHeader(manager, file);
         }
 
-        return script;
+        // Lifecycle woes.  All IRScopes need to exist before we can decodeInstrs.
+        for (KeyValuePair<IRScope, Integer> pair: scopes) {
+            IRScope scope = pair.getKey();
+            int instructionsOffset = pair.getValue();
+
+            scope.allocateInterpreterContext(file.decodeInstructionsAt(scope, instructionsOffset));
+        }
+
+        return scopes[0].getKey(); // topmost scope;
     }
 
-    private static IRScope decodeScopeHeader(IRManager manager, IRReaderDecoder decoder) {
+    private static KeyValuePair<IRScope, Integer> decodeScopeHeader(IRManager manager, IRReaderDecoder decoder) {
         if (RubyInstanceConfig.IR_READING_DEBUG) System.out.println("DECODING SCOPE HEADER");
         IRScopeType type = decoder.decodeIRScopeType();
         if (RubyInstanceConfig.IR_READING_DEBUG) System.out.println("IRScopeType = " + type);
@@ -80,9 +89,8 @@ public class IRReader {
         decoder.addScope(scope);
 
         int instructionsOffset = decoder.decodeInt();
-        decoder.decodeInstructionsAt(scope, instructionsOffset);
 
-        return scope;
+        return new KeyValuePair<>(scope, instructionsOffset);
     }
 
     private static Map<String, LocalVariable> decodeScopeLocalVariables(IRReaderDecoder decoder, IRScope scope) {
@@ -143,6 +151,6 @@ public class IRReader {
             return new IREvalScript(manager, lexicalParent, lexicalParent.getFileName(), line, staticScope, EvalType.NONE);
         }
 
-        return null;
+        throw new RuntimeException("No such scope type: " + type);
     }
 }

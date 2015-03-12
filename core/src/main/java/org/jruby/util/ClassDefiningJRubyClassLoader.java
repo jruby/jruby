@@ -34,7 +34,7 @@ import java.security.ProtectionDomain;
 import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
 
-public class ClassDefininngJRubyClassLoader extends URLClassLoader implements ClassDefiningClassLoader {
+public class ClassDefiningJRubyClassLoader extends URLClassLoader implements ClassDefiningClassLoader {
 
     final static ProtectionDomain DEFAULT_DOMAIN;
 
@@ -48,7 +48,7 @@ public class ClassDefininngJRubyClassLoader extends URLClassLoader implements Cl
         DEFAULT_DOMAIN = defaultDomain;
     }
 
-    public ClassDefininngJRubyClassLoader(ClassLoader parent) {
+    public ClassDefiningJRubyClassLoader(ClassLoader parent) {
         super(new URL[0], parent);
     }
 

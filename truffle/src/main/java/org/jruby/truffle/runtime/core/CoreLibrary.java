@@ -197,13 +197,15 @@ public class CoreLibrary {
         // NoMemoryError
         noMemoryErrorClass = defineClass(exceptionClass, "NoMemoryError");
 
+        // RubyTruffleError
+        rubyTruffleErrorClass = defineClass(exceptionClass, "RubyTruffleError");
+
         // StandardError
         standardErrorClass = defineClass(exceptionClass, "StandardError");
         argumentErrorClass = defineClass(standardErrorClass, "ArgumentError");
         ioErrorClass = defineClass(standardErrorClass, "IOError");
         localJumpErrorClass = defineClass(standardErrorClass, "LocalJumpError");
         regexpErrorClass = defineClass(standardErrorClass, "RegexpError");
-        rubyTruffleErrorClass = defineClass(standardErrorClass, "RubyTruffleError");
         runtimeErrorClass = defineClass(standardErrorClass, "RuntimeError");
         threadErrorClass = defineClass(standardErrorClass, "ThreadError");
         typeErrorClass = defineClass(standardErrorClass, "TypeError");

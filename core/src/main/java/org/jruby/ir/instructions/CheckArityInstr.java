@@ -2,8 +2,7 @@ package org.jruby.ir.instructions;
 
 import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Operation;
-import org.jruby.ir.operands.Fixnum;
-import org.jruby.ir.operands.Operand;
+import org.jruby.ir.persistence.IRReaderDecoder;
 import org.jruby.ir.persistence.IRWriterEncoder;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.ir.transformations.inlining.CloneInfo;
@@ -58,6 +57,11 @@ public class CheckArityInstr extends Instr implements FixedArityInstr {
         e.encode(opt);
         e.encode(rest);
         e.encode(receivesKeywords);
+        e.encode(restKey);
+    }
+
+    public static CheckArityInstr decode(IRReaderDecoder d) {
+        return new CheckArityInstr(d.decodeInt(), d.decodeInt(), d.decodeInt(), d.decodeBoolean(), d.decodeInt());
     }
 
     public void checkArity(ThreadContext context, Object[] args) {

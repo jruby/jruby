@@ -51,7 +51,7 @@ import java.util.jar.JarInputStream;
 import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
 
-public class JRubyClassLoader extends ClassDefininngJRubyClassLoader {
+public class JRubyClassLoader extends ClassDefiningJRubyClassLoader {
 
     private static final Logger LOG = LoggerFactory.getLogger("JRubyClassLoader");
 

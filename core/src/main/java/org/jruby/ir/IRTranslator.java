@@ -6,7 +6,7 @@ import org.jruby.RubyInstanceConfig;
 import org.jruby.ast.RootNode;
 import org.jruby.ir.interpreter.InterpreterContext;
 import org.jruby.ir.persistence.IRWriter;
-import org.jruby.ir.persistence.IRWriterFile;
+import org.jruby.ir.persistence.IRWriterStream;
 import org.jruby.ir.persistence.util.IRFileExpert;
 
 import java.io.IOException;
@@ -31,7 +31,7 @@ public abstract class IRTranslator<R, S> {
 
             if (RubyInstanceConfig.IR_WRITING) {
                 try {
-                    IRWriter.persist(new IRWriterFile(IRFileExpert.getIRPersistedFile(scope.getFileName())), scope);
+                    IRWriter.persist(new IRWriterStream(IRFileExpert.getIRPersistedFile(scope.getFileName())), scope);
                 } catch (IOException ex) {
                     ex.printStackTrace(); // FIXME: Handle errors better
                     return null;

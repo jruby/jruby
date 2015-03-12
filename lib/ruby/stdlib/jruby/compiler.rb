@@ -7,7 +7,12 @@ require 'jruby/compiler/java_class'
 module JRuby::Compiler
   BAIS = java.io.ByteArrayInputStream
   Mangler = org.jruby.util.JavaNameMangler
-  JVMVisitor = org.jruby.ir.targets.JVMVisitor
+  Opcodes = org.objectweb.asm.Opcodes rescue org.jruby.org.objectweb.asm.Opcodes
+  ClassWriter = org.objectweb.asm.ClassWriter rescue org.jruby.org.objectweb.asm.ClassWriter
+  SkinnyMethodAdapter = org.jruby.compiler.impl.SkinnyMethodAdapter
+  ByteArrayOutputStream = java.io.ByteArrayOutputStream
+  IRWriterStream = org.jruby.ir.persistence.IRWriterStream
+  IRWriter = org.jruby.ir.persistence.IRWriter
   JavaFile = java.io.File
   MethodSignatureNode = org.jruby.ast.java_signature.MethodSignatureNode
   DEFAULT_PREFIX = ""
@@ -152,36 +157,59 @@ module JRuby::Compiler
           puts "Compiling #{filename}" if options[:verbose]
 
           scope = JRuby.compile_ir(source, filename)
+          bytes = ByteArrayOutputStream.new
+          stream = IRWriterStream.new(bytes)
+          IRWriter.persist(stream, scope)
+          string = String.from_java_bytes(bytes.to_byte_array, 'BINARY')
 
-          visitor = JVMVisitor.new
-
-          bytes = visitor.compileToBytecode(scope)
-
-          class_bytes = String.from_java_bytes(bytes)
+          cls = ClassWriter.new(ClassWriter::COMPUTE_MAXS | ClassWriter::COMPUTE_FRAMES)
+          cls.visit(
+              Opcodes::V1_7,
+              Opcodes::ACC_PUBLIC,
+              pathname.gsub(".", "/"),
+              nil,
+              "java/lang/Object",
+              nil
+          )
+          cls.visit_source filename, nil
           
+          main = SkinnyMethodAdapter.new(
+              cls,
+              Opcodes::ACC_PUBLIC | Opcodes::ACC_STATIC,
+              "main",
+              "([Ljava/lang/String;)V",
+              nil,
+              nil)
+          main.start
+          main.invokestatic("org/jruby/Ruby", "newInstance", "()Lorg/jruby/Ruby;")
+          main.astore(1)
+          main.aload(1)
+          main.aload(1)
+          main.ldc(string)
+          main.ldc("ISO-8859-1")
+          main.invokevirtual("java/lang/String", "getBytes", "(Ljava/lang/String;)[B")
+          main.invokestatic("org/jruby/ir/runtime/IRRuntimeHelpers", "decodeScopeFromBytes", "(Lorg/jruby/Ruby;[B)Lorg/jruby/ir/IRScope;")
+          main.invokevirtual("org/jruby/Ruby", "runInterpreter", "(Lorg/jruby/ParseResult;)Lorg/jruby/runtime/builtin/IRubyObject;")
+          main.voidreturn
+          main.end
+
           # prepare target
           class_filename = filename.sub(/(\.rb)?$/, '.class')
           target_file = File.join(options[:target], class_filename)
           target_dir = File.dirname(target_file)
           FileUtils.mkdir_p(target_dir)
-          
+
           # write class
           File.open(target_file, 'wb') do |f|
-            f.write(class_bytes)
-          end
-
-          if options[:handles]
-            puts "Generating direct handles for #{filename}"# if options[:verbose]
-
-            asmCompiler.write_invokers(options[:target])
+            f.write(cls.to_byte_array)
           end
         end
 
         0
-      rescue Exception
-        puts "Failure during compilation of file #{filename}:\n#{$!}"
-        puts $!.backtrace
-        1
+      # rescue Exception
+      #   puts "Failure during compilation of file #{filename}:\n#{$!}"
+      #   puts $!.backtrace
+      #   1
       ensure
         file.close unless file.nil?
       end

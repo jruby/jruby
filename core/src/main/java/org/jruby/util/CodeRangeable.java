@@ -32,4 +32,5 @@ public interface CodeRangeable extends ByteListHolder {
     public boolean isCodeRangeValid();
     public void setCodeRange(int codeRange);
     public void clearCodeRange();
+    public void keepCodeRange();
 }

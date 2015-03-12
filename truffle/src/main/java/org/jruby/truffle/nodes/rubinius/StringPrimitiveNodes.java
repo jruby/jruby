@@ -6,7 +6,22 @@
  * Eclipse Public License version 1.0
  * GNU General Public License version 2
  * GNU Lesser General Public License version 2.1
- * 
+ *
+ * Some of the code in this class is transposed from org.jruby.RubyString,
+ * licensed under the same EPL1.0/GPL 2.0/LGPL 2.1 used throughout.
+ *
+ * Copyright (C) 2001 Alan Moore <alan_moore@gmx.net>
+ * Copyright (C) 2001-2002 Benoit Cerrina <b.cerrina@wanadoo.fr>
+ * Copyright (C) 2001-2004 Jan Arne Petersen <jpetersen@uni-bonn.de>
+ * Copyright (C) 2002-2004 Anders Bengtsson <ndrsbngtssn@yahoo.se>
+ * Copyright (C) 2002-2006 Thomas E Enebo <enebo@acm.org>
+ * Copyright (C) 2004 Stefan Matthias Aust <sma@3plus4.de>
+ * Copyright (C) 2004 David Corbin <dcorbin@users.sourceforge.net>
+ * Copyright (C) 2005 Tim Azzopardi <tim@tigerfive.com>
+ * Copyright (C) 2006 Miguel Covarrubias <mlcovarrubias@gmail.com>
+ * Copyright (C) 2006 Ola Bini <ola@ologix.com>
+ * Copyright (C) 2007 Nick Sieger <nicksieger@gmail.com>
+ *
  * Some of the code in this class is transliterated from C++ code in Rubinius.
  * 
  * Copyright (c) 2007-2014, Evan Phoenix and contributors

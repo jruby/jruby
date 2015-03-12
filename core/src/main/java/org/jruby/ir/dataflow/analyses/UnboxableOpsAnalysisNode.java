@@ -498,9 +498,9 @@ public class UnboxableOpsAnalysisNode extends FlowGraphNode<UnboxableOpsAnalysis
             if (ua == a) {
                 newInstrs.add(i);
             } else if (op == Operation.B_TRUE) {
-                newInstrs.add(new BTrueInstr(Operation.B_TRUE, ua, bi.getJumpTarget()));
+                newInstrs.add(new BTrueInstr(bi.getJumpTarget(), ua));
             } else {
-                newInstrs.add(new BFalseInstr(Operation.B_FALSE, ua, bi.getJumpTarget()));
+                newInstrs.add(new BFalseInstr(bi.getJumpTarget(), ua));
             }
         } else {
             newInstrs.add(i);

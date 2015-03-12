@@ -1,14 +1,2 @@
-fails:String#delete returns a new string with the chars from the intersection of sets removed
-fails:String#delete raises an ArgumentError when given no arguments
-fails:String#delete negates sets starting with ^
-fails:String#delete deletes all chars in a sequence
 fails:String#delete deletes multibyte characters
-fails:String#delete respects backslash for escaping a -
 fails:String#delete raises if the given ranges are invalid
-fails:String#delete taints result when self is tainted
-fails:String#delete tries to convert each set arg to a string using to_str
-fails:String#delete raises a TypeError when one set arg can't be converted to a string
-fails:String#delete returns subclass instances when called on a subclass
-fails:String#delete! modifies self in place and returns self
-fails:String#delete! returns nil if no modifications were made
-fails:String#delete! raises a RuntimeError when self is frozen

@@ -19,6 +19,7 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.OutputStream;
 import java.nio.ByteBuffer;
 import java.util.HashMap;
 import java.util.Map;
@@ -29,21 +30,25 @@ import org.jruby.util.ByteList;
 /**
  * Represents a file which is persisted to storage.
  */
-public class IRWriterFile implements IRWriterEncoder, IRPersistenceValues {
+public class IRWriterStream implements IRWriterEncoder, IRPersistenceValues {
     private static final int VERSION = 0;
 
     private final Map<IRScope, Integer> scopeInstructionOffsets = new HashMap<>();
     // FIXME: Allocate direct and use one per thread?
     private final ByteBuffer buf = ByteBuffer.allocate(TWO_MEGS);
-    private final File file;
+    private final OutputStream stream;
     private final IRWriterAnalzer analyzer;
 
     int headersOffset = -1;
     int poolOffset = -1;
 
-    public IRWriterFile(File file) throws FileNotFoundException {
-        this.file = file;
+    public IRWriterStream(OutputStream stream) {
+        this.stream = stream;
         this.analyzer = new IRWriterAnalzer();
+    }
+
+    public IRWriterStream(File file) throws FileNotFoundException {
+        this(new FileOutputStream(file));
     }
 
     /**
@@ -236,17 +241,14 @@ public class IRWriterFile implements IRWriterEncoder, IRPersistenceValues {
 
     @Override
     public void endEncoding(IRScope script) {
-        FileOutputStream fos = null;
-
         try {
-            fos = new FileOutputStream(file);
-            fos.write(ByteBuffer.allocate(4).putInt(headersOffset).array());
-            fos.write(ByteBuffer.allocate(4).putInt(poolOffset).array());
+            stream.write(ByteBuffer.allocate(4).putInt(headersOffset).array());
+            stream.write(ByteBuffer.allocate(4).putInt(poolOffset).array());
             buf.flip();
-            fos.getChannel().write(buf);
-            fos.close();
+            stream.write(buf.array(), buf.position(), buf.limit());
+            stream.close();
         } catch (IOException e) {
-            try { if (fos != null) fos.close(); } catch (IOException e1) {}
+            try { if (stream != null) stream.close(); } catch (IOException e1) {}
         }
     }
 }

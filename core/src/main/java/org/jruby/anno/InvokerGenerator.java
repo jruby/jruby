@@ -38,7 +38,7 @@ import java.util.Map;
 
 import org.jruby.RubyModule.MethodClumper;
 import org.jruby.internal.runtime.methods.DumpingInvocationMethodFactory;
-import org.jruby.util.ClassDefininngJRubyClassLoader;
+import org.jruby.util.ClassDefiningJRubyClassLoader;
 import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
 
@@ -68,7 +68,7 @@ public class InvokerGenerator {
             br.close();
         }
 
-        DumpingInvocationMethodFactory dumper = new DumpingInvocationMethodFactory(args[1], new ClassDefininngJRubyClassLoader(ClassLoader.getSystemClassLoader()));
+        DumpingInvocationMethodFactory dumper = new DumpingInvocationMethodFactory(args[1], new ClassDefiningJRubyClassLoader(ClassLoader.getSystemClassLoader()));
 
         for (String name : classNames) {
             MethodClumper clumper = new MethodClumper();

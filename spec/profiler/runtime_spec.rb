@@ -38,9 +38,9 @@ describe Java::OrgJruby::Ruby do
     def check_passed_spec(outcome)
       # print any errors if occured :
       @runtime.evalScriptlet("puts ERR_IO.string unless ERR_IO.string.empty?")
-      passed = (outcome.to_s.should == true.to_s)
+      expect(outcome.to_s).to eq(0.to_s)
     ensure
-      unless passed
+      unless outcome.to_s == 0.to_s
         puts "spec not passed, output: \n"
         @runtime.evalScriptlet("puts OUT_IO.string")
       end
