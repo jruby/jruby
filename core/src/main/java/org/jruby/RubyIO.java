@@ -39,6 +39,7 @@ import jnr.constants.platform.Errno;
 import jnr.constants.platform.OpenFlags;
 import jnr.enxio.channels.NativeDeviceChannel;
 import jnr.enxio.channels.NativeSelectableChannel;
+import jnr.posix.POSIX;
 import org.jcodings.transcode.EConvFlags;
 import org.jruby.runtime.Helpers;
 import org.jruby.util.StringSupport;
@@ -1828,15 +1829,19 @@ public class RubyIO extends RubyObject implements IOEncodable {
     @JRubyMethod(name = {"tty?", "isatty"})
     public RubyBoolean tty_p(ThreadContext context) {
         Ruby runtime = context.runtime;
+        POSIX posix = runtime.getPosix();
         OpenFile fptr;
 
         fptr = getOpenFileChecked();
 
         fptr.lock();
         try {
-            if (fptr.isStdio()) return runtime.getTrue();
-            if (runtime.getPosix().isNative() && runtime.getPosix().libc().isatty(fptr.getFileno()) != 0)
+            if (posix.isNative() && fptr.fd().realFileno != -1) {
+                return posix.libc().isatty(fptr.getFileno()) == 0 ? runtime.getFalse() : runtime.getTrue();
+            } else if (fptr.isStdio()) {
+                // This is a bit of a hack for platforms where we can't do native stdio
                 return runtime.getTrue();
+            }
         } finally {
             fptr.unlock();
         }
