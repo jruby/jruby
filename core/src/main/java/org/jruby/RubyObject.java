@@ -67,7 +67,7 @@ import org.jruby.util.cli.Options;
  * RubyObject represents the implementation of the Object class in Ruby. As such,
  * it defines very few methods of its own, inheriting most from the included
  * Kernel module.
- * 
+ *
  * Methods that are implemented here, such as "initialize" should be implemented
  * with care; reification of Ruby classes into Java classes can produce
  * conflicting method names in rare cases. See JRUBY-5906 for an example.
@@ -144,67 +144,67 @@ public class RubyObject extends RubyBasicObject {
             return new RubyObject(runtime, klass);
         }
     };
-    
+
     public static final ObjectAllocator OBJECT_VAR0_ALLOCATOR = new ObjectAllocator() {
         public IRubyObject allocate(Ruby runtime, RubyClass klass) {
             return new RubyObjectVar0(runtime, klass);
         }
     };
-    
+
     public static final ObjectAllocator OBJECT_VAR1_ALLOCATOR = new ObjectAllocator() {
         public IRubyObject allocate(Ruby runtime, RubyClass klass) {
             return new RubyObjectVar1(runtime, klass);
         }
     };
-    
+
     public static final ObjectAllocator OBJECT_VAR2_ALLOCATOR = new ObjectAllocator() {
         public IRubyObject allocate(Ruby runtime, RubyClass klass) {
             return new RubyObjectVar2(runtime, klass);
         }
     };
-    
+
     public static final ObjectAllocator OBJECT_VAR3_ALLOCATOR = new ObjectAllocator() {
         public IRubyObject allocate(Ruby runtime, RubyClass klass) {
             return new RubyObjectVar3(runtime, klass);
         }
     };
-    
+
     public static final ObjectAllocator OBJECT_VAR4_ALLOCATOR = new ObjectAllocator() {
         public IRubyObject allocate(Ruby runtime, RubyClass klass) {
             return new RubyObjectVar4(runtime, klass);
         }
     };
-    
+
     public static final ObjectAllocator OBJECT_VAR5_ALLOCATOR = new ObjectAllocator() {
         public IRubyObject allocate(Ruby runtime, RubyClass klass) {
             return new RubyObjectVar5(runtime, klass);
         }
     };
-    
+
     public static final ObjectAllocator OBJECT_VAR6_ALLOCATOR = new ObjectAllocator() {
         public IRubyObject allocate(Ruby runtime, RubyClass klass) {
             return new RubyObjectVar6(runtime, klass);
         }
     };
-    
+
     public static final ObjectAllocator OBJECT_VAR7_ALLOCATOR = new ObjectAllocator() {
         public IRubyObject allocate(Ruby runtime, RubyClass klass) {
             return new RubyObjectVar7(runtime, klass);
         }
     };
-    
+
     public static final ObjectAllocator OBJECT_VAR8_ALLOCATOR = new ObjectAllocator() {
         public IRubyObject allocate(Ruby runtime, RubyClass klass) {
             return new RubyObjectVar8(runtime, klass);
         }
     };
-    
+
     public static final ObjectAllocator OBJECT_VAR9_ALLOCATOR = new ObjectAllocator() {
         public IRubyObject allocate(Ruby runtime, RubyClass klass) {
             return new RubyObjectVar9(runtime, klass);
         }
     };
-    
+
     public static final ObjectAllocator[] FIELD_ALLOCATORS = {
         OBJECT_ALLOCATOR,
         OBJECT_VAR0_ALLOCATOR,
@@ -218,7 +218,7 @@ public class RubyObject extends RubyBasicObject {
         OBJECT_VAR8_ALLOCATOR,
         OBJECT_VAR9_ALLOCATOR
     };
-    
+
     public static final Class[] FIELD_ALLOCATED_CLASSES = {
         RubyObject.class,
         RubyObjectVar0.class,
@@ -232,7 +232,7 @@ public class RubyObject extends RubyBasicObject {
         RubyObjectVar8.class,
         RubyObjectVar9.class,
     };
-    
+
     /**
      * Allocator that inspects all methods for instance variables and chooses
      * a concrete class to construct based on that. This allows using
@@ -246,19 +246,19 @@ public class RubyObject extends RubyBasicObject {
             if (Options.DUMP_INSTANCE_VARS.load()) {
                 System.err.println(klass + ";" + foundVariables);
             }
-            
+
             int count = 0;
             for (String name : foundVariables) {
                 klass.getVariableTableManager().getVariableAccessorForVar(name, count);
                 count++;
                 if (count >= 10) break;
             }
-            
+
             ObjectAllocator allocator = FIELD_ALLOCATORS[count];
             Class reified = FIELD_ALLOCATED_CLASSES[count];
             klass.setAllocator(allocator);
             klass.setReifiedClass(reified);
-            
+
             return allocator.allocate(runtime, klass);
         }
     };
@@ -513,10 +513,9 @@ public class RubyObject extends RubyBasicObject {
         if (runtime.is1_9()) {
             RubyInteger integer = hashValue.convertToInteger();
             if (integer instanceof RubyBignum) {
-                return (int)integer.getBigIntegerValue().intValue();
-            } else {
-                return (int)integer.getLongValue();
+                return integer.getBigIntegerValue().intValue();
             }
+            return (int) integer.getLongValue();
         } else {
             hashValue = hashValue.callMethod(runtime.getCurrentContext(), "%", RubyFixnum.newFixnum(runtime, 536870923L));
             if (hashValue instanceof RubyFixnum) return (int) RubyNumeric.fix2long(hashValue);
