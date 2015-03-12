@@ -1,1 +1,0 @@
-fails:Array#clear raises a RuntimeError on a frozen array
