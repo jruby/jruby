@@ -34,6 +34,11 @@ public class ReadLastBacktraceNode extends RubyNode {
     }
 
     @Override
+    public Object isDefined(VirtualFrame frame) {
+        return getContext().makeString("global-variable");
+    }
+
+    @Override
     public Object execute(VirtualFrame frame) {
         final Object lastException = getLastExceptionNode.execute(frame);
 
