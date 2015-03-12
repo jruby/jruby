@@ -1598,9 +1598,9 @@ public class BodyTranslator extends Translator {
 
         if (sourceSection.getSource().getPath().equals("core:/core/rubinius/common/range.rb")) {
             if (name.equals("@begin")) {
-                return RangeNodesFactory.FirstNodeFactory.create(context, sourceSection, new RubyNode[] { self });
+                return RangeNodesFactory.BeginNodeFactory.create(context, sourceSection, new RubyNode[] { self });
             } else if (name.equals("@end")) {
-                return RangeNodesFactory.LastNodeFactory.create(context, sourceSection, new RubyNode[] { self });
+                return RangeNodesFactory.EndNodeFactory.create(context, sourceSection, new RubyNode[] { self });
             } else if (name.equals("@excl")) {
                 return RangeNodesFactory.ExcludeEndNodeFactory.create(context, sourceSection, new RubyNode[] { self });
             }
