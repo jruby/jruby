@@ -3,6 +3,7 @@ package org.jruby.ir.operands;
 // Records the nil object
 
 import org.jruby.ir.IRVisitor;
+import org.jruby.ir.persistence.IRReaderDecoder;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
 
@@ -24,6 +25,10 @@ public class NullBlock extends ImmutableLiteral {
     @Override
     public Object createCacheObject(ThreadContext context) {
         return Block.NULL_BLOCK;
+    }
+
+    public static NullBlock decode(IRReaderDecoder d) {
+        return INSTANCE;
     }
 
     @Override

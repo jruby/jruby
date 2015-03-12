@@ -50,6 +50,7 @@ class OperandDecoderMap {
             case LOCAL_VARIABLE: return d.getCurrentScope().getLocalVariable(d.decodeString(), d.decodeInt());
             case NIL: return manager.getNil();
             case NTH_REF: return new NthRef(d.decodeInt());
+            case NULL_BLOCK: return NullBlock.decode(d);
             case OBJECT_CLASS: return new ObjectClass();
             case REGEXP: return decodeRegexp();
             case SCOPE_MODULE: return new ScopeModule(d.decodeInt());
