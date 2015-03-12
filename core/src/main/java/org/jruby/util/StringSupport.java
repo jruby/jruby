@@ -1279,4 +1279,49 @@ public final class StringSupport {
     public static boolean isAsciiOnly(CodeRangeable string) {
         return string.getByteList().getEncoding().isAsciiCompatible() && string.scanForCodeRange() == CR_7BIT;
     }
+
+    /**
+     * rb_str_delete_bang
+     */
+    public static CodeRangeable delete_bangCommon19(CodeRangeable rubyString, Ruby runtime, boolean[] squeeze, TrTables tables, Encoding enc) {
+        rubyString.modify();
+        rubyString.keepCodeRange();
+
+        final ByteList value = rubyString.getByteList();
+
+        int s = value.getBegin();
+        int t = s;
+        int send = s + value.getRealSize();
+        byte[]bytes = value.getUnsafeBytes();
+        boolean modify = false;
+        boolean asciiCompatible = enc.isAsciiCompatible();
+        int cr = asciiCompatible ? CR_7BIT : CR_VALID;
+        while (s < send) {
+            int c;
+            if (asciiCompatible && Encoding.isAscii(c = bytes[s] & 0xff)) {
+                if (squeeze[c]) {
+                    modify = true;
+                } else {
+                    if (t != s) bytes[t] = (byte)c;
+                    t++;
+                }
+                s++;
+            } else {
+                c = codePoint(runtime, enc, bytes, s, send);
+                int cl = codeLength(runtime, enc, c);
+                if (trFind(c, squeeze, tables)) {
+                    modify = true;
+                } else {
+                    if (t != s) enc.codeToMbc(c, bytes, t);
+                    t += cl;
+                    if (cr == CR_7BIT) cr = CR_VALID;
+                }
+                s += cl;
+            }
+        }
+        value.setRealSize(t - value.getBegin());
+        rubyString.setCodeRange(cr);
+
+        return modify ? rubyString : null;
+    }
 }

@@ -4610,7 +4610,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
         final boolean[]squeeze = new boolean[StringSupport.TRANS_SIZE + 1];
         StringSupport.TrTables tables = StringSupport.trSetupTable(otherStr.value, runtime, squeeze, null, true, enc);
 
-        if (delete_bangCommon19(this, runtime, squeeze, tables, enc) == null) {
+        if (StringSupport.delete_bangCommon19(this, runtime, squeeze, tables, enc) == null) {
             return runtime.getNil();
         }
 
@@ -4632,53 +4632,11 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
             tables = StringSupport.trSetupTable(otherStr.value, runtime, squeeze, tables, false, enc);
         }
 
-        if (delete_bangCommon19(this, runtime, squeeze, tables, enc) == null) {
+        if (StringSupport.delete_bangCommon19(this, runtime, squeeze, tables, enc) == null) {
             return runtime.getNil();
         }
 
         return this;
-    }
-
-    private static CodeRangeable delete_bangCommon19(CodeRangeable rubyString, Ruby runtime, boolean[] squeeze, StringSupport.TrTables tables, Encoding enc) {
-        rubyString.modify();
-        rubyString.keepCodeRange();
-
-        final ByteList value = rubyString.getByteList();
-
-        int s = value.getBegin();
-        int t = s;
-        int send = s + value.getRealSize();
-        byte[]bytes = value.getUnsafeBytes();
-        boolean modify = false;
-        boolean asciiCompatible = enc.isAsciiCompatible();
-        int cr = asciiCompatible ? CR_7BIT : CR_VALID;
-        while (s < send) {
-            int c;
-            if (asciiCompatible && Encoding.isAscii(c = bytes[s] & 0xff)) {
-                if (squeeze[c]) {
-                    modify = true;
-                } else {
-                    if (t != s) bytes[t] = (byte)c;
-                    t++;
-                }
-                s++;
-            } else {
-                c = codePoint(runtime, enc, bytes, s, send);
-                int cl = codeLength(runtime, enc, c);
-                if (StringSupport.trFind(c, squeeze, tables)) {
-                    modify = true;
-                } else {
-                    if (t != s) enc.codeToMbc(c, bytes, t);
-                    t += cl;
-                    if (cr == CR_7BIT) cr = CR_VALID;
-                }
-                s += cl;
-            }
-        }
-        value.setRealSize(t - value.getBegin());
-        rubyString.setCodeRange(cr);
-
-        return modify ? rubyString : null;
     }
 
     /** rb_str_squeeze / rb_str_squeeze_bang
