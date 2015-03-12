@@ -1351,6 +1351,10 @@ public class BodyTranslator extends Translator {
             rhs = new CheckStdoutVariableTypeNode(context, sourceSection, rhs);
         } else if (name.equals("$VERBOSE")) {
             rhs = new UpdateVerbosityNode(context, sourceSection, rhs);
+        } else if (name.equals("$@")) {
+            // $@ is a special-case and doesn't write directly to an ivar field in the globals object.
+            // Instead, it writes to the backtrace field of the thread-local $! value.
+            return new UpdateLastBacktraceNode(context, sourceSection, rhs);
         }
 
         if (readOnlyGlobalVariables.contains(name)) {
@@ -1417,6 +1421,10 @@ public class BodyTranslator extends Translator {
         } else if (THREAD_LOCAL_GLOBAL_VARIABLES.contains(name)) {
             final ThreadLocalObjectNode threadLocalVariablesObjectNode = new ThreadLocalObjectNode(context, sourceSection);
             return new ReadInstanceVariableNode(context, sourceSection, name, threadLocalVariablesObjectNode, true);
+        } else if (name.equals("$@")) {
+            // $@ is a special-case and doesn't read directly from an ivar field in the globals object.
+            // Instead, it reads the backtrace field of the thread-local $! value.
+            return new ReadLastBacktraceNode(context, sourceSection);
         } else {
             final ObjectLiteralNode globalVariablesObjectNode = new ObjectLiteralNode(context, sourceSection, context.getCoreLibrary().getGlobalVariablesObject());
             return new ReadInstanceVariableNode(context, sourceSection, name, globalVariablesObjectNode, true);
