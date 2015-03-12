@@ -10,6 +10,7 @@ import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.Variable;
 
 import java.util.Map;
+import org.jruby.ir.persistence.IRWriterEncoder;
 import org.jruby.ir.transformations.inlining.CloneInfo;
 
 public class CopyInstr extends ResultBaseInstr implements FixedArityInstr {
@@ -35,6 +36,12 @@ public class CopyInstr extends ResultBaseInstr implements FixedArityInstr {
     @Override
     public Instr clone(CloneInfo ii) {
         return new CopyInstr(getOperation(), ii.getRenamedVariable(result), getSource().cloneForInlining(ii));
+    }
+
+    @Override
+    public void encode(IRWriterEncoder e) {
+        super.encode(e);
+        e.encode(getSource());
     }
 
     @Override

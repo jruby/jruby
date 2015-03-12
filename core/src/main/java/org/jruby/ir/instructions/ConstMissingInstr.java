@@ -8,6 +8,7 @@ import org.jruby.ir.Operation;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.Symbol;
 import org.jruby.ir.operands.Variable;
+import org.jruby.ir.persistence.IRWriterEncoder;
 import org.jruby.ir.transformations.inlining.CloneInfo;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.CallType;
@@ -32,6 +33,13 @@ public class ConstMissingInstr extends CallInstr implements FixedArityInstr {
     @Override
     public Instr clone(CloneInfo ii) {
         return new ConstMissingInstr(ii.getRenamedVariable(result), getReceiver().cloneForInlining(ii), missingConst);
+    }
+
+    @Override
+    public void encode(IRWriterEncoder e) {
+        super.encode(e);
+        e.encode(getReceiver());
+        e.encode(getMissingConst());
     }
 
     @Override

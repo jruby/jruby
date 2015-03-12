@@ -67,6 +67,7 @@ import org.jruby.truffle.runtime.methods.Arity;
 import org.jruby.truffle.runtime.methods.SharedMethodInfo;
 import org.jruby.util.ByteList;
 import org.jruby.util.KeyValuePair;
+import org.jruby.util.StringSupport;
 import org.jruby.util.cli.Options;
 
 import java.math.BigInteger;
@@ -550,7 +551,7 @@ public class BodyTranslator extends Translator {
         final RubyNode constructException = new RubyCallNode(context, sourceSection, "new",
                 new ObjectLiteralNode(context, sourceSection, context.getCoreLibrary().getRuntimeErrorClass()),
                 null, false,
-                new StringLiteralNode(context, sourceSection, ByteList.create("FrozenError: can't modify frozen TODO")));
+                new StringLiteralNode(context, sourceSection, ByteList.create("FrozenError: can't modify frozen TODO"), StringSupport.CR_UNKNOWN));
 
         final RubyNode raise = new RubyCallNode(context, sourceSection, "raise", new SelfNode(context, sourceSection), null, false, true, false, constructException);
 
@@ -1313,6 +1314,7 @@ public class BodyTranslator extends Translator {
         s.add("$-a");
         s.add("$-l");
         s.add("$-p");
+        s.add("$!");
     }
 
     private void initGlobalVariableAliases() {
@@ -1353,6 +1355,10 @@ public class BodyTranslator extends Translator {
             rhs = new CheckStdoutVariableTypeNode(context, sourceSection, rhs);
         } else if (name.equals("$VERBOSE")) {
             rhs = new UpdateVerbosityNode(context, sourceSection, rhs);
+        } else if (name.equals("$@")) {
+            // $@ is a special-case and doesn't write directly to an ivar field in the globals object.
+            // Instead, it writes to the backtrace field of the thread-local $! value.
+            return new UpdateLastBacktraceNode(context, sourceSection, rhs);
         }
 
         if (readOnlyGlobalVariables.contains(name)) {
@@ -1382,7 +1388,7 @@ public class BodyTranslator extends Translator {
                 localVarNode = environment.findLocalVarNode(node.getName(), sourceSection);
 
                 if (localVarNode == null) {
-                    throw new RuntimeException("shoudln't be here");
+                    throw new RuntimeException("shouldn't be here");
                 }
             }
 
@@ -1419,6 +1425,10 @@ public class BodyTranslator extends Translator {
         } else if (THREAD_LOCAL_GLOBAL_VARIABLES.contains(name)) {
             final ThreadLocalObjectNode threadLocalVariablesObjectNode = new ThreadLocalObjectNode(context, sourceSection);
             return new ReadInstanceVariableNode(context, sourceSection, name, threadLocalVariablesObjectNode, true);
+        } else if (name.equals("$@")) {
+            // $@ is a special-case and doesn't read directly from an ivar field in the globals object.
+            // Instead, it reads the backtrace field of the thread-local $! value.
+            return new ReadLastBacktraceNode(context, sourceSection);
         } else {
             final ObjectLiteralNode globalVariablesObjectNode = new ObjectLiteralNode(context, sourceSection, context.getCoreLibrary().getGlobalVariablesObject());
             return new ReadInstanceVariableNode(context, sourceSection, name, globalVariablesObjectNode, true);
@@ -1493,7 +1503,7 @@ public class BodyTranslator extends Translator {
     @Override
     public RubyNode visitInstAsgnNode(org.jruby.ast.InstAsgnNode node) {
         final SourceSection sourceSection = translate(node.getPosition());
-        final String nameWithoutSigil = node.getName();
+        final String name = node.getName();
 
         RubyNode rhs;
 
@@ -1503,53 +1513,36 @@ public class BodyTranslator extends Translator {
             rhs = node.getValueNode().accept(this);
         }
 
+        // Every case will use a SelfNode, just don't it use more than once.
+        // Also note the check for frozen.
+        final RubyNode self = new RaiseIfFrozenNode(new SelfNode(context, sourceSection));
+
         if (sourceSection.getSource().getPath().equals("core:/core/rubinius/common/time.rb")) {
-            if (nameWithoutSigil.equals("@is_gmt")) {
-                return new RubyCallNode(context, sourceSection,
-                        "_set_gmt",
-                        new SelfNode(context, sourceSection),
-                        null,
-                        false,
-                        rhs);
-            } else if (nameWithoutSigil.equals("@offset")) {
-                return new RubyCallNode(context, sourceSection,
-                        "_set_offset",
-                        new SelfNode(context, sourceSection),
-                        null,
-                        false,
-                        rhs);
+            if (name.equals("@is_gmt")) {
+                return TimeNodesFactory.InternalSetGMTNodeFactory.create(context, sourceSection, self, rhs);
+            } else if (name.equals("@offset")) {
+                return TimeNodesFactory.InternalSetOffsetNodeFactory.create(context, sourceSection, self, rhs);
             }
         }
 
         if (sourceSection.getSource().getPath().equals("core:/core/rubinius/common/hash.rb")) {
-            if (nameWithoutSigil.equals("@default")) {
-                return new RubyCallNode(context, sourceSection,
-                        "_set_default_value",
-                        new SelfNode(context, sourceSection),
-                        null,
-                        false,
-                        rhs);
-            } else if (nameWithoutSigil.equals("@default_proc")) {
-                return new RubyCallNode(context, sourceSection,
-                        "_set_default_proc",
-                        new SelfNode(context, sourceSection),
-                        null,
-                        false,
-                        rhs);
+            if (name.equals("@default")) {
+                return HashNodesFactory.SetDefaultValueNodeFactory.create(context, sourceSection, self, rhs);
+            } else if (name.equals("@default_proc")) {
+                return HashNodesFactory.SetDefaultProcNodeFactory.create(context, sourceSection, self, rhs);
             }
         }
 
-        final RubyNode receiver = new SelfNode(context, sourceSection);
-        return new WriteInstanceVariableNode(context, sourceSection, nameWithoutSigil, receiver, rhs, false);
+        return new WriteInstanceVariableNode(context, sourceSection, name, self, rhs, false);
     }
 
     @Override
     public RubyNode visitInstVarNode(org.jruby.ast.InstVarNode node) {
         final SourceSection sourceSection = translate(node.getPosition());
+        final String name = node.getName();
 
-        // TODO CS 6-Feb-15 - this appears to be the name *with* sigil - need to clarify this
-
-        final String nameWithoutSigil = node.getName();
+        // About every case will use a SelfNode, just don't it use more than once.
+        final SelfNode self = new SelfNode(context, sourceSection);
 
         /*
          * Rubinius uses the instance variable @total to store the size of an array. In order to use code that
@@ -1558,115 +1551,66 @@ public class BodyTranslator extends Translator {
          */
 
         if (sourceSection.getSource().getPath().equals("core:/core/rubinius/common/array.rb")) {
-            if (nameWithoutSigil.equals("@total")) {
-                return new RubyCallNode(context, sourceSection,
-                        "size",
-                        new SelfNode(context, sourceSection),
-                        null,
-                        false);
-            } else if (nameWithoutSigil.equals("@tuple")) {
-                return new SelfNode(context, sourceSection);
-            } else if (nameWithoutSigil.equals("@start")) {
+            if (name.equals("@total")) {
+                return new RubyCallNode(context, sourceSection, "size", self, null, false);
+            } else if (name.equals("@tuple")) {
+                return self;
+            } else if (name.equals("@start")) {
                 return new FixnumLiteralNode.IntegerFixnumLiteralNode(context, sourceSection, 0);
             }
         }
 
         if (sourceSection.getSource().getPath().equals("core:/core/rubinius/common/regexp.rb")) {
-            if (nameWithoutSigil.equals("@source")) {
-                return MatchDataNodesFactory.RubiniusSourceNodeFactory.create(
-                        context, sourceSection,
-                        new SelfNode(context, sourceSection));
-            } else if (nameWithoutSigil.equals("@full")) {
-                return new RubyCallNode(context, sourceSection,
-                        "full",
-                        new SelfNode(context, sourceSection),
-                        null,
-                        false);
+            if (name.equals("@source")) {
+                return MatchDataNodesFactory.RubiniusSourceNodeFactory.create(context, sourceSection, self);
+            } else if (name.equals("@full")) {
+                // Delegate to MatchDatat#full, in shims.
+                return new RubyCallNode(context, sourceSection, "full", self, null, false);
             }
         }
 
         if (sourceSection.getSource().getPath().equals("core:/core/rubinius/bootstrap/string.rb") ||
                 sourceSection.getSource().getPath().equals("core:/core/rubinius/common/string.rb")) {
 
-            if (nameWithoutSigil.equals("@num_bytes")) {
-                return new RubyCallNode(context, sourceSection,
-                        "bytesize",
-                        new SelfNode(context, sourceSection),
-                        null,
-                        false);
-            } else if (nameWithoutSigil.equals("@data")) {
-                final RubyNode bytes = new RubyCallNode(context, sourceSection, "bytes",
-                        new SelfNode(context, sourceSection), null, false);
-
-                return new RubyCallNode(context, sourceSection, "new",
-                        new ObjectLiteralNode(context, sourceSection, context.getCoreLibrary().getStringDataClass()),
-                        null, false, bytes);
+            if (name.equals("@num_bytes")) {
+                return StringNodesFactory.ByteSizeNodeFactory.create(context, sourceSection, new RubyNode[] { self });
+            } else if (name.equals("@data")) {
+                final RubyNode bytes = StringNodesFactory.BytesNodeFactory.create(context, sourceSection, new RubyNode[] { self });
+                // Wrap in a StringData instance, see shims.
+                ObjectLiteralNode stringDataClass = new ObjectLiteralNode(context, sourceSection, context.getCoreLibrary().getStringDataClass());
+                return new RubyCallNode(context, sourceSection, "new", stringDataClass, null, false, bytes);
             }
         }
 
         if (sourceSection.getSource().getPath().equals("core:/core/rubinius/common/time.rb")) {
-            if (nameWithoutSigil.equals("@is_gmt")) {
-                return new RubyCallNode(context, sourceSection,
-                        "_gmt?",
-                        new SelfNode(context, sourceSection),
-                        null,
-                        false);
-            } else if (nameWithoutSigil.equals("@offset")) {
-                return new RubyCallNode(context, sourceSection,
-                        "_offset",
-                        new SelfNode(context, sourceSection),
-                        null,
-                        false);
+            if (name.equals("@is_gmt")) {
+                return TimeNodesFactory.InternalGMTNodeFactory.create(context, sourceSection, self);
+            } else if (name.equals("@offset")) {
+                return TimeNodesFactory.InternalOffsetNodeFactory.create(context, sourceSection, self);
             }
         }
 
         if (sourceSection.getSource().getPath().equals("core:/core/rubinius/common/hash.rb")) {
-            if (nameWithoutSigil.equals("@default")) {
-                return new RubyCallNode(context, sourceSection,
-                        "_default_value",
-                        new SelfNode(context, sourceSection),
-                        null,
-                        false);
-            } else if (nameWithoutSigil.equals("@default_proc")) {
-                return new RubyCallNode(context, sourceSection,
-                        "default_proc",
-                        new SelfNode(context, sourceSection),
-                        null,
-                        false);
-            } else if (nameWithoutSigil.equals("@size")) {
-                return new RubyCallNode(context, sourceSection,
-                        "size",
-                        new SelfNode(context, sourceSection),
-                        null,
-                        false);
+            if (name.equals("@default")) {
+                return HashNodesFactory.DefaultValueNodeFactory.create(context, sourceSection, self);
+            } else if (name.equals("@default_proc")) {
+                return HashNodesFactory.DefaultProcNodeFactory.create(context, sourceSection, new RubyNode[] { self });
+            } else if (name.equals("@size")) {
+                return HashNodesFactory.SizeNodeFactory.create(context, sourceSection, new RubyNode[] { self });
             }
         }
 
         if (sourceSection.getSource().getPath().equals("core:/core/rubinius/common/range.rb")) {
-            if (nameWithoutSigil.equals("@begin")) {
-                return new RubyCallNode(context, sourceSection,
-                        "begin",
-                        new SelfNode(context, sourceSection),
-                        null,
-                        false);
-            } else if (nameWithoutSigil.equals("@end")) {
-                return new RubyCallNode(context, sourceSection,
-                        "end",
-                        new SelfNode(context, sourceSection),
-                        null,
-                        false);
-            } else if (nameWithoutSigil.equals("@excl")) {
-                return new RubyCallNode(context, sourceSection,
-                        "exclude_end?",
-                        new SelfNode(context, sourceSection),
-                        null,
-                        false);
+            if (name.equals("@begin")) {
+                return RangeNodesFactory.BeginNodeFactory.create(context, sourceSection, new RubyNode[] { self });
+            } else if (name.equals("@end")) {
+                return RangeNodesFactory.EndNodeFactory.create(context, sourceSection, new RubyNode[] { self });
+            } else if (name.equals("@excl")) {
+                return RangeNodesFactory.ExcludeEndNodeFactory.create(context, sourceSection, new RubyNode[] { self });
             }
         }
 
-        final RubyNode receiver = new SelfNode(context, sourceSection);
-
-        return new ReadInstanceVariableNode(context, sourceSection, nameWithoutSigil, receiver, false);
+        return new ReadInstanceVariableNode(context, sourceSection, name, self, false);
     }
 
     @Override
@@ -2625,7 +2569,7 @@ public class BodyTranslator extends Translator {
 
     @Override
     public RubyNode visitStrNode(org.jruby.ast.StrNode node) {
-        return new StringLiteralNode(context, translate(node.getPosition()), node.getValue());
+        return new StringLiteralNode(context, translate(node.getPosition()), node.getValue(), node.getCodeRange());
     }
 
     @Override

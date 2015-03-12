@@ -9,9 +9,13 @@
  */
 package org.jruby.truffle.nodes.core;
 
+import com.oracle.truffle.api.dsl.NodeChild;
+import com.oracle.truffle.api.dsl.NodeChildren;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.source.SourceSection;
+
 import org.joda.time.DateTimeZone;
+import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyNilClass;
 import org.jruby.truffle.runtime.core.RubyTime;
@@ -19,8 +23,9 @@ import org.jruby.truffle.runtime.core.RubyTime;
 @CoreClass(name = "Time")
 public abstract class TimeNodes {
 
-    @CoreMethod(names = "_gmt?")
-    public abstract static class InternalGMTNode extends CoreMethodNode {
+    // Not a core method, used to simulate Rubinius @is_gmt.
+    @NodeChild(value = "self")
+    public abstract static class InternalGMTNode extends RubyNode {
 
         public InternalGMTNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -37,8 +42,9 @@ public abstract class TimeNodes {
         }
     }
 
-    @CoreMethod(names = "_set_gmt", required = 1)
-    public abstract static class InternalSetGMTNode extends CoreMethodNode {
+    // Not a core method, used to simulate Rubinius @is_gmt.
+    @NodeChildren({ @NodeChild("self"), @NodeChild("isGMT") })
+    public abstract static class InternalSetGMTNode extends RubyNode {
 
         public InternalSetGMTNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -54,8 +60,9 @@ public abstract class TimeNodes {
         }
     }
 
-    @CoreMethod(names = "_offset")
-    public abstract static class InternalOffsetNode extends CoreMethodNode {
+    // Not a core method, used to simulate Rubinius @offset.
+    @NodeChild(value = "self")
+    public abstract static class InternalOffsetNode extends RubyNode {
 
         public InternalOffsetNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -77,8 +84,9 @@ public abstract class TimeNodes {
         }
     }
 
-    @CoreMethod(names = "_set_offset", required = 1)
-    public abstract static class InternalSetOffsetNode extends CoreMethodNode {
+    // Not a core method, used to simulate Rubinius @offset.
+    @NodeChildren({ @NodeChild("self"), @NodeChild("offset") })
+    public abstract static class InternalSetOffsetNode extends RubyNode {
 
         public InternalSetOffsetNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);

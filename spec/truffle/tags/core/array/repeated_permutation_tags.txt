@@ -1,9 +1,0 @@
-fails:Array#repeated_permutation returns an Enumerator of all repeated permutations of given length when called without a block
-fails:Array#repeated_permutation yields all repeated_permutations to the block then returns self when called with block but no arguments
-fails:Array#repeated_permutation yields the empty repeated_permutation ([[]]) when the given length is 0
-fails:Array#repeated_permutation does not yield when called on an empty Array with a nonzero argument
-fails:Array#repeated_permutation handles duplicate elements correctly
-fails:Array#repeated_permutation truncates Float arguments
-fails:Array#repeated_permutation returns an Enumerator which works as expected even when the array was modified
-fails:Array#repeated_permutation allows permutations larger than the number of elements
-fails:Array#repeated_permutation generates from a defensive copy, ignoring mutations

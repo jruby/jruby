@@ -6,6 +6,7 @@ import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Operation;
 import org.jruby.ir.operands.Boolean;
 import org.jruby.ir.operands.*;
+import org.jruby.ir.persistence.IRWriterEncoder;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.ir.transformations.inlining.CloneInfo;
 import org.jruby.parser.StaticScope;
@@ -62,6 +63,13 @@ public class RuntimeHelperCall extends ResultBaseInstr {
     public Instr clone(CloneInfo ii) {
         Variable var = getResult();
         return new RuntimeHelperCall(var == null ? null : ii.getRenamedVariable(var), helperMethod, cloneOperands(ii));
+    }
+
+    @Override
+    public void encode(IRWriterEncoder e) {
+        super.encode(e);
+        e.encode(getHelperMethod().ordinal());
+        e.encode(getArgs());
     }
 
     @Override

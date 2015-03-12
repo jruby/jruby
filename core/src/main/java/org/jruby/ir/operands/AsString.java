@@ -1,6 +1,7 @@
 package org.jruby.ir.operands;
 
 import org.jruby.ir.IRVisitor;
+import org.jruby.ir.persistence.IRWriterEncoder;
 import org.jruby.ir.transformations.inlining.CloneInfo;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.DynamicScope;
@@ -47,6 +48,12 @@ public class AsString extends Operand {
     @Override
     public void visit(IRVisitor visitor) {
         visitor.AsString(this);
+    }
+
+    @Override
+    public void encode(IRWriterEncoder e) {
+        super.encode(e);
+        e.encode(getSource());
     }
 
     @Override

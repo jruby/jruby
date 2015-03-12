@@ -27,6 +27,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.*;
+import org.jruby.util.StringSupport;
 
 import static org.jruby.ir.instructions.RuntimeHelperCall.Methods.*;
 
@@ -1003,10 +1004,10 @@ public class IRBuilder {
         Node callArgsNode = callNode.getArgsNode();
         Node receiverNode = callNode.getReceiverNode();
 
-        // check for "string".freeze
+        // Frozen string optimization: check for "string".freeze
         if (receiverNode instanceof StrNode && callNode.getName().equals("freeze")) {
-            // frozen string optimization
-            return new FrozenString(((StrNode)receiverNode).getValue());
+            StrNode asString = (StrNode) receiverNode;
+            return new FrozenString(asString.getValue(), asString.getCodeRange());
         }
 
         // Though you might be tempted to move this build into the CallInstr as:
@@ -3398,7 +3399,7 @@ public class IRBuilder {
     }
 
     public Operand buildXStr(XStrNode node) {
-        return addResultInstr(new BacktickInstr(createTemporaryVariable(), new Operand[] { new StringLiteral(node.getValue())}));
+        return addResultInstr(new BacktickInstr(createTemporaryVariable(), new Operand[] { new StringLiteral(node.getValue(), node.getCodeRange())}));
     }
 
     public Operand buildYield(YieldNode node) {

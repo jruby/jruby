@@ -5,6 +5,7 @@ import org.jruby.ir.IRScope;
 import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Operation;
 import org.jruby.ir.operands.Operand;
+import org.jruby.ir.persistence.IRWriterEncoder;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.ir.transformations.inlining.CloneInfo;
 import org.jruby.parser.StaticScope;
@@ -24,6 +25,14 @@ public class AliasInstr extends Instr implements FixedArityInstr {
     public boolean computeScopeFlags(IRScope scope) {
         scope.getFlags().add(IRFlags.REQUIRES_DYNSCOPE);
         return true;
+    }
+
+    @Override
+    public void encode(IRWriterEncoder e) {
+        super.encode(e);
+
+        e.encode(getNewName());
+        e.encode(getOldName());
     }
 
     @Override

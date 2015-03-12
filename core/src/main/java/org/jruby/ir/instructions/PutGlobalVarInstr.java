@@ -6,22 +6,23 @@ import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Operation;
 import org.jruby.ir.operands.GlobalVariable;
 import org.jruby.ir.operands.Operand;
+import org.jruby.ir.persistence.IRWriterEncoder;
 import org.jruby.ir.transformations.inlining.CloneInfo;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
-public class PutGlobalVarInstr extends PutInstr implements FixedArityInstr {
+public class PutGlobalVarInstr extends Instr implements FixedArityInstr {
     public PutGlobalVarInstr(String varName, Operand value) {
-        super(Operation.PUT_GLOBAL_VAR, new GlobalVariable(varName), null, value);
+        super(Operation.PUT_GLOBAL_VAR, new Operand[] {new GlobalVariable(varName), value});
     }
 
     @Override
     public boolean computeScopeFlags(IRScope scope) {
-        String gvName = ((GlobalVariable) getTarget()).getName();
+        String name = getTarget().getName();
 
-        if (gvName.equals("$_") || gvName.equals("$~")) {
+        if (name.equals("$_") || name.equals("$~")) {
             scope.getFlags().add(IRFlags.USES_BACKREF_OR_LASTLINE);
             return true;
         }
@@ -29,14 +30,29 @@ public class PutGlobalVarInstr extends PutInstr implements FixedArityInstr {
         return false;
     }
 
+    public GlobalVariable getTarget() {
+        return (GlobalVariable) operands[0];
+    }
+
+    public Operand getValue() {
+        return operands[1];
+    }
+
     @Override
     public Instr clone(CloneInfo ii) {
-        return new PutGlobalVarInstr(((GlobalVariable) getTarget()).getName(), getValue().cloneForInlining(ii));
+        return new PutGlobalVarInstr(getTarget().getName(), getValue().cloneForInlining(ii));
+    }
+
+    @Override
+    public void encode(IRWriterEncoder e) {
+        super.encode(e);
+        e.encode(getTarget());
+        e.encode(getValue());
     }
 
     @Override
     public Object interpret(ThreadContext context, StaticScope currScope, DynamicScope currDynScope, IRubyObject self, Object[] temp) {
-        GlobalVariable target = (GlobalVariable)getTarget();
+        GlobalVariable target = getTarget();
         IRubyObject    value  = (IRubyObject) getValue().retrieve(context, self, currScope, currDynScope, temp);
         context.runtime.getGlobalVariables().set(target.getName(), value);
         return null;

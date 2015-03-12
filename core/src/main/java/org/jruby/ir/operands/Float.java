@@ -1,6 +1,7 @@
 package org.jruby.ir.operands;
 
 import org.jruby.ir.IRVisitor;
+import org.jruby.ir.persistence.IRWriterEncoder;
 import org.jruby.runtime.ThreadContext;
 
 public class Float extends ImmutableLiteral {
@@ -25,6 +26,12 @@ public class Float extends ImmutableLiteral {
     @Override
     public void visit(IRVisitor visitor) {
         visitor.Float(this);
+    }
+
+    @Override
+    public void encode(IRWriterEncoder e) {
+        super.encode(e);
+        e.encode(value);
     }
 
     public double getValue() {

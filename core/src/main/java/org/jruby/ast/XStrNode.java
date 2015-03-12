@@ -42,11 +42,13 @@ import org.jruby.util.ByteList;
  */
 public class XStrNode extends Node implements ILiteralNode {
     private final ByteList value;
+    private int coderange;
 
-    public XStrNode(ISourcePosition position, ByteList value) {
+    public XStrNode(ISourcePosition position, ByteList value, int coderange) {
         // FIXME: Shouldn't this have codeRange like StrNode?
         super(position, false);
         this.value = (value == null ? ByteList.create("") : value);
+        this.coderange = coderange;
     }
 
     public NodeType getNodeType() {
@@ -67,6 +69,10 @@ public class XStrNode extends Node implements ILiteralNode {
      */
     public ByteList getValue() {
         return value;
+    }
+
+    public int getCodeRange() {
+        return coderange;
     }
     
     public List<Node> childNodes() {

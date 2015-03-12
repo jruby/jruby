@@ -1,5 +1,3 @@
-fails:Kernel.__method__ returns the caller from define_method too
-fails:Kernel.__method__ returns the caller from block inside define_method too
 fails:Kernel.__method__ returns method name even from eval
 fails:Kernel.__method__ returns nil from inside a class body
 fails:Kernel.__method__ returns nil when not called from a method

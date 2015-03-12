@@ -267,7 +267,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
     }
 
     final boolean singleByteOptimizable(Encoding enc) {
-        return getCodeRange() == CR_7BIT || enc.maxLength() == 1;
+        return StringSupport.isSingleByteOptimizable(this, enc);
     }
 
     // rb_enc_compatible

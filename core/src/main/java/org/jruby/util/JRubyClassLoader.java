@@ -71,7 +71,7 @@ public class JRubyClassLoader extends ClassDefininngJRubyClassLoader {
             OutputStream out = null;
             try
             {
-                File f = File.createTempFile( "jruby", ".jar");
+                File f = File.createTempFile( "jruby", new File(url.getFile()).getName());
                 f.deleteOnExit();
                 out = new BufferedOutputStream( new FileOutputStream( f ) );
                 in = new BufferedInputStream( url.openStream() );

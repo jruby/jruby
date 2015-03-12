@@ -7,6 +7,7 @@ import org.jruby.ir.Operation;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.StringLiteral;
 import org.jruby.ir.operands.Variable;
+import org.jruby.ir.persistence.IRWriterEncoder;
 import org.jruby.ir.transformations.inlining.CloneInfo;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.DynamicScope;
@@ -42,6 +43,13 @@ public class BuildCompoundStringInstr extends ResultBaseInstr {
 
     public boolean isSameEncodingAndCodeRange(RubyString str, StringLiteral newStr) {
         return newStr.bytelist.getEncoding() == encoding && newStr.getCodeRange() == str.getCodeRange();
+    }
+
+    @Override
+    public void encode(IRWriterEncoder e) {
+        super.encode(e);
+        e.encode(encoding == null ? "" : encoding.toString());
+        e.encode(getPieces());
     }
 
     @Override

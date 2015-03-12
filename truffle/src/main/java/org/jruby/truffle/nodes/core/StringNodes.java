@@ -44,6 +44,7 @@ import org.jruby.truffle.runtime.core.*;
 import org.jruby.truffle.runtime.rubinius.RubiniusByteArray;
 import org.jruby.truffle.runtime.util.ArrayUtils;
 import org.jruby.util.ByteList;
+import org.jruby.util.CodeRangeSupport;
 import org.jruby.util.Pack;
 import org.jruby.util.StringSupport;
 import org.jruby.util.io.EncodingUtils;
@@ -848,20 +849,74 @@ public abstract class StringNodes {
             return toEnumNode.call(frame, string, "to_enum", null, getContext().newSymbol("each_char"));
         }
 
-        @Specialization
+        @Specialization(guards = "isValidOr7BitEncoding(string)")
         public RubyString eachChar(VirtualFrame frame, RubyString string, RubyProc block) {
-            notDesignedForCompilation();
+            ByteList strByteList = string.getByteList();
+            byte[] ptrBytes = strByteList.unsafeBytes();
+            int ptr = strByteList.begin();
+            int len = strByteList.getRealSize();
+            Encoding enc = string.getBytes().getEncoding();
 
-            // TODO (nirvdrum 04-Feb-15): This needs to support Ruby' encoding and code range semantics.  For now, this hack will suffice for very simple Strings.
-            final String javaString = string.toString();
+            final int stringLength = string.getBytes().length();
+            int n;
 
-            for (int i = 0; i < javaString.length(); i++) {
-                yield(frame, block, getContext().makeString(javaString.charAt(i)));
+            for (int i = 0; i < stringLength; i += n) {
+                n = StringSupport.encFastMBCLen(ptrBytes, ptr + i, ptr + len, enc);
+
+                yield(frame, block, substr(string, i, n));
             }
 
             return string;
         }
 
+        @Specialization(guards = "!isValidOr7BitEncoding(string)")
+        public RubyString eachCharMultiByteEncoding(VirtualFrame frame, RubyString string, RubyProc block) {
+            ByteList strByteList = string.getByteList();
+            byte[] ptrBytes = strByteList.unsafeBytes();
+            int ptr = strByteList.begin();
+            int len = strByteList.getRealSize();
+            Encoding enc = string.getBytes().getEncoding();
+
+            final int stringLength = string.getBytes().length();
+            int n;
+
+            for (int i = 0; i < stringLength; i += n) {
+                n = multiByteStringLength(enc, ptrBytes, ptr + i, ptr + len);
+
+                yield(frame, block, substr(string, i, n));
+            }
+
+            return string;
+        }
+
+        public static boolean isValidOr7BitEncoding(RubyString string) {
+            return string.isCodeRangeValid() || CodeRangeSupport.isCodeRangeAsciiOnly(string);
+        }
+
+        @TruffleBoundary
+        private int multiByteStringLength(Encoding enc, byte[] bytes, int p, int end) {
+            return StringSupport.length(enc, bytes, p, end);
+        }
+
+        // TODO (nirvdrum 10-Mar-15): This was extracted from JRuby, but likely will need to become a Rubinius primitive.
+        private Object substr(RubyString string, int beg, int len) {
+            final ByteList bytes = string.getBytes();
+
+            int length = bytes.length();
+            if (len < 0 || beg > length) return getContext().getCoreLibrary().getNilObject();
+
+            if (beg < 0) {
+                beg += length;
+                if (beg < 0) getContext().getCoreLibrary().getNilObject();
+            }
+
+            int end = Math.min(length, beg + len);
+
+            final ByteList substringBytes = new ByteList(bytes, beg, end - beg);
+            substringBytes.setEncoding(bytes.getEncoding());
+
+            return getContext().makeString(string.getLogicalClass(), substringBytes);
+        }
     }
 
     @CoreMethod(names = "empty?")
@@ -1094,6 +1149,8 @@ public abstract class StringNodes {
             notDesignedForCompilation();
 
             self.set(from.getBytes());
+            self.setCodeRange(from.getCodeRange());
+
             return self;
         }
     }
@@ -1542,58 +1599,6 @@ public abstract class StringNodes {
         @Specialization
         public int size(RubyString string) {
             return StringSupport.strLengthFromRubyString(string);
-        }
-    }
-
-    @CoreMethod(names = "split", optional = 2, lowerFixnumParameters = 2, taintFromSelf = true)
-    public abstract static class SplitNode extends CoreMethodNode {
-
-        public SplitNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
-        public SplitNode(SplitNode prev) {
-            super(prev);
-        }
-
-        @Specialization
-        public RubyArray split(RubyString string, RubyString sep, @SuppressWarnings("unused") UndefinedPlaceholder limit) {
-            notDesignedForCompilation();
-
-            return splitHelper(string, sep.toString());
-        }
-
-        @Specialization
-        public RubyArray split(RubyString string, RubyRegexp sep, @SuppressWarnings("unused") UndefinedPlaceholder limit) {
-            notDesignedForCompilation();
-
-            return RubyArray.fromObjects(getContext().getCoreLibrary().getArrayClass(), (Object[]) sep.split(string, false, 0));
-        }
-
-        @Specialization
-        public RubyArray split(RubyString string, RubyRegexp sep, int limit) {
-            notDesignedForCompilation();
-
-            return RubyArray.fromObjects(getContext().getCoreLibrary().getArrayClass(), (Object[]) sep.split(string, limit > 0, limit));
-        }
-
-        @Specialization
-        public RubyArray split(RubyString string, @SuppressWarnings("unused") UndefinedPlaceholder sep, @SuppressWarnings("unused") UndefinedPlaceholder limit) {
-            notDesignedForCompilation();
-
-            return splitHelper(string, " ");
-        }
-
-        private RubyArray splitHelper(RubyString string, String sep) {
-            final String[] components = string.toString().split(Pattern.quote(sep));
-
-            final Object[] objects = new Object[components.length];
-
-            for (int n = 0; n < objects.length; n++) {
-                objects[n] = getContext().makeString(string.getLogicalClass(), components[n]);
-            }
-
-            return RubyArray.fromObjects(getContext().getCoreLibrary().getArrayClass(), objects);
         }
     }
 

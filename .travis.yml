@@ -67,12 +67,6 @@ matrix:
     - env: COMMAND=tool/truffle-findbugs.sh
       jdk: oraclejdk8
   fast_finish: true
-  allow_failures:
-    - env: PHASE='-Pcomplete'
-    - env: PHASE='-Pmain'
-    - env: PHASE='-Prake -Dtask=spec:jrubyc'
-    - env: PHASE='-Prake -Dtask=spec:profiler'
-    - env: PHASE='-Prake -Dtask=test:mri:jit'
 
 branches:
   only:

@@ -6,6 +6,7 @@
 
 package org.jruby.ir.persistence;
 
+import org.jcodings.Encoding;
 import org.jruby.ir.IRScope;
 import org.jruby.ir.IRScopeType;
 import org.jruby.ir.Operation;
@@ -31,12 +32,10 @@ import org.jruby.util.ByteList;
 public class IRWriterFile implements IRWriterEncoder, IRPersistenceValues {
     private static final int VERSION = 0;
 
-    private final Map<IRScope, Integer> scopeInstructionOffsets = new HashMap<IRScope, Integer>();
+    private final Map<IRScope, Integer> scopeInstructionOffsets = new HashMap<>();
     // FIXME: Allocate direct and use one per thread?
     private final ByteBuffer buf = ByteBuffer.allocate(TWO_MEGS);
     private final File file;
-    private final OperandEncoderMap operandEncoder;
-    private final InstrEncoderMap instrEncoder;
     private final IRWriterAnalzer analyzer;
 
     int headersOffset = -1;
@@ -44,8 +43,6 @@ public class IRWriterFile implements IRWriterEncoder, IRPersistenceValues {
 
     public IRWriterFile(File file) throws FileNotFoundException {
         this.file = file;
-        this.operandEncoder = new OperandEncoderMap(this);
-        this.instrEncoder = new InstrEncoderMap(this);
         this.analyzer = new IRWriterAnalzer();
     }
 
@@ -119,12 +116,19 @@ public class IRWriterFile implements IRWriterEncoder, IRPersistenceValues {
 
     @Override
     public void encode(ByteList value) {
-        byte[] bytes = value.bytes();
+        encode(value.bytes());
+        encode(value.getEncoding());
+    }
 
+    @Override
+    public void encode(byte[] bytes) {
         encode(bytes.length);
         buf.put(bytes);
-        // FIXME: Consider writing this out differently?
-        encode(value.getEncoding().toString());
+    }
+
+    @Override
+    public void encode(Encoding encoding) {
+        encode(encoding.getName());
     }
 
     @Override
@@ -151,17 +155,25 @@ public class IRWriterFile implements IRWriterEncoder, IRPersistenceValues {
 
     @Override
     public void encode(Operand operand) {
-        operandEncoder.encode(operand);
+        operand.encode(this);
+    }
+
+    @Override
+    public void encode(Operand[] operands) {
+        encode(operands.length);
+        for(Operand arg: operands) {
+            encode(arg);
+        }
     }
 
     @Override
     public void encode(Instr instr) {
-        instrEncoder.encode(instr);
+        instr.encode(this);
     }
 
     @Override
     public void encode(IRScope value) {
-        encode((int) analyzer.getScopeID(value));
+        encode(analyzer.getScopeID(value));
     }
 
     @Override

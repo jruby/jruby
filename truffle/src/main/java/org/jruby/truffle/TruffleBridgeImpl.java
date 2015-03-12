@@ -34,6 +34,7 @@ import org.jruby.truffle.translator.TranslatorDriver;
 import org.jruby.util.cli.Options;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -146,6 +147,15 @@ public class TruffleBridgeImpl implements TruffleBridge {
 
         // Shims
         loadPath.slowPush(truffleContext.makeString(new File(home, "lib/ruby/truffle/shims").toString()));
+
+        // Load libraries required from the command line (-r LIBRARY)
+        for (String requiredLibrary : truffleContext.getRuntime().getInstanceConfig().getRequiredLibraries()) {
+            try {
+                truffleContext.getFeatureManager().require(requiredLibrary, null);
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        }
 
         // Hook
 

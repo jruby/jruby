@@ -7,23 +7,28 @@ import org.jruby.ir.Operation;
 import org.jruby.ir.operands.GlobalVariable;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.Variable;
+import org.jruby.ir.persistence.IRWriterEncoder;
 import org.jruby.ir.transformations.inlining.CloneInfo;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
-public class GetGlobalVariableInstr extends GetInstr  implements FixedArityInstr {
+public class GetGlobalVariableInstr extends ResultBaseInstr  implements FixedArityInstr {
     public GetGlobalVariableInstr(Variable dest, String gvarName) {
         this(dest, new GlobalVariable(gvarName));
     }
 
     public GetGlobalVariableInstr(Variable dest, GlobalVariable gvar) {
-        super(Operation.GET_GLOBAL_VAR, dest, gvar, null);
+        super(Operation.GET_GLOBAL_VAR, dest, new Operand[] { gvar });
+    }
+
+    public GlobalVariable getGVar() {
+        return (GlobalVariable) operands[0];
     }
 
     public boolean computeScopeFlags(IRScope scope) {
-        String name = ((GlobalVariable) getSource()).getName();
+        String name = getGVar().getName();
 
         if (name.equals("$_") || name.equals("$~") || name.equals("$`") || name.equals("$'") ||
             name.equals("$+") || name.equals("$LAST_READ_LINE") || name.equals("$LAST_MATCH_INFO") ||
@@ -37,12 +42,18 @@ public class GetGlobalVariableInstr extends GetInstr  implements FixedArityInstr
 
     @Override
     public Instr clone(CloneInfo ii) {
-        return new GetGlobalVariableInstr(ii.getRenamedVariable(getResult()), ((GlobalVariable)getSource()).getName());
+        return new GetGlobalVariableInstr(ii.getRenamedVariable(getResult()), getGVar().getName());
+    }
+
+    @Override
+    public void encode(IRWriterEncoder e) {
+        super.encode(e);
+        e.encode(getGVar());
     }
 
     @Override
     public Object interpret(ThreadContext context, StaticScope currScope, DynamicScope currDynScope, IRubyObject self, Object[] temp) {
-        return getSource().retrieve(context, self, currScope, currDynScope, temp);
+        return getGVar().retrieve(context, self, currScope, currDynScope, temp);
     }
 
     @Override

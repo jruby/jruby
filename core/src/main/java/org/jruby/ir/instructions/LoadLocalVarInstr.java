@@ -6,6 +6,7 @@ import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Interp;
 import org.jruby.ir.Operation;
 import org.jruby.ir.operands.*;
+import org.jruby.ir.persistence.IRWriterEncoder;
 import org.jruby.ir.transformations.inlining.CloneInfo;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.DynamicScope;
@@ -57,6 +58,13 @@ public class LoadLocalVarInstr extends ResultBaseInstr implements FixedArityInst
         // SSS FIXME: Do we need to rename lvar really?  It is just a name-proxy!
         return new LoadLocalVarInstr(scope, (TemporaryLocalVariable)ii.getRenamedVariable(result),
                 (LocalVariable)ii.getRenamedVariable(getLocalVar()));
+    }
+
+    @Override
+    public void encode(IRWriterEncoder e) {
+        super.encode(e);
+        e.encode(getScope());
+        e.encode(getLocalVar());
     }
 
     @Interp

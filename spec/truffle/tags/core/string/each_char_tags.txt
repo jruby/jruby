@@ -1,6 +1,0 @@
-fails:String#each_char is unicode aware
-fails:String#each_char returns characters in the same encoding as self
-fails:String#each_char works with multibyte characters
-fails:String#each_char works if the String's contents is invalid for its encoding
-fails:String#each_char returns a different character if the String is transcoded
-fails:String#each_char uses the String's encoding to determine what characters it contains

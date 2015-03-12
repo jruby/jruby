@@ -1,5 +1,7 @@
 package org.jruby.ir.operands;
 
+import org.jruby.ir.persistence.IRReaderDecoder;
+import org.jruby.ir.persistence.IRWriterEncoder;
 import org.jruby.ir.transformations.inlining.SimpleCloneInfo;
 
 public class TemporaryClosureVariable extends TemporaryLocalVariable {
@@ -23,6 +25,16 @@ public class TemporaryClosureVariable extends TemporaryLocalVariable {
     @Override
     public Variable clone(SimpleCloneInfo ii) {
         return this;
+    }
+
+    @Override
+    public void encode(IRWriterEncoder e) {
+        super.encode(e);
+        e.encode(closureId);
+    }
+
+    public static TemporaryClosureVariable decode(IRReaderDecoder d) {
+        return new TemporaryClosureVariable(d.decodeInt(), d.decodeInt());
     }
 
     @Override

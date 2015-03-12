@@ -114,7 +114,8 @@ public abstract class KernelNodes {
                 throw new RuntimeException(e);
             }
 
-            return context.makeString(resultBuilder.toString());
+            // TODO (nirvdrum 10-Mar-15) This should be using the default external encoding, rather than hard-coded to UTF-8.
+            return context.makeString(resultBuilder.toString(), RubyEncoding.getEncoding("UTF-8").getEncoding());
         }
 
     }
@@ -354,6 +355,25 @@ public abstract class KernelNodes {
         @Specialization
         public boolean blockGiven() {
             return RubyArguments.getBlock(Truffle.getRuntime().getCallerFrame().getFrame(FrameInstance.FrameAccess.READ_ONLY, false).getArguments()) != null;
+        }
+    }
+
+    @CoreMethod(names = "__callee__", needsSelf = false)
+    public abstract static class CalleeNameNode extends CoreMethodNode {
+
+        public CalleeNameNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public CalleeNameNode(CalleeNameNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public RubySymbol calleeName(VirtualFrame frame) {
+            notDesignedForCompilation();
+            // the "called name" of a method.
+            return getContext().getSymbolTable().getSymbol(RubyCallStack.getCallingMethod(frame).getName());
         }
     }
 
@@ -1009,7 +1029,7 @@ public abstract class KernelNodes {
 
     }
 
-    @CoreMethod(names = {"instance_variable_set", "__instance_variable_set__"}, required = 2)
+    @CoreMethod(names = { "instance_variable_set", "__instance_variable_set__" }, raiseIfFrozenSelf = true, required = 2)
     public abstract static class InstanceVariableSetNode extends CoreMethodNode {
 
         public InstanceVariableSetNode(RubyContext context, SourceSection sourceSection) {
@@ -1290,6 +1310,7 @@ public abstract class KernelNodes {
         @Specialization
         public RubySymbol methodName(VirtualFrame frame) {
             notDesignedForCompilation();
+            // the "original/definition name" of the method.
             return getContext().getSymbolTable().getSymbol(RubyCallStack.getCallingMethod(frame).getSharedMethodInfo().getName());
         }
 

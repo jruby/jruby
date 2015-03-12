@@ -34,7 +34,7 @@ public class SafepointManager {
 
     private final Set<Thread> runningThreads = Collections.newSetFromMap(new ConcurrentHashMap<Thread, Boolean>());
 
-    @CompilerDirectives.CompilationFinal private Assumption assumption = Truffle.getRuntime().createAssumption();
+    @CompilerDirectives.CompilationFinal private Assumption assumption = Truffle.getRuntime().createAssumption("SafepointManager");
     private final ReentrantLock lock = new ReentrantLock();
 
     private final Phaser phaser = new Phaser();
@@ -111,7 +111,7 @@ public class SafepointManager {
         phaser.arriveAndAwaitAdvance();
 
         if (isDrivingThread) {
-            assumption = Truffle.getRuntime().createAssumption();
+            assumption = Truffle.getRuntime().createAssumption("SafepointManager");
         }
 
         // wait the assumption to be renewed

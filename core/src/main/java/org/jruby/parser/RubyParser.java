@@ -128,7 +128,8 @@ import org.jruby.lexer.yacc.SyntaxException.PID;
 import org.jruby.util.ByteList;
 import org.jruby.util.KeyValuePair;
 import org.jruby.util.cli.Options;
-
+import org.jruby.util.StringSupport;
+ 
 public class RubyParser {
     protected ParserSupport support;
     protected RubyLexer lexer;
@@ -148,7 +149,7 @@ public class RubyParser {
         support.setWarnings(warnings);
         lexer.setWarnings(warnings);
     }
-					// line 152 "-"
+					// line 153 "-"
   // %token constants
   public static final int kCLASS = 257;
   public static final int kMODULE = 258;
@@ -4277,9 +4278,9 @@ states[457] = new ParserState() {
                     ISourcePosition position = support.getPosition(((Node)yyVals[-1+yyTop]));
 
                     if (((Node)yyVals[-1+yyTop]) == null) {
-                        yyVal = new XStrNode(position, null);
+                        yyVal = new XStrNode(position, null, StringSupport.CR_7BIT);
                     } else if (((Node)yyVals[-1+yyTop]) instanceof StrNode) {
-                        yyVal = new XStrNode(position, (ByteList) ((StrNode)yyVals[-1+yyTop]).getValue().clone());
+                        yyVal = new XStrNode(position, (ByteList) ((StrNode)yyVals[-1+yyTop]).getValue().clone(), ((StrNode)yyVals[-1+yyTop]).getCodeRange());
                     } else if (((Node)yyVals[-1+yyTop]) instanceof DStrNode) {
                         yyVal = new DXStrNode(position, ((DStrNode)yyVals[-1+yyTop]));
 
@@ -5245,7 +5246,7 @@ states[634] = new ParserState() {
   }
 };
 }
-					// line 2510 "RubyParser.y"
+					// line 2511 "RubyParser.y"
 
     /** The parse method use an lexer stream and parse it to an AST node 
      * structure
@@ -5264,4 +5265,4 @@ states[634] = new ParserState() {
         return support.getResult();
     }
 }
-					// line 9793 "-"
+					// line 9794 "-"

@@ -5,6 +5,7 @@ import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Operation;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.Variable;
+import org.jruby.ir.persistence.IRWriterEncoder;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.ir.transformations.inlining.CloneInfo;
 import org.jruby.parser.StaticScope;
@@ -40,6 +41,13 @@ public class DefineModuleInstr extends ResultBaseInstr implements FixedArityInst
     @Override
     public Instr clone(CloneInfo ii) {
         return new DefineModuleInstr(ii.getRenamedVariable(result), this.newIRModuleBody, getContainer().cloneForInlining(ii));
+    }
+
+    @Override
+    public void encode(IRWriterEncoder e) {
+        super.encode(e);
+        e.encode(getNewIRModuleBody());
+        e.encode(getContainer());
     }
 
     @Override

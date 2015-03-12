@@ -20,7 +20,7 @@ public class OnceNode extends RubyNode {
     @Child private RubyNode child;
 
     // TODO(CS): need to always copy this with cloned nodes
-    private final AssumedValue<Object> valueMemo = new AssumedValue<>(null);
+    private final AssumedValue<Object> valueMemo = new AssumedValue<>("OnceNode", null);
 
     public OnceNode(RubyContext context, SourceSection sourceSection, RubyNode child) {
         super(context, sourceSection);

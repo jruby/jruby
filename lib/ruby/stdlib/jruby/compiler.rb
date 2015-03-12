@@ -7,8 +7,7 @@ require 'jruby/compiler/java_class'
 module JRuby::Compiler
   BAIS = java.io.ByteArrayInputStream
   Mangler = org.jruby.util.JavaNameMangler
-  BytecodeCompiler = org.jruby.compiler.impl.StandardASMCompiler
-  ASTCompiler = org.jruby.compiler.ASTCompiler
+  JVMVisitor = org.jruby.ir.targets.JVMVisitor
   JavaFile = java.io.File
   MethodSignatureNode = org.jruby.ast.java_signature.MethodSignatureNode
   DEFAULT_PREFIX = ""
@@ -129,12 +128,11 @@ module JRuby::Compiler
           pathname = Mangler.mangle_filename_for_classpath(filename, options[:basedir], options[:prefix], true, false)
         end
 
-        inspector = org.jruby.compiler.ASTInspector.new
-
         source = file.read
-        node = runtime.parse_file(BAIS.new(source.to_java_bytes), filename, nil)
 
         if options[:java] || options[:javac]
+          node = runtime.parse_file(BAIS.new(source.to_java_bytes), filename, nil)
+
           ruby_script = JavaGenerator.generate_java(node, filename)
           ruby_script.classes.each do |cls|
             java_dir = File.join(options[:target], cls.package.gsub('.', '/'))
@@ -153,17 +151,13 @@ module JRuby::Compiler
         else
           puts "Compiling #{filename}" if options[:verbose]
 
-          inspector.inspect(node)
+          scope = JRuby.compile_ir(source, filename)
 
-          asmCompiler = BytecodeCompiler.new(pathname.gsub(".", "/"), filename)
-          if options[:jdk5]
-            asmCompiler.java_version= 49
-          end
+          visitor = JVMVisitor.new
 
-          compiler = ASTCompiler.new
-          compiler.compile_root(node, asmCompiler, inspector)
+          bytes = visitor.compileToBytecode(scope)
 
-          class_bytes = String.from_java_bytes(asmCompiler.class_byte_array)
+          class_bytes = String.from_java_bytes(bytes)
           
           # prepare target
           class_filename = filename.sub(/(\.rb)?$/, '.class')

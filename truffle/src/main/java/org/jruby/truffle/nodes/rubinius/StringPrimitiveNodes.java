@@ -60,12 +60,98 @@ import org.jruby.util.ByteList;
 import org.jruby.util.ConvertBytes;
 import org.jruby.util.StringSupport;
 
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 
 /**
  * Rubinius primitives associated with the Ruby {@code String} class.
  */
 public abstract class StringPrimitiveNodes {
+
+    @RubiniusPrimitive(name = "string_awk_split")
+    public static abstract class StringAwkSplitPrimitiveNode extends RubiniusPrimitiveNode {
+
+        @Child private TaintResultNode taintResultNode;
+
+        public StringAwkSplitPrimitiveNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+            taintResultNode = new TaintResultNode(context, sourceSection, true, new int[]{});
+        }
+
+        public StringAwkSplitPrimitiveNode(StringAwkSplitPrimitiveNode prev) {
+            super(prev);
+            taintResultNode = prev.taintResultNode;
+        }
+
+        @Specialization
+        public RubyArray stringAwkSplit(RubyString string, int lim) {
+            notDesignedForCompilation();
+
+            final List<RubyString> ret = new ArrayList<>();
+            final ByteList value = string.getBytes();
+            final boolean limit = lim > 0;
+            int i = lim > 0 ? 1 : 0;
+
+            byte[]bytes = value.getUnsafeBytes();
+            int p = value.getBegin();
+            int ptr = p;
+            int len = value.getRealSize();
+            int end = p + len;
+            Encoding enc = value.getEncoding();
+            boolean skip = true;
+
+            int e = 0, b = 0;
+            final boolean singlebyte = StringSupport.isSingleByteOptimizable(string, enc);
+            while (p < end) {
+                final int c;
+                if (singlebyte) {
+                    c = bytes[p++] & 0xff;
+                } else {
+                    try {
+                        c = StringSupport.codePoint(getContext().getRuntime(), enc, bytes, p, end);
+                    } catch (org.jruby.exceptions.RaiseException ex) {
+                        throw new RaiseException(getContext().toTruffle(ex.getException(), this));
+                    }
+
+                    p += StringSupport.length(enc, bytes, p, end);
+                }
+
+                if (skip) {
+                    if (enc.isSpace(c)) {
+                        b = p - ptr;
+                    } else {
+                        e = p - ptr;
+                        skip = false;
+                        if (limit && lim <= i) break;
+                    }
+                } else {
+                    if (enc.isSpace(c)) {
+                        ret.add(makeString(string, b, e - b));
+                        skip = true;
+                        b = p - ptr;
+                        if (limit) i++;
+                    } else {
+                        e = p - ptr;
+                    }
+                }
+            }
+
+            if (len > 0 && (limit || len > b || lim < 0)) ret.add(makeString(string, b, len - b));
+
+            return RubyArray.fromObjects(getContext().getCoreLibrary().getArrayClass(), ret.toArray());
+        }
+
+        private RubyString makeString(RubyString source, int index, int length) {
+            final ByteList bytes = new ByteList(source.getBytes(), index, length);
+            bytes.setEncoding(source.getBytes().getEncoding());
+
+            final RubyString ret = getContext().makeString(source.getLogicalClass(), bytes);
+            taintResultNode.maybeTaint(source, ret);
+
+            return ret;
+        }
+    }
 
     @RubiniusPrimitive(name = "string_byte_substring")
     public static abstract class StringByteSubstringPrimitiveNode extends RubiniusPrimitiveNode {
@@ -363,11 +449,22 @@ public abstract class StringPrimitiveNodes {
             super(prev);
         }
 
-        @Specialization
-        public Object stringCharacterByteIndex(RubyString string, Object index, Object start) {
-            throw new UnsupportedOperationException("string_character_byte_index");
+        @Specialization(guards = "isSingleByteOptimizable(string)")
+        public int stringCharacterByteIndex(RubyString string, int index, int start) {
+            return start + index;
         }
 
+        @Specialization(guards = "!isSingleByteOptimizable(string)")
+        public int stringCharacterByteIndexMultiByteEncoding(RubyString string, int index, int start) {
+            final ByteList bytes = string.getBytes();
+
+            return StringSupport.nth(bytes.getEncoding(), bytes.getUnsafeBytes(), bytes.getBegin(),
+                    bytes.getBegin() + bytes.getRealSize(), start + index);
+        }
+
+        public static boolean isSingleByteOptimizable(RubyString string) {
+            return StringSupport.isSingleByteOptimizable(string, string.getBytes().getEncoding());
+        }
     }
 
     @RubiniusPrimitive(name = "string_byte_character_index", needsSelf = false)

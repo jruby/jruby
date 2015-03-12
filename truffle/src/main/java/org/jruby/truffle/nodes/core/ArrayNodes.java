@@ -23,12 +23,15 @@ import com.oracle.truffle.api.nodes.UnexpectedResultException;
 import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.utilities.BranchProfile;
 
+import org.jruby.RubyObject;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.truffle.nodes.CoreSourceSection;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.RubyRootNode;
 import org.jruby.truffle.nodes.array.*;
+import org.jruby.truffle.nodes.coerce.ToIntNode;
+import org.jruby.truffle.nodes.coerce.ToIntNodeFactory;
 import org.jruby.truffle.nodes.dispatch.*;
 import org.jruby.truffle.nodes.methods.arguments.MissingArgumentBehaviour;
 import org.jruby.truffle.nodes.methods.arguments.ReadPreArgumentNode;
@@ -448,8 +451,12 @@ public abstract class ArrayNodes {
 
     }
 
-    @CoreMethod(names = "at", required = 1, lowerFixnumParameters = 0)
-    public abstract static class AtNode extends ArrayCoreMethodNode {
+    @CoreMethod(names = "at", required = 1)
+    @NodeChildren({
+        @NodeChild(value = "array"),
+        @NodeChild(value = "index")
+    })
+    public abstract static class AtNode extends RubyNode {
 
         @Child private ArrayReadDenormalizedNode readNode;
 
@@ -460,6 +467,10 @@ public abstract class ArrayNodes {
         public AtNode(AtNode prev) {
             super(prev);
             readNode = prev.readNode;
+        }
+
+        @CreateCast("index") public RubyNode coerceOtherToInt(RubyNode index) {
+            return ToIntNodeFactory.create(getContext(), getSourceSection(), index);
         }
 
         @Specialization
@@ -474,7 +485,7 @@ public abstract class ArrayNodes {
 
     }
 
-    @CoreMethod(names = "clear")
+    @CoreMethod(names = "clear", raiseIfFrozenSelf = true)
     public abstract static class ClearNode extends ArrayCoreMethodNode {
 
         public ClearNode(RubyContext context, SourceSection sourceSection) {

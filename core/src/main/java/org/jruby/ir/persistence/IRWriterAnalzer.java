@@ -6,6 +6,7 @@
 
 package org.jruby.ir.persistence;
 
+import org.jcodings.Encoding;
 import org.jruby.ir.IRScope;
 import org.jruby.ir.IRScopeType;
 import org.jruby.ir.Operation;
@@ -41,6 +42,16 @@ public class IRWriterAnalzer implements IRWriterEncoder {
     }
 
     @Override
+    public void encode(byte[] value) {
+
+    }
+
+    @Override
+    public void encode(Encoding encoding) {
+
+    }
+
+    @Override
     public void encode(String value) {
     }
 
@@ -70,6 +81,10 @@ public class IRWriterAnalzer implements IRWriterEncoder {
 
     @Override
     public void encode(Operand operand) {
+    }
+
+    @Override
+    public void encode(Operand[] operand) {
     }
 
     @Override

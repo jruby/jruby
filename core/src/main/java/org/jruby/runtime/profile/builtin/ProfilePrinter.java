@@ -98,7 +98,7 @@ public abstract class ProfilePrinter {
     public void printFooter(PrintStream out) { }
     
     public void printProfile(PrintStream out) {
-        printProfile(out, false);
+        printProfile(out, true);
     }
 
     public abstract void printProfile(PrintStream out, boolean first) ;

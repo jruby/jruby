@@ -1,6 +1,7 @@
 package org.jruby.ir.operands;
 
 import org.jruby.ir.IRVisitor;
+import org.jruby.ir.persistence.IRWriterEncoder;
 import org.jruby.runtime.ThreadContext;
 
 import java.math.BigInteger;
@@ -59,6 +60,12 @@ public class Fixnum extends ImmutableLiteral {
 
     public long getValue() {
         return value;
+    }
+
+    @Override
+    public void encode(IRWriterEncoder e) {
+        super.encode(e);
+        e.encode(value);
     }
 
     @Override

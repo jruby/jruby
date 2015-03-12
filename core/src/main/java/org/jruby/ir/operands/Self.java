@@ -1,6 +1,7 @@
 package org.jruby.ir.operands;
 
 import org.jruby.ir.IRVisitor;
+import org.jruby.ir.persistence.IRWriterEncoder;
 import org.jruby.ir.transformations.inlining.SimpleCloneInfo;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.DynamicScope;
@@ -32,6 +33,12 @@ public class Self extends LocalVariable {
     @Override
     public Variable clone(SimpleCloneInfo ii) {
         return this;
+    }
+
+    @Override
+    public void encode(IRWriterEncoder e) {
+        // No super because we don't want to dump %self and offset of 0
+        e.encode(getOperandType().getCoded());
     }
 
     @Override

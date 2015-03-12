@@ -29,6 +29,7 @@
 package org.jruby.ir.operands;
 
 import org.jruby.ir.IRVisitor;
+import org.jruby.ir.persistence.IRReaderDecoder;
 import org.jruby.ir.transformations.inlining.SimpleCloneInfo;
 
 /**
@@ -58,5 +59,9 @@ public class TemporaryFixnumVariable extends TemporaryLocalVariable {
     @Override
     public void visit(IRVisitor visitor) {
         visitor.TemporaryFixnumVariable(this);
+    }
+
+    public static TemporaryFixnumVariable decode(IRReaderDecoder d) {
+        return new TemporaryFixnumVariable(d.decodeInt());
     }
 }

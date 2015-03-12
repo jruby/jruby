@@ -1070,9 +1070,7 @@ public class JVMVisitor extends IRVisitor {
 
     @Override
     public void GetGlobalVariableInstr(GetGlobalVariableInstr getglobalvariableinstr) {
-        Operand source = getglobalvariableinstr.getSource();
-        GlobalVariable gvar = (GlobalVariable)source;
-        String name = gvar.getName();
+        String name = getglobalvariableinstr.getGVar().getName();
         jvmMethod().loadRuntime();
         jvmMethod().invokeVirtual(Type.getType(Ruby.class), Method.getMethod("org.jruby.internal.runtime.GlobalVariables getGlobalVariables()"));
         jvmAdapter().ldc(name);

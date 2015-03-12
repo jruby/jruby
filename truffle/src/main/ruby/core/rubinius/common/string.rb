@@ -48,6 +48,10 @@ class String
     to_inum(16, false)
   end
 
+  def split(pattern=nil, limit=undefined)
+    Rubinius::Splitter.split(self, pattern, limit)
+  end
+
   def chars
     if block_given?
       each_char do |char|
@@ -91,6 +95,19 @@ class String
     end
 
     result
+  end
+
+  def sum(bits=16)
+    bits = Rubinius::Type.coerce_to bits, Fixnum, :to_int
+    i = -1
+    sum = 0
+
+    sum += @data[i] while (i += 1) < @num_bytes
+    if bits > 0
+      sum & ((1 << bits) - 1)
+    else
+      sum
+    end
   end
 
   def to_c
@@ -699,6 +716,41 @@ class String
     str.force_encoding enc
   end
 
+  def index(str, start=undefined)
+    if undefined.equal?(start)
+      start = 0
+    else
+      start = Rubinius::Type.coerce_to start, Fixnum, :to_int
+
+      start += size if start < 0
+      return if start < 0 or start > size
+    end
+
+    if str.kind_of? Regexp
+      Rubinius::Type.compatible_encoding self, str
+
+      m = Rubinius::Mirror.reflect self
+      start = m.character_to_byte_index start
+      if match = str.match_from(self, start)
+        Regexp.last_match = match
+        return match.begin(0)
+      else
+        Regexp.last_match = nil
+        return
+      end
+    end
+
+    str = StringValue(str)
+    return start if str == ""
+
+    Rubinius::Type.compatible_encoding self, str
+
+    return if str.size > size
+
+    m = Rubinius::Mirror.reflect self
+    m.character_index str, start
+  end
+
   def upto(stop, exclusive=false)
     return to_enum :upto, stop, exclusive unless block_given?
     stop = StringValue(stop)
@@ -724,6 +776,56 @@ class String
       end
     end
     self
+  end
+
+  def center(width, padding=" ")
+    padding = StringValue(padding)
+    raise ArgumentError, "zero width padding" if padding.size == 0
+
+    enc = Rubinius::Type.compatible_encoding self, padding
+
+    width = Rubinius::Type.coerce_to width, Fixnum, :to_int
+    return dup if width <= size
+
+    width -= size
+    left = width / 2
+
+    bs = bytesize
+    pbs = padding.bytesize
+
+    if pbs > 1
+      ps = padding.size
+      pm = Rubinius::Mirror.reflect padding
+
+      x = left / ps
+      y = left % ps
+
+      lpbi = pm.byte_index(y)
+      lbytes = x * pbs + lpbi
+
+      right = left + (width & 0x1)
+
+      x = right / ps
+      y = right % ps
+
+      rpbi = pm.byte_index(y)
+      rbytes = x * pbs + rpbi
+
+      pad = self.class.pattern rbytes, padding
+      str = self.class.pattern lbytes + bs + rbytes, ""
+      m = Rubinius::Mirror.reflect str
+
+      m.copy_from self, 0, bs, lbytes
+      m.copy_from pad, 0, lbytes, 0
+      m.copy_from pad, 0, rbytes, lbytes + bs
+    else
+      str = self.class.pattern width + bs, padding
+      m = Rubinius::Mirror.reflect str
+      m.copy_from self, 0, bs, left
+    end
+
+    str.taint if tainted? or padding.tainted?
+    str.force_encoding enc
   end
 
   def ljust(width, padding=" ")

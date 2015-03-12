@@ -1,3 +1,0 @@
-fails:String#sum returns a basic n-bit checksum of the characters in self
-fails:String#sum tries to convert n to an integer using to_int
-fails:String#sum returns sum of the bytes in self if n less or equal to zero

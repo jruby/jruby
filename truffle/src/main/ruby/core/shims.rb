@@ -110,26 +110,6 @@ class String
   end
 end
 
-class Array
-  def rindex(obj)
-    index = nil
-
-    each_with_index do |e, i|
-      index = i if e == obj
-    end
-
-    index
-  end
-
-  def reverse
-    res = []
-
-    each { |x| res.unshift x }
-
-    res
-  end
-end
-
 module Kernel
   def inspect
     ivars = instance_variables

@@ -6,6 +6,7 @@
 
 package org.jruby.ir.persistence;
 
+import org.jcodings.Encoding;
 import org.jruby.ir.IRScope;
 import org.jruby.ir.IRScopeType;
 import org.jruby.ir.Operation;
@@ -18,6 +19,7 @@ import org.jruby.parser.StaticScope;
 
 import java.util.List;
 import java.util.Map;
+import org.jruby.util.ByteList;
 
 /**
  *
@@ -36,6 +38,9 @@ public interface IRReaderDecoder {
     public OperandType decodeOperandType();
     public boolean decodeBoolean();
     public byte decodeByte();
+    public byte[] decodeByteArray();
+    public Encoding decodeEncoding();
+    public ByteList decodeByteList();
     public char decodeChar();
     public int decodeInt();
     public int decodeIntRaw();
