@@ -736,7 +736,7 @@ public abstract class StringNodes {
         }
     }
 
-    @CoreMethod(names = "delete!", argumentsAsArray = true)
+    @CoreMethod(names = "delete!", argumentsAsArray = true, raiseIfFrozenSelf = true)
     public abstract static class DeleteBangNode extends CoreMethodNode {
 
         @Child private ToStrNode toStr;
@@ -771,17 +771,26 @@ public abstract class StringNodes {
 
             for (int i = 0; i < args.length; i++) {
                 otherStrings[i] = toStr.executeRubyString(frame, args[i]);
-
-                // TODO (nirvdrum 12-Mar-15) Check compatible encodings.
-                final Encoding enc = string.getBytes().getEncoding();
-
-                boolean[] squeeze = new boolean[StringSupport.TRANS_SIZE + 1];
-                StringSupport.TrTables tables = StringSupport.trSetupTable(otherStrings[i].getBytes(),
-                        getContext().getRuntime(),
-                        squeeze, null, true, enc);
             }
 
-            return string.count(otherStrings);
+            RubyString otherString = otherStrings[0];
+            Encoding enc = string.checkEncoding(otherString);
+
+            boolean[] squeeze = new boolean[StringSupport.TRANS_SIZE + 1];
+            StringSupport.TrTables tables = StringSupport.trSetupTable(otherString.getBytes(),
+                    getContext().getRuntime(),
+                    squeeze, null, true, enc);
+
+            for (int i = 1; i < otherStrings.length; i++) {
+                enc = string.checkEncoding(otherStrings[i]);
+                tables = StringSupport.trSetupTable(otherStrings[i].getBytes(), getContext().getRuntime(), squeeze, tables, false, enc);
+            }
+
+            if (StringSupport.delete_bangCommon19(string, getContext().getRuntime(), squeeze, tables, enc) == null) {
+                return getContext().getCoreLibrary().getNilObject();
+            }
+
+            return string;
         }
     }
 
