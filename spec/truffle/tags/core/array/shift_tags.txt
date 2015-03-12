@@ -1,5 +1,3 @@
-fails:Array#shift raises a RuntimeError on a frozen array
-fails:Array#shift raises a RuntimeError on an empty frozen array
 fails:Array#shift passed a number n as an argument removes and returns an array with the first n element of the array
 fails:Array#shift passed a number n as an argument does not corrupt the array when shift without arguments is followed by shift with an argument
 fails:Array#shift passed a number n as an argument returns a new empty array if there are no more elements

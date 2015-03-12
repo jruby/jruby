@@ -10,6 +10,5 @@ fails:Array#sort raises an error if objects can't be compared
 fails:Array#sort! sorts array in place using block value if a block given
 fails:Array#sort! does not call #<=> on contained objects when invoked with a block
 fails:Array#sort! does not call #<=> on elements when invoked with a block even if Array is large (Rubinius #412)
-fails:Array#sort! raises a RuntimeError on a frozen array
 fails:Array#sort! returns the specified value when it would break in the given block
 fails:Array#sort! makes some modification even if finished sorting when it would break in the given block
