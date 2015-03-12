@@ -701,6 +701,7 @@ public abstract class StringNodes {
             notDesignedForCompilation();
 
             if (otherStrings.length == 0) {
+                CompilerDirectives.transferToInterpreter();
                 throw new RaiseException(getContext().getCoreLibrary().argumentErrorEmptyVarargs(this));
             }
 
