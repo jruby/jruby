@@ -1531,7 +1531,7 @@ public abstract class KernelNodes {
         public Object raise(VirtualFrame frame, UndefinedPlaceholder undefined1, UndefinedPlaceholder undefined2, UndefinedPlaceholder undefined3) {
             notDesignedForCompilation();
 
-            return ruby(frame, "$!");
+            return raise(frame, getContext().getCoreLibrary().getRuntimeErrorClass(), getContext().makeString("re-raised - don't have the current exception yet!"), undefined1);
         }
 
         @Specialization
