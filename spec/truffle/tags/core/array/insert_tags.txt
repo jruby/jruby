@@ -7,5 +7,4 @@ fails:Array#insert can insert before the first element with a negative index
 fails:Array#insert raises an IndexError if the negative index is out of bounds
 fails:Array#insert does nothing of no object is passed
 fails:Array#insert tries to convert the passed position argument to an Integer using #to_int
-fails:Array#insert raises a RuntimeError on frozen arrays when the array is modified
 fails:Array#insert raises a RuntimeError on frozen arrays when the array would not be modified
