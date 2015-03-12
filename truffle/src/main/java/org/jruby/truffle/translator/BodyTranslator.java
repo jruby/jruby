@@ -1379,7 +1379,7 @@ public class BodyTranslator extends Translator {
                 localVarNode = environment.findLocalVarNode(node.getName(), sourceSection);
 
                 if (localVarNode == null) {
-                    throw new RuntimeException("shoudln't be here");
+                    throw new RuntimeException("shouldn't be here");
                 }
             }
 
