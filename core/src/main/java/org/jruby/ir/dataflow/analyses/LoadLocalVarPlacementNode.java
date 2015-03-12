@@ -198,8 +198,10 @@ public class LoadLocalVarPlacementNode extends FlowGraphNode<LoadLocalVarPlaceme
                     }
                     it.previous();
                 }
-            } else if (scopeBindingHasEscaped && (i.getOperation() == Operation.PUT_GLOBAL_VAR
-                    || i.getOperation() == Operation.THREAD_POLL)) {
+            } else if (
+                    (scopeBindingHasEscaped && i.getOperation() == Operation.PUT_GLOBAL_VAR)
+                    || i.getOperation() == Operation.THREAD_POLL
+                    ) {
                 // 1. Global-var tracing can execute closures set up in previous trace-var calls
                 // in which case we would have the 'scopeBindingHasEscaped' flag set to true.
                 // 2. Threads can update bindings, so we treat thread poll boundaries the same way.
