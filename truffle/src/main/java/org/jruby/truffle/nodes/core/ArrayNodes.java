@@ -483,7 +483,7 @@ public abstract class ArrayNodes {
 
     }
 
-    @CoreMethod(names = "clear")
+    @CoreMethod(names = "clear", raiseIfFrozenSelf = true)
     public abstract static class ClearNode extends ArrayCoreMethodNode {
 
         public ClearNode(RubyContext context, SourceSection sourceSection) {
