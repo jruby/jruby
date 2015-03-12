@@ -64,34 +64,32 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.List;
+import org.jruby.util.CodegenUtils;
 
 @JRubyClass(name="Java::JavaClass", parent="Java::JavaObject")
 public class JavaClass extends JavaObject {
-
-    // caching constructors, as they're accessed for each new instance
-    private volatile RubyArray constructors;
-
-    public RubyModule getProxyModule() {
-        return Java.getProxyClass(getRuntime(), (Class)getValue());
-    }
-
-    public RubyClass getProxyClass() {
-        return (RubyClass)Java.getProxyClass(getRuntime(), (Class)getValue());
-    }
 
     public JavaClass(final Ruby runtime, final Class<?> javaClass) {
         super(runtime, runtime.getJavaSupport().getJavaClassClass(), javaClass);
     }
 
     @Override
-    public boolean equals(Object other) {
-        return other instanceof JavaClass &&
-            this.getValue() == ((JavaClass) other).getValue();
+    public final boolean equals(Object other) {
+        if ( this == other ) return true;
+        return other instanceof JavaClass && this.getValue() == ((JavaClass) other).getValue();
     }
 
     @Override
-    public int hashCode() {
-        return javaClass().hashCode();
+    public final int hashCode() {
+        return getValue().hashCode();
+    }
+
+    public final RubyModule getProxyModule() {
+        return Java.getProxyClass(getRuntime(), javaClass());
+    }
+
+    public final RubyClass getProxyClass() {
+        return (RubyClass) Java.getProxyClass(getRuntime(), javaClass());
     }
 
     public void addProxyExtender(final IRubyObject extender) {
@@ -133,26 +131,30 @@ public class JavaClass extends JavaObject {
         return RubyArray.newArrayNoCopy(runtime, javaClasses);
     }
 
-    public static RubyClass createJavaClassClass(Ruby runtime, RubyModule javaModule) {
+    public static RubyClass createJavaClassClass(final Ruby runtime, final RubyModule Java) {
+        return createJavaClassClass(runtime, Java, Java.getClass("JavaObject"));
+    }
+
+    static RubyClass createJavaClassClass(final Ruby runtime, final RubyModule Java, final RubyClass JavaObject) {
         // FIXME: Determine if a real allocator is needed here. Do people want to extend
         // JavaClass? Do we want them to do that? Can you Class.new(JavaClass)? Should
         // you be able to?
         // TODO: NOT_ALLOCATABLE_ALLOCATOR is probably ok here, since we don't intend for people to monkey with
         // this type and it can't be marshalled. Confirm. JRUBY-415
-        RubyClass result = javaModule.defineClassUnder("JavaClass", javaModule.getClass("JavaObject"), ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
+        RubyClass JavaCLass = Java.defineClassUnder("JavaClass", JavaObject, ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
 
-        result.includeModule(runtime.getModule("Comparable"));
+        JavaCLass.includeModule(runtime.getModule("Comparable"));
 
-        result.defineAnnotatedMethods(JavaClass.class);
+        JavaCLass.defineAnnotatedMethods(JavaClass.class);
 
-        result.getMetaClass().undefineMethod("new");
-        result.getMetaClass().undefineMethod("allocate");
+        JavaCLass.getMetaClass().undefineMethod("new");
+        JavaCLass.getMetaClass().undefineMethod("allocate");
 
-        return result;
+        return JavaCLass;
     }
 
-    public Class javaClass() {
-        return (Class) getValue();
+    public final Class javaClass() {
+        return (Class<?>) getValue();
     }
 
     public static Class<?> getJavaClass(final ThreadContext context, final RubyModule proxy) {
@@ -271,8 +273,8 @@ public class JavaClass extends JavaObject {
         return getRuntime().newString(javaClass().getName());
     }
 
-    @JRubyMethod
     @Override
+    @JRubyMethod
     public RubyString inspect() {
         return getRuntime().newString("class " + javaClass().getName());
     }
@@ -332,11 +334,13 @@ public class JavaClass extends JavaObject {
 
     @SuppressWarnings("unchecked")
     @JRubyMethod(required = 1)
-    public IRubyObject annotation(IRubyObject annoClass) {
-        if (!(annoClass instanceof JavaClass)) {
-            throw getRuntime().newTypeError(annoClass, getRuntime().getJavaSupport().getJavaClassClass());
+    public IRubyObject annotation(final IRubyObject annoClass) {
+        final Ruby runtime = getRuntime();
+        if ( ! ( annoClass instanceof JavaClass ) ) {
+            throw runtime.newTypeError(annoClass, runtime.getJavaSupport().getJavaClassClass());
         }
-        return Java.getInstance(getRuntime(), javaClass().getAnnotation(((JavaClass) annoClass).javaClass()));
+        final Class annotation = ((JavaClass) annoClass).javaClass();
+        return Java.getInstance(runtime, javaClass().getAnnotation(annotation));
     }
 
     @JRubyMethod
@@ -365,11 +369,13 @@ public class JavaClass extends JavaObject {
 
     @SuppressWarnings("unchecked")
     @JRubyMethod(name = "annotation_present?", required = 1)
-    public IRubyObject annotation_present_p(IRubyObject annoClass) {
-        if (!(annoClass instanceof JavaClass)) {
-            throw getRuntime().newTypeError(annoClass, getRuntime().getJavaSupport().getJavaClassClass());
+    public IRubyObject annotation_present_p(final IRubyObject annoClass) {
+        final Ruby runtime = getRuntime();
+        if ( ! ( annoClass instanceof JavaClass ) ) {
+            throw runtime.newTypeError(annoClass, runtime.getJavaSupport().getJavaClassClass());
         }
-        return getRuntime().newBoolean(javaClass().isAnnotationPresent(((JavaClass)annoClass).javaClass()));
+        final Class annotation = ((JavaClass) annoClass).javaClass();
+        return runtime.newBoolean( javaClass().isAnnotationPresent(annotation) );
     }
 
     @JRubyMethod
@@ -468,28 +474,29 @@ public class JavaClass extends JavaObject {
 
     @JRubyMethod(name = "<=>", required = 1)
     public IRubyObject op_cmp(IRubyObject other) {
-        Class me = javaClass();
-        Class them = null;
+        final Class<?> thisClass = javaClass();
+        Class<?> otherClass = null;
 
         // dig out the other class
         if (other instanceof JavaClass) {
-            JavaClass otherClass = (JavaClass) other;
-            them = otherClass.javaClass();
-        } else if (other instanceof ConcreteJavaProxy) {
-            ConcreteJavaProxy proxy = (ConcreteJavaProxy)other;
-            if (proxy.getObject() instanceof Class) {
-                them = (Class)proxy.getObject();
+            otherClass = ( (JavaClass) other ).javaClass();
+        }
+        else if (other instanceof ConcreteJavaProxy) {
+            ConcreteJavaProxy proxy = (ConcreteJavaProxy) other;
+            final Object wrapped = proxy.getObject();
+            if ( wrapped instanceof Class ) {
+                otherClass = (Class) wrapped;
             }
         }
 
-        if (them != null) {
-            if (this.javaClass() == them) {
+        if ( otherClass != null ) {
+            if ( thisClass == otherClass ) {
                 return getRuntime().newFixnum(0);
             }
-            if (them.isAssignableFrom(me)) {
+            if ( otherClass.isAssignableFrom(thisClass) ) {
                 return getRuntime().newFixnum(-1);
             }
-            if (me.isAssignableFrom(them)) {
+            if ( thisClass.isAssignableFrom(otherClass) ) {
                 return getRuntime().newFixnum(1);
             }
         }
@@ -606,6 +613,9 @@ public class JavaClass extends JavaObject {
         }
         return argumentTypes;
     }
+
+    // caching constructors, as they're accessed for each new instance
+    private volatile RubyArray constructors; // TODO seems not used that often?
 
     @JRubyMethod
     public RubyArray constructors() {
@@ -877,43 +887,44 @@ public class JavaClass extends JavaObject {
 
     @JRubyMethod(name = "primitive?")
     public RubyBoolean primitive_p() {
-        return getRuntime().newBoolean(isPrimitive());
+        return getRuntime().newBoolean( isPrimitive() );
     }
 
     boolean isPrimitive() { return javaClass().isPrimitive(); }
 
     @JRubyMethod(name = "assignable_from?", required = 1)
     public RubyBoolean assignable_from_p(IRubyObject other) {
-        if (! (other instanceof JavaClass)) {
+        if ( ! (other instanceof JavaClass) ) {
             throw getRuntime().newTypeError("assignable_from requires JavaClass (" + other.getType() + " given)");
         }
 
         Class<?> otherClass = ((JavaClass) other).javaClass();
-        return assignable(javaClass(), otherClass) ? getRuntime().getTrue() : getRuntime().getFalse();
+        return isAssignableFrom(otherClass) ? getRuntime().getTrue() : getRuntime().getFalse();
     }
 
-    public static boolean assignable(Class<?> thisClass, Class<?> otherClass) {
-        if(!thisClass.isPrimitive() && otherClass == Void.TYPE ||
-            thisClass.isAssignableFrom(otherClass)) {
+    public final boolean isAssignableFrom(final Class<?> clazz) {
+        return assignable(javaClass(), clazz);
+    }
+
+    public static boolean assignable(Class<?> target, Class<?> from) {
+        if ( target.isPrimitive() ) target = CodegenUtils.getBoxType(target);
+        else if ( from == Void.TYPE || target.isAssignableFrom(from) ) {
             return true;
         }
+        if ( from.isPrimitive() ) from = CodegenUtils.getBoxType(from);
 
-        otherClass = JavaUtil.primitiveToWrapper(otherClass);
-        thisClass = JavaUtil.primitiveToWrapper(thisClass);
+        if ( target.isAssignableFrom(from) ) return true;
 
-        if(thisClass.isAssignableFrom(otherClass)) {
-            return true;
-        }
-        if(Number.class.isAssignableFrom(thisClass)) {
-            if(Number.class.isAssignableFrom(otherClass)) {
+        if ( Number.class.isAssignableFrom(target) ) {
+            if ( Number.class.isAssignableFrom(from) ) {
                 return true;
             }
-            if(otherClass.equals(Character.class)) {
+            if ( from == Character.class ) {
                 return true;
             }
         }
-        if(thisClass.equals(Character.class)) {
-            if(Number.class.isAssignableFrom(otherClass)) {
+        else if ( target == Character.class ) {
+            if ( Number.class.isAssignableFrom(from) ) {
                 return true;
             }
         }
@@ -928,16 +939,16 @@ public class JavaClass extends JavaObject {
         return JavaClass.get(getRuntime(), javaClass().getComponentType());
     }
 
-    public static Constructor[] getConstructors(Class<?> javaClass) {
+    public static Constructor[] getConstructors(final Class<?> clazz) {
         try {
-            return javaClass.getConstructors();
+            return clazz.getConstructors();
         }
         catch (SecurityException e) { return new Constructor[0]; }
     }
 
-    public static Class<?>[] getDeclaredClasses(Class<?> javaClass) {
+    public static Class<?>[] getDeclaredClasses(final Class<?> clazz) {
         try {
-            return javaClass.getDeclaredClasses();
+            return clazz.getDeclaredClasses();
         }
         catch (SecurityException e) { return new Class<?>[0]; }
         catch (NoClassDefFoundError cnfe) {
@@ -949,18 +960,18 @@ public class JavaClass extends JavaObject {
         }
     }
 
-    public static Field[] getDeclaredFields(Class<?> javaClass) {
+    public static Field[] getDeclaredFields(final Class<?> clazz) {
         try {
-            return javaClass.getDeclaredFields();
+            return clazz.getDeclaredFields();
         }
         catch (SecurityException e) {
-            return getFields(javaClass);
+            return getFields(clazz);
         }
     }
 
-    public static Field[] getFields(Class<?> javaClass) {
+    public static Field[] getFields(final Class<?> clazz) {
         try {
-            return javaClass.getFields();
+            return clazz.getFields();
         }
         catch (SecurityException e) { return new Field[0]; }
     }

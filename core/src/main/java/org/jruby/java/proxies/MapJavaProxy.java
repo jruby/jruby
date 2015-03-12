@@ -12,7 +12,7 @@
  * rights and limitations under the License.
  *
  * Copyright (C) 2011 Yoko Harada <yokolet@gmail.com>
- * 
+ *
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
  * or the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
@@ -49,7 +49,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 import static org.jruby.CompatVersion.*;
 
 /**
- * 
+ *
  * @author Yoko Harada
  */
 
@@ -64,21 +64,21 @@ public class MapJavaProxy extends ConcreteJavaProxy {
         super(runtime, klazz, map);
     }
 
-    public static RubyClass createMapJavaProxy(ThreadContext context) {
-        Ruby runtime = context.runtime;
+    private static final ObjectAllocator ALLOCATOR = new ObjectAllocator() {
+        public MapJavaProxy allocate(Ruby runtime, RubyClass klazz) {
+            return new MapJavaProxy(runtime, klazz);
+        }
+    };
 
-        RubyClass mapJavaProxy = runtime.defineClass("MapJavaProxy",
-                runtime.getJavaSupport().getConcreteProxyClass(),
-                new ObjectAllocator() {
-            public IRubyObject allocate(Ruby runtime, RubyClass klazz) {
-                return new MapJavaProxy(runtime, klazz);
-            }
-        });
+    public static RubyClass createMapJavaProxy(final Ruby runtime) {
+        RubyClass MapJavaProxy = runtime.defineClass(
+            "MapJavaProxy", runtime.getJavaSupport().getConcreteProxyClass(), ALLOCATOR
+        );
         // this is done while proxy class is created.
         // See org.jruby.javasuppoer.java.createProxyClass()
-        //mapJavaProxy.defineAnnotatedMethods(MapJavaProxy.class);
-        ConcreteJavaProxy.initialize(mapJavaProxy);
-        return mapJavaProxy;
+        // MapJavaProxy.defineAnnotatedMethods(MapJavaProxy.class);
+        ConcreteJavaProxy.initialize(MapJavaProxy);
+        return MapJavaProxy;
     }
 
     private RubyHashMap getOrCreateRubyHashMap() {
@@ -102,11 +102,11 @@ public class MapJavaProxy extends ConcreteJavaProxy {
             super(runtime);
             this.receiver = receiver;
         }
-        
+
         private void setSize(int size) {
             this.size = size;
         }
-        
+
         private Map getMap() {
             return (Map) ((JavaProxy)receiver).getObject();
         }
@@ -130,12 +130,12 @@ public class MapJavaProxy extends ConcreteJavaProxy {
             Map map = getMap();
             Object convertedKey = key.toJava(Object.class);
             Object value = map.get(convertedKey);
-            
+
             if (value != null) {
                 RubyHashEntry rubyEntry = new RubyHashEntry(key.hashCode(), key, JavaUtil.convertJavaToUsableRubyObject(getRuntime(), value), null, null);
                 return rubyEntry;
             }
-            
+
             return NO_ENTRY;
         }
 
@@ -144,14 +144,14 @@ public class MapJavaProxy extends ConcreteJavaProxy {
             Map map = getMap();
             Object convertedKey = key.toJava(Object.class);
             Object value = map.get(convertedKey);
-            
+
             if (value != null) {
                 RubyHashEntry rubyEntry = new RubyHashEntry(key.hashCode(), key, JavaUtil.convertJavaToUsableRubyObject(getRuntime(), value), null, null);
                 map.remove(convertedKey);
                 size = map.size();
                 return rubyEntry;
             }
-            
+
             return NO_ENTRY;
         }
 
@@ -159,13 +159,13 @@ public class MapJavaProxy extends ConcreteJavaProxy {
         public RubyHashEntry internalDeleteEntry(final RubyHashEntry entry) {
             Map map = getMap();
             Object convertedKey = ((IRubyObject)entry.getKey()).toJava(Object.class);
-            
+
             if (map.containsKey(convertedKey)) {
                 map.remove(convertedKey);
                 size = map.size();
                 return entry;
             }
-            
+
             return NO_ENTRY;
         }
 
@@ -194,7 +194,7 @@ public class MapJavaProxy extends ConcreteJavaProxy {
         public RubyHash rb_clear() {
             getMap().clear();
             size = 0;
-            
+
             return this;
         }
 
@@ -371,12 +371,12 @@ public class MapJavaProxy extends ConcreteJavaProxy {
     public IRubyObject fetch(ThreadContext context, IRubyObject[] args, Block block) {
         return getOrCreateRubyHashMap().fetch(context, args, block);
     }
-    
+
     @JRubyMethod(compat = RUBY1_9)
     public IRubyObject fetch(ThreadContext context, IRubyObject key, Block block) {
         return getOrCreateRubyHashMap().fetch(context, key, block);
     }
-    
+
     @JRubyMethod(compat = RUBY1_9)
     public IRubyObject fetch(ThreadContext context, IRubyObject key, IRubyObject _default, Block block) {
         return getOrCreateRubyHashMap().fetch(context, key, _default, block);
@@ -405,7 +405,7 @@ public class MapJavaProxy extends ConcreteJavaProxy {
     public IRubyObject each(final ThreadContext context, final Block block) {
         return getOrCreateRubyHashMap().each(context, block);
     }
-    
+
     /** rb_hash_each
      *
      */
