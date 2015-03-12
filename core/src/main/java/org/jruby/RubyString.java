@@ -206,7 +206,8 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
         flags &= ~CR_MASK;
     }
 
-    private void keepCodeRange() {
+    @Override
+    public final void keepCodeRange() {
         if (getCodeRange() == CR_BROKEN) clearCodeRange();
     }
 
@@ -4608,7 +4609,12 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
         Encoding enc = checkEncoding(otherStr);
         final boolean[]squeeze = new boolean[StringSupport.TRANS_SIZE + 1];
         StringSupport.TrTables tables = StringSupport.trSetupTable(otherStr.value, runtime, squeeze, null, true, enc);
-        return delete_bangCommon19(runtime, squeeze, tables, enc);
+
+        if (delete_bangCommon19(this, runtime, squeeze, tables, enc) == null) {
+            return runtime.getNil();
+        }
+
+        return this;
     }
 
     @JRubyMethod(name = "delete!", required = 1, rest = true)
@@ -4626,11 +4632,18 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
             tables = StringSupport.trSetupTable(otherStr.value, runtime, squeeze, tables, false, enc);
         }
 
-        return delete_bangCommon19(runtime, squeeze, tables, enc);
+        if (delete_bangCommon19(this, runtime, squeeze, tables, enc) == null) {
+            return runtime.getNil();
+        }
+
+        return this;
     }
 
-    private IRubyObject delete_bangCommon19(Ruby runtime, boolean[]squeeze, StringSupport.TrTables tables, Encoding enc) {
-        modifyAndKeepCodeRange();
+    private static CodeRangeable delete_bangCommon19(CodeRangeable rubyString, Ruby runtime, boolean[] squeeze, StringSupport.TrTables tables, Encoding enc) {
+        rubyString.modify();
+        rubyString.keepCodeRange();
+
+        final ByteList value = rubyString.getByteList();
 
         int s = value.getBegin();
         int t = s;
@@ -4663,9 +4676,9 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
             }
         }
         value.setRealSize(t - value.getBegin());
-        setCodeRange(cr);
+        rubyString.setCodeRange(cr);
 
-        return modify ? this : runtime.getNil();
+        return modify ? rubyString : null;
     }
 
     /** rb_str_squeeze / rb_str_squeeze_bang

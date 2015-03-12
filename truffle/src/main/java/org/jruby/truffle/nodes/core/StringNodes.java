@@ -736,6 +736,55 @@ public abstract class StringNodes {
         }
     }
 
+    @CoreMethod(names = "delete!", argumentsAsArray = true)
+    public abstract static class DeleteBangNode extends CoreMethodNode {
+
+        @Child private ToStrNode toStr;
+
+        public DeleteBangNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+            toStr = ToStrNodeFactory.create(context, sourceSection, null);
+        }
+
+        public DeleteBangNode(DeleteBangNode prev) {
+            super(prev);
+            toStr = prev.toStr;
+        }
+
+        @Specialization
+        public Object deleteBang(VirtualFrame frame, RubyString string, Object[] otherStrings) {
+            if (string.getBytes().length() == 0) {
+                return getContext().getCoreLibrary().getNilObject();
+            }
+
+            if (otherStrings.length == 0) {
+                CompilerDirectives.transferToInterpreter();
+                throw new RaiseException(getContext().getCoreLibrary().argumentErrorEmptyVarargs(this));
+            }
+
+            return deleteBangSlow(frame, string, otherStrings);
+        }
+
+        @CompilerDirectives.TruffleBoundary
+        private Object deleteBangSlow(VirtualFrame frame, RubyString string, Object[] args) {
+            RubyString[] otherStrings = new RubyString[args.length];
+
+            for (int i = 0; i < args.length; i++) {
+                otherStrings[i] = toStr.executeRubyString(frame, args[i]);
+
+                // TODO (nirvdrum 12-Mar-15) Check compatible encodings.
+                final Encoding enc = string.getBytes().getEncoding();
+
+                boolean[] squeeze = new boolean[StringSupport.TRANS_SIZE + 1];
+                StringSupport.TrTables tables = StringSupport.trSetupTable(otherStrings[i].getBytes(),
+                        getContext().getRuntime(),
+                        squeeze, null, true, enc);
+            }
+
+            return string.count(otherStrings);
+        }
+    }
+
     @CoreMethod(names = "downcase", taintFromSelf = true)
     public abstract static class DowncaseNode extends CoreMethodNode {
 
