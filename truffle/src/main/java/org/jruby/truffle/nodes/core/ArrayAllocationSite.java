@@ -18,21 +18,18 @@ public class ArrayAllocationSite {
 
     public static final boolean ARRAYS_OPTIMISTIC_LONG = Options.TRUFFLE_ARRAYS_OPTIMISTIC_LONG.load();
 
-    @CompilerDirectives.CompilationFinal private boolean convertedIntToLong = false;
-    private final Assumption assumption = Truffle.getRuntime().createAssumption("ArrayAllocationSite");
+    private final Assumption keepUsingInt = Truffle.getRuntime().createAssumption("ArrayAllocationSite");
 
     @CompilerDirectives.TruffleBoundary
     public void convertedIntToLong() {
         if (ARRAYS_OPTIMISTIC_LONG) {
-            convertedIntToLong = true;
-            assumption.invalidate();
+            keepUsingInt.invalidate();
         }
     }
 
     public boolean hasConvertedIntToLong() {
         if (ARRAYS_OPTIMISTIC_LONG) {
-            assumption.isValid();
-            return convertedIntToLong;
+            return !keepUsingInt.isValid();
         } else {
             return false;
         }
