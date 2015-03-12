@@ -1515,37 +1515,17 @@ public class BodyTranslator extends Translator {
 
         if (sourceSection.getSource().getPath().equals("core:/core/rubinius/common/time.rb")) {
             if (name.equals("@is_gmt")) {
-                return new RubyCallNode(context, sourceSection,
-                        "_set_gmt",
-                        self,
-                        null,
-                        false,
-                        rhs);
+                return TimeNodesFactory.InternalSetGMTNodeFactory.create(context, sourceSection, self, rhs);
             } else if (name.equals("@offset")) {
-                return new RubyCallNode(context, sourceSection,
-                        "_set_offset",
-                        self,
-                        null,
-                        false,
-                        rhs);
+                return TimeNodesFactory.InternalSetOffsetNodeFactory.create(context, sourceSection, self, rhs);
             }
         }
 
         if (sourceSection.getSource().getPath().equals("core:/core/rubinius/common/hash.rb")) {
             if (name.equals("@default")) {
-                return new RubyCallNode(context, sourceSection,
-                        "_set_default_value",
-                        self,
-                        null,
-                        false,
-                        rhs);
+                return HashNodesFactory.SetDefaultValueNodeFactory.create(context, sourceSection, self, rhs);
             } else if (name.equals("@default_proc")) {
-                return new RubyCallNode(context, sourceSection,
-                        "_set_default_proc",
-                        new SelfNode(context, sourceSection),
-                        null,
-                        false,
-                        rhs);
+                return HashNodesFactory.SetDefaultProcNodeFactory.create(context, sourceSection, self, rhs);
             }
         }
 

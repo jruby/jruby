@@ -12,6 +12,7 @@ package org.jruby.truffle.nodes.core;
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.dsl.ImportGuards;
 import com.oracle.truffle.api.dsl.NodeChild;
+import com.oracle.truffle.api.dsl.NodeChildren;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.ExplodeLoop;
@@ -1365,9 +1366,9 @@ public abstract class HashNodes {
         }
     }
 
-    @RubiniusOnly
-    @CoreMethod(names = "_set_default_value", required = 1)
-    public abstract static class SetDefaultValueNode extends HashCoreMethodNode {
+    // Not a core method, used to simulate Rubinius @default.
+    @NodeChildren({ @NodeChild("self"), @NodeChild("defaultValue") })
+    public abstract static class SetDefaultValueNode extends RubyNode {
 
         public SetDefaultValueNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -1385,9 +1386,9 @@ public abstract class HashNodes {
         
     }
 
-    @RubiniusOnly
-    @CoreMethod(names = "_set_default_proc", required = 1)
-    public abstract static class SetDefaultProcNode extends HashCoreMethodNode {
+    // Not a core method, used to simulate Rubinius @default_proc.
+    @NodeChildren({ @NodeChild("self"), @NodeChild("defaultProc") })
+    public abstract static class SetDefaultProcNode extends RubyNode {
 
         public SetDefaultProcNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
