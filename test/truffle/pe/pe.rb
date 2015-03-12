@@ -64,7 +64,6 @@ EXAMPLES.each do |code, expected_constant, tagged|
       tested += 1
       eval "loop { Truffle::Primitive.assert_constant #{code}; Truffle::Primitive.assert_not_compiled; Thread.pass }"
     rescue RubyTruffleError => e
-      p e.message
       constant = e.message.include? 'Truffle::Primitive.assert_not_compiled'
       if expected_constant
         unless constant
