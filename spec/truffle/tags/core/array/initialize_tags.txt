@@ -1,4 +1,3 @@
-fails:Array#initialize raises a RuntimeError on frozen arrays
 fails:Array#initialize calls #to_ary to convert the value to an array, even if it's private
 fails:Array#initialize with no arguments does not use the given block
 fails:Array#initialize with (array) does not use the given block

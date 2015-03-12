@@ -1,8 +1,6 @@
 fails:Array#collect returns the evaluated value of block if it broke in the block
 fails:Array#collect returns an Enumerator when no block given
 fails:Array#collect! returns the evaluated value of block but its contents is partially modified, if it broke in the block
-fails:Array#collect! returns an Enumerator when no block given, and the enumerator can modify the original array
-fails:Array#collect! when frozen raises a RuntimeError
-fails:Array#collect! when frozen raises a RuntimeError when empty
 fails:Array#collect! when frozen raises a RuntimeError when calling #each on the returned Enumerator
 fails:Array#collect! when frozen raises a RuntimeError when calling #each on the returned Enumerator when empty
+fails:Array#collect! returns an Enumerator when no block given, and the enumerator can modify the original array
