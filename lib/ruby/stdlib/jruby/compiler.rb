@@ -181,8 +181,15 @@ module JRuby::Compiler
               nil,
               nil)
           main.start
+          main.invokestatic("org/jruby/Ruby", "newInstance", "()Lorg/jruby/Ruby;")
+          main.astore(1)
+          main.aload(1)
+          main.aload(1)
           main.ldc(string)
-          main.aprintln
+          main.ldc("ISO-8859-1")
+          main.invokevirtual("java/lang/String", "getBytes", "(Ljava/lang/String;)[B")
+          main.invokestatic("org/jruby/ir/runtime/IRRuntimeHelpers", "decodeScopeFromBytes", "(Lorg/jruby/Ruby;[B)Lorg/jruby/ir/IRScope;")
+          main.invokevirtual("org/jruby/Ruby", "runInterpreter", "(Lorg/jruby/ParseResult;)Lorg/jruby/runtime/builtin/IRubyObject;")
           main.voidreturn
           main.end
 

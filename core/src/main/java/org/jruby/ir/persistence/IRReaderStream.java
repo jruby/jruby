@@ -21,9 +21,11 @@ import org.jruby.ir.operands.TemporaryVariableType;
 import org.jruby.ir.operands.Variable;
 import org.jruby.parser.StaticScope;
 
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 import java.util.ArrayList;
@@ -38,30 +40,47 @@ import org.jruby.util.ByteList;
  *
  * @author enebo
  */
-public class IRReaderFile implements IRReaderDecoder, IRPersistenceValues {
-    private ByteBuffer buf;
+public class IRReaderStream implements IRReaderDecoder, IRPersistenceValues {
+    private final ByteBuffer buf;
     private final InstrDecoderMap instrDecoderMap;
     private final OperandDecoderMap operandDecoderMap;
     private final List<IRScope> scopes = new ArrayList<IRScope>();
     private IRScope currentScope = null; // FIXME: This is not thread-safe and more than a little gross
 
-    public IRReaderFile(IRManager manager, File file) {
-        try {
-            byte[] bytes = new byte[(int)file.length()];
-            if (RubyInstanceConfig.IR_READING_DEBUG) System.out.println("READING IN " + bytes.length + " BYTES OF DATA FROM " + file);
-            ByteBuffer buffer = ByteBuffer.wrap(bytes);
-            FileInputStream fis = new FileInputStream(file);
-            FileChannel fc = fis.getChannel();
-            fc.read(buffer);
-            fis.close();
-            buf = ByteBuffer.wrap(bytes);
-        } catch (IOException ex) {
-            Logger.getLogger(IRReaderFile.class.getName()).log(Level.SEVERE, null, ex);
+    public IRReaderStream(IRManager manager, InputStream stream) {
+        ByteBuffer buf = readIntoBuffer(stream);
 
+        this.buf = buf;
+        this.instrDecoderMap = new InstrDecoderMap(this);
+        this.operandDecoderMap = new OperandDecoderMap(manager, this);
+    }
+
+    public IRReaderStream(IRManager manager, File file) {
+        ByteBuffer buf = null;
+        try (FileInputStream fis = new FileInputStream(file)){
+            buf = readIntoBuffer(fis);
+        } catch (IOException ex) {
+            Logger.getLogger(IRReaderStream.class.getName()).log(Level.SEVERE, null, ex);
         }
 
-        instrDecoderMap = new InstrDecoderMap(this);
-        operandDecoderMap = new OperandDecoderMap(manager, this);
+        this.buf = buf;
+        this.instrDecoderMap = new InstrDecoderMap(this);
+        this.operandDecoderMap = new OperandDecoderMap(manager, this);
+    }
+
+    private ByteBuffer readIntoBuffer(InputStream stream) {
+        ByteBuffer buf = null;
+        try {
+            ByteArrayOutputStream baos = new ByteArrayOutputStream();
+            byte[] bytes = new byte[8192];
+            int r = 0;
+            while ((r = stream.read(bytes)) > 0) baos.write(bytes, 0, r);
+            if (RubyInstanceConfig.IR_READING_DEBUG) System.out.println("READ IN " + baos.size() + " BYTES OF DATA FROM");
+            buf = ByteBuffer.wrap(baos.toByteArray());
+        } catch (IOException ex) {
+            Logger.getLogger(IRReaderStream.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        return buf;
     }
 
     @Override
