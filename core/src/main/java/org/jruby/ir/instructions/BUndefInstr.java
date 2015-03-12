@@ -5,6 +5,7 @@ import org.jruby.ir.Operation;
 import org.jruby.ir.operands.Label;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.UndefinedValue;
+import org.jruby.ir.persistence.IRReaderDecoder;
 import org.jruby.ir.transformations.inlining.CloneInfo;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.DynamicScope;
@@ -12,13 +13,17 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
 public class BUndefInstr extends OneOperandBranchInstr  implements FixedArityInstr {
-    public BUndefInstr(Operand v, Label jmpTarget) {
+    public BUndefInstr(Label jmpTarget, Operand v) {
         super(Operation.B_UNDEF, new Operand[] {jmpTarget, v});
     }
 
     @Override
     public Instr clone(CloneInfo ii) {
-        return new BUndefInstr(getArg1().cloneForInlining(ii), ii.getRenamedLabel(getJumpTarget()));
+        return new BUndefInstr(ii.getRenamedLabel(getJumpTarget()), getArg1().cloneForInlining(ii));
+    }
+
+    public static BUndefInstr decode(IRReaderDecoder d) {
+        return new BUndefInstr(d.decodeLabel(), d.decodeOperand());
     }
 
     @Override

@@ -14,6 +14,7 @@ import org.jruby.ir.IRScope;
 import org.jruby.ir.IRScopeType;
 import org.jruby.ir.Operation;
 import org.jruby.ir.instructions.Instr;
+import org.jruby.ir.operands.Label;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.OperandType;
 import org.jruby.ir.operands.TemporaryVariableType;
@@ -59,7 +60,7 @@ public class IRReaderFile implements IRReaderDecoder, IRPersistenceValues {
 
         }
 
-        instrDecoderMap = new InstrDecoderMap(manager, this);
+        instrDecoderMap = new InstrDecoderMap(this);
         operandDecoderMap = new OperandDecoderMap(manager, this);
     }
 
@@ -79,6 +80,11 @@ public class IRReaderFile implements IRReaderDecoder, IRPersistenceValues {
     @Override
     public Encoding decodeEncoding() {
         return EncodingDB.getEncodings().get(decodeByteArray()).getEncoding();
+    }
+
+    @Override
+    public Label decodeLabel() {
+        return (Label) decodeOperand();
     }
 
     @Override
