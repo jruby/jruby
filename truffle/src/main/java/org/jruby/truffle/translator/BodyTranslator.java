@@ -46,6 +46,7 @@ import org.jruby.truffle.nodes.control.ReturnNode;
 import org.jruby.truffle.nodes.control.WhileNode;
 import org.jruby.truffle.nodes.core.*;
 import org.jruby.truffle.nodes.debug.AssertConstantNodeFactory;
+import org.jruby.truffle.nodes.debug.AssertNotCompiledNodeFactory;
 import org.jruby.truffle.nodes.globals.*;
 import org.jruby.truffle.nodes.literal.*;
 import org.jruby.truffle.nodes.methods.*;
@@ -398,9 +399,15 @@ public class BodyTranslator extends Translator {
         } else if (node.getReceiverNode() instanceof org.jruby.ast.Colon2ConstNode
                 && ((org.jruby.ast.Colon2ConstNode) node.getReceiverNode()).getLeftNode() instanceof org.jruby.ast.ConstNode
                 && ((org.jruby.ast.ConstNode) ((org.jruby.ast.Colon2ConstNode) node.getReceiverNode()).getLeftNode()).getName().equals("Truffle")
-                && ((org.jruby.ast.Colon2ConstNode) node.getReceiverNode()).getName().equals("Debug")
+                && ((org.jruby.ast.Colon2ConstNode) node.getReceiverNode()).getName().equals("Primitive")
                 && node.getName().equals("assert_constant")) {
             return AssertConstantNodeFactory.create(context, sourceSection, node.getArgsNode().childNodes().get(0).accept(this));
+        } else if (node.getReceiverNode() instanceof org.jruby.ast.Colon2ConstNode
+                && ((org.jruby.ast.Colon2ConstNode) node.getReceiverNode()).getLeftNode() instanceof org.jruby.ast.ConstNode
+                && ((org.jruby.ast.ConstNode) ((org.jruby.ast.Colon2ConstNode) node.getReceiverNode()).getLeftNode()).getName().equals("Truffle")
+                && ((org.jruby.ast.Colon2ConstNode) node.getReceiverNode()).getName().equals("Primitive")
+                && node.getName().equals("assert_not_compiled")) {
+            return AssertNotCompiledNodeFactory.create(context, sourceSection);
         }
 
         return visitCallNodeExtraArgument(node, null, false, false);

@@ -6,133 +6,42 @@
 # GNU General Public License version 2
 # GNU Lesser General Public License version 2.1
 
-# This file relies on some implementation details of JRuby+Truffle and Truffle,
-# so be careful as you edit. Every block that you pass to example must be
-# unique - so you can't always build up examples by running in a loop or using
-# helper method. Truffle::Debug.assert_constant looks like a method but is replaced
-# in the parser with a specific node.
+# To diagnose a failing example
+#
+# Take the expression that failed and put it in test.rb with this code around
+# it:
+#
+#   loop do
+#     expression
+#   end
+#
+# To actually see the failure (rather than just the non-constant code running)
+# do:
+#
+#   loop do
+#     Truffle::Primitive.assert_constant expression
+#   end
+#
+# Run with:
+#
+#   jt run --graal -J-G:+TraceTruffleCompilation -J-G:+TruffleCompilationExceptionsAreFatal test.rb
 
-# Definition of the DSL
+EXAMPLES = []
 
-module PETests
-
-  def self.start
-    @description_stack = []
-    @failures = []
-    @successes = []
-    @warnings = []
-    @dots = 0
-  end
-
-  def self.tests(&block)
-    instance_eval &block
-  end
-
-  def self.describe(description)
-    @description_stack.push description
-    
-    begin
-      yield
-    ensure
-      @description_stack.pop
-    end
-  end
-
-  def self.full_description
-    @description_stack.join(" ")
-  end
-
-  def self.example(description)
-    describe "#{description} is constant" do
-      begin
-        1_000_000.times do
-          yield
-        end
-
-        @successes.push full_description
-        print "."
-      rescue RubyTruffleError
-        @failures.push full_description
-        print "E"
-      ensure
-        @dots += 1
-        puts if @dots == 80
-      end
-    end
-  end
-
-  def self.counter_example(description)
-    describe "#{description} is not constant" do
-      begin
-        1_000_000.times do
-          yield
-        end
-    
-        @failures.push full_description
-        print "E"
-      rescue RubyTruffleError
-        @successes.push full_description
-        print "."
-      ensure
-        @dots += 1
-        puts if @dots == 80
-      end
-    end
-  end
-
-  def self.broken_example(description)
-    describe "#{description} is constant" do
-      @warnings.push "broken example not run: #{full_description}"
-    end
-  end
-
-  def self.finish
-    puts
-    puts
-    
-    @failures.each do |message|
-      puts "failed: #{message}"
-    end
-    
-    @warnings.each do |message|
-      puts "warning: #{message}"
-    end
-
-    puts
-
-    if @failures.empty?
-      puts "success - #{@successes.length} passed"
-      true
-    else
-      puts "failure - #{@failures.length} failed, #{@successes.length} passed"
-
-      false
-    end
-  end
-
+def example(code, expected_constant=true, tagged=false)
+  EXAMPLES << [code, expected_constant, tagged]
 end
 
-PETests.start
-
-# Test we're working
-
-PETests.tests do
-
-  describe "For example" do
-
-    example "a fixnum literal" do
-      Truffle::Debug.assert_constant 14
-    end
-
-    counter_example "a call to #rand" do
-      Truffle::Debug.assert_constant rand
-    end
-
-  end
-
+def counter_example(code)
+  example(code, false, false)
 end
 
-# Tests organised by class
+def tagged_example(code)
+  example(code, false, true)
+end
+
+example "14"
+counter_example "rand"
 
 require_relative 'language/metaprogramming_pe.rb'
 require_relative 'core/truefalse_pe.rb'
@@ -141,9 +50,48 @@ require_relative 'core/float_pe.rb'
 require_relative 'core/symbol_pe.rb'
 require_relative 'core/array_pe.rb'
 require_relative 'core/hash_pe.rb'
-require_relative 'core/kernel/set_trace_func_pe.rb'
 require_relative 'macro/pushing_pixels_pe.rb'
 
-# Finished
+tested = 0
+failed = 0
+tagged = 0
 
-exit 1 unless PETests.finish
+EXAMPLES.each do |code, expected_constant, tagged|
+  finished = false
+
+  test_thread = Thread.new do
+    begin
+      tested += 1
+      eval "loop { Truffle::Primitive.assert_constant #{code}; Truffle::Primitive.assert_not_compiled; Thread.pass }"
+    rescue RubyTruffleError => e
+      constant = e.message.include? 'Truffle::Primitive.assert_not_compiled'
+      if expected_constant
+        unless constant
+          puts "FAILURE: #{code} wasn't constant"
+          failed += 1
+        end
+      else
+        if constant
+          if tagged
+            puts "QUERY: #{code} was tagged but it still passed"
+          else
+            puts "QUERY: #{code} wasn't supposed to be constant but it was"
+            failed += 1
+          end
+        end
+      end
+    ensure
+      finished = true
+    end
+  end
+
+  test_thread.join(5)
+
+  unless finished
+    puts "TIMEOUT: #{code} didn't compile in time so I don't know if it's constant or not"
+  end
+end
+
+puts "Tested #{tested}, #{EXAMPLES.select{|c,e,t| t}.size} tagged, #{failed} failed"
+
+exit 1 unless failed.zero?

@@ -1,3 +1,11 @@
+# Copyright (c) 2014, 2015 Oracle and/or its affiliates. All rights reserved. This
+# code is released under a tri EPL/GPL/LGPL license. You can use it,
+# redistribute it and/or modify it under the terms of the:
+# 
+# Eclipse Public License version 1.0
+# GNU General Public License version 2
+# GNU Lesser General Public License version 2.1
+
 module PushingPixelsFixtures
 
   module Foo
@@ -27,11 +35,4 @@ module PushingPixelsFixtures
 
 end
 
-PETests.tests do
-
-  broken_example "A set of constants used in a literal hash, mapped to an array, indexed, used in an array literal, sorted, indexed, and added, all via method_missing, respond_to? and send" do
-    bar = PushingPixelsFixtures::Bar.new
-    Truffle::Debug.assert_constant bar.foo(14, 8, 6)
-  end
-
-end
+tagged_example "PushingPixelsFixtures::Bar.new.foo(14, 8, 6)"

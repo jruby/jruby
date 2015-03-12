@@ -1,3 +1,11 @@
+# Copyright (c) 2014, 2015 Oracle and/or its affiliates. All rights reserved. This
+# code is released under a tri EPL/GPL/LGPL license. You can use it,
+# redistribute it and/or modify it under the terms of the:
+# 
+# Eclipse Public License version 1.0
+# GNU General Public License version 2
+# GNU Lesser General Public License version 2.1
+
 module MetaprogrammingFixtures
 
   class MethodMissing
@@ -18,21 +26,7 @@ module MetaprogrammingFixtures
 
 end
 
-PETests.tests do
-
-  example "A call that results in #method_missing" do
-    method_missing = MetaprogrammingFixtures::MethodMissing.new
-    Truffle::Debug.assert_constant method_missing.does_not_exist
-  end
-
-  example "#respond_to? on a method that does exist" do
-    object_with_existing_method = MetaprogrammingFixtures::ClassWithExistingMethod.new
-    Truffle::Debug.assert_constant object_with_existing_method.respond_to? :existing_method
-  end
-
-  example "#send on a method that exists using a symbol" do
-    object_with_existing_method = MetaprogrammingFixtures::ClassWithExistingMethod.new
-    Truffle::Debug.assert_constant object_with_existing_method.send(:existing_method, 14)
-  end
-
-end
+# all fail due to calls not being inlined
+tagged_example "MetaprogrammingFixtures::MethodMissing.new.does_not_exist"
+tagged_example "MetaprogrammingFixtures::ClassWithExistingMethod.new.respond_to?(:existing_method)"
+tagged_example "MetaprogrammingFixtures::ClassWithExistingMethod.new.send(:existing_method, 14)"

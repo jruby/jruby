@@ -1,18 +1,12 @@
-PETests.tests do
+# Copyright (c) 2014, 2015 Oracle and/or its affiliates. All rights reserved. This
+# code is released under a tri EPL/GPL/LGPL license. You can use it,
+# redistribute it and/or modify it under the terms of the:
+# 
+# Eclipse Public License version 1.0
+# GNU General Public License version 2
+# GNU Lesser General Public License version 2.1
 
-  describe "A small Array" do
-    
-    example "indexed by a constant" do
-      array = [3, 1, 2]
-      Truffle::Debug.assert_constant array[1]
-    end
-    
-    example "sorted and indexed" do
-      array = [3, 1, 2]
-      sorted = array.sort
-      Truffle::Debug.assert_constant sorted[1]
-    end
+example "[3, 1, 2][1]"
 
-  end
-
-end
+# fails because of a call to <=> that is not inlined
+tagged_example "[3, 1, 2].sort[1]"

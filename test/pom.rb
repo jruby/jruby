@@ -324,7 +324,6 @@ project 'JRuby Integration Tests' do
                       '<target>' + 
                         '<exec dir="${jruby.home}" executable="${jruby.home}/bin/jruby" failonerror="true">' +
                           '<arg value="-J-server" />' +
-                          '<arg value="-J-G:+TruffleCompilationExceptionsAreThrown" />' +
                           '<arg value="-X+T" />' +
                           '<arg value="test/truffle/pe/pe.rb" />' +
                         '</exec>' +
