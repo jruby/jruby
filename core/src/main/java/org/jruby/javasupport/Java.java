@@ -1111,17 +1111,37 @@ public class Java implements Library {
         // constant access won't pay the "penalty" for adding dynamic methods ...
         final RubyModule packageOrClass = getTopLevelProxyOrPackage(runtime, constName, false);
         if ( packageOrClass != null ) {
-            final RubyModule javaModule = (RubyModule) self;
+            final RubyModule Java = (RubyModule) self;
             // NOTE: if it's a package createPackageModule already set the constant
             // ... but in case it's a (top-level) Java class name we still need to:
-            synchronized (javaModule) {
-                final IRubyObject alreadySet = javaModule.fetchConstant(constName);
+            synchronized (Java) {
+                final IRubyObject alreadySet = Java.fetchConstant(constName);
                 if ( alreadySet != null ) return (RubyModule) alreadySet;
-                javaModule.setConstant(constName, packageOrClass);
+                Java.setConstant(constName, packageOrClass);
             }
             return packageOrClass;
         }
         return context.nil; // TODO compatibility - should be throwing instead, right !?
+    }
+
+    @JRubyMethod(name = "method_missing", meta = true, required = 1)
+    public static IRubyObject method_missing(ThreadContext context, final IRubyObject self,
+        final IRubyObject name) { // JavaUtilities.get_top_level_proxy_or_package(name)
+        // NOTE: getTopLevelProxyOrPackage will bind the (cached) method for us :
+        final RubyModule result = getTopLevelProxyOrPackage(context.runtime, name.asJavaString(), true);
+        if ( result != null ) return result;
+        return context.nil; // TODO compatibility - should be throwing instead, right !?
+    }
+
+    @JRubyMethod(name = "method_missing", meta = true, rest = true)
+    public static IRubyObject method_missing(ThreadContext context, final IRubyObject self,
+        final IRubyObject[] args) {
+        final IRubyObject name = args[0];
+        if ( args.length > 1 ) {
+            final int count = args.length - 1;
+            throw context.runtime.newArgumentError("Java does not have a method `"+ name +"' with " + count + " arguments");
+        }
+        return method_missing(context, self, name);
     }
 
     public static IRubyObject get_top_level_proxy_or_package(final ThreadContext context,
@@ -1149,7 +1169,6 @@ public class Java implements Library {
         }
     }
 
-    // TODO: Formalize conversion mechanisms between Java and Ruby
     /**
      * High-level object conversion utility.
      */
@@ -1164,7 +1183,6 @@ public class Java implements Library {
     public static IRubyObject java_to_primitive(IRubyObject recv, IRubyObject object, Block unusedBlock) {
         return JavaUtil.java_to_primitive(recv, object, unusedBlock);
     }
-
 
     // TODO: Formalize conversion mechanisms between Java and Ruby
     @JRubyMethod(required = 2, module = true, visibility = PRIVATE)
