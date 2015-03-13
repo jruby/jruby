@@ -179,6 +179,24 @@ public abstract class ThreadNodes {
 
     }
 
+    @CoreMethod(names = "main", onSingleton = true)
+    public abstract static class MainNode extends CoreMethodNode {
+
+        public MainNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public MainNode(MainNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public RubyThread main() {
+            return getContext().getThreadManager().getRootThread();
+        }
+
+    }
+
     @CoreMethod(names = "pass", onSingleton = true)
     public abstract static class PassNode extends CoreMethodNode {
 
