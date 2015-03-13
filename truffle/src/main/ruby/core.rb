@@ -72,6 +72,7 @@ require_relative 'core/rubinius/common/mutex'
 require_relative 'core/rubinius/common/throw_catch'
 require_relative 'core/rubinius/common/time'
 require_relative 'core/rubinius/common/true'
+require_relative 'core/rubinius/common/random'
 
 require_relative 'core/rubinius/common/rational'
 require_relative 'core/rubinius/common/rationalizer'

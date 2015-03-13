@@ -1,8 +1,0 @@
-fails:Random.new returns a new instance of Random
-fails:Random.new uses a random seed value if none is supplied
-fails:Random.new returns Random instances initialized with different seeds
-fails:Random.new accepts an Integer seed value as an argument
-fails:Random.new accepts (and truncates) a Float seed value as an argument
-fails:Random.new accepts (and converts to Integer) a Rational seed value as an argument
-fails:Random.new accepts (and converts to Integer) a Complex (without imaginary part) seed value as an argument
-fails:Random.new raises a RangeError if passed a Complex (with imaginary part) seed value as an argument
