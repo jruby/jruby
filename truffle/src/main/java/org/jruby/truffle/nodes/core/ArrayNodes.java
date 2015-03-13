@@ -597,7 +597,12 @@ public abstract class ArrayNodes {
     }
 
     @CoreMethod(names = "concat", required = 1, raiseIfFrozenSelf = true)
-    public abstract static class ConcatNode extends ArrayCoreMethodNode {
+    @NodeChildren({
+        @NodeChild(value = "array"),
+        @NodeChild(value = "other")
+    })
+    @ImportGuards(ArrayGuards.class)
+    public abstract static class ConcatNode extends RubyNode {
 
         public ConcatNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -605,6 +610,10 @@ public abstract class ArrayNodes {
 
         public ConcatNode(ConcatNode prev) {
             super(prev);
+        }
+
+        @CreateCast("other") public RubyNode coerceOtherToAry(RubyNode other) {
+            return ToAryNodeFactory.create(getContext(), getSourceSection(), other);
         }
 
         @Specialization(guards = "areBothNull")
