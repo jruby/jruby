@@ -1244,7 +1244,12 @@ public abstract class ArrayNodes {
     }
 
     @CoreMethod(names = "initialize_copy", visibility = Visibility.PRIVATE, required = 1, raiseIfFrozenSelf = true)
-    public abstract static class InitializeCopyNode extends ArrayCoreMethodNode {
+    @NodeChildren({
+        @NodeChild(value = "self"),
+        @NodeChild(value = "from")
+    })
+    @ImportGuards(ArrayGuards.class)
+    public abstract static class InitializeCopyNode extends RubyNode {
         // TODO(cs): what about allocationSite ?
 
         public InitializeCopyNode(RubyContext context, SourceSection sourceSection) {
@@ -1253,6 +1258,10 @@ public abstract class ArrayNodes {
 
         public InitializeCopyNode(InitializeCopyNode prev) {
             super(prev);
+        }
+
+        @CreateCast("from") public RubyNode coerceOtherToAry(RubyNode other) {
+            return ToAryNodeFactory.create(getContext(), getSourceSection(), other);
         }
 
         @Specialization(guards = "isOtherNull")
