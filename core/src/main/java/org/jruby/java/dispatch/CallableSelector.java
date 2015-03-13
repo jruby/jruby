@@ -20,6 +20,7 @@ import org.jruby.javasupport.JavaUtil;
 import org.jruby.javasupport.ParameterTypes;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.CodegenUtils;
+import org.jruby.util.collections.IntHashMap;
 
 /**
  * Method selection logic for calling from Ruby to Java.
@@ -30,7 +31,8 @@ public class CallableSelector {
 
     //private static final boolean DEBUG = true;
 
-    public static ParameterTypes matchingCallableArityN(Ruby runtime, Map cache, ParameterTypes[] methods, IRubyObject[] args, int argsLength) {
+    @SuppressWarnings("unchecked")
+    public static ParameterTypes matchingCallableArityN(Ruby runtime, Map cache, ParameterTypes[] methods, IRubyObject[] args) {
         final int signatureCode = argsHashCode(args);
         ParameterTypes method = (ParameterTypes) cache.get(signatureCode);
         if (method == null) {
@@ -43,11 +45,12 @@ public class CallableSelector {
     // NOTE: The five match methods are arity-split to avoid the cost of boxing arguments
     // when there's already a cached match. Do not condense them into a single
     // method.
-    public static JavaCallable matchingCallableArityN(Ruby runtime, Map cache, JavaCallable[] methods, IRubyObject[] args, int argsLength) {
+    @SuppressWarnings("unchecked")
+    public static JavaCallable matchingCallableArityN(Ruby runtime, Map cache, JavaCallable[] methods, IRubyObject[] args) {
         final int signatureCode = argsHashCode(args);
         JavaCallable method = (JavaCallable) cache.get(signatureCode);
         if (method == null) {
-            method = (JavaCallable) findMatchingCallableForArgs(runtime, methods, args);
+            method = findMatchingCallableForArgs(runtime, methods, args);
             if (method != null) cache.put(signatureCode, method);
         }
         return method;
@@ -57,7 +60,7 @@ public class CallableSelector {
         final int signatureCode = argsHashCode(arg0);
         JavaCallable method = (JavaCallable) cache.get(signatureCode);
         if (method == null) {
-            method = (JavaCallable) findMatchingCallableForArgs(runtime, methods, arg0);
+            method = findMatchingCallableForArgs(runtime, methods, arg0);
             if (method != null) cache.put(signatureCode, method);
         }
         return method;
@@ -67,7 +70,7 @@ public class CallableSelector {
         final int signatureCode = argsHashCode(arg0, arg1);
         JavaCallable method = (JavaCallable) cache.get(signatureCode);
         if (method == null) {
-            method = (JavaCallable) findMatchingCallableForArgs(runtime, methods, arg0, arg1);
+            method = findMatchingCallableForArgs(runtime, methods, arg0, arg1);
             if (method != null) cache.put(signatureCode, method);
         }
         return method;
@@ -77,7 +80,7 @@ public class CallableSelector {
         final int signatureCode = argsHashCode(arg0, arg1, arg2);
         JavaCallable method = (JavaCallable) cache.get(signatureCode);
         if (method == null) {
-            method = (JavaCallable) findMatchingCallableForArgs(runtime, methods, arg0, arg1, arg2);
+            method = findMatchingCallableForArgs(runtime, methods, arg0, arg1, arg2);
             if (method != null) cache.put(signatureCode, method);
         }
         return method;
@@ -87,30 +90,80 @@ public class CallableSelector {
         final int signatureCode = argsHashCode(arg0, arg1, arg2, arg3);
         JavaCallable method = (JavaCallable) cache.get(signatureCode);
         if (method == null) {
-            method = (JavaCallable) findMatchingCallableForArgs(runtime, methods, arg0, arg1, arg2, arg3);
+            method = findMatchingCallableForArgs(runtime, methods, arg0, arg1, arg2, arg3);
             if (method != null) cache.put(signatureCode, method);
         }
         return method;
     }
 
-    private static ParameterTypes findMatchingCallableForArgs(final Ruby runtime,
-        final ParameterTypes[] methods, final IRubyObject... args) {
-        ParameterTypes method = null;
+    public static <T extends ParameterTypes> T matchingCallableArityN(Ruby runtime, IntHashMap<T> cache, T[] methods, IRubyObject[] args) {
+        final int signatureCode = argsHashCode(args);
+        T method = cache.get(signatureCode);
+        if (method == null) {
+            method = findMatchingCallableForArgs(runtime, methods, args);
+            if (method != null) cache.put(signatureCode, method);
+        }
+        return method;
+    }
+
+    public static <T extends ParameterTypes> T matchingCallableArityOne(Ruby runtime, IntHashMap<T> cache, T[] methods, IRubyObject arg0) {
+        final int signatureCode = argsHashCode(arg0);
+        T method = cache.get(signatureCode);
+        if (method == null) {
+            method = findMatchingCallableForArgs(runtime, methods, arg0);
+            if (method != null) cache.put(signatureCode, method);
+        }
+        return method;
+    }
+
+    public static <T extends ParameterTypes> T matchingCallableArityTwo(Ruby runtime, IntHashMap<T> cache, T[] methods, IRubyObject arg0, IRubyObject arg1) {
+        final int signatureCode = argsHashCode(arg0, arg1);
+        T method = cache.get(signatureCode);
+        if (method == null) {
+            method = findMatchingCallableForArgs(runtime, methods, arg0, arg1);
+            if (method != null) cache.put(signatureCode, method);
+        }
+        return method;
+    }
+
+    public static <T extends ParameterTypes> T matchingCallableArityThree(Ruby runtime, IntHashMap<T> cache, T[] methods, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2) {
+        final int signatureCode = argsHashCode(arg0, arg1, arg2);
+        T method = cache.get(signatureCode);
+        if (method == null) {
+            method = findMatchingCallableForArgs(runtime, methods, arg0, arg1, arg2);
+            if (method != null) cache.put(signatureCode, method);
+        }
+        return method;
+    }
+
+    public static <T extends ParameterTypes> T matchingCallableArityFour(Ruby runtime, IntHashMap<T> cache, T[] methods, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3) {
+        final int signatureCode = argsHashCode(arg0, arg1, arg2, arg3);
+        T method = cache.get(signatureCode);
+        if (method == null) {
+            method = findMatchingCallableForArgs(runtime, methods, arg0, arg1, arg2, arg3);
+            if (method != null) cache.put(signatureCode, method);
+        }
+        return method;
+    }
+
+    private static <T extends ParameterTypes> T findMatchingCallableForArgs(final Ruby runtime,
+        final T[] methods, final IRubyObject... args) {
+        T method = null;
 
         // try the new way first
-        final List<ParameterTypes> candidates = findCallableCandidates(methods, args);
+        final List<T> candidates = findCallableCandidates(methods, args);
         final int size = candidates.size();
 
         if ( size > 0 ) {
             // new way found one, so let's go with that
             if ( size == 1 ) method = candidates.get(0);
             else { // narrow to most specific version (or first version, if none are more specific)
-                ParameterTypes mostSpecific = candidates.get(0);
+                T mostSpecific = candidates.get(0);
                 Class<?>[] msTypes = mostSpecific.getParameterTypes();
                 boolean ambiguous = false;
 
                 OUTER: for ( int c = 1; c < size; c++ ) {
-                    final ParameterTypes candidate = candidates.get(c);
+                    final T candidate = candidates.get(c);
                     final Class<?>[] cTypes = candidate.getParameterTypes();
 
                     for ( int i = 0; i < msTypes.length; i++ ) {
@@ -172,11 +225,11 @@ public class CallableSelector {
         return method;
     }
 
-    private static ParameterTypes findCallable(ParameterTypes[] callables, CallableAcceptor acceptor, IRubyObject[] args) {
-        ParameterTypes bestCallable = null;
+    private static <T extends ParameterTypes> T findCallable(T[] callables, CallableAcceptor acceptor, IRubyObject[] args) {
+        T bestCallable = null;
         int bestScore = -1;
         for ( int i = 0; i < callables.length; i++ ) {
-            ParameterTypes callable = callables[i];
+            final T callable = callables[i];
 
             if ( acceptor.accept(callable, args) ) {
                 int currentScore = calcExactnessScore(callable, args);
@@ -188,15 +241,16 @@ public class CallableSelector {
         return bestCallable;
     }
 
-    private static List<ParameterTypes> findCallableCandidates(final ParameterTypes[] callables,
+    @SuppressWarnings("unchecked")
+    private static <T extends ParameterTypes> List<T> findCallableCandidates(final T[] callables,
         final IRubyObject[] args) {
         // in case of an exact match prefer to return it early :
         for ( int c = 0; c < callables.length; c++ ) {
-            final ParameterTypes callable = callables[c];
+            final T callable = callables[c];
             if ( exactMatch(callable, args ) ) return Collections.singletonList(callable);
         }
 
-        final ArrayList<ParameterTypes> retained = new ArrayList<ParameterTypes>(callables.length);
+        final ArrayList<T> retained = new ArrayList<T>(callables.length);
         ParameterTypes[] incoming = callables.clone();
 
         for ( int i = 0; i < args.length; i++ ) {
@@ -209,7 +263,7 @@ public class CallableSelector {
                     Class[] types = callable.getParameterTypes();
 
                     if ( matcher.match( types[i], args[i] ) ) {
-                        retained.add(callable);
+                        retained.add((T) callable);
                         incoming[c] = null; // retaining - remove
                     }
                 }

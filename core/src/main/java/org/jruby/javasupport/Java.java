@@ -767,7 +767,7 @@ public class Java implements Library {
 
                 JavaProxyConstructor matching = (JavaProxyConstructor)CallableSelector.matchingCallableArityN(
                         context.runtime, methodCache,
-                        forArity.toArray(new JavaProxyConstructor[forArity.size()]), args, args.length);
+                        forArity.toArray(new JavaProxyConstructor[forArity.size()]), args);
 
                 if (matching == null) {
                     throw context.runtime.newArgumentError("wrong number of arguments for constructor");

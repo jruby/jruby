@@ -11,8 +11,8 @@ import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
-public class StaticMethodInvoker extends MethodInvoker {
-    
+public final class StaticMethodInvoker extends MethodInvoker {
+
     public StaticMethodInvoker(RubyClass host, List<Method> methods) {
         super(host, methods);
     }
@@ -32,7 +32,7 @@ public class StaticMethodInvoker extends MethodInvoker {
             for (int i = 0; i < len && i < args.length; i++) {
                 convertedArgs[i] = convertArg(args[i], method, i);
             }
-            convertedArgs[len] = convertVarargs(args, method);
+            convertedArgs[len] = convertVarArgs(args, method);
         } else {
             convertedArgs = new Object[len];
             for (int i = 0; i < len && i < args.length; i++) {
