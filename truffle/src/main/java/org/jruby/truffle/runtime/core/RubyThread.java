@@ -136,7 +136,7 @@ public class RubyThread extends RubyBasicObject {
         }
     }
 
-    public void join(final int timeout) {
+    public boolean join(final int timeout) {
         final boolean joined = getContext().getThreadManager().runOnce(new BlockingActionWithoutGlobalLock<Boolean>() {
             @Override
             public Boolean block() throws InterruptedException {
@@ -147,6 +147,8 @@ public class RubyThread extends RubyBasicObject {
         if (joined && exception != null) {
             throw new RaiseException(exception);
         }
+
+        return joined;
     }
 
     public void interrupt() {
