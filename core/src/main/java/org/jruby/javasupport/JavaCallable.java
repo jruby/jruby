@@ -49,6 +49,7 @@ import org.jruby.util.cli.Options;
 import static org.jruby.javasupport.JavaClass.toRubyArray;
 
 public abstract class JavaCallable extends JavaAccessibleObject implements ParameterTypes {
+
     protected final Class<?>[] parameterTypes;
 
     private static final boolean REWRITE_JAVA_TRACE = Options.REWRITE_JAVA_TRACE.load();
@@ -62,15 +63,20 @@ public abstract class JavaCallable extends JavaAccessibleObject implements Param
         result.defineAnnotatedMethods(JavaCallable.class);
     }
 
-    public abstract int getArity();
+    public final int getArity() { return parameterTypes.length; }
+
+    public final Class<?>[] getParameterTypes() { return parameterTypes; }
+
+    //public abstract int getArity();
+    //public abstract Class<?>[] getParameterTypes();
     public abstract int getModifiers();
-    public abstract Class<?>[] getParameterTypes();
     public abstract Class<?>[] getExceptionTypes();
     public abstract Type[] getGenericExceptionTypes();
     public abstract Type[] getGenericParameterTypes();
     public abstract Annotation[][] getParameterAnnotations();
     public abstract boolean isVarArgs();
     public abstract String toGenericString();
+    
     /**
      * @return the name used in the head of the string returned from inspect()
      */
@@ -134,7 +140,7 @@ public abstract class JavaCallable extends JavaAccessibleObject implements Param
             }
         }
         result.append(")>");
-        return getRuntime().newString(result.toString());
+        return getRuntime().newString( result.toString() );
     }
 
 
@@ -143,26 +149,22 @@ public abstract class JavaCallable extends JavaAccessibleObject implements Param
         return RubyBoolean.newBoolean(getRuntime(), Modifier.isPublic(getModifiers()));
     }
 
-    protected void checkArity(int length) {
+    protected void checkArity(final int length) {
         if (length != getArity()) {
             throw getRuntime().newArgumentError(length, getArity());
         }
     }
 
-    protected static String dumpArgTypes(Object[] arguments) {
-        StringBuilder str = new StringBuilder("[");
-        for (int i = 0; i < arguments.length; i++) {
-            if (i > 0) {
-                str.append(",");
-            }
-            if (arguments[i] == null) {
-                str.append("null");
-            } else {
-                str.append(arguments[i].getClass().getName());
-            }
+    static CharSequence dumpArgTypes(final Object[] args) {
+        StringBuilder str = new StringBuilder(args.length * 16);
+        str.append('[');
+        for (int i = 0; i < args.length; i++) {
+            if ( i > 0 ) str.append(',');
+            if ( args[i] == null ) str.append("null");
+            else str.append( args[i].getClass().getName() );
         }
-        str.append("]");
-        return str.toString();
+        str.append(']');
+        return str;
     }
 
     protected IRubyObject handleThrowable(Throwable t, Member target) {

@@ -198,11 +198,6 @@ public class JavaMethod extends JavaCallable {
         return getRuntime().newString(method.getName());
     }
 
-    @Override
-    public int getArity() {
-        return parameterTypes.length;
-    }
-
     @JRubyMethod(name = "public?")
     @Override
     public RubyBoolean public_p() {
@@ -542,10 +537,15 @@ public class JavaMethod extends JavaCallable {
         return arguments;
     }
 
-    @Override
-    public Class<?>[] getParameterTypes() {
-        return parameterTypes;
-    }
+    //@Override
+    //public final int getArity() {
+    //    return parameterTypes.length;
+    //}
+
+    //@Override
+    //public final Class<?>[] getParameterTypes() {
+    //    return parameterTypes;
+    //}
 
     @Override
     public Class<?>[] getExceptionTypes() {
@@ -568,7 +568,7 @@ public class JavaMethod extends JavaCallable {
     }
 
     @Override
-    public boolean isVarArgs() {
+    public final boolean isVarArgs() {
         return method.isVarArgs();
     }
 
@@ -591,7 +591,7 @@ public class JavaMethod extends JavaCallable {
     }
 
     @Override
-    public int getModifiers() {
+    public final int getModifiers() {
         return method.getModifiers();
     }
 

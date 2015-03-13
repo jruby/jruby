@@ -129,26 +129,31 @@ public class JavaConstructor extends JavaCallable {
         return constructor.hashCode();
     }
 
-    public int getArity() {
-        return parameterTypes.length;
-    }
-
     protected String nameOnInspection() {
         return getType().toString();
     }
 
-    public Class<?>[] getParameterTypes() {
-        return parameterTypes;
-    }
+    //@Override
+    //public final int getArity() {
+    //    return parameterTypes.length;
+    //}
 
-    public Class<?>[] getExceptionTypes() {
+    //@Override
+    //public final Class<?>[] getParameterTypes() {
+    //    return parameterTypes;
+    //}
+
+    @Override
+    public final Class<?>[] getExceptionTypes() {
         return constructor.getExceptionTypes();
     }
 
+    @Override
     public Type[] getGenericParameterTypes() {
         return constructor.getGenericParameterTypes();
     }
 
+    @Override
     public Type[] getGenericExceptionTypes() {
         return constructor.getGenericExceptionTypes();
     }
@@ -157,11 +162,13 @@ public class JavaConstructor extends JavaCallable {
         return constructor.getParameterAnnotations();
     }
 
-    public boolean isVarArgs() {
+    @Override
+    public final boolean isVarArgs() {
         return constructor.isVarArgs();
     }
 
-    public int getModifiers() {
+    @Override
+    public final int getModifiers() {
         return constructor.getModifiers();
     }
 
