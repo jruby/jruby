@@ -24,10 +24,11 @@ public class CallableSelector {
     //private static final boolean DEBUG = true;
 
     public static ParameterTypes matchingCallableArityN(Ruby runtime, Map cache, ParameterTypes[] methods, IRubyObject[] args, int argsLength) {
-        int signatureCode = argsHashCode(args);
-        ParameterTypes method = (ParameterTypes)cache.get(signatureCode);
+        final int signatureCode = argsHashCode(args);
+        ParameterTypes method = (ParameterTypes) cache.get(signatureCode);
         if (method == null) {
-            method = findMatchingCallableForArgs(runtime, cache, signatureCode, methods, args);
+            method = findMatchingCallableForArgs(runtime, methods, args);
+            if (method != null) cache.put(signatureCode, method);
         }
         return method;
     }
@@ -36,52 +37,57 @@ public class CallableSelector {
     // when there's already a cached match. Do not condense them into a single
     // method.
     public static JavaCallable matchingCallableArityN(Ruby runtime, Map cache, JavaCallable[] methods, IRubyObject[] args, int argsLength) {
-        int signatureCode = argsHashCode(args);
-        JavaCallable method = (JavaCallable)cache.get(signatureCode);
+        final int signatureCode = argsHashCode(args);
+        JavaCallable method = (JavaCallable) cache.get(signatureCode);
         if (method == null) {
-            method = (JavaCallable)findMatchingCallableForArgs(runtime, cache, signatureCode, methods, args);
+            method = (JavaCallable) findMatchingCallableForArgs(runtime, methods, args);
+            if (method != null) cache.put(signatureCode, method);
         }
         return method;
     }
 
     public static JavaCallable matchingCallableArityOne(Ruby runtime, Map cache, JavaCallable[] methods, IRubyObject arg0) {
-        int signatureCode = argsHashCode(arg0);
-        JavaCallable method = (JavaCallable)cache.get(signatureCode);
+        final int signatureCode = argsHashCode(arg0);
+        JavaCallable method = (JavaCallable) cache.get(signatureCode);
         if (method == null) {
-            method = (JavaCallable)findMatchingCallableForArgs(runtime, cache, signatureCode, methods, arg0);
+            method = (JavaCallable) findMatchingCallableForArgs(runtime, methods, arg0);
+            if (method != null) cache.put(signatureCode, method);
         }
         return method;
     }
 
     public static JavaCallable matchingCallableArityTwo(Ruby runtime, Map cache, JavaCallable[] methods, IRubyObject arg0, IRubyObject arg1) {
-        int signatureCode = argsHashCode(arg0, arg1);
-        JavaCallable method = (JavaCallable)cache.get(signatureCode);
+        final int signatureCode = argsHashCode(arg0, arg1);
+        JavaCallable method = (JavaCallable) cache.get(signatureCode);
         if (method == null) {
-            method = (JavaCallable)findMatchingCallableForArgs(runtime, cache, signatureCode, methods, arg0, arg1);
+            method = (JavaCallable) findMatchingCallableForArgs(runtime, methods, arg0, arg1);
+            if (method != null) cache.put(signatureCode, method);
         }
         return method;
     }
 
     public static JavaCallable matchingCallableArityThree(Ruby runtime, Map cache, JavaCallable[] methods, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2) {
-        int signatureCode = argsHashCode(arg0, arg1, arg2);
-        JavaCallable method = (JavaCallable)cache.get(signatureCode);
+        final int signatureCode = argsHashCode(arg0, arg1, arg2);
+        JavaCallable method = (JavaCallable) cache.get(signatureCode);
         if (method == null) {
-            method = (JavaCallable)findMatchingCallableForArgs(runtime, cache, signatureCode, methods, arg0, arg1, arg2);
+            method = (JavaCallable) findMatchingCallableForArgs(runtime, methods, arg0, arg1, arg2);
+            if (method != null) cache.put(signatureCode, method);
         }
         return method;
     }
 
     public static JavaCallable matchingCallableArityFour(Ruby runtime, Map cache, JavaCallable[] methods, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3) {
-        int signatureCode = argsHashCode(arg0, arg1, arg2, arg3);
-        JavaCallable method = (JavaCallable)cache.get(signatureCode);
+        final int signatureCode = argsHashCode(arg0, arg1, arg2, arg3);
+        JavaCallable method = (JavaCallable) cache.get(signatureCode);
         if (method == null) {
-            method = (JavaCallable)findMatchingCallableForArgs(runtime, cache, signatureCode, methods, arg0, arg1, arg2, arg3);
+            method = (JavaCallable) findMatchingCallableForArgs(runtime, methods, arg0, arg1, arg2, arg3);
+            if (method != null) cache.put(signatureCode, method);
         }
         return method;
     }
 
     private static ParameterTypes findMatchingCallableForArgs(final Ruby runtime,
-        Map cache, int signatureCode, ParameterTypes[] methods, IRubyObject... args) {
+        final ParameterTypes[] methods, final IRubyObject... args) {
         ParameterTypes method = null;
 
         // try the new way first
@@ -147,9 +153,6 @@ public class CallableSelector {
                 }
             }
         }
-
-        // cache found result
-        if (method != null) cache.put(signatureCode, method);
 
         return method;
     }
@@ -393,45 +396,44 @@ public class CallableSelector {
         return false;
     }
 
-    private static boolean duckable(Class type, IRubyObject arg) {
+    private static boolean duckable(final Class<?> type, final IRubyObject arg) {
         return JavaUtil.isDuckTypeConvertable(getJavaClass(arg), type);
     }
 
     private static int argsHashCode(IRubyObject a0) {
-        return 31 + classHashCode(a0);
+        return 31 + javaClassHashCode(a0);
     }
 
     private static int argsHashCode(IRubyObject a0, IRubyObject a1) {
-        return 31 * argsHashCode(a0) + classHashCode(a1);
+        return 31 * argsHashCode(a0) + javaClassHashCode(a1);
     }
 
     private static int argsHashCode(IRubyObject a0, IRubyObject a1, IRubyObject a2) {
-        return 31 * argsHashCode(a0, a1) + classHashCode(a2);
+        return 31 * argsHashCode(a0, a1) + javaClassHashCode(a2);
     }
 
     private static int argsHashCode(IRubyObject a0, IRubyObject a1, IRubyObject a2, IRubyObject a3) {
-        return 31 * argsHashCode(a0, a1, a2) + classHashCode(a3);
+        return 31 * argsHashCode(a0, a1, a2) + javaClassHashCode(a3);
     }
 
-    private static int argsHashCode(IRubyObject[] a) {
-        if (a == null) return 0;
+    private static int argsHashCode(IRubyObject[] args) {
+        if ( args == null ) return 0;
 
         int result = 1;
 
-        for (IRubyObject element : a) {
-            result = 31 * result + classHashCode(element);
+        for ( int i = 0; i < args.length; i++ ) {
+            result = 31 * result + javaClassHashCode(args[i]);
         }
 
         return result;
     }
 
-    private static int classHashCode(IRubyObject arg) {
+    private static int javaClassHashCode(final IRubyObject arg) {
         return arg == null ? 0 : arg.getJavaClass().hashCode();
     }
 
-    private static Class getJavaClass(IRubyObject arg) {
-        if ( arg == null ) return void.class;
-        return arg.getJavaClass();
+    private static Class<?> getJavaClass(final IRubyObject arg) {
+        return arg != null ? arg.getJavaClass() : void.class;
     }
 
 }
