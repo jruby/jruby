@@ -1,4 +1,3 @@
-fails:Array#concat tries to convert the passed argument to an Array using #to_ary
 fails:Array#concat is not infected by the other
 fails:Array#concat is not infected untrustedness by the other
 fails:Array#concat returns the array itself
