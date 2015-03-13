@@ -1040,4 +1040,25 @@ CLASSDEF
     end
   end
 
+  def test_no_ambiguous_java_constructor_warning_for_exact_match
+    output = with_stderr_captured do # exact match should not warn :
+      java.awt.Color.new(1.to_java(:int), 1.to_java(:int), 1.to_java(:int))
+    end
+    # warning: ambiguous Java methods found, using java.awt.Color(int,int,int)
+    assert ! output.index('ambiguous'), output
+  end
+
+  private
+
+  def with_stderr_captured
+    stderr = $stderr; require 'stringio'
+    begin
+      $stderr = StringIO.new
+      yield
+      $stderr.string
+    ensure
+      $stderr = stderr
+    end
+  end
+
 end

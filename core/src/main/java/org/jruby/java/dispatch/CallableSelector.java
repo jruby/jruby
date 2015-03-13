@@ -2,6 +2,7 @@ package org.jruby.java.dispatch;
 
 import java.lang.reflect.Member;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import org.jruby.Ruby;
@@ -169,12 +170,18 @@ public class CallableSelector {
 
     private static List<ParameterTypes> findCallableCandidates(final ParameterTypes[] callables,
         final IRubyObject[] args) {
+        // in case of an exact match prefer to return it early :
+        for ( int c = 0; c < callables.length; c++ ) {
+            final ParameterTypes callable = callables[c];
+            if ( exactMatch(callable, args ) ) return Collections.singletonList(callable);
+        }
+
         final ArrayList<ParameterTypes> retained = new ArrayList<ParameterTypes>(callables.length);
         ParameterTypes[] incoming = callables.clone();
 
         for ( int i = 0; i < args.length; i++ ) {
             retained.clear();
-            for ( final Matcher matcher : MATCH_SEQUENCE ) {
+            for ( final Matcher matcher : NON_EXACT_MATCH_SEQUENCE ) {
                 for ( int c = 0; c < incoming.length; c++ ) {
                     ParameterTypes callable = incoming[c];
                     if ( callable == null ) continue; // removed (matched)
@@ -277,7 +284,8 @@ public class CallableSelector {
         }
     };
 
-    private static final Matcher[] MATCH_SEQUENCE = new Matcher[] { EXACT, PRIMITIVABLE, ASSIGNABLE, DUCKABLE };
+    //private static final Matcher[] MATCH_SEQUENCE = new Matcher[] { EXACT, PRIMITIVABLE, ASSIGNABLE, DUCKABLE };
+    private static final Matcher[] NON_EXACT_MATCH_SEQUENCE = new Matcher[] { PRIMITIVABLE, ASSIGNABLE, DUCKABLE };
 
     private static boolean exactMatch(ParameterTypes paramTypes, IRubyObject... args) {
         Class[] types = paramTypes.getParameterTypes();
@@ -347,7 +355,7 @@ public class CallableSelector {
         return true;
     }
 
-    private static boolean assignable(Class<?> type, IRubyObject arg) {
+    private static boolean assignable(Class<?> type, final IRubyObject arg) {
         return JavaClass.assignable(type, getJavaClass(arg));
     }
 
@@ -359,7 +367,7 @@ public class CallableSelector {
      * @param arg The argument to convert
      * @return Whether the argument can be directly converted to the target primitive type
      */
-    private static boolean primitivable(Class type, IRubyObject arg) {
+    private static boolean primitivable(final Class<?> type, final IRubyObject arg) {
         final Class<?> argClass = getJavaClass(arg);
         if (type.isPrimitive()) {
             // TODO: This is where we would want to do precision checks to see
