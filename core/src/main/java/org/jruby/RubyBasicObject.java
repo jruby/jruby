@@ -101,7 +101,7 @@ import org.jruby.runtime.ivars.VariableTableManager;
  * and internal variables are handled this way, but the implementation
  * in RubyObject only returns "this" in {@link #getInstanceVariables()} and
  * {@link #getInternalVariables()}.
- * 
+ *
  * Methods that are implemented here, such as "initialize" should be implemented
  * with care; reification of Ruby classes into Java classes can produce
  * conflicting method names in rare cases. See JRUBY-5906 for an example.
@@ -111,7 +111,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
     private static final Logger LOG = LoggerFactory.getLogger("RubyBasicObject");
 
     private static final boolean DEBUG = false;
-    
+
     /** The class of this object */
     protected transient RubyClass metaClass;
 
@@ -120,13 +120,13 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
 
     /** variable table, lazily allocated as needed (if needed) */
     public transient Object[] varTable;
-    
+
     /** locking stamp for Unsafe ops updating the vartable */
     public transient volatile int varTableStamp;
-    
+
     /** offset of the varTable field in RubyBasicObject */
     public static final long VAR_TABLE_OFFSET = UnsafeHolder.fieldOffset(RubyBasicObject.class, "varTable");
-    
+
     /** offset of the varTableTamp field in RubyBasicObject */
     public static final long STAMP_OFFSET = UnsafeHolder.fieldOffset(RubyBasicObject.class, "varTableStamp");
 
@@ -441,7 +441,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
     public void setTaint(boolean taint) {
         // JRUBY-4113: callers should not call setTaint on immediate objects
         if (isImmediate()) return;
-        
+
         if (taint) {
             flags |= TAINTED_F;
         } else {
@@ -817,26 +817,28 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
         // for callers that unconditionally pass null retval type (JRUBY-4737)
         if (target == void.class) return null;
 
-        if (dataGetStruct() instanceof JavaObject) {
+        final Object innerWrapper = dataGetStruct();
+        if (innerWrapper instanceof JavaObject) {
             // for interface impls
 
-            JavaObject innerWrapper = (JavaObject)dataGetStruct();
-
+            final Object value = ((JavaObject) innerWrapper).getValue();
             // ensure the object is associated with the wrapper we found it in,
             // so that if it comes back we don't re-wrap it
-            if (target.isAssignableFrom(innerWrapper.getValue().getClass())) {
-                getRuntime().getJavaSupport().getObjectProxyCache().put(innerWrapper.getValue(), this);
+            if (target.isAssignableFrom(value.getClass())) {
+                getRuntime().getJavaSupport().getObjectProxyCache().put(value, this);
 
-                return innerWrapper.getValue();
+                return value;
             }
-        } else if (JavaUtil.isDuckTypeConvertable(getClass(), target)) {
+        }
+        else if (JavaUtil.isDuckTypeConvertable(getClass(), target)) {
             if (!respondsTo("java_object")) {
                 return JavaUtil.convertProcToInterface(getRuntime().getCurrentContext(), this, target);
             }
-        } else if (target.isAssignableFrom(getClass())) {
+        }
+        else if (target.isAssignableFrom(getClass())) {
             return this;
         }
-        
+
         throw getRuntime().newTypeError("cannot convert instance of " + getClass() + " to " + target);
     }
 
@@ -1121,7 +1123,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
         for (Map.Entry<String, VariableAccessor> entry : metaClass.getVariableTableManager().getVariableAccessorsForRead().entrySet()) {
             Object value = entry.getValue().get(this);
             if (value == null || !(value instanceof IRubyObject) || !IdUtil.isInstanceVariable(entry.getKey())) continue;
-            
+
             part.append(sep).append(" ").append(entry.getKey()).append("=");
             part.append(invokedynamic(context, (IRubyObject)value, INSPECT));
             sep = ",";
@@ -1158,7 +1160,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
         try {
             IRubyObject cmp = invokedynamic(getRuntime().getCurrentContext(),
                     this, OP_CMP, other);
-            
+
             // if RubyBasicObject#op_cmp is used, the result may be nil
             if (!cmp.isNil()) {
                 return (int) cmp.convertToInteger().getLongValue();
@@ -1166,14 +1168,14 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
         } catch (RaiseException ex) {
             getRuntime().getGlobalVariables().set("$!", oldExc);
         }
-        
+
         /* We used to raise an error if two IRubyObject were not comparable, but
          * in order to support the new ConcurrentHashMapV8 and other libraries
          * and containers that arbitrarily call compareTo expecting it to always
          * succeed, we have opted to return 0 here. This will allow all
          * RubyBasicObject subclasses to be compared, but if the comparison is
          * not valid we they will appear the same for sorting purposes.
-         * 
+         *
          * See https://jira.codehaus.org/browse/JRUBY-7013
          */
         return 0;
@@ -1264,7 +1266,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
     public Object getVariable(int index) {
         return VariableAccessor.getVariable(this, index);
     }
-    
+
     @Override
     public void setVariable(int index, Object value) {
         ensureInstanceVariablesSettable();
@@ -1286,8 +1288,8 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
 
     /**
      * Returns true if object has any variables
-     * 
-     * @see VariableTableManager#hasVariables(org.jruby.RubyBasicObject) 
+     *
+     * @see VariableTableManager#hasVariables(org.jruby.RubyBasicObject)
      */
     @Override
     public boolean hasVariables() {
@@ -1420,7 +1422,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
         assert !IdUtil.isRubyVariable(name);
         return variableTableRemove(name);
     }
-    
+
     /**
      * Sync one this object's variables with other's - this is used to make
      * rbClone work correctly.
@@ -1429,7 +1431,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
     public void syncVariables(IRubyObject other) {
         metaClass.getVariableTableManager().syncVariables(this, other);
     }
-    
+
     //
     // INSTANCE VARIABLE API METHODS
     //
@@ -1627,7 +1629,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
 
         return getMetaClass().finvoke(context, this, name, newArgs, block);
     }
-    
+
     @JRubyMethod(name = "instance_eval",
             reads = {LASTLINE, BACKREF, VISIBILITY, BLOCK, SELF, METHODNAME, LINE, JUMPTARGET, CLASS, FILENAME, SCOPE},
             writes = {LASTLINE, BACKREF, VISIBILITY, BLOCK, SELF, METHODNAME, LINE, JUMPTARGET, CLASS, FILENAME, SCOPE})
@@ -1908,7 +1910,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
                 }
             }
         }
-        
+
         private void callFinalizer(IRubyObject finalizer) {
             Helpers.invoke(
                     finalizer.getRuntime().getCurrentContext(),
@@ -2658,7 +2660,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
     }
     public IRubyObject send(ThreadContext context, IRubyObject[] args, Block block) {
         if (args.length == 0) return send(context, block);
-        
+
         String name = RubySymbol.objectToSymbolString(args[0]);
         int newArgsLength = args.length - 1;
 
@@ -2872,20 +2874,20 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
 
         throw getRuntime().newNameError("`" + name + "' is not allowable as an instance variable name", name);
     }
-    
+
     /**
      * Serialization of a Ruby (basic) object involves three steps:
-     * 
+     *
      * <ol>
      * <li>Dump the object itself</li>
      * <li>Dump a String used to load the appropriate Ruby class</li>
      * <li>Dump each variable from varTable in turn</li>
      * </ol>
-     * 
+     *
      * The metaClass field is marked transient since Ruby classes generally will
      * not be able to serialize (since they hold references to method tables,
      * other classes, and potentially thread-, runtime-, or jvm-local state.
-     * 
+     *
      * The varTable field is transient because the layout of the same class may
      * differ across runtimes, since it is determined at runtime based on the
      * order in which variables get assigned for a given class. We serialize
@@ -2895,16 +2897,16 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
         if (metaClass.isSingleton()) {
             throw new IOException("can not serialize singleton object");
         }
-        
+
         oos.defaultWriteObject();
         oos.writeUTF(metaClass.getName());
-        
+
         metaClass.getVariableTableManager().serializeVariables(this, oos);
     }
-    
+
     /**
      * Deserialization proceeds as follows:
-     * 
+     *
      * <ol>
      * <li>Deserialize the object instance. It will have null metaClass and
      * varTable fields.</li>
@@ -2912,19 +2914,19 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      * thread-local JRuby instance.</li>
      * <li>Retrieve each variable in turn, re-assigning them by name.</li>
      * </ol>
-     * 
-     * @see RubyBasicObject#writeObject(java.io.ObjectOutputStream) 
+     *
+     * @see RubyBasicObject#writeObject(java.io.ObjectOutputStream)
      */
     private void readObject(ObjectInputStream ois) throws IOException, ClassNotFoundException {
         Ruby ruby = Ruby.getThreadLocalRuntime();
-        
+
         if (ruby == null) {
             throw new IOException("No thread-local org.jruby.Ruby available; can't deserialize Ruby object. Set with Ruby#setThreadLocalRuntime.");
         }
-        
+
         ois.defaultReadObject();
         metaClass = (RubyClass)ruby.getClassFromPath(ois.readUTF());
-        
+
         metaClass.getVariableTableManager().deserializeVariables(this, ois);
     }
 

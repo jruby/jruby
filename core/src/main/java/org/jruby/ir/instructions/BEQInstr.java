@@ -4,6 +4,7 @@ import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Operation;
 import org.jruby.ir.operands.Boolean;
 import org.jruby.ir.operands.*;
+import org.jruby.ir.persistence.IRReaderDecoder;
 import org.jruby.ir.transformations.inlining.CloneInfo;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.DynamicScope;
@@ -13,20 +14,26 @@ import org.jruby.runtime.builtin.IRubyObject;
 public class BEQInstr extends TwoOperandBranchInstr implements FixedArityInstr {
     public static BranchInstr create(Operand v1, Operand v2, Label jmpTarget) {
         if (v2 instanceof Boolean) {
-            return ((Boolean) v2).isTrue() ? new BTrueInstr(v1, jmpTarget) : new BFalseInstr(v1, jmpTarget);
+            return ((Boolean) v2).isTrue() ? new BTrueInstr(jmpTarget, v1) : new BFalseInstr(jmpTarget, v1);
         }
-        if (v2 instanceof Nil) return new BNilInstr(v1, jmpTarget);
-        if (v2 == UndefinedValue.UNDEFINED) return new BUndefInstr(v1, jmpTarget);
-        return new BEQInstr(v1, v2, jmpTarget);
+        if (v2 instanceof Nil) return new BNilInstr(jmpTarget, v1);
+        if (v2 == UndefinedValue.UNDEFINED) return new BUndefInstr(jmpTarget, v1);
+
+        return new BEQInstr(jmpTarget, v1, v2);
     }
 
-    protected BEQInstr(Operand v1, Operand v2, Label jmpTarget) {
+    protected BEQInstr(Label jmpTarget, Operand v1, Operand v2) {
         super(Operation.BEQ, v1, v2, jmpTarget);
     }
 
     @Override
     public Instr clone(CloneInfo ii) {
-        return new BEQInstr(getArg1().cloneForInlining(ii), getArg2().cloneForInlining(ii), ii.getRenamedLabel(getJumpTarget()));
+        return new BEQInstr(ii.getRenamedLabel(getJumpTarget()), getArg1().cloneForInlining(ii), getArg2().cloneForInlining(ii));
+    }
+
+
+    public static BEQInstr decode(IRReaderDecoder d) {
+        return new BEQInstr(d.decodeLabel(), d.decodeOperand(), d.decodeOperand());
     }
 
     @Override

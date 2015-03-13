@@ -45,6 +45,8 @@ import org.jruby.truffle.nodes.control.RetryNode;
 import org.jruby.truffle.nodes.control.ReturnNode;
 import org.jruby.truffle.nodes.control.WhileNode;
 import org.jruby.truffle.nodes.core.*;
+import org.jruby.truffle.nodes.debug.AssertConstantNodeFactory;
+import org.jruby.truffle.nodes.debug.AssertNotCompiledNodeFactory;
 import org.jruby.truffle.nodes.globals.*;
 import org.jruby.truffle.nodes.literal.*;
 import org.jruby.truffle.nodes.methods.*;
@@ -102,7 +104,7 @@ public class BodyTranslator extends Translator {
     }
 
     public static final Set<String> FRAME_LOCAL_GLOBAL_VARIABLES = new HashSet<>(Arrays.asList("$_", "$+", "$&", "$`", "$'"));
-    public static final Set<String> THREAD_LOCAL_GLOBAL_VARIABLES = new HashSet<>(Arrays.asList("$~", "$1", "$2", "$3", "$4", "$5", "$6", "$7", "$8", "$9")); // "$_"
+    public static final Set<String> THREAD_LOCAL_GLOBAL_VARIABLES = new HashSet<>(Arrays.asList("$~", "$1", "$2", "$3", "$4", "$5", "$6", "$7", "$8", "$9", "$!")); // "$_"
 
     public BodyTranslator(com.oracle.truffle.api.nodes.Node currentNode, RubyContext context, BodyTranslator parent, TranslatorEnvironment environment, Source source, boolean topLevel) {
         super(currentNode, context, source);
@@ -392,6 +394,18 @@ public class BodyTranslator extends Translator {
             } else if (node.getName().equals("check_frozen")) {
                 return translateRubiniusCheckFrozen(sourceSection);
             }
+        } else if (node.getReceiverNode() instanceof org.jruby.ast.Colon2ConstNode
+                && ((org.jruby.ast.Colon2ConstNode) node.getReceiverNode()).getLeftNode() instanceof org.jruby.ast.ConstNode
+                && ((org.jruby.ast.ConstNode) ((org.jruby.ast.Colon2ConstNode) node.getReceiverNode()).getLeftNode()).getName().equals("Truffle")
+                && ((org.jruby.ast.Colon2ConstNode) node.getReceiverNode()).getName().equals("Primitive")
+                && node.getName().equals("assert_constant")) {
+            return AssertConstantNodeFactory.create(context, sourceSection, node.getArgsNode().childNodes().get(0).accept(this));
+        } else if (node.getReceiverNode() instanceof org.jruby.ast.Colon2ConstNode
+                && ((org.jruby.ast.Colon2ConstNode) node.getReceiverNode()).getLeftNode() instanceof org.jruby.ast.ConstNode
+                && ((org.jruby.ast.ConstNode) ((org.jruby.ast.Colon2ConstNode) node.getReceiverNode()).getLeftNode()).getName().equals("Truffle")
+                && ((org.jruby.ast.Colon2ConstNode) node.getReceiverNode()).getName().equals("Primitive")
+                && node.getName().equals("assert_not_compiled")) {
+            return AssertNotCompiledNodeFactory.create(context, sourceSection);
         }
 
         return visitCallNodeExtraArgument(node, null, false, false);
@@ -1113,11 +1127,6 @@ public class BodyTranslator extends Translator {
 
     @Override
     public RubyNode visitFCallNode(org.jruby.ast.FCallNode node) {
-        if (Options.TRUFFLE_DEBUG_ENABLE_ASSERT_CONSTANT.load() && node.getName().equals("truffle_assert_constant")) {
-            SourceSection sourceSection = translate(node.getPosition());
-            return AssertCompilationConstantNodeFactory.create(context, sourceSection, node.getArgsNode().childNodes().get(0).accept(this));
-        }
-
         final org.jruby.ast.Node receiver = new org.jruby.ast.SelfNode(node.getPosition());
         final CallNode callNode = new CallNode(node.getPosition(), receiver, node.getName(), node.getArgsNode(), node.getIterNode());
 

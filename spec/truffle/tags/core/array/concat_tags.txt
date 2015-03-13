@@ -1,6 +1,3 @@
-fails:Array#concat tries to convert the passed argument to an Array using #to_ary
-fails:Array#concat raises a RuntimeError when Array is frozen and modification occurs
-fails:Array#concat raises a RuntimeError when Array is frozen and no modification occurs
 fails:Array#concat is not infected by the other
 fails:Array#concat is not infected untrustedness by the other
 fails:Array#concat returns the array itself

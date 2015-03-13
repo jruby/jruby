@@ -123,6 +123,102 @@ class TestHigherJavasupport < Test::Unit::TestCase
     assert_equal(17.0, array[2])
   end
 
+  class IntLike
+    def initialize(value)
+      @value = value
+    end
+    def to_int; @value end
+  end
+
+  def test_array_with_non_ruby_integer_indexes
+    size = IntLike.new(2)
+    array = Java::byte[size].new
+
+    array[ 0 ] = 42.to_java(:byte)
+    assert_equal 42, array[ 0.to_java(:int) ]
+    # TODO: this should work as well, right?!
+    #assert_equal 42, array[ 0.to_java(:short) ]
+
+    assert_equal 42, array[ IntLike.new(0) ]
+
+    array[ 1.to_java('java.lang.Integer') ] = 21
+    assert_equal 21, array[1]
+
+    array[ IntLike.new(1) ] = 41
+    assert_equal 41, array[1]
+
+    assert_nil array.at(3)
+    assert_equal 41, array.at( 1.0 )
+    assert_nil array.at( IntLike.new(2) )
+    assert_equal 42, array.at( IntLike.new(-2) )
+    assert_equal 41, array.at( -1.to_java(:int) )
+  end
+
+  def test_array_eql_and_hash
+    array1 = java.lang.Long[4].new
+    array2 = java.lang.Long[4].new
+
+    do_test_eql_arrays(array1, array2)
+
+    array1 = Java::long[5].new
+    array2 = Java::long[5].new
+
+    do_test_eql_arrays(array1, array2)
+
+    array1 = Java::long[4].new
+    array2 = Java::long[5].new
+    assert_equal false, array1 == array2
+  end
+
+  def do_test_eql_arrays(array1, array2)
+    assert_equal(array1, array2)
+    assert array1.eql?(array2)
+
+    array1[0] = 1
+    assert_equal false, array1.eql?(array2)
+
+    array2[0] = 1
+    array2[1] = 2
+    array2[2] = 3
+    array1[1] = 2
+    array1[2] = 3
+
+    assert_equal(array2, array1)
+    assert_equal(array2.hash, array1.hash)
+    assert array2.eql?(array1)
+    assert_equal true, array1 == array2
+
+    assert ! array2.equal?(array1)
+    assert array2.equal?(array2)
+  end
+  private :do_test_eql_arrays
+
+  def test_bare_eql_and_hash
+    l1 = java.lang.Long.valueOf 100_000_000
+    l2 = java.lang.Long.valueOf 100_000_000
+    assert l1.eql? l2
+    assert l1 == l2
+
+    s1 = Java::JavaLang::String.new 'a-string'
+    s2 = 'a-string'.to_java
+    assert ! s1.equal?(s2)
+    assert s1.eql? s2
+    assert s1 == s2
+
+    a1 = java.util.Arrays.asList(1, 2, 3)
+    a2 = java.util.ArrayList.new
+    a2 << 0; a2 << 2; a2 << 3
+    assert_equal false, a1.eql?(a2)
+    assert_equal false, a2 == a1
+    assert_not_equal a1.hash, a2.hash
+    a2[0] = 1
+    assert_equal true, a2.eql?(a1)
+    assert_equal true, a1 == a2
+    assert_equal true, a2 == a1
+    assert_equal a1.hash, a2.hash
+    assert_equal false, a2.equal?(a1)
+  end
+
   Pipe = java.nio.channels.Pipe
   def test_inner_classes
     assert_equal("java.nio.channels.Pipe$SinkChannel",

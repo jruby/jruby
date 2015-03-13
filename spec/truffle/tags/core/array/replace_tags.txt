@@ -1,2 +1,0 @@
-fails:Array#replace tries to convert the passed argument to an Array using #to_ary
-fails:Array#replace raises a RuntimeError on a frozen array

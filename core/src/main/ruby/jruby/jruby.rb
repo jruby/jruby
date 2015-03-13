@@ -70,7 +70,10 @@ module JRuby
                parse(content, filename, extra_position_info, &block)
              end
 
-      org.jruby.ir.IRBuilder.build_root(runtime.getIRManager(), node).scope
+      scope = org.jruby.ir.IRBuilder.build_root(runtime.getIRManager(), node).scope
+      scope.top_level_binding_scope = node.scope
+
+      scope
     end
 
     # Parse and compile the given block or provided content, returning a new

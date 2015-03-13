@@ -22,6 +22,7 @@ import org.jruby.truffle.nodes.objects.WriteInstanceVariableNode;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.control.RetryException;
+import org.jruby.truffle.runtime.core.RubyBasicObject;
 
 /**
  * Represents a block of code run with exception handlers. There's no {@code try} keyword in Ruby -
@@ -44,7 +45,7 @@ public class TryNode extends RubyNode {
         this.rescueParts = rescueParts;
         this.elsePart = elsePart;
         clearExceptionVariableNode = new WriteInstanceVariableNode(context, sourceSection, "$!",
-                new ObjectLiteralNode(context, sourceSection, context.getCoreLibrary().getGlobalVariablesObject()),
+                new ObjectLiteralNode(context, sourceSection, context.getThreadManager().getCurrentThread().getThreadLocals()),
                 new ObjectLiteralNode(context, sourceSection, context.getCoreLibrary().getNilObject()),
                 true);
     }
@@ -84,7 +85,9 @@ public class TryNode extends RubyNode {
         CompilerAsserts.neverPartOfCompilation();
 
         notDesignedForCompilation();
-        getContext().getCoreLibrary().getGlobalVariablesObject().getOperations().setInstanceVariable(getContext().getCoreLibrary().getGlobalVariablesObject(), "$!", exception.getRubyException());
+
+        final RubyBasicObject threadLocals = getContext().getThreadManager().getCurrentThread().getThreadLocals();
+        threadLocals.getOperations().setInstanceVariable(threadLocals, "$!", exception.getRubyException());
 
         for (RescueNode rescue : rescueParts) {
             if (rescue.canHandle(frame, exception.getRubyException())) {

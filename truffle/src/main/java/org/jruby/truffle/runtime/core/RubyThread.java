@@ -29,6 +29,7 @@ import com.oracle.truffle.api.frame.FrameInstanceVisitor;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Lock;
 
 /**
@@ -42,6 +43,8 @@ public class RubyThread extends RubyBasicObject {
 
     private String name;
 
+    /** We use this instead of {@link Thread#join()} since we don't always have a reference
+     * to the {@link Thread} and we want to handle cases where the Thread did not start yet. */
     private final CountDownLatch finished = new CountDownLatch(1);
 
     private volatile Thread thread;
@@ -98,7 +101,7 @@ public class RubyThread extends RubyBasicObject {
         } catch (RaiseException e) {
             exception = e.getRubyException();
         } catch (ReturnException e) {
-            exception = getContext().getCoreLibrary().unexpectedReturn(currentNode);
+            exception = context.getCoreLibrary().unexpectedReturn(currentNode);
         } finally {
             cleanup(context);
         }
@@ -107,7 +110,7 @@ public class RubyThread extends RubyBasicObject {
     // Only used by the main thread which cannot easily wrap everything inside a try/finally.
     public void cleanup(RubyContext context) {
         status = Status.ABORTING;
-        context.getThreadManager().leaveGlobalLock();
+        manager.leaveGlobalLock();
         context.getSafepointManager().leaveThread();
         manager.unregisterThread(this);
 
@@ -122,7 +125,7 @@ public class RubyThread extends RubyBasicObject {
     }
 
     public void join() {
-        getContext().getThreadManager().runUntilResult(new BlockingActionWithoutGlobalLock<Boolean>() {
+        manager.runUntilResult(new BlockingActionWithoutGlobalLock<Boolean>() {
             @Override
             public Boolean block() throws InterruptedException {
                 finished.await();
@@ -133,6 +136,21 @@ public class RubyThread extends RubyBasicObject {
         if (exception != null) {
             throw new RaiseException(exception);
         }
+    }
+
+    public boolean join(final int timeoutInMillis) {
+        final boolean joined = manager.runOnce(new BlockingActionWithoutGlobalLock<Boolean>() {
+            @Override
+            public Boolean block() throws InterruptedException {
+                return finished.await(timeoutInMillis, TimeUnit.MILLISECONDS);
+            }
+        });
+
+        if (joined && exception != null) {
+            throw new RaiseException(exception);
+        }
+
+        return joined;
     }
 
     public void interrupt() {

@@ -31,6 +31,7 @@
         <include>LICENSE*</include>
         <include>COPYING*</include>
         <include>lib/jruby.jar</include>
+        <include>lib/jruby-truffle.jar</include>
         <include>lib/jni/**/*</include>
         <include>samples/**/*</include>
         <include>docs/**/*</include>

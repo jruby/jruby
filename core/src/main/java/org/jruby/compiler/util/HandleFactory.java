@@ -35,7 +35,8 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import org.jruby.compiler.JITCompiler;
 import org.jruby.compiler.impl.SkinnyMethodAdapter;
-import org.jruby.util.ClassDefininngJRubyClassLoader;
+import org.jruby.util.ClassDefiningClassLoader;
+import org.jruby.util.ClassDefiningJRubyClassLoader;
 import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.ClassWriter;
 import static org.jruby.util.CodegenUtils.*;
@@ -53,7 +54,7 @@ public class HandleFactory {
         public Object invoke(Object receiver, Object... args) { throw fail(); }
     }
     
-    public static Handle createHandle(ClassDefininngJRubyClassLoader classLoader, Method method) {
+    public static Handle createHandle(ClassDefiningClassLoader classLoader, Method method) {
         String name = createHandleName(method);
 
         Class handleClass;
@@ -72,9 +73,9 @@ public class HandleFactory {
         }
     }
 
-    public static Class createHandleClass(ClassDefininngJRubyClassLoader classLoader, Method method, String name) {
+    public static Class createHandleClass(ClassDefiningClassLoader classLoader, Method method, String name) {
         byte[] bytes = createHandleBytes(method, name);
-        return (classLoader != null ? classLoader : new ClassDefininngJRubyClassLoader(ClassDefininngJRubyClassLoader.class.getClassLoader())).defineClass(name, bytes);
+        return (classLoader != null ? classLoader : new ClassDefiningJRubyClassLoader(ClassDefiningJRubyClassLoader.class.getClassLoader())).defineClass(name, bytes);
     }
 
     public static byte[] createHandleBytes(Method method, String name) {

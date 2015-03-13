@@ -1,2 +1,0 @@
-fails:Array#initialize_copy tries to convert the passed argument to an Array using #to_ary
-fails:Array#initialize_copy raises a RuntimeError on a frozen array

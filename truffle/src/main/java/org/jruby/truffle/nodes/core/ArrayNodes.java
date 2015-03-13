@@ -29,6 +29,7 @@ import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.RubyRootNode;
 import org.jruby.truffle.nodes.array.*;
 import org.jruby.truffle.nodes.coerce.ToIntNode;
+import org.jruby.truffle.nodes.coerce.ToAryNodeFactory;
 import org.jruby.truffle.nodes.coerce.ToIntNodeFactory;
 import org.jruby.truffle.nodes.dispatch.*;
 import org.jruby.truffle.nodes.methods.arguments.MissingArgumentBehaviour;
@@ -595,8 +596,13 @@ public abstract class ArrayNodes {
 
     }
 
-    @CoreMethod(names = "concat", required = 1)
-    public abstract static class ConcatNode extends ArrayCoreMethodNode {
+    @CoreMethod(names = "concat", required = 1, raiseIfFrozenSelf = true)
+    @NodeChildren({
+        @NodeChild(value = "array"),
+        @NodeChild(value = "other")
+    })
+    @ImportGuards(ArrayGuards.class)
+    public abstract static class ConcatNode extends RubyNode {
 
         public ConcatNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -604,6 +610,10 @@ public abstract class ArrayNodes {
 
         public ConcatNode(ConcatNode prev) {
             super(prev);
+        }
+
+        @CreateCast("other") public RubyNode coerceOtherToAry(RubyNode other) {
+            return ToAryNodeFactory.create(getContext(), getSourceSection(), other);
         }
 
         @Specialization(guards = "areBothNull")
@@ -744,7 +754,7 @@ public abstract class ArrayNodes {
 
     }
 
-    @CoreMethod(names = "delete_at", required = 1)
+    @CoreMethod(names = "delete_at", required = 1, raiseIfFrozenSelf = true)
     public abstract static class DeleteAtNode extends ArrayCoreMethodNode {
 
         private final BranchProfile tooSmallBranch = BranchProfile.create();
@@ -1135,7 +1145,7 @@ public abstract class ArrayNodes {
 
     }
 
-    @CoreMethod(names = "initialize", needsBlock = true, optional = 2)
+    @CoreMethod(names = "initialize", needsBlock = true, optional = 2, raiseIfFrozenSelf = true)
     @ImportGuards(ArrayGuards.class)
     public abstract static class InitializeNode extends YieldingCoreMethodNode {
 
@@ -1233,8 +1243,13 @@ public abstract class ArrayNodes {
 
     }
 
-    @CoreMethod(names = "initialize_copy", visibility = Visibility.PRIVATE, required = 1)
-    public abstract static class InitializeCopyNode extends ArrayCoreMethodNode {
+    @CoreMethod(names = "initialize_copy", visibility = Visibility.PRIVATE, required = 1, raiseIfFrozenSelf = true)
+    @NodeChildren({
+        @NodeChild(value = "self"),
+        @NodeChild(value = "from")
+    })
+    @ImportGuards(ArrayGuards.class)
+    public abstract static class InitializeCopyNode extends RubyNode {
         // TODO(cs): what about allocationSite ?
 
         public InitializeCopyNode(RubyContext context, SourceSection sourceSection) {
@@ -1243,6 +1258,10 @@ public abstract class ArrayNodes {
 
         public InitializeCopyNode(InitializeCopyNode prev) {
             super(prev);
+        }
+
+        @CreateCast("from") public RubyNode coerceOtherToAry(RubyNode other) {
+            return ToAryNodeFactory.create(getContext(), getSourceSection(), other);
         }
 
         @Specialization(guards = "isOtherNull")
@@ -1429,7 +1448,7 @@ public abstract class ArrayNodes {
 
     }
 
-    @CoreMethod(names = "insert", required = 2)
+    @CoreMethod(names = "insert", required = 2, raiseIfFrozenSelf = true)
     public abstract static class InsertNode extends ArrayCoreMethodNode {
 
         private final BranchProfile tooSmallBranch = BranchProfile.create();
@@ -1685,7 +1704,7 @@ public abstract class ArrayNodes {
         }
     }
 
-    @CoreMethod(names = {"map!", "collect!"}, needsBlock = true)
+    @CoreMethod(names = {"map!", "collect!"}, needsBlock = true, raiseIfFrozenSelf = true)
     @ImportGuards(ArrayGuards.class)
     public abstract static class MapInPlaceNode extends YieldingCoreMethodNode {
 
@@ -2152,7 +2171,7 @@ public abstract class ArrayNodes {
 
     }
 
-    @CoreMethod(names = "pop")
+    @CoreMethod(names = "pop", raiseIfFrozenSelf = true)
     public abstract static class PopNode extends ArrayCoreMethodNode {
 
         public PopNode(RubyContext context, SourceSection sourceSection) {
@@ -2286,7 +2305,7 @@ public abstract class ArrayNodes {
 
     }
 
-    @CoreMethod(names = {"push", "<<", "__append__"}, argumentsAsArray = true)
+    @CoreMethod(names = {"push", "<<", "__append__"}, argumentsAsArray = true, raiseIfFrozenSelf = true)
     public abstract static class PushNode extends ArrayCoreMethodNode {
 
         private final BranchProfile extendBranch = BranchProfile.create();
@@ -2610,7 +2629,7 @@ public abstract class ArrayNodes {
 
     }
 
-    @CoreMethod(names = { "reject!", "delete_if" }, needsBlock = true)
+    @CoreMethod(names = { "reject!", "delete_if" }, needsBlock = true, raiseIfFrozenSelf = true)
     @ImportGuards(ArrayGuards.class)
     public abstract static class RejectInPlaceNode extends YieldingCoreMethodNode {
 
@@ -2651,8 +2670,13 @@ public abstract class ArrayNodes {
 
     }
 
-    @CoreMethod(names = "replace", required = 1)
-    public abstract static class ReplaceNode extends ArrayCoreMethodNode {
+    @CoreMethod(names = "replace", required = 1, raiseIfFrozenSelf = true)
+    @NodeChildren({
+        @NodeChild(value = "array"),
+        @NodeChild(value = "other")
+    })
+    @ImportGuards(ArrayGuards.class)
+    public abstract static class ReplaceNode extends RubyNode {
 
         public ReplaceNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -2660,6 +2684,11 @@ public abstract class ArrayNodes {
 
         public ReplaceNode(ReplaceNode prev) {
             super(prev);
+        }
+
+
+        @CreateCast("other") public RubyNode coerceOtherToAry(RubyNode index) {
+            return ToAryNodeFactory.create(getContext(), getSourceSection(), index);
         }
 
         @Specialization(guards = "isOtherNull")
@@ -2793,7 +2822,7 @@ public abstract class ArrayNodes {
 
     }
 
-    @CoreMethod(names = "shift")
+    @CoreMethod(names = "shift", raiseIfFrozenSelf = true)
     public abstract static class ShiftNode extends CoreMethodNode {
 
         public ShiftNode(RubyContext context, SourceSection sourceSection) {
@@ -3018,7 +3047,7 @@ public abstract class ArrayNodes {
 
     }
 
-    @CoreMethod(names = "sort!")
+    @CoreMethod(names = "sort!", raiseIfFrozenSelf = true)
     public abstract static class SortBangNode extends ArrayCoreMethodNode {
 
         @Child private CallDispatchHeadNode compareDispatchNode;
@@ -3098,7 +3127,7 @@ public abstract class ArrayNodes {
 
     }
 
-    @CoreMethod(names = "unshift", argumentsAsArray = true)
+    @CoreMethod(names = "unshift", argumentsAsArray = true, raiseIfFrozenSelf = true)
     public abstract static class UnshiftNode extends CoreMethodNode {
 
         public UnshiftNode(RubyContext context, SourceSection sourceSection) {

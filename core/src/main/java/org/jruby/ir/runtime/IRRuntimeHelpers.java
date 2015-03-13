@@ -14,6 +14,7 @@ import org.jruby.internal.runtime.methods.InterpretedIRMetaClassBody;
 import org.jruby.internal.runtime.methods.InterpretedIRMethod;
 import org.jruby.internal.runtime.methods.MixedModeIRMethod;
 import org.jruby.internal.runtime.methods.UndefinedMethod;
+import org.jruby.ir.IRManager;
 import org.jruby.ir.IRMetaClassBody;
 import org.jruby.ir.IRScope;
 import org.jruby.ir.IRScopeType;
@@ -23,6 +24,8 @@ import org.jruby.ir.operands.IRException;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.Splat;
 import org.jruby.ir.operands.UndefinedValue;
+import org.jruby.ir.persistence.IRReader;
+import org.jruby.ir.persistence.IRReaderStream;
 import org.jruby.javasupport.JavaUtil;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.*;
@@ -38,6 +41,8 @@ import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
 import org.objectweb.asm.Type;
 
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
 import java.lang.invoke.MethodHandle;
 
 public class IRRuntimeHelpers {
@@ -1322,5 +1327,15 @@ public class IRRuntimeHelpers {
     @JIT
     public static VariableCachingCallSite newVariableCachingCallSite(String name) {
         return new VariableCachingCallSite(name);
+    }
+
+    @JIT
+    public static IRScope decodeScopeFromBytes(Ruby runtime, byte[] scopeBytes) {
+        try {
+            return IRReader.load(runtime.getIRManager(), new IRReaderStream(runtime.getIRManager(), new ByteArrayInputStream(scopeBytes)));
+        } catch (IOException ioe) {
+            // should not happen for bytes
+            return null;
+        }
     }
 }

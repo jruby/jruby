@@ -18,10 +18,8 @@ import org.jruby.util.RegexpOptions;
  */
 class InstrDecoderMap implements IRPersistenceValues {
     private final IRReaderDecoder d;
-    private final IRManager manager;
 
-    public InstrDecoderMap(IRManager manager, IRReaderDecoder decoder) {
-        this.manager = manager;
+    public InstrDecoderMap(IRReaderDecoder decoder) {
         this.d = decoder;
     }
 
@@ -30,7 +28,7 @@ class InstrDecoderMap implements IRPersistenceValues {
         try {
             instr = decodeInner(operation);
         } catch (Exception e) {
-            System.out.println("Got: " + instr + ", :" + d.getCurrentScope().getClass().getName());
+            System.out.println("Boom:" + d.getCurrentScope().getClass().getName());
             e.printStackTrace();
         }
         return instr;
@@ -44,15 +42,15 @@ class InstrDecoderMap implements IRPersistenceValues {
             case BINDING_LOAD: return new LoadLocalVarInstr(d.decodeScope(), (TemporaryLocalVariable) d.decodeOperand(), (LocalVariable) d.decodeOperand());
             case BINDING_STORE:return new StoreLocalVarInstr(d.decodeOperand(), d.decodeScope(), (LocalVariable) d.decodeOperand());
             case BLOCK_GIVEN: return new BlockGivenInstr(d.decodeVariable(), d.decodeOperand());
-            case BNE: return new BNEInstr(d.decodeOperand(), d.decodeOperand(), (Label) d.decodeOperand());
+            case BNE: return BNEInstr.decode(d);
             case BREAK: return new BreakInstr(d.decodeOperand(), d.decodeString());
-            case B_FALSE: return createBFalse();
-            case B_NIL: return createBNil();
-            case B_TRUE: return createBTrue();
-            case B_UNDEF: return createBUndef();
+            case B_FALSE: return BFalseInstr.decode(d);
+            case B_NIL: return BNilInstr.decode(d);
+            case B_TRUE: return BTrueInstr.decode(d);
+            case B_UNDEF: return BUndefInstr.decode(d);
             case CALL_1F: case CALL_1D: case CALL_1O: case CALL_1OB: case CALL_0O: case CALL: return decodeCall();
             case CHECK_ARGS_ARRAY_ARITY: return new CheckArgsArrayArityInstr(d.decodeOperand(), d.decodeInt(), d.decodeInt(), d.decodeInt());
-            case CHECK_ARITY: return new CheckArityInstr(d.decodeInt(), d.decodeInt(), d.decodeInt(), d.decodeBoolean(), d.decodeInt());
+            case CHECK_ARITY: return CheckArityInstr.decode(d);
             case CLASS_VAR_MODULE: return new GetClassVarContainerModuleInstr(d.decodeVariable(), d.decodeOperand(), d.decodeVariable());
             case CONST_MISSING: return decodeConstMissingInstr();
             case BUILD_COMPOUND_ARRAY: return new BuildCompoundArrayInstr(d.decodeVariable(), d.decodeOperand(), d.decodeOperand(), d.decodeBoolean());
@@ -228,17 +226,6 @@ class InstrDecoderMap implements IRPersistenceValues {
         return new CopyInstr(d.decodeVariable(), d.decodeOperand());
     }
 
-/**
-    private Instr decodeBuildCompoundStringInstr() {
-        String encodingString = d.decodeString();
-
-        if (encodingString.equals("")) return new BuildCompoundStringInstr(d.decodeVariable(), d.decodeOperandList(), ASCIIEncoding.INSTANCE);
-
-        // FIXME: yuck
-        return new BuildCompoundStringInstr(d.decodeVariable(), d.decodeOperandList(), NonIRObjectFactory.createEncoding(encodingString));
-    }
-**/
-
     private Instr decodeLineNumber() {
         return new LineNumberInstr(d.decodeInt());
     }
@@ -268,22 +255,6 @@ class InstrDecoderMap implements IRPersistenceValues {
         boolean noPrivateConst = d.decodeBoolean();
 
         return new SearchConstInstr(result, constName, startScope, noPrivateConst);
-    }
-
-    private Instr createBFalse() {
-        return new BFalseInstr(d.decodeOperand(), (Label) d.decodeOperand());
-    }
-
-    private Instr createBTrue() {
-        return new BTrueInstr(d.decodeOperand(), (Label) d.decodeOperand());
-    }
-
-    private Instr createBNil() {
-        return new BNilInstr(d.decodeOperand(), (Label) d.decodeOperand());
-    }
-
-    private Instr createBUndef() {
-        return new BUndefInstr(d.decodeOperand(), (Label) d.decodeOperand());
     }
 
     private Instr decodeReceiveRubyException() {
