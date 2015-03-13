@@ -1,7 +1,0 @@
-fails:Array#transpose assumes an array of arrays and returns the result of transposing rows and columns
-fails:Array#transpose tries to convert the passed argument to an Array using #to_ary
-fails:Array#transpose properly handles recursive arrays
-fails:Array#transpose raises a TypeError if the passed Argument does not respond to #to_ary
-fails:Array#transpose does not call to_ary on array subclass elements
-fails:Array#transpose raises an IndexError if the arrays are not of the same length
-fails:Array#transpose does not return subclass instance on Array subclasses

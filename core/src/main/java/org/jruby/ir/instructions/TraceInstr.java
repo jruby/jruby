@@ -1,9 +1,13 @@
 package org.jruby.ir.instructions;
 
 import org.jruby.ir.Operation;
-import org.jruby.ir.operands.Operand;
-import org.jruby.ir.transformations.inlining.InlinerInfo;
+import org.jruby.ir.persistence.IRWriterEncoder;
+import org.jruby.ir.transformations.inlining.CloneInfo;
+import org.jruby.parser.StaticScope;
+import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.RubyEvent;
+import org.jruby.runtime.ThreadContext;
+import org.jruby.runtime.builtin.IRubyObject;
 
 // FIXME: When presistence is revisited this should strip these out of code streams on save and add them in if
 // tracing is on for load.
@@ -17,7 +21,7 @@ public class TraceInstr extends Instr {
     private final int linenumber;
 
     public TraceInstr(RubyEvent event, String name, String filename, int linenumber) {
-        super(Operation.TRACE);
+        super(Operation.TRACE, EMPTY_OPERANDS);
 
         this.event = event;
         this.name = name;
@@ -26,7 +30,7 @@ public class TraceInstr extends Instr {
     }
 
     @Override
-    public Instr cloneForInlining(InlinerInfo ii) {
+    public Instr clone(CloneInfo ii) {
         return new TraceInstr(event, name, filename, linenumber);
     }
 
@@ -47,12 +51,28 @@ public class TraceInstr extends Instr {
     }
 
     @Override
-    public Operand[] getOperands() {
-        return new Operand[] { };
+    public String[] toStringNonOperandArgs() {
+        return new String[] {"ev: " + event, "name: " + name, "file: " + filename, "line: " + linenumber};
     }
 
-    public String toString() {
-        return super.toString() + " " + event + ", " + name + ", " + filename + ", " + linenumber;
+    @Override
+    public void encode(IRWriterEncoder e) {
+        super.encode(e);
+        e.encode(getEvent().ordinal());
+        e.encode(getName());
+        e.encode(getFilename());
+        e.encode(getLinenumber());
     }
 
+    @Override
+    public Object interpret(ThreadContext context, StaticScope currScope, DynamicScope currDynScope, IRubyObject self, Object[] temp) {
+        if (context.runtime.hasEventHooks()) {
+            // FIXME: Try and statically generate END linenumber instead of hacking it.
+            int linenumber = getLinenumber() == -1 ? context.getLine()+1 : getLinenumber();
+
+            context.trace(getEvent(), getName(), context.getFrameKlazz(), getFilename(), linenumber);
+        }
+
+        return null;
+    }
 }

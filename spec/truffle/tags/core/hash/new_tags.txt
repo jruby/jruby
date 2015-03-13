@@ -1,6 +1,0 @@
-fails:Hash.new creates an empty Hash if passed no arguments
-fails:Hash.new creates a new Hash with default object if passed a default argument
-fails:Hash.new does not create a copy of the default argument
-fails:Hash.new creates a Hash with a default_proc if passed a block
-fails:Hash.new raises an ArgumentError if more than one argument is passed
-fails:Hash.new raises an ArgumentError if passed both default argument and default block

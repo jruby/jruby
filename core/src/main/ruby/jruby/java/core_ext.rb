@@ -1,5 +1,6 @@
 # Extensions to Ruby classes
 
-require 'jruby/java/core_ext/module'
-require 'jruby/java/core_ext/object'
-require 'jruby/java/core_ext/kernel'
+# These are loads so they don't pollute LOADED_FEATURES
+load 'jruby/java/core_ext/module.rb'
+load 'jruby/java/core_ext/object.rb'
+load 'jruby/java/core_ext/kernel.rb'

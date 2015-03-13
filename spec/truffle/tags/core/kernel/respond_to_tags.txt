@@ -1,12 +1,3 @@
-fails:Kernel.respond_to? indicates if a singleton object responds to a particular message
 fails:Kernel#respond_to? returns false if the given method was undefined
-fails:Kernel#respond_to? returns true if obj responds to the given public method
-fails:Kernel#respond_to? throws a type error if argument can't be coerced into a Symbol
 fails:Kernel#respond_to? returns false if obj responds to the given protected method
-fails:Kernel#respond_to? returns false if obj responds to the given private method
-fails:Kernel#respond_to? returns true if obj responds to the given protected method (include_private = true)
 fails:Kernel#respond_to? returns false if obj responds to the given protected method (include_private = false)
-fails:Kernel#respond_to? returns false even if obj responds to the given private method (include_private = false)
-fails:Kernel#respond_to? returns true if obj responds to the given private method (include_private = true)
-fails:Kernel#respond_to? does not change method visibility when finding private method
-fails:Kernel#respond_to? indicates if an object responds to a particular message

@@ -29,6 +29,7 @@
 package org.jruby.lexer.yacc;
 
 public class SimpleSourcePosition implements ISourcePosition {
+
     final String filename;
     final int line;
 
@@ -41,16 +42,13 @@ public class SimpleSourcePosition implements ISourcePosition {
         return filename;
     }
 
-    public int getStartLine() {
-        return line;
-    }
-
     public int getLine() {
         return line;
     }
 
     @Override
     public String toString() {
-        return getFile() + ":" + (getStartLine() + 1);
+        return String.format("%s:%d", getFile(), getLine() + 1);
     }
+
 }

@@ -8,7 +8,8 @@ import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 
 public abstract class FieldMethodZero extends JavaMethodZero {
-    Field field;
+    
+    final Field field;
 
     FieldMethodZero(String name, RubyModule host, Field field) {
         super(host, Visibility.PUBLIC);

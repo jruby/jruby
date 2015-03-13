@@ -55,7 +55,8 @@ public class SunSignalFacade implements SignalFacade {
      * to emulate {@code Signal.trap(...,"DEFAULT")} that's supposed to restore the platform
      * default handler.
      */
-    private final Map<Signal,SignalHandler> original = new HashMap<Signal, SignalHandler>();
+    private final Map<Signal, SignalHandler> original = new HashMap<Signal, SignalHandler>();
+    private final Map<String, SignalHandler> fakeOriginal = new HashMap<String, SignalHandler>();
     
     private final static class JRubySignalHandler implements SignalHandler {
         private final Ruby runtime;
@@ -80,6 +81,7 @@ public class SunSignalFacade implements SignalFacade {
 
         public void handle(Signal signal) {
             ThreadContext context = runtime.getCurrentContext();
+            IRubyObject oldExc = runtime.getGlobalVariables().get("$!"); // Save $!
             try {
                 if (block != null) {
                     block.callMethod(context, "call");
@@ -91,6 +93,7 @@ public class SunSignalFacade implements SignalFacade {
                     runtime.getThread().callMethod(context, "main")
                         .callMethod(context, "raise", e.getException());
                 } catch(Exception ignored) {}
+                runtime.getGlobalVariables().set("$!", oldExc); // Restore $!
             } catch (MainExitException mee) {
                 runtime.getThreadService().getMainThread().kill();
             } finally {
@@ -113,66 +116,99 @@ public class SunSignalFacade implements SignalFacade {
 
     public IRubyObject restorePlatformDefault(IRubyObject recv, IRubyObject sig) {
         SignalHandler handler;
-        synchronized (original) {
-            handler = original.get(new Signal(sig.toString()));
+        Ruby runtime = recv.getRuntime();
+        try {
+            synchronized (original) {
+                handler = original.get(new Signal(sig.toString()));
+            }
+        } catch (IllegalArgumentException e) {
+            handler = null;
         }
-        if (handler!=null)
-            return trap(recv.getRuntime(),sig.toString(),handler);
-        else {
+        if (handler != null) {
+            return trap(runtime, sig.toString(), handler);
+        } else {
             // JRuby hasn't touched this signal handler, so it should be the platform default already
-            return recv.getRuntime().getNil();
+            // We still need to return the handler if one exists, though.
+
+            synchronized (fakeOriginal) {
+                handler = fakeOriginal.remove(sig.toString());
+            }
+            return getSignalResult(runtime, handler, null, true);
         }
     }
 
     public IRubyObject restoreOSDefault(IRubyObject recv, IRubyObject sig) {
-        return trap(recv.getRuntime(),sig.toString(),SignalHandler.SIG_DFL);
+        return trap(recv.getRuntime(), sig.toString(), SignalHandler.SIG_DFL);
     }
 
     public IRubyObject ignore(IRubyObject recv, IRubyObject sig) {
-        return trap(recv.getRuntime(),sig.toString(),SignalHandler.SIG_IGN);
+        return trap(recv.getRuntime(), sig.toString(), SignalHandler.SIG_IGN);
     }
 
     private IRubyObject trap(final Ruby runtime, final String signalName, final SignalHandler handler) {
-        final SignalHandler oldHandler;
-        final Signal signal;
+        boolean handled;
 
+        SignalHandler oldHandler;
+        Signal signal;
         try {
             signal = new Signal(signalName);
-        } catch (Throwable e) {
-            return runtime.getNil();
-        }
-
-        try {
             oldHandler = Signal.handle(signal, handler);
-        } catch (Exception e) {
-            throw runtime.newArgumentError(e.getMessage());
-        }
-        
-        synchronized (original) {
-            if (!original.containsKey(signal))
-                original.put(signal,oldHandler);
+            synchronized (original) {
+                if (!original.containsKey(signal))
+                    original.put(signal, oldHandler);
+            }
+            handled = true;
+        } catch (IllegalArgumentException e) {
+            signal = null;
+            oldHandler = fakeOriginal.get(signalName);
+            synchronized (fakeOriginal) {
+                fakeOriginal.put(signalName, handler);
+            }
+            // EXIT is a special pseudo-signal. We want to mark this signal as handled if so.
+            handled = signalName.equals("EXIT");
         }
 
+        return getSignalResult(runtime, oldHandler, signal, handled);
+    }
+
+    private IRubyObject getSignalResult(final Ruby runtime, final SignalHandler oldHandler, final Signal signal, boolean handled) {
+        IRubyObject[] retVals = new IRubyObject[] {null, runtime.newBoolean(handled)};
         BlockCallback callback = null;
+
         if (oldHandler instanceof JRubySignalHandler) {
             JRubySignalHandler jsHandler = (JRubySignalHandler) oldHandler;
             if (jsHandler.blockCallback != null) {
                 callback = jsHandler.blockCallback;
             } else {
-                return jsHandler.block;
+                retVals[0] = jsHandler.block;
+                return runtime.newArray(retVals);
             }
         }
+
         if (callback == null) {
-            callback = new BlockCallback() {
+            new BlockCallback() {
                 public IRubyObject call(ThreadContext context, IRubyObject[] args, Block block) {
-                    oldHandler.handle(signal);
+                    if(signal != null) {
+                        oldHandler.handle(signal);
+                    }
                     return runtime.getNil();
                 }
             };
+            if (oldHandler == SignalHandler.SIG_DFL) {
+                retVals[0] = runtime.newString("SYSTEM_DEFAULT");
+            } else if (oldHandler == SignalHandler.SIG_IGN) {
+                retVals[0] = runtime.newString("IGNORE");
+            } else {
+                retVals[0] = runtime.newString("DEFAULT");
+            }
+        } else {
+            final RubyModule signalModule = runtime.getModule("Signal");
+            Block block = CallBlock.newCallClosure(signalModule, signalModule, Arity.noArguments(),
+                    callback, runtime.getCurrentContext());
+            retVals[0] = RubyProc.newProc(runtime, block, block.type);
         }
-        final RubyModule signalModule = runtime.getModule("Signal");
-        Block block = CallBlock.newCallClosure(signalModule, signalModule, Arity.noArguments(),
-                callback, runtime.getCurrentContext());
-        return RubyProc.newProc(runtime, block, block.type);
+
+        return runtime.newArray(retVals);
     }
+
 }// SunSignalFacade

@@ -44,16 +44,15 @@ public class WhenNode extends Node {
     private final Node nextCase;
 
     public WhenNode(ISourcePosition position, Node expressionNodes, Node bodyNode, Node nextCase) {
-        super(position);
-        this.expressionNodes = expressionNodes;
-        if (expressionNodes instanceof ArrayNode) {
-            ((ArrayNode)expressionNodes).setLightweight(true);
-        }
+        super(position, expressionNodes != null && expressionNodes.containsVariableAssignment() ||
+                bodyNode != null && bodyNode.containsVariableAssignment() ||
+                nextCase != null && nextCase.containsVariableAssignment());
 
-        assert bodyNode != null : "bodyNode is not null";
-        
+        this.expressionNodes = expressionNodes;
         this.bodyNode = bodyNode;
         this.nextCase = nextCase;
+
+        assert bodyNode != null : "bodyNode is not null";
     }
 
     public NodeType getNodeType() {

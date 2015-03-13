@@ -169,6 +169,11 @@ public abstract class DelegatingDynamicMethod extends DynamicMethod {
     }
 
     @Override
+    public boolean isImplementedBy(RubyModule other) {
+        return delegate.isImplementedBy(other);
+    }
+
+    @Override
     public CallConfiguration getCallConfig() {
         return delegate.getCallConfig();
     }

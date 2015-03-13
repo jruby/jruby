@@ -1,5 +1,0 @@
-fails:Random#== returns true if the two objects have the same state
-fails:Random#== returns false if the two objects have different state
-fails:Random#== returns true if the two objects have the same seed
-fails:Random#== returns false if the two objects have a different seed
-fails:Random#== returns false if the other object is not a Random

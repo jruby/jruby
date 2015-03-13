@@ -196,6 +196,11 @@ describe "nonblocking IO blocking behavior: JRUBY-5122" do
     value.should == "baz"
   end
 
+  # WRITE BLOCKAGE:
+  #
+  # We try to pick a suitably large value such that potentially-blocking
+  # writes are more likely to reach buffer limits and actually block.
+  #
   # On an Ubuntu 10.10(64) box:
   #   Packaged OpenJDK6 block with > 152606 (?)
   #   Oracle's build block with > 131072 (2**17)
@@ -203,38 +208,66 @@ describe "nonblocking IO blocking behavior: JRUBY-5122" do
   #   Oracle's build does not block (use memory till OOMException)
   SOCKET_CHANNEL_MIGHT_BLOCK = "a" * (219463 * 4)
 
+# This spec does not appear to test anything meaningful and occasionally
+# failed due to several inherent races. I improved the race situation
+# somewhat, but it's unclear whether this spec can ever fail since it
+# appears to accept both blocking and nonblocking write.
+#
+# I believe the spec originally expected small writes not to block, which
+# is reasonable, but at some point it mutated into a test that write
+# *does* block under certain circumstances, making the original assertions
+# meaningless.
+#
+# See jruby/jruby#2332
+
+=begin
   it "should not block for write" do
-  100.times do # for acceleration; it failed w/o wait_for_accepted call
-    server = TCPServer.new(0)
-    value = nil
-    t = Thread.new {
-      sock = accept(server)
-      begin
-        value = 1
-        # this could block; [ruby-dev:26405]  But it doesn't block on Windows.
-        sock.write(SOCKET_CHANNEL_MIGHT_BLOCK)
-        value = 2
-      rescue RuntimeError
-        value = 3
-      end
-    }
-    s = connect(server)
-    type = nil
-    wait_for_sleep_and_terminate(t) do
-      if value == 1
-        type = :blocked
-        t.raise # help thread termination
-      else
-        value.should == 2
-        t.status.should == false
+    100.times do # for acceleration; it failed w/o wait_for_accepted call
+      server = TCPServer.new(0)
+      value = nil
+      t = Thread.new {
+        sock = accept(server)
+        begin
+          value = 1
+          # this could block; [ruby-dev:26405]  But it doesn't block on Windows.
+          sock.write(SOCKET_CHANNEL_MIGHT_BLOCK)
+          value = 2
+        rescue RuntimeError
+          value = 3
+        end
+      }
+      s = connect(server)
+
+      # Whether write blocks or not, read will block until data is available
+      IO.select([s], nil, nil, 2)
+
+      # If write did not block, give thread some time to advance
+      100.times { Thread.pass }
+
+      # Now check where we are
+      wait_for_sleep_and_terminate(t) do
+        if value == 1
+
+          # Write blocked [ruby-dev:26405], see WRITE BLOCKAGE above
+          type = :blocked
+          t.raise # help thread termination
+          t.join
+
+          if RbConfig::CONFIG['host_os'] !~ /mingw|mswin/
+            value.should == 3
+            t.status.should == false
+          end
+
+        else
+
+          # Write did not block
+          value.should == 2
+          t.status.should == false
+        end
       end
     end
-    if type == :blocked && RbConfig::CONFIG['host_os'] !~ /mingw|mswin/ 
-      value.should == 3
-      t.status.should == false
-    end
   end
-  end
+=end
 
   it "should not block for write_nonblock" do
     server = TCPServer.new(0)

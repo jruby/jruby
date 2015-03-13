@@ -108,10 +108,7 @@ public class RubyGC {
     @JRubyMethod(module = true, visibility = PRIVATE)
     public static IRubyObject count(ThreadContext context, IRubyObject recv) {
         try {
-            int count = 0;
-            for (GarbageCollectorMXBean bean : ManagementFactory.getGarbageCollectorMXBeans()) {
-                count += bean.getCollectionCount();
-            }
+            int count = getCollectionCount();
             return context.runtime.newFixnum(count);
         } catch (Throwable t) {
             return RubyFixnum.minus_one(context.runtime);
@@ -122,4 +119,21 @@ public class RubyGC {
         runtime.getWarnings().warnOnce(id,
                 name + " does nothing on JRuby");
     }
+
+    public static int getCollectionCount() {
+        int count = 0;
+        for (GarbageCollectorMXBean bean : ManagementFactory.getGarbageCollectorMXBeans()) {
+            count += bean.getCollectionCount();
+        }
+        return count;
+    }
+
+    public static long getCollectionTime() {
+        long time = 0;
+        for (GarbageCollectorMXBean bean : ManagementFactory.getGarbageCollectorMXBeans()) {
+            time += bean.getCollectionTime();
+        }
+        return time;
+    }
+
 }

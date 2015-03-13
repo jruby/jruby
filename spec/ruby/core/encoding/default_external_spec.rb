@@ -23,14 +23,10 @@ with_feature :encoding do
       before :each do
         @lc_all = ENV["LC_ALL"]
         ENV["LC_ALL"] = "C"
-
-        @rbxopt = ENV["RBXOPT"]
-        ENV["RBXOPT"] = (@rbxopt || "") + " -X19"
       end
 
       after :each do
         ENV["LC_ALL"] = @lc_all
-        ENV["RBXOPT"] = @rbxopt
       end
 
       it "is not changed by the -U option" do

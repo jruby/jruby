@@ -1,4 +1,0 @@
-fails:Array#dup returns an Array or a subclass instance
-fails:Array#dup creates a new array containing all elements or the original
-fails:Array#dup copies taint status from the original
-fails:Array#dup copies untrusted status from the original

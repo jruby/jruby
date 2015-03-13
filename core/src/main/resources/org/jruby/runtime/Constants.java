@@ -38,26 +38,7 @@ public final class Constants {
 
     public static final String RUBY_MAJOR_VERSION = "@version.ruby.major@";
     public static final String RUBY_VERSION = "@version.ruby@";
-    public static final int    RUBY_PATCHLEVEL = Integer.parseInt("@version.ruby.patchlevel@");
     public static final int    RUBY_REVISION = Integer.parseInt("@version.ruby.revision@");
-
-    @Deprecated
-    public static final String RUBY1_9_MAJOR_VERSION = "@version.ruby1_9.major@";
-    @Deprecated
-    public static final String RUBY1_9_VERSION = "@version.ruby1_9@";
-    @Deprecated
-    public static final int    RUBY1_9_PATCHLEVEL = Integer.parseInt("@version.ruby1_9.patchlevel@");
-    @Deprecated
-    public static final int    RUBY1_9_REVISION = Integer.parseInt("@version.ruby1_9.revision@");
-
-    @Deprecated
-    public static final String RUBY2_0_MAJOR_VERSION = "@version.ruby2_0.major@";
-    @Deprecated
-    public static final String RUBY2_0_VERSION = "@version.ruby2_0@";
-    @Deprecated
-    public static final int    RUBY2_0_PATCHLEVEL = Integer.parseInt("@version.ruby2_0.patchlevel@");
-    @Deprecated
-    public static final int    RUBY2_0_REVISION = Integer.parseInt("@version.ruby2_0.revision@");
 
     public static final String COMPILE_DATE = "@build.date@";
     public static final String VERSION = "@version.jruby@";
@@ -108,4 +89,7 @@ public final class Constants {
     }
 
     private Constants() {}
+
+    @Deprecated
+    public static final int    RUBY_PATCHLEVEL = 0;
 }

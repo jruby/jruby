@@ -49,9 +49,13 @@ public enum Operation {
     RECV_KW_REST_ARG(OpFlags.f_is_arg_receive),
     RECV_REST_ARG(OpFlags.f_is_arg_receive),
     RECV_OPT_ARG(OpFlags.f_is_arg_receive),
-    RECV_CLOSURE(OpFlags.f_is_arg_receive),
     RECV_RUBY_EXC(OpFlags.f_is_arg_receive),
     RECV_JRUBY_EXC(OpFlags.f_is_arg_receive),
+    LOAD_IMPLICIT_CLOSURE(OpFlags.f_is_arg_receive),
+
+    /** Instruction to reify an passed-in block to a Proc for def foo(&b) */
+    REIFY_CLOSURE(0),
+    LOAD_FRAME_CLOSURE(0),
 
     /* By default, call instructions cannot be deleted even if their results
      * aren't used by anyone unless we know more about what the call is,
@@ -68,6 +72,7 @@ public enum Operation {
 
     /* specialized calls */
     CALL_1F(OpFlags.f_has_side_effect | OpFlags.f_is_call | OpFlags.f_can_raise_exception),
+    CALL_1D(OpFlags.f_has_side_effect | OpFlags.f_is_call | OpFlags.f_can_raise_exception),
     CALL_1O(OpFlags.f_has_side_effect | OpFlags.f_is_call | OpFlags.f_can_raise_exception),
     CALL_1OB(OpFlags.f_has_side_effect | OpFlags.f_is_call | OpFlags.f_can_raise_exception),
     CALL_0O(OpFlags.f_has_side_effect | OpFlags.f_is_call | OpFlags.f_can_raise_exception),
@@ -85,8 +90,7 @@ public enum Operation {
 
     /** returns -- returns unwind stack, etc. */
     RETURN(OpFlags.f_has_side_effect | OpFlags.f_is_return),
-    /** a non local return Can thrown a LocalJumpError */
-    NONLOCAL_RETURN(OpFlags.f_has_side_effect | OpFlags.f_is_return | OpFlags.f_can_raise_exception),
+    NONLOCAL_RETURN(OpFlags.f_has_side_effect | OpFlags.f_is_return),
     /* BREAK is a return because it can only be used within closures
      * and the net result is to return from the closure. */
     BREAK(OpFlags.f_has_side_effect | OpFlags.f_is_return),
@@ -116,7 +120,6 @@ public enum Operation {
     CONST_MISSING(OpFlags.f_can_raise_exception),
     SEARCH_CONST(OpFlags.f_can_raise_exception),
 
-    /** value loads (SSS FIXME: Do any of these have side effects?) **/
     GET_GLOBAL_VAR(OpFlags.f_is_load),
     GET_FIELD(OpFlags.f_is_load),
     /** SSS FIXME: Document what causes this instr to raise an exception */
@@ -143,9 +146,12 @@ public enum Operation {
     BUILD_COMPOUND_ARRAY(OpFlags.f_can_raise_exception),
     BUILD_COMPOUND_STRING(OpFlags.f_can_raise_exception),
     BUILD_DREGEXP(OpFlags.f_can_raise_exception),
+    BUILD_RANGE(OpFlags.f_can_raise_exception),
+    BUILD_SPLAT(OpFlags.f_can_raise_exception),
     BACKTICK_STRING(OpFlags.f_can_raise_exception),
     CHECK_ARGS_ARRAY_ARITY(OpFlags.f_can_raise_exception),
     CHECK_ARITY(OpFlags.f_is_book_keeping_op | OpFlags.f_can_raise_exception),
+    CHECK_FOR_LJE(OpFlags.f_has_side_effect | OpFlags.f_can_raise_exception),
     CLASS_VAR_MODULE(0),
     COPY(0),
     GET_ENCODING(0),
@@ -154,11 +160,11 @@ public enum Operation {
     MASGN_REST(0),
     RAISE_ARGUMENT_ERROR(OpFlags.f_can_raise_exception),
     RAISE_REQUIRED_KEYWORD_ARGUMENT_ERROR(OpFlags.f_can_raise_exception),
-    RECORD_END_BLOCK(OpFlags.f_is_book_keeping_op | OpFlags.f_has_side_effect),
+    RECORD_END_BLOCK(OpFlags.f_has_side_effect),
     RESCUE_EQQ(OpFlags.f_can_raise_exception), // a === call used in rescue
     RUNTIME_HELPER(OpFlags.f_has_side_effect | OpFlags.f_can_raise_exception),
     SET_CAPTURED_VAR(OpFlags.f_can_raise_exception),
-    THREAD_POLL(OpFlags.f_is_book_keeping_op | OpFlags.f_has_side_effect),
+    THREAD_POLL(OpFlags.f_is_book_keeping_op | OpFlags.f_has_side_effect | OpFlags.f_can_raise_exception),
     THROW(OpFlags.f_has_side_effect | OpFlags.f_can_raise_exception | OpFlags.f_is_exception),
     // FIXME: TO_ARY is marked side-effecting since it can allocate new objects
     // Clarify semantics of 'f_has_side_effect' better
@@ -169,7 +175,7 @@ public enum Operation {
     DEFINED_CONSTANT_OR_METHOD(OpFlags.f_can_raise_exception),
     GET_ERROR_INFO(0),
     METHOD_DEFINED(OpFlags.f_can_raise_exception),
-    RESTORE_ERROR_INFO(OpFlags.f_has_side_effect), // SSS FIXME: Side effecting? Really?
+    RESTORE_ERROR_INFO(OpFlags.f_has_side_effect),
 
     /* Boxing/Unboxing between Ruby <--> Java types */
     BOX_FIXNUM(0),
@@ -191,7 +197,7 @@ public enum Operation {
     IXOR(OpFlags.f_is_int_op),
     ISHL(OpFlags.f_is_int_op),
     ISHR(OpFlags.f_is_int_op),
-    IEQ(OpFlags.f_is_float_op),
+    IEQ(OpFlags.f_is_int_op),
     FADD(OpFlags.f_is_float_op),
     FSUB(OpFlags.f_is_float_op),
     FMUL(OpFlags.f_is_float_op),
@@ -205,8 +211,7 @@ public enum Operation {
     PUSH_FRAME(OpFlags.f_is_book_keeping_op | OpFlags.f_has_side_effect),
     PUSH_BINDING(OpFlags.f_is_book_keeping_op | OpFlags.f_has_side_effect),
     POP_FRAME(OpFlags.f_is_book_keeping_op | OpFlags.f_has_side_effect),
-    POP_BINDING(OpFlags.f_is_book_keeping_op | OpFlags.f_has_side_effect),
-    METHOD_LOOKUP(0); /* for splitting calls into method-lookup and call -- unused **/
+    POP_BINDING(OpFlags.f_is_book_keeping_op | OpFlags.f_has_side_effect);
 
     public final OpClass opClass;
     private int flags;

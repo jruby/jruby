@@ -1,1 +1,0 @@
-fails:String#bytes returns an Array when no block is given

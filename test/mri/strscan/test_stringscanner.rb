@@ -461,7 +461,7 @@ class TestStringScanner < Test::Unit::TestCase
     assert_equal true, s[4].tainted?
 
     s = StringScanner.new("foo bar baz")
-    s.scan /(?<a>\w+) (?<b>\w+) (\w+)/
+    s.scan(/(?<a>\w+) (?<b>\w+) (\w+)/)
     assert_equal 'foo', s[1]
     assert_equal 'bar', s[2]
     assert_nil s[3]
@@ -471,6 +471,7 @@ class TestStringScanner < Test::Unit::TestCase
     assert_equal 'foo', s['a']
     assert_equal 'bar', s['b']
     assert_raise(IndexError) { s['c'] }
+    assert_raise_with_message(IndexError, /\u{30c6 30b9 30c8}/) { s["\u{30c6 30b9 30c8}"] }
   end
 
   def test_pre_match

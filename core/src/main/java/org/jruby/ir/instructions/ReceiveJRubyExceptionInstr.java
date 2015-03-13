@@ -3,7 +3,7 @@ package org.jruby.ir.instructions;
 import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Operation;
 import org.jruby.ir.operands.Variable;
-import org.jruby.ir.transformations.inlining.InlinerInfo;
+import org.jruby.ir.transformations.inlining.CloneInfo;
 
 public class ReceiveJRubyExceptionInstr extends ReceiveExceptionBase {
     public ReceiveJRubyExceptionInstr(Variable result) {
@@ -11,7 +11,7 @@ public class ReceiveJRubyExceptionInstr extends ReceiveExceptionBase {
     }
 
     @Override
-    public Instr cloneForInlining(InlinerInfo ii) {
+    public Instr clone(CloneInfo ii) {
         return new ReceiveJRubyExceptionInstr(ii.getRenamedVariable(result));
     }
 

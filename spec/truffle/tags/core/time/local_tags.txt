@@ -1,45 +1,8 @@
-fails:Time.local creates a time based on given values, interpreted in the local time zone
-fails:Time.local respects rare old timezones
 fails:Time.local creates a time based on given C-style gmtime arguments, interpreted in the local time zone
 fails:Time.local creates the correct time just before dst change
 fails:Time.local creates the correct time just after dst change
-fails:Time.local accepts 1 argument (year)
-fails:Time.local accepts 2 arguments (year, month)
-fails:Time.local accepts 3 arguments (year, month, day)
-fails:Time.local accepts 4 arguments (year, month, day, hour)
-fails:Time.local accepts 5 arguments (year, month, day, hour, minute)
-fails:Time.local raises a TypeError if the year is nil
-fails:Time.local accepts nil month, day, hour, minute, and second
-fails:Time.local handles a String year
-fails:Time.local coerces the year with #to_int
-fails:Time.local handles a String month given as a numeral
-fails:Time.local handles a String month given as a short month name
-fails:Time.local coerces the month with #to_str
-fails:Time.local coerces the month with #to_int
-fails:Time.local handles a String day
-fails:Time.local coerces the day with #to_int
-fails:Time.local handles a String hour
-fails:Time.local coerces the hour with #to_int
-fails:Time.local handles a String minute
-fails:Time.local coerces the minute with #to_int
-fails:Time.local handles a String second
-fails:Time.local coerces the second with #to_int
-fails:Time.local interprets all numerals as base 10
-fails:Time.local handles fractional seconds as a Float
-fails:Time.local handles fractional seconds as a Rational
-fails:Time.local handles years from 0 as such
-fails:Time.local accepts various year ranges
-fails:Time.local raises an ArgumentError for out of range month
-fails:Time.local raises an ArgumentError for out of range day
-fails:Time.local raises an ArgumentError for out of range hour
-fails:Time.local raises an ArgumentError for out of range minute
-fails:Time.local raises an ArgumentError for out of range second
-fails:Time.local raises ArgumentError when given 9 arguments
-fails:Time.local raises ArgumentError when given 11 arguments
-fails:Time.local returns subclass instances
 fails:Time.local handles string arguments
 fails:Time.local handles float arguments
-fails:Time.local raises an ArgumentError for out of range values
 fails:Time.local handles microseconds
 fails:Time.local handles fractional microseconds as a Float
 fails:Time.local handles fractional microseconds as a Rational

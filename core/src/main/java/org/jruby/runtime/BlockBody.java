@@ -84,7 +84,7 @@ public abstract class BlockBody {
 
     public final IRubyObject yield(ThreadContext context, IRubyObject[] args, IRubyObject self,
                                    Binding binding, Block.Type type) {
-        IRubyObject[] preppedValue = RubyProc.prepareArgs(context, type, arity(), args);
+        IRubyObject[] preppedValue = RubyProc.prepareArgs(context, type, this, args);
         return doYield(context, preppedValue, self, binding, type);
     }
 

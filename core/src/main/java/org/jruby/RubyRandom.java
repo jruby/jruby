@@ -248,6 +248,7 @@ public class RubyRandom extends RubyObject {
                     String.format("wrong argument type %s (expected %s)", orig.getMetaClass()
                             .getName(), getMetaClass().getName()));
         }
+        checkFrozen();
         random = new RandomType(((RubyRandom) orig).random);
         return this;
     }

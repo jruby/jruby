@@ -1,2 +1,0 @@
-fails:Fixnum#-@ returns self as a negative value
-fails:Fixnum#-@ negates self at Fixnum/Bignum boundaries

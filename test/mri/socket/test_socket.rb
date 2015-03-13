@@ -2,6 +2,7 @@ begin
   require "socket"
   require "tmpdir"
   require "fcntl"
+  require "etc"
   require "test/unit"
 rescue LoadError
 end
@@ -316,9 +317,9 @@ class TestSocket < Test::Unit::TestCase
 
   def test_udp_server
     begin
-      ip_addrs = Socket.ip_address_list
+      ifaddrs = Socket.getifaddrs
     rescue NotImplementedError
-      skip "Socket.ip_address_list not implemented"
+      skip "Socket.getifaddrs not implemented"
     end
 
     ifconfig = nil
@@ -326,26 +327,29 @@ class TestSocket < Test::Unit::TestCase
       famlies = {}
       sockets.each {|s| famlies[s.local_address.afamily] = s }
       nd6 = {}
-      ip_addrs.reject! {|ai|
+      ifaddrs.reject! {|ifa|
+        ai = ifa.addr
+        next true unless ai
         s = famlies[ai.afamily]
         next true unless s
+        next true if ai.ipv6_linklocal? # IPv6 link-local address is too troublesome in this test.
         case RUBY_PLATFORM
         when /linux/
           if ai.ip_address.include?('%') and
-            (`uname -r`[/[0-9.]+/].split('.').map(&:to_i) <=> [2,6,18]) <= 0
+            (Etc.uname[:release][/[0-9.]+/].split('.').map(&:to_i) <=> [2,6,18]) <= 0
             # Cent OS 5.6 (2.6.18-238.19.1.el5xen) doesn't correctly work
             # sendmsg with pktinfo for link-local ipv6 addresses
             next true
           end
         when /freebsd/
-          if ifr_name = ai.ip_address[/%(.*)/, 1]
+          if ifa.addr.ipv6_linklocal?
             # FreeBSD 9.0 with default setting (ipv6_activate_all_interfaces
             # is not YES) sets IFDISABLED to interfaces which don't have
             # global IPv6 address.
             # Link-local IPv6 addresses on those interfaces don't work.
             ulSIOCGIFINFO_IN6 = 3225971052
             ulND6_IFF_IFDISABLED = 8
-            in6_ondireq = ifr_name
+            in6_ondireq = ifa.name
             s.ioctl(ulSIOCGIFINFO_IN6, in6_ondireq)
             flag = in6_ondireq.unpack('A16L6').last
             next true if flag & ulND6_IFF_IFDISABLED != 0
@@ -359,7 +363,6 @@ class TestSocket < Test::Unit::TestCase
             # Mac OS X may sets IFDISABLED as FreeBSD does
             ulSIOCGIFFLAGS = 3223349521
             ulSIOCGIFINFO_IN6 = 3224398156
-            ulSIOCGIFAFLAG_IN6 = 3240126793
             ulIFF_POINTOPOINT = 0x10
             ulND6_IFF_IFDISABLED = 8
             in6_ondireq = ifr_name
@@ -393,17 +396,18 @@ class TestSocket < Test::Unit::TestCase
           }
         }
 
-        ip_addrs.each {|ai|
+        ifaddrs.each {|ifa|
+          ai = ifa.addr
           Addrinfo.udp(ai.ip_address, port).connect {|s|
             ping_p = false
             msg1 = "<<<#{ai.inspect}>>>"
             s.sendmsg msg1
             unless IO.select([s], nil, nil, 10)
               nd6options = nd6.key?(ai) ? "nd6=%x " % nd6[ai] : ''
-              raise "no response from #{ai.inspect} #{nd6options}ping=#{ping_p}"
+              raise "no response from #{ifa.inspect} #{nd6options}ping=#{ping_p}"
             end
             msg2, addr = s.recvmsg
-            msg2, remote_address, local_address = Marshal.load(msg2)
+            msg2, _, _ = Marshal.load(msg2)
             assert_equal(msg1, msg2)
             assert_equal(ai.ip_address, addr.ip_address)
           }
@@ -454,7 +458,7 @@ class TestSocket < Test::Unit::TestCase
       Addrinfo.udp("127.0.0.1", 0).bind {|s2|
         s1.setsockopt(:SOCKET, :TIMESTAMP, true)
         s2.send "a", 0, s1.local_address
-        msg, addr, rflags, stamp = s1.recvmsg
+        msg, _, _, stamp = s1.recvmsg
         assert_equal("a", msg)
         assert(stamp.cmsg_is?(:SOCKET, :TIMESTAMP))
       }
@@ -481,7 +485,7 @@ class TestSocket < Test::Unit::TestCase
           return
         end
         s2.send "a", 0, s1.local_address
-        msg, addr, rflags, stamp = s1.recvmsg
+        msg, _, _, stamp = s1.recvmsg
         assert_equal("a", msg)
         assert(stamp.cmsg_is?(:SOCKET, :TIMESTAMPNS))
       }
@@ -503,7 +507,7 @@ class TestSocket < Test::Unit::TestCase
       Addrinfo.udp("127.0.0.1", 0).bind {|s2|
         s1.setsockopt(:SOCKET, :BINTIME, true)
         s2.send "a", 0, s1.local_address
-        msg, addr, rflags, stamp = s1.recvmsg
+        msg, _, _, stamp = s1.recvmsg
         assert_equal("a", msg)
         assert(stamp.cmsg_is?(:SOCKET, :BINTIME))
       }
@@ -534,6 +538,7 @@ class TestSocket < Test::Unit::TestCase
       assert_raise(IOError, bug4390) {client_thread.join}
     end
   ensure
+    serv_thread.value.close
     server.close
   end
 

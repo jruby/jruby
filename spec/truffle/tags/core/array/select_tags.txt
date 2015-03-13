@@ -1,12 +1,7 @@
 fails:Array#select returns an Enumerator if no block given
-fails:Array#select returns a new array of elements for which block is true
-fails:Array#select does not return subclass instance on Array subclasses
-fails:Array#select properly handles recursive arrays
 fails:Array#select! returns nil if no changes were made in the array
 fails:Array#select! deletes elements for which the block returns a false value
 fails:Array#select! returns an enumerator if no block is given
 fails:Array#select! on frozen objects returns an Enumerator if no block is given
-fails:Array#select! on frozen objects with truthy block keeps elements after any exception
 fails:Array#select! on frozen objects with truthy block raises a RuntimeError
-fails:Array#select! on frozen objects with falsy block keeps elements after any exception
 fails:Array#select! on frozen objects with falsy block raises a RuntimeError

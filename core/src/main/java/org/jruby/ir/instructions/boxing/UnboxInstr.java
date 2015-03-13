@@ -2,46 +2,22 @@ package org.jruby.ir.instructions.boxing;
 
 import org.jruby.ir.Operation;
 import org.jruby.ir.instructions.Instr;
-import org.jruby.ir.instructions.ResultInstr;
+import org.jruby.ir.instructions.ResultBaseInstr;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.Variable;
+import org.jruby.ir.transformations.inlining.CloneInfo;
 
-import java.util.Map;
-
-public class UnboxInstr extends Instr implements ResultInstr {
-    private Variable result;
-    private Operand val;
-
-    public UnboxInstr(Operation op, Variable dst, Operand val) {
-        super(op);
-        this.result = dst;
-        this.val = val;
-    }
-
-    @Override
-    public Operand[] getOperands() {
-        return new Operand[]{ val };
+public class UnboxInstr extends ResultBaseInstr {
+    public UnboxInstr(Operation op, Variable result, Operand value) {
+        super(op, result, new Operand[] { value });
     }
 
     public Operand getValue() {
-        return val;
-    }
-
-    public Variable getResult() {
-        return result;
-    }
-
-    public void updateResult(Variable v) {
-        this.result = v;
+        return operands[0];
     }
 
     @Override
-    public void simplifyOperands(Map<Operand, Operand> valueMap, boolean force) {
-        val = val.getSimplifiedOperand(valueMap, force);
-    }
-
-    @Override
-    public String toString() {
-        return getResult() + " = " + getOperation() + "(" + val + ")";
+    public Instr clone(CloneInfo info) {
+        throw new UnsupportedOperationException();
     }
 }

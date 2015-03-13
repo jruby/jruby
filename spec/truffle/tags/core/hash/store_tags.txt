@@ -1,8 +1,0 @@
-fails:Hash#store associates the key with the value and return the value
-fails:Hash#store duplicates string keys using dup semantics
-fails:Hash#store stores unequal keys that hash to the same value
-fails:Hash#store accepts keys with private #hash method
-fails:Hash#store duplicates and freezes string keys
-fails:Hash#store doesn't duplicate and freeze already frozen string keys
-fails:Hash#store raises a RuntimeError if called on a frozen instance
-fails:Hash#store does not raise an exception if changing the value of an existing key during iteration

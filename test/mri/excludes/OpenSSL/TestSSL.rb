@@ -1,6 +1,7 @@
 exclude :test_client_ca, 'needs investigation'
 exclude :test_close_after_socket_close, "needs investigation"
 exclude :test_post_connection_check, 'needs investigation'
+exclude :test_read_nonblock_without_session, 'hangs'
 exclude :test_read_and_write, 'needs investigation'
 exclude :test_renegotiation_cb, 'needs investigation'
 exclude :test_ssl_gets, 'encoding issue'

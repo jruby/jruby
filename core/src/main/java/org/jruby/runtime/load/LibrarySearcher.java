@@ -1,5 +1,6 @@
 package org.jruby.runtime.load;
 
+import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -20,22 +21,6 @@ import org.jruby.util.JRubyFile;
 import org.jruby.util.URLResource;
 
 class LibrarySearcher {
-    static class Ruby18 extends LibrarySearcher {
-        public Ruby18(LoadService loadService) {
-            super(loadService);
-        }
-
-        @Override
-        protected String resolveLoadName(FileResource unused, String ruby18Path) {
-            return ruby18Path;
-        }
-
-        @Override
-        protected String resolveScriptName(FileResource unused, String ruby18Path) {
-            return ruby18Path;
-        }
-    }
-
     static class FoundLibrary implements Library {
         private final Library delegate;
         private final String loadName;
@@ -70,16 +55,24 @@ class LibrarySearcher {
         FoundLibrary lib = findLibrary(state.searchFile, state.suffixType);
         if (lib != null) {
             state.library = lib;
-            state.loadName = lib.getLoadName();
+            state.setLoadName(lib.getLoadName());
         }
         return lib;
     }
 
     public FoundLibrary findLibrary(String baseName, SuffixType suffixType) {
+        boolean searchedForServiceLibrary = false;
+
         for (String suffix : suffixType.getSuffixes()) {
             FoundLibrary library = findBuiltinLibrary(baseName, suffix);
             if (library == null) library = findResourceLibrary(baseName, suffix);
-            if (library == null) library = findServiceLibrary(baseName, suffix);
+
+            // Since searching for a service library doesn't take the suffix into account, there's no need
+            // to perform it more than once.
+            if (library == null && !searchedForServiceLibrary) {
+                library = findServiceLibrary(baseName, suffix);
+                searchedForServiceLibrary = true;
+            }
 
             if (library != null) {
                 return library;
@@ -154,9 +147,9 @@ class LibrarySearcher {
 
     // FIXME: to_path should not be called n times it should only be once and that means a cache which would
     // also reduce all this casting and/or string creates.
+    // (mkristian) would it make sense to turn $LOAD_PATH into something like RubyClassPathVariable where we could cache
+    // the Strings ?
     private String getPath(IRubyObject loadPathEntry) {
-        if (runtime.is1_8()) return loadPathEntry.convertToString().asJavaString();
-
         return RubyFile.get_path(runtime.getCurrentContext(), loadPathEntry).asJavaString();
     }
 
@@ -204,7 +197,7 @@ class LibrarySearcher {
     }
 
     protected String resolveLoadName(FileResource resource, String ruby18path) {
-        return resource.canonicalPath();
+        return resource.absolutePath();
     }
 
     protected String resolveScriptName(FileResource resource, String ruby18Path) {
@@ -227,8 +220,11 @@ class LibrarySearcher {
 
         @Override
         public void load(Ruby runtime, boolean wrap) {
-            InputStream is = resource.openInputStream();
-            if (is == null) {
+            InputStream is = null;
+            try {
+                is = new BufferedInputStream(resource.inputStream(), 32768);
+            }
+            catch(IOException e) {
                 throw runtime.newLoadError("no such file to load -- " + searchName, searchName);
             }
 
@@ -274,7 +270,7 @@ class LibrarySearcher {
                 }
                 else if (location.startsWith(URLResource.URI)){
                     url = null;
-                    runtime.getJRubyClassLoader().addURLNoIndex(URLResource.getResourceURL(location));
+                    runtime.getJRubyClassLoader().addURLNoIndex(URLResource.getResourceURL(runtime, location));
                 }
                 else {
                     File f = new File(location);

@@ -5,6 +5,8 @@ require 'timeout'
 require 'shellwords'
 require_relative '../ruby/envutil'
 
+module DRbTests
+
 class DRbService
   @@manager = DRb::ExtServManager.new
   @@ruby = Shellwords.escape(EnvUtil.rubybin)
@@ -29,6 +31,9 @@ class DRbService
     timeout(100, RuntimeError) do
       manager.service(name)
     end
+  end
+  def self.finish
+    @server.instance_variable_get(:@grp).list.each {|th| th.join }
   end
 end
 
@@ -138,11 +143,11 @@ module DRbCore
   def test_02_unknown
     obj = @there.unknown_class
     assert_kind_of(DRb::DRbUnknown, obj)
-    assert_equal('Unknown2', obj.name)
+    assert_equal('DRbTests::Unknown2', obj.name)
 
     obj = @there.unknown_module
     assert_kind_of(DRb::DRbUnknown, obj)
-    assert_equal('DRbEx::', obj.name)
+    assert_equal('DRbTests::DRbEx::', obj.name)
 
     assert_raise(DRb::DRbUnknownError) do
       @there.unknown_error
@@ -185,10 +190,10 @@ module DRbCore
 
   def test_06_timeout
     ten = Onecky.new(10)
-    assert_raise(TimeoutError) do
+    assert_raise(Timeout::Error) do
       @there.do_timeout(ten)
     end
-    assert_raise(TimeoutError) do
+    assert_raise(Timeout::Error) do
       @there.do_timeout(ten)
     end
   end
@@ -358,5 +363,7 @@ module DRbAry
     assert_equal(:done, result)
   end
 EOS
+
+end
 
 end

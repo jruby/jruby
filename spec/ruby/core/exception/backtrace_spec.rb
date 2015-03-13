@@ -48,4 +48,12 @@ describe "Exception#backtrace" do
       line.should =~ /^[^ ]+\:\d+(:in `[^`]+')?$/
     end
   end
+
+  it "when redefined does not affect the behaviour of Exception#message" do
+    e = Exception.new
+    e.message.should == 'Exception'
+
+    def e.backtrace; []; end
+    e.message.should == 'Exception'
+  end
 end

@@ -252,8 +252,6 @@ public class ScriptingContainer implements EmbedRubyInstanceConfigAdapter {
     }
 
     private void initConfig() throws URISyntaxException, UnsupportedEncodingException {
-        List<String> paths = SystemPropertyCatcher.findLoadPaths();
-        provider.getRubyInstanceConfig().setLoadPaths(paths);
         String home = SystemPropertyCatcher.findJRubyHome(this);
         if (home != null) {
         	provider.getRubyInstanceConfig().setJRubyHome(home);
@@ -717,9 +715,32 @@ public class ScriptingContainer implements EmbedRubyInstanceConfigAdapter {
      *
      * @since JRuby 1.6.6.
      *
+     * @deprecated Use setProfilingMode instead
+     *
      * @param mode a new profiling mode to be set.
      */
+    @Deprecated
     public void setProfile(ProfilingMode mode) {
+        provider.getRubyInstanceConfig().setProfilingMode(mode);
+    }
+
+    /**
+     * Changes a ProfilingMode to a given one. The default value is Profiling.OFF.
+     * Call this method before you use put/get, runScriptlet, and parse methods so that
+     * initial configurations will work.
+     *
+     * ProfilingMode allows you to change profiling style.
+     *
+     * Profiling.OFF - default. profiling off.
+     * Profiling.API - activates Ruby profiler API. equivalent to --profile.api command line option
+     * Profiling.FLAT - synonym for --profile command line option equivalent to --profile.flat command line option
+     * Profiling.GRAPH - runs with instrumented (timed) profiling, graph format. equivalent to --profile.graph command line option.
+     *
+     * @since JRuby 1.7.15
+     *
+     * @param mode a new profiling mode to be set.
+     */
+    public void setProfilingMode(ProfilingMode mode) {
         provider.getRubyInstanceConfig().setProfilingMode(mode);
     }
 
@@ -1836,5 +1857,33 @@ public class ScriptingContainer implements EmbedRubyInstanceConfigAdapter {
         super.finalize();
         // singleton containers share global runtime, and should not tear it down
         if (scope != LocalContextScope.SINGLETON) terminate();
+    }
+
+    /**
+     * Force dynamically-loaded Java classes to load first from the classloader provided by
+     * JRuby before searching parent classloaders. This can be used to isolated dependency
+     * in different runtimes from each other and from parent classloaders. The default
+     * behavior is to defer to parent classloaders if they can provide the requested
+     * classes.
+     *
+     * Note that if different versions of a  library are loaded by both a parent
+     * classloader and the JRuby classloader, those classess would be incompatible
+     * with each other and with other library objects from the opposing classloader.
+     *
+     * @param classloaderDelegate set whether prefer the JRuby classloader to delegate first 
+     *                            to the parent classloader when dynamically loading classes
+     * @since JRuby 9.0.0.0
+     */
+    public void setClassloaderDelegate(boolean classloaderDelegate) {
+        getProvider().getRubyInstanceConfig().setClassloaderDelegate(classloaderDelegate);
+    }
+
+    /**
+     * Retrieve the self-first classloader setting.
+     *
+     * @see ScriptingContainer#setClassloaderDelegate(boolean)
+     */
+    public boolean getClassloaderDelegate() {
+        return getProvider().getRubyInstanceConfig().isClassloaderDelegate();
     }
 }

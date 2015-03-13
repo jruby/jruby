@@ -111,16 +111,12 @@ EOF
 * 1 FETCH (UID 92285 )
 EOF
     assert_equal 92285, response.data.attr["UID"]
-
-    response = parser.parse(<<EOF.gsub(/\n/, "\r\n").taint)
-* 1 FETCH (UID 92285  )
-EOF
   end
 
   def test_msg_att_parse_error
     parser = Net::IMAP::ResponseParser.new
     e = assert_raise(Net::IMAP::ResponseParseError) {
-      response = parser.parse(<<EOF.gsub(/\n/, "\r\n").taint)
+      parser.parse(<<EOF.gsub(/\n/, "\r\n").taint)
 * 123 FETCH (UNKNOWN 92285)
 EOF
     }
@@ -247,5 +243,29 @@ EOF
     response = parser.parse("* CAPABILITY st11p00mm-iscream009 1Q49 XAPPLEPUSHSERVICE IMAP4 IMAP4rev1 SASL-IR AUTH=ATOKEN AUTH=PLAIN \r\n")
     assert_equal("CAPABILITY", response.name)
     assert_equal("AUTH=PLAIN", response.data.last)
+  end
+
+  def test_mixed_boundry
+    parser = Net::IMAP::ResponseParser.new
+    response = parser.parse("* 2688 FETCH (UID 179161 BODYSTRUCTURE (" \
+                            "(\"TEXT\" \"PLAIN\" (\"CHARSET\" \"iso-8859-1\") NIL NIL \"QUOTED-PRINTABLE\" 200 4 NIL NIL NIL)" \
+                            "(\"MESSAGE\" \"DELIVERY-STATUS\" NIL NIL NIL \"7BIT\" 318 NIL NIL NIL)" \
+                            "(\"MESSAGE\" \"RFC822\" NIL NIL NIL \"7BIT\" 2177" \
+                            " (\"Tue, 11 May 2010 18:28:16 -0400\" \"Re: Welcome letter\" (" \
+                              "(\"David\" NIL \"info\" \"xxxxxxxx.si\")) " \
+                              "((\"David\" NIL \"info\" \"xxxxxxxx.si\")) " \
+                              "((\"David\" NIL \"info\" \"xxxxxxxx.si\")) " \
+                              "((\"Doretha\" NIL \"doretha.info\" \"xxxxxxxx.si\")) " \
+                              "NIL NIL " \
+                              "\"<AC1D15E06EA82F47BDE18E851CC32F330717704E@localdomain>\" " \
+                              "\"<AANLkTikKMev1I73L2E7XLjRs67IHrEkb23f7ZPmD4S_9@localdomain>\")" \
+                            " (\"MIXED\" (\"BOUNDARY\" \"000e0cd29212e3e06a0486590ae2\") NIL NIL)" \
+                            " 37 NIL NIL NIL)" \
+                            " \"REPORT\" (\"BOUNDARY\" \"16DuG.4XbaNOvCi.9ggvq.8Ipnyp3\" \"REPORT-TYPE\" \"delivery-status\") NIL NIL))\r\n")
+    empty_part = response.data.attr['BODYSTRUCTURE'].parts[2]
+    assert_equal(empty_part.lines, 37)
+    assert_equal(empty_part.body.media_type, 'MULTIPART')
+    assert_equal(empty_part.body.subtype, 'MIXED')
+    assert_equal(empty_part.body.param['BOUNDARY'], '000e0cd29212e3e06a0486590ae2')
   end
 end

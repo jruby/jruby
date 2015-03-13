@@ -1,29 +1,17 @@
 package org.jruby.ir.instructions;
 
-import org.jruby.ir.IRScope;
 import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Operation;
-import org.jruby.ir.operands.Operand;
-import org.jruby.ir.transformations.inlining.InlinerInfo;
+import org.jruby.ir.transformations.inlining.CloneInfo;
 
 public class PushBindingInstr extends Instr implements FixedArityInstr {
     public PushBindingInstr() {
-        super(Operation.PUSH_BINDING);
+        super(Operation.PUSH_BINDING, EMPTY_OPERANDS);
     }
 
     @Override
-    public Operand[] getOperands() {
-        return EMPTY_OPERANDS;
-    }
-
-    @Override
-    public Instr cloneForInlining(InlinerInfo ii) {
-        return this;
-    }
-
-    @Override
-    public String toString() {
-        return "" + getOperation() + "()";
+    public Instr clone(CloneInfo ii) {
+        return this; // FIXME: This has to be wrong if pop_binding is conditionally noop'ing on inline
     }
 
     @Override

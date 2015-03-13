@@ -25,9 +25,7 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.internal.runtime.methods;
 
-import org.jruby.Ruby;
 import org.jruby.RubyModule;
-import org.jruby.anno.JRubyMethod;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
@@ -120,11 +118,11 @@ public abstract class JavaMethod extends DynamicMethod implements Cloneable, Met
     }
 
     protected final void preScopeOnly(ThreadContext context) {
-        context.preMethodScopeOnly(implementationClass, staticScope);
+        context.preMethodScopeOnly(staticScope);
     }
 
     protected final void preNoFrameDummyScope(ThreadContext context) {
-        context.preMethodNoFrameAndDummyScope(implementationClass, staticScope);
+        context.preMethodNoFrameAndDummyScope(staticScope);
     }
 
     protected final void preBacktraceOnly(ThreadContext context, String name) {
@@ -132,11 +130,11 @@ public abstract class JavaMethod extends DynamicMethod implements Cloneable, Met
     }
 
     protected final void preBacktraceDummyScope(ThreadContext context, String name) {
-        context.preMethodBacktraceDummyScope(implementationClass, name, staticScope);
+        context.preMethodBacktraceDummyScope(name, staticScope);
     }
 
     protected final void preBacktraceAndScope(ThreadContext context, String name) {
-        context.preMethodBacktraceAndScope(name, implementationClass, staticScope);
+        context.preMethodBacktraceAndScope(name, staticScope);
     }
 
     protected final void preNoop() {}

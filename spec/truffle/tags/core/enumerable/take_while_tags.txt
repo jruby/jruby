@@ -1,7 +1,1 @@
-fails:Enumerable#take_while returns an Enumerator if no block given
-fails:Enumerable#take_while returns no/all elements for {true/false} block
-fails:Enumerable#take_while accepts returns other than true/false
-fails:Enumerable#take_while passes elements to the block until the first false
 fails:Enumerable#take_while will only go through what's needed
-fails:Enumerable#take_while doesn't return self when it could
-fails:Enumerable#take_while calls the block with initial args when yielded with multiple arguments

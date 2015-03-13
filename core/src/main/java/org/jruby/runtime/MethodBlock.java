@@ -36,7 +36,6 @@ import org.jruby.RubyModule;
 import org.jruby.RubyProc;
 import org.jruby.exceptions.JumpException;
 import org.jruby.parser.StaticScope;
-import org.jruby.runtime.backtrace.BacktraceElement;
 import org.jruby.runtime.builtin.IRubyObject;
 
 /**
@@ -60,7 +59,7 @@ public abstract class MethodBlock extends ContextAwareBlockBody {
         Binding binding = new Binding(
                 frame,
                 dynamicScope,
-                new BacktraceElement(method.getMethodName(), body.getFile(), body.getLine()));
+                method.getMethodName(), body.getFile(), body.getLine());
 
         return new Block(body, binding);
     }
@@ -160,7 +159,7 @@ public abstract class MethodBlock extends ContextAwareBlockBody {
             // This while loop is for restarting the block call in case a 'redo' fires.
             while (true) {
                 try {
-                    IRubyObject[] preppedArgs = RubyProc.prepareArgs(context, type, arity, args);
+                    IRubyObject[] preppedArgs = RubyProc.prepareArgs(context, type, this, args);
                     return callback(context.runtime.newArrayNoCopyLight(preppedArgs), method, self, block);
                 } catch (JumpException.RedoJump rj) {
                     context.pollThreadEvents();

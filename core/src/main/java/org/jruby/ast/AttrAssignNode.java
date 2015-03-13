@@ -43,7 +43,7 @@ public class AttrAssignNode extends Node implements INameNode, IArgumentNode {
     private Node argsNode;
 
     public AttrAssignNode(ISourcePosition position, Node receiverNode, String name, Node argsNode) {
-        super(position);
+        super(position, receiverNode != null && receiverNode.containsVariableAssignment() || argsNode != null && argsNode.containsVariableAssignment());
         
         assert receiverNode != null : "receiverNode is not null";
         // TODO: At least ParserSupport.attrset passes argsNode as null.  ImplicitNil is wrong magic for 
@@ -53,7 +53,7 @@ public class AttrAssignNode extends Node implements INameNode, IArgumentNode {
         
         this.receiverNode = receiverNode;
         this.name = name;
-        setArgsInternal(argsNode);
+        this.argsNode = argsNode;
     }
 
     public NodeType getNodeType() {
@@ -95,74 +95,15 @@ public class AttrAssignNode extends Node implements INameNode, IArgumentNode {
         return argsNode;
     }
     
-    
-    protected Node newAttrAssignNode(ArrayNode argsNode) {
-        int size = argsNode.size();
-        
-        switch (size) {
-            case 1:
-                return new AttrAssignOneArgNode(getPosition(), receiverNode, name, argsNode);
-            case 2:
-                return new AttrAssignTwoArgNode(getPosition(), receiverNode, name, argsNode);
-            case 3:
-                return new AttrAssignThreeArgNode(getPosition(), receiverNode, name, argsNode);
-            default:
-                return new AttrAssignNode(getPosition(), receiverNode, name, argsNode);
-        }
-    }
-    
-    protected Node newMutatedAttrAssignNode(ArrayNode argsNode) {
-        int size = argsNode.size();
-        
-        switch (size) {
-            case 1:
-                if (!(this instanceof AttrAssignOneArgNode)) {
-                    return new AttrAssignOneArgNode(getPosition(), receiverNode, name, argsNode);
-                } else {
-                    return this;
-                }
-            case 2:
-                if (!(this instanceof AttrAssignTwoArgNode)) {
-                    return new AttrAssignTwoArgNode(getPosition(), receiverNode, name, argsNode);
-                } else {
-                    return this;
-                }
-            case 3:
-                if (!(this instanceof AttrAssignThreeArgNode)) {
-                    return new AttrAssignThreeArgNode(getPosition(), receiverNode, name, argsNode);
-                } else {
-                    return this;
-                }
-            default:
-                return new AttrAssignNode(getPosition(), receiverNode, name, argsNode);
-        }
-    }
-    
     /**
      * Set the argsNode
      * 
      * @param argsNode set the arguments for this node.
      */
     public Node setArgsNode(Node argsNode) {
-        // Empirical Observations:
-        // null -> Some arity
-        // argsNode == this.argsNode then check for arity changes
-        // newline(splatnode) -> argspushnode
-        if (this.argsNode == null && argsNode instanceof ArrayNode) {
-            return newAttrAssignNode((ArrayNode) argsNode);
-        } else if (this.argsNode == argsNode) {
-            return newMutatedAttrAssignNode((ArrayNode)argsNode);
-        }
-        
-        setArgsInternal(argsNode);
-        
-        return this;
-    }
-    
-    private void setArgsInternal(Node argsNode) {
         this.argsNode = argsNode;
-        
-        if (argsNode instanceof ArrayNode) ((ArrayNode)argsNode).setLightweight(true);
+
+        return this;
     }
 
     public List<Node> childNodes() {

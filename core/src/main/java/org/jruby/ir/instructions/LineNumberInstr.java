@@ -1,44 +1,50 @@
 package org.jruby.ir.instructions;
 
-import org.jruby.ir.IRScope;
 import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Operation;
-import org.jruby.ir.operands.Fixnum;
-import org.jruby.ir.operands.Operand;
-import org.jruby.ir.transformations.inlining.InlinerInfo;
+import org.jruby.ir.persistence.IRWriterEncoder;
+import org.jruby.ir.transformations.inlining.CloneInfo;
+import org.jruby.ir.transformations.inlining.InlineCloneInfo;
 
 public class LineNumberInstr extends Instr implements FixedArityInstr {
     public final int lineNumber;
-    public final IRScope scope; // We need to keep scope info here so that line number is meaningful across inlinings.
 
-    public LineNumberInstr(IRScope scope, int lineNumber) {
-        super(Operation.LINE_NUM);
-        this.scope = scope;
+    public LineNumberInstr(int lineNumber) {
+        super(Operation.LINE_NUM, EMPTY_OPERANDS);
+
         this.lineNumber = lineNumber;
     }
 
-    @Override
-    public Operand[] getOperands() {
-        return new Operand[] { new Fixnum(lineNumber) };
+    public int getLineNumber() {
+        return lineNumber;
     }
 
     @Override
-    public String toString() {
-        return super.toString() + "(" + lineNumber + ")";
+    public String[] toStringNonOperandArgs() {
+        return new String[] {"n: " + lineNumber};
     }
 
     @Override
-    public Instr cloneForInlining(InlinerInfo ii) {
-        // SSS FIXME: This is buggy! 'scope' might have changed because of cloning.
+    public Instr clone(CloneInfo ii) {
+        // We record cloned scope so that debugging can remember where the linenumber original came from.
+        // FIXME: Consider just saving filename and not entire scope
+        if (ii instanceof InlineCloneInfo) {
+            new InlinedLineNumberInstr(((InlineCloneInfo) ii).getScopeBeingInlined(), lineNumber);
+        }
+
+        // If a simple clone then we can share this instance since it cannot cause flow
+        // control to change (ipc and rpc should never be accessed).
         return this;
+    }
+
+    @Override
+    public void encode(IRWriterEncoder e) {
+        super.encode(e);
+        e.encode(getLineNumber());
     }
 
     @Override
     public void visit(IRVisitor visitor) {
         visitor.LineNumberInstr(this);
-    }
-
-    public int getLineNumber() {
-        return lineNumber;
     }
 }

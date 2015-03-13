@@ -1,2 +1,0 @@
-fails:Enumerator::Yielder#initialize is a private method
-fails:Enumerator::Yielder#initialize returns self when given a block

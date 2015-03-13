@@ -1,13 +1,3 @@
-fails:Kernel.Rational passed Integer returns a new Rational number with 1 as the denominator
-fails:Kernel.Rational passed two integers returns a new Rational number
-fails:Kernel.Rational passed two integers reduces the Rational
 fails:Kernel.Rational when passed a String converts the String to a Rational using the same method as String#to_r
 fails:Kernel.Rational when passed a String scales the Rational value of the first argument by the Rational value of the second
 fails:Kernel.Rational when passed a String does not use the same method as Float#to_r
-fails:Kernel.Rational when passed a String raises a TypeError if the first argument is nil
-fails:Kernel.Rational when passed a String raises a TypeError if the second argument is nil
-fails:Kernel.Rational when passed a String raises a TypeError if the first argument is a Symbol
-fails:Kernel.Rational when passed a String raises a TypeError if the second argument is a Symbol
-fails:Kernel.Rational when passed a String when passed a Numeric calls #to_r to convert the first argument to a Rational
-fails:Kernel.Rational when passed a String when passed a Complex returns a Rational from the real part if the imaginary part is 0
-fails:Kernel.Rational when passed a String when passed a Complex raises a RangeError if the imaginary part is not 0

@@ -3,17 +3,13 @@ package org.jruby.ir.instructions;
 import org.jruby.RubyModule;
 import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Operation;
-import org.jruby.ir.operands.Fixnum;
 import org.jruby.ir.operands.Label;
 import org.jruby.ir.operands.Operand;
-import org.jruby.ir.operands.StringLiteral;
-import org.jruby.ir.transformations.inlining.InlinerInfo;
+import org.jruby.ir.transformations.inlining.CloneInfo;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
-
-import java.util.Map;
 
 /**
  * This instruction will be generated whenever speculative optimizations are performed
@@ -21,28 +17,23 @@ import java.util.Map;
  * of C -- where the version number changes every time C's class structure changes).
  */
 public class ModuleVersionGuardInstr extends Instr implements FixedArityInstr {
-    /** The token value that has been assumed */
-    private final int expectedVersion;
-
-    /** The module whose version we are testing */
-    private final RubyModule module;
-
-    /** The object whose metaclass token has to be verified*/
-    private Operand candidateObj;
-
-    /** Where to jump if the version assumption fails? */
-    private final Label failurePathLabel;
+    private final int expectedVersion;  // The token value that has been assumed
+    private final RubyModule module;    // The module whose version we are testing */
 
     public ModuleVersionGuardInstr(RubyModule module, int expectedVersion, Operand candidateObj, Label failurePathLabel) {
-        super(Operation.MODULE_GUARD);
+        super(Operation.MODULE_GUARD, new Operand[] { candidateObj, failurePathLabel });
         this.module = module;
         this.expectedVersion = expectedVersion;
-        this.candidateObj = candidateObj;
-        this.failurePathLabel = failurePathLabel;
     }
 
+    /** The object whose metaclass token has to be verified*/
+    public Operand getCandidateObject() {
+        return operands[0];
+    }
+
+    /** Where to jump if the version assumption fails? */
     public Label getFailurePathLabel() {
-        return failurePathLabel;
+        return (Label) operands[1];
     }
 
     // FIXME: We should remove this and only save what we care about..live Module cannot be neccesary here?
@@ -50,42 +41,29 @@ public class ModuleVersionGuardInstr extends Instr implements FixedArityInstr {
         return module;
     }
 
-    public Operand getCandidateObject() {
-        return candidateObj;
-    }
-
     public int getExpectedVersion() {
         return expectedVersion;
     }
 
     @Override
-    public Operand[] getOperands() {
-        return new Operand[] { new StringLiteral(module.getName()), new Fixnum(expectedVersion), candidateObj, failurePathLabel };
+    public String[] toStringNonOperandArgs() {
+        return new String[] { "name: " + module.getName(), "expected_version: " + expectedVersion};
     }
 
     @Override
-    public void simplifyOperands(Map<Operand, Operand> valueMap, boolean force) {
-        candidateObj = candidateObj.getSimplifiedOperand(valueMap, force);
-    }
-
-    @Override
-    public String toString() {
-        return super.toString() + "(" + candidateObj + ", " + expectedVersion + "[" + module.getName() + "], " + failurePathLabel + ")";
-    }
-
-    @Override
-    public Instr cloneForInlining(InlinerInfo ii) {
-        return new ModuleVersionGuardInstr(module, expectedVersion, candidateObj.cloneForInlining(ii), ii.getRenamedLabel(failurePathLabel));
+    public Instr clone(CloneInfo ii) {
+        return new ModuleVersionGuardInstr(module, expectedVersion, getCandidateObject().cloneForInlining(ii),
+                ii.getRenamedLabel(getFailurePathLabel()));
     }
 
     private boolean versionMatches(ThreadContext context, StaticScope currScope, DynamicScope currDynScope, IRubyObject self, Object[] temp) {
-        IRubyObject receiver = (IRubyObject) candidateObj.retrieve(context, self, currScope, currDynScope, temp);
+        IRubyObject receiver = (IRubyObject) getCandidateObject().retrieve(context, self, currScope, currDynScope, temp);
         // if (module.getGeneration() != expectedVersion) ... replace this instr with a direct jump
         //
         // SSS FIXME: This is not always correct.  Implementation class is not always receiver.getMetaClass()
         // as we know from how we add instance-methods.  We add it to rubyClass value on the stack.  So, how
         // do we handle this sticky situation?
-        return (receiver.getMetaClass().getGeneration() == expectedVersion);
+        return (receiver.getMetaClass().getGeneration() == getExpectedVersion());
     }
 
     @Override

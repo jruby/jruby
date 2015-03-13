@@ -7,16 +7,21 @@ project 'JRuby Dist' do
   inherit "org.jruby:jruby-artifacts:#{version}"
   packaging 'pom'
 
-  properties( 'tesla.dump.pom' => 'pom-generated.xml',
-              'jruby.home' => '${basedir}/../..',
+  properties( 'tesla.dump.pom' => 'pom.xml',
+              'tesla.dump.readonly' => true,
               'main.basedir' => '${project.parent.parent.basedir}' )
 
-  gem 'ruby-maven', '3.1.1.0.8'
+  unless version =~ /-SNAPSHOT/
+    properties 'jruby.home' => '${basedir}/../..'
+  end
+
+  # pre-installed gems - not default gems !
+  gem 'ruby-maven', '3.1.1.0.8', :scope => 'provided'
 
   # add torquebox repo only when building from filesystem
   # not when using the pom as "dependency" in some other projects
   profile 'gem proxy' do
-    
+
     activation do
       file( :exists => '../jruby' )
     end
@@ -41,25 +46,31 @@ project 'JRuby Dist' do
                                             'type' =>  'jar',
                                             'overWrite' =>  'false',
                                             'outputDirectory' =>  '${project.build.directory}' } ] )
-    end    
-  end
+    end
 
-  execute :fix_executable_bits, 'package' do |ctx|
-    Dir[ File.join( ctx.project.build.directory,
-                    'META-INF', 
-                    'jruby.home', 
-                    'bin', 
-                    '*' ) ].each do |f|
-      unless f.match /.(bat|exe|dll)$/
-        puts f
-        File.chmod( 0755, f ) rescue nil
+    execute :fix_executable_bits do |ctx|
+      Dir[ File.join( ctx.project.build.directory.to_pathname,
+                      'META-INF',
+                      'jruby.home',
+                      'bin',
+                      '*' ) ].each do |f|
+        unless f.match /.(bat|exe|dll)$/
+          puts f
+          File.chmod( 0755, f ) rescue nil
+        end
+      end
+    end
+
+    execute :fix_permissions do |ctx|
+      gems = File.join( ctx.project.build.directory.to_pathname, 'rubygems-provided' )
+      ( Dir[ File.join( gems, '**/*' ) ] + Dir[ File.join( gems, '**/.*' ) ] ).each do |f|
+        File.chmod( 0644, f ) rescue nil if File.file?( f )
       end
     end
   end
 
   phase :package do
     plugin( :assembly, '2.4',
-            'finalName' => "#{model.artifact_id}-#{version.sub(/-SNAPSHOT/, '')}",
             'tarLongFileMode' =>  'gnu',
             'descriptors' => [ 'src/main/assembly/jruby.xml' ] ) do
       execute_goals( 'single' )
@@ -71,20 +82,12 @@ project 'JRuby Dist' do
   # for the release we do some extra IT by unzipping a source dist file
   # and run the $ mvn -Pall from there and check a few things to be in place.
   # add check for SNAPSHOT version in any of the modules !!!!
-
-  profile 'release' do
+  
+  profile 'not-working-currently---release' do
 
     plugin( :invoker, :pomIncludes => [ '*' ] )
 
     phase 'pre-integration-test' do
-      plugin 'org.codehaus.mojo:build-helper-maven-plugin' do
-        execute_goal( 'attach-artifact',
-                      :artifacts => [ { :file => '${project.build.directory}/jruby-dist-${project.version}-src.zip',
-                                        :type => 'zip',
-                                        :classifier => 'src' } ] )
-        
-      end
-
       plugin :dependency do
         execute_goals( 'unpack',
                        :id => 'unpack jruby-dist',
@@ -114,7 +117,7 @@ project 'JRuby Dist' do
 
   # since the source packages are done from the git repository we need
   # to be inside a git controlled directory. for example the source packages
-  # itself does not contain the git repository and can not pack 
+  # itself does not contain the git repository and can not pack
   # the source packages itself !!
 
   profile 'source dist' do
@@ -123,22 +126,31 @@ project 'JRuby Dist' do
       file( :exists => '../../.git' )
     end
 
-    execute :pack_sources, 'package' do |ctx|
-      require 'fileutils'
+    phase 'package' do
+      execute :pack_sources do |ctx|
+        require 'fileutils'
 
-      revision = `git show`.gsub( /\n.*|commit /, '' )
+        revision = `git show`.gsub( /\n.*|commit /, '' )
       
-      basefile = "#{ctx.project.build.directory}/#{ctx.project.artifactId}-#{ctx.project.version}-src".sub(/-SNAPSHOT/, '')
-
-      FileUtils.cd( File.join( ctx.project.basedir.to_s, '..', '..' ) ) do
-        [ 'tar', 'zip' ].each do |format|
-          puts "create #{basefile}.#{format}"
-          system( "git archive --prefix 'jruby-#{ctx.project.version}/' --format #{format} #{revision} . -o #{basefile}.#{format}" ) || raise( "error creating #{format}-file" )
+        basefile = "#{ctx.project.build.directory}/#{ctx.project.artifactId}-#{ctx.project.version}-src"
+        
+        FileUtils.cd( File.join( ctx.project.basedir.to_s, '..', '..' ) ) do
+          [ 'tar', 'zip' ].each do |format|
+            puts "create #{basefile}.#{format}"
+            system( "git archive --prefix 'jruby-#{ctx.project.version}/' --format #{format} #{revision} . -o #{basefile}.#{format}" ) || raise( "error creating #{format}-file" )
+          end
         end
+        puts "zipping #{basefile}.tar"
+        system( "gzip #{basefile}.tar -f" ) || raise( "error zipping #{basefile}.tar" )
       end
-      puts "zipping #{basefile}.tar"
-      system( "gzip #{basefile}.tar -f" ) || raise( "error zipping #{basefile}.tar" )
+      plugin 'org.codehaus.mojo:build-helper-maven-plugin' do
+        execute_goal( 'attach-artifact',
+                      :id => 'attach-artifacts',
+                      :artifacts => [ { :file => '${project.build.directory}/${project.build.finalName}-src.zip',
+                                        :type => 'zip',
+                                        :classifier => 'src' } ] )
+        
+      end
     end
   end
-
 end

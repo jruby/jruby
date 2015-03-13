@@ -202,7 +202,10 @@ class TestProc < Test::Unit::TestCase
   def test_method_to_proc
     b = block()
     assert_equal "OK", b.call
-    assert_instance_of(Binding, b.binding, '[ruby-core:25589]')
+    b = b.binding
+    assert_instance_of(Binding, b, '[ruby-core:25589]')
+    bug10432 = '[ruby-core:65919] [Bug #10432]'
+    assert_same(self, b.receiver, bug10432)
   end
 
   def test_block_given_method
@@ -407,6 +410,7 @@ class TestProc < Test::Unit::TestCase
     t = Thread.new { sleep }
     assert_raise(ThreadError) { t.instance_eval { initialize { } } }
     t.kill
+    t.join
   end
 
   def test_to_proc
@@ -1250,6 +1254,28 @@ class TestProc < Test::Unit::TestCase
     binding
   end
 
+  def test_local_variables
+    b = get_binding
+    assert_equal(%i'if case when begin end a', b.local_variables)
+    a = tap {|;a, b| break binding.local_variables}
+    assert_equal(%i[a b], a.sort)
+  end
+
+  def test_local_variables_nested
+    b = tap {break binding}
+    assert_equal(%i[b], b.local_variables, '[ruby-dev:48351] [Bug #10001]')
+  end
+
+  def local_variables_of(bind)
+    this_should_not_be_in_bind = 2
+    bind.local_variables
+  end
+
+  def test_local_variables_in_other_context
+    feature8773 = '[Feature #8773]'
+    assert_equal([:feature8773], local_variables_of(binding), feature8773)
+  end
+
   def test_local_variable_get
     b = get_binding
     assert_equal(0, b.local_variable_get(:a))
@@ -1277,5 +1303,15 @@ class TestProc < Test::Unit::TestCase
     b = get_binding
     assert_equal(true, b.local_variable_defined?(:a))
     assert_equal(false, b.local_variable_defined?(:b))
+  end
+
+  def test_binding_receiver
+    feature8779 = '[ruby-dev:47613] [Feature #8779]'
+
+    assert_same(self, binding.receiver, feature8779)
+
+    obj = Object.new
+    def obj.b; binding; end
+    assert_same(obj, obj.b.receiver, feature8779)
   end
 end

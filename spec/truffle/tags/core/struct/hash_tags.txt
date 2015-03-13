@@ -1,5 +1,0 @@
-fails:Struct#hash returns the same fixnum for structs with the same content
-fails:Struct#hash returns the same value if structs are #eql?
-fails:Struct#hash allows for overriding methods in an included module
-fails:Struct#hash returns the same hash for recursive structs
-fails:Struct#hash does not override the instance accessor method

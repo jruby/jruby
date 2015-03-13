@@ -14,15 +14,6 @@ options = {
   :dot_format   => false
 }
 
-def get_ir_passes
-  ir_manager = org.jruby.ir.IRManager
-  ir_manager.DEFAULT_COMPILER_PASSES.split(',').map do |pass|
-    pass.to_sym
-  end
-end
-  
-ir_passes = get_ir_passes
-
 OptionParser.new do |opts|
   opts.banner = "Usage: #{$0} [options]"
 
@@ -39,7 +30,7 @@ OptionParser.new do |opts|
     options[:print_ir] = true
   end
 
-  opts.on('-p', "--pass #{ir_passes}", ir_passes, 'Dump IR after running a pass') do |pass|
+  opts.on('-p', '--pass passes_list', 'Dump IR after running a pass') do |pass|
     options[:print_pass] = pass
   end
 
@@ -202,7 +193,7 @@ def ir_setup(root)
 
   builder = org.jruby.ir.IRBuilder
 
-  scope = builder.new(manager).build_root(root)
+  scope = builder.build_root(manager, root)
   passes = manager.get_compiler_passes(scope)
   [scope, passes]
 end

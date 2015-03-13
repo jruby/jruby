@@ -1,7 +1,4 @@
-fails:Enumerable#sort sorts by the natural order as defined by <=>
 fails:Enumerable#sort yields elements to the provided block
-fails:Enumerable#sort raises a NoMethodError if elements do not define <=>
 fails:Enumerable#sort sorts enumerables that contain nils
 fails:Enumerable#sort compare values returned by block with 0
 fails:Enumerable#sort raises an error if objects can't be compared
-fails:Enumerable#sort gathers whole arrays as elements when each yields multiple

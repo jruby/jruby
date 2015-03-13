@@ -1,12 +1,4 @@
-fails:String#insert with index, other inserts other before the character at the given index
-fails:String#insert with index, other modifies self in place
-fails:String#insert with index, other inserts after the given character on an negative count
-fails:String#insert with index, other raises an IndexError if the index is beyond string
 fails:String#insert with index, other converts index to an integer using to_int
 fails:String#insert with index, other converts other to a string using to_str
 fails:String#insert with index, other taints self if string to insert is tainted
-fails:String#insert with index, other raises a TypeError if other can't be converted to string
-fails:String#insert with index, other raises a RuntimeError if self is frozen
 fails:String#insert with index, other inserts a character into a multibyte encoded string
-fails:String#insert with index, other returns a String in the compatible encoding
-fails:String#insert with index, other raises an Encoding::CompatibilityError if the encodings are incompatible

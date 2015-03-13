@@ -1,2 +1,0 @@
-fails:Array#take_while returns all elements until the block returns false
-fails:Array#take_while returns all elements until the block returns nil

@@ -1,3 +1,0 @@
-fails:Symbol#next returns a successor
-fails:Symbol#next propagates a 'carry'
-fails:Symbol#next increments non-alphanumeric characters when no alphanumeric characters are present

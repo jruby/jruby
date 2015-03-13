@@ -11,6 +11,18 @@
     <fileSet>
       <directory>${project.build.directory}/META-INF/jruby.home</directory>
       <outputDirectory>/</outputDirectory>
+      <excludes>
+        <exclude>**/.jrubydir</exclude>
+      </excludes>
+    </fileSet>
+    <fileSet>
+      <directory>${project.build.directory}/rubygems-provided</directory>
+      <outputDirectory>/lib/ruby/gems/shared</outputDirectory>
+      <includes>
+        <include>cache/*</include>
+        <include>specifications/*</include>
+        <include>gems/**/*</include>
+      </includes>
     </fileSet>
     <fileSet>
       <directory>${project.parent.parent.basedir}</directory>
@@ -19,6 +31,7 @@
         <include>LICENSE*</include>
         <include>COPYING*</include>
         <include>lib/jruby.jar</include>
+        <include>lib/jruby-truffle.jar</include>
         <include>lib/jni/**/*</include>
         <include>samples/**/*</include>
         <include>docs/**/*</include>

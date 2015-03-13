@@ -479,7 +479,7 @@ public class RubyArgsFile {
 
         data.next_argv(context);
         if (isClosed(context, data.currentFile)) {
-            throw context.runtime.newIOError("closed stream");
+            throw context.runtime.newIOError(RubyIO.CLOSED_STREAM_MSG);
         }
         
         argf_close(context, data.currentFile);
@@ -760,7 +760,7 @@ public class RubyArgsFile {
         return context.runtime.getGlobalVariables().get("$FILENAME");
     }
 
-    @JRubyMethod(name = "to_s") 
+    @JRubyMethod(name = "to_s", alias = "inspect")
     public static IRubyObject to_s(IRubyObject recv) {
         return recv.getRuntime().newString("ARGF");
     }

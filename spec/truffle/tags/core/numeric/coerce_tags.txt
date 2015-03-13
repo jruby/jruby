@@ -1,7 +1,0 @@
-fails:Numeric#coerce returns [other, self] if self and other are instances of the same class
-fails:Numeric#coerce calls #to_f to convert other if self responds to #to_f
-fails:Numeric#coerce returns [other.to_f, self.to_f] if self and other are instances of different classes
-fails:Numeric#coerce raises a TypeError when passed nil
-fails:Numeric#coerce raises a TypeError when passed a boolean
-fails:Numeric#coerce raises a TypeError when passed a Symbol
-fails:Numeric#coerce raises an ArgumentError when passed a String

@@ -31,6 +31,7 @@ package org.jruby;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyClass;
 import org.jruby.internal.runtime.methods.DynamicMethod;
+import org.jruby.internal.runtime.methods.ProcMethod;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.ObjectAllocator;
@@ -44,7 +45,7 @@ import org.jruby.runtime.builtin.IRubyObject;
  * @author jpetersen
  */
 @JRubyClass(name="UnboundMethod", parent="Method")
-public class RubyUnboundMethod extends RubyMethod {
+public class RubyUnboundMethod extends AbstractRubyMethod {
     protected RubyUnboundMethod(Ruby runtime) {
         super(runtime, runtime.getUnboundMethod());
     }
@@ -67,35 +68,34 @@ public class RubyUnboundMethod extends RubyMethod {
     }
 
     public static RubyClass defineUnboundMethodClass(Ruby runtime) {
-        // TODO: NOT_ALLOCATABLE_ALLOCATOR is probably ok here. Confirm. JRUBY-415
         RubyClass newClass = 
-        	runtime.defineClass("UnboundMethod", runtime.getMethod(), ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
+        	runtime.defineClass("UnboundMethod", runtime.getObject(), ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
         runtime.setUnboundMethod(newClass);
 
         newClass.setClassIndex(ClassIndex.UNBOUNDMETHOD);
         newClass.setReifiedClass(RubyUnboundMethod.class);
 
+        newClass.defineAnnotatedMethods(AbstractRubyMethod.class);
         newClass.defineAnnotatedMethods(RubyUnboundMethod.class);
+
+        newClass.getSingletonClass().undefineMethod("new");
 
         return newClass;
     }
 
-    /**
-     * @see org.jruby.RubyMethod#call(IRubyObject[])
-     */
-    @JRubyMethod(name = {"call", "[]"}, rest = true)
+    @JRubyMethod(name = "==", required = 1)
     @Override
-    public IRubyObject call(ThreadContext context, IRubyObject[] args, Block block) {
-        throw context.runtime.newTypeError("you cannot call unbound method; bind first");
-    }
-
-    /**
-     * @see org.jruby.RubyMethod#unbind()
-     */
-    @JRubyMethod
-    @Override
-    public RubyUnboundMethod unbind() {
-        return this;
+    public RubyBoolean op_equal(ThreadContext context, IRubyObject other) {
+        if (!(other instanceof AbstractRubyMethod)) {
+            return context.runtime.getFalse();
+        }
+        if (method instanceof ProcMethod) {
+            return context.runtime.newBoolean(((ProcMethod) method).isSame(((AbstractRubyMethod) other).getMethod()));
+        }
+        AbstractRubyMethod otherMethod = (AbstractRubyMethod)other;
+        return context.runtime.newBoolean(
+                originModule == otherMethod.originModule &&
+                method.getRealMethod().getSerialNumber() == otherMethod.method.getRealMethod().getSerialNumber());
     }
 
     @JRubyMethod
@@ -109,30 +109,37 @@ public class RubyUnboundMethod extends RubyMethod {
 
     @JRubyMethod(name = "clone")
     @Override
-    public RubyMethod rbClone() {
+    public RubyUnboundMethod rbClone() {
         return newUnboundMethod(implementationModule, methodName, originModule, originName, method);
     }
 
+    @JRubyMethod(name = {"inspect", "to_s"})
+    @Override
+    public IRubyObject inspect() {
+        StringBuilder buf = new StringBuilder("#<");
+        char delimeter = '#';
+
+        buf.append(getMetaClass().getRealClass().getName()).append(": ");
+
+        if (implementationModule.isSingleton()) {
+            buf.append(implementationModule.inspect().toString());
+        } else {
+            buf.append(originModule.getName());
+
+            if (implementationModule != originModule) {
+                buf.append('(').append(implementationModule.getName()).append(')');
+            }
+        }
+
+        buf.append(delimeter).append(methodName).append('>');
+
+        RubyString str = getRuntime().newString(buf.toString());
+        str.setTaint(isTaint());
+        return str;
+    }
+
     @JRubyMethod
-    @Override
-    public IRubyObject to_proc(ThreadContext context, Block unusedBlock) {
-        return super.to_proc(context, unusedBlock);
-    }
-
-    @Override
-    public IRubyObject name(ThreadContext context) {
-        return name19(context);
-    }
-
-    @JRubyMethod(name = "name")
-    @Override
-    public IRubyObject name19(ThreadContext context) {
-        return context.runtime.newSymbol(methodName);
-    }
-
-    @JRubyMethod
-    @Override
-    public IRubyObject owner(ThreadContext context) {
-        return implementationModule;
+    public IRubyObject super_method(ThreadContext context ) {
+        return super_method(context, null, implementationModule.getSuperClass());
     }
 }

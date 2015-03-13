@@ -1,9 +1,10 @@
 fails:File.dirname returns all the components of filename except the last one
-fails:File.dirname returns a String
-fails:File.dirname does not modify its argument
-fails:File.dirname ignores a trailing /
-fails:File.dirname returns the return all the components of filename except the last one (unix format)
 fails:File.dirname returns all the components of filename except the last one (edge cases on all platforms)
 fails:File.dirname returns all the components of filename except the last one (edge cases on non-windows)
 fails:File.dirname accepts an object that has a #to_path method
-fails:File.dirname raises a TypeError if not passed a String type
+fails(windows):File.dirname returns all the components of filename except the last one (edge cases on windows)
+fails(windows):File.dirname returns the return all the components of filename except the last one (Windows format)
+fails(windows):File.dirname returns the return all the components of filename except the last one (windows unc)
+fails(windows):File.dirname returns the return all the components of filename except the last one (forward_slash)
+windows:File.dirname ignores a trailing /
+windows:File.dirname returns the return all the components of filename except the last one (unix format)

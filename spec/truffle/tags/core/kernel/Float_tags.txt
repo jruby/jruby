@@ -1,117 +1,12 @@
-fails:Kernel.Float returns the identical Float for numeric Floats
-fails:Kernel.Float returns a Float for Fixnums
-fails:Kernel.Float returns a Float for Bignums
-fails:Kernel.Float raises an ArgumentError for nil
-fails:Kernel.Float returns the identical NaN for NaN
-fails:Kernel.Float returns the same Infinity for Infinity
-fails:Kernel.Float converts Strings to floats without calling #to_f
-fails:Kernel.Float converts Strings with decimal points into Floats
-fails:Kernel.Float raises an ArgumentError for a String of word characters
-fails:Kernel.Float raises an ArgumentError if there are two decimal points in the String
 fails:Kernel.Float raises an ArgumentError for a String of numbers followed by word characters
-fails:Kernel.Float raises an ArgumentError for a String of word characters followed by numbers
-fails:Kernel.Float is strict about the string form even across newlines
-fails:Kernel.Float converts String subclasses to floats without calling #to_f
-fails:Kernel.Float returns a positive Float if the string is prefixed with +
-fails:Kernel.Float returns a negative Float if the string is prefixed with +
-fails:Kernel.Float raises an ArgumentError if a + or - is embedded in a String
-fails:Kernel.Float raises an ArgumentError if a String has a trailing + or -
-fails:Kernel.Float raises an ArgumentError for a String with a leading _
 fails:Kernel.Float returns a value for a String with an embedded _
-fails:Kernel.Float raises an ArgumentError for a String with a trailing _
-fails:Kernel.Float raises an ArgumentError for a String of \0
-fails:Kernel.Float raises an ArgumentError for a String with a leading \0
 fails:Kernel.Float raises an ArgumentError for a String with an embedded \0
 fails:Kernel.Float raises an ArgumentError for a String with a trailing \0
-fails:Kernel.Float raises an ArgumentError for a String that is just an empty space
-fails:Kernel.Float raises an ArgumentError for a String that with an embedded space
-fails:Kernel.Float returns a value for a String with a leading space
-fails:Kernel.Float returns a value for a String with a trailing space
-fails:Kernel.Float returns a value for a String with any leading whitespace
-fails:Kernel.Float returns a value for a String with any trailing whitespace
-fails:Kernel.Float raises an ArgumentError if e is the trailing character
-fails:Kernel.Float raises an ArgumentError if e is the leading character
-fails:Kernel.Float returns Infinity for '2e1000'
-fails:Kernel.Float returns 0 for '2e-1000'
 fails:Kernel.Float allows embedded _ in a number on either side of the e
-fails:Kernel.Float raises an exception if a space is embedded on either side of the 'e'
-fails:Kernel.Float raises an exception if there's a leading _ on either side of the 'e'
-fails:Kernel.Float raises an exception if there's a trailing _ on either side of the 'e'
-fails:Kernel.Float allows decimal points on the left side of the 'e'
-fails:Kernel.Float raises an ArgumentError if there's a decimal point on the right side of the 'e'
-fails:Kernel.Float raises an ArgumentError if E is the trailing character
-fails:Kernel.Float raises an ArgumentError if E is the leading character
-fails:Kernel.Float returns Infinity for '2E1000'
-fails:Kernel.Float returns 0 for '2E-1000'
 fails:Kernel.Float allows embedded _ in a number on either side of the E
-fails:Kernel.Float raises an exception if a space is embedded on either side of the 'E'
-fails:Kernel.Float raises an exception if there's a leading _ on either side of the 'E'
-fails:Kernel.Float raises an exception if there's a trailing _ on either side of the 'E'
-fails:Kernel.Float allows decimal points on the left side of the 'E'
-fails:Kernel.Float raises an ArgumentError if there's a decimal point on the right side of the 'E'
-fails:Kernel.Float returns a Float that can be a parameter to #Float again
-fails:Kernel.Float otherwise, converts the given argument to a Float by calling #to_f
-fails:Kernel.Float returns the identical NaN if to_f is called and it returns NaN
-fails:Kernel.Float returns the identical Infinity if to_f is called and it returns Infinity
-fails:Kernel.Float raises a TypeError if #to_f is not provided
-fails:Kernel.Float raises a TypeError if #to_f returns a String
-fails:Kernel.Float raises a TypeError if #to_f returns an Integer
-fails:Kernel#Float returns the identical Float for numeric Floats
-fails:Kernel#Float returns a Float for Fixnums
-fails:Kernel#Float returns a Float for Bignums
-fails:Kernel#Float raises an ArgumentError for nil
-fails:Kernel#Float returns the identical NaN for NaN
-fails:Kernel#Float returns the same Infinity for Infinity
-fails:Kernel#Float converts Strings to floats without calling #to_f
-fails:Kernel#Float converts Strings with decimal points into Floats
-fails:Kernel#Float raises an ArgumentError for a String of word characters
-fails:Kernel#Float raises an ArgumentError if there are two decimal points in the String
 fails:Kernel#Float raises an ArgumentError for a String of numbers followed by word characters
-fails:Kernel#Float raises an ArgumentError for a String of word characters followed by numbers
-fails:Kernel#Float is strict about the string form even across newlines
-fails:Kernel#Float converts String subclasses to floats without calling #to_f
-fails:Kernel#Float returns a positive Float if the string is prefixed with +
-fails:Kernel#Float returns a negative Float if the string is prefixed with +
-fails:Kernel#Float raises an ArgumentError if a + or - is embedded in a String
-fails:Kernel#Float raises an ArgumentError if a String has a trailing + or -
-fails:Kernel#Float raises an ArgumentError for a String with a leading _
 fails:Kernel#Float returns a value for a String with an embedded _
-fails:Kernel#Float raises an ArgumentError for a String with a trailing _
-fails:Kernel#Float raises an ArgumentError for a String of \0
-fails:Kernel#Float raises an ArgumentError for a String with a leading \0
 fails:Kernel#Float raises an ArgumentError for a String with an embedded \0
 fails:Kernel#Float raises an ArgumentError for a String with a trailing \0
-fails:Kernel#Float raises an ArgumentError for a String that is just an empty space
-fails:Kernel#Float raises an ArgumentError for a String that with an embedded space
-fails:Kernel#Float returns a value for a String with a leading space
-fails:Kernel#Float returns a value for a String with a trailing space
-fails:Kernel#Float returns a value for a String with any leading whitespace
-fails:Kernel#Float returns a value for a String with any trailing whitespace
-fails:Kernel#Float raises an ArgumentError if e is the trailing character
-fails:Kernel#Float raises an ArgumentError if e is the leading character
-fails:Kernel#Float returns Infinity for '2e1000'
-fails:Kernel#Float returns 0 for '2e-1000'
 fails:Kernel#Float allows embedded _ in a number on either side of the e
-fails:Kernel#Float raises an exception if a space is embedded on either side of the 'e'
-fails:Kernel#Float raises an exception if there's a leading _ on either side of the 'e'
-fails:Kernel#Float raises an exception if there's a trailing _ on either side of the 'e'
-fails:Kernel#Float allows decimal points on the left side of the 'e'
-fails:Kernel#Float raises an ArgumentError if there's a decimal point on the right side of the 'e'
-fails:Kernel#Float raises an ArgumentError if E is the trailing character
-fails:Kernel#Float raises an ArgumentError if E is the leading character
-fails:Kernel#Float returns Infinity for '2E1000'
-fails:Kernel#Float returns 0 for '2E-1000'
 fails:Kernel#Float allows embedded _ in a number on either side of the E
-fails:Kernel#Float raises an exception if a space is embedded on either side of the 'E'
-fails:Kernel#Float raises an exception if there's a leading _ on either side of the 'E'
-fails:Kernel#Float raises an exception if there's a trailing _ on either side of the 'E'
-fails:Kernel#Float allows decimal points on the left side of the 'E'
-fails:Kernel#Float raises an ArgumentError if there's a decimal point on the right side of the 'E'
-fails:Kernel#Float returns a Float that can be a parameter to #Float again
-fails:Kernel#Float otherwise, converts the given argument to a Float by calling #to_f
-fails:Kernel#Float returns the identical NaN if to_f is called and it returns NaN
-fails:Kernel#Float returns the identical Infinity if to_f is called and it returns Infinity
-fails:Kernel#Float raises a TypeError if #to_f is not provided
-fails:Kernel#Float raises a TypeError if #to_f returns a String
-fails:Kernel#Float raises a TypeError if #to_f returns an Integer
-fails:Kernel#Float is a private method

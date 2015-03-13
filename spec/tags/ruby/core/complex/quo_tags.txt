@@ -1,1 +1,0 @@
-fails:Complex#quo with a Numeric which responds to #real? with false coerces the passed argument to Complex and divides the resulting elements

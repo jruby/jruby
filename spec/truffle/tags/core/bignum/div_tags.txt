@@ -1,5 +1,1 @@
 fails:Bignum#div returns self divided by other
-fails:Bignum#div raises a ZeroDivisionError if other is zero and not a Float
-fails:Bignum#div raises a TypeError when given a non-Integer
-fails:Bignum#div returns a result of integer division of self by a float argument
-fails:Bignum#div raises ZeroDivisionError if the argument is Float zero

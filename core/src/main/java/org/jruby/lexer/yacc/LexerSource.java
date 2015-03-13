@@ -38,6 +38,7 @@ import org.jcodings.Encoding;
 
 import org.jruby.parser.ParserConfiguration;
 import org.jruby.util.ByteList;
+import org.jruby.util.cli.Options;
 
 /**
  * This class is what feeds the lexer.  It is primarily a wrapper around a
@@ -49,9 +50,6 @@ import org.jruby.util.ByteList;
  * 
  */
 public abstract class LexerSource {
-
-    // Where we get new positions from.
-	private SourcePositionFactory positionFactory;
 	
     // The name of this source (e.g. a filename: foo.rb)
     private final String sourceName;
@@ -74,20 +72,28 @@ public abstract class LexerSource {
     // Last full line read.
     private StringBuilder sourceLine;
 
+    protected ISourcePosition lastPosition;
+    private int startOfTokenOffset;
+
+    private boolean detailedSourcePositions = Options.PARSER_DETAILED_SOURCE_POSITIONS.load();
+
     /**
      * Create our food-source for the lexer
      * 
      * @param sourceName is the file we are reading
-     * @param extraPositionInformation will gives us extra information that an IDE may want (deprecated)
      */
-    protected LexerSource(String sourceName, List<String> list, int lineOffset, 
-            boolean extraPositionInformation, SourcePositionFactory.SourcePositionFactoryFactory sourcePositionFactoryFactory) {
+    protected LexerSource(String sourceName, List<String> list, int lineOffset) {
         this.sourceName = sourceName;
         this.lineOffset = lineOffset;
-        positionFactory = sourcePositionFactoryFactory.create(this, line);
         this.list = list;
         lineBuffer = new StringBuilder(160);
         sourceLine = new StringBuilder(160);
+
+        if (detailedSourcePositions) {
+            lastPosition = new DetailedSourcePosition(sourceName, line, 0, 0);
+        } else {
+            lastPosition = new SimpleSourcePosition(sourceName, line);
+        }
     }
 
     /**
@@ -119,6 +125,12 @@ public abstract class LexerSource {
         return (offset <= 0 ? 0 : offset);
     }
 
+    public void startOfToken() {
+        if (detailedSourcePositions) {
+            startOfTokenOffset = offset;
+        }
+    }
+
     /**
      * Where is the reader within the source {filename,row}
      *
@@ -127,8 +139,30 @@ public abstract class LexerSource {
      * @return the current position
      */
     public ISourcePosition getPosition(ISourcePosition startPosition) {
-        ISourcePosition sourcePosition = positionFactory.getPosition(startPosition);
-        return sourcePosition;
+        if (detailedSourcePositions) {
+            if (startPosition == null) {
+                lastPosition = new DetailedSourcePosition(getFilename(), getVirtualLine(), startOfTokenOffset, offset - startOfTokenOffset);
+            } else {
+                DetailedSourcePosition detailedStartPosition = (DetailedSourcePosition) startPosition;
+                lastPosition = new DetailedSourcePosition(getFilename(), getVirtualLine(), detailedStartPosition.getOffset(), 0); // offset - detailedStartPosition.getOffset()
+                return lastPosition;
+            }
+        } else {
+            if (startPosition == null) {
+                // Only give new position if we are at least one char past \n of previous line so that last tokens
+                // of previous line will not get associated with the next line.
+                if (lastPosition.getLine() == getVirtualLine() || lastWasBeginOfLine()) {
+                    return lastPosition;
+                }
+
+                lastPosition = new SimpleSourcePosition(getFilename(), getVirtualLine());
+            } else {
+                lastPosition = startPosition;
+                return lastPosition;
+            }
+        }
+
+        return lastPosition;
     }
     
     /**
@@ -150,15 +184,13 @@ public abstract class LexerSource {
      * @return the new source
      */
     public static LexerSource getSource(String name, InputStream content, List<String> list,
-            ParserConfiguration configuration, SourcePositionFactory.SourcePositionFactoryFactory sourcePositionFactoryFactory) {
-        return new InputStreamLexerSource(name, content, list, configuration.getLineNumber(), 
-                configuration.hasExtraPositionInformation(), sourcePositionFactoryFactory);
+            ParserConfiguration configuration) {
+        return new InputStreamLexerSource(name, content, list, configuration.getLineNumber());
     }
 
     public static LexerSource getSource(String name, byte[] content, List<String> list,
-            ParserConfiguration configuration, SourcePositionFactory.SourcePositionFactoryFactory sourcePositionFactoryFactory) {
-        return new ByteArrayLexerSource(name, content, list, configuration.getLineNumber(),
-                configuration.hasExtraPositionInformation(), sourcePositionFactoryFactory);
+            ParserConfiguration configuration) {
+        return new ByteArrayLexerSource(name, content, list, configuration.getLineNumber());
     }
 
     private void captureFeatureNewline() {
@@ -261,10 +293,6 @@ public abstract class LexerSource {
      */
     public abstract boolean matchMarker(ByteList marker, boolean indent, boolean withNewline) throws IOException;
 
-    public SourcePositionFactory getPositionFactory() {
-        return positionFactory;
-    }
-
     public abstract int read() throws IOException;
     public abstract ByteList readUntil(char c) throws IOException;
     public abstract ByteList readLineBytes() throws IOException;
@@ -275,4 +303,5 @@ public abstract class LexerSource {
     public abstract boolean lastWasBeginOfLine();
     public abstract boolean wasBeginOfLine();
     public abstract InputStream getRemainingAsStream() throws IOException;
+
 }

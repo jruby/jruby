@@ -1,3 +1,1 @@
-fails:main#public sets the visibility of the given method to public
-fails:main#public returns Object
 fails:main#public raises a NameError when given an undefined name

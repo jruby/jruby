@@ -1,1 +1,0 @@
-fails:FalseClass#inspect returns the string 'false'

@@ -3,10 +3,10 @@ package org.jruby.ir.instructions;
 import org.jruby.RubyArray;
 import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Operation;
-import org.jruby.ir.operands.Fixnum;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.Variable;
-import org.jruby.ir.transformations.inlining.InlinerInfo;
+import org.jruby.ir.persistence.IRWriterEncoder;
+import org.jruby.ir.transformations.inlining.CloneInfo;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.Helpers;
@@ -36,24 +36,28 @@ public class RestArgMultipleAsgnInstr extends MultipleAsgnBase implements FixedA
     }
 
     @Override
-    public Operand[] getOperands() {
-        return new Operand[] { array, new Fixnum(preArgsCount), new Fixnum(postArgsCount), new Fixnum(index) };
+    public String[] toStringNonOperandArgs() {
+        return new String[] { "index: " + index, "pre: " + preArgsCount, "post: " + postArgsCount};
     }
 
     @Override
-    public String toString() {
-        return super.toString() + "(" + array + ", " + index + ", " + preArgsCount + ", " + postArgsCount + ")";
+    public Instr clone(CloneInfo ii) {
+        return new RestArgMultipleAsgnInstr(ii.getRenamedVariable(result), getArray().cloneForInlining(ii), preArgsCount, postArgsCount, index);
     }
 
     @Override
-    public Instr cloneForInlining(InlinerInfo ii) {
-        return new RestArgMultipleAsgnInstr(ii.getRenamedVariable(result), array.cloneForInlining(ii), preArgsCount, postArgsCount, index);
+    public void encode(IRWriterEncoder e) {
+        super.encode(e);
+        e.encode(getArray());
+        e.encode(getPreArgsCount());
+        e.encode(getPostArgsCount());
+        e.encode(getIndex());
     }
 
     @Override
     public Object interpret(ThreadContext context, StaticScope currScope, DynamicScope currDynScope, IRubyObject self, Object[] temp) {
         // ENEBO: Can I assume since IR figured this is an internal array it will be RubyArray like this?
-        RubyArray rubyArray = (RubyArray) array.retrieve(context, self, currScope, currDynScope, temp);
+        RubyArray rubyArray = (RubyArray) getArray().retrieve(context, self, currScope, currDynScope, temp);
 
         return Helpers.viewArgsArray(context, rubyArray, preArgsCount, postArgsCount);
     }

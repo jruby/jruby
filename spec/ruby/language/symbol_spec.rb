@@ -83,4 +83,12 @@ describe "A Symbol literal" do
       sym.to_sym.to_s.should == sym
     end
   end
+
+  it "can be created from list syntax %i{a b c} without interpolation" do
+    %i{a b #{c}}.should == [:a, :b, :"\#{c}"]
+  end
+
+  it "can be created from list syntax %I{a b c} with interpolation" do
+    %I{a b #{"c"}}.should == [:a, :b, :c]
+  end
 end

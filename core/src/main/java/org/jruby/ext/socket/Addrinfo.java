@@ -14,16 +14,28 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.Visibility;
+import org.jruby.util.ByteList;
 
+import java.io.ByteArrayOutputStream;
+import java.io.DataOutputStream;
 import java.io.IOException;
 import java.net.Inet4Address;
 import java.net.Inet6Address;
 import java.net.InetAddress;
 import java.net.NetworkInterface;
 import java.net.UnknownHostException;
+import java.net.SocketException;
 import org.jruby.exceptions.RaiseException;
 
+import org.jruby.util.io.Sockaddr;
+
 public class Addrinfo extends RubyObject {
+
+    // TODO: (gf) these constants should be in their respective .h files
+    final short ARPHRD_ETHER    =   1;  // ethernet hatype (if_arp.h)
+    final short ARPHRD_LOOPBACK	= 772;	// loopback hatype (if_arp.h) 
+    final short AF_PACKET       =  17;  // packet socket (socket.h)
+    final byte  PACKET_HOST     =   0;  // host packet type (if_packet.h)
 
     public static void createAddrinfo(Ruby runtime) {
         RubyClass addrinfo = runtime.defineClass(
@@ -42,23 +54,31 @@ public class Addrinfo extends RubyObject {
         super(runtime, cls);
     }
 
-    public Addrinfo(Ruby runtime, RubyClass cls, NetworkInterface networkInterface, InetAddress inetAddress, boolean isLink) {
+    public Addrinfo(Ruby runtime, RubyClass cls, NetworkInterface networkInterface, InetAddress inetAddress) {
         super(runtime, cls);
+        this.networkInterface = networkInterface;
+        this.interfaceLink = false;
         this.inetAddress = inetAddress;
-        this.interfaceLink = isLink;
         this.interfaceName = networkInterface.getName();
-
-        this.sock = Sock.SOCK_STREAM;
         this.pfamily = inetAddress instanceof Inet4Address ? ProtocolFamily.PF_INET : ProtocolFamily.PF_INET6;
         this.afamily = inetAddress instanceof Inet4Address ? AddressFamily.AF_INET : AddressFamily.AF_INET6;
+        this.socketType = SocketType.SOCKET;
+    }
+
+    public Addrinfo(Ruby runtime, RubyClass cls, NetworkInterface networkInterface, boolean isBroadcast) {
+        super(runtime, cls);
+        this.networkInterface = networkInterface;
+        this.interfaceLink = true;
+        this.isBroadcast = isBroadcast;
+        this.interfaceName = networkInterface.getName();
+        this.afamily = AddressFamily.AF_UNSPEC;  // TODO: (gf) should be AF_PACKET (17) when available
+        this.pfamily = ProtocolFamily.PF_UNSPEC; // TODO: (gf) should be PF_PACKET (17) when available
         this.socketType = SocketType.SOCKET;
     }
 
     public Addrinfo(Ruby runtime, RubyClass cls, InetAddress inetAddress) {
         super(runtime, cls);
         this.inetAddress = inetAddress;
-
-        this.sock = Sock.SOCK_STREAM;
         this.pfamily = inetAddress instanceof Inet4Address ? ProtocolFamily.PF_INET : ProtocolFamily.PF_INET6;
         this.afamily = inetAddress instanceof Inet4Address ? AddressFamily.AF_INET : AddressFamily.AF_INET6;
         this.socketType = SocketType.SOCKET;
@@ -68,7 +88,6 @@ public class Addrinfo extends RubyObject {
         super(runtime, cls);
         this.inetAddress = inetAddress;
         this.port = port;
-
         this.sock = Sock.SOCK_STREAM;
         this.pfamily = inetAddress instanceof Inet4Address ? ProtocolFamily.PF_INET : ProtocolFamily.PF_INET6;
         this.afamily = inetAddress instanceof Inet4Address ? AddressFamily.AF_INET : AddressFamily.AF_INET6;
@@ -80,7 +99,6 @@ public class Addrinfo extends RubyObject {
         this.inetAddress = inetAddress;
         this.port = port;
         this.socketType = socketType;
-
         this.sock = Sock.SOCK_STREAM;
         this.pfamily = inetAddress instanceof Inet4Address ? ProtocolFamily.PF_INET : ProtocolFamily.PF_INET6;
         this.afamily = inetAddress instanceof Inet4Address ? AddressFamily.AF_INET : AddressFamily.AF_INET6;
@@ -98,21 +116,18 @@ public class Addrinfo extends RubyObject {
     @JRubyMethod(visibility = Visibility.PRIVATE)
     public IRubyObject initialize(ThreadContext context, IRubyObject _sockaddr) {
         initializeCommon(context.runtime, _sockaddr, null, null, null);
-
         return context.nil;
     }
 
     @JRubyMethod(visibility = Visibility.PRIVATE)
     public IRubyObject initialize(ThreadContext context, IRubyObject _sockaddr, IRubyObject _family) {
         initializeCommon(context.runtime, _sockaddr, _family, null, null);
-
         return context.nil;
     }
 
     @JRubyMethod(visibility = Visibility.PRIVATE)
     public IRubyObject initialize(ThreadContext context, IRubyObject _sockaddr, IRubyObject _family, IRubyObject _socktype) {
         initializeCommon(context.runtime, _sockaddr, _family, _socktype, null);
-
         return context.nil;
     }
 
@@ -180,7 +195,7 @@ public class Addrinfo extends RubyObject {
     @JRubyMethod
     public IRubyObject inspect(ThreadContext context) {
         if (interfaceLink == true) {
-            return context.runtime.newString("#<Addrinfo: LINK[" + interfaceName + "]>");
+            return context.runtime.newString("#<Addrinfo: " + packet_inspect() + ">");
         } else {
             // TODO: MRI also shows hostname, but we don't want to reverse every time...
             String portString = port == 0 ? "" : ":" + port;
@@ -202,7 +217,6 @@ public class Addrinfo extends RubyObject {
     @JRubyMethod(meta = true)
     public static IRubyObject ip(ThreadContext context, IRubyObject recv, IRubyObject arg) {
         String host = arg.convertToString().toString();
-
         try {
             InetAddress addy = InetAddress.getByName(host);
             return new Addrinfo(context.runtime, (RubyClass) recv, addy);
@@ -214,9 +228,7 @@ public class Addrinfo extends RubyObject {
     @JRubyMethod(meta = true)
     public static IRubyObject tcp(ThreadContext context, IRubyObject recv, IRubyObject arg0, IRubyObject arg1) {
         Addrinfo addrinfo = new Addrinfo(context.runtime, (RubyClass) recv);
-
         addrinfo.initializeCommon(context.runtime, arg0, null, null, arg1);
-
         return addrinfo;
     }
 
@@ -242,7 +254,10 @@ public class Addrinfo extends RubyObject {
 
     @JRubyMethod(notImplemented = true)
     public IRubyObject socktype(ThreadContext context) {
-        return context.runtime.newFixnum(sock.intValue());
+      if (sock == null) {
+        return context.runtime.newFixnum(0);
+      }
+      return context.runtime.newFixnum(sock.intValue());
     }
 
     @JRubyMethod(notImplemented = true)
@@ -277,11 +292,9 @@ public class Addrinfo extends RubyObject {
 
     @JRubyMethod
     public IRubyObject ip_unpack(ThreadContext context) {
-        byte[] bytes = inetAddress.getAddress();
-        RubyArray ary = RubyArray.newArray(context.runtime, bytes.length);
-        for (byte bite : bytes) {
-            ary.append(context.runtime.newFixnum(bite));
-        }
+        RubyArray ary = RubyArray.newArray(context.runtime, 2);
+        ary.append(ip_address(context));
+        ary.append(ip_port(context));
         return ary;
     }
 
@@ -290,6 +303,7 @@ public class Addrinfo extends RubyObject {
         if (interfaceLink == true) {
             throw SocketUtils.sockerr(context.runtime, "need IPv4 or IPv6 address");
         }
+        // TODO: (gf) for IPv6 link-local address this appends a numeric interface index (like MS-Windows), should append interface name on Linux 
         return context.runtime.newString(inetAddress.getHostAddress());
     }
 
@@ -309,7 +323,10 @@ public class Addrinfo extends RubyObject {
 
     @JRubyMethod(name = "ipv4_loopback?")
     public IRubyObject ipv4_loopback_p(ThreadContext context) {
+      if (afamily == AddressFamily.AF_INET) {
         return context.runtime.newBoolean(inetAddress.isLoopbackAddress());
+      }
+      return context.runtime.newBoolean(false);
     }
 
     @JRubyMethod(name = "ipv4_multicast?")
@@ -325,7 +342,10 @@ public class Addrinfo extends RubyObject {
 
     @JRubyMethod(name = "ipv6_loopback?")
     public IRubyObject ipv6_loopback_p(ThreadContext context) {
+      if (afamily == AddressFamily.AF_INET6) {
         return context.runtime.newBoolean(inetAddress.isLoopbackAddress());
+      }
+      return context.runtime.newBoolean(false);
     }
 
     @JRubyMethod(name = "ipv6_multicast?")
@@ -394,12 +414,99 @@ public class Addrinfo extends RubyObject {
         return context.nil;
     }
 
-    @JRubyMethod(name = {"to_sockaddr", "to_s"}, notImplemented = true)
+    @JRubyMethod(name = {"to_sockaddr", "to_s"})
     public IRubyObject to_sockaddr(ThreadContext context) {
-        // unimplemented
-        return context.nil;
+      if (afamily == AddressFamily.AF_INET || afamily == AddressFamily.AF_INET6) {
+        return Sockaddr.pack_sockaddr_in(context,port,inetAddress.getHostAddress());
+      }
+      if (afamily == AddressFamily.AF_UNSPEC) {
+        ByteArrayOutputStream bufS = new ByteArrayOutputStream();
+        DataOutputStream ds = new DataOutputStream(bufS);
+        try {                                                      // struct sockaddr_ll {  (see: man 7 packet)
+          ds.writeShort(swapShortEndian(AF_PACKET));               //   unsigned short sll_family;   /* Always AF_PACKET */
+          ds.writeShort(0);                                        //   unsigned short sll_protocol; /* Physical layer protocol */
+          ds.writeInt(swapIntEndian(networkInterface.getIndex())); //   int            sll_ifindex;  /* Interface number */ 
+          ds.writeShort(swapShortEndian(hatype()));                //   unsigned short sll_hatype;   /* ARP hardware type */
+          ds.writeByte(PACKET_HOST);                               //   unsigned char  sll_pkttype;  /* Packet type */
+          byte[] hw = hwaddr();
+          ds.writeByte(hw.length);                                 //   unsigned char  sll_halen;    /* Length of address */
+          ds.write(hw);                                            //   unsigned char  sll_addr[8];  /* Physical layer address */
+        } catch (IOException e) {
+          throw sockerr(context.runtime, "to_sockaddr: " + e.getMessage());
+        }
+        return context.runtime.newString(new ByteList(bufS.toByteArray(), false));
+      }
+      return context.nil;
     }
 
+    private short hatype() {
+      try {
+        short ht = ARPHRD_ETHER;
+        if (networkInterface.isLoopback()) {
+          ht = ARPHRD_LOOPBACK;
+        }
+        return ht;
+      } catch (IOException e) {
+        return 0;   
+      }
+    }
+
+    private byte[] hwaddr() {
+      try {
+        byte[] hw = {0,0,0,0,0,0};                            // loopback   
+        if (!networkInterface.isLoopback()) {
+          hw = networkInterface.getHardwareAddress();
+          if (hw == null) {
+            hw = new byte[]{0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0}; // UNSPEC link encap
+          }
+        }
+        if (isBroadcast) {
+          hw = new byte[]{-1,-1,-1,-1,-1,-1};  // == 0xFF
+        }
+        return hw;
+      } catch (IOException e) {
+        byte[] ehw = new byte[0];  // if bad things happened return empty address rather than null or raising exception
+        return ehw;   
+      }
+    }
+
+    public String packet_inspect() {
+      StringBuffer hwaddr_sb = new StringBuffer();
+      String sep = "";
+      for (byte b: hwaddr()) {
+        hwaddr_sb.append(sep);
+        sep = ":";
+        hwaddr_sb.append(String.format("%02x", b));
+      }
+      return "PACKET[protocol=0 " + interfaceName + " hatype=" + hatype() + " HOST hwaddr=" + hwaddr_sb + "]";
+    }
+
+    // public String packet_inspect() {
+    //   StringBuffer hwaddr_sb = new StringBuffer();
+    //   String sep = "";
+    //   byte[] hwaddr_ba = hwaddr();
+    //   if (hwaddr_ba != null && hwaddr_ba.length > 0) {
+    //     for (byte b: hwaddr_ba) {
+    //       hwaddr_sb.append(sep);
+    //       sep = ":";
+    //       hwaddr_sb.append(String.format("%02x", b));
+    //     }
+    //   }
+    //   return "PACKET[protocol=0 " + interfaceName + " hatype=" + hatype() + " HOST hwaddr=" + hwaddr_sb + "]";
+    // }
+
+    private int swapIntEndian(int i) {
+      return ((i&0xff)<<24)+((i&0xff00)<<8)+((i&0xff0000)>>8)+((i>>24)&0xff);
+    }
+    
+    private int swapShortEndian(short i) {
+      return ((i&0xff)<<8)+((i&0xff00)>>8);
+    }
+    
+    private static RuntimeException sockerr(Ruby runtime, String msg) {
+        return new RaiseException(runtime, runtime.getClass("SocketError"), msg, true);
+    }
+    
     @JRubyMethod(rest = true, notImplemented = true)
     public IRubyObject getnameinfo(ThreadContext context, IRubyObject[] args) {
         // unimplemented
@@ -426,7 +533,7 @@ public class Addrinfo extends RubyObject {
     public String toString(){  
         return inetAddress.getHostAddress() + ":" + port;
     }
-    
+
     private InetAddress inetAddress;
     private int port;
     private ProtocolFamily pfamily;
@@ -435,4 +542,6 @@ public class Addrinfo extends RubyObject {
     private SocketType socketType;
     private String interfaceName;
     private boolean interfaceLink;
+    private NetworkInterface networkInterface;
+    private boolean isBroadcast; 
 }

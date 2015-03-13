@@ -119,6 +119,36 @@ class TestStringIO < Test::Unit::TestCase
     f.close unless f.closed?
   end
 
+  def test_write_infection
+    bug9769 = '[ruby-dev:48118] [Bug #9769]'
+    s = "".untaint
+    f = StringIO.new(s, "w")
+    f.print("bar".taint)
+    f.close
+    assert_predicate(s, :tainted?, bug9769)
+  ensure
+    f.close unless f.closed?
+  end
+
+  def test_write_encoding
+    s = "".force_encoding(Encoding::UTF_8)
+    f = StringIO.new(s)
+    f.print("\u{3053 3093 306b 3061 306f ff01}".b)
+    assert_equal(Encoding::UTF_8, s.encoding, "honor the original encoding over ASCII-8BIT")
+  end
+
+  def test_set_encoding
+    bug10285 = '[ruby-core:65240] [Bug #10285]'
+    f = StringIO.new()
+    f.set_encoding(Encoding::ASCII_8BIT)
+    f.write("quz \x83 mat".b)
+    s = "foo \x97 bar".force_encoding(Encoding::WINDOWS_1252)
+    assert_nothing_raised(Encoding::CompatibilityError, bug10285) {
+      f.write(s)
+    }
+    assert_equal(Encoding::ASCII_8BIT, f.string.encoding, bug10285)
+  end
+
   def test_mode_error
     f = StringIO.new("", "r")
     assert_raise(IOError) { f.write("foo") }

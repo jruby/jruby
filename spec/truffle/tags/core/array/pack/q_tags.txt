@@ -1,70 +1,34 @@
-fails:Array#pack with format 'Q' raises a TypeError when passed nil
-fails:Array#pack with format 'Q' raises a TypeError when passed an Integer
 fails:Array#pack with format 'Q' ignores whitespace in the format string
 fails:Array#pack with format 'Q' calls #to_str to coerce the directives string
 fails:Array#pack with format 'Q' taints the output string if the format string is tainted
-fails:Array#pack with format 'Q' raises an ArgumentError if there are fewer elements than the format requires
-fails:Array#pack with format 'Q' returns an empty String if count is zero
-fails:Array#pack with format 'Q' raises a TypeError when passed true
-fails:Array#pack with format 'Q' raises a TypeError when passed false
-fails:Array#pack with format 'Q' returns an ASCII-8BIT string
-fails:Array#pack with format 'Q' raises a TypeError when the object does not respond to #to_int
-fails:Array#pack with format 'Q' raises a TypeError when passed a String
-fails:Array#pack with format 'q' raises a TypeError when passed nil
-fails:Array#pack with format 'q' raises a TypeError when passed an Integer
 fails:Array#pack with format 'q' ignores whitespace in the format string
 fails:Array#pack with format 'q' calls #to_str to coerce the directives string
 fails:Array#pack with format 'q' taints the output string if the format string is tainted
-fails:Array#pack with format 'q' raises an ArgumentError if there are fewer elements than the format requires
-fails:Array#pack with format 'q' returns an empty String if count is zero
-fails:Array#pack with format 'q' raises a TypeError when passed true
-fails:Array#pack with format 'q' raises a TypeError when passed false
-fails:Array#pack with format 'q' returns an ASCII-8BIT string
-fails:Array#pack with format 'q' raises a TypeError when the object does not respond to #to_int
-fails:Array#pack with format 'q' raises a TypeError when passed a String
-fails:Array#pack with format 'Q' with modifier '<' encodes the least significant 64 bits of a positive number
-fails:Array#pack with format 'Q' with modifier '<' encodes the least significant 64 bits of a negative number
-fails:Array#pack with format 'Q' with modifier '<' encodes a Float truncated as an Integer
 fails:Array#pack with format 'Q' with modifier '<' calls #to_int to convert the pack argument to an Integer
 fails:Array#pack with format 'Q' with modifier '<' encodes the number of array elements specified by the count modifier
 fails:Array#pack with format 'Q' with modifier '<' encodes all remaining elements when passed the '*' modifier
 fails:Array#pack with format 'Q' with modifier '<' ignores NULL bytes between directives
 fails:Array#pack with format 'Q' with modifier '<' ignores spaces between directives
-fails:Array#pack with format 'Q' with modifier '>' encodes the least significant 64 bits of a positive number
-fails:Array#pack with format 'Q' with modifier '>' encodes the least significant 64 bits of a negative number
-fails:Array#pack with format 'Q' with modifier '>' encodes a Float truncated as an Integer
 fails:Array#pack with format 'Q' with modifier '>' calls #to_int to convert the pack argument to an Integer
 fails:Array#pack with format 'Q' with modifier '>' encodes the number of array elements specified by the count modifier
 fails:Array#pack with format 'Q' with modifier '>' encodes all remaining elements when passed the '*' modifier
 fails:Array#pack with format 'Q' with modifier '>' ignores NULL bytes between directives
 fails:Array#pack with format 'Q' with modifier '>' ignores spaces between directives
-fails:Array#pack with format 'q' with modifier '<' encodes the least significant 64 bits of a positive number
-fails:Array#pack with format 'q' with modifier '<' encodes the least significant 64 bits of a negative number
-fails:Array#pack with format 'q' with modifier '<' encodes a Float truncated as an Integer
 fails:Array#pack with format 'q' with modifier '<' calls #to_int to convert the pack argument to an Integer
 fails:Array#pack with format 'q' with modifier '<' encodes the number of array elements specified by the count modifier
 fails:Array#pack with format 'q' with modifier '<' encodes all remaining elements when passed the '*' modifier
 fails:Array#pack with format 'q' with modifier '<' ignores NULL bytes between directives
 fails:Array#pack with format 'q' with modifier '<' ignores spaces between directives
-fails:Array#pack with format 'q' with modifier '>' encodes the least significant 64 bits of a positive number
-fails:Array#pack with format 'q' with modifier '>' encodes the least significant 64 bits of a negative number
-fails:Array#pack with format 'q' with modifier '>' encodes a Float truncated as an Integer
 fails:Array#pack with format 'q' with modifier '>' calls #to_int to convert the pack argument to an Integer
 fails:Array#pack with format 'q' with modifier '>' encodes the number of array elements specified by the count modifier
 fails:Array#pack with format 'q' with modifier '>' encodes all remaining elements when passed the '*' modifier
 fails:Array#pack with format 'q' with modifier '>' ignores NULL bytes between directives
 fails:Array#pack with format 'q' with modifier '>' ignores spaces between directives
-fails:Array#pack with format 'Q' encodes the least significant 64 bits of a positive number
-fails:Array#pack with format 'Q' encodes the least significant 64 bits of a negative number
-fails:Array#pack with format 'Q' encodes a Float truncated as an Integer
 fails:Array#pack with format 'Q' calls #to_int to convert the pack argument to an Integer
 fails:Array#pack with format 'Q' encodes the number of array elements specified by the count modifier
 fails:Array#pack with format 'Q' encodes all remaining elements when passed the '*' modifier
 fails:Array#pack with format 'Q' ignores NULL bytes between directives
 fails:Array#pack with format 'Q' ignores spaces between directives
-fails:Array#pack with format 'q' encodes the least significant 64 bits of a positive number
-fails:Array#pack with format 'q' encodes the least significant 64 bits of a negative number
-fails:Array#pack with format 'q' encodes a Float truncated as an Integer
 fails:Array#pack with format 'q' calls #to_int to convert the pack argument to an Integer
 fails:Array#pack with format 'q' encodes the number of array elements specified by the count modifier
 fails:Array#pack with format 'q' encodes all remaining elements when passed the '*' modifier

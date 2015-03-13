@@ -30,6 +30,12 @@ describe "C-API Exception function" do
       runtime_error = RuntimeError.new '42'
       lambda { @s.rb_exc_raise(runtime_error) }.should raise_error(RuntimeError, '42')
     end
+
+    it "raises an exception with an empty backtrace" do
+      runtime_error = RuntimeError.new '42'
+      runtime_error.set_backtrace []
+      lambda { @s.rb_exc_raise(runtime_error) }.should raise_error(RuntimeError, '42')
+    end
   end
 
   extended_on :rubinius do

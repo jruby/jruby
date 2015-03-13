@@ -1,6 +1,0 @@
-fails:Method#inspect returns a String
-fails:Method#inspect returns a String for methods defined with attr_accessor
-fails:Method#inspect returns a String containing 'Method'
-fails:Method#inspect returns a String containing the method name
-fails:Method#inspect returns a String containing the Module the method is defined in
-fails:Method#inspect returns a String containing the Module the method is referenced from

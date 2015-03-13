@@ -1,2 +1,0 @@
-fails:Symbol#intern returns self
-fails:Symbol#intern returns a Symbol

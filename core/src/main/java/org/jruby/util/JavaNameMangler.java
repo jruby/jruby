@@ -5,6 +5,13 @@
 
 package org.jruby.util;
 
+import org.jruby.ir.IRClassBody;
+import org.jruby.ir.IRClosure;
+import org.jruby.ir.IRMetaClassBody;
+import org.jruby.ir.IRMethod;
+import org.jruby.ir.IRModuleBody;
+import org.jruby.ir.IRScope;
+import org.jruby.ir.IRScriptBody;
 import org.jruby.platform.Platform;
 
 import java.io.FileNotFoundException;
@@ -248,5 +255,49 @@ public class JavaNameMangler {
 
     private static char unescapeChar(char character) {
         return DANGEROUS_CHARS.charAt(REPLACEMENT_CHARS.indexOf(character));
+    }
+
+    public static String encodeScopeForBacktrace(IRScope scope) {
+        if (scope instanceof IRMethod) {
+            return "RUBY$method$" + mangleMethodName(scope.getName());
+        } else if (scope instanceof IRClosure) {
+            return "RUBY$block$" + mangleMethodName(scope.getNearestTopLocalVariableScope().getName());
+        } else if (scope instanceof IRMetaClassBody) {
+            return "RUBY$metaclass";
+        } else if (scope instanceof IRClassBody) {
+            return "RUBY$class$" + mangleMethodName(scope.getName());
+        } else if (scope instanceof IRModuleBody) {
+            return "RUBY$module$" + mangleMethodName(scope.getName());
+        } else if (scope instanceof IRScriptBody) {
+            return "RUBY$script";
+        }
+        throw new RuntimeException("unknown scope type for backtrace encoding: " + scope.getClass());
+    }
+
+    public static String decodeMethodForBacktrace(String methodName) {
+        if (!methodName.startsWith("RUBY$")) return null;
+
+        String[] elts = methodName.split("\\$");
+        String type = elts[1];
+        String name;
+
+        // root body gets named (root)
+        switch (type) {
+            case "script":
+                return "<top>";
+            case "metaclass":
+                return "singleton class";
+        }
+
+        // remaining cases have an encoded name
+        name = demangleMethodName(elts[2]);
+        switch (type) {
+            case "method":  return name;
+            case "block":   return "block in " + name;
+            case "class":   // fall through
+            case "module":  return "<" + type + ":" + name + ">";
+            default:
+                throw new RuntimeException("unknown encoded method type '" + type + "' from '" + methodName);
+        }
     }
 }

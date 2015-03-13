@@ -31,8 +31,9 @@ describe "A Fiber that has been abandoned" do
       # Try to force finalizers to run
       java.lang.Runtime.runtime.run_finalization
 
-      # Spin for a while, hoping to make this pass
+      # Spin for a while and GC, hoping to make this pass
       1000.times do
+        JRuby.gc
         JRuby.runtime.fiber_executor.maximum_pool_size = 1
         break if (thread_bean.thread_count - thread_count) < 10
         Thread.pass

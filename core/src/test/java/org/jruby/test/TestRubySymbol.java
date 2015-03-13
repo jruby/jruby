@@ -49,16 +49,12 @@ public class TestRubySymbol extends TestCase {
 
     public void testSymbolTable() throws Exception {
         RubySymbol.SymbolTable st = runtime.getSymbolTable();
-
-        assertNull(st.lookup("somename"));
         
         RubySymbol symbol = RubySymbol.newSymbol(runtime, "somename");
-        assertSame(symbol, st.lookup("somename"));
         assertSame(symbol, st.getSymbol("somename"));
         assertSame(symbol, st.fastGetSymbol("somename"));
         
         RubySymbol another = st.fastGetSymbol("another_name");
-        assertSame(another, st.lookup("another_name"));
         assertSame(another, st.getSymbol("another_name"));
         assertSame(another, st.fastGetSymbol("another_name"));
     }

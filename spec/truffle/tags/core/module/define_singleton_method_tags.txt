@@ -1,2 +1,0 @@
-fails:Module#define_singleton_method defines the given method as an class method with the given name in self
-fails:Module#define_singleton_method needs to be reviewed for spec completeness

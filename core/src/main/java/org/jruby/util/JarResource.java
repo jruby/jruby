@@ -1,7 +1,6 @@
 package org.jruby.util;
 
 import jnr.posix.FileStat;
-import jnr.posix.POSIX;
 
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
@@ -9,7 +8,7 @@ import java.util.jar.JarEntry;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-abstract class JarResource implements FileResource {
+abstract class JarResource extends AbstractFileResource {
     private static Pattern PREFIX_MATCH = Pattern.compile("^(?:jar:)?(?:file:)?(.*)$");
 
     private static final JarCache jarCache = new JarCache();
@@ -20,17 +19,11 @@ abstract class JarResource implements FileResource {
         Matcher matcher = PREFIX_MATCH.matcher(pathname);
         String sanitized = matcher.matches() ? matcher.group(1) : pathname;
 
-        try {
-            // since pathname is actually an uri we need to decode any url decoded characters like %20
-            // which happens when directory names contain spaces
-            sanitized = URLDecoder.decode(sanitized, "UTF-8");
-        } catch (UnsupportedEncodingException e) {
-            throw new RuntimeException( "hmm - system does not know UTF-8 string encoding :(" );
-        }
-
         int bang = sanitized.indexOf('!');
         String jarPath = sanitized.substring(0, bang);
         String entryPath = sanitized.substring(bang + 1);
+        // normalize path -- issue #2017
+        if (entryPath.startsWith("//")) entryPath = entryPath.substring(1);
 
         // TODO: Do we really need to support both test.jar!foo/bar.rb and test.jar!/foo/bar.rb cases?
         JarResource resource = createJarResource(jarPath, entryPath, false);
@@ -47,7 +40,22 @@ abstract class JarResource implements FileResource {
 
         if (index == null) {
             // Jar doesn't exist
-            return null;
+            try {
+                jarPath = URLDecoder.decode(jarPath, "UTF-8");
+                entryPath = URLDecoder.decode(entryPath, "UTF-8");
+            } catch (IllegalArgumentException iae) {
+                // something in the path did not decode, so it's probably not a URI
+                // See jruby/jruby#2264.
+                return null;
+            } catch (UnsupportedEncodingException e) {
+                throw new RuntimeException( "hmm - system does not know UTF-8 string encoding :(" );
+            }
+            index = jarCache.getIndex(jarPath);
+
+            if (index == null) {
+                // Jar doesn't exist
+                return null;
+            }
         }
 
         // Try it as directory first, because jars tend to have foo/ entries

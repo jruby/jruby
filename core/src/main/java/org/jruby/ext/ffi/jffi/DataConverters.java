@@ -19,8 +19,9 @@ import java.util.Map;
  */
 public class DataConverters {
     @SuppressWarnings("unchecked")
-    private static final Map<RubyHash, NativeDataConverter> enumConverters = Collections.synchronizedMap(new WeakIdentityHashMap());
+    private static final Map<IRubyObject, NativeDataConverter> enumConverters = Collections.synchronizedMap(new WeakIdentityHashMap());
 
+    @Deprecated
     static boolean isEnumConversionRequired(Type type, RubyHash enums) {
         if (type instanceof Type.Builtin && enums != null && !enums.isEmpty()) {
             switch (type.getNativeType()) {
@@ -42,7 +43,28 @@ public class DataConverters {
         }
         return false;
     }
-   
+
+    static boolean isEnumConversionRequired(Type type, Enums enums) {
+        if (type instanceof Type.Builtin && enums != null && !enums.isEmpty()) {
+            switch (type.getNativeType()) {
+                case CHAR:
+                case UCHAR:
+                case SHORT:
+                case USHORT:
+                case INT:
+                case UINT:
+                case LONG:
+                case ULONG:
+                case LONG_LONG:
+                case ULONG_LONG:
+                    return true;
+                    
+                default:
+                    return false;
+            }
+        }
+        return false;
+    }
 
     static NativeDataConverter getResultConverter(Type type) {
         if (type instanceof Type.Builtin) {
@@ -70,7 +92,22 @@ public class DataConverters {
         return null;
     }
 
+    @Deprecated
     static NativeDataConverter getParameterConverter(Type type, RubyHash enums) {
+        if (isEnumConversionRequired(type, enums)) {
+            NativeDataConverter converter = enumConverters.get(enums);
+            if (converter != null) {
+                return converter;
+            }
+            enumConverters.put(enums, converter = new IntOrEnumConverter(NativeType.INT, enums));
+            return converter;
+        
+        } else {
+            return getParameterConverter(type);
+        }
+    }
+
+    static NativeDataConverter getParameterConverter(Type type, Enums enums) {
         if (isEnumConversionRequired(type, enums)) {
             NativeDataConverter converter = enumConverters.get(enums);
             if (converter != null) {
@@ -86,10 +123,10 @@ public class DataConverters {
 
     public static final class IntOrEnumConverter extends NativeDataConverter {
         private final NativeType nativeType;
-        private final RubyHash enums;
+        private final IRubyObject enums;
         private volatile IdentityHashMap<RubySymbol, RubyInteger> symbolToValue = new IdentityHashMap<RubySymbol, RubyInteger>();
 
-        public IntOrEnumConverter(NativeType nativeType, RubyHash enums) {
+        public IntOrEnumConverter(NativeType nativeType, IRubyObject enums) {
             this.nativeType = nativeType;
             this.enums = enums;
         }
@@ -111,25 +148,25 @@ public class DataConverters {
                 return obj;
             }
 
-            return lookupOrConvert(obj);
+            return lookupOrConvert(context, obj);
         }
 
-        IRubyObject lookupOrConvert(IRubyObject obj) {
+        IRubyObject lookupOrConvert(ThreadContext context, IRubyObject obj) {
             if (obj instanceof RubySymbol) {
                 IRubyObject value;
                 if ((value = symbolToValue.get(obj)) != null) {
                     return value;
                 }
 
-                return lookupAndCacheValue(obj);
+                return lookupAndCacheValue(context, obj);
 
             } else {
                 return obj.convertToInteger();
             }
         }
 
-        private synchronized IRubyObject lookupAndCacheValue(IRubyObject obj) {
-            IRubyObject value = enums.fastARef(obj);
+        private synchronized IRubyObject lookupAndCacheValue(ThreadContext context, IRubyObject obj) {
+            IRubyObject value = enums instanceof Enums ? ((Enums)enums).mapSymbol(context, obj) : ((RubyHash)enums).fastARef(obj);
             if (value.isNil() || !(value instanceof RubyInteger)) {
                 throw obj.getRuntime().newArgumentError("invalid enum value, " + obj.inspect());
             }

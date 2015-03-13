@@ -16,7 +16,7 @@ public class KeywordArgNode extends Node {
     private AssignableNode assignable;
     
     public KeywordArgNode(ISourcePosition position, AssignableNode assignable) {
-        super(position);
+        super(position, true);
         this.assignable = assignable;
     }
 

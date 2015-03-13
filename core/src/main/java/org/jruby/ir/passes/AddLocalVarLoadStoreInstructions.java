@@ -1,16 +1,12 @@
 package org.jruby.ir.passes;
 
 import org.jruby.ir.IRClosure;
-import org.jruby.ir.IRScope;
 import org.jruby.ir.IRFlags;
-import org.jruby.ir.dataflow.analyses.LiveVariablesProblem;
+import org.jruby.ir.IRScope;
 import org.jruby.ir.dataflow.analyses.LoadLocalVarPlacementProblem;
 import org.jruby.ir.dataflow.analyses.StoreLocalVarPlacementProblem;
 import org.jruby.ir.instructions.Instr;
-import org.jruby.ir.instructions.ResultInstr;
-import org.jruby.ir.operands.LocalVariable;
 import org.jruby.ir.operands.Operand;
-import org.jruby.ir.operands.Variable;
 import org.jruby.ir.representations.BasicBlock;
 
 import java.util.Arrays;
@@ -31,15 +27,13 @@ public class AddLocalVarLoadStoreInstructions extends CompilerPass {
         return DEPENDENCIES;
     }
 
-    private void setupLocalVarReplacement(LocalVariable v, IRScope s, Map<Operand, Operand> varRenameMap) {
-         if (varRenameMap.get(v) == null) varRenameMap.put(v, s.getNewTemporaryVariableFor(v));
-    }
-
     @Override
     public Object execute(IRScope s, Object... data) {
         StoreLocalVarPlacementProblem slvp = new StoreLocalVarPlacementProblem();
-        Map<Operand, Operand> varRenameMap = new HashMap<Operand, Operand>();
-        if (s.bindingHasEscaped() || s instanceof IRClosure) {
+
+        // Only run if we are pushing a scope or we are reusing the parents scope.
+        if (!s.getFlags().contains(IRFlags.DYNSCOPE_ELIMINATED) || s.getFlags().contains(IRFlags.REUSE_PARENT_DYNSCOPE)) {
+            Map<Operand, Operand> varRenameMap = new HashMap<>();
             // 1. Figure out required stores
             // 2. Add stores
             // 3. Figure out required loads
@@ -57,58 +51,33 @@ public class AddLocalVarLoadStoreInstructions extends CompilerPass {
             llvp.setup(s);
             llvp.compute_MOP_Solution();
 
-            // Add loads,
+            // Add loads
             llvp.addLoads(varRenameMap);
-        } else {
-            // Record the fact that we eliminated the scope
-            s.getFlags().add(IRFlags.DYNSCOPE_ELIMINATED);
 
-            // Since the scope does not require a binding, no need to do
-            // any analysis. It is sufficient to rename all local var uses
-            // with a temporary variable.
+            // Rename all local var uses with their tmp-var stand-ins
             for (BasicBlock b: s.getCFG().getBasicBlocks()) {
-                for (Instr i: b.getInstrs()) {
-                    if (i instanceof ResultInstr) {
-                        Variable v = ((ResultInstr) i).getResult();
-                        // %self is local to every scope and never crosses scope boundaries and need not be spilled/refilled
-                        if (v instanceof LocalVariable && !v.isSelf()) {
-                            // Make sure there is a replacement tmp-var allocated for lv
-                            setupLocalVarReplacement((LocalVariable)v, s, varRenameMap);
-                        }
-                    }
-                    for (Variable v : i.getUsedVariables()) {
-                        if (v instanceof LocalVariable && !v.isSelf()) {
-                            setupLocalVarReplacement((LocalVariable)v, s, varRenameMap);
-                        }
-                    }
-                }
+                for (Instr i: b.getInstrs()) i.renameVars(varRenameMap);
             }
+
+            // LVA information is no longer valid after this pass
+            // FIXME: Grrr ... this seems broken to have to create a new object to invalidate
+            (new LiveVariableAnalysis()).invalidate(s);
         }
 
-        // Rename all local var uses with their tmp-var stand-ins
-        for (BasicBlock b: s.getCFG().getBasicBlocks()) {
-            for (Instr i: b.getInstrs()) i.renameVars(varRenameMap);
-        }
-
-        // Run on all nested closures.
-        // In the current implementation, nested scopes are processed independently (unlike Live Variable Analysis)
-        for (IRClosure c: s.getClosures()) execute(c);
-
-        s.setDataFlowSolution(StoreLocalVarPlacementProblem.NAME, slvp);
-
-        // LVA information is no longer valid after the pass
-        s.setDataFlowSolution(LiveVariablesProblem.NAME, null);
+        s.putStoreLocalVarPlacementProblem(slvp);
 
         return slvp;
     }
 
     @Override
     public Object previouslyRun(IRScope scope) {
-        return scope.getDataFlowSolution(StoreLocalVarPlacementProblem.NAME);
+        return scope.getStoreLocalVarPlacementProblem();
     }
 
     @Override
-    public void invalidate(IRScope scope) {
-        scope.setDataFlowSolution(StoreLocalVarPlacementProblem.NAME, null);
+    public boolean invalidate(IRScope scope) {
+        super.invalidate(scope);
+        scope.putStoreLocalVarPlacementProblem(null);
+        return true;
     }
 }

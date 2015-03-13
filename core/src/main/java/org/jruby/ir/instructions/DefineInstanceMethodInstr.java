@@ -1,18 +1,12 @@
 package org.jruby.ir.instructions;
 
-import org.jruby.Ruby;
-import org.jruby.RubyModule;
-import org.jruby.internal.runtime.methods.DynamicMethod;
-import org.jruby.internal.runtime.methods.InterpretedIRMethod;
 import org.jruby.ir.*;
-import org.jruby.ir.operands.Operand;
+import org.jruby.ir.persistence.IRWriterEncoder;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
-import org.jruby.ir.transformations.inlining.InlinerInfo;
+import org.jruby.ir.transformations.inlining.CloneInfo;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.DynamicScope;
-import org.jruby.runtime.Helpers;
 import org.jruby.runtime.ThreadContext;
-import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 
 public class DefineInstanceMethodInstr extends Instr implements FixedArityInstr {
@@ -20,18 +14,14 @@ public class DefineInstanceMethodInstr extends Instr implements FixedArityInstr 
 
     // SSS FIXME: Implicit self arg -- make explicit to not get screwed by inlining!
     public DefineInstanceMethodInstr(IRMethod method) {
-        super(Operation.DEF_INST_METH);
+        super(Operation.DEF_INST_METH, EMPTY_OPERANDS);
+
         this.method = method;
     }
 
     @Override
-    public Operand[] getOperands() {
-        return EMPTY_OPERANDS;
-    }
-
-    @Override
-    public String toString() {
-        return getOperation() + "(" + method.getName() + ", " + method.getFileName() + ")";
+    public String[] toStringNonOperandArgs() {
+        return new String[] {"name: " + method.getName() };
     }
 
     @Override
@@ -46,23 +36,19 @@ public class DefineInstanceMethodInstr extends Instr implements FixedArityInstr 
     }
 
     @Override
-    public Instr cloneForInlining(InlinerInfo ii) {
+    public Instr clone(CloneInfo ii) {
         return new DefineInstanceMethodInstr(method);
     }
 
-    // SSS FIXME: Go through this and DefineClassMethodInstr.interpret, clean up, extract common code
+    @Override
+    public void encode(IRWriterEncoder e) {
+        super.encode(e);
+        e.encode(getMethod());
+    }
+
     @Override
     public Object interpret(ThreadContext context, StaticScope currScope, DynamicScope currDynScope, IRubyObject self, Object[] temp) {
-        Ruby runtime = context.runtime;
-        RubyModule clazz = IRRuntimeHelpers.findInstanceMethodContainer(context, currDynScope, self);
-
-        String     name  = method.getName();
-        Visibility currVisibility = context.getCurrentVisibility();
-        Visibility newVisibility = Helpers.performNormalMethodChecksAndDetermineVisibility(runtime, clazz, name, currVisibility);
-
-        DynamicMethod newMethod = new InterpretedIRMethod(method, newVisibility, clazz);
-
-        Helpers.addInstanceMethod(clazz, name, newMethod, currVisibility, context, runtime);
+        IRRuntimeHelpers.defInterpretedInstanceMethod(context, method, currDynScope, self);
 
         return null; // unused; symbol is propagated
     }

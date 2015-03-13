@@ -1,1 +1,0 @@
-fails:Time#to_i returns the value of time as an integer number of seconds since epoch

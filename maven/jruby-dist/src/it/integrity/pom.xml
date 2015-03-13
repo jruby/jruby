@@ -125,6 +125,53 @@
 	      </arguments>
 	    </configuration>
 	  </execution>
+	  <execution>
+	    <id>load default gems</id>
+	    <phase>test</phase>
+	    <goals>
+              <goal>exec</goal>
+            </goals>
+            <configuration>          
+	      <executable>java</executable> 
+              <arguments>
+		<argument>-Xbootclasspath/a:${jruby.home}/lib/jruby.jar</argument>
+		<argument>-Djruby.home=${jruby.home}</argument>
+		<argument>org.jruby.Main</argument>
+		<argument>-e</argument>
+		<!-- make sure openssl loads -->
+		<argument>
+		  require 'jar-dependencies'
+		  require 'openssl'
+		  puts Gem.loaded_specs.keys.sort.join(',')
+		</argument>
+              </arguments>
+            </configuration>
+	  </execution>
+	  <execution>
+	    <id>ensure there is no org.objectweb.asm.ClassWriter</id>
+	    <phase>test</phase>
+	    <goals>
+              <goal>exec</goal>
+            </goals>
+            <configuration>          
+	      <executable>java</executable> 
+              <arguments>
+		<argument>-Xbootclasspath/a:${jruby.home}/lib/jruby.jar</argument>
+		<argument>-Djruby.home=${jruby.home}</argument>
+		<argument>org.jruby.Main</argument>
+		<argument>-e</argument>
+		<!-- make sure openssl loads -->
+		<argument>
+		  begin
+		    import_java "org.objectweb.asm.ClassWriter"
+		    raise "error there is org.objectweb.asm.ClassWriter on the classpath"
+		  rescue NameError => e
+		    puts "there is NO org.objectweb.asm.ClassWriter on the classpath"
+                  end
+		</argument>
+              </arguments>
+            </configuration>
+	  </execution>
 	</executions>
       </plugin>
     </plugins>

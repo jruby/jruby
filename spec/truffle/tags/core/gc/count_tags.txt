@@ -1,1 +1,0 @@
-fails:GC.count returns an integer

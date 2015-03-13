@@ -1,6 +1,0 @@
-fails:Hash#fetch returns the value for key
-fails:Hash#fetch raises a KeyError if key is not found
-fails:Hash#fetch returns default if key is not found when passed a default
-fails:Hash#fetch returns value of block if key is not found when passed a block
-fails:Hash#fetch gives precedence to the default block over the default argument when passed both
-fails:Hash#fetch raises an ArgumentError when not passed one or two arguments

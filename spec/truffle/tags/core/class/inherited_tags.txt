@@ -1,8 +1,2 @@
 fails:Class.inherited is invoked with the child Class when self is subclassed
-fails:Class.inherited is invoked only once per subclass
-fails:Class.inherited is called when marked as a private class method
-fails:Class.inherited is called when marked as a protected class method
-fails:Class.inherited is called when marked as a public class method
-fails:Class.inherited is called by super from a method provided by an included module
-fails:Class.inherited is called by super even when marked as a private class method
-fails:Class.inherited will be invoked by child class regardless of visibility
+windows:Class.inherited is invoked only once per subclass

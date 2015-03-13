@@ -1,1 +1,0 @@
-fails:MatchData#inspect returns a human readable representation that contains entire matched string and the captures

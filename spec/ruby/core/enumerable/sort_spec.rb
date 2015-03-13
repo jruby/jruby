@@ -48,4 +48,7 @@ describe "Enumerable#sort" do
     multi.sort {|a, b| a.first <=> b.first}.should == [[1, 2], [3, 4, 5], [6, 7, 8, 9]]
   end
 
+  it "doesn't fail if #to_a returns a frozen Array" do
+    EnumerableSpecs::Freezy.new.sort.should == [1,2]
+  end
 end

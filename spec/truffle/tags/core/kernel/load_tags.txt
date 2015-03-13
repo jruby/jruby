@@ -1,81 +1,28 @@
-fails:Kernel#load is a private method
-fails:Kernel#load (path resolution) loads an absolute path
 fails:Kernel#load (path resolution) loads a non-canonical absolute path
-fails:Kernel#load (path resolution) loads a file defining many methods
-fails:Kernel#load (path resolution) raises a LoadError if the file does not exist
 fails:Kernel#load (path resolution) calls #to_str on non-String objects
-fails:Kernel#load (path resolution) raises a TypeError if passed nil
-fails:Kernel#load (path resolution) raises a TypeError if passed a Fixnum
-fails:Kernel#load (path resolution) raises a TypeError if passed an Array
-fails:Kernel#load (path resolution) raises a TypeError if passed an object that does not provide #to_str
-fails:Kernel#load (path resolution) raises a TypeError if passed an object that has #to_s but not #to_str
 fails:Kernel#load (path resolution) raises a TypeError if #to_str does not return a String
 fails:Kernel#load (path resolution) calls #to_path on non-String objects
 fails:Kernel#load (path resolution) calls #to_path on a String
 fails:Kernel#load (path resolution) calls #to_str on non-String objects returned by #to_path
-fails:Kernel#load (path resolution) loads a ./ relative path from the current working directory with empty $LOAD_PATH
-fails:Kernel#load (path resolution) loads a ../ relative path from the current working directory with empty $LOAD_PATH
-fails:Kernel#load (path resolution) loads a ./ relative path from the current working directory with non-empty $LOAD_PATH
-fails:Kernel#load (path resolution) loads a ../ relative path from the current working directory with non-empty $LOAD_PATH
-fails:Kernel#load (path resolution) loads a non-canonical path from the current working directory with non-empty $LOAD_PATH
 fails:Kernel#load (path resolution) resolves a filename against $LOAD_PATH entries
 fails:Kernel#load (path resolution) does not require file twice after $LOAD_PATH change
-fails:Kernel#load (path resolution) does not resolve a ./ relative path against $LOAD_PATH entries
-fails:Kernel#load (path resolution) does not resolve a ../ relative path against $LOAD_PATH entries
 fails:Kernel#load (path resolution) resolves a non-canonical path against $LOAD_PATH entries
-fails:Kernel#load (path resolution) loads a path with duplicate path separators
 fails:Kernel#load (path resolution) with an unreadable file raises a LoadError
-fails:Kernel#load loads a non-extensioned file as a Ruby source file
-fails:Kernel#load loads a non .rb extensioned file as a Ruby source file
-fails:Kernel#load loads from the current working directory
-fails:Kernel#load loads a file that recursively requires itself
-fails:Kernel#load loads a file that recursively loads itself
-fails:Kernel#load loads a file each time the method is called
-fails:Kernel#load loads a file even when the name appears in $LOADED_FEATURES
-fails:Kernel#load loads a file that has been loaded by #require
 fails:Kernel#load loads file even after $LOAD_PATH change
-fails:Kernel#load does not cause #require with the same path to fail
-fails:Kernel#load does not add the loaded path to $LOADED_FEATURES
-fails:Kernel#load raises a LoadError if passed a non-extensioned path that does not exist but a .rb extensioned path does exist
 fails:Kernel#load sets the enclosing scope to an anonymous module if passed true for 'wrap'
 fails:Kernel#load (shell expansion) expands a tilde to the HOME environment variable as the path to load
-fails:Kernel.load (path resolution) loads an absolute path
 fails:Kernel.load (path resolution) loads a non-canonical absolute path
-fails:Kernel.load (path resolution) loads a file defining many methods
-fails:Kernel.load (path resolution) raises a LoadError if the file does not exist
 fails:Kernel.load (path resolution) calls #to_str on non-String objects
-fails:Kernel.load (path resolution) raises a TypeError if passed nil
-fails:Kernel.load (path resolution) raises a TypeError if passed a Fixnum
-fails:Kernel.load (path resolution) raises a TypeError if passed an Array
-fails:Kernel.load (path resolution) raises a TypeError if passed an object that does not provide #to_str
-fails:Kernel.load (path resolution) raises a TypeError if passed an object that has #to_s but not #to_str
 fails:Kernel.load (path resolution) raises a TypeError if #to_str does not return a String
 fails:Kernel.load (path resolution) calls #to_path on non-String objects
 fails:Kernel.load (path resolution) calls #to_path on a String
 fails:Kernel.load (path resolution) calls #to_str on non-String objects returned by #to_path
-fails:Kernel.load (path resolution) loads a ./ relative path from the current working directory with empty $LOAD_PATH
-fails:Kernel.load (path resolution) loads a ../ relative path from the current working directory with empty $LOAD_PATH
-fails:Kernel.load (path resolution) loads a ./ relative path from the current working directory with non-empty $LOAD_PATH
-fails:Kernel.load (path resolution) loads a ../ relative path from the current working directory with non-empty $LOAD_PATH
-fails:Kernel.load (path resolution) loads a non-canonical path from the current working directory with non-empty $LOAD_PATH
 fails:Kernel.load (path resolution) resolves a filename against $LOAD_PATH entries
 fails:Kernel.load (path resolution) does not require file twice after $LOAD_PATH change
-fails:Kernel.load (path resolution) does not resolve a ./ relative path against $LOAD_PATH entries
-fails:Kernel.load (path resolution) does not resolve a ../ relative path against $LOAD_PATH entries
 fails:Kernel.load (path resolution) resolves a non-canonical path against $LOAD_PATH entries
-fails:Kernel.load (path resolution) loads a path with duplicate path separators
 fails:Kernel.load (path resolution) with an unreadable file raises a LoadError
-fails:Kernel.load loads a non-extensioned file as a Ruby source file
-fails:Kernel.load loads a non .rb extensioned file as a Ruby source file
-fails:Kernel.load loads from the current working directory
-fails:Kernel.load loads a file that recursively requires itself
-fails:Kernel.load loads a file that recursively loads itself
-fails:Kernel.load loads a file each time the method is called
-fails:Kernel.load loads a file even when the name appears in $LOADED_FEATURES
-fails:Kernel.load loads a file that has been loaded by #require
 fails:Kernel.load loads file even after $LOAD_PATH change
-fails:Kernel.load does not cause #require with the same path to fail
-fails:Kernel.load does not add the loaded path to $LOADED_FEATURES
-fails:Kernel.load raises a LoadError if passed a non-extensioned path that does not exist but a .rb extensioned path does exist
 fails:Kernel.load sets the enclosing scope to an anonymous module if passed true for 'wrap'
 fails:Kernel.load (shell expansion) expands a tilde to the HOME environment variable as the path to load
+windows:Kernel#load loads a file that recursively requires itself
+windows:Kernel.load loads a file that recursively requires itself

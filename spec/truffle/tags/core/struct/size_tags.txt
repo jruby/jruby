@@ -1,2 +1,0 @@
-fails:Struct#size is a synonym for length
-fails:Struct#size does not override the instance accessor method

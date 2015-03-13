@@ -130,7 +130,7 @@ class TestEval < Test::Unit::TestCase
   def forall_TYPE
     objects = [Object.new, [], nil, true, false] # TODO: check
     objects.each do |obj|
-      obj.instance_variable_set :@ivar, 12
+      obj.instance_variable_set :@ivar, 12 unless obj.frozen?
       yield obj
     end
   end
@@ -145,7 +145,7 @@ class TestEval < Test::Unit::TestCase
       assert_equal :sym,  o.instance_eval(":sym")
 
       assert_equal 11,    o.instance_eval("11")
-      assert_equal 12,    o.instance_eval("@ivar")
+      assert_equal 12,    o.instance_eval("@ivar") unless o.frozen?
       assert_equal 13,    o.instance_eval("@@cvar")
       assert_equal 14,    o.instance_eval("$gvar__eval")
       assert_equal 15,    o.instance_eval("Const")
@@ -155,7 +155,7 @@ class TestEval < Test::Unit::TestCase
       assert_equal "19",  o.instance_eval(%q("1#{9}"))
 
       1.times {
-        assert_equal 12,  o.instance_eval("@ivar")
+        assert_equal 12,  o.instance_eval("@ivar") unless o.frozen?
         assert_equal 13,  o.instance_eval("@@cvar")
         assert_equal 14,  o.instance_eval("$gvar__eval")
         assert_equal 15,  o.instance_eval("Const")
@@ -173,7 +173,7 @@ class TestEval < Test::Unit::TestCase
       assert_equal :sym,  o.instance_eval { :sym }
 
       assert_equal 11,    o.instance_eval { 11 }
-      assert_equal 12,    o.instance_eval { @ivar }
+      assert_equal 12,    o.instance_eval { @ivar } unless o.frozen?
       assert_equal 13,    o.instance_eval { @@cvar }
       assert_equal 14,    o.instance_eval { $gvar__eval }
       assert_equal 15,    o.instance_eval { Const }
@@ -183,7 +183,7 @@ class TestEval < Test::Unit::TestCase
       assert_equal "19",  o.instance_eval { "1#{9}" }
 
       1.times {
-        assert_equal 12,  o.instance_eval { @ivar }
+        assert_equal 12,  o.instance_eval { @ivar } unless o.frozen?
         assert_equal 13,  o.instance_eval { @@cvar }
         assert_equal 14,  o.instance_eval { $gvar__eval }
         assert_equal 15,  o.instance_eval { Const }
@@ -238,7 +238,7 @@ class TestEval < Test::Unit::TestCase
   # From ruby/test/ruby/test_eval.rb
   #
 
-  def test_ev
+  def make_test_binding
     local1 = "local1"
     lambda {
       local2 = "local2"
@@ -273,7 +273,7 @@ class TestEval < Test::Unit::TestCase
     assert_equal(5, eval("i"))
     assert(eval("defined? i"))
 
-    x = test_ev
+    x = make_test_binding
     assert_equal("local1", eval("local1", x)) # normal local var
     assert_equal("local2", eval("local2", x)) # nested local var
     bad = true
@@ -483,5 +483,20 @@ class TestEval < Test::Unit::TestCase
            o.method(:bar).source_location[0]
 
     assert_same a, b
+  end
+
+  def test_gced_binding_block
+    assert_normal_exit %q{
+      def m
+        binding
+      end
+      GC.stress = true
+      b = nil
+      tap do
+        b = m {}
+      end
+      0.times.to_a
+      b.eval('yield')
+    }, '[Bug #10368]'
   end
 end

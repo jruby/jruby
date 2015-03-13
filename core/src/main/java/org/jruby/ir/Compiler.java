@@ -8,19 +8,26 @@ import org.jruby.Ruby;
 import org.jruby.RubyModule;
 import org.jruby.ast.executable.AbstractScript;
 import org.jruby.ast.executable.Script;
-import org.jruby.exceptions.JumpException;
+import org.jruby.ast.executable.ScriptAndCode;
+import org.jruby.compiler.NotCompilableException;
+import org.jruby.ir.interpreter.Interpreter;
+import org.jruby.ir.operands.IRException;
+import org.jruby.ir.runtime.IRBreakJump;
 import org.jruby.ir.targets.JVMVisitor;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.Block;
+import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.Helpers;
 import org.jruby.runtime.ThreadContext;
+import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.util.JRubyClassLoader;
+import org.jruby.util.ClassDefiningClassLoader;
 
-import java.lang.reflect.InvocationTargetException;
+import java.lang.invoke.MethodHandle;
+import java.lang.invoke.MethodHandles;
 import java.lang.reflect.Method;
 
-public class Compiler extends IRTranslator<Script, JRubyClassLoader> {
+public class Compiler extends IRTranslator<ScriptAndCode, ClassDefiningClassLoader> {
 
     // Compiler is singleton
     private Compiler() {}
@@ -35,49 +42,86 @@ public class Compiler extends IRTranslator<Script, JRubyClassLoader> {
     }
 
     @Override
-    protected Script execute(final Ruby runtime, final IRScope scope, JRubyClassLoader classLoader) {
-        final JVMVisitor visitor = new JVMVisitor();
-        final Class compiled = visitor.compile(scope, classLoader);
-        final StaticScope staticScope = scope.getStaticScope();
-        final IRubyObject runtimeTopSelf = runtime.getTopSelf();
-        staticScope.setModule(runtimeTopSelf.getMetaClass());
+    protected ScriptAndCode execute(final Ruby runtime, final IRScriptBody scope, ClassDefiningClassLoader classLoader) {
+        JVMVisitor visitor;
+        byte[] bytecode;
+        Class compiled;
 
-        Method _compiledMethod;
+        MethodHandle _compiledHandle;
         try {
-            _compiledMethod = compiled.getMethod("__script__", ThreadContext.class,
-                    StaticScope.class, IRubyObject.class, IRubyObject[].class, Block.class, RubyModule.class);
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
-        final Method compiledMethod = _compiledMethod;
+            visitor = new JVMVisitor();
+            bytecode = visitor.compileToBytecode(scope);
+            compiled = visitor.defineFromBytecode(scope, bytecode, classLoader);
 
-        return new AbstractScript() {
+            Method compiledMethod = compiled.getMethod("RUBY$script", ThreadContext.class,
+                    StaticScope.class, IRubyObject.class, IRubyObject[].class, Block.class, RubyModule.class, String.class);
+            _compiledHandle = MethodHandles.publicLookup().unreflect(compiledMethod);
+        } catch (NotCompilableException nce) {
+            throw nce;
+        } catch (Throwable t) {
+            throw new NotCompilableException("failed to compile script " + scope.getName(), t);
+        }
+
+        final MethodHandle compiledHandle = _compiledHandle;
+
+        Script script = new AbstractScript() {
             @Override
             public IRubyObject __file__(ThreadContext context, IRubyObject self, IRubyObject[] args, Block block) {
                 try {
-                    return (IRubyObject) compiledMethod.invoke(null,
-                            runtime.getCurrentContext(), scope.getStaticScope(), runtimeTopSelf, IRubyObject.NULL_ARRAY, block, runtimeTopSelf.getMetaClass());
-                } catch (InvocationTargetException ite) {
-                    if (ite.getCause() instanceof JumpException) {
-                        throw (JumpException) ite.getCause();
-                    } else {
-                        throw new RuntimeException(ite);
-                    }
-                } catch (Exception e) {
-                    throw new RuntimeException(e);
+                    return (IRubyObject) compiledHandle.invokeWithArguments(context, scope.getStaticScope(), self, IRubyObject.NULL_ARRAY, block, self.getMetaClass(), Interpreter.ROOT);
+                } catch (Throwable t) {
+                    Helpers.throwException(t);
+                    return null; // not reached
                 }
             }
 
             @Override
             public IRubyObject load(ThreadContext context, IRubyObject self, boolean wrap) {
-                Helpers.preLoadCommon(context, staticScope, false);
+                // Compiler does not support BEGIN/END yet and should fail to compile above
+                {
+//                BeginEndInterpreterContext ic = (BeginEndInterpreterContext) irScope.prepareForInterpretation();
+
+                    // We get the live object ball rolling here.
+                    // This give a valid value for the top of this lexical tree.
+                    // All new scopes can then retrieve and set based on lexical parent.
+//                StaticScope scope = ic.getStaticScope();
+                }
+                // Copied from Interpreter
+                StaticScope sscope = scope.getStaticScope();
+                RubyModule currModule = sscope.getModule();
+                if (currModule == null) {
+                    // SSS FIXME: Looks like this has to do with Kernel#load
+                    // and the wrap parameter. Figure it out and document it here.
+                    currModule = context.getRuntime().getObject();
+                }
+
+                sscope.setModule(currModule);
+                DynamicScope tlbScope = scope.getToplevelScope();
+                if (tlbScope == null) {
+                    context.preMethodScopeOnly(sscope);
+                } else {
+                    sscope = tlbScope.getStaticScope();
+                    context.preScopedBody(tlbScope);
+                    tlbScope.growIfNeeded();
+                }
+                context.setCurrentVisibility(Visibility.PRIVATE);
+
                 try {
-                    return __file__(context, self, IRubyObject.NULL_ARRAY, Block.NULL_BLOCK);
+//                    runBeginEndBlocks(ic.getBeginBlocks(), context, self, scope, null);
+                    return (IRubyObject) compiledHandle.invokeWithArguments(context, sscope, self, IRubyObject.NULL_ARRAY, Block.NULL_BLOCK, currModule, Interpreter.ROOT);
+                } catch (IRBreakJump bj) {
+                    throw IRException.BREAK_LocalJumpError.getException(context.runtime);
+                } catch (Throwable t) {
+                    Helpers.throwException(t);
+                    return null; // not reached
                 } finally {
-                    Helpers.postLoad(context);
+//                    runEndBlocks(ic.getEndBlocks(), context, self, scope, null);
+                    context.popScope();
                 }
             }
         };
+
+        return new ScriptAndCode(bytecode, script);
 
     }
 

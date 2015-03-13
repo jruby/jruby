@@ -9,6 +9,8 @@ project 'JRuby', 'https://github.com/jruby/jruby' do
 
   description 'JRuby is the effort to recreate the Ruby (http://www.ruby-lang.org) interpreter in Java.'
 
+  organization 'JRuby', 'http://jruby.org'
+
   [ 'headius', 'enebo', 'wmeissner', 'BanzaiMan', 'mkristian' ].each do |name|
     developer name do
       name name
@@ -24,6 +26,10 @@ project 'JRuby', 'https://github.com/jruby/jruby' do
     end
   end
 
+  license 'GPL 3', 'http://www.gnu.org/licenses/gpl-3.0-standalone.html'
+  license 'LGPL 3', 'http://www.gnu.org/licenses/lgpl-3.0-standalone.html'
+  license 'EPL', 'http://www.eclipse.org/legal/epl-v10.html'
+
   plugin_repository( 'https://oss.sonatype.org/content/repositories/snapshots/',
                      :id => 'sonatype' ) do
     releases 'false'
@@ -33,11 +39,6 @@ project 'JRuby', 'https://github.com/jruby/jruby' do
               :id => 'sonatype' ) do
     releases 'false'
     snapshots 'true'
-  end
-  repository( 'http://lafo.ssw.uni-linz.ac.at/nexus/content/repositories/releases/',
-              :id => 'truffle' ) do
-    releases 'true'
-    snapshots 'false'
   end
 
   source_control( :url => 'https://github.com/jruby/jruby',
@@ -50,17 +51,18 @@ project 'JRuby', 'https://github.com/jruby/jruby' do
           :name => 'JRuby Site' )
   end
 
-  properties( 'minitest-excludes.version' => '1.0.2',
+  properties( 'its.j2ee' => 'j2ee*/pom.xml',
+              'its.osgi' => 'osgi*/pom.xml',
               'tesla.version' => '0.1.1',
               'rspec-core.version' => '2.14.2',
               'jruby.basedir' => '${project.basedir}',
-              'minitest.version' => '5.0.7',
+              'minitest.version' => '5.4.1',
               'ant.version' => '1.9.2',
               'diff-lcs.version' => '1.1.3',
-              'jffi.version' => '1.2.7',
+              'jffi.version' => '1.2.8',
               'rake.version' => '10.1.0',
               'project.build.sourceEncoding' => 'utf-8',
-              'jruby-launcher.version' => '1.0.19',
+              'jruby-launcher.version' => '1.1.1',
               'asm.version' => '5.0.3',
               'rspec-expectations.version' => '2.14.0',
               'base.javac.version' => '1.7',
@@ -71,17 +73,22 @@ project 'JRuby', 'https://github.com/jruby/jruby' do
               'base.java.version' => '1.7',
               'tesla.dump.readonly' => 'true',
               'rspec-mocks.version' => '2.14.1',
-              'jruby.plugins.version' => '1.0.5',
+              'jruby.plugins.version' => '1.0.7',
               'invoker.skip' => 'true',
               'json.version' => '1.8.0',
               'version.jruby' => '${project.version}',
               'bouncy-castle.version' => '1.47',
               'github.global.server' => 'github',
               'main.basedir' => '${project.basedir}',
-              'jruby.home' => '${project.basedir}',
-              'joda.time.version' => '2.3' )
+              'joda.time.version' => '2.5',
+              'test-unit.version' => '3.0.3',
+              'power_assert.version' => '0.1.4' )
 
-  modules [ 'core', 'lib' ]
+  unless version =~ /-SNAPSHOT/
+    properties 'jruby.home' => '${basedir}/..'
+  end
+
+  modules [ 'truffle', 'core', 'lib' ]
 
   plugin_management do
     jar( 'junit:junit:4.11',
@@ -123,11 +130,14 @@ project 'JRuby', 'https://github.com/jruby/jruby' do
     plugin( :invoker, '1.8',
             'settingsFile' =>  '${basedir}/src/it/settings.xml',
             'localRepositoryPath' =>  '${project.build.directory}/local-repo',
+            'properties' => { 'project.version' => '${project.version}' },
             'pomIncludes' => [ '*/pom.xml' ],
+            'pomExcludes' => [ 'extended/pom.xml', '${its.j2ee}', '${its.osgi}' ],
             'projectsDirectory' =>  'src/it',
             'cloneProjectsTo' =>  '${project.build.directory}/it',
             'preBuildHookScript' =>  'setup.bsh',
             'postBuildHookScript' =>  'verify.bsh',
+            'goals' => [:install],
             'streamLogs' =>  'true' ) do
       execute_goals( 'install', 'run',
                      :id => 'integration-test' )
@@ -157,25 +167,25 @@ project 'JRuby', 'https://github.com/jruby/jruby' do
 
 
   build do
-    default_goal 'package'
+    default_goal 'install'
   end
 
-  profile 'ext' do
-
-    modules [ 'ext' ]
-
-    build do
-      default_goal 'install'
-    end
+  profile 'test' do
+    properties 'invoker.skip' => false
+    modules [ 'test' ]
   end
 
-  [ 'rake', 'exec', 'truffle-specs-language', 'truffle-specs-core', 'truffle-test-pe' ].each do |name|
+  [
+    'rake', 'exec', 'truffle-specs-language', 'truffle-specs-core',
+    'truffle-specs-rubysl', 'truffle-specs-language-report',
+    'truffle-specs-core-report', 'truffle-specs-rubysl-report', 'truffle-test-pe'
+  ].each do |name|
     profile name do
 
       modules [ 'test' ]
 
       build do
-        default_goal 'test'
+        default_goal 'package'
       end
     end
   end
@@ -196,7 +206,34 @@ project 'JRuby', 'https://github.com/jruby/jruby' do
 
       build do
         default_goal 'install'
+	plugin_management do
+          plugin :surefire, '2.15', :skipTests => true
+        end
       end
+    end
+  end
+
+  [ 'osgi', 'j2ee' ].each do |name|
+    profile name do
+
+      modules [ 'maven' ]
+    
+      properties( 'invoker.skip' => false,
+                  "its.#{name}" => 'no-excludes/pom.xml' )
+      
+      build do
+        default_goal 'install'
+        plugin :invoker, 'pomIncludes' => [ "#{name}*/pom.xml" ]
+      end
+    end
+  end
+
+  profile 'jruby_complete_jar_extended' do
+
+    modules [ 'test', 'maven' ]
+
+    build do
+      default_goal 'install'
     end
   end
 
@@ -205,8 +242,6 @@ project 'JRuby', 'https://github.com/jruby/jruby' do
   profile 'all' do
 
     modules all_modules
-
-    #snapshot_repository 'http://ci.jruby.org/snapshots/maven', :id => 'jruby-snapshots'
 
     build do
       default_goal 'install'
@@ -243,6 +278,13 @@ project 'JRuby', 'https://github.com/jruby/jruby' do
     build do
       default_goal :deploy
     end
+  end
+
+  profile 'single invoker test' do
+    activation do
+      property :name => 'invoker.test'
+    end
+    properties 'invoker.skip' => false
   end
 
   reporting do

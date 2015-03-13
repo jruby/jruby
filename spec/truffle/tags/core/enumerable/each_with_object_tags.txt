@@ -1,3 +1,0 @@
-fails:Enumerable#each_with_object passes each element and its argument to the block
-fails:Enumerable#each_with_object returns an enumerator if no block
-fails:Enumerable#each_with_object gathers whole arrays as elements when each yields multiple

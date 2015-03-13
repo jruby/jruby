@@ -13,4 +13,3 @@ fails:Kernel#test calls #to_path on second argument when passed ?d and a directo
 fails:Kernel#test time commands returns the last access time for the provided file when passed ?A
 fails:Kernel#test time commands returns the time at which the file was created when passed ?C
 fails:Kernel#test time commands returns the time at which the file was modified when passed ?M
-fails:Kernel.test needs to be reviewed for spec completeness

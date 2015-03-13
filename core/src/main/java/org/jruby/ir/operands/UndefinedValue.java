@@ -2,7 +2,7 @@ package org.jruby.ir.operands;
 
 import org.jruby.*;
 import org.jruby.ir.IRVisitor;
-import org.jruby.ir.transformations.inlining.InlinerInfo;
+import org.jruby.ir.transformations.inlining.CloneInfo;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.DynamicScope;
@@ -34,7 +34,7 @@ public class UndefinedValue extends Operand implements IRubyObject {
     }
 
     @Override
-    public Operand cloneForInlining(InlinerInfo ii) {
+    public Operand cloneForInlining(CloneInfo ii) {
         return this;
     }
 
@@ -123,6 +123,9 @@ public class UndefinedValue extends Operand implements IRubyObject {
      * @return
      */
     public boolean isImmediate() { throw undefinedOperation(); }
+
+    @Override
+    public boolean isSpecialConst() { throw undefinedOperation(); }
 
     /**
      * RubyMethod getRubyClass.

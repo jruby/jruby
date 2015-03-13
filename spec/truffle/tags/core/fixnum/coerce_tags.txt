@@ -1,6 +1,0 @@
-fails:Fixnum#coerce when given a Fixnum returns an array containing two Fixnums
-fails:Fixnum#coerce when given a String raises an ArgumentError when trying to coerce with a non-number String
-fails:Fixnum#coerce when given a String returns  an array containing two Floats
-fails:Fixnum#coerce raises a TypeError when trying to coerce with nil
-fails:Fixnum#coerce tries to convert the given Object into a Float by using #to_f
-fails:Fixnum#coerce raises a TypeError when given an Object that does not respond to #to_f

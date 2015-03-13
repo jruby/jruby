@@ -44,7 +44,7 @@ public class OrNode extends Node implements BinaryOperatorNode {
     private final Node secondNode;
 
     public OrNode(ISourcePosition position, Node firstNode, Node secondNode) {
-        super(position);
+        super(position, firstNode.containsVariableAssignment() || secondNode.containsVariableAssignment());
         
         assert firstNode != null : "firstNode is not null";
         assert secondNode != null : "secondNode is not null";

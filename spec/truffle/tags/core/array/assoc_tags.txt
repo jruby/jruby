@@ -1,3 +1,0 @@
-fails:Array#assoc returns the first array whose 1st item is == obj or nil
-fails:Array#assoc calls == on first element of each array
-fails:Array#assoc ignores any non-Array elements

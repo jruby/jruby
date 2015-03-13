@@ -1,10 +1,12 @@
 module GC
-  def self.stat(all_stats = {})
+  def self.stat(all_stats_or_key = {})
     gc_beans = java.lang.management.ManagementFactory.garbage_collector_mx_beans
     pool_beans = {}
     java.lang.management.ManagementFactory.memory_pool_mx_beans.each do |pool_bean|
       pool_beans[pool_bean.name] = pool_bean
     end
+
+    all_stats = all_stats_or_key.is_a?(Hash) ? all_stats_or_key : {}
 
     all_stats.merge!({
         :count => 0,
@@ -53,7 +55,15 @@ module GC
       end
     end
 
-    all_stats
+    if all_stats_or_key.is_a?(Symbol)
+      if all_stats.key?(all_stats_or_key)
+        all_stats[all_stats_or_key]
+      else
+        raise ArgumentError.new(format("Unknown key %s", all_stats_or_key).force_encoding("UTF-8"))
+      end
+    else
+      all_stats
+    end
   end
 
   begin
@@ -214,8 +224,6 @@ module GC
             duration = 0
 
             @gc_listener.lines.each_with_index do |line, i|
-              puts HEADER if i % 20 == 0
-
               gc_notification = com.sun.management.GarbageCollectionNotificationInfo.from(line.user_data)
               gc_info = gc_notification.gc_info
 

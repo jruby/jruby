@@ -44,7 +44,7 @@ public class GlobalVarNode extends Node implements INameNode {
     private String name;
 
     public GlobalVarNode(ISourcePosition position, String name) {
-        super(position);
+        super(position, false);
         this.name = name;
     }
 

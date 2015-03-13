@@ -1,11 +1,13 @@
 package org.jruby.ir.persistence;
 
-import org.jcodings.specific.ASCIIEncoding;
+import org.jcodings.specific.USASCIIEncoding;
+import org.jcodings.specific.UTF8Encoding;
+import org.jruby.RubyEncoding;
 import org.jruby.RubyInstanceConfig;
 import org.jruby.ir.IRClosure;
 import org.jruby.ir.IRManager;
 import org.jruby.ir.operands.*;
-import org.jruby.ir.persistence.read.parser.NonIRObjectFactory;
+import org.jruby.util.ByteList;
 import org.jruby.util.KeyValuePair;
 import org.jruby.util.RegexpOptions;
 
@@ -40,26 +42,25 @@ class OperandDecoderMap {
             case DYNAMIC_SYMBOL: return new DynamicSymbol(d.decodeOperand());
             case FIXNUM: return new Fixnum(d.decodeLong());
             case FLOAT: return new org.jruby.ir.operands.Float(d.decodeDouble());
+            case FROZEN_STRING: return FrozenString.decode(d);
             case GLOBAL_VARIABLE: return new GlobalVariable(d.decodeString());
             case HASH: return decodeHash();
             case IR_EXCEPTION: return IRException.getExceptionFromOrdinal(d.decodeByte());
             case LABEL: return decodeLabel();
             case LOCAL_VARIABLE: return d.getCurrentScope().getLocalVariable(d.decodeString(), d.decodeInt());
-            case METHOD_HANDLE: return new MethodHandle(d.decodeOperand(), d.decodeOperand());
-            case METH_ADDR: return new MethAddr(d.decodeString());
             case NIL: return manager.getNil();
             case NTH_REF: return new NthRef(d.decodeInt());
             case OBJECT_CLASS: return new ObjectClass();
-            case RANGE: return new Range(d.decodeOperand(), d.decodeOperand(), d.decodeBoolean());
             case REGEXP: return decodeRegexp();
             case SCOPE_MODULE: return new ScopeModule(d.decodeInt());
             case SELF: return Self.SELF;
-            case SPLAT: return new Splat(d.decodeOperand(), d.decodeBoolean());
+            case SPLAT: return new Splat(d.decodeOperand());
             case STANDARD_ERROR: return new StandardError();
-            case STRING_LITERAL: return new StringLiteral(d.decodeString());
+            case STRING_LITERAL: return StringLiteral.decode(d);
             case SVALUE: return new SValue(d.decodeOperand());
-            case SYMBOL: return new Symbol(d.decodeString());
-            case TEMPORARY_VARIABLE: return decodeTemporaryVariable();
+            // FIXME: This is broken since there is no encode/decode for encoding
+            case SYMBOL: return new Symbol(d.decodeString(), USASCIIEncoding.INSTANCE);
+            case TEMPORARY_VARIABLE: return TemporaryLocalVariable.decode(d);
             case UNBOXED_BOOLEAN: return new UnboxedBoolean(d.decodeBoolean());
             case UNBOXED_FIXNUM: return new UnboxedFixnum(d.decodeLong());
             case UNBOXED_FLOAT: return new UnboxedFloat(d.decodeDouble());
@@ -106,31 +107,11 @@ class OperandDecoderMap {
     }
 
     private Regexp decodeRegexp() {
-        Operand regex = d.decodeOperand();
+        // FIXME: This is wrong
+        String source = d.decodeString();
         boolean isNone = d.decodeBoolean();
         RegexpOptions options = RegexpOptions.fromEmbeddedOptions(d.decodeInt());
         options.setEncodingNone(isNone);
-        return new Regexp(regex, options);
-    }
-
-    private Operand decodeTemporaryVariable() {
-        TemporaryVariableType type = d.decodeTemporaryVariableType();
-
-        switch(type) {
-            case CLOSURE:
-                return new TemporaryClosureVariable(d.decodeInt(), d.decodeInt());
-            case CURRENT_MODULE:
-                return new TemporaryCurrentModuleVariable(d.decodeInt());
-            case CURRENT_SCOPE:
-                return new TemporaryCurrentScopeVariable(d.decodeInt());
-            case FLOAT:
-                return new TemporaryFloatVariable(d.decodeInt());
-            case FIXNUM:
-                return new TemporaryFixnumVariable(d.decodeInt());
-            case LOCAL:
-                return new TemporaryLocalVariable(d.decodeInt());
-        }
-
-        return null;
+        return new Regexp(new ByteList(source.getBytes(RubyEncoding.UTF8), UTF8Encoding.INSTANCE), options);
     }
 }

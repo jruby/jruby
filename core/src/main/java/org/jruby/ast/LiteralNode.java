@@ -16,7 +16,7 @@ public class LiteralNode extends Node implements InvisibleNode {
     private String name;
 
     public LiteralNode(ISourcePosition position, String name) {
-        super(position);
+        super(position, false);
 
         this.name = name;
     }

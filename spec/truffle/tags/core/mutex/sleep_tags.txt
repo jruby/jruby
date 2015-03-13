@@ -1,8 +1,0 @@
-fails:Mutex#sleep raises an ArgumentError if passed a negative duration
-fails:Mutex#sleep pauses execution for approximately the duration requested
-fails:Mutex#sleep unlocks the mutex while sleeping
-fails:Mutex#sleep relocks the mutex when woken
-fails:Mutex#sleep relocks the mutex when woken by an exception being raised
-fails:Mutex#sleep returns the rounded number of seconds asleep
-fails:Mutex#sleep when not locked by the current thread raises a ThreadError
-fails:Mutex#sleep when not locked by the current thread raises an ArgumentError if passed a negative duration

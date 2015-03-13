@@ -5,10 +5,8 @@ import org.jruby.ir.instructions.Instr;
 import org.jruby.ir.instructions.JumpInstr;
 import org.jruby.ir.instructions.ReturnInstr;
 
-import java.util.ArrayList;
 import java.util.BitSet;
 import java.util.Iterator;
-import java.util.List;
 
 import static org.jruby.ir.representations.CFG.EdgeType.*;
 
@@ -39,70 +37,72 @@ import static org.jruby.ir.representations.CFG.EdgeType.*;
  * opts.  In that scenario, it may be worth it to not run the linearizer at all.
  */
 public class CFGLinearizer {
-    public static List<BasicBlock> linearize(CFG cfg) {
-        List<BasicBlock> list = new ArrayList<BasicBlock>();
-        BitSet processed = new BitSet(cfg.size()); // Assumes all id's are used
+    public static BasicBlock[] linearize(CFG cfg) {
+        BasicBlock[] list = new BasicBlock[cfg.size()];
+        BitSet processed = new BitSet(cfg.size());
 
-        linearizeInner(cfg, list, processed, cfg.getEntryBB());
+        int listSize = linearizeInner(cfg, list, 0, processed, cfg.getEntryBB());
         verifyAllBasicBlocksProcessed(cfg, processed);
-        fixupList(cfg, list);
+        fixupList(cfg, list, listSize);
 
         return list;
     }
 
-    private static void linearizeInner(CFG cfg, List<BasicBlock> list,
+    private static int linearizeInner(CFG cfg, BasicBlock[] list, int listSize,
             BitSet processed, BasicBlock current) {
-        if (processed.get(current.getID())) return;
+        if (processed.get(current.getID())) return listSize;
 
         // Cannot lay out current block till its fall-through predecessor has been laid out already
         BasicBlock source = cfg.getIncomingSourceOfType(current, FALL_THROUGH);
-        if (source != null && !processed.get(source.getID())) return;
+        if (source != null && !processed.get(source.getID())) return listSize;
 
-        list.add(current);
+        list[listSize] = current;
+        listSize++;
         processed.set(current.getID());
 
         // First, fall-through BB
         BasicBlock fallThrough = cfg.getOutgoingDestinationOfType(current, FALL_THROUGH);
-        if (fallThrough != null) linearizeInner(cfg, list, processed, fallThrough);
+        if (fallThrough != null) listSize = linearizeInner(cfg, list, listSize, processed, fallThrough);
 
         // Next, regular edges
         for (BasicBlock destination: cfg.getOutgoingDestinationsOfType(current, REGULAR)) {
-            linearizeInner(cfg, list, processed, destination);
+            listSize = linearizeInner(cfg, list, listSize, processed, destination);
         }
 
         // Next, exception edges
         for (BasicBlock destination: cfg.getOutgoingDestinationsOfType(current, EXCEPTION)) {
-            linearizeInner(cfg, list, processed, destination);
+            listSize = linearizeInner(cfg, list, listSize, processed, destination);
         }
 
         // Next, exit
         for (BasicBlock destination: cfg.getOutgoingDestinationsOfType(current, EXIT)) {
-            linearizeInner(cfg, list, processed, destination);
+            listSize = linearizeInner(cfg, list, listSize, processed, destination);
         }
+
+        return listSize;
     }
 
     /**
      * Process (fixup) list of instruction and add or remove jumps.
      */
-    private static void fixupList(CFG cfg, List<BasicBlock> list) {
-        int n = list.size();
-        for (int i = 0; i < n - 1; i++) {
-            BasicBlock current = list.get(i);
+    private static void fixupList(CFG cfg, BasicBlock[] list, int listSize) {
+        for (int i = 0; i < listSize - 1; i++) {
+            BasicBlock current = list[i];
 
             if (current.isExitBB()) { // exit not last
-                current.addInstr(new ReturnInstr(cfg.getScope().getManager().getNil()));
+                current.addInstr(new ReturnInstr(cfg.getManager().getNil()));
                 continue;
             }
 
             Instr lastInstr = current.getLastInstr();
             if (lastInstr instanceof JumpInstr) { // if jumping to next BB then remove it
-                tryAndRemoveUnneededJump(list.get(i + 1), cfg, lastInstr, current);
+                tryAndRemoveUnneededJump(list[i + 1], cfg, lastInstr, current);
             } else {
-                addJumpIfNextNotDestination(cfg, list.get(i + 1), lastInstr, current);
+                addJumpIfNextNotDestination(cfg, list[i + 1], lastInstr, current);
             }
         }
 
-        BasicBlock current = list.get(n - 1);
+        BasicBlock current = list[listSize - 1];
         if (!current.isExitBB()) {
             Instr lastInstr = current.getLastInstr();
             // Last instruction of the last basic block in the linearized list can NEVER

@@ -1,11 +1,5 @@
-fails:String#encode raises ArgumentError if the value of the :xml option is not :text or :attr
-fails:String#encode when passed no options transcodes to Encoding.default_internal when set
 fails:String#encode when passed no options transcodes a 7-bit String despite no generic converting being available
 fails:String#encode when passed no options raises an Encoding::ConverterNotFoundError when no conversion is possible
-fails:String#encode when passed to encoding accepts a String argument
-fails:String#encode when passed to encoding calls #to_str to convert the object to an Encoding
-fails:String#encode when passed to encoding transcodes to the passed encoding
-fails:String#encode when passed to encoding transcodes Japanese multibyte characters
 fails:String#encode when passed to encoding transcodes a 7-bit String despite no generic converting being available
 fails:String#encode when passed to encoding raises an Encoding::ConverterNotFoundError when no conversion is possible
 fails:String#encode when passed to encoding raises an Encoding::ConverterNotFoundError for an invalid encoding
@@ -26,7 +20,6 @@ fails:String#encode when passed to, from, options calls #to_hash to convert the 
 fails:String#encode given the :xml => :text option replaces all instances of '&' with '&amp;'
 fails:String#encode given the :xml => :text option replaces all instances of '<' with '&lt;'
 fails:String#encode given the :xml => :text option replaces all instances of '>' with '&gt;'
-fails:String#encode given the :xml => :text option does not replace '"'
 fails:String#encode given the :xml => :text option replaces undefined characters with their upper-case hexadecimal numeric character references
 fails:String#encode given the :xml => :attr option surrounds the encoded text with double-quotes
 fails:String#encode given the :xml => :attr option replaces all instances of '&' with '&amp;'
@@ -34,11 +27,6 @@ fails:String#encode given the :xml => :attr option replaces all instances of '<'
 fails:String#encode given the :xml => :attr option replaces all instances of '>' with '&gt;'
 fails:String#encode given the :xml => :attr option replaces all instances of '"' with '&quot;'
 fails:String#encode given the :xml => :attr option replaces undefined characters with their upper-case hexadecimal numeric character references
-fails:String#encode when passed no options returns a copy when Encoding.default_internal is nil
-fails:String#encode when passed no options returns a copy for a ASCII-only String when Encoding.default_internal is nil
-fails:String#encode when passed no options encodes an ascii substring of a binary string to UTF-8
-fails:String#encode when passed to encoding returns a copy when passed the same encoding as the String
-fails:String#encode when passed to encoding round trips a String
 fails:String#encode when passed options returns a copy when Encoding.default_internal is nil
 fails:String#encode when passed options normalizes newlines
 fails:String#encode when passed to, from returns a copy when both encodings are the same
@@ -88,3 +76,4 @@ fails:String#encode! when passed no options returns self for a ASCII-only String
 fails:String#encode! when passed options returns self for ASCII-only String when Encoding.default_internal is nil
 fails:String#encode! when passed to encoding returns self
 fails:String#encode! when passed to, from returns self
+fails:String#encode raises ArgumentError if the value of the :xml option is not :text or :attr

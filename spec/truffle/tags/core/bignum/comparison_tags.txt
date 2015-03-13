@@ -1,15 +1,3 @@
-fails:Bignum#<=> returns 1 when self is Infinity and other is a Bignum
-fails:Bignum#<=> returns -1 when self is negative and other is Infinty
-fails:Bignum#<=> returns 1 when self is negative and other is -Infinity
-fails:Bignum#<=> returns -1 when self is -Infinity and other is negative
-fails:Bignum#<=> with a Float when other is negative returns -1 when self is negative and other is larger
-fails:Bignum#<=> with a Float when other is negative returns 0 when other is equal
-fails:Bignum#<=> with a Float when other is negative returns 1 when self is negative and other is smaller
-fails:Bignum#<=> with a Float when other is negative returns 1 when self is positive
-fails:Bignum#<=> with a Float when other is positive returns -1 when self is negative
-fails:Bignum#<=> with a Float when other is positive returns -1 when self is positive and other is larger
-fails:Bignum#<=> with a Float when other is positive returns 0 when other is equal
-fails:Bignum#<=> with a Float when other is positive returns 1 when other is smaller
 fails:Bignum#<=> with an Object calls #coerce on other
 fails:Bignum#<=> with an Object returns nil if #coerce raises an exception
 fails:Bignum#<=> with an Object raises an exception if #coerce raises a non-StandardError exception

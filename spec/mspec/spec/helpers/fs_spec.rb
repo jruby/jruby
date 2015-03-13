@@ -12,8 +12,8 @@ describe Object, "#cp" do
   end
 
   after :each do
-    File.delete @source if File.exists? @source
-    File.delete @copy if File.exists? @copy
+    File.delete @source if File.exist? @source
+    File.delete @copy if File.exist? @copy
   end
 
   it "copies a file" do
@@ -30,17 +30,17 @@ describe Object, "#touch" do
   end
 
   after :each do
-    File.delete @name if File.exists? @name
+    File.delete @name if File.exist? @name
   end
 
   it "creates a file" do
     touch @name
-    File.exists?(@name).should be_true
+    File.exist?(@name).should be_true
   end
 
   it "accepts an optional mode argument" do
     touch @name, "wb"
-    File.exists?(@name).should be_true
+    File.exist?(@name).should be_true
   end
 
   it "overwrites an existing file" do
@@ -68,7 +68,7 @@ describe Object, "#touch" do
 
   it "creates all the directories in the path to the file" do
     touch @name
-    File.exists?(@name).should be_true
+    File.exist?(@name).should be_true
   end
 end
 
@@ -113,10 +113,10 @@ describe Object, "#rm_r" do
   end
 
   after :each do
-    File.delete @link if File.exists? @link or File.symlink? @link
-    File.delete @socket if File.exists? @socket
-    File.delete @subfile if File.exists? @subfile
-    File.delete @topfile if File.exists? @topfile
+    File.delete @link if File.exist? @link or File.symlink? @link
+    File.delete @socket if File.exist? @socket
+    File.delete @subfile if File.exist? @subfile
+    File.delete @topfile if File.exist? @topfile
 
     Dir.rmdir @subdir2 if File.directory? @subdir2
     Dir.rmdir @subdir1 if File.directory? @subdir1
@@ -129,20 +129,20 @@ describe Object, "#rm_r" do
 
   it "removes a single file" do
     rm_r @subfile
-    File.exists?(@subfile).should be_false
+    File.exist?(@subfile).should be_false
   end
 
   it "removes multiple files" do
     rm_r @topfile, @subfile
-    File.exists?(@topfile).should be_false
-    File.exists?(@subfile).should be_false
+    File.exist?(@topfile).should be_false
+    File.exist?(@subfile).should be_false
   end
 
   platform_is_not :windows do
     it "removes a symlink to a file" do
       File.symlink @topfile, @link
       rm_r @link
-      File.exists?(@link).should be_false
+      File.exist?(@link).should be_false
     end
 
     it "removes a symlink to a directory" do
@@ -151,7 +151,7 @@ describe Object, "#rm_r" do
       lambda do
         File.lstat(@link)
       end.should raise_error(Errno::ENOENT)
-      File.exists?(@subdir1).should be_true
+      File.exist?(@subdir1).should be_true
     end
 
     it "removes a dangling symlink" do
@@ -166,7 +166,7 @@ describe Object, "#rm_r" do
       require 'socket'
       UNIXServer.new(@socket).close
       rm_r @socket
-      File.exists?(@socket).should be_false
+      File.exist?(@socket).should be_false
     end
   end
 

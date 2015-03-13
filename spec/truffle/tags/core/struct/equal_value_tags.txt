@@ -1,4 +1,0 @@
-fails:Struct#== returns true if the other is the same object
-fails:Struct#== returns true if the other has all the same fields
-fails:Struct#== returns false if the other is a different object or has different fields
-fails:Struct#== handles recursive structures by returning false if a difference can be found

@@ -1,1 +1,0 @@
-fails:A Proc taking |(a, b)| arguments raises an TypeError if #to_ary does not return an Array

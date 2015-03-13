@@ -26,7 +26,6 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.util.io;
 
-import com.oracle.truffle.api.dsl.TypeCheck;
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubyFixnum;
@@ -58,6 +57,7 @@ import java.util.concurrent.Future;
  * Finally, it tries to build a minimal number of data structures an reuse them
  * as much as possible.
  */
+@Deprecated
 public class SelectBlob {
     public SelectBlob() {}
 
@@ -292,8 +292,8 @@ private void doSelect(Ruby runtime, final boolean has_timeout, long timeout) thr
     }
 }
     
-    public static final int READ_ACCEPT_OPS = SelectionKey.OP_READ | SelectionKey.OP_ACCEPT;
-    public static final int WRITE_CONNECT_OPS = SelectionKey.OP_WRITE | SelectionKey.OP_CONNECT;
+    public static final int READ_ACCEPT_OPS = SelectExecutor.READ_ACCEPT_OPS;
+    public static final int WRITE_CONNECT_OPS = SelectExecutor.WRITE_CONNECT_OPS;
     private static final int CANCELLED_OPS = SelectionKey.OP_READ | SelectionKey.OP_ACCEPT | SelectionKey.OP_CONNECT;
     
     private static boolean ready(int ops, int mask) {

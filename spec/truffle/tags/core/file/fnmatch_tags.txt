@@ -1,6 +1,10 @@
 fails:File.fnmatch matches entire strings
 fails:File.fnmatch does not match partial strings
-fails:File.fnmatch does not support { } patterns
+fails:File.fnmatch does not support { } patterns by default
+fails:File.fnmatch supports some { } patterns when File::FNM_EXTGLOB is passed
+fails:File.fnmatch doesn't support some { } patterns even when File::FNM_EXTGLOB is passed
+fails:File.fnmatch doesn't match an extra } when File::FNM_EXTGLOB is passed
+fails:File.fnmatch matches when both FNM_EXTGLOB and FNM_PATHNAME are passed
 fails:File.fnmatch matches a single character for each ? character
 fails:File.fnmatch matches zero or more characters for each * character
 fails:File.fnmatch matches ranges of characters using bracket expresions (e.g. [a-z])
@@ -29,7 +33,11 @@ fails:File.fnmatch raises a TypeError if the third argument is not an Integer
 fails:File.fnmatch does not raise a TypeError if the third argument can be coerced to an Integer
 fails:File.fnmatch? matches entire strings
 fails:File.fnmatch? does not match partial strings
-fails:File.fnmatch? does not support { } patterns
+fails:File.fnmatch? does not support { } patterns by default
+fails:File.fnmatch? supports some { } patterns when File::FNM_EXTGLOB is passed
+fails:File.fnmatch? doesn't support some { } patterns even when File::FNM_EXTGLOB is passed
+fails:File.fnmatch? doesn't match an extra } when File::FNM_EXTGLOB is passed
+fails:File.fnmatch? matches when both FNM_EXTGLOB and FNM_PATHNAME are passed
 fails:File.fnmatch? matches a single character for each ? character
 fails:File.fnmatch? matches zero or more characters for each * character
 fails:File.fnmatch? matches ranges of characters using bracket expresions (e.g. [a-z])
@@ -56,3 +64,5 @@ fails:File.fnmatch? accepts an object that has a #to_path method
 fails:File.fnmatch? raises a TypeError if the first and second arguments are not string-like
 fails:File.fnmatch? raises a TypeError if the third argument is not an Integer
 fails:File.fnmatch? does not raise a TypeError if the third argument can be coerced to an Integer
+fails(windows):File.fnmatch matches case sensitive characters on platfroms with case insensitive paths, when flags include FNM_SYSCASE
+fails(windows):File.fnmatch? matches case sensitive characters on platfroms with case insensitive paths, when flags include FNM_SYSCASE

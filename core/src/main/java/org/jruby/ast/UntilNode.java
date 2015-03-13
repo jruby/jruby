@@ -42,8 +42,6 @@ public class UntilNode extends Node {
     private final Node conditionNode;
     private final Node bodyNode;
     private final boolean evaluateAtStart;
-    
-    public boolean containsNonlocalFlow = false;
 
     public UntilNode(ISourcePosition position, Node conditionNode, Node bodyNode) {
         this(position, conditionNode, bodyNode, true);
@@ -54,7 +52,7 @@ public class UntilNode extends Node {
     }
 
     public UntilNode(ISourcePosition position, Node conditionNode, Node bodyNode, boolean evaluateAtStart) {
-        super(position);
+        super(position, conditionNode.containsVariableAssignment() || bodyNode.containsVariableAssignment());
         
         assert conditionNode != null : "conditionNode is not null";
         assert bodyNode != null : "bodyNode is not null";

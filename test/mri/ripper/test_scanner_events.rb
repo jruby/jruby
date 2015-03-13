@@ -38,6 +38,10 @@ class TestRipper::ScannerEvents < Test::Unit::TestCase
                  Ripper.tokenize("print( <<""EOS)\nheredoc\nEOS\n")
     assert_equal ["\#\n", "\n", "\#\n", "\n", "nil", "\n"],
                  Ripper.tokenize("\#\n\n\#\n\nnil\n")
+    assert_equal ["1", "  ", ".", "foo", "\n"],
+                 Ripper.tokenize("1  .foo\n")
+    assert_equal ["1", "\n", "  ", ".", "foo", "\n"],
+                 Ripper.tokenize("1\n  .foo\n")
   end
 
   def test_lex
@@ -708,6 +712,10 @@ class TestRipper::ScannerEvents < Test::Unit::TestCase
     assert_equal ["there\n""heredoc", "\n"],
                  scan('tstring_content', "<<""EOS\n""there\n""heredoc\#@foo\nEOS"),
                  bug7255
+    bug10392 = '[ruby-dev:48647] [Bug #10392]'
+    assert_equal [" E\n\n"],
+                 scan('tstring_content', "<<""'E'\n E\n\n"),
+                 bug10392
   end
 
   def test_heredoc_end
@@ -874,15 +882,28 @@ class TestRipper::ScannerEvents < Test::Unit::TestCase
   end
 
   def test_label
+    assert_equal %w(foo:),
+                 scan('label', '{foo: 1}')
+  end
+
+  def test_label_end
+    assert_equal %w(":),
+                 scan('label_end', '{"foo-bar": 1}')
   end
 
   def test_tlambda
+    assert_equal %w(->),
+                 scan('tlambda', '->{}')
   end
 
   def test_tlambeg
+    assert_equal %w({),
+                 scan('tlambeg', '-> {}')
   end
 
   def test_tlambda_arg
+    assert_equal %w(),
+                 scan('tlambda_arg', '-> {}')
   end
 
 end if ripper_test

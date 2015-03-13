@@ -1,6 +1,0 @@
-fails:Struct[] is a synonym for new
-fails:Struct#[] returns the attribute referenced
-fails:Struct#[] fails when it does not know about the requested attribute
-fails:Struct#[] fails if passed too many arguments
-fails:Struct#[] fails if not passed a string, symbol, or integer
-fails:Struct#[] returns attribute names that contain hyphens

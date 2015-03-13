@@ -1,0 +1,2 @@
+fails:Dir#fileno returns the file descriptor of the dir
+fails(windows):Dir#fileno raises an error

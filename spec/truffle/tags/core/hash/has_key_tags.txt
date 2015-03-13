@@ -1,5 +1,0 @@
-fails:Hash#has_key? returns true if argument is a key
-fails:Hash#has_key? returns true if the key's matching value was nil
-fails:Hash#has_key? returns true if the key's matching value was false
-fails:Hash#has_key? returns true if the key is nil
-fails:Hash#has_key? compares keys with the same #hash value via #eql?

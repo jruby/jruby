@@ -1,5 +1,0 @@
-fails:String#clone copies singleton methods
-fails:String#clone copies modules included in the singleton class
-fails:String#clone copies constants defined in the singleton class
-fails:String#clone copies frozen state
-fails:String#clone does not modify the original string when changing cloned string

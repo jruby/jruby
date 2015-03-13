@@ -1,7 +1,2 @@
-fails:String#upcase returns a copy of self with all lowercase letters upcased
 fails:String#upcase is locale insensitive (only replaces a-z)
-fails:String#upcase taints result when self is tainted
-fails:String#upcase returns a subclass instance for subclasses
-fails:String#upcase! modifies self in place
 fails:String#upcase! returns nil if no modifications were made
-fails:String#upcase! raises a RuntimeError when self is frozen

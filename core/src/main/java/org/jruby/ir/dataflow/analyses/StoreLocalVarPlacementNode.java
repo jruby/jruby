@@ -1,14 +1,13 @@
 package org.jruby.ir.dataflow.analyses;
 
+import org.jruby.dirgra.Edge;
 import org.jruby.ir.IRClosure;
 import org.jruby.ir.IRScope;
 import org.jruby.ir.Operation;
-import org.jruby.ir.dataflow.DataFlowConstants;
 import org.jruby.ir.dataflow.FlowGraphNode;
 import org.jruby.ir.instructions.*;
 import org.jruby.ir.operands.*;
 import org.jruby.ir.representations.BasicBlock;
-import org.jruby.ir.util.Edge;
 
 import java.util.HashSet;
 import java.util.ListIterator;
@@ -92,7 +91,7 @@ public class StoreLocalVarPlacementNode extends FlowGraphNode<StoreLocalVarPlace
                 // Allocate a new hash-set and modify it to get around ConcurrentModificationException on dirtyVars
                 Set<LocalVariable> newDirtyVars = new HashSet<LocalVariable>(dirtyVars);
                 for (LocalVariable v : dirtyVars) {
-                    if ((v instanceof ClosureLocalVariable) && ((ClosureLocalVariable)v).definingScope != scope) {
+                    if ((v instanceof ClosureLocalVariable) && !((ClosureLocalVariable)v).isDefinedLocally()) {
                         newDirtyVars.remove(v);
                     }
                 }
@@ -157,7 +156,7 @@ public class StoreLocalVarPlacementNode extends FlowGraphNode<StoreLocalVarPlace
         //       i,j are dirty inside the block, but not used outside
 
         if (basicBlock.isExitBB()) {
-            LiveVariablesProblem lvp = (LiveVariablesProblem)scope.getDataFlowSolution(DataFlowConstants.LVP_NAME);
+            LiveVariablesProblem lvp = scope.getLiveVariablesProblem();
             java.util.Collection<LocalVariable> liveVars = lvp.getVarsLiveOnScopeExit();
             if (liveVars != null) {
                 dirtyVars.retainAll(liveVars); // Intersection with variables live on exit from the scope
@@ -218,7 +217,7 @@ public class StoreLocalVarPlacementNode extends FlowGraphNode<StoreLocalVarPlace
                         // instance from a different depth and that could mislead us. See if there is a way to fix this.
                         // If we introduced 'definingScope' in all local variables, we could simply check for scope match
                         // without the instanceof check here.
-                        if (   (v instanceof ClosureLocalVariable && ((ClosureLocalVariable)v).definingScope != scope)
+                        if (   (v instanceof ClosureLocalVariable && !((ClosureLocalVariable)v).isDefinedLocally())
                             || (!(v instanceof ClosureLocalVariable) && scope.getScopeType().isClosureType()))
                         {
                             addedStores = true;
@@ -242,7 +241,7 @@ public class StoreLocalVarPlacementNode extends FlowGraphNode<StoreLocalVarPlace
                 // If this also happens to be exit BB, we would have intersected already earlier -- so no need to do it again!
 
                 if (!basicBlock.isExitBB()) {
-                    LiveVariablesProblem lvp = (LiveVariablesProblem)scope.getDataFlowSolution(DataFlowConstants.LVP_NAME);
+                    LiveVariablesProblem lvp = scope.getLiveVariablesProblem();
                     java.util.Collection<LocalVariable> liveVars = lvp.getVarsLiveOnScopeExit();
                     if (liveVars != null) {
                         dirtyVars.retainAll(liveVars); // Intersection with variables live on exit from the scope
@@ -261,9 +260,13 @@ public class StoreLocalVarPlacementNode extends FlowGraphNode<StoreLocalVarPlace
                 dirtyVars.clear();
             }
 
-            if (scopeBindingHasEscaped && (i.getOperation() == Operation.PUT_GLOBAL_VAR)) {
-                // global-var tracing can execute closures set up in previous trace-var calls
-                // in which case we would have the 'scopeBindingHasEscaped' flag set to true
+            if (
+                    (scopeBindingHasEscaped && i.getOperation() == Operation.PUT_GLOBAL_VAR)
+                    || i.getOperation() == Operation.THREAD_POLL
+                    ) {
+                // 1. Global-var tracing can execute closures set up in previous trace-var calls
+                // in which case we would have the 'scopeBindingHasEscaped' flag set to true.
+                // 2. Threads can update bindings, so we treat thread poll boundaries the same way.
                 instrs.previous();
                 for (LocalVariable v : dirtyVars) {
                     addedStores = true;

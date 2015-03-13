@@ -1,7 +1,10 @@
-fails:Kernel#fork is a private method
 fails:Kernel#fork returns nil for the child process
 fails:Kernel#fork runs a block in a child process
 fails:Kernel#fork marks threads from the parent as killed
 fails:Kernel.fork returns nil for the child process
 fails:Kernel.fork runs a block in a child process
 fails:Kernel.fork marks threads from the parent as killed
+fails(windows):Kernel#fork returns false from #respond_to?
+fails(windows):Kernel#fork raises a NotImplementedError when called
+fails(windows):Kernel.fork returns false from #respond_to?
+fails(windows):Kernel.fork raises a NotImplementedError when called

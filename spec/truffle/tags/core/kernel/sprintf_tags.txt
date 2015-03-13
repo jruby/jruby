@@ -1,5 +1,3 @@
-fails:Kernel#sprintf is a private method
-fails:Kernel#sprintf treats nil arguments as zero-width strings in %s slots
 fails:Kernel#sprintf passes some tests for positive %x
 fails:Kernel#sprintf passes some tests for negative %x
 fails:Kernel#sprintf passes some tests for negative %u
@@ -16,4 +14,3 @@ fails:Kernel#sprintf with format string that contains %<> sections formats value
 fails:Kernel#sprintf with format string that contains %<> sections raises KeyError when no matching key is in second argument
 fails:Kernel#sprintf with negative values with format %x precedes the number with '..'
 fails:Kernel#sprintf with negative values with format %b or %B precedes the number with '..'
-fails:Kernel.sprintf needs to be reviewed for spec completeness

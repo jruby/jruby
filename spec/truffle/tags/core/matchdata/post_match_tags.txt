@@ -1,5 +1,2 @@
-fails:MatchData#post_match returns the string after the match equiv. special var $'
 fails:MatchData#post_match keeps taint status from the source string
 fails:MatchData#post_match keeps untrusted status from the source string
-fails:MatchData#post_match sets the encoding to the encoding of the source String
-fails:MatchData#post_match sets an empty result to the encoding of the source String

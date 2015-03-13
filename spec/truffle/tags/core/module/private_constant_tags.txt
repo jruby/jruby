@@ -1,2 +1,1 @@
 fails:Module#private_constant can only be passed constant names defined in the target (self) module
-fails:Module#private_constant accepts multiple names

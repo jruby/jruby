@@ -44,12 +44,15 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.logging.SimpleFormatter;
 import java.util.logging.StreamHandler;
+
+import org.apache.tools.ant.util.FileUtils;
 import org.jruby.embed.io.ReaderInputStream;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
+
 import static org.junit.Assert.*;
 
 /**
@@ -200,23 +203,8 @@ public class ReaderInputStreamTest {
             }
         }
         instance.close();
-        String[] paths = {
-            basedir + "/lib/ruby/1.9",
-            basedir + "/lib/ruby/1.9/rdoc",
-            basedir + "/lib/ruby/shared",
-            basedir + "/test",
-            basedir + "/core/target/test-classes",
-            basedir
-        };
-        ScriptingContainer container = new ScriptingContainer(LocalContextScope.SINGLETHREAD);
-        container.getProvider().getRubyInstanceConfig().setLoadPaths(Arrays.asList(paths));
-        container.getProvider().getRubyInstanceConfig().setObjectSpaceEnabled(true);
-        container.getProvider().getRubyInstanceConfig().setJRubyHome(basedir);
-        container.setError(new PrintStream(outStream, true));
-        container.setOutput(new PrintStream(outStream, true));
-        container.setWriter(new FileWriter(basedir + "/core/target/run-junit-embed.txt", true));
-        container.runScriptlet(new String(sb));
-        container.terminate();
+        String expected = FileUtils.readFully(new FileReader(filename2));
+        assertEquals(expected.trim(), sb.toString().trim());
     }
 
     /**

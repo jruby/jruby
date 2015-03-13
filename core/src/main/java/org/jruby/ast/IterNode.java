@@ -53,7 +53,7 @@ public class IterNode extends Node {
      * This is to support 1.8-style assignments which only 'for' expressions use.
      */
     public IterNode(ISourcePosition position, Node args, StaticScope scope, Node body) {
-        super(position);
+        super(position, args != null && args.containsVariableAssignment || body != null && body.containsVariableAssignment);
 
         this.varNode = args;
         this.scope = scope;
@@ -64,7 +64,7 @@ public class IterNode extends Node {
      * Used for all non-for types of blocks.
      */
     public IterNode(ISourcePosition position, ArgsNode args, Node body, StaticScope scope) {
-        super(position);
+        super(position, args != null && args.containsVariableAssignment || body != null && body.containsVariableAssignment);
 
         this.varNode = args;
         this.bodyNode = body;

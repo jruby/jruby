@@ -92,7 +92,7 @@ class JarFileStat implements FileStat {
 
     @Override
     public boolean isFile() {
-        return !resource.isDirectory();
+        return resource.isFile();
     }
 
     @Override
@@ -122,12 +122,12 @@ class JarFileStat implements FileStat {
 
     @Override
     public boolean isReadable() {
-            return true;
+            return resource.canRead();
         }
 
         @Override
         public boolean isReadableReal() {
-            return true;
+            return resource.canRead();
         }
 
         @Override

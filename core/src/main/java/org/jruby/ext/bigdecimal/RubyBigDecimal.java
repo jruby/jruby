@@ -406,11 +406,21 @@ public class RubyBigDecimal extends RubyNumeric {
     }
     
     private static RubyBigDecimal cannotBeCoerced(ThreadContext context, IRubyObject v, boolean must) {
-        if (!must) return null;
+        if (must) {
+            String err;
 
-        String err = v.isImmediate() ? RubyObject.inspect(context, v).toString() : v.getMetaClass().getBaseName();
-            
-        throw context.runtime.newArgumentError(err + " can't be coerced into BigDecimal");
+            if (v == null) {
+                err = "nil";
+            } else if (v.isImmediate()) {
+                err = RubyObject.inspect(context, v).toString();
+            } else {
+                err = v.getMetaClass().getBaseName();
+            }
+
+            throw context.runtime.newTypeError(err + " can't be coerced into BigDecimal");
+        }
+
+        return null;
     }
     
     private static RubyBigDecimal unableToCoerceWithoutPrec(ThreadContext context, IRubyObject v, boolean must) {
@@ -427,11 +437,14 @@ public class RubyBigDecimal extends RubyNumeric {
     }
     
     private static RubyBigDecimal getVpRubyObjectWithPrec19Inner(ThreadContext context, RubyRational r) {
-        long numerator = RubyNumeric.num2long(r.numerator(context));
-        long denominator = RubyNumeric.num2long(r.denominator(context));
-            
-        return new RubyBigDecimal(context.runtime, 
-                BigDecimal.valueOf(numerator).divide(BigDecimal.valueOf(denominator), getRoundingMode(context.runtime)));
+        BigDecimal numerator = BigDecimal.valueOf(RubyNumeric.num2long(r.numerator(context)));
+        BigDecimal denominator = BigDecimal.valueOf(RubyNumeric.num2long(r.denominator(context)));
+
+        int len = numerator.precision() + denominator.precision();
+        int pow = len / 4;
+        MathContext mathContext = new MathContext((pow + 1) * 4, getRoundingMode(context.runtime));
+
+        return new RubyBigDecimal(context.runtime, numerator.divide(denominator, mathContext));
     }
     
     private static RubyBigDecimal getVpValueWithPrec19(ThreadContext context, IRubyObject value, long precision, boolean must) {
@@ -640,7 +653,7 @@ public class RubyBigDecimal extends RubyNumeric {
     @JRubyMethod(name = "mult", required = 2)
     public IRubyObject mult219(ThreadContext context, IRubyObject b, IRubyObject n) {
         RubyBigDecimal val = getVpValue19(context, b, false);
-        if (val == null) return cannotBeCoerced(context, val, true);
+        if (val == null) return cannotBeCoerced(context, b, true);
 
         return multInternal(context, val, b, n);
     }
@@ -856,10 +869,16 @@ public class RubyBigDecimal extends RubyNumeric {
     }
     
     private IRubyObject op_quo19_20(ThreadContext context, IRubyObject other) {
-        RubyObject preciseOther = getVpValue19(context, other, true);
+        RubyBigDecimal preciseOther = getVpValue19(context, other, true);
         // regular division with some default precision
-        // TODO: proper algorithm to set the precision
-        return op_div(context, preciseOther, getRuntime().newFixnum(200));
+        // proper algorithm to set the precision
+        // the precision is multiple of 4
+        // and the precision is larger than len * 2
+        int len = value.precision() + preciseOther.value.precision();
+        int pow = len / 4;
+        int precision = (pow + 1) * 4 * 2;
+
+        return op_div(context, preciseOther, getRuntime().newFixnum(precision));
     }
     
     public IRubyObject op_div(ThreadContext context, IRubyObject other) {
@@ -910,10 +929,18 @@ public class RubyBigDecimal extends RubyNumeric {
         // MRI behavior: "If digits is 0, the result is the same as the / operator."
         if (scale == 0) return op_quo(context, other);
 
-        // TODO: better algorithm to set precision needed
-        int prec = Math.max(200, scale);
-        return new RubyBigDecimal(context.runtime,
-                value.divide(val.value, new MathContext(prec, RoundingMode.HALF_UP))).setResult(scale);
+        if (isZero()) {
+            return newZero(getRuntime(), zeroSign * val.value.signum());
+        }
+
+        if (scale == 0) {
+            // MRI behavior: "If digits is 0, the result is the same as the / operator."
+            return op_quo(context, other);
+        } else {
+            MathContext mathContext = new MathContext(scale, getRoundingMode(context.runtime));
+            return new RubyBigDecimal(getRuntime(),
+                    value.divide(val.value, mathContext)).setResult(scale);
+        }
     }
     
     @JRubyMethod(name = "div")

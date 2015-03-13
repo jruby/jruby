@@ -1,1 +1,0 @@
-fails:GC::Profiler.result returns a string

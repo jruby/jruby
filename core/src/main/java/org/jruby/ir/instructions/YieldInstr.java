@@ -4,54 +4,47 @@ import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Interp;
 import org.jruby.ir.Operation;
 import org.jruby.ir.operands.Operand;
-import org.jruby.ir.operands.UnboxedBoolean;
 import org.jruby.ir.operands.UndefinedValue;
 import org.jruby.ir.operands.Variable;
+import org.jruby.ir.persistence.IRWriterEncoder;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
-import org.jruby.ir.transformations.inlining.InlinerInfo;
+import org.jruby.ir.transformations.inlining.CloneInfo;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
-import java.util.Map;
-
-public class YieldInstr extends Instr implements ResultInstr, FixedArityInstr {
+public class YieldInstr extends ResultBaseInstr implements FixedArityInstr {
     public final boolean unwrapArray;
-    private Operand blockArg;
-    private Operand yieldArg;
-    private Variable result;
 
     public YieldInstr(Variable result, Operand block, Operand arg, boolean unwrapArray) {
-        super(Operation.YIELD);
+        super(Operation.YIELD, result, new Operand[] { block, arg == null ? UndefinedValue.UNDEFINED : arg });
 
         assert result != null: "YieldInstr result is null";
 
-        this.blockArg = block;
-        this.yieldArg = arg == null ? UndefinedValue.UNDEFINED : arg;
         this.unwrapArray = unwrapArray;
-        this.result = result;
-    }
-
-    @Override
-    public Instr cloneForInlining(InlinerInfo ii) {
-        // FIXME: Is it necessary to clone a yield instruction in a method
-        // that is being inlined, i.e. in METHOD_INLINE clone mode?
-        // Fix BasicBlock.java:cloneForInlining!!
-        return new YieldInstr(ii.getRenamedVariable(result), blockArg.cloneForInlining(ii), yieldArg.cloneForInlining(ii), unwrapArray);
     }
 
     public Operand getBlockArg() {
-        return blockArg;
+        return operands[0];
     }
 
     public Operand getYieldArg() {
-        return yieldArg;
+        return operands[1];
     }
 
     @Override
-    public String toString() {
-        return unwrapArray ? (super.toString() + "(" + blockArg + ", UNWRAP(" + yieldArg + "))") : (super.toString() + "(" + blockArg + ", " + yieldArg + ")");
+    public Instr clone(CloneInfo ii) {
+        // FIXME: Is it necessary to clone a yield instruction in a method
+        // that is being inlined, i.e. in METHOD_INLINE clone mode?
+        // Fix BasicBlock.java:clone!!
+        return new YieldInstr(ii.getRenamedVariable(result), getBlockArg().cloneForInlining(ii),
+                getYieldArg().cloneForInlining(ii), unwrapArray);
+    }
+
+    @Override
+    public String[] toStringNonOperandArgs() {
+        return new String[] { "unwrap: " + unwrapArray};
     }
 
     public boolean isUnwrapArray() {
@@ -59,38 +52,21 @@ public class YieldInstr extends Instr implements ResultInstr, FixedArityInstr {
     }
 
     @Override
-    public Operand[] getOperands() {
-        return new Operand[] {blockArg, yieldArg, new UnboxedBoolean(unwrapArray) };
-    }
-
-    @Override
-    public Variable getResult() {
-        return result;
-    }
-
-    @Override
-    public void updateResult(Variable v) {
-        this.result = v;
-    }
-
-    public Operand[] getNonBlockOperands() {
-        return new Operand[] {yieldArg};
-    }
-
-    @Override
-    public void simplifyOperands(Map<Operand, Operand> valueMap, boolean force) {
-        blockArg = blockArg.getSimplifiedOperand(valueMap, force);
-        yieldArg = yieldArg.getSimplifiedOperand(valueMap, force);
+    public void encode(IRWriterEncoder e) {
+        super.encode(e);
+        e.encode(getBlockArg());
+        e.encode(getYieldArg());
+        e.encode(isUnwrapArray());
     }
 
     @Interp
     @Override
     public Object interpret(ThreadContext context, StaticScope currScope, DynamicScope currDynScope, IRubyObject self, Object[] temp) {
-        Object blk = blockArg.retrieve(context, self, currScope, currDynScope, temp);
-        if (yieldArg == UndefinedValue.UNDEFINED) {
+        Object blk = getBlockArg().retrieve(context, self, currScope, currDynScope, temp);
+        if (getYieldArg() == UndefinedValue.UNDEFINED) {
             return IRRuntimeHelpers.yieldSpecific(context, blk);
         } else {
-            IRubyObject yieldVal = (IRubyObject)yieldArg.retrieve(context, self, currScope, currDynScope, temp);
+            IRubyObject yieldVal = (IRubyObject) getYieldArg().retrieve(context, self, currScope, currDynScope, temp);
             return IRRuntimeHelpers.yield(context, blk, yieldVal, unwrapArray);
         }
     }

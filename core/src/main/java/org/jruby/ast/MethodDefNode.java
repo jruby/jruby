@@ -43,7 +43,7 @@ public abstract class MethodDefNode extends Node implements INameNode {
 
 	public MethodDefNode(ISourcePosition position, ArgumentNode nameNode, ArgsNode argsNode, 
 	        StaticScope scope, Node bodyNode) {
-            super(position);
+            super(position, argsNode.containsVariableAssignment() || bodyNode.containsVariableAssignment());
 
             assert bodyNode != null : "bodyNode must not be null";
             
@@ -53,8 +53,9 @@ public abstract class MethodDefNode extends Node implements INameNode {
             this.bodyNode = bodyNode;
 
             // store argument count information into scope
-            scope.setArities(argsNode.getRequiredArgsCount(), argsNode.getOptionalArgsCount(), argsNode.getRestArg());
+            scope.setArities(argsNode.getRequiredArgsCount() + argsNode.getRequiredKeywordCount(), argsNode.getOptionalArgsCount(), argsNode.getRestArg());
 	}
+
 
 	/**
 	 * Gets the argsNode.

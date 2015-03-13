@@ -1,4 +1,3 @@
-fails:Kernel#abort is a private method
 fails:Kernel#abort raises a SystemExit exception
 fails:Kernel#abort sets the exception message to the given message
 fails:Kernel#abort sets the exception status code of of 1

@@ -1,6 +1,3 @@
 fails:NoMethodError.new allows passing method args
 fails:NoMethodError#args returns an empty array if the caller method had no arguments
 fails:NoMethodError#args returns an array with the same elements as passed to the method
-fails:NoMethodError#message for an undefined method match /undefined method/
-fails:NoMethodError#message for an protected method match /protected method/
-fails:NoMethodError#message for private method match /private method/

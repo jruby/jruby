@@ -1,2 +1,1 @@
-fails:Struct#to_s is a synonym for inspect
-fails:Struct#to_s returns a string representation without the class name for anonymous structs
+windows:Struct#to_s is a synonym for inspect

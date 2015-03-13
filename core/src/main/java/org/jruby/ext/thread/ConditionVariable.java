@@ -61,6 +61,7 @@ public class ConditionVariable extends RubyObject {
                 return new ConditionVariable(runtime, klass);
             }
         });
+        cConditionVariable.undefineMethod("initialize_copy");
         cConditionVariable.setReifiedClass(ConditionVariable.class);
         cConditionVariable.defineAnnotatedMethods(ConditionVariable.class);
     }
@@ -125,6 +126,11 @@ public class ConditionVariable extends RubyObject {
     public synchronized IRubyObject signal(ThreadContext context) {
         notify();
         return this;
+    }
+
+    @JRubyMethod
+    public IRubyObject marshal_dump(ThreadContext context) {
+        return ThreadLibrary.undumpable(context, this);
     }
     
 }

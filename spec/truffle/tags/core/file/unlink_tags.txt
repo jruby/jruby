@@ -1,7 +1,5 @@
 fails:File.unlink returns 0 when called without arguments
-fails:File.unlink deletes a single file
 fails:File.unlink deletes multiple files
-fails:File.unlink raises a TypeError if not passed a String type
 fails:File.unlink raises an Errno::ENOENT when the given file doesn't exist
 fails:File.unlink coerces a given parameter into a string if possible
 fails:File.unlink accepts an object that has a #to_path method

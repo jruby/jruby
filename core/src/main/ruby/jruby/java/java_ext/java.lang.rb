@@ -205,3 +205,18 @@ Java::byte[].class_eval do
     self[index] = value
   end
 end
+
+class java::lang::Character
+  java_alias :isJavaIdentifierStart_char, :isJavaIdentifierStart, [Java::char]
+  java_alias :isJavaIdentifierPart_char, :isJavaIdentifierPart, [Java::char]
+
+  class << self
+    def java_identifier_start?(fixnum)
+      isJavaIdentifierStart_char(fixnum);
+    end
+
+    def java_identifier_part?(fixnum)
+      isJavaIdentifierPart_char(fixnum);
+    end
+  end
+end

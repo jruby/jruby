@@ -399,7 +399,7 @@ describe "Module#autoload" do
   describe "(concurrently)" do
     it "blocks others threads while doing an autoload" do
       file_path     = fixture(__FILE__, "repeated_concurrent_autoload.rb")
-      autoload_path = file_path.sub /\.rb\Z/, ''
+      autoload_path = file_path.sub(/\.rb\Z/, '')
       mod_count     = 30
       thread_count  = 16
 

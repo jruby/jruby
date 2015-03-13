@@ -1,3 +1,4 @@
 fails:Process::Status#success? for a child that exited normally returns true
 fails:Process::Status#success? for a child that exited with a non zero status returns false
 fails:Process::Status#success? for a child that was terminated returns nil
+fails(windows):Process::Status#success? for a child that was terminated always returns true

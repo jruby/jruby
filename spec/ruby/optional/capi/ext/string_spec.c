@@ -495,7 +495,7 @@ VALUE string_spec_RSTRING_PTR_iterate(VALUE self, VALUE str) {
 
   ptr = RSTRING_PTR(str);
   for(i = 0; i < RSTRING_LEN(str); i++) {
-    rb_yield(INT2FIX(ptr[i]));
+    rb_yield(CHR2FIX(ptr[i]));
   }
   return Qnil;
 }

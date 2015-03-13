@@ -37,8 +37,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.URL;
-import java.net.URLClassLoader;
-import java.security.ProtectionDomain;
 import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.HashSet;
@@ -53,28 +51,16 @@ import java.util.jar.JarInputStream;
 import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
 
-public class JRubyClassLoader extends URLClassLoader implements ClassDefiningClassLoader {
+public class JRubyClassLoader extends ClassDefiningJRubyClassLoader {
 
     private static final Logger LOG = LoggerFactory.getLogger("JRubyClassLoader");
-
-    private final static ProtectionDomain DEFAULT_DOMAIN;
-    
-    static {
-        ProtectionDomain defaultDomain = null;
-        try {
-            defaultDomain = JRubyClassLoader.class.getProtectionDomain();
-        } catch (SecurityException se) {
-            // just use null since we can't acquire protection domain
-        }
-        DEFAULT_DOMAIN = defaultDomain;
-    }
 
     private final Map<URL,Set<String>> jarIndexes = new LinkedHashMap<URL,Set<String>>();
 
     private Runnable unloader;
 
     public JRubyClassLoader(ClassLoader parent) {
-        super(new URL[0], parent);
+        super(parent);
     }
 
     public void addURLNoIndex(URL url) {
@@ -85,7 +71,7 @@ public class JRubyClassLoader extends URLClassLoader implements ClassDefiningCla
             OutputStream out = null;
             try
             {
-                File f = File.createTempFile( "jruby", ".jar");
+                File f = File.createTempFile( "jruby", new File(url.getFile()).getName());
                 f.deleteOnExit();
                 out = new BufferedOutputStream( new FileOutputStream( f ) );
                 in = new BufferedInputStream( url.openStream() );
@@ -134,19 +120,6 @@ public class JRubyClassLoader extends URLClassLoader implements ClassDefiningCla
         indexJarContents(url);
     }
 
-    @Override
-    public Class<?> loadClass(String name, boolean resolve) throws ClassNotFoundException {
-        Class<?> c = findLoadedClass(name);
-        if (c == null) {
-            try {
-                c = findClass(name);
-            } catch (ClassNotFoundException e) {
-                return super.loadClass(name, resolve);
-            }
-        }
-        return c;
-    }
-
     /**
      * Called when the parent runtime is torn down.
      */
@@ -173,21 +146,13 @@ public class JRubyClassLoader extends URLClassLoader implements ClassDefiningCla
                     baos.write(buf, 0, bytesRead);
                 }
 
-                Class unloaderClass = defineClass("org.jruby.util.JDBCDriverUnloader", baos.toByteArray());
+                Class<?> unloaderClass = defineClass("org.jruby.util.JDBCDriverUnloader", baos.toByteArray());
                 unloader = (Runnable) unloaderClass.newInstance();
             } catch (Exception e) {
                 throw new RuntimeException(e);
             }
         }
         return unloader;
-    }
-
-    public Class<?> defineClass(String name, byte[] bytes) {
-        return super.defineClass(name, bytes, 0, bytes.length, DEFAULT_DOMAIN);
-     }
-
-    public Class<?> defineClass(String name, byte[] bytes, ProtectionDomain domain) {
-       return super.defineClass(name, bytes, 0, bytes.length, domain);
     }
 
     @Override

@@ -2,9 +2,8 @@ package org.jruby.ir.instructions;
 
 import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Operation;
-import org.jruby.ir.operands.Fixnum;
-import org.jruby.ir.operands.Operand;
-import org.jruby.ir.transformations.inlining.InlinerInfo;
+import org.jruby.ir.persistence.IRWriterEncoder;
+import org.jruby.ir.transformations.inlining.CloneInfo;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.DynamicScope;
@@ -18,17 +17,12 @@ public class RaiseArgumentErrorInstr extends Instr implements FixedArityInstr {
     private final int numArgs;
 
     public RaiseArgumentErrorInstr(int required, int opt, int rest, int numArgs) {
-        super(Operation.RAISE_ARGUMENT_ERROR);
+        super(Operation.RAISE_ARGUMENT_ERROR, EMPTY_OPERANDS);
 
         this.required = required;
         this.opt = opt;
         this.rest = rest;
         this.numArgs = numArgs;
-    }
-
-    @Override
-    public Operand[] getOperands() {
-        return new Operand[] { new Fixnum(required), new Fixnum(opt), new Fixnum(rest), new Fixnum(numArgs) };
     }
 
     public int getNumArgs() {
@@ -40,8 +34,8 @@ public class RaiseArgumentErrorInstr extends Instr implements FixedArityInstr {
     }
 
     @Override
-    public String toString() {
-        return super.toString() + "(" + required + ", " + opt + ", " + rest + ")";
+    public String[] toStringNonOperandArgs() {
+        return new String[] { "req: " + required, "o: " + opt, "*r: " + rest};
     }
 
     public int getRequired() {
@@ -53,8 +47,17 @@ public class RaiseArgumentErrorInstr extends Instr implements FixedArityInstr {
     }
 
     @Override
-    public Instr cloneForInlining(InlinerInfo ii) {
-        return this;
+    public Instr clone(CloneInfo ii) {
+        return new RaiseArgumentErrorInstr(required, opt, rest, numArgs);
+    }
+
+    @Override
+    public void encode(IRWriterEncoder e) {
+        super.encode(e);
+        e.encode(getRequired());
+        e.encode(getOpt());
+        e.encode(getRest());
+        e.encode(getNumArgs());
     }
 
     @Override

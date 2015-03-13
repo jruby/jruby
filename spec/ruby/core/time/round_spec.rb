@@ -26,7 +26,7 @@ describe "Time#round" do
   it "copies own timezone to the returning value" do
     @time.zone.should == @time.round.zone
 
-    with_timezone "JST" do
+    with_timezone "JST-9" do
       time = Time.at 0, 1
       time.zone.should == time.round.zone
     end

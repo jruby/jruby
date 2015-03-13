@@ -1,8 +1,0 @@
-fails:Encoding.list returns an Array
-fails:Encoding.list returns an Array of Encoding objects
-fails:Encoding.list returns each encoding only once
-fails:Encoding.list includes the default external encoding
-fails:Encoding.list does not include any alias names
-fails:Encoding.list includes all aliased encodings
-fails:Encoding.list includes dummy encodings
-fails:Encoding.list updates the list when #find is used to load a new encoding

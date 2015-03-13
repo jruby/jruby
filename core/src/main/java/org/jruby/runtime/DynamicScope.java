@@ -119,38 +119,6 @@ public abstract class DynamicScope {
         return newDynamicScope(staticScope, null);
     }
 
-    public final DynamicScope getEvalScope(Ruby runtime) {
-        // We create one extra dynamicScope on a binding so that when we 'eval "b=1", binding' the
-        // 'b' will get put into this new dynamic scope.  The original scope does not see the new
-        // 'b' and successive evals with this binding will.  I take it having the ability to have
-        // succesive binding evals be able to share same scope makes sense from a programmers
-        // perspective.   One crappy outcome of this design is it requires Dynamic and Static
-        // scopes to be mutable for this one case.
-
-        // Note: In Ruby 1.9 all of this logic can go away since they will require explicit
-        // bindings for evals.
-
-        // We only define one special dynamic scope per 'logical' binding.  So all bindings for
-        // the same scope should share the same dynamic scope.  This allows multiple evals with
-        // different different bindings in the same scope to see the same stuff.
-
-        // No binding scope so we should create one
-        if (evalScope == null) {
-            // If the next scope out has the same binding scope as this scope it means
-            // we are evaling within an eval and in that case we should be sharing the same
-            // binding scope.
-            DynamicScope parent = getParentScope();
-            if (parent != null && parent.getEvalScope(runtime) == this) {
-                evalScope = this;
-            } else {
-                // bindings scopes must always be ManyVars scopes since evals can grow them
-                evalScope = new ManyVarsDynamicScope(runtime.getStaticScopeFactory().newEvalScope(getStaticScope()), this);
-            }
-        }
-
-        return evalScope;
-    }
-
     /**
      * Find the scope to use for flip-flops. Flip-flops live either in the
      * topmost "method scope" or in their nearest containing "eval scope".

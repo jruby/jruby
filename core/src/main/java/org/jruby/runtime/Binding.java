@@ -47,7 +47,10 @@ public class Binding {
      * frame of method which defined this block
      */
     private final Frame frame;
-    private final BacktraceElement backtrace;
+
+    public String method;
+    public String filename;
+    public int line;
 
     private Visibility visibility;
     /**
@@ -64,48 +67,53 @@ public class Binding {
      * Binding-local scope for 1.9 mode.
      */
     private DynamicScope evalScope;
-    
+
     /**
      * Location of eval scope.
-     * 
-     * 
+     *
+     *
      * Because bindings are usually cloned before used for eval, we indirect
      * the reference of the eval scope through another Binding reference,
-     * allowing us to share the same eval scope across multiple Binding
-     * instances without the cost of allocating a DynamicScope[1] for each new
-     * Binding object.
+     * allowing us to share the same eval scope across multiple cloned Binding
+     * instances.
      */
     private Binding evalScopeBinding = this;
-    
+
     public Binding(IRubyObject self, Frame frame,
-                   Visibility visibility, DynamicScope dynamicScope, BacktraceElement backtrace) {
+                   Visibility visibility, DynamicScope dynamicScope, String method, String filename, int line) {
         this.self = self;
         this.frame = frame;
         this.visibility = visibility;
         this.dynamicScope = dynamicScope;
-        this.backtrace = backtrace;
+        this.method = method;
+        this.filename = filename;
+        this.line = line;
     }
 
     private Binding(IRubyObject self, Frame frame,
-                    Visibility visibility, DynamicScope dynamicScope, BacktraceElement backtrace, DynamicScope dummyScope) {
+                    Visibility visibility, DynamicScope dynamicScope, String method, String filename, int line, DynamicScope dummyScope) {
         this.self = self;
         this.frame = frame;
         this.visibility = visibility;
         this.dynamicScope = dynamicScope;
-        this.backtrace = backtrace;
+        this.method = method;
+        this.filename = filename;
+        this.line = line;
         this.dummyScope = dummyScope;
     }
     
-    public Binding(Frame frame, DynamicScope dynamicScope, BacktraceElement backtrace) {
+    public Binding(Frame frame, DynamicScope dynamicScope, String method, String filename, int line) {
         this.self = frame.getSelf();
         this.frame = frame;
         this.visibility = frame.getVisibility();
         this.dynamicScope = dynamicScope;
-        this.backtrace = backtrace;
+        this.method = method;
+        this.filename = filename;
+        this.line = line;
     }
     
     private Binding(Binding other) {
-        this(other.self, other.frame, other.visibility, other.dynamicScope, other.backtrace, other.dummyScope);
+        this(other.self, other.frame, other.visibility, other.dynamicScope, other.method, other.filename, other.line, other.dummyScope);
     }
 
     /**
@@ -174,32 +182,28 @@ public class Binding {
         return frame;
     }
 
-    public BacktraceElement getBacktrace() {
-        return backtrace;
-    }
-
     public String getFile() {
-        return backtrace.filename;
+        return filename;
     }
 
-    public void setFile(String file) {
-        backtrace.filename = file;
+    public void setFile(String filename) {
+        this.filename = filename;
     }
 
     public int getLine() {
-        return backtrace.line;
+        return line;
     }
 
     public void setLine(int line) {
-        backtrace.line = line;
+        this.line = line;
     }
 
     public String getMethod() {
-        return backtrace.method;
+        return method;
     }
 
     public void setMethod(String method) {
-        backtrace.method = method;
+        this.method = method;
     }
 
     public boolean equals(Object other) {
@@ -217,37 +221,51 @@ public class Binding {
             this.dynamicScope == bOther.dynamicScope;
     }
 
+    // FIXME: This is because we clone the same explicit binding whenever we execute because both the captured Frame
+    // and the binding gets mutated during execution.  This means that we cannot share the same instance across
+    // concurrent evals of the same binding.  The mutated Frames I think can become new frames during execution and
+    // most of the binding clone can probably go away and we can push the values stored in a binding through the execution
+    // path.
     public final DynamicScope getEvalScope(Ruby runtime) {
         // We create one extra dynamicScope on a binding so that when we 'eval "b=1", binding' the
         // 'b' will get put into this new dynamic scope.  The original scope does not see the new
-        // 'b' and successive evals with this binding will.  I take it having the ability to have
-        // succesive binding evals be able to share same scope makes sense from a programmers
-        // perspective.   One crappy outcome of this design is it requires Dynamic and Static
-        // scopes to be mutable for this one case.
+        // 'b' and successive evals with this binding will.  Note: This only happens for explicit
+        // bindings.  Implicit bindings will always dispose of the scope they create.
 
-        // Note: In Ruby 1.9 all of this logic can go away since they will require explicit
-        // bindings for evals.
-
-        // We only define one special dynamic scope per 'logical' binding.  So all bindings for
-        // the same scope should share the same dynamic scope.  This allows multiple evals with
-        // different different bindings in the same scope to see the same stuff.
-        
         // No eval scope set, so we create one
         if (evalScopeBinding.evalScope == null) {
-            
-            // If the next scope out has the same binding scope as this scope it means
-            // we are evaling within an eval and in that case we should be sharing the same
-            // binding scope.
-            DynamicScope parent = dynamicScope.getParentScope();
-            
-            if (parent != null && parent.getEvalScope(runtime) == dynamicScope) {
-                evalScopeBinding.evalScope = dynamicScope;
-            } else {
-                // bindings scopes must always be ManyVars scopes since evals can grow them
-                evalScopeBinding.evalScope = new ManyVarsDynamicScope(runtime.getStaticScopeFactory().newEvalScope(dynamicScope.getStaticScope()), dynamicScope);
-            }
+            // bindings scopes must always be ManyVars scopes since evals can grow them
+            evalScopeBinding.evalScope = new ManyVarsDynamicScope(runtime.getStaticScopeFactory().newEvalScope(dynamicScope.getStaticScope()), dynamicScope);
         }
 
         return evalScopeBinding.evalScope;
+    }
+
+    @Deprecated
+    public Binding(IRubyObject self, Frame frame,
+                   Visibility visibility, DynamicScope dynamicScope, BacktraceElement backtrace) {
+        this.self = self;
+        this.frame = frame;
+        this.visibility = visibility;
+        this.dynamicScope = dynamicScope;
+        this.method = backtrace.method;
+        this.filename = backtrace.filename;
+        this.line = backtrace.line;
+    }
+
+    @Deprecated
+    public Binding(Frame frame, DynamicScope dynamicScope, BacktraceElement backtrace) {
+        this.self = frame.getSelf();
+        this.frame = frame;
+        this.visibility = frame.getVisibility();
+        this.dynamicScope = dynamicScope;
+        this.method = backtrace.method;
+        this.filename = backtrace.filename;
+        this.line = backtrace.line;
+    }
+
+    @Deprecated
+    public BacktraceElement getBacktrace() {
+        return new BacktraceElement(method, filename, line);
     }
 }

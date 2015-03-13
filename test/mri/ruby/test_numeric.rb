@@ -1,4 +1,5 @@
 require 'test/unit'
+require_relative 'envutil'
 
 class TestNumeric < Test::Unit::TestCase
   class DummyNumeric < Numeric
@@ -14,6 +15,24 @@ class TestNumeric < Test::Unit::TestCase
     assert_equal(Float, b.class)
 
     assert_raise(TypeError) { -Numeric.new }
+
+    assert_raise_with_message(TypeError, /can't be coerced into /) {1+:foo}
+    assert_raise_with_message(TypeError, /can't be coerced into /) {1&:foo}
+    assert_raise_with_message(TypeError, /can't be coerced into /) {1|:foo}
+    assert_raise_with_message(TypeError, /can't be coerced into /) {1^:foo}
+
+    EnvUtil.with_default_external(Encoding::UTF_8) do
+      assert_raise_with_message(TypeError, /:\u{3042}/) {1+:"\u{3042}"}
+      assert_raise_with_message(TypeError, /:\u{3042}/) {1&:"\u{3042}"}
+      assert_raise_with_message(TypeError, /:\u{3042}/) {1|:"\u{3042}"}
+      assert_raise_with_message(TypeError, /:\u{3042}/) {1^:"\u{3042}"}
+    end
+    EnvUtil.with_default_external(Encoding::US_ASCII) do
+      assert_raise_with_message(TypeError, /:"\\u3042"/) {1+:"\u{3042}"}
+      assert_raise_with_message(TypeError, /:"\\u3042"/) {1&:"\u{3042}"}
+      assert_raise_with_message(TypeError, /:"\\u3042"/) {1|:"\u{3042}"}
+      assert_raise_with_message(TypeError, /:"\\u3042"/) {1^:"\u{3042}"}
+    end
   end
 
   def test_dummynumeric
@@ -40,17 +59,43 @@ class TestNumeric < Test::Unit::TestCase
     end
     assert_equal(-1, -a)
 
+    bug7688 = '[ruby-core:51389] [Bug #7688]'
+    DummyNumeric.class_eval do
+      remove_method :coerce
+      def coerce(x); raise StandardError; end
+    end
+    assert_raise_with_message(TypeError, /can't be coerced into /) { 1 + a }
+    warn = /will no more rescue exceptions of #coerce.+ in the next release/m
+    assert_warn(warn, bug7688) { assert_raise(ArgumentError) { 1 < a } }
+
+    DummyNumeric.class_eval do
+      remove_method :coerce
+      def coerce(x); :bad_return_value; end
+    end
+    assert_raise_with_message(TypeError, "coerce must return [x, y]") { 1 + a }
+    warn = /Bad return value for #coerce.+next release will raise an error/m
+    assert_warn(warn, bug7688) { assert_raise(ArgumentError) { 1 < a } }
+
   ensure
     DummyNumeric.class_eval do
       remove_method :coerce
     end
   end
 
-  def test_numeric
+  def test_singleton_method
     a = Numeric.new
-    assert_raise(TypeError) { def a.foo; end }
-    assert_raise(TypeError) { eval("def a.\u3042; end") }
+    assert_raise_with_message(TypeError, /foo/) { def a.foo; end }
+    assert_raise_with_message(TypeError, /\u3042/) { eval("def a.\u3042; end") }
+  end
+
+  def test_dup
+    a = Numeric.new
     assert_raise(TypeError) { a.dup }
+
+    c = Module.new do
+      break eval("class C\u{3042} < Numeric; self; end")
+    end
+    assert_raise_with_message(TypeError, /C\u3042/) {c.new.dup}
   end
 
   def test_quo
@@ -239,6 +284,14 @@ class TestNumeric < Test::Unit::TestCase
     assert_nothing_raised { 1.step(by: 0).size }
     assert_nothing_raised { 1.step(by: nil) }
     assert_nothing_raised { 1.step(by: nil).size }
+
+    bug9811 = '[ruby-dev:48177] [Bug #9811]'
+    assert_raise(ArgumentError, bug9811) { 1.step(10, foo: nil) {} }
+    assert_raise(ArgumentError, bug9811) { 1.step(10, foo: nil).size }
+    assert_raise(ArgumentError, bug9811) { 1.step(10, to: 11) {} }
+    assert_raise(ArgumentError, bug9811) { 1.step(10, to: 11).size }
+    assert_raise(ArgumentError, bug9811) { 1.step(10, 1, by: 11) {} }
+    assert_raise(ArgumentError, bug9811) { 1.step(10, 1, by: 11).size }
 
     assert_equal(bignum*2+1, (-bignum).step(bignum, 1).size)
     assert_equal(bignum*2, (-bignum).step(bignum-1, 1).size)

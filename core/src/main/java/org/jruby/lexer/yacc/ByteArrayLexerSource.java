@@ -16,9 +16,8 @@ public class ByteArrayLexerSource extends LexerSource {
     private Cursor mainCursor, pushbackCursor;
     private final boolean captureSource;
 
-    public ByteArrayLexerSource(String sourceName, byte[] in, List<String> list, int line,
-            boolean extraPositionInformation, SourcePositionFactory.SourcePositionFactoryFactory sourcePositionFactoryFactory) {
-        super(sourceName, list, line, extraPositionInformation, sourcePositionFactoryFactory);
+    public ByteArrayLexerSource(String sourceName, byte[] in, List<String> list, int line) {
+        super(sourceName, list, line);
         this.readCursor = new ByteArrayCursor(in);
         this.mainCursor = readCursor;
         this.pushbackCursor = new PushbackCursor(mainCursor, new ByteList(128));

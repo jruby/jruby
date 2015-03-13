@@ -1,11 +1,9 @@
 package org.jruby.ast.util;
 
 import java.io.File;
-import java.nio.CharBuffer;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.List;
-import java.util.Locale;
 import java.util.concurrent.atomic.AtomicLong;
 
 import org.jruby.ast.AliasNode;
@@ -110,6 +108,11 @@ public class SexpMaker {
         public Builder append(double d) {
             b.append(d);
             return this;
+        }
+
+        @Override
+        public String toString() {
+            return b.toString();
         }
     }
 
@@ -223,7 +226,7 @@ public class SexpMaker {
         sb.append("(method ").append(methodName).append(' ');
         // JRUBY-4301, include filename and line in sexp
         sb.append("(file ").append(new File(body.getPosition().getFile()).getName()).append(") ");
-        sb.append("(line ").append(body.getPosition().getStartLine()).append(") ");
+        sb.append("(line ").append(body.getPosition().getLine()).append(") ");
         process(sb, argsNode);
         sb.append(' ');
         process(sb, body);

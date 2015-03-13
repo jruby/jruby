@@ -2,6 +2,7 @@ package org.jruby.util;
 
 import jnr.posix.POSIX;
 import org.jruby.util.io.ModeFlags;
+import java.io.IOException;
 import java.io.InputStream;
 
 import java.nio.channels.Channel;
@@ -61,8 +62,8 @@ class JarDirectoryResource extends JarResource {
     }
 
     @Override
-    public InputStream openInputStream() {
-      return null;
+    InputStream openInputStream() throws IOException {
+        throw new ResourceException.FileIsDirectory(path);
     }
 
     @Override

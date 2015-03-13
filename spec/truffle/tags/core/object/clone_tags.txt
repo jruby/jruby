@@ -1,8 +1,0 @@
-fails:Object#clone preserves tainted state from the original
-fails:Object#clone preserves untrusted state from the original
-fails:Object#clone raises a TypeError for NilClass
-fails:Object#clone raises a TypeError for TrueClass
-fails:Object#clone raises a TypeError for FalseClass
-fails:Object#clone raises a TypeError for Fixnum
-fails:Object#clone raises a TypeError for Symbol
-fails:Object#clone preserves frozen state from the original

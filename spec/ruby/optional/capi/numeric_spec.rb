@@ -147,6 +147,30 @@ describe "CApiNumericSpecs" do
     end
   end
 
+  describe "rb_int2num" do
+    it "raises a TypeError if passed nil" do
+      lambda { @s.rb_int2num(nil) }.should raise_error(TypeError)
+    end
+
+    it "converts a Float" do
+      @s.rb_int2num(4.2).should == 4
+    end
+
+    it "converts a Bignum" do
+      @s.rb_int2num(0x7fff_ffff).should == 0x7fff_ffff
+    end
+
+    it "converts a Fixnum" do
+      @s.rb_int2num(5).should == 5
+    end
+
+    # INT2NUM used to use `long` prior to MRI 1.9. With 1.9 it has been changed
+    # to use `int` instead.
+    it "converts 0xFFFFFFFF to -1" do
+      @s.rb_int2num(0xFFFFFFFF).should == -1
+    end
+  end
+
   describe "rb_num2ulong" do
     it "raises a TypeError if passed nil" do
       lambda { @s.rb_num2ulong(nil) }.should raise_error(TypeError)

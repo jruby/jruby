@@ -64,6 +64,7 @@ import org.jruby.util.Dir;
 import org.jruby.util.FileResource;
 import org.jruby.util.JRubyFile;
 import org.jruby.util.ByteList;
+import org.jruby.util.StringSupport;
 
 /**
  * .The Ruby built-in class Dir.
@@ -134,11 +135,12 @@ public class RubyDir extends RubyObject {
 
     @JRubyMethod(name = "initialize")
     public IRubyObject initialize19(ThreadContext context, IRubyObject arg) {
-        RubyString newPath = RubyFile.get_path(getRuntime().getCurrentContext(), arg).convertToString();
+        Ruby runtime = context.runtime;
+        RubyString newPath = StringSupport.checkEmbeddedNulls(runtime, RubyFile.get_path(context, arg));
         path = newPath;
         pos = 0;
 
-        String adjustedPath = RubyFile.adjustRootPathOnWindows(context.runtime, newPath.toString(), null);
+        String adjustedPath = RubyFile.adjustRootPathOnWindows(runtime, newPath.toString(), null);
         checkDirIsTwoSlashesOnWindows(getRuntime(), adjustedPath);
 
         dir = JRubyFile.createResource(context, adjustedPath);
@@ -178,6 +180,9 @@ public class RubyDir extends RubyObject {
     }
 
     private static String getCWD(Ruby runtime) {
+        if (runtime.getCurrentDirectory().startsWith("uri:")) {
+            return runtime.getCurrentDirectory();
+        }
         try {
             return new org.jruby.util.NormalizedFile(runtime.getCurrentDirectory()).getCanonicalPath();
         } catch (Exception e) {
@@ -253,13 +258,15 @@ public class RubyDir extends RubyObject {
 
     @JRubyMethod(name = "entries", meta = true)
     public static RubyArray entries19(ThreadContext context, IRubyObject recv, IRubyObject arg) {
-        return entriesCommon(context, RubyFile.get_path(context, arg).asJavaString());
+        RubyString path = StringSupport.checkEmbeddedNulls(context.runtime, RubyFile.get_path(context, arg));
+        return entriesCommon(context, path.asJavaString());
     }
 
     @JRubyMethod(name = "entries", meta = true)
     public static RubyArray entries19(ThreadContext context, IRubyObject recv, IRubyObject arg, IRubyObject opts) {
+        RubyString path = StringSupport.checkEmbeddedNulls(context.runtime, RubyFile.get_path(context, arg));
         // FIXME: do something with opts
-        return entriesCommon(context, RubyFile.get_path(context, arg).asJavaString());
+        return entriesCommon(context, path.asJavaString());
     }
 
     private static RubyArray entriesCommon(ThreadContext context, String path) {
@@ -294,20 +301,26 @@ public class RubyDir extends RubyObject {
     public static IRubyObject chdir(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
         Ruby runtime = context.runtime;
         RubyString path = args.length == 1 ?
-            RubyFile.get_path(context, args[0]) : getHomeDirectoryPath(context);
+            StringSupport.checkEmbeddedNulls(runtime, RubyFile.get_path(context, args[0])) :
+            getHomeDirectoryPath(context);
         String adjustedPath = RubyFile.adjustRootPathOnWindows(runtime, path.asJavaString(), null);
         checkDirIsTwoSlashesOnWindows(runtime, adjustedPath);
-        JRubyFile dir = getDir(runtime, adjustedPath, true);
-        String realPath;
+        String realPath = null;
         String oldCwd = runtime.getCurrentDirectory();
+        if (adjustedPath.startsWith("uri:")){
+            realPath = adjustedPath;
+        }
+        else {
+            JRubyFile dir = getDir(runtime, adjustedPath, true);
 
-        // We get canonical path to try and flatten the path out.
-        // a dir '/subdir/..' should return as '/'
-        // cnutter: Do we want to flatten path out?
-        try {
-            realPath = dir.getCanonicalPath();
-        } catch (IOException e) {
-            realPath = dir.getAbsolutePath();
+            // We get canonical path to try and flatten the path out.
+            // a dir '/subdir/..' should return as '/'
+            // cnutter: Do we want to flatten path out?
+            try {
+                realPath = dir.getCanonicalPath();
+            } catch (IOException e) {
+                realPath = dir.getAbsolutePath();
+            }
         }
 
         IRubyObject result = null;
@@ -317,7 +330,7 @@ public class RubyDir extends RubyObject {
             try {
                 result = block.yield(context, path);
             } finally {
-                getDir(runtime, oldCwd, true); // ENEBO: Needed in case exception is thrown???
+                getDir(runtime, oldCwd, true); // needed in case the block deleted the oldCwd
                 runtime.setCurrentDirectory(oldCwd);
             }
         } else {
@@ -347,7 +360,9 @@ public class RubyDir extends RubyObject {
 
     @JRubyMethod(name = {"rmdir", "unlink", "delete"}, required = 1, meta = true)
     public static IRubyObject rmdir19(ThreadContext context, IRubyObject recv, IRubyObject path) {
-        return rmdirCommon(context.runtime, RubyFile.get_path(context, path).asJavaString());
+        Ruby runtime = context.runtime;
+        RubyString cleanPath = StringSupport.checkEmbeddedNulls(runtime, RubyFile.get_path(context, path));
+        return rmdirCommon(runtime, cleanPath.asJavaString());
     }
 
     private static IRubyObject rmdirCommon(Ruby runtime, String path) {
@@ -419,7 +434,9 @@ public class RubyDir extends RubyObject {
 
     @JRubyMethod(name = "mkdir", required = 1, optional = 1, meta = true)
     public static IRubyObject mkdir19(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
-        return mkdirCommon(context.runtime, RubyFile.get_path(context, args[0]).asJavaString(), args);
+        Ruby runtime = context.runtime;
+        RubyString path = StringSupport.checkEmbeddedNulls(runtime, RubyFile.get_path(context, args[0]));
+        return mkdirCommon(runtime, path.asJavaString(), args);
     }
 
     private static IRubyObject mkdirCommon(Ruby runtime, String path, IRubyObject[] args) {
@@ -514,7 +531,9 @@ public class RubyDir extends RubyObject {
         Ruby runtime = getRuntime();
         StringBuilder part = new StringBuilder();
         String cname = getMetaClass().getRealClass().getName();
-        part.append("#<").append(cname).append(":").append(path.asJavaString()).append(">");
+        part.append("#<").append(cname).append(":");
+        if (path != null) { part.append(path.asJavaString()); }
+        part.append(">");
 
         return runtime.newString(part.toString());
     }
@@ -550,7 +569,7 @@ public class RubyDir extends RubyObject {
 
     @JRubyMethod(name = {"path", "to_path"})
     public IRubyObject path(ThreadContext context) {
-        return path.strDup(context.runtime);
+        return path == null ? context.runtime.getNil() : path.strDup(context.runtime);
     }
     
     @JRubyMethod
@@ -581,15 +600,17 @@ public class RubyDir extends RubyObject {
 
     @JRubyMethod(name = "exist?", meta = true)
     public static IRubyObject exist(ThreadContext context, IRubyObject recv, IRubyObject arg) {
+        Ruby runtime = context.runtime;
         // Capture previous exception if any.
-        IRubyObject exception = context.runtime.getGlobalVariables().get("$!");
+        IRubyObject exception = runtime.getGlobalVariables().get("$!");
+        RubyString path = StringSupport.checkEmbeddedNulls(runtime, RubyFile.get_path(context, arg));
         
         try {
-            return context.runtime.newFileStat(RubyFile.get_path(context, arg).asJavaString(), false).directory_p();
+            return runtime.newFileStat(path.asJavaString(), false).directory_p();
         } catch (Exception e) {
             // Restore $!
-            context.runtime.getGlobalVariables().set("$!", exception);
-            return context.runtime.newBoolean(false);
+            runtime.getGlobalVariables().set("$!", exception);
+            return runtime.newBoolean(false);
         }
     }
 
@@ -600,6 +621,11 @@ public class RubyDir extends RubyObject {
         }
 
         return exist(context, recv, arg);
+    }
+
+    @JRubyMethod(name = "fileno", notImplemented = true)
+    public IRubyObject fileno(ThreadContext context) {
+        throw context.runtime.newNotImplementedError("Dir#fileno");
     }
 
 // ----- Helper Methods --------------------------------------------------------

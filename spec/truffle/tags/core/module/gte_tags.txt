@@ -1,4 +1,0 @@
-fails:Module#>= returns true if self is a superclass of, the same as or included by given module
-fails:Module#>= returns nil if self is not related to the given module
-fails:Module#>= returns false if self is a subclass of or includes the given module
-fails:Module#>= raises a TypeError if the argument is not a class/module

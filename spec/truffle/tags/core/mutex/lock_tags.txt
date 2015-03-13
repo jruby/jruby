@@ -1,3 +1,0 @@
-fails:Mutex#lock returns self
-fails:Mutex#lock waits if the lock is not available
-fails:Mutex#lock raises a ThreadError when used recursively

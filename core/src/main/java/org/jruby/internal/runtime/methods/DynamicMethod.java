@@ -145,7 +145,7 @@ public abstract class DynamicMethod {
 
     /**
      * The minimum 'call' method required for a dynamic method handle.
-     * Subclasses must impleemnt this method, but may implement the other
+     * Subclasses must implement this method, but may implement the other
      * signatures to provide faster, non-boxing call paths. Typically
      * subclasses will implement this method to check variable arity calls,
      * then performing a specific-arity invocation to the appropriate method
@@ -310,6 +310,10 @@ public abstract class DynamicMethod {
         return implementationClass;
     }
 
+    public boolean isImplementedBy(RubyModule other) {
+        return implementationClass == other;
+    }
+
     /**
      * Set the class on which this method is implemented, used for 'super'
      * logic, among others.
@@ -348,6 +352,17 @@ public abstract class DynamicMethod {
      */
     public final boolean isUndefined() {
         return this == UndefinedMethod.INSTANCE;
+    }
+
+    /**
+     * Whether this method is the "null" method, used to stop method
+     * name resolution loops. Only returns true for NullMethod instances,
+     * of which there should be only one (a singleton).
+     *
+     * @return true if this method is the undefined method; false otherwise
+     */
+    public final boolean isNull() {
+        return this == NullMethod.INSTANCE;
     }
 
     /**

@@ -1,188 +1,20 @@
-fails:String#unpack with format 'S' with modifier '<' decodes one short for a single format character
-fails:String#unpack with format 'S' with modifier '<' decodes two shorts for two format characters
-fails:String#unpack with format 'S' with modifier '<' decodes the number of shorts requested by the count modifier
-fails:String#unpack with format 'S' with modifier '<' decodes the remaining shorts when passed the '*' modifier
-fails:String#unpack with format 'S' with modifier '<' decodes the remaining shorts when passed the '*' modifier after another directive
-fails:String#unpack with format 'S' with modifier '<' does not decode a short when fewer bytes than a short remain and the '*' modifier is passed
 fails:String#unpack with format 'S' with modifier '<' adds nil for each element requested beyond the end of the String
-fails:String#unpack with format 'S' with modifier '<' ignores NULL bytes between directives
-fails:String#unpack with format 'S' with modifier '<' ignores spaces between directives
-fails:String#unpack with format 'S' with modifier '<' decodes a short with most significant bit set as a positive number
-fails:String#unpack with format 'S' with modifier '<' and '_' decodes one short for a single format character
-fails:String#unpack with format 'S' with modifier '<' and '_' decodes two shorts for two format characters
-fails:String#unpack with format 'S' with modifier '<' and '_' decodes the number of shorts requested by the count modifier
-fails:String#unpack with format 'S' with modifier '<' and '_' decodes the remaining shorts when passed the '*' modifier
-fails:String#unpack with format 'S' with modifier '<' and '_' decodes the remaining shorts when passed the '*' modifier after another directive
-fails:String#unpack with format 'S' with modifier '<' and '_' does not decode a short when fewer bytes than a short remain and the '*' modifier is passed
 fails:String#unpack with format 'S' with modifier '<' and '_' adds nil for each element requested beyond the end of the String
-fails:String#unpack with format 'S' with modifier '<' and '_' ignores NULL bytes between directives
-fails:String#unpack with format 'S' with modifier '<' and '_' ignores spaces between directives
-fails:String#unpack with format 'S' with modifier '<' and '_' decodes a short with most significant bit set as a positive number
-fails:String#unpack with format 'S' with modifier '<' and '!' decodes one short for a single format character
-fails:String#unpack with format 'S' with modifier '<' and '!' decodes two shorts for two format characters
-fails:String#unpack with format 'S' with modifier '<' and '!' decodes the number of shorts requested by the count modifier
-fails:String#unpack with format 'S' with modifier '<' and '!' decodes the remaining shorts when passed the '*' modifier
-fails:String#unpack with format 'S' with modifier '<' and '!' decodes the remaining shorts when passed the '*' modifier after another directive
-fails:String#unpack with format 'S' with modifier '<' and '!' does not decode a short when fewer bytes than a short remain and the '*' modifier is passed
 fails:String#unpack with format 'S' with modifier '<' and '!' adds nil for each element requested beyond the end of the String
-fails:String#unpack with format 'S' with modifier '<' and '!' ignores NULL bytes between directives
-fails:String#unpack with format 'S' with modifier '<' and '!' ignores spaces between directives
-fails:String#unpack with format 'S' with modifier '<' and '!' decodes a short with most significant bit set as a positive number
-fails:String#unpack with format 'S' with modifier '>' decodes one short for a single format character
-fails:String#unpack with format 'S' with modifier '>' decodes two shorts for two format characters
-fails:String#unpack with format 'S' with modifier '>' decodes the number of shorts requested by the count modifier
-fails:String#unpack with format 'S' with modifier '>' decodes the remaining shorts when passed the '*' modifier
-fails:String#unpack with format 'S' with modifier '>' decodes the remaining shorts when passed the '*' modifier after another directive
-fails:String#unpack with format 'S' with modifier '>' does not decode a short when fewer bytes than a short remain and the '*' modifier is passed
 fails:String#unpack with format 'S' with modifier '>' adds nil for each element requested beyond the end of the String
-fails:String#unpack with format 'S' with modifier '>' ignores NULL bytes between directives
-fails:String#unpack with format 'S' with modifier '>' ignores spaces between directives
-fails:String#unpack with format 'S' with modifier '>' decodes a short with most significant bit set as a positive number
-fails:String#unpack with format 'S' with modifier '>' and '_' decodes one short for a single format character
-fails:String#unpack with format 'S' with modifier '>' and '_' decodes two shorts for two format characters
-fails:String#unpack with format 'S' with modifier '>' and '_' decodes the number of shorts requested by the count modifier
-fails:String#unpack with format 'S' with modifier '>' and '_' decodes the remaining shorts when passed the '*' modifier
-fails:String#unpack with format 'S' with modifier '>' and '_' decodes the remaining shorts when passed the '*' modifier after another directive
-fails:String#unpack with format 'S' with modifier '>' and '_' does not decode a short when fewer bytes than a short remain and the '*' modifier is passed
 fails:String#unpack with format 'S' with modifier '>' and '_' adds nil for each element requested beyond the end of the String
-fails:String#unpack with format 'S' with modifier '>' and '_' ignores NULL bytes between directives
-fails:String#unpack with format 'S' with modifier '>' and '_' ignores spaces between directives
-fails:String#unpack with format 'S' with modifier '>' and '_' decodes a short with most significant bit set as a positive number
-fails:String#unpack with format 'S' with modifier '>' and '!' decodes one short for a single format character
-fails:String#unpack with format 'S' with modifier '>' and '!' decodes two shorts for two format characters
-fails:String#unpack with format 'S' with modifier '>' and '!' decodes the number of shorts requested by the count modifier
-fails:String#unpack with format 'S' with modifier '>' and '!' decodes the remaining shorts when passed the '*' modifier
-fails:String#unpack with format 'S' with modifier '>' and '!' decodes the remaining shorts when passed the '*' modifier after another directive
-fails:String#unpack with format 'S' with modifier '>' and '!' does not decode a short when fewer bytes than a short remain and the '*' modifier is passed
 fails:String#unpack with format 'S' with modifier '>' and '!' adds nil for each element requested beyond the end of the String
-fails:String#unpack with format 'S' with modifier '>' and '!' ignores NULL bytes between directives
-fails:String#unpack with format 'S' with modifier '>' and '!' ignores spaces between directives
-fails:String#unpack with format 'S' with modifier '>' and '!' decodes a short with most significant bit set as a positive number
-fails:String#unpack with format 's' with modifier '<' decodes one short for a single format character
-fails:String#unpack with format 's' with modifier '<' decodes two shorts for two format characters
-fails:String#unpack with format 's' with modifier '<' decodes the number of shorts requested by the count modifier
-fails:String#unpack with format 's' with modifier '<' decodes the remaining shorts when passed the '*' modifier
-fails:String#unpack with format 's' with modifier '<' decodes the remaining shorts when passed the '*' modifier after another directive
-fails:String#unpack with format 's' with modifier '<' does not decode a short when fewer bytes than a short remain and the '*' modifier is passed
 fails:String#unpack with format 's' with modifier '<' adds nil for each element requested beyond the end of the String
-fails:String#unpack with format 's' with modifier '<' ignores NULL bytes between directives
-fails:String#unpack with format 's' with modifier '<' ignores spaces between directives
-fails:String#unpack with format 's' with modifier '<' decodes a short with most significant bit set as a negative number
-fails:String#unpack with format 's' with modifier '<' and '_' decodes one short for a single format character
-fails:String#unpack with format 's' with modifier '<' and '_' decodes two shorts for two format characters
-fails:String#unpack with format 's' with modifier '<' and '_' decodes the number of shorts requested by the count modifier
-fails:String#unpack with format 's' with modifier '<' and '_' decodes the remaining shorts when passed the '*' modifier
-fails:String#unpack with format 's' with modifier '<' and '_' decodes the remaining shorts when passed the '*' modifier after another directive
-fails:String#unpack with format 's' with modifier '<' and '_' does not decode a short when fewer bytes than a short remain and the '*' modifier is passed
 fails:String#unpack with format 's' with modifier '<' and '_' adds nil for each element requested beyond the end of the String
-fails:String#unpack with format 's' with modifier '<' and '_' ignores NULL bytes between directives
-fails:String#unpack with format 's' with modifier '<' and '_' ignores spaces between directives
-fails:String#unpack with format 's' with modifier '<' and '_' decodes a short with most significant bit set as a negative number
-fails:String#unpack with format 's' with modifier '<' and '!' decodes one short for a single format character
-fails:String#unpack with format 's' with modifier '<' and '!' decodes two shorts for two format characters
-fails:String#unpack with format 's' with modifier '<' and '!' decodes the number of shorts requested by the count modifier
-fails:String#unpack with format 's' with modifier '<' and '!' decodes the remaining shorts when passed the '*' modifier
-fails:String#unpack with format 's' with modifier '<' and '!' decodes the remaining shorts when passed the '*' modifier after another directive
-fails:String#unpack with format 's' with modifier '<' and '!' does not decode a short when fewer bytes than a short remain and the '*' modifier is passed
 fails:String#unpack with format 's' with modifier '<' and '!' adds nil for each element requested beyond the end of the String
-fails:String#unpack with format 's' with modifier '<' and '!' ignores NULL bytes between directives
-fails:String#unpack with format 's' with modifier '<' and '!' ignores spaces between directives
-fails:String#unpack with format 's' with modifier '<' and '!' decodes a short with most significant bit set as a negative number
-fails:String#unpack with format 's' with modifier '>' decodes one short for a single format character
-fails:String#unpack with format 's' with modifier '>' decodes two shorts for two format characters
-fails:String#unpack with format 's' with modifier '>' decodes the number of shorts requested by the count modifier
-fails:String#unpack with format 's' with modifier '>' decodes the remaining shorts when passed the '*' modifier
-fails:String#unpack with format 's' with modifier '>' decodes the remaining shorts when passed the '*' modifier after another directive
-fails:String#unpack with format 's' with modifier '>' does not decode a short when fewer bytes than a short remain and the '*' modifier is passed
 fails:String#unpack with format 's' with modifier '>' adds nil for each element requested beyond the end of the String
-fails:String#unpack with format 's' with modifier '>' ignores NULL bytes between directives
-fails:String#unpack with format 's' with modifier '>' ignores spaces between directives
-fails:String#unpack with format 's' with modifier '>' decodes a short with most significant bit set as a negative number
-fails:String#unpack with format 's' with modifier '>' and '_' decodes one short for a single format character
-fails:String#unpack with format 's' with modifier '>' and '_' decodes two shorts for two format characters
-fails:String#unpack with format 's' with modifier '>' and '_' decodes the number of shorts requested by the count modifier
-fails:String#unpack with format 's' with modifier '>' and '_' decodes the remaining shorts when passed the '*' modifier
-fails:String#unpack with format 's' with modifier '>' and '_' decodes the remaining shorts when passed the '*' modifier after another directive
-fails:String#unpack with format 's' with modifier '>' and '_' does not decode a short when fewer bytes than a short remain and the '*' modifier is passed
 fails:String#unpack with format 's' with modifier '>' and '_' adds nil for each element requested beyond the end of the String
-fails:String#unpack with format 's' with modifier '>' and '_' ignores NULL bytes between directives
-fails:String#unpack with format 's' with modifier '>' and '_' ignores spaces between directives
-fails:String#unpack with format 's' with modifier '>' and '_' decodes a short with most significant bit set as a negative number
-fails:String#unpack with format 's' with modifier '>' and '!' decodes one short for a single format character
-fails:String#unpack with format 's' with modifier '>' and '!' decodes two shorts for two format characters
-fails:String#unpack with format 's' with modifier '>' and '!' decodes the number of shorts requested by the count modifier
-fails:String#unpack with format 's' with modifier '>' and '!' decodes the remaining shorts when passed the '*' modifier
-fails:String#unpack with format 's' with modifier '>' and '!' decodes the remaining shorts when passed the '*' modifier after another directive
-fails:String#unpack with format 's' with modifier '>' and '!' does not decode a short when fewer bytes than a short remain and the '*' modifier is passed
 fails:String#unpack with format 's' with modifier '>' and '!' adds nil for each element requested beyond the end of the String
-fails:String#unpack with format 's' with modifier '>' and '!' ignores NULL bytes between directives
-fails:String#unpack with format 's' with modifier '>' and '!' ignores spaces between directives
-fails:String#unpack with format 's' with modifier '>' and '!' decodes a short with most significant bit set as a negative number
-fails:String#unpack with format 'S' ignores whitespace in the format string
 fails:String#unpack with format 'S' calls #to_str to coerce the directives string
-fails:String#unpack with format 'S' raises a TypeError when passed nil
-fails:String#unpack with format 'S' raises a TypeError when passed an Integer
-fails:String#unpack with format 'S' decodes one short for a single format character
-fails:String#unpack with format 'S' decodes two shorts for two format characters
-fails:String#unpack with format 'S' decodes the number of shorts requested by the count modifier
-fails:String#unpack with format 'S' decodes the remaining shorts when passed the '*' modifier
-fails:String#unpack with format 'S' decodes the remaining shorts when passed the '*' modifier after another directive
-fails:String#unpack with format 'S' does not decode a short when fewer bytes than a short remain and the '*' modifier is passed
 fails:String#unpack with format 'S' adds nil for each element requested beyond the end of the String
-fails:String#unpack with format 'S' ignores NULL bytes between directives
-fails:String#unpack with format 'S' ignores spaces between directives
-fails:String#unpack with format 'S' decodes a short with most significant bit set as a positive number
-fails:String#unpack with format 'S' with modifier '_' decodes one short for a single format character
-fails:String#unpack with format 'S' with modifier '_' decodes two shorts for two format characters
-fails:String#unpack with format 'S' with modifier '_' decodes the number of shorts requested by the count modifier
-fails:String#unpack with format 'S' with modifier '_' decodes the remaining shorts when passed the '*' modifier
-fails:String#unpack with format 'S' with modifier '_' decodes the remaining shorts when passed the '*' modifier after another directive
-fails:String#unpack with format 'S' with modifier '_' does not decode a short when fewer bytes than a short remain and the '*' modifier is passed
 fails:String#unpack with format 'S' with modifier '_' adds nil for each element requested beyond the end of the String
-fails:String#unpack with format 'S' with modifier '_' ignores NULL bytes between directives
-fails:String#unpack with format 'S' with modifier '_' ignores spaces between directives
-fails:String#unpack with format 'S' with modifier '_' decodes a short with most significant bit set as a positive number
-fails:String#unpack with format 'S' with modifier '!' decodes one short for a single format character
-fails:String#unpack with format 'S' with modifier '!' decodes two shorts for two format characters
-fails:String#unpack with format 'S' with modifier '!' decodes the number of shorts requested by the count modifier
-fails:String#unpack with format 'S' with modifier '!' decodes the remaining shorts when passed the '*' modifier
-fails:String#unpack with format 'S' with modifier '!' decodes the remaining shorts when passed the '*' modifier after another directive
-fails:String#unpack with format 'S' with modifier '!' does not decode a short when fewer bytes than a short remain and the '*' modifier is passed
 fails:String#unpack with format 'S' with modifier '!' adds nil for each element requested beyond the end of the String
-fails:String#unpack with format 'S' with modifier '!' ignores NULL bytes between directives
-fails:String#unpack with format 'S' with modifier '!' ignores spaces between directives
-fails:String#unpack with format 'S' with modifier '!' decodes a short with most significant bit set as a positive number
-fails:String#unpack with format 's' ignores whitespace in the format string
 fails:String#unpack with format 's' calls #to_str to coerce the directives string
-fails:String#unpack with format 's' raises a TypeError when passed nil
-fails:String#unpack with format 's' raises a TypeError when passed an Integer
-fails:String#unpack with format 's' decodes one short for a single format character
-fails:String#unpack with format 's' decodes two shorts for two format characters
-fails:String#unpack with format 's' decodes the number of shorts requested by the count modifier
-fails:String#unpack with format 's' decodes the remaining shorts when passed the '*' modifier
-fails:String#unpack with format 's' decodes the remaining shorts when passed the '*' modifier after another directive
-fails:String#unpack with format 's' does not decode a short when fewer bytes than a short remain and the '*' modifier is passed
 fails:String#unpack with format 's' adds nil for each element requested beyond the end of the String
-fails:String#unpack with format 's' ignores NULL bytes between directives
-fails:String#unpack with format 's' ignores spaces between directives
-fails:String#unpack with format 's' decodes a short with most significant bit set as a negative number
-fails:String#unpack with format 's' with modifier '_' decodes one short for a single format character
-fails:String#unpack with format 's' with modifier '_' decodes two shorts for two format characters
-fails:String#unpack with format 's' with modifier '_' decodes the number of shorts requested by the count modifier
-fails:String#unpack with format 's' with modifier '_' decodes the remaining shorts when passed the '*' modifier
-fails:String#unpack with format 's' with modifier '_' decodes the remaining shorts when passed the '*' modifier after another directive
-fails:String#unpack with format 's' with modifier '_' does not decode a short when fewer bytes than a short remain and the '*' modifier is passed
 fails:String#unpack with format 's' with modifier '_' adds nil for each element requested beyond the end of the String
-fails:String#unpack with format 's' with modifier '_' ignores NULL bytes between directives
-fails:String#unpack with format 's' with modifier '_' ignores spaces between directives
-fails:String#unpack with format 's' with modifier '_' decodes a short with most significant bit set as a negative number
-fails:String#unpack with format 's' with modifier '!' decodes one short for a single format character
-fails:String#unpack with format 's' with modifier '!' decodes two shorts for two format characters
-fails:String#unpack with format 's' with modifier '!' decodes the number of shorts requested by the count modifier
-fails:String#unpack with format 's' with modifier '!' decodes the remaining shorts when passed the '*' modifier
-fails:String#unpack with format 's' with modifier '!' decodes the remaining shorts when passed the '*' modifier after another directive
-fails:String#unpack with format 's' with modifier '!' does not decode a short when fewer bytes than a short remain and the '*' modifier is passed
 fails:String#unpack with format 's' with modifier '!' adds nil for each element requested beyond the end of the String
-fails:String#unpack with format 's' with modifier '!' ignores NULL bytes between directives
-fails:String#unpack with format 's' with modifier '!' ignores spaces between directives
-fails:String#unpack with format 's' with modifier '!' decodes a short with most significant bit set as a negative number

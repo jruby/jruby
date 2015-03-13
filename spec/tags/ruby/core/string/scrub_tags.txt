@@ -1,2 +1,2 @@
-fails:String#scrub with a custom replacement replaces groups of sequences together with a single replacement
-fails:String#scrub with a block replaces invalid byte sequences
+fails:String#scrub! modifies self for valid strings
+fails:String#scrub! accepts blocks

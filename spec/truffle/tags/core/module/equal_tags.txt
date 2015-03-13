@@ -1,1 +1,0 @@
-fails:Module#equal? returns true if self and the given module are the same

@@ -35,6 +35,7 @@ import org.jruby.RubyClass;
 import org.jruby.RubyEncoding;
 import org.jruby.RubyFixnum;
 import org.jruby.RubyFloat;
+import org.jruby.RubyHash;
 import org.jruby.RubyIO;
 import org.jruby.RubyInteger;
 import org.jruby.RubyModule;
@@ -46,7 +47,13 @@ import org.jruby.RubyNil;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
+import java.util.Arrays;
+import java.util.List;
+
 public class TypeConverter {
+    private static final List<String> IMPLICIT_CONVERSIONS =
+        Arrays.asList("to_int", "to_ary", "to_str", "to_sym", "to_hash", "to_proc", "to_io");
+
     /**
      * Converts this object to type 'targetType' using 'convertMethod' method (MRI: convert_type).
      *
@@ -57,8 +64,14 @@ public class TypeConverter {
      * @return the converted value
      */
     public static IRubyObject convertToType(IRubyObject obj, RubyClass target, String convertMethod, boolean raise) {
-        if (!obj.respondsTo(convertMethod)) return handleUncoercibleObject(raise, obj, target);
-        
+        if (!obj.respondsTo(convertMethod)) {
+            if (IMPLICIT_CONVERSIONS.contains(convertMethod)) {
+                return handleImplicitlyUncoercibleObject(raise, obj, target);
+            } else {
+                return handleUncoercibleObject(raise, obj, target);
+            }
+        }
+
         return obj.callMethod(obj.getRuntime().getCurrentContext(), convertMethod);
     }
 
@@ -186,7 +199,10 @@ public class TypeConverter {
         if (target.isInstance(obj)) return obj;
         IRubyObject val = TypeConverter.convertToType19(obj, target, convertMethod, false);
         if (val.isNil()) return val;
-        if (!target.isInstance(val)) throw obj.getRuntime().newTypeError(obj.getMetaClass() + "#" + convertMethod + " should return " + target.getName());
+        if (!target.isInstance(val)) {
+            String cname = obj.getMetaClass().getName();
+            throw obj.getRuntime().newTypeError("can't convert " + cname + " to " + target.getName() + " (" + cname + "#" + convertMethod + " gives " + val.getMetaClass().getName() + ")");
+        }
         return val;
     }
 
@@ -225,21 +241,25 @@ public class TypeConverter {
 
     // rb_check_hash_type
     public static IRubyObject checkHashType(Ruby runtime, IRubyObject obj) {
+        if (obj instanceof RubyHash) return obj;
         return TypeConverter.convertToTypeWithCheck(obj, runtime.getHash(), "to_hash");
     }
 
     // rb_check_string_type
     public static IRubyObject checkStringType(Ruby runtime, IRubyObject obj) {
+        if (obj instanceof RubyString) return obj;
         return TypeConverter.convertToTypeWithCheck(obj, runtime.getString(), "to_str");
     }
 
     // rb_check_array_type
     public static IRubyObject checkArrayType(Ruby runtime, IRubyObject obj) {
+        if (obj instanceof RubyArray) return obj;
         return TypeConverter.convertToTypeWithCheck(obj, runtime.getArray(), "to_ary");
     }
 
     // rb_io_check_io
     public static IRubyObject ioCheckIO(Ruby runtime, IRubyObject obj) {
+        if (obj instanceof RubyIO) return obj;
         return TypeConverter.convertToTypeWithCheck(obj, runtime.getIO(), "to_io");
     }
 
@@ -255,6 +275,12 @@ public class TypeConverter {
 
     public static IRubyObject handleUncoercibleObject(boolean raise, IRubyObject obj, RubyClass target) throws RaiseException {
         if (raise) throw obj.getRuntime().newTypeError("can't convert " + typeAsString(obj) + " into " + target);
+
+        return obj.getRuntime().getNil();
+    }
+
+    public static IRubyObject handleImplicitlyUncoercibleObject(boolean raise, IRubyObject obj, RubyClass target) throws RaiseException {
+        if (raise) throw obj.getRuntime().newTypeError("no implicit conversion of " + typeAsString(obj) + " into " + target);
 
         return obj.getRuntime().getNil();
     }

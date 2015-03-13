@@ -1,49 +1,13 @@
-fails:passed { |a, b = 1|  } creates a method that raises an ArgumentError when passed zero arguments
-fails:passed { |a, b = 1|  } creates a method that has a default value for b when passed one argument
-fails:passed { |a, b = 1|  } creates a method that overrides the default argument when passed two arguments
-fails:passed { |a, b = 1|  } creates a method that raises an ArgumentError when passed three arguments
 fails:Module#define_method when given an UnboundMethod passes the given arguments to the new method
 fails:Module#define_method when given an UnboundMethod adds the new method to the methods list
 fails:Module#define_method when given an UnboundMethod defining a method on a singleton class doesn't raise TypeError when calling the method
-fails:Module#define_method when name is :initialize passed a block sets visibility to private when method name is :initialize
-fails:Module#define_method when name is :initialize given an UnboundMethod sets the visibility to private when method is named :initialize
 fails:Module#define_method defines the given method as an instance method with the given name in self
 fails:Module#define_method calls #method_added after the method is added to the Module
-fails:Module#define_method defines a new method with the given name and the given block as body in self
-fails:Module#define_method raises a TypeError when the given method is no Method/Proc
 fails:Module#define_method raises an ArgumentError when no block is given
-fails:Module#define_method does not change the arity check style of the original proc
-fails:Module#define_method raises a RuntimeError if frozen
-fails:Module#define_method accepts a Method (still bound)
-fails:Module#define_method maintains the Proc's scope
-fails:Module#define_method accepts a String method name
 fails:Module#define_method is private
-fails:Module#define_method returns its symbol
 fails:Module#define_method method body is an UnboundMethod allows methods defined on a different object
-fails:Module#define_method passed {  } creates a method that returns the value computed by the block when passed zero arguments
-fails:Module#define_method passed {  } creates a method that raises an ArgumentError when passed one argument
-fails:Module#define_method passed {  } creates a method that raises an ArgumentError when passed two arguments
-fails:Module#define_method passed { ||  } creates a method that returns the value computed by the block when passed zero arguments
-fails:Module#define_method passed { ||  } creates a method that raises an ArgumentError when passed one argument
-fails:Module#define_method passed { ||  } creates a method that raises an ArgumentError when passed two arguments
-fails:Module#define_method passed { |a|  } creates a method that raises an ArgumentError when passed zero arguments
-fails:Module#define_method passed { |a|  } creates a method that raises an ArgumentError when passed zero arguments and a block
-fails:Module#define_method passed { |a|  } creates a method that raises an ArgumentError when passed two arguments
-fails:Module#define_method passed { |a|  } creates a method that receives the value passed as the argument when passed one argument
-fails:Module#define_method passed { |*a|  } creates a method that receives an empty array as the argument when passed zero arguments
-fails:Module#define_method passed { |*a|  } creates a method that receives the value in an array when passed one argument
-fails:Module#define_method passed { |*a|  } creates a method that receives the values in an array when passed two arguments
-fails:Module#define_method passed { |a, *b|  } creates a method that raises an ArgumentError when passed zero arguments
-fails:Module#define_method passed { |a, *b|  } creates a method that returns the value computed by the block when passed one argument
-fails:Module#define_method passed { |a, *b|  } creates a method that returns the value computed by the block when passed two arguments
-fails:Module#define_method passed { |a, *b|  } creates a method that returns the value computed by the block when passed three arguments
-fails:Module#define_method passed { |a, b|  } creates a method that returns the value computed by the block when passed two arguments
-fails:Module#define_method passed { |a, b|  } creates a method that raises an ArgumentError when passed zero arguments
-fails:Module#define_method passed { |a, b|  } creates a method that raises an ArgumentError when passed one argument
-fails:Module#define_method passed { |a, b|  } creates a method that raises an ArgumentError when passed one argument and a block
-fails:Module#define_method passed { |a, b|  } creates a method that raises an ArgumentError when passed three arguments
-fails:Module#define_method passed { |a, b, *c|  } creates a method that raises an ArgumentError when passed zero arguments
-fails:Module#define_method passed { |a, b, *c|  } creates a method that raises an ArgumentError when passed one argument
-fails:Module#define_method passed { |a, b, *c|  } creates a method that raises an ArgumentError when passed one argument and a block
-fails:Module#define_method passed { |a, b, *c|  } creates a method that receives an empty array as the third argument when passed two arguments
-fails:Module#define_method passed { |a, b, *c|  } creates a method that receives the third argument in an array when passed three arguments
+fails:Module#define_method when name is :initialize given an UnboundMethod sets the visibility to private when method is named :initialize
+fails:Method#define_method when passed a Method object defines a method with the same #arity as the original
+fails:Method#define_method when passed a Method object defines a method with the same #parameters as the original
+fails:Method#define_method when passed an UnboundMethod object defines a method with the same #arity as the original
+fails:Method#define_method when passed an UnboundMethod object defines a method with the same #parameters as the original

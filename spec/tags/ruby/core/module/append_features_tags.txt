@@ -1,1 +1,0 @@
-fails:Module#append_features on Class raises a TypeError if calling after rebinded to Class

@@ -1762,6 +1762,12 @@ public class PopenExecutor {
             }
         }
 
+        // restructure command as a single string if chdir and has args
+        if (eargp.chdir_given() && argc > 1) {
+            RubyArray array = RubyArray.newArrayNoCopy(runtime, argv);
+            prog = (RubyString)array.join(context, RubyString.newString(runtime, " "));
+        }
+
         if (!env.isNil()) {
             eargp.env_modification = RubyIO.checkExecEnv(context, (RubyHash)env);
         }
@@ -1847,12 +1853,13 @@ public class PopenExecutor {
                     List<byte[]> argv_buf = new ArrayList<>();
                     pBytes = prog.getByteList().unsafeBytes();
                     p = prog.getByteList().begin();
-                    while (p < pBytes.length){
-                        while (p < pBytes.length && (pBytes[p] == ' ' || pBytes[p] == '\t'))
+                    int pEnd = prog.getByteList().length() + p;
+                    while (p < pEnd){
+                        while (p < pEnd && (pBytes[p] == ' ' || pBytes[p] == '\t'))
                             p++;
-                        if (p < pBytes.length){
+                        if (p < pEnd){
                             int w = p;
-                            while (p < pBytes.length && pBytes[p] != ' ' && pBytes[p] != '\t')
+                            while (p < pEnd && pBytes[p] != ' ' && pBytes[p] != '\t')
                                 p++;
                             argv_buf.add(Arrays.copyOfRange(pBytes, w, p));
                             eargp.argv_buf = argv_buf;

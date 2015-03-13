@@ -7,3 +7,6 @@ fails:String#scrub with a custom replacement raises ArgumentError for replacemen
 fails:String#scrub with a custom replacement raises TypeError when a non String replacement is given
 fails:String#scrub with a block returns self for valid strings
 fails:String#scrub with a block replaces invalid byte sequences
+fails:String#scrub with a block replaces invalid byte sequences using a custom encoding
+fails:String#scrub! modifies self for valid strings
+fails:String#scrub! accepts blocks

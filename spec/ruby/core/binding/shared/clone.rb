@@ -4,7 +4,7 @@ describe :binding_clone, :shared => true do
     @b2 = @b1.send(@method)
   end
 
-  it "returns a copy of the Bind object" do
+  it "returns a copy of the Binding object" do
     @b1.should_not == @b2
 
     eval("@secret", @b1).should == eval("@secret", @b2)
@@ -13,7 +13,7 @@ describe :binding_clone, :shared => true do
     eval("a", @b1).should == eval("a", @b2)
   end
 
-  it "is a shallow copy of the Bind object" do
+  it "is a shallow copy of the Binding object" do
     eval("a = false", @b1)
     eval("a", @b2).should == false
   end

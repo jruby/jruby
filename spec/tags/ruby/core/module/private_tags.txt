@@ -1,2 +1,1 @@
-fails:Module#private raises a NameError when given an undefined name
 fails:Module#private without arguments does not affect method definitions when itself is inside an eval and method definitions are outside

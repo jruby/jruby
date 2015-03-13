@@ -29,14 +29,16 @@
 package org.jruby.ir.operands;
 
 import org.jruby.ir.IRVisitor;
-import org.jruby.ir.transformations.inlining.InlinerInfo;
+import org.jruby.ir.persistence.IRReaderDecoder;
+import org.jruby.ir.transformations.inlining.SimpleCloneInfo;
 
 /**
  * Represents a temporary variable for an unboxed Float operand.
  */
 public class TemporaryFloatVariable extends TemporaryLocalVariable {
+    public static final String PREFIX = "%f_";
     public TemporaryFloatVariable(int offset) {
-        super(offset);
+        super(PREFIX+offset, offset);
     }
 
     @Override
@@ -46,16 +48,20 @@ public class TemporaryFloatVariable extends TemporaryLocalVariable {
 
     @Override
     public String getPrefix() {
-        return "%f_";
+        return PREFIX;
     }
 
     @Override
-    public Variable clone(InlinerInfo ii) {
-        return new TemporaryFloatVariable(offset);
+    public Variable clone(SimpleCloneInfo ii) {
+        return this;
     }
 
     @Override
     public void visit(IRVisitor visitor) {
         visitor.TemporaryFloatVariable(this);
+    }
+
+    public static TemporaryFloatVariable decode(IRReaderDecoder d) {
+        return new TemporaryFloatVariable(d.decodeInt());
     }
 }

@@ -1,8 +1,0 @@
-fails:Fixnum#% returns the modulus obtained from dividing self by the given argument
-fails:Fixnum#% raises a ZeroDivisionError when the given argument is 0
-fails:Fixnum#% raises a ZeroDivisionError when the given argument is 0 and a Float
-fails:Fixnum#% raises a TypeError when given a non-Integer
-fails:Fixnum#modulo returns the modulus obtained from dividing self by the given argument
-fails:Fixnum#modulo raises a ZeroDivisionError when the given argument is 0
-fails:Fixnum#modulo raises a ZeroDivisionError when the given argument is 0 and a Float
-fails:Fixnum#modulo raises a TypeError when given a non-Integer

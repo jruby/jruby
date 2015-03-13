@@ -7,4 +7,9 @@ describe "Float#<=" do
     (0.0 <= 0.0).should == true
     (9_235.9 <= bignum_value).should == true
   end
+
+  it "raises an ArgumentError when given a non-Numeric" do
+    lambda { 5.0 <= "4"       }.should raise_error(ArgumentError)
+    lambda { 5.0 <= mock('x') }.should raise_error(ArgumentError)
+  end
 end

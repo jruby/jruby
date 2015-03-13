@@ -1,10 +1,2 @@
 fails:MatchData#[] supports accessors [start, length]
 fails:MatchData#[] supports ranges [start..end]
-fails:MatchData#[Symbol] returns the corresponding named match when given a Symbol
-fails:MatchData#[Symbol] returns the corresponding named match when given a String
-fails:MatchData#[Symbol] returns the matching version of multiple corresponding named match
-fails:MatchData#[Symbol] returns the last match when multiple named matches exist with the same name
-fails:MatchData#[Symbol] returns nil on non-matching named matches
-fails:MatchData#[Symbol] raises an IndexError if there is no named match corresponding to the Symbol
-fails:MatchData#[Symbol] raises an IndexError if there is no named match corresponding to the String
-fails:MatchData#[Symbol] returns matches in the String's encoding

@@ -5,14 +5,14 @@
   <parent>
     <groupId>org.jruby</groupId>
     <artifactId>jruby-parent</artifactId>
-    <version>9000.dev-SNAPSHOT</version>
+    <version>9.0.0.0-SNAPSHOT</version>
   </parent>
   <artifactId>jruby-artifacts</artifactId>
   <packaging>pom</packaging>
   <name>JRuby Artifacts</name>
   <properties>
     <tesla.dump.readonly>true</tesla.dump.readonly>
-    <tesla.dump.pom>pom-generated.xml</tesla.dump.pom>
+    <tesla.dump.pom>pom.xml</tesla.dump.pom>
   </properties>
   <build>
     <pluginManagement>
@@ -77,6 +77,22 @@
       </modules>
     </profile>
     <profile>
+      <id>osgi</id>
+      <modules>
+        <module>jruby</module>
+        <module>jruby-noasm</module>
+        <module>jruby-stdlib</module>
+        <module>jruby-complete</module>
+      </modules>
+    </profile>
+    <profile>
+      <id>j2ee</id>
+      <modules>
+        <module>jruby</module>
+        <module>jruby-stdlib</module>
+      </modules>
+    </profile>
+    <profile>
       <id>complete</id>
       <modules>
         <module>jruby-stdlib</module>
@@ -87,7 +103,6 @@
       <id>dist</id>
       <modules>
         <module>jruby-stdlib</module>
-        <module>jruby-complete</module>
         <module>jruby-dist</module>
       </modules>
     </profile>
@@ -95,8 +110,14 @@
       <id>jruby-jars</id>
       <modules>
         <module>jruby-stdlib</module>
-        <module>jruby-complete</module>
         <module>jruby-jars</module>
+      </modules>
+    </profile>
+    <profile>
+      <id>jruby_complete_jar_extended</id>
+      <modules>
+        <module>jruby-stdlib</module>
+        <module>jruby-complete</module>
       </modules>
     </profile>
   </profiles>

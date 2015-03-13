@@ -168,20 +168,25 @@ public class ParserSupport {
     public Node newline_node(Node node, ISourcePosition position) {
         if (node == null) return null;
 
-        configuration.coverLine(position.getStartLine());
+        configuration.coverLine(position.getLine());
         
         return node instanceof NewlineNode ? node : new NewlineNode(position, node); 
     }
     
-    public Node addRootNode(Node topOfAST, ISourcePosition position) {
-        position = topOfAST != null ? topOfAST.getPosition() : position;
-
+    public Node addRootNode(Node topOfAST) {
         if (result.getBeginNodes().isEmpty()) {
-            if (topOfAST == null) topOfAST = NilImplicitNode.NIL;
+            ISourcePosition position;
+            if (topOfAST == null) {
+                topOfAST = NilImplicitNode.NIL;
+                position = lexer.getPosition();
+            } else {
+                position = topOfAST.getPosition();
+            }
             
             return new RootNode(position, result.getScope(), topOfAST);
         }
-        
+
+        ISourcePosition position = topOfAST != null ? topOfAST.getPosition() : result.getBeginNodes().get(0).getPosition();
         BlockNode newTopOfAST = new BlockNode(position);
         for (Node beginNode: result.getBeginNodes()) {
             appendToBlock(newTopOfAST, beginNode);
@@ -198,10 +203,8 @@ public class ParserSupport {
         if (tail == null) return head;
         if (head == null) return tail;
 
-        // Reduces overhead in interp by not set position every single line we encounter. 
-        if (!configuration.hasExtraPositionInformation()) {
-            head = compactNewlines(head);
-        }
+        // Reduces overhead in interp by not set position every single line we encounter.
+        head = compactNewlines(head);
 
         if (!(head instanceof BlockNode)) {
             head = new BlockNode(head.getPosition()).add(head);
@@ -341,6 +344,8 @@ public class ParserSupport {
                 node = newSValueNode(position, node);
             }
         }
+
+        if (node == null) node = NilImplicitNode.NIL;
         
         return node;
     }
@@ -553,8 +558,8 @@ public class ParserSupport {
     private Node cond0(Node node) {
         checkAssignmentInCondition(node);
         
-        Node leftNode = null;
-        Node rightNode = null;
+        Node leftNode;
+        Node rightNode;
 
         // FIXME: DSTR,EVSTR,STR: warning "string literal in condition"
         switch(node.getNodeType()) {
@@ -768,20 +773,7 @@ public class ParserSupport {
     }
     
     public Node new_attrassign(ISourcePosition position, Node receiver, String name, Node args) {
-        if (!(args instanceof ArrayNode)) return new AttrAssignNode(position, receiver, name, args);
-        
-        ArrayNode argsNode = (ArrayNode) args;
-        
-        switch (argsNode.size()) {
-            case 1:
-                return new AttrAssignOneArgNode(position, receiver, name, argsNode);
-            case 2:
-                return new AttrAssignTwoArgNode(position, receiver, name, argsNode);
-            case 3:
-                return new AttrAssignThreeArgNode(position, receiver, name, argsNode);
-            default:
-                return new AttrAssignNode(position, receiver, name, argsNode);
-        }
+        return new AttrAssignNode(position, receiver, name, args);
     }
     
     private boolean isNumericOperator(String name) {
@@ -936,10 +928,8 @@ public class ParserSupport {
     }
         
     public Node asSymbol(ISourcePosition position, Node value) {
-        // FIXME: This might have an encoding issue since toString generally uses iso-8859-1
-        if (value instanceof StrNode) return new SymbolNode(position, ((StrNode) value).getValue().toString().intern());
-        
-        return new DSymbolNode(position, (DStrNode) value);
+        return value instanceof StrNode ? new SymbolNode(position, ((StrNode) value).getValue()) :
+                new DSymbolNode(position, (DStrNode) value);
     }
     
     public Node literal_concat(ISourcePosition position, Node head, Node tail) { 
@@ -1012,7 +1002,7 @@ public class ParserSupport {
         return new Yield19Node(position, node); 
     }
     
-    public Node negateInteger(Node integerNode) {
+    public NumericNode negateInteger(NumericNode integerNode) {
         if (integerNode instanceof FixnumNode) {
             FixnumNode fixnumNode = (FixnumNode) integerNode;
             
@@ -1039,6 +1029,18 @@ public class ParserSupport {
         
         return floatNode;
     }
+
+    public ComplexNode negateComplexNode(ComplexNode complexNode) {
+        complexNode.setNumber(negateNumeric(complexNode.getNumber()));
+
+        return complexNode;
+    }
+
+    public RationalNode negateRational(RationalNode rationalNode) {
+        return new RationalNode(rationalNode.getPosition(),
+                                -rationalNode.getNumerator(),
+                                rationalNode.getDenominator());
+    }
     
     public Node unwrapNewlineNode(Node node) {
     	if(node instanceof NewlineNode) {
@@ -1052,26 +1054,8 @@ public class ParserSupport {
     }
 
     public Node new_args(ISourcePosition position, ListNode pre, ListNode optional, RestArgNode rest,
-            ListNode post, BlockArgNode block) {
-        // Zero-Argument declaration
-        if (optional == null && rest == null && post == null && block == null) {
-            if (pre == null || pre.size() == 0) return new ArgsNoArgNode(position);
-            if (pre.size() == 1 && !hasAssignableArgs(pre)) return new ArgsPreOneArgNode(position, pre);
-            if (pre.size() == 2 && !hasAssignableArgs(pre)) return new ArgsPreTwoArgNode(position, pre);
-        }
-        return new ArgsNode(position, pre, optional, rest, post, block);
-    }
-    
-    public Node new_args(ISourcePosition position, ListNode pre, ListNode optional, RestArgNode rest,
             ListNode post, ArgsTailHolder tail) {
-        if (tail == null) return new_args(position, pre, optional, rest, post, (BlockArgNode) null);
-        
-        // Zero-Argument declaration
-        if (optional == null && rest == null && post == null && !tail.hasKeywordArgs() && tail.getBlockArg() == null) {
-            if (pre == null || pre.size() == 0) return new ArgsNoArgNode(position);
-            if (pre.size() == 1 && !hasAssignableArgs(pre)) return new ArgsPreOneArgNode(position, pre);
-            if (pre.size() == 2 && !hasAssignableArgs(pre)) return new ArgsPreTwoArgNode(position, pre);
-        }
+        if (tail == null) return new ArgsNode(position, pre, optional, rest, post, (BlockArgNode) null);
 
         return new ArgsNode(position, pre, optional, rest, post, 
                 tail.getKeywordArgs(), tail.getKeywordRestArgNode(), tail.getBlockArg());
@@ -1089,14 +1073,6 @@ public class ParserSupport {
         KeywordRestArgNode keywordRestArg = new KeywordRestArgNode(position, restKwargsName, slot);
         
         return new ArgsTailHolder(position, keywordArg, keywordRestArg, blockArg);
-    }    
-
-    private boolean hasAssignableArgs(ListNode list) {
-        for (int i = 0; i < list.size(); i++) {
-            Node node = list.get(i);
-            if (node instanceof AssignableNode) return true;
-        }
-        return false;
     }
 
     public Node newAlias(ISourcePosition position, Node newNode, Node oldNode) {
@@ -1411,15 +1387,17 @@ public class ParserSupport {
         return new KeywordArgNode(position, assignable);
     }
     
-    public Node negateNumeric(ISourcePosition position, Node node) {
+    public NumericNode negateNumeric(NumericNode node) {
         switch (node.getNodeType()) {
             case FIXNUMNODE:
             case BIGNUMNODE:
                 return negateInteger(node);
-            case COMPLEXNODE: // FIXME: impl
-                // COMPLEX
+            case COMPLEXNODE:
+                return negateComplexNode((ComplexNode) node);
             case FLOATNODE:
                 return negateFloat((FloatNode) node);
+            case RATIONALNODE:
+                return negateRational((RationalNode) node);
         }
         
         yyerror("Invalid or unimplemented numeric to negate: " + node.toString());

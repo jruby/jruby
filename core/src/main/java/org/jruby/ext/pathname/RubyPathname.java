@@ -66,7 +66,8 @@ public class RubyPathname extends RubyObject {
 
         runtime.getKernel().defineAnnotatedMethods(PathnameKernelMethods.class);
 
-        defineDelegateMethods(cPathname, runtime.getFile(), "atime", "ctime", "mtime", "ftype",
+        // FIXME: birthtime is provided separately in stat on some platforms (#2152)
+        defineDelegateMethods(cPathname, runtime.getFile(), "atime", "ctime", "birthtime", "mtime", "ftype",
                 "rename", "stat", "lstat", "truncate", "extname", "open");
         defineDelegateMethodsAppendPath(cPathname, runtime.getFile(), "chmod", "lchmod", "chown",
                 "lchown", "utime");
@@ -393,12 +394,14 @@ public class RubyPathname extends RubyObject {
 
     @JRubyMethod(name = {"unlink", "delete"})
     public IRubyObject unlink(ThreadContext context) {
+        IRubyObject oldExc = context.runtime.getGlobalVariables().get("$!"); // Save $!
         try {
             return context.runtime.getDir().callMethod(context, "unlink", getPath());
         } catch (RaiseException ex) {
             if (!context.runtime.getErrno().getClass("ENOTDIR").isInstance(ex.getException())) {
                 throw ex;
             }
+            context.runtime.getGlobalVariables().set("$!", oldExc); // Restore $!
             return context.runtime.getFile().callMethod(context, "unlink", getPath());
         }
     }

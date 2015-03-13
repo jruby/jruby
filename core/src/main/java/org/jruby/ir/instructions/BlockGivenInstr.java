@@ -4,8 +4,9 @@ import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Operation;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.Variable;
+import org.jruby.ir.persistence.IRWriterEncoder;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
-import org.jruby.ir.transformations.inlining.InlinerInfo;
+import org.jruby.ir.transformations.inlining.CloneInfo;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
@@ -13,51 +14,31 @@ import org.jruby.runtime.builtin.IRubyObject;
 
 import java.util.Map;
 
-public class BlockGivenInstr extends Instr implements ResultInstr, FixedArityInstr {
-    private Variable result;
-    private Operand blockArg;
-
+public class BlockGivenInstr extends ResultBaseInstr implements FixedArityInstr {
     public BlockGivenInstr(Variable result, Operand block) {
-        super(Operation.BLOCK_GIVEN);
+        super(Operation.BLOCK_GIVEN, result, new Operand[] {block});
 
         assert result != null: "BlockGivenInstr result is null";
-
-        this.result = result;
-        this.blockArg = block;
-    }
-
-    @Override
-    public Operand[] getOperands() {
-        return new Operand[]{blockArg};
-    }
-
-    @Override
-    public Variable getResult() {
-        return result;
     }
 
     public Operand getBlockArg() {
-        return blockArg;
+        return operands[0];
     }
 
     @Override
-    public void simplifyOperands(Map<Operand, Operand> valueMap, boolean force) {
-        blockArg = blockArg.getSimplifiedOperand(valueMap, force);
+    public Instr clone(CloneInfo ii) {
+        return new BlockGivenInstr(ii.getRenamedVariable(result), getBlockArg().cloneForInlining(ii));
     }
 
     @Override
-    public void updateResult(Variable v) {
-        this.result = v;
-    }
-
-    @Override
-    public Instr cloneForInlining(InlinerInfo ii) {
-        return new BlockGivenInstr(ii.getRenamedVariable(result), blockArg.cloneForInlining(ii));
+    public void encode(IRWriterEncoder e) {
+        super.encode(e);
+        e.encode(getBlockArg());
     }
 
     @Override
     public Object interpret(ThreadContext context, StaticScope currScope, DynamicScope currDynScope, IRubyObject self, Object[] temp) {
-        Object blk = (Object) blockArg.retrieve(context, self, currScope, currDynScope, temp);
+        Object blk = getBlockArg().retrieve(context, self, currScope, currDynScope, temp);
 
         return IRRuntimeHelpers.isBlockGiven(context, blk);
     }

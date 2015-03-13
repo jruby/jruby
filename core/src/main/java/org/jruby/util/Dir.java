@@ -466,6 +466,84 @@ public class Dir {
         return glob_helper(posix, cwd, pattern, pbegin, pend, -1, pflags, glob_caller, new GlobArgs(push_pattern, ary));
     }
 
+    public static ArrayList<String> braces(String pattern, int flags, ArrayList<String> patterns) {
+        boolean escape = (flags & FNM_NOESCAPE) == 0;
+
+        int rbrace = -1;
+        int lbrace = -1;
+
+        // Do a quick search for a { to start the search better
+        int i = pattern.indexOf('{');
+
+        if(i >= 0) {
+            int nest = 0;
+
+            while(i < pattern.length()) {
+                char c = pattern.charAt(i);
+
+                if(c == '{') {
+                    if(nest == 0) {
+                        lbrace = i;
+                    }
+                    nest += 1;
+                }
+
+                if(c == '}') {
+                    nest -= 1;
+                }
+
+                if(nest == 0) {
+                    rbrace = i;
+                    break;
+                }
+
+                if(c == '\\' && escape) {
+                    i += 1;
+                }
+
+                i += 1;
+            }
+        }
+
+        // There was a full {} expression detected, expand each part of it
+        // recursively.
+        if(lbrace >= 0 && rbrace >= 0) {
+            int pos = lbrace;
+            String front = pattern.substring(0, lbrace);
+            String back = pattern.substring(rbrace + 1, pattern.length());
+
+            while(pos < rbrace) {
+                int nest = 0;
+                pos += 1;
+                int last = pos;
+
+                while(pos < rbrace && !(pattern.charAt(pos) == ',' && nest == 0)) {
+                    if(pattern.charAt(pos) == '{') {
+                        nest += 1;
+                    }
+                    if(pattern.charAt(pos) == '}') {
+                        nest -= 1;
+                    }
+
+                    if(pattern.charAt(pos) == '\\' && escape) {
+                        pos += 1;
+                        if(pos == rbrace) {
+                            break;
+                        }
+                    }
+
+                    pos += 1;
+                }
+                String brace_pattern = front + pattern.substring(last, pos) + back;
+                patterns.add(brace_pattern);
+
+                braces(brace_pattern, flags, patterns);
+            }
+        }
+
+        return patterns;
+    }
+
     private static boolean has_magic(byte[] bytes, int begin, int end, int flags) {
         boolean escape = (flags & FNM_NOESCAPE) == 0;
         boolean nocase = (flags & FNM_CASEFOLD) != 0;
@@ -580,6 +658,15 @@ public class Dir {
 
     private static int addToResultIfExists(POSIX posix, String cwd, byte[] bytes, int begin, int end, int flags, GlobFunc func, GlobArgs arg) {
         String fileName = newStringFromUTF8(bytes, begin, end - begin);
+
+        // FIXME: Ultimately JRubyFile.createResource should do this but all 1.7.x is only selectively honoring raw
+        // paths and using system drive make it absolute.  MRI does this on many methods we don't.
+        if (Platform.IS_WINDOWS && cwd == null && !fileName.isEmpty() && fileName.charAt(0) == '/') {
+            cwd = System.getenv("SYSTEMDRIVE");
+            if (cwd == null) cwd = "C:";
+            cwd = cwd + "/";
+        }
+
         FileResource file = JRubyFile.createResource(posix, cwd, fileName);
 
         if (file.exists()) {

@@ -1,5 +1,2 @@
-fails:MatchData#pre_match returns the string before the match, equiv. special var $`
 fails:MatchData#pre_match keeps taint status from the source string
 fails:MatchData#pre_match keeps untrusted status from the source string
-fails:MatchData#pre_match sets the encoding to the encoding of the source String
-fails:MatchData#pre_match sets an empty result to the encoding of the source String

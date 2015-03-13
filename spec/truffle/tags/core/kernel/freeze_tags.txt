@@ -1,5 +1,3 @@
-fails:Kernel#freeze prevents self from being further modified
-fails:Kernel#freeze returns self
 fails:Kernel#freeze freezes immediate values
 fails:Kernel#freeze causes mutative calls to raise RuntimeError
 fails:Kernel#freeze causes instance_variable_set to raise RuntimeError

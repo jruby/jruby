@@ -1,3 +1,0 @@
-fails:String#size returns the length of self
-fails:String#size returns the length of a string in different encodings
-fails:String#size returns the length of the new self after encoding is changed

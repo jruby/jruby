@@ -2,6 +2,7 @@
 require "open3"
 require "timeout"
 require "test/unit"
+require_relative "find_executable"
 
 module EnvUtil
   def rubybin
@@ -9,12 +10,13 @@ module EnvUtil
       return ruby
     end
     ruby = "ruby"
-    rubyexe = ruby+".exe"
+    exeext = RbConfig::CONFIG["EXEEXT"]
+    rubyexe = (ruby + exeext if exeext and !exeext.empty?)
     3.times do
       if File.exist? ruby and File.executable? ruby and !File.directory? ruby
         return File.expand_path(ruby)
       end
-      if File.exist? rubyexe and File.executable? rubyexe
+      if rubyexe and File.exist? rubyexe and File.executable? rubyexe
         return File.expand_path(rubyexe)
       end
       ruby = File.join("..", ruby)
@@ -30,8 +32,9 @@ module EnvUtil
   LANG_ENVS = %w"LANG LC_ALL LC_CTYPE"
 
   def invoke_ruby(args, stdin_data = "", capture_stdout = false, capture_stderr = false,
-                  encoding: nil, timeout: 10, reprieve: 1,
+                  encoding: nil, timeout: 20, reprieve: 1,
                   stdout_filter: nil, stderr_filter: nil,
+                  rubybin: EnvUtil.rubybin,
                   **opt)
     in_c, in_p = IO.pipe
     out_p, out_c = IO.pipe if capture_stdout
@@ -50,7 +53,7 @@ module EnvUtil
       child_env.update(args.shift)
     end
     args = [args] if args.kind_of?(String)
-    pid = spawn(child_env, EnvUtil.rubybin, *args, **opt)
+    pid = spawn(child_env, rubybin, *args, **opt)
     in_c.close
     out_c.close if capture_stdout
     err_c.close if capture_stderr && capture_stderr != :merge_to_stdout
@@ -119,6 +122,14 @@ module EnvUtil
     stderr, $stderr, $VERBOSE = $stderr, stderr, verbose
   end
   module_function :verbose_warning
+
+  def default_warning
+    verbose, $VERBOSE = $VERBOSE, false
+    yield
+  ensure
+    $VERBOSE = verbose
+  end
+  module_function :default_warning
 
   def suppress_warning
     verbose, $VERBOSE = $VERBOSE, nil
@@ -192,7 +203,7 @@ module EnvUtil
           log = File.read(name) rescue next
           if /\AProcess:\s+#{cmd} \[#{pid}\]$/ =~ log
             File.unlink(name)
-            File.unlink("#{path}/.#{File.basename(name)}.plist")
+            File.unlink("#{path}/.#{File.basename(name)}.plist") rescue nil
             return log
           end
         end
@@ -209,13 +220,13 @@ module Test
   module Unit
     module Assertions
       public
-      def assert_valid_syntax(code, fname = caller_locations(1, 1)[0], mesg = fname.to_s)
+      def assert_valid_syntax(code, fname = caller_locations(1, 1)[0], mesg = fname.to_s, verbose: nil)
         code = code.dup.force_encoding("ascii-8bit")
         code.sub!(/\A(?:\xef\xbb\xbf)?(\s*\#.*$)*(\n)?/n) {
           "#$&#{"\n" if $1 && !$2}BEGIN{throw tag, :ok}\n"
         }
         code.force_encoding(Encoding::UTF_8)
-        verbose, $VERBOSE = $VERBOSE, nil
+        verbose, $VERBOSE = $VERBOSE, verbose
         yield if defined?(yield)
         case
         when Array === fname
@@ -302,6 +313,7 @@ module Test
       def assert_in_out_err(args, test_stdin = "", test_stdout = [], test_stderr = [], message = nil, **opt)
         stdout, stderr, status = EnvUtil.invoke_ruby(args, test_stdin, true, true, **opt)
         if signo = status.termsig
+          sleep 0.1
           EnvUtil.diagnostic_reports(Signal.signame(signo), EnvUtil.rubybin, status.pid, Time.now)
         end
         if block_given?
@@ -342,7 +354,7 @@ module Test
           file ||= loc.path
           line ||= loc.lineno
         end
-        line -= 2
+        line -= 5 # lines until src
         src = <<eom
 # -*- coding: #{src.encoding}; -*-
   require #{__dir__.dump}'/envutil';include Test::Unit::Assertions
@@ -370,13 +382,16 @@ eom
             bt.each do |l|
               l.sub!(/\A-:(\d+)/){"#{file}:#{line + $1.to_i}"}
             end
+            bt.concat(caller)
+          else
+            res.set_backtrace(caller)
           end
           raise res
         end
 
         # really is it succeed?
         unless ignore_stderr
-          # the body of assert_separately must not output anything to detect errror
+          # the body of assert_separately must not output anything to detect error
           assert_equal("", stderr, "assert_separately failed with error message")
         end
         assert_equal(0, status, "assert_separately failed: '#{stderr}'")
@@ -385,13 +400,36 @@ eom
 
       def assert_warning(pat, msg = nil)
         stderr = EnvUtil.verbose_warning { yield }
-        msg = message(msg) {diff stderr, pat}
+        msg = message(msg) {diff pat, stderr}
         assert(pat === stderr, msg)
       end
 
       def assert_warn(*args)
         assert_warning(*args) {$VERBOSE = false; yield}
       end
+
+      case RUBY_PLATFORM
+      when /solaris2\.(?:9|[1-9][0-9])/i # Solaris 9, 10, 11,...
+        bits = [nil].pack('p').size == 8 ? 64 : 32
+        if ENV['LD_PRELOAD'].to_s.empty? &&
+            ENV["LD_PRELOAD_#{bits}"].to_s.empty? &&
+            (ENV['UMEM_OPTIONS'].to_s.empty? ||
+             ENV['UMEM_OPTIONS'] == 'backend=mmap') then
+          envs = {
+            'LD_PRELOAD' => 'libumem.so',
+            'UMEM_OPTIONS' => 'backend=mmap'
+          }
+          args = [
+            envs,
+            "--disable=gems",
+            "-v", "-",
+          ]
+          _, err, status = EnvUtil.invoke_ruby(args, "exit(0)", true, true)
+          if status.exitstatus == 0 && err.to_s.empty? then
+            NO_MEMORY_LEAK_ENVS = envs
+          end
+        end
+      end #case RUBY_PLATFORM
 
       def assert_no_memory_leak(args, prepare, code, message=nil, limit: 1.5, rss: false, **opt)
         require_relative 'memory_status'
@@ -405,6 +443,11 @@ eom
           *args,
           "-v", "-",
         ]
+        if defined? NO_MEMORY_LEAK_ENVS then
+          envs ||= {}
+          newenvs = envs.merge(NO_MEMORY_LEAK_ENVS) { |_, _, _| break }
+          envs = newenvs if newenvs
+        end
         args.unshift(envs) if envs
         cmd = [
           'END {STDERR.puts '"#{token_dump}"'"FINAL=#{Memory::Status.new}"}',
@@ -432,6 +475,49 @@ eom
 
       def assert_file
         AssertFile
+      end
+
+      # pattern_list is an array which contains regexp and :*.
+      # :* means any sequence.
+      #
+      # pattern_list is anchored.
+      # Use [:*, regexp, :*] for non-anchored match.
+      def assert_pattern_list(pattern_list, actual, message=nil)
+        rest = actual
+        anchored = true
+        pattern_list.each_with_index {|pattern, i|
+          if pattern == :*
+            anchored = false
+          else
+            if anchored
+              match = /\A#{pattern}/.match(rest)
+            else
+              match = pattern.match(rest)
+            end
+            unless match
+              msg = message(msg) {
+                expect_msg = "Expected #{mu_pp pattern}\n"
+                if /\n[^\n]/ =~ rest
+                  actual_mesg = "to match\n"
+                  rest.scan(/.*\n+/) {
+                    actual_mesg << '  ' << $&.inspect << "+\n"
+                  }
+                  actual_mesg.sub!(/\+\n\z/, '')
+                else
+                  actual_mesg = "to match #{mu_pp rest}"
+                end
+                actual_mesg << "\nafter #{i} patterns with #{actual.length - rest.length} characters"
+                expect_msg + actual_mesg
+              }
+              assert false, msg
+            end
+            rest = match.post_match
+            anchored = true
+          end
+        }
+        if anchored
+          assert_equal("", rest)
+        end
       end
 
       class << (AssertFile = Struct.new(:failure_message).new)

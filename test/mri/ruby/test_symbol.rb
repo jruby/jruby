@@ -206,4 +206,28 @@ class TestSymbol < Test::Unit::TestCase
     assert_equal(true, "foo#{Time.now.to_i}".to_sym.frozen?)
     assert_equal(true, :foo.to_sym.frozen?)
   end
+
+  def test_symbol_gc_1
+    assert_normal_exit('".".intern;GC.start(immediate_sweep:false);eval %[GC.start;".".intern]',
+                       '',
+                       child_env: '--disable-gems')
+    assert_normal_exit('".".intern;GC.start(immediate_sweep:false);eval %[GC.start;:"."]',
+                       '',
+                       child_env: '--disable-gems')
+    assert_normal_exit('".".intern;GC.start(immediate_sweep:false);eval %[GC.start;%i"."]',
+                       '',
+                       child_env: '--disable-gems')
+    assert_normal_exit('tap{".".intern};GC.start(immediate_sweep:false);' +
+                       'eval %[syms=Symbol.all_symbols;GC.start;syms.each(&:to_sym)]',
+                       '',
+                       child_env: '--disable-gems')
+  end
+
+  def test_dynamic_attrset_id
+    bug10259 = '[ruby-dev:48559] [Bug #10259]'
+    class << (obj = Object.new)
+      attr_writer :unagi
+    end
+    assert_nothing_raised(NoMethodError, bug10259) {obj.send("unagi=".intern, 1)}
+  end
 end

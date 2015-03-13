@@ -5,50 +5,36 @@ import org.jruby.ir.Operation;
 import org.jruby.ir.instructions.FixedArityInstr;
 import org.jruby.ir.instructions.Instr;
 import org.jruby.ir.operands.Operand;
-import org.jruby.ir.transformations.inlining.InlinerInfo;
+import org.jruby.ir.persistence.IRWriterEncoder;
+import org.jruby.ir.transformations.inlining.CloneInfo;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
-import java.util.Map;
-
 public class RestoreErrorInfoInstr extends Instr implements FixedArityInstr {
-    private Operand arg;
-
     public RestoreErrorInfoInstr(Operand arg) {
-        super(Operation.RESTORE_ERROR_INFO);
-
-        this.arg = arg;
+        super(Operation.RESTORE_ERROR_INFO, new Operand[] { arg });
     }
 
     public Operand getArg() {
-        return arg;
+        return operands[0];
     }
 
     @Override
-    public Operand[] getOperands() {
-        return new Operand[] { arg };
+    public Instr clone(CloneInfo ii) {
+        return new RestoreErrorInfoInstr(getArg().cloneForInlining(ii));
     }
 
     @Override
-    public String toString() {
-        return super.toString() + "(" + arg + ")";
-    }
-
-    @Override
-    public void simplifyOperands(Map<Operand, Operand> valueMap, boolean force) {
-        arg = arg.getSimplifiedOperand(valueMap, force);
-    }
-
-    @Override
-    public Instr cloneForInlining(InlinerInfo ii) {
-        return new RestoreErrorInfoInstr(arg.cloneForInlining(ii));
+    public void encode(IRWriterEncoder e) {
+        super.encode(e);
+        e.encode(getArg());
     }
 
     @Override
     public Object interpret(ThreadContext context, StaticScope currScope, DynamicScope currDynScope, IRubyObject self, Object[] temp) {
-        context.setErrorInfo((IRubyObject) arg.retrieve(context, self, currScope, currDynScope, temp));
+        context.setErrorInfo((IRubyObject) getArg().retrieve(context, self, currScope, currDynScope, temp));
 
         return null;
     }

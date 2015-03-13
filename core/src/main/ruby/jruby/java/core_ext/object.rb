@@ -16,13 +16,34 @@ class Object
     return other.java_class.assignable_from?(self.java_class)
   end
 
+  # Import one or many Java classes as follows:
+  #
+  #   java_import java.lang.System
+  #   java_import java.lang.System, java.lang.Thread
+  #   java_import [java.lang.System, java.lang.Thread]
+  #
   def java_import(*import_classes)
-    import_classes.flatten!
+    import_classes = import_classes.each_with_object([]) do |classes, flattened|
+      if classes.is_a?(Array)
+        flattened.push(*classes)
+      else
+        flattened.push(classes)
+      end
+    end
 
     import_classes.map do |import_class|
       case import_class
       when String
+        cc = java.lang.Character
+        valid_name = import_class.split(".").all? do |frag|
+          cc.java_identifier_start? frag[0].ord and
+          frag.each_char.all? {|c| cc.java_identifier_part? c.ord }
+        end
+        unless valid_name
+          raise ArgumentError.new "not a valid Java identifier: #{import_class}"
+        end
         # pull in the class
+        raise ArgumentError.new "must use jvm-style name: #{import_class}" if import_class.include? "::"
         import_class = JavaUtilities.get_proxy_class(import_class)
       when Module
         if import_class.respond_to? "java_class"

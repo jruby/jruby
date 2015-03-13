@@ -4,42 +4,22 @@ import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Operation;
 import org.jruby.ir.instructions.FixedArityInstr;
 import org.jruby.ir.instructions.Instr;
-import org.jruby.ir.instructions.ResultInstr;
-import org.jruby.ir.operands.Operand;
+import org.jruby.ir.instructions.ResultBaseInstr;
 import org.jruby.ir.operands.Variable;
-import org.jruby.ir.transformations.inlining.InlinerInfo;
+import org.jruby.ir.transformations.inlining.CloneInfo;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
-public class GetErrorInfoInstr extends Instr implements ResultInstr, FixedArityInstr {
-    private Variable result;
-
+public class GetErrorInfoInstr extends ResultBaseInstr implements FixedArityInstr {
     public GetErrorInfoInstr(Variable result) {
-        super(Operation.GET_ERROR_INFO);
-
-        this.result = result;
+        super(Operation.GET_ERROR_INFO, result, EMPTY_OPERANDS);
     }
 
     @Override
-    public Operand[] getOperands() {
-        return EMPTY_OPERANDS;
-    }
-
-    @Override
-    public Variable getResult() {
-        return result;
-    }
-
-    @Override
-    public void updateResult(Variable v) {
-        result = v;
-    }
-
-    @Override
-    public Instr cloneForInlining(InlinerInfo inlinerInfo) {
-        return new GetErrorInfoInstr((Variable) getResult().cloneForInlining(inlinerInfo));
+    public Instr clone(CloneInfo info) {
+        return new GetErrorInfoInstr((Variable) getResult().cloneForInlining(info));
     }
 
     @Override

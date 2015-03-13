@@ -27,7 +27,10 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.runtime.load;
 
+import jnr.posix.JavaSecuredFile;
 import org.jruby.Ruby;
+
+import java.net.URL;
 
 /**
  * The ClassExtensionLibrary wraps a class which implements BasicLibraryService,
@@ -41,40 +44,64 @@ public class ClassExtensionLibrary implements Library {
     private final Class theClass;
     private final String name;
 
+    /**
+     * Try to locate an extension service in the current classloader resources. This happens
+     * after the jar has been added to JRuby's URLClassLoader (JRubyClassLoader) and is how
+     * extensions can magically load.
+     *
+     * The basic logic is to use the require name (@param searchName) to build the name of
+     * a class ending in "Service", and then invoke that class to boot the extension.
+     *
+     * The looping logic here was in response to a RubyGems change that started absolutizing
+     * the path to the extension jar under some circumstances, leading to an incorrect
+     * package/class name for the service contained therein. The new logic will try
+     * successively more trailing elements until one of them is not a valid package
+     * name or all elements have been exhausted.
+     *
+     * @param runtime the current JRuby runtime
+     * @param searchName the name passed to `require`
+     * @return a ClassExtensionLibrary that will boot the ext, or null if none was found
+     */
     static ClassExtensionLibrary tryFind(Ruby runtime, String searchName) {
-      // Create package name, by splitting on / and joining all but the last elements with a ".", and downcasing them.
-      String[] all = searchName.split("/");
+        // Create package name, by splitting on / and joining all but the last elements with a ".", and downcasing them.
+        String[] all = searchName.split("/");
 
-      StringBuilder finName = new StringBuilder();
-      for(int i=0, j=(all.length-1); i<j; i++) {
-        finName.append(all[i].toLowerCase()).append(".");
-      }
-
-      try {
-        // Make the class name look nice, by splitting on _ and capitalize each segment, then joining
-        // the, together without anything separating them, and last put on "Service" at the end.
-        String[] last = all[all.length-1].split("_");
-        for(int i=0, j=last.length; i<j; i++) {
-          if ("".equals(last[i])) break;
-          finName.append(Character.toUpperCase(last[i].charAt(0))).append(last[i].substring(1));
+        StringBuilder finName = new StringBuilder();
+        for (int i = 0, j = (all.length - 1); i < j; i++) {
+            finName.append(all[i].toLowerCase()).append(".");
         }
-        finName.append("Service");
 
-        // We don't want a package name beginning with dots, so we remove them
-        String className = finName.toString().replaceAll("^\\.*","");
+        try {
+            // Make the class name look nice, by splitting on _ and capitalize each segment, then joining
+            // the, together without anything separating them, and last put on "Service" at the end.
+            String[] last = all[all.length - 1].split("_");
+            for (int i = 0, j = last.length; i < j; i++) {
+                if ("".equals(last[i])) break;
+                finName.append(Character.toUpperCase(last[i].charAt(0))).append(last[i].substring(1));
+            }
+            finName.append("Service");
 
-        // quietly try to load the class
-        Class theClass = runtime.getJavaSupport().loadJavaClass(className);
-        return new ClassExtensionLibrary(className + ".java", theClass);
-      } catch (ClassNotFoundException cnfe) {
-        if (runtime.isDebug()) cnfe.printStackTrace();
+            // We don't want a package name beginning with dots, so we remove them
+            String className = finName.toString().replaceAll("^\\.*", "");
+            String classFile = className.replaceAll("\\.", "/") + ".class";
 
-        // So apparently the class doesn't exist
-        return null;
-      } catch (UnsupportedClassVersionError ucve) {
-        if (runtime.isDebug()) ucve.printStackTrace();
-        throw runtime.newLoadError("JRuby ext built for wrong Java version in `" + finName + "': " + ucve, finName.toString());
-      }
+            // quietly try to load the class, which must be reachable as a .class resource
+            URL resource = runtime.getJRubyClassLoader().getResource(classFile);
+            if (resource != null) {
+                Class theClass = runtime.getJavaSupport().loadJavaClass(className);
+                return new ClassExtensionLibrary(className + ".java", theClass);
+            }
+
+            return null;
+        } catch (ClassNotFoundException cnfe) {
+            if (runtime.isDebug()) cnfe.printStackTrace();
+
+            // So apparently the class doesn't exist
+            return null;
+        } catch (UnsupportedClassVersionError ucve) {
+            if (runtime.isDebug()) ucve.printStackTrace();
+            throw runtime.newLoadError("JRuby ext built for wrong Java version in `" + finName + "': " + ucve, finName.toString());
+        }
     }
 
     public ClassExtensionLibrary(String name, Class extension) {

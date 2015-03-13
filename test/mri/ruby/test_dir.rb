@@ -139,6 +139,7 @@ class TestDir < Test::Unit::TestCase
 
     assert_equal((?a..?z).step(2).map {|f| File.join(File.join(@root, f), "") }.sort,
                  Dir.glob(File.join(@root, "*/")).sort)
+    assert_equal([File.join(@root, '//a')], Dir.glob(@root + '//a'))
 
     FileUtils.touch(File.join(@root, "{}"))
     assert_equal(%w({} a).map{|f| File.join(@root, f) },
@@ -228,6 +229,33 @@ class TestDir < Test::Unit::TestCase
     assert_empty(Dir.glob(File.join(@root, "<")), bug8597)
   end
 
+  def test_glob_cases
+    feature5994 = "[ruby-core:42469] [Feature #5994]"
+    feature5994 << "\nDir.glob should return the filename with actual cases on the filesystem"
+    Dir.chdir(File.join(@root, "a")) do
+      open("FileWithCases", "w") {}
+      return unless File.exist?("filewithcases")
+      assert_equal(%w"FileWithCases", Dir.glob("filewithcases"), feature5994)
+    end
+    Dir.chdir(File.join(@root, "c")) do
+      open("FileWithCases", "w") {}
+      mode = File.stat(".").mode
+      begin
+        File.chmod(mode & ~0444, ".")
+        return if mode == File.stat(".").mode
+        assert_equal(%w"filewithcases", Dir.glob("filewithcases"), feature5994)
+      ensure
+        File.chmod(mode, ".")
+      end
+    end
+  end
+
+  def test_glob_super_root
+    bug9648 = '[ruby-core:61552] [Bug #9648]'
+    roots = Dir.glob("/*")
+    assert_equal(roots.map {|n| "/..#{n}"}, Dir.glob("/../*"), bug9648)
+  end
+
   def test_home
     env_home = ENV["HOME"]
     env_logdir = ENV["LOGDIR"]
@@ -265,5 +293,15 @@ class TestDir < Test::Unit::TestCase
         assert_equal [ 'dir-symlink', 'some-dir', 'some-dir/foo' ], Dir['**/*'].sort
       end
     end
+  end
+
+  def test_fileno
+    Dir.open(".") {|d|
+      if d.respond_to? :fileno
+        assert_kind_of(Integer, d.fileno)
+      else
+        assert_raise(NotImplementedError) { d.fileno }
+      end
+    }
   end
 end

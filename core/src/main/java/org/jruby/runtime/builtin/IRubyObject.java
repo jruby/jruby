@@ -129,7 +129,13 @@ public interface IRubyObject {
      * @return
      */
     boolean isImmediate();
-    
+
+    /**
+     *
+     * @return
+     */
+    boolean isSpecialConst();
+
     /**
      * RubyMethod getRubyClass.
      * @return

@@ -44,9 +44,7 @@ import java.net.URI;
 import java.net.URL;
 import java.security.AccessControlException;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -69,12 +67,12 @@ import org.jruby.exceptions.RaiseException;
 import org.jruby.ext.rbconfig.RbConfigLibrary;
 import org.jruby.platform.Platform;
 import org.jruby.runtime.Block;
-import org.jruby.runtime.Constants;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.JRubyFile;
 import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
 
+import static org.jruby.runtime.Helpers.arrayOf;
 import static org.jruby.util.URLUtil.getPath;
 import org.jruby.util.cli.Options;
 
@@ -149,24 +147,12 @@ public class LoadService {
 
         private static final String[] emptySuffixes = { "" };
         // NOTE: always search .rb first for speed
-        public static final String[] sourceSuffixes = { ".rb", ".class" };
-        public static final String[] extensionSuffixes;
+        public static final String[] sourceSuffixes =
+                Options.AOT_LOADCLASSES.load() ? arrayOf(".rb", ".class") : arrayOf(".rb");
+        public static final String[] extensionSuffixes = arrayOf(".jar");
         private static final String[] allSuffixes;
 
         static {
-            // compute based on platform
-//            if (Options.CEXT_ENABLED.load()) {
-//                if (Platform.IS_WINDOWS) {
-//                    extensionSuffixes = new String[]{".jar", ".dll", ".jar.rb"};
-//                } else if (Platform.IS_MAC) {
-//                    extensionSuffixes = new String[]{".jar", ".bundle", ".jar.rb"};
-//                } else {
-//                    extensionSuffixes = new String[]{".jar", ".so", ".jar.rb"};
-//                }
-//            } else {
-//                extensionSuffixes = new String[]{".jar", ".jar.rb"};
-//            }
-            extensionSuffixes = new String[]{".jar", ".jar.rb"};
             allSuffixes = new String[sourceSuffixes.length + extensionSuffixes.length];
             System.arraycopy(sourceSuffixes, 0, allSuffixes, 0, sourceSuffixes.length);
             System.arraycopy(extensionSuffixes, 0, allSuffixes, sourceSuffixes.length, extensionSuffixes.length);
@@ -208,9 +194,7 @@ public class LoadService {
             loadTimer = new LoadTimer();
         }
 
-        this.librarySearcher = runtime.is1_8() ?
-            new LibrarySearcher.Ruby18(this) :
-            new LibrarySearcher(this);
+        this.librarySearcher = new LibrarySearcher(this);
     }
 
     /**
@@ -286,6 +270,12 @@ public class LoadService {
             addPath(dir);
         }
     }
+
+    // MRI: rb_provide, roughly
+    public void provide(String library) {
+        addBuiltinLibrary(library, Library.DUMMY);
+        addLoadedFeature(library, library);
+    }
     
     protected boolean isFeatureInIndex(String shortName) {
         return loadedFeaturesIndex.containsKey(shortName);
@@ -352,7 +342,7 @@ public class LoadService {
             Library library = null;
             LoadServiceResource resource = getClassPathResource(classLoader, file);
             if (resource != null) {
-                state.loadName = resolveLoadName(resource, file);
+                state.setLoadName(resolveLoadName(resource, file));
                 library = createLibrary(state, resource);
             }
             if (library == null) {
@@ -873,6 +863,10 @@ public class LoadService {
             }
         }
 
+        public void setLoadName(String loadName) {
+            this.loadName = loadName;
+        }
+
         @Override
         public String toString() {
             StringBuilder sb = new StringBuilder();
@@ -988,7 +982,7 @@ public class LoadService {
             String namePlusSuffix = baseName + suffix;
             debugLogTry( "builtinLib",  namePlusSuffix );
             if (builtinLibraries.containsKey(namePlusSuffix)) {
-                state.loadName = namePlusSuffix;
+                state.setLoadName(namePlusSuffix);
                 Library lib = builtinLibraries.get(namePlusSuffix);
                 debugLogFound( "builtinLib", namePlusSuffix );
                 return lib;
@@ -1033,7 +1027,7 @@ public class LoadService {
             String file = baseName + suffix;
             LoadServiceResource resource = findFileInClasspath(file);
             if (resource != null) {
-                state.loadName = resolveLoadName(resource, file);
+                state.setLoadName(resolveLoadName(resource, file));
                 return createLibrary(state, resource);
             }
         }
@@ -1055,7 +1049,7 @@ public class LoadService {
 //            }
             throw runtime.newLoadError("C extensions are disabled, can't load `" + resource.getName() + "'", resource.getName());
         } else if (file.endsWith(".jar")) {
-            return new JarredScript(resource);
+            return new JarredScript(resource, state.searchFile);
         } else if (file.endsWith(".class")) {
             return new JavaCompiledScript(resource);
         } else {
@@ -1077,7 +1071,7 @@ public class LoadService {
                     boolean absolute = true;
                     foundResource = new LoadServiceResource(file, getFileName(file, namePlusSuffix), absolute);
                     debugLogFound(foundResource);
-                    state.loadName = resolveLoadName(foundResource, namePlusSuffix);
+                    state.setLoadName(resolveLoadName(foundResource, namePlusSuffix));
                     break;
                 }
             } catch (IllegalArgumentException illArgEx) {
@@ -1128,7 +1122,7 @@ public class LoadService {
                 if (file.isFile() && file.isAbsolute() && file.canRead()) {
                     boolean absolute = true;
 
-                    state.loadName = file.getPath();
+                    state.setLoadName(file.getPath());
                     foundResource = new LoadServiceResource(file, state.loadName, absolute);
                     debugLogFound(foundResource);
                     break;
@@ -1167,7 +1161,7 @@ public class LoadService {
                     throw runtime.newIOErrorFromException(e);
                 }
                 if (foundResource != null) {
-                    state.loadName = resolveLoadName(foundResource, namePlusSuffix);
+                    state.setLoadName(resolveLoadName(foundResource, namePlusSuffix));
                     break; // end suffix iteration
                 }
             }
@@ -1191,7 +1185,7 @@ public class LoadService {
                     throw runtime.newIOErrorFromException(e);
                 } catch(Exception e) {}
                 if (foundResource != null) {
-                    state.loadName = resolveLoadName(foundResource, namePlusSuffix);
+                    state.setLoadName(resolveLoadName(foundResource, namePlusSuffix));
                     break; // end suffix iteration
                 }
             }
@@ -1209,7 +1203,7 @@ public class LoadService {
             foundResource = tryResourceFromDotSlash(state, baseName, suffixType);
 
             if (foundResource != null) {
-                state.loadName = resolveLoadName(foundResource, foundResource.getName());
+                state.setLoadName(resolveLoadName(foundResource, foundResource.getName()));
             }
 
             // not found, don't bother with load path
@@ -1221,7 +1215,7 @@ public class LoadService {
             foundResource = tryResourceFromHome(state, baseName, suffixType);
 
             if (foundResource != null) {
-                state.loadName = resolveLoadName(foundResource, foundResource.getName());
+                state.setLoadName(resolveLoadName(foundResource, foundResource.getName()));
             }
 
             // not found, don't bother with load path
@@ -1235,7 +1229,7 @@ public class LoadService {
                 foundResource = tryResourceAsIs(namePlusSuffix);
 
                 if (foundResource != null) {
-                    state.loadName = resolveLoadName(foundResource, namePlusSuffix);
+                    state.setLoadName(resolveLoadName(foundResource, namePlusSuffix));
                     return foundResource;
                 }
             }
@@ -1256,7 +1250,7 @@ public class LoadService {
                     if(ss.startsWith("./")) {
                         ss = ss.substring(2);
                     }
-                    state.loadName = resolveLoadName(foundResource, ss);
+                    state.setLoadName(resolveLoadName(foundResource, ss));
                     break Outer;
                 }
             } else {
@@ -1278,7 +1272,7 @@ public class LoadService {
                         if(ss.startsWith("./")) {
                             ss = ss.substring(2);
                         }
-                        state.loadName = resolveLoadName(foundResource, ss);
+                        state.setLoadName(resolveLoadName(foundResource, ss));
                         break Outer; // end suffix iteration
                     }
                 }
@@ -1528,7 +1522,7 @@ public class LoadService {
     }
 
     /* Directories and unavailable resources are not able to open a stream. */
-    protected boolean isRequireable(URL loc) {
+    protected static boolean isRequireable(URL loc) {
         if (loc != null) {
                 if (loc.getProtocol().equals("file") && new java.io.File(getPath(loc)).isDirectory()) {
                         return false;
@@ -1574,30 +1568,53 @@ public class LoadService {
         }
         else {
             debugLogTry("fileInClasspath", name);
-            loc = classLoader.getResource(name);
+            try
+            {
+                loc = classLoader.getResource(name);
+            }
+            // some classloaders can throw IllegalArgumentException here
+            //  	at org.apache.felix.framework.BundleWiringImpl$BundleClassLoader.getResource(BundleWiringImpl.java:2419) ~[org.apache.felix.framework-4.2.1.jar:na]
+            //  	at java.lang.ClassLoader.getResource(ClassLoader.java:1142) ~[na:1.7.0_65]
+            catch (IllegalArgumentException e)
+            {
+                loc = null;
+            }
         }
 
         if (loc != null) { // got it
-            String path = "classpath:/" + name;
-            // special case for typical jar:file URLs, but only if the name didn't have
-            // the classpath scheme explicitly
-            if (!isClasspathScheme &&
-                    (loc.getProtocol().equals("jar") || loc.getProtocol().equals("file"))
-                    && isRequireable(loc)) {
-                path = getPath(loc);
-                // On windows file: urls converted to names will return /C:/foo from
-                // getPath versus C:/foo.  Since getPath is used in a million places
-                // putting the newFile.getPath broke some file with-in Jar loading. 
-                // So I moved it to only this site.
-                if (Platform.IS_WINDOWS && loc.getProtocol().equals("file")) {
-                    path = new File(path).getPath();
-                }
-            }
+            String path = classpathFilenameFromURL(name, loc, isClasspathScheme);
             LoadServiceResource foundResource = new LoadServiceResource(loc, path);
             debugLogFound(foundResource);
             return foundResource;
         }
         return null;
+    }
+
+    /**
+     * Given a URL to a classloader resource, build an appropriate load string.
+     *
+     * @param name the original filename requested
+     * @param loc the URL to the resource
+     * @param isClasspathScheme whether we're using the classpath: sceheme
+     * @return
+     */
+    public static String classpathFilenameFromURL(String name, URL loc, boolean isClasspathScheme) {
+        String path = "classpath:/" + name;
+        // special case for typical jar:file URLs, but only if the name didn't have
+        // the classpath scheme explicitly
+        if (!isClasspathScheme &&
+                (loc.getProtocol().equals("jar") || loc.getProtocol().equals("file"))
+                && isRequireable(loc)) {
+            path = getPath(loc);
+            // On windows file: urls converted to names will return /C:/foo from
+            // getPath versus C:/foo.  Since getPath is used in a million places
+            // putting the newFile.getPath broke some file with-in Jar loading.
+            // So I moved it to only this site.
+            if (Platform.IS_WINDOWS && loc.getProtocol().equals("file")) {
+                path = new File(path).getPath();
+            }
+        }
+        return path;
     }
 
     private String expandRelativeJarPath(String path) {

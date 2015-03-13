@@ -87,7 +87,7 @@ public class LiveVariablesProblem extends DataFlowProblem<LiveVariablesProblem, 
      */
     public List<Variable> getVarsLiveOnScopeEntry() {
         List<Variable> liveVars = new ArrayList<Variable>();
-        BitSet liveIn = getFlowGraphNode(getScope().cfg().getEntryBB()).getLiveOutBitSet();
+        BitSet liveIn = getFlowGraphNode(getScope().getCFG().getEntryBB()).getLiveOutBitSet();
 
         for (int i = 0; i < liveIn.size(); i++) {
             if (!liveIn.get(i)) continue;
@@ -165,7 +165,6 @@ public class LiveVariablesProblem extends DataFlowProblem<LiveVariablesProblem, 
     private HashMap<Variable, Integer> dfVarMap = new HashMap<Variable, Integer>();
     private HashMap<Integer, Variable> varDfVarMap = new HashMap<Integer, Variable>();
     private HashSet<LocalVariable> localVars = new HashSet<LocalVariable>(); // Local variables that can be live across dataflow barriers
-    // SSS FIXME: Should this be part of IRScope??
 
     // Variables that cross eval boundaries and are always live in this scope
     private List<LocalVariable> alwaysLiveVars;

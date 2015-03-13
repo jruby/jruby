@@ -36,7 +36,6 @@ package org.jruby;
 
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
-import org.jruby.exceptions.JumpException;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.lexer.yacc.SimpleSourcePosition;
 import org.jruby.parser.StaticScope;
@@ -46,6 +45,7 @@ import org.jruby.runtime.Block;
 import org.jruby.runtime.BlockBody;
 import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.Helpers;
+import org.jruby.runtime.InterpretedIRBlockBody;
 import org.jruby.runtime.MethodBlock;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
@@ -86,7 +86,7 @@ public class RubyProc extends RubyObject implements DataType {
         procClass.setReifiedClass(RubyProc.class);
         
         procClass.defineAnnotatedMethods(RubyProc.class);
-        
+
         return procClass;
     }
 
@@ -159,7 +159,9 @@ public class RubyProc extends RubyObject implements DataType {
                     oldBinding.getFrame().duplicate(),
                     oldBinding.getVisibility(),
                     oldBinding.getDynamicScope(),
-                    oldBinding.getBacktrace().clone());
+                    oldBinding.getMethod(),
+                    oldBinding.getFile(),
+                    oldBinding.getLine());
             block = new Block(procBlock.getBody(), newBinding);
 
             // modify the block with a new backref/lastline-grabbing scope
@@ -207,7 +209,7 @@ public class RubyProc extends RubyObject implements DataType {
         return to_s19();
     }
 
-    @JRubyMethod(name = "to_s")
+    @JRubyMethod(name = "to_s", alias = "inspect")
     public IRubyObject to_s19() {
         StringBuilder sb = new StringBuilder("#<Proc:0x" + Integer.toString(block.hashCode(), 16) + "@" +
                 block.getBody().getFile() + ":" + (block.getBody().getLine() + 1));
@@ -236,17 +238,19 @@ public class RubyProc extends RubyObject implements DataType {
      * For others, transforms the given arguments appropriately for the given arity (i.e. trimming to one arg for fixed
      * arity of one, etc.)
      */
-    public static IRubyObject[] prepareArgs(ThreadContext context, Block.Type type, Arity arity, IRubyObject[] args) {
-        if (arity == null) {
-            return args;
-        }
+    public static IRubyObject[] prepareArgs(ThreadContext context, Block.Type type, BlockBody blockBody, IRubyObject[] args) {
+        // FIXME: Arity marked for death
+        Arity arity = blockBody.arity();
+        if (arity == null) return args;
 
-        if (args == null) {
-            return IRubyObject.NULL_ARRAY;
-        }
+        if (args == null) return IRubyObject.NULL_ARRAY;
 
         if (type == Block.Type.LAMBDA) {
-            arity.checkArity(context.runtime, args.length);
+            if (blockBody instanceof InterpretedIRBlockBody) {
+                ((InterpretedIRBlockBody) blockBody).getSignature().checkArity(context.runtime, args);
+            } else {
+                arity.checkArity(context.runtime, args.length);
+            }
             return args;
         }
 
@@ -280,7 +284,7 @@ public class RubyProc extends RubyObject implements DataType {
 
     @JRubyMethod(name = {"call", "[]", "yield", "==="}, rest = true)
     public IRubyObject call19(ThreadContext context, IRubyObject[] args, Block blockCallArg) {
-        IRubyObject[] preppedArgs = prepareArgs(context, type, block.arity(), args);
+        IRubyObject[] preppedArgs = prepareArgs(context, type, block.getBody(), args);
 
         return call(context, preppedArgs, null, blockCallArg);
     }

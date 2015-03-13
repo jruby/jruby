@@ -45,6 +45,7 @@ import org.jruby.runtime.Constants;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.KCode;
 import org.jruby.util.cli.Options;
+import org.jruby.util.io.ChannelDescriptor;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
@@ -89,7 +90,7 @@ public class ScriptingContainerTest {
     static OutputStream outStream = null;
     PrintStream pstream = null;
     FileWriter writer = null;
-    String basedir = new File(System.getProperty("user.dir")).getParent();
+    String basedir = System.getProperty("jruby.home");
 
     public ScriptingContainerTest() {
     }
@@ -573,7 +574,7 @@ public class ScriptingContainerTest {
         String filename = "";
         int[] lines = null;
 
-        String[] paths = {basedir + "/lib", basedir + "/lib/ruby/2.1"};
+        String[] paths = {basedir + "/lib", basedir + "/lib/ruby/stdlib"};
         ScriptingContainer instance = new ScriptingContainer(LocalContextScope.THREADSAFE);
         instance.setLoadPaths(Arrays.asList(paths));
         instance.setError(pstream);
@@ -795,7 +796,7 @@ public class ScriptingContainerTest {
         logger1.info("runScriptlet(type, filename)");
         PathType type = null;
         String filename = "";
-        String[] paths = {basedir + "/lib/ruby/2.1"};
+        String[] paths = {basedir + "/lib/ruby/stdlib"};
         ScriptingContainer instance = new ScriptingContainer(LocalContextScope.THREADSAFE);
         instance.setLoadPaths(Arrays.asList(paths));
         instance.setError(pstream);
@@ -905,7 +906,7 @@ public class ScriptingContainerTest {
         Object receiver = null;
         String methodName = "";
         Class<Object> returnType = null;
-        String[] paths = {basedir + "/lib/ruby/2.1"};
+        String[] paths = {basedir + "/lib/ruby/stdlib"};
         ScriptingContainer instance = new ScriptingContainer(LocalContextScope.THREADSAFE);
         instance.setLoadPaths(Arrays.asList(paths));
         instance.setError(pstream);
@@ -1047,7 +1048,6 @@ public class ScriptingContainerTest {
         Class<Object> returnType = null;
         EmbedEvalUnit unit = null;
         ScriptingContainer instance = new ScriptingContainer(LocalContextScope.THREADSAFE, LocalVariableBehavior.PERSISTENT);
-        instance.setHomeDirectory(basedir);
         instance.setError(pstream);
         instance.setOutput(pstream);
         instance.setWriter(writer);
@@ -1073,7 +1073,7 @@ public class ScriptingContainerTest {
         Object receiver = unit.run();
         instance.callMethod(instance.getProvider().getRuntime().getTopSelf(), "dump", null, unit);
         Object expResult =
-                "songs: Hey Soul Sister, Who Says, Apologize\npodcasts: Java Posse, Stack Overflow\n";
+                "songs: Hey Soul Sister Who Says Apologizepodcasts: Java Posse Stack Overflow\n";
         assertEquals(expResult, sw.toString());
 
         instance.getVarMap().clear();
@@ -1420,7 +1420,7 @@ public class ScriptingContainerTest {
         esw = new StringWriter();
         instance.setErrorWriter(esw);
         instance.runScriptlet("ABC=10;ABC=20");
-        String expResult = "<script>:1 warning: already initialized constant ABC";
+        String expResult = "<script>:1: warning: already initialized constant ABC";
         assertEquals(expResult, esw.toString().trim());
 
         instance.getVarMap().clear();
@@ -1550,9 +1550,9 @@ public class ScriptingContainerTest {
         instance.setOutput(pstream);
         instance.setWriter(writer);
         instance.setErrorWriter(writer);
-        List result = instance.getLoadPaths();
+        List<String> result = instance.getLoadPaths();
         assertTrue(result != null);
-        assertTrue(result.size() > 0);
+        assertTrue(result.size() == 0);
         
         instance = null;
     }
@@ -2629,5 +2629,22 @@ public class ScriptingContainerTest {
         ScriptingContainer instance = new ScriptingContainer(LocalContextScope.SINGLETHREAD);
         Object result = instance.runScriptlet("exit 1234");
         assertEquals(1234L, result);
+    }
+
+    @Test
+    public void testLoadPathOfScriptingContainer() {
+        ScriptingContainer instance = new ScriptingContainer(LocalContextScope.SINGLETHREAD);
+        // note that instance.getLoadPath is not the load-path of the runtime !!!
+        String[] results = instance.runScriptlet("$LOAD_PATH").toString().split(", ");
+        for(String result : results){
+            assertTrue(result + " containt lib/ruby/", result.contains("lib/ruby/"));
+        }
+    }
+
+    @Test
+    public void testClasspathScriptletHasClasspathFile() {
+        ScriptingContainer instance = new ScriptingContainer(LocalContextScope.SINGLETHREAD);
+        Object result = instance.runScriptlet(PathType.CLASSPATH, "__FILE__.rb");
+        assertEquals("classpath:/__FILE__.rb", result.toString());
     }
 }

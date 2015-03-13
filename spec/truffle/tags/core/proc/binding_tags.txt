@@ -1,1 +1,0 @@
-fails:Proc#binding returns the binding associated with self

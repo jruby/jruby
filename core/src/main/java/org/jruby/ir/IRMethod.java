@@ -1,34 +1,39 @@
 package org.jruby.ir;
 
-import org.jruby.ir.instructions.Instr;
-import org.jruby.ir.instructions.ReceiveArgBase;
-import org.jruby.ir.instructions.ReceiveRestArgInstr;
-import org.jruby.ir.operands.LocalVariable;
-import org.jruby.ir.operands.Operand;
-import org.jruby.ir.operands.Splat;
-import org.jruby.parser.StaticScope;
-
+import java.lang.invoke.MethodType;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import org.jruby.ast.MethodDefNode;
+import org.jruby.ir.interpreter.InterpreterContext;
+import org.jruby.ir.operands.LocalVariable;
+import org.jruby.ir.representations.BasicBlock;
+import org.jruby.parser.StaticScope;
 
 public class IRMethod extends IRScope {
     public final boolean isInstanceMethod;
 
-    // SSS FIXME: Note that if operands from the method are modified,
-    // callArgs would have to be updated as well
-    // Call parameters
-    private List<Operand> callArgs;
-
     // Argument description of the form [:req, "a"], [:opt, "b"] ..
-    private List<String[]> argDesc;
+    private String[] argDesc;
 
-    public IRMethod(IRManager manager, IRScope lexicalParent, String name,
+    // Signatures to the jitted versions of this method
+    private Map<Integer, MethodType> signatures;
+
+    // Method name in the jitted version of this method
+    private String jittedName;
+
+    private MethodDefNode defn;
+
+    public IRMethod(IRManager manager, IRScope lexicalParent, MethodDefNode defn, String name,
             boolean isInstanceMethod, int lineNumber, StaticScope staticScope) {
         super(manager, lexicalParent, name, lexicalParent.getFileName(), lineNumber, staticScope);
 
+        this.defn = defn;
         this.isInstanceMethod = isInstanceMethod;
-        this.callArgs = new ArrayList<Operand>();
-        this.argDesc = new ArrayList<String[]>();
+        this.argDesc = null;
+        this.signatures = null;
 
         if (!getManager().isDryRun() && staticScope != null) {
             staticScope.setIRScope(this);
@@ -37,29 +42,40 @@ public class IRMethod extends IRScope {
     }
 
     @Override
+    public boolean hasBeenBuilt() {
+        return defn == null;
+    }
+
+    public synchronized InterpreterContext lazilyAcquireInterpreterContext() {
+        if (!hasBeenBuilt()) {
+            IRBuilder.topIRBuilder(getManager(), this).defineMethodInner(defn, getLexicalParent());
+
+            defn = null;
+        }
+
+        return interpreterContext;
+    }
+
+    public synchronized BasicBlock[] prepareForInitialCompilation() {
+        if (!hasBeenBuilt()) lazilyAcquireInterpreterContext();
+
+        return super.prepareForInitialCompilation();
+    }
+
+    @Override
     public IRScopeType getScopeType() {
         return isInstanceMethod ? IRScopeType.INSTANCE_METHOD : IRScopeType.CLASS_METHOD;
     }
 
-    @Override
-    public void addInstr(Instr i) {
-        // Accumulate call arguments
-        if (i instanceof ReceiveRestArgInstr) callArgs.add(new Splat(((ReceiveRestArgInstr)i).getResult(), true));
-        else if (i instanceof ReceiveArgBase) callArgs.add(((ReceiveArgBase) i).getResult());
-
-        super.addInstr(i);
-    }
-
-    public void addArgDesc(String type, String argName) {
-        argDesc.add(new String[]{type, argName});
-    }
-
-    public List<String[]> getArgDesc() {
+    public String[] getArgDesc() {
         return argDesc;
     }
 
-    public Operand[] getCallArgs() {
-        return callArgs.toArray(new Operand[callArgs.size()]);
+    /**
+     * Set upon completion of IRBuild of this IRMethod.
+     */
+    public void setArgDesc(String[] argDesc) {
+        this.argDesc = argDesc;
     }
 
     @Override
@@ -73,5 +89,22 @@ public class IRMethod extends IRScope {
         LocalVariable lvar = findExistingLocalVariable(name, scopeDepth);
         if (lvar == null) lvar = getNewLocalVariable(name, scopeDepth);
         return lvar;
+    }
+
+    public void addNativeSignature(int arity, MethodType signature) {
+        if (signatures == null) signatures = new HashMap<>();
+        signatures.put(arity, signature);
+    }
+
+    public Map<Integer, MethodType> getNativeSignatures() {
+        return Collections.unmodifiableMap(signatures);
+    }
+
+    public String getJittedName() {
+        return jittedName;
+    }
+
+    public void setJittedName(String jittedName) {
+        this.jittedName = jittedName;
     }
 }

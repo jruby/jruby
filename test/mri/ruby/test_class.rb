@@ -378,4 +378,26 @@ class TestClass < Test::Unit::TestCase
     assert_predicate(self.singleton_class, :singleton_class?, feature7609)
     assert_not_predicate(self.class, :singleton_class?, feature7609)
   end
+
+  def test_freeze_to_s
+    assert_nothing_raised("[ruby-core:41858] [Bug #5828]") {
+      Class.new.freeze.clone.to_s
+    }
+  end
+
+  def test_singleton_class_of_frozen_object
+    obj = Object.new
+    c = obj.singleton_class
+    obj.freeze
+    assert_raise_with_message(RuntimeError, /frozen object/) {
+      c.class_eval {def f; end}
+    }
+  end
+
+  def test_singleton_class_message
+    c = Class.new.freeze
+    assert_raise_with_message(RuntimeError, /frozen Class/) {
+      def c.f; end
+    }
+  end
 end

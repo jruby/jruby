@@ -1,27 +1,32 @@
 package org.jruby.ir.targets;
 
 import com.headius.invokebinder.Signature;
+import org.jcodings.specific.USASCIIEncoding;
 import org.jruby.*;
+import org.jruby.compiler.NotCompilableException;
 import org.jruby.compiler.impl.SkinnyMethodAdapter;
+import org.jruby.exceptions.RaiseException;
 import org.jruby.internal.runtime.GlobalVariables;
-import org.jruby.internal.runtime.methods.CompiledIRMethod;
+import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.ir.*;
 import org.jruby.ir.instructions.*;
 import org.jruby.ir.instructions.boxing.*;
 import org.jruby.ir.instructions.defined.GetErrorInfoInstr;
 import org.jruby.ir.instructions.defined.RestoreErrorInfoInstr;
+import org.jruby.ir.instructions.specialized.OneFixnumArgNoBlockCallInstr;
+import org.jruby.ir.instructions.specialized.OneFloatArgNoBlockCallInstr;
+import org.jruby.ir.instructions.specialized.OneOperandArgNoBlockCallInstr;
+import org.jruby.ir.instructions.specialized.ZeroOperandArgNoBlockCallInstr;
 import org.jruby.ir.operands.*;
 import org.jruby.ir.operands.Boolean;
 import org.jruby.ir.operands.Float;
 import org.jruby.ir.operands.GlobalVariable;
 import org.jruby.ir.operands.Label;
-import org.jruby.ir.operands.MethodHandle;
 import org.jruby.ir.representations.BasicBlock;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.*;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.runtime.invokedynamic.InvokeDynamicSupport;
 import org.jruby.util.ByteList;
 import org.jruby.util.ClassDefiningClassLoader;
 import org.jruby.util.JavaNameMangler;
@@ -35,7 +40,9 @@ import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
 import org.objectweb.asm.commons.Method;
 
+import java.lang.invoke.MethodType;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
@@ -48,9 +55,12 @@ public class JVMVisitor extends IRVisitor {
 
     private static final Logger LOG = LoggerFactory.getLogger("JVMVisitor");
     public static final String DYNAMIC_SCOPE = "$dynamicScope";
+    private static final boolean DEBUG = false;
 
     public JVMVisitor() {
-        _reset();
+        this.jvm = Options.COMPILE_INVOKEDYNAMIC.load() ? new JVM7() : new JVM6();
+        this.methodIndex = 0;
+        this.scopeMap = new HashMap();
     }
 
     public Class compile(IRScope scope, ClassDefiningClassLoader jrubyClassLoader) {
@@ -78,26 +88,11 @@ public class JVMVisitor extends IRVisitor {
             try {
                 result.getField(entry.getKey()).set(null, entry.getValue());
             } catch (Exception e) {
-                throw new RuntimeException(e);
+                throw new NotCompilableException(e);
             }
         }
 
         return result;
-    }
-
-    public void reset() {
-        _reset();
-    }
-
-    private void _reset() {
-        this.jvm = new JVM();
-        this.methodIndex = 0;
-        this.scopeMap = new HashMap();
-        this.prepare = true;
-    }
-
-    public void setPrepare(boolean prepare) {
-        this.prepare = prepare;
     }
 
     public byte[] code() {
@@ -112,7 +107,7 @@ public class JVMVisitor extends IRVisitor {
         } else if (scope instanceof IRModuleBody) {
             emitModuleBodyJIT((IRModuleBody)scope);
         } else {
-            throw new RuntimeException("don't know how to JIT: " + scope);
+            throw new NotCompilableException("don't know how to JIT: " + scope);
         }
     }
 
@@ -121,50 +116,31 @@ public class JVMVisitor extends IRVisitor {
     }
 
     private void logScope(IRScope scope) {
-        StringBuilder b = new StringBuilder();
-
-        b.append("\n\nLinearized instructions for JIT:\n");
-
-        int i = 0;
-        for (BasicBlock bb : scope.buildLinearization()) {
-            for (Instr instr : bb.getInstrsArray()) {
-                if (i > 0) b.append("\n");
-
-                b.append("  ").append(i).append('\t').append(instr);
-
-                i++;
-            }
-        }
-
         LOG.info("Starting JVM compilation on scope " + scope);
-        LOG.info(b.toString());
+        LOG.info("\n\nLinearized instructions for JIT:\n" + scope.toStringInstrs());
     }
 
-    public void emitScope(IRScope scope, String name, Signature signature) {
-        List <BasicBlock> bbs;
-        if (prepare) {
-            bbs = scope.prepareForCompilation();
-        } else {
-            scope.prepareForInterpretation(false);
-            bbs = scope.buildLinearization();
-        }
+    public void emitScope(IRScope scope, String name, Signature signature, boolean specificArity) {
+        BasicBlock[] bbs = scope.prepareForInitialCompilation();
+
         Map <BasicBlock, Label> exceptionTable = scope.buildJVMExceptionTable();
 
         if (Options.IR_COMPILER_DEBUG.load()) logScope(scope);
 
         emitClosures(scope);
 
-        jvm.pushmethod(name, scope, signature);
+        jvm.pushmethod(name, scope, signature, specificArity);
 
         // store IRScope in map for insertion into class later
-        scopeMap.put(name + "_IRScope", scope);
-        jvm.cls().visitField(Opcodes.ACC_STATIC | Opcodes.ACC_PUBLIC | Opcodes.ACC_VOLATILE, name + "_IRScope", ci(IRScope.class), null, null).visitEnd();
+        String scopeField = name + "_IRScope";
+        if (scopeMap.get(scopeField) == null) {
+            scopeMap.put(scopeField, scope);
+            jvm.cls().visitField(Opcodes.ACC_STATIC | Opcodes.ACC_PUBLIC | Opcodes.ACC_VOLATILE, scopeField, ci(IRScope.class), null, null).visitEnd();
+        }
 
-        // UGLY hack for blocks and scripts, which still have their scopes pushed before invocation
-        // Scope management for blocks and scripts needs to be figured out
-        // FIXME: Seems like some methods are not triggering scope loading, so this is always done for now
-        if (true ||
-                scope instanceof IRClosure || scope instanceof IRScriptBody) {
+        // Some scopes (closures, module/class bodies) do not have explicit call protocol yet.
+        // Unconditionally load current dynamic scope for those bodies.
+        if (!scope.hasExplicitCallProtocol()) {
             jvmMethod().loadContext();
             jvmMethod().invokeVirtual(Type.getType(ThreadContext.class), Method.getMethod("org.jruby.runtime.DynamicScope getCurrentScope()"));
             jvmStoreLocal(DYNAMIC_SCOPE);
@@ -172,9 +148,10 @@ public class JVMVisitor extends IRVisitor {
 
         IRBytecodeAdapter m = jvmMethod();
 
-        int numberOfLabels = bbs.size();
-        for (int i = 0; i < numberOfLabels; i++) {
-            BasicBlock bb = bbs.get(i);
+        int numberOfBasicBlocks = bbs.length;
+        int ipc = 0; // synthetic, used for debug traces that show which instr failed
+        for (int i = 0; i < numberOfBasicBlocks; i++) {
+            BasicBlock bb = bbs[i];
             org.objectweb.asm.Label start = jvm.methodData().getLabel(bb.getLabel());
             Label rescueLabel = exceptionTable.get(bb);
             org.objectweb.asm.Label end = null;
@@ -183,8 +160,8 @@ public class JVMVisitor extends IRVisitor {
 
             boolean newEnd = false;
             if (rescueLabel != null) {
-                if (i+1 < numberOfLabels) {
-                    end = jvm.methodData().getLabel(bbs.get(i+1).getLabel());
+                if (i+1 < numberOfBasicBlocks) {
+                    end = jvm.methodData().getLabel(bbs[i+1].getLabel());
                 } else {
                     newEnd = true;
                     end = new org.objectweb.asm.Label();
@@ -199,6 +176,7 @@ public class JVMVisitor extends IRVisitor {
 
             // visit remaining instrs
             for (Instr instr : bb.getInstrs()) {
+                if (DEBUG) instr.setIPC(ipc++); // debug mode uses instr offset for backtrace
                 visit(instr);
             }
 
@@ -210,62 +188,90 @@ public class JVMVisitor extends IRVisitor {
         jvm.popmethod();
     }
 
-    private static final Signature METHOD_SIGNATURE = Signature
+    private static final Signature METHOD_SIGNATURE_BASE = Signature
             .returning(IRubyObject.class)
-            .appendArgs(new String[]{"context", "scope", "self", "args", "block", "class"}, ThreadContext.class, StaticScope.class, IRubyObject.class, IRubyObject[].class, Block.class, RubyModule.class);
+            .appendArgs(new String[]{"context", "scope", "self", "block", "class", "callName"}, ThreadContext.class, StaticScope.class, IRubyObject.class, Block.class, RubyModule.class, String.class);
+
+    public static final Signature signatureFor(IRScope method, boolean aritySplit) {
+        if (aritySplit) {
+            StaticScope argScope = method.getStaticScope();
+            if (argScope.isArgumentScope() &&
+                    argScope.getOptionalArgs() == 0 &&
+                    argScope.getRestArg() == -1 &&
+                    !method.receivesKeywordArgs()) {
+                // we have only required arguments...emit a signature appropriate to that arity
+                String[] args = new String[argScope.getRequiredArgs()];
+                Class[] types = Helpers.arrayOf(Class.class, args.length, IRubyObject.class);
+                for (int i = 0; i < args.length; i++) {
+                    args[i] = "arg" + i;
+                }
+                return METHOD_SIGNATURE_BASE.insertArgs(3, args, types);
+            }
+            // we can't do an specific-arity signature
+            return null;
+        }
+
+        // normal boxed arg list signature
+        return METHOD_SIGNATURE_BASE.insertArgs(3, new String[]{"args"}, IRubyObject[].class);
+    }
 
     private static final Signature CLOSURE_SIGNATURE = Signature
             .returning(IRubyObject.class)
             .appendArgs(new String[]{"context", "scope", "self", "args", "block", "superName", "type"}, ThreadContext.class, StaticScope.class, IRubyObject.class, IRubyObject[].class, Block.class, String.class, Block.Type.class);
 
     public void emitScriptBody(IRScriptBody script) {
+        // Note: no index attached because there should be at most one script body per .class
+        String name = JavaNameMangler.encodeScopeForBacktrace(script);
         String clsName = jvm.scriptToClass(script.getFileName());
         jvm.pushscript(clsName, script.getFileName());
 
-        emitScope(script, "__script__", METHOD_SIGNATURE);
+        emitScope(script, name, signatureFor(script, false), false);
 
         jvm.cls().visitEnd();
         jvm.popclass();
     }
 
-    public Handle emitMethod(IRMethod method) {
-        String name = JavaNameMangler.mangleMethodName(method.getName() + "_" + methodIndex++);
+    public void emitMethod(IRMethod method) {
+        String name = JavaNameMangler.encodeScopeForBacktrace(method) + "$" + methodIndex++;
 
-        emitScope(method, name, METHOD_SIGNATURE);
-
-        return new Handle(Opcodes.H_INVOKESTATIC, jvm.clsData().clsName, name, sig(METHOD_SIGNATURE.type().returnType(), METHOD_SIGNATURE.type().parameterArray()));
+        emitWithSignatures(method, name);
     }
 
-    public Handle emitMethodJIT(IRMethod method) {
-        String name = JavaNameMangler.mangleMethodName(method.getName() + "_" + methodIndex++);
+    public void  emitMethodJIT(IRMethod method) {
         String clsName = jvm.scriptToClass(method.getFileName());
+        String name = JavaNameMangler.encodeScopeForBacktrace(method) + "$" + methodIndex++;
         jvm.pushscript(clsName, method.getFileName());
 
-        emitScope(method, "__script__", METHOD_SIGNATURE);
-
-        Handle handle = new Handle(Opcodes.H_INVOKESTATIC, jvm.clsData().clsName, name, sig(METHOD_SIGNATURE.type().returnType(), METHOD_SIGNATURE.type().parameterArray()));
+        emitWithSignatures(method, name);
 
         jvm.cls().visitEnd();
         jvm.popclass();
+    }
 
-        return handle;
+    private void emitWithSignatures(IRMethod method, String name) {
+        method.setJittedName(name);
+
+        Signature signature = signatureFor(method, false);
+        emitScope(method, name, signature, false);
+        method.addNativeSignature(-1, signature.type());
+
+        Signature specificSig = signatureFor(method, true);
+        if (specificSig != null) {
+            emitScope(method, name, specificSig, true);
+            method.addNativeSignature(method.getStaticScope().getRequiredArgs(), specificSig.type());
+        }
     }
 
     public Handle emitModuleBodyJIT(IRModuleBody method) {
-        String baseName = method.getName() + "_" + methodIndex++;
-        String name;
+        String name = JavaNameMangler.encodeScopeForBacktrace(method) + "$" + methodIndex++;
 
-        if (baseName.indexOf("DUMMY_MC") != -1) {
-            name = "METACLASS_" + methodIndex++;
-        } else {
-            name = baseName + "_" + methodIndex++;
-        }
         String clsName = jvm.scriptToClass(method.getFileName());
         jvm.pushscript(clsName, method.getFileName());
 
-        emitScope(method, "__script__", METHOD_SIGNATURE);
+        Signature signature = signatureFor(method, false);
+        emitScope(method, name, signature, false);
 
-        Handle handle = new Handle(Opcodes.H_INVOKESTATIC, jvm.clsData().clsName, name, sig(METHOD_SIGNATURE.type().returnType(), METHOD_SIGNATURE.type().parameterArray()));
+        Handle handle = new Handle(Opcodes.H_INVOKESTATIC, jvm.clsData().clsName, name, sig(signature.type().returnType(), signature.type().parameterArray()));
 
         jvm.cls().visitEnd();
         jvm.popclass();
@@ -282,29 +288,26 @@ public class JVMVisitor extends IRVisitor {
 
     public Handle emitClosure(IRClosure closure) {
         /* Compile the closure like a method */
-        String name = JavaNameMangler.mangleMethodName(closure.getName() + "__" + closure.getLexicalParent().getName() + "_" + methodIndex++);
+        String name = JavaNameMangler.encodeScopeForBacktrace(closure) + "$" + methodIndex++;
 
-        emitScope(closure, name, CLOSURE_SIGNATURE);
+        emitScope(closure, name, CLOSURE_SIGNATURE, false);
 
         return new Handle(Opcodes.H_INVOKESTATIC, jvm.clsData().clsName, name, sig(CLOSURE_SIGNATURE.type().returnType(), CLOSURE_SIGNATURE.type().parameterArray()));
     }
 
     public Handle emitModuleBody(IRModuleBody method) {
-        String baseName = method.getName() + "_" + methodIndex++;
-        String name;
+        String name = JavaNameMangler.encodeScopeForBacktrace(method) + "$" + methodIndex++;
 
-        if (baseName.indexOf("DUMMY_MC") != -1) {
-            name = "METACLASS_" + methodIndex++;
-        } else {
-            name = baseName + "_" + methodIndex++;
-        }
+        Signature signature = signatureFor(method, false);
+        emitScope(method, name, signature, false);
 
-        emitScope(method, name, METHOD_SIGNATURE);
-
-        return new Handle(Opcodes.H_INVOKESTATIC, jvm.clsData().clsName, name, sig(METHOD_SIGNATURE.type().returnType(), METHOD_SIGNATURE.type().parameterArray()));
+        return new Handle(Opcodes.H_INVOKESTATIC, jvm.clsData().clsName, name, sig(signature.type().returnType(), signature.type().parameterArray()));
     }
 
     public void visit(Instr instr) {
+        if (DEBUG) { // debug will skip emitting actual file line numbers
+            jvmAdapter().line(instr.getIPC());
+        }
         instr.visit(this);
     }
 
@@ -392,12 +395,14 @@ public class JVMVisitor extends IRVisitor {
 
     @Override
     public void AttrAssignInstr(AttrAssignInstr attrAssignInstr) {
+        Operand[] callArgs = attrAssignInstr.getCallArgs();
+
         compileCallCommon(
                 jvmMethod(),
-                attrAssignInstr.getMethodAddr().getName(),
-                attrAssignInstr.getCallArgs(),
+                attrAssignInstr.getName(),
+                callArgs,
                 attrAssignInstr.getReceiver(),
-                attrAssignInstr.getCallArgs().length,
+                callArgs.length,
                 null,
                 false,
                 attrAssignInstr.getReceiver() instanceof Self ? CallType.FUNCTIONAL : CallType.NORMAL,
@@ -444,7 +449,7 @@ public class JVMVisitor extends IRVisitor {
                 val = (double)((Fixnum)arg).value;
             } else {
                 // Should not happen -- so, forcing an exception.
-                throw new RuntimeException("Non-float/fixnum in loadFloatArg!" + arg);
+                throw new NotCompilableException("Non-float/fixnum in loadFloatArg!" + arg);
             }
             jvmAdapter().ldc(val);
         }
@@ -461,7 +466,7 @@ public class JVMVisitor extends IRVisitor {
                 val = ((Fixnum)arg).value;
             } else {
                 // Should not happen -- so, forcing an exception.
-                throw new RuntimeException("Non-float/fixnum in loadFixnumArg!" + arg);
+                throw new NotCompilableException("Non-float/fixnum in loadFixnumArg!" + arg);
             }
             jvmAdapter().ldc(val);
         }
@@ -476,7 +481,7 @@ public class JVMVisitor extends IRVisitor {
                 val = ((UnboxedBoolean)arg).isTrue();
             } else {
                 // Should not happen -- so, forcing an exception.
-                throw new RuntimeException("Non-float/fixnum in loadFixnumArg!" + arg);
+                throw new NotCompilableException("Non-float/fixnum in loadFixnumArg!" + arg);
             }
             jvmAdapter().ldc(val);
         }
@@ -604,7 +609,7 @@ public class JVMVisitor extends IRVisitor {
             case ISHL: a.lshl(); break;
             case ISHR: a.lshr(); break;
             case IEQ: m.invokeIRHelper("ilt", sig(boolean.class, long.class, long.class)); break; // annoying to have to do it in a method
-            default: throw new RuntimeException("UNHANDLED!");
+            default: throw new NotCompilableException("UNHANDLED!");
         }
 
         // Store it
@@ -621,7 +626,7 @@ public class JVMVisitor extends IRVisitor {
         ByteList csByteList = new ByteList();
         jvmMethod().pushString(csByteList);
 
-        for (Operand p : instr.getPieces()) {
+        for (Operand p : instr.getOperands()) {
             // visit piece and ensure it's a string
             visit(p);
             jvmAdapter().dup();
@@ -640,7 +645,7 @@ public class JVMVisitor extends IRVisitor {
         jvmAdapter().invokeinterface(p(IRubyObject.class), "setFrozen", sig(void.class, boolean.class));
 
         // invoke the "`" method on self
-        jvmMethod().invokeSelf("`", 1, false);
+        jvmMethod().invokeSelf("`", 1, false, CallType.FUNCTIONAL);
         jvmStoreLocal(instr.getResult());
     }
 
@@ -708,47 +713,63 @@ public class JVMVisitor extends IRVisitor {
         csByteList.setEncoding(compoundstring.getEncoding());
         jvmMethod().pushString(csByteList);
         for (Operand p : compoundstring.getPieces()) {
-            if ((p instanceof StringLiteral) && (compoundstring.isSameEncoding((StringLiteral)p))) {
-                jvmMethod().pushByteList(((StringLiteral)p).bytelist);
-                jvmAdapter().invokevirtual(p(RubyString.class), "cat", sig(RubyString.class, ByteList.class));
-            } else {
+//            if ((p instanceof StringLiteral) && (compoundstring.isSameEncodingAndCodeRange((StringLiteral)p))) {
+//                jvmMethod().pushByteList(((StringLiteral)p).bytelist);
+//                jvmAdapter().invokevirtual(p(RubyString.class), "cat", sig(RubyString.class, ByteList.class));
+//            } else {
                 visit(p);
                 jvmAdapter().invokevirtual(p(RubyString.class), "append19", sig(RubyString.class, IRubyObject.class));
-            }
+//            }
         }
         jvmStoreLocal(compoundstring.getResult());
     }
 
     @Override
     public void BuildDynRegExpInstr(BuildDynRegExpInstr instr) {
-        IRBytecodeAdapter m = jvmMethod();
+        final IRBytecodeAdapter m = jvmMethod();
         SkinnyMethodAdapter a = m.adapter;
 
         RegexpOptions options = instr.getOptions();
-        List<Operand> operands = instr.getPieces();
+        final Operand[] operands = instr.getPieces();
 
-        m.loadContext();
-        for (int i = 0; i < operands.size(); i++) {
-            Operand operand = operands.get(i);
-            visit(operand);
-        }
+        Runnable r = new Runnable() {
+            @Override
+            public void run() {
+                m.loadContext();
+                for (int i = 0; i < operands.length; i++) {
+                    Operand operand = operands[i];
+                    visit(operand);
+                }
+            }
+        };
 
-        a.invokedynamic(
-                "dregexp",
-                sig(RubyRegexp.class,
-                        params(ThreadContext.class,
-                                RubyString.class,
-                                operands.size())),
-                Bootstrap.regexp(),
-                options.toEmbeddedOptions());
+        m.pushDRegexp(r, options, operands.length);
 
+        jvmStoreLocal(instr.getResult());
+    }
+
+    @Override
+    public void BuildRangeInstr(BuildRangeInstr instr) {
+        jvmMethod().loadContext();
+        visit(instr.getBegin());
+        visit(instr.getEnd());
+        jvmAdapter().ldc(instr.isExclusive());
+        jvmAdapter().invokestatic(p(RubyRange.class), "newRange", sig(RubyRange.class, ThreadContext.class, IRubyObject.class, IRubyObject.class, boolean.class));
+        jvmStoreLocal(instr.getResult());
+    }
+
+    @Override
+    public void BuildSplatInstr(BuildSplatInstr instr) {
+        jvmMethod().loadContext();
+        visit(instr.getArray());
+        jvmMethod().invokeIRHelper("irSplat", sig(RubyArray.class, ThreadContext.class, IRubyObject.class));
         jvmStoreLocal(instr.getResult());
     }
 
     @Override
     public void CallInstr(CallInstr callInstr) {
         IRBytecodeAdapter m = jvmMethod();
-        String name = callInstr.getMethodAddr().getName();
+        String name = callInstr.getName();
         Operand[] args = callInstr.getCallArgs();
         Operand receiver = callInstr.getReceiver();
         int numArgs = args.length;
@@ -764,16 +785,14 @@ public class JVMVisitor extends IRVisitor {
         m.loadContext();
         m.loadSelf(); // caller
         visit(receiver);
+        int arity = numArgs;
 
         if (numArgs == 1 && args[0] instanceof Splat) {
             visit(args[0]);
-            // need to unwrap for call path (FIXME: more efficient!)
-            m.adapter.invokevirtual(p(RubyArray.class), "toJavaArrayMaybeUnsafe", sig(IRubyObject[].class));
-            numArgs = -1;
+            m.adapter.invokevirtual(p(RubyArray.class), "toJavaArray", sig(IRubyObject[].class));
+            arity = -1;
         } else if (CallBase.containsArgSplat(args)) {
-            // splat, but not in first position; bail out for now
-            // FIXME: handle compiling splat in non-first-position
-            throw new RuntimeException("splat in non-initial unsupported by JIT");
+            throw new NotCompilableException("splat in non-initial argument for normal call is unsupported in JIT");
         } else {
             for (Operand operand : args) {
                 visit(operand);
@@ -788,11 +807,13 @@ public class JVMVisitor extends IRVisitor {
 
         switch (callType) {
             case FUNCTIONAL:
+                m.invokeSelf(name, arity, hasClosure, CallType.FUNCTIONAL);
+                break;
             case VARIABLE:
-                m.invokeSelf(name, numArgs, hasClosure);
+                m.invokeSelf(name, arity, hasClosure, CallType.VARIABLE);
                 break;
             case NORMAL:
-                m.invokeOther(name, numArgs, hasClosure);
+                m.invokeOther(name, arity, hasClosure);
                 break;
         }
 
@@ -816,52 +837,38 @@ public class JVMVisitor extends IRVisitor {
 
     @Override
     public void CheckArityInstr(CheckArityInstr checkarityinstr) {
-        jvmMethod().loadContext();
-        jvmMethod().loadArgs();
-        jvmAdapter().ldc(checkarityinstr.required);
-        jvmAdapter().ldc(checkarityinstr.opt);
-        jvmAdapter().ldc(checkarityinstr.rest);
-        jvmAdapter().ldc(checkarityinstr.receivesKeywords);
-        jvmAdapter().ldc(checkarityinstr.restKey);
-        jvmAdapter().invokestatic(p(IRRuntimeHelpers.class), "checkArity", sig(void.class, ThreadContext.class, Object[].class, int.class, int.class, int.class, boolean.class, int.class));
+        if (jvm.methodData().specificArity >= 0) {
+            // no arity check in specific arity path
+        } else {
+            jvmMethod().loadContext();
+            jvmMethod().loadArgs();
+            jvmAdapter().ldc(checkarityinstr.required);
+            jvmAdapter().ldc(checkarityinstr.opt);
+            jvmAdapter().ldc(checkarityinstr.rest);
+            jvmAdapter().ldc(checkarityinstr.receivesKeywords);
+            jvmAdapter().ldc(checkarityinstr.restKey);
+            jvmAdapter().invokestatic(p(IRRuntimeHelpers.class), "checkArity", sig(void.class, ThreadContext.class, Object[].class, int.class, int.class, int.class, boolean.class, int.class));
+        }
     }
 
     @Override
+    public void CheckForLJEInstr(CheckForLJEInstr checkForljeinstr) {
+        jvmMethod().loadContext();
+        jvmLoadLocal(DYNAMIC_SCOPE);
+        jvmAdapter().ldc(checkForljeinstr.maybeLambda());
+        jvmMethod().loadBlockType();
+        jvmAdapter().invokestatic(p(IRRuntimeHelpers.class), "checkForLJE", sig(void.class, ThreadContext.class, DynamicScope.class, boolean.class, Block.Type.class));
+    }
+
+        @Override
     public void ClassSuperInstr(ClassSuperInstr classsuperinstr) {
-        // TODO: Nearly identical to InstanceSuperInstr
-        IRBytecodeAdapter m = jvmMethod();
-        String name = classsuperinstr.getMethodAddr().getName();
+        String name = classsuperinstr.getName();
         Operand[] args = classsuperinstr.getCallArgs();
-
-        m.loadContext();
-        m.loadSelf(); // TODO: get rid of caller
-        m.loadSelf();
-        visit(classsuperinstr.getDefiningModule());
-
-        // TODO: CON: is this safe?
-        jvmAdapter().checkcast(p(RubyClass.class));
-
-        for (int i = 0; i < args.length; i++) {
-            Operand operand = args[i];
-            visit(operand);
-        }
-
-        // if there's splats, provide a map and let the call site sort it out
-        boolean[] splatMap = IRRuntimeHelpers.buildSplatMap(args, classsuperinstr.containsArgSplat());
-
+        Operand definingModule = classsuperinstr.getDefiningModule();
+        boolean containsArgSplat = classsuperinstr.containsArgSplat();
         Operand closure = classsuperinstr.getClosureArg(null);
-        boolean hasClosure = closure != null;
-        if (hasClosure) {
-            m.loadContext();
-            visit(closure);
-            m.invokeIRHelper("getBlockFromObject", sig(Block.class, ThreadContext.class, Object.class));
-        } else {
-            m.adapter.getstatic(p(Block.class), "NULL_BLOCK", ci(Block.class));
-        }
 
-        m.invokeClassSuper(name, args.length, hasClosure, splatMap);
-
-        jvmStoreLocal(classsuperinstr.getResult());
+        superCommon(name, classsuperinstr, args, definingModule, containsArgSplat, closure);
     }
 
     @Override
@@ -870,8 +877,10 @@ public class JVMVisitor extends IRVisitor {
         jvmAdapter().checkcast("org/jruby/RubyModule");
         jvmMethod().loadContext();
         jvmAdapter().ldc("const_missing");
-        jvmMethod().pushSymbol(constmissinginstr.getMissingConst());
+        // FIXME: This has lost it's encoding info by this point
+        jvmMethod().pushSymbol(constmissinginstr.getMissingConst(), USASCIIEncoding.INSTANCE);
         jvmMethod().invokeVirtual(Type.getType(RubyModule.class), Method.getMethod("org.jruby.runtime.builtin.IRubyObject callMethod(org.jruby.runtime.ThreadContext, java.lang.String, org.jruby.runtime.builtin.IRubyObject)"));
+        jvmStoreLocal(constmissinginstr.getResult());
     }
 
     @Override
@@ -891,261 +900,123 @@ public class JVMVisitor extends IRVisitor {
     @Override
     public void DefineClassInstr(DefineClassInstr defineclassinstr) {
         IRClassBody newIRClassBody = defineclassinstr.getNewIRClassBody();
-        StaticScope scope = newIRClassBody.getStaticScope();
-        if (scope.getRequiredArgs() > 3 || scope.getRestArg() >= 0 || scope.getOptionalArgs() != 0) {
-            throw new RuntimeException("can't compile variable method: " + this);
-        }
 
-        String scopeString = Helpers.encodeScope(scope);
-
-        IRBytecodeAdapter   m = jvmMethod();
-        SkinnyMethodAdapter a = m.adapter;
-
-        // new CompiledIRMethod
-        a.newobj(p(CompiledIRMethod.class));
-        a.dup();
-
-        // emit method body and get handle
+        jvmMethod().loadContext();
         Handle handle = emitModuleBody(newIRClassBody);
-        a.ldc(handle); // handle
-
-        // add'l args for CompiledIRMethod constructor
-        a.ldc(newIRClassBody.getName());
-        a.ldc(newIRClassBody.getFileName());
-        a.ldc(newIRClassBody.getLineNumber());
-
-        // construct class with Helpers.newClassForIR
-        m.loadContext(); // ThreadContext
-        a.ldc(newIRClassBody.getName()); // class name
-        m.loadSelf(); // self
-
-        // create class
-        m.loadContext();
+        jvmMethod().pushHandle(handle);
+        jvmAdapter().getstatic(jvm.clsData().clsName, handle.getName() + "_IRScope", ci(IRScope.class));
         visit(defineclassinstr.getContainer());
-        m.invokeHelper("checkIsRubyModule", RubyModule.class, ThreadContext.class, Object.class);
+        visit(defineclassinstr.getSuperClass());
 
-        // superclass
-        if (defineclassinstr.getSuperClass() instanceof Nil) {
-            a.aconst_null();
-        } else {
-            visit(defineclassinstr.getSuperClass());
-        }
+        jvmMethod().invokeIRHelper("newCompiledClassBody", sig(DynamicMethod.class, ThreadContext.class, java.lang.invoke.MethodHandle.class, IRScope.class, Object.class, Object.class));
 
-        // is meta?
-        a.ldc(newIRClassBody instanceof IRMetaClassBody);
-
-        m.invokeHelper("newClassForIR", RubyClass.class, ThreadContext.class, String.class, IRubyObject.class, RubyModule.class, Object.class, boolean.class);
-
-        // static scope
-        m.loadContext();
-        m.loadStaticScope();
-        a.ldc(scopeString);
-        a.invokestatic(p(Helpers.class), "decodeScope", sig(StaticScope.class, ThreadContext.class, StaticScope.class, String.class));
-
-        // insert IRScope
-        a.dup();
-        a.getstatic(jvm.clsData().clsName, handle.getName() + "_IRScope", ci(IRScope.class));
-        a.invokevirtual(p(StaticScope.class), "setIRScope", sig(void.class, IRScope.class));
-
-        a.swap();
-
-        // set into StaticScope
-        a.dup2();
-        a.invokevirtual(p(StaticScope.class), "setModule", sig(void.class, RubyModule.class));
-
-        a.getstatic(p(Visibility.class), "PUBLIC", ci(Visibility.class));
-        a.swap();
-
-        // no arguments
-        a.ldc("");
-
-        // frame/scope
-        a.ldc(defineclassinstr.getNewIRClassBody().hasExplicitCallProtocol());
-
-        // invoke constructor
-        a.invokespecial(p(CompiledIRMethod.class), "<init>", sig(void.class, java.lang.invoke.MethodHandle.class, String.class, String.class, int.class, StaticScope.class, Visibility.class, RubyModule.class, String.class, boolean.class));
-
-        // store
         jvmStoreLocal(defineclassinstr.getResult());
     }
 
     @Override
     public void DefineClassMethodInstr(DefineClassMethodInstr defineclassmethodinstr) {
         IRMethod method = defineclassmethodinstr.getMethod();
-        StaticScope scope = method.getStaticScope();
 
-        String scopeString = Helpers.encodeScope(scope);
+        jvmMethod().loadContext();
 
-        IRBytecodeAdapter   m = jvmMethod();
-        SkinnyMethodAdapter a = m.adapter;
-        List<String[]> parameters = method.getArgDesc();
+        emitMethod(method);
 
-        m.loadContext();
+        Map<Integer, MethodType> signatures = method.getNativeSignatures();
+
+        MethodType signature = signatures.get(-1);
+
+        String defSignature = pushHandlesForDef(
+                method.getJittedName(),
+                signatures,
+                signature,
+                sig(void.class, ThreadContext.class, java.lang.invoke.MethodHandle.class, IRScope.class, IRubyObject.class),
+                sig(void.class, ThreadContext.class, java.lang.invoke.MethodHandle.class, java.lang.invoke.MethodHandle.class, int.class, IRScope.class, IRubyObject.class));
+
+        jvmAdapter().getstatic(jvm.clsData().clsName, method.getJittedName() + "_IRScope", ci(IRScope.class));
         visit(defineclassmethodinstr.getContainer());
-        Handle handle = emitMethod(method);
-        jvmMethod().pushHandle(handle); // handle
-        a.ldc(method.getName());
-        m.loadStaticScope();
-        a.getstatic(jvm.clsData().clsName, handle.getName() + "_IRScope", ci(IRScope.class));
-        a.ldc(scopeString);
-        a.ldc(method.getFileName());
-        a.ldc(method.getLineNumber());
-        a.ldc(Helpers.encodeParameterList(parameters));
-        a.ldc(method.hasExplicitCallProtocol());
 
         // add method
-        a.invokestatic(p(IRRuntimeHelpers.class), "defCompiledIRClassMethod",
-                sig(void.class, ThreadContext.class, IRubyObject.class, java.lang.invoke.MethodHandle.class, String.class,
-                        StaticScope.class, IRScope.class, String.class, String.class, int.class, String.class, boolean.class));
+        jvmMethod().adapter.invokestatic(p(IRRuntimeHelpers.class), "defCompiledClassMethod", defSignature);
     }
 
     // SSS FIXME: Needs an update to reflect instr. change
     @Override
     public void DefineInstanceMethodInstr(DefineInstanceMethodInstr defineinstancemethodinstr) {
         IRMethod method = defineinstancemethodinstr.getMethod();
-        StaticScope scope = method.getStaticScope();
-
-        String scopeString = Helpers.encodeScope(scope);
 
         IRBytecodeAdapter   m = jvmMethod();
         SkinnyMethodAdapter a = m.adapter;
-        List<String[]> parameters = method.getArgDesc();
 
         m.loadContext();
-        Handle handle = emitMethod(method);
-        jvmMethod().pushHandle(handle); // handle
-        a.ldc(method.getName());
+
+        emitMethod(method);
+        Map<Integer, MethodType> signatures = method.getNativeSignatures();
+
+        MethodType variable = signatures.get(-1); // always a variable arity handle
+
+        String defSignature = pushHandlesForDef(
+                method.getJittedName(),
+                signatures,
+                variable,
+                sig(void.class, ThreadContext.class, java.lang.invoke.MethodHandle.class, IRScope.class, DynamicScope.class, IRubyObject.class),
+                sig(void.class, ThreadContext.class, java.lang.invoke.MethodHandle.class, java.lang.invoke.MethodHandle.class, int.class, IRScope.class, DynamicScope.class, IRubyObject.class));
+
+        a.getstatic(jvm.clsData().clsName, method.getJittedName() + "_IRScope", ci(IRScope.class));
         jvmLoadLocal(DYNAMIC_SCOPE);
-        m.loadSelf();
-        a.getstatic(jvm.clsData().clsName, handle.getName() + "_IRScope", ci(IRScope.class));
-        a.ldc(scopeString);
-        a.ldc(method.getFileName());
-        a.ldc(method.getLineNumber());
-        a.ldc(Helpers.encodeParameterList(parameters));
-        a.ldc(method.hasExplicitCallProtocol());
+        jvmMethod().loadSelf();
 
         // add method
-        a.invokestatic(p(IRRuntimeHelpers.class), "defCompiledIRMethod",
-                sig(void.class, ThreadContext.class, java.lang.invoke.MethodHandle.class, String.class,
-                        DynamicScope.class, IRubyObject.class, IRScope.class, String.class, String.class, int.class, String.class, boolean.class));
+        a.invokestatic(p(IRRuntimeHelpers.class), "defCompiledInstanceMethod", defSignature);
+    }
+
+    public String pushHandlesForDef(String name, Map<Integer, MethodType> signatures, MethodType variable, String variableOnly, String variableAndSpecific) {
+        String defSignature;
+
+        jvmMethod().pushHandle(new Handle(Opcodes.H_INVOKESTATIC, jvm.clsData().clsName, name, sig(variable.returnType(), variable.parameterArray())));
+
+        if (signatures.size() == 1) {
+            defSignature = variableOnly;
+        } else {
+            defSignature = variableAndSpecific;
+
+            // FIXME: only supports one arity
+            for (Map.Entry<Integer, MethodType> entry : signatures.entrySet()) {
+                if (entry.getKey() == -1) continue; // variable arity signature pushed above
+                jvmMethod().pushHandle(new Handle(Opcodes.H_INVOKESTATIC, jvm.clsData().clsName, name, sig(entry.getValue().returnType(), entry.getValue().parameterArray())));
+                jvmAdapter().pushInt(entry.getKey());
+                break;
+            }
+        }
+        return defSignature;
     }
 
     @Override
     public void DefineMetaClassInstr(DefineMetaClassInstr definemetaclassinstr) {
         IRModuleBody metaClassBody = definemetaclassinstr.getMetaClassBody();
-        StaticScope scope = metaClassBody.getStaticScope();
-        if (scope.getRequiredArgs() > 3 || scope.getRestArg() >= 0 || scope.getOptionalArgs() != 0) {
-            throw new RuntimeException("can't compile variable method: " + this);
-        }
 
-        String scopeString = Helpers.encodeScope(scope);
-
-        IRBytecodeAdapter   m = jvmMethod();
-        SkinnyMethodAdapter a = m.adapter;
-
-        // new CompiledIRMethod
-        a.newobj(p(CompiledIRMethod.class));
-        a.dup();
-
-        // emit method body and get handle
-        a.ldc(emitModuleBody(metaClassBody)); // handle
-
-        // add'l args for CompiledIRMethod constructor
-        a.ldc(metaClassBody.getName());
-        a.ldc(metaClassBody.getFileName());
-        a.ldc(metaClassBody.getLineNumber());
-
-        // static scope
-        m.loadContext();
-        m.loadStaticScope();
-        a.ldc(scopeString);
-        a.invokestatic(p(Helpers.class), "decodeScope", "(Lorg/jruby/runtime/ThreadContext;Lorg/jruby/parser/StaticScope;Ljava/lang/String;)Lorg/jruby/parser/StaticScope;");
-
-        // get singleton class
-        m.loadRuntime();
+        jvmMethod().loadContext();
+        Handle handle = emitModuleBody(metaClassBody);
+        jvmMethod().pushHandle(handle);
+        jvmAdapter().getstatic(jvm.clsData().clsName, handle.getName() + "_IRScope", ci(IRScope.class));
         visit(definemetaclassinstr.getObject());
-        m.invokeHelper("getSingletonClass", RubyClass.class, Ruby.class, IRubyObject.class);
 
-        // set into StaticScope
-        a.dup2();
-        a.invokevirtual(p(StaticScope.class), "setModule", sig(void.class, RubyModule.class));
+        jvmMethod().invokeIRHelper("newCompiledMetaClass", sig(DynamicMethod.class, ThreadContext.class, java.lang.invoke.MethodHandle.class, IRScope.class, IRubyObject.class));
 
-        a.getstatic(p(Visibility.class), "PUBLIC", ci(Visibility.class));
-        a.swap();
-
-        // no arguments
-        a.ldc("");
-
-        // frame/scope
-        a.ldc(definemetaclassinstr.getMetaClassBody().hasExplicitCallProtocol());
-
-        // invoke constructor
-        a.invokespecial(p(CompiledIRMethod.class), "<init>", "(Ljava/lang/invoke/MethodHandle;Ljava/lang/String;Ljava/lang/String;ILorg/jruby/parser/StaticScope;Lorg/jruby/runtime/Visibility;Lorg/jruby/RubyModule;Ljava/lang/String;Z)V");
-
-        // store
         jvmStoreLocal(definemetaclassinstr.getResult());
     }
 
     @Override
     public void DefineModuleInstr(DefineModuleInstr definemoduleinstr) {
         IRModuleBody newIRModuleBody = definemoduleinstr.getNewIRModuleBody();
-        StaticScope scope = newIRModuleBody.getStaticScope();
-        if (scope.getRequiredArgs() > 3 || scope.getRestArg() >= 0 || scope.getOptionalArgs() != 0) {
-            throw new RuntimeException("can't compile variable method: " + this);
-        }
 
-        String scopeString = Helpers.encodeScope(scope);
-
-        IRBytecodeAdapter   m = jvmMethod();
-        SkinnyMethodAdapter a = m.adapter;
-
-        // new CompiledIRMethod
-        a.newobj(p(CompiledIRMethod.class));
-        a.dup();
-
-        // emit method body and get handle
+        jvmMethod().loadContext();
         Handle handle = emitModuleBody(newIRModuleBody);
-        a.ldc(handle);
-
-        // add'l args for CompiledIRMethod constructor
-        a.ldc(newIRModuleBody.getName());
-        a.ldc(newIRModuleBody.getFileName());
-        a.ldc(newIRModuleBody.getLineNumber());
-
-        m.loadContext();
-        m.loadStaticScope();
-        a.ldc(scopeString);
-        a.invokestatic(p(Helpers.class), "decodeScope", "(Lorg/jruby/runtime/ThreadContext;Lorg/jruby/parser/StaticScope;Ljava/lang/String;)Lorg/jruby/parser/StaticScope;");
-
-        // insert IRScope
-        a.dup();
-        a.getstatic(jvm.clsData().clsName, handle.getName() + "_IRScope", ci(IRScope.class));
-        a.invokevirtual(p(StaticScope.class), "setIRScope", sig(void.class, IRScope.class));
-
-        // create module
-        m.loadContext();
+        jvmMethod().pushHandle(handle);
+        jvmAdapter().getstatic(jvm.clsData().clsName, handle.getName() + "_IRScope", ci(IRScope.class));
         visit(definemoduleinstr.getContainer());
-        m.invokeHelper("checkIsRubyModule", RubyModule.class, ThreadContext.class, Object.class);
-        a.ldc(newIRModuleBody.getName());
-        a.invokevirtual(p(RubyModule.class), "defineOrGetModuleUnder", sig(RubyModule.class, String.class));
 
-        // set into StaticScope
-        a.dup2();
-        a.invokevirtual(p(StaticScope.class), "setModule", sig(void.class, RubyModule.class));
+        jvmMethod().invokeIRHelper("newCompiledModuleBody", sig(DynamicMethod.class, ThreadContext.class, java.lang.invoke.MethodHandle.class, IRScope.class, Object.class));
 
-        a.getstatic(p(Visibility.class), "PUBLIC", ci(Visibility.class));
-        a.swap();
-
-        // no arguments
-        a.ldc("");
-
-        // frame/scope
-        a.ldc(definemoduleinstr.getNewIRModuleBody().hasExplicitCallProtocol());
-
-        // invoke constructor
-        a.invokespecial(p(CompiledIRMethod.class), "<init>", "(Ljava/lang/invoke/MethodHandle;Ljava/lang/String;Ljava/lang/String;ILorg/jruby/parser/StaticScope;Lorg/jruby/runtime/Visibility;Lorg/jruby/RubyModule;Ljava/lang/String;Z)V");
-
-        // store
         jvmStoreLocal(definemoduleinstr.getResult());
     }
 
@@ -1160,12 +1031,12 @@ public class JVMVisitor extends IRVisitor {
 
     @Override
     public void ExceptionRegionEndMarkerInstr(ExceptionRegionEndMarkerInstr exceptionregionendmarkerinstr) {
-        throw new RuntimeException("Marker instructions shouldn't reach compiler: " + exceptionregionendmarkerinstr);
+        throw new NotCompilableException("Marker instructions shouldn't reach compiler: " + exceptionregionendmarkerinstr);
     }
 
     @Override
     public void ExceptionRegionStartMarkerInstr(ExceptionRegionStartMarkerInstr exceptionregionstartmarkerinstr) {
-        throw new RuntimeException("Marker instructions shouldn't reach compiler: " + exceptionregionstartmarkerinstr);
+        throw new NotCompilableException("Marker instructions shouldn't reach compiler: " + exceptionregionstartmarkerinstr);
     }
 
     @Override
@@ -1199,9 +1070,7 @@ public class JVMVisitor extends IRVisitor {
 
     @Override
     public void GetGlobalVariableInstr(GetGlobalVariableInstr getglobalvariableinstr) {
-        Operand source = getglobalvariableinstr.getSource();
-        GlobalVariable gvar = (GlobalVariable)source;
-        String name = gvar.getName();
+        String name = getglobalvariableinstr.getGVar().getName();
         jvmMethod().loadRuntime();
         jvmMethod().invokeVirtual(Type.getType(Ruby.class), Method.getMethod("org.jruby.internal.runtime.GlobalVariables getGlobalVariables()"));
         jvmAdapter().ldc(name);
@@ -1231,14 +1100,27 @@ public class JVMVisitor extends IRVisitor {
 
     @Override
     public void InstanceSuperInstr(InstanceSuperInstr instancesuperinstr) {
-        IRBytecodeAdapter m = jvmMethod();
-        String name = instancesuperinstr.getMethodAddr().getName();
+        String name = instancesuperinstr.getName();
         Operand[] args = instancesuperinstr.getCallArgs();
+        Operand definingModule = instancesuperinstr.getDefiningModule();
+        boolean containsArgSplat = instancesuperinstr.containsArgSplat();
+        Operand closure = instancesuperinstr.getClosureArg(null);
+
+        superCommon(name, instancesuperinstr, args, definingModule, containsArgSplat, closure);
+    }
+
+    private void superCommon(String name, CallInstr instr, Operand[] args, Operand definingModule, boolean containsArgSplat, Operand closure) {
+        IRBytecodeAdapter m = jvmMethod();
+        Operation operation = instr.getOperation();
 
         m.loadContext();
         m.loadSelf(); // TODO: get rid of caller
         m.loadSelf();
-        visit(instancesuperinstr.getDefiningModule());
+        if (definingModule == UndefinedValue.UNDEFINED) {
+            jvmAdapter().aconst_null();
+        } else {
+            visit(definingModule);
+        }
 
         // TODO: CON: is this safe?
         jvmAdapter().checkcast(p(RubyClass.class));
@@ -1250,21 +1132,33 @@ public class JVMVisitor extends IRVisitor {
         }
 
         // if there's splats, provide a map and let the call site sort it out
-        boolean[] splatMap = IRRuntimeHelpers.buildSplatMap(args, instancesuperinstr.containsArgSplat());
+        boolean[] splatMap = IRRuntimeHelpers.buildSplatMap(args, containsArgSplat);
 
-        Operand closure = instancesuperinstr.getClosureArg(null);
         boolean hasClosure = closure != null;
         if (hasClosure) {
             m.loadContext();
             visit(closure);
             m.invokeIRHelper("getBlockFromObject", sig(Block.class, ThreadContext.class, Object.class));
-        } else {
-            m.adapter.getstatic(p(Block.class), "NULL_BLOCK", ci(Block.class));
         }
 
-        m.invokeInstanceSuper(name, args.length, hasClosure, splatMap);
+        switch (operation) {
+            case INSTANCE_SUPER:
+                m.invokeInstanceSuper(name, args.length, hasClosure, splatMap);
+                break;
+            case CLASS_SUPER:
+                m.invokeClassSuper(name, args.length, hasClosure, splatMap);
+                break;
+            case UNRESOLVED_SUPER:
+                m.invokeUnresolvedSuper(name, args.length, hasClosure, splatMap);
+                break;
+            case ZSUPER:
+                m.invokeZSuper(name, args.length, hasClosure, splatMap);
+                break;
+            default:
+                throw new NotCompilableException("unknown super type " + operation + " in " + instr);
+        }
 
-        jvmStoreLocal(instancesuperinstr.getResult());
+        jvmStoreLocal(instr.getResult());
     }
 
     @Override
@@ -1288,6 +1182,8 @@ public class JVMVisitor extends IRVisitor {
 
     @Override
     public void LineNumberInstr(LineNumberInstr linenumberinstr) {
+        if (DEBUG) return; // debug mode uses IPC for line numbers
+
         jvmAdapter().line(linenumberinstr.getLineNumber() + 1);
     }
 
@@ -1333,6 +1229,19 @@ public class JVMVisitor extends IRVisitor {
     }
 
     @Override
+    public void LoadImplicitClosure(LoadImplicitClosureInstr loadimplicitclosureinstr) {
+        jvmMethod().loadBlock();
+        jvmStoreLocal(loadimplicitclosureinstr.getResult());
+    }
+
+    @Override
+    public void LoadFrameClosure(LoadFrameClosureInstr loadframeclosureinstr) {
+        jvmMethod().loadContext();
+        jvmAdapter().invokevirtual(p(ThreadContext.class), "getFrameBlock", sig(Block.class));
+        jvmStoreLocal(loadframeclosureinstr.getResult());
+    }
+
+    @Override
     public void Match2Instr(Match2Instr match2instr) {
         visit(match2instr.getReceiver());
         jvmMethod().loadContext();
@@ -1359,15 +1268,9 @@ public class JVMVisitor extends IRVisitor {
     }
 
     @Override
-    public void MethodLookupInstr(MethodLookupInstr methodlookupinstr) {
-        // SSS FIXME: Unused at this time
-        throw new RuntimeException("Unsupported instruction: " + methodlookupinstr);
-    }
-
-    @Override
     public void ModuleVersionGuardInstr(ModuleVersionGuardInstr moduleversionguardinstr) {
         // SSS FIXME: Unused at this time
-        throw new RuntimeException("Unsupported instruction: " + moduleversionguardinstr);
+        throw new NotCompilableException("Unsupported instruction: " + moduleversionguardinstr);
     }
 
     @Override
@@ -1378,7 +1281,7 @@ public class JVMVisitor extends IRVisitor {
     @Override
     public void NoResultCallInstr(NoResultCallInstr noResultCallInstr) {
         IRBytecodeAdapter m = jvmMethod();
-        String name = noResultCallInstr.getMethodAddr().getName();
+        String name = noResultCallInstr.getName();
         Operand[] args = noResultCallInstr.getCallArgs();
         Operand receiver = noResultCallInstr.getReceiver();
         int numArgs = args.length;
@@ -1390,8 +1293,73 @@ public class JVMVisitor extends IRVisitor {
     }
 
     @Override
+    public void OneFixnumArgNoBlockCallInstr(OneFixnumArgNoBlockCallInstr oneFixnumArgNoBlockCallInstr) {
+        if (MethodIndex.getFastFixnumOpsMethod(oneFixnumArgNoBlockCallInstr.getName()) == null) {
+            CallInstr(oneFixnumArgNoBlockCallInstr);
+            return;
+        }
+        IRBytecodeAdapter m = jvmMethod();
+        String name = oneFixnumArgNoBlockCallInstr.getName();
+        long fixnum = oneFixnumArgNoBlockCallInstr.getFixnumArg();
+        Operand receiver = oneFixnumArgNoBlockCallInstr.getReceiver();
+        Variable result = oneFixnumArgNoBlockCallInstr.getResult();
+
+        m.loadContext();
+
+        // for visibility checking without requiring frame self
+        // TODO: don't bother passing when fcall or vcall, and adjust callsite appropriately
+        m.loadSelf(); // caller
+
+        visit(receiver);
+
+        m.invokeOtherOneFixnum(name, fixnum);
+
+        if (result != null) {
+            jvmStoreLocal(result);
+        } else {
+            // still need to drop, since all dyncalls return something (FIXME)
+            m.adapter.pop();
+        }
+    }
+
+    @Override
+    public void OneFloatArgNoBlockCallInstr(OneFloatArgNoBlockCallInstr oneFloatArgNoBlockCallInstr) {
+        if (MethodIndex.getFastFloatOpsMethod(oneFloatArgNoBlockCallInstr.getName()) == null) {
+            CallInstr(oneFloatArgNoBlockCallInstr);
+            return;
+        }
+        IRBytecodeAdapter m = jvmMethod();
+        String name = oneFloatArgNoBlockCallInstr.getName();
+        double flote = oneFloatArgNoBlockCallInstr.getFloatArg();
+        Operand receiver = oneFloatArgNoBlockCallInstr.getReceiver();
+        Variable result = oneFloatArgNoBlockCallInstr.getResult();
+
+        m.loadContext();
+
+        // for visibility checking without requiring frame self
+        // TODO: don't bother passing when fcall or vcall, and adjust callsite appropriately
+        m.loadSelf(); // caller
+
+        visit(receiver);
+
+        m.invokeOtherOneFloat(name, flote);
+
+        if (result != null) {
+            jvmStoreLocal(result);
+        } else {
+            // still need to drop, since all dyncalls return something (FIXME)
+            m.adapter.pop();
+        }
+    }
+
+    @Override
+    public void OneOperandArgNoBlockCallInstr(OneOperandArgNoBlockCallInstr oneOperandArgNoBlockCallInstr) {
+        CallInstr(oneOperandArgNoBlockCallInstr);
+    }
+
+    @Override
     public void OptArgMultipleAsgnInstr(OptArgMultipleAsgnInstr optargmultipleasgninstr) {
-        visit(optargmultipleasgninstr.getArrayArg());
+        visit(optargmultipleasgninstr.getArray());
         jvmAdapter().checkcast(p(RubyArray.class));
         jvmAdapter().ldc(optargmultipleasgninstr.getMinArgsLength());
         jvmAdapter().ldc(optargmultipleasgninstr.getIndex());
@@ -1415,7 +1383,8 @@ public class JVMVisitor extends IRVisitor {
     public void ProcessModuleBodyInstr(ProcessModuleBodyInstr processmodulebodyinstr) {
         jvmMethod().loadContext();
         visit(processmodulebodyinstr.getModuleBody());
-        jvmMethod().invokeHelper("invokeModuleBody", IRubyObject.class, ThreadContext.class, CompiledIRMethod.class);
+        visit(processmodulebodyinstr.getBlock());
+        jvmMethod().invokeIRHelper("invokeModuleBody", sig(IRubyObject.class, ThreadContext.class, DynamicMethod.class, Block.class));
         jvmStoreLocal(processmodulebodyinstr.getResult());
     }
 
@@ -1430,14 +1399,21 @@ public class JVMVisitor extends IRVisitor {
     }
 
     @Override
+    public void RaiseRequiredKeywordArgumentErrorInstr(RaiseRequiredKeywordArgumentError instr) {
+        jvmMethod().loadContext();
+        jvmAdapter().ldc(instr.getName());
+        jvmMethod().invokeIRHelper("newRequiredKeywordArgumentError", sig(RaiseException.class, ThreadContext.class, String.class));
+        jvmAdapter().athrow();
+    }
+
+    @Override
     public void PushFrameInstr(PushFrameInstr pushframeinstr) {
         jvmMethod().loadContext();
         jvmMethod().loadFrameClass();
-        jvmAdapter().ldc(pushframeinstr.getFrameName().getName());
+        jvmMethod().loadFrameName();
         jvmMethod().loadSelf();
         jvmMethod().loadBlock();
-        jvmMethod().loadStaticScope();
-        jvmMethod().invokeVirtual(Type.getType(ThreadContext.class), Method.getMethod("void preMethodFrameAndClass(org.jruby.RubyModule, String, org.jruby.runtime.builtin.IRubyObject, org.jruby.runtime.Block, org.jruby.parser.StaticScope)"));
+        jvmMethod().invokeVirtual(Type.getType(ThreadContext.class), Method.getMethod("void preMethodFrameOnly(org.jruby.RubyModule, String, org.jruby.runtime.builtin.IRubyObject, org.jruby.runtime.Block)"));
 
         // FIXME: this should be part of explicit call protocol only when needed, optimizable, and correct for the scope
         // See also CompiledIRMethod.call
@@ -1500,16 +1476,11 @@ public class JVMVisitor extends IRVisitor {
     }
 
     @Override
-    public void RaiseArgumentErrorInstr(RaiseArgumentErrorInstr raiseargumenterrorinstr) {
-        super.RaiseArgumentErrorInstr(raiseargumenterrorinstr);
-    }
-
-    @Override
-    public void ReceiveClosureInstr(ReceiveClosureInstr receiveclosureinstr) {
+    public void ReifyClosureInstr(ReifyClosureInstr reifyclosureinstr) {
         jvmMethod().loadRuntime();
         jvmLoadLocal("$block");
         jvmMethod().invokeIRHelper("newProc", sig(IRubyObject.class, Ruby.class, Block.class));
-        jvmStoreLocal(receiveclosureinstr.getResult());
+        jvmStoreLocal(reifyclosureinstr.getResult());
     }
 
     @Override
@@ -1558,10 +1529,15 @@ public class JVMVisitor extends IRVisitor {
 
     @Override
     public void ReceivePreReqdArgInstr(ReceivePreReqdArgInstr instr) {
-        jvmMethod().loadContext();
-        jvmMethod().loadArgs();
-        jvmAdapter().pushInt(instr.getArgIndex());
-        jvmMethod().invokeIRHelper("getPreArgSafe", sig(IRubyObject.class, ThreadContext.class, IRubyObject[].class, int.class));
+        if (jvm.methodData().specificArity >= 0 &&
+                instr.getArgIndex() < jvm.methodData().specificArity) {
+            jvmAdapter().aload(jvm.methodData().signature.argOffset("arg" + instr.getArgIndex()));
+        } else {
+            jvmMethod().loadContext();
+            jvmMethod().loadArgs();
+            jvmAdapter().pushInt(instr.getArgIndex());
+            jvmMethod().invokeIRHelper("getPreArgSafe", sig(IRubyObject.class, ThreadContext.class, IRubyObject[].class, int.class));
+        }
         jvmStoreLocal(instr.getResult());
     }
 
@@ -1594,19 +1570,25 @@ public class JVMVisitor extends IRVisitor {
     }
 
     @Override
-    public void RecordEndBlockInstr(RecordEndBlockInstr recordendblockinstr) {
-        super.RecordEndBlockInstr(recordendblockinstr);    //To change body of overridden methods use File | Settings | File Templates.
+    public void RecordEndBlockInstr(RecordEndBlockInstr recordEndBlockInstr) {
+        jvmMethod().loadContext();
+
+        jvmMethod().loadContext();
+        visit(recordEndBlockInstr.getEndBlockClosure());
+        jvmMethod().invokeIRHelper("getBlockFromObject", sig(Block.class, ThreadContext.class, Object.class));
+
+        jvmMethod().invokeIRHelper("pushExitBlock", sig(void.class, ThreadContext.class, Block.class));
     }
 
     @Override
     public void ReqdArgMultipleAsgnInstr(ReqdArgMultipleAsgnInstr reqdargmultipleasgninstr) {
         jvmMethod().loadContext();
-        visit(reqdargmultipleasgninstr.getArrayArg());
+        visit(reqdargmultipleasgninstr.getArray());
         jvmAdapter().checkcast(p(RubyArray.class));
         jvmAdapter().pushInt(reqdargmultipleasgninstr.getPreArgsCount());
         jvmAdapter().pushInt(reqdargmultipleasgninstr.getIndex());
         jvmAdapter().pushInt(reqdargmultipleasgninstr.getPostArgsCount());
-        jvmMethod().invokeHelper("irReqdArgMultipleAsgn", IRubyObject.class, ThreadContext.class, RubyArray.class, int.class, int.class, int.class);
+        jvmMethod().invokeIRHelper("irReqdArgMultipleAsgn", sig(IRubyObject.class, ThreadContext.class, RubyArray.class, int.class, int.class, int.class));
         jvmStoreLocal(reqdargmultipleasgninstr.getResult());
     }
 
@@ -1622,7 +1604,7 @@ public class JVMVisitor extends IRVisitor {
     @Override
     public void RestArgMultipleAsgnInstr(RestArgMultipleAsgnInstr restargmultipleasgninstr) {
         jvmMethod().loadContext();
-        visit(restargmultipleasgninstr.getArrayArg());
+        visit(restargmultipleasgninstr.getArray());
         jvmAdapter().checkcast(p(RubyArray.class));
         jvmAdapter().pushInt(restargmultipleasgninstr.getPreArgsCount());
         jvmAdapter().pushInt(restargmultipleasgninstr.getPostArgsCount());
@@ -1673,10 +1655,9 @@ public class JVMVisitor extends IRVisitor {
                 break;
             case IS_DEFINED_CONSTANT_OR_METHOD:
                 jvmMethod().loadContext();
-                jvmMethod().loadSelf();
                 visit(runtimehelpercall.getArgs()[0]);
                 jvmAdapter().ldc(((StringLiteral)runtimehelpercall.getArgs()[1]).getString());
-                jvmAdapter().invokestatic(p(IRRuntimeHelpers.class), "isDefinedConstantOrMethod", sig(IRubyObject.class, ThreadContext.class, IRubyObject.class, IRubyObject.class, String.class));
+                jvmAdapter().invokestatic(p(IRRuntimeHelpers.class), "isDefinedConstantOrMethod", sig(IRubyObject.class, ThreadContext.class, IRubyObject.class, String.class));
                 jvmStoreLocal(runtimehelpercall.getResult());
                 break;
             case IS_DEFINED_NTH_REF:
@@ -1726,8 +1707,10 @@ public class JVMVisitor extends IRVisitor {
                 visit(runtimehelpercall.getArgs()[0]);
                 visit(runtimehelpercall.getArgs()[1]);
                 jvmAdapter().invokestatic(p(IRRuntimeHelpers.class), "mergeKeywordArguments", sig(IRubyObject.class, ThreadContext.class, IRubyObject.class, IRubyObject.class));
+                jvmStoreLocal(runtimehelpercall.getResult());
+                break;
             default:
-                throw new RuntimeException("Unknown IR runtime helper method: " + runtimehelpercall.getHelperMethod() + "; INSTR: " + this);
+                throw new NotCompilableException("Unknown IR runtime helper method: " + runtimehelpercall.getHelperMethod() + "; INSTR: " + this);
         }
     }
 
@@ -1736,10 +1719,9 @@ public class JVMVisitor extends IRVisitor {
         jvmMethod().loadContext();
         jvmLoadLocal(DYNAMIC_SCOPE);
         jvmMethod().loadBlockType();
-        jvmAdapter().ldc(returninstr.maybeLambda);
         visit(returninstr.getReturnValue());
 
-        jvmMethod().invokeIRHelper("initiateNonLocalReturn", sig(IRubyObject.class, ThreadContext.class, DynamicScope.class, Block.Type.class, boolean.class, IRubyObject.class));
+        jvmMethod().invokeIRHelper("initiateNonLocalReturn", sig(IRubyObject.class, ThreadContext.class, DynamicScope.class, Block.Type.class, IRubyObject.class));
         jvmMethod().returnValue();
     }
 
@@ -1814,24 +1796,20 @@ public class JVMVisitor extends IRVisitor {
 
     @Override
     public void ThreadPollInstr(ThreadPollInstr threadpollinstr) {
-        jvmMethod().loadContext();
-        jvmAdapter().invokedynamic(
-                "checkpoint",
-                sig(void.class, ThreadContext.class),
-                InvokeDynamicSupport.checkpointHandle());
+        jvmMethod().checkpoint();
     }
 
     @Override
     public void ThrowExceptionInstr(ThrowExceptionInstr throwexceptioninstr) {
-        visit(throwexceptioninstr.getExceptionArg());
+        visit(throwexceptioninstr.getException());
         jvmAdapter().athrow();
     }
 
     @Override
     public void ToAryInstr(ToAryInstr toaryinstr) {
         jvmMethod().loadContext();
-        visit(toaryinstr.getArrayArg());
-        jvmMethod().invokeHelper("irToAry", IRubyObject.class, ThreadContext.class, IRubyObject.class);
+        visit(toaryinstr.getArray());
+        jvmMethod().invokeIRHelper("irToAry", sig(IRubyObject.class, ThreadContext.class, IRubyObject.class));
         jvmStoreLocal(toaryinstr.getResult());
     }
 
@@ -1847,42 +1825,14 @@ public class JVMVisitor extends IRVisitor {
 
     @Override
     public void UnresolvedSuperInstr(UnresolvedSuperInstr unresolvedsuperinstr) {
-
-        IRBytecodeAdapter m = jvmMethod();
-        String name = unresolvedsuperinstr.getMethodAddr().getName();
+        String name = unresolvedsuperinstr.getName();
         Operand[] args = unresolvedsuperinstr.getCallArgs();
-
-        m.loadContext();
-        m.loadSelf(); // TODO: get rid of caller
-        m.loadSelf();
         // this would be getDefiningModule but that is not used for unresolved super
-//        visit(unresolvedsuperinstr.getDefiningModule());
-        jvmAdapter().aconst_null();
-
-//        // TODO: CON: is this safe?
-//        jvmAdapter().checkcast(p(RubyClass.class));
-
-        for (int i = 0; i < args.length; i++) {
-            Operand operand = args[i];
-            visit(operand);
-        }
-
-        // if there's splats, provide a map and let the call site sort it out
-        boolean[] splatMap = IRRuntimeHelpers.buildSplatMap(args, unresolvedsuperinstr.containsArgSplat());
-
+        Operand definingModule = UndefinedValue.UNDEFINED;
+        boolean containsArgSplat = unresolvedsuperinstr.containsArgSplat();
         Operand closure = unresolvedsuperinstr.getClosureArg(null);
-        boolean hasClosure = closure != null;
-        if (hasClosure) {
-            m.loadContext();
-            visit(closure);
-            m.invokeIRHelper("getBlockFromObject", sig(Block.class, ThreadContext.class, Object.class));
-        } else {
-            m.adapter.getstatic(p(Block.class), "NULL_BLOCK", ci(Block.class));
-        }
 
-        m.invokeUnresolvedSuper(name, args.length, hasClosure, splatMap);
-
-        jvmStoreLocal(unresolvedsuperinstr.getResult());
+        superCommon(name, unresolvedsuperinstr, args, definingModule, containsArgSplat, closure);
     }
 
     @Override
@@ -1902,8 +1852,20 @@ public class JVMVisitor extends IRVisitor {
     }
 
     @Override
+    public void ZeroOperandArgNoBlockCallInstr(ZeroOperandArgNoBlockCallInstr zeroOperandArgNoBlockCallInstr) {
+        CallInstr(zeroOperandArgNoBlockCallInstr);
+    }
+
+    @Override
     public void ZSuperInstr(ZSuperInstr zsuperinstr) {
-        super.ZSuperInstr(zsuperinstr);    //To change body of overridden methods use File | Settings | File Templates.
+        String name = zsuperinstr.getName();
+        Operand[] args = zsuperinstr.getCallArgs();
+        // this would be getDefiningModule but that is not used for unresolved super
+        Operand definingModule = UndefinedValue.UNDEFINED;
+        boolean containsArgSplat = zsuperinstr.containsArgSplat();
+        Operand closure = zsuperinstr.getClosureArg(null);
+
+        superCommon(name, zsuperinstr, args, definingModule, containsArgSplat, closure);
     }
 
     @Override
@@ -1924,14 +1886,9 @@ public class JVMVisitor extends IRVisitor {
     // ruby 1.9 specific
     @Override
     public void BuildLambdaInstr(BuildLambdaInstr buildlambdainstr) {
-        // SSS FIXME: Copied this from ast/LambdaNode ... Is this required here as well?
-        //
-        // JRUBY-5686: do this before executing so first time sets cref module
-//        getLambdaBody().getClosure().getStaticScope().determineModule();
-
         jvmMethod().loadRuntime();
 
-        IRClosure body = buildlambdainstr.getLambdaBody().getClosure();
+        IRClosure body = ((WrappedIRClosure)buildlambdainstr.getLambdaBody()).getClosure();
         if (body == null) {
             jvmMethod().pushNil();
         } else {
@@ -2016,6 +1973,14 @@ public class JVMVisitor extends IRVisitor {
     }
 
     @Override
+    public void Complex(Complex complex) {
+        jvmMethod().loadRuntime();
+        jvmMethod().pushFixnum(0);
+        visit(complex.getNumber());
+        jvmAdapter().invokestatic(p(RubyComplex.class), "newComplexRaw", sig(RubyComplex.class, Ruby.class, IRubyObject.class, IRubyObject.class));
+    }
+
+    @Override
     public void CurrentScope(CurrentScope currentscope) {
         jvmMethod().loadStaticScope();
     }
@@ -2034,6 +1999,11 @@ public class JVMVisitor extends IRVisitor {
     }
 
     @Override
+    public void FrozenString(FrozenString frozen) {
+        jvmMethod().pushFrozenString(frozen.getByteList());
+    }
+
+    @Override
     public void UnboxedFixnum(UnboxedFixnum fixnum) {
         jvmAdapter().ldc(fixnum.getValue());
     }
@@ -2049,23 +2019,30 @@ public class JVMVisitor extends IRVisitor {
     }
 
     @Override
-    public void GlobalVariable(GlobalVariable globalvariable) {
-        super.GlobalVariable(globalvariable);    //To change body of overridden methods use File | Settings | File Templates.
-    }
-
-    @Override
     public void Hash(Hash hash) {
+        List<KeyValuePair<Operand, Operand>> pairs = hash.getPairs();
+        Iterator<KeyValuePair<Operand, Operand>> iter = pairs.iterator();
+        boolean kwargs = hash.isKWArgsHash && pairs.get(0).getKey() == Symbol.KW_REST_ARG_DUMMY;
+
         jvmMethod().loadContext();
-        for (KeyValuePair<Operand, Operand> pair: hash.getPairs()) {
+        if (kwargs) {
+            visit(pairs.get(0).getValue());
+            jvmAdapter().checkcast(p(RubyHash.class));
+
+            iter.next();
+        }
+
+        for (; iter.hasNext() ;) {
+            KeyValuePair<Operand, Operand> pair = iter.next();
             visit(pair.getKey());
             visit(pair.getValue());
         }
-        jvmMethod().hash(hash.getPairs().size());
-    }
 
-    @Override
-    public void IRException(IRException irexception) {
-        super.IRException(irexception);    //To change body of overridden methods use File | Settings | File Templates.
+        if (kwargs) {
+            jvmMethod().kwargsHash(pairs.size() - 1);
+        } else {
+            jvmMethod().hash(pairs.size());
+        }
     }
 
     @Override
@@ -2076,17 +2053,6 @@ public class JVMVisitor extends IRVisitor {
         jvmAdapter().ldc(localvariable.getScopeDepth());
         jvmMethod().pushNil();
         jvmAdapter().invokevirtual(p(DynamicScope.class), "getValueOrNil", sig(IRubyObject.class, int.class, int.class, IRubyObject.class));
-    }
-
-    @Override
-    public void MethAddr(MethAddr methaddr) {
-        jvmAdapter().ldc(methaddr.getName());
-    }
-
-    @Override
-    public void MethodHandle(MethodHandle methodhandle) {
-        // SSS FIXME: Unused at this time
-        throw new RuntimeException("Unsupported operand: " + methodhandle);
     }
 
     @Override
@@ -2102,37 +2068,26 @@ public class JVMVisitor extends IRVisitor {
     }
 
     @Override
+    public void NullBlock(NullBlock nullblock) {
+        jvmAdapter().getstatic(p(Block.class), "NULL_BLOCK", ci(Block.class));
+    }
+
+    @Override
     public void ObjectClass(ObjectClass objectclass) {
         jvmMethod().pushObjectClass();
     }
 
     @Override
-    public void Range(Range range) {
+    public void Rational(Rational rational) {
         jvmMethod().loadRuntime();
-        jvmMethod().loadContext();
-        visit(range.getBegin());
-        visit(range.getEnd());
-        jvmAdapter().ldc(range.isExclusive());
-        jvmAdapter().invokestatic(p(RubyRange.class), "newRange", sig(RubyRange.class, Ruby.class, ThreadContext.class, IRubyObject.class, IRubyObject.class, boolean.class));
+        jvmAdapter().ldc(rational.getNumerator());
+        jvmAdapter().ldc(rational.getDenominator());
+        jvmAdapter().invokevirtual(p(Ruby.class), "newRational", sig(RubyRational.class, long.class, long.class));
     }
 
     @Override
     public void Regexp(Regexp regexp) {
-        if (!regexp.hasKnownValue() && !regexp.options.isOnce()) {
-            jvmMethod().loadRuntime();
-            visit(regexp.getRegexp());
-            jvmAdapter().invokevirtual(p(RubyString.class), "getByteList", sig(ByteList.class));
-            jvmAdapter().ldc(regexp.options.toEmbeddedOptions());
-            jvmAdapter().invokestatic(p(RubyRegexp.class), "newRegexp", sig(RubyRegexp.class, Ruby.class, RubyString.class, int.class));
-            jvmAdapter().dup();
-            jvmAdapter().invokevirtual(p(RubyRegexp.class), "setLiteral", sig(void.class));
-        } else {
-            // FIXME: need to check this on cached path
-            // context.runtime.getKCode() != rubyRegexp.getKCode()) {
-            jvmMethod().loadContext();
-            visit(regexp.getRegexp());
-            jvmMethod().pushRegexp(regexp.options.toEmbeddedOptions());
-        }
+        jvmMethod().pushRegexp(regexp.getSource(), regexp.options.toEmbeddedOptions());
     }
 
     @Override
@@ -2149,9 +2104,21 @@ public class JVMVisitor extends IRVisitor {
 
     @Override
     public void Splat(Splat splat) {
-        jvmMethod().loadContext();
         visit(splat.getArray());
-        jvmMethod().invokeHelper("irSplat", RubyArray.class, ThreadContext.class, IRubyObject.class);
+        // Splat is now only used in call arg lists where it is guaranteed that
+        // the splat-arg is an array.
+        //
+        // It is:
+        // - either a result of a args-cat/args-push (which generate an array),
+        // - or a result of a BuildSplatInstr (which also generates an array),
+        // - or a rest-arg that has been received (which also generates an array)
+        //   and is being passed via zsuper.
+        //
+        // In addition, since this only shows up in call args, the array itself is
+        // never modified. The array elements are extracted out and inserted into
+        // a java array. So, a dup is not required either.
+        //
+        // So, besides retrieving the array, nothing more to be done here!
     }
 
     @Override
@@ -2179,7 +2146,7 @@ public class JVMVisitor extends IRVisitor {
 
     @Override
     public void Symbol(Symbol symbol) {
-        jvmMethod().pushSymbol(symbol.getName());
+        jvmMethod().pushSymbol(symbol.getName(), symbol.getEncoding());
     }
 
     @Override
@@ -2214,7 +2181,7 @@ public class JVMVisitor extends IRVisitor {
 
     @Override
     public void UnexecutableNil(UnexecutableNil unexecutablenil) {
-        throw new RuntimeException(this.getClass().getSimpleName() + " should never be directly executed!");
+        throw new NotCompilableException(this.getClass().getSimpleName() + " should never be directly executed!");
     }
 
     @Override
@@ -2224,36 +2191,7 @@ public class JVMVisitor extends IRVisitor {
         jvmAdapter().newobj(p(Block.class));
         jvmAdapter().dup();
 
-        { // prepare block body (should be cached
-            jvmAdapter().newobj(p(CompiledIRBlockBody.class));
-            jvmAdapter().dup();
-
-            // FIXME: This is inefficient because it's creating a new StaticScope every time
-            String encodedScope = Helpers.encodeScope(closure.getStaticScope());
-            jvmMethod().loadContext();
-            jvmMethod().loadStaticScope();
-            jvmAdapter().ldc(encodedScope);
-            jvmAdapter().invokestatic(p(Helpers.class), "decodeScopeAndDetermineModule", sig(StaticScope.class, ThreadContext.class, StaticScope.class, String.class));
-
-            // insert IRScope
-            jvmAdapter().dup();
-            jvmAdapter().getstatic(jvm.clsData().clsName, closure.getHandle().getName() + "_IRScope", ci(IRScope.class));
-            jvmAdapter().invokevirtual(p(StaticScope.class), "setIRScope", sig(void.class, IRScope.class));
-
-            jvmAdapter().ldc(Helpers.stringJoin(",", closure.getParameterList()));
-
-            jvmAdapter().ldc(closure.getFileName());
-
-            jvmAdapter().ldc(closure.getLineNumber());
-
-            jvmAdapter().ldc(closure instanceof IRFor || closure.isBeginEndBlock());
-
-            jvmAdapter().ldc(closure.getHandle());
-
-            jvmAdapter().ldc(closure.getArity().getValue());
-
-            jvmAdapter().invokespecial(p(CompiledIRBlockBody.class), "<init>", sig(void.class, StaticScope.class, String.class, String.class, int.class, boolean.class, java.lang.invoke.MethodHandle.class, int.class));
-        }
+        jvmMethod().pushBlockBody(closure.getHandle(), closure.getSignature(), jvm.clsData().clsName);
 
         { // prepare binding
             jvmMethod().loadContext();
@@ -2276,5 +2214,4 @@ public class JVMVisitor extends IRVisitor {
     private JVM jvm;
     private int methodIndex;
     private Map<String, IRScope> scopeMap;
-    private boolean prepare;
 }

@@ -29,8 +29,8 @@ package org.jruby;
 
 import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyModule;
-import org.jruby.exceptions.JumpException;
 import org.jruby.exceptions.RaiseException;
+import org.jruby.exceptions.Unrescuable;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.BlockCallback;
@@ -67,6 +67,8 @@ public class RubyEnumerator extends RubyObject {
 
     /** Function object for lazily computing size (used for internally created enumerators) */
     private SizeFn sizeFn;
+    
+    private IRubyObject feedValue;
 
     public static void defineEnumerator(Ruby runtime) {
         RubyModule enm = runtime.getClassFromPath("Enumerable");
@@ -120,6 +122,11 @@ public class RubyEnumerator extends RubyObject {
 
     public static IRubyObject enumeratorizeWithSize(ThreadContext context, IRubyObject object, String method, SizeFn sizeFn) {
         return enumeratorizeWithSize(context, object, method, NULL_ARRAY, sizeFn);
+    }
+
+    public static IRubyObject enumeratorizeWithSize(ThreadContext context, IRubyObject object, String method,IRubyObject arg, IRubyObject size) {
+        Ruby runtime = context.runtime;
+        return new RubyEnumerator(runtime, runtime.getEnumerator(), object, runtime.fastNewSymbol(method), new IRubyObject[] { arg }, size);
     }
 
     public static IRubyObject enumeratorize(Ruby runtime, IRubyObject object, String method) {
@@ -255,14 +262,16 @@ public class RubyEnumerator extends RubyObject {
     }
 
     private IRubyObject initialize20(IRubyObject object, IRubyObject method, IRubyObject[] methodArgs, IRubyObject size, SizeFn sizeFn) {
+        final Ruby runtime = getRuntime();
         this.object = object;
         this.method = method.asJavaString();
         this.methodArgs = methodArgs;
         this.size = size;
         this.sizeFn = sizeFn;
+        this.feedValue = runtime.getNil();
         setInstanceVariable("@__object__", object);
         setInstanceVariable("@__method__", method);
-        setInstanceVariable("@__args__", RubyArray.newArrayNoCopyLight(getRuntime(), methodArgs));
+        setInstanceVariable("@__args__", RubyArray.newArrayNoCopyLight(runtime, methodArgs));
         return this;
     }
 
@@ -275,7 +284,8 @@ public class RubyEnumerator extends RubyObject {
         copy.method     = this.method;
         copy.methodArgs = this.methodArgs;
         copy.size       = this.size;
-        copy.sizeFn       = this.sizeFn;
+        copy.sizeFn     = this.sizeFn;
+        copy.feedValue  = getRuntime().getNil();
         return copy;
     }
 
@@ -452,7 +462,7 @@ public class RubyEnumerator extends RubyObject {
     @JRubyMethod
     public synchronized IRubyObject next(ThreadContext context) {
         ensureNexter(context);
-        
+        if (!feedValue.isNil()) feedValue = context.nil;
         return nexter.next();
     }
     
@@ -474,7 +484,32 @@ public class RubyEnumerator extends RubyObject {
         
         return nexter.peek();
     }
-    
+
+    @JRubyMethod(name = "peek_values")
+    public synchronized IRubyObject peekValues(ThreadContext context) {
+        ensureNexter(context);
+
+        return RubyArray.newArray(context.runtime, nexter.peek());
+    }
+
+    @JRubyMethod(name = "next_values")
+    public synchronized IRubyObject nextValues(ThreadContext context) {
+        ensureNexter(context);
+        if (!feedValue.isNil()) feedValue = context.nil;
+        return RubyArray.newArray(context.runtime, nexter.next());
+    }
+
+    @JRubyMethod
+    public IRubyObject feed(ThreadContext context, IRubyObject val) {
+        ensureNexter(context);
+        if (!feedValue.isNil()) {
+            throw context.runtime.newTypeError("feed value already set");
+        }
+        feedValue = val;
+        nexter.setFeedValue(val);
+        return context.nil;
+    }
+
     private void ensureNexter(ThreadContext context) {
         if (nexter == null) {
             if (Options.ENUMERATOR_LIGHTWEIGHT.load()) {
@@ -523,6 +558,8 @@ public class RubyEnumerator extends RubyObject {
 
         /** args to each method */
         protected final IRubyObject[] methodArgs;
+
+        private IRubyObject feedValue;
         
         public Nexter(Ruby runtime, IRubyObject object, String method, IRubyObject[] methodArgs) {
             this.object = object;
@@ -530,7 +567,15 @@ public class RubyEnumerator extends RubyObject {
             this.methodArgs = methodArgs;
             this.runtime = runtime;
         }
-        
+
+        public void setFeedValue(IRubyObject feedValue) {
+            this.feedValue = feedValue;
+        }
+
+        public IRubyObject getFeedValue() {
+            return feedValue;
+        }
+
         public abstract IRubyObject next();
         
         public abstract void shutdown();
@@ -596,11 +641,15 @@ public class RubyEnumerator extends RubyObject {
 
         /** the last value we got, used for peek */
         private IRubyObject lastValue;
+
+        /** Exception used for unrolling the iteration on terminate */
+        private static class TerminateEnumeration extends RuntimeException implements Unrescuable {}
         
         public ThreadedNexter(Ruby runtime, IRubyObject object, String method, IRubyObject[] methodArgs) {
             super(runtime, object, method, methodArgs);
+            setFeedValue(runtime.getNil());
         }
-        
+
         @Override
         public synchronized IRubyObject next() {
             if (doneObject != null) {
@@ -707,31 +756,37 @@ public class RubyEnumerator extends RubyObject {
             IRubyObject finalObject = NEVER;
             
             try {
-                IRubyObject oldExc = runtime.getGlobalVariables().get("$!");
+                IRubyObject oldExc = runtime.getGlobalVariables().get("$!"); // Save $!
+                final TerminateEnumeration terminateEnumeration = new TerminateEnumeration();
                 try {
                     object.callMethod(context, method, methodArgs, CallBlock.newCallClosure(object, object.getMetaClass(), Arity.OPTIONAL, new BlockCallback() {
                         @Override
                         public IRubyObject call(ThreadContext context, IRubyObject[] args, Block block) {
                             try {
                                 if (DEBUG) System.out.println(Thread.currentThread().getName() + ": exchanging: " + Arrays.toString(args));
-                                if (die) throw new JumpException.BreakJump(-1, NEVER);
+                                if (die) throw terminateEnumeration;
                                 out.put(RubyEnumerable.packEnumValues(runtime, args));
-                                if (die) throw new JumpException.BreakJump(-1, NEVER);
+                                if (die) throw terminateEnumeration;
                             } catch (InterruptedException ie) {
                                 if (DEBUG) System.out.println(Thread.currentThread().getName() + ": interrupted");
 
-                                throw new JumpException.BreakJump(-1, NEVER);
+                                throw terminateEnumeration;
                             }
 
-                            return context.nil;
+                            IRubyObject feedValue = getFeedValue();
+                            setFeedValue(context.nil);
+                            return feedValue;
                         }
                     }, context));
-                } catch (JumpException.BreakJump bj) {
+                } catch (TerminateEnumeration te) {
+                    if (te != terminateEnumeration) {
+                        throw te;
+                    }
                     // ignore, we're shutting down
                 } catch (RaiseException re) {
-                    runtime.getGlobalVariables().set("$!", oldExc);
                     if (DEBUG) System.out.println(Thread.currentThread().getName() + ": exception at toplevel: " + re.getException());
                     finalObject = re.getException();
+                    runtime.getGlobalVariables().set("$!", oldExc); // Restore $!
                 } catch (Throwable t) {
                     if (DEBUG) {
                         System.out.println(Thread.currentThread().getName() + ": exception at toplevel: " + t);

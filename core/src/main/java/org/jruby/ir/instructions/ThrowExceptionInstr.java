@@ -5,7 +5,8 @@ import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Operation;
 import org.jruby.ir.operands.IRException;
 import org.jruby.ir.operands.Operand;
-import org.jruby.ir.transformations.inlining.InlinerInfo;
+import org.jruby.ir.persistence.IRWriterEncoder;
+import org.jruby.ir.transformations.inlining.CloneInfo;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.DynamicScope;
@@ -13,54 +14,39 @@ import org.jruby.runtime.Helpers;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
-import java.util.Map;
-
 // Right now, this is primarily used by the JRuby implementation.
 // Ruby exceptions go through RubyKernel.raise (or RubyThread.raise).
 public class ThrowExceptionInstr extends Instr implements FixedArityInstr {
-    private Operand exceptionArg;
-
     public ThrowExceptionInstr(Operand exception) {
-        super(Operation.THROW);
-        this.exceptionArg = exception;
+        super(Operation.THROW, new Operand[] { exception });
     }
 
-    public Operand getExceptionArg() {
-        return exceptionArg;
-    }
-
-    @Override
-    public Operand[] getOperands() {
-        return new Operand[]{ exceptionArg };
+    public Operand getException() {
+        return operands[0];
     }
 
     @Override
-    public void simplifyOperands(Map<Operand, Operand> valueMap, boolean force) {
-        exceptionArg = exceptionArg.getSimplifiedOperand(valueMap, force);
+    public Instr clone(CloneInfo ii) {
+        return new ThrowExceptionInstr(getException().cloneForInlining(ii));
     }
 
     @Override
-    public String toString() {
-        return super.toString() + "(" + exceptionArg + ")";
-    }
-
-    @Override
-    public Instr cloneForInlining(InlinerInfo ii) {
-        return new ThrowExceptionInstr(exceptionArg.cloneForInlining(ii));
+    public void encode(IRWriterEncoder e) {
+        super.encode(e);
+        e.encode(getException());
     }
 
     @Override
     public Object interpret(ThreadContext context, StaticScope currScope, DynamicScope currDynScope, IRubyObject self, Object[] temp) {
-        if (exceptionArg instanceof IRException) {
-            throw ((IRException) exceptionArg).getException(context.runtime);
+        if (getException() instanceof IRException) {
+            throw ((IRException) getException()).getException(context.runtime);
         }
 
-        Object excObj = exceptionArg.retrieve(context, self, currScope, currDynScope, temp);
+        Object excObj = getException().retrieve(context, self, currScope, currDynScope, temp);
 
         if (excObj instanceof IRubyObject) {
             RubyKernel.raise(context, context.runtime.getKernel(), new IRubyObject[] {(IRubyObject)excObj}, Block.NULL_BLOCK);
         } else if (excObj instanceof Throwable) { // java exception -- avoid having to add 'throws' clause everywhere!
-            // SSS FIXME: Can avoid this workaround by adding a case for this instruction in the interpreter loop
             Helpers.throwException((Throwable)excObj);
         }
 

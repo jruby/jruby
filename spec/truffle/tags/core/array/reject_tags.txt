@@ -1,14 +1,7 @@
-fails:Array#reject returns a new array without elements for which block is true
-fails:Array#reject returns self when called on an Array emptied with #shift
-fails:Array#reject properly handles recursive arrays
-fails:Array#reject does not return subclass instance on Array subclasses
-fails:Array#reject does not retain instance variables
 fails:Array#reject returns an Enumerator if no block given
 fails:Array#reject! removes elements for which block is true
 fails:Array#reject! properly handles recursive arrays
 fails:Array#reject! returns nil when called on an Array emptied with #shift
 fails:Array#reject! returns nil if no changes are made
 fails:Array#reject! returns an Enumerator if no block given, and the array is frozen
-fails:Array#reject! raises a RuntimeError on a frozen array
-fails:Array#reject! raises a RuntimeError on an empty frozen array
 fails:Array#reject! returns an Enumerator if no block given

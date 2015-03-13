@@ -29,14 +29,15 @@
 package org.jruby.ir.operands;
 
 import org.jruby.ir.IRVisitor;
-import org.jruby.ir.transformations.inlining.InlinerInfo;
+import org.jruby.ir.transformations.inlining.SimpleCloneInfo;
 
 /**
  * Represents a temporary variable for an unboxed Boolean operand.
  */
 public class TemporaryBooleanVariable extends TemporaryLocalVariable {
+    public static final String PREFIX = "%b_";
     public TemporaryBooleanVariable(int offset) {
-        super(offset);
+        super(PREFIX+offset, offset);
     }
 
     @Override
@@ -46,12 +47,12 @@ public class TemporaryBooleanVariable extends TemporaryLocalVariable {
 
     @Override
     public String getPrefix() {
-        return "%b_";
+        return PREFIX;
     }
 
     @Override
-    public Variable clone(InlinerInfo ii) {
-        return new TemporaryBooleanVariable(offset);
+    public Variable clone(SimpleCloneInfo ii) {
+        return this;
     }
 
     @Override

@@ -43,6 +43,7 @@ import org.jruby.RubySystemCallError;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.exceptions.RaiseException;
+import org.jruby.platform.Platform;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.BlockCallback;
@@ -201,7 +202,8 @@ public class Tempfile extends RubyFile implements Finalizable {
         Ruby runtime = context.runtime;
         POSIX posix = runtime.getPosix();
 
-        if (posix.isNative()) {
+        if (posix.isNative() && !Platform.IS_WINDOWS) {
+            IRubyObject oldExc = context.runtime.getGlobalVariables().get("$!"); // Save $!
             try {
                 RubyFile.unlink(context, this);
             } catch (RaiseException re) {
@@ -209,10 +211,10 @@ public class Tempfile extends RubyFile implements Finalizable {
                 if (!(excp instanceof RubySystemCallError)) throw re;
 
                 int errno = (int)((RubySystemCallError)excp).errno().convertToInteger().getLongValue();
-                if (errno != Errno.ENOENT.intValue() &&
-                        errno != Errno.EACCES.intValue()) {
+                if (errno != Errno.ENOENT.intValue() && errno != Errno.EACCES.intValue()) {
                     throw re;
                 }
+                context.runtime.getGlobalVariables().set("$!", oldExc); // Restore $!
             }
             openFile.setPath(null);
             tmpname = context.nil;
@@ -226,7 +228,7 @@ public class Tempfile extends RubyFile implements Finalizable {
                 }
             } else {
                 // else, no-op, since we can't unlink the file without breaking stat et al
-                runtime.getWarnings().warn("Tempfile#unlink or delete called on open file; ignoring");
+                context.runtime.getWarnings().warn("Tempfile#unlink or delete called on open file; ignoring");
             }
         }
         return context.nil;

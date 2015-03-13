@@ -109,8 +109,6 @@ public class RubyMath {
         double valuea = needFloat(x).getDoubleValue();
         double valueb = needFloat(y).getDoubleValue();
         
-        if (Double.isInfinite(valuea) && Double.isInfinite(valueb)) throw context.runtime.newMathDomainError("atan2");
-
         return RubyFloat.newFloat(context.runtime, Math.atan2(valuea, valueb));
     }
 
@@ -344,7 +342,7 @@ public class RubyMath {
     }
 
     private static RubyFloat log_common19(IRubyObject recv, double value, double base, String msg) {
-        if (value < 0) throw recv.getRuntime().newMathDomainError(msg);
+        if (value < 0 || base < 0) throw recv.getRuntime().newMathDomainError(msg);
 
         return RubyFloat.newFloat(recv.getRuntime(), Math.log(value)/Math.log(base));
     }

@@ -1,26 +1,27 @@
 package org.jruby.ir.instructions;
 
+import java.util.Arrays;
+import org.jcodings.specific.USASCIIEncoding;
 import org.jruby.RubyModule;
 import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Operation;
-import org.jruby.ir.operands.MethAddr;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.Symbol;
 import org.jruby.ir.operands.Variable;
-import org.jruby.ir.transformations.inlining.InlinerInfo;
+import org.jruby.ir.persistence.IRWriterEncoder;
+import org.jruby.ir.transformations.inlining.CloneInfo;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.CallType;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
-import java.util.Map;
-
-public class ConstMissingInstr extends CallInstr implements ResultInstr, FixedArityInstr {
+public class ConstMissingInstr extends CallInstr implements FixedArityInstr {
     private final String missingConst;
 
     public ConstMissingInstr(Variable result, Operand currentModule, String missingConst) {
-        super(Operation.CONST_MISSING, CallType.FUNCTIONAL, result, new MethAddr("const_missing"), currentModule, new Operand[]{new Symbol(missingConst)}, null);
+        // FIXME: Missing encoding knowledge of the constant name.
+        super(Operation.CONST_MISSING, CallType.FUNCTIONAL, result, "const_missing", currentModule, new Operand[]{new Symbol(missingConst, USASCIIEncoding.INSTANCE)}, null);
 
         this.missingConst = missingConst;
     }
@@ -30,33 +31,30 @@ public class ConstMissingInstr extends CallInstr implements ResultInstr, FixedAr
     }
 
     @Override
-    public void simplifyOperands(Map<Operand, Operand> valueMap, boolean force) {
-        receiver = receiver.getSimplifiedOperand(valueMap, force);
+    public Instr clone(CloneInfo ii) {
+        return new ConstMissingInstr(ii.getRenamedVariable(result), getReceiver().cloneForInlining(ii), missingConst);
     }
 
     @Override
-    public Variable getResult() {
-        return result;
+    public void encode(IRWriterEncoder e) {
+        super.encode(e);
+        e.encode(getReceiver());
+        e.encode(getMissingConst());
     }
 
     @Override
-    public void updateResult(Variable v) {
-        this.result = v;
-    }
+    public String[] toStringNonOperandArgs() {
+        String[] base = super.toStringNonOperandArgs();
+        String[] args = Arrays.copyOf(base, base.length + 1);
 
-    @Override
-    public Instr cloneForInlining(InlinerInfo ii) {
-        return new ConstMissingInstr(ii.getRenamedVariable(result), receiver.cloneForInlining(ii), missingConst);
-    }
+        args[args.length - 1] = "missing: " + missingConst;
 
-    @Override
-    public String toString() {
-        return super.toString() + "(" + receiver + "," + missingConst  + ")";
+        return  args;
     }
 
     @Override
     public Object interpret(ThreadContext context, StaticScope currScope, DynamicScope currDynScope, IRubyObject self, Object[] temp) {
-        RubyModule module = (RubyModule) receiver.retrieve(context, self, currScope, currDynScope, temp);
+        RubyModule module = (RubyModule) getReceiver().retrieve(context, self, currScope, currDynScope, temp);
         return module.callMethod(context, "const_missing", context.runtime.fastNewSymbol(missingConst));
     }
 

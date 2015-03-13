@@ -3,8 +3,7 @@
 # For licensing, see LICENSE.SPECS
 #
 
-require 'ffi'
-require_relative 'spec_helper'
+require File.expand_path(File.join(File.dirname(__FILE__), "spec_helper"))
 
 describe FFI::Struct, ' by_ref' do
   before :all do
@@ -22,15 +21,15 @@ describe FFI::Struct, ' by_ref' do
 
   it "should accept instances of exact struct class" do
     s = @struct_class.new
-    @api.struct_test(s).should == s.pointer
+    expect(@api.struct_test(s)).to eq(s.pointer)
   end
 
   it "should accept nil" do
-    @api.struct_test(nil).should == nil
+    expect(@api.struct_test(nil)).to be_null
   end
 
   it "should reject other types" do
-    lambda { @api.struct_test('test').should == nil }.should raise_error(TypeError)
+    expect { expect(@api.struct_test('test')).to be_nil }.to raise_error(TypeError)
   end
 
   it "should reject instances of other struct classes" do
@@ -38,7 +37,7 @@ describe FFI::Struct, ' by_ref' do
       layout :a, :pointer
     end
 
-    lambda { @api.struct_test(other_class.new) }.should raise_error(TypeError)
+    expect { @api.struct_test(other_class.new) }.to raise_error(TypeError)
   end
 end
 

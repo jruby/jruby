@@ -1,3 +1,2 @@
 fails:Kernel.global_variables is a private method
 fails:Kernel.global_variables finds subset starting with std
-fails:Kernel#global_variables needs to be reviewed for spec completeness

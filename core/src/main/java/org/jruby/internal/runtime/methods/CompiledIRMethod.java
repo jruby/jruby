@@ -1,7 +1,8 @@
 package org.jruby.internal.runtime.methods;
 
 import org.jruby.RubyModule;
-import org.jruby.ir.runtime.IRRuntimeHelpers;
+import org.jruby.ir.IRMethod;
+import org.jruby.ir.IRScope;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
@@ -13,55 +14,61 @@ import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
 
 import java.lang.invoke.MethodHandle;
+
 import org.jruby.runtime.Helpers;
 
-public class CompiledIRMethod extends JavaMethod implements Cloneable, PositionAware, MethodArgs2 {
+public class CompiledIRMethod extends JavaMethod implements MethodArgs2, PositionAware {
     private static final Logger LOG = LoggerFactory.getLogger("CompiledIRMethod");
 
-    private final MethodHandle method;
-    private final String name;
-    private final String file;
-    private final int line;
-    private final StaticScope scope;
-    private Arity arity;
-    private final boolean hasExplicitCallProtocol;
+    protected final MethodHandle variable;
 
-    public CompiledIRMethod(MethodHandle method, String name, String file, int line, StaticScope scope,
-                            Visibility visibility, RubyModule implementationClass, String parameterDesc, boolean hasExplicitCallProtocol) {
-        super(implementationClass, visibility, CallConfiguration.FrameNoneScopeNone);
-        this.method = method;
-        this.name = name;
-        this.file = file;
-        this.line = line;
-        this.scope = scope;
-        this.scope.determineModule();
-        this.arity = calculateArity();
-        this.hasExplicitCallProtocol = hasExplicitCallProtocol;
+    protected final MethodHandle specific;
+    protected final int specificArity;
 
-        setParameterDesc(parameterDesc);
+    protected final IRScope method;
+    private final Arity arity;
+    private String[] parameterList;
 
-        setHandle(method);
+    public CompiledIRMethod(MethodHandle variable, IRScope method, Visibility visibility, RubyModule implementationClass) {
+        this(variable, null, -1, method, visibility, implementationClass);
     }
 
-    public CompiledIRMethod(MethodHandle method, String name, String file, int line, StaticScope scope,
-                            Visibility visibility, RubyModule implementationClass, String[] parameterList, boolean hasExplicitCallProtocol) {
-        super(implementationClass, visibility, CallConfiguration.FrameNoneScopeNone);
+    public CompiledIRMethod(MethodHandle variable, MethodHandle specific, int specificArity, IRScope method, Visibility visibility, RubyModule implementationClass) {
+        super(implementationClass, visibility, CallConfiguration.FrameNoneScopeNone, method.getName());
+        this.variable = variable;
+        this.specific = specific;
+        this.specificArity = specificArity;
         this.method = method;
-        this.name = name;
-        this.file = file;
-        this.line = line;
-        this.scope = scope;
-        this.scope.determineModule();
+        this.method.getStaticScope().determineModule();
         this.arity = calculateArity();
-        this.hasExplicitCallProtocol = hasExplicitCallProtocol;
 
-        setParameterList(parameterList);
+        setHandle(variable);
+    }
 
-        setHandle(method);
+    public IRScope getIRMethod() {
+        return method;
+    }
+
+    public StaticScope getStaticScope() {
+        return method.getStaticScope();
+    }
+
+    public MethodHandle getHandleFor(int arity) {
+        if (specificArity != -1 && arity == specificArity) {
+            return specific;
+        }
+
+        return null;
+    }
+
+    public String[] getParameterList() {
+        if (parameterList != null) return parameterList;
+
+        return parameterList = Helpers.irMethodArgsToParameters(((IRMethod)method).getArgDesc());
     }
 
     private Arity calculateArity() {
-        StaticScope s = scope;
+        StaticScope s = getStaticScope();
         if (s.getOptionalArgs() > 0 || s.getRestArg() >= 0) return Arity.required(s.getRequiredArgs());
 
         return Arity.createArity(s.getRequiredArgs());
@@ -72,158 +79,118 @@ public class CompiledIRMethod extends JavaMethod implements Cloneable, PositionA
         return this.arity;
     }
 
-    @Override
-    public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args, Block block) {
-        if (IRRuntimeHelpers.isDebug()) {
-            // FIXME: name should probably not be "" ever.
-            String realName = name == null || "".equals(name) ? this.name : name;
-            LOG.info("Executing '" + realName + "'");
+    protected void post(ThreadContext context) {
+        if (!method.hasExplicitCallProtocol()) {
+            // update call stacks (pop: ..)
+            context.popFrame();
+            context.postMethodScopeOnly();
         }
+    }
 
-        if (!hasExplicitCallProtocol) {
+    protected void pre(ThreadContext context, IRubyObject self, String name, Block block) {
+        if (!method.hasExplicitCallProtocol()) {
             // update call stacks (push: frame, class, scope, etc.)
             RubyModule implementationClass = getImplementationClass();
-            context.preMethodFrameAndScope(implementationClass, name, self, block, scope);
+            context.preMethodFrameAndScope(implementationClass, name, self, block, method.getStaticScope());
             // FIXME: does not seem right to use this method's visibility as current!!!
             // See also PushFrame instruction in org.jruby.ir.targets.JVMVisitor
             context.setCurrentVisibility(Visibility.PUBLIC);
         }
+    }
+
+    @Override
+    public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args, Block block) {
+        pre(context, self, name, block);
 
         try {
-            return (IRubyObject)this.method.invokeExact(context, scope, self, args, block, implementationClass);
+            return (IRubyObject)this.variable.invokeExact(context, method.getStaticScope(), self, args, block, implementationClass, name);
         } catch (Throwable t) {
             Helpers.throwException(t);
             // not reached
             return null;
         } finally {
-            if (!hasExplicitCallProtocol) {
-                // update call stacks (pop: ..)
-                context.popFrame();
-                context.postMethodScopeOnly();
-            }
+            post(context);
         }
     }
 
-    public boolean hasExplicitCallProtocol() {
-        return hasExplicitCallProtocol;
-    }
-// Because compiled IR methods have been simplified to just use IRubyObject[], we have no specific-arity paths.
-// This will come later by specializing the IR.
-/*
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, Block block) {
-        if (IRRuntimeHelpers.isDebug()) {
-            // FIXME: name should probably not be "" ever.
-            String realName = name == null || "".equals(name) ? this.name : name;
-            LOG.info("Executing '" + realName + "'");
-        }
+        if (specificArity != 0) return call(context, self, clazz, name, IRubyObject.NULL_ARRAY, block);
+        pre(context, self, name, block);
 
         try {
-            // update call stacks (push: frame, class, scope, etc.)
-            RubyModule implementationClass = getImplementationClass();
-            context.preMethodFrameAndScope(implementationClass, name, self, block, scope);
-            context.setCurrentVisibility(getVisibility());
-            return (IRubyObject)this.method.invokeWithArguments(context, scope, self, block);
+            return (IRubyObject)this.specific.invokeExact(context, method.getStaticScope(), self, block, implementationClass, name);
         } catch (Throwable t) {
             Helpers.throwException(t);
             // not reached
             return null;
         } finally {
-            // update call stacks (pop: ..)
-            context.popFrame();
-            context.postMethodScopeOnly();
+            post(context);
         }
     }
 
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0, Block block) {
-        if (IRRuntimeHelpers.isDebug()) {
-            // FIXME: name should probably not be "" ever.
-            String realName = name == null || "".equals(name) ? this.name : name;
-            LOG.info("Executing '" + realName + "'");
-        }
+        if (specificArity != 1) return call(context, self, clazz, name, Helpers.arrayOf(arg0), block);
+        pre(context, self, name, block);
 
         try {
-            // update call stacks (push: frame, class, scope, etc.)
-            RubyModule implementationClass = getImplementationClass();
-            context.preMethodFrameAndScope(implementationClass, name, self, block, scope);
-            context.setCurrentVisibility(getVisibility());
-            return (IRubyObject)this.method.invokeWithArguments(context, scope, self, arg0, block);
+            return (IRubyObject)this.specific.invokeExact(context, method.getStaticScope(), self, arg0, block, implementationClass, name);
         } catch (Throwable t) {
             Helpers.throwException(t);
             // not reached
             return null;
         } finally {
-            // update call stacks (pop: ..)
-            context.popFrame();
-            context.postMethodScopeOnly();
+            post(context);
         }
     }
 
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0, IRubyObject arg1, Block block) {
-        if (IRRuntimeHelpers.isDebug()) {
-            // FIXME: name should probably not be "" ever.
-            String realName = name == null || "".equals(name) ? this.name : name;
-            LOG.info("Executing '" + realName + "'");
-        }
+        if (specificArity != 2) return call(context, self, clazz, name, Helpers.arrayOf(arg0, arg1), block);
+        pre(context, self, name, block);
 
         try {
-            // update call stacks (push: frame, class, scope, etc.)
-            RubyModule implementationClass = getImplementationClass();
-            context.preMethodFrameAndScope(implementationClass, name, self, block, scope);
-            context.setCurrentVisibility(getVisibility());
-            return (IRubyObject)this.method.invokeWithArguments(context, scope, self, arg0, arg1, block);
+            return (IRubyObject)this.specific.invokeExact(context, method.getStaticScope(), self, arg0, arg1, block, implementationClass, name);
         } catch (Throwable t) {
             Helpers.throwException(t);
             // not reached
             return null;
         } finally {
-            // update call stacks (pop: ..)
-            context.popFrame();
-            context.postMethodScopeOnly();
+            post(context);
         }
     }
 
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Block block) {
-        if (IRRuntimeHelpers.isDebug()) {
-            // FIXME: name should probably not be "" ever.
-            String realName = name == null || "".equals(name) ? this.name : name;
-            LOG.info("Executing '" + realName + "'");
-        }
+        if (specificArity != 3) return call(context, self, clazz, name, Helpers.arrayOf(arg0, arg1, arg2), block);
+        pre(context, self, name, block);
 
         try {
-            // update call stacks (push: frame, class, scope, etc.)
-            RubyModule implementationClass = getImplementationClass();
-            context.preMethodFrameAndScope(implementationClass, name, self, block, scope);
-            context.setCurrentVisibility(getVisibility());
-            return (IRubyObject)this.method.invokeWithArguments(context, scope, self, arg0, arg1, arg2, block);
+            return (IRubyObject)this.specific.invokeExact(context, method.getStaticScope(), self, arg0, arg1, arg2, block, implementationClass, name);
         } catch (Throwable t) {
             Helpers.throwException(t);
             // not reached
             return null;
         } finally {
-            // update call stacks (pop: ..)
-            context.popFrame();
-            context.postMethodScopeOnly();
+            post(context);
         }
     }
-*/
+
+    public boolean hasExplicitCallProtocol() {
+        return method.hasExplicitCallProtocol();
+    }
+
     @Override
     public DynamicMethod dup() {
-        return new CompiledIRMethod(method, name, file, line, scope, visibility, implementationClass, getParameterList(), hasExplicitCallProtocol);
+        return new CompiledIRMethod(variable, specific, specificArity, method, visibility, implementationClass);
     }
 
     public String getFile() {
-        return file;
+        return method.getFileName();
     }
 
     public int getLine() {
-        return line;
-	}
-
-    public StaticScope getStaticScope() {
-        return scope;
+        return method.getLineNumber();
     }
 }

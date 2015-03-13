@@ -1,53 +1,7 @@
-fails:String#[] returns the character code of the character at the given index
-fails:String#[] calls to_int on the given index
-fails:String#[] raises a TypeError if the given index is nil
-fails:String#[] raises a TypeError if the given index can't be converted to an Integer
-fails:String#[] with index, length returns the substring starting at the given index with the given length
-fails:String#[] with index, length always taints resulting strings when self is tainted
-fails:String#[] with index, length returns nil if the offset falls outside of self
-fails:String#[] with index, length returns nil if the length is negative
-fails:String#[] with index, length calls to_int on the given index and the given length
-fails:String#[] with index, length raises a TypeError when idx or length can't be converted to an integer
-fails:String#[] with index, length raises a TypeError when the given index or the given length is nil
-fails:String#[] with index, length returns subclass instances
-fails:String#[] with index, length handles repeated application
-fails:String#[] with Range returns the substring given by the offsets of the range
-fails:String#[] with Range returns nil if the beginning of the range falls outside of self
-fails:String#[] with Range returns an empty string if range.begin is inside self and > real end
-fails:String#[] with Range always taints resulting strings when self is tainted
-fails:String#[] with Range returns subclass instances
 fails:String#[] with Range calls to_int on range arguments
 fails:String#[] with Range works with Range subclasses
-fails:String#[] with Range handles repeated application
-fails:String#[] with Regexp returns the matching portion of self
-fails:String#[] with Regexp returns nil if there is no match
-fails:String#[] with Regexp always taints resulting strings when self or regexp is tainted
-fails:String#[] with Regexp returns an untrusted string if the regexp is untrusted
 fails:String#[] with Regexp returns subclass instances
-fails:String#[] with Regexp sets $~ to MatchData when there is a match and nil when there's none
-fails:String#[] with Regexp, index returns the capture for the given index
-fails:String#[] with Regexp, index always taints resulting strings when self or regexp is tainted
-fails:String#[] with Regexp, index returns an untrusted string if the regexp is untrusted
-fails:String#[] with Regexp, index returns nil if there is no match
 fails:String#[] with Regexp, index returns nil if there is no capture for the given index
-fails:String#[] with Regexp, index calls to_int on the given index
-fails:String#[] with Regexp, index raises a TypeError when the given index can't be converted to Integer
-fails:String#[] with Regexp, index raises a TypeError when the given index is nil
 fails:String#[] with Regexp, index returns subclass instances
-fails:String#[] with Regexp, index sets $~ to MatchData when there is a match and nil when there's none
-fails:String#[] with Regexp, group returns the capture for the given name
-fails:String#[] with Regexp, group returns the last capture for duplicate names
-fails:String#[] with Regexp, group returns the innermost capture for nested duplicate names
-fails:String#[] with Regexp, group always taints resulting strings when self or regexp is tainted
-fails:String#[] with Regexp, group returns nil if there is no match
-fails:String#[] with Regexp, group raises an IndexError if there is no capture for the given name
-fails:String#[] with Regexp, group raises a TypeError when the given name is not a String
-fails:String#[] with Regexp, group raises an IndexError when given the empty String as a group name
 fails:String#[] with Regexp, group returns subclass instances
-fails:String#[] with Regexp, group sets $~ to MatchData when there is a match and nil when there's none
-fails:String#[] with String returns other_str if it occurs in self
 fails:String#[] with String taints resulting strings when other is tainted
-fails:String#[] with String doesn't set $~
-fails:String#[] with String returns nil if there is no match
-fails:String#[] with String doesn't call to_str on its argument
-fails:String#[] with String returns a subclass instance when given a subclass instance

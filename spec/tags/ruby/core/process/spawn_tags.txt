@@ -60,3 +60,4 @@ fails:Process.spawn raises a TypeError if given a symbol as :pgroup option
 fails:Process.spawn does not close file descriptors >= 3 in the child process when given a false :close_others option and fds are set close_on_exec=false
 fails:Process.spawn when passed :chdir changes to the directory passed for :chdir
 fails:Process.spawn when passed :chdir calls #to_path to convert the :chdir value
+fails:Process.spawn with Integer option keys maps the key to a file descriptor in the child that inherits the file descriptor from the parent specified by the value

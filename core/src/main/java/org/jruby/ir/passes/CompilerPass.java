@@ -30,6 +30,16 @@ public abstract class CompilerPass {
      */
     public abstract String getLabel();
 
+    @Override
+    public int hashCode() {
+        return getLabel().hashCode();
+    }
+
+    @Override
+    public boolean equals(Object other) {
+        return (other != null) && (other instanceof CompilerPass) && (getLabel() == ((CompilerPass)other).getLabel());
+    }
+
     /**
      * Meat of an individual pass. run will call this after dependency
      * resolution.
@@ -38,32 +48,46 @@ public abstract class CompilerPass {
      */
     public abstract Object execute(IRScope scope, Object... dependencyData);
 
-    /**
-     * The data that this pass is responsible for will get invalidated so that
-     * if this pass is then executed it will generate new pass data.  Note
-     * that some data will destructively manipulate dependent compiler pass
-     * data.  In that case, the pass may wipe more than just it's data.  In
-     * that case an execute() should still rebuild everything fine because all
-     * compiler passes list their dependencies.
-     *
-     * @param scope is where the pass stores its data.
-     */
-    public abstract void invalidate(IRScope scope);
-
     public List<Class<? extends CompilerPass>> getDependencies() {
         return NO_DEPENDENCIES;
     }
 
     /**
-     * If this pass has been previous run then return the data from that last run.
+     * If this pass has been previous run, then return the data from that last run.
+     * Specific scopes can override this behavior.
+     *
      * @returns data or null if it needs to be run
      */
     public Object previouslyRun(IRScope scope) {
-        return null;
+        return scope.getExecutedPasses().contains(this) ? new Object() : null;
+    }
+
+    /**
+     * The data that this pass is responsible for will get invalidated so that
+     * if this pass is then executed it will generate new pass data. Note
+     * that some data will destructively manipulate dependent compiler pass
+     * data. In that case, the pass may wipe more than just it's data.
+     * In that case, an execute() should still rebuild everything fine because
+     * all compiler passes list their dependencies.
+     *
+     * @param scope is where the pass stores its data.
+     * @returns true if invalidation succeeded, false otherwise.
+     */
+    public boolean invalidate(IRScope scope) {
+        // System.out.println("--- INVALIDATING " + this.getLabel() + " on scope: " + scope);
+        scope.getExecutedPasses().remove(this);
+        return true;
     }
 
     // Run the pass on the passed in scope!
-    protected Object run(IRScope scope, boolean childScope) {
+    protected Object run(IRScope scope, boolean force, boolean childScope) {
+        // System.out.println("--- RUNNING " + this.getLabel() + " on scope: " + scope);
+        Object prevData = null;
+        if (!force && (prevData = previouslyRun(scope)) != null) {
+            // System.out.println("--- RETURNING OLD RESULT ---");
+            return prevData;
+        }
+
         List<Class<? extends CompilerPass>> dependencies = getDependencies();
         Object data[] = new Object[dependencies.size()];
 
@@ -75,6 +99,9 @@ public abstract class CompilerPass {
             listener.startExecute(this, scope, childScope);
         }
 
+        // Record this pass 
+        scope.getExecutedPasses().add(this);
+
         Object passData = execute(scope, data);
 
         for (CompilerPassListener listener: scope.getManager().getListeners()) {
@@ -84,8 +111,12 @@ public abstract class CompilerPass {
         return passData;
     }
 
+    public Object run(IRScope scope, boolean force) {
+        return run(scope, force, false);
+    }
+
     public Object run(IRScope scope) {
-        return run(scope, false);
+        return run(scope, false, false);
     }
 
     private Object makeSureDependencyHasRunOnce(Class<? extends CompilerPass> passClass, IRScope scope, boolean childScope) {
@@ -93,7 +124,7 @@ public abstract class CompilerPass {
         Object data = pass.previouslyRun(scope);
 
         if (data == null) {
-            data = pass.run(scope, childScope);
+            data = pass.run(scope, false, childScope);
         } else {
             for (CompilerPassListener listener: scope.getManager().getListeners()) {
                 listener.alreadyExecuted(pass, scope, data, childScope);
@@ -142,8 +173,10 @@ public abstract class CompilerPass {
 
         List<CompilerPass> passes = new ArrayList<CompilerPass>();
 
-        for (String passClassName :  passList.split(",")) {
-            passes.add(createPassInstance(passClassName));
+        if (!passList.equals("")) {
+            for (String passClassName : passList.split(",")) {
+                passes.add(createPassInstance(passClassName));
+            }
         }
 
         return passes;

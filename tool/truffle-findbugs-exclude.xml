@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FindBugsFilter>
+  <Match>
+    <Class name="~.*NodeFactory.*" />
+  </Match>
+  <Match>
+    <Class name="org.jruby.truffle.nodes.core.MutexNodes$UnlockNode" />
+    <Bug pattern="IMSE_DONT_CATCH_IMSE" />
+  </Match>
+  <Match>
+    <Class name="org.jruby.truffle.nodes.rubinius.VMPrimitiveNodes$VMGCStartPrimitiveNode" />
+    <Bug pattern="DM_GC" />
+  </Match>
+  <Match>
+    <Class name="org.jruby.truffle.nodes.core.KernelNodes$ExecNode" />
+    <Bug pattern="DM_EXIT" />
+  </Match>
+  <Match>
+    <Class name="org.jruby.truffle.nodes.core.KernelNodes$AbortNode" />
+    <Bug pattern="DM_EXIT" />
+  </Match>
+  <Match>
+    <Class name="org.jruby.truffle.runtime.DebugOperations" />
+    <Bug pattern="DM_EXIT" />
+  </Match>
+  <Match>
+    <Class name="org.jruby.truffle.nodes.core.FixnumNodes$EqualNode" />
+    <Bug pattern="FE_FLOATING_POINT_EQUALITY" />
+  </Match>
+  <Match>
+    <Class name="org.jruby.truffle.nodes.core.BignumNodes$EqualNode" />
+    <Bug pattern="FE_FLOATING_POINT_EQUALITY" />
+  </Match>
+  <Match>
+    <Class name="org.jruby.truffle.nodes.core.FloatNodes$EqualNode" />
+    <Bug pattern="FE_FLOATING_POINT_EQUALITY" />
+  </Match>
+  <Match>
+    <Class name="org.jruby.truffle.translator.BodyTranslator" />
+    <Bug pattern="DM_EXIT" />
+  </Match>
+  <Match>
+    <Class name="org.jruby.truffle.runtime.core.RubyException" />
+    <Bug pattern="NM_CLASS_NOT_EXCEPTION" />
+  </Match>
+  <Match>
+    <Class name="org.jruby.truffle.nodes.core.FileNodes$EachLineNode" />
+    <Bug pattern="OS_OPEN_STREAM" />
+  </Match>
+  <Match>
+    <Class name="~org\.jruby\.truffle\..*" />
+    <Bug pattern="EI_EXPOSE_REP2" />
+  </Match>
+  <Match>
+    <Class name="org.jruby.truffle.nodes.core.KernelNodes$BacktickNode" />
+    <Bug pattern="OS_OPEN_STREAM" />
+  </Match>
+  <Match>
+    <Class name="org.jruby.truffle.nodes.core.FixnumNodes$PowNode" />
+    <Bug pattern="FE_FLOATING_POINT_EQUALITY" />
+  </Match>
+  <Match>
+    <Class name="org.jruby.truffle.nodes.core.FloatNodes$PowNode" />
+    <Bug pattern="FE_FLOATING_POINT_EQUALITY" />
+  </Match>
+  <Match>
+    <Class name="org.jruby.truffle.runtime.util.ArrayUtils" />
+    <Bug pattern="FE_FLOATING_POINT_EQUALITY" />
+  </Match>
+  <Match>
+    <Bug pattern="SIC_INNER_SHOULD_BE_STATIC_ANON" />
+  </Match>
+  <Match>
+    <Class name="org.jruby.truffle.runtime.subsystems.SimpleShell" />
+    <Bug pattern="DM_EXIT" />
+  </Match>
+  <Match>
+    <Class name="org.jruby.truffle.nodes.debug.AssertConstantNode" />
+    <Bug pattern="VO_VOLATILE_REFERENCE_TO_ARRAY" />
+  </Match>
+  <Match>
+    <Class name="org.jruby.truffle.nodes.debug.AssertNotCompiledNode" />
+    <Bug pattern="VO_VOLATILE_REFERENCE_TO_ARRAY" />
+  </Match>
+  <Match>
+    <Class name="org.jruby.truffle.nodes.debug.AssertConstantNode" />
+    <Bug pattern="ST_WRITE_TO_STATIC_FROM_INSTANCE_METHOD" />
+  </Match>
+  <Match>
+    <Class name="org.jruby.truffle.nodes.debug.AssertNotCompiledNode" />
+    <Bug pattern="ST_WRITE_TO_STATIC_FROM_INSTANCE_METHOD" />
+  </Match>
+</FindBugsFilter>

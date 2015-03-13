@@ -1,1 +1,0 @@
-fails:Integer#odd? returns true when self is an odd number

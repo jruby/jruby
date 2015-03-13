@@ -1,4 +1,2 @@
-fails:MatchData#begin returns the offset of the start of the nth element
-fails:MatchData#begin returns nil when the nth match isn't found
 fails:MatchData#begin returns the offset for multi byte strings
 fails:MatchData#begin returns the offset for multi byte strings with unicode regexp

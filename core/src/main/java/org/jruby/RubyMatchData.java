@@ -49,7 +49,6 @@ import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.runtime.Visibility;
 import org.jruby.util.ByteList;
 import org.jruby.util.StringSupport;
 
@@ -458,53 +457,49 @@ public class RubyMatchData extends RubyObject {
     /** match_begin
      *
      */
+    @JRubyMethod
     public IRubyObject begin(ThreadContext context, IRubyObject index) {
-        return begin19(context, index);
-    }
+        check();
 
-    @JRubyMethod(name = "begin")
-    public IRubyObject begin19(ThreadContext context, IRubyObject index) {
         int i = backrefNumber(index);
         Ruby runtime = context.runtime;
-        int b = beginCommon(runtime, i);
+
+        if (i < 0 || (regs == null ? 1 : regs.numRegs) <= i) throw runtime.newIndexError("index " + i + " out of matches");
+
+        int b = regs == null ? begin : regs.beg[i];
+
         if (b < 0) return runtime.getNil();
+
         if (!str.singleByteOptimizable()) {
             updateCharOffset();
             b = charOffsets.beg[i];
         }
-        return RubyFixnum.newFixnum(runtime, b);
-    }
 
-    private int beginCommon(Ruby runtime, int i) {
-        check();
-        if (i < 0 || (regs == null ? 1 : regs.numRegs) <= i) throw runtime.newIndexError("index " + i + " out of matches");
-        return regs == null ? begin : regs.beg[i];
+        return RubyFixnum.newFixnum(runtime, b);
     }
 
     /** match_end
      *
      */
+    @JRubyMethod
     public IRubyObject end(ThreadContext context, IRubyObject index) {
-        return end19(context, index);
-    }
+        check();
 
-    @JRubyMethod(name = "end")
-    public IRubyObject end19(ThreadContext context, IRubyObject index) {
         int i = backrefNumber(index);
         Ruby runtime = context.runtime;
-        int e = endCommon(runtime, i);
+
+        if (i < 0 || (regs == null ? 1 : regs.numRegs) <= i) throw runtime.newIndexError("index " + i + " out of matches");
+
+        int e = regs == null ? end : regs.end[i];
+
         if (e < 0) return runtime.getNil();
+
         if (!str.singleByteOptimizable()) {
             updateCharOffset();
             e = charOffsets.end[i];
         }
-        return RubyFixnum.newFixnum(runtime, e);
-    }
 
-    private int endCommon(Ruby runtime, int i) {
-        check();
-        if (i < 0 || (regs == null ? 1 : regs.numRegs) <= i) throw runtime.newIndexError("index " + i + " out of matches");
-        return regs == null ? end : regs.end[i];
+        return RubyFixnum.newFixnum(runtime, e);
     }
 
     /** match_offset
@@ -591,10 +586,10 @@ public class RubyMatchData extends RubyObject {
     public IRubyObject initialize_copy(IRubyObject original) {
         if (this == original) return this;
 
-        Ruby runtime = getRuntime();
-        ThreadContext context = runtime.getCurrentContext();
-        if ((original instanceof RubyBasicObject) && !((RubyBasicObject)original).instance_of_p(context, getMetaClass()).isTrue()) {
-            throw runtime.newTypeError("wrong argument class");
+        checkFrozen();
+
+        if (!(original instanceof RubyMatchData)) {
+            throw getRuntime().newTypeError("wrong argument class");
         }
 
         RubyMatchData origMatchData = (RubyMatchData)original;

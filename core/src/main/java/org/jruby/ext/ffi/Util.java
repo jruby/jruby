@@ -174,6 +174,10 @@ public final class Util {
         return context.runtime.getFFI().getTypeResolver().findType(context.runtime, name);
     }
 
+    public static Type findType(ThreadContext context, IRubyObject name, IRubyObject typeMap) {
+        return context.runtime.getFFI().getTypeResolver().findType(context.runtime, name, typeMap);
+    }
+
     public static ByteOrder parseByteOrder(Ruby runtime, IRubyObject byte_order) {
         if (byte_order instanceof RubySymbol || byte_order instanceof RubyString) {
             String orderName = byte_order.asJavaString();

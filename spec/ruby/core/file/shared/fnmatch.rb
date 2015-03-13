@@ -7,9 +7,62 @@ describe :file_fnmatch, :shared => true do
     File.send(@method, 'cat', 'category').should == false
   end
 
-  it "does not support { } patterns" do
+  it "does not support { } patterns by default" do
     File.send(@method, 'c{at,ub}s', 'cats').should == false
     File.send(@method, 'c{at,ub}s', 'c{at,ub}s').should == true
+  end
+
+  it "supports some { } patterns when File::FNM_EXTGLOB is passed" do
+    File.send(@method, "{a,b}", "a", File::FNM_EXTGLOB).should == true
+    File.send(@method, "{a,b}", "b", File::FNM_EXTGLOB).should == true
+    File.send(@method, "c{at,ub}s", "cats", File::FNM_EXTGLOB).should == true
+    File.send(@method, "c{at,ub}s", "cubs", File::FNM_EXTGLOB).should == true
+    File.send(@method, "-c{at,ub}s-", "-cats-", File::FNM_EXTGLOB).should == true
+    File.send(@method, "-c{at,ub}s-", "-cubs-", File::FNM_EXTGLOB).should == true
+    File.send(@method, "{a,b,c}{d,e,f}{g,h}", "adg", File::FNM_EXTGLOB).should == true
+    File.send(@method, "{a,b,c}{d,e,f}{g,h}", "bdg", File::FNM_EXTGLOB).should == true
+    File.send(@method, "{a,b,c}{d,e,f}{g,h}", "ceh", File::FNM_EXTGLOB).should == true
+    File.send(@method, "{aa,bb,cc,dd}", "aa", File::FNM_EXTGLOB).should == true
+    File.send(@method, "{aa,bb,cc,dd}", "bb", File::FNM_EXTGLOB).should == true
+    File.send(@method, "{aa,bb,cc,dd}", "cc", File::FNM_EXTGLOB).should == true
+    File.send(@method, "{aa,bb,cc,dd}", "dd", File::FNM_EXTGLOB).should == true
+    File.send(@method, "{1,5{a,b{c,d}}}", "1", File::FNM_EXTGLOB).should == true
+    File.send(@method, "{1,5{a,b{c,d}}}", "5a", File::FNM_EXTGLOB).should == true
+    File.send(@method, "{1,5{a,b{c,d}}}", "5bc", File::FNM_EXTGLOB).should == true
+    File.send(@method, "{1,5{a,b{c,d}}}", "5bd", File::FNM_EXTGLOB).should == true
+    File.send(@method, "\\\\{a\\,b,b\\}c}", "\\a,b", File::FNM_EXTGLOB).should == true
+    File.send(@method, "\\\\{a\\,b,b\\}c}", "\\b}c", File::FNM_EXTGLOB).should == true
+  end
+
+  it "doesn't support some { } patterns even when File::FNM_EXTGLOB is passed" do
+    File.send(@method, "a{0..3}b", "a0b", File::FNM_EXTGLOB).should == false
+    File.send(@method, "a{0..3}b", "a1b", File::FNM_EXTGLOB).should == false
+    File.send(@method, "a{0..3}b", "a2b", File::FNM_EXTGLOB).should == false
+    File.send(@method, "a{0..3}b", "a3b", File::FNM_EXTGLOB).should == false
+    File.send(@method, "{0..12}", "0", File::FNM_EXTGLOB).should == false
+    File.send(@method, "{0..12}", "6", File::FNM_EXTGLOB).should == false
+    File.send(@method, "{0..12}", "12", File::FNM_EXTGLOB).should == false
+    File.send(@method, "{3..-2}", "3", File::FNM_EXTGLOB).should == false
+    File.send(@method, "{3..-2}", "0", File::FNM_EXTGLOB).should == false
+    File.send(@method, "{3..-2}", "-2", File::FNM_EXTGLOB).should == false
+    File.send(@method, "{a..g}", "a", File::FNM_EXTGLOB).should == false
+    File.send(@method, "{a..g}", "d", File::FNM_EXTGLOB).should == false
+    File.send(@method, "{a..g}", "g", File::FNM_EXTGLOB).should == false
+    File.send(@method, "{g..a}", "a", File::FNM_EXTGLOB).should == false
+    File.send(@method, "{g..a}", "d", File::FNM_EXTGLOB).should == false
+    File.send(@method, "{g..a}", "g", File::FNM_EXTGLOB).should == false
+    File.send(@method, "escaping: {{,\\,,\\},\\{}", "escaping: {", File::FNM_EXTGLOB).should == false
+    File.send(@method, "escaping: {{,\\,,\\},\\{}", "escaping: ,", File::FNM_EXTGLOB).should == false
+    File.send(@method, "escaping: {{,\\,,\\},\\{}", "escaping: }", File::FNM_EXTGLOB).should == false
+    File.send(@method, "escaping: {{,\\,,\\},\\{}", "escaping: {", File::FNM_EXTGLOB).should == false
+  end
+
+  it "doesn't match an extra } when File::FNM_EXTGLOB is passed" do
+    File.send(@method, 'c{at,ub}}s', 'cats', File::FNM_EXTGLOB).should == false
+  end
+
+  it "matches when both FNM_EXTGLOB and FNM_PATHNAME are passed" do
+    File.send(@method, "?.md", "a.md", File::FNM_EXTGLOB | File::FNM_PATHNAME).should == true
   end
 
   it "matches a single character for each ? character" do

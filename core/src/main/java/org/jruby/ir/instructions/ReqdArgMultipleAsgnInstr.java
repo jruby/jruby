@@ -5,13 +5,13 @@ import org.jruby.ir.IRScope;
 import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Operation;
 import org.jruby.ir.operands.Array;
-import org.jruby.ir.operands.Fixnum;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.Variable;
-import org.jruby.ir.transformations.inlining.InlinerInfo;
+import org.jruby.ir.persistence.IRWriterEncoder;
+import org.jruby.ir.runtime.IRRuntimeHelpers;
+import org.jruby.ir.transformations.inlining.CloneInfo;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.DynamicScope;
-import org.jruby.runtime.Helpers;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
@@ -35,23 +35,18 @@ public class ReqdArgMultipleAsgnInstr extends MultipleAsgnBase implements FixedA
     public int getPostArgsCount() { return postArgsCount; }
 
     @Override
-    public Operand[] getOperands() {
-        return new Operand[] { array, new Fixnum(preArgsCount), new Fixnum(postArgsCount), new Fixnum(index) };
-    }
-
-    @Override
-    public String toString() {
-        return super.toString() + "(" + array + ", " + index + ", " + preArgsCount + ", " + postArgsCount + ")";
+    public String[] toStringNonOperandArgs() {
+        return new String[] { "index: " + index, "pre: " + preArgsCount, "post: " + postArgsCount};
     }
 
     @Override
     public Operand simplifyAndGetResult(IRScope scope, Map<Operand, Operand> valueMap) {
         simplifyOperands(valueMap, false);
-        Operand val = array.getValue(valueMap);
+        Operand val = getArray().getValue(valueMap);
         if (val instanceof Array) {
             Array a = (Array)val;
             int n = a.size();
-            int i = Helpers.irReqdArgMultipleAsgnIndex(n, preArgsCount, index, postArgsCount);
+            int i = IRRuntimeHelpers.irReqdArgMultipleAsgnIndex(n, preArgsCount, index, postArgsCount);
             return i == -1 ? scope.getManager().getNil() : a.get(i);
         } else {
             return null;
@@ -59,15 +54,24 @@ public class ReqdArgMultipleAsgnInstr extends MultipleAsgnBase implements FixedA
     }
 
     @Override
-    public Instr cloneForInlining(InlinerInfo ii) {
-        return new ReqdArgMultipleAsgnInstr(ii.getRenamedVariable(result), array.cloneForInlining(ii), preArgsCount, postArgsCount, index);
+    public Instr clone(CloneInfo ii) {
+        return new ReqdArgMultipleAsgnInstr(ii.getRenamedVariable(result), getArray().cloneForInlining(ii), preArgsCount, postArgsCount, index);
+    }
+
+    @Override
+    public void encode(IRWriterEncoder e) {
+        super.encode(e);
+        e.encode(getArray());
+        e.encode(getPreArgsCount());
+        e.encode(getPostArgsCount());
+        e.encode(getIndex());
     }
 
     @Override
     public Object interpret(ThreadContext context, StaticScope currScope, DynamicScope currDynScope, IRubyObject self, Object[] temp) {
         // ENEBO: Can I assume since IR figured this is an internal array it will be RubyArray like this?
-        RubyArray rubyArray = (RubyArray) array.retrieve(context, self, currScope, currDynScope, temp);
-        return Helpers.irReqdArgMultipleAsgn(context, rubyArray, preArgsCount, index, postArgsCount);
+        RubyArray rubyArray = (RubyArray) getArray().retrieve(context, self, currScope, currDynScope, temp);
+        return IRRuntimeHelpers.irReqdArgMultipleAsgn(context, rubyArray, preArgsCount, index, postArgsCount);
     }
 
     @Override

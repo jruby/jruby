@@ -3,59 +3,29 @@ package org.jruby.ir.instructions.boxing;
 import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Operation;
 import org.jruby.ir.instructions.Instr;
-import org.jruby.ir.instructions.ResultInstr;
+import org.jruby.ir.instructions.ResultBaseInstr;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.Variable;
-import org.jruby.ir.transformations.inlining.InlinerInfo;
 
-import java.util.Map;
+import org.jruby.ir.transformations.inlining.CloneInfo;
 
-public class AluInstr extends Instr implements ResultInstr {
-    protected Variable result;
-    protected Operand a1;
-    protected Operand a2;
-
+public class AluInstr extends ResultBaseInstr {
     public AluInstr(Operation op, Variable result, Operand a1, Operand a2) {
-        super(op);
-        this.result = result;
-        this.a1 = a1;
-        this.a2 = a2;
-    }
-
-    public Operand[] getOperands() {
-        return new Operand[]{a1, a2};
-    }
-
-    public Variable getResult() {
-        return result;
-    }
-
-    public void updateResult(Variable v) {
-        this.result = v;
+        super(op, result, new Operand[] { a1, a2 });
     }
 
     public Operand getArg1() {
-        return a1;
+        return operands[0];
     }
 
     public Operand getArg2() {
-        return a2;
+        return operands[1];
     }
 
     @Override
-    public void simplifyOperands(Map<Operand, Operand> valueMap, boolean force) {
-        a1 = a1.getSimplifiedOperand(valueMap, force);
-        a2 = a2.getSimplifiedOperand(valueMap, force);
-    }
-
-    @Override
-    public Instr cloneForInlining(InlinerInfo ii) {
-        return new AluInstr(getOperation(), ii.getRenamedVariable(result), a1.cloneForInlining(ii), a2.cloneForInlining(ii));
-    }
-
-    @Override
-    public String toString() {
-        return result + " = " + getOperation() + "(" + a1 + ", " + a2 + ")";
+    public Instr clone(CloneInfo ii) {
+        return new AluInstr(getOperation(), ii.getRenamedVariable(result), getArg1().cloneForInlining(ii),
+                getArg2().cloneForInlining(ii));
     }
 
     @Override

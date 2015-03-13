@@ -1,5 +1,3 @@
-require 'java'
-
 module JRuby
   def self.init_asm
     begin
@@ -64,17 +62,24 @@ module JRuby
     end
     alias ast_for parse
 
+    def compile_ir(content = nil, filename = (default_filename = true; '-'), extra_position_info = false, &block)
+      runtime = JRuby.runtime
+      node = if default_filename
+               parse(content, &block)
+             else
+               parse(content, filename, extra_position_info, &block)
+             end
+
+      scope = org.jruby.ir.IRBuilder.build_root(runtime.getIRManager(), node).scope
+      scope.top_level_binding_scope = node.scope
+
+      scope
+    end
+
     # Parse and compile the given block or provided content, returning a new
     # CompiledScript instance.
     def compile(content = nil, filename = (default_filename = true; '-'), extra_position_info = false, &block)
-      node = if default_filename
-        parse(content, &block)
-      else
-        parse(content, filename, extra_position_info, &block)
-      end
-
-      runtime = JRuby.runtime
-      irscope = org.jruby.ir.IRBuilder.createIRBuilder(runtime, runtime.getIRManager()).build_root(node);
+      irscope = compile_ir(content, filename)
 
       visitor = org.jruby.ir.targets.JVMVisitor.new
       bytes = visitor.compile_to_bytecode(irscope);

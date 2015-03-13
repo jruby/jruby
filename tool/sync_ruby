@@ -6,17 +6,17 @@
 # various locations in MRI's layout to JRuby's layout. It should be used
 # against the jruby-specific fork of MRI's repository at github.com/jruby/ruby.
 #
-# This script selects the branch to use against with the version number, i.e: jruby-ruby_2_1_0.
+# This script selects the branch to use against with the version number, i.e: jruby-ruby_2_2_0.
 #
-# usage: sync_ruby <tests|stdlib|all> <version(1_8_7|1_9_3|2_0_0|2_1_0)> <jruby ruby fork clone> <jruby dir>
+# usage: sync_ruby <tests|stdlib|all> <version(2_2_0)> <jruby ruby fork clone> <jruby dir>
 #
 # Example:
 #
 # Suppose the JRuby ruby fork is in ../jruby-ruby, and jruby is in the current directory.
-# We want to sync the 1.8.7 standard libraries.
+# We want to sync the 2.2.0 standard libraries.
 #
-# $ jruby tool/sync_ruby stdlib 1_8_7 ../jruby-ruby .
-# Already on 'jruby-ruby_1_8_7'
+# $ jruby tool/sync_ruby stdlib 2_2_0 ../jruby-ruby .
+# Already on 'jruby-ruby_2_2_0'
 # cp -r ../jruby-ruby/lib/English.rb ./lib/ruby/1.8
 # cp -r ../jruby-ruby/lib/Env.rb ./lib/ruby/1.8
 # ...
@@ -48,37 +48,16 @@ class Sync
     load File.dirname(__FILE__) + "/globals_#{@named_version}.rb"
 
     for file in STDLIB_FILES
-      cp_r "#{@source}/lib/#{file}", "#{@target}/lib/ruby/#{@version}", :verbose => true
+      cp_r "#{@source}/lib/#{file}", "#{@target}/lib/ruby/stdlib", :verbose => true
     end
 
     for file, target in EXT_FILES
       if File.directory? "#{@source}/#{file}"
-        cp_r "#{@source}/#{file}", "#{@target}/lib/ruby/#{@version}/", :verbose => true
+        cp_r "#{@source}/#{file}", "#{@target}/lib/ruby/stdlib/", :verbose => true
       else
-        cp_r "#{@source}/#{file}", "#{@target}/lib/ruby/#{@version}/#{target}", :verbose => true
+        cp_r "#{@source}/#{file}", "#{@target}/lib/ruby/stdlib/#{target}", :verbose => true
       end
     end
-  end
-
-  def sync_rubygems
-    if Dir.pwd != File.expand_path('../..', __FILE__) || @target != '.'
-      $stderr.puts "Rubygems is sync'd into the jruby where this script was launched."
-      $stderr.puts "To acknowledge this, run in the top level of that jruby tree and use a target of `.'."
-      raise ArgumentError, "Sync Rubygems target mismatch"
-    end
-    (Dir["#@target/lib/ruby/site_ruby/1.8/*ubygems"] + ["#@target/lib/ruby/site_ruby/1.8/rbconfig"]).each do |f|
-      rm_rf f
-    end
-    cd(@source) do
-      system "ruby setup.rb --no-format-executable --no-ri --no-rdoc"
-    end
-    gem_script = File.join(@target, "bin", "gem")
-
-    # Fix up shebang so it doesn't have abs path
-    lines = IO.readlines gem_script
-    lines[0] = "#!/usr/bin/env jruby\n"
-    File.open(gem_script, "wb") {|f| lines.each {|l| f << l } }
-    cp File.join(@target, "bin", "gem"), File.join(@target, "bin", "jgem")
   end
 
   private
@@ -101,12 +80,12 @@ end
 
 if $0 == __FILE__
   if ARGV.size != 4
-    abort "usage: sync_ruby <tests|stdlib|rubygems|all> <version(1_8_7|1_9_3|2_0_0|2_1_0)> <jruby ruby(gems) fork clone> <jruby dir>"
+    abort "usage: sync_ruby <tests|stdlib|all> <version(2_2_0)> <jruby ruby fork clone> <jruby dir>"
   end
 
   what, version, source, target = ARGV
 
-  if !%w{tests stdlib rubygems all}.include? what
+  if !%w{tests stdlib all}.include? what
     abort "invalid source to sync: #{what}"
   end
 

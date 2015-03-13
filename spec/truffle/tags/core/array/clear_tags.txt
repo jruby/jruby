@@ -1,3 +1,0 @@
-fails:Array#clear keeps tainted status
-fails:Array#clear keeps untrusted status
-fails:Array#clear raises a RuntimeError on a frozen array

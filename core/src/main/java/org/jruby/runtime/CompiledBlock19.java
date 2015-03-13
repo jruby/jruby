@@ -153,7 +153,7 @@ public class CompiledBlock19 extends ContextAwareBlockBody {
         Frame lastFrame = pre(context, binding);
         
         try {
-            IRubyObject[] preppedArgs = RubyProc.prepareArgs(context, type, arity, args);
+            IRubyObject[] preppedArgs = RubyProc.prepareArgs(context, type, this, args);
             IRubyObject[] realArgs = setupBlockArgs(context.runtime.newArrayNoCopyLight(preppedArgs), type, true);
             return callback.call(context, self, realArgs, block);
         } catch (JumpException.FlowControlException jump) {

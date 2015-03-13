@@ -1,4 +1,0 @@
-fails:Module#ancestors returns a list of modules included in self (including self)
-fails:Module#ancestors returns only modules and classes
-fails:Module#ancestors has 1 entry per module or class
-fails:Module#ancestors when called on a singleton class includes the singleton classes of ancestors

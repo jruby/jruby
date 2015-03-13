@@ -1,5 +1,4 @@
 require 'test/unit'
-require 'rational'
 require 'delegate'
 require 'timeout'
 require 'delegate'
@@ -47,6 +46,7 @@ class TestTime < Test::Unit::TestCase
     tm = [2001,2,28,23,59,30]
     t = Time.new(*tm, "-12:00")
     assert_equal([2001,2,28,23,59,30,-43200], [t.year, t.month, t.mday, t.hour, t.min, t.sec, t.gmt_offset], bug4090)
+    assert_raise(ArgumentError) { Time.new(2000,1,1, 0,0,0, "+01:60") }
   end
 
   def test_time_add()
@@ -424,6 +424,12 @@ class TestTime < Test::Unit::TestCase
     assert_equal(946684800.0, t2000.to_f)
   end
 
+  def test_to_f_accuracy
+    # https://bugs.ruby-lang.org/issues/10135#note-1
+    f = 1381089302.195
+    assert_equal(f, Time.at(f).to_f, "[ruby-core:64373] [Bug #10135] note-1")
+  end
+
   def test_cmp
     t2000 = get_t2000
     assert_equal(-1, t2000 <=> Time.gm(2001))
@@ -485,6 +491,7 @@ class TestTime < Test::Unit::TestCase
     t3 = t1.getlocal("-02:00")
     assert_equal(t1, t3)
     assert_equal(-7200, t3.utc_offset)
+    assert_equal([1999, 12, 31, 22, 0, 0], [t3.year, t3.mon, t3.mday, t3.hour, t3.min, t3.sec])
     t1.localtime
     assert_equal(t1, t2)
     assert_equal(t1.gmt?, t2.gmt?)
@@ -517,8 +524,16 @@ class TestTime < Test::Unit::TestCase
     assert_equal(Time.at(946684800).getlocal.to_s, Time.at(946684800).to_s)
   end
 
+  def assert_zone_encoding(time)
+    zone = time.zone
+    assert_predicate(zone, :valid_encoding?)
+    return if zone.ascii_only?
+    enc = Encoding.default_internal || Encoding.find('locale')
+    assert_equal(enc, zone.encoding)
+  end
+
   def test_zone
-    assert_equal(Encoding.find('locale'), Time.now.zone.encoding)
+    assert_zone_encoding Time.now
   end
 
   def test_plus_minus_succ
@@ -567,7 +582,7 @@ class TestTime < Test::Unit::TestCase
     assert_equal(1, t2000.yday)
     assert_equal(false, t2000.isdst)
     assert_equal("UTC", t2000.zone)
-    assert_equal(Encoding.find("locale"), t2000.zone.encoding)
+    assert_zone_encoding(t2000)
     assert_equal(0, t2000.gmt_offset)
     assert_not_predicate(t2000, :sunday?)
     assert_not_predicate(t2000, :monday?)
@@ -589,7 +604,7 @@ class TestTime < Test::Unit::TestCase
     assert_equal(t.yday, Time.at(946684800).yday)
     assert_equal(t.isdst, Time.at(946684800).isdst)
     assert_equal(t.zone, Time.at(946684800).zone)
-    assert_equal(Encoding.find("locale"), Time.at(946684800).zone.encoding)
+    assert_zone_encoding(Time.at(946684800))
     assert_equal(t.gmt_offset, Time.at(946684800).gmt_offset)
     assert_equal(t.sunday?, Time.at(946684800).sunday?)
     assert_equal(t.monday?, Time.at(946684800).monday?)

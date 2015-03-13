@@ -1,7 +1,3 @@
-fails:Enumerator::Lazy#find_all returns a new instance of Enumerator::Lazy
-fails:Enumerator::Lazy#find_all sets nil to size
 fails:Enumerator::Lazy#find_all calls the block with a gathered array when yield with multiple arguments
-fails:Enumerator::Lazy#find_all raises an ArgumentError when not given a block
 fails:Enumerator::Lazy#find_all when the returned lazy enumerator is evaluated by Enumerable#first stops after specified times
-fails:Enumerator::Lazy#find_all on a nested Lazy sets nil to size
 fails:Enumerator::Lazy#find_all on a nested Lazy when the returned lazy enumerator is evaluated by Enumerable#first stops after specified times

@@ -1,100 +1,20 @@
-fails:Marshal.dump dumps nil
-fails:Marshal.dump dumps true
-fails:Marshal.dump dumps false
 fails:Marshal.dump dumps an extended_object
 fails:Marshal.dump dumps an object that has had an ivar added and removed as though the ivar never was set
-fails:Marshal.dump dumps subsequent appearances of a symbol as a link
-fails:Marshal.dump dumps subsequent appearances of an object as a link
-fails:Marshal.dump nil returns a binary string
-fails:Marshal.dump 1..2 returns a binary string
-fails:Marshal.dump 1...2 returns a binary string
-fails:Marshal.dump 'a'..'b' returns a binary string
-fails:Marshal.dump Struct returns a binary string
-fails:Marshal.dump Symbol returns a binary string
-fails:Marshal.dump true returns a binary string
-fails:Marshal.dump false returns a binary string
-fails:Marshal.dump String empty returns a binary string
-fails:Marshal.dump String small returns a binary string
-fails:Marshal.dump String big returns a binary string
-fails:Marshal.dump String extended returns a binary string
-fails:Marshal.dump String subclass returns a binary string
-fails:Marshal.dump String subclass extended returns a binary string
-fails:Marshal.dump Symbol small returns a binary string
-fails:Marshal.dump Symbol big returns a binary string
-fails:Marshal.dump Bignum -2**64 returns a binary string
-fails:Marshal.dump Bignum -2**63 returns a binary string
-fails:Marshal.dump Fixnum -2**24 returns a binary string
-fails:Marshal.dump Fixnum -2**16 returns a binary string
-fails:Marshal.dump Fixnum -2**8 returns a binary string
-fails:Marshal.dump Fixnum -123 returns a binary string
-fails:Marshal.dump Fixnum 0 returns a binary string
-fails:Marshal.dump Fixnum 5 returns a binary string
-fails:Marshal.dump Fixnum 2**8 returns a binary string
-fails:Marshal.dump Fixnum 2**16 returns a binary string
-fails:Marshal.dump Fixnum 2**24 returns a binary string
-fails:Marshal.dump Bignum 2**64 returns a binary string
-fails:Marshal.dump Bignum 2**90 returns a binary string
-fails:Marshal.dump Class String returns a binary string
-fails:Marshal.dump Module Marshal returns a binary string
-fails:Marshal.dump Module nested returns a binary string
-fails:Marshal.dump _dump object returns a binary string
-fails:Marshal.dump _dump object extended returns a binary string
-fails:Marshal.dump marshal_dump object returns a binary string
-fails:Marshal.dump Regexp returns a binary string
-fails:Marshal.dump Regexp subclass /i returns a binary string
-fails:Marshal.dump Float 0.0 returns a binary string
-fails:Marshal.dump Float -0.0 returns a binary string
-fails:Marshal.dump Float Infinity returns a binary string
-fails:Marshal.dump Float -Infinity returns a binary string
-fails:Marshal.dump Float 1.0 returns a binary string
 fails:Marshal.dump Hash returns a binary string
 fails:Marshal.dump Hash subclass returns a binary string
-fails:Marshal.dump Array returns a binary string
-fails:Marshal.dump Array subclass returns a binary string
-fails:Marshal.dump Random returns a binary string
 fails:Marshal.dump raises an ArgumentError when the recursion limit is exceeded
-fails:Marshal.dump ignores the recursion limit if the limit is negative
-fails:Marshal.dump raises a TypeError if marshalling a Method instance
-fails:Marshal.dump raises a TypeError if marshalling a Proc
 fails:Marshal.dump raises a TypeError if dumping a IO/File instance
-fails:Marshal.dump raises a TypeError if dumping a MatchData instance
-fails:Marshal.dump returns an untainted string if object is untainted
 fails:Marshal.dump returns a tainted string if object is tainted
 fails:Marshal.dump returns a tainted string if nested object is tainted
-fails:Marshal.dump returns a trusted string if object is trusted
 fails:Marshal.dump returns an untrusted string if object is untrusted
 fails:Marshal.dump returns an untrusted string if nested object is untrusted
-fails:Marshal.dump with a Fixnum dumps a Fixnum
 fails:Marshal.dump with a Fixnum dumps a positive Fixnum > 31 bits as a Bignum
 fails:Marshal.dump with a Fixnum dumps a negative Fixnum > 31 bits as a Bignum
-fails:Marshal.dump with a Symbol dumps a Symbol
-fails:Marshal.dump with a Symbol dumps a big Symbol
 fails:Marshal.dump with a Symbol dumps an encoded Symbol
-fails:Marshal.dump with an object responding to #marshal_dump dumps the object returned by #marshal_dump
-fails:Marshal.dump with an object responding to #marshal_dump does not use Class#name
-fails:Marshal.dump with an object responding to #_dump dumps the object returned by #marshal_dump
-fails:Marshal.dump with an object responding to #_dump raises a TypeError if _dump returns a non-string
-fails:Marshal.dump with an object responding to #_dump favors marshal_dump over _dump
-fails:Marshal.dump with a Class dumps a builtin Class
-fails:Marshal.dump with a Class dumps a user Class
-fails:Marshal.dump with a Class dumps a nested Class
-fails:Marshal.dump with a Class raises TypeError with an anonymous Class
-fails:Marshal.dump with a Class raises TypeError with a singleton Class
-fails:Marshal.dump with a Module dumps a builtin Module
-fails:Marshal.dump with a Module raises TypeError with an anonymous Module
 fails:Marshal.dump with a Float dumps a Float
 fails:Marshal.dump with a Bignum dumps a Bignum
-fails:Marshal.dump with a String dumps a blank String
-fails:Marshal.dump with a String dumps a short String
-fails:Marshal.dump with a String dumps a long String
 fails:Marshal.dump with a String dumps a String extended with a Module
-fails:Marshal.dump with a String dumps a String subclass
-fails:Marshal.dump with a String dumps a String subclass extended with a Module
 fails:Marshal.dump with a String dumps a String with instance variables
-fails:Marshal.dump with a String dumps a US-ASCII String
-fails:Marshal.dump with a String dumps a UTF-8 String
-fails:Marshal.dump with a String dumps a String in another encoding
-fails:Marshal.dump with a String dumps multiple strings using symlinks for the :E (encoding) symbol
 fails:Marshal.dump with a Regexp dumps a Regexp
 fails:Marshal.dump with a Regexp dumps a Regexp with flags
 fails:Marshal.dump with a Regexp dumps a Regexp with instance variables
@@ -103,26 +23,16 @@ fails:Marshal.dump with a Regexp dumps a Regexp subclass
 fails:Marshal.dump with a Regexp dumps a binary Regexp
 fails:Marshal.dump with a Regexp dumps a UTF-8 Regexp
 fails:Marshal.dump with a Regexp dumps a Regexp in another encoding
-fails:Marshal.dump with an Array dumps an empty Array
-fails:Marshal.dump with an Array dumps a non-empty Array
-fails:Marshal.dump with an Array dumps an Array subclass
-fails:Marshal.dump with an Array dumps a recursive Array
 fails:Marshal.dump with an Array dumps an Array with instance variables
 fails:Marshal.dump with an Array dumps an extended Array
 fails:Marshal.dump with a Hash dumps a Hash
 fails:Marshal.dump with a Hash dumps a Hash subclass
 fails:Marshal.dump with a Hash dumps a Hash with a default value
-fails:Marshal.dump with a Hash raises a TypeError with hash having default proc
 fails:Marshal.dump with a Hash dumps a Hash with instance variables
 fails:Marshal.dump with a Hash dumps an extended Hash
 fails:Marshal.dump with a Hash dumps an Hash subclass with a parameter to initialize
-fails:Marshal.dump with a Struct dumps a Struct
-fails:Marshal.dump with a Struct dumps a Struct with instance variables
 fails:Marshal.dump with a Struct dumps an extended Struct
-fails:Marshal.dump with an Object dumps an Object
 fails:Marshal.dump with an Object dumps an extended Object
-fails:Marshal.dump with an Object dumps an Object with an instance variable
-fails:Marshal.dump with an Object dumps an Object that has had an instance variable added and removed as though it was never set
 fails:Marshal.dump with an Object dumps a BasicObject subclass if it defines respond_to?
 fails:Marshal.dump with a Range dumps a Range inclusive of end (with indeterminant order)
 fails:Marshal.dump with a Range dumps a Range exclusive of end (with indeterminant order)
@@ -131,7 +41,3 @@ fails:Marshal.dump with a Time dumps the zone, but not the offset if zone is UTC
 fails:Marshal.dump with an Exception dumps an empty Exception
 fails:Marshal.dump with an Exception dumps the message for the exception
 fails:Marshal.dump with an Exception contains the filename in the backtrace
-fails:Marshal.dump when passed an IO writes the serialized data to the IO-Object
-fails:Marshal.dump when passed an IO returns the IO-Object
-fails:Marshal.dump when passed an IO raises an Error when the IO-Object does not respond to #write
-fails:Marshal.dump when passed an IO calls binmode when it's defined

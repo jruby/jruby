@@ -60,8 +60,7 @@ describe "IO.popen" do
     end
 
     it "does not throw an exception if child exited and has been waited for" do
-      @io = IO.popen("echo ready; sleep 1000")
-      true until @io.gets =~ /ready/
+      @io = IO.popen("sleep 1000")
       Process.kill "KILL", @io.pid
       Process.wait @io.pid
       @io.close
@@ -139,22 +138,111 @@ describe "IO.popen" do
   end
 
   platform_is_not :windows do # not sure what commands to use on Windows
-    describe "with a leading Array parameter" do
+    context "with a leading ENV Hash" do
+      it "accepts a single String command" do
+        IO.popen({"FOO" => "bar"}, "echo $FOO") do |io|
+          io.read.should == "bar\n"
+        end
+      end
+
+      it "accepts a single String command, and an IO mode" do
+        IO.popen({"FOO" => "bar"}, "echo $FOO", "r") do |io|
+          io.read.should == "bar\n"
+        end
+      end
+
+      it "accepts a single String command with a trailing Hash of Process.exec options" do
+        IO.popen({"FOO" => "nonexistent"}, "ls $FOO", :err => [:child, :out]) do |io|
+          io.read.should =~ /No such file or directory/
+        end
+      end
+
+      it "accepts a single String command with a trailing Hash of Process.exec options, and an IO mode" do
+        IO.popen({"FOO" => "nonexistent"}, "ls $FOO", "r", :err => [:child, :out]) do |io|
+          io.read.should =~ /No such file or directory/
+        end
+      end
+
+      it "accepts an Array of command and arguments" do
+        IO.popen({"FOO" => "bar"}, [["sh", "specfu"], "-c", "echo $FOO"]) do |io|
+          io.read.should == "bar\n"
+        end
+      end
+
+      it "accepts an Array of command and arguments, and an IO mode" do
+        IO.popen({"FOO" => "bar"}, [["sh", "specfu"], "-c", "echo $FOO"], "r") do |io|
+          io.read.should == "bar\n"
+        end
+      end
+
+      it "accepts an Array command with a separate trailing Hash of Process.exec options" do |io|
+        IO.popen({"FOO" => "bar"}, [RUBY_EXE, "-e", "STDERR.puts ENV[:FOO.to_s]"],
+                 :err => [:child, :out]) do |io|
+          io.read.should == "bar\n"
+        end
+      end
+
+      it "accepts an Array command with a separate trailing Hash of Process.exec options, and an IO mode" do |io|
+        IO.popen({"FOO" => "bar"}, [RUBY_EXE, "-e", "STDERR.puts ENV[:FOO.to_s]"],
+                 "r", :err => [:child, :out]) do |io|
+          io.read.should == "bar\n"
+        end
+      end
+    end
+
+    context "with a leading Array argument" do
       it "uses the Array as command plus args for the child process" do
-        IO.popen(["yes", "hello"]) do |i|
-          i.read(5).should == 'hello'
+        IO.popen(["echo", "hello"]) do |io|
+          io.read.should == "hello\n"
         end
       end
 
-      it "uses a leading Hash in the Array as additional environment variables" do
-        IO.popen([{'foo' => 'bar'}, 'env']) do |i|
-          i.read.should =~ /foo=bar/
+      it "accepts a leading ENV Hash" do
+        IO.popen([{"FOO" => "bar"}, "sh", "-c", "echo $FOO"]) do |io|
+          io.read.should == "bar\n"
         end
       end
 
-      it "uses a trailing Hash in the Array for spawn-like settings" do
-        IO.popen(['sh', '-c', 'does_not_exist', {:err => [:child, :out]}]) do |i|
-          i.read.should =~ /not found/
+      it "accepts a trailing Hash of Process.exec options" do
+        IO.popen(["sh", "-c", "does_not_exist", {:err => [:child, :out]}]) do |io|
+          io.read.should =~ /not found/
+        end
+      end
+
+      it "accepts an IO mode argument following the Array" do
+        IO.popen(["sh", "-c", "does_not_exist", {:err => [:child, :out]}], "r") do |io|
+          io.read.should =~ /not found/
+        end
+      end
+
+      it "accepts [env, command, arg1, arg2, ..., exec options]" do |io|
+        IO.popen([{"FOO" => "bar"}, RUBY_EXE, "-e", "STDERR.puts ENV[:FOO.to_s]",
+                 :err => [:child, :out]]) do |io|
+          io.read.should == "bar\n"
+        end
+      end
+
+      it "accepts '[env, command, arg1, arg2, ..., exec options], mode'" do |io|
+        IO.popen([{"FOO" => "bar"}, RUBY_EXE, "-e", "STDERR.puts ENV[:FOO.to_s]",
+                 :err => [:child, :out]], "r") do |io|
+          io.read.should == "bar\n"
+        end
+      end
+
+      it "accepts '[env, command, arg1, arg2, ..., exec options], mode, IO options'" do |io|
+        IO.popen([{"FOO" => "bar"}, RUBY_EXE, "-e", "STDERR.puts ENV[:FOO.to_s]",
+                 :err => [:child, :out]], "r",
+                 :internal_encoding => Encoding::EUC_JP) do |io|
+          io.read.should == "bar\n"
+          io.internal_encoding.should == Encoding::EUC_JP
+        end
+      end
+
+      it "accepts '[env, command, arg1, arg2, ...], mode, IO + exec options'" do |io|
+        IO.popen([{"FOO" => "bar"}, RUBY_EXE, "-e", "STDERR.puts ENV[:FOO.to_s]"], "r",
+                 :err => [:child, :out], :internal_encoding => Encoding::EUC_JP) do |io|
+          io.read.should == "bar\n"
+          io.internal_encoding.should == Encoding::EUC_JP
         end
       end
     end

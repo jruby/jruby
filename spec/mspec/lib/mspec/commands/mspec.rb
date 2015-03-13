@@ -161,7 +161,9 @@ class MSpecMain < MSpecScript
       multi_exec argv
     else
       if config[:use_valgrind]
-        more = ["--db-attach=#{config[:use_gdb] ? 'yes' : 'no'}", config[:target]] + argv
+        more = ["--child-silent-after-fork=yes",
+                "--db-attach=#{config[:use_gdb] ? 'yes' : 'no'}",
+                config[:target]] + argv
         exec "valgrind", *more
       elsif config[:use_gdb]
         more = ["--args", config[:target]] + argv

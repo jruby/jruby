@@ -1,36 +1,207 @@
 require File.expand_path('../../../spec_helper', __FILE__)
-require File.expand_path('../fixtures/classes', __FILE__)
 
 describe "UnboundMethod#arity" do
-  before(:each) do
-    @um = UnboundMethodSpecs::Methods.new
+  SpecEvaluate.desc = "for method definition"
+
+  context "returns zero" do
+    evaluate <<-ruby do
+        def m() end
+      ruby
+
+      method(:m).unbind.arity.should == 0
+    end
+
+    evaluate <<-ruby do
+        def n(&b) end
+      ruby
+
+      method(:n).unbind.arity.should == 0
+    end
   end
 
-  it "returns the number of arguments accepted by a method, using Method#unbind" do
-    @um.method(:one).unbind.arity.should == 0
-    @um.method(:two).unbind.arity.should == 1
-    @um.method(:three).unbind.arity.should == 2
-    @um.method(:four).unbind.arity.should == 2
+  context "returns positive values" do
+    evaluate <<-ruby do
+        def m(a) end
+        def n(a, b) end
+        def o(a, b, c) end
+        def p(a, b, c, d) end
+      ruby
+
+      method(:m).unbind.arity.should == 1
+      method(:n).unbind.arity.should == 2
+      method(:o).unbind.arity.should == 3
+      method(:p).unbind.arity.should == 4
+    end
+
+    evaluate <<-ruby do
+        def m(a:) end
+        def n(a:, b:) end
+        def o(a: 1, b:, c:, d: 2) end
+      ruby
+
+      method(:m).unbind.arity.should == 1
+      method(:n).unbind.arity.should == 1
+      method(:o).unbind.arity.should == 1
+    end
+
+    evaluate <<-ruby do
+        def m(a, b:) end
+        def n(a, b:, &l) end
+      ruby
+
+      method(:m).unbind.arity.should == 2
+      method(:n).unbind.arity.should == 2
+    end
+
+    evaluate <<-ruby do
+        def m(a, b, c:, d: 1) end
+        def n(a, b, c:, d: 1, **k, &l) end
+      ruby
+
+      method(:m).unbind.arity.should == 3
+      method(:n).unbind.arity.should == 3
+    end
   end
 
-  it "returns the number arguments accepted by a method, using Module#instance_method" do
-    UnboundMethodSpecs::Methods.instance_method(:one).arity.should == 0
-    UnboundMethodSpecs::Methods.instance_method(:two).arity.should == 1
-    UnboundMethodSpecs::Methods.instance_method(:three).arity.should == 2
-    UnboundMethodSpecs::Methods.instance_method(:four).arity.should == 2
+  context "returns negative values" do
+    evaluate <<-ruby do
+        def m(a=1) end
+        def n(a=1, b=2) end
+      ruby
+
+      method(:m).unbind.arity.should == -1
+      method(:n).unbind.arity.should == -1
+    end
+
+    evaluate <<-ruby do
+        def m(a, b=1) end
+        def n(a, b, c=1, d=2) end
+      ruby
+
+      method(:m).unbind.arity.should == -2
+      method(:n).unbind.arity.should == -3
+    end
+
+    evaluate <<-ruby do
+        def m(a=1, *b) end
+        def n(a=1, b=2, *c) end
+      ruby
+
+      method(:m).unbind.arity.should == -1
+      method(:n).unbind.arity.should == -1
+    end
+
+    evaluate <<-ruby do
+        def m(*) end
+        def n(*a) end
+      ruby
+
+      method(:m).unbind.arity.should == -1
+      method(:n).unbind.arity.should == -1
+    end
+
+    evaluate <<-ruby do
+        def m(a, *) end
+        def n(a, *b) end
+        def o(a, b, *c) end
+        def p(a, b, c, *d) end
+      ruby
+
+      method(:m).unbind.arity.should == -2
+      method(:n).unbind.arity.should == -2
+      method(:o).unbind.arity.should == -3
+      method(:p).unbind.arity.should == -4
+    end
+
+    evaluate <<-ruby do
+        def m(*a, b) end
+        def n(*a, b, c) end
+        def o(*a, b, c, d) end
+      ruby
+
+      method(:m).unbind.arity.should == -2
+      method(:n).unbind.arity.should == -3
+      method(:o).unbind.arity.should == -4
+    end
+
+    evaluate <<-ruby do
+        def m(a, *b, c) end
+        def n(a, b, *c, d, e) end
+      ruby
+
+      method(:m).unbind.arity.should == -3
+      method(:n).unbind.arity.should == -5
+    end
+
+    evaluate <<-ruby do
+        def m(a, b=1, c=2, *d, e, f) end
+        def n(a, b, c=1, *d, e, f, g) end
+      ruby
+
+      method(:m).unbind.arity.should == -4
+      method(:n).unbind.arity.should == -6
+    end
+
+    evaluate <<-ruby do
+        def m(a: 1) end
+        def n(a: 1, b: 2) end
+      ruby
+
+      method(:m).unbind.arity.should == -1
+      method(:n).unbind.arity.should == -1
+    end
+
+    evaluate <<-ruby do
+        def m(a=1, b: 2) end
+        def n(*a, b: 1) end
+        def o(a=1, b: 2) end
+        def p(a=1, *b, c: 2, &l) end
+      ruby
+
+      method(:m).unbind.arity.should == -1
+      method(:n).unbind.arity.should == -1
+      method(:o).unbind.arity.should == -1
+      method(:p).unbind.arity.should == -1
+    end
+
+    evaluate <<-ruby do
+        def m(**k, &l) end
+        def n(*a, **k) end
+        def o(a: 1, b: 2, **k) end
+      ruby
+
+      method(:m).unbind.arity.should == -1
+      method(:n).unbind.arity.should == -1
+      method(:o).unbind.arity.should == -1
+    end
+
+    evaluate <<-ruby do
+        def m(a=1, *b, c:, d: 2, **k, &l) end
+      ruby
+
+      method(:m).unbind.arity.should == -2
+    end
+
+    evaluate <<-ruby do
+        def m(a, b=1, *c, d, e:, f: 2, **k, &l) end
+        def n(a, b=1, *c, d:, e:, f: 2, **k, &l) end
+        def o(a=0, b=1, *c, d, e:, f: 2, **k, &l) end
+        def p(a=0, b=1, *c, d:, e:, f: 2, **k, &l) end
+      ruby
+
+      method(:m).unbind.arity.should == -4
+      method(:n).unbind.arity.should == -3
+      method(:o).unbind.arity.should == -3
+      method(:p).unbind.arity.should == -2
+    end
   end
 
-  it "if optional arguments returns the negative number of mandatory arguments, using Method#unbind" do
-    @um.method(:neg_one).unbind.arity.should == -1
-    @um.method(:neg_two).unbind.arity.should == -2
-    @um.method(:neg_three).unbind.arity.should == -3
-    @um.method(:neg_four).unbind.arity.should == -3
-  end
+  context "for a Method generated by respond_to_missing?" do
+    it "returns -1" do
+      obj = mock("method arity respond_to_missing")
+      obj.should_receive(:respond_to_missing?).and_return(true)
 
-  it "if optional arguments returns the negative number of mandatory arguments, using Module#instance_method" do
-    UnboundMethodSpecs::Methods.instance_method(:neg_one).arity.should == -1
-    UnboundMethodSpecs::Methods.instance_method(:neg_two).arity.should == -2
-    UnboundMethodSpecs::Methods.instance_method(:neg_three).arity.should == -3
-    UnboundMethodSpecs::Methods.instance_method(:neg_four).arity.should == -3
+      obj.method(:m).unbind.arity.should == -1
+    end
   end
 end

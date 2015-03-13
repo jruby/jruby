@@ -1,5 +1,0 @@
-fails:Hash#initialize is private
-fails:Hash#initialize can be used to reset default_proc
-fails:Hash#initialize receives the arguments passed to Hash#new
-fails:Hash#initialize returns self
-fails:Hash#initialize raises a RuntimeError if called on a frozen instance

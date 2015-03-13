@@ -2,13 +2,16 @@ package org.jruby.ir.operands;
 
 import org.jruby.RubyString;
 import org.jruby.ir.IRVisitor;
-import org.jruby.ir.transformations.inlining.InlinerInfo;
+import org.jruby.ir.persistence.IRReaderDecoder;
+import org.jruby.ir.persistence.IRWriterEncoder;
+import org.jruby.ir.transformations.inlining.CloneInfo;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.Helpers;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
+import org.jruby.util.StringSupport;
 
 import java.nio.charset.UnsupportedCharsetException;
 import java.util.List;
@@ -21,33 +24,51 @@ import java.util.List;
  * This is not like a Java string.
  */
 public class StringLiteral extends Operand {
+    public static final StringLiteral EMPTY_STRING = new StringLiteral("");
+
     // SSS FIXME: Pick one of bytelist or string, or add internal conversion methods to convert to the default representation
 
     final public ByteList bytelist;
     final public String   string;
+    final public int      coderange;
 
-    public StringLiteral(ByteList val) {
-        super(OperandType.STRING_LITERAL);
+    public StringLiteral(ByteList val, int coderange) {
+        this(OperandType.STRING_LITERAL, val, coderange);
+    }
 
-        bytelist = val;
-        String stringTemp;
+    protected StringLiteral(OperandType type, ByteList val, int coderange) {
+        this(type, internedStringFromByteList(val), val, coderange);
+
+    }
+
+    protected StringLiteral(OperandType type, String string, ByteList bytelist, int coderange) {
+        super(type);
+
+        this.bytelist = bytelist;
+        this.coderange = coderange;
+        this.string = string;
+    }
+
+    // If Encoding has an instance of a Charset can it ever raise unsupportedcharsetexception? because this
+    // helper called copes with charset == null...
+    private static String internedStringFromByteList(ByteList val) {
         try {
-            stringTemp = Helpers.byteListToString(bytelist);
+            return Helpers.byteListToString(val).intern();
         } catch (UnsupportedCharsetException e) {
-            stringTemp = bytelist.toString();
+            return val.toString().intern();
         }
-        string = stringTemp;
     }
 
     public StringLiteral(String s) {
         this(s, ByteList.create(s));
     }
 
-    private StringLiteral(String string, ByteList byteList ) {
+    private StringLiteral(String string, ByteList byteList) {
         super(OperandType.STRING_LITERAL);
 
         this.bytelist = byteList;
         this.string = string;
+        this.coderange = StringSupport.CR_7BIT;
      }
 
     @Override
@@ -76,7 +97,7 @@ public class StringLiteral extends Operand {
     }
 
     @Override
-    public Operand cloneForInlining(InlinerInfo ii) {
+    public Operand cloneForInlining(CloneInfo ii) {
         return this;
     }
 
@@ -98,4 +119,17 @@ public class StringLiteral extends Operand {
     public String getString() {
         return string;
     }
+
+    @Override
+    public void encode(IRWriterEncoder e) {
+        super.encode(e);
+        e.encode(bytelist);
+        e.encode(coderange);
+    }
+
+    public static StringLiteral decode(IRReaderDecoder d) {
+        return new StringLiteral(d.decodeByteList(), d.decodeInt());
+    }
+
+    public int getCodeRange() { return coderange; }
 }

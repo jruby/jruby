@@ -76,9 +76,9 @@ public class TestObjectSpace extends TestCase {
     }
 
     public void testObjectSpace() {
-        IRubyObject o1 = runtime.newFixnum(10);
-        IRubyObject o2 = runtime.newFixnum(20);
-        IRubyObject o3 = runtime.newFixnum(30);
+        IRubyObject o1 = runtime.newArray(10);
+        IRubyObject o2 = runtime.newArray(20);
+        IRubyObject o3 = runtime.newArray(30);
         IRubyObject o4 = runtime.newString("hello");
 
         target.add(o1);
@@ -86,20 +86,20 @@ public class TestObjectSpace extends TestCase {
         target.add(o3);
         target.add(o4);
 
-        List storedFixnums = new ArrayList(3);
-        storedFixnums.add(o1);
-        storedFixnums.add(o2);
-        storedFixnums.add(o3);
+        List storedArrays = new ArrayList(3);
+        storedArrays.add(o1);
+        storedArrays.add(o2);
+        storedArrays.add(o3);
 
         Iterator strings = target.iterator(runtime.getString());
         assertSame(o4, strings.next());
         assertNull(strings.next());
 
-        Iterator numerics = target.iterator(runtime.getNumeric());
+        Iterator array = target.iterator(runtime.getArray());
         for (int i = 0; i < 3; i++) {
-            Object item = numerics.next();
-            assertTrue(storedFixnums.contains(item));
+            Object item = array.next();
+            assertTrue(storedArrays.contains(item));
         }
-        assertNull(numerics.next());
+        assertNull(array.next());
     }
 }

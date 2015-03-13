@@ -34,23 +34,26 @@ package org.jruby;
 
 import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyClass;
+import org.jruby.compiler.Constantizable;
 import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.runtime.opto.OptoFactory;
 
 /**
  *
  * @author  jpetersen
  */
 @JRubyClass(name="NilClass")
-public class RubyNil extends RubyObject {
+public class RubyNil extends RubyObject implements Constantizable {
 
     private final int hashCode;
+    private final Object constant;
 
     public RubyNil(Ruby runtime) {
         super(runtime, runtime.getNilClass(), false);
-        flags |= NIL_F | FALSE_F;
+        flags |= NIL_F | FALSE_F | FROZEN_F;
 
         if (RubyInstanceConfig.CONSISTENT_HASHING_ENABLED) {
             // default to a fixed value
@@ -59,6 +62,8 @@ public class RubyNil extends RubyObject {
             // save the object id based hash code;
             this.hashCode = System.identityHashCode(this);
         }
+
+        constant = OptoFactory.newConstantWrapper(IRubyObject.class, this);
     }
     
     public static final ObjectAllocator NIL_ALLOCATOR = new ObjectAllocator() {
@@ -102,6 +107,14 @@ public class RubyNil extends RubyObject {
     @Override
     public Class<?> getJavaClass() {
         return void.class;
+    }
+
+    /**
+     * @see org.jruby.compiler.Constantizable
+     */
+    @Override
+    public Object constant() {
+        return constant;
     }
     
     // Methods of the Nil Class (nil_*):
@@ -193,7 +206,7 @@ public class RubyNil extends RubyObject {
 
     @Override
     public RubyFixnum id() {
-        return getRuntime().newFixnum(4);
+        return getRuntime().newFixnum(8);
     }
     
     @Override

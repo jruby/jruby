@@ -20,9 +20,11 @@ import java.util.Map;
  */
 public class MethodData {
 
-    public MethodData(SkinnyMethodAdapter method, IRScope scope, Signature signature) {
-        this.method = new IRBytecodeAdapter(method, signature);
+    public MethodData(IRBytecodeAdapter method, IRScope scope, Signature signature, int specificArity) {
+        this.method = method;
         this.scope = scope;
+        this.signature = signature;
+        this.specificArity = specificArity;
 
         // incoming arguments
         for (int i = 0; i < signature.argCount(); i++) {
@@ -66,6 +68,8 @@ public class MethodData {
 
     public final IRBytecodeAdapter method;
     public final IRScope scope;
+    public final Signature signature;
+    public final int specificArity;
     public final Map<String, Integer> varMap = new HashMap<String, Integer>();
     public final Map<Label, org.objectweb.asm.Label> labelMap = new HashMap<Label, org.objectweb.asm.Label>();
 

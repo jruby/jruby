@@ -1,6 +1,2 @@
-fails:#enum_for is defined in Kernel
-fails:#enum_for returns a new enumerator
-fails:#enum_for defaults the first argument to :each
-fails:#enum_for exposes multi-arg yields as an array
 fails:#enum_for uses the passed block's value to calculate the size of the enumerator
 fails:#enum_for defers the evaluation of the passed block until #size is called

@@ -1,3 +1,2 @@
 fails:Exception#message returns the class name if there is no message
-fails:Exception#message returns the message passed to #initialize
 fails:Exception#message calls #to_s on self

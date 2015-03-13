@@ -6,12 +6,12 @@ String log = FileUtils.fileRead( new File( basedir, "build.log" ) );
 String expected = "rake (10.1.0)";
 if ( !log.contains( expected ) )
 {
-    throw new RuntimeException( "log file does not contain '" + expected + "'" );
+    throw new runtimeexception( "log file does not contain '" + expected + "'" );
 }
 expected = "4.1.0";
 if ( !log.contains( expected ) )
 {
-    throw new RuntimeException( "log file does not contain '" + expected + "'" );
+    throw new runtimeexception( "log file does not contain '" + expected + "'" );
 }
 expected = "json (1.8.0 java)";
 if ( !log.contains( expected ) )
@@ -29,6 +29,16 @@ if ( !log.contains( expected ) )
     throw new RuntimeException( "log file does not contain '" + expected + "'" );
 }
 expected = "gems count 9";
+if ( !log.contains( expected ) )
+{
+    throw new RuntimeException( "log file does not contain '" + expected + "'" );
+}
+expected = "jar-dependencies,jruby-openssl";
+if ( !log.contains( expected ) )
+{
+    throw new RuntimeException( "log file does not contain '" + expected + "'" );
+}
+expected = "there is NO org.objectweb.asm.ClassWriter on the classpath";
 if ( !log.contains( expected ) )
 {
     throw new RuntimeException( "log file does not contain '" + expected + "'" );

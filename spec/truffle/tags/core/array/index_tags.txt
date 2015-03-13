@@ -1,7 +1,0 @@
-fails:Array#index returns the index of the first element == to object
-fails:Array#index returns 0 if first element == to object
-fails:Array#index returns size-1 if only last element == to object
-fails:Array#index returns nil if no element == to object
-fails:Array#index accepts a block instead of an argument
-fails:Array#index ignores the block if there is an argument
-fails:Array#index given no argument and no block produces an Enumerator

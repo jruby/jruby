@@ -23,14 +23,6 @@ public class DeadCodeElimination extends CompilerPass {
     public Object execute(IRScope scope, Object... data) {
         ((LiveVariablesProblem) data[0]).markDeadInstructions();
 
-        for (IRClosure cl: scope.getClosures()) {
-            run(cl, true);
-        }
-
         return true;
-    }
-
-    public void invalidate(IRScope scope) {
-        // FIXME: Can we reset this?
     }
 }

@@ -3,6 +3,7 @@ require 'socket'
 require 'thread'
 require 'test/jruby/test_helper'
 require 'ipaddr'
+require 'timeout'
 
 WINDOWS = RbConfig::CONFIG['host_os'] =~ /Windows|mswin/
 
@@ -80,6 +81,19 @@ class SocketTest < Test::Unit::TestCase
     list.each {|ifaddr|
       assert_instance_of(Socket::Ifaddr, ifaddr)
     }
+  end
+
+  def test_getifaddrs_packet_interfaces
+    begin
+      list = Socket.getifaddrs
+    rescue NotImplementedError
+      return
+    end
+    ifnames = list.collect(&:name).uniq
+    ifnames.each do |ifname|
+      packet_interfaces = list.select { |ifaddr| ifaddr.name == ifname && ifaddr.addr.afamily == Socket::AF_UNSPEC } # TODO: (gf) Socket::AF_PACKET when available
+      assert_equal(1, packet_interfaces.count) # one for each interface
+    end
   end
 
   def test_basic_socket_reverse_lookup
@@ -528,7 +542,7 @@ class ServerTest < Test::Unit::TestCase
     loop do
       sock.syswrite("2")
     end
-  rescue Errno::EPIPE
+  rescue Errno::EPIPE, Errno::ECONNRESET
     # ok
   rescue => ex
     # FIXME: make Windows behave the same?
@@ -538,5 +552,23 @@ class ServerTest < Test::Unit::TestCase
     server.close rescue nil
     sock.close rescue nil
   end
+
+  # jruby/jruby#1637
+  def test_read_zero_never_blocks
+    assert_nothing_raised do
+      server = TCPServer.new(nil, 12345)
+      t = Thread.new do
+        s = server.accept
+      end
+      client = TCPSocket.new(nil, 12345)
+      Timeout.timeout(1) do
+        assert_equal "", client.read(0)
+      end
+      t.join
+    end
+  ensure
+    server.close rescue nil
+    client.close rescue nil
+  end if RUBY_VERSION >= '1.9'
 end
 

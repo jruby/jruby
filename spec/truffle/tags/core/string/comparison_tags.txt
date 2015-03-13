@@ -1,13 +1,4 @@
-fails:String#<=> with String compares individual characters based on their ascii value
-fails:String#<=> with String returns -1 when self is less than other
-fails:String#<=> with String returns 1 when self is greater than other
-fails:String#<=> with String considers string that comes lexicographically first to be less if strings have same size
-fails:String#<=> with String compares shorter string with corresponding number of first chars of longer string
-fails:String#<=> with String returns -1 if self is bytewise less than other
-fails:String#<=> with String returns 1 if self is bytewise greater than other
 fails:String#<=> with String ignores encoding difference
 fails:String#<=> with String compares the indices of the encodings when the strings have identical non-ASCII-compatible bytes
-fails:String#<=> returns nil if its argument provides neither #to_str nor #<=>
-fails:String#<=> uses the result of calling #to_str for comparison when #to_str is defined
 fails:String#<=> uses the result of calling #<=> on its argument when #<=> is defined but #to_str is not
 fails:String#<=> returns nil if argument also uses an inverse comparison for <=>

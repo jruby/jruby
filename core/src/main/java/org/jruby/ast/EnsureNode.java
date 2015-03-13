@@ -44,10 +44,10 @@ public class EnsureNode extends Node {
     private final Node ensureNode;
 
     public EnsureNode(ISourcePosition position, Node bodyNode, Node ensureNode) {
-        super(position);
-        
+        super(position, bodyNode.containsVariableAssignment() || ensureNode != null && ensureNode.containsVariableAssignment());
+
         assert bodyNode != null : "bodyNode is not null";
-        
+
         this.bodyNode = bodyNode;
         this.ensureNode = ensureNode;
     }

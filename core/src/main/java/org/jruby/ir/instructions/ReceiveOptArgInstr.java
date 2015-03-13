@@ -2,12 +2,13 @@ package org.jruby.ir.instructions;
 
 import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Operation;
-import org.jruby.ir.operands.Fixnum;
-import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.UndefinedValue;
 import org.jruby.ir.operands.Variable;
+import org.jruby.ir.persistence.IRWriterEncoder;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
-import org.jruby.ir.transformations.inlining.InlinerInfo;
+import org.jruby.ir.transformations.inlining.CloneInfo;
+import org.jruby.ir.transformations.inlining.InlineCloneInfo;
+import org.jruby.ir.transformations.inlining.SimpleCloneInfo;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
@@ -25,13 +26,8 @@ public class ReceiveOptArgInstr extends ReceiveArgBase implements FixedArityInst
     }
 
     @Override
-    public Operand[] getOperands() {
-        return new Operand[] { new Fixnum(requiredArgs), new Fixnum(preArgs), new Fixnum(argIndex) };
-    }
-
-    @Override
-    public String toString() {
-        return (isDead() ? "[DEAD]" : "") + (hasUnusedResult() ? "[DEAD-RESULT]" : "") + getResult() + " = " + getOperation() + "(" + requiredArgs + "," + preArgs + "," + argIndex + ")";
+    public String[] toStringNonOperandArgs() {
+        return new String[] {"index:" + getArgIndex(), "req: " + requiredArgs, "pre: " + preArgs};
     }
 
     public int getPreArgs() {
@@ -43,25 +39,31 @@ public class ReceiveOptArgInstr extends ReceiveArgBase implements FixedArityInst
     }
 
     @Override
-    public Instr cloneForInlining(InlinerInfo ii) {
+    public Instr clone(CloneInfo info) {
+        int optArgIndex = this.argIndex;
+        if (info instanceof SimpleCloneInfo) return new ReceiveOptArgInstr(info.getRenamedVariable(result), requiredArgs, preArgs, optArgIndex);
+
+        InlineCloneInfo ii = (InlineCloneInfo) info;
+
         // SSS FIXME: Need to add kwArgLoss information in InlinerInfo
         // Added this copy for code clarity
         // argIndex is relative to start of opt args and not the start of arg array
-        int optArgIndex = this.argIndex;
-        switch (ii.getCloneMode()) {
-            case ENSURE_BLOCK_CLONE:
-            case NORMAL_CLONE:
-                return new ReceiveOptArgInstr(ii.getRenamedVariable(result), requiredArgs, preArgs, optArgIndex);
-            default: {
-                int minReqdArgs = optArgIndex + requiredArgs;
-                if (ii.canMapArgsStatically()) {
-                    int n = ii.getArgsCount();
-                    return new CopyInstr(ii.getRenamedVariable(result), minReqdArgs < n ? ii.getArg(preArgs + optArgIndex) : UndefinedValue.UNDEFINED);
-                } else {
-                    return new OptArgMultipleAsgnInstr(ii.getRenamedVariable(result), ii.getArgs(), preArgs + optArgIndex, minReqdArgs);
-                }
-            }
+        int minReqdArgs = optArgIndex + requiredArgs;
+
+        if (ii.canMapArgsStatically()) {
+            int n = ii.getArgsCount();
+            return new CopyInstr(ii.getRenamedVariable(result), minReqdArgs < n ? ii.getArg(preArgs + optArgIndex) : UndefinedValue.UNDEFINED);
         }
+
+        return new OptArgMultipleAsgnInstr(ii.getRenamedVariable(result), ii.getArgs(), preArgs + optArgIndex, minReqdArgs);
+    }
+
+    @Override
+    public void encode(IRWriterEncoder e) {
+        super.encode(e);
+        e.encode(requiredArgs);
+        e.encode(getPreArgs());
+        e.encode(getArgIndex());
     }
 
     @Override

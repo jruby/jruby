@@ -88,14 +88,27 @@ public class Sockaddr {
 
         int port = ((val.get(2)&0xff) << 8) + (val.get(3)&0xff);
 
-        StringBuilder sb = new StringBuilder()
-                .append(val.get(4)&0xff)
+        AddressFamily af = getAddressFamilyFromSockaddr(runtime, val);
+
+        StringBuilder sb = new StringBuilder();
+
+        if (af == AddressFamily.AF_INET) {
+            sb.append(val.get(4) & 0xff)
                 .append(".")
-                .append(val.get(5)&0xff)
+                .append(val.get(5) & 0xff)
                 .append(".")
-                .append(val.get(6)&0xff)
+                .append(val.get(6) & 0xff)
                 .append(".")
-                .append(val.get(7)&0xff);
+                .append(val.get(7) & 0xff);
+
+        } else {                                    // if af == AddressFamily.AF_INET6
+            for (int i = 4; i <= 19; i++) {
+                if (i != 4 && i % 2 == 0) {
+                    sb.append(":");
+                }
+                sb.append(Integer.toHexString(val.get(i) & 0xff | 0x100).substring(1));
+            }
+        }
 
         IRubyObject[] result = new IRubyObject[]{
                 runtime.newFixnum(port),
@@ -117,15 +130,23 @@ public class Sockaddr {
         try {
             DataOutputStream ds = new DataOutputStream(bufS);
 
-            writeSockaddrHeader(AddressFamily.AF_INET, ds);
-            writeSockaddrPort(ds, iport);
-
             try {
                 if(host != null && "".equals(host)) {
+                    writeSockaddrHeader(AddressFamily.AF_INET, ds);
+                    writeSockaddrPort(ds, iport);
                     ds.writeInt(0);
                 } else {
                     InetAddress[] addrs = InetAddress.getAllByName(host);
                     byte[] addr = addrs[0].getAddress();
+
+                    if (addr.length == 4) {
+                        writeSockaddrHeader(AddressFamily.AF_INET, ds);
+                    } else {
+                        writeSockaddrHeader(AddressFamily.AF_INET6, ds);
+                    }
+
+                    writeSockaddrPort(ds, iport);
+
                     ds.write(addr, 0, addr.length);
                 }
             } catch (UnknownHostException e) {
@@ -206,6 +227,13 @@ public class Sockaddr {
             throw runtime.newArgumentError("can't resolve socket address of wrong type");
         }
     }
+
+    public static AddressFamily getAddressFamilyFromSockaddr(Ruby runtime, ByteList val) {
+        int high = val.get(0) & 0xff;
+        int low = val.get(1) & 0xff;
+
+        return AddressFamily.valueOf((high << 8) + low);
+        }
 
     private static RuntimeException sockerr(Ruby runtime, String msg) {
         return new RaiseException(runtime, runtime.getClass("SocketError"), msg, true);

@@ -97,16 +97,19 @@ public class RubyFileTest {
 
     @JRubyMethod(name = "executable?", required = 1, module = true)
     public static IRubyObject executable_p(IRubyObject recv, IRubyObject filename) {
-        FileStat stat = fileResource(filename).stat();
-
-        return recv.getRuntime().newBoolean(stat != null && stat.isExecutable());
+        return recv.getRuntime().newBoolean(fileResource(filename).canExecute());
     }
 
     @JRubyMethod(name = "executable_real?", required = 1, module = true)
     public static IRubyObject executable_real_p(IRubyObject recv, IRubyObject filename) {
-        FileStat stat = fileResource(filename).stat();
+        if (recv.getRuntime().getPosix().isNative()) {
+            FileStat stat = fileResource(filename).stat();
 
-        return recv.getRuntime().newBoolean(stat != null && stat.isExecutableReal());
+            return recv.getRuntime().newBoolean(stat != null && stat.isExecutableReal());
+        }
+        else {
+            return executable_p(recv, filename);
+        }
     }
 
     public static IRubyObject exist_p(IRubyObject recv, IRubyObject filename) {
@@ -128,9 +131,7 @@ public class RubyFileTest {
 
     @JRubyMethod(name = "file?", required = 1, module = true)
     public static RubyBoolean file_p(ThreadContext context, IRubyObject recv, IRubyObject filename) {
-        FileStat stat = fileResource(filename).stat();
-
-        return context.runtime.newBoolean(stat != null && stat.isFile());
+        return context.runtime.newBoolean(fileResource(filename).isFile());
     }
 
     @JRubyMethod(name = "grpowned?", required = 1, module = true)
@@ -199,8 +200,7 @@ public class RubyFileTest {
             filename = get_path(context, filename);
         }
 
-        FileStat stat = fileResource(filename).stat();
-        return runtime.newBoolean(stat != null && stat.isReadable());
+        return runtime.newBoolean(fileResource(filename).canRead());
     }
 
     // Not exposed by filetest, but so similiar in nature that it is stored here
@@ -277,7 +277,7 @@ public class RubyFileTest {
     @JRubyMethod(name = "symlink?", required = 1, module = true)
     public static RubyBoolean symlink_p(IRubyObject recv, IRubyObject filename) {
         Ruby runtime = recv.getRuntime();
-        IRubyObject oldExc = runtime.getGlobalVariables().get("$!");
+        IRubyObject oldExc = runtime.getGlobalVariables().get("$!"); // Save $!
         
         try {
             // Note: We can't use file.exists() to check whether the symlink
@@ -291,7 +291,7 @@ public class RubyFileTest {
         } catch (SecurityException re) {
             return runtime.getFalse();
         } catch (RaiseException re) {
-            runtime.getGlobalVariables().set("$!", oldExc);
+            runtime.getGlobalVariables().set("$!", oldExc); // Restore $!
             return runtime.getFalse();
         }
     }

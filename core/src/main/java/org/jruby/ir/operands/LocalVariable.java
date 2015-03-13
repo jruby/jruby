@@ -1,24 +1,18 @@
-/*
- * To change this template, choose Tools | Templates
- * and open the template in the editor.
- */
-
 package org.jruby.ir.operands;
 
 import org.jruby.ir.IRVisitor;
-import org.jruby.ir.transformations.inlining.InlinerInfo;
+import org.jruby.ir.persistence.IRWriterEncoder;
+import org.jruby.ir.transformations.inlining.SimpleCloneInfo;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
-/**
- * @author enebo
- */
 public class LocalVariable extends Variable implements DepthCloneable {
-    protected String name;
-    protected int scopeDepth;
-    protected int offset;
+    protected final String name;
+    protected final int scopeDepth;
+    protected final int offset;
+    protected final int hcode;
 
     // FIXME: We should resolve to an index into an array but localvariable has no allocator
     public LocalVariable(String name, int scopeDepth, int location) {
@@ -30,6 +24,11 @@ public class LocalVariable extends Variable implements DepthCloneable {
         this.name = name;
         this.scopeDepth = scopeDepth;
         this.offset = location;
+        this.hcode = (name + ":" + offset).hashCode();
+    }
+
+    public boolean isSameDepth(LocalVariable other) {
+        return getScopeDepth() == other.getScopeDepth();
     }
 
     public int getScopeDepth() {
@@ -56,20 +55,23 @@ public class LocalVariable extends Variable implements DepthCloneable {
 
     @Override
     public int hashCode() {
-        return name.hashCode();
+        return hcode;
     }
+
     @Override
     public boolean equals(Object obj) {
         if (obj == null || !(obj instanceof LocalVariable)) return false;
 
-        return name.equals(((LocalVariable) obj).name);
+        return hashCode() == obj.hashCode();
     }
 
     public int compareTo(Object arg0) {
         // ENEBO: what should compareTo when it is not comparable?
         if (!(arg0 instanceof LocalVariable)) return 0;
 
-        return name.compareTo(((LocalVariable) arg0).name);
+        int a = hashCode();
+        int b = arg0.hashCode();
+        return a < b ? -1 : (a == b ? 0 : 1);
     }
 
     @Override
@@ -80,13 +82,19 @@ public class LocalVariable extends Variable implements DepthCloneable {
     }
 
     @Override
-    public Variable clone(InlinerInfo ii) {
-        return new LocalVariable(name, scopeDepth, offset);
+    public Variable clone(SimpleCloneInfo ii) {
+        return this;
     }
 
-    // SSS FIXME: Better name than this?
     public LocalVariable cloneForDepth(int n) {
         return new LocalVariable(name, n, offset);
+    }
+
+    @Override
+    public void encode(IRWriterEncoder e) {
+        super.encode(e);
+        e.encode(getName());
+        e.encode(getScopeDepth());
     }
 
     @Override

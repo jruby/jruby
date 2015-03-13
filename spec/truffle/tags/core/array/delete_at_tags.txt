@@ -1,6 +1,2 @@
-fails:Array#delete_at removes the element at the specified index
 fails:Array#delete_at returns nil and makes no modification if the index is out of range
 fails:Array#delete_at tries to convert the passed argument to an Integer using #to_int
-fails:Array#delete_at raises a RuntimeError on a frozen array
-fails:Array#delete_at keeps tainted status
-fails:Array#delete_at keeps untrusted status

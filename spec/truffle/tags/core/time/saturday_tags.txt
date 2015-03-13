@@ -1,2 +1,0 @@
-fails:Time#saturday? returns true if time represents Saturday
-fails:Time#saturday? returns false if time doesn't represent Saturday

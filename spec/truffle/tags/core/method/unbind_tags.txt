@@ -1,6 +1,0 @@
-fails:Method#unbind returns an UnboundMethod
-fails:Method#unbind returns a String containing 'UnboundMethod'
-fails:Method#unbind returns a String containing the method name
-fails:Method#unbind returns a String containing the Module the method is defined in
-fails:Method#unbind returns a String containing the Module the method is referenced from
-fails:Method#unbind rebinding UnboundMethod to Method's obj produces exactly equivalent Methods

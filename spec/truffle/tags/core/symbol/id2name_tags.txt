@@ -1,1 +1,0 @@
-fails:Symbol#id2name returns the string corresponding to self

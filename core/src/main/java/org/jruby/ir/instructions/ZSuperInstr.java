@@ -7,7 +7,7 @@ import org.jruby.ir.Operation;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.Variable;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
-import org.jruby.ir.transformations.inlining.InlinerInfo;
+import org.jruby.ir.transformations.inlining.CloneInfo;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.DynamicScope;
@@ -27,13 +27,14 @@ public class ZSuperInstr extends UnresolvedSuperInstr {
     }
 
     @Override
-    public Instr cloneForInlining(InlinerInfo ii) {
-        return new ZSuperInstr(ii.getRenamedVariable(getResult()), getReceiver().cloneForInlining(ii), cloneCallArgs(ii), closure == null ? null : closure.cloneForInlining(ii));
+    public Instr clone(CloneInfo ii) {
+        return new ZSuperInstr(ii.getRenamedVariable(getResult()), getReceiver().cloneForInlining(ii),
+                cloneCallArgs(ii), getClosureArg() == null ? null : getClosureArg().cloneForInlining(ii));
     }
 
     @Override
     public Object interpret(ThreadContext context, StaticScope currScope, DynamicScope currDynScope, IRubyObject self, Object[] temp) {
-        IRubyObject[] args = prepareArguments(context, self, getCallArgs(), currScope, currDynScope, temp);
+        IRubyObject[] args = prepareArguments(context, self, currScope, currDynScope, temp);
         Block block = prepareBlock(context, self, currScope, currDynScope, temp);
         if (block == null || !block.isGiven()) block = context.getFrameBlock();
         return IRRuntimeHelpers.unresolvedSuper(context, self, args, block);

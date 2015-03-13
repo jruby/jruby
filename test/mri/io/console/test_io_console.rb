@@ -26,9 +26,8 @@ class TestIO_Console < Test::Unit::TestCase
   end
 
   def test_raw_minchar
-    len = 0
-    th = nil
     helper {|m, s|
+      len = 0
       assert_equal([nil, 0], [s.getch(min: 0), len])
       main = Thread.current
       go = false
@@ -41,18 +40,19 @@ class TestIO_Console < Test::Unit::TestCase
         m.print("1234567890")
         m.flush
       }
-      assert_equal(["a", 1], [s.getch(min: 1), len])
-      go = true
-      assert_equal(["1", 11], [s.getch, len])
+      begin
+        assert_equal(["a", 1], [s.getch(min: 1), len])
+        go = true
+        assert_equal(["1", 11], [s.getch, len])
+      ensure
+        th.join
+      end
     }
-  ensure
-    th.kill if th and th.alive?
   end
 
   def test_raw_timeout
-    len = 0
-    th = nil
     helper {|m, s|
+      len = 0
       assert_equal([nil, 0], [s.getch(min: 0, time: 0.1), len])
       main = Thread.current
       th = Thread.start {
@@ -60,11 +60,13 @@ class TestIO_Console < Test::Unit::TestCase
         len += 2
         m.print("ab")
       }
-      assert_equal(["a", 2], [s.getch(min: 1, time: 1), len])
-      assert_equal(["b", 2], [s.getch(time: 1), len])
+      begin
+        assert_equal(["a", 2], [s.getch(min: 1, time: 1), len])
+        assert_equal(["b", 2], [s.getch(time: 1), len])
+      ensure
+        th.join
+      end
     }
-  ensure
-    th.kill if th and th.alive?
   end
 
   def test_cooked
@@ -229,6 +231,9 @@ class TestIO_Console < Test::Unit::TestCase
       con = r.gets.chomp
       Process.wait(pid)
       assert_match("File", con)
+    ensure
+      r.close if r
+      w.close if w
     end
   end
 
@@ -262,8 +267,7 @@ class TestIO_Console < Test::Unit::TestCase
       t.close
       t2 = Tempfile.new("console")
       t2.close
-      cmd = NOCTTY + [
-        '--disable=gems',
+      cmd = [*NOCTTY[1..-1],
         '-e', 'open(ARGV[0], "w") {|f|',
         '-e',   'STDOUT.reopen(f)',
         '-e',   'STDERR.reopen(f)',
@@ -273,7 +277,7 @@ class TestIO_Console < Test::Unit::TestCase
         '-e',   'File.unlink(ARGV[1])',
         '-e', '}',
         '--', t.path, t2.path]
-      system(*cmd)
+      assert_ruby_status(cmd, rubybin: NOCTTY[0])
       30.times do
         break unless File.exist?(t2.path)
         sleep 0.1

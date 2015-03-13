@@ -1,8 +1,5 @@
 fails:Module#append_features is a private method
-fails:Module#append_features gets called when self is included in another module/class
 fails:Module#append_features raises an ArgumentError on a cyclic include
 fails:Module#append_features copies own tainted status to the given module
 fails:Module#append_features copies own untrusted status to the given module
-fails:Module#append_features on Class is undefined
 fails:Module#append_features on Class raises a TypeError if calling after rebinded to Class
-fails:Module#append_features when other is frozen raises a RuntimeError before appending self

@@ -118,6 +118,19 @@ describe "Dir.glob" do
     Dir.glob('./**/', File::FNM_DOTMATCH).sort.should == expected
   end
 
+  it "matches a list of paths by concatenating their individual results" do
+    expected = %w[
+      deeply/
+      deeply/nested/
+      deeply/nested/directory/
+      deeply/nested/directory/structure/
+      subdir_two/nondotfile
+      subdir_two/nondotfile.ext
+    ]
+
+    Dir.glob('{deeply/**/,subdir_two/*}').sort.should == expected
+  end
+
   it "accepts a block and yields it with each elements" do
     ary = []
     ret = Dir.glob(["file_o*", "file_t*"]) { |t| ary << t }

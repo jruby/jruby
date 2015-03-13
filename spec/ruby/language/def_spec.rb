@@ -572,8 +572,3 @@ describe "The def keyword" do
     end
   end
 end
-
-ruby_version_is "2.0" do
-  # Temporarily excluded until keyword args are added.
-  # require File.expand_path('../versions/def_2.0.rb', __FILE__)
-end

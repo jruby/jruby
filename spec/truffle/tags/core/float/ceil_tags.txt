@@ -1,1 +1,0 @@
-fails:Float#ceil returns the smallest Integer greater than or equal to self

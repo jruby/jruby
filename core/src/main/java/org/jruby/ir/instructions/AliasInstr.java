@@ -5,8 +5,9 @@ import org.jruby.ir.IRScope;
 import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Operation;
 import org.jruby.ir.operands.Operand;
+import org.jruby.ir.persistence.IRWriterEncoder;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
-import org.jruby.ir.transformations.inlining.InlinerInfo;
+import org.jruby.ir.transformations.inlining.CloneInfo;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
@@ -15,25 +16,9 @@ import org.jruby.runtime.builtin.IRubyObject;
 import java.util.Map;
 
 public class AliasInstr extends Instr implements FixedArityInstr {
-    private Operand newName;
-    private Operand oldName;
-
     // SSS FIXME: Implicit self arg -- make explicit to not get screwed by inlining!
     public AliasInstr(Operand newName, Operand oldName) {
-        super(Operation.ALIAS);
-
-        this.newName = newName;
-        this.oldName = oldName;
-    }
-
-    @Override
-    public Operand[] getOperands() {
-        return new Operand[] {getNewName(), getOldName()};
-    }
-
-    @Override
-    public String toString() {
-        return getOperation().toString() + "(" + ", " + getNewName() + ", " + getOldName() + ")";
+        super(Operation.ALIAS, new Operand[] {newName, oldName});
     }
 
     @Override
@@ -43,13 +28,15 @@ public class AliasInstr extends Instr implements FixedArityInstr {
     }
 
     @Override
-    public void simplifyOperands(Map<Operand, Operand> valueMap, boolean force) {
-        oldName = getOldName().getSimplifiedOperand(valueMap, force);
-        newName = getNewName().getSimplifiedOperand(valueMap, force);
+    public void encode(IRWriterEncoder e) {
+        super.encode(e);
+
+        e.encode(getNewName());
+        e.encode(getOldName());
     }
 
     @Override
-    public Instr cloneForInlining(InlinerInfo ii) {
+    public Instr clone(CloneInfo ii) {
         return new AliasInstr(getNewName().cloneForInlining(ii), getOldName().cloneForInlining(ii));
     }
 
@@ -67,10 +54,10 @@ public class AliasInstr extends Instr implements FixedArityInstr {
     }
 
     public Operand getNewName() {
-        return newName;
+        return operands[0];
     }
 
     public Operand getOldName() {
-        return oldName;
+        return operands[1];
     }
 }

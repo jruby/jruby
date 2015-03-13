@@ -7,7 +7,7 @@ class TestCommandLineSwitches < Test::Unit::TestCase
   include TestHelper
 
   # FIXME: currently fails on Windows
-  if (!WINDOWS)
+  if (!WINDOWS and not IS_JAR_EXECUTION)
     def test_dash_0_splits_records
       output = jruby_with_pipe("echo '1,2,3'", %Q{ -054 --disable-gems -n -e 'puts $_ + " "'})
       assert_equal 0, $?.exitstatus
@@ -120,8 +120,9 @@ class TestCommandLineSwitches < Test::Unit::TestCase
 
   def test_dash_little_v_version_verbose_T_taint_d_debug_K_kcode_r_require_b_benchmarks_a_splitsinput_I_loadpath_C_cwd_F_delimeter_J_javaprop_19
     e_line = 'puts $VERBOSE, $SAFE, $DEBUG, Encoding.default_external, $F.join(59.chr), $LOAD_PATH.join(44.chr), Dir.pwd, Java::java::lang::System.getProperty(:foo.to_s)'
-    args = "-J-Dfoo=bar -v -T3 -d -Ku -a -n -Ihello -C .. -F, -e #{q + e_line + q}"
-    lines = jruby_with_pipe("echo 1,2,3", args).split("\n")
+    args = "-v -T3 -d -Ku -a -n -Ihello -C .. -F, -e #{q + e_line + q}"
+    # the options at the end will add -J-Dfoo=bar to the args
+    lines = jruby_with_pipe("echo 1,2,3", args, :foo => 'bar').split("\n")
     assert_equal 0, $?.exitstatus, "failed execution with output:\n#{lines}"
     parent_dir = Dir.chdir('..') { Dir.pwd }
 
@@ -328,6 +329,7 @@ class TestCommandLineSwitches < Test::Unit::TestCase
 
   # JRUBY-5517
   def test_rubyopts_benchmark_cleared_in_child
+    return if IS_JAR_EXECUTION
     rubyopt_org = ENV['RUBYOPT']
     ENV['RUBYOPT'] = '-r benchmark'
 

@@ -55,6 +55,7 @@ import org.jruby.RubySymbol;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.ext.fcntl.FcntlLibrary;
+import org.jruby.platform.Platform;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
@@ -570,7 +571,7 @@ public class RubyBasicSocket extends RubyIO {
                 SocketType.forChannel(channel).shutdownInput(channel);
 
             } catch (IOException e) {
-                throw runtime.newIOError(e.getMessage());
+                // MRI ignores errors from shutdown()
             }
 
             openFile.setMode(openFile.getMode() & ~OpenFile.READABLE);
@@ -583,7 +584,7 @@ public class RubyBasicSocket extends RubyIO {
                 SocketType.forChannel(channel).shutdownOutput(channel);
 
             } catch (IOException e) {
-                throw runtime.newIOError(e.getMessage());
+                // MRI ignores errors from shutdown()
             }
 
             openFile.setMode(openFile.getMode() & ~OpenFile.WRITABLE);
@@ -608,7 +609,7 @@ public class RubyBasicSocket extends RubyIO {
     protected static ChannelFD newChannelFD(Ruby runtime, Channel channel) {
         ChannelFD fd = new ChannelFD(channel, runtime.getPosix(), runtime.getFilenoUtil());
 
-        if (runtime.getPosix().isNative() && fd.realFileno >= 0) {
+        if (runtime.getPosix().isNative() && fd.realFileno >= 0 && !Platform.IS_WINDOWS) {
             runtime.getPosix().fcntlInt(fd.realFileno, Fcntl.F_SETFD, FcntlLibrary.FD_CLOEXEC);
         }
 

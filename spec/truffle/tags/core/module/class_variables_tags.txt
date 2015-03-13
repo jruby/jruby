@@ -1,4 +1,2 @@
-fails:Module#class_variables returns an Array with the names of class variables of self
 fails:Module#class_variables returns an Array of Symbols of class variable names defined in a metaclass
 fails:Module#class_variables returns an Array with names of class variables defined in metaclasses
-fails:Module#class_variables does not return class variables defined in extended modules

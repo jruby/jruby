@@ -2,21 +2,21 @@ class Proc
   def curry(curried_arity = nil)
     if lambda? && curried_arity
       if arity > 0 && curried_arity != arity
-        raise ArgumentError, "Wrong number of arguments (%i for %i)" % [
+        raise ArgumentError, "wrong number of arguments (%i for %i)" % [
           curried_arity,
           arity
         ]
       end
 
       if arity < 0 && curried_arity < (-arity - 1)
-        raise ArgumentError, "Wrong number of arguments (%i for %i)" % [
+        raise ArgumentError, "wrong number of arguments (%i for %i)" % [
           curried_arity,
           -arity - 1
         ]
       end
     end
 
-    Proc.__make_curry_proc__(self, [], arity)
+    Proc.__make_curry_proc__(self, [], curried_arity || arity)
   end
 
   # Create a singleton class based on Proc that re-defines these methods but
@@ -44,7 +44,8 @@ class Proc
   def self.__make_curry_proc__(proc, passed, arity)
     f = __send__((proc.lambda? ? :lambda : :proc)) do |*argv, &passed_proc|
       my_passed = passed + argv
-      if my_passed.length < arity
+      abs_arity = (arity < 0 ? (-arity - 1) : arity)
+      if my_passed.length < abs_arity
         if !passed_proc.nil?
           warn "#{caller[0]}: given block not used"
         end

@@ -1,2 +1,2 @@
-fails:Encoding#dummy? returns false for proper encodings
-fails:Encoding#dummy? returns true for dummy encodings
+fails(inherited):Encoding#dummy? returns true for dummy encodings
+windows:Encoding#dummy? returns true for dummy encodings

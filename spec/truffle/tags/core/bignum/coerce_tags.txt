@@ -1,4 +1,1 @@
 fails:Bignum#coerce coerces other to a Bignum and returns [other, self] when passed a Fixnum
-fails:Bignum#coerce returns [other, self] when passed a Bignum
-fails:Bignum#coerce raises a TypeError when not passed a Fixnum or Bignum
-fails:Bignum#coerce raises a TypeError when passed a Float or String

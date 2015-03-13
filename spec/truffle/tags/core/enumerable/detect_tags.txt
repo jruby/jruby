@@ -1,11 +1,1 @@
-fails:Enumerable#detect passes each entry in enum to block while block when block is false
-fails:Enumerable#detect returns nil when the block is false and there is no ifnone proc given
-fails:Enumerable#detect returns the first element for which the block is not false
-fails:Enumerable#detect returns the value of the ifnone proc if the block is false
-fails:Enumerable#detect doesn't call the ifnone proc if an element is found
-fails:Enumerable#detect calls the ifnone proc only once when the block is false
-fails:Enumerable#detect calls the ifnone proc when there are no elements
 fails:Enumerable#detect passes through the values yielded by #each_with_index
-fails:Enumerable#detect returns an enumerator when no block given
-fails:Enumerable#detect passes the ifnone proc to the enumerator
-fails:Enumerable#detect gathers whole arrays as elements when each yields multiple

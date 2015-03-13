@@ -1,4 +1,3 @@
-fails(compiler):Literal (A::X) constant resolution with dynamically assigned constants searches Object if a toplevel qualifier (::X) is given
 fails:Module#private_constant marked constants in a module cannot be reopened as a module
 fails:Module#private_constant marked constants in a module cannot be reopened as a class
 fails:Module#private_constant marked constants in a class cannot be reopened as a module

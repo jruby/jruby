@@ -34,6 +34,11 @@ describe IOStub do
     @out.should == "hello\n1\n2\n3\n"
   end
 
+  it "provides a puts method that appends separator if argument not given" do
+    @out.puts
+    @out.should == "\n"
+  end
+
   it "provides a printf method" do
     @out.printf "%-10s, %03d, %2.1f", "test", 42, 4.2
     @out.should == "test      , 042, 4.2"

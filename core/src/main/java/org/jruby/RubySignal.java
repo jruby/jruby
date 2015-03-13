@@ -28,11 +28,11 @@
 package org.jruby;
 
 import jnr.constants.platform.Signal;
+
 import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyModule;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
-
 import org.jruby.util.SignalFacade;
 import org.jruby.util.NoFunctionalitySignalFacade;
 
@@ -58,52 +58,71 @@ public class RubySignal {
         //registerThreadDumpSignalHandler(runtime);
     }
     
-    @JRubyMethod(module = true)
+    public static Map<String, Integer> list() {
+        Map<String, Integer> signals = new HashMap<String, Integer>();
+
+        for (Signal s : Signal.values()) {
+            if (!s.description().startsWith("SIG"))
+                continue;
+            if (!RUBY_18_SIGNALS.contains(s.description().substring(3)))
+                continue;
+
+            // replace CLD with CHLD value
+            int signo = s.intValue();
+            if (s == Signal.SIGCLD)
+                signo = Signal.SIGCHLD.intValue();
+
+            // omit unsupported signals
+            if (signo >= 20000)
+                continue;
+
+            signals.put(s.description().substring("SIG".length()), signo);
+        }
+
+        return signals;
+    }
+
+    @JRubyMethod(meta = true)
     public static IRubyObject list(ThreadContext context, IRubyObject recv) {
         Ruby runtime = recv.getRuntime();
         RubyHash names = RubyHash.newHash(runtime);
-        for (Signal s : Signal.values()) {
-            if (!s.description().startsWith("SIG")) continue;
-            if (!RUBY_18_SIGNALS.contains(s.description().substring(3))) continue;
-
-            // replace CLD with CHLD value
-            long longValue = s.longValue();
-            if (s == Signal.SIGCLD) longValue = Signal.SIGCHLD.longValue();
-
-            // omit unsupported signals
-            if (longValue >= 20000) continue;
-
-            names.op_aset(context, runtime.newString(s.description().substring("SIG".length())), runtime.newFixnum(longValue));
+        for (Map.Entry<String, Integer> sig : RubySignal.list().entrySet()) {
+            names.op_aset(context, runtime.newString(sig.getKey()), runtime.newFixnum(sig.getValue()));
         }
         names.op_aset(context, runtime.newString("EXIT"), runtime.newFixnum(0));
         return names;
     }
 
-    @JRubyMethod(required = 2, module = true)
+    @JRubyMethod(required = 2, meta = true)
     public static IRubyObject __jtrap_kernel(final IRubyObject recv, IRubyObject block, IRubyObject sig) {
         return SIGNALS.trap(recv, block, sig);
     }
 
-    @JRubyMethod(required = 1, module = true)
+    @JRubyMethod(required = 1, meta = true)
     public static IRubyObject __jtrap_platform_kernel(final IRubyObject recv, IRubyObject sig) {
         return SIGNALS.restorePlatformDefault(recv, sig);
     }
 
-    @JRubyMethod(required = 1, module = true)
+    @JRubyMethod(required = 1, meta = true)
     public static IRubyObject __jtrap_osdefault_kernel(final IRubyObject recv, IRubyObject sig) {
         return SIGNALS.restoreOSDefault(recv, sig);
     }
 
-    @JRubyMethod(required = 1, module = true)
+    @JRubyMethod(required = 1, meta = true)
     public static IRubyObject __jtrap_restore_kernel(final IRubyObject recv, IRubyObject sig) {
         return SIGNALS.ignore(recv, sig);
     }
 
-    @JRubyMethod(required = 1, module = true)
-    public static IRubyObject signame(ThreadContext context, final IRubyObject recv, IRubyObject sig) {
-        String signame = signo2signm(sig.convertToInteger().getLongValue());
+    @JRubyMethod(required = 1, meta = true)
+    public static IRubyObject signame(ThreadContext context, final IRubyObject recv, IRubyObject rubySig) {
+        long sig = rubySig.convertToInteger().getLongValue();
+        String signame = signo2signm(sig);
         if (signame == null) {
-            throw context.runtime.newArgumentError("invalid signal number: " + sig);
+            if(sig == 0) {
+                return RubyString.newString(context.runtime, "EXIT");
+            } else {
+                throw context.runtime.newArgumentError("invalid signal number: " + rubySig);
+            }
         }
         return context.runtime.newString(signame);
     }

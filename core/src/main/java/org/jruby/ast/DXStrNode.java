@@ -31,6 +31,7 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.ast;
 
+import org.jcodings.Encoding;
 import org.jruby.ast.types.ILiteralNode;
 import org.jruby.ast.visitor.NodeVisitor;
 import org.jruby.lexer.yacc.ISourcePosition;
@@ -43,6 +44,10 @@ public class DXStrNode extends DNode implements ILiteralNode {
     public DXStrNode(ISourcePosition position, DStrNode node) {
         super(position);
         addAll(node);
+    }
+
+    public DXStrNode(ISourcePosition position, Encoding encoding) {
+        super(position, encoding);
     }
     
     public DXStrNode(ISourcePosition position) {

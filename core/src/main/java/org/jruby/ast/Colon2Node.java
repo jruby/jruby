@@ -44,7 +44,7 @@ public abstract class Colon2Node extends Colon3Node implements INameNode {
     protected final Node leftNode;
 
     public Colon2Node(ISourcePosition position, Node leftNode, String name) {
-        super(position, name);
+        super(position, name, leftNode != null && leftNode.containsVariableAssignment);
         this.leftNode = leftNode;
     }
 

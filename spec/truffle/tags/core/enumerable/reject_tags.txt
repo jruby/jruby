@@ -1,3 +1,0 @@
-fails:Enumerable#reject returns an array of the elements for which block is false
-fails:Enumerable#reject returns an Enumerator if called without a block
-fails:Enumerable#reject gathers whole arrays as elements when each yields multiple

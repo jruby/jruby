@@ -1,8 +1,8 @@
 # Extensions to Java classes
 
-require 'jruby/java/java_ext/java.lang'
-require 'jruby/java/java_ext/java.util'
-require 'jruby/java/java_ext/java.util.regex'
-require 'jruby/java/java_ext/java.io'
-require 'jruby/java/java_ext/java.net'
-require 'jruby/java/java_ext/org.jruby.ast'
+# These are loads so they don't pollute LOADED_FEATURES
+load 'jruby/java/java_ext/java.lang.rb'
+load 'jruby/java/java_ext/java.util.rb'
+load 'jruby/java/java_ext/java.util.regex.rb'
+load 'jruby/java/java_ext/java.io.rb'
+load 'jruby/java/java_ext/java.net.rb'

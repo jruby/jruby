@@ -77,10 +77,10 @@ class TestGemCommandsSetupCommand < Gem::TestCase
 
   def test_show_release_notes
     @default_external = nil
-    capture_io do
-      @default_external, Encoding.default_external =
-        Encoding.default_external, Encoding::US_ASCII
-    end if Object.const_defined? :Encoding
+    if Object.const_defined? :Encoding
+      @default_external = @ui.outs.external_encoding
+      @ui.outs.set_encoding Encoding::US_ASCII
+    end
 
     @cmd.options[:previous_version] = Gem::Version.new '2.0.2'
 
@@ -111,6 +111,12 @@ class TestGemCommandsSetupCommand < Gem::TestCase
     end
 
     expected = <<-EXPECTED
+=== #{Gem::VERSION} / 2013-03-26
+
+* Bug fixes:
+  * Fixed release note display for LANG=C when installing rubygems
+  * π is tasty
+
 === 2.0.2 / 2013-03-06
 
 * Bug fixes:
@@ -118,11 +124,12 @@ class TestGemCommandsSetupCommand < Gem::TestCase
 
     EXPECTED
 
-    assert_equal expected, @ui.output
+    output = @ui.output
+    output.force_encoding Encoding::UTF_8 if Object.const_defined? :Encoding
+
+    assert_equal expected, output
   ensure
-    capture_io do
-      Encoding.default_external = @default_external
-    end if @default_external
+    @ui.outs.set_encoding @default_external if @default_external
   end
 
 end

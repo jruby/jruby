@@ -1,2 +1,0 @@
-fails:Bignum#to_f returns self converted to a Float
-fails:Bignum#to_f converts number close to Float::MAX without exceeding MAX or producing NaN

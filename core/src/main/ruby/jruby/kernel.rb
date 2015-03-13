@@ -20,10 +20,7 @@ unless JRuby.runtime.posix.native?
   end
 end
 
-require 'thread.jar'
-
 # These are loads so they don't pollute LOADED_FEATURES
-load 'jruby/kernel/thread.rb'
 load 'jruby/kernel/kernel.rb'
 load 'jruby/kernel/proc.rb'
 load 'jruby/kernel/process.rb'
@@ -36,5 +33,11 @@ load 'jruby/kernel/time.rb'
 load 'jruby/kernel/gc.rb'
 load 'jruby/kernel/range.rb'
 load 'jruby/kernel/load_error.rb'
+
+# From enc/prelude.rb in MRI
+begin
+  require 'unicode_normalize'
+rescue LoadError
+end
 
 load 'jruby/kernel/rubygems.rb' unless JRuby::CONFIG.rubygems_disabled?

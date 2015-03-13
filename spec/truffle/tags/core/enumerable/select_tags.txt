@@ -1,4 +1,1 @@
-fails:Enumerable#select returns all elements for which the block is not false
-fails:Enumerable#select returns an enumerator when no block given
 fails:Enumerable#select passes through the values yielded by #each_with_index
-fails:Enumerable#select gathers whole arrays as elements when each yields multiple

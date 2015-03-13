@@ -1,11 +1,8 @@
 fails:File.basename returns the basename of a path (basic cases)
 fails:File.basename returns the last component of the filename
-fails:File.basename returns an string
-fails:File.basename returns the basename for unix format
-fails:File.basename returns the basename for edge cases
-fails:File.basename ignores a trailing directory separator
-fails:File.basename returns the basename for unix suffix
-fails:File.basename raises a TypeError if the arguments are not String types
 fails:File.basename accepts an object that has a #to_path method
-fails:File.basename raises an ArgumentError if passed more than two arguments
 fails:File.basename returns the extension for a multibyte filename
+fails(windows):File.basename returns the basename for windows
+fails(windows):File.basename returns basename windows unc
+fails(windows):File.basename returns basename windows forward slash
+fails(windows):File.basename returns basename with windows suffix

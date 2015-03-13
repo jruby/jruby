@@ -394,3 +394,53 @@ describe "Module#define_method" do
     end
   end
 end
+
+describe "Method#define_method when passed a Method object" do
+  before :each do
+    @klass = Class.new do
+      def m(a, b, *c)
+        :m
+      end
+    end
+
+    @obj = @klass.new
+    m = @obj.method :m
+
+    @klass.class_exec do
+      define_method :n, m
+    end
+  end
+
+  it "defines a method with the same #arity as the original" do
+    @obj.method(:n).arity.should == @obj.method(:m).arity
+  end
+
+  it "defines a method with the same #parameters as the original" do
+    @obj.method(:n).parameters.should == @obj.method(:m).parameters
+  end
+end
+
+describe "Method#define_method when passed an UnboundMethod object" do
+  before :each do
+    @klass = Class.new do
+      def m(a, b, *c)
+        :m
+      end
+    end
+
+    @obj = @klass.new
+    m = @klass.instance_method :m
+
+    @klass.class_exec do
+      define_method :n, m
+    end
+  end
+
+  it "defines a method with the same #arity as the original" do
+    @obj.method(:n).arity.should == @obj.method(:m).arity
+  end
+
+  it "defines a method with the same #parameters as the original" do
+    @obj.method(:n).parameters.should == @obj.method(:m).parameters
+  end
+end

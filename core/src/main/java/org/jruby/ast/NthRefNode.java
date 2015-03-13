@@ -47,7 +47,7 @@ public class NthRefNode extends Node {
     private final DefinedMessage definedMessage;
 
     public NthRefNode(ISourcePosition position, int matchNumber) {
-        super(position);
+        super(position, false);
         this.matchNumber = matchNumber;
         this.definedMessage = DefinedMessage.byText("$" + matchNumber);
     }

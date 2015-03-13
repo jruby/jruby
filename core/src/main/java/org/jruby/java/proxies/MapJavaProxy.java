@@ -86,10 +86,12 @@ public class MapJavaProxy extends ConcreteJavaProxy {
         }
         // (JavaProxy)recv).getObject() might raise exception when
         // wrong number of args are given to the constructor.
+        IRubyObject oldExc = getRuntime().getGlobalVariables().get("$!"); // Save $!
         try {
             wrappedMap.setSize(((Map)((JavaProxy)this).getObject()).size());
         } catch (RaiseException e) {
             wrappedMap.setSize(0);
+            getRuntime().getGlobalVariables().set("$!", oldExc); // Restore $!
         }
         return wrappedMap;
     }
@@ -448,14 +450,6 @@ public class MapJavaProxy extends ConcreteJavaProxy {
     @JRubyMethod(name = "key")
     public IRubyObject key(ThreadContext context, IRubyObject expected) {
         return getOrCreateRubyHashMap().key(context, expected);
-    }
-
-    /** rb_hash_indexes
-     *
-     */
-    @JRubyMethod(name = {"indexes", "indices"}, rest = true)
-    public RubyArray indices(ThreadContext context, IRubyObject[] indices) {
-        return getOrCreateRubyHashMap().indices(context, indices);
     }
 
     /** rb_hash_keys

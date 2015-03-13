@@ -1,7 +1,4 @@
 fails:String#to_f treats leading characters of self as a floating point number
 fails:String#to_f treats special float value strings as characters
 fails:String#to_f allows for underscores, even in the decimal side
-fails:String#to_f returns 0 for strings with any non-digit in them
-fails:String#to_f returns 0 for strings with leading underscores
 fails:String#to_f takes an optional sign
-fails:String#to_f returns 0.0 if the conversion fails

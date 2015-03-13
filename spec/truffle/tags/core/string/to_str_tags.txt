@@ -1,3 +1,0 @@
-fails:String#to_str returns self when self.class == String
-fails:String#to_str returns a new instance of String when called on a subclass
-fails:String#to_str taints the result when self is tainted

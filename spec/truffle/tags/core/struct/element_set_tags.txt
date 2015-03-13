@@ -1,2 +1,0 @@
-fails:Struct#[]= assigns the passed value
-fails:Struct#[]= fails when trying to assign attributes which don't exist

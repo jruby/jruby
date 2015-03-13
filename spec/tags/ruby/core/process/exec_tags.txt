@@ -9,3 +9,4 @@ fails:Process.exec with a command array uses the first element as the command na
 fails:Process.exec with a command array coerces the argument using to_ary
 fails:Process.exec (environment variables) unsets other environment variables when given a true :unsetenv_others option
 fails:Process.exec with a command array raises an ArgumentError if the Array does not have exactly two elements
+fails:Process.exec with an options Hash with Integer option keys maps the key to a file descriptor in the child that inherits the file descriptor from the parent specified by the value

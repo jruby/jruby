@@ -123,7 +123,7 @@ public class CompiledBlock extends ContextAwareBlockBody {
         // SSS FIXME: This is now being done unconditionally compared to if (klass == null) earlier
         self = prepareSelf(binding);
 
-        IRubyObject[] preppedArgs = RubyProc.prepareArgs(context, type, arity, args);
+        IRubyObject[] preppedArgs = RubyProc.prepareArgs(context, type, this, args);
         RubyArray value = context.runtime.newArrayNoCopyLight(preppedArgs);
         IRubyObject realArg = setupBlockArgs(context, value, self);
         Visibility oldVis = binding.getFrame().getVisibility();

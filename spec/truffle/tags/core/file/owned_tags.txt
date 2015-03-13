@@ -1,4 +1,3 @@
-fails:File.owned? accepts an object that has a #to_path method
 fails:File.owned? returns false if file does not exist
 fails:File.owned? returns true if the file exist and is owned by the user
 fails:File.owned? returns false when the file is not owned by the user

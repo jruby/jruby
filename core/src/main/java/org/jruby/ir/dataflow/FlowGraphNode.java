@@ -1,9 +1,9 @@
 package org.jruby.ir.dataflow;
 
+import org.jruby.dirgra.Edge;
 import org.jruby.ir.instructions.Instr;
 import org.jruby.ir.representations.BasicBlock;
 import org.jruby.ir.representations.CFG;
-import org.jruby.ir.util.Edge;
 
 import java.util.BitSet;
 import java.util.List;
@@ -21,8 +21,8 @@ public abstract class FlowGraphNode<T extends DataFlowProblem<T, U>, U extends F
         this.problem = problem;
         this.basicBlock = basicBlock;
 
-        // FIXME: Enebo: Does this really needed to be calculaed here?  Can analysis change this value?
-        rescuer = problem.getScope().cfg().getRescuerBBFor(basicBlock);
+        // Cache the rescuer node for easy access
+        rescuer = problem.getScope().getCFG().getRescuerBBFor(basicBlock);
     }
 
     /**

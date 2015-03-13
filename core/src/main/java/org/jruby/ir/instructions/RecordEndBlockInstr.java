@@ -2,35 +2,31 @@ package org.jruby.ir.instructions;
 
 import org.jruby.ir.*;
 import org.jruby.ir.operands.Operand;
-import org.jruby.ir.transformations.inlining.InlinerInfo;
+import org.jruby.ir.operands.WrappedIRClosure;
+import org.jruby.ir.persistence.IRWriterEncoder;
+import org.jruby.ir.runtime.IRRuntimeHelpers;
+import org.jruby.ir.transformations.inlining.CloneInfo;
+import org.jruby.parser.StaticScope;
+import org.jruby.runtime.Block;
+import org.jruby.runtime.DynamicScope;
+import org.jruby.runtime.ThreadContext;
+import org.jruby.runtime.builtin.IRubyObject;
 
 public class RecordEndBlockInstr extends Instr implements FixedArityInstr {
     private final IRScope declaringScope;
-    private final IRClosure endBlockClosure;
 
-    public RecordEndBlockInstr(IRScope declaringScope, IRClosure endBlockClosure) {
-        super(Operation.RECORD_END_BLOCK);
+    public RecordEndBlockInstr(IRScope declaringScope, WrappedIRClosure endBlockClosure) {
+        super(Operation.RECORD_END_BLOCK, new Operand[] { endBlockClosure });
 
         this.declaringScope = declaringScope;
-        this.endBlockClosure = endBlockClosure;
     }
 
     public IRScope getDeclaringScope() {
         return declaringScope;
     }
 
-    public IRClosure getEndBlockClosure() {
-        return endBlockClosure;
-    }
-
-    @Override
-    public Operand[] getOperands() {
-        return EMPTY_OPERANDS;
-    }
-
-    @Override
-    public String toString() {
-        return getOperation().toString() + "(" + endBlockClosure.getName() + ")";
+    public WrappedIRClosure getEndBlockClosure() {
+        return (WrappedIRClosure) operands[0];
     }
 
     @Override
@@ -40,13 +36,23 @@ public class RecordEndBlockInstr extends Instr implements FixedArityInstr {
     }
 
     @Override
-    public Instr cloneForInlining(InlinerInfo ii) {
+    public Instr clone(CloneInfo ii) {
         // SSS FIXME: Correct in all situations??
-        return new RecordEndBlockInstr(declaringScope, endBlockClosure);
+        return new RecordEndBlockInstr(declaringScope, (WrappedIRClosure) getEndBlockClosure().cloneForInlining(ii));
     }
 
-    public void interpret() {
-        declaringScope.getTopLevelScope().recordEndBlock(endBlockClosure);
+    @Override
+    public void encode(IRWriterEncoder e) {
+        super.encode(e);
+        e.encode(getDeclaringScope());
+        e.encode(getEndBlockClosure());
+    }
+
+    @Override
+    public Object interpret(ThreadContext context, StaticScope currScope, DynamicScope currDynScope, IRubyObject self, Object[] temp) {
+        Block blk = (Block) getEndBlockClosure().retrieve(context, self, currScope, context.getCurrentScope(), temp);
+        IRRuntimeHelpers.pushExitBlock(context, blk);
+        return null;
     }
 
     @Override

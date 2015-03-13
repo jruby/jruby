@@ -1,2 +1,0 @@
-fails:Struct#inspect returns a string representation of some kind
-fails:Struct#inspect returns a string representation without the class name for anonymous structs

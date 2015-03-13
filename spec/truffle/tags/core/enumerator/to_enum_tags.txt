@@ -1,6 +1,2 @@
-fails:#to_enum is defined in Kernel
-fails:#to_enum returns a new enumerator
-fails:#to_enum defaults the first argument to :each
-fails:#to_enum exposes multi-arg yields as an array
 fails:#to_enum uses the passed block's value to calculate the size of the enumerator
 fails:#to_enum defers the evaluation of the passed block until #size is called

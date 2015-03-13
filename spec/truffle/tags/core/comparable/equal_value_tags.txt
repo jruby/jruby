@@ -1,2 +1,0 @@
-fails:Comparable#== when calling #<=> on self raises an Exception raises the error if #<=> raises an Exception that excluding StandardError
-fails:Comparable#== calls #<=> on self with other and returns true if #<=> returns 0.0

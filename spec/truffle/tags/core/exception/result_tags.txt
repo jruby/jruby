@@ -1,2 +1,0 @@
-fails:StopIteration is a subclass of IndexError
-fails:StopIteration#result returns the method-returned-object from an Enumerator

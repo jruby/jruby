@@ -1,4 +1,0 @@
-fails:Struct#each_pair passes each key value pair to the given block
-fails:Struct#each_pair returns self if passed a block
-fails:Struct#each_pair returns an Enumerator if not passed a block
-fails:Struct#each_pair does not override the instance accessor method

@@ -1,35 +1,9 @@
-fails:Module#const_get accepts a String or Symbol name
-fails:Module#const_get raises a NameError if no constant is defined in the search path
 fails:Module#const_get raises a NameError with the not found constant symbol
-fails:Module#const_get raises a NameError if the name does not start with a capital letter
-fails:Module#const_get raises a NameError if the name starts with a non-alphabetic character
-fails:Module#const_get raises a NameError if the name contains non-alphabetic characters except '_'
 fails:Module#const_get calls #to_str to convert the given name to a String
 fails:Module#const_get raises a TypeError if conversion to a String by calling #to_str fails
-fails:Module#const_get calls #const_missing on the receiver if unable to locate the constant
-fails:Module#const_get does not search the singleton class of a Class or Module
-fails:Module#const_get does not search the containing scope
-fails:Module#const_get raises a NameError if the constant is defined in the receiver's supperclass and the inherit flag is false
 fails:Module#const_get searches into the receiver superclasses if the inherit flag is true
-fails:Module#const_get raises a NameError when the receiver is a Module, the constant is defined at toplevel and the inherit flag is false
-fails:Module#const_get raises a NameError when the receiver is a Class, the constant is defined at toplevel and the inherit flag is false
 fails:Module#const_get accepts a toplevel scope qualifier
 fails:Module#const_get accepts a scoped constant name
-fails:Module#const_get raises a NameError if only '::' is passed
-fails:Module#const_get raises a NameError if a Symbol has a toplevel scope qualifier
-fails:Module#const_get raises a NameError if a Symbol is a scoped constant name
-fails:Module#const_get with statically assigned constants searches the immediate class or module first
-fails:Module#const_get with statically assigned constants searches a module included in the immediate class before the superclass
-fails:Module#const_get with statically assigned constants searches the superclass before a module included in the superclass
-fails:Module#const_get with statically assigned constants searches a module included in the superclass
-fails:Module#const_get with statically assigned constants searches the superclass chain
-fails:Module#const_get with statically assigned constants returns a toplevel constant when the receiver is a Class
-fails:Module#const_get with statically assigned constants returns a toplevel constant when the receiver is a Module
-fails:Module#const_get with dynamically assigned constants searches the immediate class or module first
-fails:Module#const_get with dynamically assigned constants searches a module included in the immediate class before the superclass
-fails:Module#const_get with dynamically assigned constants searches the superclass before a module included in the superclass
-fails:Module#const_get with dynamically assigned constants searches a module included in the superclass
-fails:Module#const_get with dynamically assigned constants searches the superclass chain
-fails:Module#const_get with dynamically assigned constants returns a toplevel constant when the receiver is a Class
-fails:Module#const_get with dynamically assigned constants returns a toplevel constant when the receiver is a Module
-fails:Module#const_get with dynamically assigned constants returns the updated value of a constant
+fails:Module#const_get raises a NameError if the constant is defined in the receiver's supperclass and the inherit flag is false
+fails:Module#const_get raises a NameError when the receiver is a Module, the constant is defined at toplevel and the inherit flag is false
+fails:Module#const_get raises a NameError when the receiver is a Class, the constant is defined at toplevel and the inherit flag is false

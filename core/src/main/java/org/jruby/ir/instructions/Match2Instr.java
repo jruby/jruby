@@ -6,47 +6,28 @@ import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Operation;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.Variable;
-import org.jruby.ir.transformations.inlining.InlinerInfo;
+import org.jruby.ir.persistence.IRWriterEncoder;
+import org.jruby.ir.transformations.inlining.CloneInfo;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
-import java.util.Map;
-
 import static org.jruby.ir.IRFlags.USES_BACKREF_OR_LASTLINE;
 
-public class Match2Instr extends Instr implements ResultInstr, FixedArityInstr {
-    private Variable result;
-    private Operand receiver;
-    private Operand arg;
-
+public class Match2Instr extends ResultBaseInstr implements FixedArityInstr {
     public Match2Instr(Variable result, Operand receiver, Operand arg) {
-        super(Operation.MATCH2);
+        super(Operation.MATCH2, result, new Operand[]{receiver, arg});
 
-        assert result != null: "Match2Instr result is null";
-
-        this.result = result;
-        this.receiver = receiver;
-        this.arg = arg;
-    }
-
-    @Override
-    public Operand[] getOperands() {
-        return new Operand[] { receiver, arg };
-    }
-
-    public Operand getArg() {
-        return arg;
+        assert result != null : "Match2Instr result is null";
     }
 
     public Operand getReceiver() {
-        return receiver;
+        return operands[0];
     }
 
-    @Override
-    public String toString() {
-        return super.toString() + "(" + receiver + ", " + arg + ")";
+    public Operand getArg() {
+        return operands[1];
     }
 
     @Override
@@ -58,31 +39,22 @@ public class Match2Instr extends Instr implements ResultInstr, FixedArityInstr {
     }
 
     @Override
-    public void simplifyOperands(Map<Operand, Operand> valueMap, boolean force) {
-        receiver = receiver.getSimplifiedOperand(valueMap, force);
-        arg = arg.getSimplifiedOperand(valueMap, force);
-    }
-
-    @Override
-    public Variable getResult() {
-        return result;
-    }
-
-    @Override
-    public void updateResult(Variable v) {
-        this.result = v;
-    }
-
-    @Override
-    public Instr cloneForInlining(InlinerInfo ii) {
+    public Instr clone(CloneInfo ii) {
         return new Match2Instr((Variable) result.cloneForInlining(ii),
-                receiver.cloneForInlining(ii), arg.cloneForInlining(ii));
+                getReceiver().cloneForInlining(ii), getArg().cloneForInlining(ii));
+    }
+
+    @Override
+    public void encode(IRWriterEncoder e) {
+        super.encode(e);
+        e.encode(getReceiver());
+        e.encode(getArg());
     }
 
     @Override
     public Object interpret(ThreadContext context, StaticScope currScope, DynamicScope currDynScope, IRubyObject self, Object[] temp) {
-        RubyRegexp regexp = (RubyRegexp) receiver.retrieve(context, self, currScope, currDynScope, temp);
-        IRubyObject argValue = (IRubyObject) arg.retrieve(context, self, currScope, currDynScope, temp);
+        RubyRegexp regexp = (RubyRegexp) getReceiver().retrieve(context, self, currScope, currDynScope, temp);
+        IRubyObject argValue = (IRubyObject) getArg().retrieve(context, self, currScope, currDynScope, temp);
         return regexp.op_match19(context, argValue);
     }
 

@@ -108,7 +108,7 @@ describe "#resolve_ruby_exe" do
   it "returns the value returned by #ruby_exe_options if it exists and is executable" do
     PlatformGuard.stub!(:windows?).and_return(false)
     @script.should_receive(:ruby_exe_options).and_return(@name)
-    File.should_receive(:exists?).with(@name).and_return(true)
+    File.should_receive(:exist?).with(@name).and_return(true)
     File.should_receive(:executable?).with(@name).and_return(true)
     File.should_receive(:expand_path).with(@name).and_return(@name)
     @script.resolve_ruby_exe.should == @name
@@ -117,7 +117,7 @@ describe "#resolve_ruby_exe" do
   it "returns the value returned by #ruby_exe_options if it exists on Windows platforms" do
     PlatformGuard.stub!(:windows?).and_return(true)
     @script.should_receive(:ruby_exe_options).and_return(@name)
-    File.should_receive(:exists?).with(@name).and_return(true)
+    File.should_receive(:exist?).with(@name).and_return(true)
     File.should_not_receive(:executable?)
     File.should_receive(:expand_path).with(@name).and_return(@name)
     @script.resolve_ruby_exe.should == @name
@@ -126,14 +126,14 @@ describe "#resolve_ruby_exe" do
   it "expands the path portion of the result of #ruby_exe_options" do
     PlatformGuard.stub!(:windows?).and_return(false)
     @script.should_receive(:ruby_exe_options).and_return("#{@name} -Xfoo")
-    File.should_receive(:exists?).with(@name).and_return(true)
+    File.should_receive(:exist?).with(@name).and_return(true)
     File.should_receive(:executable?).with(@name).and_return(true)
     File.should_receive(:expand_path).with(@name).and_return("/usr/bin/#{@name}")
     @script.resolve_ruby_exe.should == "/usr/bin/#{@name} -Xfoo"
   end
 
   it "returns nil if no exe is found" do
-    File.should_receive(:exists?).at_least(:once).and_return(false)
+    File.should_receive(:exist?).at_least(:once).and_return(false)
     @script.resolve_ruby_exe.should be_nil
   end
 end
@@ -162,23 +162,23 @@ describe Object, "#ruby_cmd" do
   end
 
   it "returns a command that runs the given file if it is a file that exists" do
-    File.should_receive(:exists?).with(@file).and_return(true)
+    File.should_receive(:exist?).with(@file).and_return(true)
     @script.ruby_cmd(@file).should == "ruby_spec_exe -w -Q some/ruby/file.rb"
   end
 
   it "includes the given options and arguments with a file" do
-    File.should_receive(:exists?).with(@file).and_return(true)
+    File.should_receive(:exist?).with(@file).and_return(true)
     @script.ruby_cmd(@file, :options => "-w -Cdir", :args => "< file.txt").should ==
       "ruby_spec_exe -w -Q -w -Cdir some/ruby/file.rb < file.txt"
   end
 
   it "returns a command that runs code using -e" do
-    File.should_receive(:exists?).with(@code).and_return(false)
+    File.should_receive(:exist?).with(@code).and_return(false)
     @script.ruby_cmd(@code).should == %(ruby_spec_exe -w -Q -e "some \\"real\\" 'ruby' code")
   end
 
   it "includes the given options and arguments with -e" do
-    File.should_receive(:exists?).with(@code).and_return(false)
+    File.should_receive(:exist?).with(@code).and_return(false)
     @script.ruby_cmd(@code, :options => "-W0 -Cdir", :args => "< file.txt").should ==
       %(ruby_spec_exe -w -Q -W0 -Cdir -e "some \\"real\\" 'ruby' code" < file.txt)
   end

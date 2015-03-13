@@ -1,5 +1,6 @@
 package org.jruby.util;
 
+import jnr.constants.platform.Errno;
 import jnr.posix.FileStat;
 import jnr.posix.POSIX;
 import org.jruby.util.io.ModeFlags;
@@ -7,7 +8,7 @@ import java.io.InputStream;
 
 import java.nio.channels.Channel;
 
-class EmptyFileResource implements FileResource {
+public class EmptyFileResource implements FileResource {
     // All empty resources are the same and immutable, so may as well
     // cache the instance
     private static final EmptyFileResource INSTANCE = new EmptyFileResource();
@@ -32,6 +33,10 @@ class EmptyFileResource implements FileResource {
         return false;
     }
 
+    public int errno() {
+        return Errno.ENOENT.intValue();
+    }
+
     @Override
     public boolean isDirectory() {
         return false;
@@ -39,6 +44,11 @@ class EmptyFileResource implements FileResource {
 
     @Override
     public boolean isFile() {
+        return false;
+    }
+
+    @Override
+    public boolean canExecute() {
         return false;
     }
 
@@ -91,8 +101,8 @@ class EmptyFileResource implements FileResource {
     }
 
     @Override
-    public InputStream openInputStream() {
-      return null;
+    public InputStream inputStream() throws ResourceException {
+        throw new ResourceException.NotFound("");
     }
 
     @Override

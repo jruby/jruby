@@ -194,7 +194,7 @@ class TestSuper < Test::Unit::TestCase
         end
       end
       overlaid.call(str = "123")
-      overlaid.call(ary = [1,2,3])
+      overlaid.call([1,2,3])
       str.reverse
     end
 
@@ -318,7 +318,6 @@ class TestSuper < Test::Unit::TestCase
     }
     sub_class = EnvUtil.labeled_class("Sub\u{30af 30e9 30b9}", super_class) {
       def foo
-        x = Object.new
         lambda { super() }
       end
     }
@@ -493,5 +492,38 @@ class TestSuper < Test::Unit::TestCase
       o.foo(result)
     end
     assert_equal(%w[B A], result, bug9721)
+  end
+
+  def test_from_eval
+    bug10263 = '[ruby-core:65122] [Bug #10263a]'
+    a = Class.new do
+      def foo
+        "A"
+      end
+    end
+    b = Class.new(a) do
+      def foo
+        binding.eval("super")
+      end
+    end
+    assert_equal("A", b.new.foo, bug10263)
+  end
+
+  def test_super_with_block
+    a = Class.new do
+      def foo
+        yield
+      end
+    end
+
+    b = Class.new(a) do
+      def foo
+        super{
+          "b"
+        }
+      end
+    end
+
+    assert_equal "b", b.new.foo{"c"}
   end
 end

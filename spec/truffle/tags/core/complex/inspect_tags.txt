@@ -1,2 +1,0 @@
-fails:Complex#inspect returns (${real}+${image}i) for positive imaginary parts
-fails:Complex#inspect returns (${real}-${image}i) for negative imaginary parts

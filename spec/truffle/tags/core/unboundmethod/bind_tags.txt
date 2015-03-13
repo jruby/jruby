@@ -1,7 +1,2 @@
 fails:UnboundMethod#bind raises TypeError if object is not kind_of? the Module the method defined in
-fails:UnboundMethod#bind returns Method for any object that is kind_of? the Module method was extracted from
-fails:UnboundMethod#bind returns Method on any object when UnboundMethod is unbound from a module
-fails:UnboundMethod#bind Method returned for obj is equal to one directly returned by obj.method
-fails:UnboundMethod#bind returns a callable method
-fails:UnboundMethod#bind binds a Parent's class method to any Child's class methods
 fails:UnboundMethod#bind will raise when binding a an object singleton's method to another object

@@ -1,6 +1,5 @@
 fails:Array#slice! removes and return the element at index
 fails:Array#slice! removes and returns length elements beginning at start
-fails:Array#slice! properly handles recursive arrays
 fails:Array#slice! calls to_int on start and length arguments
 fails:Array#slice! removes and return elements in range
 fails:Array#slice! removes and returns elements in end-exclusive ranges
@@ -9,50 +8,3 @@ fails:Array#slice! returns last element for consecutive calls at zero index
 fails:Array#slice! does not expand array with indices out of bounds
 fails:Array#slice! does not expand array with negative indices out of bounds
 fails:Array#slice! raises a RuntimeError on a frozen array
-fails:Array#slice returns the element at index with [index]
-fails:Array#slice returns the element at index from the end of the array with [-index]
-fails:Array#slice returns count elements starting from index with [index, count]
-fails:Array#slice returns count elements starting at index from the end of array with [-index, count]
-fails:Array#slice returns the first count elements with [0, count]
-fails:Array#slice returns the subarray which is independent to self with [index,count]
-fails:Array#slice tries to convert the passed argument to an Integer using #to_int
-fails:Array#slice returns the elements specified by Range indexes with [m..n]
-fails:Array#slice returns elements specified by Range indexes except the element at index n with [m...n]
-fails:Array#slice returns elements that exist if range start is in the array but range end is not with [m..n]
-fails:Array#slice accepts Range instances having a negative m and both signs for n with [m..n] and [m...n]
-fails:Array#slice returns the subarray which is independent to self with [m..n]
-fails:Array#slice tries to convert Range elements to Integers using #to_int with [m..n] and [m...n]
-fails:Array#slice returns the same elements as [m..n] and [m...n] with Range subclasses
-fails:Array#slice returns nil for a requested index not in the array with [index]
-fails:Array#slice returns [] if the index is valid but length is zero with [index, length]
-fails:Array#slice returns nil if length is zero but index is invalid with [index, length]
-fails:Array#slice returns [] if index == array.size with [index, length]
-fails:Array#slice returns nil if index > array.size with [index, length]
-fails:Array#slice returns nil if length is negative with [index, length]
-fails:Array#slice returns nil if no requested index is in the array with [m..n]
-fails:Array#slice returns nil if range start is not in the array with [m..n]
-fails:Array#slice returns an empty array when m == n with [m...n]
-fails:Array#slice returns an empty array with [0...0]
-fails:Array#slice returns a subarray where m, n negatives and m < n with [m..n]
-fails:Array#slice returns an array containing the first element with [0..0]
-fails:Array#slice returns the entire array with [0..-1]
-fails:Array#slice returns all but the last element with [0...-1]
-fails:Array#slice returns [3] for [2..-1] out of [1, 2, 3]
-fails:Array#slice returns an empty array when m > n and m, n are positive with [m..n]
-fails:Array#slice returns an empty array when m > n and m, n are negative with [m..n]
-fails:Array#slice does not expand array when the indices are outside of the array bounds
-fails:Array#slice raises a RangeError when the start index is out of range of Fixnum
-fails:Array#slice raises a RangeError when the length is out of range of Fixnum
-fails:Array#slice with a subclass of Array returns a subclass instance with [n, m]
-fails:Array#slice with a subclass of Array returns a subclass instance with [-n, m]
-fails:Array#slice with a subclass of Array returns a subclass instance with [n..m]
-fails:Array#slice with a subclass of Array returns a subclass instance with [n...m]
-fails:Array#slice with a subclass of Array returns a subclass instance with [-n..-m]
-fails:Array#slice with a subclass of Array returns a subclass instance with [-n...-m]
-fails:Array#slice with a subclass of Array returns an empty array when m == n with [m...n]
-fails:Array#slice with a subclass of Array returns an empty array with [0...0]
-fails:Array#slice with a subclass of Array returns an empty array when m > n and m, n are positive with [m..n]
-fails:Array#slice with a subclass of Array returns an empty array when m > n and m, n are negative with [m..n]
-fails:Array#slice with a subclass of Array returns [] if index == array.size with [index, length]
-fails:Array#slice with a subclass of Array returns [] if the index is valid but length is zero with [index, length]
-fails:Array#slice with a subclass of Array does not call #initialize on the subclass instance

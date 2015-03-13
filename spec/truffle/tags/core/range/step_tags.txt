@@ -1,8 +1,6 @@
 fails:Range#step returns an enumerator when no block is given
 fails:Range#step returns self
-fails:Range#step raises TypeError if step
 fails:Range#step calls #to_int to coerce step to an Integer
-fails:Range#step raises a TypeError if step does not respond to #to_int
 fails:Range#step raises a TypeError if #to_int does not return an Integer
 fails:Range#step coerces the argument to integer by invoking to_int
 fails:Range#step raises a TypeError if the first element does not respond to #succ

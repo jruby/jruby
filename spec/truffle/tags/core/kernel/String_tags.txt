@@ -1,25 +1,10 @@
-fails:Kernel.String converts nil to a String
-fails:Kernel.String converts a Float to a String
-fails:Kernel.String converts a boolean to a String
-fails:Kernel.String converts a constant to a String
-fails:Kernel.String calls #to_s to convert an arbitrary object to a String
 fails:Kernel.String raises a TypeError if #to_s does not exist
 fails:Kernel.String raises a TypeError if respond_to? returns false for #to_s
 fails:Kernel.String raises a TypeError if #to_s is not defined, even though #respond_to?(:to_s) returns true
 fails:Kernel.String calls #to_s if #respond_to?(:to_s) returns true
 fails:Kernel.String raises a TypeError if #to_s does not return a String
-fails:Kernel.String returns the same object if it is already a String
-fails:Kernel.String returns the same object if it is an instance of a String subclass
-fails:Kernel#String converts nil to a String
-fails:Kernel#String converts a Float to a String
-fails:Kernel#String converts a boolean to a String
-fails:Kernel#String converts a constant to a String
-fails:Kernel#String calls #to_s to convert an arbitrary object to a String
 fails:Kernel#String raises a TypeError if #to_s does not exist
 fails:Kernel#String raises a TypeError if respond_to? returns false for #to_s
 fails:Kernel#String raises a TypeError if #to_s is not defined, even though #respond_to?(:to_s) returns true
 fails:Kernel#String calls #to_s if #respond_to?(:to_s) returns true
 fails:Kernel#String raises a TypeError if #to_s does not return a String
-fails:Kernel#String returns the same object if it is already a String
-fails:Kernel#String returns the same object if it is an instance of a String subclass
-fails:Kernel#String is a private method

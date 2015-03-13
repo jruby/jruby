@@ -2,6 +2,7 @@ package org.jruby.ir.operands;
 
 import org.jruby.RubyRegexp;
 import org.jruby.ir.IRVisitor;
+import org.jruby.ir.persistence.IRWriterEncoder;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
@@ -40,6 +41,12 @@ public class Backref extends Reference {
     @Override
     public void visit(IRVisitor visitor) {
         visitor.Backref(this);
+    }
+
+    @Override
+    public void encode(IRWriterEncoder e) {
+        super.encode(e);
+        e.encode(type);
     }
 
     @Override

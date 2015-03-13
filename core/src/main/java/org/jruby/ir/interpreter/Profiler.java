@@ -1,7 +1,7 @@
 package org.jruby.ir.interpreter;
 
 import org.jruby.RubyModule;
-import org.jruby.internal.runtime.methods.InterpretedIRMethod;
+import org.jruby.internal.runtime.methods.MixedModeIRMethod;
 import org.jruby.ir.*;
 import org.jruby.ir.instructions.CallBase;
 import org.jruby.ir.instructions.Instr;
@@ -19,9 +19,9 @@ public class Profiler {
         int      v; // scope version
         CallBase call;
         long     count;
-        InterpretedIRMethod tgtM;
+        MixedModeIRMethod tgtM;
 
-        public IRCallSite() { }
+        public IRCallSite() {}
 
         public IRCallSite(IRCallSite cs) {
             this.s     = cs.s;
@@ -86,7 +86,7 @@ public class Profiler {
             IRCallSite      cs  = csp.cs;
 
             if (cs.v != scopeVersionMap.get(cs.s).intValue()) {
-                // System.out.println("Skipping callsite: <" + cs.s + "," + cs.v + "> with compiled version: " + scopeVersionMap.get(cs.s));
+                System.out.println("Skipping callsite: <" + cs.s + "," + cs.v + "> with compiled version: " + scopeVersionMap.get(cs.s));
                 continue;
             }
 
@@ -111,12 +111,12 @@ public class Profiler {
                     CachingCallSite ccs = (CachingCallSite)runtimeCS;
                     CacheEntry ce = ccs.getCache();
 
-                    if (!(ce.method instanceof InterpretedIRMethod)) {
+                    if (!(ce.method instanceof MixedModeIRMethod)) {
                         // System.out.println("NOT IR-M!");
                         continue;
                     } else {
                         callSites.add(cs);
-                        cs.tgtM = (InterpretedIRMethod)ce.method;
+                        cs.tgtM = (MixedModeIRMethod)ce.method;
                     }
                 }
             }
@@ -149,8 +149,8 @@ public class Profiler {
             // This check is arbitrary
             if (i == 100 || freq > 99.0) break;
 
-            // System.out.println("Considering: " + ircs.call + " with id: " + ircs.call.callSiteId +
-            // " in scope " + ircs.s + " with count " + ircs.count + "; contrib " + contrib + "; freq: " + freq);
+            System.out.println("Considering: " + ircs.call + " with id: " + ircs.call.callSiteId +
+            " in scope " + ircs.s + " with count " + ircs.count + "; contrib " + contrib + "; freq: " + freq);
 
             // Now inline here!
             CallBase call = ircs.call;
@@ -162,12 +162,12 @@ public class Profiler {
 
             IRScope tgtMethod = ircs.tgtM.getIRMethod();
 
-            Instr[] instrs = tgtMethod.getInstrsForInterpretation();
+            Instr[] instrs = tgtMethod.getInterpreterContext().getInstructions();
             // Dont inline large methods -- 500 is arbitrary
             // Can be null if a previously inlined method hasn't been rebuilt
             if ((instrs == null) || instrs.length > 500) {
-                // if (instrs == null) System.out.println("no instrs!");
-                // else System.out.println("large method with " + instrs.length + " instrs. skipping!");
+                if (instrs == null) System.out.println("no instrs!");
+                else System.out.println("large method with " + instrs.length + " instrs. skipping!");
                 continue;
             }
 
@@ -179,7 +179,7 @@ public class Profiler {
                 Operand clArg = call.getClosureArg(null);
                 inlineCall = (clArg instanceof WrappedIRClosure) && (((WrappedIRClosure)clArg).getClosure() == hc);
             }
-
+/*
             if (inlineCall) {
                 noInlining = false;
                 long start = new java.util.Date().getTime();
@@ -194,6 +194,7 @@ public class Profiler {
             } else {
                 //System.out.println("--no inlining--");
             }
+*/
         }
 
         for (IRScope x: inlinedScopes) {
@@ -228,8 +229,8 @@ public class Profiler {
                 if (bden == 0) bden = 1;
 
                 // Use estimated instr count to order scopes -- rather than raw thread-poll count
-                float aCount = scopeThreadPollCounts.get(a).count * (1.0f * a.getInstrsForInterpretation().length/aden);
-                float bCount = scopeThreadPollCounts.get(b).count * (1.0f * b.getInstrsForInterpretation().length/bden);
+                float aCount = scopeThreadPollCounts.get(a).count * (1.0f * a.getInterpreterContext().getInstructions().length/aden);
+                float bCount = scopeThreadPollCounts.get(b).count * (1.0f * b.getInterpreterContext().getInstructions().length/bden);
                 if (aCount == bCount) return 0;
                 return (aCount < bCount) ? 1 : -1;
             }
@@ -277,6 +278,8 @@ public class Profiler {
     }
 
     public static Integer initProfiling(IRScope scope) {
+        if (scope == null) return null;
+
         /* SSS: Not being used currently
         tpCount = scopeThreadPollCounts.get(scope);
         if (tpCount == null) {
@@ -311,6 +314,8 @@ public class Profiler {
     }
 
     public static void updateCallSite(Instr instr, IRScope scope, Integer scopeVersion) {
+        if (scope == null) return;
+
         if (instr instanceof CallBase) {
             callerSite.s = scope;
             callerSite.v = scopeVersion;
@@ -319,8 +324,7 @@ public class Profiler {
     }
 
     public static void clockTick() {
-        // SSS: Not being used currently
-        // tpCount.count++;
+        // tpCount.count++; // SSS: Not being used currently
         globalThreadPollCount++;
 
         // 20K is arbitrary

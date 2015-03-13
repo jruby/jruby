@@ -83,8 +83,8 @@ public class PosixShim {
         try {
             if (nonblock) {
                 // TODO: figure out what nonblocking writes against atypical streams (files?) actually do
-                // Ff we can't set the channel nonblocking, I'm not sure what we can do to
-                // pretend the channel is blocking.
+                // If we can't set the channel nonblocking, I'm not sure what we can do to
+                // pretend the channel is nonblocking.
             }
 
             int written = fd.chWrite.write(tmp);
@@ -127,6 +127,8 @@ public class PosixShim {
                             errno = Errno.EAGAIN;
                             return -1;
                         }
+                    } else if (fd.chNative != null && fd.isNativeFile) {
+                        // it's a native file, so we don't do selection or nonblock
                     } else {
                         errno = Errno.EAGAIN;
                         return -1;
@@ -246,22 +248,19 @@ public class PosixShim {
 
     public Channel[] pipe() {
         clear();
-        if (posix.isNative()) {
-            int[] fds = new int[2];
-            int ret = posix.pipe(fds);
-            if (ret == -1) {
-                errno = Errno.valueOf(posix.errno());
-                return null;
-            }
-            setCloexec(fds[0], true);
-            setCloexec(fds[1], true);
-            return new Channel[]{new NativeDeviceChannel(fds[0]), new NativeDeviceChannel(fds[1])};
-        }
-
-        // otherwise, Java pipe. Note Java pipe is not FD_CLOEXEC, but we can't use posix_spawn anyway
         try {
             Pipe pipe = Pipe.open();
-            return new Channel[]{pipe.source(), pipe.sink()};
+            Channel source = pipe.source(), sink = pipe.sink();
+
+            if (posix.isNative() && !Platform.IS_WINDOWS) {
+                // set cloexec if possible
+                int read = FilenoUtil.filenoFrom(source);
+                int write = FilenoUtil.filenoFrom(sink);
+                setCloexec(read, true);
+                setCloexec(write, true);
+            }
+
+            return new Channel[]{source, sink};
         } catch (IOException ioe) {
             errno = Helpers.errnoFromException(ioe);
             return null;
@@ -393,8 +392,8 @@ public class PosixShim {
     }
 
     public Channel open(String cwd, String path, ModeFlags flags, int perm, ClassLoader classLoader) {
-        if (path.equals("/dev/null") || path.equalsIgnoreCase("nul:") || path.equalsIgnoreCase("nul")) {
-            return new NullChannel();
+        if ((path.equals("/dev/null") || path.equalsIgnoreCase("nul")) && Platform.IS_WINDOWS) {
+            path = "nul:";
         }
 
         if (path.startsWith("classpath:/") && classLoader != null) {
@@ -412,8 +411,10 @@ public class PosixShim {
             errno = Errno.ENOENT;
         } catch (ResourceException.PermissionDenied e) {
             errno = Errno.EACCES;
+        } catch (ResourceException.TooManySymlinks e) {
+            errno = Errno.ELOOP;
         } catch (IOException e) {
-            throw new RuntimeException("Unhandled IOException", e);
+            throw new RuntimeException("Unhandled IOException: " + e.getLocalizedMessage(), e);
         }
         return null;
     }

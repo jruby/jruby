@@ -1,6 +1,2 @@
-fails:Time#_dump is a private method
-fails:Time#_dump preserves the GMT flag
-fails:Time#_dump dumps a Time object to a bytestring
-fails:Time#_dump dumps an array with a date as first element
-fails:Time#_dump dumps an array with a time as second element
 fails:Time#_dump dumps like MRI's marshaled time format
+fails:Time#_dump preserves the GMT flag

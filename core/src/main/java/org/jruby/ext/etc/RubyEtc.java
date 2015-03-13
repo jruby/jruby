@@ -1,6 +1,10 @@
 package org.jruby.ext.etc;
 
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.util.concurrent.atomic.AtomicBoolean;
+
+import org.jruby.RubyHash;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyModule;
 import org.jruby.common.IRubyWarnings.ID;
@@ -10,6 +14,7 @@ import jnr.posix.Group;
 import jnr.posix.POSIX;
 import jnr.posix.util.Platform;
 import org.jruby.Ruby;
+import org.jruby.RubyFixnum;
 import org.jruby.RubyModule;
 import org.jruby.RubyNumeric;
 import org.jruby.RubyString;
@@ -19,6 +24,7 @@ import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
+import org.jruby.util.SafePropertyAccessor;
 
 @JRubyModule(name="Etc")
 public class RubyEtc {
@@ -110,6 +116,7 @@ public class RubyEtc {
     public static IRubyObject getpwuid(IRubyObject recv, IRubyObject[] args) {
         Ruby runtime = recv.getRuntime();
         POSIX posix = runtime.getPosix();
+        IRubyObject oldExc = runtime.getGlobalVariables().get("$!"); // Save $!
         try {
             int uid = args.length == 0 ? posix.getuid() : RubyNumeric.fix2int(args[0]);
             Passwd pwd = posix.getpwuid(uid);
@@ -122,6 +129,7 @@ public class RubyEtc {
             return setupPasswd(runtime, pwd);
         } catch (RaiseException re) {
             if (runtime.getNotImplementedError().isInstance(re.getException())) {
+                runtime.getGlobalVariables().set("$!", oldExc); // Restore $!
                 return runtime.getNil();
             }
             throw re;
@@ -139,13 +147,15 @@ public class RubyEtc {
         String nam = name.convertToString().toString();
         try {
             Passwd pwd = runtime.getPosix().getpwnam(nam);
-            if(pwd == null) {
+            if (pwd == null) {
                 if (Platform.IS_WINDOWS) {  // MRI behavior
                     return runtime.getNil();
                 }
                 throw runtime.newArgumentError("can't find user for " + nam);
             }
             return setupPasswd(recv.getRuntime(), pwd);
+        } catch (RaiseException e) {
+            throw e;
         } catch (Exception e) {
             if (runtime.getDebug().isTrue()) {
                 runtime.getWarnings().warn(ID.NOT_IMPLEMENTED, "Etc.getpwnam is not supported by JRuby on this platform");
@@ -266,13 +276,15 @@ public class RubyEtc {
         String nam = name.convertToString().toString();
         try {
             Group grp = runtime.getPosix().getgrnam(nam);
-            if(grp == null) {
+            if (grp == null) {
                 if (Platform.IS_WINDOWS) {  // MRI behavior
                     return runtime.getNil();
                 }
                 throw runtime.newArgumentError("can't find group for " + nam);
             }
             return setupGroup(runtime, grp);
+        } catch (RaiseException e) {
+            throw e;
         } catch (Exception e) {
             if (runtime.getDebug().isTrue()) {
                 runtime.getWarnings().warn(ID.NOT_IMPLEMENTED, "Etc.getgrnam is not supported by JRuby on this platform");
@@ -423,6 +435,36 @@ public class RubyEtc {
         ret.untaint(context);
 
         return ret;
+    }
+
+    @JRubyMethod(module = true)
+    public static IRubyObject nprocessors(ThreadContext context, IRubyObject recv) {
+        int nprocs = Runtime.getRuntime().availableProcessors();
+        return RubyFixnum.newFixnum(context.getRuntime(), nprocs);
+    }
+
+    @JRubyMethod(module = true)
+    public static IRubyObject uname(ThreadContext context, IRubyObject self) {
+        Ruby runtime = context.runtime;
+        RubyHash uname = RubyHash.newHash(runtime);
+
+        uname.op_aset(context,
+                runtime.newSymbol("sysname"),
+                runtime.newString(SafePropertyAccessor.getProperty("os.name", "unknown")));
+        try {
+            uname.op_aset(context,
+                    runtime.newSymbol("nodename"),
+                    runtime.newString(InetAddress.getLocalHost().getHostName()));
+        } catch (UnknownHostException uhe) {
+            uname.op_aset(context,
+                    runtime.newSymbol("nodename"),
+                    runtime.newString("unknown"));
+        }
+        uname.put(runtime.newSymbol("release"), runtime.newString("unknown"));
+        uname.put(runtime.newSymbol("version"), runtime.newString(SafePropertyAccessor.getProperty("os.version")));
+        uname.put(runtime.newSymbol("machine"), runtime.newString(SafePropertyAccessor.getProperty("os.arch")));
+
+        return uname;
     }
     
     private static final AtomicBoolean iteratingPasswd = new AtomicBoolean(false);

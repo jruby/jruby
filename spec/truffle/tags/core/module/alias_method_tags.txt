@@ -1,16 +1,5 @@
-fails:Module#alias_method makes a copy of the method
-fails:Module#alias_method retains method visibility
-fails:Module#alias_method handles aliasing a stub that changes visibility
-fails:Module#alias_method fails if origin method not found
-fails:Module#alias_method raises RuntimeError if frozen
 fails:Module#alias_method converts the names using #to_str
-fails:Module#alias_method raises a TypeError when the given name can't be converted using to_str
 fails:Module#alias_method is a private method
-fails:Module#alias_method returns self
-fails:Module#alias_method works in module
-fails:Module#alias_method works on private module methods in a module that has been reopened
-fails:Module#alias_method accesses a method defined on Object from Kernel
-fails:Module#alias_method can call a method with super aliased twice
 fails:Module#alias_method aliasing special methods keeps initialize private when aliasing
 fails:Module#alias_method aliasing special methods keeps initialize_copy private when aliasing
 fails:Module#alias_method aliasing special methods keeps initialize_clone private when aliasing

@@ -5,13 +5,12 @@
   <parent>
     <groupId>org.jruby</groupId>
     <artifactId>jruby-parent</artifactId>
-    <version>9000.dev-SNAPSHOT</version>
+    <version>9.0.0.0-SNAPSHOT</version>
   </parent>
   <artifactId>jruby-lib</artifactId>
   <packaging>pom</packaging>
   <name>JRuby Lib Setup</name>
   <properties>
-    <jruby.home>${basedir}/..</jruby.home>
     <tesla.dump.readonly>true</tesla.dump.readonly>
     <jruby.plugins.version>1.0.5</jruby.plugins.version>
     <tesla.dump.pom>pom.xml</tesla.dump.pom>
@@ -21,73 +20,140 @@
     <dependency>
       <groupId>org.jruby</groupId>
       <artifactId>jruby-core</artifactId>
-      <version>9000.dev-SNAPSHOT</version>
+      <version>9.0.0.0-SNAPSHOT</version>
+      <scope>provided</scope>
     </dependency>
     <dependency>
       <groupId>rubygems</groupId>
       <artifactId>jruby-openssl</artifactId>
-      <version>0.9.6.dev-SNAPSHOT</version>
+      <version>0.9.6</version>
       <type>gem</type>
+      <exclusions>
+        <exclusion>
+          <artifactId>jar-dependencies</artifactId>
+          <groupId>rubygems</groupId>
+        </exclusion>
+      </exclusions>
     </dependency>
     <dependency>
       <groupId>rubygems</groupId>
       <artifactId>jruby-readline</artifactId>
       <version>1.0.dev-SNAPSHOT</version>
       <type>gem</type>
+      <exclusions>
+        <exclusion>
+          <artifactId>jar-dependencies</artifactId>
+          <groupId>rubygems</groupId>
+        </exclusion>
+      </exclusions>
     </dependency>
     <dependency>
       <groupId>rubygems</groupId>
       <artifactId>jruby-ripper</artifactId>
       <version>2.1.0.dev-SNAPSHOT</version>
       <type>gem</type>
+      <exclusions>
+        <exclusion>
+          <artifactId>jar-dependencies</artifactId>
+          <groupId>rubygems</groupId>
+        </exclusion>
+      </exclusions>
     </dependency>
     <dependency>
       <groupId>rubygems</groupId>
       <artifactId>rake</artifactId>
       <version>${rake.version}</version>
       <type>gem</type>
+      <exclusions>
+        <exclusion>
+          <artifactId>jar-dependencies</artifactId>
+          <groupId>rubygems</groupId>
+        </exclusion>
+      </exclusions>
     </dependency>
     <dependency>
       <groupId>rubygems</groupId>
       <artifactId>rdoc</artifactId>
       <version>${rdoc.version}</version>
       <type>gem</type>
+      <exclusions>
+        <exclusion>
+          <artifactId>jar-dependencies</artifactId>
+          <groupId>rubygems</groupId>
+        </exclusion>
+      </exclusions>
     </dependency>
     <dependency>
       <groupId>rubygems</groupId>
       <artifactId>json</artifactId>
       <version>${json.version}</version>
       <type>gem</type>
-    </dependency>
-    <dependency>
-      <groupId>rubygems</groupId>
-      <artifactId>krypt</artifactId>
-      <version>0.0.2</version>
-      <type>gem</type>
-    </dependency>
-    <dependency>
-      <groupId>rubygems</groupId>
-      <artifactId>krypt-core</artifactId>
-      <version>0.0.2</version>
-      <type>gem</type>
-    </dependency>
-    <dependency>
-      <groupId>rubygems</groupId>
-      <artifactId>krypt-provider-jdk</artifactId>
-      <version>0.0.2</version>
-      <type>gem</type>
-    </dependency>
-    <dependency>
-      <groupId>rubygems</groupId>
-      <artifactId>ffi</artifactId>
-      <version>1.9.3</version>
-      <type>gem</type>
+      <exclusions>
+        <exclusion>
+          <artifactId>jar-dependencies</artifactId>
+          <groupId>rubygems</groupId>
+        </exclusion>
+      </exclusions>
     </dependency>
     <dependency>
       <groupId>rubygems</groupId>
       <artifactId>jar-dependencies</artifactId>
-      <version>0.0.9</version>
+      <version>0.1.8</version>
       <type>gem</type>
+      <exclusions>
+        <exclusion>
+          <artifactId>jar-dependencies</artifactId>
+          <groupId>rubygems</groupId>
+        </exclusion>
+      </exclusions>
+    </dependency>
+    <dependency>
+      <groupId>rubygems</groupId>
+      <artifactId>minitest</artifactId>
+      <version>${minitest.version}</version>
+      <type>gem</type>
+      <exclusions>
+        <exclusion>
+          <artifactId>jar-dependencies</artifactId>
+          <groupId>rubygems</groupId>
+        </exclusion>
+      </exclusions>
+    </dependency>
+    <dependency>
+      <groupId>rubygems</groupId>
+      <artifactId>test-unit</artifactId>
+      <version>${test-unit.version}</version>
+      <type>gem</type>
+      <exclusions>
+        <exclusion>
+          <artifactId>jar-dependencies</artifactId>
+          <groupId>rubygems</groupId>
+        </exclusion>
+      </exclusions>
+    </dependency>
+    <dependency>
+      <groupId>rubygems</groupId>
+      <artifactId>power_assert</artifactId>
+      <version>${power_assert.version}</version>
+      <type>gem</type>
+      <exclusions>
+        <exclusion>
+          <artifactId>jar-dependencies</artifactId>
+          <groupId>rubygems</groupId>
+        </exclusion>
+      </exclusions>
+    </dependency>
+    <dependency>
+      <groupId>rubygems</groupId>
+      <artifactId>psych</artifactId>
+      <version>2.0.9-SNAPSHOT</version>
+      <type>gem</type>
+      <exclusions>
+        <exclusion>
+          <artifactId>jar-dependencies</artifactId>
+          <groupId>rubygems</groupId>
+        </exclusion>
+      </exclusions>
     </dependency>
     <dependency>
       <groupId>rubygems</groupId>
@@ -115,6 +181,12 @@
                 <include>*</include>
               </includes>
             </fileset>
+            <fileset>
+              <directory>${basedir}/ruby/stdlib</directory>
+              <includes>
+                <include>**/bouncycastle/**/*.jar</include>
+              </includes>
+            </fileset>
           </filesets>
         </configuration>
       </plugin>
@@ -125,9 +197,32 @@
         </configuration>
       </plugin>
       <plugin>
+        <artifactId>maven-invoker-plugin</artifactId>
+        <configuration>
+          <skipInstallation>true</skipInstallation>
+        </configuration>
+      </plugin>
+      <plugin>
+        <artifactId>maven-dependency-plugin</artifactId>
+        <executions>
+          <execution>
+            <phase>package</phase>
+            <goals>
+              <goal>copy-dependencies</goal>
+            </goals>
+          </execution>
+        </executions>
+        <configuration>
+          <useRepositoryLayout>true</useRepositoryLayout>
+          <outputDirectory>ruby/stdlib</outputDirectory>
+          <excludeGroupIds>rubygems</excludeGroupIds>
+          <includeScope>runtime</includeScope>
+        </configuration>
+      </plugin>
+      <plugin>
         <groupId>io.tesla.polyglot</groupId>
         <artifactId>tesla-polyglot-maven-plugin</artifactId>
-        <version>${tesla.version}</version>
+        <version>0.1.1</version>
         <executions>
           <execution>
             <id>install_gems</id>
@@ -145,7 +240,7 @@
           <dependency>
             <groupId>io.tesla.polyglot</groupId>
             <artifactId>tesla-polyglot-ruby</artifactId>
-            <version>${tesla.version}</version>
+            <version>0.1.1</version>
           </dependency>
         </dependencies>
       </plugin>

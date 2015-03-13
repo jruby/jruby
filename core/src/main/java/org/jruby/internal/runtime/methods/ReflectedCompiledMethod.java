@@ -65,7 +65,7 @@ public class ReflectedCompiledMethod extends CompiledMethod {
             boolean isTrace = runtime.hasEventHooks();
             try {
                 if (isTrace) {
-                    runtime.callEventHooks(context, RubyEvent.CALL, position.getFile(), position.getStartLine(), name, getImplementationClass());
+                    runtime.callEventHooks(context, RubyEvent.CALL, position.getFile(), position.getLine(), name, getImplementationClass());
                 }
                 return (IRubyObject)method.invoke(null, $scriptObject, context, self, args, block);
             } finally {

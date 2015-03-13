@@ -1,2 +1,0 @@
-fails:Kernel#trap is a private method
-fails:Kernel.trap needs to be reviewed for spec completeness

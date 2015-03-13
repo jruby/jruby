@@ -2,9 +2,14 @@ require File.expand_path('../../../spec_helper', __FILE__)
 
 describe "MatchData#[]" do
   it "acts as normal array indexing [index]" do
-    /(.)(.)(\d+)(\d)/.match("THX1138.")[0].should == 'HX1138'
-    /(.)(.)(\d+)(\d)/.match("THX1138.")[1].should == 'H'
-    /(.)(.)(\d+)(\d)/.match("THX1138.")[2].should == 'X'
+    md = /(.)(.)(\d+)(\d)/.match("THX1138.")
+
+    md[0].should == 'HX1138'
+    md[1].should == 'H'
+    md[2].should == 'X'
+    md[-3].should == 'X'
+    md[10000].should == nil
+    md[-10000].should == nil
   end
 
   it "supports accessors [start, length]" do

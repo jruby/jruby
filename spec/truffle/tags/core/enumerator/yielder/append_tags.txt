@@ -1,4 +1,1 @@
-fails:Enumerator::Yielder#<< yields the value to the block
-fails:Enumerator::Yielder#<< returns self
 fails:Enumerator::Yielder#<< requires multiple arguments
-fails:Enumerator::Yielder#<< yields with passed arguments

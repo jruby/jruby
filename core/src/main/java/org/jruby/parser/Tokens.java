@@ -89,6 +89,7 @@ public interface Tokens {
     int tCVAR       = RubyParser.tCVAR;
     int tINTEGER    = RubyParser.tINTEGER;
     int tFLOAT      = RubyParser.tFLOAT;
+    int tRATIONAL   = RubyParser.tRATIONAL;
     int tSTRING_CONTENT     = RubyParser.tSTRING_CONTENT;
     int tSTRING_BEG = RubyParser.tSTRING_BEG;
     int tSTRING_END = RubyParser.tSTRING_END;
@@ -160,6 +161,9 @@ public interface Tokens {
     int tSYMBOLS_BEG = RubyParser.tSYMBOLS_BEG;
     int tQSYMBOLS_BEG = RubyParser.tQSYMBOLS_BEG;
     int tDSTAR = RubyParser.tDSTAR;
+    int tLABEL_END = RubyParser.tLABEL_END;
+    int tSTRING_DEND = RubyParser.tSTRING_DEND;
+    int tCHAR = RubyParser.tCHAR;
     
     String[] operators = {"+@", "-@", "**", "<=>", "==", "===", "!=", ">=", "<=", "&&",
                           "||", "=~", "!~", "..", "...", "[]", "[]=", "<<", ">>", "::"};

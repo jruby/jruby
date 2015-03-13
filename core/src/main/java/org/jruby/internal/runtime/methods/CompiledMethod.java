@@ -170,6 +170,12 @@ public abstract class CompiledMethod extends JavaMethod implements Cloneable, Po
         }
 
         @Override
+        public boolean isImplementedBy(RubyModule other) {
+            if (compiledMethod == null) return false;
+            return compiledMethod.isImplementedBy(other);
+        }
+
+        @Override
         protected RubyModule getProtectedClass() {
             if (compiledMethod == null) initializeMethod();
             return compiledMethod.getProtectedClass();
@@ -230,7 +236,7 @@ public abstract class CompiledMethod extends JavaMethod implements Cloneable, Po
 
         public int getLine() {
             if (compiledMethod == null) initializeMethod();
-            return position.getStartLine();
+            return position.getLine();
         }
 
         public String[] getParameterList() {
@@ -306,7 +312,7 @@ public abstract class CompiledMethod extends JavaMethod implements Cloneable, Po
     }
 
     public int getLine() {
-        return position.getStartLine();
+        return position.getLine();
     }
 
     public Object getScriptObject() {

@@ -17,7 +17,7 @@
  * Copyright (C) 2002 Benoit Cerrina <b.cerrina@wanadoo.fr>
  * Copyright (C) 2004 Thomas E Enebo <enebo@acm.org>
  * Copyright (C) 2006 Lukas Felber <lfelber@hsr.ch>
- * 
+ *
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
  * or the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
@@ -32,21 +32,47 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.ast;
 
+import java.awt.image.ByteLookupTable;
 import java.util.List;
+
+import org.jcodings.Encoding;
+import org.jcodings.specific.USASCIIEncoding;
+import org.jruby.Ruby;
+import org.jruby.RubySymbol;
+
 import org.jruby.ast.types.ILiteralNode;
 import org.jruby.ast.types.INameNode;
 import org.jruby.ast.visitor.NodeVisitor;
 import org.jruby.lexer.yacc.ISourcePosition;
+import org.jruby.runtime.Block;
+import org.jruby.runtime.ThreadContext;
+import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.util.ByteList;
 
-/** 
+/**
  * Represents a symbol (:symbol_name).
  */
 public class SymbolNode extends Node implements ILiteralNode, INameNode {
     private String name;
+    private RubySymbol symbol;
+    private Encoding encoding;
 
     public SymbolNode(ISourcePosition position, String name) {
-	    super(position);
-	    this.name = name;
+        super(position, false);
+
+        this.name = name;
+        this.encoding = null;
+    }
+
+    public SymbolNode(ISourcePosition position, ByteList value) {
+        super(position, false);
+        this.name = value.toString().intern();
+        // FIXME: A full scan to determine whether we should back off to US-ASCII.  Lexer should just do this properly.
+        if (value.lengthEnc() == value.length()) {
+            this.encoding = USASCIIEncoding.INSTANCE;
+        } else {
+            this.encoding = value.getEncoding();
+        }
     }
 
     public NodeType getNodeType() {
@@ -64,8 +90,20 @@ public class SymbolNode extends Node implements ILiteralNode, INameNode {
     public String getName() {
         return name;
     }
-    
+
+    public Encoding getEncoding() {
+        return encoding;
+    }
+
     public List<Node> childNodes() {
         return EMPTY_LIST;
+    }
+
+    public RubySymbol getSymbol(Ruby runtime) {
+        RubySymbol sym;
+        if ((sym = symbol) != null) return sym;
+        sym = runtime.fastNewSymbol(name);
+        if (encoding != null) sym.associateEncoding(encoding);
+        return symbol = sym;
     }
 }

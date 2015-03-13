@@ -1,5 +1,0 @@
-fails:Array#eql? handles well recursive arrays
-fails:Array#eql? does not call #to_ary on its argument
-fails:Array#eql? does not call #to_ary on Array subclasses
-fails:Array#eql? ignores array class differences
-fails:Array#eql? returns false if any corresponding elements are not #eql?

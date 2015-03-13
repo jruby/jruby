@@ -135,4 +135,10 @@ public class RubyBinding extends RubyObject {
 
         return RubyKernel.eval(context, this, newArgs, Block.NULL_BLOCK);
     }
+
+
+    @JRubyMethod(name = "receiver")
+    public IRubyObject receiver(ThreadContext context) {
+        return binding.getSelf();
+    }
 }

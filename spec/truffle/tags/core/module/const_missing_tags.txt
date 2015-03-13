@@ -1,4 +1,2 @@
-fails:Module#const_missing is called when an undefined constant is referenced via literal form
-fails:Module#const_missing is called when an undefined constant is referenced via #const_get
 fails:Module#const_missing raises NameError and includes the name of the value that wasn't found
 fails:Module#const_missing raises NameError and does not include toplevel Object

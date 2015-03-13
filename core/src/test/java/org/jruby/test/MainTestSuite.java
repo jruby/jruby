@@ -36,10 +36,12 @@ package org.jruby.test;
 import junit.framework.Test;
 import junit.framework.TestSuite;
 
+import org.jruby.TestRegexpCache;
 import org.jruby.ext.posix.JavaFileStatTest;
 import org.jruby.javasupport.TestJava;
 import org.jruby.javasupport.TestJavaClass;
 import org.jruby.javasupport.test.JavaSupportTestSuite;
+import org.jruby.parser.DetailedSourcePositionTest;
 import org.jruby.runtime.EventHookTest;
 import org.jruby.util.JRubyThreadContextTest;
 import org.jruby.util.ShellLauncherTest;
@@ -85,6 +87,8 @@ public class MainTestSuite extends TestSuite {
         suite.addTestSuite(TestMethodFactories.class);
         suite.addTestSuite(RubyTimeOutputFormatterTest.class);
         suite.addTestSuite(org.jruby.lexer.yacc.ByteArrayLexerSourceTest.class);
+        suite.addTestSuite(org.jruby.lexer.yacc.StringTermTest.class);
+        suite.addTestSuite(DetailedSourcePositionTest.class);
         suite.addTestSuite(org.jruby.runtime.load.LoadServiceResourceInputStreamTest.class);
         suite.addTestSuite(TestRubyString.class);
         suite.addTestSuite(TestRubyNKF.class);
@@ -92,6 +96,8 @@ public class MainTestSuite extends TestSuite {
         suite.addTestSuite(ParameterizedWriterTest.class);
         suite.addTestSuite(TestRubyRational.class);
         suite.addTestSuite(TestRecursiveCheck.class);
+        // Disabled test due to difficulty of making WeakRef logic deterministic
+//        suite.addTestSuite(TestRegexpCache.class);
         return suite;
     }
 }

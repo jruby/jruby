@@ -7,6 +7,23 @@ describe "C-API Array function" do
     @s = CApiArraySpecs.new
   end
 
+  describe "rb_Array" do
+    it "returns obj if it is an array" do
+      arr = @s.rb_Array([1,2])
+      arr.should == [1, 2]
+    end
+
+    it "tries to convert obj to an array" do
+      arr = @s.rb_Array({"bar" => "foo"})
+      arr.should == [["bar", "foo"]]
+    end
+
+    it "returns obj wrapped in an array if it cannot be converted to an array" do
+      arr = @s.rb_Array("a")
+      arr.should == ["a"]
+    end
+  end
+
   describe "rb_ary_new" do
     it "returns an empty array" do
       @s.rb_ary_new.should == []

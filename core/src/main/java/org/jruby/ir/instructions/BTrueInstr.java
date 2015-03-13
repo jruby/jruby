@@ -4,24 +4,25 @@ import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Operation;
 import org.jruby.ir.operands.Label;
 import org.jruby.ir.operands.Operand;
-import org.jruby.ir.transformations.inlining.InlinerInfo;
+import org.jruby.ir.persistence.IRReaderDecoder;
+import org.jruby.ir.transformations.inlining.CloneInfo;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
 public class BTrueInstr extends OneOperandBranchInstr implements FixedArityInstr {
-    public BTrueInstr(Operation op, Operand v, Label jmpTarget) {
-        super(op, v, jmpTarget);
-    }
-
-    public BTrueInstr(Operand v, Label jmpTarget) {
-        this(Operation.B_TRUE, v, jmpTarget);
+    public BTrueInstr(Label jmpTarget, Operand v) {
+        super(Operation.B_TRUE, new Operand[] { jmpTarget, v });
     }
 
     @Override
-    public Instr cloneForInlining(InlinerInfo ii) {
-        return new BTrueInstr(getOperation(), getArg1().cloneForInlining(ii), ii.getRenamedLabel(getJumpTarget()));
+    public Instr clone(CloneInfo ii) {
+        return new BTrueInstr(ii.getRenamedLabel(getJumpTarget()), getArg1().cloneForInlining(ii));
+    }
+
+    public static BTrueInstr decode(IRReaderDecoder d) {
+        return new BTrueInstr(d.decodeLabel(), d.decodeOperand());
     }
 
     @Override

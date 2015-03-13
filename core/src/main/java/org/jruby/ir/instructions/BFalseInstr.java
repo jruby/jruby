@@ -4,25 +4,25 @@ import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Operation;
 import org.jruby.ir.operands.Label;
 import org.jruby.ir.operands.Operand;
-import org.jruby.ir.transformations.inlining.InlinerInfo;
+import org.jruby.ir.persistence.IRReaderDecoder;
+import org.jruby.ir.transformations.inlining.CloneInfo;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
 public class BFalseInstr extends OneOperandBranchInstr implements FixedArityInstr {
-    // Public only for persistence reloading
-    public BFalseInstr(Operation op, Operand v, Label jmpTarget) {
-        super(op, v, jmpTarget);
-    }
-
-    public BFalseInstr(Operand v, Label jmpTarget) {
-        super(Operation.B_FALSE, v, jmpTarget);
+    public BFalseInstr(Label jmpTarget, Operand v) {
+        super(Operation.B_FALSE, new Operand[] {jmpTarget, v});
     }
 
     @Override
-    public Instr cloneForInlining(InlinerInfo ii) {
-        return new BFalseInstr(getOperation(), getArg1().cloneForInlining(ii), ii.getRenamedLabel(getJumpTarget()));
+    public Instr clone(CloneInfo ii) {
+        return new BFalseInstr(ii.getRenamedLabel(getJumpTarget()), getArg1().cloneForInlining(ii));
+    }
+
+    public static BFalseInstr decode(IRReaderDecoder d) {
+        return new BFalseInstr(d.decodeLabel(), d.decodeOperand());
     }
 
     @Override

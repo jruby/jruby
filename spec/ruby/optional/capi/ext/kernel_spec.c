@@ -277,6 +277,18 @@ static VALUE kernel_spec_rb_obj_method(VALUE self, VALUE obj, VALUE method) {
 }
 #endif
 
+#ifdef HAVE_RB_FUNCALL3
+static VALUE kernel_spec_rb_funcall3(VALUE self, VALUE obj, VALUE method) {
+  return rb_funcall3(obj, SYM2ID(method), 0, NULL);
+}
+#endif
+
+#ifdef HAVE_RB_FUNCALL_WITH_BLOCK
+static VALUE kernel_spec_rb_funcall_with_block(VALUE self, VALUE obj, VALUE method, VALUE block) {
+  return rb_funcall_with_block(obj, SYM2ID(method), 0, NULL, block);
+}
+#endif
+
 void Init_kernel_spec() {
   VALUE cls;
   cls = rb_define_class("CApiKernelSpecs", rb_cObject);
@@ -379,6 +391,14 @@ void Init_kernel_spec() {
 
 #ifdef HAVE_RB_OBJ_METHOD
   rb_define_method(cls, "rb_obj_method", kernel_spec_rb_obj_method, 2);
+#endif
+
+#ifdef HAVE_RB_FUNCALL3
+  rb_define_method(cls, "rb_funcall3", kernel_spec_rb_funcall3, 2);
+#endif
+
+#ifdef HAVE_RB_FUNCALL_WITH_BLOCK
+  rb_define_method(cls, "rb_funcall_with_block", kernel_spec_rb_funcall_with_block, 3);
 #endif
 }
 

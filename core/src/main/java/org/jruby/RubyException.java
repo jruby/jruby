@@ -36,28 +36,25 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby;
 
-import org.jruby.runtime.backtrace.BacktraceData;
-import java.io.IOException;
-import java.io.PrintStream;
-import java.util.List;
-
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.exceptions.JumpException.FlowControlException;
 import org.jruby.java.proxies.ConcreteJavaProxy;
-import org.jruby.runtime.Block;
-import org.jruby.runtime.ClassIndex;
-import org.jruby.runtime.ObjectAllocator;
-import org.jruby.runtime.ObjectMarshal;
-import org.jruby.runtime.ThreadContext;
+import org.jruby.runtime.*;
+import org.jruby.runtime.backtrace.BacktraceData;
 import org.jruby.runtime.backtrace.RubyStackTraceElement;
 import org.jruby.runtime.backtrace.TraceType;
-import static org.jruby.runtime.Visibility.*;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.builtin.Variable;
 import org.jruby.runtime.component.VariableEntry;
 import org.jruby.runtime.marshal.MarshalStream;
 import org.jruby.runtime.marshal.UnmarshalStream;
+
+import java.io.IOException;
+import java.io.PrintStream;
+import java.util.List;
+
+import static org.jruby.runtime.Visibility.PRIVATE;
 
 /**
  *
@@ -94,11 +91,14 @@ public class RubyException extends RubyObject {
     public IRubyObject set_backtrace(IRubyObject obj) {
         if (obj.isNil()) {
             backtrace = null;
-        } else if (!isArrayOfStrings(obj)) {
-            throw getRuntime().newTypeError("backtrace must be Array of String");
-        } else {
+        } else if (isArrayOfStrings(obj)) {
             backtrace = obj;
+        } else if (obj instanceof RubyString) {
+            backtrace = RubyArray.newArray(getRuntime(), obj);
+        } else {
+            throw getRuntime().newTypeError("backtrace must be Array of String or a single String");
         }
+
         return backtrace();
     }
     
@@ -132,12 +132,8 @@ public class RubyException extends RubyObject {
         }
     }
 
-    public IRubyObject to_s(ThreadContext context) {
-        return to_s19(context);
-    }
-
     @JRubyMethod(name = "to_s")
-    public IRubyObject to_s19(ThreadContext context) {
+    public IRubyObject to_s(ThreadContext context) {
         if (message.isNil()) return context.runtime.newString(getMetaClass().getRealClass().getName());
 
         message.setTaint(isTaint());
@@ -200,6 +196,10 @@ public class RubyException extends RubyObject {
         IRubyObject nil = context.nil;
         if (cause != nil) return cause;
         return nil;
+    }
+
+    public void setCause(IRubyObject cause) {
+        this.cause = cause;
     }
 
     public void setBacktraceData(BacktraceData backtraceData) {
@@ -376,6 +376,18 @@ public class RubyException extends RubyObject {
     // rb_exc_new3
     public static IRubyObject newException(ThreadContext context, RubyClass exceptionClass, IRubyObject message) {
         return exceptionClass.callMethod(context, "new", message.convertToString());
+    }
+
+    @Deprecated
+    public IRubyObject to_s19(ThreadContext context) {
+        if (message.isNil()) return context.runtime.newString(getMetaClass().getRealClass().getName());
+
+        message.setTaint(isTaint());
+        return message.asString();
+    }
+
+    public IRubyObject getMessage() {
+        return message;
     }
 
     private BacktraceData backtraceData;

@@ -88,6 +88,10 @@ class TestPathname < Test::Unit::TestCase
     defassert(:cleanpath_aggressive, '/',       '///a/../..')
   end
 
+  if DOSISH
+    defassert(:cleanpath_aggressive, 'c:/foo/bar', 'c:\\foo\\bar')
+  end
+
   def cleanpath_conservative(path)
     Pathname.new(path).cleanpath(true).to_s
   end
@@ -123,6 +127,10 @@ class TestPathname < Test::Unit::TestCase
   defassert(:cleanpath_conservative, 'a/..',   'a/../.')
   defassert(:cleanpath_conservative, '/a',     '/../.././../a')
   defassert(:cleanpath_conservative, 'a/b/../../../../c/../d', 'a/b/../../../../c/../d')
+
+  if DOSISH
+    defassert(:cleanpath_conservative, 'c:/foo/bar', 'c:\\foo\\bar')
+  end
 
   if DOSISH_UNC
     defassert(:cleanpath_conservative, '//',     '//')
@@ -213,6 +221,10 @@ class TestPathname < Test::Unit::TestCase
 
   defassert(:plus, 'a//b/d//e', 'a//b/c', '../d//e')
 
+  def test_slash
+    assert_kind_of(Pathname, Pathname("a") / Pathname("b"))
+  end
+
   def test_parent
     assert_equal(Pathname("."), Pathname("a").parent)
   end
@@ -234,6 +246,16 @@ class TestPathname < Test::Unit::TestCase
   def test_join
     r = Pathname("a").join(Pathname("b"), Pathname("c"))
     assert_equal(Pathname("a/b/c"), r)
+    r = Pathname("/a").join(Pathname("b"), Pathname("c"))
+    assert_equal(Pathname("/a/b/c"), r)
+    r = Pathname("/a").join(Pathname("/b"), Pathname("c"))
+    assert_equal(Pathname("/b/c"), r)
+    r = Pathname("/a").join(Pathname("/b"), Pathname("/c"))
+    assert_equal(Pathname("/c"), r)
+    r = Pathname("/a").join("/b", "/c")
+    assert_equal(Pathname("/c"), r)
+    r = Pathname("/foo/var").join()
+    assert_equal(Pathname("/foo/var"), r)
   end
 
   def test_absolute
@@ -537,6 +559,11 @@ class TestPathname < Test::Unit::TestCase
     assert_include([true, false], r)
   end
 
+  def test_mountpoint_enoent
+    r = Pathname("/nonexistent").mountpoint?
+    assert_equal false, r
+  end
+
   def test_destructive_update
     path = Pathname.new("a")
     path.to_s.replace "b"
@@ -747,6 +774,14 @@ class TestPathname < Test::Unit::TestCase
 
   def test_atime
     assert_kind_of(Time, Pathname(__FILE__).atime)
+  end
+
+  def test_birthtime
+    assert_kind_of(Time, Pathname(__FILE__).birthtime)
+  rescue NotImplementedError
+    assert_raise(NotImplementedError) do
+      File.birthtime(__FILE__)
+    end
   end
 
   def test_ctime
@@ -1222,7 +1257,7 @@ class TestPathname < Test::Unit::TestCase
       Pathname("d").mkdir
       assert(File.directory?("d"))
       Pathname("d").rmdir
-      assert(!File.exists?("d"))
+      assert(!File.exist?("d"))
     }
   end
 
@@ -1253,6 +1288,31 @@ class TestPathname < Test::Unit::TestCase
       assert_equal([Pathname("."), Pathname("a"), Pathname("b"), Pathname("d"), Pathname("d/x"), Pathname("d/y")], a)
       a = Pathname("d").find.sort
       assert_equal([Pathname("d"), Pathname("d/x"), Pathname("d/y")], a)
+
+      begin
+        File.unlink("d/y")
+        File.chmod(0600, "d")
+        a = []; Pathname(".").find(ignore_error: true) {|v| a << v }; a.sort!
+        assert_equal([Pathname("."), Pathname("a"), Pathname("b"), Pathname("d"), Pathname("d/x")], a)
+        a = []; Pathname("d").find(ignore_error: true) {|v| a << v }; a.sort!
+        assert_equal([Pathname("d"), Pathname("d/x")], a)
+
+        skip "no meaning test on Windows" if /mswin|mingw/ =~ RUBY_PLATFORM
+        a = [];
+        assert_raise_with_message(Errno::EACCES, %r{d/x}) do
+          Pathname(".").find(ignore_error: false) {|v| a << v }
+        end
+        a.sort!
+        assert_equal([Pathname("."), Pathname("a"), Pathname("b"), Pathname("d"), Pathname("d/x")], a)
+        a = [];
+        assert_raise_with_message(Errno::EACCES, %r{d/x}) do
+          Pathname("d").find(ignore_error: false) {|v| a << v }
+        end
+        a.sort!
+        assert_equal([Pathname("d"), Pathname("d/x")], a)
+      ensure
+        File.chmod(0700, "d")
+      end
     }
   end
 
@@ -1313,5 +1373,18 @@ class TestPathname < Test::Unit::TestCase
       $SAFE = 1
       assert_equal("foo/bar", File.join(Pathname.new("foo"), Pathname.new("bar").taint))
     }.call
+  end
+
+  def test_relative_path_from_casefold
+    assert_separately([], <<-'end;') #    do
+      module File::Constants
+        remove_const :FNM_SYSCASE
+        FNM_SYSCASE = FNM_CASEFOLD
+      end
+      require 'pathname'
+      foo = Pathname.new("fo\u{f6}")
+      bar = Pathname.new("b\u{e4}r".encode("ISO-8859-1"))
+      assert_instance_of(Pathname, foo.relative_path_from(bar))
+    end;
   end
 end

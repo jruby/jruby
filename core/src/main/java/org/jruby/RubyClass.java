@@ -60,6 +60,7 @@ import java.util.Set;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.compiler.impl.SkinnyMethodAdapter;
+import org.jruby.exceptions.RaiseException;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.java.codegen.RealClassGenerator;
 import org.jruby.java.codegen.Reified;
@@ -650,7 +651,9 @@ public class RubyClass extends RubyModule {
         RubyClass defined_class;
         DynamicMethod me = klass.searchMethod("respond_to?");
 
-        if (me != null && !me.isUndefined()) {
+        // NOTE: isBuiltin here would be NOEX_BASIC in MRI, a flag only added to respond_to?, method_missing, and
+        //       respond_to_missing? Same effect, I believe.
+        if (me != null && !me.isUndefined() && !me.isBuiltin()) {
             Arity arity = me.getArity();
 
             if (arity.getValue() > 2)
@@ -672,7 +675,7 @@ public class RubyClass extends RubyModule {
     // MRI: rb_method_call_status
     // FIXME: Partial impl because we don't have these "NOEX" flags
     public static boolean rbMethodCallStatus(ThreadContext context, DynamicMethod method, CallType callType, IRubyObject self) {
-        return !method.isUndefined() && method.isCallableFrom(self, callType);
+        return method != null && !method.isUndefined() && method.isCallableFrom(self, callType);
     }
 
     private static IRubyObject checkFuncallMissing(ThreadContext context, RubyClass klass, IRubyObject self, String method, IRubyObject... args) {
@@ -681,10 +684,13 @@ public class RubyClass extends RubyModule {
             return null;
         }
         else {
+            IRubyObject oldExc = runtime.getGlobalVariables().get("$!"); // Save $!
             try {
                 return checkFuncallExec(context, self, method, args);
-            } catch (Exception e) {
-                return checkFuncallFailed(context, self, method, runtime.getNoMethodError(), args);
+            } catch (RaiseException e) {
+                IRubyObject ret = checkFuncallFailed(context, self, method, runtime.getNoMethodError(), args);
+                runtime.getGlobalVariables().set("$!", oldExc); // restore $!
+                return ret;
             }
         }
     }

@@ -46,7 +46,7 @@ public class ConstDeclNode extends AssignableNode implements INameNode {
 
     // TODO: Split this into two sub-classes so that name and constNode can be specified seperately.
     public ConstDeclNode(ISourcePosition position, String name, INameNode constNode, Node valueNode) {
-        super(position, valueNode);
+        super(position, valueNode, valueNode != null && valueNode.containsVariableAssignment());
         
         this.name = name;        
         this.constNode = constNode;
@@ -74,13 +74,16 @@ public class ConstDeclNode extends AssignableNode implements INameNode {
     }
     
     /**
-     * Get the path the name is associated with or null (in Foo::BAR it is Foo).
+     * Get the full path, including the name of the new constant (in Foo::BAR it is Foo::BAR) or null.
+     * Your probably want to extract the left part with
+     * <code>((Colon2Node) node.getConstNode()).getLeftNode()</code>
+     * if <code>node.getConstNode()</code> is a <code>Colon2ConstNode</code>.
      * @return pathNode
      */
     public Node getConstNode() {
         return (Node) constNode;
     }
-    
+
     public List<Node> childNodes() {
         return createList(getConstNode(), getValueNode());
     }

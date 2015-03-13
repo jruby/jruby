@@ -1,6 +1,0 @@
-fails:Struct includes Enumerable
-fails:Struct anonymous class instance methods includes Enumerable
-fails:Struct anonymous class instance methods reader method should be a synonym for []
-fails:Struct anonymous class instance methods reader method should not interfere with undefined methods
-fails:Struct anonymous class instance methods writer method be a synonym for []=
-fails:Struct subclasses can be subclassed

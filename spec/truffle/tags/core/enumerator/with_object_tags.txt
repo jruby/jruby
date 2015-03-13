@@ -1,5 +1,1 @@
 fails:Enumerator#with_object receives an argument
-fails:Enumerator#with_object with block returns the given object
-fails:Enumerator#with_object with block the block parameter passes each element to first parameter
-fails:Enumerator#with_object with block the block parameter passes the given object to last parameter
-fails:Enumerator#with_object without block returns new Enumerator

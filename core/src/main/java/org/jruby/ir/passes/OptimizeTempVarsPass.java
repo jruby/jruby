@@ -1,45 +1,28 @@
 package org.jruby.ir.passes;
 
-import org.jruby.ir.IRClosure;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.ListIterator;
+import java.util.Map;
 import org.jruby.ir.IRScope;
 import org.jruby.ir.instructions.*;
+import org.jruby.ir.operands.ImmutableLiteral;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.TemporaryVariable;
 import org.jruby.ir.operands.Variable;
 
-import java.util.*;
 
-public class OptimizeTempVarsPass extends CompilerPass {
-    boolean optimizedTempVars = false;
-
-    @Override
-    public String getLabel() {
-        return "Temporary Variable Reduction";
-    }
-
-    @Override
-    public Object execute(IRScope s, Object... data) {
-        for (IRClosure c: s.getClosures()) {
-            run(c, true);
-        }
-
-        optimizeTmpVars(s);
-
-        optimizedTempVars = true;
-
-        return null;
-    }
-
-    @Override
-    public Object previouslyRun(IRScope scope) {
-        return optimizedTempVars ? new Object() : null;
-    }
-
-    @Override
-    public void invalidate(IRScope s) {
-        // FIXME: How do we un-optmize?
-    }
-
+/**
+ * Takes multiple single def-use temporary variables and reduces them to share the same temp variable.
+ * This ends up reducing the amount of allocation and most likely helps hotspot warm up in some way quicker.
+ *
+ * This traditionally was a compiler pass (extends CompilerPass) but it is special in that it is the only
+ * pass which does not require any supplementary datastructures.  In fact, it cannot be run by the time
+ * a CFG is created.  So it was de-CompilerPassed and called directly.
+ */
+public class OptimizeTempVarsPass {
     private static void allocVar(Operand oldVar, IRScope s, List<TemporaryVariable> freeVarsList, Map<Operand, Operand> newVarMap) {
         // If we dont have a var mapping, get a new var -- try the free list first
         // and if none available, allocate a fresh one
@@ -53,35 +36,34 @@ public class OptimizeTempVarsPass extends CompilerPass {
         if (!freeVarsList.contains(newVar)) freeVarsList.add(0, newVar);
     }
 
-    private static void optimizeTmpVars(IRScope s) {
-        // Cannot run after CFG has been built in the form it has been written here.
-        if (s.getCFG() != null) return;
+    public static Instr[] optimizeTmpVars(IRScope s, Instr[] initialInstrs) {
+        List<Instr> instructions = new ArrayList<>(Arrays.asList(initialInstrs));
 
         // Pass 1: Analyze instructions and find use and def count of temporary variables
-        Map<TemporaryVariable, List<Instr>> tmpVarUses = new HashMap<TemporaryVariable, List<Instr>>();
-        Map<TemporaryVariable, List<Instr>> tmpVarDefs = new HashMap<TemporaryVariable, List<Instr>>();
-        for (Instr i: s.getInstrs()) {
+        Map<TemporaryVariable, Instr> tmpVarUses = new HashMap<>();
+        Map<TemporaryVariable, Instr> tmpVarDefs = new HashMap<>();
+        for (Instr i: instructions) {
             for (Variable v: i.getUsedVariables()) {
                  if (v instanceof TemporaryVariable) {
                      TemporaryVariable tv = (TemporaryVariable)v;
-                     List<Instr> uses = tmpVarUses.get(tv);
-                     if (uses == null) {
-                         uses = new ArrayList<Instr>();
-                         tmpVarUses.put(tv, uses);
+                     Instr use = tmpVarUses.get(tv);
+                     if (use == null) {
+                         tmpVarUses.put(tv, i);
+                     } else if (use != NopInstr.NOP) {
+                         tmpVarUses.put(tv, NopInstr.NOP);
                      }
-                     uses.add(i);
                  }
             }
             if (i instanceof ResultInstr) {
                 Variable v = ((ResultInstr)i).getResult();
                 if (v instanceof TemporaryVariable) {
                      TemporaryVariable tv = (TemporaryVariable)v;
-                     List<Instr> defs = tmpVarDefs.get(tv);
+                     Instr defs = tmpVarDefs.get(tv);
                      if (defs == null) {
-                         defs = new ArrayList<Instr>();
-                         tmpVarDefs.put(tv, defs);
+                         tmpVarDefs.put(tv, i);
+                     } else if (defs != NopInstr.NOP) {
+                         tmpVarDefs.put(tv, NopInstr.NOP);
                      }
-                     defs.add(i);
                 }
             }
         }
@@ -89,8 +71,8 @@ public class OptimizeTempVarsPass extends CompilerPass {
         // Pass 2: Transform code and do additional analysis:
         // * If the result of this instr. has not been used, mark it dead
         // * Find copies where constant values are set
-        Map<TemporaryVariable, Variable> removableCopies = new HashMap<TemporaryVariable, Variable>();
-        ListIterator<Instr> instrs = s.getInstrs().listIterator();
+
+        ListIterator<Instr> instrs = instructions.listIterator();
         while (instrs.hasNext()) {
             Instr i = instrs.next();
 
@@ -100,25 +82,23 @@ public class OptimizeTempVarsPass extends CompilerPass {
                     // Deal with this code pattern:
                     //    %v = ...
                     // %v not used anywhere
-                    List<Instr> uses = tmpVarUses.get((TemporaryVariable)v);
-                    List<Instr> defs = tmpVarDefs.get((TemporaryVariable)v);
-                    if (uses == null) {
+                    Instr use = tmpVarUses.get(v);
+                    Instr def = tmpVarDefs.get(v);
+                    if (use == null) {
                         if (i instanceof CopyInstr) {
                             i.markDead();
                             instrs.remove();
                         } else if (i instanceof CallInstr) {
                             instrs.set(((CallInstr)i).discardResult());
-                        } else {
-                            i.markUnusedResult();
+                        //} else {
+                        //  FIXME: This was not being used and is not for calls specifically so we were unsure how much it would help
+                        //  but it is left here. For some instrs which assign the result to a tempvar but we notice it is not used
+                        //  we can eliminate setting the result.  In pratice this seems to mostly happen in module bodies.
+                        //  i.markUnusedResult();
                         }
                     }
-                    // Deal with this code pattern:
-                    //    %v = <some-operand>
-                    //    .... %v ...
-                    // %v not used or defined anywhere else
-                    // So, %v can be replaced by the operand
-                    else if ((uses.size() == 1) && (defs != null) && (defs.size() == 1) && (i instanceof CopyInstr)) {
-                        Instr soleUse = uses.get(0);
+                    // Replace <operand> in use from def if single-def and single-use:   %v = <operand>; ... %v ...
+                    else if (use != NopInstr.NOP && def != null && def != NopInstr.NOP && i instanceof CopyInstr) {
                         // Conservatively avoid optimizing return values since
                         // intervening cloned ensure block code can modify the
                         // copy source (if it is a variable).
@@ -130,16 +110,29 @@ public class OptimizeTempVarsPass extends CompilerPass {
                         //    v = 2
                         //    return %v_1 <-- cannot be replaced with v
                         //    ....
-                        if (!(soleUse instanceof ReturnInstr)) {
+                        if (!(use instanceof ReturnInstr)) {
                             CopyInstr ci = (CopyInstr)i;
                             Operand src = ci.getSource();
-                            i.markDead();
-                            instrs.remove();
+                            // Only tmp vars are in SSA form post IR-building and it is safe to
+                            // replace uses with defs without examining intervening instrs. But,
+                            // not true for local vars and other operands that use local vars.
+                            //   a = 0
+                            //   %v_1 = a
+                            //   a = 1
+                            //   x = %v_1
+                            // In that snippet, it would be buggy to rewrite it to:
+                            //   a = 0
+                            //   a = 1
+                            //   x = a
+                            if (src instanceof TemporaryVariable || src instanceof ImmutableLiteral) {
+                                i.markDead();
+                                instrs.remove();
 
-                            // Fix up use
-                            Map<Operand, Operand> copyMap = new HashMap<Operand, Operand>();
-                            copyMap.put(v, src);
-                            soleUse.simplifyOperands(copyMap, true);
+                                // Fix up use
+                                Map<Operand, Operand> copyMap = new HashMap<>();
+                                copyMap.put(v, src);
+                                use.simplifyOperands(copyMap, true);
+                            }
                         }
                     }
                 }
@@ -148,26 +141,36 @@ public class OptimizeTempVarsPass extends CompilerPass {
                 //    2: x = %v
                 // If %v is not used anywhere else, the result of 1. can be updated to use x and 2. can be removed
                 //
-                // NOTE: consider this pattern:
-                //    %v = <operand> (copy instr)
-                //    x = %v
-                // This code will have been captured in the previous if branch which would have deleted %v = 5
-                // Hence the check for whether the src def instr is dead
+                // CAVEATS:
+                // --------
+                // 1. We only do this if 'x' is a temporary variable since only tmp vars are in SSA form.
+                //      %v = ...(not a copy-1)
+                //      x = .. (not a copy-2)
+                //      x = %v
+                //    In that snippet above, it would be buggy to replace it with:
+                //      x = ...(not a copy-1)
+                //      x = .. (not a copy-2)
+                //
+                // 2. Consider this pattern
+                //      %v = <operand> (copy instr)
+                //      x = %v
+                //    This code will have been captured in the previous if branch which would have deleted %v = 5
+                //    Hence the check for whether the src def instr is dead
                 else if (i instanceof CopyInstr) {
                     CopyInstr ci = (CopyInstr)i;
                     Operand src = ci.getSource();
                     if (src instanceof TemporaryVariable) {
                         TemporaryVariable vsrc = (TemporaryVariable)src;
-                        List<Instr> uses = tmpVarUses.get(vsrc);
-                        List<Instr> defs = tmpVarDefs.get(vsrc);
-                        if ((uses.size() == 1) && (defs.size() == 1)) {
-                            Instr soleDef = defs.get(0);
-                            if (!soleDef.isDead()) {
-                                // Fix up def
-                                ((ResultInstr)soleDef).updateResult(ci.getResult());
-                                ci.markDead();
-                                instrs.remove();
-                            }
+                        Instr use = tmpVarUses.get(vsrc);
+                        Instr def = tmpVarDefs.get(vsrc);
+                        if (use != null && use != NopInstr.NOP &&
+                            def != null && def != NopInstr.NOP &&
+                            !def.isDead() && ((ResultInstr)def).getResult() instanceof TemporaryVariable)
+                        {
+                            // Fix up def
+                            ((ResultInstr) def).updateResult(ci.getResult());
+                            ci.markDead();
+                            instrs.remove();
                         }
                     }
                 }
@@ -198,9 +201,9 @@ public class OptimizeTempVarsPass extends CompilerPass {
         //
         // NOTE: It is sufficient to just track last use for renaming purposes.
         // At the first definition, we allocate a variable which then starts the live range
-        Map<TemporaryVariable, Integer> lastVarUseOrDef = new HashMap<TemporaryVariable, Integer>();
+        Map<TemporaryVariable, Integer> lastVarUseOrDef = new HashMap<>();
         int iCount = -1;
-        for (Instr i: s.getInstrs()) {
+        for (Instr i: instructions) {
             iCount++;
 
             // update last use/def
@@ -215,6 +218,9 @@ public class OptimizeTempVarsPass extends CompilerPass {
             }
         }
 
+        // Always make sure the yield closure variable is considered live, so we don't clobber it
+        lastVarUseOrDef.put(s.getYieldClosureVariable(), iCount);
+
         // If the scope has loops, extend live range of %current-module and %current-scope
         // to end of scope (see note earlier).
         if (s.hasLoops()) {
@@ -225,12 +231,12 @@ public class OptimizeTempVarsPass extends CompilerPass {
         // Pass 4: Reallocate temporaries based on last uses to minimize # of unique vars.
         // Replace all single use operands with constants they were assigned to.
         // Using operand -> operand signature because simplifyOperands works on operands
-        Map<Operand, Operand>   newVarMap    = new HashMap<Operand, Operand>();
-        List<TemporaryVariable> freeVarsList = new ArrayList<TemporaryVariable>();
+        Map<Operand, Operand>   newVarMap    = new HashMap<>();
+        List<TemporaryVariable> freeVarsList = new ArrayList<>();
         iCount = -1;
         s.resetTemporaryVariables();
 
-        for (Instr i: s.getInstrs()) {
+        for (Instr i: instructions) {
             iCount++;
 
             // Assign new vars
@@ -244,7 +250,7 @@ public class OptimizeTempVarsPass extends CompilerPass {
             }
 
             // Free dead vars
-            if ((result instanceof TemporaryVariable) && lastVarUseOrDef.get((TemporaryVariable)result) == iCount) {
+            if ((result instanceof TemporaryVariable) && lastVarUseOrDef.get(result) == iCount) {
                 freeVar((TemporaryVariable)newVarMap.get(result), freeVarsList);
             }
             for (Variable v: i.getUsedVariables()) {
@@ -257,5 +263,9 @@ public class OptimizeTempVarsPass extends CompilerPass {
             // Rename
             i.renameVars(newVarMap);
         }
+
+        Instr[] newInstrs = new Instr[instructions.size()];
+        instructions.toArray(newInstrs);
+        return newInstrs;
     }
 }

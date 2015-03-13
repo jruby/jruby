@@ -34,20 +34,23 @@ package org.jruby;
 
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
+import org.jruby.compiler.Constantizable;
 import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.marshal.MarshalStream;
+import org.jruby.runtime.opto.OptoFactory;
 
 /**
  *
  * @author  jpetersen
  */
 @JRubyClass(name={"TrueClass", "FalseClass"})
-public class RubyBoolean extends RubyObject {
+public class RubyBoolean extends RubyObject implements Constantizable {
 
     private final int hashCode;
+    private final Object constant;
 
     RubyBoolean(Ruby runtime, boolean value) {
         super(runtime,
@@ -63,6 +66,8 @@ public class RubyBoolean extends RubyObject {
             // save the object id based hash code;
             this.hashCode = System.identityHashCode(this);
         }
+
+        constant = OptoFactory.newConstantWrapper(IRubyObject.class, this);
     }
     
     @Override
@@ -85,6 +90,14 @@ public class RubyBoolean extends RubyObject {
         return boolean.class;
     }
 
+    /**
+     * @see org.jruby.compiler.Constantizable
+     */
+    @Override
+    public Object constant() {
+        return constant;
+    }
+
     public static RubyClass createFalseClass(Ruby runtime) {
         RubyClass falseClass = runtime.defineClass("FalseClass", runtime.getObject(), ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
         runtime.setFalseClass(falseClass);
@@ -93,9 +106,9 @@ public class RubyBoolean extends RubyObject {
         
         falseClass.defineAnnotatedMethods(False.class);
         falseClass.defineAnnotatedMethods(RubyBoolean.class);
-        
+
         falseClass.getMetaClass().undefineMethod("new");
-        
+
         return falseClass;
     }
     
@@ -109,7 +122,7 @@ public class RubyBoolean extends RubyObject {
         trueClass.defineAnnotatedMethods(RubyBoolean.class);
         
         trueClass.getMetaClass().undefineMethod("new");
-        
+
         return trueClass;
     }
     
@@ -122,7 +135,7 @@ public class RubyBoolean extends RubyObject {
             super(runtime,
                     false); // Don't put in object space
 
-            flags = FALSE_F;
+            flags = FALSE_F | FROZEN_F;
         }
         
         @JRubyMethod(name = "&")
@@ -140,7 +153,7 @@ public class RubyBoolean extends RubyObject {
             return oth.isTrue() ? f.getRuntime().getTrue() : f;
         }
 
-        @JRubyMethod(name = "to_s")
+        @JRubyMethod(name = "to_s", alias = "inspect")
         public static IRubyObject false_to_s(IRubyObject f) {
             return RubyString.newUSASCIIString(f.getRuntime(), "false");
         }
@@ -150,6 +163,8 @@ public class RubyBoolean extends RubyObject {
         True(Ruby runtime) {
             super(runtime,
                     true); // Don't put in object space
+
+            flags |= FROZEN_F;
         }
         
         @JRubyMethod(name = "&")
@@ -167,7 +182,7 @@ public class RubyBoolean extends RubyObject {
             return oth.isTrue() ? t.getRuntime().getFalse() : t;
         }
 
-        @JRubyMethod(name = "to_s")
+        @JRubyMethod(name = "to_s", alias = "inspect")
         public static IRubyObject true_to_s(IRubyObject t) {
             return RubyString.newUSASCIIString(t.getRuntime(), "true");
         }
@@ -186,7 +201,7 @@ public class RubyBoolean extends RubyObject {
     @Override
     public RubyFixnum id() {
         if ((flags & FALSE_F) == 0) {
-            return RubyFixnum.newFixnum(getRuntime(), 2);
+            return RubyFixnum.newFixnum(getRuntime(), 20);
         } else {
             return RubyFixnum.zero(getRuntime());
         }

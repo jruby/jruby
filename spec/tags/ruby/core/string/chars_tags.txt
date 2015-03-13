@@ -1,1 +1,0 @@
-fails:String#chars returns an array when no block given

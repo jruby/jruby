@@ -1,8 +1,5 @@
-fails:Kernel#sleep is a private method
 fails:Kernel#sleep pauses execution for approximately the duration requested
 fails:Kernel#sleep returns the rounded number of seconds asleep
-fails:Kernel#sleep raises an ArgumentError when passed a negative duration
 fails:Kernel#sleep raises a TypeError when passed a non-numeric duration
-fails:Kernel#sleep accepts a Rational
-fails:Kernel#sleep pauses execution indefinitely if not given a duration
-fails:Kernel.sleep needs to be reviewed for spec completeness
+slow:Kernel#sleep accepts a Float
+slow:Kernel#sleep accepts a Rational

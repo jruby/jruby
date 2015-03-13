@@ -1,15 +1,17 @@
 package org.jruby.ir.instructions;
 
+import org.jruby.ir.IRScope;
 import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Operation;
 import org.jruby.ir.instructions.specialized.OneFixnumArgNoBlockCallInstr;
+import org.jruby.ir.instructions.specialized.OneFloatArgNoBlockCallInstr;
 import org.jruby.ir.instructions.specialized.OneOperandArgBlockCallInstr;
 import org.jruby.ir.instructions.specialized.OneOperandArgNoBlockCallInstr;
 import org.jruby.ir.instructions.specialized.ZeroOperandArgNoBlockCallInstr;
-import org.jruby.ir.operands.MethAddr;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.Variable;
-import org.jruby.ir.transformations.inlining.InlinerInfo;
+import org.jruby.ir.persistence.IRWriterEncoder;
+import org.jruby.ir.transformations.inlining.CloneInfo;
 import org.jruby.runtime.CallType;
 
 /*
@@ -18,21 +20,39 @@ import org.jruby.runtime.CallType;
 public class CallInstr extends CallBase implements ResultInstr {
     protected Variable result;
 
-    public static CallInstr create(Variable result, MethAddr methAddr, Operand receiver, Operand[] args, Operand closure) {
-        return new CallInstr(CallType.NORMAL, result, methAddr, receiver, args, closure);
+    public static CallInstr create(IRScope scope, Variable result, String name, Operand receiver, Operand[] args, Operand closure) {
+        return create(scope, CallType.NORMAL, result, name, receiver, args, closure);
     }
 
-    public static CallInstr create(CallType callType, Variable result, MethAddr methAddr, Operand receiver, Operand[] args, Operand closure) {
-        return new CallInstr(callType, result, methAddr, receiver, args, closure);
+    public static CallInstr create(IRScope scope, CallType callType, Variable result, String name, Operand receiver, Operand[] args, Operand closure) {
+        if (scope.maybeUsingRefinements()) {
+            // FIXME: Make same instr with refined callSite here or push though all path below
+        }
+
+        if (!containsArgSplat(args)) {
+            boolean hasClosure = closure != null;
+
+            if (args.length == 0 && !hasClosure) {
+                return new ZeroOperandArgNoBlockCallInstr(callType, result, name, receiver, args);
+            } else if (args.length == 1) {
+                if (hasClosure) return new OneOperandArgBlockCallInstr(callType, result, name, receiver, args, closure);
+                if (isAllFixnums(args)) return new OneFixnumArgNoBlockCallInstr(callType, result, name, receiver, args);
+                if (isAllFloats(args)) return new OneFloatArgNoBlockCallInstr(callType, result, name, receiver, args);
+
+                return new OneOperandArgNoBlockCallInstr(callType, result, name, receiver, args);
+            }
+        }
+
+        return new CallInstr(callType, result, name, receiver, args, closure);
     }
 
 
-    public CallInstr(CallType callType, Variable result, MethAddr methAddr, Operand receiver, Operand[] args, Operand closure) {
-        this(Operation.CALL, callType, result, methAddr, receiver, args, closure);
+    public CallInstr(CallType callType, Variable result, String name, Operand receiver, Operand[] args, Operand closure) {
+        this(Operation.CALL, callType, result, name, receiver, args, closure);
     }
 
-    protected CallInstr(Operation op, CallType callType, Variable result, MethAddr methAddr, Operand receiver, Operand[] args, Operand closure) {
-        super(op, callType, methAddr, receiver, args, closure);
+    protected CallInstr(Operation op, CallType callType, Variable result, String name, Operand receiver, Operand[] args, Operand closure) {
+        super(op, callType, name, receiver, args, closure);
 
         assert result != null;
 
@@ -41,8 +61,15 @@ public class CallInstr extends CallBase implements ResultInstr {
 
     public CallInstr(Operation op, CallInstr ordinary) {
         this(op, ordinary.getCallType(), ordinary.getResult(),
-                ordinary.getMethodAddr(), ordinary.getReceiver(), ordinary.getCallArgs(),
+                ordinary.getName(), ordinary.getReceiver(), ordinary.getCallArgs(),
                 ordinary.getClosureArg(null));
+    }
+
+    @Override
+    public void encode(IRWriterEncoder e) {
+        super.encode(e);
+
+        e.encode(getResult());
     }
 
     public Variable getResult() {
@@ -53,37 +80,14 @@ public class CallInstr extends CallBase implements ResultInstr {
         this.result = v;
     }
 
-    @Override
-    public CallBase specializeForInterpretation() {
-        Operand[] callArgs = getCallArgs();
-        if (containsArgSplat(callArgs)) return this;
-
-        switch (callArgs.length) {
-            case 0:
-                return hasClosure() ? this : new ZeroOperandArgNoBlockCallInstr(this);
-            case 1:
-                if (isAllFixnums() && !hasClosure()) return new OneFixnumArgNoBlockCallInstr(this);
-
-                return hasClosure() ? new OneOperandArgBlockCallInstr(this) : new OneOperandArgNoBlockCallInstr(this);
-        }
-        return this;
-    }
-
     public Instr discardResult() {
-        return new NoResultCallInstr(Operation.NORESULT_CALL, getCallType(), getMethodAddr(), getReceiver(), getCallArgs(), closure);
+        return NoResultCallInstr.create(getCallType(), getName(), getReceiver(), getCallArgs(), getClosureArg());
     }
 
     @Override
-    public Instr cloneForInlining(InlinerInfo ii) {
-        return new CallInstr(getCallType(), ii.getRenamedVariable(result),
-                (MethAddr) getMethodAddr().cloneForInlining(ii),
-                receiver.cloneForInlining(ii), cloneCallArgs(ii),
-                closure == null ? null : closure.cloneForInlining(ii));
-    }
-
-    @Override
-    public String toString() {
-        return (hasUnusedResult() ? "[DEAD-RESULT]" : "") + result + " = " + super.toString();
+    public Instr clone(CloneInfo ii) {
+        return new CallInstr(getCallType(), ii.getRenamedVariable(result), getName(), getReceiver().cloneForInlining(ii),
+                cloneCallArgs(ii), getClosureArg() == null ? null : getClosureArg().cloneForInlining(ii));
     }
 
     @Override

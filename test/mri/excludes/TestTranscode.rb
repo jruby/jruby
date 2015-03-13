@@ -1,4 +1,3 @@
-exclude :test_all_bytes, "needs investigation"
 exclude :test_from_cp50221, "needs investigation"
 exclude :test_gb18030, "perhaps a bug in pack wrt encoded text"
 exclude :test_gb2312, "needs investigation"

@@ -1,4 +1,1 @@
-exclude :test_num2long, "needs investigation"
-exclude :test_quo, "needs investigation"
-exclude :test_quo_ruby_core_41575, "needs investigation"
-exclude :test_step, "needs investigation"
+exclude :test_coerce, "Needs UTF8 symbol support"

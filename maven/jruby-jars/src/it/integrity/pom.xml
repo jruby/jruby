@@ -16,6 +16,16 @@
   <build>
     <plugins>
       <plugin>
+	<groupId>de.saumya.mojo</groupId>
+	<artifactId>gem-maven-plugin</artifactId>
+	<version>1.0.5</version>
+	<executions>
+	  <execution>
+	    <goals><goal>initialize</goal></goals>
+	  </execution>
+	</executions>
+      </plugin>
+      <plugin>
         <groupId>org.codehaus.mojo</groupId>
         <artifactId>exec-maven-plugin</artifactId>
         <version>1.2</version>
@@ -36,7 +46,7 @@
 	    <configuration>
 	      <arguments>
 		<argument>-classpath</argument>
-		<argument>${gem.path}/gems/jruby-jars-${ruby.version}/lib/jruby-core-complete-@project.version@.jar${path.separator}${gem.path}/gems/jruby-jars-${ruby.version}/lib/jruby-stdlib-@project.version@.jar</argument>
+		<argument>${gem.home}/gems/jruby-jars-${ruby.version}/lib/jruby-core-@project.version@-complete.jar${path.separator}${gem.home}/gems/jruby-jars-${ruby.version}/lib/jruby-stdlib-@project.version@.jar</argument>
 		<argument>org.jruby.Main</argument>
 		<argument>-S</argument>
 		<argument>gem</argument>
@@ -53,7 +63,7 @@
 	    <configuration>
 	      <arguments>
 		<argument>-classpath</argument>
-		<argument>${gem.path}/gems/jruby-jars-${ruby.version}/lib/jruby-core-complete-@project.version@.jar${path.separator}${gem.path}/gems/jruby-jars-${ruby.version}/lib/jruby-stdlib-@project.version@.jar</argument>
+		<argument>${gem.home}/gems/jruby-jars-${ruby.version}/lib/jruby-core-@project.version@-complete.jar${path.separator}${gem.home}/gems/jruby-jars-${ruby.version}/lib/jruby-stdlib-@project.version@.jar</argument>
 		<argument>org.jruby.Main</argument>
 		<argument>-S</argument>
 		<argument>rake</argument>
@@ -70,7 +80,7 @@
 	    <configuration>
 	      <arguments>
 		<argument>-classpath</argument>
-		<argument>${gem.path}/gems/jruby-jars-${ruby.version}/lib/jruby-core-complete-@project.version@.jar${path.separator}${gem.path}/gems/jruby-jars-${ruby.version}/lib/jruby-stdlib-@project.version@.jar</argument>
+		<argument>${gem.home}/gems/jruby-jars-${ruby.version}/lib/jruby-core-@project.version@-complete.jar${path.separator}${gem.home}/gems/jruby-jars-${ruby.version}/lib/jruby-stdlib-@project.version@.jar</argument>
 		<argument>org.jruby.Main</argument>
 		<argument>-S</argument>
 		<argument>rdoc</argument>
@@ -87,7 +97,7 @@
 	    <configuration>
 	      <arguments>
 		<argument>-classpath</argument>
-		<argument>${gem.path}/gems/jruby-jars-${ruby.version}/lib/jruby-core-complete-@project.version@.jar${path.separator}${gem.path}/gems/jruby-jars-${ruby.version}/lib/jruby-stdlib-@project.version@.jar</argument>
+		<argument>${gem.home}/gems/jruby-jars-${ruby.version}/lib/jruby-core-@project.version@-complete.jar${path.separator}${gem.home}/gems/jruby-jars-${ruby.version}/lib/jruby-stdlib-@project.version@.jar</argument>
 		<argument>org.jruby.Main</argument>
 		<argument>-e</argument>
 		<argument>
@@ -103,6 +113,53 @@
 		</argument>
 	      </arguments>
 	    </configuration>
+	  </execution>
+	  <execution>
+	    <id>load default gems</id>
+	    <phase>test</phase>
+	    <goals>
+              <goal>exec</goal>
+            </goals>
+            <configuration>          
+	      <executable>java</executable> 
+              <arguments>
+		<argument>-classpath</argument>
+		<argument>${gem.home}/gems/jruby-jars-${ruby.version}/lib/jruby-core-@project.version@-complete.jar${path.separator}${gem.home}/gems/jruby-jars-${ruby.version}/lib/jruby-stdlib-@project.version@.jar</argument>
+		<argument>org.jruby.Main</argument>
+		<argument>-e</argument>
+		<!-- make sure openssl loads -->
+		<argument>
+		  require 'jar-dependencies'
+		  require 'openssl'
+		  puts Gem.loaded_specs.keys.sort.join(',')
+		</argument>
+              </arguments>
+            </configuration>
+	  </execution>
+	  <execution>
+	    <id>ensure there is no org.objectweb.asm.ClassWriter</id>
+	    <phase>test</phase>
+	    <goals>
+              <goal>exec</goal>
+            </goals>
+            <configuration>          
+	      <executable>java</executable> 
+              <arguments>
+		<argument>-classpath</argument>
+		<argument>${gem.home}/gems/jruby-jars-${ruby.version}/lib/jruby-core-@project.version@-complete.jar${path.separator}${gem.home}/gems/jruby-jars-${ruby.version}/lib/jruby-stdlib-@project.version@.jar</argument>
+		<argument>org.jruby.Main</argument>
+		<argument>-e</argument>
+		<!-- make sure openssl loads -->
+		<argument>
+		  begin
+		    import_java "org.objectweb.asm.ClassWriter"
+		    raise "error there is org.objectweb.asm.ClassWriter on the classpath"
+		  rescue NameError => e
+		    puts "there is NO org.objectweb.asm.ClassWriter on the classpath"
+                  end
+		</argument>
+              </arguments>
+            </configuration>
 	  </execution>
 	</executions>
       </plugin>

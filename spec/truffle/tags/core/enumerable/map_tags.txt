@@ -1,4 +1,1 @@
-fails:Enumerable#map returns a new array with the results of passing each element to block
 fails:Enumerable#map passes through the values yielded by #each_with_index
-fails:Enumerable#map gathers initial args as elements when each yields multiple
-fails:Enumerable#map returns an enumerator when no block given

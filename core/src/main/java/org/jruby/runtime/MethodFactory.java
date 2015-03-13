@@ -13,7 +13,7 @@
  *
  * Copyright (C) 2008 The JRuby Community <www.jruby.org>
  * Copyright (C) 2006 Ola Bini <ola@ologix.com>
- * 
+ *
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
  * or the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
@@ -31,6 +31,7 @@ package org.jruby.runtime;
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
 import java.util.List;
+
 import org.jruby.Ruby;
 import org.jruby.RubyInstanceConfig;
 import org.jruby.RubyModule;
@@ -44,7 +45,7 @@ import org.jruby.internal.runtime.methods.MethodNodes;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.util.OneShotClassLoader;
+import org.jruby.util.ClassDefiningJRubyClassLoader;
 import org.jruby.util.cli.Options;
 import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
@@ -57,7 +58,7 @@ import org.jruby.util.log.LoggerFactory;
  */
 public abstract class MethodFactory {
     private static final Logger LOG = LoggerFactory.getLogger("MethodFactory");
-    
+
     /**
      * A Class[] representing the signature of compiled Ruby method.
      */
@@ -79,16 +80,17 @@ public abstract class MethodFactory {
                 baos.write(buf, 0, bytesRead);
             }
 
-            OneShotClassLoader oscl = new OneShotClassLoader(Ruby.getClassLoader());
-            Class unloaderClass = oscl.defineClass("org.jruby.util.JDBCDriverUnloader", baos.toByteArray());
+            ClassDefiningJRubyClassLoader oscl = new ClassDefiningJRubyClassLoader(Ruby.getClassLoader());
+            Class<?> unloaderClass = oscl.defineClass("org.jruby.util.JDBCDriverUnloader", baos.toByteArray());
             unloaderClass.newInstance();
             can = true;
+            oscl.close();
         } catch (Throwable t) {
             LOG.debug("MethodFactory: failed to load bytecode at runtime, falling back on reflection", t);
         }
         CAN_LOAD_BYTECODE = can;
     }
-    
+
     /**
      * For batched method construction, the logic necessary to bind resulting
      * method objects into a target module/class must be provided as a callback.
@@ -106,7 +108,7 @@ public abstract class MethodFactory {
      * security restricts code generation, ReflectionMethodFactory will be used.
      * If we are dumping class definitions, DumpingInvocationMethodFactory will
      * be used. See MethodFactory's static initializer for more details.
-     * 
+     *
      * @param classLoader The classloader to use for searching for and
      * dynamically loading code.
      * @return A new MethodFactory.
@@ -122,13 +124,13 @@ public abstract class MethodFactory {
             return new InvocationMethodFactory(classLoader);
         }
     }
-    
+
     /**
      * Get a new method handle based on the target JRuby-compiled method.
      * Because compiled Ruby methods have additional requirements and
      * characteristics not typically found in Java-based methods, this is
      * provided as a separate way to define such method handles.
-     * 
+     *
      * @param implementationClass The class to which the method will be bound.
      * @param rubyName The Ruby method name to which the method will bind
      * @param javaName The name of the method
@@ -141,8 +143,8 @@ public abstract class MethodFactory {
      * @return A new method handle for the target compiled method.
      */
     public abstract DynamicMethod getCompiledMethod(
-            RubyModule implementationClass, String rubyName, String javaName, 
-            Arity arity, Visibility visibility, StaticScope scope, 
+            RubyModule implementationClass, String rubyName, String javaName,
+            Arity arity, Visibility visibility, StaticScope scope,
             Object scriptObject, CallConfiguration callConfig,
             ISourcePosition position, String parameterDesc,
             MethodNodes methodNodes);
@@ -177,7 +179,7 @@ public abstract class MethodFactory {
      * of starting up AOT-compiled code, by spreading out the heavy lifting
      * across the run rather than causing all method handles to be immediately
      * instantiated.
-     * 
+     *
      * @param implementationClass The class to which the method will be bound.
      * @param rubyName The Ruby method name to which the method will bind
      * @param javaName The name of the method
@@ -189,38 +191,38 @@ public abstract class MethodFactory {
      * @return A new method handle for the target compiled method.
      */
     public abstract DynamicMethod getCompiledMethodLazily(
-            RubyModule implementationClass, String rubyName, String javaName, 
-            Arity arity, Visibility visibility, StaticScope scope, 
+            RubyModule implementationClass, String rubyName, String javaName,
+            Arity arity, Visibility visibility, StaticScope scope,
             Object scriptObject, CallConfiguration callConfig,
             ISourcePosition position, String parameterDesc, MethodNodes methodNodes);
-    
+
     /**
      * Based on a list of annotated Java methods, generate a method handle using
      * the annotation and the target signatures. The annotation and signatures
      * will be used to dynamically generate the appropriate call logic for the
      * handle. This differs from the single-method version in that it will dispatch
      * multiple specific-arity paths to different target methods.
-     * 
+     *
      * @param implementationClass The target class or module on which the method
      * will be bound.
      * @param descs A list of JavaMethodDescriptors describing the target methods
      * @return A method handle for the target object.
      */
     public abstract DynamicMethod getAnnotatedMethod(RubyModule implementationClass, List<JavaMethodDescriptor> desc);
-    
+
     /**
      * Based on an annotated Java method object, generate a method handle using
      * the annotation and the target signature. The annotation and signature
      * will be used to dynamically generate the appropriate call logic for the
      * handle.
-     * 
+     *
      * @param implementationClass The target class or module on which the method
      * will be bound.
      * @param desc A JavaMethodDescriptor describing the target method
      * @return A method handle for the target object.
      */
     public abstract DynamicMethod getAnnotatedMethod(RubyModule implementationClass, JavaMethodDescriptor desc);
-    
+
     /**
      * Get a CompiledBlockCallback for the specified block
      *
@@ -269,7 +271,7 @@ public abstract class MethodFactory {
      * Use the reflection-based factory.
      */
     private static final boolean reflection;
-    
+
     static {
         boolean reflection_ = false, dumping_ = false;
         String dumpingPath_ = null;

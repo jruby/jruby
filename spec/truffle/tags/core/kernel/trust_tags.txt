@@ -1,4 +1,1 @@
-fails:Kernel#trust returns self
-fails:Kernel#trust clears the untrusted bit
 fails:Kernel#trust raises RuntimeError on an untrusted, frozen object
-fails:Kernel#trust does not raise an error on a trusted, frozen object

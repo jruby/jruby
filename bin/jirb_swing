@@ -49,7 +49,7 @@ end
 JRuby.objectspace = true # useful for code completion
 
 # From vanilla IRB
-if __FILE__ == $0
+if __FILE__.sub(/file:/, '') == $0.sub(/file:/, '')
   IRB.start(__FILE__)
 else
   # check -e option

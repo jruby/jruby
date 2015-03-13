@@ -313,11 +313,11 @@ class TestLazyEnumerator < Test::Unit::TestCase
   def test_take_rewound
     bug7696 = '[ruby-core:51470]'
     e=(1..42).lazy.take(2)
-    assert_equal 1, e.next
-    assert_equal 2, e.next
+    assert_equal 1, e.next, bug7696
+    assert_equal 2, e.next, bug7696
     e.rewind
-    assert_equal 1, e.next
-    assert_equal 2, e.next
+    assert_equal 1, e.next, bug7696
+    assert_equal 2, e.next, bug7696
   end
 
   def test_take_while
@@ -470,6 +470,7 @@ EOS
     bug7507 = '[ruby-core:51510]'
     {
       slice_before: //,
+      slice_after: //,
       with_index: nil,
       cycle: nil,
       each_with_object: 42,
@@ -480,6 +481,7 @@ EOS
       assert_equal Enumerator::Lazy, [].lazy.send(method, *arg).class, bug7507
     end
     assert_equal Enumerator::Lazy, [].lazy.chunk{}.class, bug7507
+    assert_equal Enumerator::Lazy, [].lazy.slice_when{}.class, bug7507
   end
 
   def test_no_warnings

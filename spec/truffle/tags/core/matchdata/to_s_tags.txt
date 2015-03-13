@@ -1,1 +1,0 @@
-fails:MatchData#to_s returns the entire matched string

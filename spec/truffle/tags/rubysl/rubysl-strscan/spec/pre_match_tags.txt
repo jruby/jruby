@@ -1,0 +1,1 @@
+fails:StringScanner#pre_match taints the returned String if the input was tainted

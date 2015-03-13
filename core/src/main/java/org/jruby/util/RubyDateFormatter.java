@@ -67,8 +67,6 @@ public class RubyDateFormatter {
     static enum Format {
         /** encoding to give to output */
         FORMAT_ENCODING,
-        /** taint output */
-        FORMAT_TAINT,
         /** raw string, no formatting */
         FORMAT_STRING,
         /** formatter */
@@ -243,7 +241,10 @@ public class RubyDateFormatter {
     }
 
     public List<Token> compilePattern(RubyString format, boolean dateLibrary) {
-        ByteList pattern = format.getByteList();
+        return compilePattern(format.getByteList(), dateLibrary);
+    }
+
+    public List<Token> compilePattern(ByteList pattern, boolean dateLibrary) {
         List<Token> compiledPattern = new LinkedList<Token>();
 
         Encoding enc = pattern.getEncoding();
@@ -252,10 +253,6 @@ public class RubyDateFormatter {
         }
         if (enc != ASCIIEncoding.INSTANCE) { // default for ByteList
             compiledPattern.add(new Token(Format.FORMAT_ENCODING, enc));
-        }
-
-        if (format.isTaint()) {
-            compiledPattern.add(new Token(Format.FORMAT_TAINT));
         }
 
         ByteArrayInputStream in = new ByteArrayInputStream(pattern.getUnsafeBytes(), pattern.getBegin(), pattern.getRealSize());
@@ -358,13 +355,20 @@ public class RubyDateFormatter {
 
     /** Convenience method when using no pattern caching */
     public RubyString compileAndFormat(RubyString pattern, boolean dateLibrary, DateTime dt, long nsec, IRubyObject sub_millis) {
-        return format(compilePattern(pattern, dateLibrary), dt, nsec, sub_millis);
+        RubyString out = format(compilePattern(pattern, dateLibrary), dt, nsec, sub_millis);
+        if (pattern.isTaint()) {
+            out.taint(context);
+        }
+        return out;
     }
 
     public RubyString format(List<Token> compiledPattern, DateTime dt, long nsec, IRubyObject sub_millis) {
+        return context.runtime.newString(formatToByteList(compiledPattern, dt, nsec, sub_millis));
+    }
+
+    public ByteList formatToByteList(List<Token> compiledPattern, DateTime dt, long nsec, IRubyObject sub_millis) {
         RubyTimeOutputFormatter formatter = RubyTimeOutputFormatter.DEFAULT_FORMATTER;
         ByteList toAppendTo = new ByteList();
-        boolean taint = false;
 
         for (Token token: compiledPattern) {
             String output = null;
@@ -375,9 +379,6 @@ public class RubyDateFormatter {
             switch (format) {
                 case FORMAT_ENCODING:
                     toAppendTo.setEncoding((Encoding) token.getData());
-                    continue; // go to next token
-                case FORMAT_TAINT:
-                    taint = true;
                     continue; // go to next token
                 case FORMAT_OUTPUT:
                     formatter = (RubyTimeOutputFormatter) token.getData();
@@ -553,10 +554,7 @@ public class RubyDateFormatter {
             toAppendTo.append(output.getBytes(context.runtime.getEncodingService().charsetForEncoding(toAppendTo.getEncoding())));
         }
 
-        RubyString str = context.runtime.newString(toAppendTo);
-        if (taint)
-            str.taint(context);
-        return str;
+        return toAppendTo;
     }
 
     /**
@@ -619,16 +617,11 @@ public class RubyDateFormatter {
                 after = ":" + mm + ":" + ss;
                 break;
             case 3: // %:::z -> +hh[:mm[:ss]]
-                if (minutes == 0) {
-                    if (seconds == 0) { // +hh
-                        defaultWidth = 3;
-                        after = "";
-                    } else { // +hh:mm
-                        return formatZone(1, value, formatter);
-                    }
-                } else { // +hh:mm:ss
-                    return formatZone(2, value, formatter);
-                }
+                StringBuilder sb = new StringBuilder();
+                if (minutes != 0 || seconds != 0) sb.append(":").append(mm);
+                if (seconds != 0) sb.append(":").append(ss);
+                after = sb.toString();
+                defaultWidth = after.length() + 3;
                 break;
         }
 

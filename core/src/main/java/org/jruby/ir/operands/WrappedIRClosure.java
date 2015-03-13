@@ -2,7 +2,9 @@ package org.jruby.ir.operands;
 
 import org.jruby.ir.IRClosure;
 import org.jruby.ir.IRVisitor;
-import org.jruby.ir.transformations.inlining.InlinerInfo;
+import org.jruby.ir.persistence.IRWriterEncoder;
+import org.jruby.ir.transformations.inlining.CloneInfo;
+import org.jruby.ir.transformations.inlining.SimpleCloneInfo;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.*;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -51,8 +53,14 @@ public class WrappedIRClosure extends Operand {
     }
 
     @Override
-    public Operand cloneForInlining(InlinerInfo ii) {
-        return new WrappedIRClosure(ii.getRenamedVariable(self), closure.cloneForInlining(ii));
+    public Operand cloneForInlining(CloneInfo info) {
+        // Making interp instrs so that if JIT hits IRClosure we will not concurrently modify the same IRScope.
+        if (info instanceof SimpleCloneInfo && !((SimpleCloneInfo) info).isEnsureBlockCloneMode()) {
+            // FIXME: It really bothers me we do not clone closure here but cloning like main clone case loses interpContext + other things.
+            return new WrappedIRClosure(info.getRenamedVariable(self), closure);
+        }
+
+        return new WrappedIRClosure(info.getRenamedVariable(self), closure.cloneForInlining(info));
     }
 
     @Override
@@ -67,6 +75,13 @@ public class WrappedIRClosure extends Operand {
         Binding binding = context.currentBinding(selfVal, currDynScope);
 
         return new Block(body, binding);
+    }
+
+    @Override
+    public void encode(IRWriterEncoder e) {
+        super.encode(e);
+        e.encode(self);
+        e.encode(closure);
     }
 
     @Override

@@ -1,5 +1,2 @@
-fails:ENV.key? returns true if ENV has the key
-fails:ENV.key? returns false if ENV doesn't include the key
-fails:ENV.key needs to be reviewed for completeness
 fails:ENV.key returns the index associated with the passed value
 fails:ENV.key returns nil if the passed value is not found

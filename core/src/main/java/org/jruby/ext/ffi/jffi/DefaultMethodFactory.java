@@ -142,22 +142,31 @@ public final class DefaultMethodFactory extends MethodFactory {
      * @return A new <tt>Marshaller</tt>
      */
     static ParameterMarshaller getMarshaller(Type type, CallingConvention convention, IRubyObject enums) {
+        if (enums != null && !enums.isNil() && !(enums instanceof RubyHash || enums instanceof Enums)) {
+            throw type.getRuntime().newArgumentError("wrong argument type "
+                    + enums.getMetaClass().getName() + " (expected Hash or Enums)");
+        }
+
         if (type instanceof Type.Builtin) {
             return enums != null && !enums.isNil() ? getEnumMarshaller(type, convention, enums) : getMarshaller(type.getNativeType());
 
         } else if (type instanceof org.jruby.ext.ffi.CallbackInfo) {
             return new ConvertingMarshaller(getMarshaller(type.getNativeType()), 
-                    DataConverters.getParameterConverter(type, null));
+                    DataConverters.getParameterConverter(type, (Enums)null));
 
         } else if (type instanceof org.jruby.ext.ffi.StructByValue) {
             return new StructByValueMarshaller((org.jruby.ext.ffi.StructByValue) type);
         
         } else if (type instanceof org.jruby.ext.ffi.MappedType) {
             MappedType ctype = (MappedType) type;
-            return new ConvertingMarshaller(
-                    getMarshaller(ctype.getRealType(), convention, enums), 
-                    DataConverters.getParameterConverter(type, 
-                        enums instanceof RubyHash ? (RubyHash) enums : null));
+            if (enums == null || enums instanceof Enums)
+                return new ConvertingMarshaller(
+                    getMarshaller(ctype.getRealType(), convention, (Enums)enums), 
+                    DataConverters.getParameterConverter(type, (Enums)enums));
+            else
+                return new ConvertingMarshaller(
+                    getMarshaller(ctype.getRealType(), convention, enums.isNil() ? null : (RubyHash)enums),
+                    DataConverters.getParameterConverter(type, enums.isNil() ? null : (RubyHash)enums));
 
         } else {
             return null;
@@ -172,11 +181,11 @@ public final class DefaultMethodFactory extends MethodFactory {
      * @return A new <tt>ParameterMarshaller</tt>
      */
     static ParameterMarshaller getEnumMarshaller(Type type, CallingConvention convention, IRubyObject enums) {
-        if (!(enums instanceof RubyHash)) {
+        if (enums != null && !enums.isNil() && !(enums instanceof RubyHash || enums instanceof Enums)) {
             throw type.getRuntime().newArgumentError("wrong argument type "
                     + enums.getMetaClass().getName() + " (expected Hash or Enums)");
         }
-        NativeDataConverter converter = DataConverters.getParameterConverter(type, (RubyHash) enums);
+        NativeDataConverter converter = DataConverters.getParameterConverter(type, (Enums)enums);
         ParameterMarshaller marshaller = getMarshaller(type.getNativeType());
         return converter != null ? new ConvertingMarshaller(marshaller, converter) : marshaller;
     }

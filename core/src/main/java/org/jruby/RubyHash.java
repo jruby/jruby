@@ -314,7 +314,7 @@ public class RubyHash extends RubyObject implements Map {
      * ============================
      */
 
-    private static final int MRI_PRIMES[] = {
+    public static final int MRI_PRIMES[] = {
         8 + 3, 16 + 3, 32 + 5, 64 + 3, 128 + 3, 256 + 27, 512 + 9, 1024 + 9, 2048 + 5, 4096 + 3,
         8192 + 27, 16384 + 43, 32768 + 3, 65536 + 45, 131072 + 29, 262144 + 3, 524288 + 21, 1048576 + 7,
         2097152 + 17, 4194304 + 15, 8388608 + 9, 16777216 + 43, 33554432 + 35, 67108864 + 15,
@@ -1437,7 +1437,7 @@ public class RubyHash extends RubyObject implements Map {
     }
     
     public boolean keep_ifCommon(final ThreadContext context, final Block block) {
-        testFrozen("hash");
+        testFrozen("Hash");
         final boolean[] modified = {false};
         iteratorVisitAll(new Visitor() {
             @Override
@@ -1451,10 +1451,7 @@ public class RubyHash extends RubyObject implements Map {
         return modified[0];
     }
 
-    /** rb_hash_sort
-     *
-     */
-    @JRubyMethod
+    @Deprecated
     public IRubyObject sort(ThreadContext context, Block block) {
         return to_a().sort_bang(context, block);
     }
@@ -1492,14 +1489,6 @@ public class RubyHash extends RubyObject implements Map {
         } catch (FoundKey found) {
             return found.key;
         }
-    }
-
-    /** rb_hash_indexes
-     *
-     */
-    @JRubyMethod(name = {"indexes", "indices"}, rest = true)
-    public RubyArray indices(ThreadContext context, IRubyObject[] indices) {
-        return values_at(context, indices);
     }
 
     /** rb_hash_keys
@@ -1887,6 +1876,45 @@ public class RubyHash extends RubyObject implements Map {
         RubyHash clone = (RubyHash) super.rbClone();
         clone.setComparedByIdentity(isComparedByIdentity());
         return clone;
+    }
+
+    @JRubyMethod(name = "any?")
+    public IRubyObject any_p(ThreadContext context, Block block) {
+        if (isEmpty()) return context.runtime.getFalse();
+
+        if (!block.isGiven()) return context.runtime.getTrue();
+
+        if (block.arity().getValue() > 1)
+            return any_p_i_fast(context, block);
+
+        return any_p_i(context, block);
+    }
+
+    private IRubyObject any_p_i(ThreadContext context, Block block) {
+        iteratorEntry();
+        try {
+            for (RubyHashEntry entry = head.nextAdded; entry != head; entry = entry.nextAdded) {
+                IRubyObject newAssoc = RubyArray.newArray(context.runtime, entry.key, entry.value);
+                if (block.yield(context, newAssoc).isTrue())
+                    return context.getRuntime().getTrue();
+            }
+            return context.getRuntime().getFalse();
+        } finally {
+            iteratorExit();
+        }
+    }
+
+    private IRubyObject any_p_i_fast(ThreadContext context, Block block) {
+        iteratorEntry();
+        try {
+            for (RubyHashEntry entry = head.nextAdded; entry != head; entry = entry.nextAdded) {
+                if (block.yieldSpecific(context, entry.key, entry.value).isTrue())
+                    return context.getRuntime().getTrue();
+            }
+            return context.getRuntime().getFalse();
+        } finally {
+            iteratorExit();
+        }
     }
 
     /**

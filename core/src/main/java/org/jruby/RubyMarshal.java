@@ -44,6 +44,7 @@ import org.jruby.anno.JRubyModule;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.Constants;
 import org.jruby.runtime.ThreadContext;
+import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.marshal.MarshalStream;
 import org.jruby.runtime.marshal.UnmarshalStream;
@@ -71,7 +72,7 @@ public class RubyMarshal {
         return module;
     }
 
-    @JRubyMethod(required = 1, optional = 2, module = true)
+    @JRubyMethod(required = 1, optional = 2, module = true, visibility = Visibility.PRIVATE)
     public static IRubyObject dump(IRubyObject recv, IRubyObject[] args, Block unusedBlock) {
         Ruby runtime = recv.getRuntime();
         IRubyObject objectToDump = args[0];
@@ -119,7 +120,7 @@ public class RubyMarshal {
         if (io.respondsTo("binmode")) io.callMethod(context, "binmode");
     }
 
-    @JRubyMethod(name = {"load", "restore"}, required = 1, optional = 1, module = true)
+    @JRubyMethod(name = {"load", "restore"}, required = 1, optional = 1, module = true, visibility = Visibility.PRIVATE)
     public static IRubyObject load(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block unusedBlock) {
         Ruby runtime = context.runtime;
         IRubyObject in = args[0];

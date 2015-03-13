@@ -312,6 +312,17 @@ EOT
     }
   end
 
+  def test_ignored_encoding_option
+    enc = "\u{30a8 30f3 30b3 30fc 30c7 30a3 30f3 30b0}"
+    pattern = /#{enc}/
+    assert_warning(pattern) {
+      open(IO::NULL, external_encoding: "us-ascii", encoding: enc) {}
+    }
+    assert_warning(pattern) {
+      open(IO::NULL, internal_encoding: "us-ascii", encoding: enc) {}
+    }
+  end
+
   def test_io_new_enc
     with_tmpdir {
       generate_file("tmp", "\xa1")
@@ -2142,32 +2153,34 @@ EOT
 
   def test_textmode_paragraph_nonasciicompat
     bug3534 = ['[ruby-dev:41803]', '[Bug #3534]']
-    r, w = IO.pipe
-    [Encoding::UTF_32BE, Encoding::UTF_32LE,
-     Encoding::UTF_16BE, Encoding::UTF_16LE,
-     Encoding::UTF_8].each do |e|
-      r.set_encoding(Encoding::US_ASCII, e)
-      wthr = Thread.new{ w.print(bug3534[0], "\n\n\n\n", bug3534[1], "\n") }
-      assert_equal((bug3534[0]+"\n\n").encode(e), r.gets(""), bug3534[0])
-      assert_equal((bug3534[1]+"\n").encode(e), r.gets(), bug3534[1])
-      wthr.join
-    end
+    IO.pipe {|r, w|
+      [Encoding::UTF_32BE, Encoding::UTF_32LE,
+       Encoding::UTF_16BE, Encoding::UTF_16LE,
+       Encoding::UTF_8].each do |e|
+        r.set_encoding(Encoding::US_ASCII, e)
+        wthr = Thread.new{ w.print(bug3534[0], "\n\n\n\n", bug3534[1], "\n") }
+        assert_equal((bug3534[0]+"\n\n").encode(e), r.gets(""), bug3534[0])
+        assert_equal((bug3534[1]+"\n").encode(e), r.gets(), bug3534[1])
+        wthr.join
+      end
+    }
   end
 
   def test_binmode_paragraph_nonasciicompat
     bug3534 = ['[ruby-dev:41803]', '[Bug #3534]']
-    r, w = IO.pipe
-    r.binmode
-    w.binmode
-    [Encoding::UTF_32BE, Encoding::UTF_32LE,
-     Encoding::UTF_16BE, Encoding::UTF_16LE,
-     Encoding::UTF_8].each do |e|
-      r.set_encoding(Encoding::US_ASCII, e)
-      wthr = Thread.new{ w.print(bug3534[0], "\n\n\n\n", bug3534[1], "\n") }
-      assert_equal((bug3534[0]+"\n\n").encode(e), r.gets(""), bug3534[0])
-      assert_equal((bug3534[1]+"\n").encode(e), r.gets(), bug3534[1])
-      wthr.join
-    end
+    IO.pipe {|r, w|
+      r.binmode
+      w.binmode
+      [Encoding::UTF_32BE, Encoding::UTF_32LE,
+       Encoding::UTF_16BE, Encoding::UTF_16LE,
+       Encoding::UTF_8].each do |e|
+        r.set_encoding(Encoding::US_ASCII, e)
+        wthr = Thread.new{ w.print(bug3534[0], "\n\n\n\n", bug3534[1], "\n") }
+        assert_equal((bug3534[0]+"\n\n").encode(e), r.gets(""), bug3534[0])
+        assert_equal((bug3534[1]+"\n").encode(e), r.gets(), bug3534[1])
+        wthr.join
+      end
+    }
   end
 
   def test_puts_widechar

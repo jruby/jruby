@@ -1,4 +1,5 @@
 require_relative "testbase"
+require_relative "../ruby/envutil"
 require "bigdecimal/math"
 
 class TestBigMath < Test::Unit::TestCase
@@ -59,5 +60,22 @@ class TestBigMath < Test::Unit::TestCase
     assert_in_delta(Math::PI/2, atan(PINF, N))
     assert_equal(BigDecimal("0.823840753418636291769355073102514088959345624027952954058347023122539489"),
                  atan(BigDecimal("1.08"), 72).round(72), '[ruby-dev:41257]')
+  end
+
+  def test_log
+    assert_equal(0, BigMath.log(BigDecimal("1.0"), 10))
+    assert_in_epsilon(Math.log(10)*1000, BigMath.log(BigDecimal("1e1000"), 10))
+    assert_raise(Math::DomainError) {BigMath.log(BigDecimal("0"), 10)}
+    assert_raise(Math::DomainError) {BigMath.log(BigDecimal("-1"), 10)}
+    assert_separately(%w[-rbigdecimal], <<-SRC)
+    begin
+      x = BigMath.log(BigDecimal("1E19999999999999"), 10)
+    rescue FloatDomainError
+    else
+      unless x.infinite?
+        assert_in_epsilon(Math.log(10)*19999999999999, x)
+      end
+    end
+    SRC
   end
 end

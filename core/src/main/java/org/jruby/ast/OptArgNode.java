@@ -40,7 +40,7 @@ public class OptArgNode extends Node implements INameNode {
     private Node value;
 
     public OptArgNode(ISourcePosition position, Node value) {
-        super(position);
+        super(position, value != null && value.containsVariableAssignment());
         this.value = value;
     }
 

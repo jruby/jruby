@@ -1,168 +1,24 @@
-fails:Array#pack with format 'S' raises a TypeError when passed nil
-fails:Array#pack with format 'S' raises a TypeError when passed an Integer
 fails:Array#pack with format 'S' ignores whitespace in the format string
 fails:Array#pack with format 'S' calls #to_str to coerce the directives string
 fails:Array#pack with format 'S' taints the output string if the format string is tainted
-fails:Array#pack with format 'S' raises an ArgumentError if there are fewer elements than the format requires
-fails:Array#pack with format 'S' returns an empty String if count is zero
-fails:Array#pack with format 'S' raises a TypeError when passed true
-fails:Array#pack with format 'S' raises a TypeError when passed false
-fails:Array#pack with format 'S' returns an ASCII-8BIT string
-fails:Array#pack with format 'S' raises a TypeError when the object does not respond to #to_int
-fails:Array#pack with format 'S' raises a TypeError when passed a String
-fails:Array#pack with format 's' raises a TypeError when passed nil
-fails:Array#pack with format 's' raises a TypeError when passed an Integer
 fails:Array#pack with format 's' ignores whitespace in the format string
 fails:Array#pack with format 's' calls #to_str to coerce the directives string
 fails:Array#pack with format 's' taints the output string if the format string is tainted
-fails:Array#pack with format 's' raises an ArgumentError if there are fewer elements than the format requires
-fails:Array#pack with format 's' returns an empty String if count is zero
-fails:Array#pack with format 's' raises a TypeError when passed true
-fails:Array#pack with format 's' raises a TypeError when passed false
-fails:Array#pack with format 's' returns an ASCII-8BIT string
-fails:Array#pack with format 's' raises a TypeError when the object does not respond to #to_int
-fails:Array#pack with format 's' raises a TypeError when passed a String
-fails:Array#pack with format 'S' with modifier '<' encodes the least significant 16 bits of a positive number
-fails:Array#pack with format 'S' with modifier '<' encodes the least significant 16 bits of a negative number
-fails:Array#pack with format 'S' with modifier '<' encodes a Float truncated as an Integer
 fails:Array#pack with format 'S' with modifier '<' calls #to_int to convert the pack argument to an Integer
-fails:Array#pack with format 'S' with modifier '<' encodes the number of array elements specified by the count modifier
-fails:Array#pack with format 'S' with modifier '<' encodes all remaining elements when passed the '*' modifier
-fails:Array#pack with format 'S' with modifier '<' ignores NULL bytes between directives
-fails:Array#pack with format 'S' with modifier '<' ignores spaces between directives
-fails:Array#pack with format 'S' with modifier '<' and '_' encodes the least significant 16 bits of a positive number
-fails:Array#pack with format 'S' with modifier '<' and '_' encodes the least significant 16 bits of a negative number
-fails:Array#pack with format 'S' with modifier '<' and '_' encodes a Float truncated as an Integer
 fails:Array#pack with format 'S' with modifier '<' and '_' calls #to_int to convert the pack argument to an Integer
-fails:Array#pack with format 'S' with modifier '<' and '_' encodes the number of array elements specified by the count modifier
-fails:Array#pack with format 'S' with modifier '<' and '_' encodes all remaining elements when passed the '*' modifier
-fails:Array#pack with format 'S' with modifier '<' and '_' ignores NULL bytes between directives
-fails:Array#pack with format 'S' with modifier '<' and '_' ignores spaces between directives
-fails:Array#pack with format 'S' with modifier '<' and '!' encodes the least significant 16 bits of a positive number
-fails:Array#pack with format 'S' with modifier '<' and '!' encodes the least significant 16 bits of a negative number
-fails:Array#pack with format 'S' with modifier '<' and '!' encodes a Float truncated as an Integer
 fails:Array#pack with format 'S' with modifier '<' and '!' calls #to_int to convert the pack argument to an Integer
-fails:Array#pack with format 'S' with modifier '<' and '!' encodes the number of array elements specified by the count modifier
-fails:Array#pack with format 'S' with modifier '<' and '!' encodes all remaining elements when passed the '*' modifier
-fails:Array#pack with format 'S' with modifier '<' and '!' ignores NULL bytes between directives
-fails:Array#pack with format 'S' with modifier '<' and '!' ignores spaces between directives
-fails:Array#pack with format 'S' with modifier '>' encodes the least significant 16 bits of a positive number
-fails:Array#pack with format 'S' with modifier '>' encodes the least significant 16 bits of a negative number
-fails:Array#pack with format 'S' with modifier '>' encodes a Float truncated as an Integer
 fails:Array#pack with format 'S' with modifier '>' calls #to_int to convert the pack argument to an Integer
-fails:Array#pack with format 'S' with modifier '>' encodes the number of array elements specified by the count modifier
-fails:Array#pack with format 'S' with modifier '>' encodes all remaining elements when passed the '*' modifier
-fails:Array#pack with format 'S' with modifier '>' ignores NULL bytes between directives
-fails:Array#pack with format 'S' with modifier '>' ignores spaces between directives
-fails:Array#pack with format 'S' with modifier '>' and '_' encodes the least significant 16 bits of a positive number
-fails:Array#pack with format 'S' with modifier '>' and '_' encodes the least significant 16 bits of a negative number
-fails:Array#pack with format 'S' with modifier '>' and '_' encodes a Float truncated as an Integer
 fails:Array#pack with format 'S' with modifier '>' and '_' calls #to_int to convert the pack argument to an Integer
-fails:Array#pack with format 'S' with modifier '>' and '_' encodes the number of array elements specified by the count modifier
-fails:Array#pack with format 'S' with modifier '>' and '_' encodes all remaining elements when passed the '*' modifier
-fails:Array#pack with format 'S' with modifier '>' and '_' ignores NULL bytes between directives
-fails:Array#pack with format 'S' with modifier '>' and '_' ignores spaces between directives
-fails:Array#pack with format 'S' with modifier '>' and '!' encodes the least significant 16 bits of a positive number
-fails:Array#pack with format 'S' with modifier '>' and '!' encodes the least significant 16 bits of a negative number
-fails:Array#pack with format 'S' with modifier '>' and '!' encodes a Float truncated as an Integer
 fails:Array#pack with format 'S' with modifier '>' and '!' calls #to_int to convert the pack argument to an Integer
-fails:Array#pack with format 'S' with modifier '>' and '!' encodes the number of array elements specified by the count modifier
-fails:Array#pack with format 'S' with modifier '>' and '!' encodes all remaining elements when passed the '*' modifier
-fails:Array#pack with format 'S' with modifier '>' and '!' ignores NULL bytes between directives
-fails:Array#pack with format 'S' with modifier '>' and '!' ignores spaces between directives
-fails:Array#pack with format 's' with modifier '<' encodes the least significant 16 bits of a positive number
-fails:Array#pack with format 's' with modifier '<' encodes the least significant 16 bits of a negative number
-fails:Array#pack with format 's' with modifier '<' encodes a Float truncated as an Integer
 fails:Array#pack with format 's' with modifier '<' calls #to_int to convert the pack argument to an Integer
-fails:Array#pack with format 's' with modifier '<' encodes the number of array elements specified by the count modifier
-fails:Array#pack with format 's' with modifier '<' encodes all remaining elements when passed the '*' modifier
-fails:Array#pack with format 's' with modifier '<' ignores NULL bytes between directives
-fails:Array#pack with format 's' with modifier '<' ignores spaces between directives
-fails:Array#pack with format 's' with modifier '<' and '_' encodes the least significant 16 bits of a positive number
-fails:Array#pack with format 's' with modifier '<' and '_' encodes the least significant 16 bits of a negative number
-fails:Array#pack with format 's' with modifier '<' and '_' encodes a Float truncated as an Integer
 fails:Array#pack with format 's' with modifier '<' and '_' calls #to_int to convert the pack argument to an Integer
-fails:Array#pack with format 's' with modifier '<' and '_' encodes the number of array elements specified by the count modifier
-fails:Array#pack with format 's' with modifier '<' and '_' encodes all remaining elements when passed the '*' modifier
-fails:Array#pack with format 's' with modifier '<' and '_' ignores NULL bytes between directives
-fails:Array#pack with format 's' with modifier '<' and '_' ignores spaces between directives
-fails:Array#pack with format 's' with modifier '<' and '!' encodes the least significant 16 bits of a positive number
-fails:Array#pack with format 's' with modifier '<' and '!' encodes the least significant 16 bits of a negative number
-fails:Array#pack with format 's' with modifier '<' and '!' encodes a Float truncated as an Integer
 fails:Array#pack with format 's' with modifier '<' and '!' calls #to_int to convert the pack argument to an Integer
-fails:Array#pack with format 's' with modifier '<' and '!' encodes the number of array elements specified by the count modifier
-fails:Array#pack with format 's' with modifier '<' and '!' encodes all remaining elements when passed the '*' modifier
-fails:Array#pack with format 's' with modifier '<' and '!' ignores NULL bytes between directives
-fails:Array#pack with format 's' with modifier '<' and '!' ignores spaces between directives
-fails:Array#pack with format 's' with modifier '>' encodes the least significant 16 bits of a positive number
-fails:Array#pack with format 's' with modifier '>' encodes the least significant 16 bits of a negative number
-fails:Array#pack with format 's' with modifier '>' encodes a Float truncated as an Integer
 fails:Array#pack with format 's' with modifier '>' calls #to_int to convert the pack argument to an Integer
-fails:Array#pack with format 's' with modifier '>' encodes the number of array elements specified by the count modifier
-fails:Array#pack with format 's' with modifier '>' encodes all remaining elements when passed the '*' modifier
-fails:Array#pack with format 's' with modifier '>' ignores NULL bytes between directives
-fails:Array#pack with format 's' with modifier '>' ignores spaces between directives
-fails:Array#pack with format 's' with modifier '>' and '_' encodes the least significant 16 bits of a positive number
-fails:Array#pack with format 's' with modifier '>' and '_' encodes the least significant 16 bits of a negative number
-fails:Array#pack with format 's' with modifier '>' and '_' encodes a Float truncated as an Integer
 fails:Array#pack with format 's' with modifier '>' and '_' calls #to_int to convert the pack argument to an Integer
-fails:Array#pack with format 's' with modifier '>' and '_' encodes the number of array elements specified by the count modifier
-fails:Array#pack with format 's' with modifier '>' and '_' encodes all remaining elements when passed the '*' modifier
-fails:Array#pack with format 's' with modifier '>' and '_' ignores NULL bytes between directives
-fails:Array#pack with format 's' with modifier '>' and '_' ignores spaces between directives
-fails:Array#pack with format 's' with modifier '>' and '!' encodes the least significant 16 bits of a positive number
-fails:Array#pack with format 's' with modifier '>' and '!' encodes the least significant 16 bits of a negative number
-fails:Array#pack with format 's' with modifier '>' and '!' encodes a Float truncated as an Integer
 fails:Array#pack with format 's' with modifier '>' and '!' calls #to_int to convert the pack argument to an Integer
-fails:Array#pack with format 's' with modifier '>' and '!' encodes the number of array elements specified by the count modifier
-fails:Array#pack with format 's' with modifier '>' and '!' encodes all remaining elements when passed the '*' modifier
-fails:Array#pack with format 's' with modifier '>' and '!' ignores NULL bytes between directives
-fails:Array#pack with format 's' with modifier '>' and '!' ignores spaces between directives
-fails:Array#pack with format 'S' encodes the least significant 16 bits of a positive number
-fails:Array#pack with format 'S' encodes the least significant 16 bits of a negative number
-fails:Array#pack with format 'S' encodes a Float truncated as an Integer
 fails:Array#pack with format 'S' calls #to_int to convert the pack argument to an Integer
-fails:Array#pack with format 'S' encodes the number of array elements specified by the count modifier
-fails:Array#pack with format 'S' encodes all remaining elements when passed the '*' modifier
-fails:Array#pack with format 'S' ignores NULL bytes between directives
-fails:Array#pack with format 'S' ignores spaces between directives
-fails:Array#pack with format 'S' with modifier '_' encodes the least significant 16 bits of a positive number
-fails:Array#pack with format 'S' with modifier '_' encodes the least significant 16 bits of a negative number
-fails:Array#pack with format 'S' with modifier '_' encodes a Float truncated as an Integer
 fails:Array#pack with format 'S' with modifier '_' calls #to_int to convert the pack argument to an Integer
-fails:Array#pack with format 'S' with modifier '_' encodes the number of array elements specified by the count modifier
-fails:Array#pack with format 'S' with modifier '_' encodes all remaining elements when passed the '*' modifier
-fails:Array#pack with format 'S' with modifier '_' ignores NULL bytes between directives
-fails:Array#pack with format 'S' with modifier '_' ignores spaces between directives
-fails:Array#pack with format 'S' with modifier '!' encodes the least significant 16 bits of a positive number
-fails:Array#pack with format 'S' with modifier '!' encodes the least significant 16 bits of a negative number
-fails:Array#pack with format 'S' with modifier '!' encodes a Float truncated as an Integer
 fails:Array#pack with format 'S' with modifier '!' calls #to_int to convert the pack argument to an Integer
-fails:Array#pack with format 'S' with modifier '!' encodes the number of array elements specified by the count modifier
-fails:Array#pack with format 'S' with modifier '!' encodes all remaining elements when passed the '*' modifier
-fails:Array#pack with format 'S' with modifier '!' ignores NULL bytes between directives
-fails:Array#pack with format 'S' with modifier '!' ignores spaces between directives
-fails:Array#pack with format 's' encodes the least significant 16 bits of a positive number
-fails:Array#pack with format 's' encodes the least significant 16 bits of a negative number
-fails:Array#pack with format 's' encodes a Float truncated as an Integer
 fails:Array#pack with format 's' calls #to_int to convert the pack argument to an Integer
-fails:Array#pack with format 's' encodes the number of array elements specified by the count modifier
-fails:Array#pack with format 's' encodes all remaining elements when passed the '*' modifier
-fails:Array#pack with format 's' ignores NULL bytes between directives
-fails:Array#pack with format 's' ignores spaces between directives
-fails:Array#pack with format 's' with modifier '_' encodes the least significant 16 bits of a positive number
-fails:Array#pack with format 's' with modifier '_' encodes the least significant 16 bits of a negative number
-fails:Array#pack with format 's' with modifier '_' encodes a Float truncated as an Integer
 fails:Array#pack with format 's' with modifier '_' calls #to_int to convert the pack argument to an Integer
-fails:Array#pack with format 's' with modifier '_' encodes the number of array elements specified by the count modifier
-fails:Array#pack with format 's' with modifier '_' encodes all remaining elements when passed the '*' modifier
-fails:Array#pack with format 's' with modifier '_' ignores NULL bytes between directives
-fails:Array#pack with format 's' with modifier '_' ignores spaces between directives
-fails:Array#pack with format 's' with modifier '!' encodes the least significant 16 bits of a positive number
-fails:Array#pack with format 's' with modifier '!' encodes the least significant 16 bits of a negative number
-fails:Array#pack with format 's' with modifier '!' encodes a Float truncated as an Integer
 fails:Array#pack with format 's' with modifier '!' calls #to_int to convert the pack argument to an Integer
-fails:Array#pack with format 's' with modifier '!' encodes the number of array elements specified by the count modifier
-fails:Array#pack with format 's' with modifier '!' encodes all remaining elements when passed the '*' modifier
-fails:Array#pack with format 's' with modifier '!' ignores NULL bytes between directives
-fails:Array#pack with format 's' with modifier '!' ignores spaces between directives

@@ -37,7 +37,6 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby;
 
-import com.oracle.truffle.api.Truffle;
 import org.jruby.exceptions.MainExitException;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.exceptions.ThreadKill;
@@ -206,6 +205,7 @@ public class Main {
             // If a Truffle exception gets this far it's a hard failure - don't try and dress it up as a Ruby exception
 
             if (main.config.getCompileMode() == RubyInstanceConfig.CompileMode.TRUFFLE) {
+                System.err.println("Truffle internal error: " + t);
                 t.printStackTrace(System.err);
             } else {
                 // print out as a nice Ruby backtrace
@@ -438,6 +438,7 @@ public class Main {
     }
     
     private boolean checkStreamSyntax(Ruby runtime, InputStream in, String filename) {
+        IRubyObject oldExc = runtime.getGlobalVariables().get("$!"); // Save $!
         try {
             runtime.parseFromMain(in, filename);
             config.getOutput().println("Syntax OK");
@@ -448,6 +449,7 @@ public class Main {
             } else {
                 throw re;
             }
+            runtime.getGlobalVariables().set("$!", oldExc); // Restore $!
             return false;
         }
     }

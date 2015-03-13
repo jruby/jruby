@@ -1,2 +1,0 @@
-fails:Regexp#== is true if self and other have the same character set code
-fails:Regexp#== is true if other has the same #casefold? values

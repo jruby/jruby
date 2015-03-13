@@ -67,3 +67,5 @@ fails:Process.spawn with a command array raises an ArgumentError if the Strings 
 fails:Process.spawn with a command array raises a TypeError if an element in the Array does not respond to #to_str
 fails:Process.spawn when passed :chdir changes to the directory passed for :chdir
 fails:Process.spawn when passed :chdir calls #to_path to convert the :chdir value
+fails:Process.spawn with Integer option keys maps the key to a file descriptor in the child that inherits the file descriptor from the parent specified by the value
+fails(windows):Process.spawn raises an ArgumentError if given :pgroup option

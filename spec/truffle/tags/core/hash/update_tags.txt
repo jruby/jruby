@@ -1,8 +1,0 @@
-fails:Hash#update adds the entries from other, overwriting duplicate keys. Returns self
-fails:Hash#update sets any duplicate key to the value of block if passed a block
-fails:Hash#update tries to convert the passed argument to a hash using #to_hash
-fails:Hash#update does not call to_hash on hash subclasses
-fails:Hash#update processes entries with same order as merge()
-fails:Hash#update raises a RuntimeError on a frozen instance that is modified
-fails:Hash#update checks frozen status before coercing an object with #to_hash
-fails:Hash#update raises a RuntimeError on a frozen instance that would not be modified

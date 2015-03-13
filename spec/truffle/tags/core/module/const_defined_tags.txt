@@ -1,21 +1,10 @@
-fails:Module#const_defined? returns true if the given Symbol names a constant defined in the receiver
-fails:Module#const_defined? returns true if the constant is defined in the reciever's superclass
-fails:Module#const_defined? returns true if the constant is defined in a mixed-in module of the reciever
-fails:Module#const_defined? returns true if the constant is defined in Object and the receiver is a module
-fails:Module#const_defined? returns true if the constant is defined in Object and the receiver is a class that has Object among its ancestors
 fails:Module#const_defined? returns false if the constant is defined in the receiver's superclass and the inherit flag is false
 fails:Module#const_defined? returns true if the constant is defined in the receiver's superclass and the inherit flag is true
-fails:Module#const_defined? returns true if the given String names a constant defined in the receiver
-fails:Module#const_defined? returns false if the constant is not defined in the receiver, its superclass, or any included modules
-fails:Module#const_defined? does not call #const_missing if the constant is not defined in the receiver
 fails:Module#const_defined? calls #to_str to convert the given name to a String
-fails:Module#const_defined? special cases Object and checks it's included Modules
 fails:Module#const_defined? returns true for toplevel constant when the name begins with '::'
 fails:Module#const_defined? returns true when passed a scoped constant name
 fails:Module#const_defined? returns true when passed a scoped constant name for a constant in the inheritance hierarchy and the inherited flag is default
 fails:Module#const_defined? returns true when passed a scoped constant name for a constant in the inheritance hierarchy and the inherited flag is true
-fails:Module#const_defined? returns false when passed a scoped constant name for a constant in the inheritance hierarchy and the inherited flag is false
-fails:Module#const_defined? returns false when the name begins with '::' and the toplevel constant does not exist
 fails:Module#const_defined? raises a NameError if the name does not start with a capital letter
 fails:Module#const_defined? raises a NameError if the name starts with '_'
 fails:Module#const_defined? raises a NameError if the name starts with '@'

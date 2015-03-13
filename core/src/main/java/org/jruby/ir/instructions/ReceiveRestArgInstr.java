@@ -2,11 +2,12 @@ package org.jruby.ir.instructions;
 
 import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Operation;
-import org.jruby.ir.operands.Fixnum;
-import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.Variable;
+import org.jruby.ir.persistence.IRWriterEncoder;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
-import org.jruby.ir.transformations.inlining.InlinerInfo;
+import org.jruby.ir.transformations.inlining.CloneInfo;
+import org.jruby.ir.transformations.inlining.InlineCloneInfo;
+import org.jruby.ir.transformations.inlining.SimpleCloneInfo;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
@@ -23,29 +24,27 @@ public class ReceiveRestArgInstr extends ReceiveArgBase implements FixedArityIns
     }
 
     @Override
-    public String toString() {
-        return (isDead() ? "[DEAD]" : "") + (hasUnusedResult() ? "[DEAD-RESULT]" : "") + getResult() + " = " + getOperation() + "(" + required + ", " + argIndex + ")";
+    public String[] toStringNonOperandArgs() {
+        return new String[] { "index: " + getArgIndex(), "req: " + required };
     }
 
     @Override
-    public Operand[] getOperands() {
-        return new Operand[] { new Fixnum(required), new Fixnum(argIndex) };
+    public Instr clone(CloneInfo info) {
+        if (info instanceof SimpleCloneInfo) return new ReceiveRestArgInstr(info.getRenamedVariable(result), required, argIndex);
+
+        InlineCloneInfo ii = (InlineCloneInfo) info;
+
+        // FIXME: Check this
+        if (ii.canMapArgsStatically()) return new CopyInstr(ii.getRenamedVariable(result), ii.getArg(argIndex, true));
+
+        return new RestArgMultipleAsgnInstr(ii.getRenamedVariable(result), ii.getArgs(), argIndex, (required - argIndex), argIndex);
     }
 
     @Override
-    public Instr cloneForInlining(InlinerInfo ii) {
-        switch (ii.getCloneMode()) {
-            case ENSURE_BLOCK_CLONE:
-            case NORMAL_CLONE:
-                return new ReceiveRestArgInstr(ii.getRenamedVariable(result), required, argIndex);
-            default:
-                if (ii.canMapArgsStatically()) {
-                    // FIXME: Check this
-                    return new CopyInstr(ii.getRenamedVariable(result), ii.getArg(argIndex, true));
-                } else {
-                    return new RestArgMultipleAsgnInstr(ii.getRenamedVariable(result), ii.getArgs(), argIndex, (required - argIndex), argIndex);
-                }
-        }
+    public void encode(IRWriterEncoder e) {
+        super.encode(e);
+        e.encode(required);
+        e.encode(getArgIndex());
     }
 
     @Override

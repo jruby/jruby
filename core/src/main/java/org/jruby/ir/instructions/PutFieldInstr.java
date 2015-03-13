@@ -4,7 +4,7 @@ import org.jruby.RubyClass;
 import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Operation;
 import org.jruby.ir.operands.Operand;
-import org.jruby.ir.transformations.inlining.InlinerInfo;
+import org.jruby.ir.transformations.inlining.CloneInfo;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
@@ -16,7 +16,7 @@ public class PutFieldInstr extends PutInstr implements FixedArityInstr {
     }
 
     @Override
-    public Instr cloneForInlining(InlinerInfo ii) {
+    public Instr clone(CloneInfo ii) {
         return new PutFieldInstr(getTarget().cloneForInlining(ii), ref, getValue().cloneForInlining(ii));
     }
 
@@ -24,7 +24,8 @@ public class PutFieldInstr extends PutInstr implements FixedArityInstr {
     public Object interpret(ThreadContext context, StaticScope currScope, DynamicScope currDynScope, IRubyObject self, Object[] temp) {
         IRubyObject object = (IRubyObject) getTarget().retrieve(context, self, currScope, currDynScope, temp);
 
-        // FIXME: Why getRealClass? Document
+        // We store instance variable offsets on the real class, since instance var tables are associated with the
+        // natural type of an object.
         RubyClass clazz = object.getMetaClass().getRealClass();
 
         // FIXME: Should add this as a field for instruction

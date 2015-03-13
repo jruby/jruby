@@ -33,10 +33,13 @@
 package org.jruby;
 
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import org.jruby.internal.runtime.methods.DynamicMethod;
+import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.builtin.Variable;
 
@@ -56,6 +59,7 @@ public class IncludedModuleWrapper extends IncludedModule {
     public IncludedModuleWrapper(Ruby runtime, RubyClass superClass, RubyModule origin) {
         super(runtime, superClass, origin);
         origin.addIncludingHierarchy(this);
+        if (origin.methodLocation != origin) this.methodLocation = origin.methodLocation;
     }
 
     /**
@@ -66,7 +70,7 @@ public class IncludedModuleWrapper extends IncludedModule {
      */
     @Override
     @Deprecated
-    public IncludedModule newIncludeClass(RubyClass superClass) {
+    public IncludedModuleWrapper newIncludeClass(RubyClass superClass) {
         IncludedModuleWrapper includedModule = new IncludedModuleWrapper(getRuntime(), superClass, getNonIncludedClass());
         
         // include its parent (and in turn that module's parents)
@@ -78,28 +82,41 @@ public class IncludedModuleWrapper extends IncludedModule {
     }
 
     @Override
+    public void addMethod(String name, DynamicMethod method) {
+        throw new UnsupportedOperationException("An included class is only a wrapper for a module");
+    }
+
+    public void setMethods(Map newMethods) {
+        throw new UnsupportedOperationException("An included class is only a wrapper for a module");
+    }
+
+    public RubyModule getDelegate() {
+        return origin;
+    }
+
+    @Override
     public boolean isIncluded() {
         return true;
     }
 
     @Override
+    public boolean isPrepended() {
+        return origin.hasPrepends();
+    }
+
+    @Override
+    protected boolean isSame(RubyModule module) {
+        return origin.isSame(module.getDelegate());
+    }
+
+    @Override
     public Map<String, DynamicMethod> getMethods() {
-        return origin.methodLocation.getMethods();
+        return origin.getMethods();
     }
 
     @Override
     public Map<String, DynamicMethod> getMethodsForWrite() {
-        return origin.methodLocation.getMethodsForWrite();
-    }
-
-    @Override
-    public RubyModule getMethodLocation() {
-        return origin.getMethodLocation();
-    }
-
-    @Override
-    public RubyModule getNonIncludedClass() {
-        return origin;
+        return origin.getMethodsForWrite();
     }
 
     @Override

@@ -1,5 +1,6 @@
 package org.jruby.ir.dataflow.analyses;
 
+import org.jruby.dirgra.Edge;
 import org.jruby.ir.IRClosure;
 import org.jruby.ir.IREvalScript;
 import org.jruby.ir.IRScope;
@@ -8,7 +9,6 @@ import org.jruby.ir.dataflow.FlowGraphNode;
 import org.jruby.ir.instructions.*;
 import org.jruby.ir.operands.*;
 import org.jruby.ir.representations.BasicBlock;
-import org.jruby.ir.util.Edge;
 
 import java.util.*;
 
@@ -198,9 +198,13 @@ public class LoadLocalVarPlacementNode extends FlowGraphNode<LoadLocalVarPlaceme
                     }
                     it.previous();
                 }
-            } else if (scopeBindingHasEscaped && (i.getOperation() == Operation.PUT_GLOBAL_VAR)) {
-                // global-var tracing can execute closures set up in previous trace-var calls
-                // in which case we would have the 'scopeBindingHasEscaped' flag set to true
+            } else if (
+                    (scopeBindingHasEscaped && i.getOperation() == Operation.PUT_GLOBAL_VAR)
+                    || i.getOperation() == Operation.THREAD_POLL
+                    ) {
+                // 1. Global-var tracing can execute closures set up in previous trace-var calls
+                // in which case we would have the 'scopeBindingHasEscaped' flag set to true.
+                // 2. Threads can update bindings, so we treat thread poll boundaries the same way.
                 it.next();
                 for (LocalVariable v : reqdLoads) {
                     it.add(new LoadLocalVarInstr(scope, getLocalVarReplacement(v, scope, varRenameMap), v));
@@ -248,7 +252,7 @@ public class LoadLocalVarPlacementNode extends FlowGraphNode<LoadLocalVarPlaceme
             // System.out.println("\t--> Reqd loads   : " + java.util.Arrays.toString(reqdLoads.toArray()));
             for (LocalVariable v : reqdLoads) {
                 if (scope.usesLocalVariable(v) || scope.definesLocalVariable(v)) {
-                    if (isEvalScript || !(v instanceof ClosureLocalVariable) || (scope != ((ClosureLocalVariable)v).definingScope)) {
+                    if (isEvalScript || !(v instanceof ClosureLocalVariable) || !((ClosureLocalVariable)v).isDefinedLocally()) {
                         it.add(new LoadLocalVarInstr(scope, getLocalVarReplacement(v, scope, varRenameMap), v));
                     }
                 }

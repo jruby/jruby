@@ -37,6 +37,7 @@ package org.jruby.lexer.yacc;
 
 import java.io.IOException;
 
+import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.HashMap;
 
@@ -48,27 +49,20 @@ import org.joni.Matcher;
 import org.joni.Option;
 import org.joni.Regex;
 import org.jruby.RubyRegexp;
-import org.jruby.ast.BackRefNode;
-import org.jruby.ast.BignumNode;
-import org.jruby.ast.ComplexNode;
-import org.jruby.ast.FixnumNode;
-import org.jruby.ast.FloatNode;
-import org.jruby.ast.Node;
-import org.jruby.ast.NthRefNode;
-import org.jruby.ast.RationalNode;
-import org.jruby.ast.StrNode;
+import org.jruby.ast.*;
 import org.jruby.common.IRubyWarnings;
 import org.jruby.common.IRubyWarnings.ID;
 import org.jruby.lexer.yacc.SyntaxException.PID;
 import org.jruby.parser.ParserSupport;
+import org.jruby.parser.RubyParser;
 import org.jruby.parser.Tokens;
 import org.jruby.util.ByteList;
 import org.jruby.util.SafeDoubleParser;
 import org.jruby.util.StringSupport;
 import org.jruby.util.cli.Options;
 
-
-/** This is a port of the MRI lexer to Java it is compatible to Ruby 1.8.1.
+/*
+ * This is a port of the MRI lexer to Java.
  */
 public class RubyLexer {
     public static final Encoding UTF8_ENCODING = UTF8Encoding.INSTANCE;
@@ -136,20 +130,6 @@ public class RubyLexer {
         return encoding;
     }
 
-    private int getFloatToken(String number) {
-        // FIXME: Rational support is needed here.
-        double d;
-        try {
-            d = SafeDoubleParser.parseDouble(number);
-        } catch (NumberFormatException e) {
-            warnings.warn(ID.FLOAT_OUT_OF_RANGE, getPosition(), "Float " + number + " out of range.");
-
-            d = number.startsWith("-") ? Double.NEGATIVE_INFINITY : Double.POSITIVE_INFINITY;
-        }
-        yaccValue = new FloatNode(getPosition(), d);
-        return Tokens.tFLOAT;
-    }
-
     private BignumNode newBignumNode(String value, int radix) {
         return new BignumNode(getPosition(), new BigInteger(value, radix));
     }
@@ -159,10 +139,10 @@ public class RubyLexer {
     }
     
     private RationalNode newRationalNode(String value, int radix) throws NumberFormatException {
-        return new RationalNode(getPosition(), Long.parseLong(value, radix));
+        return new RationalNode(getPosition(), Long.parseLong(value, radix), 1);
     }
     
-    private ComplexNode newComplexNode(Node number) {
+    private ComplexNode newComplexNode(NumericNode number) {
         return new ComplexNode(getPosition(), number);
     }
     
@@ -280,7 +260,7 @@ public class RubyLexer {
     
     public enum LexState {
         EXPR_BEG, EXPR_END, EXPR_ARG, EXPR_CMDARG, EXPR_ENDARG, EXPR_MID,
-        EXPR_FNAME, EXPR_DOT, EXPR_CLASS, EXPR_VALUE, EXPR_ENDFN
+        EXPR_FNAME, EXPR_DOT, EXPR_CLASS, EXPR_VALUE, EXPR_ENDFN, EXPR_LABELARG
     }
     
     public static Keyword getKeyword(String str) {
@@ -308,9 +288,14 @@ public class RubyLexer {
     private LexState last_state;
     public ISourcePosition tokline;
 
+    public void startOfToken() {
+        src.startOfToken();
+    }
+
     public void newtok() {
         tokline = getPosition();
     }
+
     // Tempory buffer to build up a potential token.  Consumer takes responsibility to reset 
     // this before use.
     private StringBuilder tokenBuffer = new StringBuilder(60);
@@ -341,13 +326,23 @@ public class RubyLexer {
 
     // Count of nested parentheses
     private int parenNest = 0;
+    private int braceNest = 0;
 
     private int leftParenBegin = 0;
+    public boolean inKwarg = false;
 
     public int incrementParenNest() {
         parenNest++;
 
         return parenNest;
+    }
+
+    public int getBraceNest() {
+        return braceNest;
+    }
+
+    public void setBraceNest(int nest) {
+        braceNest = nest;
     }
 
     public int getLeftParenBegin() {
@@ -371,17 +366,12 @@ public class RubyLexer {
         resetStacks();
         lex_strterm = null;
         commandStart = true;
+        parenNest = 0;
+        braceNest = 0;
     }
 
     public int nextToken() throws IOException {
-        src.getPositionFactory().startOfToken();
-
         token = yylex();
-
-        if (token != -1) {
-            src.getPositionFactory().endOfToken();
-        }
-
         return token == EOF ? 0 : token;
     }
     
@@ -491,6 +481,10 @@ public class RubyLexer {
         }
     }
 
+    public LexState getState() {
+        return lex_state;
+    }
+
     public void setState(LexState state) {
         this.lex_state = state;
 //        printState();
@@ -517,7 +511,8 @@ public class RubyLexer {
 
     private boolean isBEG() {
         return lex_state == LexState.EXPR_BEG || lex_state == LexState.EXPR_MID ||
-                lex_state == LexState.EXPR_CLASS || (lex_state == LexState.EXPR_VALUE);
+                lex_state == LexState.EXPR_CLASS || lex_state == LexState.EXPR_VALUE ||
+                lex_state == LexState.EXPR_LABELARG;
     }
     
     private boolean isEND() {
@@ -547,9 +542,45 @@ public class RubyLexer {
             break;
         }
     }
-    
-    private Object getInteger(String value, int radix, int suffix) {
-        Node literalValue = null;
+
+    private int considerComplex(int token, int suffix) {
+        if ((suffix & SUFFIX_I) == 0) {
+            return token;
+        } else {
+            yaccValue = newComplexNode((NumericNode) yaccValue);
+            return RubyParser.tIMAGINARY;
+        }
+    }
+
+    private int getFloatToken(String number, int suffix) {
+        if ((suffix & SUFFIX_R) != 0) {
+            BigDecimal bd = new BigDecimal(number);
+            BigDecimal denominator = BigDecimal.ONE.scaleByPowerOfTen(bd.scale());
+            BigDecimal numerator = bd.multiply(denominator);
+
+            try {
+                yaccValue = new RationalNode(getPosition(), numerator.longValueExact(), denominator.longValueExact());
+            } catch (ArithmeticException ae) {
+                // FIXME: Rational supports Bignum numerator and denominator
+                throw new SyntaxException(PID.RATIONAL_OUT_OF_RANGE, getPosition(), getCurrentLine(), "Rational (" + numerator + "/" + denominator + ") out of range.");
+            }
+            return considerComplex(Tokens.tRATIONAL, suffix);
+        }
+
+        double d;
+        try {
+            d = SafeDoubleParser.parseDouble(number);
+        } catch (NumberFormatException e) {
+            warnings.warn(ID.FLOAT_OUT_OF_RANGE, getPosition(), "Float " + number + " out of range.");
+
+            d = number.startsWith("-") ? Double.NEGATIVE_INFINITY : Double.POSITIVE_INFINITY;
+        }
+        yaccValue = new FloatNode(getPosition(), d);
+        return considerComplex(Tokens.tFLOAT, suffix);
+    }
+
+    private int getIntegerToken(String value, int radix, int suffix) {
+        Node literalValue;
 
         if ((suffix & SUFFIX_R) != 0) {
             literalValue = newRationalNode(value, radix);
@@ -560,8 +591,9 @@ public class RubyLexer {
                 literalValue = newBignumNode(value, radix);
             }
         }
-        
-        return (suffix & SUFFIX_I) != 0 ? newComplexNode(literalValue) : literalValue;
+
+        yaccValue = literalValue;
+        return considerComplex(Tokens.tINTEGER, suffix);
     }
 
 	/**
@@ -787,7 +819,9 @@ public class RubyLexer {
     }
     
     private void arg_ambiguous() {
-        if (warnings.isVerbose()) warnings.warning(ID.AMBIGUOUS_ARGUMENT, getPosition(), "Ambiguous first argument; make sure.");
+        if (warnings.isVerbose() && Options.PARSER_WARN_AMBIGUOUS_ARGUMENTS.load()) {
+            warnings.warning(ID.AMBIGUOUS_ARGUMENT, getPosition(), "Ambiguous first argument; make sure.");
+        }
     }
 
 
@@ -1079,7 +1113,21 @@ public class RubyLexer {
         
         if (lex_strterm != null) {
             int tok = lex_strterm.parseString(this, src);
-            if (tok == Tokens.tSTRING_END || tok == Tokens.tREGEXP_END) {
+
+            if (tok == Tokens.tSTRING_END && (yaccValue.equals("\"") || yaccValue.equals("'"))) {
+                if (((lex_state == LexState.EXPR_BEG || lex_state == LexState.EXPR_ENDFN) && !conditionState.isInState() ||
+                        isARG()) && src.peek(':')) {
+                    int c1 = src.read();
+                    if (src.peek(':')) { // "mod"::SOMETHING (hack MRI does not do this)
+                        src.unread(c1);
+                    } else {
+                        src.read();
+                        tok = Tokens.tLABEL_END;
+                    }
+                }
+            }
+
+            if (tok == Tokens.tSTRING_END || tok == Tokens.tREGEXP_END || tok == Tokens.tLABEL_END) {
                 lex_strterm = null;
                 setState(LexState.EXPR_END);
             }
@@ -1091,6 +1139,7 @@ public class RubyLexer {
         commandStart = false;
 
         loop: for(;;) {
+            startOfToken();
             last_state = lex_state;
             c = src.read();
             switch(c) {
@@ -1114,6 +1163,13 @@ public class RubyLexer {
                 switch (lex_state) {
                 case EXPR_BEG: case EXPR_FNAME: case EXPR_DOT:
                 case EXPR_CLASS: case EXPR_VALUE:
+                    continue loop;
+                case EXPR_LABELARG:
+                    if (inKwarg) {
+                        commandStart = true;
+                        setState(LexState.EXPR_BEG);
+                        return '\n';
+                    }
                     continue loop;
                 }
 
@@ -1638,7 +1694,20 @@ public class RubyLexer {
             return identifierToken(Tokens.tGVAR, tokenBuffer.toString().intern());
         }
     }
-    
+
+    // FIXME: I added number gvars here and they did not.
+    public boolean isGlobalCharPunct(int c) {
+        switch (c) {
+            case '_': case '~': case '*': case '$': case '?': case '!': case '@':
+            case '/': case '\\': case ';': case ',': case '.': case '=': case ':':
+            case '<': case '>': case '\"': case '-': case '&': case '`': case '\'':
+            case '+': case '1': case '2': case '3': case '4': case '5': case '6':
+            case '7': case '8': case '9': case '0':
+                return true;
+        }
+        return isIdentifierChar(c);
+    }
+
     private int dot() throws IOException {
         int c;
         
@@ -1758,7 +1827,7 @@ public class RubyLexer {
         if (isLabelPossible(commandState)) {
             int c2 = src.read();
             if (c2 == ':' && !src.peek(':')) {
-                setState(LexState.EXPR_BEG);
+                setState(LexState.EXPR_LABELARG);
                 yaccValue = tempVal;
                 return Tokens.tLABEL;
             }
@@ -1832,6 +1901,8 @@ public class RubyLexer {
     }
     
     private int leftCurly() {
+        braceNest++;
+        //System.out.println("lcurly: " + braceNest);
         if (leftParenBegin > 0 && leftParenBegin == parenNest) {
             setState(LexState.EXPR_BEG);
             leftParenBegin = 0;
@@ -2123,7 +2194,7 @@ public class RubyLexer {
                 setState(LexState.EXPR_END);
                 yaccValue = new StrNode(getPosition(), oneCharBL);
                 
-                return Tokens.tINTEGER; // FIXME: This should be something else like a tCHAR in 1.9/2.0
+                return Tokens.tCHAR;
             } else {
                 c = readEscape();
             }
@@ -2136,7 +2207,7 @@ public class RubyLexer {
         oneCharBL.append(c);
         yaccValue = new StrNode(getPosition(), oneCharBL);
         
-        return Tokens.tINTEGER;
+        return Tokens.tCHAR;
     }
     
     private int rightBracket() {
@@ -2153,7 +2224,10 @@ public class RubyLexer {
         cmdArgumentState.restart();
         setState(LexState.EXPR_ENDARG);
         yaccValue = "}";
-        return Tokens.tRCURLY;
+        //System.out.println("braceNest: " + braceNest);
+        int tok = /*braceNest != 0 ? Tokens.tSTRING_DEND : */ Tokens.tRCURLY;
+        braceNest--;
+        return tok;
     }
 
     private int rightParen() {
@@ -2314,8 +2388,7 @@ public class RubyLexer {
                         throw new SyntaxException(PID.TRAILING_UNDERSCORE_IN_NUMBER,
                                 getPosition(), getCurrentLine(), "Trailing '_' in number.");
                     }
-                    yaccValue = getInteger(tokenBuffer.toString(), 16, numberLiteralSuffix(SUFFIX_ALL));
-                    return Tokens.tINTEGER;
+                    return getIntegerToken(tokenBuffer.toString(), 16, numberLiteralSuffix(SUFFIX_ALL));
                 case 'b' :
                 case 'B' : // binary
                     c = src.read();
@@ -2341,8 +2414,7 @@ public class RubyLexer {
                         throw new SyntaxException(PID.TRAILING_UNDERSCORE_IN_NUMBER,
                                 getPosition(), getCurrentLine(), "Trailing '_' in number.");
                     }
-                    yaccValue = getInteger(tokenBuffer.toString(), 2, numberLiteralSuffix(SUFFIX_ALL));
-                    return Tokens.tINTEGER;
+                    return getIntegerToken(tokenBuffer.toString(), 2, numberLiteralSuffix(SUFFIX_ALL));
                 case 'd' :
                 case 'D' : // decimal
                     c = src.read();
@@ -2368,8 +2440,7 @@ public class RubyLexer {
                         throw new SyntaxException(PID.TRAILING_UNDERSCORE_IN_NUMBER, getPosition(),
                                 getCurrentLine(), "Trailing '_' in number.");
                     }
-                    yaccValue = getInteger(tokenBuffer.toString(), 10, numberLiteralSuffix(SUFFIX_ALL));
-                    return Tokens.tINTEGER;
+                    return getIntegerToken(tokenBuffer.toString(), 10, numberLiteralSuffix(SUFFIX_ALL));
                 case 'o':
                 case 'O':
                     c = src.read();
@@ -2395,8 +2466,7 @@ public class RubyLexer {
                                     getPosition(), getCurrentLine(), "Trailing '_' in number.");
                         }
 
-                        yaccValue = getInteger(tokenBuffer.toString(), 8, numberLiteralSuffix(SUFFIX_ALL));
-                        return Tokens.tINTEGER;
+                        return getIntegerToken(tokenBuffer.toString(), 8, numberLiteralSuffix(SUFFIX_ALL));
                     }
                 case '8' :
                 case '9' :
@@ -2449,8 +2519,7 @@ public class RubyLexer {
                             		// Enebo:  c can never be antrhign but '.'
                             		// Why did I put this here?
                             } else {
-                                yaccValue = getInteger(tokenBuffer.toString(), 10, numberLiteralSuffix(SUFFIX_ALL));
-                                return Tokens.tINTEGER;
+                                return getIntegerToken(tokenBuffer.toString(), 10, numberLiteralSuffix(SUFFIX_ALL));
                             }
                         } else {
                             tokenBuffer.append('.');
@@ -2501,10 +2570,10 @@ public class RubyLexer {
             throw new SyntaxException(PID.TRAILING_UNDERSCORE_IN_NUMBER, getPosition(),
                     getCurrentLine(), "Trailing '_' in number.");
         } else if (isFloat) {
-            return getFloatToken(number);
+            int suffix = numberLiteralSuffix(seen_e ? SUFFIX_I : SUFFIX_ALL);
+            return getFloatToken(number, suffix);
         }
-        yaccValue = getInteger(number, 10, numberLiteralSuffix(SUFFIX_ALL));
-        return Tokens.tINTEGER;
+        return getIntegerToken(number, 10, numberLiteralSuffix(SUFFIX_ALL));
     }
 
     // Note: parser_tokadd_utf8 variant just for regexp literal parsing.  This variant is to be

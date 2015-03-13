@@ -1,1 +1,0 @@
-fails:Literal Regexps caches the Regexp object

@@ -1,10 +1,3 @@
-fails:Float#to_s returns 'NaN' for NaN
-fails:Float#to_s returns 'Infinity' for positive infinity
-fails:Float#to_s returns '-Infinity' for negative infinity
-fails:Float#to_s returns '0.0' for 0.0
-fails:Float#to_s emits '-' for -0.0
-fails:Float#to_s emits a '-' for negative values
-fails:Float#to_s emits a trailing '.0' for a whole number
 fails:Float#to_s emits a trailing '.0' for the mantissa in e format
 fails:Float#to_s uses non-e format for a positive value with fractional part having 5 significant figures
 fails:Float#to_s uses non-e format for a negative value with fractional part having 5 significant figures
@@ -18,7 +11,3 @@ fails:Float#to_s uses e format for a positive value with whole part having 18 si
 fails:Float#to_s uses e format for a negative value with whole part having 18 significant figures
 fails:Float#to_s uses non-e format for a positive value with whole part having 17 significant figures
 fails:Float#to_s uses non-e format for a negative value with whole part having 17 significant figures
-fails:Float#to_s outputs the minimal, unique form necessary to recreate the value
-fails:Float#to_s outputs the minimal, unique form to represent the value
-fails:Float#to_s returns a String in US-ASCII encoding when Encoding.default_internal is nil
-fails:Float#to_s returns a String in US-ASCII encoding when Encoding.default_internal is not nil

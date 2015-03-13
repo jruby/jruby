@@ -1,1 +1,0 @@
-fails:BasicObject.ancestors returns only BasicObject

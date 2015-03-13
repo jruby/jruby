@@ -4,4 +4,3 @@ fails:File::Stat.world_readable? returns nil if the file is chmod 700
 fails:File::Stat.world_readable? returns a Fixnum if the file is chmod 644
 fails:File::Stat.world_readable? returns a Fixnum if the file is a directory and chmod 644
 fails:File::Stat.world_readable? coerces the argument with #to_path
-fails:File::Stat#world_readable? needs to be reviewed for spec completeness

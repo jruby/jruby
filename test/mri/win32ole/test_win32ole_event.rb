@@ -52,7 +52,7 @@ if defined?(WIN32OLE_EVENT)
 
       def test_s_new
         assert_raise(TypeError) {
-          ev = WIN32OLE_EVENT.new("A")
+          WIN32OLE_EVENT.new("A")
         }
       end
 
@@ -149,11 +149,11 @@ if defined?(WIN32OLE_EVENT)
 
       def test_non_exist_event
         assert_raise(RuntimeError) {
-          ev = WIN32OLE_EVENT.new(@db, 'XXXX')
+          WIN32OLE_EVENT.new(@db, 'XXXX')
         }
         dict = WIN32OLE.new('Scripting.Dictionary')
         assert_raise(RuntimeError) {
-          ev = WIN32OLE_EVENT.new(dict)
+          WIN32OLE_EVENT.new(dict)
         }
       end
 
@@ -328,6 +328,19 @@ if defined?(WIN32OLE_EVENT)
         @db.open
         message_loop
         assert(h2.ev != "")
+      end
+
+      def test_s_new_exc_tainted
+        th = Thread.new {
+          $SAFE=1
+          str = 'ConnectionEvents'
+          str.taint
+          ev = WIN32OLE_EVENT.new(@db, str)
+        }
+        exc = assert_raise(SecurityError) {
+          th.join
+        }
+        assert_match(/insecure event creation - `ConnectionEvents'/, exc.message)
       end
     end
   end

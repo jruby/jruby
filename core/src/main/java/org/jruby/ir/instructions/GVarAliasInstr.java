@@ -3,58 +3,42 @@ package org.jruby.ir.instructions;
 import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Operation;
 import org.jruby.ir.operands.Operand;
-import org.jruby.ir.transformations.inlining.InlinerInfo;
+import org.jruby.ir.persistence.IRWriterEncoder;
+import org.jruby.ir.transformations.inlining.CloneInfo;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
-import java.util.Map;
-
 public class GVarAliasInstr extends Instr implements FixedArityInstr {
-    private Operand newName;
-    private Operand oldName;
-
     public GVarAliasInstr(Operand newName, Operand oldName) {
-        super(Operation.GVAR_ALIAS);
-
-        this.newName = newName;
-        this.oldName = oldName;
+        super(Operation.GVAR_ALIAS, new Operand[] { newName, oldName });
     }
 
     public Operand getNewName() {
-        return newName;
+        return operands[0];
     }
 
     public Operand getOldName() {
-        return oldName;
+        return operands[1];
     }
 
     @Override
-    public String toString() {
-        return getOperation().toString() + "(" + newName + ", " + oldName + ")";
+    public Instr clone(CloneInfo ii) {
+        return new GVarAliasInstr(getNewName().cloneForInlining(ii), getOldName().cloneForInlining(ii));
     }
 
     @Override
-    public Operand[] getOperands() {
-        return new Operand[] { newName, oldName };
-    }
-
-    @Override
-    public void simplifyOperands(Map<Operand, Operand> valueMap, boolean force) {
-        oldName = oldName.getSimplifiedOperand(valueMap, force);
-        newName = newName.getSimplifiedOperand(valueMap, force);
-    }
-
-    @Override
-    public Instr cloneForInlining(InlinerInfo ii) {
-        return new GVarAliasInstr(newName.cloneForInlining(ii), oldName.cloneForInlining(ii));
+    public void encode(IRWriterEncoder e) {
+        super.encode(e);
+        e.encode(getNewName());
+        e.encode(getOldName());
     }
 
     @Override
     public Object interpret(ThreadContext context, StaticScope currScope, DynamicScope currDynScope, IRubyObject self, Object[] temp) {
-        String newNameString = newName.retrieve(context, self, currScope, currDynScope, temp).toString();
-        String oldNameString = oldName.retrieve(context, self, currScope, currDynScope, temp).toString();
+        String newNameString = getNewName().retrieve(context, self, currScope, currDynScope, temp).toString();
+        String oldNameString = getOldName().retrieve(context, self, currScope, currDynScope, temp).toString();
 
         context.runtime.getGlobalVariables().alias(newNameString, oldNameString);
         return null;

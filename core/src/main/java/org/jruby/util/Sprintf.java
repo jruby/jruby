@@ -374,10 +374,12 @@ public class Sprintf {
                     // MRI doesn't flag it as an error if width is given multiple
                     // times as a number (but it does for *)
                     number = 0;
-                    for ( ; offset < length && isDigit(fchar = format[offset]); offset++) {
-                        number = extendWidth(args, number, fchar);
+                    { // MRI: GETNUM macro
+                        for (; offset < length && isDigit(fchar = format[offset]); offset++) {
+                            number = extendWidth(args, number, fchar);
+                        }
+                        checkOffset(args, offset, length, ERR_MALFORMED_NUM);
                     }
-                    checkOffset(args,offset,length,ERR_MALFORMED_NUM);
                     if (fchar == '$') {
                         if (arg != null) {
                             raiseArgumentError(args,"value given twice - " + number + "$");
@@ -434,10 +436,12 @@ public class Sprintf {
                         checkOffset(args,++offset,length,ERR_MALFORMED_STAR_NUM);
                         mark = offset;
                         number = 0;
-                        for ( ; offset < length && isDigit(fchar = format[offset]); offset++) {
-                            number = extendWidth(args,number,fchar);
+                        { // MRI: GETNUM macro
+                            for (; offset < length && isDigit(fchar = format[offset]); offset++) {
+                                number = extendWidth(args, number, fchar);
+                            }
+                            checkOffset(args, offset, length, ERR_MALFORMED_STAR_NUM);
                         }
-                        checkOffset(args,offset,length,ERR_MALFORMED_STAR_NUM);
                         if (fchar == '$') {
                             precision = args.getNthInt(number);
                             if (precision < 0) {

@@ -1,1 +1,1 @@
-fails:GC.start always returns nil
+slow:GC.start always returns nil

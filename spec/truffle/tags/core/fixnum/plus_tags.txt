@@ -1,2 +1,0 @@
-fails:Fixnum#+ returns self plus the given Integer
-fails:Fixnum#+ raises a TypeError when given a non-Integer

@@ -1,6 +1,0 @@
-fails:Method#to_s returns a String
-fails:Method#to_s returns a String for methods defined with attr_accessor
-fails:Method#to_s returns a String containing 'Method'
-fails:Method#to_s returns a String containing the method name
-fails:Method#to_s returns a String containing the Module the method is defined in
-fails:Method#to_s returns a String containing the Module the method is referenced from

@@ -1,1211 +1,723 @@
 require File.expand_path('../../spec_helper', __FILE__)
 require File.expand_path('../fixtures/variables', __FILE__)
 
-# TODO: partition these specs into distinct cases based on the
-# real parsed forms, not the superficial code forms.
-describe "Basic assignment" do
-  it "allows the rhs to be assigned to the lhs" do
-    a = nil
-    a.should == nil
-  end
-
-  it "assigns nil to lhs when rhs is an empty expression" do
-    a = ()
-    a.should be_nil
-  end
-
-  it "assigns [] to lhs when rhs is an empty splat expression" do
-    a = *()
-    a.should == []
-  end
-
-  it "allows the assignment of the rhs to the lhs using the rhs splat operator" do
-    a = *nil;      a.should == []
-    a = *1;        a.should == [1]
-    a = *[];       a.should == []
-    a = *[1];      a.should == [1]
-    a = *[nil];    a.should == [nil]
-    a = *[[]];     a.should == [[]]
-    a = *[1,2];    a.should == [1,2]
-  end
-
-  it "allows the assignment of the rhs to the lhs using the lhs splat operator" do
-    * = 1,2        # Valid syntax, but pretty useless! Nothing to test
-    *a = nil;      a.should == [nil]
-    *a = 1;        a.should == [1]
-    *a = [];       a.should == []
-    *a = [1];      a.should == [1]
-    *a = [1,2];    a.should == [1,2]
-  end
-
-  it "allows the assignment of rhs to the lhs using the lhs and rhs splat operators simultaneously" do
-    *a = *nil;      a.should == []
-    *a = *1;        a.should == [1]
-    *a = *[];       a.should == []
-    *a = *[1];      a.should == [1]
-    *a = *[nil];    a.should == [nil]
-    *a = *[1,2];    a.should == [1,2]
-  end
-
-  it "sets unavailable values to nil" do
-    ary = []
-    a, b, c = ary
-
-    a.should be_nil
-    b.should be_nil
-    c.should be_nil
-  end
-
-  it "sets the splat to an empty Array if there are no more values" do
-    ary = []
-    a, b, *c = ary
-
-    a.should be_nil
-    b.should be_nil
-    c.should == []
-  end
-
-  it "allows multiple values to be assigned" do
-    a,b,*c = nil;       [a,b,c].should == [nil, nil, []]
-    a,b,*c = 1;         [a,b,c].should == [1, nil, []]
-    a,b,*c = [];        [a,b,c].should == [nil, nil, []]
-    a,b,*c = [1];       [a,b,c].should == [1, nil, []]
-    a,b,*c = [nil];     [a,b,c].should == [nil, nil, []]
-    a,b,*c = [[]];      [a,b,c].should == [[], nil, []]
-    a,b,*c = [1,2];     [a,b,c].should == [1,2,[]]
-
-    a,b,*c = *nil;      [a,b,c].should == [nil, nil, []]
-    a,b,*c = *1;        [a,b,c].should == [1, nil, []]
-    a,b,*c = *[];       [a,b,c].should == [nil, nil, []]
-    a,b,*c = *[1];      [a,b,c].should == [1, nil, []]
-    a,b,*c = *[nil];    [a,b,c].should == [nil, nil, []]
-    a,b,*c = *[[]];     [a,b,c].should == [[], nil, []]
-    a,b,*c = *[1,2];    [a,b,c].should == [1,2,[]]
-  end
-
-  it "calls to_a on the given argument when using a splat" do
-    a,b = *VariablesSpecs::ArrayLike.new([1,2]); [a,b].should == [1,2]
-  end
-
-  it "supports the {|r,| } form of block assignment" do
-    f = lambda {|r,| r.should == []}
-    f.call([], *[])
-
-    f = lambda{|x,| x}
-    f.call(42).should == 42
-    f.call([42]).should == [42]
-    f.call([[42]]).should == [[42]]
-    f.call([42,55]).should == [42,55]
-  end
-
-  it "allows assignment through lambda" do
-    f = lambda {|r,*l| r.should == []; l.should == [1]}
-    f.call([], *[1])
-
-    f = lambda{|x| x}
-    f.call(42).should == 42
-    f.call([42]).should == [42]
-    f.call([[42]]).should == [[42]]
-    f.call([42,55]).should == [42,55]
-
-    f = lambda{|*x| x}
-    f.call(42).should == [42]
-    f.call([42]).should == [[42]]
-    f.call([[42]]).should == [[[42]]]
-    f.call([42,55]).should == [[42,55]]
-    f.call(42,55).should == [42,55]
-  end
-
-  it "allows chained assignment" do
-    (a = 1 + b = 2 + c = 4 + d = 8).should == 15
-    d.should == 8
-    c.should == 12
-    b.should == 14
-    a.should == 15
-  end
-end
-
-describe "Assignment using expansion" do
-  it "succeeds without conversion" do
-    *x = (1..7).to_a
-    x.should == [1, 2, 3, 4, 5, 6, 7]
-  end
-end
-
-describe "Basic multiple assignment" do
-  describe "with a single RHS value" do
-    it "does not call #to_ary on an Array instance" do
-      x = [1, 2]
-      x.should_not_receive(:to_ary)
-
-      a, b = x
-      a.should == 1
-      b.should == 2
+describe "Multiple assignment" do
+  context "with a single RHS value" do
+    it "assigns a simple MLHS" do
+      (a, b, c = 1).should == 1
+      [a, b, c].should == [1, nil, nil]
     end
 
-    it "does not call #to_a on an Array instance" do
-      x = [1, 2]
-      x.should_not_receive(:to_a)
-
-      a, b = x
-      a.should == 1
-      b.should == 2
-    end
-
-    it "does not call #to_ary on an Array subclass instance" do
-      x = VariablesSpecs::ArraySubclass.new [1, 2]
-      x.should_not_receive(:to_ary)
-
-      a, b = x
-      a.should == 1
-      b.should == 2
-    end
-
-    it "does not call #to_a on an Array subclass instance" do
-      x = VariablesSpecs::ArraySubclass.new [1, 2]
-      x.should_not_receive(:to_a)
-
-      a, b = x
-      a.should == 1
-      b.should == 2
-    end
-
-    it "calls #to_ary on an object" do
-      x = mock("single rhs value for masgn")
+    it "calls #to_ary to convert an Object RHS when assigning a simple MLHS" do
+      x = mock("multi-assign single RHS")
       x.should_receive(:to_ary).and_return([1, 2])
 
-      a, b = x
-      a.should == 1
-      b.should == 2
+      (a, b, c = x).should == x
+      [a, b, c].should == [1, 2, nil]
     end
 
-    it "does not call #to_a on an object if #to_ary is not defined" do
-      x = mock("single rhs value for masgn")
+    it "calls #to_ary if it is private" do
+      x = mock("multi-assign single RHS")
+      x.should_receive(:to_ary).and_return([1, 2])
+      class << x; private :to_ary; end
+
+      (a, b, c = x).should == x
+      [a, b, c].should == [1, 2, nil]
+    end
+
+    it "does not call #to_ary if #respond_to? returns false" do
+      x = mock("multi-assign single RHS")
+      x.should_receive(:respond_to?).with(:to_ary, true).and_return(false)
+      x.should_not_receive(:to_ary)
+
+      (a, b, c = x).should == x
+      [a, b, c].should == [x, nil, nil]
+    end
+
+    it "wraps the Object in an Array if #to_ary returns nil" do
+      x = mock("multi-assign single RHS")
+      x.should_receive(:to_ary).and_return(nil)
+
+      (a, b, c = x).should == x
+      [a, b, c].should == [x, nil, nil]
+    end
+
+    it "raises a TypeError of #to_ary does not return an Array" do
+      x = mock("multi-assign single RHS")
+      x.should_receive(:to_ary).and_return(1)
+
+      lambda { a, b, c = x }.should raise_error(TypeError)
+    end
+
+    it "does not call #to_a to convert an Object RHS when assigning a simple MLHS" do
+      x = mock("multi-assign single RHS")
       x.should_not_receive(:to_a)
 
-      a, b = x
-      a.should == x
-      b.should be_nil
+      (a, b, c = x).should == x
+      [a, b, c].should == [x, nil, nil]
     end
 
-    it "does not call #to_a on a String" do
-      x = "one\ntwo"
-
-      a, b = x
-      a.should == x
-      b.should be_nil
-    end
-
-    it "calls #to_ary on an object even if it's private" do
-      a, b = VariablesSpecs::PrivateMethods.new
-      a.should == 1
-      b.should == 2
-    end
-
-    it "doesn't take in account #to_ary if it returns nil" do
-      x = VariablesSpecs::ToAryNil.new
-
-      a, b = x
-      a.should == x
-      b.should be_nil
-    end
-  end
-
-  describe "with a splatted single RHS value" do
     it "does not call #to_ary on an Array instance" do
       x = [1, 2]
       x.should_not_receive(:to_ary)
 
-      a, b = *x
-      a.should == 1
-      b.should == 2
+      (a, b = x).should == x
+      [a, b].should == [1, 2]
     end
 
     it "does not call #to_a on an Array instance" do
       x = [1, 2]
       x.should_not_receive(:to_a)
 
-      a, b = *x
-      a.should == 1
-      b.should == 2
+      (a, b = x).should == x
+      [a, b].should == [1, 2]
+    end
+
+    it "returns the RHS when it is an Array" do
+      ary = [1, 2]
+
+      x = (a, b = ary)
+      x.should equal(ary)
+    end
+
+    it "returns the RHS when it is an Array subclass" do
+      cls = Class.new(Array)
+      ary = cls.new [1, 2]
+
+      x = (a, b = ary)
+      x.should equal(ary)
     end
 
     it "does not call #to_ary on an Array subclass instance" do
-      x = VariablesSpecs::ArraySubclass.new [1, 2]
+      x = Class.new(Array).new [1, 2]
       x.should_not_receive(:to_ary)
 
-      a, b = *x
-      a.should == 1
-      b.should == 2
+      (a, b = x).should == x
+      [a, b].should == [1, 2]
     end
 
     it "does not call #to_a on an Array subclass instance" do
-      x = VariablesSpecs::ArraySubclass.new [1, 2]
+      x = Class.new(Array).new [1, 2]
       x.should_not_receive(:to_a)
 
-      a, b = *x
-      a.should == 1
-      b.should == 2
+      (a, b = x).should == x
+      [a, b].should == [1, 2]
     end
 
-    it "calls #to_a on an object if #to_ary is not defined" do
-      x = mock("single splatted rhs value for masgn")
+    it "assigns a MLHS with a trailing comma" do
+      a, = 1
+      b, c, = []
+      [a, b, c].should == [1, nil, nil]
+    end
+
+    it "assigns a single LHS splat" do
+      (*a = 1).should == 1
+      a.should == [1]
+    end
+
+    it "calls #to_ary to convert an Object RHS" do
+      x = mock("multi-assign splat")
+      x.should_receive(:to_ary).and_return([1, 2])
+
+      (*a = x).should == x
+      a.should == [1, 2]
+    end
+
+    it "raises a TypeError if #to_ary does not return an Array" do
+      x = mock("multi-assign splat")
+      x.should_receive(:to_ary).and_return(1)
+
+      lambda { *a = x }.should raise_error(TypeError)
+    end
+
+    it "does not call #to_ary on an Array subclass" do
+      cls = Class.new(Array)
+      ary = cls.new [1, 2]
+      ary.should_not_receive(:to_ary)
+
+      (*a = ary).should == [1, 2]
+      a.should == [1, 2]
+    end
+
+    it "assigns an Array when the RHS is an Array subclass" do
+      cls = Class.new(Array)
+      ary = cls.new [1, 2]
+
+      x = (*a = ary)
+      x.should equal(ary)
+      a.should be_an_instance_of(Array)
+    end
+
+    it "calls #to_ary to convert an Object RHS with MLHS" do
+      x = mock("multi-assign splat")
+      x.should_receive(:to_ary).and_return([1, 2])
+
+      (a, *b, c = x).should == x
+      [a, b, c].should == [1, [], 2]
+    end
+
+    it "raises a TypeError if #to_ary does not return an Array" do
+      x = mock("multi-assign splat")
+      x.should_receive(:to_ary).and_return(1)
+
+      lambda { a, *b, c = x }.should raise_error(TypeError)
+    end
+
+    it "does not call #to_a to convert an Object RHS with a MLHS" do
+      x = mock("multi-assign splat")
+      x.should_not_receive(:to_a)
+
+      (a, *b = x).should == x
+      [a, b].should == [x, []]
+    end
+
+    it "assigns a MLHS with leading splat" do
+      (*a, b, c = 1).should == 1
+      [a, b, c].should == [[], 1, nil]
+    end
+
+    it "assigns a MLHS with a middle splat" do
+      a, b, *c, d, e = 1
+      [a, b, c, d, e].should == [1, nil, [], nil, nil]
+    end
+
+    it "assigns a MLHS with a trailing splat" do
+      a, b, *c = 1
+      [a, b, c].should == [1, nil, []]
+    end
+
+    it "assigns a grouped LHS without splat" do
+      ((a, b), c), (d, (e,), (f, (g, h))) = 1
+      [a, b, c, d, e, f, g, h].should == [1, nil, nil, nil, nil, nil, nil, nil]
+    end
+
+    it "assigns a single grouped LHS splat" do
+      (*a) = nil
+      a.should == [nil]
+    end
+
+    it "assigns a grouped LHS with splats" do
+      (a, *b), c, (*d, (e, *f, g)) = 1
+      [a, b, c, d, e, f, g].should == [1, [], nil, [], nil, [], nil]
+    end
+
+    it "consumes values for an anonymous splat" do
+      (* = 1).should == 1
+    end
+
+    it "consumes values for a grouped anonymous splat" do
+      ((*) = 1).should == 1
+    end
+
+    it "does not mutate a RHS Array" do
+      x = [1, 2, 3, 4]
+      a, *b, c, d = x
+      [a, b, c, d].should == [1, [2], 3, 4]
+      x.should == [1, 2, 3, 4]
+    end
+
+    it "assigns values from a RHS method call" do
+      def x() 1 end
+
+      (a, b = x).should == 1
+      [a, b].should == [1, nil]
+    end
+
+    it "assigns values from a RHS method call with arguments" do
+      def x(a) a end
+
+      (a, b = x []).should == []
+      [a, b].should == [nil, nil]
+    end
+
+    it "assigns values from a RHS method call with receiver" do
+      x = mock("multi-assign attributes")
+      x.should_receive(:m).and_return([1, 2, 3])
+
+      a, b = x.m
+      [a, b].should == [1, 2]
+    end
+
+    it "calls #to_ary on the value returned by the method call" do
+      y = mock("multi-assign method return value")
+      y.should_receive(:to_ary).and_return([1, 2])
+
+      x = mock("multi-assign attributes")
+      x.should_receive(:m).and_return(y)
+
+      (a, b = x.m).should == y
+      [a, b].should == [1, 2]
+    end
+
+    it "raises a TypeError if #to_ary does not return an Array" do
+      y = mock("multi-assign method return value")
+      y.should_receive(:to_ary).and_return(1)
+
+      x = mock("multi-assign attributes")
+      x.should_receive(:m).and_return(y)
+
+      lambda { a, b = x.m }.should raise_error(TypeError)
+    end
+
+    it "assigns values from a RHS method call with receiver and arguments" do
+      x = mock("multi-assign attributes")
+      x.should_receive(:m).with(1, 2).and_return([1, 2, 3])
+
+      a, b = x.m 1, 2
+      [a, b].should == [1, 2]
+    end
+
+    it "assigns global variables" do
+      $spec_a, $spec_b = 1
+      [$spec_a, $spec_b].should == [1, nil]
+    end
+
+    it "assigns instance variables" do
+      @a, @b = 1
+      [@a, @b].should == [1, nil]
+    end
+
+    it "assigns attributes" do
+      a = mock("multi-assign attributes")
+      a.should_receive(:x=).with(1)
+      a.should_receive(:y=).with(nil)
+
+      a.x, a.y = 1
+    end
+
+    it "assigns indexed elements" do
+      a = []
+      a[1], a[2] = 1
+      a.should == [nil, 1, nil]
+    end
+  end
+
+  context "with a single splatted RHS value" do
+    it "assigns a single grouped LHS splat" do
+      (*a) = *1
+      a.should == [1]
+    end
+
+    it "assigns an empty Array to a single LHS value when passed nil" do
+      (a = *nil).should == []
+      a.should == []
+    end
+
+    it "calls #to_a to convert nil to an empty Array" do
+      nil.should_receive(:to_a).and_return([])
+
+      (*a = *nil).should == []
+      a.should == []
+    end
+
+    it "does not call #to_a on an Array" do
+      ary = [1, 2]
+      ary.should_not_receive(:to_a)
+
+      (a = *ary).should == [1, 2]
+      a.should == [1, 2]
+    end
+
+    it "returns a copy of a splatted Array" do
+      ary = [1, 2]
+
+      (a = *ary).should == [1, 2]
+      a.should_not equal(ary)
+    end
+
+    it "does not call #to_a on an Array subclass" do
+      cls = Class.new(Array)
+      ary = cls.new [1, 2]
+      ary.should_not_receive(:to_a)
+
+      (a = *ary).should == [1, 2]
+      a.should == [1, 2]
+    end
+
+    it "returns an Array when the splatted object is an Array subclass" do
+      cls = Class.new(Array)
+      ary = cls.new [1, 2]
+
+      x = (a = *ary)
+
+      x.should == [1, 2]
+      x.should be_an_instance_of(Array)
+
+      a.should == [1, 2]
+      a.should be_an_instance_of(Array)
+    end
+
+    it "consumes values for an anonymous splat" do
+      a = 1
+      (* = *a).should == [1]
+    end
+
+    it "assigns a single LHS splat" do
+      x = 1
+      (*a = *x).should == [1]
+      a.should == [1]
+    end
+
+    it "calls #to_a to convert an Object RHS with a single splat LHS" do
+      x = mock("multi-assign RHS splat")
       x.should_receive(:to_a).and_return([1, 2])
 
-      a, b = *x
-      a.should == 1
-      b.should == 2
+      (*a = *x).should == [1, 2]
+      a.should == [1, 2]
     end
 
-    it "does not call #to_ary on an object" do
-      x = mock("single splatted rhs value for masgn")
+    it "calls #to_a if it is private" do
+      x = mock("multi-assign RHS splat")
+      x.should_receive(:to_a).and_return([1, 2])
+      class << x; private :to_a; end
+
+      (*a = *x).should == [1, 2]
+      a.should == [1, 2]
+    end
+
+    it "does not call #to_a if #respond_to? returns false" do
+      x = mock("multi-assign RHS splat")
+      x.should_receive(:respond_to?).with(:to_a, true).and_return(false)
+      x.should_not_receive(:to_a)
+
+      (*a = *x).should == [x]
+      a.should == [x]
+    end
+
+    it "wraps the Object in an Array if #to_a returns nil" do
+      x = mock("multi-assign RHS splat")
+      x.should_receive(:to_a).and_return(nil)
+
+      (*a = *x).should == [x]
+      a.should == [x]
+    end
+
+    it "raises a TypeError if #to_a does not return an Array" do
+      x = mock("multi-assign RHS splat")
+      x.should_receive(:to_a).and_return(1)
+
+      lambda { *a = *x }.should raise_error(TypeError)
+    end
+
+    it "does not call #to_ary to convert an Object RHS with a single splat LHS" do
+      x = mock("multi-assign RHS splat")
       x.should_not_receive(:to_ary)
 
-      a, b = *x
-      a.should == x
-      b.should be_nil
+      (*a = *x).should == [x]
+      a.should == [x]
     end
 
-    it "does not call #to_a on a String" do
-      x = "one\ntwo"
-
-      a, b = *x
-      a.should == x
-      b.should be_nil
+    it "assigns a MLHS with leading splat" do
+      (*a, b, c = *1).should == [1]
+      [a, b, c].should == [[], 1, nil]
     end
 
-    it "calls #to_a even if it's private" do
-      x = VariablesSpecs::PrivateMethods.new
-
-      a, b = *x
-      a.should == 3
-      b.should == 4
+    it "assigns a MLHS with a middle splat" do
+      a, b, *c, d, e = *1
+      [a, b, c, d, e].should == [1, nil, [], nil, nil]
     end
-  end
-end
 
-describe "Assigning multiple values" do
-  it "allows parallel assignment" do
-    a, b = 1, 2
-    a.should == 1
-    b.should == 2
-
-    a, = 1,2
-    a.should == 1
-  end
-
-  it "allows safe parallel swapping" do
-    a, b = 1, 2
-    a, b = b, a
-    a.should == 2
-    b.should == 1
-  end
-
-  not_compliant_on :rubinius do
-    it "returns the rhs values used for assignment as an array" do
-      x = begin; a, b, c = 1, 2, 3; end
-      x.should == [1,2,3]
+    it "assigns a MLHS with a trailing splat" do
+      a, b, *c = *nil
+      [a, b, c].should == [nil, nil, []]
     end
-  end
 
-  it "wraps a single value in an Array if it's not already one" do
-    *a = 1
-    a.should == [1]
+    it "calls #to_a to convert an Object RHS with a single LHS" do
+      x = mock("multi-assign RHS splat")
+      x.should_receive(:to_a).and_return([1, 2])
 
-    b = [1]
-    *a = b
-    a.should == b
-  end
-
-  it "evaluates rhs left-to-right" do
-    a = VariablesSpecs::ParAsgn.new
-    d, e ,f = a.inc, a.inc, a.inc
-    d.should == 1
-    e.should == 2
-    f.should == 3
-  end
-
-  it "supports parallel assignment to lhs args via object.method=" do
-    a = VariablesSpecs::ParAsgn.new
-    a.x, b = 1, 2
-
-    a.x.should == 1
-    b.should == 2
-
-    c = VariablesSpecs::ParAsgn.new
-    c.x, a.x = a.x, b
-
-    c.x.should == 1
-    a.x.should == 2
-  end
-
-  it "supports parallel assignment to lhs args using []=" do
-    a = [1,2,3]
-    a[3], b = 4,5
-
-    a.should == [1,2,3,4]
-    b.should == 5
-  end
-
-  it "bundles remaining values to an array when using the splat operator" do
-    a, *b = 1, 2, 3
-    a.should == 1
-    b.should == [2, 3]
-
-    *a = 1, 2, 3
-    a.should == [1, 2, 3]
-
-    *a = 4
-    a.should == [4]
-
-    *a = nil
-    a.should == [nil]
-
-    a, = *[1]
-    a.should == 1
-  end
-
-  it "calls #to_ary on RHS arg if the corresponding LHS var is a splat" do
-    x = VariablesSpecs::ParAsgn.new
-
-    a,(*b),c = 5,x
-    a.should == 5
-    b.should == x.to_ary
-    c.should == nil
-  end
-
-  it "allows complex parallel assignment" do
-    a, (b, c), d = 1, [2, 3], 4
-    a.should == 1
-    b.should == 2
-    c.should == 3
-    d.should == 4
-
-    x, (y, z) = 1, 2, 3
-    [x,y,z].should == [1,2,nil]
-    x, (y, z) = 1, [2,3]
-    [x,y,z].should == [1,2,3]
-    x, (y, z) = 1, [2]
-    [x,y,z].should == [1,2,nil]
-
-    a,(b,c,*d),(e,f),*g = 0,[1,2,3,4],[5,6],7,8
-    a.should == 0
-    b.should == 1
-    c.should == 2
-    d.should == [3,4]
-    e.should == 5
-    f.should == 6
-    g.should == [7,8]
-
-    x = VariablesSpecs::ParAsgn.new
-    a,(b,c,*d),(e,f),*g = 0,x,[5,6],7,8
-    a.should == 0
-    b.should == 1
-    c.should == 2
-    d.should == [3,4]
-    e.should == 5
-    f.should == 6
-    g.should == [7,8]
-  end
-
-  it "allows a lhs arg to be used in another lhs args parallel assignment" do
-    c = [4,5,6]
-    a,b,c[a] = 1,2,3
-    a.should == 1
-    b.should == 2
-    c.should == [4,3,6]
-
-    c[a],b,a = 7,8,9
-    a.should == 9
-    b.should == 8
-    c.should == [4,7,6]
-  end
-end
-
-describe "Conditional assignment" do
-  it "assigns the lhs if previously unassigned" do
-    a=[]
-    a[0] ||= "bar"
-    a[0].should == "bar"
-
-    h={}
-    h["foo"] ||= "bar"
-    h["foo"].should == "bar"
-
-    h["foo".to_sym] ||= "bar"
-    h["foo".to_sym].should == "bar"
-
-    aa = 5
-    aa ||= 25
-    aa.should == 5
-
-    bb ||= 25
-    bb.should == 25
-
-    cc &&=33
-    cc.should == nil
-
-    cc = 5
-    cc &&=44
-    cc.should == 44
-  end
-
-  it "checks for class variable definition before fetching its value" do
-    class VariableSpecCVarSpec
-      @@cvarspec ||= 5
-      @@cvarspec.should == 5
+      (a = *x).should == [1, 2]
+      a.should == [1, 2]
     end
-  end
-end
 
-describe "Unconditional operator assignment 'var op= expr'" do
-  it "is equivalent to 'var = var op expr'" do
-    x = 13
-    (x += 5).should == 18
-    x.should == 18
+    it "does not call #to_ary to convert an Object RHS with a single LHS" do
+      x = mock("multi-assign RHS splat")
+      x.should_not_receive(:to_ary)
 
-    x = 17
-    (x -= 11).should == 6
-    x.should == 6
+      (a = *x).should == [x]
+      a.should == [x]
+    end
 
-    x = 2
-    (x *= 5).should == 10
-    x.should == 10
+    it "calls #to_a to convert an Object RHS with a single LHS" do
+      x = mock("multi-assign splat")
+      x.should_receive(:to_a).and_return([1, 2])
 
-    x = 36
-    (x /= 9).should == 4
-    x.should == 4
+      a = *x
+      a.should == [1, 2]
+    end
 
-    x = 23
-    (x %= 5).should == 3
-    x.should == 3
-    (x %= 3).should == 0
-    x.should == 0
+    it "raises a TypeError if #to_a does not return an Array" do
+      x = mock("multi-assign splat")
+      x.should_receive(:to_a).and_return(1)
 
-    x = 2
-    (x **= 3).should == 8
-    x.should == 8
+      lambda { a = *x }.should raise_error(TypeError)
+    end
 
-    x = 4
-    (x |= 3).should == 7
-    x.should == 7
-    (x |= 4).should == 7
-    x.should == 7
+    it "calls #to_a to convert an Object splat RHS when assigned to a simple MLHS" do
+      x = mock("multi-assign splat")
+      x.should_receive(:to_a).and_return([1, 2])
 
-    x = 6
-    (x &= 3).should == 2
-    x.should == 2
-    (x &= 4).should == 0
-    x.should == 0
+      (a, b, c = *x).should == [1, 2]
+      [a, b, c].should == [1, 2, nil]
+    end
 
-    # XOR
-    x = 2
-    (x ^= 3).should == 1
-    x.should == 1
-    (x ^= 4).should == 5
-    x.should == 5
+    it "raises a TypeError if #to_a does not return an Array" do
+      x = mock("multi-assign splat")
+      x.should_receive(:to_a).and_return(1)
 
-    # Bit-shift left
-    x = 17
-    (x <<= 3).should == 136
-    x.should == 136
+      lambda { a, b, c = *x }.should raise_error(TypeError)
+    end
 
-    # Bit-shift right
-    x = 5
-    (x >>= 1).should == 2
-    x.should == 2
-  end
-end
+    it "does not call #to_ary to convert an Object splat RHS when assigned to a simple MLHS" do
+      x = mock("multi-assign splat")
+      x.should_not_receive(:to_ary)
 
-describe "Conditional operator assignment 'var op= expr'" do
-  it "assigns the lhs if its truthiness is false for ||, true for &&" do
-    x = nil
-    (x ||= 17).should == 17
-    x.should == 17
-    (x ||= 2).should == 17
-    x.should == 17
+      (a, b, c = *x).should == [x]
+      [a, b, c].should == [x, nil, nil]
+    end
 
-    x = false
-    (x &&= true).should == false
-    x.should == false
-    (x &&= false).should == false
-    x.should == false
-    x = true
-    (x &&= true).should == true
-    x.should == true
-    (x &&= false).should == false
-    x.should == false
-  end
+    it "calls #to_a to convert an Object RHS with MLHS" do
+      x = mock("multi-assign splat")
+      x.should_receive(:to_a).and_return([1, 2])
 
-  it "may not assign at all, depending on the truthiness of lhs" do
-    Object.new.instance_eval do
-      @falsey = false
-      @truthy = true
-      freeze
-      lambda{ @truthy ||= 42 }.should_not raise_error
-      lambda{ @falsey &&= 42 }.should_not raise_error
+      a, *b, c = *x
+      [a, b, c].should == [1, [], 2]
+    end
+
+    it "raises a TypeError if #to_a does not return an Array" do
+      x = mock("multi-assign splat")
+      x.should_receive(:to_a).and_return(1)
+
+      lambda { a, *b, c = *x }.should raise_error(TypeError)
+    end
+
+    it "does not call #to_ary to convert an Object RHS with a MLHS" do
+      x = mock("multi-assign splat")
+      x.should_not_receive(:to_ary)
+
+      a, *b = *x
+      [a, b].should == [x, []]
+    end
+
+    it "assigns a grouped LHS without splats" do
+      ((a, b), c), (d, (e,), (f, (g, h))) = *1
+      [a, b, c, d, e, f, g, h].should == [1, nil, nil, nil, nil, nil, nil, nil]
+    end
+
+    it "assigns a grouped LHS with splats" do
+      (a, *b), c, (*d, (e, *f, g)) = *1
+      [a, b, c, d, e, f, g].should == [1, [], nil, [], nil, [], nil]
+    end
+
+    it "consumes values for an anonymous splat" do
+      (* = *1).should == [1]
+    end
+
+    it "consumes values for a grouped anonymous splat" do
+      ((*) = *1).should == [1]
+    end
+
+    it "does not mutate a RHS Array" do
+      x = [1, 2, 3, 4]
+      a, *b, c, d = *x
+      [a, b, c, d].should == [1, [2], 3, 4]
+      x.should == [1, 2, 3, 4]
     end
   end
 
-  it "uses short-circuit arg evaluation" do
-    x = 8
-    y = VariablesSpecs::OpAsgn.new
-    (x ||= y.do_side_effect).should == 8
-    y.side_effect.should == nil
-
-    x = nil
-    (x &&= y.do_side_effect).should == nil
-    y.side_effect.should == nil
-
-    y.a = 5
-    (x ||= y.do_side_effect).should == 5
-    y.side_effect.should == true
-  end
-end
-
-describe "Unconditional operator assignment 'obj.meth op= expr'" do
-  it "is equivalent to 'obj.meth = obj.meth op expr'" do
-    @x = VariablesSpecs::OpAsgn.new
-    @x.a = 13
-    (@x.a += 5).should == 18
-    @x.a.should == 18
-
-    @x.a = 17
-    (@x.a -= 11).should == 6
-    @x.a.should == 6
-
-    @x.a = 2
-    (@x.a *= 5).should == 10
-    @x.a.should == 10
-
-    @x.a = 36
-    (@x.a /= 9).should == 4
-    @x.a.should == 4
-
-    @x.a = 23
-    (@x.a %= 5).should == 3
-    @x.a.should == 3
-    (@x.a %= 3).should == 0
-    @x.a.should == 0
-
-    @x.a = 2
-    (@x.a **= 3).should == 8
-    @x.a.should == 8
-
-    @x.a = 4
-    (@x.a |= 3).should == 7
-    @x.a.should == 7
-    (@x.a |= 4).should == 7
-    @x.a.should == 7
-
-    @x.a = 6
-    (@x.a &= 3).should == 2
-    @x.a.should == 2
-    (@x.a &= 4).should == 0
-    @x.a.should == 0
-
-    # XOR
-    @x.a = 2
-    (@x.a ^= 3).should == 1
-    @x.a.should == 1
-    (@x.a ^= 4).should == 5
-    @x.a.should == 5
-
-    @x.a = 17
-    (@x.a <<= 3).should == 136
-    @x.a.should == 136
-
-    @x.a = 5
-    (@x.a >>= 1).should == 2
-    @x.a.should == 2
-  end
-end
-
-describe "Conditional operator assignment 'obj.meth op= expr'" do
-  it "is equivalent to 'obj.meth op obj.meth = expr'" do
-    @x = VariablesSpecs::OpAsgn.new
-    @x.a = nil
-    (@x.a ||= 17).should == 17
-    @x.a.should == 17
-    (@x.a ||= 2).should == 17
-    @x.a.should == 17
-
-    @x.a = false
-    (@x.a &&= true).should == false
-    @x.a.should == false
-    (@x.a &&= false).should == false
-    @x.a.should == false
-    @x.a = true
-    (@x.a &&= true).should == true
-    @x.a.should == true
-    (@x.a &&= false).should == false
-    @x.a.should == false
-  end
-
-  it "may not assign at all, depending on the truthiness of lhs" do
-    m = mock("object")
-    m.should_receive(:foo).and_return(:truthy)
-    m.should_not_receive(:foo=)
-    m.foo ||= 42
-
-    m.should_receive(:bar).and_return(false)
-    m.should_not_receive(:bar=)
-    m.bar &&= 42
-  end
-
-  it "uses short-circuit arg evaluation" do
-    x = 8
-    y = VariablesSpecs::OpAsgn.new
-    (x ||= y.do_side_effect).should == 8
-    y.side_effect.should == nil
-
-    x = nil
-    (x &&= y.do_side_effect).should == nil
-    y.side_effect.should == nil
-
-    y.a = 5
-    (x ||= y.do_side_effect).should == 5
-    y.side_effect.should == true
-  end
-end
-
-describe "Operator assignment 'obj.meth op= expr'" do
-  it "evaluates lhs one time" do
-    x = VariablesSpecs::OpAsgn.new
-    x.a = 5
-    (x.do_more_side_effects.a += 5).should == 15
-    x.a.should == 15
-
-    x.a = 5
-    (x.do_more_side_effects.a -= 4).should == 6
-    x.a.should == 6
-
-    x.a = 2
-    (x.do_more_side_effects.a *= 5).should == 35
-    x.a.should == 35
-
-    x.a = 31
-    (x.do_more_side_effects.a /= 9).should == 4
-    x.a.should == 4
-
-    x.a = 18
-    (x.do_more_side_effects.a %= 5).should == 3
-    x.a.should == 3
-
-    x.a = 0
-    (x.do_more_side_effects.a **= 3).should == 125
-    x.a.should == 125
-
-    x.a = -1
-    (x.do_more_side_effects.a |= 3).should == 7
-    x.a.should == 7
-
-    x.a = 1
-    (x.do_more_side_effects.a &= 3).should == 2
-    x.a.should == 2
-
-    # XOR
-    x.a = -3
-    (x.do_more_side_effects.a ^= 3).should == 1
-    x.a.should == 1
-
-    x.a = 12
-    (x.do_more_side_effects.a <<= 3).should == 136
-    x.a.should == 136
-
-    x.a = 0
-    (x.do_more_side_effects.a >>= 1).should == 2
-    x.a.should == 2
-
-    x.a = nil
-    x.b = 0
-    (x.do_bool_side_effects.a ||= 17).should == 17
-    x.a.should == 17
-    x.b.should == 1
-
-    x.a = false
-    x.b = 0
-    (x.do_bool_side_effects.a &&= true).should == false
-    x.a.should == false
-    x.b.should == 1
-    (x.do_bool_side_effects.a &&= false).should == false
-    x.a.should == false
-    x.b.should == 2
-    x.a = true
-    x.b = 0
-    (x.do_bool_side_effects.a &&= true).should == true
-    x.a.should == true
-    x.b.should == 1
-    (x.do_bool_side_effects.a &&= false).should == false
-    x.a.should == false
-    x.b.should == 2
-  end
-end
-
-describe "Unconditional operator assignment 'obj[idx] op= expr'" do
-  it "is equivalent to 'obj[idx] = obj[idx] op expr'" do
-    x = [2,13,7]
-    (x[1] += 5).should == 18
-    x.should == [2,18,7]
-
-    x = [17,6]
-    (x[0] -= 11).should == 6
-    x.should == [6,6]
-
-    x = [nil,2,28]
-    (x[2] *= 2).should == 56
-    x.should == [nil,2,56]
-
-    x = [3,9,36]
-    (x[2] /= x[1]).should == 4
-    x.should == [3,9,4]
-
-    x = [23,4]
-    (x[0] %= 5).should == 3
-    x.should == [3,4]
-    (x[0] %= 3).should == 0
-    x.should == [0,4]
-
-    x = [1,2,3]
-    (x[1] **= 3).should == 8
-    x.should == [1,8,3]
-
-    x = [4,5,nil]
-    (x[0] |= 3).should == 7
-    x.should == [7,5,nil]
-    (x[0] |= 4).should == 7
-    x.should == [7,5,nil]
-
-    x = [3,6,9]
-    (x[1] &= 3).should == 2
-    x.should == [3,2,9]
-    (x[1] &= 4).should == 0
-    x.should == [3,0,9]
-
-    # XOR
-    x = [0,1,2]
-    (x[2] ^= 3).should == 1
-    x.should == [0,1,1]
-    (x[2] ^= 4).should == 5
-    x.should == [0,1,5]
-
-    x = [17]
-    (x[0] <<= 3).should == 136
-    x.should == [136]
-
-    x = [nil,5,8]
-    (x[1] >>= 1).should == 2
-    x.should == [nil,2,8]
-  end
-end
-
-describe "Conditional operator assignment 'obj[idx] op= expr'" do
-  it "is equivalent to 'obj[idx] op obj[idx] = expr'" do
-    x = [1,nil,12]
-    (x[1] ||= 17).should == 17
-    x.should == [1,17,12]
-    (x[1] ||= 2).should == 17
-    x.should == [1,17,12]
-
-    x = [true, false, false]
-    (x[1] &&= true).should == false
-    x.should == [true, false, false]
-    (x[1] &&= false).should == false
-    x.should == [true, false, false]
-    (x[0] &&= true).should == true
-    x.should == [true, false, false]
-    (x[0] &&= false).should == false
-    x.should == [false, false, false]
-  end
-
-  it "may not assign at all, depending on the truthiness of lhs" do
-    m = mock("object")
-    m.should_receive(:[]).and_return(:truthy)
-    m.should_not_receive(:[]=)
-    m[:foo] ||= 42
-
-    m = mock("object")
-    m.should_receive(:[]).and_return(false)
-    m.should_not_receive(:[]=)
-    m[:bar] &&= 42
-  end
-
-  it "uses short-circuit arg evaluation" do
-    x = 8
-    y = VariablesSpecs::OpAsgn.new
-    (x ||= y.do_side_effect).should == 8
-    y.side_effect.should == nil
-
-    x = nil
-    (x &&= y.do_side_effect).should == nil
-    y.side_effect.should == nil
-
-    y.a = 5
-    (x ||= y.do_side_effect).should == 5
-    y.side_effect.should == true
-  end
-end
-
-describe "Operator assignment 'obj[idx] op= expr'" do
-  class ArrayWithDefaultIndex < Array
-    def [](index=nil)
-      super(index || 0)
+  context "with a MRHS value" do
+    it "consumes values for an anonymous splat" do
+      (* = 1, 2, 3).should == [1, 2, 3]
     end
 
-    def []=(first_arg, second_arg=nil)
-      if second_arg
-        index = fist_arg
-        value = second_arg
-      else
-        index = 0
-        value = first_arg
-      end
+    it "consumes values for multiple '_' variables" do
+      a, _, b, _, c = 1, 2, 3, 4, 5
+      [a, b, c].should == [1, 3, 5]
+    end
 
-      super(index, value)
+    it "does not call #to_a to convert an Object in a MRHS" do
+      x = mock("multi-assign MRHS")
+      x.should_not_receive(:to_a)
+
+      (a, b = 1, x).should == [1, x]
+      [a, b].should == [1, x]
+    end
+
+    it "does not call #to_ary to convert an Object in a MRHS" do
+      x = mock("multi-assign MRHS")
+      x.should_not_receive(:to_ary)
+
+      (a, b = 1, x).should == [1, x]
+      [a, b].should == [1, x]
+    end
+
+    it "calls #to_a to convert a splatted Object as part of a MRHS with a splat MLHS" do
+      x = mock("multi-assign splat MRHS")
+      x.should_receive(:to_a).and_return([3, 4])
+
+      (a, *b = 1, *x).should == [1, 3, 4]
+      [a, b].should == [1, [3, 4]]
+    end
+
+    it "raises a TypeError if #to_a does not return an Array" do
+      x = mock("multi-assign splat MRHS")
+      x.should_receive(:to_a).and_return(1)
+
+      lambda { a, *b = 1, *x }.should raise_error(TypeError)
+    end
+
+    it "does not call #to_ary to convert a splatted Object as part of a MRHS with a splat MRHS" do
+      x = mock("multi-assign splat MRHS")
+      x.should_not_receive(:to_ary)
+
+      (a, *b = 1, *x).should == [1, x]
+      [a, b].should == [1, [x]]
+    end
+
+    it "calls #to_a to convert a splatted Object as part of a MRHS with a splat MLHS" do
+      x = mock("multi-assign splat MRHS")
+      x.should_receive(:to_a).and_return([3, 4])
+
+      (a, *b = *x, 1).should == [3, 4, 1]
+      [a, b].should == [3, [4, 1]]
+    end
+
+    it "raises a TypeError if #to_a does not return an Array" do
+      x = mock("multi-assign splat MRHS")
+      x.should_receive(:to_a).and_return(1)
+
+      lambda { a, *b = *x, 1 }.should raise_error(TypeError)
+    end
+
+    it "does not call #to_ary to convert a splatted Object as part of a MRHS with a splat MRHS" do
+      x = mock("multi-assign splat MRHS")
+      x.should_not_receive(:to_ary)
+
+      (a, *b = *x, 1).should == [x, 1]
+      [a, b].should == [x, [1]]
+    end
+
+    it "assigns a grouped LHS without splat from a simple Array" do
+      ((a, b), c), (d, (e,), (f, (g, h))) = 1, 2, 3, 4, 5
+      [a, b, c, d, e, f, g, h].should == [1, nil, nil, 2, nil, nil, nil, nil]
+    end
+
+    it "assigns a grouped LHS without splat from nested Arrays" do
+      ary = [[1, 2, 3], 4], [[5], [6, 7], [8, [9, 10]]]
+      ((a, b), c), (d, (e,), (f, (g, h))) = ary
+      [a, b, c, d, e, f, g, h].should == [1, 2, 4, [5], 6, 8, 9, 10]
+    end
+
+    it "assigns a single grouped LHS splat" do
+      (*a) = 1, 2, 3
+      a.should == [1, 2, 3]
+    end
+
+    it "assigns a grouped LHS with splats from nested Arrays" do
+      (a, *b), c, (*d, (e, *f, g)) = 1, 2, 3, 4
+      [a, b, c, d, e, f, g].should == [1, [], 2, [], 3, [], nil]
+    end
+
+    it "assigns a grouped LHS with splats from nested Arrays" do
+      (a, *b), c, (*d, (e, *f, g)) = [1, [2, 3]], [4, 5], [6, 7, 8]
+      [a, b, c, d, e, f, g].should == [1, [[2, 3]], [4, 5], [6, 7], 8, [], nil]
+    end
+
+    it "consumes values for an anonymous splat" do
+      (* = 1, 2, 3).should == [1, 2, 3]
+    end
+
+    it "consumes values for a grouped anonymous splat" do
+      ((*) = 1, 2, 3).should == [1, 2, 3]
+    end
+
+    it "calls #to_ary to convert an Object when the position receiving the value is a multiple assignment" do
+      x = mock("multi-assign mixed RHS")
+      x.should_receive(:to_ary).and_return([1, 2])
+
+      (a, (b, c), d, e = 1, x, 3, 4).should == [1, x, 3, 4]
+      [a, b, c, d, e].should == [1, 1, 2, 3, 4]
+    end
+
+    it "raises a TypeError if #to_ary does not return an Array" do
+      x = mock("multi-assign mixed RHS")
+      x.should_receive(:to_ary).and_return(x)
+
+      lambda { a, (b, c), d = 1, x, 3, 4 }.should raise_error(TypeError)
+    end
+
+    it "calls #to_a to convert a splatted Object value in a MRHS" do
+      x = mock("multi-assign mixed splatted RHS")
+      x.should_receive(:to_a).and_return([4, 5])
+
+      (a, *b, (c, d) = 1, 2, 3, *x).should == [1, 2, 3, 4, 5]
+      [a, b, c, d].should == [1, [2, 3, 4], 5, nil]
+
+    end
+
+    it "calls #to_ary to convert a splatted Object when the position receiving the value is a multiple assignment" do
+      x = mock("multi-assign mixed splatted RHS")
+      x.should_receive(:to_ary).and_return([4, 5])
+
+      (a, *b, (c, d) = 1, 2, 3, *x).should == [1, 2, 3, x]
+      [a, b, c, d].should == [1, [2, 3], 4, 5]
+    end
+
+    it "raises a TypeError if #to_ary does not return an Array" do
+      x = mock("multi-assign mixed splatted RHS")
+      x.should_receive(:to_ary).and_return(x)
+
+      lambda { a, *b, (c, d) = 1, 2, 3, *x }.should raise_error(TypeError)
+    end
+
+    it "does not call #to_ary to convert an Object when the position receiving the value is a simple variable" do
+      x = mock("multi-assign mixed RHS")
+      x.should_not_receive(:to_ary)
+
+      a, b, c, d = 1, x, 3, 4
+      [a, b, c, d].should == [1, x, 3, 4]
+    end
+
+    it "does not call #to_ary to convert an Object when the position receiving the value is a rest variable" do
+      x = mock("multi-assign mixed RHS")
+      x.should_not_receive(:to_ary)
+
+      a, *b, c, d = 1, x, 3, 4
+      [a, b, c, d].should == [1, [x], 3, 4]
+    end
+
+    it "does not call #to_ary to convert a splatted Object when the position receiving the value is a simple variable" do
+      x = mock("multi-assign mixed splatted RHS")
+      x.should_not_receive(:to_ary)
+
+      a, *b, c = 1, 2, *x
+      [a, b, c].should == [1, [2], x]
+    end
+
+    it "does not call #to_ary to convert a splatted Object when the position receiving the value is a rest variable" do
+      x = mock("multi-assign mixed splatted RHS")
+      x.should_not_receive(:to_ary)
+
+      a, b, *c = 1, 2, *x
+      [a, b, c].should == [1, 2, [x]]
+    end
+
+    it "does not mutate the assigned Array" do
+      x = ((a, *b, c, d) = 1, 2, 3, 4, 5)
+      x.should == [1, 2, 3, 4, 5]
     end
   end
 
-  it "handles empty index (idx) arguments" do
-    array = ArrayWithDefaultIndex.new
-    array << 1
-    (array[] += 5).should == 6
-  end
-
-  it "handles complex index (idx) arguments" do
-    x = [1,2,3,4]
-    (x[0,2] += [5]).should == [1,2,5]
-    x.should == [1,2,5,3,4]
-    (x[0,2] += [3,4]).should == [1,2,3,4]
-    x.should == [1,2,3,4,5,3,4]
-
-    (x[2..3] += [8]).should == [3,4,8]
-    x.should == [1,2,3,4,8,5,3,4]
-
-    y = VariablesSpecs::OpAsgn.new
-    y.a = 1
-    (x[y.do_side_effect] *= 2).should == 4
-    x.should == [1,4,3,4,8,5,3,4]
-
-    h = {'key1' => 23, 'key2' => 'val'}
-    (h['key1'] %= 5).should == 3
-    (h['key2'] += 'ue').should == 'value'
-    h.should == {'key1' => 3, 'key2' => 'value'}
-  end
-
-  it "handles empty splat index (idx) arguments" do
-    array = ArrayWithDefaultIndex.new
-    array << 5
-    splat_index = []
-
-    (array[*splat_index] += 5).should == 10
-    array.should== [10]
-  end
-
-  it "handles single splat index (idx) arguments" do
-    array = [1,2,3,4]
-    splat_index = [0]
-
-    (array[*splat_index] += 5).should == 6
-    array.should == [6,2,3,4]
-  end
-
-  it "handles multiple splat index (idx) arguments" do
-    array = [1,2,3,4]
-    splat_index = [0,2]
-
-    (array[*splat_index] += [5]).should == [1,2,5]
-    array.should == [1,2,5,3,4]
-  end
-
-  it "handles splat index (idx) arguments with normal arguments" do
-    array = [1,2,3,4]
-    splat_index = [2]
-
-    (array[0, *splat_index] += [5]).should == [1,2,5]
-    array.should == [1,2,5,3,4]
-  end
-
-  # This example fails on 1.9 because of bug #2050
-  it "returns result of rhs not result of []=" do
-    a = VariablesSpecs::Hashalike.new
-
-    (a[123] =   2).should == 2
-    (a[123] +=  2).should == 125
-    (a[123] -=  2).should == 121
-    (a[123] *=  2).should == 246
-    # Guard against the Mathn library
-    # TODO: Make these specs not rely on specific behaviour / result values
-    # by using mocks.
-    conflicts_with :Prime do
-      (a[123] /=  2).should == 61
-    end
-    (a[123] %=  2).should == 1
-    (a[123] **= 2).should == 15129
-    (a[123] |=  2).should == 123
-    (a[123] &=  2).should == 2
-    (a[123] ^=  2).should == 121
-    (a[123] <<= 2).should == 492
-    (a[123] >>= 2).should == 30
-    (a[123] ||= 2).should == 123
-    (a[nil] ||= 2).should == 2
-    (a[123] &&= 2).should == 2
-    (a[nil] &&= 2).should == nil
-  end
-end
-
-describe "Single assignment" do
-  it "Assignment does not modify the lhs, it reassigns its reference" do
-    a = 'Foobar'
-    b = a
-    b = 'Bazquux'
-    a.should == 'Foobar'
-    b.should == 'Bazquux'
-  end
-
-  it "Assignment does not copy the object being assigned, just creates a new reference to it" do
-    a = []
-    b = a
-    b << 1
-    a.should == [1]
-  end
-
-  it "If rhs has multiple arguments, lhs becomes an Array of them" do
-    a = 1, 2, 3
-    a.should == [1, 2, 3]
-
-    a = 1, (), 3
-    a.should == [1, nil, 3]
-  end
-end
-
-describe "Multiple assignment without grouping or splatting" do
-  it "An equal number of arguments on lhs and rhs assigns positionally" do
-    a, b, c, d = 1, 2, 3, 4
-    a.should == 1
-    b.should == 2
-    c.should == 3
-    d.should == 4
-  end
-
-  it "If rhs has too few arguments, the missing ones on lhs are assigned nil" do
-    a, b, c = 1, 2
-    a.should == 1
-    b.should == 2
-    c.should == nil
-  end
-
-  it "If rhs has too many arguments, the extra ones are silently not assigned anywhere" do
-    a, b = 1, 2, 3
-    a.should == 1
-    b.should == 2
-  end
-
-  it "The assignments are done in parallel so that lhs and rhs are independent of eachother without copying" do
-    o_of_a, o_of_b = mock('a'), mock('b')
-    a, b = o_of_a, o_of_b
-    a, b = b, a
-    a.should equal(o_of_b)
-    b.should equal(o_of_a)
-  end
-end
-
-describe "Multiple assignments with splats" do
-  it "* on the lhs collects all parameters from its position onwards as an Array or an empty Array" do
-    a, *b = 1, 2
-    c, *d = 1
-    e, *f = 1, 2, 3
-    g, *h = 1, [2, 3]
-    *i = 1, [2,3]
-    *k = 1,2,3
-
-    a.should == 1
-    b.should == [2]
-    c.should == 1
-    d.should == []
-    e.should == 1
-    f.should == [2, 3]
-    g.should == 1
-    h.should == [[2, 3]]
-    i.should == [1, [2, 3]]
-    k.should == [1,2,3]
-  end
-
-  it "* on the LHS returns the Array on the RHS without enclosing it in an Array" do
-    *j = [1,2,3]
-    j.should == [1,2,3]
-  end
-end
-
-describe "Multiple assignments with grouping" do
-  it "A group on the lhs is considered one position and treats its corresponding rhs position like an Array" do
-    a, (b, c), d = 1, 2, 3, 4
-    e, (f, g), h = 1, [2, 3, 4], 5
-    i, (j, k), l = 1, 2, 3
-    a.should == 1
-    b.should == 2
-    c.should == nil
-    d.should == 3
-    e.should == 1
-    f.should == 2
-    g.should == 3
-    h.should == 5
-    i.should == 1
-    j.should == 2
-    k.should == nil
-    l.should == 3
-  end
-
-  it "supports multiple levels of nested groupings" do
-    a,(b,(c,d)) = 1,[2,[3,4]]
-    a.should == 1
-    b.should == 2
-    c.should == 3
-    d.should == 4
-
-    a,(b,(c,d)) = [1,[2,[3,4]]]
-    a.should == 1
-    b.should == 2
-    c.should == 3
-    d.should == 4
-
-    x = [1,[2,[3,4]]]
-    a,(b,(c,d)) = x
-    a.should == 1
-    b.should == 2
-    c.should == 3
-    d.should == 4
-  end
-
-  it "rhs cannot use parameter grouping, it is a syntax error" do
-    lambda { eval '(a, b) = (1, 2)' }.should raise_error(SyntaxError)
-  end
-end
-
-# TODO: merge the following two describe blocks and partition the specs
-# into distinct cases.
-describe "Multiple assignment" do
-  not_compliant_on :rubinius do
-    it "has the proper return value" do
-      (a,b,*c = *[5,6,7,8,9,10]).should == [5,6,7,8,9,10]
-      (d,e = VariablesSpecs.reverse_foo(4,3)).should == [3,4]
-      (f,g,h = VariablesSpecs.reverse_foo(6,7)).should == [7,6]
-      (i,*j = *[5,6,7]).should == [5,6,7]
-      (k,*l = [5,6,7]).should == [5,6,7]
-      a.should == 5
-      b.should == 6
-      c.should == [7,8,9,10]
-      d.should == 3
-      e.should == 4
-      f.should == 7
-      g.should == 6
-      h.should == nil
-      i.should == 5
-      j.should == [6,7]
-      k.should == 5
-      l.should == [6,7]
-    end
-  end
-
-  # TODO: write Rubinius versions
-end
-
-# For now, masgn is deliberately non-compliant with MRI wrt the return val from an masgn.
-# Rubinius returns true as the result of the assignment, but MRI returns an array
-# containing all the elements on the rhs. As this result is never used, the cost
-# of creating and then discarding this array is avoided
-describe "Multiple assignment, array-style" do
-  it "returns an array of all rhs values" do
-    (a,b = 5,6,7).should == [5,6,7]
-    a.should == 5
-    b.should == 6
-
-    (c,d,*e = 99,8).should == [99,8]
-    c.should == 99
-    d.should == 8
-    e.should == []
-
-    (f,g,h = 99,8).should == [99,8]
-    f.should == 99
-    g.should == 8
-    h.should == nil
-  end
-end
-
-describe "Scope of variables" do
-  it "instance variables not overwritten by local variable in each block" do
-
-    class ScopeVariables
-      attr_accessor :v
-
-      def initialize
-        @v = ['a', 'b', 'c']
-      end
-
-      def check_access
-        v.should == ['a', 'b', 'c']
-        self.v.should == ['a', 'b', 'c']
-      end
-
-      def check_local_variable
-        v = nil
-        self.v.should == ['a', 'b', 'c']
-      end
-
-      def check_each_block
-        self.v.each { |v|
-          # Don't actually do anything
-        }
-        self.v.should == ['a', 'b', 'c']
-        v.should == ['a', 'b', 'c']
-        self.v.object_id.should == v.object_id
-      end
-    end # Class ScopeVariables
-
-    instance = ScopeVariables.new()
-    instance.check_access
-    instance.check_local_variable
-    instance.check_each_block
-  end
-end
-
-describe "A local variable in a #define_method scope" do
-  ruby_bug '#1322', '1.8.7.228' do
-    it "shares the lexical scope containing the call to #define_method" do
-      # We need a new scope to reproduce this bug.
-      handle = mock("handle for containing scope method")
-
-      def handle.produce_bug
-        local = 1
-
-        klass = Class.new
-        klass.send :define_method, :set_local do |arg|
-          lambda { local = 2 }.call
-        end
-
-        # We must call with at least one argument to reproduce the bug.
-        klass.new.set_local(nil)
-
-        local
-      end
-
-      handle.produce_bug.should == 2
-    end
-  end
-
-  describe "Multiple assignments with splats" do
-    it "* on the LHS has to be applied to any parameter" do
-      a, *b, c = 1, 2, 3
+  context "with a RHS assignment value" do
+    it "consumes values for an anonymous splat" do
+      (* = (a = 1)).should == 1
       a.should == 1
-      b.should == [2]
-      c.should == 3
     end
-  end
 
-  describe "Chained assignments with method call without parenthesis" do
-    it "assigns the result of the method call" do
-      a = b = VariablesSpecs::Chain.without_parenthesis 1
-      a.should == 1
-      b.should == 1
+    it "does not mutate a RHS Array" do
+      a, *b, c, d = (e = [1, 2, 3, 4])
+      [a, b, c, d].should == [1, [2], 3, 4]
+      e.should == [1, 2, 3, 4]
     end
   end
 end

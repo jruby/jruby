@@ -43,9 +43,10 @@ end
 # download files during the tests
 execute 'download', :phase => 'integration-test' do
   require 'open-uri'
-  FileUtils.cp( 'target/j2ee_wildfly.war', 'target/wildfly-run/wildfly-8.1.0.Final/standalone/deployments/packed.war' )
-  FileUtils.cp_r( 'target/j2ee_wildfly', 'target/wildfly-run/wildfly-8.1.0.Final/standalone/deployments/unpacked.war' )
-  FileUtils.touch( 'target/wildfly-run/wildfly-8.1.0.Final/standalone/deployments/unpacked.war.dodeploy' )
+  dir = Dir[ 'target/wildfly-run/*' ].first
+  FileUtils.cp( 'target/j2ee_wildfly.war', dir + '/standalone/deployments/packed.war' )
+  FileUtils.cp_r( 'target/j2ee_wildfly', dir + '/standalone/deployments/unpacked.war' )
+  FileUtils.touch( dir + '/standalone/deployments/unpacked.war.dodeploy' )
 
   # packed application
   count = 10

@@ -33,16 +33,28 @@ package org.jruby.ext.thread;
 import java.io.IOException;
 
 import org.jruby.Ruby;
+import org.jruby.RubyObject;
+import org.jruby.runtime.ThreadContext;
+import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.load.Library;
 
 /**
  * The 'thread' library.
  */
 public class ThreadLibrary implements Library {
-    public void load(final Ruby runtime, boolean wrap) throws IOException {
+    public void load(final Ruby runtime, boolean wrap) {
         Mutex.setup(runtime);
         ConditionVariable.setup(runtime);
         Queue.setup(runtime);
         SizedQueue.setup(runtime);
+    }
+
+    /**
+     * Convenience method for objects that are undumpable. Always throws.
+     *
+     * @throws TypeError
+     */
+    static IRubyObject undumpable(ThreadContext context, RubyObject self) {
+        throw context.runtime.newTypeError("can't dump " + self.type());
     }
 }

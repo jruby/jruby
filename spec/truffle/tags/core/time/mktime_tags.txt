@@ -1,45 +1,8 @@
-fails:Time.mktime creates a time based on given values, interpreted in the local time zone
-fails:Time.mktime respects rare old timezones
 fails:Time.mktime creates a time based on given C-style gmtime arguments, interpreted in the local time zone
 fails:Time.mktime creates the correct time just before dst change
 fails:Time.mktime creates the correct time just after dst change
-fails:Time.mktime accepts 1 argument (year)
-fails:Time.mktime accepts 2 arguments (year, month)
-fails:Time.mktime accepts 3 arguments (year, month, day)
-fails:Time.mktime accepts 4 arguments (year, month, day, hour)
-fails:Time.mktime accepts 5 arguments (year, month, day, hour, minute)
-fails:Time.mktime raises a TypeError if the year is nil
-fails:Time.mktime accepts nil month, day, hour, minute, and second
-fails:Time.mktime handles a String year
-fails:Time.mktime coerces the year with #to_int
-fails:Time.mktime handles a String month given as a numeral
-fails:Time.mktime handles a String month given as a short month name
-fails:Time.mktime coerces the month with #to_str
-fails:Time.mktime coerces the month with #to_int
-fails:Time.mktime handles a String day
-fails:Time.mktime coerces the day with #to_int
-fails:Time.mktime handles a String hour
-fails:Time.mktime coerces the hour with #to_int
-fails:Time.mktime handles a String minute
-fails:Time.mktime coerces the minute with #to_int
-fails:Time.mktime handles a String second
-fails:Time.mktime coerces the second with #to_int
-fails:Time.mktime interprets all numerals as base 10
-fails:Time.mktime handles fractional seconds as a Float
-fails:Time.mktime handles fractional seconds as a Rational
-fails:Time.mktime handles years from 0 as such
-fails:Time.mktime accepts various year ranges
-fails:Time.mktime raises an ArgumentError for out of range month
-fails:Time.mktime raises an ArgumentError for out of range day
-fails:Time.mktime raises an ArgumentError for out of range hour
-fails:Time.mktime raises an ArgumentError for out of range minute
-fails:Time.mktime raises an ArgumentError for out of range second
-fails:Time.mktime raises ArgumentError when given 9 arguments
-fails:Time.mktime raises ArgumentError when given 11 arguments
-fails:Time.mktime returns subclass instances
 fails:Time.mktime handles string arguments
 fails:Time.mktime handles float arguments
-fails:Time.mktime raises an ArgumentError for out of range values
 fails:Time.mktime handles microseconds
 fails:Time.mktime handles fractional microseconds as a Float
 fails:Time.mktime handles fractional microseconds as a Rational

@@ -1,3 +1,1 @@
-fails:Enumerator::Generator#initialize is a private method
-fails:Enumerator::Generator#initialize returns self when given a block
 fails:Enumerator::Generator#initialize on frozen instance raises a RuntimeError

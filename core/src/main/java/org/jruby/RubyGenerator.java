@@ -85,6 +85,8 @@ public class RubyGenerator extends RubyObject {
             throw context.runtime.newTypeError(other, context.runtime.getGenerator());
         }
 
+        checkFrozen();
+
         this.proc = ((RubyGenerator)other).proc;
 
         return this;

@@ -42,7 +42,6 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.load.LoadServiceResourceInputStream;
 import org.jruby.util.ByteList;
-import org.jruby.util.cli.Options;
 
 /**
  * Serves as a simple facade for all the parsing magic.
@@ -75,7 +74,7 @@ public class Parser {
     public Node parse(String file, byte[] content, DynamicScope blockScope,
             ParserConfiguration configuration) {
         RubyArray list = getLines(configuration, runtime, file);
-        LexerSource lexerSource = LexerSource.getSource(file, content, list, configuration, getSourcePositionFactoryFactory());
+        LexerSource lexerSource = LexerSource.getSource(file, content, list, configuration);
         return parse(file, lexerSource, blockScope, configuration);
     }
 
@@ -86,7 +85,7 @@ public class Parser {
         if (content instanceof LoadServiceResourceInputStream) {
             return parse(file, ((LoadServiceResourceInputStream) content).getBytes(), blockScope, configuration);
         } else {
-            LexerSource lexerSource = LexerSource.getSource(file, content, list, configuration, getSourcePositionFactoryFactory());
+            LexerSource lexerSource = LexerSource.getSource(file, content, list, configuration);
             return parse(file, lexerSource, blockScope, configuration);
         }
     }
@@ -128,9 +127,16 @@ public class Parser {
                 case NOT_ASCII_COMPATIBLE:
                     throw runtime.newArgumentError(e.getMessage());
                 default:
+                    int line = e.getPosition().getLine();
+
+                    // Detailed source positions always have the right line number so they don't need to be adjusted.
+                    if (! (e.getPosition() instanceof DetailedSourcePosition)) {
+                        line++;
+                    }
+
                     StringBuilder buffer = new StringBuilder(100);
                     buffer.append(e.getPosition().getFile()).append(':');
-                    buffer.append(e.getPosition().getStartLine() + 1).append(": ");
+                    buffer.append(line).append(": ");
                     buffer.append(e.getMessage());
 
                     throw runtime.newSyntaxError(buffer.toString());
@@ -173,15 +179,5 @@ public class Parser {
         }
         return list;
     }
-
-    // I'm really sorry, this is a factory factory factory method (CS)
-    private SourcePositionFactory.SourcePositionFactoryFactory getSourcePositionFactoryFactory() {
-        if (runtime.getInstanceConfig().getCompileMode() == RubyInstanceConfig.CompileMode.TRUFFLE || Options.PARSER_ALWAYS_TRUFFLE_POSITIONS.load()) {
-            return new TruffleSourcePositionFactory.Factory();
-        } else {
-            return new SimpleSourcePositionFactory.Factory();
-        }
-    }
-
 
 }

@@ -56,6 +56,7 @@ import org.jruby.util.ByteList;
 import org.jruby.util.KCode;
 import org.jruby.util.OSEnvironment;
 import org.jruby.util.RegexpOptions;
+import org.jruby.util.ShellLauncher;
 import org.jruby.util.cli.OutputStrings;
 import org.jruby.util.io.BadDescriptorException;
 import org.jruby.util.io.OpenFile;
@@ -63,6 +64,8 @@ import org.jruby.util.io.STDIO;
 
 import static org.jruby.internal.runtime.GlobalVariable.Scope.*;
 
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.channels.Channel;
@@ -245,6 +248,8 @@ public class RubyGlobal {
         // ARGF, $< object
         RubyArgsFile.initArgsFile(runtime);
 
+        globals.alias("$-0", "$/");
+
         // Define aliases originally in the "English.rb" stdlib
         globals.alias("$ERROR_INFO", "$!");
         globals.alias("$ERROR_POSITION", "$@");
@@ -274,15 +279,25 @@ public class RubyGlobal {
     }
 
     private static Channel prepareStdioChannel(Ruby runtime, STDIO stdio, Object stream) {
-        if (runtime.getPosix().isNative() && stdio.isJVMDefault(stream)) {
+        if (runtime.getPosix().isNative() && stdio.isJVMDefault(stream) && !Platform.IS_WINDOWS) {
             // use real native channel for stdio
             return new NativeDeviceChannel(stdio.fileno());
         } else {
             switch (stdio) {
                 case IN:
+                    stream = ShellLauncher.unwrapFilterInputStream((InputStream)stream);
+                    if (stream instanceof FileInputStream) {
+                        return ((FileInputStream)stream).getChannel();
+                    }
+
                     return Channels.newChannel((InputStream)stream);
                 case OUT:
                 case ERR:
+                    stream = ShellLauncher.unwrapFilterOutputStream((OutputStream)stream);
+                    if (stream instanceof FileOutputStream) {
+                        return ((FileOutputStream)stream).getChannel();
+                    }
+
                     return Channels.newChannel((OutputStream)stream);
                 default: throw new RuntimeException("invalid stdio: " + stdio);
             }

@@ -35,6 +35,8 @@ package org.jruby;
 
 import java.io.FileDescriptor;
 import java.io.IOException;
+import java.nio.file.attribute.FileTime;
+import java.util.concurrent.TimeUnit;
 
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
@@ -49,6 +51,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.FileResource;
 import org.jruby.util.JRubyFile;
 import org.jruby.util.JRubyNonExistentFile;
+import org.jruby.util.StringSupport;
 
 /**
  * Implements File::Stat
@@ -63,6 +66,10 @@ public class RubyFileStat extends RubyObject {
 
     private FileResource file;
     private FileStat stat;
+
+    private void checkInitialized() {
+        if (stat == null) throw getRuntime().newTypeError("uninitialized File::Stat");
+    }
 
     private static ObjectAllocator ALLOCATOR = new ObjectAllocator() {
         @Override
@@ -120,15 +127,17 @@ public class RubyFileStat extends RubyObject {
     }
     
     private void setup(String filename, boolean lstat) {
+        Ruby runtime = getRuntime();
+
         if (Platform.IS_WINDOWS && filename.length() == 2
                 && filename.charAt(1) == ':' && Character.isLetter(filename.charAt(0))) {
             filename += "/";
         }
 
-        file = JRubyFile.createResource(getRuntime().getPosix(), getRuntime().getCurrentDirectory(), filename);
+        file = JRubyFile.createResource(runtime.getPosix(), runtime.getCurrentDirectory(), filename);
         stat = lstat ? file.lstat() : file.stat();
 
-        if (stat == null) throw getRuntime().newErrnoFromInt(getRuntime().getPosix().errno());
+        if (stat == null) throw runtime.newErrnoFromInt(file.errno(), filename);
     }
 
     public IRubyObject initialize(IRubyObject fname, Block unusedBlock) {
@@ -137,38 +146,47 @@ public class RubyFileStat extends RubyObject {
 
     @JRubyMethod(name = "initialize", required = 1, visibility = Visibility.PRIVATE)
     public IRubyObject initialize19(IRubyObject fname, Block unusedBlock) {
-        setup(RubyFile.get_path(getRuntime().getCurrentContext(), fname).convertToString().toString(), false);
+        Ruby runtime = getRuntime();
+        ThreadContext context = runtime.getCurrentContext();
+        RubyString path = StringSupport.checkEmbeddedNulls(runtime, RubyFile.get_path(context, fname));
+        setup(path.convertToString().toString(), false);
 
         return this;    
     }
     
     @JRubyMethod(name = "atime")
     public IRubyObject atime() {
+        checkInitialized();
         return getRuntime().newTime(stat.atime() * 1000);
     }
     
     @JRubyMethod(name = "blksize")
     public RubyFixnum blksize() {
+        checkInitialized();
         return getRuntime().newFixnum(stat.blockSize());
     }
 
     @JRubyMethod(name = "blockdev?")
     public IRubyObject blockdev_p() {
+        checkInitialized();
         return getRuntime().newBoolean(stat.isBlockDev());
     }
 
     @JRubyMethod(name = "blocks")
     public IRubyObject blocks() {
+        checkInitialized();
         return getRuntime().newFixnum(stat.blocks());
     }
 
     @JRubyMethod(name = "chardev?")
     public IRubyObject chardev_p() {
+        checkInitialized();
         return getRuntime().newBoolean(stat.isCharDev());
     }
 
     @JRubyMethod(name = "<=>", required = 1)
     public IRubyObject cmp(IRubyObject other) {
+        checkInitialized();
         if (!(other instanceof RubyFileStat)) return getRuntime().getNil();
         
         long time1 = stat.mtime();
@@ -185,56 +203,75 @@ public class RubyFileStat extends RubyObject {
 
     @JRubyMethod(name = "ctime")
     public IRubyObject ctime() {
+        checkInitialized();
         return getRuntime().newTime(stat.ctime() * 1000);
+    }
+
+    @JRubyMethod(name = "birthtime")
+    public IRubyObject birthtime() {
+        checkInitialized();
+        FileTime btime = RubyFile.getBirthtimeWithNIO(file.absolutePath());
+        if (btime != null) return getRuntime().newTime(btime.toMillis());
+        return ctime();
     }
 
     @JRubyMethod(name = "dev")
     public IRubyObject dev() {
+        checkInitialized();
         return getRuntime().newFixnum(stat.dev());
     }
     
     @JRubyMethod(name = "dev_major")
     public IRubyObject devMajor() {
+        checkInitialized();
         return getRuntime().newFixnum(stat.major(stat.dev()));
     }
 
     @JRubyMethod(name = "dev_minor")
     public IRubyObject devMinor() {
+        checkInitialized();
         return getRuntime().newFixnum(stat.minor(stat.dev()));
     }
 
     @JRubyMethod(name = "directory?")
     public RubyBoolean directory_p() {
+        checkInitialized();
         return getRuntime().newBoolean(stat.isDirectory());
     }
 
     @JRubyMethod(name = "executable?")
     public IRubyObject executable_p() {
+        checkInitialized();
         return getRuntime().newBoolean(stat.isExecutable());
     }
 
     @JRubyMethod(name = "executable_real?")
     public IRubyObject executableReal_p() {
+        checkInitialized();
         return getRuntime().newBoolean(stat.isExecutableReal());
     }
 
     @JRubyMethod(name = "file?")
     public RubyBoolean file_p() {
+        checkInitialized();
         return getRuntime().newBoolean(stat.isFile());
     }
 
     @JRubyMethod(name = "ftype")
     public RubyString ftype() {
+        checkInitialized();
         return getRuntime().newString(stat.ftype());
     }
 
     @JRubyMethod(name = "gid")
     public IRubyObject gid() {
+        checkInitialized();
         return getRuntime().newFixnum(stat.gid());
     }
     
     @JRubyMethod(name = "grpowned?")
     public IRubyObject group_owned_p() {
+        checkInitialized();
         return getRuntime().newBoolean(stat.isGroupOwned());
     }
     
@@ -244,6 +281,8 @@ public class RubyFileStat extends RubyObject {
         if (!(original instanceof RubyFileStat)) {
             throw getRuntime().newTypeError("wrong argument class");
         }
+
+        checkFrozen();
         
         RubyFileStat originalFileStat = (RubyFileStat) original;
         
@@ -255,6 +294,7 @@ public class RubyFileStat extends RubyObject {
     
     @JRubyMethod(name = "ino")
     public IRubyObject ino() {
+        checkInitialized();
         return getRuntime().newFixnum(stat.ino());
     }
 
@@ -263,24 +303,28 @@ public class RubyFileStat extends RubyObject {
     public IRubyObject inspect() {
         StringBuilder buf = new StringBuilder("#<");
         buf.append(getMetaClass().getRealClass().getName());
-        buf.append(" ");
-        // FIXME: Obvious issue that not all platforms can display all attributes.  Ugly hacks.
-        // Using generic posix library makes pushing inspect behavior into specific system impls
-        // rather painful.
-        try { buf.append("dev=0x").append(Long.toHexString(stat.dev())); } catch (Exception e) {} finally { buf.append(", "); }
-        try { buf.append("ino=").append(stat.ino()); } catch (Exception e) {} finally { buf.append(", "); }
-        buf.append("mode=0").append(Integer.toOctalString(stat.mode())).append(", "); 
-        try { buf.append("nlink=").append(stat.nlink()); } catch (Exception e) {} finally { buf.append(", "); }
-        try { buf.append("uid=").append(stat.uid()); } catch (Exception e) {} finally { buf.append(", "); }
-        try { buf.append("gid=").append(stat.gid()); } catch (Exception e) {} finally { buf.append(", "); }
-        try { buf.append("rdev=0x").append(Long.toHexString(stat.rdev())); } catch (Exception e) {} finally { buf.append(", "); }
-        buf.append("size=").append(sizeInternal()).append(", ");
-        try { buf.append("blksize=").append(stat.blockSize()); } catch (Exception e) {} finally { buf.append(", "); }
-        try { buf.append("blocks=").append(stat.blocks()); } catch (Exception e) {} finally { buf.append(", "); }
-        
-        buf.append("atime=").append(atime()).append(", ");
-        buf.append("mtime=").append(mtime()).append(", ");
-        buf.append("ctime=").append(ctime());
+        if (stat == null) {
+            buf.append(": uninitialized");
+        } else {
+            buf.append(" ");
+            // FIXME: Obvious issue that not all platforms can display all attributes.  Ugly hacks.
+            // Using generic posix library makes pushing inspect behavior into specific system impls
+            // rather painful.
+            try { buf.append("dev=0x").append(Long.toHexString(stat.dev())); } catch (Exception e) {} finally { buf.append(", "); }
+            try { buf.append("ino=").append(stat.ino()); } catch (Exception e) {} finally { buf.append(", "); }
+            buf.append("mode=0").append(Integer.toOctalString(stat.mode())).append(", ");
+            try { buf.append("nlink=").append(stat.nlink()); } catch (Exception e) {} finally { buf.append(", "); }
+            try { buf.append("uid=").append(stat.uid()); } catch (Exception e) {} finally { buf.append(", "); }
+            try { buf.append("gid=").append(stat.gid()); } catch (Exception e) {} finally { buf.append(", "); }
+            try { buf.append("rdev=0x").append(Long.toHexString(stat.rdev())); } catch (Exception e) {} finally { buf.append(", "); }
+            buf.append("size=").append(sizeInternal()).append(", ");
+            try { buf.append("blksize=").append(stat.blockSize()); } catch (Exception e) {} finally { buf.append(", "); }
+            try { buf.append("blocks=").append(stat.blocks()); } catch (Exception e) {} finally { buf.append(", "); }
+
+            buf.append("atime=").append(atime()).append(", ");
+            buf.append("mtime=").append(mtime()).append(", ");
+            buf.append("ctime=").append(ctime());
+        }
         buf.append(">");
         
         return getRuntime().newString(buf.toString());
@@ -288,16 +332,19 @@ public class RubyFileStat extends RubyObject {
 
     @JRubyMethod(name = "uid")
     public IRubyObject uid() {
+        checkInitialized();
         return getRuntime().newFixnum(stat.uid());
     }
     
     @JRubyMethod(name = "mode")
     public IRubyObject mode() {
+        checkInitialized();
         return getRuntime().newFixnum(stat.mode());
     }
 
     @JRubyMethod(name = "mtime")
     public IRubyObject mtime() {
+        checkInitialized();
         return getRuntime().newTime(stat.mtime() * 1000);
     }
     
@@ -315,55 +362,66 @@ public class RubyFileStat extends RubyObject {
 
     @JRubyMethod(name = "nlink")
     public IRubyObject nlink() {
+        checkInitialized();
         return getRuntime().newFixnum(stat.nlink());
     }
 
     @JRubyMethod(name = "owned?")
     public IRubyObject owned_p() {
+        checkInitialized();
         return getRuntime().newBoolean(stat.isOwned());
     }
 
     @JRubyMethod(name = "pipe?")
     public IRubyObject pipe_p() {
+        checkInitialized();
         return getRuntime().newBoolean(stat.isNamedPipe());
     }
 
     @JRubyMethod(name = "rdev")
     public IRubyObject rdev() {
+        checkInitialized();
         return getRuntime().newFixnum(stat.rdev());
     }
     
     @JRubyMethod(name = "rdev_major")
     public IRubyObject rdevMajor() {
+        checkInitialized();
         return getRuntime().newFixnum(stat.major(stat.rdev()));
     }
 
     @JRubyMethod(name = "rdev_minor")
     public IRubyObject rdevMinor() {
+        checkInitialized();
         return getRuntime().newFixnum(stat.minor(stat.rdev()));
     }
 
     @JRubyMethod(name = "readable?")
     public IRubyObject readable_p() {
+        checkInitialized();
         return getRuntime().newBoolean(stat.isReadable());
     }
 
     @JRubyMethod(name = "readable_real?")
     public IRubyObject readableReal_p() {
+        checkInitialized();
         return getRuntime().newBoolean(stat.isReadableReal());
     }
 
     @JRubyMethod(name = "setgid?")
     public IRubyObject setgid_p() {
+        checkInitialized();
         return getRuntime().newBoolean(stat.isSetgid());
     }
 
     @JRubyMethod(name = "setuid?")
     public IRubyObject setuid_p() {
+        checkInitialized();
         return getRuntime().newBoolean(stat.isSetuid());
     }
 
     private long sizeInternal() {
+        checkInitialized();
         // Workaround for JRUBY-4149
         if (Platform.IS_WINDOWS && file != null) {
             try {
@@ -392,11 +450,13 @@ public class RubyFileStat extends RubyObject {
 
     @JRubyMethod(name = "socket?")
     public IRubyObject socket_p() {
+        checkInitialized();
         return getRuntime().newBoolean(stat.isSocket());
     }
     
     @JRubyMethod(name = "sticky?")
     public IRubyObject sticky_p() {
+        checkInitialized();
         Ruby runtime = getRuntime();
         
         if (runtime.getPosix().isNative()) {
@@ -408,21 +468,25 @@ public class RubyFileStat extends RubyObject {
 
     @JRubyMethod(name = "symlink?")
     public IRubyObject symlink_p() {
+        checkInitialized();
         return getRuntime().newBoolean(stat.isSymlink());
     }
 
     @JRubyMethod(name = "writable?")
     public IRubyObject writable_p() {
+        checkInitialized();
     	return getRuntime().newBoolean(stat.isWritable());
     }
     
     @JRubyMethod(name = "writable_real?")
     public IRubyObject writableReal_p() {
+        checkInitialized();
         return getRuntime().newBoolean(stat.isWritableReal());
     }
     
     @JRubyMethod(name = "zero?")
     public IRubyObject zero_p() {
+        checkInitialized();
         return getRuntime().newBoolean(stat.isEmpty());
     }
 
@@ -437,6 +501,7 @@ public class RubyFileStat extends RubyObject {
     }
 
     private IRubyObject getWorldMode(ThreadContext context, int mode) {
+        checkInitialized();
         if ((stat.mode() & mode) == mode) {
             return RubyNumeric.int2fix(context.runtime,
                     (stat.mode() & (S_IRUGO | S_IWUGO | S_IXUGO) ));

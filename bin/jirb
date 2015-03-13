@@ -9,7 +9,7 @@
 
 require "irb"
 
-if __FILE__ == $0
+if __FILE__.sub(/file:/, '').gsub(/ /,'%20') == $0.gsub(/file:/, '').gsub(/ /,'%20')
   IRB.start(__FILE__)
 else
   # check -e option

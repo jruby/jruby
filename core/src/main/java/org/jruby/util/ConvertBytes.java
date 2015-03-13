@@ -619,10 +619,13 @@ public class ConvertBytes {
             return runtime.newFixnum(0);
         }
 
-        len *= (end-str);
+        if (base <= 10) {
+            len *= (trailingLength());
+        } else {
+            len *= (end-str);
+        }
 
         //System.err.println(" main/len=" + len);
-
         if(len < Long.SIZE-1) {
             int[] endPlace = new int[]{str};
             long val = stringToLong(str, endPlace, base);
@@ -651,6 +654,15 @@ public class ConvertBytes {
             }
         }
         return bigParse(len, sign);
+    }
+
+    private int trailingLength() {
+        int newLen = 0;
+        for (int i=str; i < end; i++) {
+            if (Character.isDigit(data[i])) newLen++;
+            else return newLen;
+        }
+        return newLen;
     }
 
     private RubyInteger bigParse(int len, boolean sign) {

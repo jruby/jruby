@@ -1,63 +1,207 @@
 require File.expand_path('../../../spec_helper', __FILE__)
-require File.expand_path('../fixtures/classes', __FILE__)
 
 describe "Method#arity" do
-  before(:each) do
-    @m = MethodSpecs::Methods.new
+  SpecEvaluate.desc = "for method definition"
+
+  context "returns zero" do
+    evaluate <<-ruby do
+        def m() end
+      ruby
+
+      method(:m).arity.should == 0
+    end
+
+    evaluate <<-ruby do
+        def n(&b) end
+      ruby
+
+      method(:n).arity.should == 0
+    end
   end
 
-  it "returns n, where n is the number of required arguments, when there are zero or more required arguments only" do
-    @m.method(:zero).arity.should    == 0
-    @m.method(:attr).arity.should    == 0
-    @m.method(:one_req).arity.should == 1
-    @m.method(:attr=).arity.should   == 1
-    @m.method(:two_req).arity.should == 2
+  context "returns positive values" do
+    evaluate <<-ruby do
+        def m(a) end
+        def n(a, b) end
+        def o(a, b, c) end
+        def p(a, b, c, d) end
+      ruby
+
+      method(:m).arity.should == 1
+      method(:n).arity.should == 2
+      method(:o).arity.should == 3
+      method(:p).arity.should == 4
+    end
+
+    evaluate <<-ruby do
+        def m(a:) end
+        def n(a:, b:) end
+        def o(a: 1, b:, c:, d: 2) end
+      ruby
+
+      method(:m).arity.should == 1
+      method(:n).arity.should == 1
+      method(:o).arity.should == 1
+    end
+
+    evaluate <<-ruby do
+        def m(a, b:) end
+        def n(a, b:, &l) end
+      ruby
+
+      method(:m).arity.should == 2
+      method(:n).arity.should == 2
+    end
+
+    evaluate <<-ruby do
+        def m(a, b, c:, d: 1) end
+        def n(a, b, c:, d: 1, **k, &l) end
+      ruby
+
+      method(:m).arity.should == 3
+      method(:n).arity.should == 3
+    end
   end
 
-  it "returns n, where n is the number of required arguments and method created via defined_method" do
-    @m.method(:zero_defined_method).arity.should    == 0
-    @m.method(:one_req_defined_method).arity.should == 1
-    @m.method(:two_req_defined_method).arity.should == 2
-    @m.method(:zero_with_splat_defined_method).arity.should == -1
+  context "returns negative values" do
+    evaluate <<-ruby do
+        def m(a=1) end
+        def n(a=1, b=2) end
+      ruby
+
+      method(:m).arity.should == -1
+      method(:n).arity.should == -1
+    end
+
+    evaluate <<-ruby do
+        def m(a, b=1) end
+        def n(a, b, c=1, d=2) end
+      ruby
+
+      method(:m).arity.should == -2
+      method(:n).arity.should == -3
+    end
+
+    evaluate <<-ruby do
+        def m(a=1, *b) end
+        def n(a=1, b=2, *c) end
+      ruby
+
+      method(:m).arity.should == -1
+      method(:n).arity.should == -1
+    end
+
+    evaluate <<-ruby do
+        def m(*) end
+        def n(*a) end
+      ruby
+
+      method(:m).arity.should == -1
+      method(:n).arity.should == -1
+    end
+
+    evaluate <<-ruby do
+        def m(a, *) end
+        def n(a, *b) end
+        def o(a, b, *c) end
+        def p(a, b, c, *d) end
+      ruby
+
+      method(:m).arity.should == -2
+      method(:n).arity.should == -2
+      method(:o).arity.should == -3
+      method(:p).arity.should == -4
+    end
+
+    evaluate <<-ruby do
+        def m(*a, b) end
+        def n(*a, b, c) end
+        def o(*a, b, c, d) end
+      ruby
+
+      method(:m).arity.should == -2
+      method(:n).arity.should == -3
+      method(:o).arity.should == -4
+    end
+
+    evaluate <<-ruby do
+        def m(a, *b, c) end
+        def n(a, b, *c, d, e) end
+      ruby
+
+      method(:m).arity.should == -3
+      method(:n).arity.should == -5
+    end
+
+    evaluate <<-ruby do
+        def m(a, b=1, c=2, *d, e, f) end
+        def n(a, b, c=1, *d, e, f, g) end
+      ruby
+
+      method(:m).arity.should == -4
+      method(:n).arity.should == -6
+    end
+
+    evaluate <<-ruby do
+        def m(a: 1) end
+        def n(a: 1, b: 2) end
+      ruby
+
+      method(:m).arity.should == -1
+      method(:n).arity.should == -1
+    end
+
+    evaluate <<-ruby do
+        def m(a=1, b: 2) end
+        def n(*a, b: 1) end
+        def o(a=1, b: 2) end
+        def p(a=1, *b, c: 2, &l) end
+      ruby
+
+      method(:m).arity.should == -1
+      method(:n).arity.should == -1
+      method(:o).arity.should == -1
+      method(:p).arity.should == -1
+    end
+
+    evaluate <<-ruby do
+        def m(**k, &l) end
+        def n(*a, **k) end
+        def o(a: 1, b: 2, **k) end
+      ruby
+
+      method(:m).arity.should == -1
+      method(:n).arity.should == -1
+      method(:o).arity.should == -1
+    end
+
+    evaluate <<-ruby do
+        def m(a=1, *b, c:, d: 2, **k, &l) end
+      ruby
+
+      method(:m).arity.should == -2
+    end
+
+    evaluate <<-ruby do
+        def m(a, b=1, *c, d, e:, f: 2, **k, &l) end
+        def n(a, b=1, *c, d:, e:, f: 2, **k, &l) end
+        def o(a=0, b=1, *c, d, e:, f: 2, **k, &l) end
+        def p(a=0, b=1, *c, d:, e:, f: 2, **k, &l) end
+      ruby
+
+      method(:m).arity.should == -4
+      method(:n).arity.should == -3
+      method(:o).arity.should == -3
+      method(:p).arity.should == -2
+    end
   end
 
-  it "returns -(n+1), where n is the number of required arguments, when there is at least one optional argument" do
-    @m.method(:one_opt).arity.should         == -1
-    @m.method(:one_req_one_opt).arity.should == -2
-    @m.method(:one_req_two_opt).arity.should == -2
-    @m.method(:two_req_one_opt).arity.should == -3
-  end
-
-  it "returns -(n+1), where n is the number of required arguments, when there is a splat argument, regardless of optional arguments" do
-    @m.method(:zero_with_splat).arity.should            == -1
-    @m.method(:one_req_with_splat).arity.should         == -2
-    @m.method(:one_req_one_opt_with_splat).arity.should == -2
-    @m.method(:one_req_two_opt_with_splat).arity.should == -2
-    @m.method(:two_req_with_splat).arity.should         == -3
-    @m.method(:two_req_one_opt_with_splat).arity.should == -3
-  end
-
-  it "returns the same value regardless of the presence of a block" do
-    @m.method(:zero_with_block).arity.should                      == @m.method(:zero).arity
-    @m.method(:one_req_with_block).arity.should                   == @m.method(:one_req).arity
-    @m.method(:two_req_with_block).arity.should                   == @m.method(:two_req).arity
-
-    @m.method(:one_opt_with_block).arity.should                   == @m.method(:one_opt).arity
-    @m.method(:one_req_one_opt_with_block).arity.should           == @m.method(:one_req_one_opt).arity
-    @m.method(:one_req_two_opt_with_block).arity.should           == @m.method(:one_req_two_opt).arity
-    @m.method(:two_req_one_opt_with_block).arity.should           == @m.method(:two_req_one_opt).arity
-
-    @m.method(:zero_with_splat_and_block).arity.should            == @m.method(:zero_with_splat).arity
-    @m.method(:one_req_with_splat_and_block).arity.should         == @m.method(:one_req_with_splat).arity
-    @m.method(:one_req_one_opt_with_splat_and_block).arity.should == @m.method(:one_req_one_opt_with_splat).arity
-    @m.method(:one_req_two_opt_with_splat_and_block).arity.should == @m.method(:one_req_two_opt_with_splat).arity
-    @m.method(:two_req_with_splat_and_block).arity.should         == @m.method(:two_req_with_splat).arity
-    @m.method(:two_req_one_opt_with_splat_and_block).arity.should == @m.method(:two_req_one_opt_with_splat).arity
-  end
-
-  describe "for a Method generated by respond_to_missing?" do
+  context "for a Method generated by respond_to_missing?" do
     it "returns -1" do
-      @m.method(:handled_via_method_missing).arity.should == -1
+      obj = mock("method arity respond_to_missing")
+      obj.should_receive(:respond_to_missing?).and_return(true)
+
+      obj.method(:m).arity.should == -1
     end
   end
 end

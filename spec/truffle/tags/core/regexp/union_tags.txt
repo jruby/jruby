@@ -1,13 +1,1 @@
-fails:Regexp.union returns /(?!)/ when passed no arguments
-fails:Regexp.union returns a regular expression that will match passed arguments
-fails:Regexp.union quotes any string arguments
-fails:Regexp.union returns a Regexp with the encoding of an ASCII-incompatible String argument
-fails:Regexp.union returns a Regexp with the encoding of a String containing non-ASCII-compatible characters
-fails:Regexp.union returns a Regexp with US-ASCII encoding if all arguments are ASCII-only
-fails:Regexp.union returns a Regexp with the encoding of multiple non-conflicting ASCII-incompatible String arguments
-fails:Regexp.union returns a Regexp with the encoding of multiple non-conflicting Strings containing non-ASCII-compatible characters
-fails:Regexp.union returns a Regexp with the encoding of a String containing non-ASCII-compatible characters and another ASCII-only String
-fails:Regexp.union returns a Regexp with UTF-8 if one part is UTF-8
-fails:Regexp.union returns a Regexp if an array of string with special characters is passed
-fails:Regexp.union uses to_str to convert arguments (if not Regexp)
-fails:Regexp.union accepts a single array of patterns as arguments
+fails:Regexp.union raises ArgumentError if the arguments include conflicting fixed encoding Regexps

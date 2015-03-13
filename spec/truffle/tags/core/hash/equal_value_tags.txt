@@ -1,17 +1,1 @@
-fails:Hash#== does not compare values when keys don't match
-fails:Hash#== returns false when the numbers of keys differ without comparing any elements
-fails:Hash#== first compares keys via hash
 fails:Hash#== does not compare keys with different hash codes via eql?
-fails:Hash#== computes equality for recursive hashes
-fails:Hash#== doesn't call to_hash on objects
-fails:Hash#== computes equality for complex recursive hashes
-fails:Hash#== computes equality for recursive hashes & arrays
-fails:Hash#== compares values when keys match
-fails:Hash#== compares keys with eql? semantics
-fails:Hash#== returns true iff other Hash has the same number of keys and each key-value pair matches
-fails:Hash#== does not call to_hash on hash subclasses
-fails:Hash#== ignores hash class differences
-fails:Hash#== compares keys with matching hash codes via eql?
-fails:Hash#== compares the values in self to values in other hash
-fails:Hash#== returns true if other Hash has the same number of keys and each key-value pair matches, even though the default-value are not same
-fails:Hash#== compares values with == semantics

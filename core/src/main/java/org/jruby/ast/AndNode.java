@@ -44,7 +44,7 @@ public class AndNode extends Node implements BinaryOperatorNode {
     private final Node secondNode;
 
     public AndNode(ISourcePosition position, Node firstNode, Node secondNode) {
-        super(position);
+        super(position, firstNode.containsVariableAssignment() || secondNode.containsVariableAssignment());
         
         assert firstNode != null : "AndNode.first == null";
         assert secondNode != null : "AndNode.second == null";

@@ -1,5 +1,0 @@
-fails:Float#/ returns self divided by other
-fails:Float#/ properly coerces objects
-fails:Float#/ returns +Infinity when dividing non-zero by zero of the same sign
-fails:Float#/ returns -Infinity when dividing non-zero by zero of opposite sign
-fails:Float#/ returns NaN when dividing zero by zero

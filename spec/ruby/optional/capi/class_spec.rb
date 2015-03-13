@@ -107,6 +107,16 @@ describe "C-API Class function" do
     end
   end
 
+  describe "rb_class_path" do
+    it "returns a String of a class path with no scope modifiers" do
+      @s.rb_class_path(Array).should == "Array"
+    end
+
+    it "returns a String of a class path with scope modifiers" do
+      @s.rb_class_path(File::Stat).should == "File::Stat"
+    end
+  end
+
   describe "rb_class_name" do
     it "returns the class name" do
       @s.rb_class_name(CApiClassSpecs).should == "CApiClassSpecs"

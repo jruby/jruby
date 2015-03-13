@@ -38,7 +38,7 @@ class TestResolvDNS < Test::Unit::TestCase
             dns.getresources("foo.example.org", Resolv::DNS::Resource::IN::A)
           }
         }
-        msg, (af, client_port, _, client_address) = u.recvfrom(4096)
+        msg, (_, client_port, _, client_address) = u.recvfrom(4096)
         id, word2, qdcount, ancount, nscount, arcount = msg.unpack("nnnnnn")
         qr =     (word2 & 0x8000) >> 15
         opcode = (word2 & 0x7800) >> 11
@@ -65,7 +65,7 @@ class TestResolvDNS < Test::Unit::TestCase
         assert_operator(rest, :start_with?, name)
         rest = rest[name.length..-1]
         assert_equal(4, rest.length)
-        qtype, qclass = rest.unpack("nn")
+        qtype, _ = rest.unpack("nn")
         assert_equal(1, qtype) # A
         assert_equal(1, qtype) # IN
         id = id
@@ -153,7 +153,7 @@ class TestResolvDNS < Test::Unit::TestCase
 
   def test_invalid_byte_comment
     bug9273 = '[ruby-core:59239] [Bug #9273]'
-    Tempfile.open('resolv_test_dns_') do |tmpfile|
+    Tempfile.create('resolv_test_dns_') do |tmpfile|
       tmpfile.print("\xff\x00\x40")
       tmpfile.close
       assert_nothing_raised(ArgumentError, bug9273) do

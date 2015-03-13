@@ -11,7 +11,7 @@ import java.lang.invoke.MutableCallSite;
 import org.jruby.runtime.ivars.VariableAccessor;
 
 public class VariableSite extends MutableCallSite {
-    public final String name;
+    private final String name;
     private VariableAccessor accessor = VariableAccessor.DUMMY_ACCESSOR;
     private final String file;
     private final int line;
@@ -66,5 +66,9 @@ public class VariableSite extends MutableCallSite {
 
     public int line() {
         return line;
+    }
+
+    public String name() {
+        return name;
     }
 }

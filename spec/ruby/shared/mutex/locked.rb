@@ -28,6 +28,7 @@ describe :mutex_locked, :shared => true do
     m1.locked?.should be_true
     m2.unlock # release th
     th.join
+    # A Thread releases its locks upon termination
     m1.locked?.should be_false
   end
 end

@@ -3,6 +3,7 @@ package org.jruby.util;
 import jnr.posix.POSIX;
 import org.jruby.util.io.ModeFlags;
 
+import java.io.IOException;
 import java.io.InputStream;
 import java.nio.channels.Channel;
 import java.nio.channels.Channels;
@@ -59,12 +60,12 @@ class JarFileResource extends JarResource {
   }
 
   @Override
-  public InputStream openInputStream() {
+  InputStream openInputStream() {
     return index.getInputStream(entry);
   }
 
   @Override
   public Channel openChannel(ModeFlags flags, int perm) throws ResourceException {
-    return Channels.newChannel(openInputStream());
+    return Channels.newChannel(inputStream());
   }
 }

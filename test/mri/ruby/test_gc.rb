@@ -35,6 +35,10 @@ class TestGc < Test::Unit::TestCase
     GC.stress = prev_stress
   end
 
+  def use_rgengc?
+    GC::OPTS.include? 'USE_RGENGC'.freeze
+  end
+
   def test_enable_disable
     GC.enable
     assert_equal(false, GC.enable)
@@ -49,6 +53,8 @@ class TestGc < Test::Unit::TestCase
   end
 
   def test_start_full_mark
+    return unless use_rgengc?
+
     GC.start(full_mark: false)
     assert_nil GC.latest_gc_info(:major_by)
 
@@ -85,14 +91,18 @@ class TestGc < Test::Unit::TestCase
     GC.start
     GC.stat(stat)
     ObjectSpace.count_objects(count)
-    assert_equal(count[:TOTAL]-count[:FREE], stat[:heap_live_slot])
-    assert_equal(count[:FREE], stat[:heap_free_slot])
+    assert_equal(count[:TOTAL]-count[:FREE], stat[:heap_live_slots])
+    assert_equal(count[:FREE], stat[:heap_free_slots])
 
     # measure again without GC.start
     1000.times{ "a" + "b" }
     GC.stat(stat)
     ObjectSpace.count_objects(count)
-    assert_equal(count[:FREE], stat[:heap_free_slot])
+    assert_equal(count[:FREE], stat[:heap_free_slots])
+  end
+
+  def test_stat_argument
+    assert_raise_with_message(ArgumentError, /\u{30eb 30d3 30fc}/) {GC.stat(:"\u{30eb 30d3 30fc}")}
   end
 
   def test_stat_single
@@ -101,18 +111,32 @@ class TestGc < Test::Unit::TestCase
     assert_raise(ArgumentError){ GC.stat(:invalid) }
   end
 
+  def test_stat_constraints
+    stat = GC.stat
+    assert_equal stat[:total_allocated_pages], stat[:heap_allocated_pages] + stat[:total_freed_pages]
+    assert_operator stat[:heap_sorted_length], :>=, stat[:heap_eden_pages] + stat[:heap_allocatable_pages], "stat is: " + stat.inspect
+    assert_equal stat[:heap_available_slots], stat[:heap_live_slots] + stat[:heap_free_slots] + stat[:heap_final_slots]
+    assert_equal stat[:heap_live_slots], stat[:total_allocated_objects] - stat[:total_freed_objects] - stat[:heap_final_slots]
+    assert_equal stat[:heap_allocated_pages], stat[:heap_eden_pages] + stat[:heap_tomb_pages]
+
+    if use_rgengc?
+      assert_equal stat[:count], stat[:major_gc_count] + stat[:minor_gc_count]
+    end
+  end
+
   def test_latest_gc_info
     GC.start
-    GC.stat[:heap_free_slot].times{ "a" + "b" }
+    count = GC.stat(:heap_free_slots) + GC.stat(:heap_allocatable_pages) * GC::INTERNAL_CONSTANTS[:HEAP_OBJ_LIMIT]
+    count.times{ "a" + "b" }
     assert_equal :newobj, GC.latest_gc_info[:gc_by]
 
     GC.start
-    assert_equal :nofree, GC.latest_gc_info[:major_by]
+    assert_equal :force, GC.latest_gc_info[:major_by] if use_rgengc?
     assert_equal :method, GC.latest_gc_info[:gc_by]
     assert_equal true, GC.latest_gc_info[:immediate_sweep]
 
     GC.stress = true
-    assert_equal :stress, GC.latest_gc_info[:major_by]
+    assert_equal :force, GC.latest_gc_info[:major_by]
   ensure
     GC.stress = false
   end
@@ -124,6 +148,7 @@ class TestGc < Test::Unit::TestCase
     assert_not_empty info
     assert_equal info[:gc_by], GC.latest_gc_info(:gc_by)
     assert_raises(ArgumentError){ GC.latest_gc_info(:invalid) }
+    assert_raise_with_message(ArgumentError, /\u{30eb 30d3 30fc}/) {GC.latest_gc_info(:"\u{30eb 30d3 30fc}")}
   end
 
   def test_singleton_method
@@ -184,8 +209,9 @@ class TestGc < Test::Unit::TestCase
     }
     assert_normal_exit("exit", "", :child_env => env)
     assert_in_out_err([env, "-w", "-e", "exit"], "", [], /RUBY_GC_HEAP_OLDOBJECT_LIMIT_FACTOR=0\.9/, "")
+
     # always full GC when RUBY_GC_HEAP_OLDOBJECT_LIMIT_FACTOR < 1.0
-    assert_in_out_err([env, "-e", "1000_000.times{Object.new}; p(GC.stat[:minor_gc_count] < GC.stat[:major_gc_count])"], "", ['true'], //, "")
+    assert_in_out_err([env, "-e", "1000_000.times{Object.new}; p(GC.stat[:minor_gc_count] < GC.stat[:major_gc_count])"], "", ['true'], //, "") if use_rgengc?
 
     # check obsolete
     assert_in_out_err([{'RUBY_FREE_MIN' => '100'}, '-w', '-eexit'], '', [],
@@ -203,15 +229,17 @@ class TestGc < Test::Unit::TestCase
     assert_in_out_err([env, "-w", "-e", "exit"], "", [], /RUBY_GC_MALLOC_LIMIT_MAX=16000000/, "")
     assert_in_out_err([env, "-w", "-e", "exit"], "", [], /RUBY_GC_MALLOC_LIMIT_GROWTH_FACTOR=2.0/, "")
 
-    env = {
-      "RUBY_GC_OLDMALLOC_LIMIT"               => "60000000",
-      "RUBY_GC_OLDMALLOC_LIMIT_MAX"           => "160000000",
-      "RUBY_GC_OLDMALLOC_LIMIT_GROWTH_FACTOR" => "2.0"
-    }
-    assert_normal_exit("exit", "", :child_env => env)
-    assert_in_out_err([env, "-w", "-e", "exit"], "", [], /RUBY_GC_OLDMALLOC_LIMIT=6000000/, "")
-    assert_in_out_err([env, "-w", "-e", "exit"], "", [], /RUBY_GC_OLDMALLOC_LIMIT_MAX=16000000/, "")
-    assert_in_out_err([env, "-w", "-e", "exit"], "", [], /RUBY_GC_OLDMALLOC_LIMIT_GROWTH_FACTOR=2.0/, "")
+    if use_rgengc?
+      env = {
+        "RUBY_GC_OLDMALLOC_LIMIT"               => "60000000",
+        "RUBY_GC_OLDMALLOC_LIMIT_MAX"           => "160000000",
+        "RUBY_GC_OLDMALLOC_LIMIT_GROWTH_FACTOR" => "2.0"
+      }
+      assert_normal_exit("exit", "", :child_env => env)
+      assert_in_out_err([env, "-w", "-e", "exit"], "", [], /RUBY_GC_OLDMALLOC_LIMIT=6000000/, "")
+      assert_in_out_err([env, "-w", "-e", "exit"], "", [], /RUBY_GC_OLDMALLOC_LIMIT_MAX=16000000/, "")
+      assert_in_out_err([env, "-w", "-e", "exit"], "", [], /RUBY_GC_OLDMALLOC_LIMIT_GROWTH_FACTOR=2.0/, "")
+    end
   end
 
   def test_profiler_enabled
@@ -258,16 +286,16 @@ class TestGc < Test::Unit::TestCase
   def test_expand_heap
     assert_separately %w[--disable-gem], __FILE__, __LINE__, <<-'eom'
     GC.start
-    base_length = GC.stat[:heap_eden_page_length]
+    base_length = GC.stat[:heap_eden_pages]
     (base_length * 500).times{ 'a' }
     GC.start
-    assert_in_delta base_length, (v = GC.stat[:heap_eden_page_length]), 1,
-           "invalid heap expanding (base_length: #{base_length}, GC.stat[:heap_eden_page_length]: #{v})"
+    assert_in_delta base_length, (v = GC.stat[:heap_eden_pages]), 1,
+           "invalid heap expanding (base_length: #{base_length}, GC.stat[:heap_eden_pages]: #{v})"
 
     a = []
     (base_length * 500).times{ a << 'a'; nil }
     GC.start
-    assert_operator base_length, :<, GC.stat[:heap_eden_page_length] + 1
+    assert_operator base_length, :<, GC.stat[:heap_eden_pages] + 1
     eom
   end
 
@@ -279,7 +307,7 @@ class TestGc < Test::Unit::TestCase
   def test_sweep_in_finalizer
     bug9205 = '[ruby-core:58833] [Bug #9205]'
     2.times do
-      assert_ruby_status([], <<-'end;', bug9205, timeout: 30)
+      assert_ruby_status([], <<-'end;', bug9205, timeout: 60)
         raise_proc = proc do |id|
           GC.start
         end
@@ -305,5 +333,23 @@ class TestGc < Test::Unit::TestCase
 
   def test_verify_internal_consistency
     assert_nil(GC.verify_internal_consistency)
+  end
+
+  def test_gc_stress_on_realloc
+    assert_normal_exit(<<-'end;', '[Bug #9859]')
+      class C
+        def initialize
+          @a = nil
+          @b = nil
+          @c = nil
+          @d = nil
+          @e = nil
+          @f = nil
+        end
+      end
+
+      GC.stress = true
+      C.new
+    end;
   end
 end

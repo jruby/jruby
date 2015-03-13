@@ -41,7 +41,7 @@ public class OpAsgnOrNode extends Node implements BinaryOperatorNode {
     private final Node secondNode;
 
     public OpAsgnOrNode(ISourcePosition position, Node headNode, Node valueNode) {
-        super(position);
+        super(position, headNode.containsVariableAssignment() || valueNode.containsVariableAssignment());
         
         assert headNode != null : "headNode is not null";
         assert valueNode != null : "valueNode is not null";

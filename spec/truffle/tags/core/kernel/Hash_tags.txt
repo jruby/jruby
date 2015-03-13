@@ -1,4 +1,3 @@
-fails:Kernel#hash needs to be reviewed for spec completeness
 fails:Kernel has private instance method Hash()
 fails:Kernel.Hash converts nil to a Hash
 fails:Kernel.Hash converts an empty array to a Hash

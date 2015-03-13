@@ -46,7 +46,7 @@ public class HashNode extends Node {
     private final List<KeyValuePair<Node,Node>> pairs;
 
     public HashNode(ISourcePosition position) {
-        super(position);
+        super(position, false);
 
         pairs = new ArrayList<KeyValuePair<Node,Node>>();
     }
@@ -62,6 +62,10 @@ public class HashNode extends Node {
     }
 
     public HashNode add(KeyValuePair<Node,Node> pair) {
+        if (pair.getKey() != null && pair.getKey().containsVariableAssignment() ||
+                pair.getValue() != null && pair.getValue().containsVariableAssignment()) {
+            containsVariableAssignment = true;
+        }
         pairs.add(pair);
 
         return this;

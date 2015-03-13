@@ -3,12 +3,29 @@
  *
  * For licensing, see LICENSE.SPECS
  */
+#include <stdint.h>
 
 int test_untagged_enum(int val) {
     return val;
 }
 
 int test_untagged_typedef_enum(int val) {
+    return val;
+}
+
+uint8_t test_untagged_nonint_enum(uint8_t val) {
+    return val;
+}
+
+uint16_t test_tagged_nonint_enum1(uint16_t val) {
+    return val;
+}
+
+uint32_t test_tagged_nonint_enum2(uint32_t val) {
+    return val;
+}
+
+uint64_t test_tagged_nonint_enum3(uint64_t val) {
     return val;
 }
 

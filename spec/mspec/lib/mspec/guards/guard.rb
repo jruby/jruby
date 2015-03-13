@@ -135,6 +135,8 @@ class SpecGuard
         RUBY_NAME =~ /^maglev/
       when :topaz
         RUBY_NAME =~ /^topaz/
+      when :opal
+        RUBY_NAME =~ /^opal/
       else
         false
       end

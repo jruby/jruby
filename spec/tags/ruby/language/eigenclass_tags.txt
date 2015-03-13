@@ -1,3 +1,0 @@
-fails:self in an eigenclass body (class << obj) is a metametaclass for metaclasses
-fails:self in an eigenclass body (class << obj) has the class's metaclass's metaclass as superclass for metaclasses
-fails:Class methods of an eigenclass includes class methods of the metaclass of Class, for a metaclass

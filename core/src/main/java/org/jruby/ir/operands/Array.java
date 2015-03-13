@@ -1,7 +1,8 @@
 package org.jruby.ir.operands;
 
 import org.jruby.ir.IRVisitor;
-import org.jruby.ir.transformations.inlining.InlinerInfo;
+import org.jruby.ir.persistence.IRWriterEncoder;
+import org.jruby.ir.transformations.inlining.CloneInfo;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
@@ -20,7 +21,7 @@ public class Array extends Operand {
 
     // SSS FIXME: Do we create a special-case for zero-length arrays?
     public Array() {
-        this(new Operand[0]);
+        this(EMPTY_ARRAY);
     }
 
     public Array(List<Operand> elts) {
@@ -30,7 +31,7 @@ public class Array extends Operand {
     public Array(Operand[] elts) {
         super(OperandType.ARRAY);
 
-        this.elts = elts == null ? new Operand[0] : elts;
+        this.elts = elts == null ? EMPTY_ARRAY : elts;
     }
 
     public boolean isBlank() {
@@ -83,7 +84,7 @@ public class Array extends Operand {
     }
 
     @Override
-    public Operand cloneForInlining(InlinerInfo ii) {
+    public Operand cloneForInlining(CloneInfo ii) {
         if (hasKnownValue()) return this;
 
         Operand[] newElts = new Operand[elts.length];
@@ -92,6 +93,12 @@ public class Array extends Operand {
         }
 
         return new Array(newElts);
+    }
+
+    @Override
+    public void encode(IRWriterEncoder e) {
+        super.encode(e);
+        e.encode(getElts());
     }
 
     @Override

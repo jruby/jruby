@@ -4,34 +4,27 @@ import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Operation;
 import org.jruby.ir.operands.Label;
 import org.jruby.ir.operands.Operand;
-import org.jruby.ir.transformations.inlining.InlinerInfo;
+import org.jruby.ir.persistence.IRWriterEncoder;
+import org.jruby.ir.transformations.inlining.CloneInfo;
 
 public class ExceptionRegionStartMarkerInstr extends Instr implements FixedArityInstr {
-    final public Label firstRescueBlockLabel;
-
     public ExceptionRegionStartMarkerInstr(Label firstRescueBlockLabel) {
-        super(Operation.EXC_REGION_START);
+        super(Operation.EXC_REGION_START, new Operand[] { firstRescueBlockLabel });
+    }
 
-        this.firstRescueBlockLabel = firstRescueBlockLabel;
+    public Label getFirstRescueBlockLabel() {
+        return (Label) operands[0];
     }
 
     @Override
-    public Operand[] getOperands() {
-        return new Operand[] { firstRescueBlockLabel };
+    public Instr clone(CloneInfo ii) {
+        return new ExceptionRegionStartMarkerInstr(ii.getRenamedLabel((Label) operands[0]));
     }
 
     @Override
-    public String toString() {
-        StringBuilder buf = new StringBuilder(super.toString());
-
-        buf.append("(").append(firstRescueBlockLabel).append(")");
-
-        return buf.toString();
-    }
-
-    @Override
-    public Instr cloneForInlining(InlinerInfo ii) {
-        return new ExceptionRegionStartMarkerInstr(ii.getRenamedLabel(firstRescueBlockLabel));
+    public void encode(IRWriterEncoder e) {
+        super.encode(e);
+        e.encode(getFirstRescueBlockLabel());
     }
 
     @Override

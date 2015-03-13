@@ -26,41 +26,47 @@ project 'JRuby Core' do
               'jruby.test.memory.permgen' => '2G',
               'jruby.compile.memory' => '2G' )
 
+  IO.foreach(File.join(basedir, '..', 'default.build.properties')) do |line|
+    line.chomp!
+    # skip comments
+    next if line =~ /(^\W*#|^$)/
+    # build const name
+    name, value = line.split("=", 2)
+    properties name => value
+  end
+
   jar 'org.ow2.asm:asm:${asm.version}'
   jar 'org.ow2.asm:asm-commons:${asm.version}'
   jar 'org.ow2.asm:asm-analysis:${asm.version}'
   jar 'org.ow2.asm:asm-util:${asm.version}'
 
-  jar 'com.github.jnr:jnr-netdb:1.1.2'
-  jar 'com.github.jnr:jnr-enxio:0.4'
+  jar 'com.github.jnr:jnr-netdb:1.1.4'
+  jar 'com.github.jnr:jnr-enxio:0.7'
   jar 'com.github.jnr:jnr-x86asm:1.0.2'
-  jar 'com.github.jnr:jnr-unixsocket:0.3'
-  jar 'com.github.jnr:jnr-posix:3.0.2'
-  jar 'com.github.jnr:jnr-constants:0.8.6-SNAPSHOT'
-  jar 'com.github.jnr:jnr-ffi:2.0.0-SNAPSHOT'
+  jar 'com.github.jnr:jnr-unixsocket:0.6'
+  jar 'com.github.jnr:jnr-posix:3.0.10'
+  jar 'com.github.jnr:jnr-constants:0.8.6'
+  jar 'com.github.jnr:jnr-ffi:2.0.2'
   jar 'com.github.jnr:jffi:${jffi.version}'
   jar 'com.github.jnr:jffi:${jffi.version}:native'
 
-  jar 'org.jruby.joni:joni:2.1.2'
-  jar 'org.jruby.extras:bytelist:1.0.12-SNAPSHOT'
-  jar 'org.jruby.jcodings:jcodings:1.0.12-SNAPSHOT'
-  jar 'org.jruby:yecht:1.0'
+  jar 'org.jruby.joni:joni:2.1.5'
+  jar 'org.jruby.extras:bytelist:1.0.12'
+  jar 'org.jruby.jcodings:jcodings:1.0.12'
+  jar 'org.jruby:dirgra:0.2'
 
-  jar 'com.headius:invokebinder:1.4-SNAPSHOT'
+  jar 'com.headius:invokebinder:1.5'
   jar 'com.headius:options:1.1'
   jar 'com.headius:coro-mock:1.0', :scope => 'provided'
   jar 'com.headius:unsafe-mock', '${unsafe.version}', :scope => 'provided'
   jar 'com.headius:jsr292-mock:1.1', :scope => 'provided'
 
   jar 'bsf:bsf:2.4.0', :scope => 'provided'
-  jar 'com.jcraft:jzlib:1.1.2'
+  jar 'com.jcraft:jzlib:1.1.3'
   jar 'com.martiansoftware:nailgun-server:0.9.1'
-  jar 'com.oracle:truffle:0.5'
-  jar 'com.oracle:truffle-dsl-processor:0.5', :scope => 'provided'
   jar 'junit:junit', :scope => 'test'
   jar 'org.apache.ant:ant:${ant.version}', :scope => 'provided'
   jar 'org.osgi:org.osgi.core:5.0.0', :scope => 'provided'
-  jar 'org.yaml:snakeyaml:1.13'  
 
   # joda timezone must be before joda-time to be packed correctly
   jar 'org.jruby:joda-timezones:${tzdata.version}', :scope => '${tzdata.scope}'
@@ -117,15 +123,6 @@ project 'JRuby Core' do
             } )
   end
 
-  plugin 'org.codehaus.mojo:properties-maven-plugin:1.0-alpha-2' do
-    execute_goals( 'read-project-properties',
-                   :id => 'properties',
-                   :phase => 'initialize',
-                   'files' => [ '${jruby.basedir}/default.build.properties',
-                                '${jruby.basedir}/build.properties' ],
-                   'quiet' =>  'true' )
-  end
-
   plugin 'org.codehaus.mojo:buildnumber-maven-plugin:1.2' do
     execute_goals( 'create',
                    :id => 'jruby-revision',
@@ -180,8 +177,7 @@ project 'JRuby Core' do
     execute_goals( 'compile',
                    :id => 'default-compile',
                    :phase => 'compile',
-                   'annotationProcessors' => [ 'org.jruby.anno.AnnotationBinder',
-                                               'com.oracle.truffle.dsl.processor.TruffleProcessor' ],
+                   'annotationProcessors' => [ 'org.jruby.anno.AnnotationBinder' ],
                    'generatedSourcesDirectory' =>  'target/generated-sources',
                    'compilerArgs' => [ '-XDignore.symbol.file=true',
                                        '-J-Duser.language=en',
@@ -211,17 +207,6 @@ project 'JRuby Core' do
                    'filesets' => [ { 'directory' =>  '${project.build.sourceDirectory}',
                                      'includes' => [ '${Constants.java}' ] } ],
                    'failOnError' =>  'false' )
-  end
-
-  plugin :shade do
-    execute_goals( 'shade',
-                   :id => 'pack jruby.jar',
-                   :phase => 'package',
-                   'relocations' => [ { 'pattern' => 'org.objectweb',
-                                        'shadedPattern' => 'org.jruby.org.objectweb' } ],
-                   'outputFile' => '${jruby.basedir}/lib/jruby.jar',
-                   'transformers' => [ { '@implementation' => 'org.apache.maven.plugins.shade.resource.ManifestResourceTransformer',
-                                         'mainClass' => 'org.jruby.Main' } ] )
   end
 
   plugin( :surefire,
@@ -259,12 +244,23 @@ project 'JRuby Core' do
   end
 
 
-  [ :dist, :'jruby-jars', :main, :all, :complete, :release, :snapshots ].each do |name|
+  plugin :shade do
+    execute_goals( 'shade',
+                   :id => 'create lib/jruby.jar',
+                   :phase => 'package',
+                   'relocations' => [ { 'pattern' => 'org.objectweb',
+                                        'shadedPattern' => 'org.jruby.org.objectweb' } ],
+                   'outputFile' => '${jruby.basedir}/lib/jruby.jar',
+                   'transformers' => [ { '@implementation' => 'org.apache.maven.plugins.shade.resource.ManifestResourceTransformer',
+                                         'mainClass' => 'org.jruby.Main' } ] )
+  end
+
+  [ :osgi, :dist, :'jruby-jars', :main, :all, :complete, :release, :jruby_complete_jar_extended ].each do |name|
     profile name do
       plugin :shade do
         execute_goals( 'shade',
                        :id => 'pack jruby-core-noasm.jar',
-                       :phase => 'verify',
+                       :phase => 'package',
                        'shadedArtifactAttached' =>  'true',
                        'shadedClassifierName' =>  'noasm',
                        'artifactSet' => {
@@ -275,7 +271,7 @@ project 'JRuby Core' do
                                             'shadedPattern' =>  'org.jruby.org.objectweb' } ] )
         execute_goals( 'shade',
                        :id => 'pack jruby-core-complete.jar',
-                       :phase => 'verify',
+                       :phase => 'package',
                        'shadedArtifactAttached' =>  'true',
                        'shadedClassifierName' =>  'complete',
                        'relocations' => [ { 'pattern' =>  'org.objectweb',
@@ -295,7 +291,7 @@ project 'JRuby Core' do
     plugin :antrun do
       execute_goals( 'run',
                      :id => 'copy',
-                     :phase => 'package',
+                     :phase => 'initialize',
                      'tasks' => {
                        'exec' => {
                          '@executable' =>  '/bin/sh',
@@ -338,6 +334,22 @@ project 'JRuby Core' do
   profile 'test' do
 
     properties( 'maven.test.skip' => 'false' )
+
+  end
+
+  profile 'build.properties' do
+
+    activation do
+      file( :exits => '../build.properties' )
+    end
+
+    plugin 'org.codehaus.mojo:properties-maven-plugin:1.0-alpha-2' do
+      execute_goals( 'read-project-properties',
+                     :id => 'properties',
+                     :phase => 'initialize',
+                     'files' => [ '${jruby.basedir}/build.properties' ],
+                     'quiet' =>  'true' )
+    end
 
   end
 

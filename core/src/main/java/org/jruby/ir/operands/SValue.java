@@ -2,7 +2,8 @@ package org.jruby.ir.operands;
 
 import org.jruby.RubyArray;
 import org.jruby.ir.IRVisitor;
-import org.jruby.ir.transformations.inlining.InlinerInfo;
+import org.jruby.ir.persistence.IRWriterEncoder;
+import org.jruby.ir.transformations.inlining.CloneInfo;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
@@ -62,7 +63,7 @@ public class SValue extends Operand {
     }
 
     @Override
-    public Operand cloneForInlining(InlinerInfo ii) {
+    public Operand cloneForInlining(CloneInfo ii) {
         return hasKnownValue() ? this : new SValue(array.cloneForInlining(ii));
     }
 
@@ -71,6 +72,12 @@ public class SValue extends Operand {
         Object val = array.retrieve(context, self, currScope, currDynScope, temp);
 
         return (val instanceof RubyArray) ? val : context.runtime.getNil();
+    }
+
+    @Override
+    public void encode(IRWriterEncoder e) {
+        super.encode(e);
+        e.encode(getArray());
     }
 
     @Override

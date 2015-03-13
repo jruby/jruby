@@ -252,6 +252,8 @@ public class RubyStruct extends RubyObject {
         }
         
         if (block.isGiven()) {
+            // Since this defines a new class, run the block as a module-eval.
+            block.setEvalType(EvalType.MODULE_EVAL);
             // Struct bodies should be public by default, so set block visibility to public. JRUBY-1185.
             block.getBinding().setVisibility(Visibility.PUBLIC);
             block.yieldNonArray(runtime.getCurrentContext(), null, newStruct);
@@ -542,37 +544,53 @@ public class RubyStruct extends RubyObject {
     /** inspect_struct
     *
     */
-    private IRubyObject inspectStruct(final ThreadContext context) {
+    private IRubyObject inspectStruct(final ThreadContext context, boolean recur) {
+        Ruby runtime = context.runtime;
         RubyArray member = __member__();
-        ByteList buffer = new ByteList("#<struct ".getBytes());
+        RubyString buffer = RubyString.newString(getRuntime(), new ByteList("#<struct ".getBytes()));
+        String cpath = getMetaClass().getRealClass().getName();
+        char first = cpath.charAt(0);
 
-        if (getMetaClass().getRealClass().getBaseName() != null) {
-            buffer.append(getMetaClass().getRealClass().getRealClass().getName().getBytes());
-            buffer.append(' ');
+        if (recur || first != '#') {
+            buffer.cat(cpath.getBytes());
+            buffer.cat(' ');
+        }
+
+        if (recur) {
+            buffer.cat(":...>".getBytes());
+            return buffer.dup();
         }
 
         for (int i = 0,k=member.getLength(); i < k; i++) {
-            if (i > 0) buffer.append(',').append(' ');
-            // FIXME: MRI has special case for constants here
-            buffer.append(RubyString.objAsString(context, member.eltInternal(i)).getByteList());
-            buffer.append('=');
-            buffer.append(inspect(context, values[i]).getByteList());
+            if (i > 0) {
+                buffer.cat(',').cat(' ');
+            }
+            RubySymbol slot = (RubySymbol)member.eltInternal(i);
+            String name = slot.toString();
+            if (IdUtil.isLocal(name) || IdUtil.isConstant(name)) {
+                buffer.cat19(RubyString.objAsString(context, slot));
+            } else {
+                buffer.cat19(((RubyString) slot.inspect(context)));
+            }
+            buffer.cat('=');
+            buffer.cat19(inspect(context, values[i]));
         }
 
-        buffer.append('>');
-        return getRuntime().newString(buffer); // OBJ_INFECT
+        buffer.cat('>');
+        return buffer.dup(); // OBJ_INFECT
     }
 
     @JRubyMethod(name = {"inspect", "to_s"})
-    public IRubyObject inspect(ThreadContext context) {
-        if (getRuntime().isInspecting(this)) return getRuntime().newString("#<struct " + getMetaClass().getRealClass().getName() + ":...>");
+    public IRubyObject inspect(final ThreadContext context) {
+        final Ruby runtime = context.runtime;
 
-        try {
-            getRuntime().registerInspecting(this);
-            return inspectStruct(context);
-        } finally {
-            getRuntime().unregisterInspecting(this);
-        }
+        // recursion guard
+        return runtime.execRecursiveOuter(new Ruby.RecursiveFunction() {
+            @Override
+            public IRubyObject call(IRubyObject obj, boolean recur) {
+                return inspectStruct(context, recur);
+            }
+        }, this);
     }
 
     @JRubyMethod(name = {"to_a", "values"})
@@ -763,6 +781,8 @@ public class RubyStruct extends RubyObject {
     public IRubyObject initialize_copy(IRubyObject arg) {
         if (this == arg) return this;
         RubyStruct original = (RubyStruct) arg;
+
+        checkFrozen();
         
         System.arraycopy(original.values, 0, values, 0, original.values.length);
 

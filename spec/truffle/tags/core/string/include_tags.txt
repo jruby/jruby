@@ -1,4 +1,0 @@
-fails:String#include? with String returns true if self contains other_str
-fails:String#include? with String ignores subclass differences
-fails:String#include? with String tries to convert other to string using to_str
-fails:String#include? with String raises a TypeError if other can't be converted to string

@@ -1,3 +1,1 @@
-fails:ENV.delete removes the variable from the environment
-fails:ENV.delete returns the previous value
 fails:ENV.delete yields the name to the given block if the named environment variable does not exist

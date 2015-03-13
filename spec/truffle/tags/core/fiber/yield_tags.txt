@@ -1,5 +1,0 @@
-fails:Fiber.yield passes control to the Fiber's caller
-fails:Fiber.yield returns its arguments to the caller
-fails:Fiber.yield returns nil to the caller if given no arguments
-fails:Fiber.yield returns to the Fiber the value of the #resume call that invoked it
-fails:Fiber.yield raises a FiberError if called from the root Fiber

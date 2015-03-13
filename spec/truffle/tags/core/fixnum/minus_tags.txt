@@ -1,2 +1,0 @@
-fails:Fixnum#- raises a TypeError when given a non-Integer
-fails:Fixnum#- returns self minus the given Integer

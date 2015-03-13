@@ -5,7 +5,8 @@ import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Operation;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.Variable;
-import org.jruby.ir.transformations.inlining.InlinerInfo;
+import org.jruby.ir.persistence.IRWriterEncoder;
+import org.jruby.ir.transformations.inlining.CloneInfo;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.Helpers;
@@ -18,70 +19,42 @@ import java.util.Map;
 //   * Array + Splat ([1,2,3], *[5,6,7])
 // This used to be an operand, but since to_a can be called as part of
 // building the args-cat/push value, this is not really side-effect free.
-public class BuildCompoundArrayInstr extends Instr implements ResultInstr {
-    private Variable result;
-    private Operand a1;
-    private Operand a2;
+public class BuildCompoundArrayInstr extends ResultBaseInstr {
     private boolean isArgsPush;
 
     public BuildCompoundArrayInstr(Variable result, Operand a1, Operand a2, boolean isArgsPush) {
-        super(Operation.BUILD_COMPOUND_ARRAY);
-        this.a1 = a1;
-        this.a2 = a2;
-        this.result = result;
+        super(Operation.BUILD_COMPOUND_ARRAY, result, new Operand[] { a1, a2 });
         this.isArgsPush = isArgsPush;
     }
 
-    @Override
-    public Variable getResult() {
-        return result;
-    }
-
-    @Override
-    public void updateResult(Variable v) {
-        this.result = v;
-    }
-
-    public Operand getA1() {
-        return a1;
-    }
-
-    public Operand getA2() {
-        return a2;
-    }
-
-    // SSS FIXME: Consolidate identical methods
     public Operand getAppendingArg() {
-        return a1;
+        return operands[0];
     }
 
-    // SSS FIXME: Consolidate identical methods
     public Operand getAppendedArg() {
-        return a2;
+        return operands[1];
     }
 
     public boolean isArgsPush() { return isArgsPush; }
 
     @Override
-    public Operand[] getOperands() {
-        return new Operand[] {a1, a2};
+    public Instr clone(CloneInfo ii) {
+        return new BuildCompoundArrayInstr(ii.getRenamedVariable(result), getAppendingArg().cloneForInlining(ii),
+                getAppendedArg().cloneForInlining(ii), isArgsPush);
     }
 
     @Override
-    public void simplifyOperands(Map<Operand, Operand> valueMap, boolean force) {
-        a1 = a1.getSimplifiedOperand(valueMap, force);
-        a2 = a2.getSimplifiedOperand(valueMap, force);
-    }
-
-    @Override
-    public Instr cloneForInlining(InlinerInfo ii) {
-        return new BuildCompoundArrayInstr(ii.getRenamedVariable(result), a1.cloneForInlining(ii), a2.cloneForInlining(ii), isArgsPush);
+    public void encode(IRWriterEncoder e) {
+        super.encode(e);
+        e.encode(getAppendingArg());
+        e.encode(getAppendedArg());
+        e.encode(isArgsPush());
     }
 
     @Override
     public Object interpret(ThreadContext context, StaticScope currScope, DynamicScope currDynScope, IRubyObject self, Object[] temp) {
-        IRubyObject v1 = (IRubyObject)a1.retrieve(context, self, currScope, currDynScope, temp);
-        IRubyObject v2 = (IRubyObject)a2.retrieve(context, self, currScope, currDynScope, temp);
+        IRubyObject v1 = (IRubyObject)getAppendingArg().retrieve(context, self, currScope, currDynScope, temp);
+        IRubyObject v2 = (IRubyObject)getAppendedArg().retrieve(context, self, currScope, currDynScope, temp);
         return isArgsPush ? Helpers.argsPush((RubyArray) v1, v2) : Helpers.argsCat(v1, v2);
     }
 
@@ -91,7 +64,7 @@ public class BuildCompoundArrayInstr extends Instr implements ResultInstr {
     }
 
     @Override
-    public String toString() {
-        return result + " = " + (isArgsPush ? "ArgsPush[" : "ArgsCat:[") + a1 + ", " + a2 + "]";
+    public String[] toStringNonOperandArgs() {
+        return new String[] { "type: " + (isArgsPush ? "push" : "cat")};
     }
 }

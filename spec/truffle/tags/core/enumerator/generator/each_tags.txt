@@ -1,6 +1,1 @@
-fails:Enumerator::Generator#each is an enumerable
-fails:Enumerator::Generator#each supports enumeration with a block
-fails:Enumerator::Generator#each raises a LocalJumpError if no block given
-fails:Enumerator::Generator#each returns the block returned value
 fails:Enumerator::Generator#each requires multiple arguments
-fails:Enumerator::Generator#each appends given arguments to receiver.each

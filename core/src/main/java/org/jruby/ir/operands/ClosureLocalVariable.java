@@ -2,47 +2,60 @@ package org.jruby.ir.operands;
 
 import org.jruby.ir.IRClosure;
 import org.jruby.ir.IRVisitor;
-import org.jruby.ir.transformations.inlining.InlinerInfo;
+import org.jruby.ir.persistence.IRWriterEncoder;
+import org.jruby.ir.transformations.inlining.SimpleCloneInfo;
 
 /**
- * This represents a variable used in a closure that is
- * local to the closure and is not defined in any ancestor lexical scope
+ * This represents a non-temporary variable used in a closure
+ * and defined in this or a parent closure.
  */
 public class ClosureLocalVariable extends LocalVariable {
-    final public IRClosure definingScope;
+    // Note that we cannot use (scopeDepth > 0) check to detect this.
+    // When a dyn-scope is eliminated for a leaf scope, depths for all
+    // closure local vars are decremented by 1 => a non-local variable
+    // can have scope depth 0.
+    //
+    // Can only transition in one direction (from true to false)
+    private boolean definedLocally;
 
-    public ClosureLocalVariable(IRClosure scope, String name, int scopeDepth, int location) {
+    public ClosureLocalVariable(String name, int scopeDepth, int location) {
         super(name, scopeDepth, location);
-        this.definingScope = scope;
-    }
-
-    @Override
-    public int hashCode() {
-        return name.hashCode();
+        this.definedLocally = true;
     }
 
     @Override
     public boolean equals(Object obj) {
         if (obj == null || !(obj instanceof ClosureLocalVariable)) return false;
 
-        return name.equals(((LocalVariable) obj).name);
+        return hashCode() == obj.hashCode();
     }
 
     public int compareTo(Object arg0) {
         // ENEBO: what should compareTo when it is not comparable?
         if (!(arg0 instanceof ClosureLocalVariable)) return 0;
 
-        return name.compareTo(((LocalVariable) arg0).name);
+        int a = hashCode();
+        int b = arg0.hashCode();
+        return a < b ? -1 : (a == b ? 0 : 1);
+    }
+
+    public boolean isDefinedLocally() {
+        return definedLocally;
     }
 
     @Override
-    public Variable clone(InlinerInfo ii) {
-        return new ClosureLocalVariable(ii.getClonedClosure(), name, scopeDepth, offset);
+    public Variable clone(SimpleCloneInfo ii) {
+        ClosureLocalVariable lv = new ClosureLocalVariable(name, scopeDepth, offset);
+        lv.definedLocally = definedLocally;
+        return lv;
     }
 
-    // SSS FIXME: Better name than this?
     public LocalVariable cloneForDepth(int n) {
-        return new ClosureLocalVariable(definingScope, name, n, offset);
+        ClosureLocalVariable lv = new ClosureLocalVariable(name, n, offset);
+        if (definedLocally && n > 0) {
+            lv.definedLocally = false;
+        }
+        return lv;
     }
 
     @Override
@@ -51,7 +64,13 @@ public class ClosureLocalVariable extends LocalVariable {
     }
 
     @Override
+    public void encode(IRWriterEncoder e) {
+        super.encode(e);
+        e.encode(definedLocally);
+    }
+
+    @Override
     public String toString() {
-        return "<" + name + "(" + scopeDepth + ":" + offset + ")>";
+        return "<" + name + "(" + scopeDepth + ":" + offset + ":local=" + definedLocally + ")>";
     }
 }

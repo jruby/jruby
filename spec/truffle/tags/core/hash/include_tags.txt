@@ -1,5 +1,0 @@
-fails:Hash#include? returns true if argument is a key
-fails:Hash#include? returns true if the key's matching value was nil
-fails:Hash#include? returns true if the key's matching value was false
-fails:Hash#include? returns true if the key is nil
-fails:Hash#include? compares keys with the same #hash value via #eql?

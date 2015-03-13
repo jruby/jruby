@@ -3,10 +3,7 @@ package org.jruby.runtime.callsite;
 import org.jruby.RubyClass;
 import org.jruby.RubyFixnum;
 import org.jruby.RubyFloat;
-import org.jruby.RubyLocalJumpError;
 import org.jruby.RubyModule;
-import org.jruby.exceptions.JumpException;
-import org.jruby.exceptions.RaiseException;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.runtime.Helpers;
 import org.jruby.runtime.Block;
@@ -402,8 +399,8 @@ public class SuperCallSite extends CallSite {
 
     protected static RubyClass pollAndGetClass(ThreadContext context, IRubyObject self, RubyModule frameClass, String frameName) {
         checkSuperDisabledOrOutOfMethod(context, frameClass, frameName);
-        RubyClass superClass = Helpers.findImplementerIfNecessary(self.getMetaClass(), frameClass).getSuperClass();
-        return superClass;
+
+        return Helpers.findImplementerIfNecessary(self.getMetaClass(), frameClass).getSuperClass();
     }
 
     protected static void checkSuperDisabledOrOutOfMethod(ThreadContext context, RubyModule frameClass, String frameName) {
@@ -414,9 +411,5 @@ public class SuperCallSite extends CallSite {
                 throw context.runtime.newNoMethodError("super called outside of method", null, context.runtime.getNil());
             }
         }
-    }
-
-    protected static RaiseException retryJumpError(ThreadContext context) {
-        return context.runtime.newLocalJumpError(RubyLocalJumpError.Reason.RETRY, context.runtime.getNil(), "retry outside of rescue not supported");
     }
 }

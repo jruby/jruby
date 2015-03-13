@@ -307,10 +307,10 @@ public class JavaInterfaceTemplate {
                 singleton.addMethod("append_features", new JavaMethodOneBlock(singleton, Visibility.PUBLIC) {
                     @Override
                     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg, Block block) {
-                        if (!(arg instanceof RubyClass)) {
-                            throw context.runtime.newTypeError("append_features called with non-class");
+                        if (!(arg instanceof RubyModule)) {
+                            throw context.runtime.newTypeError("append_features called with non-module");
                         }
-                        RubyClass target = (RubyClass)arg;
+                        RubyModule target = (RubyModule)arg;
                         RubyArray javaInterfaceMods = (RubyArray)self.getInstanceVariables().getInstanceVariable("@java_interface_mods");
 
                         target.include(javaInterfaceMods.toJavaArray());

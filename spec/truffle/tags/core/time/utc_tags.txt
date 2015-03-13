@@ -1,46 +1,5 @@
 fails:Time#utc? returns true if time represents a time in UTC (GMT)
-fails:Time.utc creates a time based on given values, interpreted as UTC (GMT)
-fails:Time.utc creates a time based on given C-style gmtime arguments, interpreted as UTC (GMT)
-fails:Time.utc interprets pre-Gregorian reform dates using Gregorian proleptic calendar
-fails:Time.utc interprets Julian-Gregorian gap dates using Gregorian proleptic calendar
-fails:Time.utc interprets post-Gregorian reform dates using Gregorian calendar
-fails:Time.utc accepts 1 argument (year)
-fails:Time.utc accepts 2 arguments (year, month)
-fails:Time.utc accepts 3 arguments (year, month, day)
-fails:Time.utc accepts 4 arguments (year, month, day, hour)
-fails:Time.utc accepts 5 arguments (year, month, day, hour, minute)
-fails:Time.utc raises a TypeError if the year is nil
-fails:Time.utc accepts nil month, day, hour, minute, and second
-fails:Time.utc handles a String year
-fails:Time.utc coerces the year with #to_int
-fails:Time.utc handles a String month given as a numeral
-fails:Time.utc handles a String month given as a short month name
-fails:Time.utc coerces the month with #to_str
-fails:Time.utc coerces the month with #to_int
-fails:Time.utc handles a String day
-fails:Time.utc coerces the day with #to_int
-fails:Time.utc handles a String hour
-fails:Time.utc coerces the hour with #to_int
-fails:Time.utc handles a String minute
-fails:Time.utc coerces the minute with #to_int
-fails:Time.utc handles a String second
-fails:Time.utc coerces the second with #to_int
-fails:Time.utc interprets all numerals as base 10
-fails:Time.utc handles fractional seconds as a Float
-fails:Time.utc handles fractional seconds as a Rational
-fails:Time.utc handles years from 0 as such
-fails:Time.utc accepts various year ranges
-fails:Time.utc raises an ArgumentError for out of range month
-fails:Time.utc raises an ArgumentError for out of range day
-fails:Time.utc raises an ArgumentError for out of range hour
-fails:Time.utc raises an ArgumentError for out of range minute
-fails:Time.utc raises an ArgumentError for out of range second
-fails:Time.utc raises ArgumentError when given 9 arguments
-fails:Time.utc raises ArgumentError when given 11 arguments
-fails:Time.utc returns subclass instances
 fails:Time.utc handles string arguments
-fails:Time.utc handles float arguments
-fails:Time.utc raises an ArgumentError for out of range values
 fails:Time.utc handles microseconds
 fails:Time.utc handles fractional microseconds as a Float
 fails:Time.utc handles fractional microseconds as a Rational

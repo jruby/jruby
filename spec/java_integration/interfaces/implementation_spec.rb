@@ -38,6 +38,19 @@ describe "Single-method Java interfaces implemented in Ruby" do
     end
   end
 
+  # JRUBY-6945
+  it "should allow aggregating interfaces in a module" do
+    a = Module.new do
+      include java.awt.event.ActionListener
+    end
+
+    lambda do
+      b = Module.new do
+        include a
+      end
+    end.should_not raise_error
+  end
+
   it "should be kind_of? the interface" do
     @value_holder1.new(1).should be_kind_of(SingleMethodInterface)
     SingleMethodInterface.should === @value_holder1.new(1)

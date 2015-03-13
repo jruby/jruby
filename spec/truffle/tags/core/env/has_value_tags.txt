@@ -1,2 +1,1 @@
-fails:ENV.has_value? returns true if ENV has the value
-fails:ENV.has_value? returns false if ENV doesn't have the value
+fails(windows - Hash#has_value?):ENV.has_value? looks up values case-insensitively

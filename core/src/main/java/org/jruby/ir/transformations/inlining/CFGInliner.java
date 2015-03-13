@@ -1,5 +1,6 @@
 package org.jruby.ir.transformations.inlining;
 
+import org.jruby.dirgra.Edge;
 import org.jruby.RubyModule;
 import org.jruby.ir.IRClosure;
 import org.jruby.ir.IRScope;
@@ -9,7 +10,6 @@ import org.jruby.ir.operands.*;
 import org.jruby.ir.representations.BasicBlock;
 import org.jruby.ir.representations.CFG;
 import org.jruby.ir.representations.CFG.EdgeType;
-import org.jruby.ir.util.Edge;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -21,10 +21,8 @@ public class CFGInliner {
         this.cfg = build;
     }
 
-    private InlinerInfo cloneHostInstrs(CFG cfg) {
-        cfg.getScope().initNestedClosures();
-
-        InlinerInfo ii = new InlinerInfo(cfg);
+    private SimpleCloneInfo cloneHostInstrs(CFG cfg) {
+        SimpleCloneInfo ii = new SimpleCloneInfo(cfg.getScope(), false);
         for (BasicBlock b : cfg.getBasicBlocks()) {
             b.cloneInstrs(ii);
         }
@@ -32,7 +30,7 @@ public class CFGInliner {
         return ii;
     }
 
-    private CFG cloneSelf(InlinerInfo ii) {
+    private CFG cloneSelf(InlineCloneInfo ii) {
         CFG selfClone = new CFG(cfg.getScope());
 
         // clone bbs
@@ -100,10 +98,7 @@ public class CFGInliner {
         }
         cfg.removeAllOutgoingEdgesForBB(callBB);
 
-        InlinerInfo hostCloneInfo = null;
-        if (cloneHost) {
-            hostCloneInfo = cloneHostInstrs(cfg);
-        }
+        SimpleCloneInfo hostCloneInfo = cloneHost ? cloneHostInstrs(cfg) : null;
 
         // Host method data init
         Operand callReceiver = call.getReceiver();
@@ -114,7 +109,7 @@ public class CFGInliner {
             callReceiverVar = hostScope.createTemporaryVariable();
         }
 
-        InlinerInfo ii = new InlinerInfo(call, cfg, callReceiverVar);
+        InlineCloneInfo ii = new InlineCloneInfo(call, cfg, callReceiverVar, scope);
 
         // Inlinee method data init
         CFG methodCFG = scope.getCFG();
@@ -258,7 +253,7 @@ public class CFGInliner {
 */
     }
 
-    private void inlineClosureAtYieldSite(InlinerInfo ii, IRClosure cl, BasicBlock yieldBB, YieldInstr yield) {
+    private void inlineClosureAtYieldSite(InlineCloneInfo ii, IRClosure cl, BasicBlock yieldBB, YieldInstr yield) {
         // 1. split yield site bb and move outbound edges from yield site bb to split bb.
         BasicBlock splitBB = yieldBB.splitAtInstruction(yield, cfg.getScope().getNewLabel(), false);
         cfg.addBasicBlock(splitBB);
@@ -269,7 +264,7 @@ public class CFGInliner {
         cfg.removeAllOutgoingEdgesForBB(yieldBB);
 
         // Allocate new inliner object to reset variable and label rename maps
-        ii = ii.cloneForInliningClosure();
+        ii = ii.cloneForInliningClosure(cl);
         ii.setupYieldArgsAndYieldResult(yield, yieldBB, cl.getBlockBody().arity());
 
         // 2. Merge closure cfg into the current cfg

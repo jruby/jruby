@@ -12,4 +12,11 @@ describe "Array#eql?" do
     [1, 2, 3, 4].send(@method, [1, 2, 3, 4.0]).should be_false
   end
 
+  it "returns false if other is not a kind of Array" do
+    obj = mock("array eql?")
+    obj.should_not_receive(:to_ary)
+    obj.should_not_receive(:==)
+
+    [1, 2, 3].eql?(obj).should be_false
+  end
 end

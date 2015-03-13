@@ -1,8 +1,0 @@
-fails:Integer#times returns self
-fails:Integer#times yields each value from 0 to self - 1
-fails:Integer#times skips the current iteration when encountering 'next'
-fails:Integer#times skips all iterations when encountering 'break'
-fails:Integer#times skips all iterations when encountering break with an argument and returns that argument
-fails:Integer#times executes a nested while loop containing a break expression
-fails:Integer#times executes a nested #times
-fails:Integer#times returns an Enumerator

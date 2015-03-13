@@ -1,1 +1,0 @@
-fails:The alias keyword operates on the object's metaclass when used in instance_eval

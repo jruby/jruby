@@ -52,6 +52,8 @@ import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import static org.jruby.platform.Platform.IS_WINDOWS;
+
 @JRubyModule(name="Config")
 public class RbConfigLibrary implements Library {
     // Ruby's designation for some platforms, minus version numbers in some cases
@@ -108,7 +110,7 @@ public class RbConfigLibrary implements Library {
     }
 
     public static String getRuntimeVerStr(Ruby runtime) {
-        return "2.1";
+        return Constants.RUBY_MAJOR_VERSION;
     }
 
     public static String getNormalizedHome(Ruby runtime) {
@@ -167,7 +169,7 @@ public class RbConfigLibrary implements Library {
     }
 
     public static String getRubyLibDir(Ruby runtime) {
-        return getRubyLibDirFor(runtime, getRuntimeVerStr(runtime));
+        return getRubyLibDirFor(runtime, "stdlib");
     }
 
     public static String getRubyLibDirFor(Ruby runtime, String runtimeVerStr) {
@@ -243,7 +245,9 @@ public class RbConfigLibrary implements Library {
         setConfig(configHash, "bindir", binDir);
 
         setConfig(configHash, "RUBY_INSTALL_NAME", jrubyScript());
+        setConfig(configHash, "RUBYW_INSTALL_NAME", IS_WINDOWS ? "jrubyw.exe" : jrubyScript());
         setConfig(configHash, "ruby_install_name", jrubyScript());
+        setConfig(configHash, "rubyw_install_name", IS_WINDOWS ? "jrubyw.exe" : jrubyScript());
         setConfig(configHash, "SHELL", jrubyShell());
         setConfig(configHash, "prefix", normalizedHome);
         setConfig(configHash, "exec_prefix", normalizedHome);
@@ -470,7 +474,7 @@ public class RbConfigLibrary implements Library {
         return SafePropertyAccessor.getProperty("jruby.shell", Platform.IS_WINDOWS ? "cmd.exe" : "/bin/sh").replace('\\', '/');
     }
 
-    @JRubyMethod(name = "ruby", module = true)
+    @JRubyMethod(name = "ruby", meta = true)
     public static IRubyObject ruby(ThreadContext context, IRubyObject recv) {
         Ruby runtime = context.runtime;
         RubyHash configHash = (RubyHash) runtime.getModule("RbConfig").getConstant("CONFIG");

@@ -22,6 +22,7 @@ describe "String#include? with String" do
 
   it "raises a TypeError if other can't be converted to string" do
     lambda { "hello".include?([])       }.should raise_error(TypeError)
+    lambda { "hello".include?('h'.ord)  }.should raise_error(TypeError)
     lambda { "hello".include?(mock('x')) }.should raise_error(TypeError)
   end
 end

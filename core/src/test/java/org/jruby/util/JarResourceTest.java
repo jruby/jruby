@@ -10,8 +10,6 @@ public class JarResourceTest extends TestCase {
         assertNotNull( resource );
         resource = JarResource.create( jar + "!/f o.rb" );
         assertNotNull( resource );
-        resource = JarResource.create( jar + "!/f%20o.rb" );
-        assertNotNull( resource );
         resource = JarResource.create( jar + "!/doesnotexist.rb" );
         assertNull( resource );
         resource = JarResource.create( jar.replace( ".jar", ".zip" ) + "!/foo.rb" );
@@ -23,8 +21,6 @@ public class JarResourceTest extends TestCase {
         JarResource resource = JarResource.create( jar + "!/foo.rb" );
         assertNotNull( resource );
         resource = JarResource.create( jar + "!/f o.rb" );
-        assertNotNull( resource );
-        resource = JarResource.create( jar + "!/f%20o.rb" );
         assertNotNull( resource );
         resource = JarResource.create( jar + "!/doesnotexist.rb" );
         assertNull( resource );

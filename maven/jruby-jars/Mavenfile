@@ -3,13 +3,13 @@ require 'fileutils'
 
 gemspec
 
-version = File.read( File.join( File.dirname(File.expand_path(__FILE__)), '..', '..', 'VERSION' ) ).strip
+version = File.read( File.join( basedir, '..', '..', 'VERSION' ) ).strip
+
+# maven does treats prereleased version as snapshot - undo it here
+ruby_version = model.version.sub( /-SNAPSHOT/, '' )
+self.version nil
 
 inherit "org.jruby:jruby-artifacts:#{version}"
-
-ruby_version = model.version
-
-model.version = nil
 
 name "JRuby Jars Gem"
 
@@ -25,18 +25,29 @@ plugin( :clean, '2.5' ) do
 end
 
 properties( 'tesla.dump.pom' => 'pom.xml',
-            'tesla.version' => '0.1.1',
+            'tesla.dump.readonly' => true,
+            'jruby.plugins.version' => '1.0.7',
             # we share the already installed gems
             'gem.home' => '${jruby.home}/lib/ruby/gems/shared',
-            'jruby.home' => '${basedir}/../../' )
+            # need jruby_home but not jruby.home as name otherwise
+            # tesla-plugin will pick the jruby from jruby.home
+            'jruby_home' => '${basedir}/../../' )
+
+  unless version =~ /-SNAPSHOT/
+    properties 'jruby.home' => '${basedir}/../..'
+  end
 
 execute 'copy jruby.jar', 'prepare-package' do |ctx|
-  FileUtils.cp( File.join( ctx.project.properties[ 'jruby.home' ],
+  source = File.expand_path( ctx.project.properties[ 'jruby_home' ].to_pathname )
+  # TODO somehow the lib/jruby.jar gets moved away to avoid conflicts
+  FileUtils.cp( Dir[ File.join( source, "core/target/jruby-core-#{version}-complete.jar" ) ].first,
+                File.join( ctx.project.basedir.to_pathname, 
                            'lib',
-                           'jruby.jar' ),
-                File.join( ctx.project.basedir.to_s, 
+                           "jruby-core-#{ctx.project.version}-complete.jar" ) )
+  FileUtils.cp( Dir[ File.join( source, "truffle/target/jruby-truffle-#{version}-complete.jar" ) ].first,
+                File.join( ctx.project.basedir.to_pathname, 
                            'lib',
-                           "jruby-core-complete-#{ctx.project.version}.jar" ) )
+                           "jruby-truffle-#{ctx.project.version}-complete.jar" ) )
 end
 
 # do not push the gem during deploy phase
@@ -49,12 +60,10 @@ jruby_plugin!( :gem,
   execute_goals :id => 'default-push', :skip => true
 end
 
-plugin :invoker, :properties => { 'ruby.version' => ruby_version, 'gem.home' => '${project.build.directory}', 'gem.path' => '${project.build.directory}' }
-
-execute 'rename gem file', :verify do |ctx|
-  require 'fileutils'
-  FileUtils.rm_rf(Dir["#{ctx.project.build.directory}/*.gem"])
-  FileUtils.mv(Dir["#{ctx.project.basedir}/*.gem"], ctx.project.build.directory)
+build do
+  final_name "${project.artifactId}-#{ruby_version}"
 end
+
+plugin :invoker, :properties => { 'ruby.version' => ruby_version, 'gem.home' => '${project.build.directory}/rubygems', 'gem.path' => '${project.build.directory}/rubygems' }
 
 # vim: syntax=Ruby

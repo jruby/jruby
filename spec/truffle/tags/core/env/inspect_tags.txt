@@ -1,1 +1,0 @@
-fails:ENV.inspect returns a String that looks like a Hash with real data

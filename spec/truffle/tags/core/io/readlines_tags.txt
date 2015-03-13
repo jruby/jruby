@@ -16,8 +16,6 @@ fails:IO#readlines when passed a string that starts with a | gets data from the 
 fails:IO#readlines when passed a string that starts with a | gets data from a fork when passed -
 fails:IO#readlines raises an IOError if the stream is opened for append only
 fails:IO#readlines raises an IOError if the stream is opened for write only
-fails:IO.readlines does not change $_
-fails:IO.readlines raises TypeError if the first parameter is nil
 fails:IO.readlines raises an Errno::ENOENT if the file does not exist
 fails:IO.readlines yields a single string with entire content when the separator is nil
 fails:IO.readlines yields a sequence of paragraphs when the separator is an empty string
@@ -47,3 +45,5 @@ fails:IO.readlines when passed name, separator, limit, options calls #to_hash to
 fails:IO.readlines encodes lines using the default external encoding
 fails:IO.readlines encodes lines using the default internal encoding, when set
 fails:IO.readlines ignores the default internal encoding if the external encoding is ASCII-8BIT
+windows:IO.readlines does not change $_
+windows:IO.readlines raises TypeError if the first parameter is nil

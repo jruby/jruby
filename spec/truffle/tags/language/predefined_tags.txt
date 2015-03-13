@@ -1,92 +1,11 @@
-fails:Predefined global $~ is set at the method-scoped level rather than block-scoped
-fails:Predefined global $~ changes the value of derived capture globals when assigned
-fails:Predefined global $~ changes the value of the derived preceding match global
-fails:Predefined global $~ changes the value of the derived following match global
-fails:Predefined global $~ changes the value of the derived full match global
-fails:Predefined global $& is equivalent to MatchData#[0] on the last match $~
-fails(inherited):Predefined global $& sets the encoding to the encoding of the source String
-fails:Predefined global $` is equivalent to MatchData#pre_match on the last match $~
-fails(inherited):Predefined global $` sets the encoding to the encoding of the source String
-fails(inherited):Predefined global $` sets an empty result to the encoding of the source String
-fails:Predefined global $' is equivalent to MatchData#post_match on the last match $~
-fails(inherited):Predefined global $' sets the encoding to the encoding of the source String
-fails(inherited):Predefined global $' sets an empty result to the encoding of the source String
-fails(inherited):Predefined global $+ sets the encoding to the encoding of the source String
-fails(inherited):Predefined globals $1..N sets the encoding to the encoding of the source String
-fails:Predefined global $stdout is the same as $DEFAULT_OUTPUT from 'English' library
-fails:Predefined global $stdout raises TypeError error if assigned to nil
-fails:Predefined global $stdout raises TypeError error if assigned to object that doesn't respond to #write
-fails:Predefined global $! remains nil after a failed core class "checked" coercion against a class that defines method_missing
-fails(inherited):Predefined global $/ changes $-0
-fails:Predefined global $/ does not call #to_str to convert the object to a String
-fails:Predefined global $/ raises a TypeError if assigned a Fixnum
-fails:Predefined global $/ raises a TypeError if assigned a boolean
-fails(inherited):Predefined global $-0 changes $/
-fails(inherited):Predefined global $-0 does not call #to_str to convert the object to a String
-fails(inherited):Predefined global $-0 raises a TypeError if assigned a Fixnum
-fails(inherited):Predefined global $-0 raises a TypeError if assigned a boolean
-fails:Predefined global $, raises TypeError if assigned a non-String
-fails:Predefined global $_ is set to the last line read by e.g. StringIO#gets
-fails:Predefined global $_ is set at the method-scoped level rather than block-scoped
-fails:Predefined global $_ is Thread-local
-fails:Execution variable $: is the same object as $LOAD_PATH and $-I
-fails:Execution variable $: is read-only
-fails:Global variable $" is read-only
-fails:Global variable $< is read-only
-fails:Global variable $FILENAME is read-only
-fails:Global variable $? is read-only
-fails:Global variable $? is thread-local
-fails:Global variable $-a is read-only
-fails:Global variable $-l is read-only
-fails:Global variable $-p is read-only
-fails:Global variable $-d is an alias of $DEBUG
-fails:Global variable $-v is an alias of $VERBOSE
-fails:Global variable $-w is an alias of $VERBOSE
-fails(inherited):Global variable $0 raises a TypeError when not given an object that can be coerced to a String
-fails:The predefined standard objects includes ARGF
-fails:The predefined global constants includes TOPLEVEL_BINDING
-fails:Processing RUBYOPT sets $DEBUG to true for '-d'
-fails:Processing RUBYOPT sets $VERBOSE to true for '-w'
-fails:Processing RUBYOPT sets $VERBOSE to true for '-W'
-fails:Processing RUBYOPT sets $VERBOSE to nil for '-W0'
-fails:Processing RUBYOPT sets $VERBOSE to false for '-W1'
-fails:Processing RUBYOPT sets $VERBOSE to true for '-W2'
-fails:Processing RUBYOPT requires the file for '-r'
-fails:Processing RUBYOPT raises a RuntimeError for '-a'
-fails(inherited):Processing RUBYOPT raises a RuntimeError for '-p'
-fails(inherited):Processing RUBYOPT raises a RuntimeError for '-n'
-fails(inherited):Processing RUBYOPT raises a RuntimeError for '-y'
-fails(inherited):Processing RUBYOPT raises a RuntimeError for '-c'
-fails(inherited):Processing RUBYOPT raises a RuntimeError for '-s'
-fails(inherited):Processing RUBYOPT raises a RuntimeError for '-h'
-fails(inherited):Processing RUBYOPT raises a RuntimeError for '--help'
-fails(inherited):Processing RUBYOPT raises a RuntimeError for '-l'
-fails(inherited):Processing RUBYOPT raises a RuntimeError for '-S'
-fails(inherited):Processing RUBYOPT raises a RuntimeError for '-e'
-fails(inherited):Processing RUBYOPT raises a RuntimeError for '-i'
-fails(inherited):Processing RUBYOPT raises a RuntimeError for '-x'
-fails(inherited):Processing RUBYOPT raises a RuntimeError for '-C'
-fails(inherited):Processing RUBYOPT raises a RuntimeError for '-X'
-fails(inherited):Processing RUBYOPT raises a RuntimeError for '-F'
-fails(inherited):Processing RUBYOPT raises a RuntimeError for '-0'
-fails(inherited):Processing RUBYOPT raises a RuntimeError for '--copyright'
-fails(inherited):Processing RUBYOPT raises a RuntimeError for '--version'
-fails(inherited):Processing RUBYOPT raises a RuntimeError for '--yydebug'
-fails:The predefined global constant STDERR has nil for the external encoding despite Encoding.default_external being changed
-fails:The predefined global constant STDERR has the encodings set by #set_encoding
 fails:The predefined global constant ARGV contains Strings encoded in locale Encoding
-fails:The predefined global constant STDERR has nil for the internal encoding despite Encoding.default_internal being changed
-fails:The predefined global constant STDERR has nil for the internal encoding
-fails:The predefined global constant STDERR has nil for the external encoding
-fails:The predefined global constant STDOUT has nil for the internal encoding despite Encoding.default_internal being changed
-fails:The predefined global constant STDOUT has nil for the internal encoding
-fails:The predefined global constant STDOUT has the encodings set by #set_encoding
-fails:The predefined global constant STDOUT has nil for the external encoding despite Encoding.default_external being changed
-fails:The predefined global constant STDOUT has nil for the external encoding
-fails:The predefined global constant STDIN has nil for the internal encoding despite Encoding.default_internal being changed
-fails:The predefined global constant STDIN has nil for the internal encoding
-fails:The predefined global constant STDIN retains the encoding set by #set_encoding when Encoding.default_external is changed
-fails:The predefined global constant STDIN has the encodings set by #set_encoding
-fails:The predefined global constant STDIN has the same external encoding as Encoding.default_external when that encoding is changed
-fails:The predefined global constant STDIN has the same external encoding as Encoding.default_external
-fails:Processing RUBYOPT prints the version number for '-v'
+slow:Execution variable $: does not include '.' when the taint check level > 1
+slow:The predefined global constant STDERR has the encodings set by #set_encoding
+slow:The predefined global constant STDIN retains the encoding set by #set_encoding when Encoding.default_external is changed
+slow:The predefined global constant STDIN has the encodings set by #set_encoding
+slow:The predefined global constant STDOUT has the encodings set by #set_encoding
+windows:Execution variable $: does not include '.' when the taint check level > 1
+windows:The predefined global constant STDIN has the encodings set by #set_encoding
+windows:The predefined global constant STDIN retains the encoding set by #set_encoding when Encoding.default_external is changed
+windows:The predefined global constant STDOUT has the encodings set by #set_encoding
+windows:The predefined global constant STDERR has the encodings set by #set_encoding

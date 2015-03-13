@@ -1,2 +1,0 @@
-fails:Literal Regexps matches against $_ (last input) in a conditional if no explicit matchee provided
-fails:Literal Regexps allows unescaped / to be used with %r

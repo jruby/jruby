@@ -44,7 +44,7 @@ public class DefinedNode extends Node {
     private final Node expressionNode;
 
     public DefinedNode(ISourcePosition position, Node expressionNode) {
-        super(position);
+        super(position, expressionNode.containsVariableAssignment());
         
         assert expressionNode != null : "expressionNode is not null";
         

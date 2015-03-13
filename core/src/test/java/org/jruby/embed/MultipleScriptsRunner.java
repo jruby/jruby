@@ -79,9 +79,8 @@ public class MultipleScriptsRunner {
     @Before
     public void setUp() throws FileNotFoundException, IOException {
         String[] paths = new String[] {
-            basedir + "/lib/ruby/1.9",
-            basedir + "/lib/ruby/shared",
-            basedir + "/lib/ruby/1.9/rdoc",
+            basedir + "/lib/ruby/stdlib",
+            basedir + "/lib/ruby/stdlib/rdoc",
             basedir + "/test",
             basedir
         };

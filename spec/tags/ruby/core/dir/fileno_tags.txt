@@ -1,0 +1,1 @@
+fails:Dir#fileno returns the file descriptor of the dir

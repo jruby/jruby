@@ -79,6 +79,7 @@ public class Platform {
         X86_64,
         POWERPC,
         POWERPC64,
+        POWERPC64LE,
         SPARC,
         SPARCV9,
         S390X,
@@ -134,6 +135,8 @@ public class Platform {
             return CPU.POWERPC;
         } else if ("ppc64".equals(archString)) {
             return CPU.POWERPC64;
+        } else if ("ppc64le".equals(archString)) {
+            return CPU.POWERPC64LE;
         } else if ("sparc".equals(archString)) {
             return CPU.SPARC;
         } else if ("sparcv9".equals(archString)) {
@@ -197,6 +200,7 @@ public class Platform {
                     break;
                 case X86_64:
                 case POWERPC64:
+                case POWERPC64LE:
                 case SPARCV9:
                 case S390X:
                     dataModel = 64;

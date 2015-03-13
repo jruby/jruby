@@ -1,3 +1,1 @@
-fails:main#private sets the visibility of the given method to private
-fails:main#private returns Object
 fails:main#private raises a NameError when given an undefined name

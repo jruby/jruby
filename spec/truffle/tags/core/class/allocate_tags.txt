@@ -1,5 +1,1 @@
-fails:Class#allocate returns an instance of self
-fails:Class#allocate returns a fully-formed instance of Module
-fails:Class#allocate throws an exception when calling a method on a new instance
-fails:Class#allocate does not call initialize on the new instance
 fails:Class#allocate raises TypeError for #superclass

@@ -14,6 +14,7 @@ public enum OperandType {
     BIGNUM((byte) 'B'),
     BOOLEAN((byte) 'b'),
     LOCAL_VARIABLE((byte) 'l'), // Also applicable for ClosureLocalVariable
+    COMPLEX((byte) 'C'),
     COMPOUND_ARRAY((byte) 'c'),
     COMPOUND_STRING((byte) '"'),
     CURRENT_SCOPE((byte) 's'),
@@ -24,12 +25,11 @@ public enum OperandType {
     HASH((byte) '{'),
     IR_EXCEPTION((byte) '!'),
     LABEL((byte) 'L'),
-    METH_ADDR((byte) 'M'),
-    METHOD_HANDLE((byte) 'm'),
     NIL((byte) 'N'),
     NTH_REF((byte) '1'),
     OBJECT_CLASS((byte) 'O'),
     RANGE((byte) '.'),
+    RATIONAL((byte) 'r'),
     REGEXP((byte) '/'),
     SCOPE_MODULE((byte) '_'),
     SELF((byte) 'S'),
@@ -45,6 +45,8 @@ public enum OperandType {
     UNDEFINED_VALUE((byte) 'u'),
     UNEXECUTABLE_NIL((byte) 'n'),
     WRAPPED_IR_CLOSURE((byte) 'w'),
+    FROZEN_STRING((byte) 'z'),
+    NULL_BLOCK((byte) 'o'),
     ;
 
     private final byte coded;

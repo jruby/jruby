@@ -1,1 +1,0 @@
-fails:UnboundMethod#parameters needs to be reviewed for spec completeness

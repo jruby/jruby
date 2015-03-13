@@ -105,6 +105,18 @@ lib/ruby/1.9, and lib/ruby/site_ruby/1.8/rubygems*.
  The "yecht" library is Copyright (c) 2009-2011 Ola Bini, and released
  under the MIT license.
 
+ The Rubinius API implementation in truffle/src/main/ruby/core/rubinius/api
+ is copyright (c) 2011, Evan Phoenix, and released under the 3-clause BSD license.
+
+ The Rubinius core library implementation
+ in truffle/src/main/ruby/core/rubinius/bootstrap
+ and truffle/src/main/ruby/core/rubinius/common is
+ copyright (c) 2007-2014, Evan Phoenix and contributors,
+ and released under the 3-clause BSD license.
+
+ Some parts of the RubySL implementations of the stdlib in lib/ruby/truffle/rubysl
+ are copyright (c) 2013 Brian Shirai and are licensed under the 3-clause BSD license.
+
 The complete text of the Eclipse Public License is as follows:
 
   Eclipse Public License - v 1.0

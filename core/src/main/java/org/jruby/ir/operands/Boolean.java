@@ -1,13 +1,11 @@
 package org.jruby.ir.operands;
 
 import org.jruby.ir.IRVisitor;
+import org.jruby.ir.persistence.IRWriterEncoder;
 import org.jruby.runtime.ThreadContext;
 
 public class Boolean extends ImmutableLiteral {
     private final boolean truthy;
-
-    public static final Boolean TRUE = new Boolean(true);
-    public static final Boolean FALSE = new Boolean(false);
 
     public Boolean(boolean truthy) {
         super(OperandType.BOOLEAN);
@@ -41,6 +39,12 @@ public class Boolean extends ImmutableLiteral {
     @Override
     public void visit(IRVisitor visitor) {
         visitor.Boolean(this);
+    }
+
+    @Override
+    public void encode(IRWriterEncoder e) {
+        super.encode(e);
+        e.encode(isTrue());
     }
 
     @Override

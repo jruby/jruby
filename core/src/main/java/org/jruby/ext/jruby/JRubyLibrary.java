@@ -31,6 +31,8 @@
 package org.jruby.ext.jruby;
 
 import java.util.ArrayList;
+
+import org.jruby.AbstractRubyMethod;
 import org.jruby.CompatVersion;
 import org.jruby.ast.RestArgNode;
 import org.jruby.anno.JRubyMethod;
@@ -73,6 +75,7 @@ import org.jruby.runtime.load.Library;
 public class JRubyLibrary implements Library {
     public void load(Ruby runtime, boolean wrap) {
         ThreadContext context = runtime.getCurrentContext();
+
         runtime.getLoadService().require("java");
 
         // load Ruby parts of the 'jruby' library
@@ -89,8 +92,17 @@ public class JRubyLibrary implements Library {
 
         RubyClass fiberLocalClass = jrubyModule.defineClassUnder("FiberLocal", runtime.getObject(), JRubyFiberLocal.ALLOCATOR);
         fiberLocalClass.defineAnnotatedMethods(JRubyExecutionContextLocal.class);
-        
-        new JRubyConfigLibrary().load(runtime, wrap);
+
+        RubyModule config = jrubyModule.defineModuleUnder("CONFIG");
+        config.getSingletonClass().defineAnnotatedMethods(JRubyConfig.class);
+    }
+
+    public static class JRubyConfig {
+        @JRubyMethod(name = "rubygems_disabled?")
+        public static IRubyObject rubygems_disabled_p(ThreadContext context, IRubyObject self) {
+            return context.runtime.newBoolean(
+                    context.runtime.getInstanceConfig().isDisableGems());
+        }
     }
 
     /**
@@ -155,7 +167,7 @@ public class JRubyLibrary implements Library {
         @JRubyMethod(name = "args")
         public static IRubyObject methodArgs(IRubyObject recv) {
             Ruby runtime = recv.getRuntime();
-            RubyMethod rubyMethod = (RubyMethod)recv;
+            AbstractRubyMethod rubyMethod = (AbstractRubyMethod)recv;
             RubyArray argsArray = RubyArray.newArray(runtime);
             DynamicMethod method = rubyMethod.getMethod().getRealMethod();
             RubySymbol req = runtime.newSymbol("req");
@@ -210,10 +222,17 @@ public class JRubyLibrary implements Library {
                     argsArray.append(RubyArray.newArray(runtime, block, getNameFrom(runtime, args.getBlock())));
                 }
             } else if (method instanceof IRMethodArgs) {
-                for (String[] argParam: ((IRMethodArgs)method).getParameterList()) {
-                    RubySymbol argType = runtime.newSymbol(argParam[0]);
-                    if (argParam[1] == "") argsArray.append(RubyArray.newArray(runtime, argType));
-                    else argsArray.append(RubyArray.newArray(runtime, argType, runtime.newSymbol(argParam[1])));
+                String[] argsDesc = ((IRMethodArgs) method).getParameterList();
+
+                for (int i = 0; i < argsDesc.length; i++) {
+                    RubySymbol argType = runtime.newSymbol(argsDesc[i]);
+                    i++;
+                    String argName = argsDesc[i];
+                    if (argName.isEmpty()) {
+                        argsArray.append(RubyArray.newArray(runtime, argType));
+                    } else {
+                        argsArray.append(RubyArray.newArray(runtime, argType, runtime.newSymbol(argName)));
+                    }
                 }
             } else {
                 if (method.getArity() == Arity.OPTIONAL) {
@@ -275,10 +294,17 @@ public class JRubyLibrary implements Library {
                     argsArray.add("b" + getNameFrom(runtime, args.getBlock()));
                 }
             } else if (method instanceof IRMethodArgs) {
-                for (String[] argParam: ((IRMethodArgs)method).getParameterList()) {
-                    RubySymbol argType = runtime.newSymbol(argParam[0]);
-                    if (argParam[1] == "") argsArray.add(argParam[0]);
-                    else argsArray.add(argParam[0] + argParam[1]);
+                String[] argsDesc = ((IRMethodArgs) method).getParameterList();
+
+                for (int i = 0; i < argsDesc.length; i++) {
+                    String argType = argsDesc[i];
+                    i++;
+                    String argName = argsDesc[i];
+                    if (argName.isEmpty()) {
+                        argsArray.add(argType);
+                    } else {
+                        argsArray.add(argType + argName);
+                    }
                 }
             } else {
                 if (method.getArity() == Arity.OPTIONAL) {

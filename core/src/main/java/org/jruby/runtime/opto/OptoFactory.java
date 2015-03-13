@@ -27,13 +27,27 @@
 package org.jruby.runtime.opto;
 
 import org.jruby.RubyModule;
+import org.jruby.runtime.ThreadContext;
 import org.jruby.util.cli.Options;
+
+import java.lang.invoke.MethodHandles;
 
 /**
  * A set of factory methods to construct optimizing utilities for compilation,
  * cache invalidation, and so on.
  */
 public class OptoFactory {
+
+    /**
+     * Create a new "constant" representation for this object, conforming to the given concrete type. This is currently
+     * only used by invokedynamic to cache "constant" method handle wrappers for common literal fixnums and symbols.
+     * @param type the class to which the constant should conform
+     * @return a "constant" representation of this object appropriate to the current JVM and runtime modes
+     */
+    public static final Object newConstantWrapper(Class type, Object object) {
+        return OptoFactory.CONSTANT_FACTORY.create(type, object);
+    }
+
     public static Invalidator newConstantInvalidator() {
         if (indyEnabled() && indyConstants()) {
             try {
@@ -67,7 +81,7 @@ public class OptoFactory {
     }
 
     public static Invalidator newMethodInvalidator(RubyModule module) {
-        if (indyEnabled() && indyInvocationSwitchpoint()) {
+        if (indyEnabled()) {
             try {
                 return new GenerationAndSwitchPointInvalidator(module);
             } catch (Error e) {
@@ -84,11 +98,51 @@ public class OptoFactory {
         return Options.INVOKEDYNAMIC_CACHE_CONSTANTS.load();
     }
 
-    private static Boolean indyInvocationSwitchpoint() {
-        return Options.INVOKEDYNAMIC_INVOCATION_SWITCHPOINT.load();
-    }
-
     private static void disableIndy() {
         Options.COMPILE_INVOKEDYNAMIC.force("false");
     }
+
+    /**
+     * A factory for abstract "constant" representations of objects. This is currently only used by our invokedynamic
+     * support to cache the "constant" handles that wrap common literal fixnums and symbols. See #2058.
+     */
+    public static interface ConstantFactory {
+        /**
+         * Return a representation of a "constant" suitable for optimization in the current runtime. For invokedynamic,
+         * this produces a MethodHandles.constant wrapper around the given object, typed with the given type.
+         *
+         * @param type the type to which the constant should conform
+         * @param object the object which represents the constant's value
+         * @return a constant representation suitable for optimization
+         */
+        public Object create(Class type, Object object);
+    }
+
+    /**
+     * A constant factory that produces MethodHandle constants that drop an initial ThreadContext argument.
+     */
+    private static class MethodHandleConstantFactory implements ConstantFactory {
+        public Object create(Class type, Object object) {
+            return MethodHandles.dropArguments(
+                    MethodHandles.constant(type, object),
+                    0,
+                    ThreadContext.class);
+        }
+    }
+
+    /**
+     * A dummy factory, for when we are not running with invokedynamic.
+     */
+    private static class DummyConstantFactory implements ConstantFactory {
+        public Object create(Class type, Object object) {
+            return null;
+        }
+    }
+
+    /**
+     * The constant factory we'll be using for this run.
+     */
+    private static final ConstantFactory CONSTANT_FACTORY = Options.COMPILE_INVOKEDYNAMIC.load() ?
+            new MethodHandleConstantFactory() :
+            new DummyConstantFactory();
 }

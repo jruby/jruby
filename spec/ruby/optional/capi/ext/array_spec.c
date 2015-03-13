@@ -7,6 +7,12 @@
 extern "C" {
 #endif
 
+#ifdef HAVE_RB_ARRAY
+static VALUE array_spec_rb_Array(VALUE self, VALUE object) {
+  return rb_Array(object);
+}
+#endif
+
 #ifdef HAVE_RARRAY
 static VALUE array_spec_RARRAY_ptr_assign(VALUE self, VALUE ary, VALUE content, VALUE length) {
   int i;
@@ -304,6 +310,10 @@ static VALUE array_spec_rb_ary_subseq(VALUE self, VALUE ary, VALUE begin, VALUE 
 void Init_array_spec() {
   VALUE cls;
   cls = rb_define_class("CApiArraySpecs", rb_cObject);
+
+#ifdef HAVE_RB_ARRAY
+  rb_define_method(cls, "rb_Array", array_spec_rb_Array, 1);
+#endif
 
 #ifdef HAVE_RARRAY
   rb_define_method(cls, "RARRAY_ptr_iterate", array_spec_RARRAY_ptr_iterate, 1);

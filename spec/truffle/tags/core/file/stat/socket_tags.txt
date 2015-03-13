@@ -1,2 +1,0 @@
-fails:File::Stat#socket? accepts an object that has a #to_path method
-fails:File::Stat#socket? needs to be reviewed for spec completeness

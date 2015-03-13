@@ -1,8 +1,5 @@
-fails:Module#remove_class_variable removes class variable
 fails:Module#remove_class_variable returns the value of removing class variable
 fails:Module#remove_class_variable removes a class variable defined in a metaclass
-fails:Module#remove_class_variable raises a NameError when removing class variable declared in included module
 fails:Module#remove_class_variable raises a NameError when passed a symbol with one leading @
 fails:Module#remove_class_variable raises a NameError when passed a symbol with no leading @
 fails:Module#remove_class_variable raises a NameError when an uninitialized class variable is given
-fails:Module#remove_class_variable is public

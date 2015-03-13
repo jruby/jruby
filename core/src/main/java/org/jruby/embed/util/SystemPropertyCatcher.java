@@ -36,7 +36,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import org.jruby.CompatVersion;
 import org.jruby.RubyInstanceConfig;
 import org.jruby.RubyInstanceConfig.CompileMode;
 import org.jruby.embed.internal.LocalContextProvider;
@@ -121,17 +120,17 @@ public class SystemPropertyCatcher {
         }
         return Boolean.parseBoolean(s);
     }
-    
+
     /**
      * Sets classloader based on System property. This is only used from
      * JRubyEgnineFactory.
-     * 
+     *
      * @param container ScriptingContainer to be set classloader
      */
-    
+
     public static void setClassLoader(ScriptingContainer container) {
         String s = SafePropertyAccessor.getProperty(PropertyName.CLASSLOADER.toString());
-        
+
         // current should be removed later
         if (s == null || "container".equals(s) || "current".equals(s)) { // default
             container.setClassLoader(container.getClass().getClassLoader());
@@ -195,10 +194,8 @@ public class SystemPropertyCatcher {
             return jrubyhome;
         } else if ((jrubyhome = SafePropertyAccessor.getProperty("jruby.home")) != null) {
             return jrubyhome;
-        } else if ((jrubyhome = findFromJar(instance)) != null) {
-            return jrubyhome;
         } else {
-            return null;
+            return "uri:classloader://META-INF/jruby.home";
         }
     }
 

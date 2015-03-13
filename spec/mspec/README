@@ -34,7 +34,7 @@ specs in a manner compatible with multiple Ruby implementations.
 
 2. Bundler
 
-A Gemfile is provides. Use Bundler to install gem dependencies. To install
+A Gemfile is provided. Use Bundler to install gem dependencies. To install
 Bundler, run the following:
 
   $ gem install bundler

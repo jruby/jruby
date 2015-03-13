@@ -1,2 +1,0 @@
-fails:String#eql? when given a non-String returns false
-fails:String#eql? when given a non-String does not try to call #to_str on the given argument

@@ -1,4 +1,1 @@
-fails:String#each_byte passes each byte in self to the given block
 fails:String#each_byte keeps iterating from the old position (to new string end) when self changes
-fails:String#each_byte returns self
-fails:String#each_byte returns an enumerator when no block given

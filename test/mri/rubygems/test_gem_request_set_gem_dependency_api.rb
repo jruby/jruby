@@ -68,6 +68,22 @@ class TestGemRequestSetGemDependencyAPI < Gem::TestCase
     assert_equal [dep('a')], @set.dependencies
 
     assert_equal %w[a], @gda.requires['a']
+
+    expected = { 'a' => nil }
+
+    assert_equal expected, @gda.dependencies
+  end
+
+  def test_gem_duplicate
+    @gda.gem 'a'
+
+    _, err = capture_io do
+      @gda.gem 'a'
+    end
+
+    expected = "Gem dependencies file gem.deps.rb requires a more than once."
+
+    assert_match expected, err
   end
 
   def test_gem_git
@@ -76,6 +92,36 @@ class TestGemRequestSetGemDependencyAPI < Gem::TestCase
     assert_equal [dep('a')], @set.dependencies
 
     assert_equal %w[git/a master], @git_set.repositories['a']
+
+    expected = { 'a' => '!' }
+
+    assert_equal expected, @gda.dependencies
+  end
+
+  def test_gem_bitbucket
+    @gda.gem 'a', :bitbucket => 'example/repository'
+
+    assert_equal [dep('a')], @set.dependencies
+
+    assert_equal %w[https://example@bitbucket.org/example/repository.git master],
+                 @git_set.repositories['a']
+
+    expected = { 'a' => '!' }
+
+    assert_equal expected, @gda.dependencies
+  end
+
+  def test_gem_bitbucket_expand_path
+    @gda.gem 'a', :bitbucket => 'example'
+
+    assert_equal [dep('a')], @set.dependencies
+
+    assert_equal %w[https://example@bitbucket.org/example/example.git master],
+                 @git_set.repositories['a']
+
+    expected = { 'a' => '!' }
+
+    assert_equal expected, @gda.dependencies
   end
 
   def test_gem_git_branch
@@ -127,6 +173,23 @@ class TestGemRequestSetGemDependencyAPI < Gem::TestCase
 
     assert_equal %w[git://github.com/example/repository.git master],
                  @git_set.repositories['a']
+
+    expected = { 'a' => '!' }
+
+    assert_equal expected, @gda.dependencies
+  end
+
+  def test_gem_github_expand_path
+    @gda.gem 'a', :github => 'example'
+
+    assert_equal [dep('a')], @set.dependencies
+
+    assert_equal %w[git://github.com/example/example.git master],
+                 @git_set.repositories['a']
+
+    expected = { 'a' => '!' }
+
+    assert_equal expected, @gda.dependencies
   end
 
   def test_gem_group
@@ -141,6 +204,10 @@ class TestGemRequestSetGemDependencyAPI < Gem::TestCase
     @gda.gem 'a', :group => :test
 
     assert_empty @set.dependencies
+
+    expected = { 'a' => nil }
+
+    assert_equal expected, @gda.dependencies
   end
 
   def test_gem_groups
@@ -159,6 +226,10 @@ class TestGemRequestSetGemDependencyAPI < Gem::TestCase
     loaded = @vendor_set.load_spec(name, version, Gem::Platform::RUBY, nil)
 
     assert_equal "#{name}-#{version}", loaded.full_name
+
+    expected = { name => '!' }
+
+    assert_equal expected, @gda.dependencies
   end
 
   def test_gem_platforms
@@ -254,6 +325,18 @@ class TestGemRequestSetGemDependencyAPI < Gem::TestCase
     Gem.win_platform = win_platform
   end
 
+  def test_gem_platforms_platform
+    win_platform, Gem.win_platform = Gem.win_platform?, false
+
+    with_engine_version 'ruby', '2.0.0' do
+      @gda.gem 'a', :platforms => :jruby, :platform => :ruby
+
+      refute_empty @set.dependencies
+    end
+  ensure
+    Gem.win_platform = win_platform
+  end
+
   def test_gem_platforms_version
     with_engine_version 'ruby', '2.0.0' do
       @gda.gem 'a', :platforms => :ruby_18
@@ -270,7 +353,7 @@ class TestGemRequestSetGemDependencyAPI < Gem::TestCase
     assert_equal 'unknown platform :unknown', e.message
   end
 
-  def test_gem_require
+  def test_gem_requires
     @gda.gem 'a', :require => %w[b c]
     @gda.gem 'd', :require => 'e'
 
@@ -280,7 +363,7 @@ class TestGemRequestSetGemDependencyAPI < Gem::TestCase
     assert_equal %w[e],   @gda.requires['d']
   end
 
-  def test_gem_require_false
+  def test_gem_requires_false
     @gda.gem 'a', :require => false
 
     assert_equal [dep('a')], @set.dependencies
@@ -288,7 +371,7 @@ class TestGemRequestSetGemDependencyAPI < Gem::TestCase
     assert_empty @gda.requires
   end
 
-  def test_gem_require_without_group
+  def test_gem_requires_without_group
     @gda.without_groups << :test
 
     @gda.gem 'a', :group => :test
@@ -302,12 +385,20 @@ class TestGemRequestSetGemDependencyAPI < Gem::TestCase
     @gda.gem 'a', '~> 1.0'
 
     assert_equal [dep('a', '~> 1.0')], @set.dependencies
+
+    expected = { 'a' => ['~> 1.0'] }
+
+    assert_equal expected, @gda.dependencies
   end
 
   def test_gem_requirements
     @gda.gem 'b', '~> 1.0', '>= 1.0.2'
 
     assert_equal [dep('b', '~> 1.0', '>= 1.0.2')], @set.dependencies
+
+    expected = { 'b' => ['~> 1.0', '>= 1.0.2'] }
+
+    assert_equal expected, @gda.dependencies
   end
 
   def test_gem_requirements_options
@@ -369,9 +460,18 @@ class TestGemRequestSetGemDependencyAPI < Gem::TestCase
 
     @gda.gemspec
 
-    assert_equal [dep('b', '= 2'), dep('c', '=3')], @set.dependencies
+    assert_equal [dep('a', '= 1'), dep('b', '= 2'), dep('c', '=3')],
+                 @set.dependencies
 
     assert_equal %w[a], @gda.requires['a']
+
+    expected = {
+      'a' => '!',
+      'b' => req('= 2'),
+      'c' => req('= 3'),
+    }
+
+    assert_equal expected, @gda.dependencies
   end
 
   def test_gemspec_bad
@@ -398,7 +498,7 @@ class TestGemRequestSetGemDependencyAPI < Gem::TestCase
 
     @gda.gemspec :development_group => :other
 
-    assert_equal [dep('b', '= 2')], @set.dependencies
+    assert_equal [dep('a', '= 1'), dep('b', '= 2')], @set.dependencies
 
     assert_equal %w[a], @gda.requires['a']
   end
@@ -434,7 +534,7 @@ class TestGemRequestSetGemDependencyAPI < Gem::TestCase
 
     @gda.gemspec :name => 'b'
 
-    assert_equal [dep('c', '= 3')], @set.dependencies
+    assert_equal [dep('b', '= 2'), dep('c', '= 3')], @set.dependencies
   end
 
   def test_gemspec_named
@@ -446,7 +546,7 @@ class TestGemRequestSetGemDependencyAPI < Gem::TestCase
 
     @gda.gemspec
 
-    assert_equal [dep('b', '= 2')], @set.dependencies
+    assert_equal [dep('a', '= 1'), dep('b', '= 2')], @set.dependencies
   end
 
   def test_gemspec_none
@@ -468,7 +568,7 @@ class TestGemRequestSetGemDependencyAPI < Gem::TestCase
 
     @gda.gemspec :path => 'other'
 
-    assert_equal [dep('b', '= 2')], @set.dependencies
+    assert_equal [dep('a', '= 1'), dep('b', '= 2')], @set.dependencies
   end
 
   def test_git
@@ -483,6 +583,16 @@ class TestGemRequestSetGemDependencyAPI < Gem::TestCase
     assert_equal %w[git://example/repo.git master], @git_set.repositories['b']
   end
 
+  def test_git_source
+    @gda.git_source :example do |repo_name|
+      "git://example/#{repo_name}.git"
+    end
+
+    @gda.gem 'a', :example => 'repo'
+
+    assert_equal %w[git://example/repo.git master], @git_set.repositories['a']
+  end
+
   def test_group
     @gda.group :test do
       @gda.gem 'a'
@@ -492,7 +602,7 @@ class TestGemRequestSetGemDependencyAPI < Gem::TestCase
   end
 
   def test_load
-    Tempfile.open 'gem.deps.rb' do |io|
+    tf = Tempfile.open 'gem.deps.rb' do |io|
       io.write <<-GEM_DEPS
 gem 'a'
 
@@ -504,10 +614,12 @@ end
 
       gda = @GDA.new @set, io.path
 
-      gda.load
+      assert_equal gda, gda.load
 
       assert_equal [dep('a'), dep('b')], @set.dependencies
+      io
     end
+    tf.close! if tf.respond_to? :close!
   end
 
   def test_name_typo
@@ -536,18 +648,42 @@ end
   end
 
   def test_platform_mswin
+    util_set_arch 'i686-darwin8.10.1' do
+      @gda.platform :mswin do
+        @gda.gem 'a'
+      end
+
+      assert_empty @set.dependencies
+    end
+
+    util_set_arch 'x86-mswin32-60' do
+      @gda.platform :mswin do
+        @gda.gem 'a'
+      end
+
+      refute_empty @set.dependencies
+    end
+  end
+
+  def test_platform_multiple
     win_platform, Gem.win_platform = Gem.win_platform?, false
 
-    @gda.platform :mswin do
-      @gda.gem 'a'
+    gda = @GDA.new @set, nil
+
+    with_engine_version 'ruby', '1.8.7' do
+      gda.platform :mri_19, :mri_20 do
+        gda.gem 'a'
+      end
     end
 
     assert_empty @set.dependencies
 
-    Gem.win_platform = true
+    gda = @GDA.new @set, nil
 
-    @gda.platform :mswin do
-      @gda.gem 'a'
+    with_engine_version 'ruby', '2.0.0' do
+      gda.platform :mri_19, :mri_20 do
+        gda.gem 'a'
+      end
     end
 
     refute_empty @set.dependencies
@@ -568,30 +704,27 @@ end
   end
 
   def test_platforms
-    win_platform, Gem.win_platform = Gem.win_platform?, false
+    util_set_arch 'i686-darwin8.10.1' do
+      @gda.platforms :ruby do
+        @gda.gem 'a'
+      end
 
-    @gda.platforms :ruby do
-      @gda.gem 'a'
+      assert_equal [dep('a')], @set.dependencies
+
+      @gda.platforms :mswin do
+        @gda.gem 'b'
+      end
+
+      assert_equal [dep('a')], @set.dependencies
     end
 
-    assert_equal [dep('a')], @set.dependencies
+    util_set_arch 'x86-mswin32-60' do
+      @gda.platforms :mswin do
+        @gda.gem 'c'
+      end
 
-    @gda.platforms :mswin do
-      @gda.gem 'b'
+      assert_equal [dep('a'), dep('c')], @set.dependencies
     end
-
-    assert_equal [dep('a')], @set.dependencies
-
-    Gem.win_platform = true
-
-    @gda.platforms :mswin do
-      @gda.gem 'c'
-    end
-
-    assert_equal [dep('a'), dep('c')], @set.dependencies
-
-  ensure
-    Gem.win_platform = win_platform
   end
 
   def test_ruby
@@ -643,6 +776,12 @@ end
     end
 
     assert_equal "Your Ruby version is #{RUBY_VERSION}, but your gem.deps.rb requires 1.8.0", e.message
+  end
+
+  def test_ruby_mismatch_installing
+    @gda.installing = true
+
+    assert @gda.ruby '1.8.0'
   end
 
   def test_source

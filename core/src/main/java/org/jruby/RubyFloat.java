@@ -56,10 +56,10 @@ import static org.jruby.util.Numeric.nurat_rationalize_internal;
 import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
 import java.util.Locale;
+import java.lang.Math;
 
 import org.jcodings.specific.ASCIIEncoding;
 import org.jcodings.specific.USASCIIEncoding;
-import static org.jruby.RubyNumeric.dbl2num;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.runtime.ClassIndex;
@@ -140,6 +140,12 @@ public class RubyFloat extends RubyNumeric {
     public RubyFloat(Ruby runtime, double value) {
         super(runtime.getFloat());
         this.value = value;
+        this.flags |= FROZEN_F;
+    }
+
+    @Override
+    public RubyClass getSingletonClass() {
+        throw getRuntime().newTypeError("can't define singleton");
     }
 
     @Override
@@ -452,11 +458,18 @@ public class RubyFloat extends RubyNumeric {
     
     @JRubyMethod(name = "**", required = 1)
     public IRubyObject op_pow19(ThreadContext context, IRubyObject other) {
-        double d_other = ((RubyNumeric) other).getDoubleValue();
-        if (value < 0 && (d_other != Math.round(d_other))) {
-            return RubyComplex.newComplexRaw(getRuntime(), this).callMethod(context, "**", other);
-        } else {
-            return op_pow(context, other);
+        switch (other.getMetaClass().getClassIndex()) {
+            case FIXNUM:
+            case BIGNUM:
+            case FLOAT:
+                double d_other = ((RubyNumeric) other).getDoubleValue();
+                if (value < 0 && (d_other != Math.round(d_other))) {
+                    return RubyComplex.newComplexRaw(getRuntime(), this).callMethod(context, "**", other);
+                } else {
+                    return op_pow(context, other);
+                }
+            default:
+                return coerceBin(context, "**", other);
         }
     }
 
@@ -978,4 +991,14 @@ public class RubyFloat extends RubyNumeric {
     private static final ByteList NAN_BYTELIST = new ByteList("nan".getBytes());
     private static final ByteList NEGATIVE_INFINITY_BYTELIST = new ByteList("-inf".getBytes());
     private static final ByteList INFINITY_BYTELIST = new ByteList("inf".getBytes());
+
+    @JRubyMethod(name = "next_float")
+    public IRubyObject next_float() {
+        return RubyFloat.newFloat(getRuntime(), Math.nextAfter(value, Double.POSITIVE_INFINITY));
+    }
+
+    @JRubyMethod(name = "prev_float")
+    public IRubyObject prev_float() {
+        return RubyFloat.newFloat(getRuntime(), Math.nextAfter(value, Double.NEGATIVE_INFINITY));
+    }
 }

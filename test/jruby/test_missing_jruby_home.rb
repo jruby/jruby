@@ -12,7 +12,7 @@ class TestMissingJRubyHome < Test::Unit::TestCase
         runtime.eval_scriptlet('require "rbconfig"')
       end
     ensure
-      java.lang.System.set_property('jruby.home', old)
+      java.lang.System.set_property('jruby.home', old) if old
     end
   end
 end

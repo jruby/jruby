@@ -44,7 +44,6 @@ import org.jruby.RubyModule;
 import org.jruby.RubyString;
 import org.jruby.RubyThread;
 import org.jruby.ast.executable.RuntimeCache;
-import org.jruby.exceptions.JumpException.ReturnJump;
 import org.jruby.ext.fiber.ThreadFiber;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.lexer.yacc.ISourcePosition;
@@ -398,6 +397,11 @@ public final class ThreadContext {
         }
         return frame;
     }
+
+    public void pushEvalSimpleFrame(IRubyObject executeObject) {
+        Frame frame = getCurrentFrame();
+        pushCallFrame(frame.getKlazz(), frame.getName(), executeObject, Block.NULL_BLOCK);
+    }
     
     private void pushCallFrame(RubyModule clazz, String name, 
                                IRubyObject self, Block block) {
@@ -529,6 +533,10 @@ public final class ThreadContext {
         context.backtraceIndex--;
     }
 
+    public boolean hasAnyScopes() {
+        return scopeIndex > -1;
+    }
+
     /**
      * Check if a static scope is present on the call stack.
      * This is the IR equivalent of isJumpTargetAlive
@@ -582,7 +590,7 @@ public final class ThreadContext {
     public void setFileAndLine(ISourcePosition position) {
         BacktraceElement b = backtrace[backtraceIndex];
         b.filename = position.getFile();
-        b.line = position.getStartLine();
+        b.line = position.getLine();
     }
     
     public Visibility getCurrentVisibility() {
@@ -805,10 +813,6 @@ public final class ThreadContext {
         popFrame();
     }
 
-    public void preMethodFrameAndClass(RubyModule implClass, String name, IRubyObject self, Block block, StaticScope staticScope) {
-        pushCallFrame(implClass, name, self, block);
-    }
-
     public void preMethodFrameAndScope(RubyModule clazz, String name, IRubyObject self, Block block,
             StaticScope staticScope) {
         pushCallFrame(clazz, name, self, block);
@@ -821,7 +825,7 @@ public final class ThreadContext {
         pushScope(staticScope.getDummyScope());
     }
 
-    public void preMethodNoFrameAndDummyScope(RubyModule clazz, StaticScope staticScope) {
+    public void preMethodNoFrameAndDummyScope(StaticScope staticScope) {
         pushScope(staticScope.getDummyScope());
     }
     
@@ -838,7 +842,7 @@ public final class ThreadContext {
         popFrame();
     }
     
-    public void preMethodScopeOnly(RubyModule clazz, StaticScope staticScope) {
+    public void preMethodScopeOnly(StaticScope staticScope) {
         pushScope(DynamicScope.newDynamicScope(staticScope));
     }
     
@@ -846,8 +850,8 @@ public final class ThreadContext {
         popScope();
     }
     
-    public void preMethodBacktraceAndScope(String name, RubyModule clazz, StaticScope staticScope) {
-        preMethodScopeOnly(clazz, staticScope);
+    public void preMethodBacktraceAndScope(String name, StaticScope staticScope) {
+        preMethodScopeOnly(staticScope);
     }
     
     public void postMethodBacktraceAndScope() {
@@ -857,7 +861,7 @@ public final class ThreadContext {
     public void preMethodBacktraceOnly(String name) {
     }
 
-    public void preMethodBacktraceDummyScope(RubyModule clazz, String name, StaticScope staticScope) {
+    public void preMethodBacktraceDummyScope(String name, StaticScope staticScope) {
         pushScope(staticScope.getDummyScope());
     }
     
@@ -877,11 +881,7 @@ public final class ThreadContext {
         getCurrentScope().getStaticScope().setModule(objectClass);
     }
     
-    public void preNodeEval(RubyModule rubyClass, IRubyObject self, String name) {
-        pushEvalFrame(self);
-    }
-
-    public void preNodeEval(RubyModule rubyClass, IRubyObject self) {
+    public void preNodeEval(IRubyObject self) {
         pushEvalFrame(self);
     }
     
@@ -890,14 +890,14 @@ public final class ThreadContext {
     }
     
     // XXX: Again, screwy evaling under previous frame's scope
-    public void preExecuteUnder(RubyModule executeUnderClass, Block block) {
+    public void preExecuteUnder(IRubyObject executeUnderObj, RubyModule executeUnderClass, Block block) {
         Frame frame = getCurrentFrame();
         
         DynamicScope scope = getCurrentScope();
         StaticScope sScope = runtime.getStaticScopeFactory().newBlockScope(scope.getStaticScope());
         sScope.setModule(executeUnderClass);
         pushScope(DynamicScope.newDynamicScope(sScope, scope));
-        pushCallFrame(frame.getKlazz(), frame.getName(), frame.getSelf(), block);
+        pushCallFrame(frame.getKlazz(), frame.getName(), executeUnderObj, block);
         getCurrentFrame().setVisibility(getPreviousFrame().getVisibility());
     }
     
@@ -949,8 +949,7 @@ public final class ThreadContext {
     }
     
     public Frame preEvalWithBinding(Binding binding) {
-        Frame lastFrame = pushFrameForEval(binding);
-        return lastFrame;
+        return pushFrameForEval(binding);
     }
     
     public void postEvalWithBinding(Binding binding, Frame lastFrame) {
@@ -1005,7 +1004,8 @@ public final class ThreadContext {
      */
     public Binding currentBinding() {
         Frame frame = getCurrentFrame().capture();
-        return new Binding(frame, getCurrentScope(), backtrace[backtraceIndex].clone());
+        BacktraceElement elt = backtrace[backtraceIndex];
+        return new Binding(frame, getCurrentScope(), elt.getMethod(), elt.getFilename(), elt.getLine());
     }
 
     /**
@@ -1015,7 +1015,8 @@ public final class ThreadContext {
      */
     public Binding currentBinding(IRubyObject self) {
         Frame frame = getCurrentFrame().capture();
-        return new Binding(self, frame, frame.getVisibility(), getCurrentScope(), backtrace[backtraceIndex].clone());
+        BacktraceElement elt = backtrace[backtraceIndex];
+        return new Binding(self, frame, frame.getVisibility(), getCurrentScope(), elt.getMethod(), elt.getFilename(), elt.getLine());
     }
 
     /**
@@ -1027,7 +1028,8 @@ public final class ThreadContext {
      */
     public Binding currentBinding(IRubyObject self, Visibility visibility) {
         Frame frame = getCurrentFrame().capture();
-        return new Binding(self, frame, visibility, getCurrentScope(), backtrace[backtraceIndex].clone());
+        BacktraceElement elt = backtrace[backtraceIndex];
+        return new Binding(self, frame, visibility, getCurrentScope(), elt.getMethod(), elt.getFilename(), elt.getLine());
     }
 
     /**
@@ -1039,7 +1041,8 @@ public final class ThreadContext {
      */
     public Binding currentBinding(IRubyObject self, DynamicScope scope) {
         Frame frame = getCurrentFrame().capture();
-        return new Binding(self, frame, frame.getVisibility(), scope, backtrace[backtraceIndex].clone());
+        BacktraceElement elt = backtrace[backtraceIndex];
+        return new Binding(self, frame, frame.getVisibility(), scope, elt.getMethod(), elt.getFilename(), elt.getLine());
     }
 
     /**
@@ -1054,7 +1057,8 @@ public final class ThreadContext {
      */
     public Binding currentBinding(IRubyObject self, Visibility visibility, DynamicScope scope) {
         Frame frame = getCurrentFrame().capture();
-        return new Binding(self, frame, visibility, scope, backtrace[backtraceIndex].clone());
+        BacktraceElement elt = backtrace[backtraceIndex];
+        return new Binding(self, frame, visibility, scope, elt.getMethod(), elt.getFilename(), elt.getLine());
     }
 
     /**

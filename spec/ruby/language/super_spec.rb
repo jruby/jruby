@@ -39,6 +39,11 @@ describe "The super keyword" do
     Super::MS2::C.new.foo([]).should == ["ModB#foo","C#baz","A#baz"]
   end
 
+  it "can resolve to different methods in an included module method" do
+    Super::MultiSuperTargets::A.new.foo.should == :BaseA
+    Super::MultiSuperTargets::B.new.foo.should == :BaseB
+  end
+
   it "searches class methods including modules" do
     Super::MS3::A.new.foo([]).should == ["A#foo"]
     Super::MS3::A.foo([]).should == ["ModA#foo"]

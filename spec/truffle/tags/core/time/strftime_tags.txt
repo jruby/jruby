@@ -1,43 +1,6 @@
-fails:Time#strftime formats time according to the directives in the given format string
-fails:Time#strftime supports week of year format with %U and %W
-fails:Time#strftime supports mm/dd/yy formatting with %D
-fails:Time#strftime supports HH:MM:SS formatting with %T
-fails:Time#strftime supports 12-hr formatting with %l
-fails:Time#strftime supports AM/PM formatting with %p
-fails:Time#strftime returns the abbreviated weekday with %a
-fails:Time#strftime returns the full weekday with %A
-fails:Time#strftime returns the abbreviated month with %b
-fails:Time#strftime returns the full month with %B
-fails:Time#strftime returns the day of the month with %d
-fails:Time#strftime returns the 24-based hour with %H
-fails:Time#strftime returns the 12-based hour with %I
-fails:Time#strftime returns the Julian date with %j
-fails:Time#strftime returns the month with %m
-fails:Time#strftime returns the minute with %M
-fails:Time#strftime returns the second with %S
-fails:Time#strftime returns the enumerated day of the week with %w
-fails:Time#strftime returns the date alone with %x
-fails:Time#strftime returns the time alone with %X
-fails:Time#strftime returns the year wihout a century with %y
-fails:Time#strftime returns the year with %Y
-fails:Time#strftime returns the timezone with %Z
-fails:Time#strftime supports am/pm formatting with %P
 fails:Time#strftime returns the fractional seconds digits, default is 9 digits (nanosecond) with %N
-fails:Time#strftime supports GNU modificators
-fails:Time#strftime supports the '-' modifier to drop leading zeros
-fails:Time#strftime supports the '-' modifier for padded format directives
-fails:Time#strftime passes the format string's encoding to the result string
-fails:Time#strftime with %L formats the milliseconds of a second
 fails:Time#strftime with %N formats the nanoseconds of of the second with %N
-fails:Time#strftime with %N formats the milliseconds of of the second with %3N
 fails:Time#strftime with %N formats the microseconds of of the second with %6N
 fails:Time#strftime with %N formats the nanoseconds of of the second with %9N
 fails:Time#strftime with %N formats the picoseconds of of the second with %12N
-fails:Time#strftime with %z formats a UTC time offset as '+0000'
-fails:Time#strftime with %z formats a local time with positive UTC offset as '+HHMM'
-fails:Time#strftime with %z formats a local time with negative UTC offset as '-HHMM'
-fails:Time#strftime with %z formats a time with fixed positive offset as '+HHMM'
-fails:Time#strftime with %z formats a time with fixed negative offset as '-HHMM'
-fails:Time#strftime with %z formats a time with fixed offset as '+/-HH:MM' with ':' specifier
-fails:Time#strftime with %z formats a time with fixed offset as '+/-HH:MM:SS' with '::' specifier
 fails:Time#strftime with %z rounds fixed offset to the nearest second

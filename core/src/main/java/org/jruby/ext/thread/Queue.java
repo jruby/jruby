@@ -65,16 +65,19 @@ public class Queue extends RubyObject {
         }
     };
 
-    final RubyThread.Task<IRubyObject, IRubyObject> putTask = new RubyThread.Task<IRubyObject, IRubyObject>() {
+    final RubyThread.Task<IRubyObject[], IRubyObject> putTask = new RubyThread.Task<IRubyObject[], IRubyObject>() {
         @Override
-        public IRubyObject run(ThreadContext context, IRubyObject data) throws InterruptedException {
+        public IRubyObject run(ThreadContext context, IRubyObject[] args) throws InterruptedException {
             final BlockingQueue<IRubyObject> queue = getQueueSafe();
-            queue.put(data);
+            if(args.length == 2 && args[1].isTrue() && queue.remainingCapacity() == 0) {
+                throw context.runtime.newThreadError("queue full");
+            }
+            queue.put(args[0]);
             return context.nil;
         }
 
         @Override
-        public void wakeup(RubyThread thread, IRubyObject data) {
+        public void wakeup(RubyThread thread, IRubyObject[] data) {
             thread.getNativeThread().interrupt();
         }
     };
@@ -90,6 +93,7 @@ public class Queue extends RubyObject {
                 return new Queue(runtime, klass);
             }
         });
+        cQueue.undefineMethod("initialize_copy");
         cQueue.setReifiedClass(Queue.class);
         cQueue.defineAnnotatedMethods(Queue.class);
     }
@@ -165,15 +169,20 @@ public class Queue extends RubyObject {
         return pop(context, !arg0.isTrue());
     }
 
-    @JRubyMethod(name = {"push", "<<", "enq"})
-    public IRubyObject push(ThreadContext context, final IRubyObject value) {
+    @JRubyMethod(name = {"push", "<<", "enq"}, required = 1, optional = 1)
+    public IRubyObject push(ThreadContext context, final IRubyObject[] args) {
         checkShutdown();
         try {
-            context.getThread().executeTask(context, value, putTask);
+            context.getThread().executeTask(context, args, putTask);
             return this;
         } catch (InterruptedException ie) {
             throw context.runtime.newThreadError("interrupted in " + getMetaClass().getName() + "#push");
         }
+    }
+
+    @JRubyMethod
+    public IRubyObject marshal_dump(ThreadContext context) {
+        return ThreadLibrary.undumpable(context, this);
     }
 
     private IRubyObject pop(ThreadContext context, boolean should_block) {

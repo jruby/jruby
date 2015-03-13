@@ -43,7 +43,7 @@ public class ReturnNode extends Node implements NonLocalControlFlowNode {
     private final Node valueNode;
 
     public ReturnNode(ISourcePosition position, Node valueNode) {
-        super(position);
+        super(position, valueNode.containsVariableAssignment());
         
         assert valueNode != null : "valueNode is not null";
         

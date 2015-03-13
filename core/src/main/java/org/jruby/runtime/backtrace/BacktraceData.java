@@ -71,63 +71,19 @@ public class BacktraceData implements Serializable {
                 // Don't process .java files
                 if (!filename.endsWith(".java")) {
 
-                    boolean compiled = false;
-                    int index = -1;
+                    String decodedName = JavaNameMangler.decodeMethodForBacktrace(methodName);
 
-                    // Check for compiled name markers
-                    // FIXME: Formalize jitted method structure so this isn't quite as hacky
-                    if (className.startsWith(JITCompiler.RUBY_JIT_PREFIX)) {
+                    if (decodedName != null) {
+                        // construct Ruby trace element
+                        RubyStackTraceElement rubyElement = new RubyStackTraceElement(className, decodedName, filename, line, false);
 
-                        // JIT-compiled code
-                        compiled = true;
-
-                        // pull out and demangle the method name
-                        String tmpClassName = className;
-                        int start = JITCompiler.RUBY_JIT_PREFIX.length() + 1;
-                        int hash = tmpClassName.indexOf(JITCompiler.CLASS_METHOD_DELIMITER, start);
-                        int end = tmpClassName.lastIndexOf("_");
-                        if( hash != -1 ) { // TODO in case the class file was loaded by jit codeCache. Is this right
-                            className = tmpClassName.substring(start, hash);
+                        // add duplicate if masking native and previous frame was native (Kernel#caller)
+                        if (maskNative && dupFrame) {
+                            dupFrame = false;
+                            trace.add(new RubyStackTraceElement(className, dupFrameName, filename, line, false));
                         }
-                        methodName = tmpClassName.substring(hash + JITCompiler.CLASS_METHOD_DELIMITER.length(), end);
-
-                    } else if ((index = methodName.indexOf("$RUBY$")) >= 0) {
-
-                        // AOT-compiled code
-                        compiled = true;
-
-                        // pull out and demangle the method name
-                        index += "$RUBY$".length();
-                        if (methodName.indexOf("SYNTHETIC", index) == index) {
-                            methodName = methodName.substring(index + "SYNTHETIC".length());
-                        } else {
-                            methodName = methodName.substring(index);
-                        }
-
-                    }
-
-                    // demangle any JVM-prohibited names
-                    methodName = JavaNameMangler.demangleMethodName(methodName);
-
-                    // root body gets named (root)
-                    if (methodName.equals("__file__")) methodName = "(root)";
-
-                    // construct Ruby trace element
-                    RubyStackTraceElement rubyElement = new RubyStackTraceElement(className, methodName, filename, line, false);
-
-                    // add duplicate if masking native and previous frame was native (Kernel#caller)
-                    if (maskNative && dupFrame) {
-                        dupFrame = false;
-                        trace.add(new RubyStackTraceElement(className, dupFrameName, filename, line, false));
-                    }
-                    trace.add(rubyElement);
-
-                    if (compiled) {
-                        // if it's a synthetic call, gobble up parent calls
-                        // TODO: need to formalize this better
-                        while (element.getMethodName().contains("$RUBY$SYNTHETIC") && ++i < javaTrace.length) {
-                            element = javaTrace[i];
-                        }
+                        trace.add(rubyElement);
+                        continue;
                     }
                 }
             }
@@ -169,8 +125,20 @@ public class BacktraceData implements Serializable {
                 // pop interpreter frame
                 BacktraceElement rubyFrame = rubyTrace[rubyFrameIndex--];
 
+                FrameType frameType = FrameType.INTERPRETED_FRAMES.get(methodName);
+
                 // construct Ruby trace element
-                RubyStackTraceElement rubyElement = new RubyStackTraceElement("RUBY", rubyFrame.method, rubyFrame.filename, rubyFrame.line + 1, false);
+                String newName = rubyFrame.method;
+                switch (frameType) {
+                    case METHOD: newName = rubyFrame.method; break;
+                    case BLOCK: newName = "block in " + rubyFrame.method; break;
+                    case CLASS: newName = "<class:" + rubyFrame.method + ">"; break;
+                    case MODULE: newName = "<module:" + rubyFrame.method + ">"; break;
+                    case METACLASS: newName = "singleton class"; break;
+                    case ROOT: newName = "<top>"; break;
+                    case EVAL: newName = "<eval>"; break;
+                }
+                RubyStackTraceElement rubyElement = new RubyStackTraceElement("RUBY", newName, rubyFrame.filename, rubyFrame.line + 1, false);
 
                 // dup if masking native and previous frame was native
                 if (maskNative && dupFrame) {

@@ -1,6 +1,0 @@
-fails:Enumerable#minmax min should return the minimum element
-fails:Enumerable#minmax returns [nil, nil] for an empty Enumerable
-fails:Enumerable#minmax raises an ArgumentError when elements are incomparable
-fails:Enumerable#minmax raises a NoMethodError for elements without #<=>
-fails:Enumerable#minmax returns the minimum when using a block rule
-fails:Enumerable#minmax gathers whole arrays as elements when each yields multiple

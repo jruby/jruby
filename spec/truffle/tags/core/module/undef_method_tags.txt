@@ -1,15 +1,5 @@
 fails:Module#undef_method is a private method
 fails:Module#undef_method requires multiple arguments
 fails:Module#undef_method does not undef any instance methods when argument not given
-fails:Module#undef_method returns self
-fails:Module#undef_method raises a NameError when passed a missing name
-fails:Module#undef_method on frozen instance raises a RuntimeError when passed a name
 fails:Module#undef_method on frozen instance raises a RuntimeError when passed a missing name
-fails:Module#undef_method on frozen instance raises a TypeError when passed a not name
 fails:Module#undef_method on frozen instance does not raise exceptions when no arguments given
-fails:Module#undef_method with symbol removes a method defined in a class
-fails:Module#undef_method with symbol removes a method defined in a super class
-fails:Module#undef_method with symbol does not remove a method defined in a super class when removed from a subclass
-fails:Module#undef_method with string removes a method defined in a class
-fails:Module#undef_method with string removes a method defined in a super class
-fails:Module#undef_method with string does not remove a method defined in a super class when removed from a subclass

@@ -41,6 +41,18 @@ static VALUE rational_spec_rb_rational_new2(VALUE self, VALUE num, VALUE den) {
 }
 #endif
 
+#ifdef HAVE_RB_RATIONAL_NUM
+static VALUE rational_spec_rb_rational_num(VALUE self, VALUE rational) {
+  return rb_rational_num(rational);
+}
+#endif
+
+#ifdef HAVE_RB_RATIONAL_DEN
+static VALUE rational_spec_rb_rational_den(VALUE self, VALUE rational) {
+  return rb_rational_den(rational);
+}
+#endif
+
 void Init_rational_spec() {
   VALUE cls;
   cls = rb_define_class("CApiRationalSpecs", rb_cObject);
@@ -67,6 +79,14 @@ void Init_rational_spec() {
 
 #ifdef HAVE_RB_RATIONAL_NEW2
   rb_define_method(cls, "rb_rational_new2", rational_spec_rb_rational_new2, 2);
+#endif
+
+#ifdef HAVE_RB_RATIONAL_NUM
+  rb_define_method(cls, "rb_rational_num", rational_spec_rb_rational_num, 1);
+#endif
+
+#ifdef HAVE_RB_RATIONAL_DEN
+  rb_define_method(cls, "rb_rational_den", rational_spec_rb_rational_den, 1);
 #endif
 }
 

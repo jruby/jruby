@@ -1,6 +1,0 @@
-fails:Enumerator.new creates a new custom enumerator with the given object, iterator and arguments
-fails:Enumerator.new creates a new custom enumerator that responds to #each
-fails:Enumerator.new creates a new custom enumerator that runs correctly
-fails:Enumerator.new aliases the second argument to :each
-fails:Enumerator.new doesn't check for the presence of the iterator method
-fails:Enumerator.new uses the latest define iterator method

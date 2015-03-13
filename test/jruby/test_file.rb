@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 require 'test/unit'
+require 'test/jruby/test_helper'
 require 'rbconfig'
 require 'fileutils'
 require 'tempfile'
@@ -7,6 +8,7 @@ require 'pathname'
 require 'jruby'
 
 class TestFile < Test::Unit::TestCase
+  include TestHelper
   WINDOWS = RbConfig::CONFIG['host_os'] =~ /Windows|mswin/
 
   def setup
@@ -253,15 +255,15 @@ class TestFile < Test::Unit::TestCase
     def test_expand_path_looks_like_url
       jruby_specific_test
       assert_equal "classpath:/META-INF/jruby.home", File.expand_path("classpath:/META-INF/jruby.home")
-      assert_equal "uri:bundle://12.0:1/META-INF/jruby.home", File.expand_path("uri:bundle://12.0:1/META-INF/jruby.home")
+      assert_equal "uri:file://META-INF/jruby.home", File.expand_path("uri:file://META-INF/jruby.home")
       assert_equal "http://example.com/a.jar", File.expand_path("http://example.com/a.jar")
       assert_equal "http://example.com/", File.expand_path("..", "http://example.com/a.jar")
       assert_equal "classpath:/foo/bar/baz", File.expand_path("baz", "classpath:/foo/bar")
       assert_equal "classpath:/foo/bar", File.expand_path("classpath:/foo/bar", "classpath:/baz/quux")
       assert_equal "classpath:/foo", File.expand_path("..", "classpath:/foo/bar")
-      assert_equal "uri:bundle://12.0:1/foo/bar/baz", File.expand_path("baz", "uri:bundle://12.0:1/foo/bar")
-      assert_equal "uri:bundle://12.0:1/foo/bar", File.expand_path("uri:bundle://12.0:1/foo/bar", "uri:bundle://12.0:1/baz/quux")
-      assert_equal "uri:bundle://12.0:1/foo", File.expand_path("..", "uri:bundle://12.0:1/foo/bar")
+      assert_equal "uri:jar://foo/bar/baz", File.expand_path("baz", "uri:jar://foo/bar")
+      assert_equal "uri:file://foo/bar", File.expand_path("uri:file://foo/bar", "uri:file://baz/quux")
+      assert_equal "uri:jar://foo", File.expand_path("..", "uri:jar://foo/bar")
     end
 
     def test_mkdir_with_non_file_uri_raises_error
@@ -461,13 +463,55 @@ class TestFile < Test::Unit::TestCase
     end
   end
 
+  def test_directory_query # - directory?
+    begin
+      Dir.mkdir("dir_tmp")
+      assert(File.directory?("dir_tmp"))
+      assert(! File.directory?("test/jruby/test_file.rb"))
+      assert(! File.directory?("dir_not_tmp"))
+      result = jruby("-e 'print File.directory?(\"dir_not_tmp\");print File.directory?(\"dir_tmp\");print File.directory?(\"test/jruby/test_file.rb\")'", 'jruby.native.enabled' => 'false')
+      assert(result == 'falsetruefalse')
+    ensure
+      Dir.rmdir("dir_tmp")
+    end
+  end
+
   def test_file_query # - file?
     assert(File.file?('test/jruby/test_file.rb'))
     assert(! File.file?('test'))
+    assert(! File.file?('test_not'))
+    result = jruby("-e 'print File.file?(\"test_not\");print File.file?(\"test\");print File.file?(\"test/jruby/test_file.rb\")'", 'jruby.native.enabled' => 'false' )
+    assert(result == 'falsefalsetrue')
   end
+
+  def test_readable_query # - readable?
+    assert(File.readable?(__FILE__))
+    assert(File.readable?(File.dirname(__FILE__)))
+    assert(! File.readable?('test_not'))
+    result = jruby("-e 'print File.readable?(\"test_not\");print File.readable?(\"#{File.dirname(__FILE__)}\");print File.readable?(\"#{__FILE__}\")'", 'jruby.native.enabled' => 'false' )
+    assert(result == 'falsetruetrue')
+  end
+
+  [ :executable?, :executable_real? ].each do |method|
+    define_method :"test_#{method}_query" do # - executable?/executable_real?
+      if WINDOWS
+        exec_file = 'bin/jruby.bat'
+      else
+        exec_file = 'bin/jruby.sh'
+      end
+      assert(File.send(method, exec_file))
+      assert(!File.send(method, 'test/test_file.rb'))
+      assert(File.send(method, 'test'))
+      assert(!File.send(method, 'test_not'))
+      result = jruby("-e 'print File.#{method}(\"#{exec_file}\");print File.#{method}(\"test_not\");print File.#{method}(\"test\");print File.#{method}(\"test/test_file.rb\")'", 'jruby.native.enabled' => 'false' )
+      assert(result == 'truefalsetruefalse')
+    end
+  end 
 
   def test_file_exist_query
     assert(File.exist?('test'))
+    assert(! File.exist?('test_not'))
+    assert(jruby("-e 'print File.exists?(\"test_not\");print File.exists?(\"test\")'", 'jruby.native.enabled' => 'false' ) == 'falsetrue')
   end
 
   def test_file_exist_in_jar_file
@@ -500,7 +544,7 @@ class TestFile < Test::Unit::TestCase
         assert $LOADED_FEATURES.pop =~ /foo\.rb$/
       end
 
-      with_load_path(File.expand_path("test/jruby/dir with spaces/test_jar.jar")) do
+      with_load_path(File.expand_path("test/jruby/dir with spaces/test_jar.jar!/")) do
         assert require('abc/foo')
         assert $LOADED_FEATURES.pop =~ /foo\.rb$/
       end
@@ -608,21 +652,22 @@ class TestFile < Test::Unit::TestCase
   end
 
   # JRUBY-2524
-  def test_file_time_uri_prefixes
-    assert_raise(Errno::ENOENT) do
-      File.atime("file:")
-    end
-    assert_raise(Errno::ENOENT) do
-      File.atime("file:!")
-    end
+  # GH #2048 Stat of an empty resource does not generate proper Exception
+  # def test_file_time_uri_prefixes
+  #   assert_raise(Errno::ENOENT) do
+  #     File.atime("file:")
+  #   end
+  #   assert_raise(Errno::ENOENT) do
+  #     File.atime("file:!")
+  #   end
 
-    assert_raise(Errno::ENOENT) do
-      File.ctime("file:")
-    end
-    assert_raise(Errno::ENOENT) do
-      File.ctime("file:!")
-    end
-  end
+  #   assert_raise(Errno::ENOENT) do
+  #     File.ctime("file:")
+  #   end
+  #   assert_raise(Errno::ENOENT) do
+  #     File.ctime("file:!")
+  #   end
+  # end
 
   def test_file_open_utime
     filename = "__test__file"
@@ -908,12 +953,7 @@ class TestFile < Test::Unit::TestCase
       File.open('pom.xml') { |file|
         # chown
         assert_equal(0, file.chown(-1, -1))
-	assert_equal(0, file.chown(nil, nil))
-        # lchown
-	# NOTE: hmm, it seems that MRI
-	# doesn't have File#lchown method at all!
-        assert_equal(0, file.lchown(-1, -1))
-        assert_equal(0, file.lchown(nil, nil))
+        assert_equal(0, file.chown(nil, nil))
       }
     end
   end
@@ -1145,4 +1185,9 @@ class TestFile < Test::Unit::TestCase
     io.close
     File.unlink(filename)
   end
+
+  # jruby/jruby#2331
+  def test_classpath_realpath
+    assert_equal("classpath:/java/lang/String.class", File.realpath("classpath:/java/lang/String.class"))
+  end if RUBY_VERSION >= '1.9'
 end

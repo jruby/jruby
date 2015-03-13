@@ -1,5 +1,5 @@
 class ImportedGem
-  attr_reader :name, :default_gem, :pom_version_key, :ruby_version, :only_spec
+  attr_reader :name, :default_gem, :pom_version_key, :ruby_version
 
   def initialize( name, pom_version_key, default_gem, ruby_version = nil )
     @name = name
@@ -17,22 +17,19 @@ class ImportedGem
   end
 end
 
-KRYPT_VERSION = '0.0.2'
-
 # the versions are declared in ../pom.xml
 default_gems =
   [
-   ImportedGem.new( 'jruby-openssl', '0.9.6.dev-SNAPSHOT', true ),
-   ImportedGem.new( 'jruby-readline', '1.0.dev-SNAPSHOT', false ),
-   ImportedGem.new( 'jruby-ripper', '2.1.0.dev-SNAPSHOT', false, '2.1' ),
+   ImportedGem.new( 'jruby-openssl', '0.9.6', true ),
+   ImportedGem.new( 'jruby-readline', '1.0', false ),
    ImportedGem.new( 'rake', 'rake.version', true ),
-   ImportedGem.new( 'rdoc', 'rdoc.version', true, '2.1' ),
-   ImportedGem.new( 'json', 'json.version', true, '2.1' ),
-   ImportedGem.new( 'krypt', KRYPT_VERSION, true ),
-   ImportedGem.new( 'krypt-core', KRYPT_VERSION, true ),
-   ImportedGem.new( 'krypt-provider-jdk', KRYPT_VERSION, true ),
-   ImportedGem.new( 'ffi', '1.9.3', true ),
-   ImportedGem.new( 'jar-dependencies', '0.0.9', true )
+   ImportedGem.new( 'rdoc', 'rdoc.version', true ),
+   ImportedGem.new( 'json', 'json.version', true ),
+   ImportedGem.new( 'jar-dependencies', '0.1.8', true ),
+   ImportedGem.new( 'minitest', 'minitest.version', true ),
+   ImportedGem.new( 'test-unit', 'test-unit.version', true ),
+   ImportedGem.new( 'power_assert', 'power_assert.version', true ),
+   ImportedGem.new( 'psych', '2.0.9-SNAPSHOT', true )
   ]
 
 project 'JRuby Lib Setup' do
@@ -64,30 +61,43 @@ project 'JRuby Lib Setup' do
   properties( 'tesla.dump.pom' => 'pom.xml',
               'tesla.dump.readonly' => true,
               'tesla.version' => '0.1.1',
-              'jruby.plugins.version' => '1.0.5',
-              'jruby.home' => '${basedir}/..' )
+              'jruby.plugins.version' => '1.0.5' )
+
+  unless version =~ /-SNAPSHOT/
+    properties 'jruby.home' => '${basedir}/..'
+  end
 
   # just depends on jruby-core so we are sure the jruby.jar is in place
-  jar "org.jruby:jruby-core:#{version}"
+  jar "org.jruby:jruby-core:#{version}", :scope => 'provided'
 
   repository( :url => 'http://rubygems-proxy.torquebox.org/releases',
               :id => 'rubygems-releases' )
 
   plugin( :clean,
           :filesets => [ { :directory => '${basedir}/ruby/gems/shared/specifications/default',
-                           :includes => [ '*' ] } ] )
+                           :includes => [ '*' ] },
+                         { :directory => '${basedir}/ruby/stdlib',
+                           :includes => [ '**/bouncycastle/**/*.jar' ] } ] )
 
   # tell maven to download the respective gem artifacts
   default_gems.each do |g|
-    gem g.name, g.version
+    dependency 'rubygems', g.name, g.version, :type => 'gem' do
+      exclusion 'rubygems:jar-dependencies'
+    end
   end
 
   # this is not an artifact for maven central
   plugin :deploy, :skip => true
 
+  plugin :invoker, :skipInstallation => true
+
   gem 'ruby-maven', '3.1.1.0.8', :scope => :provided
 
-  execute :install_gems, :package do |ctx|
+  plugin :dependency, :useRepositoryLayout => true, :outputDirectory => 'ruby/stdlib', :excludeGroupIds => 'rubygems', :includeScope => :runtime do
+    execute_goal 'copy-dependencies', :phase => 'package'
+  end
+
+  execute :install_gems, :'package' do |ctx|
     require 'fileutils'
 
     puts "using jruby #{JRUBY_VERSION}"
@@ -125,6 +135,7 @@ project 'JRuby Lib Setup' do
     require 'rubygems/package'
 
     puts 'install gems unless already installed'
+    ENV_JAVA['jars.skip'] = 'true'
     ctx.project.artifacts.select do |a|
       a.group_id == 'rubygems' || a.group_id == 'org.jruby.gems'
     end.each do |a|
@@ -149,12 +160,34 @@ project 'JRuby Lib Setup' do
         puts
         puts "--- gem #{g.name}-#{version} ---"
 
-        # copy the gem content to shared or to respective
-        dir = g.ruby_version || 'shared'
-        puts "copy gem content to ruby/#{dir}"
+        # copy the gem content to stdlib
+        stdlib_dir = File.join( ruby_dir, 'stdlib' )
+        puts "copy gem content to #{stdlib_dir}"
         # assume default require_path
-        Dir[ File.join( gems, "#{g.name}-#{version}*", 'lib', '*' ) ].each do |f|
-          FileUtils.cp_r( f, File.join( ruby_dir, dir ) )
+        require_base = File.join( gems, "#{g.name}-#{version}*", 'lib' )
+        require_files = File.join( require_base, '*' )
+
+        # copy in new ones and mark writable for future updates (e.g. minitest)
+        stdlib_locs = []
+        Dir[ require_files ].each do |f|
+          puts "copying: #{f} to #{stdlib_dir}"
+          FileUtils.cp_r( f, stdlib_dir )
+
+          stdlib_loc = f.sub( File.dirname(f), stdlib_dir )
+          if File.directory?(stdlib_loc)
+            stdlib_locs += Dir[stdlib_loc + "/*"].to_a
+          else
+            stdlib_locs << stdlib_loc
+          end
+        end
+
+        # fix permissions on copied files
+        stdlib_locs.each do |f|
+          next if File.writable? f
+
+          puts "fixing permissions: #{f}"
+          # TODO: better way to just set it writable without changing all modes?
+          FileUtils.chmod_R(0644, f)
         end
 
         # copy bin files if the gem has any
@@ -169,7 +202,14 @@ project 'JRuby Lib Setup' do
         end
 
         if g.default_gem
-          specname = File.basename( Dir[ File.join( specs, "#{g.name}-#{version}*.gemspec" ) ].first )
+          specfile_wildcard = "#{g.name}-#{version}*.gemspec"
+          specfile = Dir[ File.join( specs,  specfile_wildcard ) ].first
+
+          unless specfile
+            raise Errno::ENOENT, "gemspec #{specfile_wildcard} not found; dependency unspecified in lib/pom.xml?"
+          end
+
+          specname = File.basename( specfile )
           puts "copy to specifications/default: #{specname}"
 
           spec = Gem::Package.new( Dir[ File.join( cache, "#{g.name}-#{version}*.gem" ) ].first ).spec
@@ -182,27 +222,16 @@ project 'JRuby Lib Setup' do
 
     # patch jruby-openssl - remove file which should be only inside gem
     # use this instead of FileUtils.rm_f - issue #1698
-    f = File.join( ruby_dir, 'shared', 'jruby-openssl.rb' )
+    f = File.join( ruby_dir, 'stdlib', 'jruby-openssl.rb' )
     File.delete( f ) if File.exists?( f )
-
-    # PATCH krypt
-    if KRYPT_VERSION == '0.0.2'
-      file = ctx.basedir.to_pathname + '/ruby/shared/krypt/provider.rb'
-      content = File.read( file )
-      content.sub! /begin(.|[\n])*/, <<EOS
-unless java?
-  require_relative 'provider/ffi'
-end
-EOS
-      File.open( file, 'w' ) do |f|
-        f.print content
-      end
-    else
-      raise "please remove the obsolete PATCH for krypt in lib/pom.rb"
-    end
 
     # we do not want rubygems_plugin.rb within jruby
-    f = File.join( ruby_dir, 'shared', 'rubygems_plugin.rb' )
+    f = File.join( ruby_dir, 'stdlib', 'rubygems_plugin.rb' )
     File.delete( f ) if File.exists?( f )
-  end
+
+    # fix file permissions of installed gems
+    ( Dir[ File.join( jruby_gems, '**/*' ) ] + Dir[ File.join( jruby_gems, '**/.*' ) ] ).each do |f|
+      File.chmod( 0644, f ) rescue nil if File.file?( f )
+    end
+  end  
 end

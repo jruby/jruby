@@ -1,1 +1,0 @@
-fails:A Symbol literal can contain null in the string

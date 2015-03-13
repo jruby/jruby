@@ -1,14 +1,10 @@
 fails:Module#prepend is a public method
 fails:Module#prepend calls #prepend_features(self) in reversed order on each module
 fails:Module#prepend raises a TypeError when the argument is not a Module
-fails:Module#prepend does not raise a TypeError when the argument is an instance of a subclass of Module
-fails:Module#prepend does not import constants
 fails:Module#prepend imports instance methods
-fails:Module#prepend does not import methods to modules and classes
 fails:Module#prepend allows wrapping methods
 fails:Module#prepend also prepends included modules
 fails:Module#prepend prepends multiple modules in the right order
-fails:Module#prepend includes prepended modules in ancestors
 fails:Module#prepend sees an instance of a prepended class as kind of the prepended module
 fails:Module#prepend keeps the module in the chain when dupping the class
 fails:Module#prepend keeps the module in the chain when dupping an intermediate module
@@ -18,6 +14,9 @@ fails:Module#prepend works with subclasses
 fails:Module#prepend throws a NoMethodError when there is no more superclass
 fails:Module#prepend calls prepended after prepend_features
 fails:Module#prepend detects cyclic prepends
-fails:Module#prepend accepts no-arguments
 fails:Module#prepend returns the class it's included into
 fails:Module#prepend clears any caches
+fails:Module#prepend includes prepended modules in ancestors
+fails:Module#prepend does not import constants
+fails:Module#prepend does not import methods to modules and classes
+fails:Module#prepend accepts no-arguments

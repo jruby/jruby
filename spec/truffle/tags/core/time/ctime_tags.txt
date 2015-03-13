@@ -1,1 +1,0 @@
-fails:Time#ctime returns a canonical string representation of time

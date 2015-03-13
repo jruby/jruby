@@ -53,6 +53,16 @@ namespace :spec do
   end
 
   permute_specs "regression", compile_flags do |t|
+    t.rspec_opts ||= []
+    t.rspec_opts << '--format documentation '
     t.pattern = 'spec/regression/**/*_spec.rb'
+  end
+
+  permute_specs "jruby", compile_flags do |t|
+    t.pattern = 'spec/jruby/**/*_spec.rb'
+  end
+
+  permute_specs "jrubyc", compile_flags do |t|
+    t.pattern = 'spec/jrubyc/**/*_spec.rb'
   end
 end

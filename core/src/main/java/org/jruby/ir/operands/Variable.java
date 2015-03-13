@@ -1,15 +1,12 @@
 package org.jruby.ir.operands;
 
-import org.jruby.ir.transformations.inlining.InlinerInfo;
+import org.jruby.ir.transformations.inlining.CloneInfo;
+import org.jruby.ir.transformations.inlining.SimpleCloneInfo;
 
 import java.util.List;
 import java.util.Map;
 
 public abstract class Variable extends Operand implements Comparable {
-    public final static String BLOCK          = "%block";
-    public final static String CURRENT_SCOPE  = "%current_scope";
-    public final static String CURRENT_MODULE = "%current_module";
-
     public Variable(OperandType type) {
         super(type);
     }
@@ -26,10 +23,6 @@ public abstract class Variable extends Operand implements Comparable {
         Operand v = valueMap.get(this);
         // You can only value-replace atomic values
         return (v != null) && (force || v.canCopyPropagate()) ? v : this;
-    }
-
-    public boolean isImplicitBlockArg() {
-        return getName().equals(BLOCK);
     }
 
     public boolean isSelf() {
@@ -49,10 +42,10 @@ public abstract class Variable extends Operand implements Comparable {
         l.add(this);
     }
 
-    public abstract Variable clone(InlinerInfo ii);
+    public abstract Variable clone(SimpleCloneInfo ii);
 
     @Override
-    public Operand cloneForInlining(InlinerInfo ii) {
+    public Operand cloneForInlining(CloneInfo ii) {
         return ii.getRenamedVariable(this);
     }
 }

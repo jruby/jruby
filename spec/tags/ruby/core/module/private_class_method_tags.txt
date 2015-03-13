@@ -1,3 +1,0 @@
-fails:Module#private_class_method raises a NameError if class method doesn't exist
-fails:Module#private_class_method raises a NameError when the given name is not a method
-fails:Module#private_class_method raises a NameError when the given name is an instance method

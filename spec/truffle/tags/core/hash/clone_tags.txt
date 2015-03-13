@@ -1,1 +1,0 @@
-fails:Hash#clone copies instance variable but not the objects they refer to

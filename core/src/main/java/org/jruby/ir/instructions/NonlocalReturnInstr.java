@@ -1,30 +1,30 @@
 package org.jruby.ir.instructions;
 
 import org.jruby.ir.*;
-import org.jruby.ir.operands.Boolean;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.StringLiteral;
 import org.jruby.ir.operands.Variable;
-import org.jruby.ir.transformations.inlining.InlinerInfo;
+import org.jruby.ir.persistence.IRWriterEncoder;
+import org.jruby.ir.transformations.inlining.CloneInfo;
+import org.jruby.ir.transformations.inlining.InlineCloneInfo;
+import org.jruby.ir.transformations.inlining.SimpleCloneInfo;
 
 public class NonlocalReturnInstr extends ReturnBase implements FixedArityInstr {
     public final String methodName; // Primarily a debugging aid
-    public final boolean maybeLambda;
 
-    public NonlocalReturnInstr(Operand returnValue, String methodName, boolean maybeLambda) {
+    public NonlocalReturnInstr(Operand returnValue, String methodName) {
         super(Operation.NONLOCAL_RETURN, returnValue);
         this.methodName = methodName;
-        this.maybeLambda = maybeLambda;
     }
 
     @Override
     public Operand[] getOperands() {
-        return new Operand[] { returnValue, new StringLiteral(methodName), new Boolean(maybeLambda) };
+        return new Operand[] { getReturnValue(), new StringLiteral(methodName) };
     }
 
     @Override
-    public String toString() {
-        return getOperation() + "(" + returnValue + ", <" + methodName + ":" + maybeLambda + ">" + ")";
+    public String[] toStringNonOperandArgs() {
+        return new String[] { "name: " + methodName };
     }
 
     public boolean computeScopeFlags(IRScope scope) {
@@ -33,21 +33,28 @@ public class NonlocalReturnInstr extends ReturnBase implements FixedArityInstr {
     }
 
     @Override
-    public Instr cloneForInlining(InlinerInfo ii) {
-        switch (ii.getCloneMode()) {
-            case CLOSURE_INLINE:
-                if (ii.getInlineHostScope() instanceof IRMethod) {
-                    // Treat like inlining of a regular method-return
-                    Variable v = ii.getCallResultVariable();
-                    return v == null ? null : new CopyInstr(v, returnValue.cloneForInlining(ii));
-                }
-                // fall through
-            case ENSURE_BLOCK_CLONE:
-            case NORMAL_CLONE:
-                return new NonlocalReturnInstr(returnValue.cloneForInlining(ii), methodName, maybeLambda);
-            default:
-                return super.cloneForInlining(ii);
+    public Instr clone(CloneInfo info) {
+        if (info instanceof SimpleCloneInfo) return new NonlocalReturnInstr(getReturnValue().cloneForInlining(info), methodName);
+
+        InlineCloneInfo ii = (InlineCloneInfo) info;
+        if (ii.isClosure()) {
+            if (ii.getHostScope() instanceof IRMethod) {
+                // Treat like inlining of a regular method-return
+                Variable v = ii.getCallResultVariable();
+                return v == null ? null : new CopyInstr(v, getReturnValue().cloneForInlining(ii));
+            }
+
+            return new NonlocalReturnInstr(getReturnValue().cloneForInlining(ii), methodName);
+        } else {
+            throw new UnsupportedOperationException("Nonlocal returns shouldn't show up outside closures.");
         }
+    }
+
+    @Override
+    public void encode(IRWriterEncoder e) {
+        super.encode(e);
+        e.encode(getReturnValue());
+        e.encode(methodName);
     }
 
     @Override

@@ -1,5 +1,0 @@
-fails:Symbol#size returns 0 for empty name
-fails:Symbol#size returns 1 for name formed by a NUL character
-fails:Symbol#size returns 3 for name formed by 3 ASCII characters
-fails:Symbol#size returns 4 for name formed by 4 ASCII characters
-fails:Symbol#size returns 4 for name formed by 1 multibyte and 3 ASCII characters

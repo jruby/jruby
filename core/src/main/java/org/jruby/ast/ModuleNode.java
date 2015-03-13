@@ -46,7 +46,7 @@ public class ModuleNode extends Node implements IScopingNode {
     private final Node bodyNode;
 
     public ModuleNode(ISourcePosition position, Colon3Node cpath, StaticScope scope, Node bodyNode) {
-        super(position);
+        super(position, cpath.containsVariableAssignment() || bodyNode.containsVariableAssignment());
 
         assert cpath != null : "cpath is not null";
         assert scope != null : "scope is not null";

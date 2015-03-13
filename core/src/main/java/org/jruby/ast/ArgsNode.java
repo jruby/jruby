@@ -103,7 +103,13 @@ public class ArgsNode extends Node {
      */
     public ArgsNode(ISourcePosition position, ListNode pre, ListNode optionalArguments,
             RestArgNode rest, ListNode post, ListNode keywords, KeywordRestArgNode keyRest, BlockArgNode blockArgNode) {
-        super(position);
+        super(position, pre != null && pre.containsVariableAssignment() ||
+                        optionalArguments != null && optionalArguments.containsVariableAssignment() ||
+                        rest != null && rest.containsVariableAssignment() ||
+                        post != null && post.containsVariableAssignment() ||
+                        keywords != null && keywords.containsVariableAssignment() ||
+                        keyRest != null && keyRest.containsVariableAssignment() ||
+                        blockArgNode != null && blockArgNode.containsVariableAssignment());
 
         this.pre = pre;
         this.preCount = pre == null ? 0 : pre.size();
@@ -277,4 +283,27 @@ public class ArgsNode extends Node {
 
         return Node.createList(pre, optArgs, restArgNode, blockArgNode);
     }
+
+    public int getRequiredKeywordCount() {
+        if (hasRequiredKeywordArg()) return 1;
+        return 0;
+    }
+
+    private boolean hasRequiredKeywordArg() {
+        if (getKeywords() == null) return false;
+
+        for (Node keyWordNode :getKeywords().childNodes()) {
+            for (Node asgnNode : keyWordNode.childNodes()) {
+                if (isRequiredKeywordArgumentValueNode(asgnNode)) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    private boolean isRequiredKeywordArgumentValueNode(Node asgnNode) {
+        return asgnNode.childNodes().get(0) instanceof RequiredKeywordArgumentValueNode;
+    }
+
 }

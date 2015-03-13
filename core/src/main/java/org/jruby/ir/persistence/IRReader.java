@@ -14,10 +14,12 @@ import org.jruby.ir.operands.LocalVariable;
 import org.jruby.parser.StaticScope;
 import org.jruby.parser.StaticScopeFactory;
 import org.jruby.runtime.Arity;
+import org.jruby.runtime.Signature;
 
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
+import org.jruby.util.KeyValuePair;
 
 /**
  *
@@ -34,15 +36,23 @@ public class IRReader {
         int scopesToRead  = file.decodeInt();
         if (RubyInstanceConfig.IR_READING_DEBUG) System.out.println("scopes to read = " + scopesToRead);
 
-        IRScope script = decodeScopeHeader(manager, file);
-        for (int i = 1; i < scopesToRead; i++) {
-            decodeScopeHeader(manager, file);
+        KeyValuePair<IRScope, Integer>[] scopes = new KeyValuePair[scopesToRead];
+        for (int i = 0; i < scopesToRead; i++) {
+            scopes[i] = decodeScopeHeader(manager, file);
         }
 
-        return script;
+        // Lifecycle woes.  All IRScopes need to exist before we can decodeInstrs.
+        for (KeyValuePair<IRScope, Integer> pair: scopes) {
+            IRScope scope = pair.getKey();
+            int instructionsOffset = pair.getValue();
+
+            scope.allocateInterpreterContext(file.decodeInstructionsAt(scope, instructionsOffset));
+        }
+
+        return scopes[0].getKey(); // topmost scope;
     }
 
-    private static IRScope decodeScopeHeader(IRManager manager, IRReaderDecoder decoder) {
+    private static KeyValuePair<IRScope, Integer> decodeScopeHeader(IRManager manager, IRReaderDecoder decoder) {
         if (RubyInstanceConfig.IR_READING_DEBUG) System.out.println("DECODING SCOPE HEADER");
         IRScopeType type = decoder.decodeIRScopeType();
         if (RubyInstanceConfig.IR_READING_DEBUG) System.out.println("IRScopeType = " + type);
@@ -55,13 +65,18 @@ public class IRReader {
         Map<String, Integer> indices = decodeScopeLabelIndices(decoder);
 
         IRScope parent = type != IRScopeType.SCRIPT_BODY ? decoder.decodeScope() : null;
-        int arity = type == IRScopeType.CLOSURE || type == IRScopeType.FOR ? decoder.decodeInt() : -1;
+        Signature signature;
+        if (type == IRScopeType.CLOSURE || type == IRScopeType.FOR) {
+            signature = Signature.decode(decoder.decodeInt());
+        } else {
+            signature = Signature.OPTIONAL;
+        }
         int argumentType = type == IRScopeType.CLOSURE ? decoder.decodeInt() : -1;
         StaticScope parentScope = parent == null ? null : parent.getStaticScope();
         // FIXME: It seems wrong we have static scope + local vars both being persisted.  They must have the same values
         // and offsets?
         StaticScope staticScope = decodeStaticScope(decoder, parentScope);
-        IRScope scope = createScope(manager, type, name, line, parent, arity, argumentType, staticScope);
+        IRScope scope = createScope(manager, type, name, line, parent, signature, argumentType, staticScope);
 
         scope.setTemporaryVariableCount(tempVarsCount);
         // FIXME: Replace since we are defining this...perhaps even make a persistence constructor
@@ -73,9 +88,9 @@ public class IRReader {
 
         decoder.addScope(scope);
 
-        scope.savePersistenceInfo(decoder.decodeInt(), decoder);
+        int instructionsOffset = decoder.decodeInt();
 
-        return scope;
+        return new KeyValuePair<>(scope, instructionsOffset);
     }
 
     private static Map<String, LocalVariable> decodeScopeLocalVariables(IRReaderDecoder decoder, IRScope scope) {
@@ -86,7 +101,8 @@ public class IRReader {
             int offset = decoder.decodeInt();
 
             localVariables.put(name, scope instanceof IRClosure ?
-                    new ClosureLocalVariable((IRClosure) scope, name, 0, offset) : new LocalVariable(name, 0, offset));
+                    // SSS FIXME: do we need to read back locallyDefined boolean?
+                    new ClosureLocalVariable(name, 0, offset) : new LocalVariable(name, 0, offset));
         }
 
         return localVariables;
@@ -110,7 +126,7 @@ public class IRReader {
     }
 
     public static IRScope createScope(IRManager manager, IRScopeType type, String name, int line,
-            IRScope lexicalParent, int arity, int argumentType,
+            IRScope lexicalParent, Signature signature, int argumentType,
             StaticScope staticScope) {
 
         switch (type) {
@@ -119,22 +135,22 @@ public class IRReader {
         case METACLASS_BODY:
             return new IRMetaClassBody(manager, lexicalParent, manager.getMetaClassName(), line, staticScope);
         case INSTANCE_METHOD:
-            return new IRMethod(manager, lexicalParent, name, true, line, staticScope);
+            return new IRMethod(manager, lexicalParent, null, name, true, line, staticScope);
         case CLASS_METHOD:
-            return new IRMethod(manager, lexicalParent, name, false, line, staticScope);
+            return new IRMethod(manager, lexicalParent, null, name, false, line, staticScope);
         case MODULE_BODY:
             return new IRModuleBody(manager, lexicalParent, name, line, staticScope);
         case SCRIPT_BODY:
-            return new IRScriptBody(manager, "__file__", name, staticScope);
+            return new IRScriptBody(manager, name, staticScope);
         case FOR:
-            return new IRFor(manager, lexicalParent, line, staticScope, Arity.createArity(arity), argumentType);
+            return new IRFor(manager, lexicalParent, line, staticScope, signature);
         case CLOSURE:
-            return new IRClosure(manager, lexicalParent, line, staticScope, Arity.createArity(arity), argumentType);
+            return new IRClosure(manager, lexicalParent, line, staticScope, signature);
         case EVAL_SCRIPT:
             // SSS FIXME: This is broken right now -- the isModuleEval arg has to be persisted and then read back.
             return new IREvalScript(manager, lexicalParent, lexicalParent.getFileName(), line, staticScope, EvalType.NONE);
         }
 
-        return null;
+        throw new RuntimeException("No such scope type: " + type);
     }
 }

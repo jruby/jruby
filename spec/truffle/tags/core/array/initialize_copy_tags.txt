@@ -1,8 +1,1 @@
-fails:Array#initialize_copy is private
-fails:Array#initialize_copy replaces the elements with elements from other array
-fails:Array#initialize_copy properly handles recursive arrays
-fails:Array#initialize_copy returns self
-fails:Array#initialize_copy does not make self dependent to the original array
 fails:Array#initialize_copy tries to convert the passed argument to an Array using #to_ary
-fails:Array#initialize_copy does not call #to_ary on Array subclasses
-fails:Array#initialize_copy raises a RuntimeError on a frozen array

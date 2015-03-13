@@ -60,3 +60,40 @@ void pack_varargs(s64* buf, const char* fmt, ...)
     va_end(ap);
 }
 
+int pack_varargs2(s64* buf, int retval, const char* fmt, ...)
+{
+    va_list ap;
+    int c;
+    double d;
+    va_start(ap, fmt);
+    while ((c = *fmt++)) {
+        switch (c) {
+            case 'c':
+            case 's':
+            case 'i':
+                *buf++ = va_arg(ap, s32);
+                break;
+            case 'l':
+                *buf++ = va_arg(ap, long);
+                break;
+            case 'j':
+                *buf++ = va_arg(ap, s64);
+                break;
+            case 'f':
+            case 'd':
+                d = va_arg(ap, double);
+                memcpy(buf++, &d, sizeof(d));
+                break;
+            case 'C':
+            case 'S':
+            case 'I':
+                *buf++ = va_arg(ap, u32);
+                break;
+            case 'L':
+                *buf++ = va_arg(ap, unsigned long);
+                break;
+        }
+    }
+    va_end(ap);
+    return retval + 1;
+}

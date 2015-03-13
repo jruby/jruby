@@ -183,10 +183,6 @@ OUT
     $:.shift
   end
 
-  def test_load_rb_if_jar_doesnt_exist
-    require 'test/jruby/fake.jar' # test/fake.jar does not exist, but test/fake.jar.rb does.
-  end
-
   def test_overriding_require_shouldnt_cause_problems
     eval(<<DEPS, binding, "deps")
 class ::Object
@@ -258,6 +254,13 @@ DEPS
       true
     }
   end
+
+  def test_jar_with_plus_in_name
+    assert_in_sub_runtime %{
+       require 'test/jruby/jar_with+.jar'
+       Dir["#{File.dirname( __FILE__ )}/jar_with+.jar!/*"].size == 2
+     }
+   end
 
   # JRUBY-5045
   def test_cwd_plus_dotdot_jar_loading

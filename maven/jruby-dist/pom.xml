@@ -5,16 +5,16 @@
   <parent>
     <groupId>org.jruby</groupId>
     <artifactId>jruby-artifacts</artifactId>
-    <version>9000.dev-SNAPSHOT</version>
+    <version>9.0.0.0-SNAPSHOT</version>
   </parent>
   <artifactId>jruby-dist</artifactId>
   <packaging>pom</packaging>
   <name>JRuby Dist</name>
   <properties>
-    <jruby.home>${basedir}/../..</jruby.home>
+    <tesla.dump.readonly>true</tesla.dump.readonly>
     <jruby.plugins.version>1.0.3</jruby.plugins.version>
     <main.basedir>${project.parent.parent.basedir}</main.basedir>
-    <tesla.dump.pom>pom-generated.xml</tesla.dump.pom>
+    <tesla.dump.pom>pom.xml</tesla.dump.pom>
     <tesla.version>0.1.1</tesla.version>
   </properties>
   <dependencies>
@@ -23,6 +23,7 @@
       <artifactId>ruby-maven</artifactId>
       <version>3.1.1.0.8</version>
       <type>gem</type>
+      <scope>provided</scope>
     </dependency>
   </dependencies>
   <build>
@@ -76,7 +77,6 @@
           </execution>
         </executions>
         <configuration>
-          <finalName>jruby-dist-9000.dev</finalName>
           <tarLongFileMode>gnu</tarLongFileMode>
           <descriptors>
             <descriptor>src/main/assembly/jruby.xml</descriptor>
@@ -93,12 +93,23 @@
         <executions>
           <execution>
             <id>fix_executable_bits</id>
-            <phase>package</phase>
+            <phase>prepare-package</phase>
             <goals>
               <goal>execute</goal>
             </goals>
             <configuration>
               <taskId>fix_executable_bits</taskId>
+              <nativePom>pom.rb</nativePom>
+            </configuration>
+          </execution>
+          <execution>
+            <id>fix_permissions</id>
+            <phase>prepare-package</phase>
+            <goals>
+              <goal>execute</goal>
+            </goals>
+            <configuration>
+              <taskId>fix_permissions</taskId>
               <nativePom>pom.rb</nativePom>
             </configuration>
           </execution>
@@ -129,7 +140,7 @@
       </repositories>
     </profile>
     <profile>
-      <id>release</id>
+      <id>not-working-currently---release</id>
       <build>
         <plugins>
           <plugin>
@@ -139,27 +150,6 @@
                 <pomInclude>*</pomInclude>
               </pomIncludes>
             </configuration>
-          </plugin>
-          <plugin>
-            <groupId>org.codehaus.mojo</groupId>
-            <artifactId>build-helper-maven-plugin</artifactId>
-            <executions>
-              <execution>
-                <phase>pre-integration-test</phase>
-                <goals>
-                  <goal>attach-artifact</goal>
-                </goals>
-                <configuration>
-                  <artifacts>
-                    <artifact>
-                      <file>${project.build.directory}/jruby-dist-${project.version}-src.zip</file>
-                      <type>zip</type>
-                      <classifier>src</classifier>
-                    </artifact>
-                  </artifacts>
-                </configuration>
-              </execution>
-            </executions>
           </plugin>
           <plugin>
             <artifactId>maven-dependency-plugin</artifactId>
@@ -224,6 +214,28 @@
       </activation>
       <build>
         <plugins>
+          <plugin>
+            <groupId>org.codehaus.mojo</groupId>
+            <artifactId>build-helper-maven-plugin</artifactId>
+            <executions>
+              <execution>
+                <id>attach-artifacts</id>
+                <phase>package</phase>
+                <goals>
+                  <goal>attach-artifact</goal>
+                </goals>
+                <configuration>
+                  <artifacts>
+                    <artifact>
+                      <file>${project.build.directory}/${project.build.finalName}-src.zip</file>
+                      <type>zip</type>
+                      <classifier>src</classifier>
+                    </artifact>
+                  </artifacts>
+                </configuration>
+              </execution>
+            </executions>
+          </plugin>
           <plugin>
             <groupId>io.tesla.polyglot</groupId>
             <artifactId>tesla-polyglot-maven-plugin</artifactId>

@@ -2,10 +2,12 @@ package org.jruby.ir.instructions;
 
 import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Operation;
-import org.jruby.ir.operands.Fixnum;
-import org.jruby.ir.operands.Operand;
+import org.jruby.ir.persistence.IRReaderDecoder;
+import org.jruby.ir.persistence.IRWriterEncoder;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
-import org.jruby.ir.transformations.inlining.InlinerInfo;
+import org.jruby.ir.transformations.inlining.CloneInfo;
+import org.jruby.ir.transformations.inlining.InlineCloneInfo;
+import org.jruby.ir.transformations.inlining.SimpleCloneInfo;
 import org.jruby.runtime.ThreadContext;
 
 public class CheckArityInstr extends Instr implements FixedArityInstr {
@@ -16,7 +18,7 @@ public class CheckArityInstr extends Instr implements FixedArityInstr {
     public final int restKey;
 
     public CheckArityInstr(int required, int opt, int rest, boolean receivesKeywords, int restKey) {
-        super(Operation.CHECK_ARITY);
+        super(Operation.CHECK_ARITY, EMPTY_OPERANDS);
 
         this.required = required;
         this.opt = opt;
@@ -26,34 +28,40 @@ public class CheckArityInstr extends Instr implements FixedArityInstr {
     }
 
     @Override
-    public Operand[] getOperands() {
-        return new Operand[] { new Fixnum(required), new Fixnum(opt), new Fixnum(rest) };
+    public String[] toStringNonOperandArgs() {
+        return new String[] {"req: " + required, "opt: " + opt, "*r: " + rest, "kw: " + receivesKeywords};
     }
 
     @Override
-    public String toString() {
-        return super.toString() + " req: " + required + ", opt: " + opt + ", *r: " + rest + ", kw: " + receivesKeywords + ", **r: " + restKey;
-    }
+    public Instr clone(CloneInfo info) {
+        if (info instanceof SimpleCloneInfo) return new CheckArityInstr(required, opt, rest, receivesKeywords, restKey);
 
-    @Override
-    public Instr cloneForInlining(InlinerInfo ii) {
-        switch (ii.getCloneMode()) {
-            case ENSURE_BLOCK_CLONE:
-            case NORMAL_CLONE:
-                return new CheckArityInstr(required, opt, rest, receivesKeywords, restKey);
-            default:
-                if (ii.canMapArgsStatically()) {
-                    // Since we know arity at a callsite, arity check passes or we have an ArgumentError
-                    int numArgs = ii.getArgsCount();
-                    if ((numArgs < required) || ((rest == -1) && (numArgs > (required + opt)))) {
-                        return new RaiseArgumentErrorInstr(required, opt, rest, rest);
-                    }
+        InlineCloneInfo ii = (InlineCloneInfo) info;
+        if (ii.canMapArgsStatically()) { // we can error on bad arity or remove check_arity
+            int numArgs = ii.getArgsCount();
 
-                    return null;
-                } else {
-                    return new CheckArgsArrayArityInstr(ii.getArgs(), required, opt, rest);
-                }
+            if (numArgs < required || (rest == -1 && numArgs > (required + opt))) {
+                return new RaiseArgumentErrorInstr(required, opt, rest, rest);
+            }
+
+            return null;
         }
+
+        return new CheckArgsArrayArityInstr(ii.getArgs(), required, opt, rest);
+    }
+
+    @Override
+    public void encode(IRWriterEncoder e) {
+        super.encode(e);
+        e.encode(required);
+        e.encode(opt);
+        e.encode(rest);
+        e.encode(receivesKeywords);
+        e.encode(restKey);
+    }
+
+    public static CheckArityInstr decode(IRReaderDecoder d) {
+        return new CheckArityInstr(d.decodeInt(), d.decodeInt(), d.decodeInt(), d.decodeBoolean(), d.decodeInt());
     }
 
     public void checkArity(ThreadContext context, Object[] args) {

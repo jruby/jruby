@@ -24,13 +24,11 @@ class TestOpenURI < Test::Unit::TestCase
         :Port => 0})
       _, port, _, host = srv.listeners[0].addr
       begin
-        srv.start
+        th = srv.start
         yield srv, dr, "http://#{host}:#{port}"
       ensure
         srv.shutdown
-        until srv.status == :Stop
-          sleep 0.1
-        end
+        th.join
       end
     }
   end
@@ -124,6 +122,24 @@ class TestOpenURI < Test::Unit::TestCase
     }
   end
 
+  def test_open_timeout
+    assert_raises(Net::OpenTimeout) do
+      URI("http://example.com/").read(open_timeout: 0.000001)
+    end if false # avoid external resources in tests
+
+    with_http {|srv, dr, url|
+      url += '/'
+      srv.mount_proc('/', lambda { |_, res| res.body = 'hi' })
+      begin
+        URI(url).read(open_timeout: 0.000001)
+      rescue Net::OpenTimeout
+        # not guaranteed to fire, since the kernel negotiates the
+        # TCP connection even if the server thread is sleeping
+      end
+      assert_equal 'hi', URI(url).read(open_timeout: 60), 'should not timeout'
+    }
+  end
+
   def test_invalid_option
     assert_raise(ArgumentError) { open("http://127.0.0.1/", :invalid_option=>true) {} }
   end
@@ -160,6 +176,29 @@ class TestOpenURI < Test::Unit::TestCase
       ensure
         f.close if f && !f.closed?
       end
+    }
+  end
+
+  def test_close_in_block_small
+    with_http {|srv, dr, url|
+      srv.mount_proc("/close200", lambda { |req, res| res.body = "close200" } )
+      assert_nothing_raised {
+        open("#{url}/close200") {|f|
+          f.close
+        }
+      }
+    }
+  end
+
+  def test_close_in_block_big
+    with_http {|srv, dr, url|
+      content = "close200big"*10240
+      srv.mount_proc("/close200big", lambda { |req, res| res.body = content } )
+      assert_nothing_raised {
+        open("#{url}/close200big") {|f|
+          f.close
+        }
+      }
     }
   end
 
@@ -202,7 +241,7 @@ class TestOpenURI < Test::Unit::TestCase
       _, proxy_port, _, proxy_host = proxy.listeners[0].addr
       proxy_url = "http://#{proxy_host}:#{proxy_port}/"
       begin
-        proxy.start
+        proxy_thread = proxy.start
         srv.mount_proc("/proxy", lambda { |req, res| res.body = "proxy" } )
         open("#{url}/proxy", :proxy=>proxy_url) {|f|
           assert_equal("200", f.status[0])
@@ -233,6 +272,7 @@ class TestOpenURI < Test::Unit::TestCase
         assert_equal("", log); log.clear
       ensure
         proxy.shutdown
+        proxy_thread.join
       end
     }
   end
@@ -255,7 +295,7 @@ class TestOpenURI < Test::Unit::TestCase
       _, proxy_port, _, proxy_host = proxy.listeners[0].addr
       proxy_url = "http://#{proxy_host}:#{proxy_port}/"
       begin
-        proxy.start
+        th = proxy.start
         srv.mount_proc("/proxy", lambda { |req, res| res.body = "proxy" } )
         exc = assert_raise(OpenURI::HTTPError) { open("#{url}/proxy", :proxy=>proxy_url) {} }
         assert_equal("407", exc.io.status[0])
@@ -273,6 +313,7 @@ class TestOpenURI < Test::Unit::TestCase
         assert_equal("", log); log.clear
       ensure
         proxy.shutdown
+        th.join
       end
     }
   end
@@ -378,9 +419,7 @@ class TestOpenURI < Test::Unit::TestCase
   end
 
   def test_userinfo
-    if "1.9.0" <= RUBY_VERSION
-      assert_raise(ArgumentError) { open("http://user:pass@127.0.0.1/") {} }
-    end
+    assert_raise(ArgumentError) { open("http://user:pass@127.0.0.1/") {} }
   end
 
   def test_progress
@@ -525,7 +564,7 @@ class TestOpenURI < Test::Unit::TestCase
     assert_raise(ArgumentError) { URI("ftp://127.0.0.1/a%0Ab").read }
     assert_raise(ArgumentError) { URI("ftp://127.0.0.1/a%0Db/f").read }
     assert_raise(ArgumentError) { URI("ftp://127.0.0.1/a%0Ab/f").read }
-    assert_raise(URI::InvalidComponentError) { URI("ftp://127.0.0.1/d/f;type=x") }
+    assert_nothing_raised(URI::InvalidComponentError) { URI("ftp://127.0.0.1/d/f;type=x") }
   end
 
   def test_ftp

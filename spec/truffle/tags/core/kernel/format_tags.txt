@@ -1,2 +1,0 @@
-fails:Kernel#format is a private method
-fails:Kernel.format is accessible as a module function

@@ -17,13 +17,14 @@ import java.nio.channels.FileChannel;
 
 import org.jruby.ext.fcntl.FcntlLibrary;
 import org.jruby.RubyFile;
+import org.jruby.platform.Platform;
 import org.jruby.util.io.ModeFlags;
 import org.jruby.util.io.PosixShim;
 
 /**
  * Represents a "regular" file, backed by regular file system.
  */
-class RegularFileResource implements FileResource {
+class RegularFileResource extends AbstractFileResource {
     private final JRubyFile file;
     private final POSIX posix;
 
@@ -68,6 +69,15 @@ class RegularFileResource implements FileResource {
         // MRI behavior: Even broken symlinks should return true.
         // FIXME: Where is the above statement true?  For RubyFile{,Test} it does not seem to be.
         return file.exists(); // || isSymLink();
+    }
+
+    @Override
+    public boolean canExecute() {
+        return file.canExecute();
+    }
+
+    public int errno() {
+        return posix.errno();
     }
 
     @Override
@@ -139,17 +149,13 @@ class RegularFileResource implements FileResource {
     }
 
     @Override
-    public InputStream openInputStream() {
-        try {
-            return new java.io.BufferedInputStream(new FileInputStream(file), 32768);
-        } catch (FileNotFoundException fnfe) {
-            return null;
-        }
+    InputStream openInputStream() throws IOException {
+        return new FileInputStream(file);
     }
 
     @Override
     public Channel openChannel(ModeFlags flags, int perm) throws ResourceException {
-        if (posix.isNative()) {
+        if (posix.isNative() && !Platform.IS_WINDOWS) {
             int fd = posix.open(absolutePath(), flags.getFlags(), perm);
             if (fd < 0) {
                 Errno errno = Errno.valueOf(posix.errno());
@@ -162,6 +168,8 @@ class RegularFileResource implements FileResource {
                         throw new ResourceException.InvalidArguments(absolutePath());
                     case ENOENT:
                         throw new ResourceException.NotFound(absolutePath());
+                    case ELOOP:
+                        throw new ResourceException.TooManySymlinks(absolutePath());
                     default:
                         throw new ResourceException.IOError(new IOException("unhandled errno: " + errno));
 

@@ -16,12 +16,13 @@ import org.objectweb.asm.commons.Method;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.Stack;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  *
  * @author headius
  */
-class ClassData {
+abstract class ClassData {
 
     public ClassData(String clsName, ClassVisitor cls) {
         this.clsName = clsName;
@@ -71,15 +72,7 @@ class ClassData {
         return types;
     }
 
-    public void pushmethod(String name, IRScope scope, Signature signature) {
-        Method m = new Method(name, Type.getType(signature.type().returnType()), typesFromSignature(signature));
-        methodStack.push(
-                new MethodData(
-                        new SkinnyMethodAdapter(cls, Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC, m.getName(), m.getDescriptor(), null, null),
-                        scope,
-                        signature)
-        );
-    }
+    public abstract void pushmethod(String name, IRScope scope, Signature signature, boolean specificArity);
 
     public void popmethod() {
         method().endMethod();
@@ -89,6 +82,9 @@ class ClassData {
     public ClassVisitor cls;
     public String clsName;
     Stack<MethodData> methodStack = new Stack();
-    public Set<String> fieldSet = new HashSet<String>();
-
+    public AtomicInteger callSiteCount = new AtomicInteger(0);
+    public Set<Integer> arrayMethodsDefined = new HashSet();
+    public Set<Integer> hashMethodsDefined = new HashSet();
+    public Set<Integer> kwargsHashMethodsDefined = new HashSet();
+    public Set<Integer> dregexpMethodsDefined = new HashSet();
 }

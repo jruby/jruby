@@ -6,20 +6,19 @@ import org.jruby.ir.Operation;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.StringLiteral;
 import org.jruby.ir.operands.Variable;
-import org.jruby.ir.transformations.inlining.InlinerInfo;
+import org.jruby.ir.persistence.IRWriterEncoder;
+import org.jruby.ir.transformations.inlining.CloneInfo;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
-public class GetEncodingInstr extends Instr implements ResultInstr, FixedArityInstr {
+public class GetEncodingInstr extends ResultBaseInstr implements FixedArityInstr {
     private final Encoding encoding;
-    private Variable result;
 
     public GetEncodingInstr(Variable result, Encoding encoding) {
-        super(Operation.GET_ENCODING);
+        super(Operation.GET_ENCODING, result, EMPTY_OPERANDS);
 
-        this.result = result;
         this.encoding = encoding;
     }
 
@@ -28,31 +27,24 @@ public class GetEncodingInstr extends Instr implements ResultInstr, FixedArityIn
     }
 
     @Override
-    public Operand[] getOperands() {
-        return new Operand[] { new StringLiteral(encoding.toString()) };
+    public String[] toStringNonOperandArgs() {
+        return new String[] { "name: " + encoding };
     }
 
     @Override
-    public String toString() {
-        return super.toString() + "(" + encoding + ")";
-    }
-
-    public Variable getResult() {
-        return result;
-    }
-
-    public void updateResult(Variable v) {
-        this.result = v;
-    }
-
-    @Override
-    public Instr cloneForInlining(InlinerInfo ii) {
+    public Instr clone(CloneInfo ii) {
         return new GetEncodingInstr(ii.getRenamedVariable(result), encoding);
     }
 
     @Override
     public Object interpret(ThreadContext context, StaticScope currScope, DynamicScope currDynScope, IRubyObject self, Object[] temp) {
         return context.runtime.getEncodingService().getEncoding(encoding);
+    }
+
+    @Override
+    public void encode(IRWriterEncoder e) {
+        super.encode(e);
+        e.encode(getEncoding().toString());
     }
 
     @Override

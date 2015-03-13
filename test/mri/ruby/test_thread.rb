@@ -27,6 +27,13 @@ class TestThread < Test::Unit::TestCase
     end
   end
 
+  def test_inspect
+    th = Module.new {break module_eval("class C\u{30b9 30ec 30c3 30c9} < Thread; self; end")}.start{}
+    assert_match(/::C\u{30b9 30ec 30c3 30c9}:/, th.inspect)
+  ensure
+    th.join
+  end
+
   def test_main_thread_variable_in_enumerator
     assert_equal Thread.main, Thread.current
 
@@ -127,17 +134,21 @@ class TestThread < Test::Unit::TestCase
 
   def test_priority
     c1 = c2 = 0
-    t1 = Thread.new { loop { c1 += 1 } }
+    run = true
+    t1 = Thread.new { c1 += 1 while run }
     t1.priority = 3
-    t2 = Thread.new { loop { c2 += 1 } }
+    t2 = Thread.new { c2 += 1 while run }
     t2.priority = -3
     assert_equal(3, t1.priority)
     assert_equal(-3, t2.priority)
     sleep 0.5
     5.times do
+      assert_not_predicate(t1, :stop?)
+      assert_not_predicate(t2, :stop?)
       break if c1 > c2
       sleep 0.1
     end
+    run = false
     t1.kill
     t2.kill
     assert_operator(c1, :>, c2, "[ruby-dev:33124]") # not guaranteed
@@ -358,6 +369,24 @@ class TestThread < Test::Unit::TestCase
     c.kill if c
   end
 
+  def test_switch_while_busy_loop
+    bug1402 = "[ruby-dev:38319] [Bug #1402]"
+    flag = true
+    th = Thread.current
+    waiter = Thread.start {
+      sleep 0.1
+      flag = false
+      sleep 1
+      th.raise(bug1402)
+    }
+    assert_nothing_raised(RuntimeError, bug1402) do
+      nil while flag
+    end
+    assert(!flag, bug1402)
+  ensure
+    waiter.kill.join
+  end
+
   def test_safe_level
     ok = false
     t = Thread.new do
@@ -507,8 +536,8 @@ class TestThread < Test::Unit::TestCase
   def test_no_valid_cfp
     skip 'with win32ole, cannot run this testcase because win32ole redefines Thread#intialize' if defined?(WIN32OLE)
     bug5083 = '[ruby-dev:44208]'
-    assert_equal([], Thread.new(&Module.method(:nesting)).value)
-    assert_instance_of(Thread, Thread.new(:to_s, &Class.new.method(:undef_method)).join)
+    assert_equal([], Thread.new(&Module.method(:nesting)).value, bug5083)
+    assert_instance_of(Thread, Thread.new(:to_s, &Class.new.method(:undef_method)).join, bug5083)
   end
 
   def make_handle_interrupt_test_thread1 flag
@@ -788,14 +817,20 @@ _eom
   end
 
   def test_main_thread_status_at_exit
-    assert_in_out_err([], <<-INPUT, %w(false), [])
+    assert_in_out_err([], <<-'INPUT', ["false false aborting"], [])
+require 'thread'
+q = Queue.new
 Thread.new(Thread.current) {|mth|
   begin
-    Thead.pass until mth.stop?
+    q.push nil
+    mth.run
+    Thread.pass until mth.stop?
+    p :mth_stopped # don't run if killed by rb_thread_terminate_all
   ensure
-    p mth.alive?
+    puts "#{mth.alive?} #{mth.status} #{Thread.current.status}"
   end
 }
+q.pop
     INPUT
   end
 

@@ -151,7 +151,7 @@ describe "Kernel#require_relative with a relative path" do
     end
   end
 
-  describe "($LOAD_FEATURES)" do
+  describe "($LOADED_FEATURES)" do
     it "stores an absolute path" do
       require_relative(@path).should be_true
       $LOADED_FEATURES.should == [@abs_path]

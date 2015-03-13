@@ -41,18 +41,20 @@ public enum IRFlags {
     CAN_RECEIVE_NONLOCAL_RETURNS, // may receive a non-local return during execution
     HAS_BREAK_INSTRS,             // contains at least one break
     HAS_END_BLOCKS,               // has an end block. big de-opt flag
-    HAS_EXPLICIT_CALL_PROTOCOL,   // contains call protocol instrs.  if so we don't need to manage bindings frame implicitly.
+    HAS_EXPLICIT_CALL_PROTOCOL,   // contains call protocol instrs => we don't need to manage bindings frame implicitly
     HAS_LOOPS,                    // has a loop
     HAS_NONLOCAL_RETURNS,         // has a non-local return
-    HAS_UNUSED_IMPLICIT_BLOCK_ARG,// Is %block implicit block arg unused?
+    MAYBE_USING_REFINEMENTS,      // a call to 'using' discovered...is it "the" using...maybe?
     RECEIVES_CLOSURE_ARG,         // This scope (or parent receives a closure
     RECEIVES_KEYWORD_ARGS,        // receives keyword args
     REQUIRES_DYNSCOPE,            // does this scope require a dynamic scope?
-    USES_BACKREF_OR_LASTLINE,     // Since backref ($~) and lastline ($_) vars are allocated space on the dynamic scope.
+    USES_BACKREF_OR_LASTLINE,     // Since backref ($~) and lastline ($_) vars are allocated space on the dynamic scope
     USES_EVAL,                    // calls eval
     USES_ZSUPER,                  // has zsuper instr
     REQUIRES_FRAME,               // callee may read/write caller's frame elements
     REQUIRES_VISIBILITY,          // callee may read/write caller's visibility
 
     DYNSCOPE_ELIMINATED,          // local var load/stores have been converted to tmp var accesses
+    REUSE_PARENT_DYNSCOPE,        // for closures -- reuse parent's dynscope
+    SIMPLE_METHOD,                // probably temporary flag.  Can this method scope fit into a simple method interpreter
 }

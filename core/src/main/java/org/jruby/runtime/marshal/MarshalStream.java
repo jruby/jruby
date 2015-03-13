@@ -54,7 +54,7 @@ import org.jruby.RubyRegexp;
 import org.jruby.RubyString;
 import org.jruby.RubyStruct;
 import org.jruby.RubySymbol;
-import org.jruby.IncludedModule;
+import org.jruby.IncludedModuleWrapper;
 import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.Constants;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -437,7 +437,7 @@ public class MarshalStream extends FilterOutputStream {
     private boolean hasSingletonMethods(RubyClass type) {
         for(DynamicMethod method : type.getMethods().values()) {
             // We do not want to capture cached methods
-            if(method.getImplementationClass() == type) {
+            if(method.isImplementedBy(type)) {
                 return true;
             }
         }
@@ -456,7 +456,7 @@ public class MarshalStream extends FilterOutputStream {
         }
         while(type.isIncluded()) {
             write('e');
-            writeAndRegisterSymbol(((IncludedModule)type).getNonIncludedClass().getName());
+            writeAndRegisterSymbol(((IncludedModuleWrapper)type).getNonIncludedClass().getName());
             type = type.getSuperClass();
         }
         return type;

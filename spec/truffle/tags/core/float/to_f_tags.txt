@@ -1,1 +1,0 @@
-fails:Float#to_f returns self

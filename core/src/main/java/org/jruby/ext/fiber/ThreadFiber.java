@@ -98,7 +98,7 @@ public class ThreadFiber extends RubyObject implements ExecutionContext {
 
         // Note: these need to be separate try/catches because of the while loop.
         try {
-            targetFiberData.queue.push(context, val);
+            targetFiberData.queue.push(context, new IRubyObject[] {val});
         } catch (RaiseException re) {
             handleExceptionDuringExchange(context, currentFiberData, targetFiberData, re);
         }
@@ -259,7 +259,7 @@ public class ThreadFiber extends RubyObject implements ExecutionContext {
                             result = block.yieldArray(context, init, null);
                         }
 
-                        data.prev.data.queue.push(context, result);
+                        data.prev.data.queue.push(context, new IRubyObject[] { result });
                     } finally {
                         data.queue.shutdown();
                         runtime.getThreadService().disposeCurrentThread();

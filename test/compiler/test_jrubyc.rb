@@ -87,6 +87,9 @@ class TestJrubyc < Test::Unit::TestCase
   end
 
   def test_signature_with_arg_named_result
+    if RbConfig::CONFIG['bindir'].match( /!\//) || RbConfig::CONFIG['bindir'].match( /:\//)
+      skip( 'only filesystem installations of jruby can compile ruby to java' ) 
+    end
     $compile_test = false
     File.open("test_file2.rb", "w") {|file| file.write(<<-RUBY
       class C

@@ -52,16 +52,13 @@ public class OpElementAsgnNode extends Node {
     private final String operatorName;
 
     public OpElementAsgnNode(ISourcePosition position, Node receiverNode, String operatorName, Node argsNode, Node valueNode) {
-        super(position);
+        super(position, receiverNode.containsVariableAssignment() || argsNode != null && argsNode.containsVariableAssignment() || valueNode.containsVariableAssignment());
         
         assert receiverNode != null : "receiverNode is not null";
         assert valueNode != null : "valueNode is not null";
         
         this.receiverNode = receiverNode;
         this.argsNode = argsNode;
-        if (argsNode instanceof ArrayNode) {
-            ((ArrayNode)argsNode).setLightweight(true);
-        }
         this.valueNode = valueNode;
         this.operatorName = operatorName;
     }

@@ -1,1 +1,0 @@
-fails:Float#zero? returns true if self is 0.0

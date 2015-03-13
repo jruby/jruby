@@ -154,6 +154,11 @@ public class Mutex extends RubyObject {
         }
     }
 
+    @JRubyMethod(name = "owned?")
+    public IRubyObject owned_p(ThreadContext context) {
+        return context.runtime.newBoolean(lock.isHeldByCurrentThread());
+    }
+
     private void checkRelocking(ThreadContext context) {
         if (lock.isHeldByCurrentThread()) {
             throw context.runtime.newThreadError("Mutex relocking by same thread");

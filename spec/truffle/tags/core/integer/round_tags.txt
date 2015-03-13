@@ -1,11 +1,1 @@
-fails:Integer#round returns self
-fails:Integer#round rounds itself as a float if passed a positive precision
-fails:Integer#round returns itself if passed zero
-fails:Integer#round returns itself rounded if passed a negative value
-fails:Integer#round raises a RangeError when passed a big negative value
-fails:Integer#round raises a RangeError when passed Float::INFINITY
 fails:Integer#round raises a RangeError when passed a beyond signed int
-fails:Integer#round raises a TypeError when passed a String
-fails:Integer#round raises a TypeError when its argument cannot be converted to an Integer
-fails:Integer#round calls #to_int on the argument to convert it to an Integer
-fails:Integer#round raises a TypeError when #to_int does not return an Integer

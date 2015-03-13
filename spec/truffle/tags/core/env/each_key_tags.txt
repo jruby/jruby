@@ -1,3 +1,2 @@
 fails:ENV.each_key returns each key
-fails:ENV.each_key returns an Enumerator if called without a block
 fails:ENV.each_key returns keys in the locale encoding

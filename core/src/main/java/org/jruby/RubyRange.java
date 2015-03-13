@@ -109,21 +109,9 @@ public class RubyRange extends RubyObject {
         begin = end = runtime.getNil();
     }
 
-    public static RubyRange newRange(Ruby runtime, ThreadContext context, IRubyObject begin, IRubyObject end, boolean isExclusive) {
-        RubyRange range = new RubyRange(runtime, runtime.getRange());
+    public static RubyRange newRange(ThreadContext context, IRubyObject begin, IRubyObject end, boolean isExclusive) {
+        RubyRange range = new RubyRange(context.runtime, context.runtime.getRange());
         range.init(context, begin, end, isExclusive);
-        return range;
-    }
-
-    public static RubyRange newExclusiveRange(Ruby runtime, ThreadContext context, IRubyObject begin, IRubyObject end) {
-        RubyRange range = new RubyRange(runtime, runtime.getRange());
-        range.init(context, begin, end, true);
-        return range;
-    }
-
-    public static RubyRange newInclusiveRange(Ruby runtime, ThreadContext context, IRubyObject begin, IRubyObject end) {
-        RubyRange range = new RubyRange(runtime, runtime.getRange());
-        range.init(context, begin, end, false);
         return range;
     }
 
@@ -251,7 +239,18 @@ public class RubyRange extends RubyObject {
         init(context, args[0], args[1], args.length > 2 && args[2].isTrue());
         return getRuntime().getNil();
     }
-    
+
+    @JRubyMethod(required = 1, visibility = PRIVATE)
+    public IRubyObject initialize_copy(ThreadContext context, IRubyObject original) {
+        if (!begin.isNil() || !end.isNil()) {
+            throw context.runtime.newNameError("`initialize' called twice", "initialize");
+        }
+
+        RubyRange other = (RubyRange) original;
+        init(context, other.begin, other.end, other.isExclusive);
+        return getRuntime().getNil();
+    }
+
     @JRubyMethod(name = "hash")
     public RubyFixnum hash(ThreadContext context) {
         long hash = isExclusive ? 1 : 0;
@@ -268,27 +267,36 @@ public class RubyRange extends RubyObject {
     private static byte[] DOTDOTDOT = "...".getBytes();
     private static byte[] DOTDOT = "..".getBytes();
 
-    @JRubyMethod(name = "inspect")
-    public IRubyObject inspect(ThreadContext context) {
-        RubyString str = inspect(context, begin).strDup(context.runtime);
-        RubyString str2 = inspect(context, end);
-
-        str.cat(isExclusive ? DOTDOTDOT : DOTDOT);
-        str.concat(str2);
-        str.infectBy(str2);
-        return str;
+    private IRubyObject inspectValue(final ThreadContext context, IRubyObject value) {
+        return getRuntime().execRecursiveOuter(new Ruby.RecursiveFunction() {
+            public IRubyObject call(IRubyObject obj, boolean recur) {
+                if(recur) {
+                    return RubyString.newString(context.runtime, isExclusive ? "(... ... ...)" : "(... .. ...)");
+                } else {
+                    return inspect(context, obj);
+                }
+            }
+        }, value);
     }
-    
+
+    @JRubyMethod(name = "inspect")
+    public IRubyObject inspect(final ThreadContext context) {
+        RubyString i1 = ((RubyString) inspectValue(context, begin)).strDup(context.runtime);
+        RubyString i2 = (RubyString) inspectValue(context, end);
+        i1.cat(isExclusive ? DOTDOTDOT : DOTDOT);
+        i1.append(i2);
+        i1.infectBy(i2);
+        return i1;
+    }
+
     @JRubyMethod(name = "to_s")
-    public IRubyObject to_s(ThreadContext context) {
-        RubyString str = RubyString.objAsString(context, begin).strDup(context.runtime);
-        RubyString str2 = RubyString.objAsString(context, end);
-
-        str.cat(isExclusive ? DOTDOTDOT : DOTDOT);
-        str.concat(str2);
-        str.infectBy(str2);
-        return str;
-
+    public IRubyObject to_s(final ThreadContext context) {
+        RubyString i1 = begin.asString().strDup(context.runtime);
+        RubyString i2 = end.asString();
+        i1.cat(isExclusive ? DOTDOTDOT : DOTDOT);
+        i1.append(i2);
+        i1.infectBy(i2);
+        return i1;
     }
 
     @JRubyMethod(name = "exclude_end?")
@@ -296,7 +304,7 @@ public class RubyRange extends RubyObject {
         return getRuntime().newBoolean(isExclusive);
     }
 
-    @JRubyMethod(name = "==", required = 1)
+    @JRubyMethod(name = {"==", "eql?"}, required = 1)
     @Override
     public IRubyObject op_equal(ThreadContext context, IRubyObject other) {
         if (this == other) return getRuntime().getTrue();
@@ -305,19 +313,6 @@ public class RubyRange extends RubyObject {
 
         if (equalInternal(context, begin, otherRange.begin) &&
             equalInternal(context, end, otherRange.end) &&
-            isExclusive == otherRange.isExclusive) return getRuntime().getTrue();
-
-        return getRuntime().getFalse();
-    }
-
-    @JRubyMethod(name = "eql?", required = 1)
-    public IRubyObject eql_p(ThreadContext context, IRubyObject other) {
-        if (this == other) return getRuntime().getTrue();
-        if (!(other instanceof RubyRange)) return getRuntime().getFalse();
-        RubyRange otherRange = (RubyRange)other;
-
-        if (eqlInternal(context, begin, otherRange.begin) &&
-            eqlInternal(context, end, otherRange.end) &&
             isExclusive == otherRange.isExclusive) return getRuntime().getTrue();
 
         return getRuntime().getFalse();
@@ -454,19 +449,22 @@ public class RubyRange extends RubyObject {
             throw runtime.newTypeError("can't iterate from Time");
         } else if (begin instanceof RubyFixnum && end instanceof RubyFixnum) {
             fixnumEach(context, runtime, block);
-        } else if (begin instanceof RubyString) {
-            ((RubyString) begin).uptoCommon19(context, end, isExclusive, block);
         } else if (begin instanceof RubySymbol) {
             begin.asString().uptoCommon19(context, end.asString(), isExclusive, block, true);
         } else {
-            if (!begin.respondsTo("succ")) throw getRuntime().newTypeError(
-                    "can't iterate from " + begin.getMetaClass().getName());
-            rangeEach(context, new RangeCallBack() {
-                @Override
-                void call(ThreadContext context, IRubyObject arg) {
-                    block.yield(context, arg);
-                }
-            });
+            IRubyObject tmp = begin.checkStringType();
+            if(!tmp.isNil()) {
+                ((RubyString) tmp).uptoCommon19(context, end, isExclusive, block);
+            } else {
+                if (!begin.respondsTo("succ")) throw getRuntime().newTypeError("can't iterate from " +
+                        begin.getMetaClass().getName());
+                rangeEach(context, new RangeCallBack() {
+                    @Override
+                    void call(ThreadContext context, IRubyObject arg) {
+                        block.yield(context, arg);
+                    }
+                });
+            }
         }
         return this;
     }
@@ -643,30 +641,60 @@ public class RubyRange extends RubyObject {
 
     @JRubyMethod(frame = true)
     public IRubyObject min(ThreadContext context, Block block) {
-        if (block.isGiven()) return Helpers.invokeSuper(context, this, block);
-
-        int c = RubyComparable.cmpint(context, invokedynamic(context, begin, MethodNames.OP_CMP, end), begin, end);
-
-        return c > 0 || (c == 0 && isExclusive) ? context.runtime.getNil(): begin;
+        IRubyObject receiver = getReceiverForMinMax(context, end, block);
+        if(receiver.isNil()) return receiver;
+        return Helpers.invokeSuper(context, receiver, block);
     }
 
     @JRubyMethod(frame = true)
     public IRubyObject max(ThreadContext context, Block block) {
-        if (begin.callMethod(context, ">", end).isTrue()) return context.runtime.getNil();
-
-        if (block.isGiven() || isExclusive && !(end instanceof RubyNumeric)) return Helpers.invokeSuper(context, this, block);
-
-        int c = RubyComparable.cmpint(context, invokedynamic(context, begin, MethodNames.OP_CMP, end), begin, end);
-        Ruby runtime = context.runtime;
+        IRubyObject rangeEnd;
         if (isExclusive) {
-            if (!(end instanceof RubyInteger)) throw runtime.newTypeError("cannot exclude non Integer end value");
-            if (c == 0) return runtime.getNil();
-            if (end instanceof RubyFixnum) return RubyFixnum.newFixnum(runtime, ((RubyFixnum)end).getLongValue() - 1);
-            
-            return end.callMethod(context, "-", RubyFixnum.one(runtime));
+            if (!(end instanceof RubyInteger)) {
+                throw context.runtime.newTypeError("cannot exclude non Integer end value");
+            }
+            if (!(begin instanceof RubyInteger)) {
+                throw context.runtime.newTypeError("cannot exclude end value with non Integer begin value");
+            }
+            rangeEnd = RubyFixnum.newFixnum(context.runtime, ((RubyFixnum) end).getLongValue() - 1);
+        } else {
+            rangeEnd = end;
         }
-        
-        return end;
+
+        IRubyObject receiver = getReceiverForMinMax(context, rangeEnd, block);
+        if(receiver.isNil()) return receiver;
+        return Helpers.invokeSuper(context, receiver, block);
+    }
+
+    @JRubyMethod(frame = true)
+    public IRubyObject min(ThreadContext context, IRubyObject arg, Block block) {
+        if (block.isGiven()) return Helpers.invokeSuper(context, this, block);
+
+        return first(context, arg);
+    }
+
+    @JRubyMethod(frame = true)
+    public IRubyObject max(ThreadContext context, IRubyObject arg, Block block) {
+        if (block.isGiven()) return Helpers.invokeSuper(context, this, block);
+
+        return ((RubyArray) last(context, arg)).reverse();
+    }
+
+    private boolean rangeEmpty_p(ThreadContext context) {
+        int cmp = RubyComparable.cmpint(context, invokedynamic(context, begin, MethodNames.OP_CMP, end), begin, end);
+        return cmp > 0 || (cmp == 0 && isExclusive);
+    }
+
+    private IRubyObject getReceiverForMinMax(ThreadContext context, IRubyObject rangeEnd, Block block) {
+        RubyObject receiver;
+
+        if (block.isGiven()) {
+            receiver = this;
+        } else {
+            if(rangeEmpty_p(context)) return context.runtime.getNil();
+            receiver = RubyArray.newArray(context.runtime, new IRubyObject[]{begin, rangeEnd});
+        }
+        return receiver;
     }
 
     @JRubyMethod

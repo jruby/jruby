@@ -272,4 +272,17 @@ module EnumerableSpecs
       @initialize_dup_called = true
     end
   end
+
+  class Freezy
+    include Enumerable
+
+    def each
+      yield 1
+      yield 2
+    end
+
+    def to_a
+      super.freeze
+    end
+  end
 end # EnumerableSpecs utility classes

@@ -4,6 +4,12 @@ require 'tmpdir'
 require_relative '../ruby/envutil'
 
 class TestConditionVariable < Test::Unit::TestCase
+  def test_initialized
+    assert_raise(TypeError) {
+      ConditionVariable.allocate.wait(nil)
+    }
+  end
+
   def test_condvar_signal_and_wait
     mutex = Mutex.new
     condvar = ConditionVariable.new
@@ -74,8 +80,10 @@ class TestConditionVariable < Test::Unit::TestCase
       condvar.broadcast
       result << "P2"
     end
-    nr_threads.times do |i|
-      threads[i].join
+    Timeout.timeout(5) do
+      nr_threads.times do |i|
+        threads[i].join
+      end
     end
 
     assert_equal ["C1", "C1", "C1", "P1", "P2", "C2", "C2", "C2"], result
@@ -187,5 +195,28 @@ INPUT
     condvar = ConditionVariable.new
 
     assert_nothing_raised(Exception) { mutex.synchronize {condvar.broadcast} }
+  end
+
+  def test_dup
+    bug9440 = '[ruby-core:59961] [Bug #9440]'
+    condvar = ConditionVariable.new
+    assert_raise(NoMethodError, bug9440) do
+      condvar.dup
+    end
+  end
+
+  (DumpableCV = ConditionVariable.dup).class_eval {remove_method :marshal_dump}
+
+  def test_dump
+    bug9674 = '[ruby-core:61677] [Bug #9674]'
+    condvar = ConditionVariable.new
+    assert_raise_with_message(TypeError, /#{ConditionVariable}/, bug9674) do
+      Marshal.dump(condvar)
+    end
+
+    condvar = DumpableCV.new
+    assert_raise_with_message(TypeError, /internal Array/, bug9674) do
+      Marshal.dump(condvar)
+    end
   end
 end

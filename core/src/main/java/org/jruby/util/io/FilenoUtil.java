@@ -82,6 +82,10 @@ public class FilenoUtil {
             return ((NativeSocketChannel)channel).getFD();
         }
 
+        return getFilenoUsingReflection(channel);
+    }
+
+    private static int getFilenoUsingReflection(Channel channel) {
         if (FILE_DESCRIPTOR_FD != null) {
             FileDescriptor fd = getDescriptorFromChannel(channel);
             if (fd.valid()) {

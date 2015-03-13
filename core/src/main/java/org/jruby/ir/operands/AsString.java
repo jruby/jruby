@@ -1,7 +1,8 @@
 package org.jruby.ir.operands;
 
 import org.jruby.ir.IRVisitor;
-import org.jruby.ir.transformations.inlining.InlinerInfo;
+import org.jruby.ir.persistence.IRWriterEncoder;
+import org.jruby.ir.transformations.inlining.CloneInfo;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
@@ -16,23 +17,22 @@ public class AsString extends Operand {
     public AsString(Operand source) {
         super(OperandType.AS_STRING);
 
-        if (source == null) source = new StringLiteral("");
-        this.source = source;
+        this.source = source == null ? StringLiteral.EMPTY_STRING : source;
     }
 
     @Override
     public Object retrieve(ThreadContext context, IRubyObject self, StaticScope currScope, DynamicScope currDynScope, Object[] temp) {
-        return ((IRubyObject)source.retrieve(context, self, currScope, currDynScope, temp)).asString();
+        return ((IRubyObject) source.retrieve(context, self, currScope, currDynScope, temp)).asString();
     }
 
     @Override
     public Operand getSimplifiedOperand(Map<Operand, Operand> valueMap, boolean force) {
         Operand newSource = source.getSimplifiedOperand(valueMap, force);
-        return (newSource == source) ? this : new AsString(newSource);
+        return newSource == source ? this : new AsString(newSource);
     }
 
     @Override
-    public Operand cloneForInlining(InlinerInfo ii) {
+    public Operand cloneForInlining(CloneInfo ii) {
         return new AsString(source.cloneForInlining(ii));
     }
 
@@ -48,6 +48,12 @@ public class AsString extends Operand {
     @Override
     public void visit(IRVisitor visitor) {
         visitor.AsString(this);
+    }
+
+    @Override
+    public void encode(IRWriterEncoder e) {
+        super.encode(e);
+        e.encode(getSource());
     }
 
     @Override

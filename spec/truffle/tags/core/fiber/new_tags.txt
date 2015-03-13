@@ -1,5 +1,0 @@
-fails:Fiber.new creates a fiber from the given block
-fails:Fiber.new creates a fiber from a subclass
-fails:Fiber.new raises an ArgumentError if called without a block
-fails:Fiber.new does not invoke the block
-fails:Fiber.new closes over lexical environments

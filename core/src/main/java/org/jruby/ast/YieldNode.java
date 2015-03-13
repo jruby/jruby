@@ -52,16 +52,12 @@ public class YieldNode extends Node {
      *                          yield [1, 2, 3] (expandedArguments = false).
      */
     public YieldNode(ISourcePosition position, Node argsNode, boolean expandedArguments) {
-        super(position);
+        super(position, argsNode != null && argsNode.containsVariableAssignment());
         
         // block.yield depends on null to represent empty and nil to represent nil - [nil] vs []
         //assert argsNode != null : "argsNode is not null";
         
         this.argsNode = argsNode;
-        // If we have more than one argument, then make sure the array is not ObjectSpaced.
-        if (argsNode instanceof ArrayNode) {
-            ((ArrayNode)argsNode).setLightweight(true);
-        }
         this.expandedArguments = expandedArguments;
     }
 

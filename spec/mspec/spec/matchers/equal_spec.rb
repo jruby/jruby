@@ -14,7 +14,6 @@ describe EqualMatcher do
 
   it "does not match when actual is not a equal? to expected" do
     EqualMatcher.new(1).matches?(1.0).should == false
-    EqualMatcher.new(1.5).matches?(1.5).should == false
     EqualMatcher.new("blue").matches?("blue").should == false
     EqualMatcher.new(Hash).matches?(Object).should == false
   end

@@ -1,11 +1,4 @@
-fails:The super keyword calls the correct method when the method visibility is modified
-fails:The super keyword raises an error error when super method does not exist
-fails:The super keyword calls the superclass method when initial method is defined_method'd
-fails:The super keyword can call through a define_method multiple times (caching check)
-fails:The super keyword supers up appropriate name even if used for multiple method names
-fails:The super keyword can be used with implicit arguments from a method defined with define_method
 fails:The super keyword passes along modified rest args when they weren't originally empty
 fails:The super keyword passes along modified rest args when they were originally empty
 fails:The super keyword raises a RuntimeError when called with implicit arguments from a method defined with define_method
-fails:The super keyword invokes methods from a chain of anonymous modules
-fails:The super keyword calls the method on the calling class including modules
+fails:The super keyword calls method_missing when a superclass method is not found

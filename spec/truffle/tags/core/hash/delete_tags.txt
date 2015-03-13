@@ -1,5 +1,0 @@
-fails:Hash#delete removes the entry and returns the deleted value
-fails:Hash#delete calls supplied block if the key is not found
-fails:Hash#delete returns nil if the key is not found when no block is given
-fails:Hash#delete accepts keys with private #hash method
-fails:Hash#delete raises a RuntimeError if called on a frozen instance

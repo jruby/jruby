@@ -1,3 +1,0 @@
-fails:Module::Nesting returns the list of Modules nested at the point of call
-fails:Module::Nesting returns the nesting for module/class declaring the called method
-fails:Module.nesting needs to be reviewed for spec completeness

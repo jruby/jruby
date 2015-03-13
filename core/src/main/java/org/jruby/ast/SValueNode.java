@@ -37,7 +37,7 @@ public class SValueNode extends Node {
     protected final Node node;
     
     public SValueNode(ISourcePosition position, Node node) {
-        super(position);
+        super(position, node.containsVariableAssignment());
         
         assert node != null : "node is not null";
         

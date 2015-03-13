@@ -45,15 +45,12 @@ public class RescueBodyNode extends Node {
     private final RescueBodyNode optRescueNode;
 
     public RescueBodyNode(ISourcePosition position, Node exceptionNodes, Node bodyNode, RescueBodyNode optRescueNode) {
-        super(position);
+        super(position, exceptionNodes != null && exceptionNodes.containsVariableAssignment() ||
+                bodyNode.containsVariableAssignment() || optRescueNode != null && optRescueNode.containsVariableAssignment());
         
        assert bodyNode != null : "bodyNode is not null";
         
         this.exceptionNodes = exceptionNodes;
-        if (exceptionNodes instanceof ArrayNode) {
-            // array created for rescue args doesn't need to be in ObjectSpace.
-            ((ArrayNode)exceptionNodes).setLightweight(true);
-        }
         this.bodyNode = bodyNode;
         this.optRescueNode = optRescueNode;
     }

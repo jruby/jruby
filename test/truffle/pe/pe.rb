@@ -1,4 +1,4 @@
-# Copyright (c) 2014 Oracle and/or its affiliates. All rights reserved. This
+# Copyright (c) 2014, 2015 Oracle and/or its affiliates. All rights reserved. This
 # code is released under a tri EPL/GPL/LGPL license. You can use it,
 # redistribute it and/or modify it under the terms of the:
 # 
@@ -6,50 +6,92 @@
 # GNU General Public License version 2
 # GNU Lesser General Public License version 2.1
 
-# This file relies on some implementation details of JRuby+Truffle and Truffle,
-# so be careful as you edit. Every block that you pass to example must be
-# unique - so you can't always build up examples by running in a loop or using
-# helper method. truffle_assert_constant looks like a method but is replaced
-# in the parser with a specific node.
+# To diagnose a failing example
+#
+# Take the expression that failed and put it in test.rb with this code around
+# it:
+#
+#   loop do
+#     expression
+#   end
+#
+# To actually see the failure (rather than just the non-constant code running)
+# do:
+#
+#   loop do
+#     Truffle::Primitive.assert_constant expression
+#   end
+#
+# Run with:
+#
+#   jt run --graal -J-G:+TraceTruffleCompilation -J-G:+TruffleCompilationExceptionsAreFatal test.rb
 
-$failures = 0
+EXAMPLES = []
 
-def example
-  1_000_000.times do
-    yield
-  end
-
-  print "."
-rescue RubyTruffleError
-  $failures += 1
-  print "E"
+def example(code, expected_constant=true, tagged=false)
+  EXAMPLES << [code, expected_constant, tagged]
 end
 
-def counter_example
-  1_000_000.times do
-    yield
-  end
-
-  $failures += 1
-  print "E"
-rescue RubyTruffleError
-  print "."
+def counter_example(code)
+  example(code, false, false)
 end
 
-# Two simple tests to check we're working
+def tagged_example(code)
+  example(code, false, true)
+end
 
-example { truffle_assert_constant 14 }
-#counter_example { truffle_assert_constant rand }
+example "14"
+counter_example "rand"
 
-# Tests organised by class
+require_relative 'language/metaprogramming_pe.rb'
+require_relative 'core/truefalse_pe.rb'
+require_relative 'core/fixnum_pe.rb'
+require_relative 'core/float_pe.rb'
+require_relative 'core/symbol_pe.rb'
+require_relative 'core/array_pe.rb'
+require_relative 'core/hash_pe.rb'
+require_relative 'macro/pushing_pixels_pe.rb'
 
-$: << File.expand_path('..', __FILE__)
+tested = 0
+failed = 0
+tagged = 0
 
-require "core/truefalse_pe.rb"
-require "core/fixnum_pe.rb"
-require "core/float_pe.rb"
-require "core/symbol_pe.rb"
+EXAMPLES.each do |code, expected_constant, tagged|
+  finished = false
 
-print "\n"
+  test_thread = Thread.new do
+    begin
+      tested += 1
+      eval "loop { Truffle::Primitive.assert_constant #{code}; Truffle::Primitive.assert_not_compiled; Thread.pass }"
+    rescue RubyTruffleError => e
+      constant = e.message.include? 'Truffle::Primitive.assert_not_compiled'
+      if expected_constant
+        unless constant
+          puts "FAILURE: #{code} wasn't constant"
+          failed += 1
+        end
+      else
+        if constant
+          if tagged
+            puts "QUERY: #{code} was tagged but it still passed"
+          else
+            puts "QUERY: #{code} wasn't supposed to be constant but it was"
+            failed += 1
+          end
+        end
+      end
+    ensure
+      finished = true
+    end
+  end
 
-exit 1 unless $failures.zero?
+  test_thread.join(5)
+
+  unless finished
+    puts "TIMEOUT: #{code} didn't compile in time so I don't know if it's constant or not"
+  end
+end
+
+puts "Tested #{tested}, #{EXAMPLES.select{|c,e,t| t}.size} tagged, #{failed} failed"
+
+exit 1 unless failed.zero?

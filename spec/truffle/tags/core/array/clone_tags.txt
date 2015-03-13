@@ -1,6 +1,0 @@
-fails:Array#clone returns an Array or a subclass instance
-fails:Array#clone creates a new array containing all elements or the original
-fails:Array#clone copies taint status from the original
-fails:Array#clone copies untrusted status from the original
-fails:Array#clone copies frozen status from the original
-fails:Array#clone copies singleton methods

@@ -29,3 +29,5 @@ fails:IO#write does not warn if called after IO#read
 fails:IO#write writes to the current position after IO#read
 fails:IO#write advances the file position by the count of given bytes
 fails:IO#write raises IOError on closed stream
+fails(windows):IO#write on Windows normalizes line endings in text mode
+fails(windows):IO#write on Windows does not normalize line endings in binary mode

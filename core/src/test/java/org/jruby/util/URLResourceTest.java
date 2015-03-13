@@ -8,8 +8,7 @@ public class URLResourceTest extends TestCase {
     
     public void testDirectory(){
         String uri = Thread.currentThread().getContextClassLoader().getResource( "somedir" ).toExternalForm();
-        // hmm not sure why the url from the classloader does not work :(
-        FileResource resource = URLResource.create( "uri:" + uri.replace( "file://", "file:/" ));
+        FileResource resource = URLResource.create( null, "uri:" + uri);
         
         assertNotNull(resource );
         assertFalse(resource.isFile());
@@ -21,8 +20,7 @@ public class URLResourceTest extends TestCase {
 
     public void testNoneDirectory(){
         String uri = Thread.currentThread().getContextClassLoader().getResource( "somedir/dir_without_listing" ).toExternalForm();
-        // TODO once the URLResource does keep the protocol part of the uri as is we can remove this replace
-        FileResource resource = URLResource.create( "uri:" + uri.replace( "file:/", "file:///" ));
+        FileResource resource = URLResource.create( null, "uri:" + uri);
 
         assertNotNull(resource );
         // you can open streams on file-system directories
@@ -34,8 +32,7 @@ public class URLResourceTest extends TestCase {
 
     public void testFile(){
         String uri = Thread.currentThread().getContextClassLoader().getResource( "somedir/.jrubydir" ).toExternalForm();
-        // TODO once the URLResource does keep the protocol part of the uri as is we can remove this replace
-        FileResource resource = URLResource.create( "uri:" + uri.replace( "file:/", "file:///" ));
+        FileResource resource = URLResource.create( null, "uri:" + uri);
         
         assertNotNull(resource );
         // you can open streams on file-system directories
@@ -47,13 +44,60 @@ public class URLResourceTest extends TestCase {
     
     public void testNonExistingFile(){
         String uri = Thread.currentThread().getContextClassLoader().getResource( "somedir" ).toExternalForm();
-        // TODO once the URLResource does keep the protocol part of the uri as is we can remove this replace
-        FileResource resource = URLResource.create( "uri:" + uri.replace( "file:/", "file:///" ) + "/not_there");
+        FileResource resource = URLResource.create( null, "uri:" + uri + "/not_there");
         
         assertNotNull(resource );
         assertFalse(resource.isFile());
         assertFalse(resource.exists());
         assertFalse(resource.isDirectory());
         assertNull(resource.list());
+    }
+
+    public void testDirectoryClassloader()
+    {
+        FileResource resource = URLResource.create( null, "uri:classloader:/somedir");
+
+        assertNotNull( resource );
+        assertFalse( resource.isFile() );
+        assertTrue( resource.isDirectory() );
+        assertTrue( resource.exists() );
+        assertEquals( Arrays.asList( resource.list() ),
+                      Arrays.asList( new String[] { ".", "dir_without_listing",
+                                                   "dir_with_listing" } ) );
+    }
+
+    public void testNoneDirectoryClassloader()
+    {
+        FileResource resource = URLResource.create( null, "uri:classloader:/somedir/dir_without_listing");
+
+        assertNotNull( resource );
+        // you can open streams on file-system directories
+        assertTrue( resource.isFile() );
+        assertTrue( resource.exists() );
+        assertFalse( resource.isDirectory() );
+        assertNull( resource.list() );
+    }
+
+    public void testFileClassloader()
+    {
+        FileResource resource = URLResource.create( null, "uri:classloader:/somedir/.jrubydir" );
+
+        assertNotNull( resource );
+        // you can open streams on file-system directories
+        assertTrue( resource.isFile() );
+        assertTrue( resource.exists() );
+        assertFalse( resource.isDirectory() );
+        assertNull( resource.list() );
+    }
+
+    public void testNonExistingFileClassloader()
+    {
+        FileResource resource = URLResource.create( null, "uri:classloader:/somedir/not_there" );
+
+        assertNotNull( resource );
+        assertFalse( resource.isFile() );
+        assertFalse( resource.exists() );
+        assertFalse( resource.isDirectory() );
+        assertNull( resource.list() );
     }
 }

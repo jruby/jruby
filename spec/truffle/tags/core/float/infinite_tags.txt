@@ -1,4 +1,0 @@
-fails:Float#infinite? returns nil for finite values
-fails:Float#infinite? returns 1 for positive infinity
-fails:Float#infinite? returns -1 for negative infinity
-fails:Float#infinite? returns nil for NaN

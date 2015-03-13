@@ -40,7 +40,7 @@ public class EncodingNode extends Node {
     private final Encoding encoding;
 
     public EncodingNode(ISourcePosition position, Encoding encoding) {
-        super(position);
+        super(position, false);
 
         this.encoding = encoding;
     }

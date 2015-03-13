@@ -9,10 +9,11 @@ import java.io.BufferedInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+
 import org.jruby.Ruby;
 import org.jruby.ast.executable.Script;
-import org.jruby.util.OneShotClassLoader;
 import org.jruby.util.JRubyClassLoader;
+import org.jruby.util.OneShotClassLoader;
 import org.objectweb.asm.ClassReader;
 
 /**
@@ -33,7 +34,7 @@ public class CompiledScriptLoader {
             buf = baos.toByteArray();
             JRubyClassLoader jcl = runtime.getJRubyClassLoader();
             OneShotClassLoader oscl = new OneShotClassLoader(jcl);
-            
+
             ClassReader cr = new ClassReader(buf);
             String className = cr.getClassName().replace('/', '.');
 

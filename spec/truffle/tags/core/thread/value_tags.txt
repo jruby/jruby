@@ -1,3 +1,0 @@
-fails:Thread#value returns the result of the block
-fails:Thread#value re-raises an error for an uncaught exception
-fails:Thread#value is nil for a killed thread

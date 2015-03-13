@@ -2,17 +2,24 @@ package org.jruby.ir.operands;
 
 import java.util.List;
 
+import org.jruby.ir.persistence.IRWriterEncoder;
+import org.jruby.ir.transformations.inlining.CloneInfo;
 import org.jruby.parser.StaticScope;
 import org.jruby.ir.IRVisitor;
-import org.jruby.ir.transformations.inlining.InlinerInfo;
-import org.jruby.parser.StaticScope;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
-import java.util.List;
-
 public class CurrentScope extends Operand {
+    // First four scopes are so common and this operand is immutable so we share them.
+    public static final CurrentScope[] CURRENT_SCOPE = {
+            new CurrentScope(0), new CurrentScope(1), new CurrentScope(2), new CurrentScope(3), new CurrentScope(4)
+    };
+
+    public static CurrentScope ScopeFor(int depth) {
+        return depth < CURRENT_SCOPE.length ? CURRENT_SCOPE[depth] : new CurrentScope(depth);
+    }
+
     private final int scopeNestingDepth;
 
     public CurrentScope(int scopeNestingDepth) {
@@ -26,7 +33,7 @@ public class CurrentScope extends Operand {
     }
 
     @Override
-    public Operand cloneForInlining(InlinerInfo ii) {
+    public Operand cloneForInlining(CloneInfo ii) {
         return this;
     }
 
@@ -65,6 +72,12 @@ public class CurrentScope extends Operand {
     @Override
     public void visit(IRVisitor visitor) {
         visitor.CurrentScope(this);
+    }
+
+    @Override
+    public void encode(IRWriterEncoder e) {
+        super.encode(e);
+        e.encode(getScopeNestingDepth());
     }
 
     @Override

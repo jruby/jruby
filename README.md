@@ -3,15 +3,15 @@
 Master: [![Build Status](https://travis-ci.org/jruby/jruby.png?branch=master)](https://travis-ci.org/jruby/jruby) 
 1.7 branch: [![Build Status](https://travis-ci.org/jruby/jruby.png?branch=jruby-1_7)](https://travis-ci.org/jruby/jruby/branches)
 
-Authors: Stefan Matthias Aust, Anders Bengtsson, Geert Bevin,
+Authors: Stefan Matthias Aust, Anders Bengtsson, Geert Bevin, Ola Bini,
  Piergiuliano Bossi, Johannes Brodwall, Rocky Burt, Paul Butcher,
- Benoit Cerrina, Wyss Clemens, David Corbin, Thomas E Enebo, Robert Feldt,
- Russ Freeman, Chad Fowler, Joey Gibson, Kiel Hodges, Xandy Johnson,
- Kelvin Liu, Alan Moore, Akinori Musha, Charles Nutter, Takashi Okamoto
- Jan Arne Petersen, Tobias Reif, David Saff, Ed Sinjiashvili, Daiki Ueno
- Matthias Veit, Jason Voegele, Sergey Yevtushenko, Robert Yokota, 
- Ola Bini, Nick Sieger, Vladimir Sizikov, and many gracious contributors
- from the community.
+ Benoit Cerrina, Wyss Clemens, David Corbin, Benoit Daloze, Thomas E Enebo,
+ Robert Feldt, Chad Fowler, Russ Freeman, Joey Gibson, Kiel Hodges,
+ Xandy Johnson, Kelvin Liu, Kevin Menard, Alan Moore, Akinori Musha,
+ Charles Nutter, Takashi Okamoto, Jan Arne Petersen, Tobias Reif, David Saff,
+ Subramanya Sastry, Chris Seaton, Nick Sieger, Ed Sinjiashvili, Vladimir Sizikov,
+ Daiki Ueno, Matthias Veit, Jason Voegele, Sergey Yevtushenko, Robert Yokota,
+   and many gracious contributors from the community.
 
 Project Contact: Thomas E Enebo <enebo@acm.org>
 
@@ -29,7 +29,9 @@ See the [docs](docs) directory for more information.
 
 ## Prerequisites
 
-JRuby 1.7.x requires Java 6 or greater.
+* A Java 7-compatible (or higher) Java development kit (JDK)
+* Maven 3+
+* Apache Ant 1.8+ (see https://github.com/jruby/jruby/issues/2236)
 
 ## Run
 
@@ -46,7 +48,8 @@ See [BUILDING](BUILDING.md) for more information.
 
 ## Testing
 
-See [BUILDING: Developing and Testing](BUILDING.md#developing-and-testing) for more information.
+See [BUILDING: Developing and Testing](BUILDING.md#developing-and-testing) for
+more information.
 
 ## More Information
 

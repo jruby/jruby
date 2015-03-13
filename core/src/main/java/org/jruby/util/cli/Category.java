@@ -45,7 +45,8 @@ public enum Category {
     DEBUG("debugging and logging"),
     JAVA_INTEGRATION("java integration"),
     PROFILING("profiling"),
-    CLI("command line options");
+    CLI("command line options"),
+    COMPLIANCE("compliance options");
 
     Category(String desc) {
         this.desc = desc;

@@ -259,7 +259,7 @@ public class RubyZlib {
         return JZlibInflate.s_inflate(context, recv, string);
     }
 
-    @JRubyMethod(required = 1, optional = 1)
+    @JRubyMethod(required = 1, optional = 1, module = true)
     public static IRubyObject deflate(IRubyObject recv, IRubyObject[] args) {
         return JZlibDeflate.s_deflate(recv, args);
     }
