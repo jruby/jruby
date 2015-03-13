@@ -30,14 +30,14 @@ public class PackParser {
 
     public CallTarget parse(String format) {
         final PackTokenizer tokenizer = new PackTokenizer(format);
-        final PackNode body = parse(tokenizer);
+        final PackNode body = parse(tokenizer, false);
         return Truffle.getRuntime().createCallTarget(new PackRootNode(describe(format), body));
     }
 
-    public PackNode parse(PackTokenizer tokenizer) {
+    public PackNode parse(PackTokenizer tokenizer, boolean inParens) {
         final List<PackNode> sequenceChildren = new ArrayList<>();
 
-        while (true) {
+        tokenizerLoop: while (true) {
             Object token = tokenizer.next();
 
             if (token == null) {
@@ -48,6 +48,15 @@ public class PackParser {
 
             if (token instanceof Character) {
                 switch ((char) token) {
+                    case '(':
+                        node = parse(tokenizer, true);
+                        break;
+                    case ')':
+                        if (inParens) {
+                            break tokenizerLoop;
+                        } else {
+                            throw new UnsupportedOperationException("unbalanced parens");
+                        }
                     case 'N':
                         node = new UInt32BENode();
                         break;
@@ -73,16 +82,18 @@ public class PackParser {
                 throw new UnsupportedOperationException(String.format("unexpected token %s", token));
             }
 
-            token = tokenizer.next();
+            token = tokenizer.peek();
 
             if (token != null) {
                 if (token instanceof Character) {
                     switch ((char) token) {
                         case '*':
+                            tokenizer.next();
                             node = new StarNode(node);
                             break;
                     }
                 } else if (token instanceof Integer) {
+                    tokenizer.next();
                     node = new NNode((int) token, node);
                 }
             }

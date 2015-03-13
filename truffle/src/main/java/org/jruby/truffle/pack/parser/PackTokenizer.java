@@ -13,12 +13,27 @@ public class PackTokenizer {
 
     private final String format;
     private int position;
+    private Object peek;
 
     public PackTokenizer(String format) {
         this.format = format;
     }
 
+    public Object peek() {
+        if (peek == null) {
+            peek = next();
+        }
+
+        return peek;
+    }
+
     public Object next() {
+        if (peek != null) {
+            final Object token = peek;
+            peek = null;
+            return token;
+        }
+
         consumeWhitespace();
 
         if (position == format.length()) {
@@ -27,7 +42,7 @@ public class PackTokenizer {
 
         final char c = format.charAt(position);
 
-        if ("NLXx*".indexOf(c) > -1) {
+        if ("NLXx*()".indexOf(c) > -1) {
             position++;
             return c;
         }

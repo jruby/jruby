@@ -2178,7 +2178,7 @@ public abstract class ArrayNodes {
 
     }
 
-    @CoreMethod(names = "pack_fast", required = 1)
+    @CoreMethod(names = "pack_fast", required = 1, optional = 1)
     public abstract static class PackFastNode extends ArrayCoreMethodNode {
 
         @Child private DirectCallNode callPackNode;
@@ -2193,7 +2193,7 @@ public abstract class ArrayNodes {
         }
 
         @Specialization
-        public RubyString pack(VirtualFrame frame, RubyArray array, RubyString format) {
+        public RubyString pack(VirtualFrame frame, RubyArray array, RubyString format, boolean extended) {
             if (callPackNode == null) {
                 CompilerDirectives.transferToInterpreter();
                 final CallTarget packCallTarget = new PackParser().parse(format.toString());
@@ -2201,6 +2201,11 @@ public abstract class ArrayNodes {
             }
 
             return getContext().makeString((ByteList) callPackNode.call(frame, new Object[]{array.getStore(), array.getSize()}));
+        }
+
+        @Specialization
+        public RubyString pack(VirtualFrame frame, RubyArray array, RubyString format, UndefinedPlaceholder extended) {
+            return pack(frame, array, format, false);
         }
 
     }
