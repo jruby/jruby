@@ -43,6 +43,8 @@ public class RubyThread extends RubyBasicObject {
 
     private String name;
 
+    /** We use this instead of {@link Thread#join()} since we don't always have a reference
+     * to the {@link Thread} and we want to handle cases where the Thread did not start yet. */
     private final CountDownLatch finished = new CountDownLatch(1);
 
     private volatile Thread thread;
