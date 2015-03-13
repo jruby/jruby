@@ -4488,17 +4488,20 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
         if (value.getRealSize() == 0) return RubyFixnum.zero(runtime);
 
         RubyString otherStr = arg.convertToString();
+        ByteList otherBL = otherStr.getByteList();
         Encoding enc = checkEncoding(otherStr);
 
-        int c;
-        if (otherStr.value.length() == 1 && enc.isAsciiCompatible() &&
-                ((c = otherStr.value.unsafeBytes()[otherStr.value.getBegin()] & 0xff)) < 0x80 && scanForCodeRange() != CR_BROKEN) {
+        if (otherBL.length() == 1 && enc.isAsciiCompatible() &&
+                enc.isReverseMatchAllowed(otherBL.unsafeBytes(), otherBL.begin(), otherBL.begin() + otherBL.getRealSize()) &&
+                scanForCodeRange() != CR_BROKEN) {
+            int n = 0;
+            int[] len_p = {0};
+            int c = EncodingUtils.encCodepointLength(runtime, otherBL.unsafeBytes(), otherBL.begin(), otherBL.begin() + otherBL.getRealSize(), len_p, enc);
 
             if (value.length() ==0) return RubyFixnum.zero(runtime);
             byte[]bytes = value.unsafeBytes();
             int p = value.getBegin();
             int end = p + value.length();
-            int n = 0;
             while (p < end) {
                 if ((bytes[p++] & 0xff) == c) n++;
             }

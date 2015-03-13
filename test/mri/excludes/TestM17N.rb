@@ -1,4 +1,3 @@
-exclude :test_count_sjis_trailing_byte, "needs investigation"
 exclude :test_delete, "needs investigation"
 exclude :test_dynamic_eucjp_regexp, "needs investigation"
 exclude :test_dynamic_sjis_regexp, "needs investigation"
