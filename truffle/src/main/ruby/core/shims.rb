@@ -9,10 +9,6 @@
 # These are implemented just to get other stuff working - we'll go back and
 # implement these properly later.
 
-# Here otherwise it causes problems for RubySpec
-class Channel
-end
-
 class IO
   def external_encoding
     @external

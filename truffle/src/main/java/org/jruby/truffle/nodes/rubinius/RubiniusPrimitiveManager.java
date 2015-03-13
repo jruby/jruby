@@ -53,6 +53,7 @@ public class RubiniusPrimitiveManager {
         nodeFactories.addAll(EncodingPrimitiveNodesFactory.getFactories());
         nodeFactories.addAll(RegexpPrimitiveNodesFactory.getFactories());
         nodeFactories.addAll(ModulePrimitiveNodesFactory.getFactories());
+        nodeFactories.addAll(RandomPrimitiveNodesFactory.getFactories());
 
         final Map<String, RubiniusPrimitiveConstructor> primitives = new HashMap<>();
 

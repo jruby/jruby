@@ -31,6 +31,7 @@ import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.RubyRootNode;
 import org.jruby.truffle.nodes.array.*;
 import org.jruby.truffle.nodes.coerce.ToIntNode;
+import org.jruby.truffle.nodes.coerce.ToAryNodeFactory;
 import org.jruby.truffle.nodes.coerce.ToIntNodeFactory;
 import org.jruby.truffle.nodes.dispatch.*;
 import org.jruby.truffle.nodes.methods.arguments.MissingArgumentBehaviour;
@@ -598,7 +599,12 @@ public abstract class ArrayNodes {
     }
 
     @CoreMethod(names = "concat", required = 1, raiseIfFrozenSelf = true)
-    public abstract static class ConcatNode extends ArrayCoreMethodNode {
+    @NodeChildren({
+        @NodeChild(value = "array"),
+        @NodeChild(value = "other")
+    })
+    @ImportStatic(ArrayGuards.class)
+    public abstract static class ConcatNode extends RubyNode {
 
         public ConcatNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -606,6 +612,10 @@ public abstract class ArrayNodes {
 
         public ConcatNode(ConcatNode prev) {
             super(prev);
+        }
+
+        @CreateCast("other") public RubyNode coerceOtherToAry(RubyNode other) {
+            return ToAryNodeFactory.create(getContext(), getSourceSection(), other);
         }
 
         @Specialization(guards = "areBothNull(array, other)")
@@ -1236,7 +1246,12 @@ public abstract class ArrayNodes {
     }
 
     @CoreMethod(names = "initialize_copy", visibility = Visibility.PRIVATE, required = 1, raiseIfFrozenSelf = true)
-    public abstract static class InitializeCopyNode extends ArrayCoreMethodNode {
+    @NodeChildren({
+        @NodeChild(value = "self"),
+        @NodeChild(value = "from")
+    })
+    @ImportStatic(ArrayGuards.class)
+    public abstract static class InitializeCopyNode extends RubyNode {
         // TODO(cs): what about allocationSite ?
 
         public InitializeCopyNode(RubyContext context, SourceSection sourceSection) {
@@ -1245,6 +1260,10 @@ public abstract class ArrayNodes {
 
         public InitializeCopyNode(InitializeCopyNode prev) {
             super(prev);
+        }
+
+        @CreateCast("from") public RubyNode coerceOtherToAry(RubyNode other) {
+            return ToAryNodeFactory.create(getContext(), getSourceSection(), other);
         }
 
         @Specialization(guards = "isOtherNull(self, from)")
@@ -2657,7 +2676,12 @@ public abstract class ArrayNodes {
     }
 
     @CoreMethod(names = "replace", required = 1, raiseIfFrozenSelf = true)
-    public abstract static class ReplaceNode extends ArrayCoreMethodNode {
+    @NodeChildren({
+        @NodeChild(value = "array"),
+        @NodeChild(value = "other")
+    })
+    @ImportStatic(ArrayGuards.class)
+    public abstract static class ReplaceNode extends RubyNode {
 
         public ReplaceNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -2665,6 +2689,10 @@ public abstract class ArrayNodes {
 
         public ReplaceNode(ReplaceNode prev) {
             super(prev);
+        }
+
+        @CreateCast("other") public RubyNode coerceOtherToAry(RubyNode index) {
+            return ToAryNodeFactory.create(getContext(), getSourceSection(), index);
         }
 
         @Specialization(guards = "isOtherNull(array, other)")

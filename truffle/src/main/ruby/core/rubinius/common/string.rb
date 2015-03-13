@@ -102,19 +102,6 @@ class String
     result
   end
 
-  def sum(bits=16)
-    bits = Rubinius::Type.coerce_to bits, Fixnum, :to_int
-    i = -1
-    sum = 0
-
-    sum += @data[i] while (i += 1) < @num_bytes
-    if bits > 0
-      sum & ((1 << bits) - 1)
-    else
-      sum
-    end
-  end
-
   def to_c
     Complexifier.new(self).convert
   end

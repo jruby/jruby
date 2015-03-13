@@ -3,16 +3,11 @@ if RUBY_VERSION > '1.9'
   describe 'String#casecmp' do
     it 'returns correct value' do
       Encoding.name_list.each do |enc_name|
-        if (enc_name != "UTF-7") && (enc_name != "CP65000")
-          # this condition statement escape the following error:
-          # Encoding::ConverterNotFoundError: 
-          # code converter not found for UTF-7
-
-          # using "UTF-16LE", "UTF-8", "Shift_JIS", and other available encodings
-          a = 'ABC'.encode(enc_name)
-          b = 'ABC'.encode(enc_name)
-          b.casecmp(a).should be_true
-        end
+        enc = Encoding.find(enc_name)
+        next if !enc || enc.dummy?
+        a = 'ABC'.encode(enc)
+        b = 'ABC'.encode(enc)
+        b.casecmp(a).should == 0
       end
     end
   end

@@ -40,6 +40,8 @@ class Mutex
   def sleep(duration=undefined)
     if duration.kind_of?(Numeric) && duration < 0
       raise ArgumentError, "time interval must be positive"
+    elsif duration == nil
+      duration = undefined
     end
 
     unlock

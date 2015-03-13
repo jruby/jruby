@@ -1,1 +1,0 @@
-fails:Thread.main returns the main thread
