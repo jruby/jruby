@@ -1,6 +1,4 @@
 fails:Array#hash returns the same hash for equal recursive arrays
 fails:Array#hash returns the same hash for equal recursive arrays through hashes
 fails:Array#hash calls to_int on result of calling hash on each element
-fails:Array#hash returns same hash code for arrays with the same content
-fails:Array#hash returns the same value if arrays are #eql?
 fails:Array#hash properly handles recursive arrays
