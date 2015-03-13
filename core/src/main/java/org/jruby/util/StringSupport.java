@@ -1324,4 +1324,25 @@ public final class StringSupport {
 
         return modify ? rubyString : null;
     }
+
+    /**
+     * rb_str_chop
+     */
+    public static int choppedLength19(CodeRangeable rubyString, Ruby runtime) {
+        final ByteList value = rubyString.getByteList();
+        int p = value.getBegin();
+        int end = p + value.getRealSize();
+
+        if (p > end) return 0;
+        byte bytes[] = value.getUnsafeBytes();
+        Encoding enc = value.getEncoding();
+
+        int s = enc.prevCharHead(bytes, p, end, end);
+        if (s == -1) return 0;
+        if (s > p && codePoint(runtime, enc, bytes, s, end) == '\n') {
+            int s2 = enc.prevCharHead(bytes, p, s, end);
+            if (s2 != -1 && codePoint(runtime, enc, bytes, s2, end) == '\r') s = s2;
+        }
+        return s - p;
+    }
 }
