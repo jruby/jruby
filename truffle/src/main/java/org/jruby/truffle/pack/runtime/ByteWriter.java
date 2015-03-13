@@ -21,13 +21,21 @@ public class ByteWriter {
     @CompilerDirectives.CompilationFinal private byte[] bytes;
     private int position;
 
-    public ByteWriter(int capacity) {
-        bytes = new byte[capacity];
+    public ByteWriter(int expectedLength) {
+        bytes = new byte[expectedLength];
+    }
+
+    public void writeUInt32LE(int value) {
+        write((byte) value, (byte) (value >>> 8), (byte) (value >>> 16), (byte) (value >>> 24));
+    }
+
+    public void writeUInt32BE(int value) {
+        write((byte) (value >>> 24), (byte) (value >>> 16), (byte) (value >>> 8), (byte) value);
     }
 
     @ExplodeLoop
     public void write(byte... values) {
-        if (position + values.length >= bytes.length) {
+        if (position + values.length > bytes.length) {
             CompilerDirectives.transferToInterpreterAndInvalidate();
             bytes = Arrays.copyOf(bytes, bytes.length * 2);
         }
@@ -37,6 +45,10 @@ public class ByteWriter {
             bytes[position] = value;
             position++;
         }
+    }
+
+    public void back() {
+        position--;
     }
 
     public int getLength() {

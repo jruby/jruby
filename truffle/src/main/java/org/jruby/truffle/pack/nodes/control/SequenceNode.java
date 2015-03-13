@@ -27,6 +27,7 @@ public class SequenceNode extends PackNode {
         for (PackNode child : children) {
             source_pos = child.pack(source, source_pos, source_len, writer);
         }
+        getRootNode().reportLoopCount(children.length);
         return source_pos;
     }
 
@@ -36,6 +37,7 @@ public class SequenceNode extends PackNode {
         for (PackNode child : children) {
             source_pos = child.pack(source, source_pos, source_len, writer);
         }
+        getRootNode().reportLoopCount(children.length);
         return source_pos;
     }
 
@@ -45,6 +47,7 @@ public class SequenceNode extends PackNode {
         for (PackNode child : children) {
             source_pos = child.pack(source, source_pos, source_len, writer);
         }
+        getRootNode().reportLoopCount(children.length);
         return source_pos;
     }
 
@@ -54,6 +57,7 @@ public class SequenceNode extends PackNode {
         for (PackNode child : children) {
             source_pos = child.pack(source, source_pos, source_len, writer);
         }
+        getRootNode().reportLoopCount(children.length);
         return source_pos;
     }
 

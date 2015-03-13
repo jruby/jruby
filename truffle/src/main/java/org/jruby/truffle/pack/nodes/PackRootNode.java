@@ -18,11 +18,14 @@ import org.jruby.util.ByteList;
 
 public class PackRootNode extends RootNode {
 
+    private final String description;
+
     @Child private PackNode child;
 
     @CompilerDirectives.CompilationFinal private int expectedLength = ArrayUtils.capacity(0, 0);
 
-    public PackRootNode(PackNode child) {
+    public PackRootNode(String description, PackNode child) {
+        this.description = description;
         this.child = child;
     }
 
@@ -52,4 +55,8 @@ public class PackRootNode extends RootNode {
         return true;
     }
 
+    @Override
+    public String toString() {
+        return description;
+    }
 }

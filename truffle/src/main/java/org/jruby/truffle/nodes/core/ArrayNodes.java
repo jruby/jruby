@@ -2189,6 +2189,7 @@ public abstract class ArrayNodes {
 
         public PackFastNode(PackFastNode prev) {
             super(prev);
+            callPackNode = prev.callPackNode;
         }
 
         @Specialization
@@ -2197,14 +2198,12 @@ public abstract class ArrayNodes {
                 CompilerDirectives.transferToInterpreter();
                 final CallTarget packCallTarget = new PackParser().parse(format.toString());
                 callPackNode = insert(Truffle.getRuntime().createDirectCallNode(packCallTarget));
-                callPackNode.forceInlining();
             }
 
             return getContext().makeString((ByteList) callPackNode.call(frame, new Object[]{array.getStore(), array.getSize()}));
         }
 
     }
-
 
     @CoreMethod(names = "pop", raiseIfFrozenSelf = true)
     public abstract static class PopNode extends ArrayCoreMethodNode {

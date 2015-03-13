@@ -12,19 +12,17 @@ package org.jruby.truffle.pack.nodes.type;
 import org.jruby.truffle.pack.runtime.ByteWriter;
 import org.jruby.truffle.pack.nodes.PackNode;
 
-public class UInt32NativeNode extends PackNode {
+public class UInt32LENode extends PackNode {
 
     @Override
     public int pack(int[] source, int source_pos, int source_len, ByteWriter writer) {
-        final int value = source[source_pos];
-        writer.write((byte) value, (byte) (value >>> 8), (byte) (value >>> 16), (byte) (value >>> 24));
+        writer.writeUInt32LE(source[source_pos]);
         return source_pos + 1;
     }
 
     @Override
     public int pack(long[] source, int source_pos, int source_len, ByteWriter writer) {
-        final int value = (int) source[source_pos]; // happy to truncate
-        writer.write((byte) value, (byte) (value >>> 8), (byte) (value >>> 16), (byte) (value >>> 24));
+        writer.writeUInt32LE((int) source[source_pos]); // happy to truncate
         return source_pos + 1;
     }
 

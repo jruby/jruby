@@ -13,12 +13,15 @@ import com.oracle.truffle.api.CallTarget;
 import com.oracle.truffle.api.Truffle;
 import org.jruby.truffle.pack.nodes.PackNode;
 import org.jruby.truffle.pack.nodes.PackRootNode;
+import org.jruby.truffle.pack.nodes.control.BackNode;
 import org.jruby.truffle.pack.nodes.control.NNode;
 import org.jruby.truffle.pack.nodes.control.SequenceNode;
 import org.jruby.truffle.pack.nodes.control.StarNode;
 import org.jruby.truffle.pack.nodes.type.NullNode;
-import org.jruby.truffle.pack.nodes.type.UInt32NativeNode;
+import org.jruby.truffle.pack.nodes.type.UInt32BENode;
+import org.jruby.truffle.pack.nodes.type.UInt32LENode;
 
+import java.nio.ByteOrder;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -35,11 +38,23 @@ public class PackParser {
             switch (format.charAt(n)) {
                 case ' ':
                     continue charLoop;
-                case 'x':
-                    node = new NullNode();
+                case 'N':
+                    node = new UInt32BENode();
                     break;
                 case 'L':
-                    node = new UInt32NativeNode();
+                    if (ByteOrder.nativeOrder() == ByteOrder.BIG_ENDIAN) {
+                        node = new UInt32BENode();
+                    } else if (ByteOrder.nativeOrder() == ByteOrder.LITTLE_ENDIAN) {
+                        node = new UInt32LENode();
+                    } else {
+                        throw new UnsupportedOperationException();
+                    }
+                    break;
+                case 'X':
+                    node = new BackNode();
+                    break;
+                case 'x':
+                    node = new NullNode();
                     break;
                 default:
                     throw new UnsupportedOperationException();
@@ -65,7 +80,17 @@ public class PackParser {
         }
 
         final PackNode sequence = new SequenceNode(sequenceChildren.toArray(new PackNode[sequenceChildren.size()]));
-        return Truffle.getRuntime().createCallTarget(new PackRootNode(sequence));
+        return Truffle.getRuntime().createCallTarget(new PackRootNode(describe(format), sequence));
+    }
+
+    private String describe(String format) {
+        format = format.replace("\\s+", "");
+
+        if (format.length() > 10) {
+            format = format.substring(0, 10) + "…";
+        }
+
+        return format;
     }
 
 }
