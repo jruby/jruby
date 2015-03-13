@@ -98,7 +98,8 @@ public class IRReaderStream implements IRReaderDecoder, IRPersistenceValues {
 
     @Override
     public Encoding decodeEncoding() {
-        return EncodingDB.getEncodings().get(decodeByteArray()).getEncoding();
+        byte[] encodingName = decodeByteArray();
+        return EncodingDB.getEncodings().get(encodingName).getEncoding();
     }
 
     @Override

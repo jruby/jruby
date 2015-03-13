@@ -59,8 +59,7 @@ class OperandDecoderMap {
             case STANDARD_ERROR: return new StandardError();
             case STRING_LITERAL: return StringLiteral.decode(d);
             case SVALUE: return new SValue(d.decodeOperand());
-            // FIXME: This is broken since there is no encode/decode for encoding
-            case SYMBOL: return new Symbol(d.decodeString(), USASCIIEncoding.INSTANCE);
+            case SYMBOL: return Symbol.decode(d);
             case TEMPORARY_VARIABLE: return TemporaryLocalVariable.decode(d);
             case UNBOXED_BOOLEAN: return new UnboxedBoolean(d.decodeBoolean());
             case UNBOXED_FIXNUM: return new UnboxedFixnum(d.decodeLong());

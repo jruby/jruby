@@ -155,7 +155,8 @@ class InstrDecoderMap implements IRPersistenceValues {
     private Instr decodeCall() {
         if (RubyInstanceConfig.IR_READING_DEBUG) System.out.println("decoding call");
         int callTypeOrdinal = d.decodeInt();
-        if (RubyInstanceConfig.IR_READING_DEBUG) System.out.println("decoding call, calltype(ord):  "+ callTypeOrdinal);
+        CallType callType = CallType.fromOrdinal(callTypeOrdinal);
+        if (RubyInstanceConfig.IR_READING_DEBUG) System.out.println("decoding call, calltype(ord):  " + callType);
         String methAddr = d.decodeString();
         if (RubyInstanceConfig.IR_READING_DEBUG) System.out.println("decoding call, methaddr:  "+ methAddr);
         Operand receiver = d.decodeOperand();
@@ -170,11 +171,11 @@ class InstrDecoderMap implements IRPersistenceValues {
         }
 
         Operand closure = hasClosureArg ? d.decodeOperand() : null;
-
+        if (RubyInstanceConfig.IR_READING_DEBUG) System.out.println("before result");
         Variable result = d.decodeVariable();
         if (RubyInstanceConfig.IR_READING_DEBUG) System.out.println("decoding call, result:  "+ result);
 
-        return CallInstr.create(d.getCurrentScope(), CallType.fromOrdinal(callTypeOrdinal), result, methAddr, receiver, args, closure);
+        return CallInstr.create(d.getCurrentScope(), callType, result, methAddr, receiver, args, closure);
     }
 
     private Instr decodeFrame() {

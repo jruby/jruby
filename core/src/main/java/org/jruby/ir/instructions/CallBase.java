@@ -62,7 +62,7 @@ public abstract class CallBase extends Instr implements ClosureAcceptingInstr {
         e.encode(getCallType().ordinal());
         e.encode(getName());
         e.encode(getReceiver());
-        e.encode(calculateArity(getCallArgs(), hasClosure));
+        e.encode(calculateArity());
 
         for (Operand arg: getCallArgs()) {
             e.encode(arg);
@@ -74,8 +74,8 @@ public abstract class CallBase extends Instr implements ClosureAcceptingInstr {
 
     // FIXME: Convert this to some Signature/Arity method
     // -0 is not possible so we add 1 to arguments with closure so we get a valid negative value.
-    private int calculateArity(Operand[] arguments, boolean hasClosure) {
-        return hasClosure ? -1*(arguments.length + 1) : arguments.length;
+    private int calculateArity() {
+        return hasClosure ? -1*(argsCount + 1) : argsCount;
     }
 
     private static Operand[] getOperands(Operand receiver, Operand[] arguments, Operand closure) {

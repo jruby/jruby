@@ -4,6 +4,7 @@ import org.jcodings.Encoding;
 import org.jcodings.specific.ASCIIEncoding;
 import org.jruby.RubySymbol;
 import org.jruby.ir.IRVisitor;
+import org.jruby.ir.persistence.IRReaderDecoder;
 import org.jruby.ir.persistence.IRWriterEncoder;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.DynamicScope;
@@ -43,8 +44,11 @@ public class Symbol extends Reference {
     @Override
     public void encode(IRWriterEncoder e) {
         super.encode(e);
-        e.encode(getName());
-        e.encode(getEncoding().toString());
+        e.encode(getEncoding());
+    }
+
+    public static Symbol decode(IRReaderDecoder d) {
+        return new Symbol(d.decodeString(), d.decodeEncoding());
     }
 
     @Override
