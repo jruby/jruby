@@ -136,11 +136,11 @@ public class RubyThread extends RubyBasicObject {
         }
     }
 
-    public boolean join(final int timeout) {
+    public boolean join(final int timeoutInMillis) {
         final boolean joined = getContext().getThreadManager().runOnce(new BlockingActionWithoutGlobalLock<Boolean>() {
             @Override
             public Boolean block() throws InterruptedException {
-                return finished.await(timeout, TimeUnit.SECONDS);
+                return finished.await(timeoutInMillis, TimeUnit.MILLISECONDS);
             }
         });
 

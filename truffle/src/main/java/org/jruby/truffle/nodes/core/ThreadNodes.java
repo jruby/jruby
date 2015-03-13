@@ -148,18 +148,29 @@ public abstract class ThreadNodes {
         }
 
         @Specialization
-        public RubyThread join(RubyThread self, UndefinedPlaceholder timeout) {
+        public RubyThread join(RubyThread thread, UndefinedPlaceholder timeout) {
             notDesignedForCompilation();
 
-            self.join();
-            return self;
+            thread.join();
+            return thread;
         }
 
         @Specialization
-        public Object join(RubyThread self, int timeout) {
+        public Object join(RubyThread thread, int timeout) {
             notDesignedForCompilation();
 
-            if (self.join(timeout)) {
+            return joinMillis(thread, timeout * 1000);
+        }
+
+        @Specialization
+        public Object join(RubyThread thread, double timeout) {
+            notDesignedForCompilation();
+
+            return joinMillis(thread, (int) (timeout * 1000.0));
+        }
+
+        private Object joinMillis(RubyThread self, int timeoutInMillis) {
+            if (self.join(timeoutInMillis)) {
                 return self;
             } else {
                 return getContext().getCoreLibrary().getNilObject();
