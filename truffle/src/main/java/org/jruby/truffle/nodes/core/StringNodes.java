@@ -696,6 +696,42 @@ public abstract class StringNodes {
         }
     }
 
+    @CoreMethod(names = "chop!", raiseIfFrozenSelf = true)
+    public abstract static class ChopBangNode extends CoreMethodNode {
+
+        public ChopBangNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public ChopBangNode(ChopBangNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public Object chopBang(RubyString string) {
+            notDesignedForCompilation();
+
+            if (string.length() == 0) {
+                return getContext().getCoreLibrary().getNilObject();
+            }
+
+            final int newLength = choppedLength(string);
+
+            string.getByteList().view(0, newLength);
+
+            if (string.getCodeRange() != StringSupport.CR_7BIT) {
+                string.clearCodeRange();
+            }
+
+            return string;
+        }
+
+        @TruffleBoundary
+        private int choppedLength(RubyString string) {
+            return StringSupport.choppedLength19(string, getContext().getRuntime());
+        }
+    }
+
     @CoreMethod(names = "count", argumentsAsArray = true)
     public abstract static class CountNode extends CoreMethodNode {
 

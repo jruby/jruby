@@ -1,27 +1,3 @@
-fails:String#chop removes the final character
-fails:String#chop removes the final carriage return
-fails:String#chop removes the final newline
-fails:String#chop removes the final carriage return, newline
-fails:String#chop removes the carrige return, newline if they are the only characters
-fails:String#chop does not remove more than the final carriage return, newline
 fails:String#chop removes a multi-byte character
 fails:String#chop removes the final carriage return, newline from a multibyte String
 fails:String#chop removes the final carriage return, newline from a non-ASCII String
-fails:String#chop returns an empty string when applied to an empty string
-fails:String#chop returns a new string when applied to an empty string
-fails:String#chop taints result when self is tainted
-fails:String#chop untrusts result when self is untrusted
-fails:String#chop returns subclass instances when called on a subclass
-fails:String#chop! removes the final character
-fails:String#chop! removes the final carriage return
-fails:String#chop! removes the final newline
-fails:String#chop! removes the final carriage return, newline
-fails:String#chop! removes the carrige return, newline if they are the only characters
-fails:String#chop! does not remove more than the final carriage return, newline
-fails:String#chop! removes a multi-byte character
-fails:String#chop! removes the final carriage return, newline from a multibyte String
-fails:String#chop! removes the final carriage return, newline from a non-ASCII String
-fails:String#chop! returns self if modifications were made
-fails:String#chop! returns nil when called on an empty string
-fails:String#chop! raises a RuntimeError on a frozen instance that is modified
-fails:String#chop! raises a RuntimeError on a frozen instance that would not be modified

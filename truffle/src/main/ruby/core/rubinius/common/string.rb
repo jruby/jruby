@@ -67,6 +67,11 @@ class String
     str.chomp!(separator) || str
   end
 
+  def chop
+    str = dup
+    str.chop! || str
+  end
+
   def delete(*strings)
     str = dup
     str.delete!(*strings) || str
