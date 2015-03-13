@@ -61,7 +61,7 @@ class TestHigherJavasupport < Test::Unit::TestCase
 
   def test_dispatching_on_nil
     sb = TestHelper.getInterfacedInstance()
-    assert_equal(nil , sb.dispatchObject(nil))
+    assert_equal(nil, sb.dispatchObject(nil))
   end
 
   def test_class_methods
@@ -395,6 +395,34 @@ class TestHigherJavasupport < Test::Unit::TestCase
   def test_direct_package_access
     a = java.util.ArrayList.new
     assert_equal(0, a.size)
+  end
+
+  def test_reflected_field
+    j_integer = Java::JavaClass.for_name('java.lang.Integer')
+    begin
+      j_integer.field('value')
+      fail('value field is not public!')
+    rescue NameError => e
+      assert e
+    end
+    value_field = j_integer.declared_field('value')
+    assert_equal false, value_field.static?
+    assert_equal false, value_field.public?
+    assert_equal true, value_field.final?
+    assert_equal false, value_field.accessible?
+    value_field.accessible = true
+    assert_equal 123456789, value_field.value( 123456789.to_java(:int) )
+    assert_equal 'int', value_field.value_type
+
+    value1_field = Java::JavaClass.for_name('java.lang.reflect.Method').field(:DECLARED)
+    value2_field = Java::JavaLangReflect::Constructor.java_class.field('DECLARED')
+
+    assert_equal value1_field, value2_field
+    assert_equal true, value2_field.eql?(value1_field)
+    assert_equal 1, value2_field.static_value
+    assert_equal true, value1_field.static?
+    assert_equal true, value2_field.public?
+    assert_equal true, value1_field.final?
   end
 
   Properties = Java::java.util.Properties

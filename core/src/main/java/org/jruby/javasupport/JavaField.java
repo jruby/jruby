@@ -115,12 +115,13 @@ public class JavaField extends JavaAccessibleObject {
         Ruby runtime = context.runtime;
 
         Object javaObject = null;
-        if (!Modifier.isStatic(field.getModifiers())) {
+        if ( ! Modifier.isStatic( field.getModifiers() ) ) {
             javaObject = JavaUtil.unwrapJavaValue(runtime, object, "not a java object");
         }
         try {
-            return JavaUtil.convertJavaToUsableRubyObject(runtime, field.get(javaObject));
-        } catch (IllegalAccessException iae) {
+            return convertToRuby(runtime, field.get(javaObject));
+        }
+        catch (IllegalAccessException iae) {
             throw runtime.newTypeError("illegal access");
         }
     }
@@ -128,26 +129,21 @@ public class JavaField extends JavaAccessibleObject {
     @JRubyMethod
     public IRubyObject set_value(IRubyObject object, IRubyObject value) {
         Object javaObject = null;
-        if (!Modifier.isStatic(field.getModifiers())) {
+        if ( ! Modifier.isStatic( field.getModifiers() ) ) {
             javaObject  = JavaUtil.unwrapJavaValue(getRuntime(), object, "not a java object: " + object);
         }
-        IRubyObject val = value;
-        if(val.dataGetStruct() instanceof JavaObject) {
-            val = (IRubyObject)val.dataGetStruct();
-        }
+        final Object javaValue = convertValueToJava(value);
         try {
-            Object convertedValue = val.toJava(field.getType());
-
-            field.set(javaObject, convertedValue);
-        } catch (IllegalAccessException iae) {
-            throw getRuntime().newTypeError(
-                                "illegal access on setting variable: " + iae.getMessage());
-        } catch (IllegalArgumentException iae) {
-            throw getRuntime().newTypeError(
-                                "wrong type for " + field.getType().getName() + ": " +
-                                val.getClass().getName());
+            field.set(javaObject, javaValue);
         }
-        return val;
+        catch (IllegalAccessException iae) {
+            throw getRuntime().newTypeError("illegal access on setting variable: " + iae.getMessage());
+        }
+        catch (IllegalArgumentException iae) {
+            throw getRuntime().newTypeError("wrong type for " + field.getType().getName() + ": " +
+                    ( javaValue == null ? null : javaValue.getClass().getName() ) );
+        }
+        return value;
     }
 
     @JRubyMethod(name = "final?")
@@ -156,45 +152,33 @@ public class JavaField extends JavaAccessibleObject {
     }
 
     @JRubyMethod
-    public JavaObject static_value() {
+    public IRubyObject static_value() {
         try {
-            // TODO: Only setAccessible to account for pattern found by
-            // accessing constants included from a non-public interface.
-            // (aka java.util.zip.ZipConstants being implemented by many
-            // classes)
-            if (!Ruby.isSecurityRestricted()) {
-                field.setAccessible(true);
-            }
-            return JavaObject.wrap(getRuntime(), field.get(null));
-        } catch (IllegalAccessException iae) {
+            return convertToRuby( getRuntime(), field.get(null) );
+        }
+        catch (IllegalAccessException iae) {
             throw getRuntime().newTypeError("illegal static value access: " + iae.getMessage());
         }
     }
 
     @JRubyMethod
-    public JavaObject set_static_value(IRubyObject value) {
-        if (! (value instanceof JavaObject)) {
+    public IRubyObject set_static_value(IRubyObject value) {
+        if ( ! ( value instanceof JavaObject ) ) {
             throw getRuntime().newTypeError("not a java object:" + value);
         }
+        final Object javaValue = convertValueToJava(value);
         try {
-            Object convertedValue = value.toJava(field.getType());
-            // TODO: Only setAccessible to account for pattern found by
-            // accessing constants included from a non-public interface.
-            // (aka java.util.zip.ZipConstants being implemented by many
-            // classes)
-            // TODO: not sure we need this at all, since we only expose
-            // public fields.
-            //field.setAccessible(true);
-            field.set(null, convertedValue);
-        } catch (IllegalAccessException iae) {
+            field.set(null, javaValue);
+        }
+        catch (IllegalAccessException iae) {
             throw getRuntime().newTypeError(
                                 "illegal access on setting static variable: " + iae.getMessage());
-        } catch (IllegalArgumentException iae) {
-            throw getRuntime().newTypeError(
-                                "wrong type for " + field.getType().getName() + ": " +
-                                ((JavaObject) value).getValue().getClass().getName());
         }
-        return (JavaObject) value;
+        catch (IllegalArgumentException iae) {
+            throw getRuntime().newTypeError("wrong type for " + field.getType().getName() + ": " +
+                    ( javaValue == null ? null : javaValue.getClass().getName() ) );
+        }
+        return value;
     }
 
     @JRubyMethod
@@ -205,6 +189,16 @@ public class JavaField extends JavaAccessibleObject {
     @Override
     public AccessibleObject accessibleObject() {
         return field;
+    }
+
+    private Object convertValueToJava(IRubyObject value) {
+        Object val = value.dataGetStruct();
+        if ( val instanceof JavaObject ) value = (IRubyObject) val;
+        return value.toJava( field.getType() );
+    }
+
+    private static IRubyObject convertToRuby(final Ruby runtime, final Object javaValue) {
+        return JavaUtil.convertJavaToUsableRubyObject(runtime, javaValue);
     }
 
 }
