@@ -755,7 +755,12 @@ public abstract class ArrayNodes {
     }
 
     @CoreMethod(names = "delete_at", required = 1, raiseIfFrozenSelf = true)
-    public abstract static class DeleteAtNode extends ArrayCoreMethodNode {
+    @NodeChildren({
+        @NodeChild(value = "array"),
+        @NodeChild(value = "index")
+    })
+    @ImportGuards(ArrayGuards.class)
+    public abstract static class DeleteAtNode extends RubyNode {
 
         private final BranchProfile tooSmallBranch = BranchProfile.create();
         private final BranchProfile beyondEndBranch = BranchProfile.create();
@@ -766,6 +771,10 @@ public abstract class ArrayNodes {
 
         public DeleteAtNode(DeleteAtNode prev) {
             super(prev);
+        }
+
+        @CreateCast("index") public RubyNode coerceOtherToInt(RubyNode index) {
+            return ToIntNodeFactory.create(getContext(), getSourceSection(), index);
         }
 
         @Specialization(guards = "isIntegerFixnum", rewriteOn = UnexpectedResultException.class)
