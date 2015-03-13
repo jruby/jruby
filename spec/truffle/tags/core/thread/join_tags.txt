@@ -1,2 +1,1 @@
-fails:Thread#join returns nil if it is not finished when given a timeout
 fails:Thread#join accepts a floating point timeout length
