@@ -80,44 +80,40 @@ public class JavaConstructor extends JavaCallable {
         return new JavaConstructor(runtime, constructor);
     }
 
-    public static JavaConstructor getMatchingConstructor(Ruby runtime, Class<?> javaClass, Class<?>[] argumentTypes) {
+    public static JavaConstructor getMatchingConstructor(final Ruby runtime,
+        final Class<?> javaClass, final Class<?>[] argumentTypes) {
         try {
             return create(runtime, javaClass.getConstructor(argumentTypes));
-        } catch (NoSuchMethodException e) {
+        }
+        catch (NoSuchMethodException e) {
+            final int argLength = argumentTypes.length;
             // Java reflection does not allow retrieving constructors like methods
-            CtorSearch: for (Constructor<?> ctor : javaClass.getConstructors()) {
-                Class<?>[] targetTypes = ctor.getParameterTypes();
+            Search: for (Constructor<?> ctor : javaClass.getConstructors()) {
+                final Class<?>[] ctorTypes = ctor.getParameterTypes();
+                final int ctorLength = ctorTypes.length;
 
+                if ( ctorLength != argLength ) continue Search;
                 // for zero args case we can stop searching
-                if (targetTypes.length != argumentTypes.length) {
-                    continue CtorSearch;
-                } else if (targetTypes.length == 0 && argumentTypes.length == 0) {
+                if ( ctorLength == 0 && argLength == 0 ) {
                     return create(runtime, ctor);
-                } else {
-                    boolean found = true;
+                }
 
-                    TypeScan: for (int i = 0; i < argumentTypes.length; i++) {
-                        if (i >= targetTypes.length) found = false;
-
-                        if (targetTypes[i].isAssignableFrom(argumentTypes[i])) {
-                            found = true;
-                            continue TypeScan;
-                        } else {
-                            found = false;
-                            continue CtorSearch;
-                        }
-                    }
-
-                    // if we get here, we found a matching method, use it
-                    // TODO: choose narrowest method by continuing to search
-                    if (found) {
-                        return create(runtime, ctor);
+                boolean found = true;
+                TypeScan: for ( int i = 0; i < argLength; i++ ) {
+                    //if ( i >= ctorLength ) found = false;
+                    if ( ctorTypes[i].isAssignableFrom(argumentTypes[i]) ) {
+                        found = true; // continue TypeScan;
+                    } else {
+                        continue Search; // not-found
                     }
                 }
+
+                // if we get here, we found a matching method, use it
+                // TODO: choose narrowest method by continuing to search
+                if ( found ) return create(runtime, ctor);
             }
         }
-        // no matching ctor found
-        return null;
+        return null; // no matching ctor found
     }
 
     public final boolean equals(Object other) {
