@@ -980,7 +980,7 @@ public abstract class StringNodes {
 
             if (beg < 0) {
                 beg += length;
-                if (beg < 0) getContext().getCoreLibrary().getNilObject();
+                if (beg < 0) return getContext().getCoreLibrary().getNilObject();
             }
 
             int end = Math.min(length, beg + len);
