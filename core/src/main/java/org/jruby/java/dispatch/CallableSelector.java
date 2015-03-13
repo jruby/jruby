@@ -2,8 +2,6 @@ package org.jruby.java.dispatch;
 
 import java.lang.reflect.Member;
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import org.jruby.Ruby;
@@ -199,23 +197,23 @@ public class CallableSelector {
         final Class[] types = paramTypes.getParameterTypes();
         int count = 0;
 
-        if (paramTypes.isVarArgs()) {
+        if ( paramTypes.isVarArgs() ) {
             // varargs exactness gives the last N args as +1 since they'll already
             // have been determined to fit
 
             // dig out as many trailing args as possible that match varargs type
-            int nonVarargs = types.length - 1;
+            final int nonVarargs = types.length - 1;
 
-            // add one for vararg
-            count += 1;
+            count += 1; // add one for vararg
 
             // check remaining args
             for (int i = 0; i < nonVarargs && i < args.length; i++) {
-                if ( types[i].equals( getJavaClass(args[i]) ) ) count++;
+                if ( types[i] == getJavaClass(args[i]) ) count++;
             }
-        } else {
+        }
+        else {
             for (int i = 0; i < args.length; i++) {
-                if ( types[i].equals( getJavaClass(args[i]) ) ) count++;
+                if ( types[i] == getJavaClass(args[i]) ) count++;
             }
         }
         return count;
@@ -251,13 +249,13 @@ public class CallableSelector {
     };
 
     private static interface Matcher {
-        public boolean match(Class type, IRubyObject arg);
+        public boolean match(final Class<?> type, final IRubyObject arg);
     }
 
     private static final Matcher EXACT = new Matcher() {
-        public boolean match(Class type, IRubyObject arg) {
-            return type.equals(getJavaClass(arg))
-                    || (type.isPrimitive() && CodegenUtils.getBoxType(type) == getJavaClass(arg));
+        public boolean match(final Class<?> type, final IRubyObject arg) {
+            final Class<?> argClass = getJavaClass(arg);
+            return type == argClass || (type.isPrimitive() && CodegenUtils.getBoxType(type) == argClass);
         }
     };
 
@@ -330,9 +328,7 @@ public class CallableSelector {
         Class varArgType = varArgArrayType.getComponentType();
 
         // if there's no args, we only match when there's just varargs
-        if (args.length == 0) {
-            return types.length <= 1;
-        }
+        if ( args.length == 0 ) return types.length <= 1;
 
         // dig out as many trailing args as will fit, ensuring they match varargs type
         int nonVarargs = types.length - 1;
@@ -351,7 +347,7 @@ public class CallableSelector {
         return true;
     }
 
-    private static boolean assignable(Class type, IRubyObject arg) {
+    private static boolean assignable(Class<?> type, IRubyObject arg) {
         return JavaClass.assignable(type, getJavaClass(arg));
     }
 
@@ -364,30 +360,32 @@ public class CallableSelector {
      * @return Whether the argument can be directly converted to the target primitive type
      */
     private static boolean primitivable(Class type, IRubyObject arg) {
-        Class argClass = getJavaClass(arg);
+        final Class<?> argClass = getJavaClass(arg);
         if (type.isPrimitive()) {
             // TODO: This is where we would want to do precision checks to see
             // if it's non-destructive to coerce a given type into the target
             // integral primitive
             if (type == Integer.TYPE || type == Long.TYPE || type == Short.TYPE || type == Character.TYPE) {
                 return argClass == long.class || // long first because it's what Fixnum claims to be
-                        argClass == byte.class ||
-                        argClass == short.class ||
-                        argClass == char.class ||
-                        argClass == int.class ||
-                        argClass == Long.class ||
-                        argClass == Byte.class ||
-                        argClass == Short.class ||
-                        argClass == Character.class ||
-                        argClass == Integer.class;
-            } else if (type == Float.TYPE || type == Double.TYPE) {
+                       argClass == byte.class ||
+                       argClass == short.class ||
+                       argClass == char.class ||
+                       argClass == int.class ||
+                       argClass == Long.class ||
+                       argClass == Byte.class ||
+                       argClass == Short.class ||
+                       argClass == Character.class ||
+                       argClass == Integer.class;
+            }
+            if (type == Float.TYPE || type == Double.TYPE) {
                 return argClass == double.class || // double first because it's what float claims to be
-                        argClass == float.class ||
-                        argClass == Float.class ||
-                        argClass == Double.class;
-            } else if (type == Boolean.TYPE) {
+                       argClass == float.class ||
+                       argClass == Float.class ||
+                       argClass == Double.class;
+            }
+            if (type == Boolean.TYPE) {
                 return argClass == boolean.class ||
-                        argClass == Boolean.class;
+                       argClass == Boolean.class;
             }
         }
         return false;
