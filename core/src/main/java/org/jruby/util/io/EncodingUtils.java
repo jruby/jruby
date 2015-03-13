@@ -4,7 +4,6 @@ import org.jcodings.Encoding;
 import org.jcodings.EncodingDB;
 import org.jcodings.Ptr;
 import org.jcodings.specific.ASCIIEncoding;
-import org.jcodings.specific.USASCIIEncoding;
 import org.jcodings.specific.UTF16BEEncoding;
 import org.jcodings.specific.UTF16LEEncoding;
 import org.jcodings.specific.UTF32BEEncoding;
@@ -16,6 +15,7 @@ import org.jcodings.transcode.EConvResult;
 import org.jcodings.transcode.Transcoder;
 import org.jcodings.transcode.TranscoderDB;
 import org.jcodings.transcode.Transcoding;
+import org.jcodings.util.CaseInsensitiveBytesHash;
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubyBasicObject;
@@ -24,7 +24,6 @@ import org.jruby.RubyEncoding;
 import org.jruby.RubyFixnum;
 import org.jruby.RubyHash;
 import org.jruby.RubyIO;
-import org.jruby.RubyInteger;
 import org.jruby.RubyMethod;
 import org.jruby.RubyNumeric;
 import org.jruby.RubyProc;
@@ -1810,17 +1809,59 @@ public class EncodingUtils {
             throw context.runtime.newArgumentError("replacement must be valid byte sequence '" + str + "'");
         }
         else if (cr == StringSupport.CR_7BIT) {
-            Encoding e = str.getEncoding();
+            Encoding e = STR_ENC_GET(str);
             if (!enc.isAsciiCompatible()) {
                 throw context.runtime.newEncodingCompatibilityError("incompatible character encodings: " + enc + " and " + e);
             }
         }
         else { /* ENC_CODERANGE_VALID */
-            Encoding e = str.getEncoding();
+            Encoding e = STR_ENC_GET(str);
             if (enc != e) {
                 throw context.runtime.newEncodingCompatibilityError("incompatible character encodings: " + enc + " and " + e);
             }
         }
         return str;
+    }
+
+    // MRI: get_encoding
+    public static Encoding getEncoding(ByteList str) {
+        return getActualEncoding(str.getEncoding(), str);
+    }
+
+    // MRI: get_actual_encoding
+    public static Encoding getActualEncoding(Encoding enc, ByteList byteList) {
+        byte[] bytes = byteList.unsafeBytes();
+        int p = byteList.begin();
+        int end = p + byteList.getRealSize();
+
+        CaseInsensitiveBytesHash<EncodingDB.Entry> encodings = EncodingDB.getEncodings();
+        if (enc == encodings.get("UTF-16".getBytes()).getEncoding() && end - p >= 2) {
+            int c0 = bytes[p] & 0xff;
+            int c1 = bytes[p + 1] & 0xff;
+
+            if (c0 == 0xFE && c1 == 0xFF) {
+                return UTF16BEEncoding.INSTANCE;
+            } else if (c0 == 0xFF && c1 == 0xFE) {
+                return UTF16LEEncoding.INSTANCE;
+            }
+            return ASCIIEncoding.INSTANCE;
+        } else if (enc == encodings.get("UTF-32".getBytes()).getEncoding() && end - p >= 4) {
+            int c0 = bytes[p] & 0xff;
+            int c1 = bytes[p + 1] & 0xff;
+            int c2 = bytes[p + 2] & 0xff;
+            int c3 = bytes[p + 3] & 0xff;
+
+            if (c0 == 0 && c1 == 0 && c2 == 0xFE && c3 == 0xFF) {
+                return UTF32BEEncoding.INSTANCE;
+            } else if (c3 == 0 && c2 == 0 && c1 == 0xFE && c0 == 0xFF) {
+                return UTF32LEEncoding.INSTANCE;
+            }
+            return ASCIIEncoding.INSTANCE;
+        }
+        return enc;
+    }
+
+    public static Encoding STR_ENC_GET(RubyString str) {
+        return getEncoding(str.getByteList());
     }
 }
