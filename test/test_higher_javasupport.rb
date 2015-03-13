@@ -474,7 +474,6 @@ class TestHigherJavasupport < Test::Unit::TestCase
   end
 
   # Disabled temporarily...keeps failing for no obvious reason
-=begin
   def test_that_multiple_threads_including_classes_dont_step_on_each_other
     # we swallow the output to $stderr, so testers don't have to see the
     # warnings about redefining constants over and over again.
@@ -490,10 +489,10 @@ class TestHigherJavasupport < Test::Unit::TestCase
       end
 
       # wait for threads to all stop, then wake them up
-      threads.each {|t| Thread.pass until t.stop?}
-      threads.each {|t| t.run}
+      threads.each { |t| Thread.pass until t.stop? }
+      threads.each(&:run)
       # join each to let them run
-      threads.each {|t| t.join }
+      threads.each(&:join)
       # confirm they all successfully called currentTimeMillis and freeMemory
     ensure
       $stderr.reopen(old_stream)
@@ -504,7 +503,6 @@ class TestHigherJavasupport < Test::Unit::TestCase
       assert(t[:mem])
     end
   end
-=end
 
   if javax.xml.namespace.NamespaceContext.instance_of?(Module)
 
