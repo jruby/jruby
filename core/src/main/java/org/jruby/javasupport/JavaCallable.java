@@ -90,14 +90,8 @@ public abstract class JavaCallable extends JavaAccessibleObject implements Param
         return getRuntime().newFixnum(getArity());
     }
 
-    @JRubyMethod
-    public final RubyArray argument_types() {
-        return toRubyArray(getRuntime(), getParameterTypes());
-    }
-
-    // same as argument_types, but matches name in java.lang.reflect.Constructor/Method
-    @JRubyMethod
-    public RubyArray parameter_types() {
+    @JRubyMethod(name = { "argument_types", "parameter_types" })
+    public final RubyArray parameter_types() {
         return toRubyArray(getRuntime(), getParameterTypes());
     }
 
