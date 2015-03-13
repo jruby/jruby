@@ -74,4 +74,20 @@
     <Class name="org.jruby.truffle.runtime.subsystems.SimpleShell" />
     <Bug pattern="DM_EXIT" />
   </Match>
+  <Match>
+    <Class name="org.jruby.truffle.nodes.debug.AssertConstantNode" />
+    <Bug pattern="VO_VOLATILE_REFERENCE_TO_ARRAY" />
+  </Match>
+  <Match>
+    <Class name="org.jruby.truffle.nodes.debug.AssertNotCompiledNode" />
+    <Bug pattern="VO_VOLATILE_REFERENCE_TO_ARRAY" />
+  </Match>
+  <Match>
+    <Class name="org.jruby.truffle.nodes.debug.AssertConstantNode" />
+    <Bug pattern="ST_WRITE_TO_STATIC_FROM_INSTANCE_METHOD" />
+  </Match>
+  <Match>
+    <Class name="org.jruby.truffle.nodes.debug.AssertNotCompiledNode" />
+    <Bug pattern="ST_WRITE_TO_STATIC_FROM_INSTANCE_METHOD" />
+  </Match>
 </FindBugsFilter>
