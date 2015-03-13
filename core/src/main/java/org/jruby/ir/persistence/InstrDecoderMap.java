@@ -37,26 +37,27 @@ class InstrDecoderMap implements IRPersistenceValues {
     public Instr decodeInner(Operation operation) {
         switch(operation) {
             case ALIAS: return new AliasInstr(d.decodeOperand(), d.decodeOperand());
-            case ATTR_ASSIGN: return decodeAttrAssignInstr();
+            case ATTR_ASSIGN: return AttrAssignInstr.decode(d);
+            case B_FALSE: return BFalseInstr.decode(d);
+            case B_NIL: return BNilInstr.decode(d);
+            case B_TRUE: return BTrueInstr.decode(d);
+            case B_UNDEF: return BUndefInstr.decode(d);
             case BEQ: return BEQInstr.create(d.decodeOperand(), d.decodeOperand(), (Label) d.decodeOperand());
             case BINDING_LOAD: return new LoadLocalVarInstr(d.decodeScope(), (TemporaryLocalVariable) d.decodeOperand(), (LocalVariable) d.decodeOperand());
             case BINDING_STORE:return new StoreLocalVarInstr(d.decodeOperand(), d.decodeScope(), (LocalVariable) d.decodeOperand());
             case BLOCK_GIVEN: return new BlockGivenInstr(d.decodeVariable(), d.decodeOperand());
             case BNE: return BNEInstr.decode(d);
             case BREAK: return new BreakInstr(d.decodeOperand(), d.decodeString());
-            case B_FALSE: return BFalseInstr.decode(d);
-            case B_NIL: return BNilInstr.decode(d);
-            case B_TRUE: return BTrueInstr.decode(d);
-            case B_UNDEF: return BUndefInstr.decode(d);
+            case BUILD_COMPOUND_ARRAY: return new BuildCompoundArrayInstr(d.decodeVariable(), d.decodeOperand(), d.decodeOperand(), d.decodeBoolean());
+            case BUILD_COMPOUND_STRING: return BuildCompoundStringInstr.decode(d);
+            case BUILD_DREGEXP: return decodeBuildDynRegExpInstr();
+            case BUILD_SPLAT: return BuildSplatInstr.decode(d);
+            case BUILD_RANGE: return new BuildRangeInstr(d.decodeVariable(), d.decodeOperand(), d.decodeOperand(), d.decodeBoolean());
             case CALL_1F: case CALL_1D: case CALL_1O: case CALL_1OB: case CALL_0O: case CALL: return decodeCall();
             case CHECK_ARGS_ARRAY_ARITY: return CheckArgsArrayArityInstr.decode(d);
             case CHECK_ARITY: return CheckArityInstr.decode(d);
             case CLASS_VAR_MODULE: return new GetClassVarContainerModuleInstr(d.decodeVariable(), d.decodeOperand(), d.decodeVariable());
             case CONST_MISSING: return decodeConstMissingInstr();
-            case BUILD_COMPOUND_ARRAY: return new BuildCompoundArrayInstr(d.decodeVariable(), d.decodeOperand(), d.decodeOperand(), d.decodeBoolean());
-            case BUILD_COMPOUND_STRING: return BuildCompoundStringInstr.decode(d);
-            case BUILD_DREGEXP: return decodeBuildDynRegExpInstr();
-            case BUILD_RANGE: return new BuildRangeInstr(d.decodeVariable(), d.decodeOperand(), d.decodeOperand(), d.decodeBoolean());
             case COPY: return CopyInstr.decode(d);
             case DEF_CLASS: return new DefineClassInstr((d.decodeVariable()), (IRClassBody) d.decodeScope(), d.decodeOperand(), d.decodeOperand());
             case DEF_CLASS_METH: return new DefineClassMethodInstr(d.decodeOperand(), (IRMethod) d.decodeScope());
@@ -128,20 +129,6 @@ class InstrDecoderMap implements IRPersistenceValues {
         }
 
         throw new IllegalArgumentException("Whoa bro: " + operation);
-    }
-
-    private Instr decodeAttrAssignInstr() {
-        Operand op = d.decodeOperand();
-        String methAddr = d.decodeString();
-
-        int length = d.decodeInt();
-        Operand[] args = new Operand[length];
-
-        for (int i = 0; i < length; i++) {
-            args[i] = d.decodeOperand();
-        }
-
-        return AttrAssignInstr.create(op, methAddr, args);
     }
 
     private Instr decodeBuildDynRegExpInstr() {

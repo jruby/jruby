@@ -52,7 +52,7 @@ class OperandDecoderMap {
             case NTH_REF: return new NthRef(d.decodeInt());
             case NULL_BLOCK: return NullBlock.decode(d);
             case OBJECT_CLASS: return new ObjectClass();
-            case REGEXP: return decodeRegexp();
+            case REGEXP: return Regexp.decode(d);
             case SCOPE_MODULE: return new ScopeModule(d.decodeInt());
             case SELF: return Self.SELF;
             case SPLAT: return new Splat(d.decodeOperand());
@@ -104,14 +104,5 @@ class OperandDecoderMap {
         d.getVars().put(fullLabel, newLabel);
 
         return newLabel;
-    }
-
-    private Regexp decodeRegexp() {
-        // FIXME: This is wrong
-        String source = d.decodeString();
-        boolean isNone = d.decodeBoolean();
-        RegexpOptions options = RegexpOptions.fromEmbeddedOptions(d.decodeInt());
-        options.setEncodingNone(isNone);
-        return new Regexp(new ByteList(source.getBytes(RubyEncoding.UTF8), UTF8Encoding.INSTANCE), options);
     }
 }

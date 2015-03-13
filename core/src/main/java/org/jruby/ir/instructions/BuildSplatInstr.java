@@ -4,6 +4,7 @@ import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Operation;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.Variable;
+import org.jruby.ir.persistence.IRReaderDecoder;
 import org.jruby.ir.persistence.IRWriterEncoder;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.ir.transformations.inlining.CloneInfo;
@@ -37,6 +38,10 @@ public class BuildSplatInstr extends ResultBaseInstr {
     public void encode(IRWriterEncoder e) {
         super.encode(e);
         e.encode(getArray());
+    }
+
+    public static BuildSplatInstr decode(IRReaderDecoder d) {
+        return new BuildSplatInstr(d.decodeVariable(), d.decodeOperand());
     }
 
     @Override

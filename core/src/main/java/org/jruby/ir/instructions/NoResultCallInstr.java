@@ -29,14 +29,6 @@ public class NoResultCallInstr extends CallBase {
     }
 
     @Override
-    public void encode(IRWriterEncoder e) {
-        super.encode(e);
-        e.encode(getReceiver());
-        e.encode(getName());
-        e.encode(getCallArgs());
-    }
-
-    @Override
     public void visit(IRVisitor visitor) {
         visitor.NoResultCallInstr(this);
     }
