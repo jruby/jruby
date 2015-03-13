@@ -1,11 +1,19 @@
 package org.jruby.java.dispatch;
 
 import java.lang.reflect.Member;
+import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import org.jruby.Ruby;
+import org.jruby.RubyBignum;
+import org.jruby.RubyBoolean;
+import org.jruby.RubyFixnum;
+import org.jruby.RubyFloat;
+import org.jruby.RubyInteger;
+import org.jruby.RubyString;
 import org.jruby.javasupport.JavaCallable;
 import org.jruby.javasupport.JavaClass;
 import org.jruby.javasupport.JavaUtil;
@@ -122,10 +130,23 @@ public class CallableSelector {
                             ambiguous = true;
                         }
                     }
+                    // somehow we can still decide e.g. if we got a RubyFixnum
+                    // then (int) constructor shoudl be preffered over (float)
+                    if ( ambiguous ) {
+                        int msPref = 0, cPref = 0;
+                        for ( int i = 0; i < msTypes.length; i++ ) {
+                            final Class<?> msType = msTypes[i], cType = cTypes[i];
+                            msPref += calcTypePreference(msType, args[i]);
+                            cPref += calcTypePreference(cType, args[i]);
+                        }
+                        // for backwards compatibility we do not switch to cType as
+                        // the better fit - we seem to lack tests on this front ...
+                        if ( msPref > cPref ) ambiguous = false; // continue OUTER;
+                    }
                 }
                 method = mostSpecific;
 
-                if (ambiguous) {
+                if ( ambiguous ) {
                     runtime.getWarnings().warn("ambiguous Java methods found, using " + ((Member) ((JavaCallable) method).accessibleObject()).getName() + CodegenUtils.prettyParams(msTypes));
                 }
             }
@@ -158,10 +179,9 @@ public class CallableSelector {
             ParameterTypes callable = callables[i];
 
             if ( acceptor.accept(callable, args) ) {
-                int currentScore = getExactnessScore(callable, args);
+                int currentScore = calcExactnessScore(callable, args);
                 if (currentScore > bestScore) {
-                    bestCallable = callable;
-                    bestScore = currentScore;
+                    bestCallable = callable; bestScore = currentScore;
                 }
             }
         }
@@ -200,11 +220,11 @@ public class CallableSelector {
         return retained;
     }
 
-    private static int getExactnessScore(ParameterTypes paramTypes, IRubyObject[] args) {
-        final Class[] types = paramTypes.getParameterTypes();
+    private static int calcExactnessScore(final ParameterTypes callable, final IRubyObject[] args) {
+        final Class[] types = callable.getParameterTypes();
         int count = 0;
 
-        if ( paramTypes.isVarArgs() ) {
+        if ( callable.isVarArgs() ) {
             // varargs exactness gives the last N args as +1 since they'll already
             // have been determined to fit
 
@@ -264,24 +284,28 @@ public class CallableSelector {
             final Class<?> argClass = getJavaClass(arg);
             return type == argClass || (type.isPrimitive() && CodegenUtils.getBoxType(type) == argClass);
         }
+        @Override public String toString() { return "EXACT"; } // for debugging
     };
 
     private static final Matcher ASSIGNABLE = new Matcher() {
         public boolean match(Class type, IRubyObject arg) {
             return assignable(type, arg);
         }
+        @Override public String toString() { return "ASSIGNABLE"; } // for debugging
     };
 
     private static final Matcher PRIMITIVABLE = new Matcher() {
         public boolean match(Class type, IRubyObject arg) {
             return primitivable(type, arg);
         }
+        @Override public String toString() { return "PRIMITIVABLE"; } // for debugging
     };
 
     private static final Matcher DUCKABLE = new Matcher() {
         public boolean match(Class type, IRubyObject arg) {
             return duckable(type, arg);
         }
+        @Override public String toString() { return "DUCKABLE"; } // for debugging
     };
 
     //private static final Matcher[] MATCH_SEQUENCE = new Matcher[] { EXACT, PRIMITIVABLE, ASSIGNABLE, DUCKABLE };
@@ -397,6 +421,70 @@ public class CallableSelector {
             }
         }
         return false;
+    }
+
+    private static int calcTypePreference(Class<?> type, final IRubyObject arg) {
+        final boolean primitive = type.isPrimitive();
+
+        if ( primitive ) type = CodegenUtils.getBoxType(type);
+
+        if ( Number.class.isAssignableFrom(type) || Character.class == type ) {
+            if ( arg instanceof RubyFixnum ) {
+                if ( type == Long.class ) return 10;
+                if ( type == Integer.class ) return 8;
+                if ( type == BigInteger.class ) return 7;
+                if ( type == Short.class ) return 6;
+                if ( type == Byte.class ) return 4;
+                if ( type == Float.class ) return 3;
+                if ( type == Double.class ) return 2;
+                //if ( type == Character.class ) return 1;
+                return 1;
+            }
+            if ( arg instanceof RubyBignum ) {
+                if ( type == BigInteger.class ) return 10;
+                if ( type == Long.class ) return 4;
+                //if ( type == Integer.class ) return 6;
+                //if ( type == Short.class ) return 5;
+                //if ( type == Byte.class ) return 4;
+                if ( type == Double.class ) return 6;
+                if ( type == Float.class ) return 5;
+                //if ( type == Character.class ) return 1;
+                return 1;
+            }
+            if ( arg instanceof RubyInteger ) {
+                if ( type == Long.class ) return 10;
+                if ( type == Integer.class ) return 8;
+                //if ( type == Short.class ) return 6;
+                //if ( type == Byte.class ) return 4;
+                if ( type == Float.class ) return 3;
+                if ( type == Double.class ) return 2;
+                //if ( type == Character.class ) return 1;
+                return 1;
+            }
+            if ( arg instanceof RubyFloat ) {
+                if ( type == Double.class ) return 10;
+                if ( type == Float.class ) return 8;
+                if ( type == BigDecimal.class ) return 6;
+                if ( type == Long.class ) return 4;
+                if ( type == Integer.class ) return 3;
+                if ( type == Short.class ) return 2;
+                //if ( type == Character.class ) return 1;
+                return 1;
+            }
+        }
+        else if ( arg instanceof RubyString ) {
+            if ( type == String.class ) return 10;
+            if ( type == byte[].class ) return 8;
+            if ( CharSequence.class.isAssignableFrom(type) ) return 7;
+            if ( type == Character.class ) return 1;
+        }
+        else if ( arg instanceof RubyBoolean ) {
+            if ( type == Boolean.class ) return 10;
+            //if ( type == Byte.class ) return 2;
+            //if ( type == Character.class ) return 1;
+        }
+
+        return 0;
     }
 
     private static boolean duckable(final Class<?> type, final IRubyObject arg) {

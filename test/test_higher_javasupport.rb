@@ -964,41 +964,29 @@ CLASSDEF
   end
 
   def test_no_warnings_on_concurrent_package_const_initialization
-    stderr = $stderr; require 'stringio'
-    begin
-      $stderr = StringIO.new
+    output = with_stderr_captured do
       threads = (0..10).map do # smt not yet initialized :
         Thread.new { Java::JavaTextSpi::CollatorProvider }
       end
-
       threads.each { |thread| thread.join }
-
-      # expect no already initialized constant warning written e.g.
-      # file:/.../jruby.jar!/jruby/java/java_module.rb:4 warning: already initialized constant JavaTextSpi
-      assert ! $stderr.string.index('already initialized constant'), $stderr.string
-    ensure
-      $stderr = stderr
     end
+    # expect no already initialized constant warning written e.g.
+    # file:/.../jruby.jar!/jruby/java/java_module.rb:4 warning: already initialized constant JavaTextSpi
+    assert ! output.index('already initialized constant'), output
   end
 
   def test_no_warnings_on_concurrent_class_const_initialization
     Java.send :remove_const, :DefaultPackageClass if Java.const_defined? :DefaultPackageClass
 
-    stderr = $stderr; require 'stringio'
-    begin
-      $stderr = StringIO.new
+    output = with_stderr_captured do
       threads = (0..10).map do
         Thread.new { Java::DefaultPackageClass }
       end
-
       threads.each { |thread| thread.join }
-
-      # expect no already initialized constant warning written e.g.
-      # ... warning: already initialized constant DefaultPackageClass
-      assert ! $stderr.string.index('already initialized constant'), $stderr.string
-    ensure
-      $stderr = stderr
     end
+    # expect no already initialized constant warning written e.g.
+    # ... warning: already initialized constant DefaultPackageClass
+    assert ! output.index('already initialized constant'), output
   end
 
   # reproducing https://github.com/jruby/jruby/issues/2014
@@ -1042,11 +1030,45 @@ CLASSDEF
 
   def test_no_ambiguous_java_constructor_warning_for_exact_match
     output = with_stderr_captured do # exact match should not warn :
-      java.awt.Color.new(1.to_java(:int), 1.to_java(:int), 1.to_java(:int))
+      color = java.awt.Color.new(100.to_java(:int), 1.to_java(:int), 1.to_java(:int))
+      assert_equal 100, color.getRed # assert we called (int,int,int)
     end
     # warning: ambiguous Java methods found, using java.awt.Color(int,int,int)
     assert ! output.index('ambiguous'), output
   end
+
+  def test_no_ambiguous_java_constructor_warning_with_semi_exact_match
+    output = with_stderr_captured do # exact match should not warn :
+      color = java.awt.Color.new(10, 10, 10)
+      assert_equal 10, color.getRed # assert we called (int,int,int)
+    end
+    # warning: ambiguous Java methods found, using java.awt.Color(int,int,int)
+    assert ! output.index('ambiguous'), output
+
+    output = with_stderr_captured do # exact match should not warn :
+      color = java.awt.Color.new(1.0, 1.0, 1.0)
+      assert_equal 255, color.getRed # assert we called (float,float,float)
+    end
+    # warning: ambiguous Java methods found, using java.awt.Color(int,int,int)
+    assert ! output.index('ambiguous'), output
+  end
+
+# NOTE: this might be desired to be implemented - except coercion it's all in
+#  def test_java_constructor_with_prefered_match
+#    output = with_stderr_captured do # exact match should not warn :
+#      color = java.awt.Color.new(10, 10, 1.0)
+#      assert_equal 10, color.getRed # assert we called (int,int,int)
+#    end
+#    # warning: ambiguous Java methods found, using java.awt.Color(int,int,int)
+#    assert ! output.index('ambiguous'), output
+#
+#    output = with_stderr_captured do # exact match should not warn :
+#      color = java.awt.Color.new(1.0, 0.1, 1)
+#      assert_equal 255, color.getRed # assert we called (float,float,float)
+#    end
+#    # warning: ambiguous Java methods found, using java.awt.Color(int,int,int)
+#    assert ! output.index('ambiguous'), output
+#  end
 
   private
 
