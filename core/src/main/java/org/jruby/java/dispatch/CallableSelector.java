@@ -91,41 +91,36 @@ public class CallableSelector {
         ParameterTypes method = null;
 
         // try the new way first
-        final List<ParameterTypes> candidates = findCallable(methods, args);
+        final List<ParameterTypes> candidates = findCallableCandidates(methods, args);
+        final int size = candidates.size();
 
-        if ( candidates.size() > 0 ) {
+        if ( size > 0 ) {
             // new way found one, so let's go with that
-            if ( candidates.size() == 1 ) method = candidates.get(0);
-            else {
-                // narrow to most specific version (or first version, if none are more specific
-                ParameterTypes mostSpecific = null;
-                Class<?>[] msTypes = null;
+            if ( size == 1 ) method = candidates.get(0);
+            else { // narrow to most specific version (or first version, if none are more specific)
+                ParameterTypes mostSpecific = candidates.get(0);
+                Class<?>[] msTypes = mostSpecific.getParameterTypes();
                 boolean ambiguous = false;
-                OUTER: for ( ParameterTypes candidate : candidates ) {
-                    if (mostSpecific == null) {
-                        mostSpecific = candidate;
-                        msTypes = mostSpecific.getParameterTypes();
-                        continue;
-                    }
 
+                OUTER: for ( int c = 1; c < size; c++ ) {
+                    final ParameterTypes candidate = candidates.get(c);
                     final Class<?>[] cTypes = candidate.getParameterTypes();
 
-                    for (int i = 0; i < msTypes.length; i++) {
-                        if (msTypes[i] != cTypes[i] && msTypes[i].isAssignableFrom(cTypes[i])) {
+                    for ( int i = 0; i < msTypes.length; i++ ) {
+                        final Class<?> msType = msTypes[i], cType = cTypes[i];
+                        if ( msType != cType && msType.isAssignableFrom(cType) ) {
                             mostSpecific = candidate;
                             msTypes = cTypes;
-                            ambiguous = false;
-                            continue OUTER;
+                            ambiguous = false; continue OUTER;
                         }
                     }
-
                     // none more specific; check for ambiguities
-                    for (int i = 0; i < msTypes.length; i++) {
-                        if (msTypes[i] != cTypes[i] && !msTypes[i].isAssignableFrom(cTypes[i]) && !cTypes[i].isAssignableFrom(msTypes[i])) {
-                            ambiguous = true;
+                    for ( int i = 0; i < msTypes.length; i++ ) {
+                        final Class<?> msType = msTypes[i], cType = cTypes[i];
+                        if ( msType == cType || msType.isAssignableFrom(cType) || cType.isAssignableFrom(msType) ) {
+                            ambiguous = false; continue OUTER;
                         } else {
-                            ambiguous = false;
-                            continue OUTER;
+                            ambiguous = true;
                         }
                     }
                 }
@@ -174,28 +169,30 @@ public class CallableSelector {
         return bestCallable;
     }
 
-    private static List<ParameterTypes> findCallable(ParameterTypes[] callables, IRubyObject[] args) {
-        ArrayList<ParameterTypes> retainedCallables = new ArrayList<ParameterTypes>(callables.length);
-        ArrayList<ParameterTypes> incomingCallables = new ArrayList<ParameterTypes>(Arrays.asList(callables));
+    private static List<ParameterTypes> findCallableCandidates(final ParameterTypes[] callables,
+        final IRubyObject[] args) {
+        final ArrayList<ParameterTypes> retained = new ArrayList<ParameterTypes>(callables.length);
+        ParameterTypes[] incoming = callables.clone();
 
         for ( int i = 0; i < args.length; i++ ) {
-            retainedCallables.clear();
+            retained.clear();
             for ( final Matcher matcher : MATCH_SEQUENCE ) {
-                for (Iterator<ParameterTypes> callableIter = incomingCallables.iterator(); callableIter.hasNext();) {
-                    ParameterTypes callable = callableIter.next();
+                for ( int c = 0; c < incoming.length; c++ ) {
+                    ParameterTypes callable = incoming[c];
+                    if ( callable == null ) continue; // removed (matched)
+
                     Class[] types = callable.getParameterTypes();
 
                     if ( matcher.match( types[i], args[i] ) ) {
-                        callableIter.remove();
-                        retainedCallables.add(callable);
+                        retained.add(callable);
+                        incoming[c] = null; // retaining - remove
                     }
                 }
             }
-            incomingCallables.clear();
-            incomingCallables.addAll(retainedCallables);
+            incoming = retained.toArray( new ParameterTypes[retained.size()] );
         }
 
-        return retainedCallables;
+        return retained;
     }
 
     private static int getExactnessScore(ParameterTypes paramTypes, IRubyObject[] args) {
