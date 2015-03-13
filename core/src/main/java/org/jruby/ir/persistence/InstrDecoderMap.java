@@ -86,7 +86,7 @@ class InstrDecoderMap implements IRPersistenceValues {
             case MASGN_REQD: return new ReqdArgMultipleAsgnInstr(d.decodeVariable(), d.decodeOperand(), d.decodeInt(), d.decodeInt(), d.decodeInt());
             case MASGN_REST: return new RestArgMultipleAsgnInstr(d.decodeVariable(), d.decodeOperand(), d.decodeInt(), d.decodeInt(), d.decodeInt());
             case MATCH: return new MatchInstr(d.decodeVariable(), d.decodeOperand());
-            case MATCH2: return new Match2Instr(d.decodeVariable(), d.decodeOperand(), d.decodeOperand());
+            case MATCH2: return Match2Instr.decode(d);
             case MATCH3: return new Match3Instr(d.decodeVariable(), d.decodeOperand(), d.decodeOperand());
             case NONLOCAL_RETURN: return new NonlocalReturnInstr(d.decodeOperand(), d.decodeString());
             case NOP: return NopInstr.NOP;

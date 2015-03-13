@@ -1,17 +1,11 @@
 package org.jruby.ir.persistence;
 
-import org.jcodings.specific.USASCIIEncoding;
-import org.jcodings.specific.UTF8Encoding;
-import org.jruby.RubyEncoding;
 import org.jruby.RubyInstanceConfig;
 import org.jruby.ir.IRClosure;
 import org.jruby.ir.IRManager;
 import org.jruby.ir.operands.*;
-import org.jruby.util.ByteList;
 import org.jruby.util.KeyValuePair;
-import org.jruby.util.RegexpOptions;
 
-import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -33,14 +27,14 @@ class OperandDecoderMap {
         if (RubyInstanceConfig.IR_READING_DEBUG) System.out.println("Decoding operand " + type);
 
         switch (type) {
-            case ARRAY: return new Array(d.decodeOperandList());
-            case AS_STRING: return new AsString(d.decodeOperand());
-            case BACKREF: return new Backref(d.decodeChar());
-            case BIGNUM: return new Bignum(new BigInteger(d.decodeString()));
-            case BOOLEAN: return new UnboxedBoolean(d.decodeBoolean());
-            case CURRENT_SCOPE: return new CurrentScope(d.decodeInt());
-            case DYNAMIC_SYMBOL: return new DynamicSymbol(d.decodeOperand());
-            case FIXNUM: return new Fixnum(d.decodeLong());
+            case ARRAY: return Array.decode(d);
+            case AS_STRING: return AsString.decode(d);
+            case BACKREF: return Backref.decode(d);
+            case BIGNUM: return Bignum.decode(d);
+            case BOOLEAN: return UnboxedBoolean.decode(d);
+            case CURRENT_SCOPE: return CurrentScope.decode(d);
+            case DYNAMIC_SYMBOL: return DynamicSymbol.decode(d);
+            case FIXNUM: return Fixnum.decode(d);
             case FLOAT: return new org.jruby.ir.operands.Float(d.decodeDouble());
             case FROZEN_STRING: return FrozenString.decode(d);
             case GLOBAL_VARIABLE: return new GlobalVariable(d.decodeString());
@@ -49,7 +43,7 @@ class OperandDecoderMap {
             case LABEL: return decodeLabel();
             case LOCAL_VARIABLE: return d.getCurrentScope().getLocalVariable(d.decodeString(), d.decodeInt());
             case NIL: return manager.getNil();
-            case NTH_REF: return new NthRef(d.decodeInt());
+            case NTH_REF: return NthRef.decode(d);
             case NULL_BLOCK: return NullBlock.decode(d);
             case OBJECT_CLASS: return new ObjectClass();
             case REGEXP: return Regexp.decode(d);
