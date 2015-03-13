@@ -122,7 +122,7 @@ public class JavaSupport {
     private RubyClass concreteProxyClass;
     private RubyClass mapJavaProxy;
 
-    private final Map<String, JavaClass> nameClassMap = new HashMap<String, JavaClass>();
+    private final Map<String, JavaClass> nameClassMap = new HashMap<String, JavaClass>(64);
 
     // A cache of all JavaProxyClass objects created for this runtime
     private Map<Set<?>, JavaProxyClass> javaProxyClassCache = Collections.synchronizedMap(new HashMap<Set<?>, JavaProxyClass>());
