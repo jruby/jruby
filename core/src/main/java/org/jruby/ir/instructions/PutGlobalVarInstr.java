@@ -6,6 +6,7 @@ import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Operation;
 import org.jruby.ir.operands.GlobalVariable;
 import org.jruby.ir.operands.Operand;
+import org.jruby.ir.persistence.IRReaderDecoder;
 import org.jruby.ir.persistence.IRWriterEncoder;
 import org.jruby.ir.transformations.inlining.CloneInfo;
 import org.jruby.parser.StaticScope;
@@ -15,7 +16,11 @@ import org.jruby.runtime.builtin.IRubyObject;
 
 public class PutGlobalVarInstr extends Instr implements FixedArityInstr {
     public PutGlobalVarInstr(String varName, Operand value) {
-        super(Operation.PUT_GLOBAL_VAR, new Operand[] {new GlobalVariable(varName), value});
+        this(new GlobalVariable(varName), value);
+    }
+
+    public PutGlobalVarInstr(GlobalVariable gvar, Operand value) {
+        super(Operation.PUT_GLOBAL_VAR, new Operand[] {gvar, value});
     }
 
     @Override
@@ -48,6 +53,10 @@ public class PutGlobalVarInstr extends Instr implements FixedArityInstr {
         super.encode(e);
         e.encode(getTarget());
         e.encode(getValue());
+    }
+
+    public static PutGlobalVarInstr decode(IRReaderDecoder d) {
+        return new PutGlobalVarInstr((GlobalVariable) d.decodeOperand(), d.decodeOperand());
     }
 
     @Override

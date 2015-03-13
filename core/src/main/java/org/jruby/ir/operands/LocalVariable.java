@@ -95,6 +95,7 @@ public class LocalVariable extends Variable implements DepthCloneable {
         super.encode(e);
         e.encode(getName());
         e.encode(getScopeDepth());
+        // We do not encode location because we rebuild lvars from IRScope when being rebuilt
     }
 
     @Override
