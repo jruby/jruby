@@ -13,9 +13,9 @@ public abstract class TwoOperandBranchInstr extends BranchInstr {
     @Override
     public void encode(IRWriterEncoder e) {
         super.encode(e);
+        e.encode(getJumpTarget());
         e.encode(getArg1());
         e.encode(getArg2());
-        e.encode(getJumpTarget());
     }
 
     public Operand getArg1() {
