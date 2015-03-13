@@ -101,7 +101,7 @@ public class RubyThread extends RubyBasicObject {
         } catch (RaiseException e) {
             exception = e.getRubyException();
         } catch (ReturnException e) {
-            exception = getContext().getCoreLibrary().unexpectedReturn(currentNode);
+            exception = context.getCoreLibrary().unexpectedReturn(currentNode);
         } finally {
             cleanup(context);
         }
@@ -110,7 +110,7 @@ public class RubyThread extends RubyBasicObject {
     // Only used by the main thread which cannot easily wrap everything inside a try/finally.
     public void cleanup(RubyContext context) {
         status = Status.ABORTING;
-        context.getThreadManager().leaveGlobalLock();
+        manager.leaveGlobalLock();
         context.getSafepointManager().leaveThread();
         manager.unregisterThread(this);
 
@@ -125,7 +125,7 @@ public class RubyThread extends RubyBasicObject {
     }
 
     public void join() {
-        getContext().getThreadManager().runUntilResult(new BlockingActionWithoutGlobalLock<Boolean>() {
+        manager.runUntilResult(new BlockingActionWithoutGlobalLock<Boolean>() {
             @Override
             public Boolean block() throws InterruptedException {
                 finished.await();
@@ -139,7 +139,7 @@ public class RubyThread extends RubyBasicObject {
     }
 
     public boolean join(final int timeoutInMillis) {
-        final boolean joined = getContext().getThreadManager().runOnce(new BlockingActionWithoutGlobalLock<Boolean>() {
+        final boolean joined = manager.runOnce(new BlockingActionWithoutGlobalLock<Boolean>() {
             @Override
             public Boolean block() throws InterruptedException {
                 return finished.await(timeoutInMillis, TimeUnit.MILLISECONDS);
