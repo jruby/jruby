@@ -13,6 +13,3 @@ fails:StringIO#puts when passed 1 or more objects prints a newline when passed n
 fails:StringIO#puts when passed no arguments returns nil
 fails:StringIO#puts when passed no arguments prints a newline
 fails:StringIO#puts when passed no arguments does not honor the global output record separator $\
-fails:StringIO#puts when in append mode appends the passed argument to the end of self
-fails:StringIO#puts when in append mode correctly updates self's position
-fails:StringIO#puts when passed an encoded string stores the bytes unmodified

@@ -84,5 +84,10 @@ class String
   def num_bytes
     @num_bytes
   end
+  
+  def byte_append(str)
+    Rubinius.primitive :string_byte_append
+    raise TypeError, "String#byte_append primitive only accepts Strings"
+  end
 
 end

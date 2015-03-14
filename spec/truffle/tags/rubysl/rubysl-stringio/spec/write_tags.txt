@@ -8,5 +8,3 @@ fails:StringIO#write when passed [String] does not taint self when the passed ar
 fails:StringIO#write when passed [String] writes binary data into the io
 fails:StringIO#write when passed [String] retains the original encoding
 fails:StringIO#write when passed [String] pads multibyte characters properly
-fails:StringIO#write when in append mode appends the passed argument to the end of self
-fails:StringIO#write when in append mode correctly updates self's position

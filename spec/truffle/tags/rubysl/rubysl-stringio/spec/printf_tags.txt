@@ -2,5 +2,3 @@ fails:StringIO#printf returns nil
 fails:StringIO#printf pads self with \000 when the current position is after the end
 fails:StringIO#printf performs format conversion
 fails:StringIO#printf updates the current position
-fails:StringIO#printf when in append mode appends the passed argument to the end of self
-fails:StringIO#printf when in append mode correctly updates self's position

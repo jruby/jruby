@@ -6,5 +6,3 @@ fails:StringIO#<< when passed [Object] taints self's String when the passed argu
 fails:StringIO#<< when passed [Object] does not taint self when the passed argument is tainted
 fails:StringIO#<< when passed [Object] updates self's position
 fails:StringIO#<< when passed [Object] tries to convert the passed argument to a String using #to_s
-fails:StringIO#<< when in append mode appends the passed argument to the end of self, ignoring current position
-fails:StringIO#<< when in append mode correctly updates self's position

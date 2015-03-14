@@ -687,4 +687,24 @@ public abstract class StringPrimitiveNodes {
 
     }
 
+    @RubiniusPrimitive(name = "string_byte_append")
+    public static abstract class StringByteAppendPrimitiveNode extends RubiniusPrimitiveNode {
+
+        public StringByteAppendPrimitiveNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public StringByteAppendPrimitiveNode(StringByteAppendPrimitiveNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public RubyString stringByteAppend(RubyString string, RubyString other) {
+            notDesignedForCompilation();
+            string.getByteList().append(other.getByteList());
+            return string;
+        }
+
+    }
+
 }
