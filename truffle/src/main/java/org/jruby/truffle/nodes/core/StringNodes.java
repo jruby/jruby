@@ -231,8 +231,16 @@ public abstract class StringNodes {
             super(prev);
         }
 
-        @CreateCast("other") public RubyNode coerceOtherToString(RubyNode other) {
-            return ToStrNodeFactory.create(getContext(), getSourceSection(), other);
+        @Specialization
+        public RubyString concat(RubyString string, int other) {
+            string.getByteList().append((byte) other);
+            return string;
+        }
+
+        @Specialization
+        public RubyString concat(RubyString string, long other) {
+            string.getByteList().append((byte) other);
+            return string;
         }
 
         @TruffleBoundary
@@ -258,6 +266,12 @@ public abstract class StringNodes {
             other.setCodeRange(ptr_cr_ret[0]);
 
             return string;
+        }
+
+        @Specialization(guards = {"!isInteger(other)", "!isLong(other)", "!isRubyString(other)"})
+        public Object concat(VirtualFrame frame, RubyString string, Object other) {
+            notDesignedForCompilation();
+            return ruby(frame, "concat StringValue(other)", "other", other);
         }
     }
 
@@ -2211,6 +2225,24 @@ public abstract class StringNodes {
             byteListString.setEncoding(string.getBytes().getEncoding());
 
             return byteListString;
+        }
+    }
+
+    @CoreMethod(names = "_set_num_bytes", required = 1)
+    public abstract static class SetNumBytesNode extends CoreMethodNode {
+
+        public SetNumBytesNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public SetNumBytesNode(SetNumBytesNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public RubyString setNumBytes(RubyString string, int count) {
+            string.getByteList().view(0, count);
+            return string;
         }
     }
 

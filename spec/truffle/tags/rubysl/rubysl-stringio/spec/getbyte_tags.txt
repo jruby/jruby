@@ -1,0 +1,1 @@
+fails:StringIO#getbyte retrieves bytes at a time rather than characters

@@ -206,6 +206,32 @@ class Binding
   def eval(string)
     Kernel.eval(string, self)
   end
+end
+
+class String
+
+  def modify!
+    # TODO CS 14-Mar-15 what does this do?
+  end
+
+  def num_bytes=(count)
+    _set_num_bytes count
+  end
 
 end
 
+class IO
+
+  RDONLY = 0
+  WRONLY = 1
+  RDWR = 2
+
+  CREAT = 512
+  EXCL = 2048
+  NOCTTY = 131072
+  TRUNC = 1024
+  APPEND = 8
+  NONBLOCK = 4
+  SYNC = 128
+
+end

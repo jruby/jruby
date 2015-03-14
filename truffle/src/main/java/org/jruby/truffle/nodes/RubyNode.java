@@ -255,7 +255,7 @@ public abstract class RubyNode extends Node {
     }
 
     public static void notDesignedForCompilation() {
-        CompilerDirectives.bailout("this code either doesn't implement Ruby semantics properly, or is a basic implementation that will not compile");
+        CompilerAsserts.neverPartOfCompilation();
     }
 
     public boolean isTrue(boolean value) {

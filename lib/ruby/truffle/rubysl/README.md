@@ -5,3 +5,4 @@ was written by Brian Shirai, et al.
 Commits for each library are:
 
 * rubysl-strscan `efab0248119cbb10b2b0ce2561eae269e052cdfe`
+* rubysl-stringio `4b2977296eceef83084146c73d9ddef8d7e8f1af`

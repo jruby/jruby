@@ -57,7 +57,12 @@ import java.util.Comparator;
 public abstract class ArrayNodes {
 
     @CoreMethod(names = "+", required = 1)
-    public abstract static class AddNode extends ArrayCoreMethodNode {
+    @NodeChildren({
+        @NodeChild(value = "a"),
+        @NodeChild(value = "b")
+    })
+    @ImportStatic(ArrayGuards.class)
+    public abstract static class AddNode extends RubyNode {
 
         public AddNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -65,6 +70,10 @@ public abstract class ArrayNodes {
 
         public AddNode(AddNode prev) {
             super(prev);
+        }
+
+        @CreateCast("b") public RubyNode coerceOtherToAry(RubyNode other) {
+            return ToAryNodeFactory.create(getContext(), getSourceSection(), other);
         }
 
         @Specialization(guards = {"isNull(a)", "isNull(b)"})
@@ -131,52 +140,34 @@ public abstract class ArrayNodes {
             return new RubyArray(getContext().getCoreLibrary().getArrayClass(), Arrays.copyOf((Object[]) b.getStore(), size), size);
         }
 
-        @Specialization(guards = "isIntegerFixnum(a)")
-        public RubyArray addEmptyIntegerFixnum(RubyArray a, RubyArray b) {
-            // TODO CS 5-Feb-15 hack to get things working with empty int[] store
+        @Specialization(guards = {"!isObject(a)", "isOtherObject(a, b)"})
+        public RubyArray addOtherObject(RubyArray a, RubyArray b) {
+            final int combinedSize = a.getSize() + b.getSize();
+            final Object[] combined = new Object[combinedSize];
+            System.arraycopy(ArrayUtils.box(a.getStore()), 0, combined, 0, a.getSize());
+            System.arraycopy(b.getStore(), 0, combined, a.getSize(), b.getSize());
+            return new RubyArray(getContext().getCoreLibrary().getArrayClass(), combined, combinedSize);
+        }
 
-            if (a.getSize() != 0) {
-                throw new UnsupportedOperationException();
-            }
+        @Specialization(guards = {"isObject(a)", "!isOtherObject(a, b)"})
+        public RubyArray addObject(RubyArray a, RubyArray b) {
+            final int combinedSize = a.getSize() + b.getSize();
+            final Object[] combined = new Object[combinedSize];
+            System.arraycopy(a.getStore(), 0, combined, 0, a.getSize());
+            System.arraycopy(ArrayUtils.box(b.getStore()), 0, combined, a.getSize(), b.getSize());
+            return new RubyArray(getContext().getCoreLibrary().getArrayClass(), combined, combinedSize);
+        }
 
+        @Specialization(guards = "isEmpty(a)")
+        public RubyArray addEmpty(RubyArray a, RubyArray b) {
             final int size = b.getSize();
             return new RubyArray(getContext().getCoreLibrary().getArrayClass(), ArrayUtils.box(b.getStore()), size);
         }
 
-        @Specialization(guards = "isLongFixnum(a)")
-        public RubyArray addEmptyLongFixnum(RubyArray a, RubyArray b) {
-            // TODO CS 5-Feb-15 hack to get things working with empty long[] store
-
-            if (a.getSize() != 0) {
-                throw new UnsupportedOperationException();
-            }
-
-            final int size = b.getSize();
-            return new RubyArray(getContext().getCoreLibrary().getArrayClass(), ArrayUtils.box(b.getStore()), size);
-        }
-
-        @Specialization(guards = "isFloat(a)")
-        public RubyArray addEmptyDouble(RubyArray a, RubyArray b) {
-            // TODO CS 5-Feb-15 hack to get things working with empty double[] store
-
-            if (a.getSize() != 0) {
-                throw new UnsupportedOperationException();
-            }
-
-            final int size = b.getSize();
-            return new RubyArray(getContext().getCoreLibrary().getArrayClass(), ArrayUtils.box(b.getStore()), size);
-        }
-
-        @Specialization(guards = "isObject(a)")
-        public RubyArray addEmptyObject(RubyArray a, RubyArray b) {
-            // TODO CS 5-Feb-15 hack to get things working with empty Object[] store
-
-            if (a.getSize() != 0) {
-                throw new UnsupportedOperationException();
-            }
-
-            final int size = b.getSize();
-            return new RubyArray(getContext().getCoreLibrary().getArrayClass(), ArrayUtils.box(b.getStore()), size);
+        @Specialization(guards = "isOtherEmpty(a, b)")
+        public RubyArray addOtherEmpty(RubyArray a, RubyArray b) {
+            final int size = a.getSize();
+            return new RubyArray(getContext().getCoreLibrary().getArrayClass(), ArrayUtils.box(a.getStore()), size);
         }
 
     }
