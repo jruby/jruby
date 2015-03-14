@@ -1,1 +1,0 @@
-fails:Proc#inspect for a proc created with UnboundMethod#to_proc returns a description including '(lambda)' and optionally including file and line number

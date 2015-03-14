@@ -1,5 +1,4 @@
 fails:Module#protected is a private method
-fails:Module#protected makes a public Object instance method protected in a new module
 fails:Module#protected makes a public Object instance method protected in Kernel
 fails:Module#protected raises a NameError when given an undefined name
 fails:Module#protected without arguments sets visibility to following method definitions

@@ -1,7 +1,6 @@
 fails:Module#class_variable_get returns the value of the class variable with the given name
 fails:Module#class_variable_get raises a NameError for a class variable named '@@'
 fails:Module#class_variable_get raises a NameError for a class variables with the given name defined in an extended module
-fails:Module#class_variable_get returns class variables defined in the class body and accessed in the metaclass
 fails:Module#class_variable_get returns class variables defined in the metaclass and accessed by class methods
 fails:Module#class_variable_get returns class variables defined in the metaclass and accessed by instance methods
 fails:Module#class_variable_get returns a class variable defined in a metaclass
