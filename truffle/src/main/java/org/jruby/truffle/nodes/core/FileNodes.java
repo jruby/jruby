@@ -116,7 +116,7 @@ public abstract class FileNodes {
             notDesignedForCompilation();
 
             file.close();
-            return getContext().getCoreLibrary().getNilObject();
+            return nil();
         }
 
     }
@@ -229,7 +229,7 @@ public abstract class FileNodes {
                 yield(frame, block, context.makeString(line));
             }
 
-            return getContext().getCoreLibrary().getNilObject();
+            return nil();
         }
 
     }
@@ -443,7 +443,7 @@ public abstract class FileNodes {
                 throw new RuntimeException(e);
             }
 
-            return getContext().getCoreLibrary().getNilObject();
+            return nil();
         }
 
     }
@@ -545,13 +545,13 @@ public abstract class FileNodes {
             final File f = new File(file.toString());
 
             if (!f.exists()) {
-                return getContext().getCoreLibrary().getNilObject();
+                return nil();
             }
 
             final long size = f.length();
 
             if (size == 0) {
-                return getContext().getCoreLibrary().getNilObject();
+                return nil();
             }
 
             return size;
@@ -616,7 +616,7 @@ public abstract class FileNodes {
                 throw new RuntimeException(e);
             }
 
-            return getContext().getCoreLibrary().getNilObject();
+            return nil();
         }
 
     }

@@ -208,7 +208,7 @@ public abstract class StringNodes {
                 return compare(a, coerced);
             } catch (RaiseException e) {
                 if (e.getRubyException().getLogicalClass() == getContext().getCoreLibrary().getTypeErrorClass()) {
-                    return getContext().getCoreLibrary().getNilObject();
+                    return nil();
                 } else {
                     throw e;
                 }
@@ -319,7 +319,7 @@ public abstract class StringNodes {
 
             if (normalizedIndex < 0 || normalizedIndex >= bytes.length()) {
                 outOfBounds.enter();
-                return getContext().getCoreLibrary().getNilObject();
+                return nil();
             } else {
                 return getContext().makeString(string.getLogicalClass(), bytes.charAt(normalizedIndex), string.getByteList().getEncoding());
             }
@@ -344,7 +344,7 @@ public abstract class StringNodes {
 
             if (begin < 0 || begin > javaString.length()) {
                 outOfBounds.enter();
-                return getContext().getCoreLibrary().getNilObject();
+                return nil();
             } else {
                 final int end = string.normalizeIndex(range.getEnd());
                 final int excludingEnd = string.clampExclusiveIndex(range.doesExcludeEnd() ? end : end+1);
@@ -367,7 +367,7 @@ public abstract class StringNodes {
 
             if (begin < 0 || begin > bytes.length() || length < 0) {
                 outOfBounds.enter();
-                return getContext().getCoreLibrary().getNilObject();
+                return nil();
             } else {
                 final int end = Math.min(bytes.length(), begin + length);
 
@@ -420,7 +420,7 @@ public abstract class StringNodes {
 
             final Object matchData = matchNode.call(frame, regexp, "match", null, string);
 
-            if (matchData == getContext().getCoreLibrary().getNilObject()) {
+            if (matchData == nil()) {
                 return matchData;
             }
 
@@ -452,7 +452,7 @@ public abstract class StringNodes {
                 return dupNode.dup(frame, matchStr);
             }
 
-            return getContext().getCoreLibrary().getNilObject();
+            return nil();
         }
     }
 
@@ -670,7 +670,7 @@ public abstract class StringNodes {
             notDesignedForCompilation();
 
             if (string.length() == 0) {
-                return getContext().getCoreLibrary().getNilObject();
+                return nil();
             }
 
             string.set(StringNodesHelper.chomp(string));
@@ -679,7 +679,7 @@ public abstract class StringNodes {
 
         @Specialization
         public RubyNilClass chompBangWithNil(RubyString string, RubyNilClass stringToChomp) {
-            return getContext().getCoreLibrary().getNilObject();
+            return nil();
         }
 
         @Specialization(guards = { "!isUndefinedPlaceholder(arguments[1])", "!isRubyNilClass(arguments[1])" })
@@ -712,7 +712,7 @@ public abstract class StringNodes {
             notDesignedForCompilation();
 
             if (string.length() == 0) {
-                return getContext().getCoreLibrary().getNilObject();
+                return nil();
             }
 
             final int newLength = choppedLength(string);
@@ -806,7 +806,7 @@ public abstract class StringNodes {
         @Specialization
         public Object deleteBang(VirtualFrame frame, RubyString string, Object[] otherStrings) {
             if (string.getBytes().length() == 0) {
-                return getContext().getCoreLibrary().getNilObject();
+                return nil();
             }
 
             if (otherStrings.length == 0) {
@@ -839,7 +839,7 @@ public abstract class StringNodes {
             }
 
             if (StringSupport.delete_bangCommon19(string, getContext().getRuntime(), squeeze, tables, enc) == null) {
-                return getContext().getCoreLibrary().getNilObject();
+                return nil();
             }
 
             return string;
@@ -884,7 +884,7 @@ public abstract class StringNodes {
             ByteList newByteList = StringNodesHelper.downcase(string);
 
             if (newByteList.equal(string.getBytes())) {
-                return getContext().getCoreLibrary().getNilObject();
+                return nil();
             } else {
                 string.set(newByteList);
                 return string;
@@ -1012,11 +1012,11 @@ public abstract class StringNodes {
             final ByteList bytes = string.getBytes();
 
             int length = bytes.length();
-            if (len < 0 || beg > length) return getContext().getCoreLibrary().getNilObject();
+            if (len < 0 || beg > length) return nil();
 
             if (beg < 0) {
                 beg += length;
-                if (beg < 0) return getContext().getCoreLibrary().getNilObject();
+                if (beg < 0) return nil();
             }
 
             int end = Math.min(length, beg + len);
@@ -1109,7 +1109,7 @@ public abstract class StringNodes {
 
             final Object defaultInternalEncoding = defaultInternalNode.defaultInternal();
 
-            if (defaultInternalEncoding == getContext().getCoreLibrary().getNilObject()) {
+            if (defaultInternalEncoding == nil()) {
                 return encode(string, RubyEncoding.getEncoding("UTF-8"), UndefinedPlaceholder.INSTANCE);
             }
 
@@ -1478,7 +1478,7 @@ public abstract class StringNodes {
                 normalizedEndPosition = endPosition + string.length();
 
                 if (normalizedEndPosition < 0) {
-                    return getContext().getCoreLibrary().getNilObject();
+                    return nil();
                 }
             } else if (endPosition > string.length()) {
                 normalizedEndPosition = string.length();
@@ -1491,7 +1491,7 @@ public abstract class StringNodes {
             if (result >= 0) {
                 return result;
             } else {
-                return getContext().getCoreLibrary().getNilObject();
+                return nil();
             }
         }
     }
@@ -1631,7 +1631,7 @@ public abstract class StringNodes {
             int end = 0;
             int range = p + string.getBytes().getRealSize();
 
-            Object lastGoodMatchData = getContext().getCoreLibrary().getNilObject();
+            Object lastGoodMatchData = nil();
 
             if (regexp.getRegex().numberOfCaptures() == 0) {
                 while (true) {
@@ -2034,12 +2034,12 @@ public abstract class StringNodes {
             String javaString = string.toString();
 
             if (javaString.isEmpty()) {
-                return getContext().getCoreLibrary().getNilObject();
+                return nil();
             } else {
                 final ByteList byteListString = StringNodesHelper.capitalize(string);
                 
                 if (string.getByteList().equals(byteListString)) {
-                    return getContext().getCoreLibrary().getNilObject();
+                    return nil();
                 }else {
                     string.set(byteListString);
                     return string;

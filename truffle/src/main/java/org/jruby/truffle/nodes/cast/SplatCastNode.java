@@ -73,7 +73,7 @@ public abstract class SplatCastNode extends RubyNode {
                 return new RubyArray(getContext().getCoreLibrary().getArrayClass());
 
             case ARRAY_WITH_NIL:
-                return RubyArray.fromObject(getContext().getCoreLibrary().getArrayClass(), getContext().getCoreLibrary().getNilObject());
+                return RubyArray.fromObject(getContext().getCoreLibrary().getArrayClass(), nil());
 
             default: {
                 CompilerAsserts.neverPartOfCompilation();

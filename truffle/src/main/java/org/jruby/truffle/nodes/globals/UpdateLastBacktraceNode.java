@@ -40,7 +40,7 @@ public class UpdateLastBacktraceNode extends RubyNode {
     public Object execute(VirtualFrame frame) {
         final Object lastException = getLastExceptionNode.execute(frame);
 
-        if (lastException == getContext().getCoreLibrary().getNilObject()) {
+        if (lastException == nil()) {
             CompilerDirectives.transferToInterpreter();
             throw new RaiseException(getContext().getCoreLibrary().argumentError("$! is not set", this));
         }

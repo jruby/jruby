@@ -69,8 +69,8 @@ public abstract class ArrayLiteralNode extends RubyNode {
     @Override
     public Object isDefined(VirtualFrame frame) {
         for (RubyNode value : values) {
-            if (value.isDefined(frame) == getContext().getCoreLibrary().getNilObject()) {
-                return getContext().getCoreLibrary().getNilObject();
+            if (value.isDefined(frame) == nil()) {
+                return nil();
             }
         }
 

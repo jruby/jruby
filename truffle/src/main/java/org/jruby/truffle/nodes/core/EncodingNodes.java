@@ -128,7 +128,7 @@ public abstract class EncodingNodes {
             if (compatibleEncoding != null) {
                 return RubyEncoding.getEncoding(compatibleEncoding);
             } else {
-                return getContext().getCoreLibrary().getNilObject();
+                return nil();
             }
         }
 
@@ -140,7 +140,7 @@ public abstract class EncodingNodes {
             if (compatibleEncoding != null) {
                 return RubyEncoding.getEncoding(compatibleEncoding);
             } else {
-                return getContext().getCoreLibrary().getNilObject();
+                return nil();
             }
         }
 
@@ -152,7 +152,7 @@ public abstract class EncodingNodes {
             if (compatibleEncoding != null) {
                 return RubyEncoding.getEncoding(compatibleEncoding);
             } else {
-                return getContext().getCoreLibrary().getNilObject();
+                return nil();
             }
         }
 
@@ -164,7 +164,7 @@ public abstract class EncodingNodes {
             if (compatibleEncoding != null) {
                 return RubyEncoding.getEncoding(compatibleEncoding);
             } else {
-                return getContext().getCoreLibrary().getNilObject();
+                return nil();
             }
         }
 
@@ -176,7 +176,7 @@ public abstract class EncodingNodes {
             if (compatibleEncoding != null) {
                 return RubyEncoding.getEncoding(compatibleEncoding);
             } else {
-                return getContext().getCoreLibrary().getNilObject();
+                return nil();
             }
         }
 
@@ -188,7 +188,7 @@ public abstract class EncodingNodes {
             if (compatibleEncoding != null) {
                 return RubyEncoding.getEncoding(compatibleEncoding);
             } else {
-                return getContext().getCoreLibrary().getNilObject();
+                return nil();
             }
         }
 
@@ -200,7 +200,7 @@ public abstract class EncodingNodes {
             if (compatibleEncoding != null) {
                 return RubyEncoding.getEncoding(compatibleEncoding);
             } else {
-                return getContext().getCoreLibrary().getNilObject();
+                return nil();
             }
         }
 
@@ -212,7 +212,7 @@ public abstract class EncodingNodes {
             if (compatibleEncoding != null) {
                 return RubyEncoding.getEncoding(compatibleEncoding);
             } else {
-                return getContext().getCoreLibrary().getNilObject();
+                return nil();
             }
         }
 
@@ -224,7 +224,7 @@ public abstract class EncodingNodes {
             if (compatibleEncoding != null) {
                 return RubyEncoding.getEncoding(compatibleEncoding);
             } else {
-                return getContext().getCoreLibrary().getNilObject();
+                return nil();
             }
         }
 
@@ -274,7 +274,7 @@ public abstract class EncodingNodes {
             Encoding encoding = getContext().getRuntime().getDefaultInternalEncoding();
 
             if (encoding == null) {
-                return getContext().getCoreLibrary().getNilObject();
+                return nil();
                 //encoding = UTF8Encoding.INSTANCE;
             }
 

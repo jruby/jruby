@@ -937,7 +937,7 @@ public abstract class FixnumNodes {
                 "!isDouble(arguments[1])",
                 "!isRubyBignum(arguments[1])"})
         public RubyNilClass compare(Object a, Object b) {
-            return getContext().getCoreLibrary().getNilObject();
+            return nil();
         }
 
     }

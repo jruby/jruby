@@ -83,7 +83,7 @@ public abstract class VMPrimitiveNodes {
                         clearExceptionVariableNode = insert(
                                 new WriteInstanceVariableNode(getContext(), getSourceSection(), "$!",
                                         new ObjectLiteralNode(getContext(), getSourceSection(), getContext().getThreadManager().getCurrentThread().getThreadLocals()),
-                                        new ObjectLiteralNode(getContext(), getSourceSection(), getContext().getCoreLibrary().getNilObject()),
+                                        new ObjectLiteralNode(getContext(), getSourceSection(), nil()),
                                         true)
                         );
                     }
@@ -118,7 +118,7 @@ public abstract class VMPrimitiveNodes {
                 getContext().getThreadManager().enterGlobalLock(runningThread);
             }
 
-            return getContext().getCoreLibrary().getNilObject();
+            return nil();
         }
 
     }

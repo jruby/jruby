@@ -45,7 +45,7 @@ public abstract class ArrayReadNormalizedNode extends RubyNode {
             guards="isNullArray"
     )
     public RubyNilClass readNull(RubyArray array, int index) {
-        return getContext().getCoreLibrary().getNilObject();
+        return nil();
     }
 
     // Read within the bounds of an array with actual storage
@@ -84,7 +84,7 @@ public abstract class ArrayReadNormalizedNode extends RubyNode {
             guards="!isInBounds"
     )
     public RubyNilClass readOutOfBounds(RubyArray array, int index) {
-        return getContext().getCoreLibrary().getNilObject();
+        return nil();
     }
 
     // Guards

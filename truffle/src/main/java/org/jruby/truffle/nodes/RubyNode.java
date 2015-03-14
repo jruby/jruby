@@ -465,7 +465,7 @@ public abstract class RubyNode extends Node implements ProbeNode.Instrumentable 
     }
 
     public boolean isRubyNilObject(Object value) {
-        return value == getContext().getCoreLibrary().getNilObject();
+        return value == nil();
     }
 
     public boolean isRubiniusUndefined(Object value) {
@@ -492,6 +492,10 @@ public abstract class RubyNode extends Node implements ProbeNode.Instrumentable 
                 evalFrame);
 
         return getContext().eval(ByteList.create(expression), binding, true, "inline-ruby", this);
+    }
+
+    protected RubyNilClass nil() {
+        return getContext().getCoreLibrary().getNilObject();
     }
 
 }

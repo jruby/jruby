@@ -49,7 +49,7 @@ public abstract class ObjectSpaceNodes {
             notDesignedForCompilation();
 
             if (id == ObjectIDOperations.NIL) {
-                return getContext().getCoreLibrary().getNilObject();
+                return nil();
             } else if (id == ObjectIDOperations.TRUE) {
                 return true;
             } else if (id == ObjectIDOperations.FALSE) {
@@ -60,7 +60,7 @@ public abstract class ObjectSpaceNodes {
                 final Object object = getContext().getObjectSpaceManager().collectLiveObjects().get(id);
 
                 if (object == null) {
-                    return getContext().getCoreLibrary().getNilObject();
+                    return nil();
                 } else {
                     return object;
                 }

@@ -81,7 +81,7 @@ public abstract class ThreadNodes {
         @Specialization
         public RubyNilClass exit() {
             getContext().getThreadManager().getCurrentThread().exit();
-            return getContext().getCoreLibrary().getNilObject();
+            return nil();
         }
 
     }
@@ -131,7 +131,7 @@ public abstract class ThreadNodes {
             notDesignedForCompilation();
 
             thread.initialize(getContext(), this, block);
-            return getContext().getCoreLibrary().getNilObject();
+            return nil();
         }
 
     }
@@ -173,7 +173,7 @@ public abstract class ThreadNodes {
             if (self.join(timeoutInMillis)) {
                 return self;
             } else {
-                return getContext().getCoreLibrary().getNilObject();
+                return nil();
             }
         }
 
@@ -215,7 +215,7 @@ public abstract class ThreadNodes {
         @Specialization
         public RubyNilClass pass(VirtualFrame frame) {
             threadPassNode.executeVoid(frame);
-            return getContext().getCoreLibrary().getNilObject();
+            return nil();
         }
 
     }
@@ -268,7 +268,7 @@ public abstract class ThreadNodes {
 
             });
 
-            return getContext().getCoreLibrary().getNilObject();
+            return nil();
         }
 
     }
@@ -313,7 +313,7 @@ public abstract class ThreadNodes {
             // TODO: slightly hackish
             if (self.getStatus() == Status.DEAD) {
                 if (self.getException() != null) {
-                    return getContext().getCoreLibrary().getNilObject();
+                    return nil();
                 } else {
                     return false;
                 }

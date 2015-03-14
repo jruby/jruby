@@ -49,7 +49,7 @@ public class ReadInstanceVariableNode extends RubyNode implements ReadNode {
             // TODO(CS): need to put this onto the fast path?
 
             CompilerDirectives.transferToInterpreter();
-            throw new UnexpectedResultException(getContext().getCoreLibrary().getNilObject());
+            throw new UnexpectedResultException(nil());
         }
     }
 
@@ -63,7 +63,7 @@ public class ReadInstanceVariableNode extends RubyNode implements ReadNode {
             // TODO(CS): need to put this onto the fast path?
 
             CompilerDirectives.transferToInterpreter();
-            throw new UnexpectedResultException(getContext().getCoreLibrary().getNilObject());
+            throw new UnexpectedResultException(nil());
         }
     }
 
@@ -77,7 +77,7 @@ public class ReadInstanceVariableNode extends RubyNode implements ReadNode {
             // TODO(CS): need to put this onto the fast path?
 
             CompilerDirectives.transferToInterpreter();
-            throw new UnexpectedResultException(getContext().getCoreLibrary().getNilObject());
+            throw new UnexpectedResultException(nil());
         }
     }
 
@@ -90,13 +90,13 @@ public class ReadInstanceVariableNode extends RubyNode implements ReadNode {
 
             if (value == null) {
                 nullProfile.enter();
-                value = getContext().getCoreLibrary().getNilObject();
+                value = nil();
             }
 
             return value;
         } else {
             primitiveProfile.enter();
-            return getContext().getCoreLibrary().getNilObject();
+            return nil();
         }
     }
 
@@ -110,13 +110,13 @@ public class ReadInstanceVariableNode extends RubyNode implements ReadNode {
             if (readNode.getName().equals("$~") || readNode.getName().equals("$!")) {
                 return getContext().makeString("global-variable");
             } else if (readNode.isSet(receiverValue)) {
-                if (readNode.execute(receiverValue) == getContext().getCoreLibrary().getNilObject()) {
-                    return getContext().getCoreLibrary().getNilObject();
+                if (readNode.execute(receiverValue) == nil()) {
+                    return nil();
                 } else {
                     return getContext().makeString("global-variable");
                 }
             } else {
-                return getContext().getCoreLibrary().getNilObject();
+                return nil();
             }
         }
 
@@ -133,7 +133,7 @@ public class ReadInstanceVariableNode extends RubyNode implements ReadNode {
             if (storageLocation != null) {
                 return context.makeString("instance-variable");
             } else {
-                return getContext().getCoreLibrary().getNilObject();
+                return nil();
             }
         } else {
             return false;

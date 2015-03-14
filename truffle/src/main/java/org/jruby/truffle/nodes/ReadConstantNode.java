@@ -81,7 +81,7 @@ public class ReadConstantNode extends RubyNode {
              */
 
             if (e.getRubyException().getLogicalClass() == context.getCoreLibrary().getNameErrorClass()) {
-                return getContext().getCoreLibrary().getNilObject();
+                return nil();
             }
 
             throw e;
@@ -91,7 +91,7 @@ public class ReadConstantNode extends RubyNode {
         RubyConstant constant = ModuleOperations.lookupConstant(context, dispatch.getLexicalScope(), module, name);
 
         if (constant == null || !constant.isVisibleTo(context, dispatch.getLexicalScope(), module)) {
-            return getContext().getCoreLibrary().getNilObject();
+            return nil();
         } else {
             return context.makeString("constant");
         }

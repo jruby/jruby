@@ -74,7 +74,7 @@ public class TaintResultNode extends RubyNode {
             throw new UnsupportedOperationException(e);
         }
 
-        if (result != getContext().getCoreLibrary().getNilObject()) {
+        if (result != nil()) {
             if (taintFromSelf) {
                 maybeTaint((RubyBasicObject) RubyArguments.getSelf(frame.getArguments()), result);
             }
