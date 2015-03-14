@@ -1,6 +1,0 @@
-fails:StringIO#ungetbyte returns nil
-fails:StringIO#ungetbyte prepends the byte to the data before data is read
-fails:StringIO#ungetbyte preserves the prepended bytes when #rewind is called
-fails:StringIO#ungetbyte prepends byte to the data at the current position
-fails:StringIO#ungetbyte overwrites bytes in the data
-fails:StringIO#ungetbyte does not change the encoding of the data
