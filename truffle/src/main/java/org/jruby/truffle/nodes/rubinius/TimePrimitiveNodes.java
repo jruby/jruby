@@ -202,7 +202,7 @@ public abstract class TimePrimitiveNodes {
             String zoneString = org.jruby.RubyTime.zoneHelper(envTimeZoneString, dateTime, false);
             Object zone;
             if (zoneString.matches(".*-\\d+")) {
-                zone = getContext().getCoreLibrary().getNilObject();
+                zone = nil();
             } else {
                 zone = getContext().makeString(zoneString);
             }
@@ -293,13 +293,13 @@ public abstract class TimePrimitiveNodes {
                 final int millis = cast(DebugOperations.send(getContext(), utcoffset, "_offset_to_milliseconds", null));
                 final DateTime dateTime = new DateTime(year, month, mday, hour, min, sec, nsec / 1_000_000, DateTimeZone.forOffsetMillis(millis));
                 return new RubyTime(timeClass, dateTime, utcoffset);
-            } else if (isdst == -1 && !fromutc && utcoffset == getContext().getCoreLibrary().getNilObject()) {
+            } else if (isdst == -1 && !fromutc && utcoffset == nil()) {
                 // TODO CS 14-Feb-15 uses debug send
                 final DateTimeZone zone = org.jruby.RubyTime.getTimeZoneFromTZString(getContext().getRuntime(),
                         DebugOperations.send(getContext(), getContext().getCoreLibrary().getENV(), "[]", null, getContext().makeString("TZ")).toString());
                 final DateTime dateTime = new DateTime(year, month, mday, hour, min, sec, nsec / 1_000_000, zone);
                 return new RubyTime(timeClass, dateTime, null);
-            } else if (isdst == -1 && fromutc && utcoffset == getContext().getCoreLibrary().getNilObject()) {
+            } else if (isdst == -1 && fromutc && utcoffset == nil()) {
                 final DateTime dateTime = new DateTime(year, month, mday, hour, min, sec, nsec / 1_000_000, DateTimeZone.UTC);
                 return new RubyTime(timeClass, dateTime, utcoffset);
             } else {

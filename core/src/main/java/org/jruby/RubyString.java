@@ -4148,7 +4148,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
     public IRubyObject chop19(ThreadContext context) {
         Ruby runtime = context.runtime;
         if (value.getRealSize() == 0) return newEmptyString(runtime, getMetaClass(), value.getEncoding()).infectBy(this);
-        return makeShared19(runtime, 0, choppedLength19(runtime));
+        return makeShared19(runtime, 0, StringSupport.choppedLength19(this, runtime));
     }
 
     @JRubyMethod(name = "chop!")
@@ -4156,31 +4156,11 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
         modifyCheck();
         Ruby runtime = context.runtime;
         if (value.getRealSize() == 0) return runtime.getNil();
-        view(0, choppedLength19(runtime));
+        view(0, StringSupport.choppedLength19(this, runtime));
         if (getCodeRange() != CR_7BIT) clearCodeRange();
         return this;
     }
 
-    private int choppedLength19(Ruby runtime) {
-        int p = value.getBegin();
-        int end = p + value.getRealSize();
-
-        if (p > end) return 0;
-        byte bytes[] = value.getUnsafeBytes();
-        Encoding enc = value.getEncoding();
-
-        int s = enc.prevCharHead(bytes, p, end, end);
-        if (s == -1) return 0;
-        if (s > p && codePoint(runtime, enc, bytes, s, end) == '\n') {
-            int s2 = enc.prevCharHead(bytes, p, s, end);
-            if (s2 != -1 && codePoint(runtime, enc, bytes, s2, end) == '\r') s = s2;
-        }
-        return s - p;
-    }
-
-    /** rb_str_chop
-     *
-     */
     public RubyString chomp(ThreadContext context) {
         return chomp19(context);
     }

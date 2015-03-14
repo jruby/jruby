@@ -40,7 +40,7 @@ public class TopLevelRaiseHandler extends RubyNode {
             // Ignore
         }
 
-        return getContext().getCoreLibrary().getNilObject();
+        return nil();
     }
 
 }

@@ -31,7 +31,7 @@ public class CheckOutputSeparatorVariableTypeNode extends RubyNode {
 
         final Object childValue = child.execute(frame);
 
-        if (!(childValue instanceof RubyString) && childValue != getContext().getCoreLibrary().getNilObject()) {
+        if (!(childValue instanceof RubyString) && childValue != nil()) {
             CompilerDirectives.transferToInterpreter();
             throw new RaiseException(getContext().getCoreLibrary().typeErrorMustBe("$,", "String", this));
         }

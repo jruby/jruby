@@ -38,7 +38,7 @@ public abstract class ExceptionNodes {
             notDesignedForCompilation();
 
             exception.initialize(getContext().makeString(" "), RubyCallStack.getBacktrace(this));
-            return getContext().getCoreLibrary().getNilObject();
+            return nil();
         }
 
         @Specialization
@@ -46,7 +46,7 @@ public abstract class ExceptionNodes {
             notDesignedForCompilation();
 
             exception.initialize(message, RubyCallStack.getBacktrace(this));
-            return getContext().getCoreLibrary().getNilObject();
+            return nil();
         }
 
     }

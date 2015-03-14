@@ -44,27 +44,27 @@ public abstract class HashCastNode extends RubyNode {
 
     @Specialization
     public RubyNilClass cast(boolean value) {
-        return getContext().getCoreLibrary().getNilObject();
+        return nil();
     }
 
     @Specialization
     public RubyNilClass cast(int value) {
-        return getContext().getCoreLibrary().getNilObject();
+        return nil();
     }
 
     @Specialization
     public RubyNilClass cast(long value) {
-        return getContext().getCoreLibrary().getNilObject();
+        return nil();
     }
 
     @Specialization
     public RubyNilClass cast(double value) {
-        return getContext().getCoreLibrary().getNilObject();
+        return nil();
     }
 
     @Specialization
     public RubyNilClass cast(RubyBignum value) {
-        return getContext().getCoreLibrary().getNilObject();
+        return nil();
     }
 
     @Specialization
@@ -84,7 +84,7 @@ public abstract class HashCastNode extends RubyNode {
         final Object result = toHashNode.call(frame, object, "to_hash", null, new Object[]{});
 
         if (result == DispatchNode.MISSING) {
-            return getContext().getCoreLibrary().getNilObject();
+            return nil();
         }
 
         if (!(result instanceof RubyHash)) {

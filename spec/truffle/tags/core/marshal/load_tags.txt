@@ -1,4 +1,3 @@
-fails:Marshal.load raises an ArgumentError when the dumped data is truncated
 fails:Marshal.load raises an ArgumentError when the dumped class is missing
 fails:Marshal.load returns the value of the proc when called with a proc
 fails:Marshal.load calls the proc for recursively visited data
@@ -36,7 +35,6 @@ fails:Marshal.load loads a Float 8323434.342
 fails:Marshal.load loads a Random
 fails:Marshal.load raises an ArgumentError with full constant name when the dumped constant is missing
 fails:Marshal.load when source is tainted returns a tainted object
-fails:Marshal.load when source is tainted does not taint Symbols
 fails:Marshal.load for an Array loads an array containing the same objects
 fails:Marshal.load for a Hash loads an extended_user_hash with a parameter to initialize
 fails:Marshal.load for a Hash preserves hash ivars when hash contains a string having ivar

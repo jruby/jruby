@@ -7,7 +7,6 @@ fails:Module#define_method raises an ArgumentError when no block is given
 fails:Module#define_method is private
 fails:Module#define_method method body is an UnboundMethod allows methods defined on a different object
 fails:Module#define_method when name is :initialize given an UnboundMethod sets the visibility to private when method is named :initialize
-fails:Method#define_method when passed a Method object defines a method with the same #arity as the original
 fails:Method#define_method when passed a Method object defines a method with the same #parameters as the original
 fails:Method#define_method when passed an UnboundMethod object defines a method with the same #arity as the original
 fails:Method#define_method when passed an UnboundMethod object defines a method with the same #parameters as the original

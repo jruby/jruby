@@ -185,7 +185,7 @@ public abstract class KernelNodes {
 
         @Specialization
         public RubyNilClass equal(Object other) {
-            return getContext().getCoreLibrary().getNilObject();
+            return nil();
         }
 
     }
@@ -232,7 +232,7 @@ public abstract class KernelNodes {
             if (equalNode.executeSameOrEqual(frame, self, other)) {
                 return 0;
             } else {
-                return getContext().getCoreLibrary().getNilObject();
+                return nil();
             }
         }
 
@@ -253,7 +253,7 @@ public abstract class KernelNodes {
         public RubyNilClass abort() {
             CompilerDirectives.transferToInterpreter();
             System.exit(1);
-            return getContext().getCoreLibrary().getNilObject();
+            return nil();
         }
     }
 
@@ -311,7 +311,7 @@ public abstract class KernelNodes {
             notDesignedForCompilation();
 
             getContext().getAtExitManager().add(block);
-            return getContext().getCoreLibrary().getNilObject();
+            return nil();
         }
     }
 
@@ -405,7 +405,7 @@ public abstract class KernelNodes {
             int size = activations.size() - omit;
 
             if (size < 0) {
-                return getContext().getCoreLibrary().getNilObject();
+                return nil();
             }
 
             Object[] callers = new Object[size];
@@ -706,7 +706,7 @@ public abstract class KernelNodes {
         public RubyNilClass exit(int exitCode) {
             CompilerDirectives.transferToInterpreter();
             System.exit(exitCode);
-            return getContext().getCoreLibrary().getNilObject();
+            return nil();
         }
 
     }
@@ -750,7 +750,7 @@ public abstract class KernelNodes {
         public Object fork(Object[] args) {
             notDesignedForCompilation();
             getContext().getWarnings().warn("Kernel#fork not implemented - defined to satisfy some metaprogramming in RubySpec");
-            return getContext().getCoreLibrary().getNilObject();
+            return nil();
         }
 
     }
@@ -1407,7 +1407,7 @@ public abstract class KernelNodes {
         }
 
         @Specialization
-        public boolean nil() {
+        public boolean isNil() {
             return false;
         }
     }
@@ -1545,7 +1545,7 @@ public abstract class KernelNodes {
 
             final Object lastException = getLastExceptionNode.execute(frame);
 
-            if (lastException == getContext().getCoreLibrary().getNilObject()) {
+            if (lastException == nil()) {
                 return raise(frame, getContext().makeString(""), UndefinedPlaceholder.INSTANCE, UndefinedPlaceholder.INSTANCE);
             }
 

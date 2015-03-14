@@ -1,4 +1,3 @@
-fails:Array#sort sorts reverse-sorted Arrays
 fails:Array#sort may take a block which is used to determine the order of objects a and b described as -1, 0 or +1
 fails:Array#sort raises an error when a given block returns nil
 fails:Array#sort completes when supplied a block that always returns the same result

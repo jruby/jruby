@@ -49,7 +49,7 @@ public class CallRubiniusPrimitiveNode extends RubyNode {
     @Override
     public Object execute(VirtualFrame frame) {
         executeVoid(frame);
-        return getContext().getCoreLibrary().getNilObject();
+        return nil();
     }
 
 }

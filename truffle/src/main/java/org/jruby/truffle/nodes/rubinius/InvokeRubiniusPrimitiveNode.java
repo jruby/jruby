@@ -43,7 +43,7 @@ public class InvokeRubiniusPrimitiveNode extends RubyNode {
 
         // Primitives may return null to indicate that they have failed, in which case we continue with the fallback
 
-        return getContext().getCoreLibrary().getNilObject();
+        return nil();
     }
 
 }

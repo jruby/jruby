@@ -25,7 +25,7 @@ public class NilLiteralNode extends RubyNode {
 
     @Override
     public Object execute(VirtualFrame frame) {
-        return getContext().getCoreLibrary().getNilObject();
+        return nil();
     }
 
     @Override

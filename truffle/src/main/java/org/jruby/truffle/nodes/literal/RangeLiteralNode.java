@@ -108,7 +108,7 @@ public abstract class RangeLiteralNode extends RubyNode {
             throw new RaiseException(getContext().getCoreLibrary().argumentError("bad value for range", this));
         }
 
-        if (cmpResult == getContext().getCoreLibrary().getNilObject()) {
+        if (cmpResult == nil()) {
             throw new RaiseException(getContext().getCoreLibrary().argumentError("bad value for range", this));
         }
 

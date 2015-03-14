@@ -1,7 +1,4 @@
 fails:Object#instance_exec raises a LocalJumpError unless given a block
-fails:Object#instance_exec has an arity of -1
-fails:Object#instance_exec accepts arguments with a block
-fails:Object#instance_exec doesn't pass self to the block as an argument
 fails:Object#instance_exec passes any arguments to the block
 fails:Object#instance_exec only binds the exec to the receiver
 fails:Object#instance_exec binds self to the receiver

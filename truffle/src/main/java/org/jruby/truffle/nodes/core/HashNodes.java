@@ -540,7 +540,7 @@ public abstract class HashNodes {
         @Specialization
         public Object defaultProc(RubyHash hash) {
             if (hash.getDefaultBlock() == null) {
-                return getContext().getCoreLibrary().getNilObject();
+                return nil();
             } else {
                 return hash.getDefaultBlock();
             }
@@ -572,7 +572,7 @@ public abstract class HashNodes {
         @Specialization(guards = "isNull(hash)")
         public Object deleteNull(VirtualFrame frame, RubyHash hash, Object key, Object block) {
             if (block == UndefinedPlaceholder.INSTANCE) {
-                return getContext().getCoreLibrary().getNilObject();
+                return nil();
             } else {
                 return yieldNode.dispatch(frame, (RubyProc) block, key);
             }
@@ -598,7 +598,7 @@ public abstract class HashNodes {
             }
 
             if (block == UndefinedPlaceholder.INSTANCE) {
-                return getContext().getCoreLibrary().getNilObject();
+                return nil();
             } else {
                 return yieldNode.dispatch(frame, (RubyProc) block, key);
             }
@@ -612,7 +612,7 @@ public abstract class HashNodes {
 
             if (hashSearchResult.getEntry() == null) {
                 if (block == UndefinedPlaceholder.INSTANCE) {
-                    return getContext().getCoreLibrary().getNilObject();
+                    return nil();
                 } else {
                     return yieldNode.dispatch(frame, (RubyProc) block, key);
                 }
@@ -1204,7 +1204,7 @@ public abstract class HashNodes {
 
         @Specialization(guards = {"isEmpty(hash)", "!hasDefaultValue(hash)", "!hasDefaultBlock(hash)"})
         public RubyNilClass shiftEmpty(RubyHash hash) {
-            return getContext().getCoreLibrary().getNilObject();
+            return nil();
         }
 
         @Specialization(guards = {"isEmpty(hash)", "hasDefaultValue(hash)", "!hasDefaultBlock(hash)"})
@@ -1216,7 +1216,7 @@ public abstract class HashNodes {
         public Object shiftEmptyDefaultProc(RubyHash hash) {
             notDesignedForCompilation();
             
-            return hash.getDefaultBlock().rootCall(hash, getContext().getCoreLibrary().getNilObject());
+            return hash.getDefaultBlock().rootCall(hash, nil());
         }
 
         @Specialization(guards = {"!isEmpty(hash)", "!isNull(hash)", "!isBuckets(hash)"})
@@ -1364,7 +1364,7 @@ public abstract class HashNodes {
             final Object value = hash.getDefaultValue();
             
             if (value == null) {
-                return getContext().getCoreLibrary().getNilObject();
+                return nil();
             } else {
                 return value;
             }
@@ -1414,7 +1414,7 @@ public abstract class HashNodes {
         public RubyNilClass setDefaultProc(RubyHash hash, RubyNilClass nil) {
             hash.setDefaultValue(null);
             hash.setDefaultBlock(null);
-            return getContext().getCoreLibrary().getNilObject();
+            return nil();
         }
 
     }

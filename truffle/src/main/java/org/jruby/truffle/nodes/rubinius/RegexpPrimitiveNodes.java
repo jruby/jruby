@@ -103,7 +103,7 @@ public abstract class RegexpPrimitiveNodes {
         @Specialization
         public RubyNilClass setBlockLastMatch(RubyClass regexpClass) {
             // TODO CS 7-Mar-15 what does this do?
-            return getContext().getCoreLibrary().getNilObject();
+            return nil();
         }
 
     }

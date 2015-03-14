@@ -54,7 +54,7 @@ public final class WhileNode extends RubyNode {
             return e.getResult();
         }
 
-        return getContext().getCoreLibrary().getNilObject();
+        return nil();
     }
     
     private static abstract class WhileRepeatingBaseNode extends Node implements RepeatingNode {

@@ -119,7 +119,7 @@ public abstract class ProcNodes {
                     block.getCallTargetForProcs(), block.getCallTargetForMethods(), block.getDeclarationFrame(),
                     block.getMethod(), block.getSelfCapturedInScope(), block.getBlockCapturedInScope());
 
-            return getContext().getCoreLibrary().getNilObject();
+            return nil();
         }
 
         @Specialization
@@ -218,7 +218,7 @@ public abstract class ProcNodes {
             SourceSection sourceSection = proc.getSharedMethodInfo().getSourceSection();
 
             if (sourceSection instanceof NullSourceSection) {
-                return getContext().getCoreLibrary().getNilObject();
+                return nil();
             } else {
                 RubyString file = getContext().makeString(sourceSection.getSource().getName());
                 return RubyArray.fromObjects(getContext().getCoreLibrary().getArrayClass(),

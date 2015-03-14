@@ -1,7 +1,3 @@
-fails:Random#bytes returns a String
-fails:Random#bytes returns a String of the length given as argument
-fails:Random#bytes returns an ASCII-8BIT String
 fails:Random#bytes returns the same output for a given seed
 fails:Random#bytes returns the same numeric output for a given seed accross all implementations and platforms
 fails:Random#bytes returns the same numeric output for a given huge seed accross all implementations and platforms
-fails:Random#bytes returns a random binary String

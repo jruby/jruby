@@ -121,7 +121,7 @@ public abstract class NumericNodes {
                 yield(frame, block, i);
             }
 
-            return getContext().getCoreLibrary().getNilObject();
+            return nil();
         }
 
     }

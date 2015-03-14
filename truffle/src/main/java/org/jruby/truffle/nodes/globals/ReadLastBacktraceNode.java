@@ -42,8 +42,8 @@ public class ReadLastBacktraceNode extends RubyNode {
     public Object execute(VirtualFrame frame) {
         final Object lastException = getLastExceptionNode.execute(frame);
 
-        if (lastException == getContext().getCoreLibrary().getNilObject()) {
-            return getContext().getCoreLibrary().getNilObject();
+        if (lastException == nil()) {
+            return nil();
         }
 
         return getBacktraceNode.call(frame, lastException, "backtrace", null);

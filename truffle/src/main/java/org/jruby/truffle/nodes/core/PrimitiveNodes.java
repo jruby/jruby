@@ -176,7 +176,7 @@ public abstract class PrimitiveNodes {
                 System.err.println(line);
             }
 
-            return getContext().getCoreLibrary().getNilObject();
+            return nil();
         }
 
     }
@@ -195,7 +195,7 @@ public abstract class PrimitiveNodes {
         @Specialization
         public RubyNilClass flush() {
             getContext().getRuntime().getOut().flush();
-            return getContext().getCoreLibrary().getNilObject();
+            return nil();
         }
 
     }
@@ -338,7 +338,7 @@ public abstract class PrimitiveNodes {
         @Specialization
         public RubyNilClass doPanic() {
             DebugOperations.panic(getContext(), this, null);
-            return getContext().getCoreLibrary().getNilObject();
+            return nil();
         }
 
     }
@@ -361,7 +361,7 @@ public abstract class PrimitiveNodes {
             final org.jruby.ast.Node parseTree = RubyCallStack.getCallingMethod(frame).getSharedMethodInfo().getParseTree();
 
             if (parseTree == null) {
-                return getContext().getCoreLibrary().getNilObject();
+                return nil();
             } else {
                 return getContext().makeString(parseTree.toString(true, 0));
             }
@@ -458,7 +458,7 @@ public abstract class PrimitiveNodes {
         @Specialization
         public RubyNilClass simpleShell() {
             new SimpleShell(getContext()).run(Truffle.getRuntime().getCallerFrame().getFrame(FrameInstance.FrameAccess.MATERIALIZE, true).materialize(), this);
-            return getContext().getCoreLibrary().getNilObject();
+            return nil();
         }
 
     }

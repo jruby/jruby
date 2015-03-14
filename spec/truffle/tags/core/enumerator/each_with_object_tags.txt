@@ -1,1 +1,0 @@
-fails:Enumerator#each_with_object receives an argument
