@@ -1,1 +1,0 @@
-fails:Enumerable#map passes through the values yielded by #each_with_index
