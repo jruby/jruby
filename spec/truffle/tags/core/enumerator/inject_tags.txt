@@ -1,2 +1,1 @@
-fails:Enumerator#inject requires multiple arguments
 fails:Enumerator#inject works when chained against each_with_index
