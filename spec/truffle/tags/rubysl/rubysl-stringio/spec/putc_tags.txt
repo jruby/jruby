@@ -1,8 +1,0 @@
-fails:StringIO#putc when passed [String] overwrites the character at the current position
-fails:StringIO#putc when passed [String] only writes the first character from the passed String
-fails:StringIO#putc when passed [String] returns the passed String
-fails:StringIO#putc when passed [String] correctly updates the current position
-fails:StringIO#putc when passed [String] writes a byte into the io
-fails:StringIO#putc when passed [Object] it writes the passed Integer % 256 to self
-fails:StringIO#putc when passed [Object] pads self with \000 when the current position is after the end
-fails:StringIO#putc when passed [Object] tries to convert the passed argument to an Integer using #to_int

@@ -624,8 +624,9 @@ public abstract class StringPrimitiveNodes {
         }
 
         @Specialization
-        public Object stringResizeCapacity(RubyString string, Object capacity) {
-            throw new UnsupportedOperationException("string_resize_capacity");
+        public RubyString stringResizeCapacity(RubyString string, int capacity) {
+            string.getByteList().ensure(capacity);
+            return string;
         }
 
     }

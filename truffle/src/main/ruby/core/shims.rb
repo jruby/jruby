@@ -200,3 +200,15 @@ module Rubinius
     end
   end
 end
+
+class String
+
+  def modify!
+    # TODO CS 14-Mar-15 what does this do?
+  end
+
+  def num_bytes=(count)
+    _set_num_bytes count
+  end
+
+end

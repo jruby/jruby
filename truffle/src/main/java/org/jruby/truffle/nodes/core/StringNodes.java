@@ -2213,4 +2213,22 @@ public abstract class StringNodes {
         }
     }
 
+    @CoreMethod(names = "_set_num_bytes", required = 1)
+    public abstract static class SetNumBytesNode extends CoreMethodNode {
+
+        public SetNumBytesNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public SetNumBytesNode(SetNumBytesNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public RubyString setNumBytes(RubyString string, int count) {
+            string.getByteList().view(0, count);
+            return string;
+        }
+    }
+
 }
