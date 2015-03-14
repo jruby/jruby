@@ -212,3 +212,19 @@ class String
   end
 
 end
+
+class IO
+
+  RDONLY = 0
+  WRONLY = 1
+  RDWR = 2
+
+  CREAT = 512
+  EXCL = 2048
+  NOCTTY = 131072
+  TRUNC = 1024
+  APPEND = 8
+  NONBLOCK = 4
+  SYNC = 128
+
+end

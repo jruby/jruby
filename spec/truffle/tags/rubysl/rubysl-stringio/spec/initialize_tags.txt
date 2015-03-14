@@ -1,4 +1,0 @@
-fails:StringIO#initialize when passed [Object, mode] allows passing the mode as an Integer
-fails:StringIO#initialize when passed [Object, mode] raises a TypeError when passed a frozen String in truncate mode as StringIO backend
-fails:StringIO#initialize when passed [Object, mode] raises a RuntimeError when passed a frozen String in truncate mode as StringIO backend
-fails:StringIO#initialize when passed no arguments uses an empty String as the StringIO backend
