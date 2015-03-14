@@ -806,11 +806,10 @@ public abstract class ArrayNodes {
 
             if (normalizedIndex < 0) {
                 tooSmallBranch.enter();
-                CompilerDirectives.transferToInterpreter();
-                throw new UnsupportedOperationException();
+                return getContext().getCoreLibrary().getNilObject();
             } else if (normalizedIndex >= array.getSize()) {
                 beyondEndBranch.enter();
-                throw new UnsupportedOperationException();
+                return getContext().getCoreLibrary().getNilObject();
             } else {
                 final int[] store = (int[]) array.getStore();
                 final int value = store[normalizedIndex];
