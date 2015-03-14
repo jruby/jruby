@@ -9,6 +9,7 @@
  */
 package org.jruby.truffle.pack.nodes.type;
 
+import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.truffle.pack.runtime.ByteWriter;
 import org.jruby.truffle.pack.nodes.PackNode;
 
@@ -28,6 +29,11 @@ public class UInt32LENode extends PackNode {
 
     @Override
     public int pack(double[] source, int source_pos, int source_len, ByteWriter writer) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public int pack(IRubyObject[] source, int source_pos, int source_len, ByteWriter writer) {
         throw new UnsupportedOperationException();
     }
 

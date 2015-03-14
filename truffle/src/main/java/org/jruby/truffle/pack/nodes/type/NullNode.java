@@ -9,6 +9,7 @@
  */
 package org.jruby.truffle.pack.nodes.type;
 
+import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.truffle.pack.runtime.ByteWriter;
 import org.jruby.truffle.pack.nodes.PackNode;
 
@@ -28,6 +29,12 @@ public class NullNode extends PackNode {
 
     @Override
     public int pack(double[] source, int source_pos, int source_len, ByteWriter writer) {
+        writer.write((byte) 0);
+        return source_pos;
+    }
+
+    @Override
+    public int pack(IRubyObject[] source, int source_pos, int source_len, ByteWriter writer) {
         writer.write((byte) 0);
         return source_pos;
     }

@@ -9,6 +9,8 @@
  */
 package org.jruby.truffle.pack.nodes.type;
 
+import com.oracle.truffle.api.CompilerDirectives;
+import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.truffle.pack.nodes.PackNode;
 import org.jruby.truffle.pack.runtime.ByteWriter;
 
@@ -29,6 +31,17 @@ public class UInt32BENode extends PackNode {
     @Override
     public int pack(double[] source, int source_pos, int source_len, ByteWriter writer) {
         throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public int pack(IRubyObject[] source, int source_pos, int source_len, ByteWriter writer) {
+        writer.writeUInt32BE((int) toLong(source[source_pos])); // happy to truncate
+        return source_pos + 1;
+    }
+
+    @CompilerDirectives.TruffleBoundary
+    private static long toLong(IRubyObject object) {
+        return object.convertToInteger().getLongValue();
     }
 
     @Override

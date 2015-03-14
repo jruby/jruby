@@ -11,6 +11,7 @@ package org.jruby.truffle.pack.nodes.control;
 
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.nodes.ExplodeLoop;
+import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.truffle.pack.runtime.ByteWriter;
 import org.jruby.truffle.pack.nodes.PackNode;
 
@@ -53,6 +54,20 @@ public class SequenceNode extends PackNode {
     @ExplodeLoop
     @Override
     public int pack(double[] source, int source_pos, int source_len, ByteWriter writer) {
+        for (PackNode child : children) {
+            source_pos = child.pack(source, source_pos, source_len, writer);
+        }
+
+        if (CompilerDirectives.inInterpreter()) {
+            getRootNode().reportLoopCount(children.length);
+        }
+
+        return source_pos;
+    }
+
+    @ExplodeLoop
+    @Override
+    public int pack(IRubyObject[] source, int source_pos, int source_len, ByteWriter writer) {
         for (PackNode child : children) {
             source_pos = child.pack(source, source_pos, source_len, writer);
         }

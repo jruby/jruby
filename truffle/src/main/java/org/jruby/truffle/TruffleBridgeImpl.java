@@ -9,6 +9,7 @@
  */
 package org.jruby.truffle;
 
+import com.oracle.truffle.api.CallTarget;
 import com.oracle.truffle.api.Truffle;
 import com.oracle.truffle.api.frame.MaterializedFrame;
 import com.oracle.truffle.api.source.BytesDecoder;
@@ -22,6 +23,7 @@ import org.jruby.truffle.nodes.TopLevelRaiseHandler;
 import org.jruby.truffle.nodes.control.SequenceNode;
 import org.jruby.truffle.nodes.core.*;
 import org.jruby.truffle.nodes.rubinius.ByteArrayNodesFactory;
+import org.jruby.truffle.pack.parser.PackParser;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.backtrace.Backtrace;
 import org.jruby.truffle.runtime.control.RaiseException;
@@ -31,6 +33,7 @@ import org.jruby.truffle.runtime.core.RubyException;
 import org.jruby.truffle.runtime.util.FileUtils;
 import org.jruby.truffle.translator.NodeWrapper;
 import org.jruby.truffle.translator.TranslatorDriver;
+import org.jruby.util.ByteList;
 import org.jruby.util.cli.Options;
 
 import java.io.File;
@@ -215,6 +218,20 @@ public class TruffleBridgeImpl implements TruffleBridge {
                 System.err.println(line);
             }
         }
+    }
+
+    @Override
+    public Packer parsePack(String format, boolean extended) {
+        final CallTarget packCallTarget = new PackParser().parse(format, extended);
+
+        return new Packer() {
+
+            @Override
+            public ByteList pack(Object[] store, int size) {
+                return (ByteList) packCallTarget.call(store, size);
+            }
+
+        };
     }
 
 }

@@ -10,6 +10,7 @@
 package org.jruby;
 
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.util.ByteList;
 
 public interface TruffleBridge {
 
@@ -26,5 +27,13 @@ public interface TruffleBridge {
     Object toTruffle(IRubyObject object);
 
     void shutdown();
+
+    public interface Packer {
+
+        public ByteList pack(Object[] store, int size);
+
+    }
+
+    Packer parsePack(String format, boolean extended);
     
 }

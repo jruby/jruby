@@ -4103,6 +4103,24 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
         }
     }
 
+    private static TruffleBridge.Packer packer;
+
+    @JRubyMethod(name = "pack_fast", required = 1, optional = 1)
+    public RubyString packFast(ThreadContext context, IRubyObject[] args) {
+        if (packer == null) {
+            RubyString iFmt = args[0].convertToString();
+            boolean extended;
+            if (args.length == 2) {
+                extended = args[1].isTrue();
+            } else {
+                extended = false;
+            }
+            packer = getRuntime().getTruffleBridge().parsePack(iFmt.toString(), extended);
+        }
+
+        return getRuntime().newString(packer.pack(values, realLength));
+    }
+
     @Override
     public Class getJavaClass() {
         return List.class;

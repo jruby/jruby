@@ -11,6 +11,7 @@ package org.jruby.truffle.pack.nodes;
 
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.nodes.Node;
+import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.truffle.pack.runtime.ByteWriter;
 
 public abstract class PackNode extends Node {
@@ -18,11 +19,13 @@ public abstract class PackNode extends Node {
     @CompilerDirectives.CompilationFinal private boolean seenInt;
     @CompilerDirectives.CompilationFinal private boolean seenLong;
     @CompilerDirectives.CompilationFinal private boolean seenDouble;
+    @CompilerDirectives.CompilationFinal private boolean seenIObject;
     @CompilerDirectives.CompilationFinal private boolean seenObject;
 
     public abstract int pack(int[] source, int source_pos, int source_len, ByteWriter writer);
     public abstract int pack(long[] source, int source_pos, int source_len, ByteWriter writer);
     public abstract int pack(double[] source, int source_pos, int source_len, ByteWriter writer);
+    public abstract int pack(IRubyObject[] source, int source_pos, int source_len, ByteWriter writer);
     public abstract int pack(Object[] source, int source_pos, int source_len, ByteWriter writer);
 
     public int pack(Object source, int source_pos, int source_len, ByteWriter writer) {
@@ -36,6 +39,10 @@ public abstract class PackNode extends Node {
 
         if (seenDouble && source instanceof double[]) {
             return pack((double[]) source, source_pos, source_len, writer);
+        }
+
+        if (seenIObject && source instanceof IRubyObject[]) {
+            return pack((IRubyObject[]) source, source_pos, source_len, writer);
         }
 
         if (seenObject && source instanceof Object[]) {
@@ -57,6 +64,11 @@ public abstract class PackNode extends Node {
         if (source instanceof double[]) {
             seenDouble = true;
             return pack((double[]) source, source_pos, source_len, writer);
+        }
+
+        if (source instanceof IRubyObject[]) {
+            seenIObject = true;
+            return pack((IRubyObject[]) source, source_pos, source_len, writer);
         }
 
         if (source instanceof Object[]) {
