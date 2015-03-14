@@ -10,7 +10,6 @@
 package org.jruby.truffle.nodes;
 
 import com.oracle.truffle.api.CompilerAsserts;
-import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.Truffle;
 import com.oracle.truffle.api.dsl.TypeSystemReference;
 import com.oracle.truffle.api.frame.MaterializedFrame;
@@ -218,7 +217,7 @@ public abstract class RubyNode extends Node implements ProbeNode.Instrumentable 
     }
 
     public static void notDesignedForCompilation() {
-        CompilerDirectives.bailout("this code either doesn't implement Ruby semantics properly, or is a basic implementation that will not compile");
+        CompilerAsserts.neverPartOfCompilation();
     }
 
     public boolean isTrue(boolean value) {
