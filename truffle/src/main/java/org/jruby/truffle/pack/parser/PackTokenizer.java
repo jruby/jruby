@@ -12,11 +12,13 @@ package org.jruby.truffle.pack.parser;
 public class PackTokenizer {
 
     private final String format;
+    private final boolean extended;
     private int position;
     private Object peek;
 
-    public PackTokenizer(String format) {
+    public PackTokenizer(String format, boolean extended) {
         this.format = format;
+        this.extended = extended;
     }
 
     public Object peek() {
@@ -42,7 +44,15 @@ public class PackTokenizer {
 
         final char c = format.charAt(position);
 
-        if ("NLXx*()".indexOf(c) > -1) {
+        final String chars;
+
+        if (extended) {
+            chars = "NLXx*()";
+        } else {
+            chars = "NLXx*";
+        }
+
+        if (chars.indexOf(c) > -1) {
             position++;
             return c;
         }

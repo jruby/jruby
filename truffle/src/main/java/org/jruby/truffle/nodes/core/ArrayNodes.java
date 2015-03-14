@@ -2196,7 +2196,7 @@ public abstract class ArrayNodes {
         public RubyString pack(VirtualFrame frame, RubyArray array, RubyString format, boolean extended) {
             if (callPackNode == null) {
                 CompilerDirectives.transferToInterpreter();
-                final CallTarget packCallTarget = new PackParser().parse(format.toString());
+                final CallTarget packCallTarget = new PackParser().parse(format.toString(), extended);
                 callPackNode = insert(Truffle.getRuntime().createDirectCallNode(packCallTarget));
             }
 

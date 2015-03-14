@@ -10,15 +10,19 @@
 package org.jruby.truffle.pack.runtime;
 
 import com.oracle.truffle.api.CompilerDirectives;
+import com.oracle.truffle.api.Truffle;
 import com.oracle.truffle.api.nodes.ExplodeLoop;
 import org.jcodings.specific.USASCIIEncoding;
 import org.jruby.util.ByteList;
+import org.jruby.util.unsafe.UnsafeHolder;
+import sun.misc.Unsafe;
 
 import java.util.Arrays;
 
 public class ByteWriter {
 
     @CompilerDirectives.CompilationFinal private byte[] bytes;
+    @CompilerDirectives.CompilationFinal private long bytesAddress;
     private int position;
 
     public ByteWriter(int expectedLength) {
@@ -41,8 +45,11 @@ public class ByteWriter {
         }
 
         for (byte value : values) {
-            // TODO CS 11-Mar-15 ensure array bounds checks here are removed
-            bytes[position] = value;
+            //bytes[position] = value;
+            UnsafeHolder.U.putByte(
+                    bytes,
+                    Unsafe.ARRAY_BYTE_BASE_OFFSET + Unsafe.ARRAY_BYTE_INDEX_SCALE * (long) position,
+                    value);
             position++;
         }
     }

@@ -9,6 +9,7 @@
  */
 package org.jruby.truffle.pack.nodes.control;
 
+import com.oracle.truffle.api.CompilerDirectives;
 import org.jruby.truffle.pack.runtime.ByteWriter;
 import org.jruby.truffle.pack.nodes.PackNode;
 
@@ -27,7 +28,11 @@ public class NNode extends PackNode {
         for (int i = 0; i < repeats; i++) {
             source_pos = child.pack(source, source_pos, source_len, writer);
         }
-        getRootNode().reportLoopCount(repeats);
+
+        if (CompilerDirectives.inInterpreter()) {
+            getRootNode().reportLoopCount(repeats);
+        }
+
         return source_pos;
     }
 
@@ -36,7 +41,11 @@ public class NNode extends PackNode {
         for (int i = 0; i < repeats; i++) {
             source_pos = child.pack(source, source_pos, source_len, writer);
         }
-        getRootNode().reportLoopCount(repeats);
+
+        if (CompilerDirectives.inInterpreter()) {
+            getRootNode().reportLoopCount(repeats);
+        }
+
         return source_pos;
     }
 
@@ -45,7 +54,11 @@ public class NNode extends PackNode {
         for (int i = 0; i < repeats; i++) {
             source_pos = child.pack(source, source_pos, source_len, writer);
         }
-        getRootNode().reportLoopCount(repeats);
+
+        if (CompilerDirectives.inInterpreter()) {
+            getRootNode().reportLoopCount(repeats);
+        }
+
         return source_pos;
     }
 
@@ -54,7 +67,11 @@ public class NNode extends PackNode {
         for (int i = 0; i < repeats; i++) {
             source_pos = child.pack(source, source_pos, source_len, writer);
         }
-        getRootNode().reportLoopCount(repeats);
+
+        if (CompilerDirectives.inInterpreter()) {
+            getRootNode().reportLoopCount(repeats);
+        }
+
         return source_pos;
     }
 
