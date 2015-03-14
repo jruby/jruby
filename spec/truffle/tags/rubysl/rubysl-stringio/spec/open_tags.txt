@@ -1,0 +1,6 @@
+fails:StringIO.open when passed [Object, mode] allows passing the mode as an Integer
+fails:StringIO.open when passed [Object, mode] raises a TypeError when passed a frozen String in truncate mode as StringIO backend
+fails:StringIO.open when passed [Object, mode] raises a RuntimeError when passed a frozen String in truncate mode as StringIO backend
+fails:StringIO.open when passed no arguments yields self to the passed block
+fails:StringIO.open when passed no arguments sets the mode to read-write
+fails:StringIO.open when passed no arguments uses an empty String as the StringIO backend

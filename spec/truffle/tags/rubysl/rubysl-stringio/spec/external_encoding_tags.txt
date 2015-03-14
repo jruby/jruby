@@ -1,0 +1,1 @@
+fails:StringIO#external_encoding gets the encoding of the underlying String

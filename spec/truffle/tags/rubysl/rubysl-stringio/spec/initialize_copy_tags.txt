@@ -1,0 +1,2 @@
+fails:StringIO#initialize_copy copies the passed StringIO's append mode
+fails:StringIO#initialize_copy does not truncate self's content when the copied StringIO was in truncate mode

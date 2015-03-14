@@ -1,0 +1,18 @@
+fails:StringIO#puts when passed an Array writes each element of the passed Array to self, separated by a newline
+fails:StringIO#puts when passed an Array flattens nested Arrays
+fails:StringIO#puts when passed an Array handles self-recursive arrays correctly
+fails:StringIO#puts when passed an Array does not honor the global output record separator $\
+fails:StringIO#puts when passed an Array first tries to convert each Array element to an Array using #to_ary
+fails:StringIO#puts when passed an Array then tries to convert each Array element to a String using #to_s
+fails:StringIO#puts when passed 1 or more objects does not honor the global output record separator $\
+fails:StringIO#puts when passed 1 or more objects does not put a \n after each Objects that end in a newline
+fails:StringIO#puts when passed 1 or more objects first tries to convert each Object to an Array using #to_ary
+fails:StringIO#puts when passed 1 or more objects then tries to convert each Object to a String using #to_s
+fails:StringIO#puts when passed 1 or more objects prints a newline when passed an empty string
+fails:StringIO#puts when passed 1 or more objects prints a newline when passed nil
+fails:StringIO#puts when passed no arguments returns nil
+fails:StringIO#puts when passed no arguments prints a newline
+fails:StringIO#puts when passed no arguments does not honor the global output record separator $\
+fails:StringIO#puts when in append mode appends the passed argument to the end of self
+fails:StringIO#puts when in append mode correctly updates self's position
+fails:StringIO#puts when passed an encoded string stores the bytes unmodified

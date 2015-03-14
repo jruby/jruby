@@ -1,0 +1,1 @@
+fails:StringIO#internal_encoding returns nil

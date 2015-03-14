@@ -1,0 +1,9 @@
+fails:StringIO#seek seeks from the current position when whence is IO::SEEK_CUR
+fails:StringIO#seek seeks from the end of self when whence is IO::SEEK_END
+fails:StringIO#seek seeks to an absolute position when whence is IO::SEEK_SET
+fails:StringIO#seek raises an Errno::EINVAL error on negative amounts when whence is IO::SEEK_SET
+fails:StringIO#seek raises an Errno::EINVAL error on incorrect whence argument
+fails:StringIO#seek tries to convert the passed Object to a String using #to_int
+fails:StringIO#seek raises a TypeError when the passed Object can't be converted to an Integer
+fails:StringIO#seek when self is closed does not raise an IOError
+fails:StringIO#seek when self is closed raises an IOError

@@ -1,0 +1,4 @@
+fails:StringIO#set_encoding sets the encoding of the underlying String to the specified encoding
+fails:StringIO#set_encoding sets the encoding of the underlying String to the named encoding
+fails:StringIO#set_encoding sets the encoding of the underlying String to the default external encoding when passed nil
+fails:StringIO#set_encoding returns self
