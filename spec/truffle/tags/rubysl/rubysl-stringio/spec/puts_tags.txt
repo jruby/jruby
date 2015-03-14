@@ -13,3 +13,4 @@ fails:StringIO#puts when passed 1 or more objects prints a newline when passed n
 fails:StringIO#puts when passed no arguments returns nil
 fails:StringIO#puts when passed no arguments prints a newline
 fails:StringIO#puts when passed no arguments does not honor the global output record separator $\
+fails:StringIO#puts when passed 1 or more objects does not put a \n after each Objects that end in a newline
