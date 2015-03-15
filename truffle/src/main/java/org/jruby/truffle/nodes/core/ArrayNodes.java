@@ -339,6 +339,9 @@ public abstract class ArrayNodes {
     public abstract static class IndexSetNode extends ArrayCoreMethodNode {
 
         @Child private ArrayWriteDenormalizedNode writeNode;
+        @Child protected ArrayReadSliceDenormalizedNode readSliceNode;
+        @Child private ConcatNode concatNode;
+        @Child private PopNode popNode;
 
         private final BranchProfile tooSmallBranch = BranchProfile.create();
 
@@ -349,6 +352,9 @@ public abstract class ArrayNodes {
         public IndexSetNode(IndexSetNode prev) {
             super(prev);
             writeNode = prev.writeNode;
+            readSliceNode = prev.readSliceNode;
+            concatNode = prev.concatNode;
+            popNode = prev.popNode;
         }
 
         @Specialization
@@ -363,7 +369,7 @@ public abstract class ArrayNodes {
 
         // Set a slice of the array to a particular value
 
-        @Specialization(guards = { "isObject", "!isRubyArray(arguments[3])", "!isUndefinedPlaceholder(arguments[3])" })
+        @Specialization(guards = { "!isRubyArray(arguments[3])", "!isUndefinedPlaceholder(arguments[3])" })
         public Object setObject(VirtualFrame frame, RubyArray array, int start, int length, Object value) {
             notDesignedForCompilation();
 
@@ -374,22 +380,51 @@ public abstract class ArrayNodes {
 
             final int begin = array.normalizeIndex(start);
 
-            if (begin >= array.getSize()) {
+            if (begin < array.getSize() && length == 1) {
                 if (writeNode == null) {
                     CompilerDirectives.transferToInterpreter();
                     writeNode = insert(ArrayWriteDenormalizedNodeFactory.create(getContext(), getSourceSection(), null, null, null));
                 }
 
-                return writeNode.executeWrite(frame, array, start, value);
+                return writeNode.executeWrite(frame, array, begin, value);
             } else {
-                throw new UnsupportedOperationException();
+                if(array.getSize() > (begin + length)){ // there is a tail, else other values discarded
+                    if (readSliceNode == null) {
+                        CompilerDirectives.transferToInterpreter();
+                        readSliceNode = insert(ArrayReadSliceDenormalizedNodeFactory.create(getContext(), getSourceSection(), null, null, null));
+                    }
+                    RubyArray endValues = (RubyArray)readSliceNode.executeReadSlice(frame, array, (begin + length), (array.getSize() - begin - length));
+                    if (writeNode == null) {
+                        CompilerDirectives.transferToInterpreter();
+                        writeNode = insert(ArrayWriteDenormalizedNodeFactory.create(getContext(), getSourceSection(), null, null, null));
+                    }
+                    writeNode.executeWrite(frame, array, begin, value);
+                    Object[] endValuesStore = ArrayUtils.box(endValues.getStore());
+
+                    int i = begin + 1;
+                    for (Object obj : endValuesStore ) {
+                        writeNode.executeWrite(frame, array, i, obj);
+                        i += 1;
+                    }
+                } else {
+                    writeNode.executeWrite(frame, array, begin, value);
+                }
+                if (popNode == null) {
+                    CompilerDirectives.transferToInterpreter();
+                    popNode = insert(ArrayNodesFactory.PopNodeFactory.create(getContext(), getSourceSection(), new RubyNode[]{null,null}));
+                }
+                int popLength = length - 1 < array.getSize() ? length - 1  :  array.getSize() - 1;
+                for(int i = 0; i < popLength; i++) { // TODO 3-15-2015 BF update when pop can pop multiple
+                    popNode.executePop(array);
+                }
+                return value;
             }
         }
 
         // Set a slice of the array to another array
 
-        @Specialization(guards = "isIntegerFixnum")
-        public Object setIntegerFixnum(VirtualFrame frame, RubyArray array, int start, int length, RubyArray value) {
+        @Specialization
+        public Object setOtherArray(VirtualFrame frame, RubyArray array, int start, int length, RubyArray value) {
             notDesignedForCompilation();
 
             if (length < 0) {
@@ -397,10 +432,11 @@ public abstract class ArrayNodes {
                 throw new RaiseException(getContext().getCoreLibrary().indexNegativeLength(length, this));
             }
 
+            final int begin = array.normalizeIndex(start);
             if (value.getSize() == 0) {
-                final int begin = array.normalizeIndex(start);
+
                 final int exclusiveEnd = begin + length;
-                int[] store = (int[]) array.getStore();
+                Object[] store = ArrayUtils.box(array.getStore());
 
                 if (begin < 0) {
                     tooSmallBranch.enter();
@@ -416,27 +452,46 @@ public abstract class ArrayNodes {
 
                 return value;
             } else {
-                throw new UnsupportedOperationException();
+                if (writeNode == null) {
+                    CompilerDirectives.transferToInterpreter();
+                    writeNode = insert(ArrayWriteDenormalizedNodeFactory.create(getContext(), getSourceSection(), null, null, null));
+                }
+                Object[] values = ArrayUtils.box(value.getStore());
+                if (value.getSize() == length || (begin + length + 1) > array.getSize()) {
+                    int i = begin;
+                    for (Object obj : values) {
+                        writeNode.executeWrite(frame, array, i, obj);
+                        i += 1;
+                    }
+                } else { // value.getSize() > length
+                    if (readSliceNode == null) {
+                        CompilerDirectives.transferToInterpreter();
+                        readSliceNode = insert(ArrayReadSliceDenormalizedNodeFactory.create(getContext(), getSourceSection(), null, null, null));
+                    }
+                    RubyArray endValues = (RubyArray)readSliceNode.executeReadSlice(frame, array, (begin + length), (array.getSize() - begin - length));
+                    if (concatNode == null) {
+                        CompilerDirectives.transferToInterpreter();
+                        concatNode = insert(ArrayNodesFactory.ConcatNodeFactory.create(getContext(), getSourceSection(), null, null));
+                    }
+                    int i = begin;
+                    for (Object obj : values) {
+                        writeNode.executeWrite(frame, array, i, obj);
+                        i += 1;
+                    }
+                    concatNode.executeConcat(array, endValues);
+                }
+                return value;
             }
         }
 
-        @Specialization(guards = "isIntegerFixnum")
-        public Object setIntegerFixnumRange(VirtualFrame frame, RubyArray array, RubyRange.IntegerFixnumRange range, RubyArray other, UndefinedPlaceholder unused) {
-            if (range.doesExcludeEnd()) {
-                CompilerDirectives.transferToInterpreter();
-                throw new UnsupportedOperationException();
-            } else {
-                int normalizedBegin = array.normalizeIndex(range.getBegin());
-                int normalizedEnd = array.normalizeIndex(range.getEnd());
+        @Specialization(guards = "!isRubyArray(arguments[2])")
+        public Object setRange(VirtualFrame frame, RubyArray array, RubyRange.IntegerFixnumRange range, Object other, UndefinedPlaceholder unused) {
+            return setObject(frame, array, range.getBegin(), range.getLength(), other);
+        }
 
-                if (normalizedBegin == 0 && normalizedEnd == array.getSize() - 1) {
-                    array.setStore(Arrays.copyOf((int[]) other.getStore(), other.getSize()), other.getSize());
-                } else {
-                    throw new RuntimeException();
-                }
-            }
-
-            return other;
+        @Specialization
+        public Object setRangeArray(VirtualFrame frame, RubyArray array, RubyRange.IntegerFixnumRange range, RubyArray other, UndefinedPlaceholder unused) {
+            return setOtherArray(frame, array, range.getBegin(), range.getLength(), other);
         }
 
     }
@@ -602,6 +657,8 @@ public abstract class ArrayNodes {
         public ConcatNode(ConcatNode prev) {
             super(prev);
         }
+
+        public abstract RubyArray executeConcat(RubyArray array, RubyArray other);
 
         @CreateCast("other") public RubyNode coerceOtherToAry(RubyNode other) {
             return ToAryNodeFactory.create(getContext(), getSourceSection(), other);
@@ -2296,6 +2353,8 @@ public abstract class ArrayNodes {
         public PopNode(PopNode prev) {
             super(prev);
         }
+
+        public abstract Object executePop(RubyArray array);
 
         @Specialization(guards = "isNull")
         public Object popNil(RubyArray array) {
