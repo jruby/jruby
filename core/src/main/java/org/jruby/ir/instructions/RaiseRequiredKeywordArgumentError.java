@@ -2,6 +2,7 @@ package org.jruby.ir.instructions;
 
 import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Operation;
+import org.jruby.ir.persistence.IRReaderDecoder;
 import org.jruby.ir.persistence.IRWriterEncoder;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.ir.transformations.inlining.CloneInfo;
@@ -33,6 +34,10 @@ public class RaiseRequiredKeywordArgumentError extends Instr implements FixedAri
     public void encode(IRWriterEncoder e) {
         super.encode(e);
         e.encode(getName());
+    }
+
+    public static RaiseRequiredKeywordArgumentError decode(IRReaderDecoder d) {
+        return new RaiseRequiredKeywordArgumentError(d.decodeString());
     }
 
     @Override

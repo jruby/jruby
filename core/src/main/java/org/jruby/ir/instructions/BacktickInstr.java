@@ -42,7 +42,7 @@ public class BacktickInstr extends ResultBaseInstr {
     public static BacktickInstr decode(IRReaderDecoder d) {
         return new BacktickInstr(d.decodeVariable(), d.decodeOperandArray());
     }
-    
+
     @Override
     public Object interpret(ThreadContext context, StaticScope currScope, DynamicScope currDynScope, IRubyObject self, Object[] temp) {
         RubyString newString = context.runtime.newString();

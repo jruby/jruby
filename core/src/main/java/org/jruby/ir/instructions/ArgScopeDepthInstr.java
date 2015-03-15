@@ -4,6 +4,7 @@ import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Operation;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.Variable;
+import org.jruby.ir.persistence.IRReaderDecoder;
 import org.jruby.ir.transformations.inlining.CloneInfo;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.DynamicScope;
@@ -33,5 +34,9 @@ public class ArgScopeDepthInstr extends ResultBaseInstr implements FixedArityIns
             i++;
         }
         return context.runtime.newFixnum(i);
+    }
+
+    public static ArgScopeDepthInstr decode(IRReaderDecoder d) {
+        return new ArgScopeDepthInstr(d.decodeVariable());
     }
 }

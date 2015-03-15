@@ -7,7 +7,6 @@ import org.jruby.ir.instructions.*;
 import org.jruby.ir.instructions.defined.GetErrorInfoInstr;
 import org.jruby.ir.instructions.defined.RestoreErrorInfoInstr;
 import org.jruby.ir.operands.*;
-import org.jruby.ir.persistence.read.parser.NonIRObjectFactory;
 import org.jruby.lexer.yacc.SimpleSourcePosition;
 import org.jruby.runtime.CallType;
 import org.jruby.util.RegexpOptions;
@@ -36,28 +35,30 @@ class InstrDecoderMap implements IRPersistenceValues {
 
     public Instr decodeInner(Operation operation) {
         switch(operation) {
-            case ALIAS: return new AliasInstr(d.decodeOperand(), d.decodeOperand());
+            case ALIAS: return AliasInstr.decode(d);
+            case ARG_SCOPE_DEPTH: return ArgScopeDepthInstr.decode(d);
             case ATTR_ASSIGN: return AttrAssignInstr.decode(d);
             case B_FALSE: return BFalseInstr.decode(d);
             case B_NIL: return BNilInstr.decode(d);
             case B_TRUE: return BTrueInstr.decode(d);
             case B_UNDEF: return BUndefInstr.decode(d);
             case BACKTICK_STRING: return BacktickInstr.decode(d);
-            case BEQ: return BEQInstr.create(d.decodeOperand(), d.decodeOperand(), (Label) d.decodeOperand());
-            case BINDING_LOAD: return new LoadLocalVarInstr(d.decodeScope(), (TemporaryLocalVariable) d.decodeOperand(), (LocalVariable) d.decodeOperand());
-            case BINDING_STORE:return new StoreLocalVarInstr(d.decodeOperand(), d.decodeScope(), (LocalVariable) d.decodeOperand());
-            case BLOCK_GIVEN: return new BlockGivenInstr(d.decodeVariable(), d.decodeOperand());
+            case BEQ: return BEQInstr.decode(d);
+            case BINDING_LOAD: return LoadLocalVarInstr.decode(d);
+            case BINDING_STORE:return StoreLocalVarInstr.decode(d);
+            case BLOCK_GIVEN: return BlockGivenInstr.decode(d);
             case BNE: return BNEInstr.decode(d);
             case BREAK: return new BreakInstr(d.decodeOperand(), d.decodeString());
             case BUILD_COMPOUND_ARRAY: return new BuildCompoundArrayInstr(d.decodeVariable(), d.decodeOperand(), d.decodeOperand(), d.decodeBoolean());
             case BUILD_COMPOUND_STRING: return BuildCompoundStringInstr.decode(d);
             case BUILD_DREGEXP: return decodeBuildDynRegExpInstr();
-            case BUILD_SPLAT: return BuildSplatInstr.decode(d);
             case BUILD_RANGE: return new BuildRangeInstr(d.decodeVariable(), d.decodeOperand(), d.decodeOperand(), d.decodeBoolean());
+            case BUILD_SPLAT: return BuildSplatInstr.decode(d);
             case CALL_1F: case CALL_1D: case CALL_1O: case CALL_1OB: case CALL_0O: case CALL: return decodeCall();
             case CHECK_ARGS_ARRAY_ARITY: return CheckArgsArrayArityInstr.decode(d);
             case CHECK_ARITY: return CheckArityInstr.decode(d);
             case CHECK_FOR_LJE: return CheckForLJEInstr.decode(d);
+            case CLASS_SUPER: return decodeSuperInstr(operation);
             case CLASS_VAR_MODULE: return new GetClassVarContainerModuleInstr(d.decodeVariable(), d.decodeOperand(), d.decodeVariable());
             case CONST_MISSING: return ConstMissingInstr.decode(d);
             case COPY: return CopyInstr.decode(d);
@@ -77,6 +78,7 @@ class InstrDecoderMap implements IRPersistenceValues {
             case GET_GLOBAL_VAR: return GetGlobalVariableInstr.decode(d);
             case GVAR_ALIAS: return new GVarAliasInstr(d.decodeOperand(), d.decodeOperand());
             case INHERITANCE_SEARCH_CONST: return new InheritanceSearchConstInstr(d.decodeVariable(), d.decodeOperand(), d.decodeString(), d.decodeBoolean());
+            case INSTANCE_SUPER: return decodeSuperInstr(operation);
             case JUMP: return new JumpInstr((Label) d.decodeOperand());
             case LABEL: return LabelInstr.decode(d);
             case LAMBDA: return decodeLambda();
@@ -103,6 +105,7 @@ class InstrDecoderMap implements IRPersistenceValues {
             case PUT_FIELD: return new PutFieldInstr(d.decodeOperand(), d.decodeString(), d.decodeOperand());
             case PUT_GLOBAL_VAR: return PutGlobalVarInstr.decode(d);
             case RAISE_ARGUMENT_ERROR: return new RaiseArgumentErrorInstr(d.decodeInt(), d.decodeInt(), d.decodeInt(), d.decodeInt());
+            case RAISE_REQUIRED_KEYWORD_ARGUMENT_ERROR: return RaiseRequiredKeywordArgumentError.decode(d);
             case RECORD_END_BLOCK: return new RecordEndBlockInstr(d.decodeScope(), (WrappedIRClosure) d.decodeOperand());
             case REIFY_CLOSURE: return ReifyClosureInstr.decode(d);
             case RECV_RUBY_EXC: return decodeReceiveRubyException();
@@ -119,13 +122,13 @@ class InstrDecoderMap implements IRPersistenceValues {
             case RETURN: return new ReturnInstr(d.decodeOperand());
             case RUNTIME_HELPER: return RuntimeHelperCall.decode(d);
             case SEARCH_CONST: return decodeSearchConst();
-            case CLASS_SUPER: return decodeSuperInstr(operation);
-            case INSTANCE_SUPER: return decodeSuperInstr(operation);
-            case UNRESOLVED_SUPER: return decodeUnresolvedSuperInstr();
+            case SET_CAPTURED_VAR: return SetCapturedVarInstr.decode(d);
+            // FIXME: case TRACE: ...
             case THREAD_POLL: return new ThreadPollInstr(d.decodeBoolean());
             case THROW: return new ThrowExceptionInstr(d.decodeOperand());
             case TO_ARY: return new ToAryInstr(d.decodeVariable(), d.decodeOperand());
             case UNDEF_METHOD: return new UndefMethodInstr(d.decodeVariable(), d.decodeOperand());
+            case UNRESOLVED_SUPER: return decodeUnresolvedSuperInstr();
             case YIELD: return new YieldInstr(d.decodeVariable(), d.decodeOperand(), d.decodeOperand(), d.decodeBoolean());
             case ZSUPER: return decodeZSuperInstr();
         }
