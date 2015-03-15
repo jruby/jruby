@@ -234,6 +234,8 @@ public abstract class BasicObjectNodes {
 
         @Specialization
         public Object instanceExec(VirtualFrame frame, Object receiver, Object[] arguments, RubyProc block) {
+            notDesignedForCompilation();
+
             return yieldWithModifiedSelf(frame, block, receiver, arguments);
         }
 
