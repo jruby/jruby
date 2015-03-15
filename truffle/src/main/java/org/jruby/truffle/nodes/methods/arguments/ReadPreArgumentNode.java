@@ -49,7 +49,7 @@ public class ReadPreArgumentNode extends RubyNode {
                     return UndefinedPlaceholder.INSTANCE;
 
                 case NIL:
-                    return getContext().getCoreLibrary().getNilObject();
+                    return nil();
             }
         }
 

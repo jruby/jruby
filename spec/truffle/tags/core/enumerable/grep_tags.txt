@@ -1,5 +1,0 @@
-fails:Enumerable#grep grep without a block should return an array of all elements === pattern
-fails:Enumerable#grep grep with a block should return an array of elements === pattern passed through block
-fails:Enumerable#grep grep the enumerable (rubycon legacy)
-fails:Enumerable#grep can use $~ in the block when used with a Regexp
-fails:Enumerable#grep calls the block with an array when yielded with multiple arguments

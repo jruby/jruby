@@ -54,27 +54,27 @@ public abstract class ArrayCastNode extends RubyNode {
 
     @Specialization
     public RubyNilClass cast(boolean value) {
-        return getContext().getCoreLibrary().getNilObject();
+        return nil();
     }
 
     @Specialization
     public RubyNilClass cast(int value) {
-        return getContext().getCoreLibrary().getNilObject();
+        return nil();
     }
 
     @Specialization
     public RubyNilClass cast(long value) {
-        return getContext().getCoreLibrary().getNilObject();
+        return nil();
     }
 
     @Specialization
     public RubyNilClass cast(double value) {
-        return getContext().getCoreLibrary().getNilObject();
+        return nil();
     }
 
     @Specialization
     public RubyNilClass cast(RubyBignum value) {
-        return getContext().getCoreLibrary().getNilObject();
+        return nil();
     }
 
     @Specialization
@@ -89,7 +89,7 @@ public abstract class ArrayCastNode extends RubyNode {
                 return new RubyArray(getContext().getCoreLibrary().getArrayClass());
 
             case ARRAY_WITH_NIL:
-                return RubyArray.fromObject(getContext().getCoreLibrary().getArrayClass(), getContext().getCoreLibrary().getNilObject());
+                return RubyArray.fromObject(getContext().getCoreLibrary().getArrayClass(), nil());
 
             case NIL:
                 return nil;
@@ -108,7 +108,7 @@ public abstract class ArrayCastNode extends RubyNode {
         final Object result = toArrayNode.call(frame, object, "to_ary", null, new Object[]{});
 
         if (result == DispatchNode.MISSING) {
-            return getContext().getCoreLibrary().getNilObject();
+            return nil();
         }
 
         if (!(result instanceof RubyArray)) {

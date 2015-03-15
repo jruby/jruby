@@ -85,7 +85,7 @@ public abstract class FiberNodes {
             notDesignedForCompilation();
 
             fiber.initialize(block);
-            return getContext().getCoreLibrary().getNilObject();
+            return nil();
         }
 
     }

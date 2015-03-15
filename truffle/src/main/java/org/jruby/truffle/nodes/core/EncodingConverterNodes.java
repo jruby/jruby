@@ -109,7 +109,7 @@ public abstract class EncodingConverterNodes {
 
             self.setEConv(econv);
 
-            return getContext().getCoreLibrary().getNilObject();
+            return nil();
         }
 
     }
@@ -133,13 +133,13 @@ public abstract class EncodingConverterNodes {
             // Adapted from RubyConverter - see attribution there
 
             final Ruby runtime = getContext().getRuntime();
-            final RubyNilClass nil = getContext().getCoreLibrary().getNilObject();
+            final RubyNilClass nil = nil();
             ThreadContext context = runtime.getCurrentContext();
             final byte[][] encNames = {null, null};
             final Encoding[] encs = {null, null};
             final int[] ecflags_p = {0};
             final IRubyObject[] ecopts_p = {context.nil};
-            final Object[] convpath = {getContext().getCoreLibrary().getNilObject()};
+            final Object[] convpath = {nil()};
 
             EncodingUtils.econvArgs(context, new IRubyObject[]{getContext().toJRuby(source), getContext().toJRuby(destination)}, encNames, encs, ecflags_p, ecopts_p);
 

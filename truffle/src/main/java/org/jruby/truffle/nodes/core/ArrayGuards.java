@@ -13,6 +13,14 @@ import org.jruby.truffle.runtime.core.RubyArray;
 
 public class ArrayGuards {
 
+    public static boolean isEmpty(RubyArray array) {
+        return array.getSize() == 0;
+    }
+
+    public static boolean isOtherEmpty(RubyArray array, RubyArray other) {
+        return other.getSize() == 0;
+    }
+
     public static boolean isNull(RubyArray array) {
         return array.getStore() == null;
     }

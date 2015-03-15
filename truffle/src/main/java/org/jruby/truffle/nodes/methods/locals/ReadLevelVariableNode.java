@@ -79,10 +79,10 @@ public abstract class ReadLevelVariableNode extends FrameSlotNode implements Rea
     public Object isDefined(VirtualFrame frame) {
         // TODO(CS): copy and paste of ReadLocalVariableNode
         if (BodyTranslator.FRAME_LOCAL_GLOBAL_VARIABLES.contains(frameSlot.getIdentifier())) {
-            if (ReadLocalVariableNode.ALWAYS_DEFINED_GLOBALS.contains(frameSlot.getIdentifier()) || doValue(frame) != getContext().getCoreLibrary().getNilObject()) {
+            if (ReadLocalVariableNode.ALWAYS_DEFINED_GLOBALS.contains(frameSlot.getIdentifier()) || doValue(frame) != nil()) {
                 return getContext().makeString("global-variable");
             } else {
-                return getContext().getCoreLibrary().getNilObject();
+                return nil();
             }
         } else {
             return getContext().makeString("local-variable");

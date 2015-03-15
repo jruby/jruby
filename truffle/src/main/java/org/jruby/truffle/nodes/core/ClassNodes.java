@@ -149,7 +149,7 @@ public abstract class ClassNodes {
 
         @Specialization
         public RubyNilClass inherited(Object subclass) {
-            return getContext().getCoreLibrary().getNilObject();
+            return nil();
         }
 
     }

@@ -1,0 +1,7 @@
+fails:StringIO#print prints $_ when passed no arguments
+fails:StringIO#print prints the passed arguments to self
+fails:StringIO#print tries to convert the passed Object to a String using #to_s
+fails:StringIO#print pads self with \000 when the current position is after the end
+fails:StringIO#print updates the current position
+fails:StringIO#print when in append mode appends the passed argument to the end of self
+fails:StringIO#print when in append mode correctly updates self's position

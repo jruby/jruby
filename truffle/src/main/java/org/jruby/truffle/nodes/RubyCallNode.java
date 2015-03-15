@@ -75,13 +75,13 @@ public class RubyCallNode extends RubyNode {
     public Object isDefined(VirtualFrame frame) {
         notDesignedForCompilation();
 
-        if (receiver.isDefined(frame) == getContext().getCoreLibrary().getNilObject()) {
-            return getContext().getCoreLibrary().getNilObject();
+        if (receiver.isDefined(frame) == nil()) {
+            return nil();
         }
 
         for (RubyNode argument : dispatchHead.getArgumentNodes()) {
-            if (argument.isDefined(frame) == getContext().getCoreLibrary().getNilObject()) {
-                return getContext().getCoreLibrary().getNilObject();
+            if (argument.isDefined(frame) == nil()) {
+                return nil();
             }
         }
 
@@ -99,7 +99,7 @@ public class RubyCallNode extends RubyNode {
 
             receiverObject = receiver.execute(frame);
         } catch (Exception e) {
-            return getContext().getCoreLibrary().getNilObject();
+            return nil();
         }
 
         // TODO(CS): this lookup should be cached
@@ -112,12 +112,12 @@ public class RubyCallNode extends RubyNode {
             final Object r = respondToMissing.call(frame, receiverObject, "respond_to_missing?", null, context.makeString(methodName));
 
             if (r != DispatchNode.MISSING && !respondToMissingCast.executeBoolean(frame, r)) {
-                return getContext().getCoreLibrary().getNilObject();
+                return nil();
             }
         } else if (method.isUndefined()) {
-            return getContext().getCoreLibrary().getNilObject();
+            return nil();
         } else if (!ignoreVisibility && !method.isVisibleTo(this, context.getCoreLibrary().getMetaClass(self))) {
-            return getContext().getCoreLibrary().getNilObject();
+            return nil();
         }
 
         return context.makeString("method");

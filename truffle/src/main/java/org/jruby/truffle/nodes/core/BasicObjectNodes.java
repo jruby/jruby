@@ -185,7 +185,7 @@ public abstract class BasicObjectNodes {
 
         @Specialization
         public RubyNilClass initialize() {
-            return getContext().getCoreLibrary().getNilObject();
+            return nil();
         }
 
     }

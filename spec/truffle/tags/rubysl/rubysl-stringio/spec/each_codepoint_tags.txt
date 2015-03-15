@@ -1,0 +1,5 @@
+fails:StringIO#each_codepoint yields each codepoint code in turn
+fails:StringIO#each_codepoint yields each codepoint starting from the current position
+fails:StringIO#each_codepoint raises an error if reading invalid sequence
+fails:StringIO#each_codepoint calls the given block
+fails:StringIO#each_codepoint returns self

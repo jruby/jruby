@@ -136,7 +136,7 @@ public abstract class UnboundMethodNodes {
             SourceSection sourceSection = unboundMethod.getMethod().getSharedMethodInfo().getSourceSection();
 
             if (sourceSection instanceof NullSourceSection) {
-                return getContext().getCoreLibrary().getNilObject();
+                return nil();
             } else {
                 RubyString file = getContext().makeString(sourceSection.getSource().getName());
                 return RubyArray.fromObjects(getContext().getCoreLibrary().getArrayClass(),

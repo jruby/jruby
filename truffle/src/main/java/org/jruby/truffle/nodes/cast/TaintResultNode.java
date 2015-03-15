@@ -74,7 +74,7 @@ public class TaintResultNode extends RubyNode {
             throw new UnsupportedOperationException(e);
         }
 
-        if (result != getContext().getCoreLibrary().getNilObject()) {
+        if (result != nil()) {
             if (taintFromSelf) {
                 maybeTaint((RubyBasicObject) RubyArguments.getSelf(frame.getArguments()), result);
             }
@@ -85,9 +85,12 @@ public class TaintResultNode extends RubyNode {
                 // scenario is that the argument at that position is an UndefinedPlaceholder, which doesn't take up
                 // a space in the frame.
                 if (taintFromParameters[i] < RubyArguments.getUserArgumentsCount(frame.getArguments())) {
-                    final RubyBasicObject taintSource =
-                            (RubyBasicObject) RubyArguments.getUserArgument(frame.getArguments(), taintFromParameters[i]);
-                    maybeTaint(taintSource, result);
+                    final Object argument = RubyArguments.getUserArgument(frame.getArguments(), taintFromParameters[i]);
+
+                    if (argument instanceof RubyBasicObject) {
+                        final RubyBasicObject taintSource = (RubyBasicObject) argument;
+                        maybeTaint(taintSource, result);
+                    }
                 }
             }
         }

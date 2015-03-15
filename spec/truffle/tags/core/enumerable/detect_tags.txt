@@ -1,1 +1,0 @@
-fails:Enumerable#detect passes through the values yielded by #each_with_index

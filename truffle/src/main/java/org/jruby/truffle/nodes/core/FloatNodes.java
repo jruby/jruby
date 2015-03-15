@@ -497,12 +497,12 @@ public abstract class FloatNodes {
 
         @Specialization(guards = "isNaN(arguments[0])")
         public RubyNilClass compareFirstNaN(double a, Object b) {
-            return getContext().getCoreLibrary().getNilObject();
+            return nil();
         }
 
         @Specialization(guards = "isNaN(arguments[1])")
         public RubyNilClass compareSecondNaN(Object a, double b) {
-            return getContext().getCoreLibrary().getNilObject();
+            return nil();
         }
 
         @Specialization(guards = {"!isNaN(arguments[0])"})
@@ -536,7 +536,7 @@ public abstract class FloatNodes {
 
         @Specialization(guards = {"!isNaN(arguments[0])", "!isRubyBignum(arguments[1])"})
         public RubyNilClass compare(double a, RubyBasicObject b) {
-            return getContext().getCoreLibrary().getNilObject();
+            return nil();
         }
 
     }
@@ -705,7 +705,7 @@ public abstract class FloatNodes {
                     return 1;
                 }
             } else {
-                return getContext().getCoreLibrary().getNilObject();
+                return nil();
             }
         }
 

@@ -72,7 +72,7 @@ public abstract class SymbolNodes {
         @Specialization(guards = "!isRubySymbol(arguments[1])")
         public RubyNilClass compare(RubySymbol symbol,  Object other) {
             notDesignedForCompilation();
-            return getContext().getCoreLibrary().getNilObject();
+            return nil();
         }
     }
 
@@ -142,7 +142,7 @@ public abstract class SymbolNodes {
         @Specialization(guards = "!isRubySymbol(arguments[1])")
         public RubyNilClass caseCompare(RubySymbol symbol,  Object other) {
             notDesignedForCompilation();
-            return getContext().getCoreLibrary().getNilObject();
+            return nil();
         }
 
     }

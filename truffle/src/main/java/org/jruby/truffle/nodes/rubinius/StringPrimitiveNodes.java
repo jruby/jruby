@@ -187,12 +187,12 @@ public abstract class StringPrimitiveNodes {
         public Object stringByteSubstring(RubyString string, int index, UndefinedPlaceholder length) {
             final Object subString = stringByteSubstring(string, index, 1);
 
-            if (subString == getContext().getCoreLibrary().getNilObject()) {
+            if (subString == nil()) {
                 return subString;
             }
 
             if (((RubyString) subString).getByteList().length() == 0) {
-                return getContext().getCoreLibrary().getNilObject();
+                return nil();
             }
 
             return subString;
@@ -203,13 +203,13 @@ public abstract class StringPrimitiveNodes {
             final ByteList bytes = string.getBytes();
 
             if (length < 0) {
-                return getContext().getCoreLibrary().getNilObject();
+                return nil();
             }
 
             final int normalizedIndex = string.normalizeIndex(index);
 
             if (normalizedIndex > bytes.length()) {
-                return getContext().getCoreLibrary().getNilObject();
+                return nil();
             }
 
             int rangeEnd = normalizedIndex + length;
@@ -218,7 +218,7 @@ public abstract class StringPrimitiveNodes {
             }
 
             if (normalizedIndex < bytes.getBegin()) {
-                return getContext().getCoreLibrary().getNilObject();
+                return nil();
             }
 
             final byte[] copiedBytes = Arrays.copyOfRange(bytes.getUnsafeBytes(), normalizedIndex, rangeEnd);
@@ -445,7 +445,7 @@ public abstract class StringPrimitiveNodes {
                     start, string.getBytes().getEncoding());
 
             if (index == -1) {
-                return getContext().getCoreLibrary().getNilObject();
+                return nil();
             }
 
             return index;
@@ -550,7 +550,7 @@ public abstract class StringPrimitiveNodes {
                 }
 
                 if(i < characters) {
-                    return getContext().getCoreLibrary().getNilObject();
+                    return nil();
                 } else {
                     return count;
                 }
@@ -624,8 +624,9 @@ public abstract class StringPrimitiveNodes {
         }
 
         @Specialization
-        public Object stringResizeCapacity(RubyString string, Object capacity) {
-            throw new UnsupportedOperationException("string_resize_capacity");
+        public RubyString stringResizeCapacity(RubyString string, int capacity) {
+            string.getByteList().ensure(capacity);
+            return string;
         }
 
     }
@@ -683,6 +684,26 @@ public abstract class StringPrimitiveNodes {
             } catch (org.jruby.exceptions.RaiseException e) {
                 throw new RaiseException(getContext().toTruffle(e.getException(), this));
             }
+        }
+
+    }
+
+    @RubiniusPrimitive(name = "string_byte_append")
+    public static abstract class StringByteAppendPrimitiveNode extends RubiniusPrimitiveNode {
+
+        public StringByteAppendPrimitiveNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public StringByteAppendPrimitiveNode(StringByteAppendPrimitiveNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public RubyString stringByteAppend(RubyString string, RubyString other) {
+            notDesignedForCompilation();
+            string.getByteList().append(other.getByteList());
+            return string;
         }
 
     }

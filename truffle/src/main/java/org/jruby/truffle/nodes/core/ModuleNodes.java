@@ -116,7 +116,7 @@ public abstract class ModuleNodes {
                 return false;
             }
 
-            return getContext().getCoreLibrary().getNilObject();
+            return nil();
         }
 
         @Specialization
@@ -153,7 +153,7 @@ public abstract class ModuleNodes {
                 return false;
             }
 
-            return getContext().getCoreLibrary().getNilObject();
+            return nil();
         }
 
         @Specialization
@@ -194,7 +194,7 @@ public abstract class ModuleNodes {
                 return false;
             }
 
-            return getContext().getCoreLibrary().getNilObject();
+            return nil();
         }
 
         @Specialization
@@ -231,7 +231,7 @@ public abstract class ModuleNodes {
                 return false;
             }
 
-            return getContext().getCoreLibrary().getNilObject();
+            return nil();
         }
 
         @Specialization
@@ -284,7 +284,7 @@ public abstract class ModuleNodes {
             final Object isSubclass = isSubclass(frame, self, other);
 
             if (isSubclass instanceof RubyNilClass) {
-                return getContext().getCoreLibrary().getNilObject();
+                return nil();
             } else if (booleanCast(frame, isSubclass)) {
                 return -1;
             }
@@ -295,7 +295,7 @@ public abstract class ModuleNodes {
         public Object compare(VirtualFrame frame, RubyModule self, RubyBasicObject other) {
             notDesignedForCompilation();
 
-            return getContext().getCoreLibrary().getNilObject();
+            return nil();
         }
 
     }
@@ -360,7 +360,7 @@ public abstract class ModuleNodes {
             notDesignedForCompilation();
 
             module.appendFeatures(this, other);
-            return getContext().getCoreLibrary().getNilObject();
+            return nil();
         }
     }
 
@@ -393,7 +393,7 @@ public abstract class ModuleNodes {
                 attrReader(this, getContext(), sourceSection, module, accessorName);
             }
 
-            return getContext().getCoreLibrary().getNilObject();
+            return nil();
         }
 
         public static void attrReader(Node currentNode, RubyContext context, SourceSection sourceSection, RubyModule module, String name) {
@@ -445,7 +445,7 @@ public abstract class ModuleNodes {
                 attrWriter(this, getContext(), sourceSection, module, accessorName);
             }
 
-            return getContext().getCoreLibrary().getNilObject();
+            return nil();
         }
 
         public static void attrWriter(Node currentNode, RubyContext context, SourceSection sourceSection, RubyModule module, String name) {
@@ -498,7 +498,7 @@ public abstract class ModuleNodes {
                 attrAccessor(this, getContext(), sourceSection, module, accessorName);
             }
 
-            return getContext().getCoreLibrary().getNilObject();
+            return nil();
         }
 
         public static void attrAccessor(Node currentNode, RubyContext context, SourceSection sourceSection, RubyModule module, String name) {
@@ -558,7 +558,7 @@ public abstract class ModuleNodes {
 
             module.setAutoloadConstant(this, name, filename);
 
-            return getContext().getCoreLibrary().getNilObject();
+            return nil();
         }
     }
 
@@ -587,7 +587,7 @@ public abstract class ModuleNodes {
             final RubyConstant constant = ModuleOperations.lookupConstant(getContext(), LexicalScope.NONE, module, name);
 
             if ((constant == null) || ! constant.isAutoload()) {
-                return getContext().getCoreLibrary().getNilObject();
+                return nil();
             }
 
             return constant.getValue();
@@ -1034,7 +1034,7 @@ public abstract class ModuleNodes {
             notDesignedForCompilation();
 
             self.initCopy(other);
-            return getContext().getCoreLibrary().getNilObject();
+            return nil();
         }
 
     }
@@ -1072,7 +1072,7 @@ public abstract class ModuleNodes {
                 }
             }
 
-            return getContext().getCoreLibrary().getNilObject();
+            return nil();
         }
     }
 
@@ -1122,7 +1122,7 @@ public abstract class ModuleNodes {
 
         @Specialization
         public RubyNilClass included(Object subclass) {
-            return getContext().getCoreLibrary().getNilObject();
+            return nil();
         }
 
     }
@@ -1200,7 +1200,7 @@ public abstract class ModuleNodes {
             notDesignedForCompilation();
 
             if (!module.hasName()) {
-                return getContext().getCoreLibrary().getNilObject();
+                return nil();
             }
 
             return getContext().makeString(module.getName());
