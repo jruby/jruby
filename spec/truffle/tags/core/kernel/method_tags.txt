@@ -1,6 +1,5 @@
 fails:Kernel#method returns a method object if we repond_to_missing? method
 fails:Kernel#method raises a NameError for an invalid method name
 fails:Kernel#method raises a NameError for an invalid singleton method name
-fails:Kernel#method changes the method called for super on a target aliased method
 fails:Kernel#method will see an alias of the original method as == when in a derived class
 fails:Kernel#method can be called even if we only repond_to_missing? method, true

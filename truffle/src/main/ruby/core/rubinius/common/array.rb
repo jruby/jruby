@@ -905,4 +905,60 @@ class Array
     out
   end
 
+  # Insertion sort in-place between the given indexes.
+  def isort!(left, right)
+    i = left + 1
+
+    tup = @tuple
+
+    while i < right
+      j = i
+
+      while j > left
+        jp = j - 1
+        el1 = tup.at(jp)
+        el2 = tup.at(j)
+
+        unless cmp = (el1 <=> el2)
+          raise ArgumentError, "comparison of #{el1.inspect} with #{el2.inspect} failed (#{j})"
+        end
+
+        break unless cmp > 0
+
+        tup.put(j, el1)
+        tup.put(jp, el2)
+
+        j = jp
+      end
+
+      i += 1
+    end
+  end
+  private :isort!
+
+  # Insertion sort in-place between the given indexes using a block.
+  def isort_block!(left, right, block)
+    i = left + 1
+
+    while i < right
+      j = i
+
+      while j > left
+        block_result = block.call(@tuple.at(j - 1), @tuple.at(j))
+
+        if block_result.nil?
+          raise ArgumentError, 'block returned nil'
+        elsif block_result > 0
+          @tuple.swap(j, (j - 1))
+          j -= 1
+        else
+          break
+        end
+      end
+
+      i += 1
+    end
+  end
+  private :isort_block!
+
 end

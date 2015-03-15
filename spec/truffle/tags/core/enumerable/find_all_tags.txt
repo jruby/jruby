@@ -1,1 +1,0 @@
-fails:Enumerable#find_all passes through the values yielded by #each_with_index

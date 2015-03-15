@@ -1019,6 +1019,117 @@ public abstract class ArrayNodes {
             return array;
         }
 
+        @Specialization(guards = "isIntegerFixnum(array)")
+        public Object eachWithIndexInt(VirtualFrame frame, RubyArray array, RubyProc block) {
+            final int[] store = (int[]) array.getStore();
+
+            int count = 0;
+
+            try {
+                outer:
+                for (int n = 0; n < array.getSize(); n++) {
+                    while (true) {
+                        if (CompilerDirectives.inInterpreter()) {
+                            count++;
+                        }
+
+                        try {
+                            yield(frame, block, store[n], n);
+                            continue outer;
+                        } catch (BreakException e) {
+                            breakProfile.enter();
+                            return e.getResult();
+                        } catch (NextException e) {
+                            nextProfile.enter();
+                            continue outer;
+                        } catch (RedoException e) {
+                            redoProfile.enter();
+                        }
+                    }
+                }
+            } finally {
+                if (CompilerDirectives.inInterpreter()) {
+                    getRootNode().reportLoopCount(count);
+                }
+            }
+
+            return array;
+        }
+
+        @Specialization(guards = "isLongFixnum(array)")
+        public Object eachWithIndexLong(VirtualFrame frame, RubyArray array, RubyProc block) {
+            final long[] store = (long[]) array.getStore();
+
+            int count = 0;
+
+            try {
+                outer:
+                for (int n = 0; n < array.getSize(); n++) {
+                    while (true) {
+                        if (CompilerDirectives.inInterpreter()) {
+                            count++;
+                        }
+
+                        try {
+                            yield(frame, block, store[n], n);
+                            continue outer;
+                        } catch (BreakException e) {
+                            breakProfile.enter();
+                            return e.getResult();
+                        } catch (NextException e) {
+                            nextProfile.enter();
+                            continue outer;
+                        } catch (RedoException e) {
+                            redoProfile.enter();
+                        }
+                    }
+                }
+            } finally {
+                if (CompilerDirectives.inInterpreter()) {
+                    getRootNode().reportLoopCount(count);
+                }
+            }
+
+            return array;
+        }
+
+        @Specialization(guards = "isFloat(array)")
+        public Object eachWithIndexDouble(VirtualFrame frame, RubyArray array, RubyProc block) {
+            final double[] store = (double[]) array.getStore();
+
+            int count = 0;
+
+            try {
+                outer:
+                for (int n = 0; n < array.getSize(); n++) {
+                    while (true) {
+                        if (CompilerDirectives.inInterpreter()) {
+                            count++;
+                        }
+
+                        try {
+                            yield(frame, block, store[n], n);
+                            continue outer;
+                        } catch (BreakException e) {
+                            breakProfile.enter();
+                            return e.getResult();
+                        } catch (NextException e) {
+                            nextProfile.enter();
+                            continue outer;
+                        } catch (RedoException e) {
+                            redoProfile.enter();
+                        }
+                    }
+                }
+            } finally {
+                if (CompilerDirectives.inInterpreter()) {
+                    getRootNode().reportLoopCount(count);
+                }
+            }
+
+            return array;
+        }
+
         @Specialization(guards = "isObject(array)")
         public Object eachWithIndexObject(VirtualFrame frame, RubyArray array, RubyProc block) {
             final Object[] store = (Object[]) array.getStore();
@@ -1054,6 +1165,11 @@ public abstract class ArrayNodes {
             }
 
             return array;
+        }
+
+        @Specialization
+        public Object eachWithIndexObject(VirtualFrame frame, RubyArray array, UndefinedPlaceholder block) {
+            return ruby(frame, "to_enum(:each_with_index)");
         }
 
     }
@@ -2882,9 +2998,7 @@ public abstract class ArrayNodes {
         }
 
         @Specialization(guards = "isNull(array)")
-        public RubyArray sortNull(RubyArray array, UndefinedPlaceholder block) {
-            notDesignedForCompilation();
-
+        public RubyArray sortNull(RubyArray array, Object block) {
             return new RubyArray(getContext().getCoreLibrary().getArrayClass());
         }
 
@@ -2902,7 +3016,7 @@ public abstract class ArrayNodes {
                 if (i < size) {
                     for (int j = i + 1; j < RubyArray.ARRAYS_SMALL; j++) {
                         if (j < size) {
-                            if ((int) compareDispatchNode.call(frame, store[j], "<=>", null, store[i]) < 0) {
+                            if (castSortValue(compareDispatchNode.call(frame, store[j], "<=>", null, store[i])) < 0) {
                                 final int temp = store[j];
                                 store[j] = store[i];
                                 store[i] = temp;
@@ -2914,16 +3028,6 @@ public abstract class ArrayNodes {
             }
 
             return new RubyArray(getContext().getCoreLibrary().getArrayClass(), newStore, size);
-        }
-
-        @Specialization(guards = "isIntegerFixnum(array)")
-        public RubyArray sortIntegerFixnum(VirtualFrame frame, RubyArray array, UndefinedPlaceholder block) {
-            notDesignedForCompilation();
-
-            final Object[] boxed = ArrayUtils.box((int[]) array.getStore());
-            sort(frame, boxed);
-            final int[] unboxed = ArrayUtils.unboxInteger(boxed, array.getSize());
-            return new RubyArray(getContext().getCoreLibrary().getArrayClass(), unboxed, array.getSize());
         }
 
         @ExplodeLoop
@@ -2940,7 +3044,7 @@ public abstract class ArrayNodes {
                 if (i < size) {
                     for (int j = i + 1; j < RubyArray.ARRAYS_SMALL; j++) {
                         if (j < size) {
-                            if ((int) compareDispatchNode.call(frame, store[j], "<=>", null, store[i]) < 0) {
+                            if (castSortValue(compareDispatchNode.call(frame, store[j], "<=>", null, store[i])) < 0) {
                                 final long temp = store[j];
                                 store[j] = store[i];
                                 store[i] = temp;
@@ -2952,26 +3056,6 @@ public abstract class ArrayNodes {
             }
 
             return new RubyArray(getContext().getCoreLibrary().getArrayClass(), newStore, size);
-        }
-
-        @Specialization(guards = "isLongFixnum(array)")
-        public RubyArray sortLongFixnum(VirtualFrame frame, RubyArray array, UndefinedPlaceholder block) {
-            notDesignedForCompilation();
-
-            final Object[] boxed = ArrayUtils.box((long[]) array.getStore());
-            sort(frame, boxed);
-            final long[] unboxed = ArrayUtils.unboxLong(boxed, array.getSize());
-            return new RubyArray(getContext().getCoreLibrary().getArrayClass(), unboxed, array.getSize());
-        }
-
-        @Specialization(guards = "isFloat(array)")
-        public RubyArray sortDouble(VirtualFrame frame, RubyArray array, UndefinedPlaceholder block) {
-            notDesignedForCompilation();
-
-            final Object[] boxed = ArrayUtils.box((double[]) array.getStore());
-            sort(frame, boxed);
-            final double[] unboxed = ArrayUtils.unboxDouble(boxed, array.getSize());
-            return new RubyArray(getContext().getCoreLibrary().getArrayClass(), unboxed, array.getSize());
         }
 
         @Specialization(guards = {"isObject(array)", "isSmall(array)"})
@@ -2987,7 +3071,7 @@ public abstract class ArrayNodes {
                 final Object x = store[i];
                 int j = i;
                 // TODO(CS): node for this cast
-                while (j > 0 && (int) compareDispatchNode.call(frame, store[j - 1], "<=>", null, x) > 0) {
+                while (j > 0 && castSortValue(compareDispatchNode.call(frame, store[j - 1], "<=>", null, x)) > 0) {
                     store[j] = store[j - 1];
                     j--;
                 }
@@ -2997,98 +3081,33 @@ public abstract class ArrayNodes {
             return new RubyArray(getContext().getCoreLibrary().getArrayClass(), store, size);
         }
 
-        @Specialization(guards = "isObject(array)")
-        public RubyArray sortObject(VirtualFrame frame, RubyArray array, UndefinedPlaceholder block) {
-            notDesignedForCompilation();
-
-            final Object[] store = Arrays.copyOf((Object[]) array.getStore(), array.getSize());
-            sort(frame, store);
-            return new RubyArray(getContext().getCoreLibrary().getArrayClass(), store, array.getSize());
+        @Specialization
+        public Object sortUsingRubinius(VirtualFrame frame, RubyArray array, RubyProc block) {
+            return sortUsingRubinius(frame, array, (Object) block);
         }
 
-        @Specialization(guards = "isObject(array)")
-        public RubyArray sortWithCompareBlock(VirtualFrame frame, RubyArray array, RubyProc block) {
-            notDesignedForCompilation();
-
-            final Object[] store = Arrays.copyOf((Object[]) array.getStore(), array.getSize());
-            sort(frame, store, block);
-            return new RubyArray(getContext().getCoreLibrary().getArrayClass(), store, array.getSize());
+        @Specialization(guards = {"!isNull(array)", "!isSmall(array)"})
+        public Object sortUsingRubinius(VirtualFrame frame, RubyArray array, Object block) {
+            if (block == UndefinedPlaceholder.INSTANCE) {
+                return ruby(frame, "sorted = dup; Rubinius.privately { sorted.isort!(0, right) }; sorted", "right", array.getSize());
+            } else {
+                return ruby(frame, "sorted = dup; Rubinius.privately { sorted.isort_block!(0, right, block) }; sorted", "right", array.getSize(), "block", block);
+            }
         }
 
-        private <T> void sort(VirtualFrame frame, T[] objects) {
-            final VirtualFrame finalFrame = frame;
+        private int castSortValue(Object value) {
+            if (value instanceof Integer) {
+                return (int) value;
+            }
 
-            Arrays.sort(objects, new Comparator<Object>() {
+            CompilerDirectives.transferToInterpreter();
 
-                @Override
-                public int compare(Object a, Object b) {
-                    // TODO(CS): node for this cast
-                    return (int) compareDispatchNode.call(finalFrame, a, "<=>", null, b);
-                }
-
-            });
-        }
-
-        private <T> void sort(VirtualFrame frame, T[] objects, RubyProc compare) {
-            final VirtualFrame finalFrame = frame;
-            final RubyProc finalCompare = compare;
-
-            Arrays.sort(objects, new Comparator<Object>() {
-
-                @Override
-                public int compare(Object a, Object b) {
-                    // TODO(CS): node for this cast
-                    return (int) yieldNode.dispatch(finalFrame, finalCompare, a, b);
-                }
-
-            });
+            // TODO CS 14-Mar-15 - what's the error message here?
+            throw new RaiseException(getContext().getCoreLibrary().argumentError("expecting a Fixnum to sort", this));
         }
 
         protected static boolean isSmall(RubyArray array) {
             return array.getSize() <= RubyArray.ARRAYS_SMALL;
-        }
-
-    }
-
-    @CoreMethod(names = "sort!", raiseIfFrozenSelf = true)
-    public abstract static class SortBangNode extends ArrayCoreMethodNode {
-
-        @Child private CallDispatchHeadNode compareDispatchNode;
-
-        public SortBangNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-            compareDispatchNode = DispatchHeadNodeFactory.createMethodCall(context);
-        }
-
-        public SortBangNode(SortBangNode prev) {
-            super(prev);
-            compareDispatchNode = prev.compareDispatchNode;
-        }
-
-        @Specialization
-        public RubyArray sort(VirtualFrame frame, RubyArray array) {
-            notDesignedForCompilation();
-
-            final Object[] store = array.slowToArray();
-            sort(frame, store);
-            array.setStore(store, array.getSize());
-            return array;
-        }
-
-        // TODO(CS): copied from #sort
-
-        private <T> void sort(VirtualFrame frame, T[] objects) {
-            final VirtualFrame finalFrame = frame;
-
-            Arrays.sort(objects, new Comparator<Object>() {
-
-                @Override
-                public int compare(Object a, Object b) {
-                    // TODO(CS): node for this cast
-                    return (int) compareDispatchNode.call(finalFrame, a, "<=>", null, b);
-                }
-
-            });
         }
 
     }
