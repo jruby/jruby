@@ -8,4 +8,3 @@ fails:Regexp#match with [string, position] when given a negative position uses t
 fails:Regexp#match with [string, position] when passed a block yields the MatchData
 fails:Regexp#match with [string, position] when passed a block returns the block result
 fails:Regexp#~ matches against the contents of $_
-fails:Regexp#match returns a MatchData object, when argument is a Symbol
