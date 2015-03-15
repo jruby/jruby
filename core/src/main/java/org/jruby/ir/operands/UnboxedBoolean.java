@@ -52,7 +52,7 @@ public class UnboxedBoolean extends ImmutableLiteral {
     }
 
     public static UnboxedBoolean decode(IRReaderDecoder d) {
-        return new UnboxedBoolean(d.decodeBoolean());
+        return d.decodeBoolean() ? TRUE : FALSE;
     }
 
     @Override

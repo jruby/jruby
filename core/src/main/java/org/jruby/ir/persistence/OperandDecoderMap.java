@@ -3,6 +3,7 @@ package org.jruby.ir.persistence;
 import org.jruby.RubyInstanceConfig;
 import org.jruby.ir.IRManager;
 import org.jruby.ir.operands.*;
+import org.jruby.ir.operands.Boolean;
 
 import static org.jruby.ir.operands.UnexecutableNil.U_NIL;
 
@@ -26,7 +27,7 @@ class OperandDecoderMap {
             case AS_STRING: return AsString.decode(d);
             case BACKREF: return Backref.decode(d);
             case BIGNUM: return Bignum.decode(d);
-            case BOOLEAN: return UnboxedBoolean.decode(d);
+            case BOOLEAN: return Boolean.decode(d);
             case CURRENT_SCOPE: return CurrentScope.decode(d);
             case DYNAMIC_SYMBOL: return DynamicSymbol.decode(d);
             case FIXNUM: return Fixnum.decode(d);

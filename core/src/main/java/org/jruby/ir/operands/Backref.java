@@ -46,7 +46,7 @@ public class Backref extends Reference {
 
     @Override
     public void encode(IRWriterEncoder e) {
-        super.encode(e);
+        e.encode(getOperandType().getCoded());
         e.encode(type);
     }
 

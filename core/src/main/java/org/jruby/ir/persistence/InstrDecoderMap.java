@@ -42,6 +42,7 @@ class InstrDecoderMap implements IRPersistenceValues {
             case B_NIL: return BNilInstr.decode(d);
             case B_TRUE: return BTrueInstr.decode(d);
             case B_UNDEF: return BUndefInstr.decode(d);
+            case BACKTICK_STRING: return BacktickInstr.decode(d);
             case BEQ: return BEQInstr.create(d.decodeOperand(), d.decodeOperand(), (Label) d.decodeOperand());
             case BINDING_LOAD: return new LoadLocalVarInstr(d.decodeScope(), (TemporaryLocalVariable) d.decodeOperand(), (LocalVariable) d.decodeOperand());
             case BINDING_STORE:return new StoreLocalVarInstr(d.decodeOperand(), d.decodeScope(), (LocalVariable) d.decodeOperand());
@@ -56,8 +57,9 @@ class InstrDecoderMap implements IRPersistenceValues {
             case CALL_1F: case CALL_1D: case CALL_1O: case CALL_1OB: case CALL_0O: case CALL: return decodeCall();
             case CHECK_ARGS_ARRAY_ARITY: return CheckArgsArrayArityInstr.decode(d);
             case CHECK_ARITY: return CheckArityInstr.decode(d);
+            case CHECK_FOR_LJE: return CheckForLJEInstr.decode(d);
             case CLASS_VAR_MODULE: return new GetClassVarContainerModuleInstr(d.decodeVariable(), d.decodeOperand(), d.decodeVariable());
-            case CONST_MISSING: return decodeConstMissingInstr();
+            case CONST_MISSING: return ConstMissingInstr.decode(d);
             case COPY: return CopyInstr.decode(d);
             case DEF_CLASS: return new DefineClassInstr((d.decodeVariable()), (IRClassBody) d.decodeScope(), d.decodeOperand(), d.decodeOperand());
             case DEF_CLASS_METH: return new DefineClassMethodInstr(d.decodeOperand(), (IRMethod) d.decodeScope());
@@ -70,7 +72,7 @@ class InstrDecoderMap implements IRPersistenceValues {
             case GET_CVAR: return new GetClassVariableInstr(d.decodeVariable(), d.decodeOperand(), d.decodeString());
                 // FIXME: Encoding load is likely wrong here but likely will work :)
             case GET_ENCODING: return new GetEncodingInstr(d.decodeVariable(), Encoding.load(d.decodeString()));
-            case GET_ERROR_INFO: return new GetErrorInfoInstr(d.decodeVariable());
+            case GET_ERROR_INFO: return GetErrorInfoInstr.decode(d);
             case GET_FIELD: return new GetFieldInstr(d.decodeVariable(), d.decodeOperand(), d.decodeString());
             case GET_GLOBAL_VAR: return GetGlobalVariableInstr.decode(d);
             case GVAR_ALIAS: return new GVarAliasInstr(d.decodeOperand(), d.decodeOperand());
@@ -171,10 +173,6 @@ class InstrDecoderMap implements IRPersistenceValues {
     private Instr decodeFrame() {
         String methAddr = d.decodeString();
         return new PushFrameInstr(methAddr);
-    }
-
-    private Instr decodeConstMissingInstr() {
-        return new ConstMissingInstr(d.decodeVariable(), d.decodeOperand(), d.decodeString());
     }
 
     private Instr decodeLambda() {
