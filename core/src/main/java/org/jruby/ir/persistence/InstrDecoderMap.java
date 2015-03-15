@@ -9,7 +9,6 @@ import org.jruby.ir.instructions.defined.RestoreErrorInfoInstr;
 import org.jruby.ir.operands.*;
 import org.jruby.lexer.yacc.SimpleSourcePosition;
 import org.jruby.runtime.CallType;
-import org.jruby.util.RegexpOptions;
 
 /**
  *
@@ -51,7 +50,7 @@ class InstrDecoderMap implements IRPersistenceValues {
             case BREAK: return new BreakInstr(d.decodeOperand(), d.decodeString());
             case BUILD_COMPOUND_ARRAY: return new BuildCompoundArrayInstr(d.decodeVariable(), d.decodeOperand(), d.decodeOperand(), d.decodeBoolean());
             case BUILD_COMPOUND_STRING: return BuildCompoundStringInstr.decode(d);
-            case BUILD_DREGEXP: return decodeBuildDynRegExpInstr();
+            case BUILD_DREGEXP: return BuildDynRegExpInstr.decode(d);
             case BUILD_RANGE: return new BuildRangeInstr(d.decodeVariable(), d.decodeOperand(), d.decodeOperand(), d.decodeBoolean());
             case BUILD_SPLAT: return BuildSplatInstr.decode(d);
             case CALL_1F: case CALL_1D: case CALL_1O: case CALL_1OB: case CALL_0O: case CALL: return decodeCall();
@@ -85,7 +84,7 @@ class InstrDecoderMap implements IRPersistenceValues {
             case LEXICAL_SEARCH_CONST: return new LexicalSearchConstInstr(d.decodeVariable(), d.decodeOperand(), d.decodeString());
             case LOAD_FRAME_CLOSURE: return new LoadFrameClosureInstr(d.decodeVariable());
             case LOAD_IMPLICIT_CLOSURE: return new LoadImplicitClosureInstr(d.decodeVariable());
-            case LINE_NUM: return decodeLineNumber();
+            case LINE_NUM: return LineNumberInstr.decode(d);
             case MASGN_OPT: return new OptArgMultipleAsgnInstr(d.decodeVariable(), d.decodeOperand(), d.decodeInt(), d.decodeInt());
             case MASGN_REQD: return new ReqdArgMultipleAsgnInstr(d.decodeVariable(), d.decodeOperand(), d.decodeInt(), d.decodeInt(), d.decodeInt());
             case MASGN_REST: return new RestArgMultipleAsgnInstr(d.decodeVariable(), d.decodeOperand(), d.decodeInt(), d.decodeInt(), d.decodeInt());
@@ -99,7 +98,7 @@ class InstrDecoderMap implements IRPersistenceValues {
             case POP_FRAME: return new PopFrameInstr();
             case PROCESS_MODULE_BODY: return ProcessModuleBodyInstr.decode(d);
             case PUSH_BINDING: return new PushBindingInstr();
-            case PUSH_FRAME: return decodeFrame();
+            case PUSH_FRAME: return PushFrameInstr.decode(d);
             case PUT_CONST: return new PutConstInstr(d.decodeOperand(), d.decodeString(), d.decodeOperand());
             case PUT_CVAR: return new PutClassVariableInstr(d.decodeOperand(), d.decodeString(), d.decodeOperand());
             case PUT_FIELD: return new PutFieldInstr(d.decodeOperand(), d.decodeString(), d.decodeOperand());
@@ -108,20 +107,20 @@ class InstrDecoderMap implements IRPersistenceValues {
             case RAISE_REQUIRED_KEYWORD_ARGUMENT_ERROR: return RaiseRequiredKeywordArgumentError.decode(d);
             case RECORD_END_BLOCK: return new RecordEndBlockInstr(d.decodeScope(), (WrappedIRClosure) d.decodeOperand());
             case REIFY_CLOSURE: return ReifyClosureInstr.decode(d);
-            case RECV_RUBY_EXC: return decodeReceiveRubyException();
-            case RECV_JRUBY_EXC: return decodeReceiveJRubyException();
+            case RECV_RUBY_EXC: return ReceiveRubyExceptionInstr.decode(d);
+            case RECV_JRUBY_EXC: return ReceiveJRubyExceptionInstr.decode(d);
             case RECV_KW_ARG: return new ReceiveKeywordArgInstr(d.decodeVariable(), d.decodeString(), d.decodeInt());
             case RECV_KW_REST_ARG: return new ReceiveKeywordRestArgInstr(d.decodeVariable(), d.decodeInt());
             case RECV_OPT_ARG: return new ReceiveOptArgInstr(d.decodeVariable(), d.decodeInt(), d.decodeInt(), d.decodeInt());
             case RECV_POST_REQD_ARG: return new ReceivePostReqdArgInstr(d.decodeVariable(), d.decodeInt(), d.decodeInt(), d.decodeInt());
             case RECV_PRE_REQD_ARG: return new ReceivePreReqdArgInstr(d.decodeVariable(), d.decodeInt());
-            case RECV_REST_ARG: return decodeReceiveRestArgInstr();
+            case RECV_REST_ARG: return ReceiveRestArgInstr.decode(d);
             case RECV_SELF: return new ReceiveSelfInstr(d.decodeVariable());
             case RESCUE_EQQ: return new RescueEQQInstr(d.decodeVariable(), d.decodeOperand(), d.decodeOperand());
             case RESTORE_ERROR_INFO: return new RestoreErrorInfoInstr(d.decodeOperand());
             case RETURN: return new ReturnInstr(d.decodeOperand());
             case RUNTIME_HELPER: return RuntimeHelperCall.decode(d);
-            case SEARCH_CONST: return decodeSearchConst();
+            case SEARCH_CONST: return SearchConstInstr.decode(d);
             case SET_CAPTURED_VAR: return SetCapturedVarInstr.decode(d);
             // FIXME: case TRACE: ...
             case THREAD_POLL: return new ThreadPollInstr(d.decodeBoolean());
@@ -134,14 +133,6 @@ class InstrDecoderMap implements IRPersistenceValues {
         }
 
         throw new IllegalArgumentException("Whoa bro: " + operation);
-    }
-
-    private Instr decodeBuildDynRegExpInstr() {
-        Variable result = d.decodeVariable();
-        Operand[] pieces = d.decodeOperandArray();
-        int embeddedOptions = d.decodeInt();
-
-        return new BuildDynRegExpInstr(result, pieces, RegexpOptions.fromEmbeddedOptions(embeddedOptions));
     }
 
     private Instr decodeCall() {
@@ -173,11 +164,6 @@ class InstrDecoderMap implements IRPersistenceValues {
         return CallInstr.create(d.getCurrentScope(), callType, result, methAddr, receiver, args, closure);
     }
 
-    private Instr decodeFrame() {
-        String methAddr = d.decodeString();
-        return new PushFrameInstr(methAddr);
-    }
-
     private Instr decodeLambda() {
         Variable v = d.decodeVariable();
         WrappedIRClosure c = (WrappedIRClosure) d.decodeOperand();
@@ -204,31 +190,6 @@ class InstrDecoderMap implements IRPersistenceValues {
         Operand closure = hasClosureArg ? d.decodeOperand() : null;
 
         return NoResultCallInstr.create(CallType.fromOrdinal(callTypeOrdinal), methAddr, receiver, args, closure);
-    }
-
-    private Instr decodeLineNumber() {
-        return new LineNumberInstr(d.decodeInt());
-    }
-
-    private Instr decodeReceiveRestArgInstr() {
-        return new ReceiveRestArgInstr(d.decodeVariable(), d.decodeInt(), d.decodeInt());
-    }
-
-    private Instr decodeSearchConst() {
-        Variable result = d.decodeVariable();
-        String constName = d.decodeString();
-        Operand startScope = d.decodeOperand();
-        boolean noPrivateConst = d.decodeBoolean();
-
-        return new SearchConstInstr(result, constName, startScope, noPrivateConst);
-    }
-
-    private Instr decodeReceiveRubyException() {
-        return new ReceiveRubyExceptionInstr(d.decodeVariable());
-    }
-
-    private Instr decodeReceiveJRubyException() {
-        return new ReceiveJRubyExceptionInstr(d.decodeVariable());
     }
 
     private Instr decodeSuperInstr(Operation operation) {

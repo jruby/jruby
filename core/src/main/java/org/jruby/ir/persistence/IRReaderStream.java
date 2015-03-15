@@ -14,11 +14,41 @@ import org.jruby.ir.IRScope;
 import org.jruby.ir.IRScopeType;
 import org.jruby.ir.Operation;
 import org.jruby.ir.instructions.Instr;
+import org.jruby.ir.operands.Array;
+import org.jruby.ir.operands.AsString;
+import org.jruby.ir.operands.Backref;
+import org.jruby.ir.operands.Bignum;
+import org.jruby.ir.operands.CurrentScope;
+import org.jruby.ir.operands.DynamicSymbol;
+import org.jruby.ir.operands.Fixnum;
+import org.jruby.ir.operands.FrozenString;
+import org.jruby.ir.operands.GlobalVariable;
+import org.jruby.ir.operands.Hash;
+import org.jruby.ir.operands.IRException;
 import org.jruby.ir.operands.Label;
+import org.jruby.ir.operands.LocalVariable;
+import org.jruby.ir.operands.NthRef;
+import org.jruby.ir.operands.NullBlock;
+import org.jruby.ir.operands.ObjectClass;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.OperandType;
+import org.jruby.ir.operands.Regexp;
+import org.jruby.ir.operands.SValue;
+import org.jruby.ir.operands.ScopeModule;
+import org.jruby.ir.operands.Self;
+import org.jruby.ir.operands.Splat;
+import org.jruby.ir.operands.StandardError;
+import org.jruby.ir.operands.StringLiteral;
+import org.jruby.ir.operands.Symbol;
+import org.jruby.ir.operands.TemporaryLocalVariable;
 import org.jruby.ir.operands.TemporaryVariableType;
+import org.jruby.ir.operands.UnboxedBoolean;
+import org.jruby.ir.operands.UnboxedFixnum;
+import org.jruby.ir.operands.UnboxedFloat;
+import org.jruby.ir.operands.UndefinedValue;
+import org.jruby.ir.operands.UnexecutableNil;
 import org.jruby.ir.operands.Variable;
+import org.jruby.ir.operands.WrappedIRClosure;
 import org.jruby.parser.StaticScope;
 
 import java.io.ByteArrayOutputStream;
@@ -27,7 +57,6 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.ByteBuffer;
-import java.nio.channels.FileChannel;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -42,20 +71,20 @@ import org.jruby.util.ByteList;
  */
 public class IRReaderStream implements IRReaderDecoder, IRPersistenceValues {
     private final ByteBuffer buf;
+    private IRManager manager;
     private final InstrDecoderMap instrDecoderMap;
-    private final OperandDecoderMap operandDecoderMap;
-    private final List<IRScope> scopes = new ArrayList<IRScope>();
+    private final List<IRScope> scopes = new ArrayList<>();
     private IRScope currentScope = null; // FIXME: This is not thread-safe and more than a little gross
 
     public IRReaderStream(IRManager manager, InputStream stream) {
         ByteBuffer buf = readIntoBuffer(stream);
-
+        this.manager = manager;
         this.buf = buf;
         this.instrDecoderMap = new InstrDecoderMap(this);
-        this.operandDecoderMap = new OperandDecoderMap(manager, this);
     }
 
     public IRReaderStream(IRManager manager, File file) {
+        this.manager = manager;
         ByteBuffer buf = null;
         try (FileInputStream fis = new FileInputStream(file)){
             buf = readIntoBuffer(fis);
@@ -65,7 +94,6 @@ public class IRReaderStream implements IRReaderDecoder, IRPersistenceValues {
 
         this.buf = buf;
         this.instrDecoderMap = new InstrDecoderMap(this);
-        this.operandDecoderMap = new OperandDecoderMap(manager, this);
     }
 
     private ByteBuffer readIntoBuffer(InputStream stream) {
@@ -73,7 +101,7 @@ public class IRReaderStream implements IRReaderDecoder, IRPersistenceValues {
         try {
             ByteArrayOutputStream baos = new ByteArrayOutputStream();
             byte[] bytes = new byte[8192];
-            int r = 0;
+            int r;
             while ((r = stream.read(bytes)) > 0) baos.write(bytes, 0, r);
             if (RubyInstanceConfig.IR_READING_DEBUG) System.out.println("READ IN " + baos.size() + " BYTES OF DATA FROM");
             buf = ByteBuffer.wrap(baos.toByteArray());
@@ -155,7 +183,7 @@ public class IRReaderStream implements IRReaderDecoder, IRPersistenceValues {
 
         int numberOfInstructions = decodeInt();
         if (RubyInstanceConfig.IR_READING_DEBUG) System.out.println("Number of Instructions: " + numberOfInstructions);
-        List<Instr> instrs = new ArrayList(numberOfInstructions);
+        List<Instr> instrs = new ArrayList<>(numberOfInstructions);
 
         for (int i = 0; i < numberOfInstructions; i++) {
             Instr decodedInstr = decodeInstr();
@@ -203,7 +231,7 @@ public class IRReaderStream implements IRReaderDecoder, IRPersistenceValues {
 
         if (RubyInstanceConfig.IR_READING_DEBUG) System.out.println("OP<" + operandType);
 
-        Operand decodedOperand = operandDecoderMap.decode(operandType);
+        Operand decodedOperand = decode(operandType);
 
         if (RubyInstanceConfig.IR_READING_DEBUG) System.out.println(">OP = " + decodedOperand);
 
@@ -231,7 +259,7 @@ public class IRReaderStream implements IRReaderDecoder, IRPersistenceValues {
     public List<Operand> decodeOperandList() {
         int size = decodeInt();
         if (RubyInstanceConfig.IR_READING_DEBUG) System.out.println("OPERAND LIST of size: " + size);
-        List<Operand> list = new ArrayList<Operand>(size);
+        List<Operand> list = new ArrayList<>(size);
 
         for (int i = 0; i < size; i++) {
             if (RubyInstanceConfig.IR_READING_DEBUG) System.out.println("OPERAND #" + i);
@@ -300,5 +328,48 @@ public class IRReaderStream implements IRReaderDecoder, IRPersistenceValues {
     @Override
     public void seek(int headersOffset) {
         buf.position(headersOffset);
+    }
+
+    public Operand decode(OperandType type) {
+        if (RubyInstanceConfig.IR_READING_DEBUG) System.out.println("Decoding operand " + type);
+
+        switch (type) {
+            case ARRAY: return Array.decode(this);
+            case AS_STRING: return AsString.decode(this);
+            case BACKREF: return Backref.decode(this);
+            case BIGNUM: return Bignum.decode(this);
+            case BOOLEAN: return org.jruby.ir.operands.Boolean.decode(this);
+            case CURRENT_SCOPE: return CurrentScope.decode(this);
+            case DYNAMIC_SYMBOL: return DynamicSymbol.decode(this);
+            case FIXNUM: return Fixnum.decode(this);
+            case FLOAT: return org.jruby.ir.operands.Float.decode(this);
+            case FROZEN_STRING: return FrozenString.decode(this);
+            case GLOBAL_VARIABLE: return GlobalVariable.decode(this);
+            case HASH: return Hash.decode(this);
+            case IR_EXCEPTION: return IRException.decode(this);
+            case LABEL: return Label.decode(this);
+            case LOCAL_VARIABLE: return LocalVariable.decode(this);
+            case NIL: return manager.getNil();
+            case NTH_REF: return NthRef.decode(this);
+            case NULL_BLOCK: return NullBlock.decode(this);
+            case OBJECT_CLASS: return new ObjectClass();
+            case REGEXP: return Regexp.decode(this);
+            case SCOPE_MODULE: return ScopeModule.decode(this);
+            case SELF: return Self.SELF;
+            case SPLAT: return Splat.decode(this);
+            case STANDARD_ERROR: return new StandardError();
+            case STRING_LITERAL: return StringLiteral.decode(this);
+            case SVALUE: return SValue.decode(this);
+            case SYMBOL: return Symbol.decode(this);
+            case TEMPORARY_VARIABLE: return TemporaryLocalVariable.decode(this);
+            case UNBOXED_BOOLEAN: return new UnboxedBoolean(decodeBoolean());
+            case UNBOXED_FIXNUM: return new UnboxedFixnum(decodeLong());
+            case UNBOXED_FLOAT: return new UnboxedFloat(decodeDouble());
+            case UNDEFINED_VALUE: return UndefinedValue.UNDEFINED;
+            case UNEXECUTABLE_NIL: return UnexecutableNil.U_NIL;
+            case WRAPPED_IR_CLOSURE: return WrappedIRClosure.decode(this);
+        }
+
+        return null;
     }
 }
