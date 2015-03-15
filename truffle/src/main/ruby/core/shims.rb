@@ -135,14 +135,6 @@ end
 
 ENV['TZ'] = 'UTC'
 
-class BasicObject
-
-  def instance_exec(*args)
-    # TODO (nirvdrum 06-Mar-15) Properly implement this.  The stub is just to get the specs even loading.
-  end
-
-end
-
 class Method
 
   def to_proc

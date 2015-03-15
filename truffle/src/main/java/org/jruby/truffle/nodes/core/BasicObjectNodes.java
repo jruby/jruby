@@ -221,6 +221,24 @@ public abstract class BasicObjectNodes {
 
     }
 
+    @CoreMethod(names = "instance_exec", needsBlock = true, argumentsAsArray = true)
+    public abstract static class InstanceExecNode extends YieldingCoreMethodNode {
+
+        public InstanceExecNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public InstanceExecNode(InstanceExecNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public Object instanceExec(VirtualFrame frame, Object receiver, Object[] arguments, RubyProc block) {
+            return yieldWithModifiedSelf(frame, block, receiver, arguments);
+        }
+
+    }
+
     @CoreMethod(names = "method_missing", needsBlock = true, argumentsAsArray = true, visibility = Visibility.PRIVATE)
     public abstract static class MethodMissingNode extends CoreMethodNode {
 
