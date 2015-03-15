@@ -1,6 +1,7 @@
 package org.jruby.ir.operands;
 
 import org.jruby.ir.IRVisitor;
+import org.jruby.ir.persistence.IRReaderDecoder;
 import org.jruby.ir.persistence.IRWriterEncoder;
 import org.jruby.ir.transformations.inlining.SimpleCloneInfo;
 import org.jruby.parser.StaticScope;
@@ -96,6 +97,10 @@ public class LocalVariable extends Variable implements DepthCloneable {
         e.encode(getName());
         e.encode(getScopeDepth());
         // We do not encode location because we rebuild lvars from IRScope when being rebuilt
+    }
+
+    public static LocalVariable decode(IRReaderDecoder d) {
+        return d.getCurrentScope().getLocalVariable(d.decodeString(), d.decodeInt());
     }
 
     @Override

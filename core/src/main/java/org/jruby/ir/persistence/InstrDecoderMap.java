@@ -140,17 +140,20 @@ class InstrDecoderMap implements IRPersistenceValues {
     }
 
     private Instr decodeCall() {
-        if (RubyInstanceConfig.IR_READING_DEBUG) System.out.println("decoding call");
+        if (RubyInstanceConfig.IR_READING_DEBUG) System.out.println("decodeCall");
         int callTypeOrdinal = d.decodeInt();
         CallType callType = CallType.fromOrdinal(callTypeOrdinal);
-        if (RubyInstanceConfig.IR_READING_DEBUG) System.out.println("decoding call, calltype(ord):  " + callType);
+        if (RubyInstanceConfig.IR_READING_DEBUG) System.out.println("decodeCall - calltype:  " + callType);
         String methAddr = d.decodeString();
-        if (RubyInstanceConfig.IR_READING_DEBUG) System.out.println("decoding call, methaddr:  "+ methAddr);
+        if (RubyInstanceConfig.IR_READING_DEBUG) System.out.println("decodeCall - methaddr:  " + methAddr);
         Operand receiver = d.decodeOperand();
+        if (RubyInstanceConfig.IR_READING_DEBUG) System.out.println("decodeCall - receiver:  " + receiver);
         int argsCount = d.decodeInt();
+        if (RubyInstanceConfig.IR_READING_DEBUG) System.out.println("decodeCall - # of args:  " + argsCount);
         boolean hasClosureArg = argsCount < 0;
         int argsLength = hasClosureArg ? (-1 * (argsCount + 1)) : argsCount;
-        if (RubyInstanceConfig.IR_READING_DEBUG) System.out.println("ARGS: " + argsLength + ", CLOSURE: " + hasClosureArg);
+        if (RubyInstanceConfig.IR_READING_DEBUG) System.out.println("decodeCall - # of args(2): " + argsLength);
+        if (RubyInstanceConfig.IR_READING_DEBUG) System.out.println("decodeCall - hasClosure: " + hasClosureArg);
         Operand[] args = new Operand[argsLength];
 
         for (int i = 0; i < argsLength; i++) {
