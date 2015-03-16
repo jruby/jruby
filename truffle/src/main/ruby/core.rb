@@ -24,6 +24,7 @@ require_relative 'core/rubinius/api/shims/metrics'
 # Load bootstrap (ordered according to Rubinius' load_order.txt)
 require_relative 'core/rubinius/bootstrap/basic_object'
 require_relative 'core/rubinius/bootstrap/mirror'
+require_relative 'core/rubinius/bootstrap/character'
 require_relative 'core/rubinius/bootstrap/false'
 require_relative 'core/rubinius/bootstrap/gc'
 require_relative 'core/rubinius/bootstrap/kernel'

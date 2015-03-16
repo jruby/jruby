@@ -666,50 +666,6 @@ public abstract class StringNodes {
 
     }
 
-    @CoreMethod(names = "chomp!", optional = 1, raiseIfFrozenSelf = true)
-    public abstract static class ChompBangNode extends CoreMethodNode {
-
-        @Child private ToStrNode toStrNode;
-
-        public ChompBangNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
-        public ChompBangNode(ChompBangNode prev) {
-            super(prev);
-        }
-
-        @Specialization
-        public Object chompBang(RubyString string, UndefinedPlaceholder undefined) {
-            notDesignedForCompilation();
-
-            if (string.length() == 0) {
-                return nil();
-            }
-
-            string.set(StringNodesHelper.chomp(string));
-            return string;
-        }
-
-        @Specialization
-        public RubyNilClass chompBangWithNil(RubyString string, RubyNilClass stringToChomp) {
-            return nil();
-        }
-
-        @Specialization(guards = { "!isUndefinedPlaceholder(arguments[1])", "!isRubyNilClass(arguments[1])" })
-        public RubyString chompBangWithString(VirtualFrame frame, RubyString string, Object stringToChomp) {
-            notDesignedForCompilation();
-
-            if (toStrNode == null) {
-                CompilerDirectives.transferToInterpreter();
-                toStrNode = insert(ToStrNodeFactory.create(getContext(), getSourceSection(), null));
-            }
-
-            string.set(StringNodesHelper.chompWithString(string, toStrNode.executeRubyString(frame, stringToChomp)));
-            return string;
-        }
-    }
-
     @CoreMethod(names = "chop!", raiseIfFrozenSelf = true)
     public abstract static class ChopBangNode extends CoreMethodNode {
 
@@ -2161,24 +2117,6 @@ public abstract class StringNodes {
             newByteList.setEncoding(string.getBytes().getEncoding());
 
             return newByteList;
-        }
-
-        @TruffleBoundary
-        public static ByteList chomp(RubyString string) {
-            String javaString = string.toString();
-            if (javaString.endsWith("\r")) {
-                String newString = javaString.substring(0, javaString.length()-1);
-                ByteList byteListString = ByteList.create(newString);
-                byteListString.setEncoding(string.getBytes().getEncoding());
-
-                return byteListString;
-            } else {
-                ByteList byteListString = ByteList.create(javaString.trim());
-                byteListString.setEncoding(string.getBytes().getEncoding());
-
-                return byteListString;
-            }
-
         }
 
         @TruffleBoundary
