@@ -104,6 +104,13 @@ class String
   def append(other)
     self << other
   end
+
+  def shorten!(size)
+    self.modify!
+    return if @num_bytes == 0
+    self.num_bytes -= size
+  end
+
 end
 
 module Kernel

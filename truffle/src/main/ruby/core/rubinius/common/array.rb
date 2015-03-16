@@ -612,6 +612,28 @@ class Array
     nil
   end
 
+
+  def inspect
+    return "[]".force_encoding(Encoding::US_ASCII) if @total == 0
+    comma = ", "
+    result = "["
+
+    return "[...]" if Thread.detect_recursion self do
+      each_with_index do |element, index|
+        temp = element.inspect
+        result.force_encoding(temp.encoding) if index == 0
+        result << temp << comma
+      end
+    end
+
+    Rubinius::Type.infect(result, self)
+    result.shorten!(2)
+    result << "]"
+    result
+  end
+
+  alias_method :to_s, :inspect
+
   def keep_if(&block)
     return to_enum :keep_if unless block_given?
 

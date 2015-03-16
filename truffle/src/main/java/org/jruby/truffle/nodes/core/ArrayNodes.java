@@ -1666,48 +1666,6 @@ public abstract class ArrayNodes {
 
     }
 
-    @CoreMethod(names = {"inspect", "to_s"})
-    public abstract static class InspectNode extends CoreMethodNode {
-
-        @Child private CallDispatchHeadNode inspect;
-
-        public InspectNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-            inspect = DispatchHeadNodeFactory.createMethodCall(context);
-        }
-
-        public InspectNode(InspectNode prev) {
-            super(prev);
-            inspect = prev.inspect;
-        }
-
-        @Specialization
-        public RubyString inspect(VirtualFrame frame, RubyArray array) {
-            notDesignedForCompilation();
-
-            final StringBuilder builder = new StringBuilder();
-            final Object[] objects = array.slowToArray();
-
-            builder.append("[");
-
-            for (int n = 0; n < objects.length; n++) {
-                if (n > 0) {
-                    builder.append(", ");
-                }
-
-                // TODO(CS): cast
-
-                final RubyString string = (RubyString) inspect.call(frame, objects[n], "inspect", null);
-                builder.append(string.getBytes().toString());
-            }
-
-            builder.append("]");
-
-            return getContext().makeString(builder.toString());
-        }
-
-    }
-
     @CoreMethod(names = "join", optional = 1)
     public abstract static class JoinNode extends ArrayCoreMethodNode {
 
