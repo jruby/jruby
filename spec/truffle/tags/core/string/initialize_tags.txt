@@ -1,3 +1,0 @@
-fails:String#initialize with an argument tries to convert other to string using to_str
-fails:String#initialize with an argument raises a RuntimeError on a frozen instance that is modified
-fails:String#initialize with an argument raises a RuntimeError on a frozen instance when self-replacing

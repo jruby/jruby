@@ -50,6 +50,8 @@ import org.jruby.truffle.nodes.coerce.ToStrNodeFactory;
 import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNode;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
+import org.jruby.truffle.nodes.objects.IsFrozenNode;
+import org.jruby.truffle.nodes.objects.IsFrozenNodeFactory;
 import org.jruby.truffle.nodes.rubinius.StringPrimitiveNodes;
 import org.jruby.truffle.nodes.rubinius.StringPrimitiveNodesFactory;
 import org.jruby.truffle.runtime.RubyContext;
@@ -1210,12 +1212,17 @@ public abstract class StringNodes {
     @CoreMethod(names = "initialize", optional = 1, taintFromParameters = 0)
     public abstract static class InitializeNode extends CoreMethodNode {
 
+        @Child private IsFrozenNode isFrozenNode;
+        @Child private ToStrNode toStrNode;
+
         public InitializeNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
         }
 
         public InitializeNode(InitializeNode prev) {
             super(prev);
+            isFrozenNode = prev.isFrozenNode;
+            toStrNode = prev.toStrNode;
         }
 
         @Specialization
@@ -1225,12 +1232,31 @@ public abstract class StringNodes {
 
         @Specialization
         public RubyString initialize(RubyString self, RubyString from) {
-            notDesignedForCompilation();
+            if (isFrozenNode == null) {
+                CompilerDirectives.transferToInterpreter();
+                isFrozenNode = insert(IsFrozenNodeFactory.create(getContext(), getSourceSection(), null));
+            }
+
+            if (isFrozenNode.executeIsFrozen(self)) {
+                CompilerDirectives.transferToInterpreter();
+                throw new RaiseException(
+                        getContext().getCoreLibrary().frozenError(self.getLogicalClass().getName(), this));
+            }
 
             self.set(from.getBytes());
             self.setCodeRange(from.getCodeRange());
 
             return self;
+        }
+
+        @Specialization(guards = { "!isRubyString(arguments[1])", "!isUndefinedPlaceholder(arguments[1])" })
+        public RubyString initialize(VirtualFrame frame, RubyString self, Object from) {
+            if (toStrNode == null) {
+                CompilerDirectives.transferToInterpreter();
+                toStrNode = insert(ToStrNodeFactory.create(getContext(), getSourceSection(), null));
+            }
+
+            return initialize(self, toStrNode.executeRubyString(frame, from));
         }
     }
 
