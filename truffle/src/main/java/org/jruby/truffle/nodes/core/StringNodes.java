@@ -35,6 +35,7 @@ import com.oracle.truffle.api.nodes.UnexpectedResultException;
 import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.utilities.BranchProfile;
 
+import com.oracle.truffle.api.utilities.ConditionProfile;
 import org.jcodings.Encoding;
 import org.jcodings.specific.ASCIIEncoding;
 import org.jcodings.specific.UTF8Encoding;
@@ -97,8 +98,12 @@ public abstract class StringNodes {
         }
     }
 
-    @CoreMethod(names = "*", required = 1, lowerFixnumParameters = 0)
+    @CoreMethod(names = "*", required = 1, lowerFixnumParameters = 0, taintFromSelf = true)
     public abstract static class MulNode extends CoreMethodNode {
+
+        private final ConditionProfile negativeTimesProfile = ConditionProfile.createBinaryProfile();
+
+        @Child private ToIntNode toIntNode;
 
         public MulNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -106,11 +111,17 @@ public abstract class StringNodes {
 
         public MulNode(MulNode prev) {
             super(prev);
+            toIntNode = prev.toIntNode;
         }
 
         @Specialization
-        public RubyString add(RubyString string, int times) {
+        public RubyString multiply(RubyString string, int times) {
             notDesignedForCompilation();
+
+            if (negativeTimesProfile.profile(times < 0)) {
+                CompilerDirectives.transferToInterpreter();
+                throw new RaiseException(getContext().getCoreLibrary().argumentError("negative argument", this));
+            }
 
             final ByteList inputBytes = string.getBytes();
             final ByteList outputBytes = new ByteList(string.getBytes().length() * times);
@@ -121,7 +132,25 @@ public abstract class StringNodes {
 
             outputBytes.setEncoding(inputBytes.getEncoding());
 
-            return new RubyString(getContext().getCoreLibrary().getStringClass(), outputBytes);
+            return getContext().makeString(string.getLogicalClass(), outputBytes);
+        }
+
+        @Specialization
+        public RubyString multiply(RubyString string, RubyBignum times) {
+            CompilerDirectives.transferToInterpreter();
+
+            throw new RaiseException(
+                    getContext().getCoreLibrary().rangeError("bignum too big to convert into `long'", this));
+        }
+
+        @Specialization(guards = { "!isRubyBignum(arguments[1])", "!isInteger(arguments[1])" })
+        public RubyString multiply(VirtualFrame frame, RubyString string, Object times) {
+            if (toIntNode == null) {
+                CompilerDirectives.transferToInterpreter();
+                toIntNode = insert(ToIntNodeFactory.create(getContext(), getSourceSection(), null));
+            }
+
+            return multiply(string, toIntNode.executeIntegerFixnum(frame, times));
         }
     }
 
