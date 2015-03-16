@@ -68,6 +68,9 @@ public class ExceptionTranslatingNode extends RubyNode {
         } catch (UnsupportedSpecializationException exception) {
             CompilerDirectives.transferToInterpreter();
             throw new RaiseException(translate(exception));
+        } catch (org.jruby.exceptions.RaiseException e) {
+            CompilerDirectives.transferToInterpreter();
+            throw new RaiseException(getContext().toTruffle(e.getException(), this));
         } catch (Throwable exception) {
             CompilerDirectives.transferToInterpreter();
             throw new RaiseException(translate(exception));
