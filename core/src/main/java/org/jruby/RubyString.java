@@ -1123,18 +1123,10 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
     public IRubyObject op_plus19(ThreadContext context, IRubyObject _str) {
         RubyString str = _str.convertToString();
         Encoding enc = checkEncoding(str);
-        RubyString resultStr = newStringNoCopy(context.runtime, addByteLists(value, str.value),
+        RubyString resultStr = newStringNoCopy(context.runtime, StringSupport.addByteLists(value, str.value),
                                     enc, CodeRangeSupport.codeRangeAnd(getCodeRange(), str.getCodeRange()));
         resultStr.infectBy(flags | str.flags);
         return resultStr;
-    }
-
-    private ByteList addByteLists(ByteList value1, ByteList value2) {
-        ByteList result = new ByteList(value1.getRealSize() + value2.getRealSize());
-        result.setRealSize(value1.getRealSize() + value2.getRealSize());
-        System.arraycopy(value1.getUnsafeBytes(), value1.getBegin(), result.getUnsafeBytes(), 0, value1.getRealSize());
-        System.arraycopy(value2.getUnsafeBytes(), value2.getBegin(), result.getUnsafeBytes(), value1.getRealSize(), value2.getRealSize());
-        return result;
     }
 
     public IRubyObject op_mul(ThreadContext context, IRubyObject other) {

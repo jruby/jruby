@@ -1366,4 +1366,12 @@ public final class StringSupport {
 
         return RubyEncoding.areCompatible(enc1, string.scanForCodeRange(), enc2, other.scanForCodeRange());
     }
+
+    public static ByteList addByteLists(ByteList value1, ByteList value2) {
+        ByteList result = new ByteList(value1.getRealSize() + value2.getRealSize());
+        result.setRealSize(value1.getRealSize() + value2.getRealSize());
+        System.arraycopy(value1.getUnsafeBytes(), value1.getBegin(), result.getUnsafeBytes(), 0, value1.getRealSize());
+        System.arraycopy(value2.getUnsafeBytes(), value2.getBegin(), result.getUnsafeBytes(), value1.getRealSize(), value2.getRealSize());
+        return result;
+    }
 }
