@@ -1,4 +1,2 @@
-fails:Object#instance_exec raises a LocalJumpError unless given a block
-fails:Object#instance_exec invokes Method objects without rebinding self
 fails:Object#instance_exec raises a TypeError when defining methods on an immediate
 fails:Object#instance_exec raises a TypeError when defining methods on numerics
