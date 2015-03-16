@@ -1375,6 +1375,44 @@ public abstract class StringNodes {
         }
     }
 
+    @RubiniusOnly
+    @CoreMethod(names = "modify!")
+    public abstract static class ModifyBangNode extends CoreMethodNode {
+
+        public ModifyBangNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public ModifyBangNode(ModifyBangNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public RubyString modifyBang(RubyString string) {
+            string.modify();
+            return string;
+        }
+    }
+
+    @RubiniusOnly
+    @CoreMethod(names = "num_bytes=", required = 1)
+    public abstract static class SetNumBytesNode extends CoreMethodNode {
+
+        public SetNumBytesNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public SetNumBytesNode(SetNumBytesNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public RubyString setNumBytes(RubyString string, int count) {
+            string.getByteList().view(0, count);
+            return string;
+        }
+    }
+
     @CoreMethod(names = "ord")
     public abstract static class OrdNode extends CoreMethodNode {
 
@@ -2162,44 +2200,6 @@ public abstract class StringNodes {
             byteListString.setEncoding(string.getBytes().getEncoding());
 
             return byteListString;
-        }
-    }
-
-    @RubiniusOnly
-    @CoreMethod(names = "modify!")
-    public abstract static class ModifyBangNode extends CoreMethodNode {
-
-        public ModifyBangNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
-        public ModifyBangNode(ModifyBangNode prev) {
-            super(prev);
-        }
-
-        @Specialization
-        public RubyString modifyBang(RubyString string) {
-            string.modify();
-            return string;
-        }
-    }
-
-    @RubiniusOnly
-    @CoreMethod(names = "num_bytes=", required = 1)
-    public abstract static class SetNumBytesNode extends CoreMethodNode {
-
-        public SetNumBytesNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
-        public SetNumBytesNode(SetNumBytesNode prev) {
-            super(prev);
-        }
-
-        @Specialization
-        public RubyString setNumBytes(RubyString string, int count) {
-            string.getByteList().view(0, count);
-            return string;
         }
     }
 
