@@ -193,14 +193,6 @@ module Rubinius
   end
 end
 
-class String
-
-  def num_bytes=(count)
-    _set_num_bytes count
-  end
-
-end
-
 class IO
 
   RDONLY = 0
