@@ -4,6 +4,7 @@ import org.jruby.Ruby;
 import org.jruby.ir.*;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.Variable;
+import org.jruby.ir.persistence.IRReaderDecoder;
 import org.jruby.ir.persistence.IRWriterEncoder;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.ir.transformations.inlining.CloneInfo;
@@ -57,6 +58,10 @@ public class DefineMetaClassInstr extends ResultBaseInstr implements FixedArityI
         super.encode(e);
         e.encode(getObject());
         e.encode(getMetaClassBody());
+    }
+
+    public static DefineMetaClassInstr decode(IRReaderDecoder d) {
+        return new DefineMetaClassInstr(d.decodeVariable(), d.decodeOperand(), (IRModuleBody) d.decodeScope());
     }
 
     @Override
