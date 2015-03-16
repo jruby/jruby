@@ -4,6 +4,7 @@ import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Operation;
 import org.jruby.ir.operands.Variable;
 import org.jruby.ir.operands.WrappedIRClosure;
+import org.jruby.ir.persistence.IRReaderDecoder;
 import org.jruby.ir.transformations.inlining.CloneInfo;
 import org.jruby.ir.transformations.inlining.InlineCloneInfo;
 import org.jruby.ir.transformations.inlining.SimpleCloneInfo;
@@ -33,6 +34,10 @@ public class LoadFrameClosureInstr extends ResultBaseInstr implements FixedArity
         if (ii.getCallClosure() instanceof WrappedIRClosure) return NopInstr.NOP;
 
         return new CopyInstr(ii.getRenamedVariable(result), ii.getCallClosure());
+    }
+
+    public static LoadFrameClosureInstr decode(IRReaderDecoder d) {
+        return new LoadFrameClosureInstr(d.decodeVariable());
     }
 
     @Override

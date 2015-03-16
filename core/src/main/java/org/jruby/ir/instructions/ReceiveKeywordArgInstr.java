@@ -5,6 +5,7 @@ import org.jruby.ir.IRScope;
 import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Operation;
 import org.jruby.ir.operands.*;
+import org.jruby.ir.persistence.IRReaderDecoder;
 import org.jruby.ir.persistence.IRWriterEncoder;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.ir.transformations.inlining.CloneInfo;
@@ -42,6 +43,10 @@ public class ReceiveKeywordArgInstr extends ReceiveArgBase implements FixedArity
         super.encode(e);
         e.encode(argName);
         e.encode(required);
+    }
+
+    public static ReceiveKeywordArgInstr decode(IRReaderDecoder d) {
+        return new ReceiveKeywordArgInstr(d.decodeVariable(), d.decodeString(), d.decodeInt());
     }
 
     @Override

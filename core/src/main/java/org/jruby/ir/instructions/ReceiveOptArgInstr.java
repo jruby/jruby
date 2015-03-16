@@ -4,6 +4,7 @@ import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Operation;
 import org.jruby.ir.operands.UndefinedValue;
 import org.jruby.ir.operands.Variable;
+import org.jruby.ir.persistence.IRReaderDecoder;
 import org.jruby.ir.persistence.IRWriterEncoder;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.ir.transformations.inlining.CloneInfo;
@@ -64,6 +65,10 @@ public class ReceiveOptArgInstr extends ReceiveArgBase implements FixedArityInst
         e.encode(requiredArgs);
         e.encode(getPreArgs());
         e.encode(getArgIndex());
+    }
+
+    public static ReceiveOptArgInstr decode(IRReaderDecoder d) {
+        return new ReceiveOptArgInstr(d.decodeVariable(), d.decodeInt(), d.decodeInt(), d.decodeInt());
     }
 
     @Override

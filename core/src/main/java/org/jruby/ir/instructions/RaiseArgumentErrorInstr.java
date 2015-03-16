@@ -2,6 +2,7 @@ package org.jruby.ir.instructions;
 
 import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Operation;
+import org.jruby.ir.persistence.IRReaderDecoder;
 import org.jruby.ir.persistence.IRWriterEncoder;
 import org.jruby.ir.transformations.inlining.CloneInfo;
 import org.jruby.parser.StaticScope;
@@ -58,6 +59,10 @@ public class RaiseArgumentErrorInstr extends Instr implements FixedArityInstr {
         e.encode(getOpt());
         e.encode(getRest());
         e.encode(getNumArgs());
+    }
+
+    public static RaiseArgumentErrorInstr decode(IRReaderDecoder d) {
+        return new RaiseArgumentErrorInstr(d.decodeInt(), d.decodeInt(), d.decodeInt(), d.decodeInt());
     }
 
     @Override

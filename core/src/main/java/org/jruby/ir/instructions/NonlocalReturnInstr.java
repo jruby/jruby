@@ -4,6 +4,7 @@ import org.jruby.ir.*;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.StringLiteral;
 import org.jruby.ir.operands.Variable;
+import org.jruby.ir.persistence.IRReaderDecoder;
 import org.jruby.ir.persistence.IRWriterEncoder;
 import org.jruby.ir.transformations.inlining.CloneInfo;
 import org.jruby.ir.transformations.inlining.InlineCloneInfo;
@@ -55,6 +56,10 @@ public class NonlocalReturnInstr extends ReturnBase implements FixedArityInstr {
         super.encode(e);
         e.encode(getReturnValue());
         e.encode(methodName);
+    }
+
+    public static NonlocalReturnInstr decode(IRReaderDecoder d) {
+        return new NonlocalReturnInstr(d.decodeOperand(), d.decodeString());
     }
 
     @Override
