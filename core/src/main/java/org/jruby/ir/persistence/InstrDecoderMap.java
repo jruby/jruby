@@ -7,7 +7,6 @@ import org.jruby.ir.instructions.*;
 import org.jruby.ir.instructions.defined.GetErrorInfoInstr;
 import org.jruby.ir.instructions.defined.RestoreErrorInfoInstr;
 import org.jruby.ir.operands.*;
-import org.jruby.lexer.yacc.SimpleSourcePosition;
 import org.jruby.runtime.CallType;
 
 /**
@@ -129,7 +128,7 @@ class InstrDecoderMap implements IRPersistenceValues {
             case UNDEF_METHOD: return new UndefMethodInstr(d.decodeVariable(), d.decodeOperand());
             case UNRESOLVED_SUPER: return decodeUnresolvedSuperInstr();
             case YIELD: return new YieldInstr(d.decodeVariable(), d.decodeOperand(), d.decodeOperand(), d.decodeBoolean());
-            case ZSUPER: return decodeZSuperInstr();
+            case ZSUPER: return ZSuperInstr.decode(d);
         }
 
         throw new IllegalArgumentException("Whoa bro: " + operation);
@@ -237,21 +236,5 @@ class InstrDecoderMap implements IRPersistenceValues {
         if (RubyInstanceConfig.IR_READING_DEBUG) System.out.println("decoding call, result:  " + result);
 
         return new UnresolvedSuperInstr(result, receiver, args, closure);
-    }
-
-    public Instr decodeZSuperInstr() {
-        Variable result = d.decodeVariable();
-        Operand receiver = d.decodeOperand();
-        boolean hasClosure = d.decodeBoolean();
-        Operand closure = hasClosure ? d.decodeOperand() : null;
-
-        int argsLength = d.decodeInt();
-        // if (RubyInstanceConfig.IR_READING_DEBUG) System.out.println("ARGS: " + argsLength + ", CLOSURE: " + hasClosure);
-        Operand[] args = new Operand[argsLength];
-        for (int i = 0; i < argsLength; i++) {
-            args[i] = d.decodeOperand();
-        }
-
-        return new ZSuperInstr(result, receiver, args, closure);
     }
  }
