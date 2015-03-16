@@ -116,8 +116,6 @@ public abstract class StringNodes {
 
         @Specialization
         public RubyString multiply(RubyString string, int times) {
-            notDesignedForCompilation();
-
             if (negativeTimesProfile.profile(times < 0)) {
                 CompilerDirectives.transferToInterpreter();
                 throw new RaiseException(getContext().getCoreLibrary().argumentError("negative argument", this));
@@ -131,8 +129,10 @@ public abstract class StringNodes {
             }
 
             outputBytes.setEncoding(inputBytes.getEncoding());
+            final RubyString ret = getContext().makeString(string.getLogicalClass(), outputBytes);
+            ret.setCodeRange(string.getCodeRange());
 
-            return getContext().makeString(string.getLogicalClass(), outputBytes);
+            return ret;
         }
 
         @Specialization
