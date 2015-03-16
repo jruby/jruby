@@ -827,7 +827,7 @@ public abstract class StringNodes {
             }
 
             RubyString otherString = otherStrings[0];
-            Encoding enc = string.checkEncoding(otherString);
+            Encoding enc = string.checkEncoding(otherString, this);
 
             boolean[] squeeze = new boolean[StringSupport.TRANS_SIZE + 1];
             StringSupport.TrTables tables = StringSupport.trSetupTable(otherString.getBytes(),
@@ -835,7 +835,7 @@ public abstract class StringNodes {
                     squeeze, null, true, enc);
 
             for (int i = 1; i < otherStrings.length; i++) {
-                enc = string.checkEncoding(otherStrings[i]);
+                enc = string.checkEncoding(otherStrings[i], this);
                 tables = StringSupport.trSetupTable(otherStrings[i].getBytes(), getContext().getRuntime(), squeeze, tables, false, enc);
             }
 
