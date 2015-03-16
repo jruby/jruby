@@ -20,7 +20,6 @@ import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.objects.Allocator;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.util.ByteList;
-import org.jruby.util.ByteListHolder;
 import org.jruby.util.CodeRangeable;
 import org.jruby.util.StringSupport;
 
@@ -205,7 +204,7 @@ public class RubyString extends RubyBasicObject implements CodeRangeable {
     }
 
     @Override
-    public Encoding checkEncoding(ByteListHolder other) {
+    public Encoding checkEncoding(CodeRangeable other) {
         // TODO (nirvdrum Jan. 13, 2015): This should check if the encodings are compatible rather than just always succeeding.
         return bytes.getEncoding();
     }

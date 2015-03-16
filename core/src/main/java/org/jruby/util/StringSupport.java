@@ -36,6 +36,7 @@ import org.jcodings.util.IntHash;
 import org.joni.Matcher;
 import org.jruby.Ruby;
 import org.jruby.RubyBasicObject;
+import org.jruby.RubyEncoding;
 import org.jruby.RubyObject;
 import org.jruby.RubyString;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -1344,5 +1345,25 @@ public final class StringSupport {
             if (s2 != -1 && codePoint(runtime, enc, bytes, s2, end) == '\r') s = s2;
         }
         return s - p;
+    }
+
+    /**
+     * rb_enc_compatible
+     */
+
+    public static Encoding areCompatible(CodeRangeable string, CodeRangeable other) {
+        Encoding enc1 = string.getByteList().getEncoding();
+        Encoding enc2 = other.getByteList().getEncoding();
+
+        if (enc1 == enc2) return enc1;
+
+        if (other.getByteList().getRealSize() == 0) return enc1;
+        if (string.getByteList().getRealSize() == 0) {
+            return (enc1.isAsciiCompatible() && isAsciiOnly(other)) ? enc1 : enc2;
+        }
+
+        if (!enc1.isAsciiCompatible() || !enc2.isAsciiCompatible()) return null;
+
+        return RubyEncoding.areCompatible(enc1, string.scanForCodeRange(), enc2, other.scanForCodeRange());
     }
 }
