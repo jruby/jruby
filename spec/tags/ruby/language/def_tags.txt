@@ -1,0 +1,1 @@
+fails:An instance method with a default argument does not call a method with the same name as the local
