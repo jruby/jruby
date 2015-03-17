@@ -99,17 +99,17 @@ class MSpecScript
   
   set :core, core
 
-  set :rubysl, [
-    "spec/truffle/spec/rubysl/rubysl-erb/spec",
-    "spec/truffle/spec/rubysl/rubysl-set/spec",
-    "spec/truffle/spec/rubysl/rubysl-strscan/spec",
-    "spec/truffle/spec/rubysl/rubysl-stringio/spec"
+  set :library, [
+    "spec/ruby/library/erb",
+    "spec/ruby/library/set",
+    "spec/ruby/library/strscan",
+    "spec/ruby/library/stringio"
   ]
 
   set :tags_patterns, [
                         [%r(^.*/language/),     'spec/truffle/tags/language/'],
                         [%r(^.*/core/),         'spec/truffle/tags/core/'],
-                        [%r(^.*/rubysl/),       'spec/truffle/tags/rubysl/'],
+                        [%r(^.*/library/),      'spec/truffle/tags/library/'],
                         [/_spec.rb$/,           '_tags.txt']
                       ]
 
@@ -123,6 +123,6 @@ class MSpecScript
   MSpec.disable_feature :fork
   MSpec.enable_feature :generator
 
-  set :files, get(:language) + get(:core) + get(:rubysl)
+  set :files, get(:language) + get(:core) + get(:library)
 
 end

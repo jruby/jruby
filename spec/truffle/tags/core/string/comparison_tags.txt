@@ -1,4 +1,0 @@
-fails:String#<=> with String ignores encoding difference
-fails:String#<=> with String compares the indices of the encodings when the strings have identical non-ASCII-compatible bytes
-fails:String#<=> uses the result of calling #<=> on its argument when #<=> is defined but #to_str is not
-fails:String#<=> returns nil if argument also uses an inverse comparison for <=>

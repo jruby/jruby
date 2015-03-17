@@ -237,13 +237,13 @@ project 'JRuby Integration Tests' do
 
   end
 
-  profile 'truffle-specs-rubysl' do
+  profile 'truffle-specs-library' do
 
     plugin :antrun do
       execute_goals( 'run',
                      :id => 'rake',
                      :phase => 'test',
-                     :configuration => [ xml( truffle_spec_config(:rubysl, false) ) ] )
+                     :configuration => [ xml( truffle_spec_config(:library, false) ) ] )
     end
 
   end
@@ -292,7 +292,7 @@ project 'JRuby Integration Tests' do
 
   end
 
-  profile 'truffle-specs-rubysl-report' do
+  profile 'truffle-specs-library-report' do
 
     plugin :antrun do
       dependency 'org.apache.ant', 'ant-junit', '${ant.version}'
@@ -300,7 +300,7 @@ project 'JRuby Integration Tests' do
       execute_goals( 'run',
                      :id => 'rake',
                      :phase => 'test',
-                     :configuration => [ xml( truffle_spec_config(:rubysl, true) ) ] )
+                     :configuration => [ xml( truffle_spec_config(:library, true) ) ] )
 
       execute_goals( 'run',
                      :id => 'junit-report-generation',

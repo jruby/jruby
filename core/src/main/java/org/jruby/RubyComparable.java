@@ -69,7 +69,19 @@ public class RubyComparable {
      */
     public static int cmpint(ThreadContext context, IRubyObject val, IRubyObject a, IRubyObject b) {
         if (val.isNil()) cmperr(a, b);
-        if (val instanceof RubyFixnum) return RubyNumeric.fix2int((RubyFixnum) val);
+        if (val instanceof RubyFixnum) {
+            final int asInt = RubyNumeric.fix2int((RubyFixnum) val);
+
+            if (asInt > 0) {
+                return 1;
+            }
+
+            if (asInt < 0) {
+                return -1;
+            }
+
+            return 0;
+        }
         if (val instanceof RubyBignum) return ((RubyBignum) val).getValue().signum() == -1 ? -1 : 1;
 
         RubyFixnum zero = RubyFixnum.zero(context.runtime);

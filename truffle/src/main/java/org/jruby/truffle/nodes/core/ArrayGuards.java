@@ -10,6 +10,7 @@
 package org.jruby.truffle.nodes.core;
 
 import org.jruby.truffle.runtime.core.RubyArray;
+import org.jruby.truffle.runtime.core.RubyRange;
 
 public class ArrayGuards {
 
@@ -67,6 +68,10 @@ public class ArrayGuards {
 
     public static boolean areBothIntegerFixnum(RubyArray a, RubyArray b) {
         return a.getStore() instanceof int[] && b.getStore() instanceof int[];
+    }
+
+    public static boolean areBothIntegerFixnum(RubyArray array, RubyRange.IntegerFixnumRange range, RubyArray other) {
+        return array.getStore() instanceof int[] && other.getStore() instanceof int[];
     }
 
     public static boolean areBothLongFixnum(RubyArray a, RubyArray b) {

@@ -39,7 +39,7 @@ env:
     - PHASE='-Prake -Dtask=spec:profiler'
     - PHASE='-Ptruffle-specs-language'
     - PHASE='-Ptruffle-specs-core'
-    - PHASE='-Ptruffle-specs-rubysl'
+    - PHASE='-Ptruffle-specs-library'
 
 matrix:
   include:

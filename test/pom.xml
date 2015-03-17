@@ -749,7 +749,7 @@
       </build>
     </profile>
     <profile>
-      <id>truffle-specs-rubysl</id>
+      <id>truffle-specs-library</id>
       <build>
         <plugins>
           <plugin>
@@ -783,7 +783,7 @@
                       <arg value="spec/truffle/truffle.mspec" />
                       <arg value="--excl-tag" />
                       <arg value="fails" />
-                      <arg value=":rubysl" />
+                      <arg value=":library" />
                     </exec>
                   </target>
                 </configuration>
@@ -928,7 +928,7 @@
       </build>
     </profile>
     <profile>
-      <id>truffle-specs-rubysl-report</id>
+      <id>truffle-specs-library-report</id>
       <build>
         <plugins>
           <plugin>
@@ -964,7 +964,7 @@
                       <arg value="spec/truffle/truffle.mspec" />
                       <arg value="--excl-tag" />
                       <arg value="fails" />
-                      <arg value=":rubysl" />
+                      <arg value=":library" />
                     </exec>
                   </target>
                 </configuration>

@@ -213,5 +213,6 @@ class IO
   APPEND = 8
   NONBLOCK = 4
   SYNC = 128
+  SEEK_SET = 0
 
 end
