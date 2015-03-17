@@ -118,8 +118,8 @@ public class JavaUtil {
         CAN_SET_ACCESSIBLE = canSetAccessible;
     }
 
-    public static IRubyObject[] convertJavaArrayToRuby(Ruby runtime, Object[] objects) {
-        if (objects == null) return IRubyObject.NULL_ARRAY;
+    public static IRubyObject[] convertJavaArrayToRuby(final Ruby runtime, final Object[] objects) {
+        if ( objects == null ) return IRubyObject.NULL_ARRAY;
 
         IRubyObject[] rubyObjects = new IRubyObject[objects.length];
         for (int i = 0; i < objects.length; i++) {
@@ -128,30 +128,27 @@ public class JavaUtil {
         return rubyObjects;
     }
 
-    public static RubyArray convertJavaArrayToRubyWithNesting(ThreadContext context, Object array) {
-        int length = Array.getLength(array);
-        RubyArray outer = context.runtime.newArray(length);
-        for (int i = 0; i < length; i++) {
-            Object element = Array.get(array, i);
-            if (element instanceof ArrayJavaProxy) {
-                outer.append(convertJavaArrayToRubyWithNesting(context, ((ArrayJavaProxy)element).getObject()));
-            } else if (element != null && element.getClass().isArray()) {
-                outer.append(convertJavaArrayToRubyWithNesting(context, element));
-            } else {
-                outer.append(JavaUtil.convertJavaToUsableRubyObject(context.runtime, element));
+    public static RubyArray convertJavaArrayToRubyWithNesting(final ThreadContext context, final Object array) {
+        final int length = Array.getLength(array);
+        final RubyArray outer = context.runtime.newArray(length);
+        for ( int i = 0; i < length; i++ ) {
+            final Object element = Array.get(array, i);
+            if ( element instanceof ArrayJavaProxy ) {
+                outer.append( convertJavaArrayToRubyWithNesting(context, ((ArrayJavaProxy) element).getObject()) );
+            }
+            else if ( element != null && element.getClass().isArray() ) {
+                outer.append( convertJavaArrayToRubyWithNesting(context, element) );
+            }
+            else {
+                outer.append( convertJavaToUsableRubyObject(context.runtime, element) );
             }
         }
         return outer;
     }
 
     public static JavaConverter getJavaConverter(Class clazz) {
-        JavaConverter converter = JAVA_CONVERTERS.get(clazz);
-
-        if (converter == null) {
-            converter = JAVA_DEFAULT_CONVERTER;
-        }
-
-        return converter;
+        final JavaConverter converter = JAVA_CONVERTERS.get(clazz);
+        return converter == null ? JAVA_DEFAULT_CONVERTER : converter;
     }
 
     public static IRubyObject convertJavaToRuby(Ruby runtime, Object object) {
@@ -221,18 +218,18 @@ public class JavaUtil {
         return converter.get(runtime, array, i);
     }
 
-    public static Class<?> primitiveToWrapper(Class<?> type) {
+    public static Class<?> primitiveToWrapper(final Class<?> type) {
         if (type.isPrimitive()) {
             return CodegenUtils.getBoxType(type);
         }
         return type;
     }
 
+    @SuppressWarnings("unchecked")
     public static boolean isDuckTypeConvertable(Class providedArgumentType, Class parameterType) {
-        return
-                parameterType.isInterface() &&
-                !parameterType.isAssignableFrom(providedArgumentType) &&
-                RubyObject.class.isAssignableFrom(providedArgumentType);
+        return parameterType.isInterface() &&
+                ! parameterType.isAssignableFrom(providedArgumentType) &&
+                    RubyObject.class.isAssignableFrom(providedArgumentType);
     }
 
     public static Object convertProcToInterface(ThreadContext context, RubyObject rubyObject, Class target) {
@@ -240,14 +237,15 @@ public class JavaUtil {
     }
 
     public static Object convertProcToInterface(ThreadContext context, RubyBasicObject rubyObject, Class target) {
-        Ruby runtime = context.runtime;
-        RubyModule javaInterfaceModule = (RubyModule)Java.get_interface_module(runtime, JavaClass.get(runtime, target));
-        if (!((RubyModule) javaInterfaceModule).isInstance(rubyObject)) {
-            javaInterfaceModule.callMethod(context, "extend_object", rubyObject);
-            javaInterfaceModule.callMethod(context, "extended", rubyObject);
+        final Ruby runtime = context.runtime;
+
+        final RubyModule ifaceModule = Java.getInterfaceModule(runtime, JavaClass.get(runtime, target));
+        if ( ! ifaceModule.isInstance(rubyObject) ) {
+            ifaceModule.callMethod(context, "extend_object", rubyObject);
+            ifaceModule.callMethod(context, "extended", rubyObject);
         }
 
-        if (rubyObject instanceof RubyProc) {
+        if ( rubyObject instanceof RubyProc ) {
             // Proc implementing an interface, pull in the catch-all code that lets the proc get invoked
             // no matter what method is called on the interface
             RubyClass singletonClass = rubyObject.getSingletonClass();
@@ -276,39 +274,38 @@ public class JavaUtil {
                 }
             });
         }
-        JavaObject jo = (JavaObject) Helpers.invoke(context, rubyObject, "__jcreate_meta!");
-        return jo.getValue();
+        JavaObject javaObject = (JavaObject) Helpers.invoke(context, rubyObject, "__jcreate_meta!");
+        return javaObject.getValue();
     }
 
     public static NumericConverter getNumericConverter(Class target) {
-        NumericConverter converter = NUMERIC_CONVERTERS.get(target);
-        if (converter == null) {
-            return NUMERIC_TO_OTHER;
-        }
-        return converter;
+        final NumericConverter converter = NUMERIC_CONVERTERS.get(target);
+        return converter == null ? NUMERIC_TO_OTHER : converter;
     }
 
-    public static boolean isJavaObject(IRubyObject candidate) {
-        return candidate instanceof JavaProxy || candidate.dataGetStruct() instanceof JavaObject;
+    public static boolean isJavaObject(final IRubyObject object) {
+        return object instanceof JavaProxy || object.dataGetStruct() instanceof JavaObject;
     }
 
-    public static Object unwrapJavaObject(IRubyObject object) {
-        if (object instanceof JavaProxy) {
-            return ((JavaProxy)object).getObject();
+    public static Object unwrapJavaObject(final IRubyObject object) {
+        if ( object instanceof JavaProxy ) {
+            return ((JavaProxy) object).getObject();
         }
-        return ((JavaObject)object.dataGetStruct()).getValue();
+        return ((JavaObject) object.dataGetStruct()).getValue();
     }
 
-    public static Object unwrapJavaValue(Ruby runtime, IRubyObject obj, String errorMessage) {
-        if (obj instanceof JavaProxy) {
-            return ((JavaProxy)obj).getObject();
-        } else if (obj instanceof JavaObject) {
-            return ((JavaObject)obj).getValue();
-        } else if(obj.dataGetStruct() != null && (obj.dataGetStruct() instanceof IRubyObject)) {
-            return unwrapJavaValue(runtime, ((IRubyObject)obj.dataGetStruct()), errorMessage);
-        } else {
-            throw runtime.newTypeError(errorMessage);
+    public static Object unwrapJavaValue(final Ruby runtime, final IRubyObject object, final String errorMessage) {
+        if ( object instanceof JavaProxy ) {
+            return ((JavaProxy) object).getObject();
         }
+        if ( object instanceof JavaObject ) {
+            return ((JavaObject) object).getValue();
+        }
+        final Object unwrap = object.dataGetStruct();
+        if ( unwrap != null && unwrap instanceof IRubyObject ) {
+            return unwrapJavaValue(runtime, (IRubyObject) unwrap, errorMessage);
+        }
+        throw runtime.newTypeError(errorMessage);
     }
 
     /**
@@ -419,21 +416,24 @@ public class JavaUtil {
      * @param methods
      * @return method names
      */
-    public static Set<String> getRubyNamesForJavaName(String javaName, List<Method> methods) {
-        final String javaPropertyName = JavaUtil.getJavaPropertyName(javaName);
-        final String rubyName = JavaUtil.getRubyCasedName(javaName);
-        Set<String> nameSet = new LinkedHashSet<String>();
+    public static Set<String> getRubyNamesForJavaName(final String javaName, final List<Method> methods) {
+        final String javaPropertyName = getJavaPropertyName(javaName);
+        final String rubyName = getRubyCasedName(javaName);
+        final Set<String> nameSet = new LinkedHashSet<String>();
         nameSet.add(javaName);
         nameSet.add(rubyName);
 
         for ( final Method method : methods ) {
-            final Class<?>[] argTypes = method.getParameterTypes();
             final Class<?> resultType = method.getReturnType();
-            final int argCount = argTypes.length;
 
             // Add property name aliases
             if (javaPropertyName != null) {
-                if (rubyName.startsWith("get_")) {
+                final Class<?>[] argTypes = method.getParameterTypes();
+                final int argCount = argTypes.length;
+                // string starts-with "get_" or "set_" micro-optimization :
+                final boolean maybeGetOrSet_ = rubyName.length() > 3 && rubyName.charAt(3) == '_';
+
+                if (maybeGetOrSet_ && rubyName.startsWith("get")) { // rubyName.startsWith("get_")
                     final String rubyPropertyName = rubyName.substring(4);
                     if (argCount == 0 ||                                // getFoo      => foo
                         argCount == 1 && argTypes[0] == int.class) {    // getFoo(int) => foo(int)
@@ -446,7 +446,7 @@ public class JavaUtil {
                         }
                     }
                 }
-                else if (rubyName.startsWith("set_")) {
+                else if (maybeGetOrSet_ && rubyName.startsWith("set")) { // rubyName.startsWith("set_")
                     final String rubyPropertyName = rubyName.substring(4);
                     if (argCount == 1 && resultType == void.class) {    // setFoo(Foo) => foo=(Foo)
                         nameSet.add(javaPropertyName + '=');
