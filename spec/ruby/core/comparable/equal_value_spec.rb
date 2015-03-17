@@ -42,6 +42,18 @@ describe "Comparable#==" do
     (@a == @b).should be_false
   end
 
+  context 'when given objects that extend Comparable, but do not define #<=>' do
+    before(:all) do
+      (@missing_comp_a = Object.new).extend(Comparable)
+      (@missing_comp_b = Object.new).extend(Comparable)
+    end
+
+    it  'raises a SystemStackError for a == b, and b == a' do
+      ->{ @missing_comp_a == @missing_comp_b }.should raise_error(SystemStackError)
+      ->{ @missing_comp_b == @missing_comp_a }.should raise_error(SystemStackError)
+    end
+  end
+
   describe "when calling #<=> on self raises an Exception" do
     before(:all) do
       @raise_standard_error = @a.dup
