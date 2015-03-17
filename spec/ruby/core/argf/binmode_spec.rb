@@ -5,6 +5,7 @@ describe "ARGF.binmode" do
     @file1    = fixture __FILE__, "file1.txt"
     @file2    = fixture __FILE__, "file2.txt"
     @bin_file = fixture __FILE__, "bin_file.txt"
+    argv []
   end
 
   after :each do
@@ -12,9 +13,7 @@ describe "ARGF.binmode" do
   end
 
   it "returns self" do
-    argv [@bin_file] do
-      ARGF.binmode.should equal(ARGF)
-    end
+    ruby_exe("puts(ARGF.binmode == ARGF)", args: @bin_file).chomp.should == 'true'
   end
 
   platform_is :windows do
@@ -40,19 +39,15 @@ describe "ARGF.binmode" do
   platform_is_not :windows do
     # This does nothing on Unix but it should not raise any errors.
     it "does not raise an error" do
-      argv [@bin_file] do
-        lambda { ARGF.binmode }.should_not raise_error
-      end
+      ruby_exe("ARGF.binmode", args: @bin_file)
+      $?.should  be_kind_of(Process::Status)
+      $?.to_i.should == 0
     end
   end
 
   it "sets the file's encoding to ASCII-8BIT" do
-    argv [@bin_file, @file1] do
-      ARGF.binmode
-      ARGF.binmode?.should be_true
-      ARGF.gets.encoding.should == Encoding::ASCII_8BIT
-      ARGF.skip
-      ARGF.read.encoding.should == Encoding::ASCII_8BIT
-    end
+    script = fixture __FILE__, "encoding.rb"
+    output = "true\n#{Encoding::ASCII_8BIT}\n#{Encoding::ASCII_8BIT}\n"
+    ruby_exe(script, args: [@bin_file, @file1]).should == output
   end
 end

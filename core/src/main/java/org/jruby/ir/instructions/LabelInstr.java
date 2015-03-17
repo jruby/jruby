@@ -4,6 +4,7 @@ import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Operation;
 import org.jruby.ir.operands.Label;
 import org.jruby.ir.operands.Operand;
+import org.jruby.ir.persistence.IRReaderDecoder;
 import org.jruby.ir.persistence.IRWriterEncoder;
 import org.jruby.ir.transformations.inlining.CloneInfo;
 
@@ -25,6 +26,10 @@ public class LabelInstr extends Instr implements FixedArityInstr {
     public void encode(IRWriterEncoder e) {
         super.encode(e);
         e.encode(getLabel());
+    }
+
+    public static LabelInstr decode(IRReaderDecoder d) {
+        return new LabelInstr(d.decodeLabel());
     }
 
     @Override

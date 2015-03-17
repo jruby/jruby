@@ -104,7 +104,7 @@ describe ContextState, "#it" do
   it "calls registered :add actions" do
     ExampleState.should_receive(:new).with(@state, "it", @proc).and_return(@ex)
 
-    add_action = mock("add")
+    add_action = double("add")
     add_action.should_receive(:add).with(@ex).and_return { ScratchPad.record :add }
     MSpec.register :add, add_action
 
@@ -251,9 +251,9 @@ end
 describe ContextState, "#parent=" do
   before :each do
     @state = ContextState.new ""
-    @parent = mock("describe")
-    @parent.stub!(:parent).and_return(nil)
-    @parent.stub!(:child)
+    @parent = double("describe")
+    @parent.stub(:parent).and_return(nil)
+    @parent.stub(:child)
   end
 
   it "does not set self as a child of parent if shared" do
@@ -282,9 +282,9 @@ end
 describe ContextState, "#parent" do
   before :each do
     @state = ContextState.new ""
-    @parent = mock("describe")
-    @parent.stub!(:parent).and_return(nil)
-    @parent.stub!(:child)
+    @parent = double("describe")
+    @parent.stub(:parent).and_return(nil)
+    @parent.stub(:child)
   end
 
   it "returns nil if parent has not been set" do
@@ -301,9 +301,9 @@ describe ContextState, "#parents" do
   before :each do
     @first = ContextState.new ""
     @second = ContextState.new ""
-    @parent = mock("describe")
-    @parent.stub!(:parent).and_return(nil)
-    @parent.stub!(:child)
+    @parent = double("describe")
+    @parent.stub(:parent).and_return(nil)
+    @parent.stub(:child)
   end
 
   it "returns a list of all enclosing ContextState instances" do
@@ -317,9 +317,9 @@ describe ContextState, "#child" do
   before :each do
     @first = ContextState.new ""
     @second = ContextState.new ""
-    @parent = mock("describe")
-    @parent.stub!(:parent).and_return(nil)
-    @parent.stub!(:child)
+    @parent = double("describe")
+    @parent.stub(:parent).and_return(nil)
+    @parent.stub(:child)
   end
 
   it "adds the ContextState to the list of contained ContextStates" do
@@ -369,7 +369,7 @@ describe ContextState, "#process" do
   before :each do
     MSpec.store :before, []
     MSpec.store :after, []
-    MSpec.stub!(:register_current)
+    MSpec.stub(:register_current)
 
     @state = ContextState.new ""
     @state.describe { }
@@ -405,7 +405,7 @@ describe ContextState, "#process" do
   it "does not call the #it block if #filtered? returns true" do
     @state.it("one", &@a)
     @state.it("two", &@b)
-    @state.examples.first.stub!(:filtered?).and_return(true)
+    @state.examples.first.stub(:filtered?).and_return(true)
     @state.process
     ScratchPad.recorded.should == [:b]
   end
@@ -510,7 +510,7 @@ describe ContextState, "#process" do
     @state = ContextState.new ""
     @state.describe { }
 
-    action = mock("action")
+    action = double("action")
     def action.exception(exc)
       ScratchPad.record :exception if exc.exception.is_a? SpecExpectationNotFoundError
     end
@@ -550,7 +550,7 @@ describe ContextState, "#process" do
     @state = ContextState.new ""
     @state.describe { }
 
-    example = mock("example")
+    example = double("example")
     def example.example(state, spec)
       ScratchPad << state << spec
     end
@@ -594,7 +594,7 @@ describe ContextState, "#process" do
   end
 
   it "calls registered :before actions with the current ExampleState instance" do
-    before = mock("before")
+    before = double("before")
     before.should_receive(:before).and_return {
       ScratchPad.record :before
       @spec_state = @state.state
@@ -606,7 +606,7 @@ describe ContextState, "#process" do
   end
 
   it "calls registered :after actions with the current ExampleState instance" do
-    after = mock("after")
+    after = double("after")
     after.should_receive(:after).and_return {
       ScratchPad.record :after
       @spec_state = @state.state
@@ -634,7 +634,7 @@ describe ContextState, "#process" do
   end
 
   it "calls registered :enter actions with the current #describe string" do
-    enter = mock("enter")
+    enter = double("enter")
     enter.should_receive(:enter).with("C#m").and_return { ScratchPad.record :enter }
     MSpec.register :enter, enter
     @state.process
@@ -642,7 +642,7 @@ describe ContextState, "#process" do
   end
 
   it "calls registered :leave actions" do
-    leave = mock("leave")
+    leave = double("leave")
     leave.should_receive(:leave).and_return { ScratchPad.record :leave }
     MSpec.register :leave, leave
     @state.process
@@ -736,11 +736,11 @@ describe ContextState, "#process when an exception is raised in before(:each)" d
     ScratchPad.recorded.should == []
   end
 
-  it "does not call after(:each)" do
+  it "does call after(:each)" do
     @state.after(:each, &@a)
     @state.it("") { }
     @state.process
-    ScratchPad.recorded.should == []
+    ScratchPad.recorded.should == [:a]
   end
 
   it "does not call Mock.verify_count" do
@@ -775,7 +775,7 @@ describe ContextState, "#process in pretend mode" do
   end
 
   it "calls registered :before actions with the current ExampleState instance" do
-    before = mock("before")
+    before = double("before")
     before.should_receive(:before).and_return {
       ScratchPad.record :before
       @spec_state = @state.state
@@ -787,7 +787,7 @@ describe ContextState, "#process in pretend mode" do
   end
 
   it "calls registered :after actions with the current ExampleState instance" do
-    after = mock("after")
+    after = double("after")
     after.should_receive(:after).and_return {
       ScratchPad.record :after
       @spec_state = @state.state
@@ -898,7 +898,7 @@ describe ContextState, "#process in pretend mode" do
   end
 
   it "calls registered :enter actions with the current #describe string" do
-    enter = mock("enter")
+    enter = double("enter")
     enter.should_receive(:enter).and_return { ScratchPad.record :enter }
     MSpec.register :enter, enter
     @state.process
@@ -906,7 +906,7 @@ describe ContextState, "#process in pretend mode" do
   end
 
   it "calls registered :leave actions" do
-    leave = mock("leave")
+    leave = double("leave")
     leave.should_receive(:leave).and_return { ScratchPad.record :leave }
     MSpec.register :leave, leave
     @state.process
@@ -918,7 +918,7 @@ describe ContextState, "#it_should_behave_like" do
   before :each do
     @shared_desc = :shared_context
     @shared = ContextState.new(@shared_desc, :shared => true)
-    MSpec.stub!(:retrieve_shared).and_return(@shared)
+    MSpec.stub(:retrieve_shared).and_return(@shared)
 
     @state = ContextState.new "Top level"
     @a = lambda {|*| }
@@ -938,7 +938,7 @@ describe ContextState, "#it_should_behave_like" do
       @shared.children << @nested
 
       @nested_dup = @nested.dup
-      @nested.stub!(:dup).and_return(@nested_dup)
+      @nested.stub(:dup).and_return(@nested_dup)
     end
 
     it "duplicates the nested ContextState" do
@@ -972,7 +972,7 @@ describe ContextState, "#it_should_behave_like" do
   it "adds duped examples from the shared ContextState" do
     @shared.it "some method", &@a
     ex_dup = @shared.examples.first.dup
-    @shared.examples.first.stub!(:dup).and_return(ex_dup)
+    @shared.examples.first.stub(:dup).and_return(ex_dup)
 
     @state.it_should_behave_like @shared_desc
     @state.examples.should == [ex_dup]
@@ -1022,20 +1022,20 @@ describe ContextState, "#filter_examples" do
   end
 
   it "removes examples that are filtered" do
-    @state.examples.first.stub!(:filtered?).and_return(true)
+    @state.examples.first.stub(:filtered?).and_return(true)
     @state.examples.size.should == 2
     @state.filter_examples
     @state.examples.size.should == 1
   end
 
   it "returns true if there are remaining examples to evaluate" do
-    @state.examples.first.stub!(:filtered?).and_return(true)
+    @state.examples.first.stub(:filtered?).and_return(true)
     @state.filter_examples.should be_true
   end
 
   it "returns false if there are no remaining examples to evaluate" do
-    @state.examples.first.stub!(:filtered?).and_return(true)
-    @state.examples.last.stub!(:filtered?).and_return(true)
+    @state.examples.first.stub(:filtered?).and_return(true)
+    @state.examples.last.stub(:filtered?).and_return(true)
     @state.filter_examples.should be_false
   end
 end

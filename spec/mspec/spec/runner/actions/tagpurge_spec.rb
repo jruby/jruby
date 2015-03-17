@@ -36,8 +36,8 @@ end
 
 describe TagPurgeAction, "#after" do
   before :each do
-    @state = mock("ExampleState")
-    @state.stub!(:description).and_return("str")
+    @state = double("ExampleState")
+    @state.stub(:description).and_return("str")
 
     @action = TagPurgeAction.new
   end
@@ -64,11 +64,11 @@ describe TagPurgeAction, "#unload" do
     @t2 = SpecTag.new "unstable:I'm unstable"
     @t3 = SpecTag.new "fails:I'm unstable"
 
-    MSpec.stub!(:read_tags).and_return([@t1, @t2, @t3])
-    MSpec.stub!(:write_tags)
+    MSpec.stub(:read_tags).and_return([@t1, @t2, @t3])
+    MSpec.stub(:write_tags)
 
-    @state = mock("ExampleState")
-    @state.stub!(:description).and_return("I'm unstable")
+    @state = double("ExampleState")
+    @state.stub(:description).and_return("I'm unstable")
 
     @action = TagPurgeAction.new
     @action.load
@@ -107,10 +107,10 @@ describe TagPurgeAction, "#unload" do
     @stdout = $stdout
     $stdout = IOStub.new
 
-    MSpec.stub!(:read_tags).and_return([])
+    MSpec.stub(:read_tags).and_return([])
 
-    @state = mock("ExampleState")
-    @state.stub!(:description).and_return("I'm unstable")
+    @state = double("ExampleState")
+    @state.stub(:description).and_return("I'm unstable")
 
     @action = TagPurgeAction.new
     @action.load
@@ -131,7 +131,7 @@ end
 
 describe TagPurgeAction, "#register" do
   before :each do
-    MSpec.stub!(:register)
+    MSpec.stub(:register)
     @action = TagPurgeAction.new
   end
 
@@ -143,7 +143,7 @@ end
 
 describe TagPurgeAction, "#unregister" do
   before :each do
-    MSpec.stub!(:unregister)
+    MSpec.stub(:unregister)
     @action = TagPurgeAction.new
   end
 

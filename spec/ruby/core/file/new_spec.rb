@@ -17,13 +17,13 @@ describe "File.new" do
   it "returns a new File with mode string" do
     @fh = File.new(@file, 'w')
     @fh.should be_kind_of(File)
-    File.exists?(@file).should == true
+    File.exist?(@file).should == true
   end
 
   it "returns a new File with mode num" do
     @fh = File.new(@file, @flags)
     @fh.should be_kind_of(File)
-    File.exists?(@file).should == true
+    File.exist?(@file).should == true
   end
 
   it "returns a new File with modus num and permissions" do
@@ -34,7 +34,7 @@ describe "File.new" do
     platform_is_not :windows do
       File.stat(@file).mode.to_s(8).should == "100744"
     end
-    File.exists?(@file).should == true
+    File.exist?(@file).should == true
   end
 
   it "creates the file and returns writable descriptor when called with 'w' mode and r-o permissions" do
@@ -72,7 +72,7 @@ describe "File.new" do
       @fh_orig = File.new(@file)
       @fh = File.new(@fh_orig.fileno)
       @fh.should be_kind_of(File)
-      File.exists?(@file).should == true
+      File.exist?(@file).should == true
     ensure
       @fh.close rescue nil if @fh
       @fh = nil
@@ -84,7 +84,7 @@ describe "File.new" do
   it "creates a new file when use File::EXCL mode" do
     @fh = File.new(@file, File::EXCL)
     @fh.should be_kind_of(File)
-    File.exists?(@file).should == true
+    File.exist?(@file).should == true
   end
 
   it "raises an Errorno::EEXIST if the file exists when create a new file with File::CREAT|File::EXCL" do
@@ -94,48 +94,48 @@ describe "File.new" do
   it "creates a new file when use File::WRONLY|File::APPEND mode" do
     @fh = File.new(@file, File::WRONLY|File::APPEND)
     @fh.should be_kind_of(File)
-    File.exists?(@file).should == true
+    File.exist?(@file).should == true
   end
 
   ruby_bug "[ruby-dev:40397]", "1.8.8" do
     it "returns a new File when use File::APPEND mode" do
       @fh = File.new(@file, File::APPEND)
       @fh.should be_kind_of(File)
-      File.exists?(@file).should == true
+      File.exist?(@file).should == true
     end
 
     it "returns a new File when use File::RDONLY|File::APPEND mode" do
       @fh = File.new(@file, File::RDONLY|File::APPEND)
       @fh.should be_kind_of(File)
-      File.exists?(@file).should == true
+      File.exist?(@file).should == true
     end
   end
 
   it "returns a new File when use File::RDONLY|File::WRONLY mode" do
     @fh = File.new(@file, File::RDONLY|File::WRONLY)
     @fh.should be_kind_of(File)
-    File.exists?(@file).should == true
+    File.exist?(@file).should == true
   end
 
 
   it "creates a new file when use File::WRONLY|File::TRUNC mode" do
     @fh = File.new(@file, File::WRONLY|File::TRUNC)
     @fh.should be_kind_of(File)
-    File.exists?(@file).should == true
+    File.exist?(@file).should == true
   end
 
   it "coerces filename using to_str" do
     name = mock("file")
     name.should_receive(:to_str).and_return(@file)
     @fh = File.new(name, "w")
-    File.exists?(@file).should == true
+    File.exist?(@file).should == true
   end
 
   it "coerces filename using #to_path" do
     name = mock("file")
     name.should_receive(:to_path).and_return(@file)
     @fh = File.new(name, "w")
-    File.exists?(@file).should == true
+    File.exist?(@file).should == true
   end
 
   it "raises a TypeError if the first parameter can't be coerced to a string" do

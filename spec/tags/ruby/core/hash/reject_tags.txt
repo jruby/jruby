@@ -1,0 +1,1 @@
+fails:Hash#reject taints the resulting hash

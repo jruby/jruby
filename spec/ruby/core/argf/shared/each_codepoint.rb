@@ -13,11 +13,15 @@ describe :argf_each_codepoint, :shared => true do
   end
 
   it "is a public method" do
-    ARGF.public_methods(false).should include(@method)
+    argv @filenames do
+      ARGF.public_methods(false).should include(@method)
+    end
   end
 
   it "does not require arguments" do
-    ARGF.method(@method).arity.should == 0
+    argv @filenames do
+      ARGF.method(@method).arity.should == 0
+    end
   end
 
   it "returns self when passed a block" do

@@ -67,28 +67,30 @@ describe "Module#const_defined?" do
     Object.const_defined?(:CS_CONST10).should be_true
   end
 
-  it "returns true for toplevel constant when the name begins with '::'" do
-    ConstantSpecs.const_defined?("::Array").should be_true
-  end
+  ruby_version_is "2.1" do
+    it "returns true for toplevel constant when the name begins with '::'" do
+      ConstantSpecs.const_defined?("::Array").should be_true
+    end
 
-  it "returns true when passed a scoped constant name" do
-    ConstantSpecs.const_defined?("ClassC::CS_CONST1").should be_true
-  end
+    it "returns true when passed a scoped constant name" do
+      ConstantSpecs.const_defined?("ClassC::CS_CONST1").should be_true
+    end
 
-  it "returns true when passed a scoped constant name for a constant in the inheritance hierarchy and the inherited flag is default" do
-    ConstantSpecs::ClassD.const_defined?("ClassE::CS_CONST2").should be_true
-  end
+    it "returns true when passed a scoped constant name for a constant in the inheritance hierarchy and the inherited flag is default" do
+      ConstantSpecs::ClassD.const_defined?("ClassE::CS_CONST2").should be_true
+    end
 
-  it "returns true when passed a scoped constant name for a constant in the inheritance hierarchy and the inherited flag is true" do
-    ConstantSpecs::ClassD.const_defined?("ClassE::CS_CONST2", true).should be_true
-  end
+    it "returns true when passed a scoped constant name for a constant in the inheritance hierarchy and the inherited flag is true" do
+      ConstantSpecs::ClassD.const_defined?("ClassE::CS_CONST2", true).should be_true
+    end
 
-  it "returns false when passed a scoped constant name for a constant in the inheritance hierarchy and the inherited flag is false" do
-    ConstantSpecs::ClassD.const_defined?("ClassE::CS_CONST2", false).should be_false
-  end
+    it "returns false when passed a scoped constant name for a constant in the inheritance hierarchy and the inherited flag is false" do
+      ConstantSpecs::ClassD.const_defined?("ClassE::CS_CONST2", false).should be_false
+    end
 
-  it "returns false when the name begins with '::' and the toplevel constant does not exist" do
-    ConstantSpecs.const_defined?("::Name").should be_false
+    it "returns false when the name begins with '::' and the toplevel constant does not exist" do
+      ConstantSpecs.const_defined?("::Name").should be_false
+    end
   end
 
   it "raises a NameError if the name does not start with a capital letter" do
@@ -105,6 +107,23 @@ describe "Module#const_defined?" do
 
   it "raises a NameError if the name starts with '!'" do
     lambda { ConstantSpecs.const_defined? "!Name" }.should raise_error(NameError)
+  end
+
+  ruby_version_is ""..."2.1" do
+    it "raises a NameError for the nested name" do
+      lambda { ConstantSpecs.const_defined? "::Name" }.should raise_error(NameError)
+      lambda { ConstantSpecs.const_defined? "A::Name" }.should raise_error(NameError)
+    end
+  end
+
+  ruby_version_is "2.1" do
+    it "returns true or false for the nested name" do
+      ConstantSpecs.const_defined?("A::Name").should == false
+      ConstantSpecs.const_defined?("::Name").should == false
+      ConstantSpecs.const_defined?("::Object").should == true
+      ConstantSpecs.const_defined?("ClassA::CS_CONST10").should == true
+      ConstantSpecs.const_defined?("ClassA::CS_CONST10_").should == false
+    end
   end
 
   it "raises a NameError if the name contains non-alphabetic characters except '_'" do

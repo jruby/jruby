@@ -6,16 +6,16 @@ import org.jruby.ir.operands.Operand;
 import org.jruby.ir.persistence.IRWriterEncoder;
 
 public abstract class TwoOperandBranchInstr extends BranchInstr {
-    public TwoOperandBranchInstr(Operation op, Operand arg1, Operand arg2, Label jumpTarget) {
+    public TwoOperandBranchInstr(Operation op, Label jumpTarget, Operand arg1, Operand arg2) {
         super(op, new Operand[] {jumpTarget, arg1, arg2});
     }
 
     @Override
     public void encode(IRWriterEncoder e) {
         super.encode(e);
+        e.encode(getJumpTarget());
         e.encode(getArg1());
         e.encode(getArg2());
-        e.encode(getJumpTarget());
     }
 
     public Operand getArg1() {

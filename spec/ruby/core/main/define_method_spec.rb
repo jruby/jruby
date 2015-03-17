@@ -22,7 +22,9 @@ describe "main#define_method" do
     Object.should have_method :boom
   end
 
-  it 'returns the method name as symbol' do
-    eval(@code, TOPLEVEL_BINDING).should equal :boom
+  ruby_version_is "2.1" do
+    it 'returns the method name as symbol' do
+      eval(@code, TOPLEVEL_BINDING).should equal :boom
+    end
   end
 end

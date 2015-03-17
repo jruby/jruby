@@ -3,6 +3,7 @@ package org.jruby.ir.instructions;
 import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Operation;
 import org.jruby.ir.operands.Operand;
+import org.jruby.ir.persistence.IRReaderDecoder;
 import org.jruby.ir.persistence.IRWriterEncoder;
 import org.jruby.ir.transformations.inlining.CloneInfo;
 import org.jruby.parser.StaticScope;
@@ -33,6 +34,10 @@ public class GVarAliasInstr extends Instr implements FixedArityInstr {
         super.encode(e);
         e.encode(getNewName());
         e.encode(getOldName());
+    }
+
+    public static GVarAliasInstr decode(IRReaderDecoder d) {
+        return new GVarAliasInstr(d.decodeOperand(), d.decodeOperand());
     }
 
     @Override

@@ -1,11 +1,11 @@
 describe :file_sticky, :shared => true do
   before :each do
     @dir = tmp('sticky_dir')
-    Dir.rmdir(@dir) if File.exists?(@dir)
+    Dir.rmdir(@dir) if File.exist?(@dir)
   end
 
   after :each do
-    Dir.rmdir(@dir) if File.exists?(@dir)
+    Dir.rmdir(@dir) if File.exist?(@dir)
   end
 
   platform_is_not :windows, :darwin, :freebsd, :netbsd, :openbsd, :solaris do

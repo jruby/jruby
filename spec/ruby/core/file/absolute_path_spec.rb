@@ -12,7 +12,7 @@ describe "File.absolute_path" do
   it "resolves paths relative to the current working directory" do
     path = File.dirname(@abs)
     Dir.chdir(path) do
-      File.absolute_path('hello.txt').should == File.join(path, 'hello.txt')
+      File.absolute_path('hello.txt').should == File.join(Dir.pwd, 'hello.txt')
     end
   end
 
@@ -23,7 +23,7 @@ describe "File.absolute_path" do
   it "does not expand '~user' to a home directory." do
     path = File.dirname(@abs)
     Dir.chdir(path) do
-      File.absolute_path('~user').should == File.join(path, '~user')
+      File.absolute_path('~user').should == File.join(Dir.pwd, '~user')
     end
   end
 

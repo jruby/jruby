@@ -6,6 +6,7 @@ import org.jruby.ir.Operation;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.UndefinedValue;
 import org.jruby.ir.operands.Variable;
+import org.jruby.ir.persistence.IRReaderDecoder;
 import org.jruby.ir.persistence.IRWriterEncoder;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.ir.transformations.inlining.CloneInfo;
@@ -54,6 +55,10 @@ public class DefineClassInstr extends ResultBaseInstr implements FixedArityInstr
         e.encode(getNewIRClassBody());
         e.encode(getContainer());
         e.encode(getSuperClass());
+    }
+
+    public static DefineClassInstr decode(IRReaderDecoder d) {
+        return new DefineClassInstr((d.decodeVariable()), (IRClassBody) d.decodeScope(), d.decodeOperand(), d.decodeOperand());
     }
 
     @Override

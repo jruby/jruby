@@ -25,14 +25,16 @@ describe "Hash#reject" do
     h.reject { false }.to_a.should == [[1, 2]]
   end
 
-  it "returns subclass instance for subclasses" do
-    HashSpecs::MyHash[1 => 2, 3 => 4].reject { false }.should be_an_instance_of(HashSpecs::MyHash)
-    HashSpecs::MyHash[1 => 2, 3 => 4].reject { true }.should be_an_instance_of(HashSpecs::MyHash)
-  end
+  ruby_bug "extra states should not be copied", "2.1" do
+    it "returns Hash instance for subclasses" do
+      HashSpecs::MyHash[1 => 2, 3 => 4].reject { false }.should be_kind_of(Hash)
+      HashSpecs::MyHash[1 => 2, 3 => 4].reject { true }.should be_kind_of(Hash)
+    end
 
-  it "taints the resulting hash" do
-    h = new_hash(:a => 1).taint
-    h.reject {false}.tainted?.should == true
+    it "taints the resulting hash" do
+      h = new_hash(:a => 1).taint
+      h.reject {false}.tainted?.should == false
+    end
   end
 
   it "processes entries with the same order as reject!" do
@@ -52,7 +54,7 @@ end
 describe "Hash#reject!" do
   it "removes keys from self for which the block yields true" do
     hsh = new_hash
-    (1 .. 10).each { |k| hsh[k] = k.even? }
+    (1 .. 10).each { |k| hsh[k] = (k % 2 == 0) }
     hsh.reject! { |k,v| v }
     hsh.keys.sort.should == [1,3,5,7,9]
   end

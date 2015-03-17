@@ -106,7 +106,7 @@ class MSpecScript
   # Registers all filters and actions.
   def register
     if config[:formatter].nil?
-      config[:formatter] = @files.size < 50 ? DottedFormatter : FileFormatter
+      config[:formatter] = STDOUT.tty? ? SpinnerFormatter : @files.size < 50 ? DottedFormatter : FileFormatter
     end
 
     if config[:formatter]
@@ -125,7 +125,6 @@ class MSpecScript
     ProfileFilter.new(:exclude, *config[:xprofiles]).register unless config[:xprofiles].empty?
 
     DebugAction.new(config[:atags], config[:astrings]).register if config[:debugger]
-    GdbAction.new(config[:atags], config[:astrings]).register   if config[:gdb]
 
     custom_register
   end

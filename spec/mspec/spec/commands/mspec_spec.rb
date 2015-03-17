@@ -5,11 +5,11 @@ require 'mspec/commands/mspec'
 describe MSpecMain, "#options" do
   before :each do
     @options, @config = new_option
-    MSpecOptions.stub!(:new).and_return(@options)
+    MSpecOptions.stub(:new).and_return(@options)
 
     @script = MSpecMain.new
-    @script.stub!(:config).and_return(@config)
-    @script.stub!(:load)
+    @script.stub(:config).and_return(@config)
+    @script.stub(:load)
   end
 
   it "enables the configure option" do
@@ -108,15 +108,15 @@ describe MSpecMain, "#report" do
   before :each do
     @stdout, $stdout = $stdout, IOStub.new
 
-    @timer = mock("timer").as_null_object
-    @timer.stub!(:format).and_return("Finished in 42 seconds")
-    @file = mock("file").as_null_object
+    @timer = double("timer").as_null_object
+    @timer.stub(:format).and_return("Finished in 42 seconds")
+    @file = double("file").as_null_object
 
-    File.stub!(:delete)
-    YAML.stub!(:load)
+    File.stub(:delete)
+    YAML.stub(:load)
 
     @hash = { "files"=>1, "examples"=>1, "expectations"=>2, "failures"=>0, "errors"=>0 }
-    File.stub!(:open).and_yield(@file).and_return(@hash)
+    File.stub(:open).and_yield(@file).and_return(@hash)
 
     @script = MSpecMain.new
   end
@@ -182,16 +182,16 @@ end
 describe MSpecMain, "#multi_exec" do
   before :each do
     @options, @config = new_option
-    MSpecOptions.stub!(:new).and_return(@options)
+    MSpecOptions.stub(:new).and_return(@options)
 
     @config[:target] = "target"
     @config[:ci_files] = ["a", "b"]
 
     @script = MSpecMain.new
-    @script.stub!(:config).and_return(@config)
-    @script.stub!(:fork)
-    @script.stub!(:report)
-    Process.stub!(:waitall)
+    @script.stub(:config).and_return(@config)
+    @script.stub(:fork)
+    @script.stub(:report)
+    Process.stub(:waitall)
   end
 
   it "calls #fork for each entry in config[:ci_files]" do
@@ -213,10 +213,10 @@ end
 describe MSpecMain, "#run" do
   before :each do
     @options, @config = new_option
-    MSpecOptions.stub!(:new).and_return(@options)
+    MSpecOptions.stub(:new).and_return(@options)
     @script = MSpecMain.new
-    @script.stub!(:config).and_return(@config)
-    @script.stub!(:exec)
+    @script.stub(:config).and_return(@config)
+    @script.stub(:exec)
   end
 
   it "sets MSPEC_RUNNER = '1' in the environment" do
@@ -264,39 +264,16 @@ describe MSpecMain, "#run" do
   end
 end
 
-describe "The -D, --gdb option" do
-  before :each do
-    @options, @config = new_option
-    MSpecOptions.stub!(:new).and_return(@options)
-    @script = MSpecMain.new
-    @script.stub!(:config).and_return(@config)
-  end
-
-  it "is enabled by #options" do
-    @options.stub!(:on)
-    @options.should_receive(:on).with("-D", "--gdb", an_instance_of(String))
-    @script.options
-  end
-
-  it "sets use_gdb to true" do
-    ["-D", "--gdb"].each do |opt|
-      @config[:use_gdb] = false
-      @script.options [opt]
-      @config[:use_gdb].should be_true
-    end
-  end
-end
-
 describe "The -A, --valgrind option" do
   before :each do
     @options, @config = new_option
-    MSpecOptions.stub!(:new).and_return(@options)
+    MSpecOptions.stub(:new).and_return(@options)
     @script = MSpecMain.new
-    @script.stub!(:config).and_return(@config)
+    @script.stub(:config).and_return(@config)
   end
 
   it "is enabled by #options" do
-    @options.stub!(:on)
+    @options.stub(:on)
     @options.should_receive(:on).with("-A", "--valgrind", an_instance_of(String))
     @script.options
   end
@@ -313,13 +290,13 @@ end
 describe "The --warnings option" do
   before :each do
     @options, @config = new_option
-    MSpecOptions.stub!(:new).and_return(@options)
+    MSpecOptions.stub(:new).and_return(@options)
     @script = MSpecMain.new
-    @script.stub!(:config).and_return(@config)
+    @script.stub(:config).and_return(@config)
   end
 
   it "is enabled by #options" do
-    @options.stub!(:on)
+    @options.stub(:on)
     @options.should_receive(:on).with("--warnings", an_instance_of(String))
     @script.options
   end
@@ -340,13 +317,13 @@ end
 describe "The -j, --multi option" do
   before :each do
     @options, @config = new_option
-    MSpecOptions.stub!(:new).and_return(@options)
+    MSpecOptions.stub(:new).and_return(@options)
     @script = MSpecMain.new
-    @script.stub!(:config).and_return(@config)
+    @script.stub(:config).and_return(@config)
   end
 
   it "is enabled by #options" do
-    @options.stub!(:on)
+    @options.stub(:on)
     @options.should_receive(:on).with("-j", "--multi", an_instance_of(String))
     @script.options
   end
@@ -371,13 +348,13 @@ end
 describe "The -h, --help option" do
   before :each do
     @options, @config = new_option
-    MSpecOptions.stub!(:new).and_return(@options)
+    MSpecOptions.stub(:new).and_return(@options)
     @script = MSpecMain.new
-    @script.stub!(:config).and_return(@config)
+    @script.stub(:config).and_return(@config)
   end
 
   it "is enabled by #options" do
-    @options.stub!(:on)
+    @options.stub(:on)
     @options.should_receive(:on).with("-h", "--help", an_instance_of(String))
     @script.options
   end
@@ -402,13 +379,13 @@ end
 describe "The -v, --version option" do
   before :each do
     @options, @config = new_option
-    MSpecOptions.stub!(:new).and_return(@options)
+    MSpecOptions.stub(:new).and_return(@options)
     @script = MSpecMain.new
-    @script.stub!(:config).and_return(@config)
+    @script.stub(:config).and_return(@config)
   end
 
   it "is enabled by #options" do
-    @options.stub!(:on)
+    @options.stub(:on)
     @options.should_receive(:on).with("-v", "--version", an_instance_of(String))
     @script.options
   end
@@ -423,7 +400,7 @@ describe "The -v, --version option" do
 
   it "prints the version and exits if no subscript is invoked" do
     @config[:command] = nil
-    File.stub!(:basename).and_return("mspec")
+    File.stub(:basename).and_return("mspec")
     @script.should_receive(:puts).twice.with("mspec #{MSpec::VERSION}")
     @script.should_receive(:exit).twice
     ["-v", "--version"].each do |opt|

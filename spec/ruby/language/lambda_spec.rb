@@ -22,31 +22,6 @@ describe "A lambda literal -> () { }" do
     -> () { }.lambda?.should be_true
   end
 
-  it "searches lexical scope for constants" do
-    klass = Class.new do
-      X = 1
-      def m
-        -> { X }
-      end
-    end
-
-    klass.new.m.().should == 1
-  end
-
-  it "searches inheritance hierarchy for constants" do
-    parent = Class.new do
-      X = 1
-    end
-
-    klass = Class.new(parent) do
-      def m
-        -> { X }
-      end
-    end
-
-    klass.new.m.().should == 1
-  end
-
   context "assigns no local variables" do
     evaluate <<-ruby do
         @a = -> { }
@@ -112,12 +87,14 @@ describe "A lambda literal -> () { }" do
       @a.(1, 2, 3).should == [1, 2, 3]
     end
 
-    evaluate <<-ruby do
-        @a = -> (a:) { a }
-      ruby
+    ruby_version_is "2.1" do
+      evaluate <<-ruby do
+          @a = -> (a:) { a }
+        ruby
 
-      lambda { @a.() }.should raise_error(ArgumentError)
-      @a.(a: 1).should == 1
+        lambda { @a.() }.should raise_error(ArgumentError)
+        @a.(a: 1).should == 1
+      end
     end
 
     evaluate <<-ruby do
@@ -205,40 +182,42 @@ describe "A lambda literal -> () { }" do
       @a.(&(l = ->{})).should equal(l)
     end
 
-    evaluate <<-ruby do
-        @a = -> (a:, b:) { [a, b] }
-      ruby
+    ruby_version_is "2.1" do
+      evaluate <<-ruby do
+          @a = -> (a:, b:) { [a, b] }
+        ruby
 
-      @a.(a: 1, b: 2).should == [1, 2]
-    end
+        @a.(a: 1, b: 2).should == [1, 2]
+      end
 
-    evaluate <<-ruby do
-        @a = -> (a:, b: 1) { [a, b] }
-      ruby
+      evaluate <<-ruby do
+          @a = -> (a:, b: 1) { [a, b] }
+        ruby
 
-      @a.(a: 1).should == [1, 1]
-      @a.(a: 1, b: 2).should == [1, 2]
-    end
+        @a.(a: 1).should == [1, 1]
+        @a.(a: 1, b: 2).should == [1, 2]
+      end
 
-    evaluate <<-ruby do
-        @a = -> (a: 1, b:) { [a, b] }
-      ruby
+      evaluate <<-ruby do
+          @a = -> (a: 1, b:) { [a, b] }
+        ruby
 
-      @a.(b: 0).should == [1, 0]
-      @a.(b: 2, a: 3).should == [3, 2]
-    end
+        @a.(b: 0).should == [1, 0]
+        @a.(b: 2, a: 3).should == [3, 2]
+      end
 
-    evaluate <<-ruby do
-        @a = -> (a: @a = -> (a: 1) { a }, b:) do
-          [a, b]
-        end
-      ruby
+      evaluate <<-ruby do
+          @a = -> (a: @a = -> (a: 1) { a }, b:) do
+            [a, b]
+          end
+        ruby
 
-      @a.(a: 2, b: 3).should == [2, 3]
-      @a.(b: 1).should == [@a, 1]
+        @a.(a: 2, b: 3).should == [2, 3]
+        @a.(b: 1).should == [@a, 1]
 
-      # Note the default value of a: in the original method.
-      @a.().should == 1
+        # Note the default value of a: in the original method.
+        @a.().should == 1
+      end
     end
 
     evaluate <<-ruby do
@@ -249,24 +228,26 @@ describe "A lambda literal -> () { }" do
       @a.(b: 3, a: 4).should == [4, 3]
     end
 
-    evaluate <<-ruby do
-        @a = -> (a, b=1, *c, (*d, (e)), f: 2, g:, h:, **k, &l) do
-          [a, b, c, d, e, f, g, h, k, l]
-        end
-      ruby
+    ruby_version_is "2.1" do
+      evaluate <<-ruby do
+          @a = -> (a, b=1, *c, (*d, (e)), f: 2, g:, h:, **k, &l) do
+            [a, b, c, d, e, f, g, h, k, l]
+          end
+        ruby
 
-      result = @a.(9, 8, 7, 6, f: 5, g: 4, h: 3, &(l = ->{}))
-      result.should == [9, 8, [7], [], 6, 5, 4, 3, {}, l]
-    end
+        result = @a.(9, 8, 7, 6, f: 5, g: 4, h: 3, &(l = ->{}))
+        result.should == [9, 8, [7], [], 6, 5, 4, 3, {}, l]
+      end
 
-    evaluate <<-ruby do
-        @a = -> a, b=1, *c, d, e:, f: 2, g:, **k, &l do
-          [a, b, c, d, e, f, g, k, l]
-        end
-      ruby
+      evaluate <<-ruby do
+          @a = -> a, b=1, *c, d, e:, f: 2, g:, **k, &l do
+            [a, b, c, d, e, f, g, k, l]
+          end
+        ruby
 
-      result = @a.(1, 2, e: 3, g: 4, h: 5, i: 6, &(l = ->{}))
-      result.should == [1, 1, [], 2, 3, 2, 4, { h: 5, i: 6 }, l]
+        result = @a.(1, 2, e: 3, g: 4, h: 5, i: 6, &(l = ->{}))
+        result.should == [1, 1, [], 2, 3, 2, 4, { h: 5, i: 6 }, l]
+      end
     end
   end
 end
@@ -291,31 +272,6 @@ describe "A lambda expression 'lambda { ... }'" do
 
   it "returns a lambda" do
     lambda { }.lambda?.should be_true
-  end
-
-  it "searches lexical scope for constants" do
-    klass = Class.new do
-      X = 1
-      def m
-        -> { X }
-      end
-    end
-
-    klass.new.m.().should == 1
-  end
-
-  it "searches inheritance hierarchy for constants" do
-    parent = Class.new do
-      X = 1
-    end
-
-    klass = Class.new(parent) do
-      def m
-        -> { X }
-      end
-    end
-
-    klass.new.m.().should == 1
   end
 
   context "assigns no local variables" do
@@ -412,12 +368,14 @@ describe "A lambda expression 'lambda { ... }'" do
       @a.(1, 2, 3).should == [1, 2, 3]
     end
 
-    evaluate <<-ruby do
-        @a = lambda { |a:| a }
-      ruby
+    ruby_version_is "2.1" do
+      evaluate <<-ruby do
+          @a = lambda { |a:| a }
+        ruby
 
-      lambda { @a.() }.should raise_error(ArgumentError)
-      @a.(a: 1).should == 1
+        lambda { @a.() }.should raise_error(ArgumentError)
+        @a.(a: 1).should == 1
+      end
     end
 
     evaluate <<-ruby do
@@ -503,40 +461,42 @@ describe "A lambda expression 'lambda { ... }'" do
       @a.(&(l = ->{})).should equal(l)
     end
 
-    evaluate <<-ruby do
-        @a = lambda { |a:, b:| [a, b] }
-      ruby
+    ruby_version_is "2.1" do
+      evaluate <<-ruby do
+          @a = lambda { |a:, b:| [a, b] }
+        ruby
 
-      @a.(a: 1, b: 2).should == [1, 2]
-    end
+        @a.(a: 1, b: 2).should == [1, 2]
+      end
 
-    evaluate <<-ruby do
-        @a = lambda { |a:, b: 1| [a, b] }
-      ruby
+      evaluate <<-ruby do
+          @a = lambda { |a:, b: 1| [a, b] }
+        ruby
 
-      @a.(a: 1).should == [1, 1]
-      @a.(a: 1, b: 2).should == [1, 2]
-    end
+        @a.(a: 1).should == [1, 1]
+        @a.(a: 1, b: 2).should == [1, 2]
+      end
 
-    evaluate <<-ruby do
-        @a = lambda { |a: 1, b:| [a, b] }
-      ruby
+      evaluate <<-ruby do
+          @a = lambda { |a: 1, b:| [a, b] }
+        ruby
 
-      @a.(b: 0).should == [1, 0]
-      @a.(b: 2, a: 3).should == [3, 2]
-    end
+        @a.(b: 0).should == [1, 0]
+        @a.(b: 2, a: 3).should == [3, 2]
+      end
 
-    evaluate <<-ruby do
-        @a = lambda do |a: (@a = -> (a: 1) { a }), b:|
-          [a, b]
-        end
-      ruby
+      evaluate <<-ruby do
+          @a = lambda do |a: (@a = -> (a: 1) { a }), b:|
+            [a, b]
+          end
+        ruby
 
-      @a.(a: 2, b: 3).should == [2, 3]
-      @a.(b: 1).should == [@a, 1]
+        @a.(a: 2, b: 3).should == [2, 3]
+        @a.(b: 1).should == [@a, 1]
 
-      # Note the default value of a: in the original method.
-      @a.().should == 1
+        # Note the default value of a: in the original method.
+        @a.().should == 1
+      end
     end
 
     evaluate <<-ruby do
@@ -547,24 +507,26 @@ describe "A lambda expression 'lambda { ... }'" do
       @a.(b: 3, a: 4).should == [4, 3]
     end
 
-    evaluate <<-ruby do
-        @a = lambda do |a, b=1, *c, (*d, (e)), f: 2, g:, h:, **k, &l|
-          [a, b, c, d, e, f, g, h, k, l]
-        end
-      ruby
+    ruby_version_is "2.1" do
+      evaluate <<-ruby do
+          @a = lambda do |a, b=1, *c, (*d, (e)), f: 2, g:, h:, **k, &l|
+            [a, b, c, d, e, f, g, h, k, l]
+          end
+        ruby
 
-      result = @a.(9, 8, 7, 6, f: 5, g: 4, h: 3, &(l = ->{}))
-      result.should == [9, 8, [7], [], 6, 5, 4, 3, {}, l]
-    end
+        result = @a.(9, 8, 7, 6, f: 5, g: 4, h: 3, &(l = ->{}))
+        result.should == [9, 8, [7], [], 6, 5, 4, 3, {}, l]
+      end
 
-    evaluate <<-ruby do
-        @a = lambda do |a, b=1, *c, d, e:, f: 2, g:, **k, &l|
-          [a, b, c, d, e, f, g, k, l]
-        end
-      ruby
+      evaluate <<-ruby do
+          @a = lambda do |a, b=1, *c, d, e:, f: 2, g:, **k, &l|
+            [a, b, c, d, e, f, g, k, l]
+          end
+        ruby
 
-      result = @a.(1, 2, e: 3, g: 4, h: 5, i: 6, &(l = ->{}))
-      result.should == [1, 1, [], 2, 3, 2, 4, { h: 5, i: 6 }, l]
+        result = @a.(1, 2, e: 3, g: 4, h: 5, i: 6, &(l = ->{}))
+        result.should == [1, 1, [], 2, 3, 2, 4, { h: 5, i: 6 }, l]
+      end
     end
   end
 end

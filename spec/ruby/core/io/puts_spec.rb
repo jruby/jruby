@@ -7,11 +7,13 @@ require File.expand_path('../fixtures/classes', __FILE__)
 # are correct.
 describe "IO#puts" do
   before :each do
+    @before_separator = $/
     @name = tmp("io_puts.txt")
     @io = new_io @name
   end
 
   after :each do
+    $/ = @before_separator
     @io.close unless @io.closed?
     rm_r @name
   end
@@ -93,7 +95,6 @@ describe "IO#puts" do
     @io.should_receive(:write).with("5")
     @io.should_receive(:write).with("\n")
     @io.puts(5).should == nil
-    $/ = "\n"
   end
 
   it "raises IOError on closed stream" do

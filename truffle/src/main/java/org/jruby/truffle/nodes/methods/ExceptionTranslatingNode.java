@@ -68,6 +68,9 @@ public class ExceptionTranslatingNode extends RubyNode {
         } catch (UnsupportedSpecializationException exception) {
             CompilerDirectives.transferToInterpreter();
             throw new RaiseException(translate(exception));
+        } catch (org.jruby.exceptions.RaiseException e) {
+            CompilerDirectives.transferToInterpreter();
+            throw new RaiseException(getContext().toTruffle(e.getException(), this));
         } catch (Throwable exception) {
             CompilerDirectives.transferToInterpreter();
             throw new RaiseException(translate(exception));
@@ -129,7 +132,7 @@ public class ExceptionTranslatingNode extends RubyNode {
                 builder.append(value.getClass().getName());
             }
 
-            if (value instanceof Number) {
+            if (value instanceof Number || value instanceof Boolean) {
                 builder.append("=");
                 builder.append(value.toString());
             }

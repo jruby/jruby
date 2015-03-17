@@ -1,5 +1,4 @@
 require File.expand_path('../../../spec_helper', __FILE__)
-require File.expand_path('../fixtures/methods', __FILE__)
 
 describe "Time#zone" do
   it "returns the time zone used for time" do
@@ -39,11 +38,25 @@ describe "Time#zone" do
       Encoding.default_internal = @encoding
     end
 
-    it "returns the string with the default internal encoding" do
-      t = Time.new(2005, 2, 27, 22, 50, 0, -3600)
+    ruby_version_is ""..."2.2" do
+      it "returns the string with the default internal encoding" do
+        t = Time.new(2005, 2, 27, 22, 50, 0, -3600)
 
-      with_timezone("US/Eastern") do
-        t.getlocal.zone.encoding.should == Encoding::UTF_8
+        with_timezone("US/Eastern") do
+          t.getlocal.zone.encoding.should == Encoding::UTF_8
+        end
+      end
+    end
+
+    ruby_version_is "2.2" do
+      ruby_bug "#10887", "2.2.0.81" do
+        it "returns an ASCII string" do
+          t = Time.new(2005, 2, 27, 22, 50, 0, -3600)
+
+          with_timezone("US/Eastern") do
+            t.getlocal.zone.encoding.should == Encoding::US_ASCII
+          end
+        end
       end
     end
 

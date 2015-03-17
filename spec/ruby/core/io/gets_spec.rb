@@ -299,12 +299,11 @@ describe "IO#gets" do
     @io.gets.encoding.should == Encoding::ASCII_8BIT
   end
 
-  # #8342
-  it "ignores the internal encoding if the IO object's external encoding is ASCII-8BIT" do
+  it "transcodes to internal encoding if the IO object's external encoding is ASCII-8BIT" do
     Encoding.default_external = Encoding::ASCII_8BIT
     Encoding.default_internal = Encoding::UTF_8
     @io = new_io @name, 'r'
     @io.set_encoding Encoding::ASCII_8BIT, Encoding::UTF_8
-    @io.gets.encoding.should == Encoding::ASCII_8BIT
+    @io.gets.encoding.should == Encoding::UTF_8
   end
 end

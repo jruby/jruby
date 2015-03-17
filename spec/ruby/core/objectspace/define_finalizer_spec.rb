@@ -6,12 +6,6 @@ require File.expand_path('../fixtures', __FILE__)
 # It is highly questionable whether these aspects of ObjectSpace
 # should be spec'd at all.
 describe "ObjectSpace.define_finalizer" do
-  it "raises a RuntimeError if the object is not garbage collectable" do
-    lambda {
-      ObjectSpace.define_finalizer(:symbol, lambda { })
-    }.should raise_error(RuntimeError)
-  end
-
   it "raises an ArgumentError if the action does not respond to call" do
     lambda {
       ObjectSpace.define_finalizer("", 3)
@@ -27,6 +21,30 @@ describe "ObjectSpace.define_finalizer" do
     handler = mock("callable")
     def handler.call(obj) end
     ObjectSpace.define_finalizer("garbage", handler).should == [0, handler]
+  end
+
+  ruby_version_is ""..."2.1" do
+    it "raises ArgumentError trying to define a finalizer on a non-reference" do
+      lambda {
+        ObjectSpace.define_finalizer(:blah) { 1 }
+      }.should raise_error(ArgumentError)
+    end
+  end
+
+  ruby_version_is "2.1"..."2.2" do
+    it "raises RuntimeError trying to define a finalizer on a non-reference" do
+      lambda {
+        ObjectSpace.define_finalizer(:blah) { 1 }
+      }.should raise_error(RuntimeError)
+    end
+  end
+
+  ruby_version_is "2.2" do
+    it "raises ArgumentError trying to define a finalizer on a non-reference" do
+      lambda {
+        ObjectSpace.define_finalizer(:blah) { 1 }
+      }.should raise_error(ArgumentError)
+    end
   end
 
   # see [ruby-core:24095]

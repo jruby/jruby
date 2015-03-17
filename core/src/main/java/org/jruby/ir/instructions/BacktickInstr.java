@@ -6,6 +6,7 @@ import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Operation;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.Variable;
+import org.jruby.ir.persistence.IRReaderDecoder;
 import org.jruby.ir.persistence.IRWriterEncoder;
 import org.jruby.ir.transformations.inlining.CloneInfo;
 import org.jruby.parser.StaticScope;
@@ -36,6 +37,10 @@ public class BacktickInstr extends ResultBaseInstr {
     public void encode(IRWriterEncoder e) {
         super.encode(e);
         e.encode(getPieces());
+    }
+
+    public static BacktickInstr decode(IRReaderDecoder d) {
+        return new BacktickInstr(d.decodeVariable(), d.decodeOperandArray());
     }
 
     @Override

@@ -172,9 +172,7 @@ public enum Operation {
 
     /* Instructions to support defined? */
     BLOCK_GIVEN(0),
-    DEFINED_CONSTANT_OR_METHOD(OpFlags.f_can_raise_exception),
     GET_ERROR_INFO(0),
-    METHOD_DEFINED(OpFlags.f_can_raise_exception),
     RESTORE_ERROR_INFO(OpFlags.f_has_side_effect),
 
     /* Boxing/Unboxing between Ruby <--> Java types */

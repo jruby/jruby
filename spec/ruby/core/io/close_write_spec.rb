@@ -18,10 +18,20 @@ describe "IO#close_write" do
     lambda { @io.write "attempt to write" }.should raise_error(IOError)
   end
 
-  it "raises an IOError on subsequent invocations" do
-    @io.close_write
+  ruby_version_is ''...'2.3' do
+    it "raises an IOError on subsequent invocations" do
+      @io.close_write
 
-    lambda { @io.close_write }.should raise_error(IOError)
+      lambda { @io.close_write }.should raise_error(IOError)
+    end
+  end
+
+  ruby_version_is '2.3' do
+    it "doesn't raise an IOError on subsequent invocations" do
+      @io.close_write
+
+      lambda { @io.close_write }.should_not raise_error(IOError)
+    end
   end
 
   it "allows subsequent invocation of close" do
@@ -56,9 +66,19 @@ describe "IO#close_write" do
     @io.read.should == "12345\n"
   end
 
-  it "raises IOError on closed stream" do
-    @io.close
+  ruby_version_is ''...'2.3' do
+    it "raises IOError on closed stream" do
+      @io.close
 
-    lambda { @io.close_write }.should raise_error(IOError)
+      lambda { @io.close_write }.should raise_error(IOError)
+    end
+  end
+
+  ruby_version_is '2.3' do
+    it "doesn't raise IOError on closed stream" do
+      @io.close
+
+      lambda { @io.close_write }.should_not raise_error(IOError)
+    end
   end
 end

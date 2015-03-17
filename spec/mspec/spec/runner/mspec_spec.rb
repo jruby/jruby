@@ -95,7 +95,7 @@ describe MSpec, ".protect" do
   before :each do
     MSpec.clear_current
     @cs = ContextState.new "C#m"
-    @cs.stub!(:state).and_return(@es)
+    @cs.stub(:state).and_return(@es)
     @cs.parent = MSpec.current
 
     @es = ExampleState.new @cs, "runs"
@@ -125,8 +125,8 @@ describe MSpec, ".protect" do
 
   it "calls all the exception actions" do
     exc = ExceptionState.new @es, "testing", ScratchPad.recorded
-    ExceptionState.stub!(:new).and_return(exc)
-    action = mock("exception")
+    ExceptionState.stub(:new).and_return(exc)
+    action = double("exception")
     action.should_receive(:exception).with(exc)
     MSpec.register :exception, action
     MSpec.protect("testing") { raise ScratchPad.recorded }
@@ -183,10 +183,10 @@ describe MSpec, ".actions" do
   before :each do
     MSpec.store :start, []
     ScratchPad.record []
-    start_one = mock("one")
-    start_one.stub!(:start).and_return { ScratchPad << :one }
-    start_two = mock("two")
-    start_two.stub!(:start).and_return { ScratchPad << :two }
+    start_one = double("one")
+    start_one.stub(:start).and_return { ScratchPad << :one }
+    start_two = double("two")
+    start_two.stub(:start).and_return { ScratchPad << :two }
     MSpec.register :start, start_one
     MSpec.register :start, start_two
   end
@@ -264,9 +264,9 @@ describe MSpec, ".describe" do
   before :each do
     MSpec.clear_current
     @cs = ContextState.new ""
-    ContextState.stub!(:new).and_return(@cs)
-    MSpec.stub!(:current).and_return(nil)
-    MSpec.stub!(:register_current)
+    ContextState.stub(:new).and_return(@cs)
+    MSpec.stub(:current).and_return(nil)
+    MSpec.stub(:register_current)
   end
 
   it "creates a new ContextState for the block" do
@@ -293,22 +293,22 @@ end
 
 describe MSpec, ".process" do
   before :each do
-    MSpec.stub!(:files)
+    MSpec.stub(:files)
     MSpec.store :start, []
     MSpec.store :finish, []
   end
 
   it "calls all start actions" do
-    start = mock("start")
-    start.stub!(:start).and_return { ScratchPad.record :start }
+    start = double("start")
+    start.stub(:start).and_return { ScratchPad.record :start }
     MSpec.register :start, start
     MSpec.process
     ScratchPad.recorded.should == :start
   end
 
   it "calls all finish actions" do
-    finish = mock("finish")
-    finish.stub!(:finish).and_return { ScratchPad.record :finish }
+    finish = double("finish")
+    finish.stub(:finish).and_return { ScratchPad.record :finish }
     MSpec.register :finish, finish
     MSpec.process
     ScratchPad.recorded.should == :finish
@@ -325,12 +325,12 @@ describe MSpec, ".files" do
     MSpec.store :load, []
     MSpec.store :unload, []
     MSpec.register_files [:one, :two, :three]
-    Kernel.stub!(:load)
+    Kernel.stub(:load)
   end
 
   it "calls load actions before each file" do
-    load = mock("load")
-    load.stub!(:load).and_return { ScratchPad.record :load }
+    load = double("load")
+    load.stub(:load).and_return { ScratchPad.record :load }
     MSpec.register :load, load
     MSpec.files
     ScratchPad.recorded.should == :load
@@ -403,7 +403,7 @@ end
 
 describe MSpec, ".read_tags" do
   before :each do
-    MSpec.stub!(:tags_file).and_return(File.dirname(__FILE__) + '/tags.txt')
+    MSpec.stub(:tags_file).and_return(File.dirname(__FILE__) + '/tags.txt')
   end
 
   it "returns a list of tag instances for matching tag names found" do
@@ -424,7 +424,7 @@ describe MSpec, ".read_tags" do
       f.puts @tag
       f.puts ""
     end
-    MSpec.stub!(:tags_file).and_return(tmp("tags.txt", false))
+    MSpec.stub(:tags_file).and_return(tmp("tags.txt", false))
   end
 
   it "does not return a tag object for empty lines" do
@@ -435,7 +435,7 @@ end
 describe MSpec, ".write_tags" do
   before :each do
     FileUtils.cp File.dirname(__FILE__) + "/tags.txt", tmp("tags.txt", false)
-    MSpec.stub!(:tags_file).and_return(tmp("tags.txt", false))
+    MSpec.stub(:tags_file).and_return(tmp("tags.txt", false))
     @tag1 = SpecTag.new "check(broken):Tag#rewrite works"
     @tag2 = SpecTag.new "broken:Tag#write_tags fails"
   end
@@ -459,8 +459,8 @@ end
 
 describe MSpec, ".write_tag" do
   before :each do
-    FileUtils.stub!(:mkdir_p)
-    MSpec.stub!(:tags_file).and_return(tmp("tags.txt", false))
+    FileUtils.stub(:mkdir_p)
+    MSpec.stub(:tags_file).and_return(tmp("tags.txt", false))
     @tag = SpecTag.new "fail(broken):Some#method works"
   end
 
@@ -483,7 +483,7 @@ end
 describe MSpec, ".delete_tag" do
   before :each do
     FileUtils.cp File.dirname(__FILE__) + "/tags.txt", tmp("tags.txt", false)
-    MSpec.stub!(:tags_file).and_return(tmp("tags.txt", false))
+    MSpec.stub(:tags_file).and_return(tmp("tags.txt", false))
     @tag = SpecTag.new "fail(Comments don't matter):Some#method? works"
   end
 
@@ -530,7 +530,7 @@ describe MSpec, ".delete_tags" do
   before :each do
     @tags = tmp("tags.txt", false)
     FileUtils.cp File.dirname(__FILE__) + "/tags.txt", @tags
-    MSpec.stub!(:tags_file).and_return(@tags)
+    MSpec.stub(:tags_file).and_return(@tags)
   end
 
   it "deletes the tag file" do

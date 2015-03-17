@@ -15,7 +15,7 @@ describe "Enumerator::Lazy#force" do
   end
 
   it "passes given arguments to receiver.each" do
-    @yieldsmixed.force(:arg1, :arg2, :arg3).should == 
+    @yieldsmixed.force(:arg1, :arg2, :arg3).should ==
       EnumeratorLazySpecs::YieldsMixed.gathered_yields_with_args(:arg1, :arg2, :arg3)
   end
 

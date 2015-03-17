@@ -3,6 +3,7 @@ package org.jruby.ir.instructions;
 import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Operation;
 import org.jruby.ir.operands.Variable;
+import org.jruby.ir.persistence.IRReaderDecoder;
 import org.jruby.ir.persistence.IRWriterEncoder;
 import org.jruby.ir.transformations.inlining.CloneInfo;
 import org.jruby.ir.transformations.inlining.InlineCloneInfo;
@@ -31,6 +32,10 @@ public class ReceivePreReqdArgInstr extends ReceiveArgBase implements FixedArity
     public void encode(IRWriterEncoder e) {
         super.encode(e);
         e.encode(getArgIndex());
+    }
+
+    public static ReceivePreReqdArgInstr decode(IRReaderDecoder d) {
+        return new ReceivePreReqdArgInstr(d.decodeVariable(), d.decodeInt());
     }
 
     @Override

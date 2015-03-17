@@ -8,8 +8,8 @@ describe :file_unlink, :shared => true do
   end
 
   after :each do
-    File.send(@method, @file1) if File.exists?(@file1)
-    File.send(@method, @file2) if File.exists?(@file2)
+    File.send(@method, @file1) if File.exist?(@file1)
+    File.send(@method, @file2) if File.exist?(@file2)
 
     @file1 = nil
     @file2 = nil
@@ -21,13 +21,13 @@ describe :file_unlink, :shared => true do
 
   it "deletes a single file" do
     File.send(@method, @file1).should == 1
-    File.exists?(@file1).should == false
+    File.exist?(@file1).should == false
   end
 
   it "deletes multiple files" do
     File.send(@method, @file1, @file2).should == 2
-    File.exists?(@file1).should == false
-    File.exists?(@file2).should == false
+    File.exist?(@file1).should == false
+    File.exist?(@file2).should == false
   end
 
   it "raises a TypeError if not passed a String type" do

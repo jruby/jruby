@@ -50,7 +50,7 @@ describe :array_inspect, :shared => true do
 
   describe "with encoding" do
     before :each do
-       @default_external_encoding = Encoding.default_external
+      @default_external_encoding = Encoding.default_external
     end
 
     after :each do

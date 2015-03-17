@@ -63,7 +63,7 @@ class SpinnerFormatter < DottedFormatter
   def spin
     @which = (@which + 1) % Spins.size
     if @color
-      print "\r[%s | %s | %s] \033[0;#{@fail_color}m%6dF \033[0;#{@error_color}m%6dE\033[0m" %
+      print "\r[%s | %s | %s] \e[0;#{@fail_color}m%6dF \e[0;#{@error_color}m%6dE\e[0m" %
           [Spins[@which], percentage, etr, @counter.failures, @counter.errors]
     else
       print "\r[%s | %s | %s] %6dF %6dE" %

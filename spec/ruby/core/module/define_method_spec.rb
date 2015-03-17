@@ -206,25 +206,66 @@ describe "Module#define_method" do
     Module.should have_private_instance_method(:define_method)
   end
 
-  it "returns its symbol" do
-    class DefineMethodSpecClass
-      method = define_method("return_test") { || true }
-      method.should == :return_test
+  ruby_version_is ""..."2.1" do
+    it "returns a Proc" do
+      class DefineMethodSpecClass
+        method = define_method("return_test") { || true }
+        method.is_a?(Proc).should be_true
+        # check if it is a lambda:
+        lambda {
+          method.call :too_many_arguments
+        }.should raise_error(ArgumentError)
+      end
     end
   end
 
-  describe "method body is an UnboundMethod" do
-    before do
-      @lazy_class_def = lambda {
-        LazyClass = Class.new do
-          define_method :bar, ModuleSpecs::UnboundMethodTest.instance_method(:foo)
-        end
-      }
+  ruby_version_is "2.1" do
+    it "returns its symbol" do
+      class DefineMethodSpecClass
+        method = define_method("return_test") { || true }
+        method.should == :return_test
+      end
     end
+  end
 
-    it "allows methods defined on a different object" do
-      @lazy_class_def.call.new.bar.should == 'bar'
-    end
+  it "allows an UnboundMethod from a module to be defined on a class" do
+    DestinationClass = Class.new {
+      define_method :bar, ModuleSpecs::UnboundMethodTest.instance_method(:foo)
+    }
+    DestinationClass.new.should respond_to(:bar)
+  end
+
+  it "allows an UnboundMethod from a parent class to be defined on a child class" do
+    Parent = Class.new { define_method(:foo) { :bar } }
+    ChildClass = Class.new(Parent) {
+      define_method :baz, Parent.instance_method(:foo)
+    }
+    ChildClass.new.should respond_to(:baz)
+  end
+
+  it "allows an UnboundMethod from a module to be defined on another unrelated module" do
+    DestinationModule = Module.new {
+      define_method :bar, ModuleSpecs::UnboundMethodTest.instance_method(:foo)
+    }
+    DestinationClass = Class.new { include DestinationModule }
+
+    DestinationClass.new.should respond_to(:bar)
+  end
+
+  it "raises a TypeError when an UnboundMethod from a child class is defined on a parent class" do
+    lambda {
+      ParentClass = Class.new { define_method(:foo) { :bar } }
+      ChildClass = Class.new(ParentClass) { define_method(:foo) { :baz } }
+      ParentClass.send :define_method, :foo, ChildClass.instance_method(:foo)
+    }.should raise_error(TypeError)
+  end
+
+  it "raises a TypeError when an UnboundMethod from one class is defined on an unrelated class" do
+    lambda {
+      DestinationClass = Class.new {
+        define_method :bar, ModuleSpecs::InstanceMeth.instance_method(:foo)
+      }
+    }.should raise_error(TypeError)
   end
 end
 

@@ -29,7 +29,7 @@ describe RunnerGuard, "#match?" do
 
   it "returns true when passed :rspec and ENV['RSPEC_RUNNER'] is true but the constant Spec does not exist" do
     ENV['RSPEC_RUNNER'] = '1'
-    Object.should_receive(:const_defined?).with(:Spec).any_number_of_times.and_return(false)
+    Object.stub(:const_defined?).and_return(false)
     RunnerGuard.new(:rspec).match?.should == true
   end
 end
@@ -37,18 +37,18 @@ end
 describe Object, "#runner_is" do
   before :each do
     @guard = RunnerGuard.new
-    RunnerGuard.stub!(:new).and_return(@guard)
+    RunnerGuard.stub(:new).and_return(@guard)
     ScratchPad.clear
   end
 
   it "yields when #match? returns true" do
-    @guard.stub!(:match?).and_return(true)
+    @guard.stub(:match?).and_return(true)
     runner_is(:mspec) { ScratchPad.record :yield }
     ScratchPad.recorded.should == :yield
   end
 
   it "does not yield when #match? returns false" do
-    @guard.stub!(:match?).and_return(false)
+    @guard.stub(:match?).and_return(false)
     runner_is(:mspec) { ScratchPad.record :yield }
     ScratchPad.recorded.should_not == :yield
   end
@@ -70,18 +70,18 @@ end
 describe Object, "#runner_is_not" do
   before :each do
     @guard = RunnerGuard.new
-    RunnerGuard.stub!(:new).and_return(@guard)
+    RunnerGuard.stub(:new).and_return(@guard)
     ScratchPad.clear
   end
 
   it "does not yield when #match? returns true" do
-    @guard.stub!(:match?).and_return(true)
+    @guard.stub(:match?).and_return(true)
     runner_is_not(:mspec) { ScratchPad.record :yield }
     ScratchPad.recorded.should_not == :yield
   end
 
   it "yields when #match? returns false" do
-    @guard.stub!(:match?).and_return(false)
+    @guard.stub(:match?).and_return(false)
     runner_is_not(:mspec) { ScratchPad.record :yield }
     ScratchPad.recorded.should == :yield
   end

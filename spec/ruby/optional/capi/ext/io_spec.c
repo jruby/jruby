@@ -214,6 +214,14 @@ VALUE io_spec_rb_fd_fix_cloexec(VALUE self, VALUE io) {
 }
 #endif
 
+#ifdef HAVE_RB_CLOEXEC_OPEN
+VALUE io_spec_rb_cloexec_open(VALUE self, VALUE path, VALUE flags, VALUE mode) {
+  const char *pathname = StringValuePtr(path);
+  int fd = rb_cloexec_open(pathname, FIX2INT(flags), FIX2INT(mode));
+  return rb_funcall(rb_cIO, rb_intern("for_fd"), 1, INT2FIX(fd));
+}
+#endif
+
 #ifdef HAVE_RB_IO_CLOSE
 VALUE io_spec_rb_io_close(VALUE self, VALUE io) {
   return rb_io_close(io);
@@ -295,6 +303,9 @@ void Init_io_spec() {
   rb_define_method(cls, "rb_fd_fix_cloexec", io_spec_rb_fd_fix_cloexec, 1);
 #endif
 
+#ifdef HAVE_RB_CLOEXEC_OPEN
+  rb_define_method(cls, "rb_cloexec_open", io_spec_rb_cloexec_open, 3);
+#endif
 }
 
 #ifdef __cplusplus

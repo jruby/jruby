@@ -2,6 +2,7 @@ package org.jruby.ir.operands;
 
 import java.util.List;
 
+import org.jruby.ir.persistence.IRReaderDecoder;
 import org.jruby.ir.persistence.IRWriterEncoder;
 import org.jruby.ir.transformations.inlining.CloneInfo;
 import org.jruby.parser.StaticScope;
@@ -78,6 +79,10 @@ public class CurrentScope extends Operand {
     public void encode(IRWriterEncoder e) {
         super.encode(e);
         e.encode(getScopeNestingDepth());
+    }
+
+    public static CurrentScope decode(IRReaderDecoder d) {
+        return ScopeFor(d.decodeInt());
     }
 
     @Override

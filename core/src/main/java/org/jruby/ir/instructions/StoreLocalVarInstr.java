@@ -6,6 +6,7 @@ import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Operation;
 import org.jruby.ir.operands.LocalVariable;
 import org.jruby.ir.operands.Operand;
+import org.jruby.ir.persistence.IRReaderDecoder;
 import org.jruby.ir.persistence.IRWriterEncoder;
 import org.jruby.ir.transformations.inlining.CloneInfo;
 import org.jruby.parser.StaticScope;
@@ -16,7 +17,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 public class StoreLocalVarInstr extends Instr implements FixedArityInstr {
     private final IRScope scope;
 
-    public StoreLocalVarInstr(Operand value, IRScope scope, LocalVariable lvar) {
+    public StoreLocalVarInstr(IRScope scope, Operand value, LocalVariable lvar) {
         super(Operation.BINDING_STORE, new Operand[] { value, lvar });
 
         this.scope = scope;
@@ -60,7 +61,7 @@ public class StoreLocalVarInstr extends Instr implements FixedArityInstr {
     @Override
     public Instr clone(CloneInfo ii) {
         // SSS FIXME: Do we need to rename lvar really?  It is just a name-proxy!
-        return new StoreLocalVarInstr(getValue().cloneForInlining(ii), scope,
+        return new StoreLocalVarInstr(scope, getValue().cloneForInlining(ii),
                 (LocalVariable) getLocalVar().cloneForInlining(ii));
     }
 
@@ -68,8 +69,12 @@ public class StoreLocalVarInstr extends Instr implements FixedArityInstr {
     public void encode(IRWriterEncoder e) {
         super.encode(e);
         e.encode(getScope());
-        e.encode(getLocalVar());
         e.encode(getValue());
+        e.encode(getLocalVar());
+    }
+
+    public static StoreLocalVarInstr decode(IRReaderDecoder d) {
+        return new StoreLocalVarInstr(d.decodeScope(), d.decodeOperand(), (LocalVariable) d.decodeOperand());
     }
 
     @Override

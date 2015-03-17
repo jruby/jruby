@@ -1,19 +1,7 @@
 require File.expand_path('../../../spec_helper', __FILE__)
 require File.expand_path('../fixtures/common', __FILE__)
 
-platform_is :windows do
-  describe "Process.daemon" do
-    it "returns false from #respond_to?" do
-      Process.respond_to?(:daemon).should be_false
-    end
-
-    it "raises a NotImplementedError when called" do
-      lambda { Process.daemon }.should raise_error(NotImplementedError)
-    end
-  end
-end
-
-platform_is_not :windows do
+if Process.respond_to?(:daemon)
   describe :process_daemon_keep_stdio_open_false, :shared => true do
     it "redirects stdout to /dev/null" do
       @daemon.invoke("keep_stdio_open_false_stdout", @object).should be_nil

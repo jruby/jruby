@@ -82,3 +82,11 @@ fails:Kernel.require ($LOAD_FEATURES) when a non-extensioned file is in $LOADED_
 fails:Kernel.require ($LOAD_FEATURES) when a non-extensioned file is in $LOADED_FEATURES returns false when passed a path and the file is not found
 fails:Kernel.require (shell expansion) performs tilde expansion on a .rb file before storing paths in $LOADED_FEATURES
 fails:Kernel.require (shell expansion) performs tilde expansion on a non-extensioned file before storing paths in $LOADED_FEATURES
+fails:Kernel#require stores the missing path in a LoadError object
+fails:Kernel.require stores the missing path in a LoadError object
+fails:Kernel#require (concurrently) blocks a second thread from returning while the 1st is still requiring
+fails:Kernel.require (concurrently) blocks a second thread from returning while the 1st is still requiring
+fails:Kernel#require (concurrently) allows a 2nd require if the 1st raised an exception
+fails:Kernel.require (concurrently) allows a 2nd require if the 1st raised an exception
+fails:Kernel#require (concurrently) blocks a 3rd require if the 1st raises an exception and the 2nd is still running
+fails:Kernel.require (concurrently) blocks a 3rd require if the 1st raises an exception and the 2nd is still running

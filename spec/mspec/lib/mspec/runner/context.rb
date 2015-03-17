@@ -182,15 +182,13 @@ class ContextState
   # Removes filtered examples. Returns true if there are examples
   # left to evaluate.
   def filter_examples
-    filtered = @examples.select do |ex|
+    filtered, @examples = @examples.partition do |ex|
       ex.filtered?
     end
 
     filtered.each do |ex|
       MSpec.actions :tagged, ex
     end
-
-    @examples -= filtered
 
     not @examples.empty?
   end
@@ -218,9 +216,9 @@ class ContextState
                 MSpec.actions :example, state, example
                 protect nil, @expectation_missing unless MSpec.expectation? or not passed
               end
-              protect "after :each", post(:each)
-              protect "Mock.verify_count", @mock_verify
             end
+            protect "after :each", post(:each)
+            protect "Mock.verify_count", @mock_verify
 
             protect "Mock.cleanup", @mock_cleanup
             MSpec.actions :after, state

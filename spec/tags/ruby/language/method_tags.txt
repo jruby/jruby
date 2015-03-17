@@ -14,3 +14,5 @@ fails:"A method assigns local variables from method parameters for definition \n
 fails:"A method assigns local variables from method parameters for definition \n    def m(*, **) end"
 fails:"A method assigns local variables from method parameters for definition \n    def m(*a, **) a end"
 fails:"A method assigns local variables from method parameters for definition \n    def m(*, **k) k end"
+fails:"A method assigns local variables from method parameters for definition \n    def m(a = nil, **k) [a, k] end"
+fails:"A method assigns local variables from method parameters for definition \n    def m(*a, **k) [a, k] end"

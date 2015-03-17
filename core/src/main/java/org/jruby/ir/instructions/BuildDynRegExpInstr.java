@@ -6,6 +6,7 @@ import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Operation;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.Variable;
+import org.jruby.ir.persistence.IRReaderDecoder;
 import org.jruby.ir.persistence.IRWriterEncoder;
 import org.jruby.ir.transformations.inlining.CloneInfo;
 import org.jruby.parser.StaticScope;
@@ -64,6 +65,11 @@ public class BuildDynRegExpInstr extends ResultBaseInstr {
         super.encode(e);
         e.encode(getPieces());
         e.encode(getOptions().toEmbeddedOptions());
+    }
+
+    public static BuildDynRegExpInstr decode(IRReaderDecoder d) {
+        return new BuildDynRegExpInstr(d.decodeVariable(),
+                d.decodeOperandArray(),RegexpOptions.fromEmbeddedOptions(d.decodeInt()));
     }
 
     @Override

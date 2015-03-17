@@ -22,8 +22,8 @@ public class BEQInstr extends TwoOperandBranchInstr implements FixedArityInstr {
         return new BEQInstr(jmpTarget, v1, v2);
     }
 
-    protected BEQInstr(Label jmpTarget, Operand v1, Operand v2) {
-        super(Operation.BEQ, v1, v2, jmpTarget);
+    protected BEQInstr(Label jumpTarget, Operand v1, Operand v2) {
+        super(Operation.BEQ, jumpTarget, v1, v2);
     }
 
     @Override

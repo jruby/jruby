@@ -9,12 +9,14 @@
  */
 package org.jruby.truffle.nodes.core;
 
+import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.SourceSection;
 
 import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.RubyArray;
 import org.jruby.truffle.runtime.core.RubyFile;
 import org.jruby.truffle.runtime.core.RubyProc;
@@ -82,8 +84,8 @@ public abstract class DirNodes {
             }
 
             if (!dir.delete()) {
-                // TODO(CS, 12-Jan-15) handle failure
-                throw new UnsupportedOperationException();
+                CompilerDirectives.transferToInterpreter();
+                throw new RaiseException(getContext().getCoreLibrary().dirNotEmptyError(path.toString(), this));
             }
 
             return 0;

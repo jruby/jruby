@@ -14,6 +14,13 @@ describe "Module#alias_method" do
     @object.double(12).should == @object.public_two(12)
   end
 
+  it "preserves the arguments information of the original methods" do
+    @class.make_alias :uno, :public_one
+    @class.make_alias :double, :public_two
+    @class.instance_method(:uno).parameters.should == @class.instance_method(:public_one).parameters
+    @class.instance_method(:double).parameters.should == @class.instance_method(:public_two).parameters
+  end
+
   it "retains method visibility" do
     @class.make_alias :private_ichi, :private_one
     lambda { @object.private_one  }.should raise_error(NameError)

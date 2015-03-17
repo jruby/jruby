@@ -6,6 +6,7 @@ import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Interp;
 import org.jruby.ir.Operation;
 import org.jruby.ir.operands.*;
+import org.jruby.ir.persistence.IRReaderDecoder;
 import org.jruby.ir.persistence.IRWriterEncoder;
 import org.jruby.ir.transformations.inlining.CloneInfo;
 import org.jruby.parser.StaticScope;
@@ -65,6 +66,10 @@ public class LoadLocalVarInstr extends ResultBaseInstr implements FixedArityInst
         super.encode(e);
         e.encode(getScope());
         e.encode(getLocalVar());
+    }
+
+    public static LoadLocalVarInstr decode(IRReaderDecoder d) {
+        return new LoadLocalVarInstr(d.decodeScope(), (TemporaryLocalVariable) d.decodeVariable(), (LocalVariable) d.decodeVariable());
     }
 
     @Interp

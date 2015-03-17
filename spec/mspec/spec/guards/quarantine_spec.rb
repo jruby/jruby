@@ -12,7 +12,7 @@ describe Object, "#quarantine!" do
     ScratchPad.clear
 
     @guard = QuarantineGuard.new
-    QuarantineGuard.stub!(:new).and_return(@guard)
+    QuarantineGuard.stub(:new).and_return(@guard)
   end
 
   it "does not yield" do

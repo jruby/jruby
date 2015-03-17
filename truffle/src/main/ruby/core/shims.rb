@@ -104,6 +104,13 @@ class String
   def append(other)
     self << other
   end
+
+  def shorten!(size)
+    self.modify!
+    return if @num_bytes == 0
+    self.num_bytes -= size
+  end
+
 end
 
 module Kernel
@@ -134,14 +141,6 @@ class Rational
 end
 
 ENV['TZ'] = 'UTC'
-
-class BasicObject
-
-  def instance_exec(*args)
-    # TODO (nirvdrum 06-Mar-15) Properly implement this.  The stub is just to get the specs even loading.
-  end
-
-end
 
 class Method
 
@@ -199,18 +198,6 @@ module Rubinius
       @array[index]
     end
   end
-end
-
-class String
-
-  def modify!
-    # TODO CS 14-Mar-15 what does this do?
-  end
-
-  def num_bytes=(count)
-    _set_num_bytes count
-  end
-
 end
 
 class IO

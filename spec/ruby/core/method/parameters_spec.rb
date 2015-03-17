@@ -146,38 +146,38 @@ describe "Method#parameters" do
     m = MethodSpecs::Methods.instance_method(:one_opt_with_stabby)
     m.parameters.should == [[:opt,:a]]
   end
-  
+
   # define_method variants
   it "returns [] for a define_method method with explicit no-args || specification" do
     m = MethodSpecs::Methods.instance_method(:zero_defined_method)
     m.parameters.should == []
   end
-  
+
   it "returns [[:rest, :x]] for a define_method method with rest arg 'x' only" do
     m = MethodSpecs::Methods.instance_method(:zero_with_splat_defined_method)
     m.parameters.should == [[:rest, :x]]
   end
-  
+
   it "returns [[:req, :x]] for a define_method method expecting one required argument 'x'" do
     m = MethodSpecs::Methods.instance_method(:one_req_defined_method)
     m.parameters.should == [[:req, :x]]
   end
-  
+
   it "returns [[:req, :x], [:req, :y]] for a define_method method expecting two required arguments 'x' and 'y'" do
     m = MethodSpecs::Methods.instance_method(:two_req_defined_method)
     m.parameters.should == [[:req, :x], [:req, :y]]
   end
-  
+
   it "returns [] for a define_method method with no args specification" do
     m = MethodSpecs::Methods.instance_method(:no_args_defined_method)
     m.parameters.should == []
   end
-  
+
   it "returns [[:req]] for a define_method method with a grouping as its only argument" do
     m = MethodSpecs::Methods.instance_method(:two_grouped_defined_method)
     m.parameters.should == [[:req]]
   end
-  
+
   it "returns [[:opt, :x]] for a define_method method with an optional argument 'x'" do
     m = MethodSpecs::Methods.instance_method(:one_optional_defined_method)
     m.parameters.should == [[:opt, :x]]

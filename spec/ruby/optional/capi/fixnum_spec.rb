@@ -13,10 +13,6 @@ describe "CApiFixnumSpecs" do
         lambda { @s.rb_fix2uint(nil) }.should raise_error(TypeError)
       end
 
-      it "raises a RangeError when given a negative value" do
-        lambda { @s.rb_fix2uint(-1) }.should raise_error(RangeError)
-      end
-
       it "converts a Fixnum" do
         @s.rb_fix2uint(1).should == 1
       end

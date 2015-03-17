@@ -1,2 +1,0 @@
-fails:String#each_codepoint raises an ArgumentError when self has an invalid encoding and a method is called on the returned Enumerator
-fails:String#each_codepoint raises an ArgumentError if self's encoding is invalid and a block is given

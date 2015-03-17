@@ -14,4 +14,14 @@ describe "Exception#message" do
     exc = ExceptionSpecs::OverrideToS.new("you won't see this")
     exc.message.should == "this is from #to_s"
   end
+
+  context "when #backtrace is redefined" do
+    it "returns the Exception message" do
+      e = Exception.new
+      e.message.should == 'Exception'
+
+      def e.backtrace; []; end
+      e.message.should == 'Exception'
+    end
+  end
 end

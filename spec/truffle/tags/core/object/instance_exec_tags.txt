@@ -1,11 +1,2 @@
-fails:Object#instance_exec raises a LocalJumpError unless given a block
-fails:Object#instance_exec passes any arguments to the block
-fails:Object#instance_exec only binds the exec to the receiver
-fails:Object#instance_exec binds self to the receiver
-fails:Object#instance_exec binds the block's binding self to the receiver
-fails:Object#instance_exec executes in the context of the receiver
-fails:Object#instance_exec has access to receiver's instance variables
-fails:Object#instance_exec invokes Method objects without rebinding self
-fails:Object#instance_exec sets class variables in the receiver
 fails:Object#instance_exec raises a TypeError when defining methods on an immediate
 fails:Object#instance_exec raises a TypeError when defining methods on numerics

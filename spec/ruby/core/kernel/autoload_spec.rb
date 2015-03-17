@@ -113,10 +113,8 @@ describe "Kernel.autoload" do
     Kernel.autoload?(:KSAutoloadAA).should == @non_existent
   end
 
-  it "sets the autoload constant in Object's metaclass's constant table" do
-    class << Object
-      should have_constant(:KSAutoloadBB)
-    end
+  it "sets the autoload constant in Object's constant table" do
+    Object.should have_constant(:KSAutoloadBB)
   end
 
   it "calls #to_path on non-String filenames" do

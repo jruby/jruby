@@ -11,7 +11,7 @@ describe Object, "#it_behaves_like" do
     @state.instance_variable_set :@parsed, true
 
     @shared = ContextState.new :shared_spec, :shared => true
-    MSpec.stub!(:retrieve_shared).and_return(@shared)
+    MSpec.stub(:retrieve_shared).and_return(@shared)
   end
 
   it "creates @method set to the name of the aliased method" do

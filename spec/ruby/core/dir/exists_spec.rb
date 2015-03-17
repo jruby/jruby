@@ -1,6 +1,6 @@
 require File.expand_path('../../../spec_helper', __FILE__)
 require File.expand_path('../fixtures/common', __FILE__)
-require File.expand_path('../shared/exists', __FILE__)
+require File.expand_path('../shared/exist', __FILE__)
 
 describe "Dir.exists?" do
   before :all do
@@ -11,5 +11,5 @@ describe "Dir.exists?" do
     DirSpecs.delete_mock_dirs
   end
 
-  it_behaves_like(:dir_exists, :exists?)
+  it_behaves_like(:dir_exist, :exists?)
 end

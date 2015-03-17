@@ -1,4 +1,5 @@
 require File.expand_path('../../spec_helper', __FILE__)
+require File.expand_path('../fixtures/def', __FILE__)
 
 # Language-level method behaviour
 describe "Redefining a method" do
@@ -8,6 +9,16 @@ describe "Redefining a method" do
 
     def barfoo; 200; end
     barfoo.should == 200
+  end
+end
+
+describe "Defining a method at the top-level" do
+  it "defines it on Object with private visibility by default" do
+    Object.should have_private_instance_method(:some_toplevel_method, false)
+  end
+
+  it "defines it on Object with public visibility after calling public" do
+    Object.should have_public_instance_method(:public_toplevel_method, false)
   end
 end
 
@@ -62,9 +73,18 @@ describe "Defining a 'respond_to_missing?' method" do
 end
 
 describe "Defining a method" do
-  it "returns a symbol of the method name" do
-    method_name = def some_method; end
-    method_name.should == :some_method
+  ruby_version_is ""..."2.1" do
+    it "returns a symbol of the method name" do
+      method_name = def some_method; end
+      method_name.should == nil
+    end
+  end
+
+  ruby_version_is "2.1" do
+    it "returns a symbol of the method name" do
+      method_name = def some_method; end
+      method_name.should == :some_method
+    end
   end
 end
 
@@ -154,15 +174,30 @@ describe "An instance method with a default argument" do
     foo(2,3,3).should == [2,3,[3]]
   end
 
-  it "calls a method with the same name as the local" do
-    def bar
-      1
+  ruby_version_is "2.0"..."2.2" do
+    it "calls a method with the same name as the local" do
+      def bar
+        1
+      end
+      def foo(bar = bar)
+        bar
+      end
+      foo.should == 1
+      foo(2).should == 2
     end
-    def foo(bar = bar)
-      bar
+  end
+
+  ruby_version_is "2.2" do
+    it "does not call a method with the same name as the local" do
+      def bar
+        1
+      end
+      def foo(bar = bar)
+        bar
+      end
+      foo.should == nil
+      foo(2).should == 2
     end
-    foo.should == 1
-    foo(2).should == 2
   end
 end
 

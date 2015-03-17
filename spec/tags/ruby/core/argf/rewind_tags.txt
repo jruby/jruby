@@ -1,0 +1,3 @@
+fails:ARGF.rewind goes back to beginning of current file
+fails:ARGF.rewind resets ARGF.lineno to 0
+fails:ARGF.rewind raises an ArgumentError when end of stream reached

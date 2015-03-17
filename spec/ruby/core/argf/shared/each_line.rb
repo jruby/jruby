@@ -12,11 +12,15 @@ describe :argf_each_line, :shared => true do
   end
 
   it "is a public method" do
-    ARGF.public_methods(false).should include(stasy(@method))
+    argv [@file1_name, @file2_name] do
+      ARGF.public_methods(false).should include(stasy(@method))
+    end
   end
 
   it "requires multiple arguments" do
-    ARGF.method(@method).arity.should < 0
+    argv [@file1_name, @file2_name] do
+      ARGF.method(@method).arity.should < 0
+    end
   end
 
   it "reads each line of files" do

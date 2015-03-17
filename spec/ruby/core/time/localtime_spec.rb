@@ -1,5 +1,4 @@
 require File.expand_path('../../../spec_helper', __FILE__)
-require File.expand_path('../fixtures/methods', __FILE__)
 
 describe "Time#localtime" do
   it "converts self to local time, modifying the receiver" do

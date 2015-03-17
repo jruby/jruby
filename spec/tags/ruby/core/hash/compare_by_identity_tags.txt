@@ -1,0 +1,2 @@
+fails:Hash#compare_by_identity causes future comparisons on the receiver to be made by identity
+fails:Hash#compare_by_identity uses the semantics of BasicObject#equal? to determine key identity

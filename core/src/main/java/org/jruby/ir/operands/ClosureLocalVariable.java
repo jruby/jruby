@@ -66,7 +66,8 @@ public class ClosureLocalVariable extends LocalVariable {
     @Override
     public void encode(IRWriterEncoder e) {
         super.encode(e);
-        e.encode(definedLocally);
+        // FIXME: cloneForDepth might have marked this false and we may need to restore with false
+        //e.encode(definedLocally);
     }
 
     @Override

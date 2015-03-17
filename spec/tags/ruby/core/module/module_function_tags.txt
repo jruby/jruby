@@ -1,2 +1,3 @@
 fails:Module#module_function on Class raises a TypeError if calling after rebinded to Class
 fails:Module#module_function as a toggle (no arguments) in a Module body does not affect definitions when inside an eval even if the definitions are outside of it
+fails:Module#module_function as a toggle (no arguments) in a Module body doesn't affect definitions when inside an eval even if the definitions are outside of it

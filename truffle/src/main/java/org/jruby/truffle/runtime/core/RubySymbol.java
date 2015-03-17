@@ -25,7 +25,6 @@ import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.methods.Arity;
 import org.jruby.truffle.runtime.methods.SharedMethodInfo;
 import org.jruby.util.ByteList;
-import org.jruby.util.ByteListHolder;
 import org.jruby.util.CodeRangeable;
 import org.jruby.util.StringSupport;
 
@@ -139,7 +138,7 @@ public class RubySymbol extends RubyBasicObject implements CodeRangeable {
     }
 
     @Override
-    public Encoding checkEncoding(ByteListHolder other) {
+    public Encoding checkEncoding(CodeRangeable other) {
         // TODO (nirvdrum Jan. 13, 2015): This should check if the encodings are compatible rather than just always succeeding.
         return bytes.getEncoding();
     }

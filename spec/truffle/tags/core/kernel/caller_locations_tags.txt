@@ -1,0 +1,5 @@
+fails:Kernel#caller_locations is a private method
+fails:Kernel#caller_locations returns an Array of caller locations
+fails:Kernel#caller_locations returns an Array of caller locations using a custom offset
+fails:Kernel#caller_locations returns an Array of caller locations using a custom limit
+fails:Kernel#caller_locations returns the locations as Thread::Backtrace::Location instances

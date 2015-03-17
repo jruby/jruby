@@ -256,7 +256,7 @@ describe "String#%" do
       "%f", "%g", "%G", "%i", "%o", "%p",
       "%s", "%u", "%x", "%X"
     ].each do |format|
-      (StringSpecs::MyString.new(format) % universal).should be_kind_of(String)
+      (StringSpecs::MyString.new(format) % universal).should be_an_instance_of(String)
     end
   end
 

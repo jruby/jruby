@@ -527,6 +527,41 @@ public abstract class FileNodes {
 
     }
 
+    @CoreMethod(names = "realpath", onSingleton = true, required = 1, optional = 1)
+    public abstract static class RealpathNode extends CoreMethodNode {
+
+        public RealpathNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public RealpathNode(RealpathNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public RubyString realpath(RubyString path, UndefinedPlaceholder dir) {
+            return getContext().makeString(realpath(path.toString(), null));
+        }
+
+        @Specialization
+        public RubyString realpath(RubyString path, RubyString dir) {
+            return getContext().makeString(realpath(path.toString(), dir.toString()));
+        }
+
+        private String realpath(String path, String dir) {
+            notDesignedForCompilation();
+
+            File file = new File(dir, path);
+
+            try {
+                return file.getCanonicalPath();
+            } catch (IOException e) {
+                throw new UnsupportedOperationException("realpath - " + file);
+            }
+        }
+
+    }
+
     @CoreMethod(names = "size?", onSingleton = true, required = 1)
     public abstract static class SizeNode extends CoreMethodNode {
 

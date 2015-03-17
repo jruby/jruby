@@ -21,25 +21,25 @@ end
 
 describe Mock, ".replaced_name" do
   it "returns the name for a method that is being replaced by a mock method" do
-    m = mock('a fake id')
-    m.stub!(:__mspec_object_id__).and_return(42)
+    m = double('a fake id')
+    m.stub(:__mspec_object_id__).and_return(42)
     Mock.replaced_name(m, :method_call).should == :__mspec_42_method_call__
   end
 end
 
 describe Mock, ".replaced_key" do
   it "returns a key used internally by Mock" do
-    m = mock('a fake id')
-    m.stub!(:__mspec_object_id__).and_return(42)
+    m = double('a fake id')
+    m.stub(:__mspec_object_id__).and_return(42)
     Mock.replaced_key(m, :method_call).should == [:__mspec_42_method_call__, :method_call]
   end
 end
 
 describe Mock, ".replaced?" do
   before :each do
-    @mock = mock('install_method')
-    MSpec.stub!(:actions)
-    MSpec.stub!(:current).and_return(mock("spec state").as_null_object)
+    @mock = double('install_method')
+    MSpec.stub(:actions)
+    MSpec.stub(:current).and_return(double("spec state").as_null_object)
   end
 
   it "returns true if a method has been stubbed on an object" do
@@ -59,7 +59,7 @@ end
 
 describe Mock, ".name_or_inspect" do
   before :each do
-    @mock = mock("I have a #name")
+    @mock = double("I have a #name")
   end
 
   it "returns the value of @name if set" do
@@ -70,9 +70,9 @@ end
 
 describe Mock, ".install_method for mocks" do
   before :each do
-    @mock = mock('install_method')
-    MSpec.stub!(:actions)
-    MSpec.stub!(:current).and_return(mock("spec state").as_null_object)
+    @mock = double('install_method')
+    MSpec.stub(:actions)
+    MSpec.stub(:current).and_return(double("spec state").as_null_object)
   end
 
   after :each do
@@ -123,8 +123,8 @@ describe Mock, ".install_method for mocks" do
   end
 
   it "adds to the expectation tally" do
-    state = mock("run state").as_null_object
-    state.stub!(:state).and_return(mock("spec state"))
+    state = double("run state").as_null_object
+    state.stub(:state).and_return(double("spec state"))
     MSpec.should_receive(:current).and_return(state)
     MSpec.should_receive(:actions).with(:expectation, state.state)
     Mock.install_method(@mock, :method_call).and_return(1)
@@ -132,8 +132,8 @@ describe Mock, ".install_method for mocks" do
   end
 
   it "registers that an expectation has been encountered" do
-    state = mock("run state").as_null_object
-    state.stub!(:state).and_return(mock("spec state"))
+    state = double("run state").as_null_object
+    state.stub(:state).and_return(double("spec state"))
     MSpec.should_receive(:expectation)
     Mock.install_method(@mock, :method_call).and_return(1)
     @mock.method_call.should == 1
@@ -142,9 +142,9 @@ end
 
 describe Mock, ".install_method for stubs" do
   before :each do
-    @mock = mock('install_method')
-    MSpec.stub!(:actions)
-    MSpec.stub!(:current).and_return(mock("spec state").as_null_object)
+    @mock = double('install_method')
+    MSpec.stub(:actions)
+    MSpec.stub(:current).and_return(double("spec state").as_null_object)
   end
 
   after :each do
@@ -157,12 +157,12 @@ describe Mock, ".install_method for stubs" do
 
   # This illustrates RSpec's behavior. This spec passes on RSpec and we mimic it
   #
-  # describe "A mock receiving multiple calls to #stub!" do
+  # describe "A mock receiving multiple calls to #stub" do
   #   it "returns the last value stubbed" do
-  #     m = mock 'multiple #stub!'
-  #     m.stub!(:foo).and_return(true)
+  #     m = mock 'multiple #stub'
+  #     m.stub(:foo).and_return(true)
   #     m.foo.should == true
-  #     m.stub!(:foo).and_return(false)
+  #     m.stub(:foo).and_return(false)
   #     m.foo.should == false
   #   end
   # end
@@ -175,8 +175,8 @@ describe Mock, ".install_method for stubs" do
   end
 
   it "does not add to the expectation tally" do
-    state = mock("run state").as_null_object
-    state.stub!(:state).and_return(mock("spec state"))
+    state = double("run state").as_null_object
+    state.stub(:state).and_return(double("spec state"))
     MSpec.should_not_receive(:actions)
     Mock.install_method(@mock, :method_call, :stub).and_return(1)
     @mock.method_call.should == 1
@@ -185,9 +185,9 @@ end
 
 describe Mock, ".install_method" do
   before :each do
-    @mock = mock('install_method')
-    MSpec.stub!(:actions)
-    MSpec.stub!(:current).and_return(mock("spec state").as_null_object)
+    @mock = double('install_method')
+    MSpec.stub(:actions)
+    MSpec.stub(:current).and_return(double("spec state").as_null_object)
   end
 
   after :each do
@@ -211,10 +211,10 @@ class MockAndRaiseError < Exception; end
 
 describe Mock, ".verify_call" do
   before :each do
-    MSpec.stub!(:actions)
-    MSpec.stub!(:current).and_return(mock("spec state").as_null_object)
+    MSpec.stub(:actions)
+    MSpec.stub(:current).and_return(double("spec state").as_null_object)
 
-    @mock = mock('verify_call')
+    @mock = double('verify_call')
     @proxy = Mock.install_method @mock, :method_call
   end
 
@@ -302,9 +302,9 @@ describe Mock, ".verify_call" do
 
   it "does not raise an expection when it is expected to yield to a block that can take any number of arguments" do
     @proxy.and_yield(1, 2, 3)
-    lambda {
+    expect {
       Mock.verify_call(@mock, :method_call) {|*a|}
-    }.should_not raise_error(SpecExpectationNotMetError)
+    }.not_to raise_error
   end
 
   it "raises an exception when expected to" do
@@ -317,10 +317,10 @@ end
 
 describe Mock, ".verify_count" do
   before :each do
-    MSpec.stub!(:actions)
-    MSpec.stub!(:current).and_return(mock("spec state").as_null_object)
+    MSpec.stub(:actions)
+    MSpec.stub(:current).and_return(double("spec state").as_null_object)
 
-    @mock = mock('verify_count')
+    @mock = double('verify_count')
     @proxy = Mock.install_method @mock, :method_call
   end
 
@@ -380,10 +380,10 @@ end
 
 describe Mock, ".verify_count mixing mocks and stubs" do
   before :each do
-    MSpec.stub!(:actions)
-    MSpec.stub!(:current).and_return(mock("spec state").as_null_object)
+    MSpec.stub(:actions)
+    MSpec.stub(:current).and_return(double("spec state").as_null_object)
 
-    @mock = mock('verify_count')
+    @mock = double('verify_count')
   end
 
   after :each do
@@ -412,10 +412,10 @@ end
 
 describe Mock, ".cleanup" do
   before :each do
-    MSpec.stub!(:actions)
-    MSpec.stub!(:current).and_return(mock("spec state").as_null_object)
+    MSpec.stub(:actions)
+    MSpec.stub(:current).and_return(double("spec state").as_null_object)
 
-    @mock = mock('cleanup')
+    @mock = double('cleanup')
     @proxy = Mock.install_method @mock, :method_call
     @stub = Mock.install_method @mock, :method_call, :stub
   end

@@ -1,0 +1,3 @@
+fails:ARGF.lineno returns the current line number on each file
+fails:ARGF.lineno resets to 0 after the stream is rewound
+fails:ARGF.lineno aliases to $.

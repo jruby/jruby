@@ -2,8 +2,10 @@ require File.expand_path('../../../spec_helper', __FILE__)
 require File.expand_path('../fixtures/classes', __FILE__)
 
 describe "Module#include" do
-  it "is a public method" do
-    Module.should have_public_instance_method(:include, true)
+  ruby_version_is "2.1" do
+    it "is a public method" do
+      Module.should have_public_instance_method(:include, true)
+    end
   end
 
   it "calls #append_features(self) in reversed order on each module" do

@@ -99,18 +99,18 @@ end
 describe Object, "#ruby_version_is" do
   before :each do
     @guard = VersionGuard.new 'x.x.x.x'
-    VersionGuard.stub!(:new).and_return(@guard)
+    VersionGuard.stub(:new).and_return(@guard)
     ScratchPad.clear
   end
 
   it "yields when #match? returns true" do
-    @guard.stub!(:match?).and_return(true)
+    @guard.stub(:match?).and_return(true)
     ruby_version_is('x.x.x.x') { ScratchPad.record :yield }
     ScratchPad.recorded.should == :yield
   end
 
   it "does not yield when #match? returns false" do
-    @guard.stub!(:match?).and_return(false)
+    @guard.stub(:match?).and_return(false)
     ruby_version_is('x.x.x.x') { ScratchPad.record :yield }
     ScratchPad.recorded.should_not == :yield
   end

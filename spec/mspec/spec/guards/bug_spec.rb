@@ -94,7 +94,7 @@ describe BugGuard, "#match? when #implementation? is not 'ruby'" do
   end
 
   it "returns false when MSpec.mode?(:no_ruby_bug) is true" do
-    MSpec.should_receive(:mode?).with(:no_ruby_bug).any_number_of_times.and_return(:true)
+    MSpec.stub(:mode?).and_return(:true)
     BugGuard.new("#1", "1.8.6").match?.should == false
     BugGuard.new("#1", "1.8.6.114").match?.should == false
     BugGuard.new("#1", "1.8.6.115").match?.should == false
@@ -104,18 +104,18 @@ end
 describe Object, "#ruby_bug" do
   before :each do
     @guard = BugGuard.new "#1234", "x.x.x.x"
-    BugGuard.stub!(:new).and_return(@guard)
+    BugGuard.stub(:new).and_return(@guard)
     ScratchPad.clear
   end
 
   it "yields when #match? returns false" do
-    @guard.stub!(:match?).and_return(false)
+    @guard.stub(:match?).and_return(false)
     ruby_bug("#1234", "1.8.6") { ScratchPad.record :yield }
     ScratchPad.recorded.should == :yield
   end
 
   it "does not yield when #match? returns true" do
-    @guard.stub!(:match?).and_return(true)
+    @guard.stub(:match?).and_return(true)
     ruby_bug("#1234", "1.8.6") { ScratchPad.record :yield }
     ScratchPad.recorded.should_not == :yield
   end

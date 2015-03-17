@@ -5,11 +5,11 @@ require 'mspec/runner/filters/tag'
 
 describe TagFilter, "#load" do
   before :each do
-    @match = mock("match filter").as_null_object
+    @match = double("match filter").as_null_object
     @filter = TagFilter.new :include, "tag", "key"
     @tag = SpecTag.new "tag(comment):description"
-    MSpec.stub!(:read_tags).and_return([@tag])
-    MSpec.stub!(:register)
+    MSpec.stub(:read_tags).and_return([@tag])
+    MSpec.stub(:register)
   end
 
   it "loads tags from the tag file" do
@@ -46,13 +46,13 @@ describe TagFilter, "#unload" do
   before :each do
     @filter = TagFilter.new :include, "tag", "key"
     @tag = SpecTag.new "tag(comment):description"
-    MSpec.stub!(:read_tags).and_return([@tag])
+    MSpec.stub(:read_tags).and_return([@tag])
   end
 
   it "unregisters the MatchFilter if one was registered" do
-    match = mock("match filter").as_null_object
+    match = double("match filter").as_null_object
     match.should_receive(:unregister)
-    MatchFilter.stub!(:new).with(:include, "description").and_return(match)
+    MatchFilter.stub(:new).with(:include, "description").and_return(match)
     @filter.load
     @filter.unload
   end

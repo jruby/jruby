@@ -1,4 +1,4 @@
-# encoding: US-ASCII
+# encoding: us-ascii
 
 module CodingUS_ASCII
   def self.encoding

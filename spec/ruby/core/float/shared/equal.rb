@@ -6,13 +6,12 @@ describe :float_equal, :shared => true do
   end
 
   it "calls 'other == self' if coercion fails" do
-    x = Class.new do
-      def ==(other)
-        2.0 == other
-      end
+    x = mock('other')
+    def x.==(other)
+      2.0 == other
     end
 
-    1.0.send(@method, x.new).should == false
-    2.0.send(@method, x.new).should == true
+    1.0.send(@method, x).should == false
+    2.0.send(@method, x).should == true
   end
 end

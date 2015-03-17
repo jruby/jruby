@@ -68,7 +68,7 @@ describe ExampleState, "#filtered?" do
     MSpec.store :exclude, nil
 
     @state = ExampleState.new ContextState.new("describe"), "it"
-    @filter = mock("filter")
+    @filter = double("filter")
   end
 
   after :each do

@@ -1,6 +1,7 @@
 package org.jruby.ir.operands;
 
 import org.jruby.ir.IRVisitor;
+import org.jruby.ir.persistence.IRReaderDecoder;
 import org.jruby.ir.persistence.IRWriterEncoder;
 import org.jruby.runtime.ThreadContext;
 
@@ -45,6 +46,11 @@ public class Boolean extends ImmutableLiteral {
     public void encode(IRWriterEncoder e) {
         super.encode(e);
         e.encode(isTrue());
+    }
+
+    public static Boolean decode(IRReaderDecoder d) {
+        return d.decodeBoolean() ?
+                d.getCurrentScope().getManager().getTrue() : d.getCurrentScope().getManager().getFalse();
     }
 
     @Override

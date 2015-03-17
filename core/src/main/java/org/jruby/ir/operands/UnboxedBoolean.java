@@ -1,6 +1,8 @@
 package org.jruby.ir.operands;
 
 import org.jruby.ir.IRVisitor;
+import org.jruby.ir.persistence.IRReaderDecoder;
+import org.jruby.ir.persistence.IRWriterEncoder;
 import org.jruby.runtime.ThreadContext;
 
 public class UnboxedBoolean extends ImmutableLiteral {
@@ -41,6 +43,16 @@ public class UnboxedBoolean extends ImmutableLiteral {
     @Override
     public void visit(IRVisitor visitor) {
         visitor.UnboxedBoolean(this);
+    }
+
+    @Override
+    public void encode(IRWriterEncoder e) {
+        super.encode(e);
+        e.encode(truthy);
+    }
+
+    public static UnboxedBoolean decode(IRReaderDecoder d) {
+        return d.decodeBoolean() ? TRUE : FALSE;
     }
 
     @Override

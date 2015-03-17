@@ -1,8 +1,10 @@
 package org.jruby.ir.operands;
 
+import java.util.ArrayList;
 import org.jruby.Ruby;
 import org.jruby.RubyHash;
 import org.jruby.ir.IRVisitor;
+import org.jruby.ir.persistence.IRReaderDecoder;
 import org.jruby.ir.persistence.IRWriterEncoder;
 import org.jruby.ir.transformations.inlining.CloneInfo;
 import org.jruby.parser.StaticScope;
@@ -54,7 +56,7 @@ public class Hash extends Operand {
 
     @Override
     public Operand getSimplifiedOperand(Map<Operand, Operand> valueMap, boolean force) {
-        List<KeyValuePair<Operand, Operand>> newPairs = new java.util.ArrayList<KeyValuePair<Operand, Operand>>();
+        List<KeyValuePair<Operand, Operand>> newPairs = new java.util.ArrayList<>();
         for (KeyValuePair<Operand, Operand> pair : pairs) {
             newPairs.add(new KeyValuePair(pair.getKey().getSimplifiedOperand(valueMap, force), pair
                     .getValue().getSimplifiedOperand(valueMap, force)));
@@ -73,7 +75,7 @@ public class Hash extends Operand {
     }
 
     public Operand cloneForLVarDepth(int newDepth) {
-        List<KeyValuePair<Operand, Operand>> newPairs = new java.util.ArrayList<KeyValuePair<Operand, Operand>>();
+        List<KeyValuePair<Operand, Operand>> newPairs = new java.util.ArrayList<>();
         for (KeyValuePair<Operand, Operand> pair : pairs) {
             newPairs.add(new KeyValuePair(pair.getKey(), ((DepthCloneable) pair.getValue()).cloneForDepth(newDepth)));
         }
@@ -85,10 +87,9 @@ public class Hash extends Operand {
         if (hasKnownValue())
             return this;
 
-        List<KeyValuePair<Operand, Operand>> newPairs = new java.util.ArrayList<KeyValuePair<Operand, Operand>>();
+        List<KeyValuePair<Operand, Operand>> newPairs = new java.util.ArrayList<>();
         for (KeyValuePair<Operand, Operand> pair : pairs) {
-            newPairs.add(new KeyValuePair(pair.getKey().cloneForInlining(ii), pair.getValue()
-                    .cloneForInlining(ii)));
+            newPairs.add(new KeyValuePair(pair.getKey().cloneForInlining(ii), pair.getValue().cloneForInlining(ii)));
         }
         return new Hash(newPairs, isKWArgsHash);
     }
@@ -109,7 +110,7 @@ public class Hash extends Operand {
         }
 
         while (it.hasNext()) {
-            KeyValuePair<Operand, Operand> pair = (KeyValuePair<Operand, Operand>) it.next();
+            KeyValuePair<Operand, Operand> pair = it.next();
             IRubyObject key = (IRubyObject) pair.getKey().retrieve(context, self, currScope, currDynScope, temp);
             IRubyObject value = (IRubyObject) pair.getValue().retrieve(context, self, currScope, currDynScope, temp);
 
@@ -132,6 +133,18 @@ public class Hash extends Operand {
             e.encode(pair.getKey());
             e.encode(pair.getValue());
         }
+        e.encode(isKWArgsHash);
+    }
+
+    public static Hash decode(IRReaderDecoder d) {
+        int size = d.decodeInt();
+        List<KeyValuePair<Operand, Operand>> pairs = new ArrayList<>(size);
+
+        for (int i = 0; i < size; i++) {
+            pairs.add(new KeyValuePair(d.decodeOperand(), d.decodeOperand()));
+        }
+
+        return new Hash(pairs, d.decodeBoolean());
     }
 
     @Override

@@ -4,4 +4,4 @@ module MarshalSpec
       false
     end
   end
-end  
+end

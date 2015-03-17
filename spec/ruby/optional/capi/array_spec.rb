@@ -42,6 +42,14 @@ describe "C-API Array function" do
     end
   end
 
+  ruby_version_is "2.1" do
+    describe "rb_ary_new_from_args" do
+      it "returns an array with the passed cardinality and varargs" do
+        @s.rb_ary_new_from_args(1,2,3).should == [1,2,3]
+      end
+    end
+  end
+
   describe "rb_ary_new4" do
     it "returns returns an array with the passed values" do
       @s.rb_ary_new4(1,2,3).should == [1,2,3]
@@ -176,6 +184,12 @@ describe "C-API Array function" do
       a = [5, 1, 1, 5, 4]
       b = [2, 3]
       @s.rb_ary_concat(a, b).should == [5, 1, 1, 5, 4, 2, 3]
+    end
+  end
+
+  describe "rb_ary_plus" do
+    it "adds two arrays together" do
+      @s.rb_ary_plus([10], [20]).should == [10, 20]
     end
   end
 

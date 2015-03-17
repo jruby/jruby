@@ -7,25 +7,25 @@ describe Object, "#conflicts_with" do
   end
 
   it "does not yield if Object.constants includes any of the arguments" do
-    Object.stub!(:constants).and_return(["SomeClass", "OtherClass"])
+    Object.stub(:constants).and_return(["SomeClass", "OtherClass"])
     conflicts_with(:SomeClass, :AClass, :BClass) { ScratchPad.record :yield }
     ScratchPad.recorded.should_not == :yield
   end
 
   it "does not yield if Object.constants (as Symbols) includes any of the arguments" do
-    Object.stub!(:constants).and_return([:SomeClass, :OtherClass])
+    Object.stub(:constants).and_return([:SomeClass, :OtherClass])
     conflicts_with(:SomeClass, :AClass, :BClass) { ScratchPad.record :yield }
     ScratchPad.recorded.should_not == :yield
   end
 
   it "yields if Object.constants does not include any of the arguments" do
-    Object.stub!(:constants).and_return(["SomeClass", "OtherClass"])
+    Object.stub(:constants).and_return(["SomeClass", "OtherClass"])
     conflicts_with(:AClass, :BClass) { ScratchPad.record :yield }
     ScratchPad.recorded.should == :yield
   end
 
   it "yields if Object.constants (as Symbols) does not include any of the arguments" do
-    Object.stub!(:constants).and_return([:SomeClass, :OtherClass])
+    Object.stub(:constants).and_return([:SomeClass, :OtherClass])
     conflicts_with(:AClass, :BClass) { ScratchPad.record :yield }
     ScratchPad.recorded.should == :yield
   end
@@ -34,7 +34,7 @@ end
 describe Object, "#conflicts_with" do
   before :each do
     @guard = ConflictsGuard.new
-    ConflictsGuard.stub!(:new).and_return(@guard)
+    ConflictsGuard.stub(:new).and_return(@guard)
   end
 
   it "sets the name of the guard to :conflicts_with" do
