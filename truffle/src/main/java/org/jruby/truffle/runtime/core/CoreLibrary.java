@@ -123,6 +123,7 @@ public class CoreLibrary {
     private final RubyClass edomClass;
     private final RubyClass einvalClass;
     private final RubyClass enoentClass;
+    private final RubyClass enotemptyClass;
     private final RubyClass encodingConverterClass;
     private final RubyClass encodingCompatibilityErrorClass;
     private final RubyClass methodClass;
@@ -230,7 +231,7 @@ public class CoreLibrary {
         edomClass = new RubyClass(context, errnoModule, systemCallErrorClass, "EDOM");
         new RubyClass(context, errnoModule, systemCallErrorClass, "EEXIST");
         enoentClass = new RubyClass(context, errnoModule, systemCallErrorClass, "ENOENT");
-        new RubyClass(context, errnoModule, systemCallErrorClass, "ENOTEMPTY");
+        enotemptyClass = new RubyClass(context, errnoModule, systemCallErrorClass, "ENOTEMPTY");
         new RubyClass(context, errnoModule, systemCallErrorClass, "EPERM");
         new RubyClass(context, errnoModule, systemCallErrorClass, "EXDEV");
         einvalClass = new RubyClass(context, errnoModule, systemCallErrorClass, "EINVAL");
@@ -860,6 +861,11 @@ public class CoreLibrary {
     public RubyException fileNotFoundError(String fileName, Node currentNode) {
         CompilerAsserts.neverPartOfCompilation();
         return new RubyException(enoentClass, context.makeString(String.format("No such file or directory -  %s", fileName)), RubyCallStack.getBacktrace(currentNode));
+    }
+
+    public RubyException dirNotEmptyError(String path, Node currentNode) {
+        CompilerAsserts.neverPartOfCompilation();
+        return new RubyException(enotemptyClass, context.makeString(String.format("Directory not empty - %s", path)), RubyCallStack.getBacktrace(currentNode));
     }
 
     public RubyException rangeError(int code, RubyEncoding encoding, Node currentNode) {
