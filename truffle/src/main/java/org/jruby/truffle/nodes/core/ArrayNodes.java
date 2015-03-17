@@ -486,12 +486,18 @@ public abstract class ArrayNodes {
 
         @Specialization(guards = "!isRubyArray(arguments[2])")
         public Object setRange(VirtualFrame frame, RubyArray array, RubyRange.IntegerFixnumRange range, Object other, UndefinedPlaceholder unused) {
-            return setObject(frame, array, range.getBegin(), range.getLength(), other);
+            final int normalizedStart = array.normalizeIndex(range.getBegin());
+            final int normalizedEnd = range.doesExcludeEnd() ? array.normalizeIndex(range.getEnd()) - 1 : array.normalizeIndex(range.getEnd());
+            final int length = normalizedEnd - normalizedStart + 1;
+            return setObject(frame, array, normalizedStart, length, other);
         }
 
         @Specialization
         public Object setRangeArray(VirtualFrame frame, RubyArray array, RubyRange.IntegerFixnumRange range, RubyArray other, UndefinedPlaceholder unused) {
-            return setOtherArray(frame, array, range.getBegin(), range.getLength(), other);
+            final int normalizedStart = array.normalizeIndex(range.getBegin());
+            final int normalizedEnd = range.doesExcludeEnd() ? array.normalizeIndex(range.getEnd()) - 1 : array.normalizeIndex(range.getEnd());
+            final int length = normalizedEnd - normalizedStart + 1;
+            return setOtherArray(frame, array, normalizedStart, length, other);
         }
 
     }
