@@ -44,6 +44,7 @@ import org.joni.Option;
 import org.joni.Region;
 import org.jruby.runtime.Visibility;
 import org.jruby.truffle.nodes.RubyNode;
+import org.jruby.truffle.nodes.cast.TaintResultNode;
 import org.jruby.truffle.nodes.coerce.ToIntNode;
 import org.jruby.truffle.nodes.coerce.ToIntNodeFactory;
 import org.jruby.truffle.nodes.coerce.ToStrNode;
@@ -80,7 +81,13 @@ import java.util.regex.Pattern;
 public abstract class StringNodes {
 
     @CoreMethod(names = "+", required = 1)
-    public abstract static class AddNode extends CoreMethodNode {
+    @NodeChildren({
+        @NodeChild(value = "string"),
+        @NodeChild(value = "other")
+    })
+    public abstract static class AddNode extends RubyNode {
+
+        @Child private TaintResultNode taintResultNode;
 
         public AddNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -88,13 +95,29 @@ public abstract class StringNodes {
 
         public AddNode(AddNode prev) {
             super(prev);
+            taintResultNode = prev.taintResultNode;
+        }
+
+        @CreateCast("other") public RubyNode coerceOtherToString(RubyNode other) {
+            return ToStrNodeFactory.create(getContext(), getSourceSection(), other);
         }
 
         @Specialization
-        public RubyString add(RubyString a, RubyString b) {
-            notDesignedForCompilation();
+        public RubyString add(RubyString string, RubyString other) {
+            final Encoding enc = string.checkEncoding(other, this);
+            final RubyString ret = getContext().makeString(getContext().getCoreLibrary().getStringClass(),
+                    StringSupport.addByteLists(string.getByteList(), other.getByteList()));
 
-            return (RubyString) getContext().toTruffle(getContext().toJRuby(a).op_plus(getContext().getRuntime().getCurrentContext(), getContext().toJRuby(b)));
+            if (taintResultNode == null) {
+                CompilerDirectives.transferToInterpreter();
+                taintResultNode = insert(new TaintResultNode(getContext(), getSourceSection(), false, new int[]{}));
+            }
+
+            ret.getByteList().setEncoding(enc);
+            taintResultNode.maybeTaint(string, ret);
+            taintResultNode.maybeTaint(other, ret);
+
+            return ret;
         }
     }
 
