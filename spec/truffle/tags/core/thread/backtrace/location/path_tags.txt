@@ -1,0 +1,7 @@
+fails:Thread::Backtrace::Location#path outside a main script returns an absolute path
+fails:Thread::Backtrace::Location#path in a main script when the script is in the working directory when using a relative script path returns a path relative to the working directory
+fails:Thread::Backtrace::Location#path in a main script when the script is in the working directory when using an absolute script path returns an absolute path
+fails:Thread::Backtrace::Location#path in a main script when the script is in a sub directory of the working directory when using a relative script path returns a path relative to the working directory
+fails:Thread::Backtrace::Location#path in a main script when the script is in a sub directory of the working directory when using an absolute script path returns an absolute path
+fails:Thread::Backtrace::Location#path in a main script when the script is outside of the working directory when using a relative script path returns a path relative to the working directory
+fails:Thread::Backtrace::Location#path in a main script when the script is outside of the working directory when using an absolute path returns an absolute path

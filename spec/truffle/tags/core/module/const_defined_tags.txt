@@ -11,3 +11,4 @@ fails:Module#const_defined? raises a NameError if the name starts with '@'
 fails:Module#const_defined? raises a NameError if the name starts with '!'
 fails:Module#const_defined? raises a NameError if the name contains non-alphabetic characters except '_'
 fails:Module#const_defined? raises a TypeError if conversion to a String by calling #to_str fails
+fails:Module#const_defined? returns true or false for the nested name
