@@ -6,7 +6,6 @@
 
   <formats>
     <format>tar.gz</format>
-    <format>zip</format>
   </formats>
 
   <componentDescriptors>
@@ -36,4 +35,11 @@
       </includes>
     </fileSet>
   </fileSets>
+  <files>
+    <file>
+      <source>${project.build.directory}/META-INF/jruby.home/bin/jruby200.sh</source>
+      <outputDirectory>bin</outputDirectory>
+      <destName>jruby</destName>
+    </file>
+  </files>
 </assembly>

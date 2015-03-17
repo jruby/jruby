@@ -18,7 +18,7 @@ project 'JRuby Dist' do
   # pre-installed gems - not default gems !
   gem 'ruby-maven', '3.1.1.0.8', :scope => 'provided'
 
-  # add torquebox repo only when building from filesystem
+  # HACK: add torquebox repo only when building from filesystem
   # not when using the pom as "dependency" in some other projects
   profile 'gem proxy' do
 
@@ -86,51 +86,16 @@ project 'JRuby Dist' do
   phase :package do
     plugin( :assembly, '2.4',
             :recompressZippedFiles => true,
-            'tarLongFileMode' =>  'gnu' ) do
-      execute_goals( 'single', :id => 'jar', 
-                     'descriptors' => [ 'src/main/assembly/bin.xml' ] )
-      execute_goals( 'single', :id => 'pack200', 
-                     'descriptors' => [ 'src/main/assembly/bin200.xml' ] )
+            :tarLongFileMode =>  'gnu' ) do
+      execute_goals( :single, :id => 'bin.tar.gz and bin.zip',
+                     :descriptors => [ 'src/main/assembly/bin.xml' ] )
+      execute_goals( :single, :id => 'bin200.tar.gz',
+                     #:attach => false,
+                     :descriptors => [ 'src/main/assembly/bin200.xml' ] )
     end
   end
 
   plugin( :invoker )
-
-  # for the release we do some extra IT by unzipping a source dist file
-  # and run the $ mvn -Pall from there and check a few things to be in place.
-  # add check for SNAPSHOT version in any of the modules !!!!
-  
-  profile 'not-working-currently---release' do
-
-    plugin( :invoker, :pomIncludes => [ '*' ] )
-
-    phase 'pre-integration-test' do
-      plugin :dependency do
-        execute_goals( 'unpack',
-                       :id => 'unpack jruby-dist',
-                       'stripVersion' =>  'true',
-                       'artifactItems' => [ { 'groupId' =>  'org.jruby',
-                                              'artifactId' =>  'jruby-dist',
-                                              'version' =>  '${project.version}',
-                                              'type' =>  'zip',
-                                              'classifier' => 'src',
-                                              'overWrite' =>  'false',
-                                              'outputDirectory' =>  '${project.build.directory}' } ] )
-      end
-    end
-
-    execute :prepare_sources_for_it, 'pre-integration-test' do |ctx|
-      require 'fileutils'
-      dir = File.join( "#{ctx.project.build.directory}", 'it' )
-      FileUtils.mkdir_p dir
-      dir = File.join( dir, 'sources')
-      FileUtils.mv( "#{ctx.project.build.directory}/jruby-#{ctx.project.version}", "#{dir}" ) unless File.exists? "#{dir}"
-      File.open( "#{dir}/test.properties", 'w' ) do |f|
-        f.puts File.join( "outputFile=#{File.expand_path( dir )}", 'tree.txt' )
-        f.puts 'appendOutput=true'
-      end
-    end
-  end
 
   # since the source packages are done from the git repository we need
   # to be inside a git controlled directory. for example the source packages
@@ -152,13 +117,14 @@ project 'JRuby Dist' do
         basefile = "#{ctx.project.build.directory}/#{ctx.project.artifactId}-#{ctx.project.version}-src"
         
         FileUtils.cd( File.join( ctx.project.basedir.to_s, '..', '..' ) ) do
-          [ 'tar', 'zip' ].each do |format|
+          #[ 'tar', 'zip' ].each do |format|
+          [ 'zip' ].each do |format|
             puts "create #{basefile}.#{format}"
             system( "git archive --prefix 'jruby-#{ctx.project.version}/' --format #{format} #{revision} . -o #{basefile}.#{format}" ) || raise( "error creating #{format}-file" )
           end
         end
-        puts "zipping #{basefile}.tar"
-        system( "gzip #{basefile}.tar -f" ) || raise( "error zipping #{basefile}.tar" )
+        #puts "zipping #{basefile}.tar"
+        #system( "gzip #{basefile}.tar -f" ) || raise( "error zipping #{basefile}.tar" )
       end
       plugin 'org.codehaus.mojo:build-helper-maven-plugin' do
         execute_goal( 'attach-artifact',

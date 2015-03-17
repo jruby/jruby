@@ -15,6 +15,7 @@
     <jruby.plugins.version>1.0.8</jruby.plugins.version>
     <main.basedir>${project.parent.parent.basedir}</main.basedir>
     <tesla.dump.pom>pom.xml</tesla.dump.pom>
+    <tesla.version>0.1.1</tesla.version>
   </properties>
   <dependencies>
     <dependency>
@@ -69,7 +70,7 @@
         <version>2.4</version>
         <executions>
           <execution>
-            <id>jar</id>
+            <id>bin.tar.gz and bin.zip</id>
             <phase>package</phase>
             <goals>
               <goal>single</goal>
@@ -81,7 +82,7 @@
             </configuration>
           </execution>
           <execution>
-            <id>pack200</id>
+            <id>bin200.tar.gz</id>
             <phase>package</phase>
             <goals>
               <goal>single</goal>
@@ -104,7 +105,7 @@
       <plugin>
         <groupId>io.tesla.polyglot</groupId>
         <artifactId>tesla-polyglot-maven-plugin</artifactId>
-        <version>0.1.1</version>
+        <version>${tesla.version}</version>
         <executions>
           <execution>
             <id>pack200</id>
@@ -144,7 +145,7 @@
           <dependency>
             <groupId>io.tesla.polyglot</groupId>
             <artifactId>tesla-polyglot-ruby</artifactId>
-            <version>0.1.1</version>
+            <version>${tesla.version}</version>
           </dependency>
         </dependencies>
       </plugin>
@@ -164,72 +165,6 @@
           <url>http://rubygems-proxy.torquebox.org/releases</url>
         </repository>
       </repositories>
-    </profile>
-    <profile>
-      <id>not-working-currently---release</id>
-      <build>
-        <plugins>
-          <plugin>
-            <artifactId>maven-invoker-plugin</artifactId>
-            <configuration>
-              <pomIncludes>
-                <pomInclude>*</pomInclude>
-              </pomIncludes>
-            </configuration>
-          </plugin>
-          <plugin>
-            <artifactId>maven-dependency-plugin</artifactId>
-            <executions>
-              <execution>
-                <id>unpack jruby-dist</id>
-                <phase>pre-integration-test</phase>
-                <goals>
-                  <goal>unpack</goal>
-                </goals>
-                <configuration>
-                  <stripVersion>true</stripVersion>
-                  <artifactItems>
-                    <artifactItem>
-                      <groupId>org.jruby</groupId>
-                      <artifactId>jruby-dist</artifactId>
-                      <version>${project.version}</version>
-                      <type>zip</type>
-                      <classifier>src</classifier>
-                      <overWrite>false</overWrite>
-                      <outputDirectory>${project.build.directory}</outputDirectory>
-                    </artifactItem>
-                  </artifactItems>
-                </configuration>
-              </execution>
-            </executions>
-          </plugin>
-          <plugin>
-            <groupId>io.tesla.polyglot</groupId>
-            <artifactId>tesla-polyglot-maven-plugin</artifactId>
-            <version>0.1.1</version>
-            <executions>
-              <execution>
-                <id>prepare_sources_for_it</id>
-                <phase>pre-integration-test</phase>
-                <goals>
-                  <goal>execute</goal>
-                </goals>
-                <configuration>
-                  <taskId>prepare_sources_for_it</taskId>
-                  <nativePom>pom.rb</nativePom>
-                </configuration>
-              </execution>
-            </executions>
-            <dependencies>
-              <dependency>
-                <groupId>io.tesla.polyglot</groupId>
-                <artifactId>tesla-polyglot-ruby</artifactId>
-                <version>0.1.1</version>
-              </dependency>
-            </dependencies>
-          </plugin>
-        </plugins>
-      </build>
     </profile>
     <profile>
       <id>source dist</id>
@@ -265,7 +200,7 @@
           <plugin>
             <groupId>io.tesla.polyglot</groupId>
             <artifactId>tesla-polyglot-maven-plugin</artifactId>
-            <version>0.1.1</version>
+            <version>${tesla.version}</version>
             <executions>
               <execution>
                 <id>pack_sources</id>
@@ -283,7 +218,7 @@
               <dependency>
                 <groupId>io.tesla.polyglot</groupId>
                 <artifactId>tesla-polyglot-ruby</artifactId>
-                <version>0.1.1</version>
+                <version>${tesla.version}</version>
               </dependency>
             </dependencies>
           </plugin>
