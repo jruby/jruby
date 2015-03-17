@@ -1118,7 +1118,6 @@ public abstract class StringNodes {
         @TruffleBoundary
         @Specialization
         public RubyString encode(RubyString string, RubyString encoding, @SuppressWarnings("unused") UndefinedPlaceholder options) {
-
             final org.jruby.RubyString jrubyString = getContext().toJRuby(string);
             final org.jruby.RubyString jrubyEncodingString = getContext().toJRuby(encoding);
             final org.jruby.RubyString jrubyTranscoded = (org.jruby.RubyString) jrubyString.encode(getContext().getRuntime().getCurrentContext(), jrubyEncodingString);
@@ -1534,9 +1533,9 @@ public abstract class StringNodes {
             super(prev);
         }
 
+        @TruffleBoundary
         @Specialization
         public int ord(RubyString string) {
-            notDesignedForCompilation();
             return ((org.jruby.RubyFixnum) getContext().toJRuby(string).ord(getContext().getRuntime().getCurrentContext())).getIntValue();
         }
     }
