@@ -1723,6 +1723,11 @@ public abstract class ArrayNodes {
     public abstract static class MapNode extends YieldingCoreMethodNode {
 
         @Child private ArrayBuilderNode arrayBuilder;
+        @Child private CallDispatchHeadNode toEnumNode;
+
+        private final BranchProfile breakProfile = BranchProfile.create();
+        private final BranchProfile nextProfile = BranchProfile.create();
+        private final BranchProfile redoProfile = BranchProfile.create();
 
         public MapNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -1732,6 +1737,17 @@ public abstract class ArrayNodes {
         public MapNode(MapNode prev) {
             super(prev);
             arrayBuilder = prev.arrayBuilder;
+            toEnumNode = prev.toEnumNode;
+        }
+
+        @Specialization
+        public Object eachEnumerator(VirtualFrame frame, RubyArray array, UndefinedPlaceholder block) {
+            if (toEnumNode == null) {
+                CompilerDirectives.transferToInterpreter();
+                toEnumNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext()));
+            }
+
+            return toEnumNode.call(frame, array, "to_enum", null, getContext().getCoreLibrary().getMapSymbol());
         }
 
         @Specialization(guards = "isNull")
@@ -1740,20 +1756,33 @@ public abstract class ArrayNodes {
         }
 
         @Specialization(guards = "isIntegerFixnum")
-        public RubyArray mapIntegerFixnum(VirtualFrame frame, RubyArray array, RubyProc block) {
+        public Object mapIntegerFixnum(VirtualFrame frame, RubyArray array, RubyProc block) {
             final int[] store = (int[]) array.getStore();
             final int arraySize = array.getSize();
             Object mappedStore = arrayBuilder.start(arraySize);
 
             int count = 0;
-
             try {
+                outer:
                 for (int n = 0; n < array.getSize(); n++) {
-                    if (CompilerDirectives.inInterpreter()) {
-                        count++;
-                    }
+                    while (true) {
+                        if (CompilerDirectives.inInterpreter()) {
+                            count++;
+                        }
 
-                    mappedStore = arrayBuilder.append(mappedStore, n, yield(frame, block, store[n]));
+                        try {
+                            mappedStore = arrayBuilder.append(mappedStore, n, yield(frame, block, store[n]));
+                            continue outer;
+                        } catch (BreakException e) {
+                            breakProfile.enter();
+                            return e.getResult();
+                        } catch (NextException e) {
+                            nextProfile.enter();
+                            continue outer;
+                        } catch (RedoException e) {
+                            redoProfile.enter();
+                        }
+                    }
                 }
             } finally {
                 if (CompilerDirectives.inInterpreter()) {
@@ -1765,20 +1794,33 @@ public abstract class ArrayNodes {
         }
 
         @Specialization(guards = "isLongFixnum")
-        public RubyArray mapLongFixnum(VirtualFrame frame, RubyArray array, RubyProc block) {
+        public Object mapLongFixnum(VirtualFrame frame, RubyArray array, RubyProc block) {
             final long[] store = (long[]) array.getStore();
             final int arraySize = array.getSize();
             Object mappedStore = arrayBuilder.start(arraySize);
 
             int count = 0;
-
             try {
+                outer:
                 for (int n = 0; n < array.getSize(); n++) {
-                    if (CompilerDirectives.inInterpreter()) {
-                        count++;
-                    }
+                    while (true) {
+                        if (CompilerDirectives.inInterpreter()) {
+                            count++;
+                        }
 
-                    mappedStore = arrayBuilder.append(mappedStore, n, yield(frame, block, store[n]));
+                        try {
+                            mappedStore = arrayBuilder.append(mappedStore, n, yield(frame, block, store[n]));
+                            continue outer;
+                        } catch (BreakException e) {
+                            breakProfile.enter();
+                            return e.getResult();
+                        } catch (NextException e) {
+                            nextProfile.enter();
+                            continue outer;
+                        } catch (RedoException e) {
+                            redoProfile.enter();
+                        }
+                    }
                 }
             } finally {
                 if (CompilerDirectives.inInterpreter()) {
@@ -1790,20 +1832,33 @@ public abstract class ArrayNodes {
         }
 
         @Specialization(guards = "isFloat")
-        public RubyArray mapFloat(VirtualFrame frame, RubyArray array, RubyProc block) {
+        public Object mapFloat(VirtualFrame frame, RubyArray array, RubyProc block) {
             final double[] store = (double[]) array.getStore();
             final int arraySize = array.getSize();
             Object mappedStore = arrayBuilder.start(arraySize);
 
             int count = 0;
-
             try {
+                outer:
                 for (int n = 0; n < array.getSize(); n++) {
-                    if (CompilerDirectives.inInterpreter()) {
-                        count++;
-                    }
+                    while (true) {
+                        if (CompilerDirectives.inInterpreter()) {
+                            count++;
+                        }
 
-                    mappedStore = arrayBuilder.append(mappedStore, n, yield(frame, block, store[n]));
+                        try {
+                            mappedStore = arrayBuilder.append(mappedStore, n, yield(frame, block, store[n]));
+                            continue outer;
+                        } catch (BreakException e) {
+                            breakProfile.enter();
+                            return e.getResult();
+                        } catch (NextException e) {
+                            nextProfile.enter();
+                            continue outer;
+                        } catch (RedoException e) {
+                            redoProfile.enter();
+                        }
+                    }
                 }
             } finally {
                 if (CompilerDirectives.inInterpreter()) {
@@ -1815,20 +1870,33 @@ public abstract class ArrayNodes {
         }
 
         @Specialization(guards = "isObject")
-        public RubyArray mapObject(VirtualFrame frame, RubyArray array, RubyProc block) {
+        public Object mapObject(VirtualFrame frame, RubyArray array, RubyProc block) {
             final Object[] store = (Object[]) array.getStore();
             final int arraySize = array.getSize();
             Object mappedStore = arrayBuilder.start(arraySize);
 
             int count = 0;
-
             try {
+                outer:
                 for (int n = 0; n < array.getSize(); n++) {
-                    if (CompilerDirectives.inInterpreter()) {
-                        count++;
-                    }
+                    while (true) {
+                        if (CompilerDirectives.inInterpreter()) {
+                            count++;
+                        }
 
-                    mappedStore = arrayBuilder.append(mappedStore, n, yield(frame, block, store[n]));
+                        try {
+                            mappedStore = arrayBuilder.append(mappedStore, n, yield(frame, block, store[n]));
+                            continue outer;
+                        } catch (BreakException e) {
+                            breakProfile.enter();
+                            return e.getResult();
+                        } catch (NextException e) {
+                            nextProfile.enter();
+                            continue outer;
+                        } catch (RedoException e) {
+                            redoProfile.enter();
+                        }
+                    }
                 }
             } finally {
                 if (CompilerDirectives.inInterpreter()) {
@@ -1840,20 +1908,35 @@ public abstract class ArrayNodes {
         }
     }
 
-    @CoreMethod(names = {"map!", "collect!"}, needsBlock = true, raiseIfFrozenSelf = true)
+    @CoreMethod(names = {"map!", "collect!"}, needsBlock = true)
     @ImportGuards(ArrayGuards.class)
     public abstract static class MapInPlaceNode extends YieldingCoreMethodNode {
 
-        @Child private ArrayBuilderNode arrayBuilder;
+        @Child private CallDispatchHeadNode toEnumNode;
+        @Child private ArrayWriteDenormalizedNode writeNode;
+
+        private final BranchProfile breakProfile = BranchProfile.create();
+        private final BranchProfile nextProfile = BranchProfile.create();
+        private final BranchProfile redoProfile = BranchProfile.create();
 
         public MapInPlaceNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            arrayBuilder = new ArrayBuilderNode.UninitializedArrayBuilderNode(context);
         }
 
         public MapInPlaceNode(MapInPlaceNode prev) {
             super(prev);
-            arrayBuilder = prev.arrayBuilder;
+            toEnumNode = prev.toEnumNode;
+            writeNode = prev.writeNode;
+        }
+
+        @Specialization
+        public Object eachEnumerator(VirtualFrame frame, RubyArray array, UndefinedPlaceholder block) {
+            if (toEnumNode == null) {
+                CompilerDirectives.transferToInterpreter();
+                toEnumNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext()));
+            }
+
+            return toEnumNode.call(frame, array, "to_enum", null, getContext().getCoreLibrary().getMapBangSymbol());
         }
 
         @Specialization(guards = "isNull")
@@ -1862,20 +1945,37 @@ public abstract class ArrayNodes {
         }
 
         @Specialization(guards = "isIntegerFixnum")
-        public RubyArray mapInPlaceFixnumInteger(VirtualFrame frame, RubyArray array, RubyProc block) {
+        public Object mapInPlaceFixnumInteger(VirtualFrame frame, RubyArray array, RubyProc block) {
+            if (writeNode == null) {
+                CompilerDirectives.transferToInterpreter();
+                writeNode = insert(ArrayWriteDenormalizedNodeFactory.create(getContext(), getSourceSection(), null, null, null));
+            }
+
             final int[] store = (int[]) array.getStore();
-            final int arraySize = array.getSize();
-            Object mappedStore = arrayBuilder.start(arraySize);
 
             int count = 0;
 
             try {
+                outer:
                 for (int n = 0; n < array.getSize(); n++) {
-                    if (CompilerDirectives.inInterpreter()) {
-                        count++;
-                    }
+                    while (true) {
+                        if (CompilerDirectives.inInterpreter()) {
+                            count++;
+                        }
 
-                    mappedStore = arrayBuilder.append(mappedStore, n, yield(frame, block, store[n]));
+                        try {
+                            writeNode.executeWrite(frame, array, n, yield(frame, block, store[n]));
+                            continue outer;
+                        } catch (BreakException e) {
+                            breakProfile.enter();
+                            return e.getResult();
+                        } catch (NextException e) {
+                            nextProfile.enter();
+                            continue outer;
+                        } catch (RedoException e) {
+                            redoProfile.enter();
+                        }
+                    }
                 }
             } finally {
                 if (CompilerDirectives.inInterpreter()) {
@@ -1883,26 +1983,42 @@ public abstract class ArrayNodes {
                 }
             }
 
-            array.setStore(arrayBuilder.finish(mappedStore, arraySize), arraySize);
 
             return array;
         }
 
         @Specialization(guards = "isObject")
-        public RubyArray mapInPlaceObject(VirtualFrame frame, RubyArray array, RubyProc block) {
+        public Object mapInPlaceObject(VirtualFrame frame, RubyArray array, RubyProc block) {
+            if (writeNode == null) {
+                CompilerDirectives.transferToInterpreter();
+                writeNode = insert(ArrayWriteDenormalizedNodeFactory.create(getContext(), getSourceSection(), null, null, null));
+            }
+
             final Object[] store = (Object[]) array.getStore();
-            final int arraySize = array.getSize();
-            Object mappedStore = arrayBuilder.start(arraySize);
 
             int count = 0;
 
             try {
+                outer:
                 for (int n = 0; n < array.getSize(); n++) {
-                    if (CompilerDirectives.inInterpreter()) {
-                        count++;
-                    }
+                    while (true) {
+                        if (CompilerDirectives.inInterpreter()) {
+                            count++;
+                        }
 
-                    mappedStore = arrayBuilder.append(mappedStore, n, yield(frame, block, store[n]));
+                        try {
+                            writeNode.executeWrite(frame, array, n, yield(frame, block, store[n]));
+                            continue outer;
+                        } catch (BreakException e) {
+                            breakProfile.enter();
+                            return e.getResult();
+                        } catch (NextException e) {
+                            nextProfile.enter();
+                            continue outer;
+                        } catch (RedoException e) {
+                            redoProfile.enter();
+                        }
+                    }
                 }
             } finally {
                 if (CompilerDirectives.inInterpreter()) {
@@ -1910,7 +2026,6 @@ public abstract class ArrayNodes {
                 }
             }
 
-            array.setStore(arrayBuilder.finish(mappedStore, arraySize), arraySize);
 
             return array;
         }

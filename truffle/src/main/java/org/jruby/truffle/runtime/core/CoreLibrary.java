@@ -142,6 +142,8 @@ public class CoreLibrary {
     private final ArrayNodes.MaxBlock arrayMaxBlock;
 
     @CompilerDirectives.CompilationFinal private RubySymbol eachSymbol;
+    @CompilerDirectives.CompilationFinal private RubySymbol mapSymbol;
+    @CompilerDirectives.CompilationFinal private RubySymbol mapBangSymbol;
     @CompilerDirectives.CompilationFinal private RubyHash envHash;
 
     public CoreLibrary(RubyContext context) {
@@ -361,6 +363,8 @@ public class CoreLibrary {
 
         // Common symbols
         eachSymbol = getContext().getSymbolTable().getSymbol("each");
+        mapBangSymbol = getContext().getSymbolTable().getSymbol("map!");
+        mapSymbol = getContext().getSymbolTable().getSymbol("map");
     }
 
     private void initializeGlobalVariables() {
@@ -1160,4 +1164,13 @@ public class CoreLibrary {
     public RubySymbol getEachSymbol() {
         return eachSymbol;
     }
+
+    public RubySymbol getMapBangSymbol() {
+        return mapBangSymbol;
+    }
+
+    public RubySymbol getMapSymbol() {
+        return mapSymbol;
+    }
+
 }
