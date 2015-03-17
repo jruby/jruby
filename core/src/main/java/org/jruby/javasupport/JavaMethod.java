@@ -384,9 +384,9 @@ public class JavaMethod extends JavaCallable {
             Object result = method.invoke(javaInvokee, arguments);
             return returnConverter.convert(getRuntime(), result);
         } catch (IllegalArgumentException iae) {
-            return handlelIllegalArgumentEx(method, iae, arguments);
+            return handlelIllegalArgumentEx(iae, method, arguments);
         } catch (IllegalAccessException iae) {
-            return handleIllegalAccessEx(method, iae);
+            return handleIllegalAccessEx(iae, method);
         } catch (InvocationTargetException ite) {
             return handleInvocationTargetEx(ite, method);
         } catch (Throwable t) {
@@ -401,9 +401,9 @@ public class JavaMethod extends JavaCallable {
             Object result = method.invoke(javaInvokee, arguments);
             return convertReturn(result);
         } catch (IllegalArgumentException iae) {
-            return handlelIllegalArgumentEx(method, iae, arguments);
+            return handlelIllegalArgumentEx(iae, method, arguments);
         } catch (IllegalAccessException iae) {
-            return handleIllegalAccessEx(method, iae);
+            return handleIllegalAccessEx(iae, method);
         } catch (InvocationTargetException ite) {
             return handleInvocationTargetEx(ite, method);
         } catch (Throwable t) {
@@ -416,9 +416,9 @@ public class JavaMethod extends JavaCallable {
             Object result = method.invoke(javaInvokee, arguments);
             return convertReturn(result);
         } catch (IllegalArgumentException iae) {
-            return handlelIllegalArgumentEx(method, iae, arguments);
+            return handlelIllegalArgumentEx(iae, method, arguments);
         } catch (IllegalAccessException iae) {
-            return handleIllegalAccessEx(method, iae);
+            return handleIllegalAccessEx(iae, method);
         } catch (InvocationTargetException ite) {
             return handleInvocationTargetEx(ite, method);
         } catch (Throwable t) {
@@ -431,9 +431,9 @@ public class JavaMethod extends JavaCallable {
             Object result = method.invoke(javaInvokee);
             return convertReturn(result);
         } catch (IllegalArgumentException iae) {
-            return handlelIllegalArgumentEx(method, iae);
+            return handlelIllegalArgumentEx(iae, method);
         } catch (IllegalAccessException iae) {
-            return handleIllegalAccessEx(method, iae);
+            return handleIllegalAccessEx(iae, method);
         } catch (InvocationTargetException ite) {
             return handleInvocationTargetEx(ite, method);
         } catch (Throwable t) {
@@ -446,9 +446,9 @@ public class JavaMethod extends JavaCallable {
             Object result = method.invoke(javaInvokee, arg0);
             return convertReturn(result);
         } catch (IllegalArgumentException iae) {
-            return handlelIllegalArgumentEx(method, iae, arg0);
+            return handlelIllegalArgumentEx(iae, method, arg0);
         } catch (IllegalAccessException iae) {
-            return handleIllegalAccessEx(method, iae);
+            return handleIllegalAccessEx(iae, method);
         } catch (InvocationTargetException ite) {
             return handleInvocationTargetEx(ite, method);
         } catch (Throwable t) {
@@ -461,9 +461,9 @@ public class JavaMethod extends JavaCallable {
             Object result = method.invoke(javaInvokee, arg0, arg1);
             return convertReturn(result);
         } catch (IllegalArgumentException iae) {
-            return handlelIllegalArgumentEx(method, iae, arg0, arg1);
+            return handlelIllegalArgumentEx(iae, method, arg0, arg1);
         } catch (IllegalAccessException iae) {
-            return handleIllegalAccessEx(method, iae);
+            return handleIllegalAccessEx(iae, method);
         } catch (InvocationTargetException ite) {
             return handleInvocationTargetEx(ite, method);
         } catch (Throwable t) {
@@ -476,9 +476,9 @@ public class JavaMethod extends JavaCallable {
             Object result = method.invoke(javaInvokee, arg0, arg1, arg2);
             return convertReturn(result);
         } catch (IllegalArgumentException iae) {
-            return handlelIllegalArgumentEx(method, iae, arg0, arg1, arg2);
+            return handlelIllegalArgumentEx(iae, method, arg0, arg1, arg2);
         } catch (IllegalAccessException iae) {
-            return handleIllegalAccessEx(method, iae);
+            return handleIllegalAccessEx(iae, method);
         } catch (InvocationTargetException ite) {
             return handleInvocationTargetEx(ite, method);
         } catch (Throwable t) {
@@ -491,9 +491,9 @@ public class JavaMethod extends JavaCallable {
             Object result = method.invoke(javaInvokee, arg0, arg1, arg2, arg3);
             return convertReturn(result);
         } catch (IllegalArgumentException iae) {
-            return handlelIllegalArgumentEx(method, iae, arg0, arg1, arg2, arg3);
+            return handlelIllegalArgumentEx(iae, method, arg0, arg1, arg2, arg3);
         } catch (IllegalAccessException iae) {
-            return handleIllegalAccessEx(method, iae);
+            return handleIllegalAccessEx(iae, method);
         } catch (InvocationTargetException ite) {
             return handleInvocationTargetEx(ite, method);
         } catch (Throwable t) {
@@ -508,33 +508,6 @@ public class JavaMethod extends JavaCallable {
             return JavaUtil.convertJavaToUsableRubyObject(getRuntime(), result);
         }
         return JavaUtil.convertJavaToUsableRubyObjectWithConverter(getRuntime(), result, returnConverter);
-    }
-
-    private IRubyObject handleIllegalAccessEx(Method method, IllegalAccessException iae) throws RaiseException {
-        throw getRuntime().newTypeError("illegal access on '" + method.getName() + "': " + iae.getMessage());
-    }
-
-    private IRubyObject handlelIllegalArgumentEx(Method method, IllegalArgumentException iae, Object... arguments) throws RaiseException {
-        throw getRuntime().newTypeError(
-                "for method " +
-                method.getDeclaringClass().getSimpleName() +
-                "." +
-                method.getName() +
-                " expected " +
-                argument_types().inspect() +
-                "; got: " +
-                dumpArgTypes(arguments) +
-                "; error: " +
-                iae.getMessage());
-    }
-
-    private Object[] convertArguments(final IRubyObject[] args, int offset) {
-        final Object[] arguments = new Object[ args.length - offset ];
-        final Class<?>[] types = getParameterTypes();
-        for ( int i = arguments.length; --i >= 0; ) {
-            arguments[i] = args[ i + offset ].toJava(types[i]);
-        }
-        return arguments;
     }
 
     //@Override
