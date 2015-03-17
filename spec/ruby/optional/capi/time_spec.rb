@@ -1,5 +1,4 @@
 require File.expand_path('../spec_helper', __FILE__)
-require File.expand_path('../../../core/time/fixtures/methods', __FILE__)
 
 load_extension("time")
 
@@ -192,7 +191,7 @@ describe "CApiTimeSpecs" do
       t = Time.now
       sec, usec = @s.rb_time_timeval(t)
       sec.should == t.to_i
-      usec.should == t.nsec / 1000
+      usec.should == t.nsec.div(1000)
     end
   end
 

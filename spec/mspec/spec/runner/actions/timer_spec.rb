@@ -6,6 +6,8 @@ require 'time'
 describe TimerAction do
   before :each do
     @timer = TimerAction.new
+    @start_time = Time.utc(2009, 3, 30, 14, 5, 19)
+    @stop_time  = Time.utc(2009, 3, 30, 14, 5, 52)
   end
 
   it "responds to #start by recording the current time" do
@@ -19,17 +21,17 @@ describe TimerAction do
   end
 
   it "responds to #elapsed by returning the difference between stop and start" do
-    Time.stub!(:now).and_return(Time.parse('Mon Mar 30 14:05:19 -0700 2009'))
+    Time.stub(:now).and_return(@start_time)
     @timer.start
-    Time.stub!(:now).and_return(Time.parse('Mon Mar 30 14:05:52 -0700 2009'))
+    Time.stub(:now).and_return(@stop_time)
     @timer.finish
     @timer.elapsed.should == 33
   end
 
   it "responds to #format by returning a readable string of elapsed time" do
-    Time.stub!(:now).and_return(Time.parse('Mon Mar 30 14:05:19 -0700 2009'))
+    Time.stub(:now).and_return(@start_time)
     @timer.start
-    Time.stub!(:now).and_return(Time.parse('Mon Mar 30 14:05:52 -0700 2009'))
+    Time.stub(:now).and_return(@stop_time)
     @timer.finish
     @timer.format.should == "Finished in 33.000000 seconds"
   end

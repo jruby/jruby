@@ -51,7 +51,7 @@ end
 describe Object, "#not_supported_on" do
   before :each do
     @guard = SupportedGuard.new
-    SupportedGuard.stub!(:new).and_return(@guard)
+    SupportedGuard.stub(:new).and_return(@guard)
   end
 
   it "sets the name of the guard to :not_supported_on" do

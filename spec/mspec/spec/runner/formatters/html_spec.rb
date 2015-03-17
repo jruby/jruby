@@ -12,7 +12,7 @@ describe HtmlFormatter do
   end
 
   it "responds to #register by registering itself with MSpec for appropriate actions" do
-    MSpec.stub!(:register)
+    MSpec.stub(:register)
     MSpec.should_receive(:register).with(:start, @formatter)
     MSpec.should_receive(:register).with(:enter, @formatter)
     MSpec.should_receive(:register).with(:leave, @formatter)
@@ -33,7 +33,7 @@ describe HtmlFormatter, "#start" do
   it "prints the HTML head" do
     @formatter.start
     ruby_name = RUBY_NAME
-    ruby_name.should =~ /^ruby/
+    ruby_name.should =~ /^#{ruby_name}/
     @out.should ==
 %[<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN"
     "http://www.w3.org/TR/html4/strict.dtd">
@@ -144,19 +144,19 @@ end
 
 describe HtmlFormatter, "#finish" do
   before :each do
-    @tally = mock("tally").as_null_object
-    TallyAction.stub!(:new).and_return(@tally)
-    @timer = mock("timer").as_null_object
-    TimerAction.stub!(:new).and_return(@timer)
+    @tally = double("tally").as_null_object
+    TallyAction.stub(:new).and_return(@tally)
+    @timer = double("timer").as_null_object
+    TimerAction.stub(:new).and_return(@timer)
 
     $stdout = @out = IOStub.new
     context = ContextState.new "describe"
     @state = ExampleState.new(context, "it")
-    MSpec.stub!(:register)
+    MSpec.stub(:register)
     @formatter = HtmlFormatter.new
     @formatter.register
     @exception = MSpecExampleError.new("broken")
-    @exception.stub!(:backtrace).and_return(["file.rb:1", "file.rb:2"])
+    @exception.stub(:backtrace).and_return(["file.rb:1", "file.rb:2"])
   end
 
   after :each do
@@ -172,7 +172,7 @@ describe HtmlFormatter, "#finish" do
 
   it "prints a backtrace for an exception" do
     exc = ExceptionState.new @state, nil, @exception
-    exc.stub!(:backtrace).and_return("path/to/some/file.rb:35:in method")
+    exc.stub(:backtrace).and_return("path/to/some/file.rb:35:in method")
     @formatter.exception exc
     @formatter.finish
     @out.should =~ %r[<pre>.*path/to/some/file.rb:35:in method.*</pre>]m
@@ -192,9 +192,9 @@ describe HtmlFormatter, "#finish" do
 
   it "prints errors, backtraces, elapsed time, and tallies" do
     exc = ExceptionState.new @state, nil, @exception
-    exc.stub!(:backtrace).and_return("path/to/some/file.rb:35:in method")
+    exc.stub(:backtrace).and_return("path/to/some/file.rb:35:in method")
     @formatter.exception exc
-    
+
     @timer.should_receive(:format).and_return("Finished in 2.0 seconds")
     @tally.should_receive(:format).and_return("1 example, 1 failures")
     @formatter.finish

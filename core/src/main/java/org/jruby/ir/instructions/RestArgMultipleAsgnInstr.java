@@ -5,6 +5,7 @@ import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Operation;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.Variable;
+import org.jruby.ir.persistence.IRReaderDecoder;
 import org.jruby.ir.persistence.IRWriterEncoder;
 import org.jruby.ir.transformations.inlining.CloneInfo;
 import org.jruby.parser.StaticScope;
@@ -52,6 +53,10 @@ public class RestArgMultipleAsgnInstr extends MultipleAsgnBase implements FixedA
         e.encode(getPreArgsCount());
         e.encode(getPostArgsCount());
         e.encode(getIndex());
+    }
+
+    public static RestArgMultipleAsgnInstr decode(IRReaderDecoder d) {
+        return new RestArgMultipleAsgnInstr(d.decodeVariable(), d.decodeOperand(), d.decodeInt(), d.decodeInt(), d.decodeInt());
     }
 
     @Override

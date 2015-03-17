@@ -62,11 +62,11 @@ module Mock
       meta.__send__ :alias_method, key.first, sym
     end
 
-    meta.class_eval <<-END
-      def #{sym}(*args, &block)
-        Mock.verify_call self, :#{sym}, *args, &block
+    meta.class_eval {
+      define_method(sym) do |*args, &block|
+        Mock.verify_call self, sym, *args, &block
       end
-    END
+    }
 
     proxy = MockProxy.new type
 

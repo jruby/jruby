@@ -40,3 +40,4 @@ fails:IO#gets transcodes into the IO object's internal encoding, when set
 fails:IO#gets overwrites the default external encoding with the IO object's own external encoding
 fails:IO#gets ignores the internal encoding if the default external encoding is ASCII-8BIT
 fails:IO#gets ignores the internal encoding if the IO object's external encoding is ASCII-8BIT
+fails:IO#gets transcodes to internal encoding if the IO object's external encoding is ASCII-8BIT

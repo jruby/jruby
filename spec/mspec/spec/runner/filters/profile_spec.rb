@@ -5,7 +5,7 @@ require 'mspec/runner/filters/profile'
 describe ProfileFilter, "#find" do
   before :each do
     @filter = ProfileFilter.new nil
-    File.stub!(:exist?).and_return(false)
+    File.stub(:exist?).and_return(false)
     @file = "rails.yaml"
   end
 
@@ -79,7 +79,7 @@ end
 describe ProfileFilter, "#===" do
   before :each do
     @filter = ProfileFilter.new nil
-    @filter.stub!(:load).and_return({ "A#" => ["[]=", "a", "a!", "a?", "aa="]})
+    @filter.stub(:load).and_return({ "A#" => ["[]=", "a", "a!", "a?", "aa="]})
     @filter.send :initialize, nil
   end
 

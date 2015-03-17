@@ -1,6 +1,7 @@
 package org.jruby.ir.instructions;
 
 import org.jruby.ir.*;
+import org.jruby.ir.persistence.IRReaderDecoder;
 import org.jruby.ir.persistence.IRWriterEncoder;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.ir.transformations.inlining.CloneInfo;
@@ -44,6 +45,10 @@ public class DefineInstanceMethodInstr extends Instr implements FixedArityInstr 
     public void encode(IRWriterEncoder e) {
         super.encode(e);
         e.encode(getMethod());
+    }
+
+    public static DefineInstanceMethodInstr decode(IRReaderDecoder d) {
+        return new DefineInstanceMethodInstr((IRMethod) d.decodeScope());
     }
 
     @Override

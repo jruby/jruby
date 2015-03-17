@@ -3,3 +3,4 @@ fails:IO#reopen with an IO sets path equals to the other IO's path if other IO i
 fails:IO#reopen changes the class of the instance to the class of the object returned by #to_io
 fails:IO#reopen with an IO may change the class of the instance
 fails:IO#reopen with a String effects exec/system/fork performed after it
+fails:IO#reopen with a String closes the file descriptor obtained by opening the new file

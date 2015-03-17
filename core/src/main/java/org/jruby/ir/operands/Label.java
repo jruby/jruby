@@ -1,6 +1,7 @@
 package org.jruby.ir.operands;
 
 import org.jruby.ir.IRVisitor;
+import org.jruby.ir.persistence.IRReaderDecoder;
 import org.jruby.ir.persistence.IRWriterEncoder;
 import org.jruby.ir.transformations.inlining.CloneInfo;
 
@@ -82,6 +83,29 @@ public class Label extends Operand {
         super.encode(e);
         e.encode(prefix);
         e.encode(id);
+    }
+
+    public static Label decode(IRReaderDecoder d) {
+        String prefix = d.decodeString();
+        int id = d.decodeInt();
+
+        // Special case of label
+        if ("_GLOBAL_ENSURE_BLOCK".equals(prefix)) return new Label("_GLOBAL_ENSURE_BLOCK", 0);
+
+        // Check if this label was already created
+        // Important! Program would not be interpreted correctly
+        // if new name will be created every time
+        String fullLabel = prefix + "_" + id;
+        if (d.getVars().containsKey(fullLabel)) {
+            return (Label) d.getVars().get(fullLabel);
+        }
+
+        Label newLabel = new Label(prefix, id);
+
+        // Add to context for future reuse
+        d.getVars().put(fullLabel, newLabel);
+
+        return newLabel;
     }
 
     @Override

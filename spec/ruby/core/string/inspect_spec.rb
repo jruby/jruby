@@ -313,8 +313,10 @@ describe "String#inspect" do
     ].should be_computed_by(:inspect)
   end
 
-  it "returns a string with a NUL character replaced by \\000" do
-    0.chr.inspect.should == '"\\x00"'
+  ruby_version_is "1.9".."2.1" do
+    it "returns a string with a NUL character replaced by \\x notation" do
+      0.chr.inspect.should == '"\\x00"'
+    end
   end
 
   describe "when default external is UTF-8" do
@@ -385,8 +387,10 @@ describe "String#inspect" do
       ].should be_computed_by(:inspect)
     end
 
-    it "returns a string with a NUL character replaced by \\000" do
-      0.chr('utf-8').inspect.should == '"\\u0000"'
+    ruby_version_is "1.9".."2.1" do
+      it "returns a string with a NUL character replaced by \\u notation" do
+        0.chr('utf-8').inspect.should == '"\\u0000"'
+      end
     end
 
     it "returns a string with extended characters for Unicode strings" do
@@ -487,48 +491,6 @@ describe "String#inspect" do
         [0376.chr('utf-8'), '"þ"'],
         [0377.chr('utf-8'), '"ÿ"']
       ].should be_computed_by(:inspect)
-    end
-  end
-end
-
-with_feature :encoding do
-  describe "String#inspect" do
-    before :each do
-      @external = Encoding.default_external
-      @internal = Encoding.default_internal
-    end
-
-    after :each do
-      Encoding.default_external = @external
-      Encoding.default_internal = @internal
-    end
-
-    describe "when Encoding.default_internal is nil" do
-      before :each do
-        Encoding.default_internal = nil
-      end
-
-      it "returns a String with Encoding.default_external encoding if it is ASCII compatible" do
-        Encoding.default_external = Encoding::IBM437
-        "\u00b8".inspect.encoding.should equal(Encoding::IBM437)
-      end
-
-      it "returns a String in US-ASCII encoding if Encoding.default_external is not ASCII compatible" do
-        Encoding.default_external = Encoding::UTF_16BE
-        "\u00b8".inspect.encoding.should equal(Encoding::US_ASCII)
-      end
-    end
-
-    describe "when Encoding.default_internal is not nil" do
-      it "returns a String with Encoding.default_internal encoding if it is ASCII compatible" do
-        Encoding.default_internal = Encoding::IBM866
-        "\u00b8".inspect.encoding.should equal(Encoding::IBM866)
-      end
-
-      it "returns a String in US-ASCII encoding if Encoding.default_internal is not ASCII compatible" do
-        Encoding.default_internal = Encoding::UTF_16BE
-        "\u00b8".inspect.encoding.should equal(Encoding::US_ASCII)
-      end
     end
   end
 end

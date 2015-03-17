@@ -2,6 +2,7 @@ package org.jruby.ir.targets;
 
 import com.headius.invokebinder.Signature;
 import org.jcodings.specific.USASCIIEncoding;
+import org.jcodings.Encoding;
 import org.jruby.*;
 import org.jruby.compiler.NotCompilableException;
 import org.jruby.compiler.impl.SkinnyMethodAdapter;
@@ -1989,8 +1990,19 @@ public class JVMVisitor extends IRVisitor {
     public void DynamicSymbol(DynamicSymbol dynamicsymbol) {
         jvmMethod().loadRuntime();
         visit(dynamicsymbol.getSymbolName());
+        jvmAdapter().dup();
+
+        // get symbol name
         jvmAdapter().invokeinterface(p(IRubyObject.class), "asJavaString", sig(String.class));
-        jvmAdapter().invokevirtual(p(Ruby.class), "newSymbol", sig(RubySymbol.class, String.class));
+        jvmAdapter().swap();
+
+        // get encoding of symbol name
+        jvmAdapter().invokeinterface(p(IRubyObject.class), "asString", sig(RubyString.class));
+        jvmAdapter().invokevirtual(p(RubyString.class), "getByteList", sig(ByteList.class));
+        jvmAdapter().invokevirtual(p(ByteList.class), "getEncoding", sig(Encoding.class));
+
+        // keeps encoding of symbol name
+        jvmAdapter().invokevirtual(p(Ruby.class), "newSymbol", sig(RubySymbol.class, String.class, Encoding.class));
     }
 
     @Override

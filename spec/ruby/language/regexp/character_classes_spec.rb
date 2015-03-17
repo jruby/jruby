@@ -2,7 +2,7 @@ require File.expand_path('../../../spec_helper', __FILE__)
 require File.expand_path('../../fixtures/classes', __FILE__)
 
 describe "Regexp with character classes" do
-  it "supports \w (word character)" do
+  it "supports \\w (word character)" do
     /\w/.match("a").to_a.should == ["a"]
     /\w/.match("1").to_a.should == ["1"]
     /\w/.match("_").to_a.should == ["_"]
@@ -13,7 +13,7 @@ describe "Regexp with character classes" do
     /\w/.match("\0").should be_nil
   end
 
-  it "supports \W (non-word character)" do
+  it "supports \\W (non-word character)" do
     /\W+/.match(LanguageSpecs.white_spaces).to_a.should == [LanguageSpecs.white_spaces]
     /\W+/.match(LanguageSpecs.non_alphanum_non_space).to_a.should == [LanguageSpecs.non_alphanum_non_space]
     /\W/.match("\0").to_a.should == ["\0"]
@@ -24,7 +24,7 @@ describe "Regexp with character classes" do
     /\W/.match("_").should be_nil
   end
 
-  it "supports \s (space character)" do
+  it "supports \\s (space character)" do
     /\s+/.match(LanguageSpecs.white_spaces).to_a.should == [LanguageSpecs.white_spaces]
 
     # Non-matches
@@ -34,7 +34,7 @@ describe "Regexp with character classes" do
     /\s/.match("\0").should be_nil
   end
 
-  it "supports \S (non-space character)" do
+  it "supports \\S (non-space character)" do
     /\S/.match("a").to_a.should == ["a"]
     /\S/.match("1").to_a.should == ["1"]
     /\S+/.match(LanguageSpecs.non_alphanum_non_space).to_a.should == [LanguageSpecs.non_alphanum_non_space]
@@ -44,7 +44,7 @@ describe "Regexp with character classes" do
     /\S/.match(LanguageSpecs.white_spaces).should be_nil
   end
 
-  it "supports \d (numeric digit)" do
+  it "supports \\d (numeric digit)" do
     /\d/.match("1").to_a.should == ["1"]
 
     # Non-matches
@@ -54,7 +54,7 @@ describe "Regexp with character classes" do
     /\d/.match("\0").should be_nil
   end
 
-  it "supports \D (non-digit)" do
+  it "supports \\D (non-digit)" do
     /\D/.match("a").to_a.should == ["a"]
     /\D+/.match(LanguageSpecs.white_spaces).to_a.should == [LanguageSpecs.white_spaces]
     /\D+/.match(LanguageSpecs.non_alphanum_non_space).to_a.should == [LanguageSpecs.non_alphanum_non_space]
@@ -141,8 +141,19 @@ describe "Regexp with character classes" do
     "\u{3F}".match(/[[:alpha:]]/).to_a.should == []
   end
 
+  ruby_version_is ""..."2.2" do
+    it "matches Unicode Mongolian vowel seperator characters with [[:blank:]]" do
+      "\u{180E}".match(/[[:blank:]]/).to_a.should == ["\u{180E}"]
+    end
+  end
+
+  ruby_version_is "2.2" do
+    it "doesn't match Unicode Mongolian vowel seperator characters with [[:blank:]]" do
+      "\u{180E}".match(/[[:blank:]]/).to_a.should == []
+    end
+  end
+
   it "matches Unicode space characters with [[:blank:]]" do
-    "\u{180E}".match(/[[:blank:]]/).to_a.should == ["\u{180E}"]
     "\u{1680}".match(/[[:blank:]]/).to_a.should == ["\u{1680}"]
   end
 

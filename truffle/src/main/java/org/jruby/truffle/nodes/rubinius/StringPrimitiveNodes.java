@@ -84,6 +84,23 @@ import java.util.List;
  */
 public abstract class StringPrimitiveNodes {
 
+    @RubiniusPrimitive(name = "character_ascii_p")
+    public static abstract class CharacterAsciiPrimitiveNode extends RubiniusPrimitiveNode {
+
+        public CharacterAsciiPrimitiveNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public CharacterAsciiPrimitiveNode(CharacterAsciiPrimitiveNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public boolean isCharacterAscii(RubyString character) {
+            return StringSupport.isAsciiOnly(character);
+        }
+    }
+
     @RubiniusPrimitive(name = "string_awk_split")
     public static abstract class StringAwkSplitPrimitiveNode extends RubiniusPrimitiveNode {
 
@@ -281,6 +298,112 @@ public abstract class StringPrimitiveNodes {
             }
 
             return true;
+        }
+
+    }
+
+    @RubiniusPrimitive(name = "string_chr_at")
+    public static abstract class StringChrAtPrimitiveNode extends RubiniusPrimitiveNode {
+
+        @Child private StringByteSubstringPrimitiveNode stringByteSubstringNode;
+
+        public StringChrAtPrimitiveNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public StringChrAtPrimitiveNode(StringChrAtPrimitiveNode prev) {
+            super(prev);
+            stringByteSubstringNode = prev.stringByteSubstringNode;
+        }
+
+        @CompilerDirectives.TruffleBoundary
+        @Specialization
+        public Object stringChrAt(RubyString string, int byteIndex) {
+            if (stringByteSubstringNode == null) {
+                CompilerDirectives.transferToInterpreter();
+
+                stringByteSubstringNode = insert(
+                        StringPrimitiveNodesFactory.StringByteSubstringPrimitiveNodeFactory.create(
+                                getContext(),
+                                getSourceSection(),
+                                new RubyNode[]{})
+                );
+            }
+
+            final ByteList bytes = string.getByteList();
+            final int p = bytes.getBegin();
+            final int end = p + bytes.getRealSize();
+            final int c = StringSupport.preciseLength(bytes.getEncoding(), bytes.getUnsafeBytes(), p, end);
+
+            if (! StringSupport.MBCLEN_CHARFOUND_P(c)) {
+                return getContext().getCoreLibrary().getNilObject();
+            }
+
+            final int n = StringSupport.MBCLEN_CHARFOUND_LEN(c);
+            if (n + byteIndex > end) {
+                return getContext().getCoreLibrary().getNilObject();
+            }
+
+            return stringByteSubstringNode.stringByteSubstring(string, byteIndex, n);
+        }
+
+    }
+
+    @RubiniusPrimitive(name = "string_compare_substring")
+    public static abstract class StringCompareSubstringPrimitiveNode extends RubiniusPrimitiveNode {
+
+        private final ConditionProfile startTooLargeProfile = ConditionProfile.createBinaryProfile();
+        private final ConditionProfile startTooSmallProfile = ConditionProfile.createBinaryProfile();
+
+        public StringCompareSubstringPrimitiveNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public StringCompareSubstringPrimitiveNode(StringCompareSubstringPrimitiveNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public int stringCompareSubstring(RubyString string, RubyString other, int start, int size) {
+            // Transliterated from Rubinius C++.
+
+            if (start < 0) {
+                start += other.length();
+            }
+
+            if (startTooLargeProfile.profile(start > other.length())) {
+                CompilerDirectives.transferToInterpreter();
+
+                throw new RaiseException(
+                        getContext().getCoreLibrary().indexError(
+                                String.format("index %d out of string", start),
+                                this
+                        ));
+            }
+
+            if (startTooSmallProfile.profile(start < 0)) {
+                CompilerDirectives.transferToInterpreter();
+
+                throw new RaiseException(
+                        getContext().getCoreLibrary().indexError(
+                                String.format("index %d out of string", start),
+                                this
+                        ));
+            }
+
+            if (start + size > other.length()) {
+                size = other.length() - start;
+            }
+
+            if (size > string.length()) {
+                size = string.length();
+            }
+
+            final ByteList bytes = string.getByteList();
+            final ByteList otherBytes = other.getByteList();
+
+            return ByteList.memcmp(bytes.getUnsafeBytes(), bytes.getBegin(), size,
+                    otherBytes.getUnsafeBytes(), otherBytes.getBegin() + start, size);
         }
 
     }
@@ -559,7 +682,7 @@ public abstract class StringPrimitiveNodes {
 
     }
 
-    @RubiniusPrimitive(name = "string_previous_byte_index", needsSelf = false)
+    @RubiniusPrimitive(name = "string_previous_byte_index")
     public static abstract class StringPreviousByteIndexPrimitiveNode extends RubiniusPrimitiveNode {
 
         public StringPreviousByteIndexPrimitiveNode(RubyContext context, SourceSection sourceSection) {
@@ -571,8 +694,27 @@ public abstract class StringPrimitiveNodes {
         }
 
         @Specialization
-        public Object stringPreviousByteIndex(RubyString string, Object indexedString, Object start) {
-            throw new UnsupportedOperationException("string_previous_byte_index");
+        public Object stringPreviousByteIndex(RubyString string, int index) {
+            if (index < 0) {
+                CompilerDirectives.transferToInterpreter();
+                throw new RaiseException(getContext().getCoreLibrary().argumentError("negative index given", this));
+            }
+
+            final ByteList bytes = string.getByteList();
+            final int p = bytes.getBegin();
+            final int end = p + bytes.getRealSize();
+
+            if (p > end) {
+                return 0;
+            }
+
+            final int s = bytes.getEncoding().prevCharHead(bytes.getUnsafeBytes(), p, p + index, end);
+
+            if (s == -1) {
+                return 0;
+            }
+
+            return s - p;
         }
 
     }

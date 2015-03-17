@@ -1,1 +1,3 @@
 fails:ARGF.lines with a separator yields each separated section of all streams
+fails:ARGF.lines reads each line of files
+fails:ARGF.lines returns self when passed a block

@@ -1,0 +1,2 @@
+fails:ARGF.fileno returns the current file number on each file
+fails:ARGF.fileno raises an ArgumentError when called on a closed stream

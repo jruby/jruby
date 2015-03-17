@@ -3,6 +3,7 @@
 #include <unistd.h>
 
 #include "ruby.h"
+#include "ruby/thread.h"
 #include "rubyspec.h"
 
 #ifdef __cplusplus
@@ -14,6 +15,8 @@ static VALUE thread_spec_rb_thread_alone() {
   return rb_thread_alone() ? Qtrue : Qfalse;
 }
 #endif
+
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
 
 #ifdef HAVE_RB_THREAD_BLOCKING_REGION
 /* This is unblocked by unblock_func(). */

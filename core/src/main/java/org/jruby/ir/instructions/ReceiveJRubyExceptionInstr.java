@@ -3,6 +3,7 @@ package org.jruby.ir.instructions;
 import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Operation;
 import org.jruby.ir.operands.Variable;
+import org.jruby.ir.persistence.IRReaderDecoder;
 import org.jruby.ir.transformations.inlining.CloneInfo;
 
 public class ReceiveJRubyExceptionInstr extends ReceiveExceptionBase {
@@ -13,6 +14,10 @@ public class ReceiveJRubyExceptionInstr extends ReceiveExceptionBase {
     @Override
     public Instr clone(CloneInfo ii) {
         return new ReceiveJRubyExceptionInstr(ii.getRenamedVariable(result));
+    }
+
+    public static ReceiveJRubyExceptionInstr decode(IRReaderDecoder d) {
+        return new ReceiveJRubyExceptionInstr(d.decodeVariable());
     }
 
     @Override

@@ -4,3 +4,4 @@ fails:A method definition inside an instance_eval creates a class method when th
 fails:A method definition in an eval creates an instance method
 fails:A method definition in an eval creates a class method
 fails:A method definition in an eval creates a singleton method
+fails:An instance method with a default argument does not call a method with the same name as the local

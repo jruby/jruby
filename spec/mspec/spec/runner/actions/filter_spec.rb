@@ -22,7 +22,7 @@ end
 
 describe ActionFilter, "#===" do
   before :each do
-    MSpec.stub!(:read_tags).and_return(["match"])
+    MSpec.stub(:read_tags).and_return(["match"])
     @action = ActionFilter.new(nil, ["catch", "if you"])
   end
 

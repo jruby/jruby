@@ -1,3 +1,0 @@
-fails:Random.new_seed returns a Bignum
-fails:Random.new_seed returns an arbitrary seed value each time
-fails:Random.new_seed is not affected by Kernel#srand

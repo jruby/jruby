@@ -99,6 +99,11 @@ public abstract class TimePrimitiveNodes {
         }
 
         @Specialization(guards = "isTrue(isUTC)")
+        public RubyTime timeSSpecificUTC(long seconds, int nanoseconds, boolean isUTC, RubyNilClass offset) {
+            return timeSSpecificUTC((int) seconds, nanoseconds, isUTC, offset);
+        }
+
+        @Specialization(guards = "isTrue(isUTC)")
         public RubyTime timeSSpecificUTC(int seconds, int nanoseconds, boolean isUTC, RubyNilClass offset) {
             // TODO(CS): overflow checks needed?
             final long milliseconds = seconds * 1_000L + (nanoseconds / 1_000_000);
@@ -109,6 +114,11 @@ public abstract class TimePrimitiveNodes {
         @Specialization(guards = "!isTrue(isUTC)")
         public RubyTime timeSSpecific(VirtualFrame frame, long seconds, long nanoseconds, boolean isUTC, RubyNilClass offset) {
             return timeSSpecific(frame, (int) seconds, (int) nanoseconds, isUTC, offset);
+        }
+
+        @Specialization(guards = "!isTrue(isUTC)")
+        public RubyTime timeSSpecific(VirtualFrame frame, long seconds, int nanoseconds, boolean isUTC, RubyNilClass offset) {
+            return timeSSpecific(frame, (int) seconds, nanoseconds, isUTC, offset);
         }
 
         @Specialization(guards = "!isTrue(isUTC)")

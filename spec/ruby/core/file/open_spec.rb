@@ -42,8 +42,16 @@ describe "File.open" do
       ScratchPad.recorded.should == [:file_opened, :file_closed]
     end
 
-    it "does not propagate StandardErrors produced by close" do
-      File.open(@file, 'r') { |f| FileSpecs.make_closer f, IOError }
+    it "propagates StandardErrors produced by close" do
+      lambda {
+        File.open(@file, 'r') { |f| FileSpecs.make_closer f, StandardError }
+      }.should raise_error(StandardError)
+
+      ScratchPad.recorded.should == [:file_opened, :file_closed]
+    end
+
+    it "does not propagate IOError with 'closed stream' message produced by close" do
+      File.open(@file, 'r') { |f| FileSpecs.make_closer f, IOError.new('closed stream') }
 
       ScratchPad.recorded.should == [:file_opened, :file_closed]
     end
@@ -134,6 +142,41 @@ describe "File.open" do
       File.readable?(@file).should == false
       File.writable?(@file).should == true
     end
+  end
+
+  it "opens the file when call with fd" do
+    fh_orig = File.open(@file)
+    @fh = File.open(fh_orig.fileno)
+    (@fh.autoclose = false) rescue nil
+    @fh.should be_kind_of(File)
+    File.exist?(@file).should == true
+    # don't close fh_orig here to adjust closing cycle between fh_orig and @fh
+    # see also c02c78b3899fcf769084a88777c63de0fcebb48d
+  end
+
+  it "opens a file with a file descriptor d and a block" do
+    @fh = File.open(@file)
+    @fh.should be_kind_of(File)
+
+    ruby_version_is ''...'2.0' do
+      File.open(@fh.fileno) do |fh|
+        @fd = fh.fileno
+        @fh.close
+      end
+      lambda { File.open(@fd) }.should raise_error(SystemCallError)
+    end
+
+    ruby_version_is '2.0' do
+      lambda {
+        File.open(@fh.fileno) do |fh|
+          @fd = fh.fileno
+          @fh.close
+        end
+      }.should raise_error(Errno::EBADF)
+      lambda { File.open(@fd) }.should raise_error(SystemCallError)
+    end
+
+    File.exist?(@file).should == true
   end
 
   it "opens a file that no exists when use File::WRONLY mode" do
@@ -517,35 +560,33 @@ describe "File.open" do
 
   platform_is_not :windows do
     ruby_bug '#7908', '1.8.7' do
-      if `which mkfifo`.chomp != ""
-        describe "on a FIFO" do
-          before :each do
-            @fifo = tmp("File_open_fifo")
-            system "mkfifo #{@fifo}"
+      describe "on a FIFO" do
+        before :each do
+          @fifo = tmp("File_open_fifo")
+          system "mkfifo #{@fifo}"
+        end
+
+        after :each do
+          rm_r @fifo
+        end
+
+        it "opens it as a normal file" do
+          file_w, file_r, read_bytes, written_length = nil
+
+          # open in threads, due to blocking open and writes
+          Thread.new do
+            file_w = File.open(@fifo, 'w')
+            written_length = file_w.syswrite('hello')
+          end
+          Thread.new do
+            file_r = File.open(@fifo, 'r')
+            read_bytes = file_r.sysread(5)
           end
 
-          after :each do
-            rm_r @fifo
-          end
+          Thread.pass until read_bytes && written_length
 
-          it "opens it as a normal file" do
-            file_w, file_r, read_bytes, written_length = nil
-
-            # open in threads, due to blocking open and writes
-            Thread.new do
-              file_w = File.open(@fifo, 'w')
-              written_length = file_w.syswrite('hello')
-            end
-            Thread.new do
-              file_r = File.open(@fifo, 'r')
-              read_bytes = file_r.sysread(5)
-            end
-
-            Thread.pass until read_bytes && written_length
-
-            written_length.should == 5
-            read_bytes.should == 'hello'
-          end
+          written_length.should == 5
+          read_bytes.should == 'hello'
         end
       end
     end

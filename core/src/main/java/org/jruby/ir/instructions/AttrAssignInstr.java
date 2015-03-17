@@ -1,10 +1,12 @@
 package org.jruby.ir.instructions;
 
+import org.jruby.RubyInstanceConfig;
 import org.jruby.ir.IRScope;
 import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Operation;
 import org.jruby.ir.instructions.specialized.OneArgOperandAttrAssignInstr;
 import org.jruby.ir.operands.Operand;
+import org.jruby.ir.persistence.IRReaderDecoder;
 import org.jruby.ir.persistence.IRWriterEncoder;
 import org.jruby.ir.transformations.inlining.CloneInfo;
 import org.jruby.parser.StaticScope;
@@ -42,6 +44,19 @@ public class AttrAssignInstr extends NoResultCallInstr {
     @Override
     public Instr clone(CloneInfo ii) {
         return new AttrAssignInstr(getReceiver().cloneForInlining(ii), getName(), cloneCallArgs(ii));
+    }
+
+    @Override
+    public void encode(IRWriterEncoder e) {
+        if (RubyInstanceConfig.IR_WRITING_DEBUG) System.out.println("Instr(" + getOperation() + "): " + this);
+        e.encode(getOperation());
+        e.encode(getReceiver());
+        e.encode(getName());
+        e.encode(getCallArgs());
+    }
+
+    public static AttrAssignInstr decode(IRReaderDecoder d) {
+        return create(d.decodeOperand(), d.decodeString(), d.decodeOperandArray());
     }
 
     @Override

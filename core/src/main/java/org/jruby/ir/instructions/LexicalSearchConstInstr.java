@@ -5,6 +5,7 @@ import org.jruby.ir.Operation;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.UndefinedValue;
 import org.jruby.ir.operands.Variable;
+import org.jruby.ir.persistence.IRReaderDecoder;
 import org.jruby.ir.persistence.IRWriterEncoder;
 import org.jruby.ir.transformations.inlining.CloneInfo;
 import org.jruby.parser.StaticScope;
@@ -56,6 +57,10 @@ public class LexicalSearchConstInstr extends ResultBaseInstr implements FixedAri
         super.encode(e);
         e.encode(getDefiningScope());
         e.encode(getConstName());
+    }
+
+    public static LexicalSearchConstInstr decode(IRReaderDecoder d) {
+        return new LexicalSearchConstInstr(d.decodeVariable(), d.decodeOperand(), d.decodeString());
     }
 
     private Object cache(ThreadContext context, StaticScope currScope, DynamicScope currDynScope, IRubyObject self, Object[] temp) {

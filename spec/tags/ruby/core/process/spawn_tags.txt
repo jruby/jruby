@@ -61,3 +61,6 @@ fails:Process.spawn does not close file descriptors >= 3 in the child process wh
 fails:Process.spawn when passed :chdir changes to the directory passed for :chdir
 fails:Process.spawn when passed :chdir calls #to_path to convert the :chdir value
 fails:Process.spawn with Integer option keys maps the key to a file descriptor in the child that inherits the file descriptor from the parent specified by the value
+fails:Process.spawn does not unset other environment variables when given a false :unsetenv_others option
+fails:Process.spawn does not unset environment variables included in the environment hash
+fails:Process.spawn joins the current process if :pgroup => false

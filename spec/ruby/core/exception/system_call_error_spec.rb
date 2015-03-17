@@ -1,12 +1,27 @@
 require File.expand_path('../../../spec_helper', __FILE__)
+require File.expand_path('../fixtures/common', __FILE__)
 
-describe "SystemCallError.new" do
-  it "requires at least one argumentt" do
-    lambda { SystemCallError.new }.should raise_error(ArgumentError)
+describe "SystemCallError" do
+  before :each do
+    ScratchPad.clear
   end
 
-  it "takes an optional errno argument" do
-    SystemCallError.should be_ancestor_of(SystemCallError.new("message",1).class)
+  it "can be subclassed" do
+    ExceptionSpecs::SCESub = Class.new(SystemCallError) do
+      def initialize
+        ScratchPad.record :initialize
+      end
+    end
+
+    exc = ExceptionSpecs::SCESub.new
+    ScratchPad.recorded.should equal(:initialize)
+    exc.should be_an_instance_of(ExceptionSpecs::SCESub)
+  end
+end
+
+describe "SystemCallError.new" do
+  it "requires at least one argument" do
+    lambda { SystemCallError.new }.should raise_error(ArgumentError)
   end
 
   it "accepts single Fixnum argument as errno" do
@@ -20,8 +35,23 @@ describe "SystemCallError.new" do
     # so let's use it then.
     SystemCallError.new(22).should be_kind_of(SystemCallError)
     SystemCallError.new(22).should be_an_instance_of(Errno::EINVAL)
-
     SystemCallError.new(2**28).should be_an_instance_of(SystemCallError)
+  end
+
+  it "accepts an optional custom message preceding the errno" do
+    exc = SystemCallError.new("custom message", 22)
+    exc.should be_an_instance_of(Errno::EINVAL)
+    exc.errno.should == 22
+    exc.message.should == "Invalid argument - custom message"
+  end
+
+  ruby_version_is "2.1" do
+    it "accepts an optional third argument specifying the location" do
+      exc = SystemCallError.new("custom message", 22, "location")
+      exc.should be_an_instance_of(Errno::EINVAL)
+      exc.errno.should == 22
+      exc.message.should == "Invalid argument @ location - custom message"
+    end
   end
 
   it "returns an arity of -1 for the initialize method" do
@@ -54,5 +84,3 @@ describe "SystemCallError#message" do
     SystemCallError.new("XXX").message.should =~ /XXX/
   end
 end
-
-

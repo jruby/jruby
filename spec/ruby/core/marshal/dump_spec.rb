@@ -1,7 +1,6 @@
-# -*- encoding: US-ASCII -*-
+# -*- encoding: us-ascii -*-
 require File.expand_path('../../../spec_helper', __FILE__)
 require File.expand_path('../fixtures/marshal_data', __FILE__)
-require File.expand_path('../../time/fixtures/methods', __FILE__)
 require File.expand_path('../fixtures/marshal_data19', __FILE__)
 
 describe "Marshal.dump" do
@@ -68,17 +67,30 @@ describe "Marshal.dump" do
         [Marshal, s.encode("euc-jp").to_sym,
             "\x04\bI:\a\xA2\xAA\x06:\rencoding\"\vEUC-JP"],
         [Marshal, s.encode("sjis").to_sym,
-            "\x04\bI:\a\x81\xA8\x06:\rencoding\"\x10Windows-31J"],
-        [Marshal, s.force_encoding("binary").to_sym,
-            "\x04\bI:\b\xE2\x86\x92\x00"]
+            "\x04\bI:\a\x81\xA8\x06:\rencoding\"\x10Windows-31J"]
       ].should be_computed_by(:dump)
     end
+
+    ruby_version_is ""..."2.2" do
+      it "dumps a binary encoded Symbol" do
+        s = "\u2192".force_encoding("binary").to_sym
+        Marshal.dump(s).should == "\x04\bI:\b\xE2\x86\x92\x00"
+      end
+    end
+
+    ruby_version_is "2.2" do
+      it "dumps a binary encoded Symbol" do
+        s = "\u2192".force_encoding("binary").to_sym
+        Marshal.dump(s).should == "\x04\b:\b\xE2\x86\x92"
+      end
+    end
+
   end
 
   it "dumps an extended_object" do
     Marshal.dump(Object.new.extend(Meths)).should == "\x04\be:\nMethso:\vObject\x00"
   end
-  
+
   it "dumps an object that has had an ivar added and removed as though the ivar never was set" do
     obj = Object.new
     initial = Marshal.dump(obj)
@@ -183,33 +195,33 @@ describe "Marshal.dump" do
 
   describe "with a String" do
     it "dumps a blank String" do
-      Marshal.dump(encode("", "binary")).should == "\004\b\"\000"
+      Marshal.dump("".force_encoding("binary")).should == "\004\b\"\000"
     end
 
     it "dumps a short String" do
-      Marshal.dump(encode("short", "binary")).should == "\004\b\"\012short"
+      Marshal.dump("short".force_encoding("binary")).should == "\004\b\"\012short"
     end
 
     it "dumps a long String" do
-      Marshal.dump(encode("big" * 100, "binary")).should == "\004\b\"\002,\001#{"big" * 100}"
+      Marshal.dump(("big" * 100).force_encoding("binary")).should == "\004\b\"\002,\001#{"big" * 100}"
     end
 
     it "dumps a String extended with a Module" do
-      Marshal.dump(encode("".extend(Meths), "binary")).should == "\004\be:\nMeths\"\000"
+      Marshal.dump("".extend(Meths).force_encoding("binary")).should == "\004\be:\nMeths\"\000"
     end
 
     it "dumps a String subclass" do
-      Marshal.dump(encode(UserString.new, "binary")).should == "\004\bC:\017UserString\"\000"
+      Marshal.dump(UserString.new.force_encoding("binary")).should == "\004\bC:\017UserString\"\000"
     end
 
     it "dumps a String subclass extended with a Module" do
-      Marshal.dump(encode(UserString.new.extend(Meths), "binary")).should == "\004\be:\nMethsC:\017UserString\"\000"
+      Marshal.dump(UserString.new.extend(Meths).force_encoding("binary")).should == "\004\be:\nMethsC:\017UserString\"\000"
     end
 
     it "dumps a String with instance variables" do
       str = ""
       str.instance_variable_set("@foo", "bar")
-      Marshal.dump(encode(str, "binary")).should == "\x04\bI\"\x00\x06:\t@fooI\"\bbar\x06:\x06EF"
+      Marshal.dump(str.force_encoding("binary")).should == "\x04\bI\"\x00\x06:\t@fooI\"\bbar\x06:\x06EF"
     end
 
     with_feature :encoding do
@@ -259,17 +271,17 @@ describe "Marshal.dump" do
     end
 
     it "dumps a binary Regexp" do
-      o = Regexp.new(encode("", "binary"), Regexp::FIXEDENCODING)
+      o = Regexp.new("".force_encoding("binary"), Regexp::FIXEDENCODING)
       Marshal.dump(o).should == "\x04\b/\x00\x10"
     end
 
     it "dumps a UTF-8 Regexp" do
-      o = Regexp.new(encode("", "utf-8"), Regexp::FIXEDENCODING)
+      o = Regexp.new("".force_encoding("utf-8"), Regexp::FIXEDENCODING)
       Marshal.dump(o).should == "\x04\bI/\x00\x10\x06:\x06ET"
     end
 
     it "dumps a Regexp in another encoding" do
-      o = Regexp.new(encode("", "utf-16le"), Regexp::FIXEDENCODING)
+      o = Regexp.new("".force_encoding("utf-16le"), Regexp::FIXEDENCODING)
       Marshal.dump(o).should == "\x04\bI/\x00\x10\x06:\rencoding\"\rUTF-16LE"
     end
   end
@@ -419,17 +431,36 @@ describe "Marshal.dump" do
       Encoding.default_internal = @internal
     end
 
-    it "dumps the zone and the offset" do
-      with_timezone 'AST', 3 do
-        dump = Marshal.dump(@t)
-        dump.should == "\x04\bIu:\tTime\r#{@t_dump}\a:\voffseti\x020*:\tzoneI\"\bAST\x06:\x06ET"
+    ruby_version_is ""..."2.2" do
+      it "dumps the zone and the offset" do
+        with_timezone 'AST', 3 do
+          dump = Marshal.dump(@t)
+          dump.should == "\x04\bIu:\tTime\r#{@t_dump}\a:\voffseti\x020*:\tzoneI\"\bAST\x06:\x06ET"
+        end
+      end
+
+      it "dumps the zone, but not the offset if zone is UTC" do
+        dump = Marshal.dump(@utc)
+        dump.should == "\x04\bIu:\tTime\r#{@utc_dump}\x06:\tzoneI\"\bUTC\x06:\x06ET"
       end
     end
 
-    it "dumps the zone, but not the offset if zone is UTC" do
-      dump = Marshal.dump(@utc)
-      dump.should == "\x04\bIu:\tTime\r#{@utc_dump}\x06:\tzoneI\"\bUTC\x06:\x06ET"
+    ruby_version_is "2.2" do
+      ruby_bug "#10887", "2.2.0.81" do
+        it "dumps the zone and the offset" do
+          with_timezone 'AST', 3 do
+            dump = Marshal.dump(@t)
+            dump.should == "\x04\bIu:\tTime\r#{@t_dump}\a:\voffseti\x020*:\tzoneI\"\bAST\x06:\x06EF"
+          end
+
+          it "dumps the zone, but not the offset if zone is UTC" do
+            dump = Marshal.dump(@utc)
+            dump.should == "\x04\bIu:\tTime\r#{@utc_dump}\x06:\tzoneI\"\bUTC\x06:\x06EF"
+          end
+        end
+      end
     end
+
   end
 
   describe "with an Exception" do

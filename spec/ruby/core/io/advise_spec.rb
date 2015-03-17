@@ -69,8 +69,26 @@ describe "IO#advise" do
     @io.advise(:noreuse).should be_nil
   end
 
-  it "supports the willneed advice type" do
-    @io.advise(:willneed).should be_nil
+  platform_is_not :linux do
+    it "supports the willneed advice type" do
+      @io.advise(:willneed).should be_nil
+    end
+  end
+
+  platform_is :linux do
+    require 'etc'
+    uname = if Etc.respond_to?(:uname)
+              Etc.uname[:release]
+            else
+              `uname -r`.chomp
+            end
+    if (uname.split('.').map(&:to_i) <=> [3,6]) < 0
+      # [ruby-core:65355] tmpfs is not supported
+    else
+      it "supports the willneed advice type" do
+        @io.advise(:willneed).should be_nil
+      end
+    end
   end
 
   it "raises an IOError if the stream is closed" do

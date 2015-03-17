@@ -7,7 +7,7 @@ describe :dir_chroot_as_root, :shared => true do
   end
 
   after(:all) do
-    until File.exists?(@ref_dir)
+    until File.exist?(@ref_dir)
       Dir.send(@method, "../") or break
     end
 
@@ -16,7 +16,7 @@ describe :dir_chroot_as_root, :shared => true do
 
   it "can be used to change the process' root directory" do
     lambda { Dir.send(@method, File.dirname(__FILE__)) }.should_not raise_error
-    File.exists?("/#{File.basename(__FILE__)}").should be_true
+    File.exist?("/#{File.basename(__FILE__)}").should be_true
   end
 
   it "returns 0 if successful" do
@@ -29,8 +29,8 @@ describe :dir_chroot_as_root, :shared => true do
 
   it "can be escaped from with ../" do
     Dir.send(@method, @real_root)
-    File.exists?(@ref_dir).should be_true
-    File.exists?("/#{File.basename(__FILE__)}").should be_false
+    File.exist?(@ref_dir).should be_true
+    File.exist?("/#{File.basename(__FILE__)}").should be_false
   end
 
   it "calls #to_path on non-String argument" do

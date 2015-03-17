@@ -18,3 +18,4 @@ fails:File::Constants::WRONLY is defined
 fails:File::Constants::NOCTTY is defined
 fails:File::Constants::SYNC is defined
 fails(windows):File::Constants::BINARY is defined
+fails:File::Constants::FNM_EXTGLOB is defined

@@ -1,0 +1,1 @@
+fails:Kernel.autoload sets the autoload constant in Object's constant table

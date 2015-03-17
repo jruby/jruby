@@ -7,6 +7,7 @@ import org.jruby.ir.Operation;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.Variable;
 import org.jruby.ir.operands.WrappedIRClosure;
+import org.jruby.ir.persistence.IRReaderDecoder;
 import org.jruby.ir.persistence.IRWriterEncoder;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.ir.transformations.inlining.CloneInfo;
@@ -55,7 +56,10 @@ public class ReifyClosureInstr extends ResultBaseInstr implements FixedArityInst
     public void encode(IRWriterEncoder e) {
         super.encode(e);
         e.encode(getSource());
-        e.encode(getResult());
+    }
+
+    public static ReifyClosureInstr decode(IRReaderDecoder d) {
+        return new ReifyClosureInstr(d.decodeVariable(), d.decodeVariable());
     }
 
     @Override

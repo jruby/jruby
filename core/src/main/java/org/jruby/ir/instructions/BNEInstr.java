@@ -14,15 +14,15 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
 public class BNEInstr extends TwoOperandBranchInstr implements FixedArityInstr {
-    public static BranchInstr create(Operand v1, Operand v2, Label jmpTarget) {
+    public static BranchInstr create(Label jmpTarget, Operand v1, Operand v2) {
         if (v2 instanceof Boolean) {
             return ((Boolean) v2).isFalse() ? new BTrueInstr(jmpTarget, v1) : new BFalseInstr(jmpTarget, v1);
         }
         return new BNEInstr(jmpTarget, v1, v2);
     }
 
-    public BNEInstr(Label jmpTarget, Operand v1, Operand v2) {
-        super(Operation.BNE, v1, v2, jmpTarget);
+    public BNEInstr(Label jumpTarget, Operand v1, Operand v2) {
+        super(Operation.BNE, jumpTarget, v1, v2);
     }
 
     @Override

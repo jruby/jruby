@@ -228,13 +228,13 @@ describe "C-API Encoding function" do
 
   describe "ENC_CODERANGE_ASCIIONLY" do
     it "returns true if the object encoding is only ASCII" do
-      str = encode("abc", "us-ascii")
+      str = "abc".force_encoding("us-ascii")
       str.valid_encoding? # make sure to set the coderange
       @s.ENC_CODERANGE_ASCIIONLY(str).should be_true
     end
 
     it "returns false if the object encoding is not ASCII only" do
-      str = encode("ありがとう", "utf-8")
+      str = "ありがとう".force_encoding("utf-8")
       @s.ENC_CODERANGE_ASCIIONLY(str).should be_false
     end
   end
@@ -308,12 +308,20 @@ describe "C-API Encoding function" do
       @s.rb_enc_copy("string", @obj).encoding.should == Encoding::US_ASCII
     end
 
-    it "sets the encoding of a Regexp to that of the second argument" do
-      @s.rb_enc_copy(/regexp/, @obj).encoding.should == Encoding::US_ASCII
+    ruby_version_is ""..."2.1" do
+      it "sets the encoding of a Symbol to that of the second argument" do
+        @s.rb_enc_copy(:symbol, @obj).encoding.should == Encoding::US_ASCII
+      end
     end
 
-    it "sets the encoding of a Symbol to that of the second argument" do
-      @s.rb_enc_copy(:symbol, @obj).encoding.should == Encoding::US_ASCII
+    ruby_version_is "2.1" do
+      it "raises a RuntimeError if the second argument is a Symbol" do
+        lambda { @s.rb_enc_copy(:symbol, @obj) }.should raise_error(RuntimeError)
+      end
+    end
+
+    it "sets the encoding of a Regexp to that of the second argument" do
+      @s.rb_enc_copy(/regexp/, @obj).encoding.should == Encoding::US_ASCII
     end
   end
 
@@ -359,12 +367,20 @@ describe "C-API Encoding function" do
       @s.rb_enc_associate("string", "ASCII-8BIT").encoding.should == Encoding::ASCII_8BIT
     end
 
-    it "sets the encoding of a Regexp to the encoding" do
-      @s.rb_enc_associate(/regexp/, "ASCII-8BIT").encoding.should == Encoding::ASCII_8BIT
+    ruby_version_is ""..."2.1" do
+      it "sets the encoding of a Symbol to the encoding" do
+        @s.rb_enc_associate(:symbol, "US-ASCII").encoding.should == Encoding::US_ASCII
+      end
     end
 
-    it "sets the encoding of a Symbol to the encoding" do
-      @s.rb_enc_associate(:symbol, "US-ASCII").encoding.should == Encoding::US_ASCII
+    ruby_version_is "2.1" do
+      it "raises a RuntimeError if the argument is Symbol" do
+        lambda { @s.rb_enc_associate(:symbol, "US-ASCII") }.should raise_error(RuntimeError)
+      end
+    end
+
+    it "sets the encoding of a Regexp to the encoding" do
+      @s.rb_enc_associate(/regexp/, "ASCII-8BIT").encoding.should == Encoding::ASCII_8BIT
     end
 
     it "sets the encoding of a String to a default when the encoding is NULL" do
@@ -386,9 +402,7 @@ describe "C-API Encoding function" do
     end
 
     it "sets the encoding of a Symbol to the encoding" do
-      index = @s.rb_enc_find_index("US-ASCII")
-      enc = @s.rb_enc_associate_index(:symbol, index).encoding
-      enc.should == Encoding::US_ASCII
+      lambda { @s.rb_enc_associate_index(:symbol, "US-ASCII") }.should raise_error(TypeError)
     end
   end
 

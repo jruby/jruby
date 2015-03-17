@@ -6,6 +6,8 @@ import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Operation;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.Variable;
+import org.jruby.ir.persistence.IRReader;
+import org.jruby.ir.persistence.IRReaderDecoder;
 import org.jruby.ir.persistence.IRWriterEncoder;
 import org.jruby.ir.transformations.inlining.CloneInfo;
 import org.jruby.parser.StaticScope;
@@ -49,6 +51,10 @@ public class Match2Instr extends ResultBaseInstr implements FixedArityInstr {
         super.encode(e);
         e.encode(getReceiver());
         e.encode(getArg());
+    }
+
+    public static Match2Instr decode(IRReaderDecoder d) {
+        return new Match2Instr(d.decodeVariable(), d.decodeOperand(), d.decodeOperand());
     }
 
     @Override

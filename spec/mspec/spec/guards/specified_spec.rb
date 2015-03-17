@@ -6,7 +6,7 @@ describe Object, "#unspecified" do
     ScratchPad.clear
 
     @guard = UnspecifiedGuard.new
-    UnspecifiedGuard.stub!(:new).and_return(@guard)
+    UnspecifiedGuard.stub(:new).and_return(@guard)
   end
 
   it "does not yield if #standard? returns true" do
@@ -29,7 +29,7 @@ describe Object, "#unspecified" do
 
   it "calls #unregister even when an exception is raised in the guard block" do
     guard = UnspecifiedGuard.new :rubinius
-    UnspecifiedGuard.stub!(:new).and_return(guard)
+    UnspecifiedGuard.stub(:new).and_return(guard)
     guard.should_receive(:match?).and_return(true)
     guard.should_receive(:unregister)
 
@@ -53,7 +53,7 @@ describe Object, "#specified_on" do
 
   it "does not yield when #standard? returns true" do
     guard = SpecifiedOnGuard.new
-    SpecifiedOnGuard.stub!(:new).and_return(guard)
+    SpecifiedOnGuard.stub(:new).and_return(guard)
     guard.should_receive(:standard?).and_return(true)
 
     specified_on(:rubinius) { ScratchPad.record :yield }
@@ -62,7 +62,7 @@ describe Object, "#specified_on" do
 
   it "does not yield when #standard? returns false and #implementation? returns false" do
     guard = SpecifiedOnGuard.new :rubinius
-    SpecifiedOnGuard.stub!(:new).and_return(guard)
+    SpecifiedOnGuard.stub(:new).and_return(guard)
     guard.should_receive(:standard?).and_return(false)
     guard.should_receive(:implementation?).with(:rubinius).and_return(false)
 
@@ -72,7 +72,7 @@ describe Object, "#specified_on" do
 
   it "yields when #standard? returns false and #implementation? returns true" do
     guard = SpecifiedOnGuard.new :rubinius
-    SpecifiedOnGuard.stub!(:new).and_return(guard)
+    SpecifiedOnGuard.stub(:new).and_return(guard)
     guard.should_receive(:standard?).and_return(false)
     guard.should_receive(:implementation?).with(:rubinius).and_return(true)
 
@@ -82,7 +82,7 @@ describe Object, "#specified_on" do
 
   it "sets the name of the guard to :specified_on" do
     guard = SpecifiedOnGuard.new :rubinius
-    SpecifiedOnGuard.stub!(:new).and_return(guard)
+    SpecifiedOnGuard.stub(:new).and_return(guard)
     guard.should_receive(:match?).and_return(false)
 
     specified_on(:rubinius) { }
@@ -91,7 +91,7 @@ describe Object, "#specified_on" do
 
   it "calls #unregister even when an exception is raised in the guard block" do
     guard = SpecifiedOnGuard.new :rubinius
-    SpecifiedOnGuard.stub!(:new).and_return(guard)
+    SpecifiedOnGuard.stub(:new).and_return(guard)
     guard.should_receive(:match?).and_return(true)
     guard.should_receive(:unregister)
 

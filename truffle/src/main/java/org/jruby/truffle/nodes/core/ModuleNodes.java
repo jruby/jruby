@@ -1701,6 +1701,26 @@ public abstract class ModuleNodes {
 
     }
 
+    @CoreMethod(names = { "to_s", "inspect" })
+    public abstract static class ToSNode extends CoreMethodNode {
+
+        public ToSNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public ToSNode(ToSNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public RubyString toS(RubyModule module) {
+            notDesignedForCompilation();
+
+            return getContext().makeString(module.getName());
+        }
+
+    }
+
     @CoreMethod(names = "undef_method", required = 1)
     public abstract static class UndefMethodNode extends CoreMethodNode {
 

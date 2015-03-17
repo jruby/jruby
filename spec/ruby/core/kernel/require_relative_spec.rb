@@ -7,9 +7,9 @@ describe "Kernel#require_relative with a relative path" do
   before :each do
     CodeLoadingSpecs.spec_setup
     @dir = "../../fixtures/code"
-    @abs_dir = File.expand_path(@dir, File.dirname(__FILE__))
+    @abs_dir = File.realpath(@dir, File.dirname(__FILE__))
     @path = "#{@dir}/load_fixture.rb"
-    @abs_path = File.expand_path(@path, File.dirname(__FILE__))
+    @abs_path = File.realpath(@path, File.dirname(__FILE__))
   end
 
   after :each do

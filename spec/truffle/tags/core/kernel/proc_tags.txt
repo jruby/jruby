@@ -1,1 +1,2 @@
 fails:Kernel.proc raises an ArgumentError when no block is given
+fails:Kernel#proc uses the implicit block from an enclosing method

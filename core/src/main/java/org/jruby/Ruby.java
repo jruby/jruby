@@ -3491,6 +3491,11 @@ public final class Ruby implements Constantizable {
         return symbolTable.getSymbol(name);
     }
 
+    public RubySymbol newSymbol(String name, Encoding encoding) {
+        ByteList byteList = RubyString.encodeBytelist(name, encoding);
+        return symbolTable.getSymbol(byteList);
+    }
+
     public RubySymbol newSymbol(ByteList name) {
         return symbolTable.getSymbol(name);
     }

@@ -1,12 +1,34 @@
 require 'mspec/guards/feature'
 
-class IOStub < String
+class IOStub
+  def initialize
+    @buffer = []
+    @output = ''
+  end
+
   def write(*str)
     self << str.join
   end
 
+  def << str
+    @buffer << str
+    self
+  end
+
   def print(*str)
     write(str.join + $\.to_s)
+  end
+
+  def method_missing(name, *args, &block)
+    to_s.send(name, *args, &block)
+  end
+
+  def == other
+    to_s == other
+  end
+
+  def =~ other
+    to_s =~ other
   end
 
   def puts(*str)
@@ -22,7 +44,20 @@ class IOStub < String
   end
 
   def flush
+    @output += @buffer.join('')
+    @buffer.clear
     self
+  end
+
+  def to_s
+    flush
+    @output
+  end
+
+  alias_method :to_str, :to_s
+
+  def inspect
+    to_s.inspect
   end
 end
 

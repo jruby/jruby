@@ -1,5 +1,0 @@
-fails:String#* tries to convert the given argument to an integer using to_int
-fails:String#* raises an ArgumentError when given integer is negative
-fails:String#* raises a RangeError when given integer is a Bignum
-fails:String#* returns subclass instances
-fails:String#* always taints the result when self is tainted

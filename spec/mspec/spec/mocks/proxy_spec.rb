@@ -219,12 +219,12 @@ describe MockProxy, "#and_return" do
     @proxy.returning.should == 2
     @proxy.returning.should == 3
   end
-  
+
   it "implicitly sets the expected number of calls" do
     @proxy.and_return(1, 2, 3)
     @proxy.count.should == [:exactly, 3]
   end
-  
+
   it "only sets the expected number of calls if it is higher than what is already set" do
     @proxy.at_least(5).times.and_return(1, 2, 3)
     @proxy.count.should == [:at_least, 5]
@@ -340,7 +340,7 @@ describe MockProxy, "#raising" do
   end
 
   it "returns the exception object passed to #and_raise" do
-    exc = mock("exception")
+    exc = double("exception")
     @proxy.and_raise(exc)
     @proxy.raising.should equal(exc)
   end

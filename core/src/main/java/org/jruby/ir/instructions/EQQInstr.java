@@ -4,6 +4,7 @@ import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Operation;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.Variable;
+import org.jruby.ir.persistence.IRReaderDecoder;
 import org.jruby.ir.persistence.IRWriterEncoder;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.ir.transformations.inlining.CloneInfo;
@@ -38,6 +39,10 @@ public class EQQInstr extends ResultBaseInstr implements FixedArityInstr {
         super.encode(e);
         e.encode(getArg1());
         e.encode(getArg2());
+    }
+
+    public static EQQInstr decode(IRReaderDecoder d) {
+        return new EQQInstr(d.decodeVariable(), d.decodeOperand(), d.decodeOperand());
     }
 
     @Override

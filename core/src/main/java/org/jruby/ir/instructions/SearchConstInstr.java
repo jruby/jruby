@@ -6,6 +6,7 @@ import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Operation;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.Variable;
+import org.jruby.ir.persistence.IRReaderDecoder;
 import org.jruby.ir.persistence.IRWriterEncoder;
 import org.jruby.ir.transformations.inlining.CloneInfo;
 import org.jruby.parser.StaticScope;
@@ -61,6 +62,10 @@ public class SearchConstInstr extends ResultBaseInstr implements FixedArityInstr
         e.encode(getConstName());
         e.encode(getStartingScope());
         e.encode(isNoPrivateConsts());
+    }
+
+    public static SearchConstInstr decode(IRReaderDecoder d) {
+        return new SearchConstInstr(d.decodeVariable(), d.decodeString(), d.decodeOperand(), d.decodeBoolean());
     }
 
     @Override

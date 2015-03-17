@@ -13,3 +13,5 @@ fails:Marshal.restore when source is tainted does not taint Bignums
 fails:Marshal.restore when source is tainted does not taint Floats
 fails:Marshal.restore when a class with the same name as the dumped one exists outside the namespace raises a NameError
 fails:Marshal.restore when a class with the same name as the dumped one exists outside the namespace invokes Module#const_missing
+fails:Marshal.restore loads an array containing an object with _dump that returns an immediate value, followed by multiple instances of another object
+fails:Marshal.restore when a class does not exist in the namespace raises an ArgumentError

@@ -51,7 +51,7 @@ module LangSendSpecs
       a, self.foo = 1, value
     end
   end
-  
+
   class PrivateGetter
     attr_reader :foo
     private :foo

@@ -6,8 +6,8 @@ require 'mspec/runner/example'
 describe FileFormatter, "#register" do
   before :each do
     @formatter = FileFormatter.new
-    MSpec.stub!(:register)
-    MSpec.stub!(:unregister)
+    MSpec.stub(:register)
+    MSpec.stub(:unregister)
   end
 
   it "registers self with MSpec for :load, :unload actions" do

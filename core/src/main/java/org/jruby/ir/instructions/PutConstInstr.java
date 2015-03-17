@@ -4,6 +4,7 @@ import org.jruby.RubyModule;
 import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Operation;
 import org.jruby.ir.operands.Operand;
+import org.jruby.ir.persistence.IRReaderDecoder;
 import org.jruby.ir.transformations.inlining.CloneInfo;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.DynamicScope;
@@ -29,6 +30,10 @@ public class PutConstInstr extends PutInstr implements FixedArityInstr {
 
         module.setConstant(getRef(), value);
         return null;
+    }
+
+    public static PutConstInstr decode(IRReaderDecoder d) {
+        return new PutConstInstr(d.decodeOperand(), d.decodeString(), d.decodeOperand());
     }
 
     @Override

@@ -1,2 +1,0 @@
-fails:BasicObject#instance_exec sets self to the receiver in the context of the passed block
-fails:BasicObject#instance_exec passes arguments to the block

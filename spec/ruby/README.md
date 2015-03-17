@@ -1,3 +1,20 @@
+# A RubySpec fork for CRuby
+
+[![Build Status](https://travis-ci.org/ruby/rubyspec.png)](https://travis-ci.org/ruby/rubyspec)
+
+## FAQ
+
+### Why fork?
+
+Because RubySpec often include [tests which fails on CRuby](http://rubyci.blob.core.windows.net/centos5-64/ruby-trunk/log/20130220T070302Z.diff.html.gz) even if RubySpec is a test suite which verifies whether an implementation is compatible with CRuby or not.
+Moreover recent mspec can't ignore specs guarded with ruby\_bug. It breaks running RubySpec because those guards are used to avoid specs which hang or crash.
+
+### Do you receive pull requests?
+
+Yes. If the pull request won't break anything, it will be merged.
+
+## Original Readme
+
 RubySpec is an executable specification for the Ruby programming language. The
 specs describe Ruby language syntax as well as the core and standard library
 classes. See http://rubyspec.org for more information.

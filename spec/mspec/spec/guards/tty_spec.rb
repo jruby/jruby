@@ -6,7 +6,7 @@ describe Object, "#with_tty" do
     ScratchPad.clear
 
     @guard = TTYGuard.new
-    TTYGuard.stub!(:new).and_return(@guard)
+    TTYGuard.stub(:new).and_return(@guard)
   end
 
   it "yields if STDOUT is a TTY" do

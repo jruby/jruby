@@ -33,33 +33,35 @@ describe "Method#arity" do
       method(:p).arity.should == 4
     end
 
-    evaluate <<-ruby do
-        def m(a:) end
-        def n(a:, b:) end
-        def o(a: 1, b:, c:, d: 2) end
-      ruby
+    ruby_version_is "2.1" do
+      evaluate <<-ruby do
+          def m(a:) end
+          def n(a:, b:) end
+          def o(a: 1, b:, c:, d: 2) end
+        ruby
 
-      method(:m).arity.should == 1
-      method(:n).arity.should == 1
-      method(:o).arity.should == 1
-    end
+        method(:m).arity.should == 1
+        method(:n).arity.should == 1
+        method(:o).arity.should == 1
+      end
 
-    evaluate <<-ruby do
-        def m(a, b:) end
-        def n(a, b:, &l) end
-      ruby
+      evaluate <<-ruby do
+          def m(a, b:) end
+          def n(a, b:, &l) end
+        ruby
 
-      method(:m).arity.should == 2
-      method(:n).arity.should == 2
-    end
+        method(:m).arity.should == 2
+        method(:n).arity.should == 2
+      end
 
-    evaluate <<-ruby do
-        def m(a, b, c:, d: 1) end
-        def n(a, b, c:, d: 1, **k, &l) end
-      ruby
+      evaluate <<-ruby do
+          def m(a, b, c:, d: 1) end
+          def n(a, b, c:, d: 1, **k, &l) end
+        ruby
 
-      method(:m).arity.should == 3
-      method(:n).arity.should == 3
+        method(:m).arity.should == 3
+        method(:n).arity.should == 3
+      end
     end
   end
 
@@ -142,13 +144,15 @@ describe "Method#arity" do
       method(:n).arity.should == -6
     end
 
-    evaluate <<-ruby do
-        def m(a: 1) end
-        def n(a: 1, b: 2) end
-      ruby
+    ruby_version_is "2.1" do
+      evaluate <<-ruby do
+          def m(a: 1) end
+          def n(a: 1, b: 2) end
+        ruby
 
-      method(:m).arity.should == -1
-      method(:n).arity.should == -1
+        method(:m).arity.should == -1
+        method(:n).arity.should == -1
+      end
     end
 
     evaluate <<-ruby do
@@ -164,35 +168,37 @@ describe "Method#arity" do
       method(:p).arity.should == -1
     end
 
-    evaluate <<-ruby do
-        def m(**k, &l) end
-        def n(*a, **k) end
-        def o(a: 1, b: 2, **k) end
-      ruby
+    ruby_version_is "2.1" do
+      evaluate <<-ruby do
+          def m(**k, &l) end
+          def n(*a, **k) end
+          def o(a: 1, b: 2, **k) end
+        ruby
 
-      method(:m).arity.should == -1
-      method(:n).arity.should == -1
-      method(:o).arity.should == -1
-    end
+        method(:m).arity.should == -1
+        method(:n).arity.should == -1
+        method(:o).arity.should == -1
+      end
 
-    evaluate <<-ruby do
-        def m(a=1, *b, c:, d: 2, **k, &l) end
-      ruby
+      evaluate <<-ruby do
+          def m(a=1, *b, c:, d: 2, **k, &l) end
+        ruby
 
-      method(:m).arity.should == -2
-    end
+        method(:m).arity.should == -2
+      end
 
-    evaluate <<-ruby do
-        def m(a, b=1, *c, d, e:, f: 2, **k, &l) end
-        def n(a, b=1, *c, d:, e:, f: 2, **k, &l) end
-        def o(a=0, b=1, *c, d, e:, f: 2, **k, &l) end
-        def p(a=0, b=1, *c, d:, e:, f: 2, **k, &l) end
-      ruby
+      evaluate <<-ruby do
+          def m(a, b=1, *c, d, e:, f: 2, **k, &l) end
+          def n(a, b=1, *c, d:, e:, f: 2, **k, &l) end
+          def o(a=0, b=1, *c, d, e:, f: 2, **k, &l) end
+          def p(a=0, b=1, *c, d:, e:, f: 2, **k, &l) end
+        ruby
 
-      method(:m).arity.should == -4
-      method(:n).arity.should == -3
-      method(:o).arity.should == -3
-      method(:p).arity.should == -2
+        method(:m).arity.should == -4
+        method(:n).arity.should == -3
+        method(:o).arity.should == -3
+        method(:p).arity.should == -2
+      end
     end
   end
 

@@ -11,9 +11,10 @@ describe :process_exec, :shared => true do
     lambda { @object.exec "\000" }.should raise_error(ArgumentError)
   end
 
-  it "raises Errno::EACCES when the file does not have execute permissions" do
-    File.executable?(__FILE__).should == false
-    lambda { @object.exec __FILE__ }.should raise_error(Errno::EACCES)
+  unless File.executable?(__FILE__) # Some FS (e.g. vboxfs) locate all files executable
+    it "raises Errno::EACCES when the file does not have execute permissions" do
+      lambda { @object.exec __FILE__ }.should raise_error(Errno::EACCES)
+    end
   end
 
   platform_is_not :openbsd do
@@ -66,7 +67,7 @@ describe :process_exec, :shared => true do
     end
 
     it "creates an argument array with shell parsing semantics for whitespace" do
-      ruby_exe('exec "echo a b  c 	d"', :escape => true).should == "a b c d\n"
+      ruby_exe('exec "echo a b  c   d"', :escape => true).should == "a b c d\n"
     end
   end
 

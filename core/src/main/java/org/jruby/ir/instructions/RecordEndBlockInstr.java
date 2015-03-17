@@ -3,6 +3,7 @@ package org.jruby.ir.instructions;
 import org.jruby.ir.*;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.WrappedIRClosure;
+import org.jruby.ir.persistence.IRReaderDecoder;
 import org.jruby.ir.persistence.IRWriterEncoder;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.ir.transformations.inlining.CloneInfo;
@@ -46,6 +47,10 @@ public class RecordEndBlockInstr extends Instr implements FixedArityInstr {
         super.encode(e);
         e.encode(getDeclaringScope());
         e.encode(getEndBlockClosure());
+    }
+
+    public static RecordEndBlockInstr decode(IRReaderDecoder d) {
+        return new RecordEndBlockInstr(d.decodeScope(), (WrappedIRClosure) d.decodeOperand());
     }
 
     @Override

@@ -12,7 +12,7 @@ describe "String#lstrip" do
 
   # spec/core/string/lstrip_spec.rb
   not_compliant_on :rubinius do
-    it "does not strip leading \0" do
+    it "does not strip leading \\0" do
      "\x00hello".lstrip.should == "\x00hello"
     end
   end

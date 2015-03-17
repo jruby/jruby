@@ -7,6 +7,7 @@ import org.jruby.ir.Operation;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.StringLiteral;
 import org.jruby.ir.operands.Variable;
+import org.jruby.ir.persistence.IRReaderDecoder;
 import org.jruby.ir.persistence.IRWriterEncoder;
 import org.jruby.ir.transformations.inlining.CloneInfo;
 import org.jruby.parser.StaticScope;
@@ -48,8 +49,12 @@ public class BuildCompoundStringInstr extends ResultBaseInstr {
     @Override
     public void encode(IRWriterEncoder e) {
         super.encode(e);
-        e.encode(encoding == null ? "" : encoding.toString());
         e.encode(getPieces());
+        e.encode(encoding);
+    }
+
+    public static BuildCompoundStringInstr decode(IRReaderDecoder d) {
+        return new BuildCompoundStringInstr(d.decodeVariable(), d.decodeOperandArray(), d.decodeEncoding());
     }
 
     @Override

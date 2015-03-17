@@ -51,7 +51,7 @@ end
 describe Object, "#deviates_on" do
   before :each do
     @guard = NonComplianceGuard.new
-    NonComplianceGuard.stub!(:new).and_return(@guard)
+    NonComplianceGuard.stub(:new).and_return(@guard)
   end
 
   it "sets the name of the guard to :deviates_on" do

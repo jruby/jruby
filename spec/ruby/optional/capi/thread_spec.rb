@@ -21,35 +21,38 @@ describe "C-API Thread function" do
   end
 
   describe "rb_thread_select" do
-    it "returns true if an fd is ready to read" do
-      read, write = IO.pipe
+    ruby_version_is ""..."2.2" do
+      it "returns true if an fd is ready to read" do
+        read, write = IO.pipe
 
-      @t.rb_thread_select_fd(read.to_i, 0).should == false
-      write << "1"
-      @t.rb_thread_select_fd(read.to_i, 0).should == true
-    end
-
-    it "does not block all threads" do
-      t = Thread.new do
-        sleep 0.25
-        ScratchPad.record :inner
+        @t.rb_thread_select_fd(read.to_i, 0).should == false
+        write << "1"
+        @t.rb_thread_select_fd(read.to_i, 0).should == true
       end
-      Thread.pass while t.status and t.status != "sleep"
 
-      @t.rb_thread_select(500_000)
+      it "does not block all threads" do
+        t = Thread.new do
+          sleep 0.25
+          ScratchPad.record :inner
+        end
+        Thread.pass while t.status and t.status != "sleep"
 
-      t.alive?.should be_false
-      ScratchPad.recorded.should == :inner
+        @t.rb_thread_select(500_000)
 
-      t.join
+        t.alive?.should be_false
+        ScratchPad.recorded.should == :inner
+
+        t.join
+      end
     end
+
   end
 
   describe "rb_thread_wait_for" do
     it "sleeps the current thread for the give ammount of time" do
       start = Time.now
       @t.rb_thread_wait_for(0, 100_000)
-      (Time.now - start).should be_close(0.1, 0.1)
+      (Time.now - start).should be_close(0.1, 0.2)
     end
   end
 
@@ -145,8 +148,10 @@ describe "C-API Thread function" do
       it_behaves_like :rb_thread_blocking_region, :rb_thread_blocking_region
     end
 
-    it_behaves_like :rb_thread_blocking_region, :rb_thread_blocking_region_with_ubf_io
-    it_behaves_like :rb_thread_blocking_region, :rb_thread_blocking_region
+    ruby_version_is "1.9"..."2.2" do
+      it_behaves_like :rb_thread_blocking_region, :rb_thread_blocking_region_with_ubf_io
+      it_behaves_like :rb_thread_blocking_region, :rb_thread_blocking_region
+    end
 
     it_behaves_like :rb_thread_blocking_region, :rb_thread_call_without_gvl
     it_behaves_like :rb_thread_blocking_region, :rb_thread_call_without_gvl2

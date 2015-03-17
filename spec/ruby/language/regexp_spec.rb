@@ -112,7 +112,7 @@ describe "Literal Regexps" do
     /foo.(?<!\d)/.match("foo1 fooA").to_a.should == ["fooA"]
   end
 
-  it "supports \g (named backreference)" do
+  it "supports \\g (named backreference)" do
     /(?<foo>foo.)bar\g<foo>/.match("foo1barfoo2").to_a.should == ["foo1barfoo2", "foo2"]
   end
 

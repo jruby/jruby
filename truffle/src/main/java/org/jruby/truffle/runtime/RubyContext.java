@@ -398,10 +398,6 @@ public class RubyContext extends ExecutionContext {
             final long value = ((org.jruby.RubyFixnum) object).getLongValue();
 
             if (value < Integer.MIN_VALUE || value > Integer.MAX_VALUE) {
-                if (value < Long.MIN_VALUE || value > Long.MAX_VALUE) {
-                    throw new UnsupportedOperationException();
-                }
-
                 return value;
             }
 

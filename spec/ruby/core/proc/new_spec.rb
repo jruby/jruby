@@ -189,4 +189,14 @@ describe "Proc.new without a block" do
   it "raises an ArgumentError if invoked on a subclass from within a method with no block" do
     lambda { ProcSpecs.new_proc_subclass_in_method }.should raise_error(ArgumentError)
   end
+
+  it "uses the implicit block from an enclosing method" do
+    def some_method
+      Proc.new
+    end
+
+    prc = some_method { "hello" }
+
+    prc.call.should == "hello"
+  end
 end

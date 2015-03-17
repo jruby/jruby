@@ -1,0 +1,15 @@
+GIT
+  remote: git://github.com/ruby/mspec.git
+  revision: 312d99ce934a8e776280e5bd40dbeb8040ced18f
+  specs:
+    mspec (1.7.0)
+
+GEM
+  remote: https://rubygems.org/
+  specs:
+
+PLATFORMS
+  ruby
+
+DEPENDENCIES
+  mspec!

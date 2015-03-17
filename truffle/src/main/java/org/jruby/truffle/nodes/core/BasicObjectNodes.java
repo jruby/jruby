@@ -18,6 +18,7 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.NodeUtil;
 import com.oracle.truffle.api.source.SourceSection;
 
+import com.oracle.truffle.api.utilities.ConditionProfile;
 import org.jruby.runtime.Visibility;
 import org.jruby.truffle.nodes.RubyCallNode;
 import org.jruby.truffle.nodes.RubyNode;
@@ -217,6 +218,39 @@ public abstract class BasicObjectNodes {
             notDesignedForCompilation();
 
             return yield.dispatchWithModifiedSelf(frame, block, receiver);
+        }
+
+    }
+
+    @CoreMethod(names = "instance_exec", needsBlock = true, argumentsAsArray = true)
+    public abstract static class InstanceExecNode extends YieldingCoreMethodNode {
+
+        private final ConditionProfile rubyMethodProfile = ConditionProfile.createBinaryProfile();
+
+        public InstanceExecNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public InstanceExecNode(InstanceExecNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public Object instanceExec(VirtualFrame frame, Object receiver, Object[] arguments, RubyProc block) {
+            notDesignedForCompilation();
+
+            if (rubyMethodProfile.profile(block.getSelfCapturedInScope() instanceof RubyMethod)) {
+                return yield(frame, block, arguments);
+            }
+
+            return yieldWithModifiedSelf(frame, block, receiver, arguments);
+        }
+
+        @Specialization
+        public Object instanceExec(Object receiver, Object[] arguments, UndefinedPlaceholder block) {
+            CompilerDirectives.transferToInterpreter();
+
+            throw new RaiseException(getContext().getCoreLibrary().localJumpError("no block given", this));
         }
 
     }

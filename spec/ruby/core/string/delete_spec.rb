@@ -27,7 +27,6 @@ describe "String#delete" do
   end
 
   it "deletes all chars in a sequence" do
-    "hello".delete("\x00-\xFF").should == ""
     "hello".delete("ej-m").should == "ho"
     "hello".delete("e-h").should == "llo"
     "hel-lo".delete("e-").should == "hllo"
@@ -60,6 +59,7 @@ describe "String#delete" do
   end
 
   it "raises if the given ranges are invalid" do
+    lambda { "hello".delete("\x00-\xFF").should == "" }.should raise_error(ArgumentError)
     lambda { "hello".delete("h-e") }.should raise_error(ArgumentError)
     lambda { "hello".delete("^h-e") }.should raise_error(ArgumentError)
   end

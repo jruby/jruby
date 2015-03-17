@@ -3,7 +3,6 @@ require 'mspec/utils/script'
 require 'mspec/runner/mspec'
 require 'mspec/runner/filters'
 require 'mspec/runner/actions/filter'
-require 'mspec/runner/actions/gdb'
 
 describe MSpecScript, ".config" do
   it "returns a Hash" do
@@ -54,7 +53,7 @@ describe MSpecScript, "#load_default" do
       @engine = Object.const_get :RUBY_ENGINE
     end
     @script = MSpecScript.new
-    MSpecScript.stub!(:new).and_return(@script)
+    MSpecScript.stub(:new).and_return(@script)
   end
 
   after :each do
@@ -63,7 +62,7 @@ describe MSpecScript, "#load_default" do
   end
 
   it "attempts to load 'default.mspec'" do
-    @script.stub!(:load)
+    @script.stub(:load)
     @script.should_receive(:load).with('default.mspec').and_return(true)
     @script.load_default
   end
@@ -80,8 +79,8 @@ end
 
 describe MSpecScript, ".main" do
   before :each do
-    @script = mock("MSpecScript").as_null_object
-    MSpecScript.stub!(:new).and_return(@script)
+    @script = double("MSpecScript").as_null_object
+    MSpecScript.stub(:new).and_return(@script)
   end
 
   it "creates an instance of MSpecScript" do
@@ -142,7 +141,7 @@ end
 
 describe MSpecScript, "#load" do
   before :each do
-    File.stub!(:exist?).and_return(false)
+    File.stub(:exist?).and_return(false)
     @script = MSpecScript.new
     @file = "default.mspec"
     @base = "default"
@@ -202,7 +201,7 @@ describe MSpecScript, "#custom_options" do
   end
 
   it "prints 'None'" do
-    options = mock("options")
+    options = double("options")
     options.should_receive(:doc).with("   No custom options registered")
     @script.custom_options options
   end
@@ -212,7 +211,7 @@ describe MSpecScript, "#register" do
   before :each do
     @script = MSpecScript.new
 
-    @formatter = mock("formatter").as_null_object
+    @formatter = double("formatter").as_null_object
     @script.config[:formatter] = @formatter
   end
 
@@ -233,7 +232,7 @@ describe MSpecScript, "#register" do
   end
 
   it "registers :formatter with the formatter instance" do
-    @formatter.stub!(:new).and_return(@formatter)
+    @formatter.stub(:new).and_return(@formatter)
     MSpec.should_receive(:store).with(:formatter, @formatter)
     @script.register
   end
@@ -249,10 +248,10 @@ describe MSpecScript, "#register" do
   before :each do
     @script = MSpecScript.new
 
-    @formatter = mock("formatter").as_null_object
+    @formatter = double("formatter").as_null_object
     @script.config[:formatter] = @formatter
 
-    @filter = mock("filter")
+    @filter = double("filter")
     @filter.should_receive(:register)
 
     @ary = ["some", "spec"]
@@ -305,14 +304,6 @@ describe MSpecScript, "#register" do
     @script.config[:xprofiles] = @ary
     @script.register
   end
-
-  it "creates and registers a GdbAction for excluded specs" do
-    @script.config[:atags] = ["some"]
-    @script.config[:astrings] = ["string"]
-    GdbAction.should_receive(:new).with(["some"], ["string"]).and_return(@filter)
-    @script.config[:gdb] = true
-    @script.register
-  end
 end
 
 describe MSpecScript, "#signals" do
@@ -342,9 +333,9 @@ describe MSpecScript, "#entries" do
   before :each do
     @script = MSpecScript.new
 
-    File.stub!(:expand_path).and_return("name")
-    File.stub!(:file?).and_return(false)
-    File.stub!(:directory?).and_return(false)
+    File.stub(:expand_path).and_return("name")
+    File.stub(:file?).and_return(false)
+    File.stub(:directory?).and_return(false)
   end
 
   it "returns the pattern in an array if it is a file" do
@@ -355,7 +346,7 @@ describe MSpecScript, "#entries" do
 
   it "returns Dir['pattern/**/*_spec.rb'] if pattern is a directory" do
     File.should_receive(:directory?).with("name").and_return(true)
-    File.stub!(:expand_path).and_return("name","name/**/*_spec.rb")
+    File.stub(:expand_path).and_return("name","name/**/*_spec.rb")
     Dir.should_receive(:[]).with("name/**/*_spec.rb").and_return(["dir1", "dir2"])
     @script.entries("name").should == ["dir1", "dir2"]
   end
@@ -379,7 +370,7 @@ describe MSpecScript, "#entries" do
     end
 
     it "returns Dir['pattern/**/*_spec.rb'] if pattern is a directory" do
-      File.stub!(:expand_path).and_return(@name, @name+"/**/*_spec.rb")
+      File.stub(:expand_path).and_return(@name, @name+"/**/*_spec.rb")
       File.should_receive(:directory?).with(@name).and_return(true)
       Dir.should_receive(:[]).with(@name + "/**/*_spec.rb").and_return(["dir1", "dir2"])
       @script.entries("name").should == ["dir1", "dir2"]

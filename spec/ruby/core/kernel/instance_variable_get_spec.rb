@@ -38,6 +38,12 @@ describe "Kernel#instance_variable_get" do
     obj.stub!(:to_str).and_return("test")
     lambda { @obj.instance_variable_get(obj) }.should raise_error(NameError)
   end
+
+  it "raises a NameError when passed just '@'" do
+    obj = mock("to_str")
+    obj.stub!(:to_str).and_return('@')
+    lambda { @obj.instance_variable_get(obj) }.should raise_error(NameError)
+  end
 end
 
 describe "Kernel#instance_variable_get when passed Symbol" do

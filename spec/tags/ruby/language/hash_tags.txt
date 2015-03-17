@@ -3,3 +3,5 @@ fails:Hash literal expands an '**obj' element into the containing Hash literal i
 fails:Hash literal calls #to_hash to convert an '**obj' element
 fails:Hash literal merges the containing Hash into the **obj before importing obj's items
 fails:Hash literal merges multiple nested '**obj' in Hash literals
+fails:Hash literal expands an '**{}' element with the last key/value pair taking precedence
+fails:Hash literal calls #to_hash to expand an '**obj' element

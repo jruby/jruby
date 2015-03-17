@@ -37,10 +37,6 @@ class MSpecMain < MSpecScript
 
     options.targets
 
-    options.on("-D", "--gdb", "Run under gdb") do
-      config[:use_gdb] = true
-    end
-
     options.on("-A", "--valgrind", "Run under valgrind") do
       config[:use_valgrind] = true
     end
@@ -162,12 +158,8 @@ class MSpecMain < MSpecScript
     else
       if config[:use_valgrind]
         more = ["--child-silent-after-fork=yes",
-                "--db-attach=#{config[:use_gdb] ? 'yes' : 'no'}",
                 config[:target]] + argv
         exec "valgrind", *more
-      elsif config[:use_gdb]
-        more = ["--args", config[:target]] + argv
-        exec "gdb", *more
       else
         cmd, *rest = config[:target].split(/\s+/)
         argv = rest + argv unless rest.empty?

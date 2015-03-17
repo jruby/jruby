@@ -27,7 +27,7 @@ describe "Mutex#sleep" do
     duration = 0.1
     start = Time.now
     m.sleep duration
-    (Time.now - start).should be_close(duration, 0.1)
+    (Time.now - start).should be_close(duration, 0.2)
   end
 
   it "unlocks the mutex while sleeping" do

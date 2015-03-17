@@ -6,10 +6,10 @@ describe "Enumerator::Yielder#<<" do
     ary = []
     y = enumerator_class::Yielder.new {|x| ary << x}
     y << 1
-    
+
     ary.should == [1]
   end
-  
+
   it "returns self" do
     y = enumerator_class::Yielder.new {|x| x + 1}
     (y << 1).should equal(y)

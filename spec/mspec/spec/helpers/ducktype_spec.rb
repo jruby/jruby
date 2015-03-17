@@ -4,7 +4,7 @@ require 'mspec/helpers'
 
 describe Object, "#responds_to" do
   it "returns true for specified symbols" do
-    obj = mock("obj")
+    obj = double("obj")
     obj.responds_to(:to_flo)
     obj.should respond_to(:to_flo)
     obj.should respond_to(:to_s)
@@ -13,7 +13,7 @@ end
 
 describe Object, "#does_not_respond_to" do
   it "returns false for specified symbols" do
-    obj = mock("obj")
+    obj = double("obj")
     obj.does_not_respond_to(:to_s)
     obj.should_not respond_to(:to_s)
   end
@@ -30,7 +30,7 @@ end
 
 describe Object, "#fake!" do
   before :each do
-    @obj = mock("obj")
+    @obj = double("obj")
   end
 
   it "makes the object respond to the message" do

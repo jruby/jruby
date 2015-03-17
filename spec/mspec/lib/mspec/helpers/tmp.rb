@@ -3,7 +3,7 @@
 # should clean up any temporary files created so that the temp
 # directory is empty when the process exits.
 
-SPEC_TEMP_DIR = "#{File.expand_path(Dir.pwd)}/rubyspec_temp"
+SPEC_TEMP_DIR = ENV["SPEC_TEMP_DIR"] || "#{File.expand_path(Dir.pwd)}/rubyspec_temp"
 
 SPEC_TEMP_UNIQUIFIER = "0"
 

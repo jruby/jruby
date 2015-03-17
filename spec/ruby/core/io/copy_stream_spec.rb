@@ -120,7 +120,7 @@ describe "IO.copy_stream" do
 
     it "raises an IOError if the source IO is not open for reading" do
       @from_io.close
-      @from_io = new_io @from_name, "a"
+      @from_io = new_io @from_bigfile, "a"
       lambda { IO.copy_stream @from_io, @to_name }.should raise_error(IOError)
     end
 

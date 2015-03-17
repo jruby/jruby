@@ -26,6 +26,10 @@
 
 # Only part of Rubinius' string.rb
 
+# Default Ruby Record Separator
+# Used in this file and by various methods that need to ignore $/
+DEFAULT_RECORD_SEPARATOR = "\n"
+
 class String
 
   def include?(needle)
@@ -60,6 +64,75 @@ class String
     else
       each_char.to_a
     end
+  end
+
+
+  def chomp!(sep=undefined)
+    Rubinius.check_frozen
+
+    if undefined.equal?(sep)
+      sep = $/
+    elsif sep
+      sep = StringValue(sep)
+    end
+
+    return if sep.nil?
+
+    m = Rubinius::Mirror.reflect self
+
+    if sep == DEFAULT_RECORD_SEPARATOR
+      return unless bytes = m.previous_byte_index(@num_bytes)
+
+      chr = chr_at bytes
+      return unless chr.ascii?
+
+      case chr.ord
+        when 13
+          # do nothing
+        when 10
+          if j = m.previous_byte_index(bytes)
+            chr = chr_at j
+
+            if chr.ord == 13 and chr.ascii?
+              bytes = j
+            end
+          end
+        else
+          return
+      end
+    elsif sep.size == 0
+      return if @num_bytes == 0
+      bytes = @num_bytes
+
+      while i = m.previous_byte_index(bytes)
+        chr = chr_at i
+        break unless chr.ord == 10 and chr.ascii?
+
+        bytes = i
+
+        if j = m.previous_byte_index(i)
+          chr = chr_at j
+          if chr.ord == 13 and chr.ascii?
+            bytes = j
+          end
+        end
+      end
+
+      return if bytes == @num_bytes
+    else
+      size = sep.size
+      return if size > @num_bytes
+
+      # TODO: Move #compare_substring to mirror.
+      return unless sep.compare_substring(self, -size, size) == 0
+      bytes = @num_bytes - size
+    end
+
+    # We do not need to dup the data, so don't use #modify!
+    @hash_value = nil
+    self.num_bytes = bytes
+
+    self
   end
 
   def chomp(separator=$/)
@@ -656,6 +729,15 @@ class String
   def to_inum(base, check)
     Rubinius.primitive :string_to_inum
     raise ArgumentError, "invalid value for Integer"
+  end
+
+  def compare_substring(other, start, size)
+    Rubinius.primitive :string_compare_substring
+
+    if start > @num_bytes || start + @num_bytes < 0
+      raise IndexError, "index #{start} out of string"
+    end
+    raise PrimitiveFailure, "String#compare_substring primitive failed"
   end
 
   def self.try_convert(obj)

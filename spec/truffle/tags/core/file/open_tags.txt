@@ -69,3 +69,7 @@ fails:File.open on a FIFO opens it as a normal file
 fails:File.open when passed a file descriptor opens a file
 fails:File.open when passed a file descriptor opens a file when passed a block
 fails:File.open opens directories
+fails:File.open opens the file when call with fd
+fails:File.open opens a file with a file descriptor d and a block
+fails:File.open with a block propagates StandardErrors produced by close
+fails:File.open with a block does not propagate IOError with 'closed stream' message produced by close

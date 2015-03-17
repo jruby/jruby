@@ -2,3 +2,5 @@ fails:Kernel#taint raises RuntimeError on an untainted, frozen object
 fails:Kernel#taint has no effect on immediate values
 fails:Kernel#taint on a Bignum raises a RuntimeError
 fails:Kernel#taint on a Symbol raises a RuntimeError
+fails:Kernel#taint no raises a RuntimeError on symbols
+fails:Kernel#taint no raises error on fixnum values

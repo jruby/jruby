@@ -10,3 +10,6 @@ fails:Module#define_method when name is :initialize given an UnboundMethod sets 
 fails:Method#define_method when passed a Method object defines a method with the same #parameters as the original
 fails:Method#define_method when passed an UnboundMethod object defines a method with the same #arity as the original
 fails:Method#define_method when passed an UnboundMethod object defines a method with the same #parameters as the original
+fails:Module#define_method allows an UnboundMethod from a module to be defined on a class
+fails:Module#define_method allows an UnboundMethod from a parent class to be defined on a child class
+fails:Module#define_method allows an UnboundMethod from a module to be defined on another unrelated module
