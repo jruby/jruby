@@ -17,6 +17,7 @@
     <tesla.dump.pom>pom.xml</tesla.dump.pom>
     <jruby.complete.home>${project.build.outputDirectory}/META-INF/jruby.home</jruby.complete.home>
     <jruby_home>${basedir}/../..</jruby_home>
+    <tesla.version>0.1.1</tesla.version>
   </properties>
   <build>
     <resources>
@@ -77,7 +78,7 @@
       <plugin>
         <groupId>io.tesla.polyglot</groupId>
         <artifactId>tesla-polyglot-maven-plugin</artifactId>
-        <version>0.1.1</version>
+        <version>${tesla.version}</version>
         <executions>
           <execution>
             <id>fix shebang on gem bin files and add *.bat files</id>
@@ -117,7 +118,7 @@
           <dependency>
             <groupId>io.tesla.polyglot</groupId>
             <artifactId>tesla-polyglot-ruby</artifactId>
-            <version>0.1.1</version>
+            <version>${tesla.version}</version>
           </dependency>
         </dependencies>
       </plugin>

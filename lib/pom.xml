@@ -210,7 +210,7 @@
       <plugin>
         <groupId>io.tesla.polyglot</groupId>
         <artifactId>tesla-polyglot-maven-plugin</artifactId>
-        <version>0.1.1</version>
+        <version>${tesla.version}</version>
         <executions>
           <execution>
             <id>install_gems</id>
@@ -228,7 +228,7 @@
           <dependency>
             <groupId>io.tesla.polyglot</groupId>
             <artifactId>tesla-polyglot-ruby</artifactId>
-            <version>0.1.1</version>
+            <version>${tesla.version}</version>
           </dependency>
         </dependencies>
       </plugin>
