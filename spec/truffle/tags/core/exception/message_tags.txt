@@ -1,2 +1,3 @@
 fails:Exception#message returns the class name if there is no message
 fails:Exception#message calls #to_s on self
+fails:Exception#message when #backtrace is redefined returns the Exception message
