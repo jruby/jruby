@@ -31,8 +31,13 @@ env:
 matrix:
   include:
     # there is one integration test which uses a external jar for jdk7+
-    - jdk: oraclejdk7
+    # These started failing on 6 and 7 in March 2015, possibly due to travis+docker+jvm issues
+    - jdk: oraclejdk8
       env: TARGET='main'
+    - jdk: oraclejdk8
+      env: TARGET='test-jruby-jars'
+    - jdk: oraclejdk8
+      env: TARGET='jruby-jars-extended'
   fast_finish: true
 
 branches:
