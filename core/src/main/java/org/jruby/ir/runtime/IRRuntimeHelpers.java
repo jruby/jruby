@@ -964,22 +964,22 @@ public class IRRuntimeHelpers {
         return runtime.freezeAndDedupString(new RubyString(runtime, runtime.getString(), newByteListFromRaw(runtime, str, encoding)));
     }
 
-    // Used by JIT
+    @JIT
     public static final ByteList newByteListFromRaw(Ruby runtime, String str, String encoding) {
         return new ByteList(str.getBytes(RubyEncoding.ISO), runtime.getEncodingService().getEncodingFromString(encoding), false);
     }
 
-    // Used by JIT
+    @JIT
     public static RubyEncoding retrieveEncoding(ThreadContext context, String name) {
         return context.runtime.getEncodingService().getEncoding(retrieveJCodingsEncoding(context, name));
     }
 
-    // Used by JIT
+    @JIT
     public static Encoding retrieveJCodingsEncoding(ThreadContext context, String name) {
         return context.runtime.getEncodingService().findEncodingOrAliasEntry(name.getBytes()).getEncoding();
     }
 
-    // Used by JIT
+    @JIT
     public static RubyHash constructHashFromArray(Ruby runtime, IRubyObject[] pairs) {
         RubyHash hash = RubyHash.newHash(runtime);
         for (int i = 0; i < pairs.length;) {
@@ -988,7 +988,7 @@ public class IRRuntimeHelpers {
         return hash;
     }
 
-    // Used by JIT
+    @JIT
     public static RubyHash dupKwargsHashAndPopulateFromArray(ThreadContext context, RubyHash dupHash, IRubyObject[] pairs) {
         Ruby runtime = context.runtime;
         RubyHash hash = dupHash.dupFast(context);
@@ -998,7 +998,7 @@ public class IRRuntimeHelpers {
         return hash;
     }
 
-    // Used by JIT
+    @JIT
     public static IRubyObject searchConst(ThreadContext context, StaticScope staticScope, String constName, boolean noPrivateConsts) {
         Ruby runtime = context.getRuntime();
         RubyModule object = runtime.getObject();
@@ -1020,7 +1020,7 @@ public class IRRuntimeHelpers {
         return constant;
     }
 
-    // Used by JIT
+    @JIT
     public static IRubyObject inheritedSearchConst(ThreadContext context, IRubyObject cmVal, String constName, boolean noPrivateConsts) {
         Ruby runtime = context.runtime;
         RubyModule module;
@@ -1039,7 +1039,7 @@ public class IRRuntimeHelpers {
         return constant;
     }
 
-    // Used by JIT
+    @JIT
     public static IRubyObject lexicalSearchConst(ThreadContext context, StaticScope staticScope, String constName) {
         IRubyObject constant = staticScope.getConstantInner(constName);
 
