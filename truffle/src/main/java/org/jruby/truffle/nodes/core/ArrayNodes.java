@@ -492,12 +492,32 @@ public abstract class ArrayNodes {
             return setObject(frame, array, normalizedStart, length, other);
         }
 
-        @Specialization
+        @Specialization(guards = "!areBothIntegerFixnum")
         public Object setRangeArray(VirtualFrame frame, RubyArray array, RubyRange.IntegerFixnumRange range, RubyArray other, UndefinedPlaceholder unused) {
             final int normalizedStart = array.normalizeIndex(range.getBegin());
             final int normalizedEnd = range.doesExcludeEnd() ? array.normalizeIndex(range.getEnd()) - 1 : array.normalizeIndex(range.getEnd());
             final int length = normalizedEnd - normalizedStart + 1;
             return setOtherArray(frame, array, normalizedStart, length, other);
+        }
+
+        @Specialization(guards = "areBothIntegerFixnum" )
+        public Object setIntegerFixnumRange(VirtualFrame frame, RubyArray array, RubyRange.IntegerFixnumRange range, RubyArray other, UndefinedPlaceholder unused) {
+            if (range.doesExcludeEnd()) {
+                CompilerDirectives.transferToInterpreter();
+                return setRangeArray(frame, array, range, other, unused);
+            } else {
+                int normalizedBegin = array.normalizeIndex(range.getBegin());
+                int normalizedEnd = array.normalizeIndex(range.getEnd());
+
+                if (normalizedBegin == 0 && normalizedEnd == array.getSize() - 1) {
+                    array.setStore(Arrays.copyOf((int[]) other.getStore(), other.getSize()), other.getSize());
+                } else {
+                    CompilerDirectives.transferToInterpreter();
+                    return setRangeArray(frame, array, range, other, unused);
+                }
+            }
+
+            return other;
         }
 
     }
