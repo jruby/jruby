@@ -26,7 +26,7 @@ namespace :spec do
     mspec :compile_mode => "JIT",
           :jit_threshold => 0,
           :format => 'd',
-          :spec_target => ":fast"c
+          :spec_target => ":fast"
   end
 
   desc "Run rubyspecs expected to pass"
