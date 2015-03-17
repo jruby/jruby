@@ -1,7 +1,1 @@
-fails:Array#inspect represents a recursive element with '[...]'
-fails:Array#inspect taints the result if the Array is non-empty and tainted
-fails:Array#inspect taints the result if an element is tainted
-fails:Array#inspect untrusts the result if the Array is untrusted
-fails:Array#inspect untrusts the result if an element is untrusted
 fails:Array#inspect with encoding raises if inspected result is not default external encoding
-fails:Array#inspect with encoding use the default external encoding if it is ascii compatible
