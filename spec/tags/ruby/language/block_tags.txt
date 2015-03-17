@@ -7,3 +7,6 @@ fails:A block yielded a single Array raises a TypeError if #to_hash does not ret
 fails:A block yielded a single Array raises the error raised inside #to_hash
 fails:A block yielded a single Object receives the object if #to_ary returns nil
 fails:A block yielded a single Array assigns elements to required arguments when a keyword rest argument is present
+fails:A block yielded a single Array treats hashes with symbol keys as keyword arguments
+fails:A block yielded a single Array does not treat hashes with string keys as keyword arguments
+fails:A block yielded a single Array calls #to_hash on the last element when there are more arguments than parameters

@@ -127,3 +127,9 @@ fails:Kernel.spawn does not close file descriptors >= 3 in the child process whe
 fails:Kernel.spawn when passed :chdir changes to the directory passed for :chdir
 fails:Kernel.spawn when passed :chdir calls #to_path to convert the :chdir value
 fails:Kernel.spawn with Integer option keys maps the key to a file descriptor in the child that inherits the file descriptor from the parent specified by the value
+fails:Kernel#spawn does not unset other environment variables when given a false :unsetenv_others option
+fails:Kernel#spawn does not unset environment variables included in the environment hash
+fails:Kernel#spawn joins the current process if :pgroup => false
+fails:Kernel.spawn does not unset other environment variables when given a false :unsetenv_others option
+fails:Kernel.spawn does not unset environment variables included in the environment hash
+fails:Kernel.spawn joins the current process if :pgroup => false

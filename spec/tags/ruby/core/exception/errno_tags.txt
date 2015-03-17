@@ -1,0 +1,1 @@
+fails:Errno::EINVAL.new accepts an optional custom message and location

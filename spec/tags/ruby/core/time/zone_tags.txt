@@ -1,1 +1,2 @@
 fails:Time#zone returns nil when getting the local time with a fixed offset
+fails:Time#zone Encoding.default_internal is set returns an ASCII string
