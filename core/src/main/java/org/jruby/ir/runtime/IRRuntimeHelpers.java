@@ -33,6 +33,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.callsite.FunctionalCachingCallSite;
 import org.jruby.runtime.callsite.NormalCachingCallSite;
 import org.jruby.runtime.callsite.VariableCachingCallSite;
+import org.jruby.runtime.ivars.VariableAccessor;
 import org.jruby.util.ByteList;
 import org.jruby.util.DefinedMessage;
 import org.jruby.util.RegexpOptions;
@@ -1337,5 +1338,25 @@ public class IRRuntimeHelpers {
             // should not happen for bytes
             return null;
         }
+    }
+
+    @JIT
+    public static VariableAccessor getVariableAccessorForRead(IRubyObject object, String name) {
+        return ((RubyBasicObject)object).getMetaClass().getRealClass().getVariableAccessorForRead(name);
+    }
+
+    @JIT
+    public static VariableAccessor getVariableAccessorForWrite(IRubyObject object, String name) {
+        return ((RubyBasicObject)object).getMetaClass().getRealClass().getVariableAccessorForWrite(name);
+    }
+
+    @JIT
+    public static IRubyObject getVariableWithAccessor(IRubyObject self, VariableAccessor accessor, ThreadContext context) {
+        return Helpers.nullToNil((IRubyObject)accessor.get(self), context);
+    }
+
+    @JIT
+    public static void setVariableWithAccessor(IRubyObject self, IRubyObject value, VariableAccessor accessor) {
+        accessor.set(self, value);
     }
 }
