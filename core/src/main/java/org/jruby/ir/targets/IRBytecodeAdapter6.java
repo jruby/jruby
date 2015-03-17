@@ -196,16 +196,19 @@ public class IRBytecodeAdapter6 extends IRBytecodeAdapter{
         }
     }
 
-    public void pushSymbol(String sym, Encoding encoding) {
-        loadRuntime();
-        adapter.ldc(sym);
+    public void pushSymbol(final String sym, final Encoding encoding) {
+        cacheValuePermanently(newFieldName("symbol"), RubySymbol.class, new Runnable() {
+            @Override
+            public void run() {
+                loadRuntime();
+                adapter.ldc(sym);
+                loadContext();
+                adapter.ldc(encoding.toString());
+                invokeIRHelper("retrieveJCodingsEncoding", sig(Encoding.class, ThreadContext.class, String.class));
 
-        // FIXME: Should be a helper somewhere?  Load Encoding
-        loadContext();
-        adapter.ldc(encoding.toString());
-        invokeIRHelper("retrieveJCodingsEncoding", sig(Encoding.class, ThreadContext.class, String.class));
-
-        adapter.invokestatic(p(RubySymbol.class), "newSymbol", sig(RubySymbol.class, Ruby.class, String.class, Encoding.class));
+                adapter.invokestatic(p(RubySymbol.class), "newSymbol", sig(RubySymbol.class, Ruby.class, String.class, Encoding.class));
+            }
+        });
     }
 
     public void loadRuntime() {
@@ -213,10 +216,15 @@ public class IRBytecodeAdapter6 extends IRBytecodeAdapter{
         adapter.getfield(p(ThreadContext.class), "runtime", ci(Ruby.class));
     }
 
-    public void pushEncoding(Encoding encoding) {
-        loadContext();
-        adapter.ldc(encoding.toString());
-        invokeIRHelper("retrieveEncoding", sig(RubyEncoding.class, ThreadContext.class, String.class));
+    public void pushEncoding(final Encoding encoding) {
+        cacheValuePermanently(newFieldName("symbol"), RubySymbol.class, new Runnable() {
+            @Override
+            public void run() {
+                loadContext();
+                adapter.ldc(encoding.toString());
+                invokeIRHelper("retrieveEncoding", sig(RubyEncoding.class, ThreadContext.class, String.class));
+            }
+        });
     }
 
     public void invokeOther(String name, int arity, boolean hasClosure) {
