@@ -1,3 +1,4 @@
 fails:Time#zone returns the correct timezone for a local time
 fails:Time#zone returns nil when getting the local time with a fixed offset
 fails:Time#zone Encoding.default_internal is set returns the string with the default internal encoding
+fails:Time#zone Encoding.default_internal is set returns an ASCII string
