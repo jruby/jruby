@@ -63,6 +63,7 @@ import org.jruby.RubyInstanceConfig;
 import org.jruby.RubyMethod;
 import org.jruby.RubyModule;
 import org.jruby.RubyObject;
+import org.jruby.RubyProc;
 import org.jruby.RubyString;
 import org.jruby.RubyUnboundMethod;
 import org.jruby.javasupport.binding.Initializer;
@@ -78,6 +79,7 @@ import org.jruby.runtime.load.Library;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyModule;
 import org.jruby.exceptions.RaiseException;
+import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.internal.runtime.methods.JavaMethod.JavaMethodN;
 import org.jruby.internal.runtime.methods.JavaMethod.JavaMethodZero;
 import org.jruby.java.addons.ArrayJavaAddons;
@@ -1100,6 +1102,34 @@ public class Java implements Library {
         @Override
         public Arity getArity() {
             return Arity.noArguments();
+        }
+
+    }
+
+    final static class ProcToInterface extends org.jruby.internal.runtime.methods.DynamicMethod {
+
+        ProcToInterface(final RubyClass singletonClass) {
+            super(singletonClass, PUBLIC, org.jruby.internal.runtime.methods.CallConfiguration.FrameNoneScopeNone);
+        }
+
+        @Override // method_missing impl :
+        public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args, Block block) {
+            if ( ! ( self instanceof RubyProc ) ) {
+                throw context.runtime.newTypeError("interface impl method_missing for block used with non-Proc object");
+            }
+            final RubyProc proc = (RubyProc) self;
+            final IRubyObject[] newArgs;
+            if ( args.length == 1 ) newArgs = IRubyObject.NULL_ARRAY;
+            else {
+                newArgs = new IRubyObject[ args.length - 1 ];
+                System.arraycopy(args, 1, newArgs, 0, newArgs.length);
+            }
+            return proc.call(context, newArgs);
+        }
+
+        @Override
+        public DynamicMethod dup() {
+            return this;
         }
 
     }

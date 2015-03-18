@@ -74,8 +74,6 @@ import org.jruby.RubyObject;
 import org.jruby.RubyProc;
 import org.jruby.RubyString;
 import org.jruby.RubyTime;
-import org.jruby.internal.runtime.methods.CallConfiguration;
-import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.java.proxies.ArrayJavaProxy;
 import org.jruby.java.proxies.JavaProxy;
 import org.jruby.java.proxies.RubyObjectHolderProxy;
@@ -84,7 +82,6 @@ import org.jruby.runtime.Helpers;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.ThreadContext;
-import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 
 import org.jruby.util.ByteList;
@@ -233,7 +230,7 @@ public class JavaUtil {
     }
 
     public static Object convertProcToInterface(ThreadContext context, RubyObject rubyObject, Class target) {
-        return convertProcToInterface(context, (RubyBasicObject)rubyObject, target);
+        return convertProcToInterface(context, (RubyBasicObject) rubyObject, target);
     }
 
     public static Object convertProcToInterface(ThreadContext context, RubyBasicObject rubyObject, Class target) {
@@ -248,31 +245,8 @@ public class JavaUtil {
         if ( rubyObject instanceof RubyProc ) {
             // Proc implementing an interface, pull in the catch-all code that lets the proc get invoked
             // no matter what method is called on the interface
-            RubyClass singletonClass = rubyObject.getSingletonClass();
-
-            singletonClass.addMethod("method_missing", new DynamicMethod(singletonClass, Visibility.PUBLIC, CallConfiguration.FrameNoneScopeNone) {
-
-                @Override
-                public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args, Block block) {
-                    if (!(self instanceof RubyProc)) {
-                        throw context.runtime.newTypeError("interface impl method_missing for block used with non-Proc object");
-                    }
-                    RubyProc proc = (RubyProc)self;
-                    IRubyObject[] newArgs;
-                    if (args.length == 1) {
-                        newArgs = IRubyObject.NULL_ARRAY;
-                    } else {
-                        newArgs = new IRubyObject[args.length - 1];
-                        System.arraycopy(args, 1, newArgs, 0, args.length - 1);
-                    }
-                    return proc.call(context, newArgs);
-                }
-
-                @Override
-                public DynamicMethod dup() {
-                    return this;
-                }
-            });
+            final RubyClass singletonClass = rubyObject.getSingletonClass();
+            singletonClass.addMethod("method_missing", new Java.ProcToInterface(singletonClass));
         }
         JavaObject javaObject = (JavaObject) Helpers.invoke(context, rubyObject, "__jcreate_meta!");
         return javaObject.getValue();
