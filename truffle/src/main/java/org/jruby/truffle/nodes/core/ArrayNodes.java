@@ -1916,7 +1916,7 @@ public abstract class ArrayNodes {
         }
     }
 
-    @CoreMethod(names = {"map!", "collect!"}, needsBlock = true, returnsEnumeratorIfNoBlock = true)
+    @CoreMethod(names = {"map!", "collect!"}, needsBlock = true, returnsEnumeratorIfNoBlock = true, raiseIfFrozenSelf = true)
     @ImportGuards(ArrayGuards.class)
     public abstract static class MapInPlaceNode extends YieldingCoreMethodNode {
 
