@@ -59,6 +59,27 @@ print m.map { |x| x.to_s }.join("")
     ruby_exe "puts", :args => "| #{RUBY_EXE} -n #{file}"
   end
 
+  # kind_of?, is_a?, instance_of?
+  module SomeOtherModule; end
+  module AncestorModule; end
+  module MyModule; end
+  module MyExtensionModule; end
+
+  class AncestorClass < String
+    include AncestorModule
+  end
+
+  class InstanceClass < AncestorClass
+    include MyModule
+  end
+
+  class KindaClass < AncestorClass
+    include MyModule
+    def initialize
+      self.extend MyExtensionModule
+    end
+  end
+
   class Method
     public :abort, :exec, :exit, :exit!, :fork, :system
     public :spawn if respond_to?(:spawn, true)
@@ -243,38 +264,6 @@ print m.map { |x| x.to_s }.join("")
       define_method(:defined_block) do
         Kernel.block_given?
       end
-    end
-  end
-
-  class IVars
-    def initialize
-      @secret = 99
-    end
-  end
-
-  module InstEvalCVar
-    instance_eval { @@count = 2 }
-  end
-
-  module InstEval
-    def self.included(base)
-      base.instance_eval { @@count = 2 }
-    end
-  end
-
-  class IncludesInstEval
-    include InstEval
-  end
-
-  class InstEvalConst
-    INST_EVAL_CONST_X = 2
-  end
-
-  module InstEvalOuter
-    module Inner
-      obj = InstEvalConst.new
-      X_BY_STR = obj.instance_eval("INST_EVAL_CONST_X") rescue nil
-      X_BY_BLOCK = obj.instance_eval { INST_EVAL_CONST_X } rescue nil
     end
   end
 

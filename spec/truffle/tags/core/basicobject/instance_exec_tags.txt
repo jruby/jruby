@@ -1,0 +1,2 @@
+fails:BasicObject#instance_exec raises a TypeError when defining methods on an immediate
+fails:BasicObject#instance_exec raises a TypeError when defining methods on numerics

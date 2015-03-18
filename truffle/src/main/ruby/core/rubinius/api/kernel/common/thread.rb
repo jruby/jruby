@@ -41,10 +41,6 @@ class Thread
   # recurse back to :foo, it could require making
   # the tables independant.
 
-  def randomizer
-    @randomizer ||= Rubinius::Randomizer.new
-  end
-
   def self.recursion_guard(obj)
     id = obj.object_id
     objects = current.recursive_objects

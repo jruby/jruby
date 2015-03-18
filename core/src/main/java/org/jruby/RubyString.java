@@ -311,22 +311,6 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
         return enc;
     }
 
-    private boolean isComparableWith(RubyString other) {
-        ByteList otherValue = other.value;
-        if (value.getEncoding() == otherValue.getEncoding() ||
-            value.getRealSize() == 0 || otherValue.getRealSize() == 0) return true;
-        return isComparableViaCodeRangeWith(other);
-    }
-
-    private boolean isComparableViaCodeRangeWith(RubyString other) {
-        int cr1 = scanForCodeRange();
-        int cr2 = other.scanForCodeRange();
-
-        if (cr1 == CR_7BIT && (cr2 == CR_7BIT || other.value.getEncoding().isAsciiCompatible())) return true;
-        if (cr2 == CR_7BIT && value.getEncoding().isAsciiCompatible()) return true;
-        return false;
-    }
-
     public final int strLength() {
         if (StringSupport.isSingleByteOptimizable(this, value.getEncoding())) return value.getRealSize();
         return StringSupport.strLengthFromRubyString(this);
@@ -351,7 +335,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
     // rb_str_hash_cmp
     private boolean eql19(Ruby runtime, IRubyObject other) {
         RubyString otherString = (RubyString)other;
-        return isComparableWith(otherString) && value.equal(((RubyString)other).value);
+        return StringSupport.areComparable(this, otherString) && value.equal(((RubyString)other).value);
     }
 
     public RubyString(Ruby runtime, RubyClass rubyClass) {
@@ -1104,7 +1088,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
         if (this == other) return runtime.getTrue();
         if (other instanceof RubyString) {
             RubyString otherString = (RubyString)other;
-            return isComparableWith(otherString) && value.equal(otherString.value) ? runtime.getTrue() : runtime.getFalse();
+            return StringSupport.areComparable(this, otherString) && value.equal(otherString.value) ? runtime.getTrue() : runtime.getFalse();
         }
         return op_equalCommon(context, other);
     }
@@ -1265,7 +1249,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
      */
     public final int op_cmp(RubyString other) {
         int ret = value.cmp(other.value);
-        if (ret == 0 && !isComparableWith(other)) {
+        if (ret == 0 && !StringSupport.areComparable(this, other)) {
             return value.getEncoding().getIndex() > other.value.getEncoding().getIndex() ? 1 : -1;
         }
         return ret;
@@ -1738,7 +1722,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
         Ruby runtime = context.runtime;
         if (other instanceof RubyString) {
             RubyString otherString = (RubyString)other;
-            if (isComparableWith(otherString) && value.equal(otherString.value)) return runtime.getTrue();
+            if (StringSupport.areComparable(this, otherString) && value.equal(otherString.value)) return runtime.getTrue();
         }
         return runtime.getFalse();
     }

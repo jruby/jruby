@@ -1374,4 +1374,20 @@ public final class StringSupport {
         System.arraycopy(value2.getUnsafeBytes(), value2.getBegin(), result.getUnsafeBytes(), value1.getRealSize(), value2.getRealSize());
         return result;
     }
+
+    public static boolean areComparable(CodeRangeable string, CodeRangeable other) {
+        ByteList otherValue = other.getByteList();
+        if (string.getByteList().getEncoding() == otherValue.getEncoding() ||
+                string.getByteList().getRealSize() == 0 || otherValue.getRealSize() == 0) return true;
+        return areComparableViaCodeRange(string, other);
+    }
+
+    public static boolean areComparableViaCodeRange(CodeRangeable string, CodeRangeable other) {
+        int cr1 = string.scanForCodeRange();
+        int cr2 = other.scanForCodeRange();
+
+        if (cr1 == CR_7BIT && (cr2 == CR_7BIT || other.getByteList().getEncoding().isAsciiCompatible())) return true;
+        if (cr2 == CR_7BIT && string.getByteList().getEncoding().isAsciiCompatible()) return true;
+        return false;
+    }
 }

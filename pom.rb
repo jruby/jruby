@@ -177,8 +177,8 @@ project 'JRuby', 'https://github.com/jruby/jruby' do
 
   [
     'rake', 'exec', 'truffle-specs-language', 'truffle-specs-core',
-    'truffle-specs-rubysl', 'truffle-specs-language-report',
-    'truffle-specs-core-report', 'truffle-specs-rubysl-report', 'truffle-test-pe'
+    'truffle-specs-library', 'truffle-specs-language-report',
+    'truffle-specs-core-report', 'truffle-specs-library-report', 'truffle-test-pe'
   ].each do |name|
     profile name do
 

@@ -20,6 +20,8 @@ import com.oracle.truffle.api.source.SourceSection;
 
 import org.jruby.runtime.Visibility;
 import org.jruby.truffle.nodes.RubyNode;
+import org.jruby.truffle.nodes.objects.SingletonClassNode;
+import org.jruby.truffle.nodes.objects.SingletonClassNodeFactory;
 import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.TruffleFatalException;
@@ -32,11 +34,13 @@ public class AddMethodNode extends RubyNode {
 
     @Child private RubyNode receiver;
     @Child private MethodDefinitionNode methodNode;
+    @Child private SingletonClassNode singletonClassNode;
 
     public AddMethodNode(RubyContext context, SourceSection section, RubyNode receiver, MethodDefinitionNode method) {
         super(context, section);
         this.receiver = receiver;
         this.methodNode = method;
+        singletonClassNode = SingletonClassNodeFactory.create(context, section, null);
     }
 
     @Override
@@ -52,7 +56,7 @@ public class AddMethodNode extends RubyNode {
         if (receiverObject instanceof RubyModule) {
             module = (RubyModule) receiverObject;
         } else {
-            module = ((RubyBasicObject) receiverObject).getSingletonClass(this);
+            module = singletonClassNode.executeSingletonClass(frame, receiverObject);
         }
 
         final Visibility visibility = getVisibility(frame, methodObject.getName());

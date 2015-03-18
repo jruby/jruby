@@ -28,8 +28,10 @@ describe "Integer#round" do
     (-25 * 10**70 + 1).round(-71).should eql(-20 * 10**70)
   end
 
-  it "raises a RangeError when passed a big negative value" do
-    lambda { 42.round(fixnum_min()) }.should raise_error(RangeError)
+  platform_is_not :wordsize => 32 do
+    it "raises a RangeError when passed a big negative value" do
+      lambda { 42.round(fixnum_min()) }.should raise_error(RangeError)
+    end
   end
 
   it "raises a RangeError when passed Float::INFINITY" do

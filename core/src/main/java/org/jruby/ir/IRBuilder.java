@@ -561,7 +561,9 @@ public class IRBuilder {
     protected Operand buildWithOrder(Node node, boolean preserveOrder) {
         Operand value = build(node);
 
-        return preserveOrder ? copyAndReturnValue(value) : value;
+        // We need to preserve order in cases (like in presence of assignments) except that immutable
+        // literals can never change value so we can still emit these out of order.
+        return preserveOrder && !(value instanceof ImmutableLiteral) ? copyAndReturnValue(value) : value;
     }
 
     protected Variable getValueInTemporaryVariable(Operand val) {

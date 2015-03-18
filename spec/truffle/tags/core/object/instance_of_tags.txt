@@ -1,3 +1,0 @@
-fails:Object#instance_of? returns false if given a Module that is included in object's class
-fails:Object#instance_of? returns false if given a Module that is included one of object's ancestors only
-fails:Object#instance_of? returns false if given a Module that is not included in object's class

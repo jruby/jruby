@@ -193,7 +193,7 @@ def ir_setup(root)
 
   builder = org.jruby.ir.IRBuilder
 
-  scope = builder.build_root(manager, root)
+  scope = builder.build_root(manager, root).scope
   passes = manager.get_compiler_passes(scope)
   [scope, passes]
 end

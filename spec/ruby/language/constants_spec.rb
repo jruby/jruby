@@ -366,7 +366,7 @@ describe "Constant resolution within a singleton class (class << obj)" do
     ConstantSpecs::CS_SINGLETON1.foo.should == 1
   end
 
-  ruby_bug "#10943", "2.3" do
+  ruby_version_is "2.3" do
     it "uses its own namespace for each object" do
       a = ConstantSpecs::CS_SINGLETON2[0].foo
       b = ConstantSpecs::CS_SINGLETON2[1].foo

@@ -31,26 +31,24 @@ import com.oracle.truffle.api.dsl.NodeChild;
 import com.oracle.truffle.api.dsl.NodeChildren;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
-import com.oracle.truffle.api.nodes.UnexpectedResultException;
 import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.utilities.BranchProfile;
 
 import com.oracle.truffle.api.utilities.ConditionProfile;
 import org.jcodings.Encoding;
 import org.jcodings.specific.ASCIIEncoding;
-import org.jcodings.specific.UTF8Encoding;
 import org.joni.Matcher;
 import org.joni.Option;
-import org.joni.Region;
 import org.jruby.runtime.Visibility;
 import org.jruby.truffle.nodes.RubyNode;
+import org.jruby.truffle.nodes.cast.CmpIntNode;
+import org.jruby.truffle.nodes.cast.CmpIntNodeFactory;
 import org.jruby.truffle.nodes.cast.TaintResultNode;
 import org.jruby.truffle.nodes.coerce.ToIntNode;
 import org.jruby.truffle.nodes.coerce.ToIntNodeFactory;
 import org.jruby.truffle.nodes.coerce.ToStrNode;
 import org.jruby.truffle.nodes.coerce.ToStrNodeFactory;
 import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
-import org.jruby.truffle.nodes.dispatch.DispatchHeadNode;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.nodes.objects.IsFrozenNode;
 import org.jruby.truffle.nodes.objects.IsFrozenNodeFactory;
@@ -61,21 +59,14 @@ import org.jruby.truffle.runtime.UndefinedPlaceholder;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.*;
 import org.jruby.truffle.runtime.rubinius.RubiniusByteArray;
-import org.jruby.truffle.runtime.util.ArrayUtils;
 import org.jruby.util.ByteList;
 import org.jruby.util.CodeRangeSupport;
 import org.jruby.util.Pack;
 import org.jruby.util.StringSupport;
 import org.jruby.util.io.EncodingUtils;
 
-import java.math.BigInteger;
-import java.nio.ByteBuffer;
-import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.List;
 import java.util.Locale;
-import java.util.regex.Pattern;
 
 @CoreClass(name = "String")
 public abstract class StringNodes {
@@ -222,6 +213,10 @@ public abstract class StringNodes {
     @CoreMethod(names = "<=>", required = 1)
     public abstract static class CompareNode extends CoreMethodNode {
 
+        @Child private CallDispatchHeadNode cmpNode;
+        @Child private CmpIntNode cmpIntNode;
+        @Child private KernelNodes.RespondToNode respondToCmpNode;
+        @Child private KernelNodes.RespondToNode respondToToStrNode;
         @Child private ToStrNode toStrNode;
 
         public CompareNode(RubyContext context, SourceSection sourceSection) {
@@ -230,43 +225,80 @@ public abstract class StringNodes {
 
         public CompareNode(CompareNode prev) {
             super(prev);
+            cmpNode = prev.cmpNode;
+            cmpIntNode = prev.cmpIntNode;
+            respondToCmpNode = prev.respondToCmpNode;
+            respondToToStrNode = prev.respondToToStrNode;
+            toStrNode = prev.toStrNode;
         }
 
         @Specialization
         public int compare(RubyString a, RubyString b) {
-            notDesignedForCompilation();
+            // Taken from org.jruby.RubyString#op_cmp
 
-            final int result = a.toString().compareTo(b.toString());
+            final int ret = a.getByteList().cmp(b.getByteList());
 
-            if (result < 0) {
-                return -1;
-            } else if (result > 0) {
-                return 1;
+            if ((ret == 0) && !StringSupport.areComparable(a, b)) {
+                return a.getByteList().getEncoding().getIndex() > b.getByteList().getEncoding().getIndex() ? 1 : -1;
             }
 
-            return 0;
+            return ret;
         }
 
         @Specialization(guards = "!isRubyString(arguments[1])")
         public Object compare(VirtualFrame frame, RubyString a, Object b) {
             notDesignedForCompilation();
 
-            if (toStrNode == null) {
+            if (respondToToStrNode == null) {
                 CompilerDirectives.transferToInterpreter();
-                toStrNode = insert(ToStrNodeFactory.create(getContext(), getSourceSection(), null));
+                respondToToStrNode = insert(KernelNodesFactory.RespondToNodeFactory.create(getContext(), getSourceSection(), new RubyNode[] { null, null, null }));
             }
 
-            try {
-                final RubyString coerced = toStrNode.executeRubyString(frame, b);
+            if (respondToToStrNode.doesRespondTo(frame, b, getContext().makeString("to_str"), false)) {
+                if (toStrNode == null) {
+                    CompilerDirectives.transferToInterpreter();
+                    toStrNode = insert(ToStrNodeFactory.create(getContext(), getSourceSection(), null));
+                }
 
-                return compare(a, coerced);
-            } catch (RaiseException e) {
-                if (e.getRubyException().getLogicalClass() == getContext().getCoreLibrary().getTypeErrorClass()) {
-                    return nil();
-                } else {
-                    throw e;
+                try {
+                    final RubyString coerced = toStrNode.executeRubyString(frame, b);
+
+                    return compare(a, coerced);
+                } catch (RaiseException e) {
+                    if (e.getRubyException().getLogicalClass() == getContext().getCoreLibrary().getTypeErrorClass()) {
+                        return nil();
+                    } else {
+                        throw e;
+                    }
                 }
             }
+
+            if (respondToCmpNode == null) {
+                CompilerDirectives.transferToInterpreter();
+                respondToCmpNode = insert(KernelNodesFactory.RespondToNodeFactory.create(getContext(), getSourceSection(), new RubyNode[] { null, null, null }));
+            }
+
+            if (respondToCmpNode.doesRespondTo(frame, b, getContext().makeString("<=>"), false)) {
+                if (cmpNode == null) {
+                    CompilerDirectives.transferToInterpreter();
+                    cmpNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext()));
+                }
+
+                final Object cmpResult = cmpNode.call(frame, b, "<=>", null, a);
+
+                if (cmpResult == nil()) {
+                    return nil();
+                }
+
+                if (cmpIntNode == null) {
+                    CompilerDirectives.transferToInterpreter();
+                    cmpIntNode = insert(CmpIntNodeFactory.create(getContext(), getSourceSection(), null, null, null));
+                }
+
+                return -(cmpIntNode.executeIntegerFixnum(frame, cmpResult, a, b));
+            }
+
+            return nil();
         }
     }
 
@@ -1086,7 +1118,6 @@ public abstract class StringNodes {
         @TruffleBoundary
         @Specialization
         public RubyString encode(RubyString string, RubyString encoding, @SuppressWarnings("unused") UndefinedPlaceholder options) {
-
             final org.jruby.RubyString jrubyString = getContext().toJRuby(string);
             final org.jruby.RubyString jrubyEncodingString = getContext().toJRuby(encoding);
             final org.jruby.RubyString jrubyTranscoded = (org.jruby.RubyString) jrubyString.encode(getContext().getRuntime().getCurrentContext(), jrubyEncodingString);
@@ -1502,9 +1533,9 @@ public abstract class StringNodes {
             super(prev);
         }
 
+        @TruffleBoundary
         @Specialization
         public int ord(RubyString string) {
-            notDesignedForCompilation();
             return ((org.jruby.RubyFixnum) getContext().toJRuby(string).ord(getContext().getRuntime().getCurrentContext())).getIntValue();
         }
     }

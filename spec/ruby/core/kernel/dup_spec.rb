@@ -1,7 +1,10 @@
 require File.expand_path('../../../spec_helper', __FILE__)
 require File.expand_path('../fixtures/classes', __FILE__)
+require File.expand_path('../shared/dup_clone', __FILE__)
 
 describe "Kernel#dup" do
+  it_behaves_like :kernel_dup_clone, :dup
+
   before :each do
     ScratchPad.clear
     @obj = KernelSpecs::Duplicate.new 1, :a
@@ -11,6 +14,13 @@ describe "Kernel#dup" do
     dup = @obj.dup
     ScratchPad.recorded.should_not == @obj.object_id
     ScratchPad.recorded.should == dup.object_id
+  end
+
+  it "does not copy frozen state from the original" do
+    @obj.freeze
+    dup = @obj.dup
+
+    dup.frozen?.should == false
   end
 
   it "copies instance variables" do
