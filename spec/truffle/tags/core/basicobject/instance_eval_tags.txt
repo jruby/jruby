@@ -1,0 +1,5 @@
+fails:BasicObject#instance_eval expects a block with no arguments
+fails:BasicObject#instance_eval yields the object to the block
+fails:BasicObject#instance_eval gets constants in the receiver if a string given
+fails:BasicObject#instance_eval raises a TypeError when defining methods on an immediate
+fails:BasicObject#instance_eval raises a TypeError when defining methods on numerics
