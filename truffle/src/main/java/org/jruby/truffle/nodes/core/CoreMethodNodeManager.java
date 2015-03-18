@@ -175,7 +175,7 @@ public abstract class CoreMethodNodeManager {
                 }
 
                 if (ArrayUtils.contains(methodDetails.getMethodAnnotation().raiseIfFrozenParameters(), n)) {
-                    readArgumentNode = new FixnumLowerNode(readArgumentNode);
+                    readArgumentNode = new RaiseIfFrozenNode(readArgumentNode);
                 }
 
                 argumentsNodes.add(readArgumentNode);
