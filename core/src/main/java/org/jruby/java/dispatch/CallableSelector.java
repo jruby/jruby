@@ -19,8 +19,9 @@ import org.jruby.javasupport.JavaClass;
 import org.jruby.javasupport.JavaUtil;
 import org.jruby.javasupport.ParameterTypes;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.util.CodegenUtils;
 import org.jruby.util.collections.IntHashMap;
+import static org.jruby.util.CodegenUtils.getBoxType;
+import static org.jruby.util.CodegenUtils.prettyParams;
 
 /**
  * Method selection logic for calling from Ruby to Java.
@@ -200,7 +201,7 @@ public class CallableSelector {
                 method = mostSpecific;
 
                 if ( ambiguous ) {
-                    runtime.getWarnings().warn("ambiguous Java methods found, using " + ((Member) ((JavaCallable) method).accessibleObject()).getName() + CodegenUtils.prettyParams(msTypes));
+                    runtime.getWarnings().warn("ambiguous Java methods found, using " + ((Member) ((JavaCallable) method).accessibleObject()).getName() + prettyParams(msTypes));
                 }
             }
         }
@@ -336,7 +337,7 @@ public class CallableSelector {
     private static final Matcher EXACT = new Matcher() {
         public boolean match(final Class<?> type, final IRubyObject arg) {
             final Class<?> argClass = getJavaClass(arg);
-            return type == argClass || (type.isPrimitive() && CodegenUtils.getBoxType(type) == argClass);
+            return type == argClass || (type.isPrimitive() && getBoxType(type) == argClass);
         }
         @Override public String toString() { return "EXACT"; } // for debugging
     };
@@ -480,7 +481,7 @@ public class CallableSelector {
     private static int calcTypePreference(Class<?> type, final IRubyObject arg) {
         final boolean primitive = type.isPrimitive();
 
-        if ( primitive ) type = CodegenUtils.getBoxType(type);
+        if ( primitive ) type = getBoxType(type);
 
         if ( Number.class.isAssignableFrom(type) || Character.class == type ) {
             if ( arg instanceof RubyFixnum ) {

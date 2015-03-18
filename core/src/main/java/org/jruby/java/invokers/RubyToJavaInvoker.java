@@ -23,7 +23,7 @@ import org.jruby.javasupport.ParameterTypes;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.util.CodegenUtils;
+import static org.jruby.util.CodegenUtils.prettyParams;
 import org.jruby.util.collections.IntHashMap;
 
 public abstract class RubyToJavaInvoker extends JavaMethod {
@@ -345,9 +345,9 @@ public abstract class RubyToJavaInvoker extends JavaMethod {
             org.jruby.javasupport.JavaMethod method = (org.jruby.javasupport.JavaMethod) methods[0];
             error.append("method '").append( method.getValue().getName() ).append("'");
         }
-        error.append(" for arguments ")
-             .append( CodegenUtils.prettyParams(argTypes) )
-             .append(" on ");
+        error.append(" for arguments ");
+        prettyParams(error, argTypes);
+        error.append(" on ");
 
         if (receiver instanceof RubyModule) {
             error.append( ((RubyModule) receiver).getName() );
@@ -359,7 +359,7 @@ public abstract class RubyToJavaInvoker extends JavaMethod {
             error.append("\n  available overloads:");
             for (ParameterTypes method : methods) {
                 Class<?>[] paramTypes = method.getParameterTypes();
-                error.append("\n    ").append( CodegenUtils.prettyParams(paramTypes) );
+                error.append("\n    "); prettyParams( error, paramTypes );
             }
         }
 
@@ -371,7 +371,7 @@ public abstract class RubyToJavaInvoker extends JavaMethod {
         if (object == null) return void.class;
 
         if (object instanceof ConcreteJavaProxy) {
-            return ((ConcreteJavaProxy)object).getJavaClass();
+            return ((ConcreteJavaProxy) object).getJavaClass();
         }
         return object.getClass();
     }

@@ -442,9 +442,9 @@ public class JavaProxy extends RubyObject {
     private RubyMethod getRubyMethod(String name, Class... argTypes) {
         Method jmethod = getMethod(name, argTypes);
         if (Modifier.isStatic(jmethod.getModifiers())) {
-            return RubyMethod.newMethod(metaClass.getSingletonClass(), CodegenUtils.prettyParams(argTypes), metaClass.getSingletonClass(), name, getMethodInvoker(jmethod), getMetaClass());
+            return RubyMethod.newMethod(metaClass.getSingletonClass(), CodegenUtils.prettyParams(argTypes).toString(), metaClass.getSingletonClass(), name, getMethodInvoker(jmethod), getMetaClass());
         } else {
-            return RubyMethod.newMethod(metaClass, CodegenUtils.prettyParams(argTypes), metaClass, name, getMethodInvoker(jmethod), this);
+            return RubyMethod.newMethod(metaClass, CodegenUtils.prettyParams(argTypes).toString(), metaClass, name, getMethodInvoker(jmethod), this);
         }
     }
 
@@ -486,14 +486,15 @@ public class JavaProxy extends RubyObject {
     }
 
     private void confirmCachedProxy(String message) {
-        RubyClass realClass = metaClass.getRealClass();
-        if (!realClass.getCacheProxy()) {
+        final RubyClass realClass = metaClass.getRealClass();
+        if ( ! realClass.getCacheProxy() ) {
+            final Ruby runtime = getRuntime();
             if (Java.OBJECT_PROXY_CACHE) {
-                getRuntime().getWarnings().warnOnce(IRubyWarnings.ID.NON_PERSISTENT_JAVA_PROXY, MessageFormat.format(message, realClass));
+                runtime.getWarnings().warnOnce(IRubyWarnings.ID.NON_PERSISTENT_JAVA_PROXY, MessageFormat.format(message, realClass));
             } else {
-                getRuntime().getWarnings().warn(MessageFormat.format(message, realClass));
+                runtime.getWarnings().warn(MessageFormat.format(message, realClass));
                 realClass.setCacheProxy(true);
-                getRuntime().getJavaSupport().getObjectProxyCache().put(getObject(), this);
+                runtime.getJavaSupport().getObjectProxyCache().put(getObject(), this);
             }
         }
     }

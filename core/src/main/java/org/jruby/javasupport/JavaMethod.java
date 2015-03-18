@@ -36,6 +36,13 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.javasupport;
 
+import java.lang.annotation.Annotation;
+import java.lang.reflect.AccessibleObject;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
+import java.lang.reflect.Type;
+
 import org.jruby.Ruby;
 import org.jruby.RubyBoolean;
 import org.jruby.RubyClass;
@@ -50,16 +57,11 @@ import org.jruby.javasupport.proxy.JavaProxyClass;
 import org.jruby.javasupport.proxy.JavaProxyMethod;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.util.CodegenUtils;
 import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
 
-import java.lang.annotation.Annotation;
-import java.lang.reflect.AccessibleObject;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
-import java.lang.reflect.Modifier;
-import java.lang.reflect.Type;
+import static org.jruby.util.CodegenUtils.getBoxType;
+import static org.jruby.util.CodegenUtils.prettyParams;
 
 @JRubyClass(name="Java::JavaMethod")
 public class JavaMethod extends JavaCallable {
@@ -96,7 +98,7 @@ public class JavaMethod extends JavaCallable {
         this.isFinal = Modifier.isFinal(method.getModifiers());
         final Class<?> returnType = method.getReturnType();
         if (returnType.isPrimitive() && returnType != void.class) {
-            this.boxedReturnType = CodegenUtils.getBoxType(returnType);
+            this.boxedReturnType = getBoxType(returnType);
         } else {
             this.boxedReturnType = returnType;
         }
@@ -654,6 +656,6 @@ public class JavaMethod extends JavaCallable {
     }
 
     public static RaiseException newArgSizeMismatchError(Ruby runtime, Class ... argTypes) {
-        return runtime.newArgumentError("argument count mismatch for method signature " + CodegenUtils.prettyParams(argTypes));
+        return runtime.newArgumentError("argument count mismatch for method signature " + prettyParams(argTypes));
     }
 }
