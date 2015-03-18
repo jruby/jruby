@@ -1,0 +1,10 @@
+fails:Array#pack with format '@' ignores whitespace in the format string
+fails:Array#pack with format '@' calls #to_str to coerce the directives string
+fails:Array#pack with format '@' taints the output string if the format string is tainted
+fails:Array#pack with format '@' raises ArgumentError when the format modifier is '_'
+fails:Array#pack with format '@' raises ArgumentError when the format modifier is '!'
+fails:Array#pack with format '@' moves the insertion point to the index specified by the count modifier
+fails:Array#pack with format '@' does not consume any elements
+fails:Array#pack with format '@' extends the string with NULL bytes if the string size is less than the count
+fails:Array#pack with format '@' truncates the string if the string size is greater than the count
+fails:Array#pack with format '@' implicitly has a count of one when no count modifier is passed

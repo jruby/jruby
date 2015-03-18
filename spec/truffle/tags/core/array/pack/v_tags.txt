@@ -6,3 +6,27 @@ fails:Array#pack with format 'v' ignores whitespace in the format string
 fails:Array#pack with format 'v' calls #to_str to coerce the directives string
 fails:Array#pack with format 'v' taints the output string if the format string is tainted
 fails:Array#pack with format 'v' calls #to_int to convert the pack argument to an Integer
+fails:Array#pack with format 'V' raises an ArgumentError if there are fewer elements than the format requires
+fails:Array#pack with format 'V' returns an empty String if count is zero
+fails:Array#pack with format 'V' returns an ASCII-8BIT string
+fails:Array#pack with format 'V' raises ArgumentError when the format modifier is '_'
+fails:Array#pack with format 'V' raises ArgumentError when the format modifier is '!'
+fails:Array#pack with format 'V' encodes the least significant 32 bits of a positive number
+fails:Array#pack with format 'V' encodes the least significant 32 bits of a negative number
+fails:Array#pack with format 'V' encodes a Float truncated as an Integer
+fails:Array#pack with format 'V' encodes the number of array elements specified by the count modifier
+fails:Array#pack with format 'V' encodes all remaining elements when passed the '*' modifier
+fails:Array#pack with format 'V' ignores NULL bytes between directives
+fails:Array#pack with format 'V' ignores spaces between directives
+fails:Array#pack with format 'v' raises an ArgumentError if there are fewer elements than the format requires
+fails:Array#pack with format 'v' returns an empty String if count is zero
+fails:Array#pack with format 'v' returns an ASCII-8BIT string
+fails:Array#pack with format 'v' raises ArgumentError when the format modifier is '_'
+fails:Array#pack with format 'v' raises ArgumentError when the format modifier is '!'
+fails:Array#pack with format 'v' encodes the least significant 16 bits of a positive number
+fails:Array#pack with format 'v' encodes the least significant 16 bits of a negative number
+fails:Array#pack with format 'v' encodes a Float truncated as an Integer
+fails:Array#pack with format 'v' encodes the number of array elements specified by the count modifier
+fails:Array#pack with format 'v' encodes all remaining elements when passed the '*' modifier
+fails:Array#pack with format 'v' ignores NULL bytes between directives
+fails:Array#pack with format 'v' ignores spaces between directives

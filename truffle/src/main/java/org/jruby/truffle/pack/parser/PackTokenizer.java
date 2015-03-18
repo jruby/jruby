@@ -11,6 +11,8 @@ package org.jruby.truffle.pack.parser;
 
 public class PackTokenizer {
 
+    private static final String simpleTokens = "CSLQcslqnNvVXx*";
+
     private final String format;
     private final boolean extended;
     private int position;
@@ -47,9 +49,9 @@ public class PackTokenizer {
         final String chars;
 
         if (extended) {
-            chars = "NLXx*()";
+            chars = simpleTokens + "()";
         } else {
-            chars = "NLXx*";
+            chars = simpleTokens;
         }
 
         if (chars.indexOf(c) > -1) {
@@ -71,7 +73,7 @@ public class PackTokenizer {
     }
 
     private void consumeWhitespace() {
-        while (position < format.length() && format.charAt(position) == ' ') {
+        while (position < format.length() && (Character.isWhitespace(format.charAt(position)) || format.charAt(position) == 0)) {
             position++;
         }
     }

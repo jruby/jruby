@@ -1,0 +1,38 @@
+fails:Array#pack with format 'G' ignores whitespace in the format string
+fails:Array#pack with format 'G' calls #to_str to coerce the directives string
+fails:Array#pack with format 'G' taints the output string if the format string is tainted
+fails:Array#pack with format 'G' raises an ArgumentError if there are fewer elements than the format requires
+fails:Array#pack with format 'G' raises ArgumentError when the format modifier is '_'
+fails:Array#pack with format 'G' raises ArgumentError when the format modifier is '!'
+fails:Array#pack with format 'G' returns an empty String if count is zero
+fails:Array#pack with format 'G' returns an ASCII-8BIT string
+fails:Array#pack with format 'G' encodes a positive Float
+fails:Array#pack with format 'G' encodes a negative Float
+fails:Array#pack with format 'G' converts an Integer to a Float
+fails:Array#pack with format 'G' encodes the number of array elements specified by the count modifier
+fails:Array#pack with format 'G' encodes all remaining elements when passed the '*' modifier
+fails:Array#pack with format 'G' ignores NULL bytes between directives
+fails:Array#pack with format 'G' ignores spaces between directives
+fails:Array#pack with format 'G' encodes positive Infinity
+fails:Array#pack with format 'G' encodes negative Infinity
+fails:Array#pack with format 'G' encodes a positive Float outside the range of a single precision float
+fails:Array#pack with format 'G' encodes a negative Float outside the range of a single precision float
+fails:Array#pack with format 'g' ignores whitespace in the format string
+fails:Array#pack with format 'g' calls #to_str to coerce the directives string
+fails:Array#pack with format 'g' taints the output string if the format string is tainted
+fails:Array#pack with format 'g' raises an ArgumentError if there are fewer elements than the format requires
+fails:Array#pack with format 'g' raises ArgumentError when the format modifier is '_'
+fails:Array#pack with format 'g' raises ArgumentError when the format modifier is '!'
+fails:Array#pack with format 'g' returns an empty String if count is zero
+fails:Array#pack with format 'g' returns an ASCII-8BIT string
+fails:Array#pack with format 'g' encodes a positive Float
+fails:Array#pack with format 'g' encodes a negative Float
+fails:Array#pack with format 'g' converts an Integer to a Float
+fails:Array#pack with format 'g' encodes the number of array elements specified by the count modifier
+fails:Array#pack with format 'g' encodes all remaining elements when passed the '*' modifier
+fails:Array#pack with format 'g' ignores NULL bytes between directives
+fails:Array#pack with format 'g' ignores spaces between directives
+fails:Array#pack with format 'g' encodes positive Infinity
+fails:Array#pack with format 'g' encodes negative Infinity
+fails:Array#pack with format 'g' encodes a positive Float outside the range of a single precision float
+fails:Array#pack with format 'g' encodes a negative Float outside the range of a single precision float

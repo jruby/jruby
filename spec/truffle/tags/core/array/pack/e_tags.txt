@@ -1,0 +1,38 @@
+fails:Array#pack with format 'E' ignores whitespace in the format string
+fails:Array#pack with format 'E' calls #to_str to coerce the directives string
+fails:Array#pack with format 'E' taints the output string if the format string is tainted
+fails:Array#pack with format 'E' raises an ArgumentError if there are fewer elements than the format requires
+fails:Array#pack with format 'E' raises ArgumentError when the format modifier is '_'
+fails:Array#pack with format 'E' raises ArgumentError when the format modifier is '!'
+fails:Array#pack with format 'E' returns an empty String if count is zero
+fails:Array#pack with format 'E' returns an ASCII-8BIT string
+fails:Array#pack with format 'E' encodes a positive Float
+fails:Array#pack with format 'E' encodes a negative Float
+fails:Array#pack with format 'E' converts an Integer to a Float
+fails:Array#pack with format 'E' encodes the number of array elements specified by the count modifier
+fails:Array#pack with format 'E' encodes all remaining elements when passed the '*' modifier
+fails:Array#pack with format 'E' ignores NULL bytes between directives
+fails:Array#pack with format 'E' ignores spaces between directives
+fails:Array#pack with format 'E' encodes positive Infinity
+fails:Array#pack with format 'E' encodes negative Infinity
+fails:Array#pack with format 'E' encodes a positive Float outside the range of a single precision float
+fails:Array#pack with format 'E' encodes a negative Float outside the range of a single precision float
+fails:Array#pack with format 'e' ignores whitespace in the format string
+fails:Array#pack with format 'e' calls #to_str to coerce the directives string
+fails:Array#pack with format 'e' taints the output string if the format string is tainted
+fails:Array#pack with format 'e' raises an ArgumentError if there are fewer elements than the format requires
+fails:Array#pack with format 'e' raises ArgumentError when the format modifier is '_'
+fails:Array#pack with format 'e' raises ArgumentError when the format modifier is '!'
+fails:Array#pack with format 'e' returns an empty String if count is zero
+fails:Array#pack with format 'e' returns an ASCII-8BIT string
+fails:Array#pack with format 'e' encodes a positive Float
+fails:Array#pack with format 'e' encodes a negative Float
+fails:Array#pack with format 'e' converts an Integer to a Float
+fails:Array#pack with format 'e' encodes the number of array elements specified by the count modifier
+fails:Array#pack with format 'e' encodes all remaining elements when passed the '*' modifier
+fails:Array#pack with format 'e' ignores NULL bytes between directives
+fails:Array#pack with format 'e' ignores spaces between directives
+fails:Array#pack with format 'e' encodes positive Infinity
+fails:Array#pack with format 'e' encodes negative Infinity
+fails:Array#pack with format 'e' encodes a positive Float outside the range of a single precision float
+fails:Array#pack with format 'e' encodes a negative Float outside the range of a single precision float

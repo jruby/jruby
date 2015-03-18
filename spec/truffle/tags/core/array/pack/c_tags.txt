@@ -6,3 +6,27 @@ fails:Array#pack with format 'c' ignores whitespace in the format string
 fails:Array#pack with format 'c' calls #to_str to coerce the directives string
 fails:Array#pack with format 'c' taints the output string if the format string is tainted
 fails:Array#pack with format 'c' calls #to_int to convert the pack argument to an Integer
+fails:Array#pack with format 'C' encodes the least significant eight bits of a positive number
+fails:Array#pack with format 'C' encodes the least significant eight bits of a negative number
+fails:Array#pack with format 'C' encodes a Float truncated as an Integer
+fails:Array#pack with format 'C' encodes the number of array elements specified by the count modifier
+fails:Array#pack with format 'C' encodes all remaining elements when passed the '*' modifier
+fails:Array#pack with format 'C' ignores NULL bytes between directives
+fails:Array#pack with format 'C' ignores spaces between directives
+fails:Array#pack with format 'C' raises an ArgumentError if there are fewer elements than the format requires
+fails:Array#pack with format 'C' returns an empty String if count is zero
+fails:Array#pack with format 'C' returns an ASCII-8BIT string
+fails:Array#pack with format 'C' raises ArgumentError when the format modifier is '_'
+fails:Array#pack with format 'C' raises ArgumentError when the format modifier is '!'
+fails:Array#pack with format 'c' encodes the least significant eight bits of a positive number
+fails:Array#pack with format 'c' encodes the least significant eight bits of a negative number
+fails:Array#pack with format 'c' encodes a Float truncated as an Integer
+fails:Array#pack with format 'c' encodes the number of array elements specified by the count modifier
+fails:Array#pack with format 'c' encodes all remaining elements when passed the '*' modifier
+fails:Array#pack with format 'c' ignores NULL bytes between directives
+fails:Array#pack with format 'c' ignores spaces between directives
+fails:Array#pack with format 'c' raises an ArgumentError if there are fewer elements than the format requires
+fails:Array#pack with format 'c' returns an empty String if count is zero
+fails:Array#pack with format 'c' returns an ASCII-8BIT string
+fails:Array#pack with format 'c' raises ArgumentError when the format modifier is '_'
+fails:Array#pack with format 'c' raises ArgumentError when the format modifier is '!'

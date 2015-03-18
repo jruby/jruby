@@ -3,4 +3,42 @@ fails:Array#pack with format 'M' calls #to_s to convert an object to a String
 fails:Array#pack with format 'M' converts the object to a String representation if #to_s does not return a String
 fails:Array#pack with format 'M' encodes a Symbol as a String
 fails:Array#pack with format 'M' encodes an Integer as a String
-fails:Array#pack with format 'm' raises a TypeError if passed an Integer
+fails:Array#pack with format 'M' ignores whitespace in the format string
+fails:Array#pack with format 'M' calls #to_str to coerce the directives string
+fails:Array#pack with format 'M' taints the output string if the format string is tainted
+fails:Array#pack with format 'M' raises an ArgumentError if there are fewer elements than the format requires
+fails:Array#pack with format 'M' encodes an empty string as an empty string
+fails:Array#pack with format 'M' encodes nil as an empty string
+fails:Array#pack with format 'M' appends a soft line break at the end of an encoded string
+fails:Array#pack with format 'M' does not append a soft break if the string ends with a newline
+fails:Array#pack with format 'M' encodes one element for each directive
+fails:Array#pack with format 'M' encodes byte values 33..60 directly
+fails:Array#pack with format 'M' encodes byte values 62..126 directly
+fails:Array#pack with format 'M' encodes an '=' character in hex format
+fails:Array#pack with format 'M' encodes an embedded space directly
+fails:Array#pack with format 'M' encodes a space at the end of the string directly
+fails:Array#pack with format 'M' encodes an embedded tab directly
+fails:Array#pack with format 'M' encodes a tab at the end of the string directly
+fails:Array#pack with format 'M' encodes an embedded newline directly
+fails:Array#pack with format 'M' encodes 0..31 except tab and newline in hex format
+fails:Array#pack with format 'M' encodes a tab followed by a newline with an encoded newline
+fails:Array#pack with format 'M' encodes 127..255 in hex format
+fails:Array#pack with format 'M' emits a soft line break when the output exceeds 72 characters when passed '*', 0, 1, or no count modifier
+fails:Array#pack with format 'M' emits a soft line break when the output exceeds count characters
+fails:Array#pack with format 'M' encodes a Float as a String
+fails:Array#pack with format 'M' converts Floats to the minimum unique representation
+fails:Array#pack with format 'M' sets the output string to US-ASCII encoding
+fails:Array#pack with format 'm' ignores whitespace in the format string
+fails:Array#pack with format 'm' calls #to_str to coerce the directives string
+fails:Array#pack with format 'm' taints the output string if the format string is tainted
+fails:Array#pack with format 'm' raises an ArgumentError if there are fewer elements than the format requires
+fails:Array#pack with format 'm' encodes an empty string as an empty string
+fails:Array#pack with format 'm' appends a newline to the end of the encoded string
+fails:Array#pack with format 'm' encodes one element per directive
+fails:Array#pack with format 'm' encodes 1, 2, or 3 characters in 4 output characters (Base64 encoding)
+fails:Array#pack with format 'm' emits a newline after complete groups of count / 3 input characters when passed a count modifier
+fails:Array#pack with format 'm' implicitly has a count of 45 when passed '*', 1, 2 or no count modifier
+fails:Array#pack with format 'm' encodes all ascii characters
+fails:Array#pack with format 'm' calls #to_str to convert an object to a String
+fails:Array#pack with format 'm' does not emit a newline if passed zero as the count modifier
+fails:Array#pack with format 'm' sets the output string to US-ASCII encoding

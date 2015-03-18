@@ -18,17 +18,22 @@ import org.jruby.truffle.pack.nodes.control.BackNode;
 import org.jruby.truffle.pack.nodes.control.NNode;
 import org.jruby.truffle.pack.nodes.control.SequenceNode;
 import org.jruby.truffle.pack.nodes.control.StarNode;
-import org.jruby.truffle.pack.nodes.type.IntegerNode;
-import org.jruby.truffle.pack.nodes.type.IntegerNodeGen;
-import org.jruby.truffle.pack.nodes.type.NullNode;
+import org.jruby.truffle.pack.nodes.type.*;
 import org.jruby.truffle.pack.runtime.Endianness;
 import org.jruby.truffle.pack.runtime.Signedness;
+import org.jruby.truffle.runtime.RubyContext;
 
 import java.nio.ByteOrder;
 import java.util.ArrayList;
 import java.util.List;
 
 public class PackParser {
+
+    private final RubyContext context;
+
+    public PackParser(RubyContext context) {
+        this.context = context;
+    }
 
     public CallTarget parse(String format, boolean extended) {
         if (format.length() > 32) {
@@ -64,12 +69,30 @@ public class PackParser {
                         } else {
                             throw new UnsupportedOperationException("unbalanced parens");
                         }
-                    case 'N':
-                        node = IntegerNodeGen.create(32, Signedness.UNSIGNED, Endianness.BIG, new SourceNode());
-                        break;
+                    case 'C':
+                        return writeInteger(8, Signedness.UNSIGNED, nativeEndianness());
+                    case 'S':
+                        return writeInteger(16, Signedness.UNSIGNED, nativeEndianness());
                     case 'L':
-                        node = IntegerNodeGen.create(32, Signedness.UNSIGNED, nativeEndianness(), new SourceNode());
-                        break;
+                        return writeInteger(32, Signedness.UNSIGNED, nativeEndianness());
+                    case 'Q':
+                        return writeInteger(64, Signedness.UNSIGNED, nativeEndianness());
+                    case 'c':
+                        return writeInteger(8, Signedness.SIGNED, nativeEndianness());
+                    case 's':
+                        return writeInteger(16, Signedness.SIGNED, nativeEndianness());
+                    case 'l':
+                        return writeInteger(32, Signedness.SIGNED, nativeEndianness());
+                    case 'q':
+                        return writeInteger(64, Signedness.SIGNED, nativeEndianness());
+                    case 'n':
+                        return writeInteger(16, Signedness.UNSIGNED, Endianness.BIG);
+                    case 'N':
+                        return writeInteger(32, Signedness.UNSIGNED, Endianness.BIG);
+                    case 'v':
+                        return writeInteger(16, Signedness.UNSIGNED, Endianness.LITTLE);
+                    case 'V':
+                        return writeInteger(32, Signedness.UNSIGNED, Endianness.LITTLE);
                     case 'X':
                         node = new BackNode();
                         break;
@@ -194,6 +217,39 @@ public class PackParser {
             return Endianness.LITTLE;
         } else {
             throw new UnsupportedOperationException(String.format("unknown byte order %s", ByteOrder.nativeOrder()));
+        }
+    }
+
+    private PackNode writeInteger(int size, Signedness signedness, Endianness endianness) {
+        final PackNode readNode = ReadIntegerNodeGen.create(context, new SourceNode());
+
+        switch (size) {
+            case 16:
+                switch (signedness) {
+                    case UNSIGNED:
+                        switch (endianness) {
+                            case LITTLE:
+                                return Write16UnsignedBigNodeGen.create(readNode);
+                            case BIG:
+                                return Write16UnsignedLittleNodeGen.create(readNode);
+                        }
+                    default:
+                        throw new UnsupportedOperationException();
+                }
+            case 32:
+                switch (signedness) {
+                    case UNSIGNED:
+                        switch (endianness) {
+                            case LITTLE:
+                                return Write32UnsignedBigNodeGen.create(readNode);
+                            case BIG:
+                                return Write32UnsignedLittleNodeGen.create(readNode);
+                        }
+                    default:
+                        throw new UnsupportedOperationException();
+                }
+            default:
+                throw new UnsupportedOperationException();
         }
     }
 

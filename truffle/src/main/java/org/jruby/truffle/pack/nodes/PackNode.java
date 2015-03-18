@@ -46,6 +46,19 @@ public abstract class PackNode extends Node {
         frame.setInt(PackFrame.INSTANCE.getSourcePositionSlot(), position);
     }
 
+    protected int advanceSourcePosition(VirtualFrame frame) {
+        final int sourcePosition = getSourcePosition(frame);
+
+        if (sourcePosition == getSourceLength(frame)) {
+            CompilerDirectives.transferToInterpreter();
+            throw new UnsupportedOperationException();
+        }
+
+        setSourcePosition(frame, sourcePosition + 1);
+
+        return sourcePosition;
+    }
+
     protected byte[] getOutput(VirtualFrame frame) {
         try {
             return (byte[]) frame.getObject(PackFrame.INSTANCE.getOutputSlot());
@@ -68,45 +81,6 @@ public abstract class PackNode extends Node {
 
     protected void setOutputPosition(VirtualFrame frame, int position) {
         frame.setInt(PackFrame.INSTANCE.getOutputPositionSlot(), position);
-    }
-
-    protected int readInt(VirtualFrame frame, int[] source) {
-        final int sourcePosition = getSourcePosition(frame);
-
-        if (sourcePosition == getSourceLength(frame)) {
-            CompilerDirectives.transferToInterpreter();
-            throw new UnsupportedOperationException();
-        }
-
-        setSourcePosition(frame, sourcePosition + 1);
-
-        return source[sourcePosition];
-    }
-
-    protected int readInt(VirtualFrame frame, IRubyObject[] source) {
-        final int sourcePosition = getSourcePosition(frame);
-
-        if (sourcePosition == getSourceLength(frame)) {
-            CompilerDirectives.transferToInterpreter();
-            throw new UnsupportedOperationException();
-        }
-
-        setSourcePosition(frame, sourcePosition + 1);
-
-        return toInt(source[sourcePosition]);
-    }
-
-    @CompilerDirectives.TruffleBoundary
-    private int toInt(IRubyObject object) {
-        return object.convertToInteger().getIntValue();
-    }
-
-    protected void write32UnsignedLittle(VirtualFrame frame, int value) {
-        write(frame, (byte) value, (byte) (value >>> 8), (byte) (value >>> 16), (byte) (value >>> 24));
-    }
-
-    protected void write32UnsignedBig(VirtualFrame frame, int value) {
-        write(frame, (byte) (value >>> 24), (byte) (value >>> 16), (byte) (value >>> 8), (byte) value);
     }
 
     @ExplodeLoop

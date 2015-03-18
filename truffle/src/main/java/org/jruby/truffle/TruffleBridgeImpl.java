@@ -225,13 +225,13 @@ public class TruffleBridgeImpl implements TruffleBridge {
 
     @Override
     public Packer parsePack(String format, boolean extended) {
-        final CallTarget packCallTarget = new PackParser().parse(format, extended);
+        final CallTarget packCallTarget = new PackParser(null).parse(format, extended);
 
         return new Packer() {
 
             @Override
             public ByteList pack(Object[] store, int size) {
-                return new ByteList((byte[]) packCallTarget.call(store, size));
+                return (ByteList) packCallTarget.call(store, size);
             }
 
         };

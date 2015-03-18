@@ -15,6 +15,8 @@ import org.jruby.truffle.pack.runtime.Endianness;
 import org.jruby.truffle.pack.runtime.Signedness;
 
 @TypeSystem({
+        int.class,
+        long.class,
         int[].class,
         long[].class,
         double[].class,

@@ -2287,16 +2287,16 @@ public abstract class ArrayNodes {
         }
     }
 
-    @CoreMethod(names = "pack", required = 1)
-    public abstract static class PackNode extends ArrayCoreMethodNode {
+    @CoreMethod(names = "pack_slow", required = 1)
+    public abstract static class PackSlowNode extends ArrayCoreMethodNode {
 
         @Child private CallDispatchHeadNode toStringNode;
 
-        public PackNode(RubyContext context, SourceSection sourceSection) {
+        public PackSlowNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
         }
 
-        public PackNode(PackNode prev) {
+        public PackSlowNode(PackSlowNode prev) {
             super(prev);
             toStringNode = prev.toStringNode;
         }
@@ -2449,16 +2449,16 @@ public abstract class ArrayNodes {
 
     }
 
-    @CoreMethod(names = "pack_fast", required = 1, optional = 1)
-    public abstract static class PackFastNode extends ArrayCoreMethodNode {
+    @CoreMethod(names = "pack", required = 1, optional = 1, taintFromParameters = 1)
+    public abstract static class PackNode extends ArrayCoreMethodNode {
 
         @Child private DirectCallNode callPackNode;
 
-        public PackFastNode(RubyContext context, SourceSection sourceSection) {
+        public PackNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
         }
 
-        public PackFastNode(PackFastNode prev) {
+        public PackNode(PackNode prev) {
             super(prev);
             callPackNode = prev.callPackNode;
         }
@@ -2467,16 +2467,36 @@ public abstract class ArrayNodes {
         public RubyString pack(VirtualFrame frame, RubyArray array, RubyString format, boolean extended) {
             if (callPackNode == null) {
                 CompilerDirectives.transferToInterpreter();
-                final CallTarget packCallTarget = new PackParser().parse(format.toString(), extended);
+                final CallTarget packCallTarget = new PackParser(getContext()).parse(format.toString(), extended);
                 callPackNode = insert(Truffle.getRuntime().createDirectCallNode(packCallTarget));
             }
 
-            return getContext().makeString((byte[]) callPackNode.call(frame, new Object[]{array.getStore(), array.getSize()}));
+            final RubyString result = getContext().makeString((ByteList) callPackNode.call(frame, new Object[]{array.getStore(), array.getSize()}));
+
+            CompilerDirectives.transferToInterpreterAndInvalidate();
+            callPackNode = null;
+
+            return result;
         }
 
         @Specialization
         public RubyString pack(VirtualFrame frame, RubyArray array, RubyString format, UndefinedPlaceholder extended) {
             return pack(frame, array, format, false);
+        }
+
+        @Specialization(guards = "!isRubyString(format)")
+        public Object pack(VirtualFrame frame, RubyArray array, RubyNilClass format, Object extended) {
+            return ruby(frame, "raise TypeError");
+        }
+
+        @Specialization(guards = {"!isRubyString(format)", "!isRubyNilClass(format)"})
+        public Object pack(VirtualFrame frame, RubyArray array, Object format, UndefinedPlaceholder extended) {
+            return ruby(frame, "pack(format.to_s)", "format", format);
+        }
+
+        @Specialization(guards = {"!isRubyString(format)", "!isRubyNilClass(format)"})
+        public Object pack(VirtualFrame frame, RubyArray array, Object format, boolean extended) {
+            return ruby(frame, "pack(format.to_s, extended)", "format", format, "extended", extended);
         }
 
     }

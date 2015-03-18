@@ -6,3 +6,25 @@ fails:Array#pack with format 'n' ignores whitespace in the format string
 fails:Array#pack with format 'n' calls #to_str to coerce the directives string
 fails:Array#pack with format 'n' taints the output string if the format string is tainted
 fails:Array#pack with format 'n' calls #to_int to convert the pack argument to an Integer
+fails:Array#pack with format 'N' raises an ArgumentError if there are fewer elements than the format requires
+fails:Array#pack with format 'N' returns an empty String if count is zero
+fails:Array#pack with format 'N' raises ArgumentError when the format modifier is '_'
+fails:Array#pack with format 'N' raises ArgumentError when the format modifier is '!'
+fails:Array#pack with format 'N' encodes the least significant 32 bits of a positive number
+fails:Array#pack with format 'N' encodes the least significant 32 bits of a negative number
+fails:Array#pack with format 'N' encodes a Float truncated as an Integer
+fails:Array#pack with format 'N' encodes the number of array elements specified by the count modifier
+fails:Array#pack with format 'N' encodes all remaining elements when passed the '*' modifier
+fails:Array#pack with format 'N' ignores NULL bytes between directives
+fails:Array#pack with format 'N' ignores spaces between directives
+fails:Array#pack with format 'n' raises an ArgumentError if there are fewer elements than the format requires
+fails:Array#pack with format 'n' returns an empty String if count is zero
+fails:Array#pack with format 'n' raises ArgumentError when the format modifier is '_'
+fails:Array#pack with format 'n' raises ArgumentError when the format modifier is '!'
+fails:Array#pack with format 'n' encodes the least significant 16 bits of a positive number
+fails:Array#pack with format 'n' encodes the least significant 16 bits of a negative number
+fails:Array#pack with format 'n' encodes a Float truncated as an Integer
+fails:Array#pack with format 'n' encodes the number of array elements specified by the count modifier
+fails:Array#pack with format 'n' encodes all remaining elements when passed the '*' modifier
+fails:Array#pack with format 'n' ignores NULL bytes between directives
+fails:Array#pack with format 'n' ignores spaces between directives
