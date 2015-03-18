@@ -1,1 +1,0 @@
-fails:String#downcase is locale insensitive (only replaces A-Z)
