@@ -145,8 +145,9 @@ ENV['TZ'] = 'UTC'
 class Method
 
   def to_proc
+    meth = self
     proc { |*args|
-      self.call(*args)
+      meth.call(*args)
     }
   end
 

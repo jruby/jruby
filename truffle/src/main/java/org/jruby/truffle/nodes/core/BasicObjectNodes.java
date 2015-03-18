@@ -225,8 +225,6 @@ public abstract class BasicObjectNodes {
     @CoreMethod(names = "instance_exec", needsBlock = true, argumentsAsArray = true)
     public abstract static class InstanceExecNode extends YieldingCoreMethodNode {
 
-        private final ConditionProfile rubyMethodProfile = ConditionProfile.createBinaryProfile();
-
         public InstanceExecNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
         }
@@ -238,10 +236,6 @@ public abstract class BasicObjectNodes {
         @Specialization
         public Object instanceExec(VirtualFrame frame, Object receiver, Object[] arguments, RubyProc block) {
             notDesignedForCompilation();
-
-            if (rubyMethodProfile.profile(block.getSelfCapturedInScope() instanceof RubyMethod)) {
-                return yield(frame, block, arguments);
-            }
 
             return yieldWithModifiedSelf(frame, block, receiver, arguments);
         }
