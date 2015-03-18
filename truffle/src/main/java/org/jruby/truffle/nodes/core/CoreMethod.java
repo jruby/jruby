@@ -68,4 +68,6 @@ public @interface CoreMethod {
 
     UnsupportedOperationBehavior unsupportedOperationBehavior() default UnsupportedOperationBehavior.TYPE_ERROR;
 
+    boolean returnsEnumeratorIfNoBlock() default false;
+
 }

@@ -1738,12 +1738,11 @@ public abstract class ArrayNodes {
 
     }
 
-    @CoreMethod(names = {"map", "collect"}, needsBlock = true)
+    @CoreMethod(names = {"map", "collect"}, needsBlock = true, returnsEnumeratorIfNoBlock = true)
     @ImportGuards(ArrayGuards.class)
     public abstract static class MapNode extends YieldingCoreMethodNode {
 
         @Child private ArrayBuilderNode arrayBuilder;
-        @Child private CallDispatchHeadNode toEnumNode;
 
         private final BranchProfile breakProfile = BranchProfile.create();
         private final BranchProfile nextProfile = BranchProfile.create();
@@ -1757,17 +1756,6 @@ public abstract class ArrayNodes {
         public MapNode(MapNode prev) {
             super(prev);
             arrayBuilder = prev.arrayBuilder;
-            toEnumNode = prev.toEnumNode;
-        }
-
-        @Specialization
-        public Object eachEnumerator(VirtualFrame frame, RubyArray array, UndefinedPlaceholder block) {
-            if (toEnumNode == null) {
-                CompilerDirectives.transferToInterpreter();
-                toEnumNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext()));
-            }
-
-            return toEnumNode.call(frame, array, "to_enum", null, getContext().getCoreLibrary().getMapSymbol());
         }
 
         @Specialization(guards = "isNull")
@@ -1928,11 +1916,10 @@ public abstract class ArrayNodes {
         }
     }
 
-    @CoreMethod(names = {"map!", "collect!"}, needsBlock = true)
+    @CoreMethod(names = {"map!", "collect!"}, needsBlock = true, returnsEnumeratorIfNoBlock = true)
     @ImportGuards(ArrayGuards.class)
     public abstract static class MapInPlaceNode extends YieldingCoreMethodNode {
 
-        @Child private CallDispatchHeadNode toEnumNode;
         @Child private ArrayWriteDenormalizedNode writeNode;
 
         private final BranchProfile breakProfile = BranchProfile.create();
@@ -1945,18 +1932,7 @@ public abstract class ArrayNodes {
 
         public MapInPlaceNode(MapInPlaceNode prev) {
             super(prev);
-            toEnumNode = prev.toEnumNode;
             writeNode = prev.writeNode;
-        }
-
-        @Specialization
-        public Object eachEnumerator(VirtualFrame frame, RubyArray array, UndefinedPlaceholder block) {
-            if (toEnumNode == null) {
-                CompilerDirectives.transferToInterpreter();
-                toEnumNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext()));
-            }
-
-            return toEnumNode.call(frame, array, "to_enum", null, getContext().getCoreLibrary().getMapBangSymbol());
         }
 
         @Specialization(guards = "isNull")
