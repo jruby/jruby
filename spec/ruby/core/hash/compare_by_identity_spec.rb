@@ -8,11 +8,58 @@ describe "Hash#compare_by_identity" do
     @h["a"] = :a
     @h["a"].should == :a
     @h.compare_by_identity
-    @h["a"].should be_nil
+    @h["a".dup].should be_nil
   end
 
-  it "causes #compare_by_identity? to return true" do
-    @idh.compare_by_identity?.should be_true
+  ruby_version_is ''...'2.2' do
+    it "causes future comparisons on the receiver to be made by identity" do
+      @h["a"] = :a
+      @h["a"].should == :a
+      @h.compare_by_identity
+      @h["a"].should be_nil
+    end
+
+    it "uses the semantics of BasicObject#equal? to determine key identity" do
+      -0.0.should_not equal(-0.0) # -0.0 is not flonum
+      @idh[-0.0] = :a
+      @idh[-0.0] = :b
+      [1].should_not equal([1])
+      @idh[[1]] = :c
+      @idh[[1]] = :d
+      :bar.should equal(:bar)
+      @idh[:bar] = :e
+      @idh[:bar] = :f
+      "bar".should_not equal('bar')
+      @idh["bar"] = :g
+      @idh["bar"] = :h
+      @idh.values.should == [:a, :b, :c, :d, :f, :g, :h]
+    end
+  end
+
+  ruby_version_is '2.2' do
+    it "causes future comparisons on the receiver to be made by identity" do
+      @h["a"] = :a
+      @h["a"].should == :a
+      @h.compare_by_identity
+      @h["a"].should == :a
+    end
+
+    it "uses the semantics of BasicObject#equal? to determine key identity" do
+      -0.0.should_not equal(-0.0) # -0.0 is not flonum
+      @idh[-0.0] = :a
+      @idh[-0.0] = :b
+      [1].should_not equal([1])
+      @idh[[1]] = :c
+      @idh[[1]] = :d
+      :bar.should equal(:bar)
+      @idh[:bar] = :e
+      @idh[:bar] = :f
+      # CRuby r44551 [ruby-core:59640] [Bug #9382]
+      "bar".should_not equal('bar')
+      @idh["bar"] = :g
+      @idh["bar"] = :h
+      @idh.values.should == [:a, :b, :c, :d, :f, :h]
+    end
   end
 
   it "returns self" do
@@ -30,7 +77,7 @@ describe "Hash#compare_by_identity" do
     @idh[:bar] = :f
     "bar".should_not equal('bar')
     @idh["bar"] = :g
-    @idh["bar"] = :h
+    @idh["bar".dup] = :h
     @idh.values.should == [:c, :d, :f, :g, :h]
   end
 

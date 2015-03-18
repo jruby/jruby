@@ -28,7 +28,7 @@ describe "Regexps with anchors" do
     /(foo\n^)(^bar)/.match("foo\nbar").to_a.should == ["foo\nbar", "foo\n", "bar"]
   end
 
-  it "does not match ^ after trailing \n" do
+  it "does not match ^ after trailing \\n" do
     /^(?!\A)/.match("foo\n").should be_nil # There is no (empty) line after a trailing \n
   end
 
@@ -57,7 +57,7 @@ describe "Regexps with anchors" do
     /(foo$)($\nbar)/.match("foo\nbar").to_a.should == ["foo\nbar", "foo", "\nbar"]
   end
 
-  it "supports \A (string start anchor)" do
+  it "supports \\A (string start anchor)" do
     # Basic matching
     /\Afoo/.match("foo").to_a.should == ["foo"]
     # Basic non-matching
@@ -76,7 +76,7 @@ describe "Regexps with anchors" do
     /(\A)/.match("foo").to_a.should == ["", ""]
   end
 
-  it "supports \Z (string end anchor, including before trailing \n)" do
+  it "supports \\Z (string end anchor, including before trailing \\n)" do
     # Basic matching
     /foo\Z/.match("foo").to_a.should == ["foo"]
     /foo\Z/.match("foo\n").to_a.should == ["foo"]
@@ -98,7 +98,7 @@ describe "Regexps with anchors" do
     (/(\Z)/ =~ "foo").should == "foo".size and $~.to_a.should == ["", ""]
   end
 
-  it "supports \z (string end anchor)" do
+  it "supports \\z (string end anchor)" do
     # Basic matching
     /foo\z/.match("foo").to_a.should == ["foo"]
     # Basic non-matching
@@ -119,7 +119,7 @@ describe "Regexps with anchors" do
     (/(\z)/ =~ "foo").should == "foo".size and $~.to_a.should == ["", ""]
   end
 
-  it "supports \b (word boundary)" do
+  it "supports \\b (word boundary)" do
     # Basic matching
     /foo\b/.match("foo").to_a.should == ["foo"]
     /foo\b/.match("foo\n").to_a.should == ["foo"]
@@ -136,7 +136,7 @@ describe "Regexps with anchors" do
     /foo\b/.match("foo_").should be_nil
   end
 
-  it "supports \B (non-word-boundary)" do
+  it "supports \\B (non-word-boundary)" do
     # Basic matching
     /foo\B/.match("foobar").to_a.should == ["foo"]
     /foo\B/.match("foo123").to_a.should == ["foo"]
@@ -169,11 +169,11 @@ describe "Regexps with anchors" do
     /(?<=foo)bar./.match("bar1 foobar2").to_a.should == ["bar2"]
   end
 
-  it "supports (?<=\b) (positive lookbehind with word boundary)" do
+  it "supports (?<=\\b) (positive lookbehind with word boundary)" do
     /(?<=\bfoo)bar./.match("1foobar1 foobar2").to_a.should == ["bar2"]
   end
 
-  it "supports (?!<\b) (negative lookbehind with word boundary)" do
+  it "supports (?!<\\b) (negative lookbehind with word boundary)" do
     /(?<!\bfoo)bar./.match("foobar1 1foobar2").to_a.should == ["bar2"]
   end
 end

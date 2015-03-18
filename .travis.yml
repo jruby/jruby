@@ -39,7 +39,7 @@ env:
     - PHASE='-Prake -Dtask=spec:profiler'
     - PHASE='-Ptruffle-specs-language'
     - PHASE='-Ptruffle-specs-core'
-    - PHASE='-Ptruffle-specs-rubysl'
+    - PHASE='-Ptruffle-specs-library'
 
 matrix:
   include:
@@ -56,10 +56,11 @@ matrix:
       jdk: openjdk7
     - env: PHASE='-Pj2ee'
       jdk: oraclejdk7
+    # These next two started crashing on JDK7 in March 2015, possibly due to JVM issues on Travis's Docker-based env
     - env: PHASE='-Pjruby-jars,test -Dinvoker.test=extended'
-      jdk: oraclejdk7
+      jdk: oraclejdk8
     - env: PHASE='-Pmain,test -Dinvoker.test=extended'
-      jdk: openjdk7
+      jdk: oraclejdk8
     - env: PHASE='-Pjruby_complete_jar_extended -Dinvoker.skip=true'
       jdk: oraclejdk8
     - env: COMMAND=test/check_versions.sh
@@ -67,6 +68,7 @@ matrix:
     - env: COMMAND=tool/truffle-findbugs.sh
       jdk: oraclejdk8
   fast_finish: true
+
 
 branches:
   only:

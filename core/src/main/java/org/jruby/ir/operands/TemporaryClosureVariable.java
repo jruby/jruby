@@ -34,7 +34,9 @@ public class TemporaryClosureVariable extends TemporaryLocalVariable {
     }
 
     public static TemporaryClosureVariable decode(IRReaderDecoder d) {
-        return new TemporaryClosureVariable(d.decodeInt(), d.decodeInt());
+        int offset = d.decodeInt();
+        int closureId = d.decodeInt();
+        return new TemporaryClosureVariable(closureId, offset);
     }
 
     @Override

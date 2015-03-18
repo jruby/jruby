@@ -1,0 +1,1 @@
+fails:Kernel#caller returns an Array of caller locations using a custom limit

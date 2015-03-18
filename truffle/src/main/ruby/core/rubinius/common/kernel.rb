@@ -134,4 +134,13 @@ module Kernel
   end
   module_function :warn
 
+  def srand(seed=undefined)
+    if undefined.equal? seed
+      seed = Thread.current.randomizer.generate_seed
+    end
+    seed = Rubinius::Type.coerce_to seed, Integer, :to_int
+    Thread.current.randomizer.swap_seed seed
+  end
+  module_function :srand
+
 end

@@ -1,6 +1,7 @@
 package org.jruby.ir.operands;
 
 import org.jruby.ir.IRVisitor;
+import org.jruby.ir.persistence.IRReaderDecoder;
 import org.jruby.ir.persistence.IRWriterEncoder;
 import org.jruby.ir.transformations.inlining.CloneInfo;
 import org.jruby.parser.StaticScope;
@@ -75,6 +76,10 @@ public class ScopeModule extends Operand {
     public void encode(IRWriterEncoder e) {
         super.encode(e);
         e.encode(getScopeModuleDepth());
+    }
+
+    public static ScopeModule decode(IRReaderDecoder d) {
+        return ModuleFor(d.decodeInt());
     }
 
     @Override

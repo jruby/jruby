@@ -6,6 +6,7 @@ import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Operation;
 import org.jruby.ir.operands.Boolean;
 import org.jruby.ir.operands.*;
+import org.jruby.ir.persistence.IRReaderDecoder;
 import org.jruby.ir.persistence.IRWriterEncoder;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.ir.transformations.inlining.CloneInfo;
@@ -22,7 +23,11 @@ public class RuntimeHelperCall extends ResultBaseInstr {
         HANDLE_PROPAGATE_BREAK, HANDLE_NONLOCAL_RETURN, HANDLE_BREAK_AND_RETURNS_IN_LAMBDA,
         IS_DEFINED_BACKREF, IS_DEFINED_NTH_REF, IS_DEFINED_GLOBAL, IS_DEFINED_INSTANCE_VAR,
         IS_DEFINED_CLASS_VAR, IS_DEFINED_SUPER, IS_DEFINED_METHOD, IS_DEFINED_CALL,
-        IS_DEFINED_CONSTANT_OR_METHOD, MERGE_KWARGS
+        IS_DEFINED_CONSTANT_OR_METHOD, MERGE_KWARGS;
+
+        public static Methods fromOrdinal(int value) {
+            return value < 0 || value >= values().length ? null : values()[value];
+        }
     }
 
     Methods    helperMethod;
@@ -70,6 +75,10 @@ public class RuntimeHelperCall extends ResultBaseInstr {
         super.encode(e);
         e.encode(getHelperMethod().ordinal());
         e.encode(getArgs());
+    }
+
+    public static RuntimeHelperCall decode(IRReaderDecoder d) {
+        return new RuntimeHelperCall(d.decodeVariable(), Methods.fromOrdinal(d.decodeInt()), d.decodeOperandArray());
     }
 
     @Override

@@ -36,69 +36,14 @@ describe "String#crypt" do
     end
   end
 
-  platform_is_not :java do
-    platform_is :openbsd do
-      it "returns empty string if the first byte of the salt" do
-        "hello".crypt("\x00\x00").should == ""
-        "hello".crypt("\x00a").should == ""
-      end
-
-      it "returns the same character prepended to the string for the salt if the second character of the salt is a NULL byte" do
-        "hello".crypt("a\x00").should == "aaGJVggM8eWwo"
-        "hello".crypt("b\x00").should == "bb.LIhrI2NKCo"
-      end
-    end
-
-    platform_is :darwin, /netbsd[a-z]*[1-5]\./ do
-      it "returns '.' prepended to the string for each NULL byte the salt contains" do
-        "hello".crypt("\x00\x00").should == "..dR0/E99ehpU"
-        "hello".crypt("\x00a").should == ".aeipc4xPxhGY"
-        "hello".crypt("a\x00").should == "a.GJVggM8eWwo"
-      end
-    end
-
-    platform_is /netbsd[a-z]*(?![1-5]\.)/ do
-      it "returns '*0' when the salt contains NULL bytes" do
-        "hello".crypt("\x00\x00").should == "*0"
-        "hello".crypt("\x00a").should == "*0"
-        "hello".crypt("a\x00").should == "*0"
-      end
-    end
-
-    platform_is :freebsd do
-      it "returns an empty string when the salt starts with NULL bytes" do
-        "hello".crypt("\x00\x00").should == ""
-        "hello".crypt("\x00a").should == ""
-      end
-
-      it "ignores trailing NULL bytes in the salt but counts them for the 2 character minimum" do
-        "hello".crypt("a\x00").should == "aaGJVggM8eWwo"
-      end
-    end
-
-    # These specs are quarantined because this behavior isn't consistent
-    # across different linux distributions and highly dependent of the
-    # exact distribution. It seems like in newer Glibc versions this now
-    # throws an error:
-    #
-    # https://github.com/rubinius/rubinius/issues/2168
-    quarantine! do
-      platform_is :linux do
-        it "returns an empty string when the salt starts with NULL bytes" do
-          "hello".crypt("\x00\x00").should == ""
-          "hello".crypt("\x00a").should == ""
-        end
-
-        it "ignores trailing NULL bytes in the salt but counts them for the 2 character minimum" do
-          "hello".crypt("a\x00").should == "aa1dYAU.hgL3A"
-        end
-      end
-    end
-  end
-
   it "raises an ArgumentError when the salt is shorter than two characters" do
     lambda { "hello".crypt("")  }.should raise_error(ArgumentError)
     lambda { "hello".crypt("f") }.should raise_error(ArgumentError)
+    ruby_version_is "2.2" do
+      lambda { "hello".crypt("\x00\x00") }.should raise_error(ArgumentError)
+      lambda { "hello".crypt("\x00a") }.should raise_error(ArgumentError)
+      lambda { "hello".crypt("a\x00") }.should raise_error(ArgumentError)
+    end
   end
 
   it "calls #to_str to converts the salt arg to a String" do
@@ -127,8 +72,8 @@ describe "String#crypt" do
   end
 
   it "doesn't return subclass instances" do
-    StringSpecs::MyString.new("hello").crypt("aa").should be_kind_of(String)
-    "hello".crypt(StringSpecs::MyString.new("aa")).should be_kind_of(String)
-    StringSpecs::MyString.new("hello").crypt(StringSpecs::MyString.new("aa")).should be_kind_of(String)
+    StringSpecs::MyString.new("hello").crypt("aa").should be_an_instance_of(String)
+    "hello".crypt(StringSpecs::MyString.new("aa")).should be_an_instance_of(String)
+    StringSpecs::MyString.new("hello").crypt(StringSpecs::MyString.new("aa")).should be_an_instance_of(String)
   end
 end

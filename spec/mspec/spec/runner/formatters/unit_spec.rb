@@ -5,15 +5,15 @@ require 'mspec/utils/script'
 
 describe UnitdiffFormatter, "#finish" do
   before :each do
-    @tally = mock("tally").as_null_object
-    TallyAction.stub!(:new).and_return(@tally)
-    @timer = mock("timer").as_null_object
-    TimerAction.stub!(:new).and_return(@timer)
+    @tally = double("tally").as_null_object
+    TallyAction.stub(:new).and_return(@tally)
+    @timer = double("timer").as_null_object
+    TimerAction.stub(:new).and_return(@timer)
 
     $stdout = @out = IOStub.new
     context = ContextState.new "describe"
     @state = ExampleState.new(context, "it")
-    MSpec.stub!(:register)
+    MSpec.stub(:register)
     @formatter = UnitdiffFormatter.new
     @formatter.register
   end
@@ -32,7 +32,7 @@ describe UnitdiffFormatter, "#finish" do
 
   it "prints a backtrace for an exception" do
     exc = ExceptionState.new @state, nil, Exception.new("broken")
-    exc.stub!(:backtrace).and_return("path/to/some/file.rb:35:in method")
+    exc.stub(:backtrace).and_return("path/to/some/file.rb:35:in method")
     @formatter.exception exc
     @formatter.finish
     @out.should =~ %r[path/to/some/file.rb:35:in method$]
@@ -52,7 +52,7 @@ describe UnitdiffFormatter, "#finish" do
 
   it "prints errors, backtraces, elapsed time, and tallies" do
     exc = ExceptionState.new @state, nil, Exception.new("broken")
-    exc.stub!(:backtrace).and_return("path/to/some/file.rb:35:in method")
+    exc.stub(:backtrace).and_return("path/to/some/file.rb:35:in method")
     @formatter.exception exc
     @formatter.after @state
     @timer.should_receive(:format).and_return("Finished in 2.0 seconds")

@@ -86,8 +86,6 @@ class MSpecRun < MSpecScript
   end
 
   def run
-    MSpec.register_mode :no_ruby_bug
-
     MSpec.register_tags_patterns config[:tags_patterns]
     MSpec.register_files @files
 

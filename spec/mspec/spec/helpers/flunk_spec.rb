@@ -6,8 +6,8 @@ require 'mspec/helpers'
 
 describe Object, "#flunk" do
   before :each do
-    MSpec.stub!(:actions)
-    MSpec.stub!(:current).and_return(mock("spec state").as_null_object)
+    MSpec.stub(:actions)
+    MSpec.stub(:current).and_return(double("spec state").as_null_object)
   end
 
   it "raises an SpecExpectationNotMetError unconditionally" do

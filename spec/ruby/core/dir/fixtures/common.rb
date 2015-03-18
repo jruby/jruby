@@ -132,7 +132,7 @@ module DirSpecs
 
     dirs.reverse_each do |d|
       dir = File.join base_dir, d
-      if File.exists? dir
+      if File.exist? dir
         File.chmod 0777, dir
         rm_r dir
       end
@@ -142,7 +142,7 @@ module DirSpecs
     if create
       dirs.each do |d|
         dir = File.join base_dir, d
-        unless File.exists? dir
+        unless File.exist? dir
           mkdir_p dir
           File.chmod 0777, dir
         end

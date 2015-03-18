@@ -24,13 +24,25 @@ describe "Module#attr_reader" do
     o.send(:b).should == "test2"
   end
 
-  it "allows for adding an attr_reader to an immediate" do
-    class TrueClass
-      attr_reader :spec_attr_reader
-    end
+  ruby_version_is ''...'2.2' do
+    it "allows for adding an attr_reader to an immediate" do
+      class TrueClass
+        attr_reader :spec_attr_reader
+      end
 
-    true.instance_variable_set("@spec_attr_reader", "a")
-    true.spec_attr_reader.should == "a"
+      true.instance_variable_set("@spec_attr_reader", "a")
+      true.spec_attr_reader.should == "a"
+    end
+  end
+
+  ruby_version_is '2.2' do
+    it "not allows for adding an attr_reader to an immediate" do
+      class TrueClass
+        attr_reader :spec_attr_reader
+      end
+
+      lambda { true.instance_variable_set("@spec_attr_reader", "a") }.should raise_error(RuntimeError)
+    end
   end
 
   it "converts non string/symbol/fixnum names to strings using to_str" do

@@ -7,7 +7,7 @@ class BeFalseMatcher
   def failure_message
     ["Expected #{@actual.inspect}", "to be false"]
   end
-  
+
   def negative_failure_message
     ["Expected #{@actual.inspect}", "not to be false"]
   end

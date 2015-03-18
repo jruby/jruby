@@ -5,6 +5,7 @@ import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Operation;
 import org.jruby.ir.operands.CurrentScope;
 import org.jruby.ir.operands.Operand;
+import org.jruby.ir.persistence.IRReaderDecoder;
 import org.jruby.ir.transformations.inlining.CloneInfo;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.DynamicScope;
@@ -32,6 +33,10 @@ public class PutClassVariableInstr extends PutInstr implements FixedArityInstr {
         // Modules and classes set this constant as a side-effect
         if (!(getValue() instanceof CurrentScope)) module.setClassVar(getRef(), value);
         return null;
+    }
+
+    public static PutClassVariableInstr decode(IRReaderDecoder d) {
+        return new PutClassVariableInstr(d.decodeOperand(), d.decodeString(), d.decodeOperand());
     }
 
     @Override

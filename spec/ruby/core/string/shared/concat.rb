@@ -25,10 +25,18 @@ describe :string_concat, :shared => true do
     lambda { a.send(@method, "test") }.should raise_error(RuntimeError)
   end
 
-  it "works when given a subclass instance" do
+  it "returns a String when given a subclass instance" do
     a = "hello"
     a.send(@method, StringSpecs::MyString.new(" world"))
     a.should == "hello world"
+    a.should be_an_instance_of(String)
+  end
+
+  it "returns an instance of same class when called on a subclass" do
+    str = StringSpecs::MyString.new("hello")
+    str.send(@method, " world")
+    str.should == "hello world"
+    str.should be_an_instance_of(StringSpecs::MyString)
   end
 
   it "taints self if other is tainted" do
@@ -144,9 +152,11 @@ describe :string_concat_encoding, :shared => true do
     end
   end
 
-  describe "when self is ASCII-8BIT and argument is US-ASCII" do
-    it "uses ASCII-8BIT encoding" do
-      "abc".encode("ASCII-8BIT").send(@method, "123".encode("US-ASCII")).encoding.should == Encoding::ASCII_8BIT
+  ruby_bug "#", "1.9.3" do
+    describe "when self is ASCII-8BIT and argument is US-ASCII" do
+      it "uses ASCII-8BIT encoding" do
+        "abc".encode("ASCII-8BIT").send(@method, "123".encode("US-ASCII")).encoding.should == Encoding::ASCII_8BIT
+      end
     end
   end
 end

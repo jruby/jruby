@@ -57,7 +57,7 @@ end
 describe Object, "#compliant_on" do
   before :each do
     @guard = CompliantOnGuard.new :any
-    CompliantOnGuard.stub!(:new).and_return(@guard)
+    CompliantOnGuard.stub(:new).and_return(@guard)
   end
 
   it "sets the name of the guard to :compliant_on" do
@@ -123,7 +123,7 @@ end
 describe Object, "#not_compliant_on" do
   before :each do
     @guard = NotCompliantOnGuard.new :any
-    NotCompliantOnGuard.stub!(:new).and_return(@guard)
+    NotCompliantOnGuard.stub(:new).and_return(@guard)
   end
 
   it "sets the name of the guard to :not_compliant_on" do

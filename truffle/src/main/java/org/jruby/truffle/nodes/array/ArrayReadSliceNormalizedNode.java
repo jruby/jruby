@@ -47,14 +47,14 @@ public abstract class ArrayReadSliceNormalizedNode extends RubyNode {
             guards={"!indexInBounds(array, index)"}
     )
     public RubyNilClass readIndexOutOfBounds(RubyArray array, int index, int length) {
-        return getContext().getCoreLibrary().getNilObject();
+        return nil();
     }
 
     @Specialization(
             guards={"!lengthPositive(length)"}
     )
     public RubyNilClass readNegativeLength(RubyArray array, int index, int length) {
-        return getContext().getCoreLibrary().getNilObject();
+        return nil();
     }
 
     // If these guards pass for a null array you can only get an empty array

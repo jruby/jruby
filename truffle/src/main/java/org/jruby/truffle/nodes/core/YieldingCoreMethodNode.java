@@ -49,4 +49,8 @@ public abstract class YieldingCoreMethodNode extends CoreMethodNode {
         return booleanCast(frame, yield(frame, block, arguments));
     }
 
+    public Object yieldWithModifiedSelf(VirtualFrame frame, RubyProc block, Object self, Object... arguments) {
+        return dispatchNode.dispatchWithModifiedSelf(frame, block, self, arguments);
+    }
+
 }

@@ -1,2 +1,3 @@
 fails:Kernel#untrusted? returns the untrusted status of an object
 fails:Kernel#untrusted? has no effect on immediate values
+fails:Kernel#untrusted? has effect on immediate values

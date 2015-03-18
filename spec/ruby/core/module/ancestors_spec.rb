@@ -19,21 +19,23 @@ describe "Module#ancestors" do
   end
 
   describe "when called on a singleton class" do
-    it "includes the singleton classes of ancestors" do
-      Parent  = Class.new
-      Child   = Class.new(Parent)
-      SChild  = Child.singleton_class
+    ruby_version_is "2.1" do
+      it "includes the singleton classes of ancestors" do
+        Parent  = Class.new
+        Child   = Class.new(Parent)
+        SChild  = Child.singleton_class
 
-      SChild.ancestors.should include(SChild,
-                                      Parent.singleton_class,
-                                      Object.singleton_class,
-                                      BasicObject.singleton_class,
-                                      Class,
-                                      Module,
-                                      Object,
-                                      Kernel,
-                                      BasicObject)
+        SChild.ancestors.should include(SChild,
+                                        Parent.singleton_class,
+                                        Object.singleton_class,
+                                        BasicObject.singleton_class,
+                                        Class,
+                                        Module,
+                                        Object,
+                                        Kernel,
+                                        BasicObject)
 
+      end
     end
   end
 end

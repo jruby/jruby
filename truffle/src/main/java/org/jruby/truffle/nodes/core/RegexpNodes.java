@@ -123,14 +123,14 @@ public abstract class RegexpNodes {
         public Object match(RubyRegexp regexp, RubyString string) {
             notDesignedForCompilation();
 
-            return regexp.matchCommon(string, true, false) != getContext().getCoreLibrary().getNilObject();
+            return regexp.matchCommon(string, true, false) != nil();
         }
 
         @Specialization
         public Object match(RubyRegexp regexp, RubySymbol symbol) {
             notDesignedForCompilation();
 
-            return regexp.matchCommon(symbol.toRubyString(), true, false) != getContext().getCoreLibrary().getNilObject();
+            return regexp.matchCommon(symbol.toRubyString(), true, false) != nil();
         }
 
     }
@@ -158,7 +158,7 @@ public abstract class RegexpNodes {
             if (other instanceof RubyString) {
                 return match(regexp, (RubyString) other);
             } else {
-                return getContext().getCoreLibrary().getNilObject();
+                return nil();
             }
         }
 
@@ -260,7 +260,7 @@ public abstract class RegexpNodes {
                 && ((RubyMatchData) matchResult).getRegion().beg[0] == startPos) {
                 return matchResult;
             }
-            return getContext().getCoreLibrary().getNilObject();
+            return nil();
         }
     }
 

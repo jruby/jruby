@@ -19,5 +19,25 @@ describe "Dir#read" do
     dir.close
   end
 
+  it "returns nil when there are no more entries" do
+    dir = Dir.open DirSpecs.mock_dir
+    DirSpecs.expected_paths.size.times do
+      dir.read.should_not == nil
+    end
+    dir.read.should == nil
+    dir.close
+  end
+
+  it "returns each entry successively" do
+    dir = Dir.open DirSpecs.mock_dir
+    entries = []
+    while entry = dir.read
+      entries << entry
+    end
+    dir.close
+
+    entries.sort.should == DirSpecs.expected_paths
+  end
+
   it_behaves_like :dir_closed, :read
 end

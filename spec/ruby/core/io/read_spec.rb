@@ -316,7 +316,7 @@ describe "IO#read with $KCODE set to UTF-8" do
 
   it "ignores unicode encoding" do
     @io.readline.should == "Voici la ligne une.\n"
-    @io.read(5).should == encode("Qui \303", "binary")
+    @io.read(5).should == "Qui \303".force_encoding("binary")
   end
 end
 

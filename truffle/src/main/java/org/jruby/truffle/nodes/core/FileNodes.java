@@ -116,7 +116,7 @@ public abstract class FileNodes {
             notDesignedForCompilation();
 
             file.close();
-            return getContext().getCoreLibrary().getNilObject();
+            return nil();
         }
 
     }
@@ -229,7 +229,7 @@ public abstract class FileNodes {
                 yield(frame, block, context.makeString(line));
             }
 
-            return getContext().getCoreLibrary().getNilObject();
+            return nil();
         }
 
     }
@@ -443,7 +443,7 @@ public abstract class FileNodes {
                 throw new RuntimeException(e);
             }
 
-            return getContext().getCoreLibrary().getNilObject();
+            return nil();
         }
 
     }
@@ -527,6 +527,41 @@ public abstract class FileNodes {
 
     }
 
+    @CoreMethod(names = "realpath", onSingleton = true, required = 1, optional = 1)
+    public abstract static class RealpathNode extends CoreMethodNode {
+
+        public RealpathNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public RealpathNode(RealpathNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public RubyString realpath(RubyString path, UndefinedPlaceholder dir) {
+            return getContext().makeString(realpath(path.toString(), null));
+        }
+
+        @Specialization
+        public RubyString realpath(RubyString path, RubyString dir) {
+            return getContext().makeString(realpath(path.toString(), dir.toString()));
+        }
+
+        private String realpath(String path, String dir) {
+            notDesignedForCompilation();
+
+            File file = new File(dir, path);
+
+            try {
+                return file.getCanonicalPath();
+            } catch (IOException e) {
+                throw new UnsupportedOperationException("realpath - " + file);
+            }
+        }
+
+    }
+
     @CoreMethod(names = "size?", onSingleton = true, required = 1)
     public abstract static class SizeNode extends CoreMethodNode {
 
@@ -545,13 +580,13 @@ public abstract class FileNodes {
             final File f = new File(file.toString());
 
             if (!f.exists()) {
-                return getContext().getCoreLibrary().getNilObject();
+                return nil();
             }
 
             final long size = f.length();
 
             if (size == 0) {
-                return getContext().getCoreLibrary().getNilObject();
+                return nil();
             }
 
             return size;
@@ -616,7 +651,7 @@ public abstract class FileNodes {
                 throw new RuntimeException(e);
             }
 
-            return getContext().getCoreLibrary().getNilObject();
+            return nil();
         }
 
     }

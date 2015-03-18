@@ -1,0 +1,2 @@
+fails:ARGF.to_a reads all lines of all files
+fails:ARGF.to_a returns an empty Array when end of stream reached

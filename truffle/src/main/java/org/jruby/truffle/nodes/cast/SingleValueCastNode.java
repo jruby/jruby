@@ -34,7 +34,7 @@ public abstract class SingleValueCastNode extends RubyNode {
 
     @Specialization(guards = "noArguments(args)")
     protected RubyNilClass castNil(Object[] args) {
-        return getContext().getCoreLibrary().getNilObject();
+        return nil();
     }
 
     @Specialization(guards = "singleArgument(args)")

@@ -36,6 +36,7 @@ import org.jcodings.util.IntHash;
 import org.joni.Matcher;
 import org.jruby.Ruby;
 import org.jruby.RubyBasicObject;
+import org.jruby.RubyEncoding;
 import org.jruby.RubyObject;
 import org.jruby.RubyString;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -1323,5 +1324,70 @@ public final class StringSupport {
         rubyString.setCodeRange(cr);
 
         return modify ? rubyString : null;
+    }
+
+    /**
+     * rb_str_chop
+     */
+    public static int choppedLength19(CodeRangeable rubyString, Ruby runtime) {
+        final ByteList value = rubyString.getByteList();
+        int p = value.getBegin();
+        int end = p + value.getRealSize();
+
+        if (p > end) return 0;
+        byte bytes[] = value.getUnsafeBytes();
+        Encoding enc = value.getEncoding();
+
+        int s = enc.prevCharHead(bytes, p, end, end);
+        if (s == -1) return 0;
+        if (s > p && codePoint(runtime, enc, bytes, s, end) == '\n') {
+            int s2 = enc.prevCharHead(bytes, p, s, end);
+            if (s2 != -1 && codePoint(runtime, enc, bytes, s2, end) == '\r') s = s2;
+        }
+        return s - p;
+    }
+
+    /**
+     * rb_enc_compatible
+     */
+
+    public static Encoding areCompatible(CodeRangeable string, CodeRangeable other) {
+        Encoding enc1 = string.getByteList().getEncoding();
+        Encoding enc2 = other.getByteList().getEncoding();
+
+        if (enc1 == enc2) return enc1;
+
+        if (other.getByteList().getRealSize() == 0) return enc1;
+        if (string.getByteList().getRealSize() == 0) {
+            return (enc1.isAsciiCompatible() && isAsciiOnly(other)) ? enc1 : enc2;
+        }
+
+        if (!enc1.isAsciiCompatible() || !enc2.isAsciiCompatible()) return null;
+
+        return RubyEncoding.areCompatible(enc1, string.scanForCodeRange(), enc2, other.scanForCodeRange());
+    }
+
+    public static ByteList addByteLists(ByteList value1, ByteList value2) {
+        ByteList result = new ByteList(value1.getRealSize() + value2.getRealSize());
+        result.setRealSize(value1.getRealSize() + value2.getRealSize());
+        System.arraycopy(value1.getUnsafeBytes(), value1.getBegin(), result.getUnsafeBytes(), 0, value1.getRealSize());
+        System.arraycopy(value2.getUnsafeBytes(), value2.getBegin(), result.getUnsafeBytes(), value1.getRealSize(), value2.getRealSize());
+        return result;
+    }
+
+    public static boolean areComparable(CodeRangeable string, CodeRangeable other) {
+        ByteList otherValue = other.getByteList();
+        if (string.getByteList().getEncoding() == otherValue.getEncoding() ||
+                string.getByteList().getRealSize() == 0 || otherValue.getRealSize() == 0) return true;
+        return areComparableViaCodeRange(string, other);
+    }
+
+    public static boolean areComparableViaCodeRange(CodeRangeable string, CodeRangeable other) {
+        int cr1 = string.scanForCodeRange();
+        int cr2 = other.scanForCodeRange();
+
+        if (cr1 == CR_7BIT && (cr2 == CR_7BIT || other.getByteList().getEncoding().isAsciiCompatible())) return true;
+        if (cr2 == CR_7BIT && string.getByteList().getEncoding().isAsciiCompatible()) return true;
+        return false;
     }
 }

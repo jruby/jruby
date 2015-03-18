@@ -561,7 +561,9 @@ public class IRBuilder {
     protected Operand buildWithOrder(Node node, boolean preserveOrder) {
         Operand value = build(node);
 
-        return preserveOrder ? copyAndReturnValue(value) : value;
+        // We need to preserve order in cases (like in presence of assignments) except that immutable
+        // literals can never change value so we can still emit these out of order.
+        return preserveOrder && !(value instanceof ImmutableLiteral) ? copyAndReturnValue(value) : value;
     }
 
     protected Variable getValueInTemporaryVariable(Operand val) {
@@ -1265,7 +1267,7 @@ public class IRBuilder {
 
     private void genInheritanceSearchInstrs(Operand startingModule, Variable constVal, Label foundLabel, boolean noPrivateConstants, String name) {
         addInstr(new InheritanceSearchConstInstr(constVal, startingModule, name, noPrivateConstants));
-        addInstr(BNEInstr.create(constVal, UndefinedValue.UNDEFINED, foundLabel));
+        addInstr(BNEInstr.create(foundLabel, constVal, UndefinedValue.UNDEFINED));
         addInstr(new ConstMissingInstr(constVal, startingModule, name));
         addInstr(new LabelInstr(foundLabel));
     }
@@ -1417,7 +1419,7 @@ public class IRBuilder {
             Operand v = protectCodeWithRescue(protectedCode, rescueBlock);
             Label doneLabel = getNewLabel();
             Variable tmpVar = getValueInTemporaryVariable(v);
-            addInstr(BNEInstr.create(tmpVar, manager.getNil(), doneLabel));
+            addInstr(BNEInstr.create(doneLabel, tmpVar, manager.getNil()));
             addInstr(new CopyInstr(tmpVar, new FrozenString("expression")));
             addInstr(new LabelInstr(doneLabel));
 
@@ -1480,9 +1482,9 @@ public class IRBuilder {
             Variable tmpVar  = createTemporaryVariable();
             String constName = ((ConstNode) node).getName();
             addInstr(new LexicalSearchConstInstr(tmpVar, startingSearchScope(), constName));
-            addInstr(BNEInstr.create(tmpVar, UndefinedValue.UNDEFINED, defLabel));
+            addInstr(BNEInstr.create(defLabel, tmpVar, UndefinedValue.UNDEFINED));
             addInstr(new InheritanceSearchConstInstr(tmpVar, findContainerModule(), constName, false)); // SSS FIXME: should this be the current-module var or something else?
-            addInstr(BNEInstr.create(tmpVar, UndefinedValue.UNDEFINED, defLabel));
+            addInstr(BNEInstr.create(defLabel, tmpVar, UndefinedValue.UNDEFINED));
             addInstr(new CopyInstr(tmpVar, manager.getNil()));
             addInstr(new JumpInstr(doneLabel));
             addInstr(new LabelInstr(defLabel));
@@ -1855,7 +1857,7 @@ public class IRBuilder {
                 if (scope instanceof IRMethod) addArgumentDescription(IRMethodArgs.ArgType.opt, argName);
                 // You need at least required+j+1 incoming args for this opt arg to get an arg at all
                 addInstr(new ReceiveOptArgInstr(av, required, numPreReqd, j));
-                addInstr(BNEInstr.create(av, UndefinedValue.UNDEFINED, l)); // if 'av' is not undefined, go to default
+                addInstr(BNEInstr.create(l, av, UndefinedValue.UNDEFINED)); // if 'av' is not undefined, go to default
                 build(n.getValue());
                 addInstr(new LabelInstr(l));
             }
@@ -1942,7 +1944,7 @@ public class IRBuilder {
                 Label l = getNewLabel();
                 if (scope instanceof IRMethod) addKeyArgDesc(kasgn, argName);
                 addInstr(new ReceiveKeywordArgInstr(av, argName, required));
-                addInstr(BNEInstr.create(av, UndefinedValue.UNDEFINED, l)); // if 'av' is not undefined, we are done
+                addInstr(BNEInstr.create(l, av, UndefinedValue.UNDEFINED)); // if 'av' is not undefined, we are done
 
                 // Required kwargs have no value and check_arity will throw if they are not provided.
                 if (!isRequiredKeywordArgumentValue(kasgn)) {
@@ -2385,11 +2387,11 @@ public class IRBuilder {
         addInstr(new CopyInstr(returnVal, manager.getFalse()));
 
         // Are we in state 1?
-        addInstr(BNEInstr.create(flipState, s1, s2Label));
+        addInstr(BNEInstr.create(s2Label, flipState, s1));
 
         // ----- Code for when we are in state 1 -----
         Operand s1Val = build(flipNode.getBeginNode());
-        addInstr(BNEInstr.create(s1Val, manager.getTrue(), s2Label));
+        addInstr(BNEInstr.create(s2Label, s1Val, manager.getTrue()));
 
         // s1 condition is true => set returnVal to true & move to state 2
         addInstr(new CopyInstr(returnVal, manager.getTrue()));
@@ -2402,12 +2404,12 @@ public class IRBuilder {
         if (flipNode.isExclusive()) addInstr(BEQInstr.create(returnVal, manager.getTrue(), doneLabel));
 
         // Are we in state 2?
-        addInstr(BNEInstr.create(flipState, s2, doneLabel));
+        addInstr(BNEInstr.create(doneLabel, flipState, s2));
 
         // ----- Code for when we are in state 2 -----
         Operand s2Val = build(flipNode.getEndNode());
         addInstr(new CopyInstr(returnVal, manager.getTrue()));
-        addInstr(BNEInstr.create(s2Val, manager.getTrue(), doneLabel));
+        addInstr(BNEInstr.create(doneLabel, s2Val, manager.getTrue()));
 
         // s2 condition is true => move to state 1
         addInstr(new CopyInstr(flipState, s1));
@@ -3452,7 +3454,7 @@ public class IRBuilder {
                     // Generate the next set of instructions
                     if (next != null) addInstr(new LabelInstr(next));
                     next = getNewLabel();
-                    addInstr(BNEInstr.create(new Fixnum(depthFromSuper), scopeDepth, next));
+                    addInstr(BNEInstr.create(next, new Fixnum(depthFromSuper), scopeDepth));
                     Operand[] args = adjustVariableDepth(getCallArgs(superScope, superBuilder), depthFromSuper);
                     addInstr(new ZSuperInstr(zsuperResult, buildSelf(), args,  block));
                     addInstr(new JumpInstr(allDoneLabel));

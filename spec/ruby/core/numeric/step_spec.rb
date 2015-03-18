@@ -86,22 +86,6 @@ describe "Numeric#step" do
     end
   end
 
-  describe "Numeric#step with [stop, step] when self and stop are Floats but step is a String" do
-    it "returns an Enumerator if not given a block" do
-      1.1.step(5.1, "1").should be_an_instance_of(enumerator_class)
-      1.1.step(5.1, "0.1").should be_an_instance_of(enumerator_class)
-      1.1.step(5.1, "1/3").should be_an_instance_of(enumerator_class)
-      1.1.step(5.1, "foo").should be_an_instance_of(enumerator_class)
-    end
-
-    it "raises a TypeError if given a block" do
-      lambda { 1.1.step(5.1, "1") {} }.should raise_error(TypeError)
-      lambda { 1.1.step(5.1, "0.1") {} }.should raise_error(TypeError)
-      lambda { 1.1.step(5.1, "1/3") {} }.should raise_error(TypeError)
-      lambda { 1.1.step(5.1, "foo") {} }.should raise_error(TypeError)
-    end
-  end
-
   describe "Numeric#step with [stop, +step] when self, stop and step are Fixnums" do
     it "yields while increasing self by step until stop is reached" do
       1.step(5, 1, &@prc)

@@ -106,6 +106,28 @@ describe "IO.write" do
     IO.write(@filename, 'Hëllö'.encode('ISO-8859-1'))
     File.binread(@filename).should == "H\xEBll\xF6".force_encoding(Encoding::ASCII_8BIT)
   end
+
+  platform_is_not :windows do
+    describe "on a FIFO" do
+      before :each do
+        @fifo = tmp("File_open_fifo")
+        system "mkfifo #{@fifo}"
+      end
+
+      after :each do
+        rm_r @fifo
+      end
+
+      it "writes correctly" do
+        thr = Thread.new do
+          sleep 0.5
+          IO.read(@fifo)
+        end
+        string = "hi"
+        IO.write(@fifo, string).should == string.length
+      end
+    end
+  end
 end
 
 describe "IO#write" do

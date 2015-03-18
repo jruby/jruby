@@ -1,5 +1,4 @@
 require File.expand_path('../../../spec_helper', __FILE__)
-require File.expand_path('../fixtures/methods', __FILE__)
 
 describe "Time#to_a" do
   it "returns a 10 element array representing the deconstructed time" do

@@ -1,0 +1,3 @@
+fails:StringIO#ungetc when passed [char] does nothing when at the beginning of self
+fails:StringIO#ungetc when passed [char] tries to convert the passed length to an Integer using #to_int
+fails:StringIO#ungetc when passed [char] raises a TypeError when the passed length can't be converted to an Integer

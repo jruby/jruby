@@ -7,6 +7,7 @@ import org.jruby.ir.Operation;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.StringLiteral;
 import org.jruby.ir.operands.Variable;
+import org.jruby.ir.persistence.IRReaderDecoder;
 import org.jruby.ir.persistence.IRWriterEncoder;
 import org.jruby.ir.transformations.inlining.CloneInfo;
 import org.jruby.ir.transformations.inlining.InlineCloneInfo;
@@ -101,6 +102,10 @@ public class BreakInstr extends Instr implements FixedArityInstr {
         super.encode(e);
         e.encode(getReturnValue());
         e.encode(getScopeName());
+    }
+
+    public static BreakInstr decode(IRReaderDecoder d) {
+        return new BreakInstr(d.decodeOperand(), d.decodeString());
     }
 
     @Override

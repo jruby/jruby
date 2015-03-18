@@ -12,6 +12,7 @@ package org.jruby.truffle.nodes;
 import com.oracle.truffle.api.CompilerAsserts;
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.dsl.GenerateNodeFactory;
+import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.Truffle;
 import com.oracle.truffle.api.dsl.TypeSystemReference;
 import com.oracle.truffle.api.frame.MaterializedFrame;
@@ -466,7 +467,7 @@ public abstract class RubyNode extends Node {
     }
 
     public boolean isRubyNilObject(Object value) {
-        return value == getContext().getCoreLibrary().getNilObject();
+        return value == nil();
     }
 
     public boolean isRubiniusUndefined(Object value) {
@@ -493,6 +494,10 @@ public abstract class RubyNode extends Node {
                 evalFrame);
 
         return getContext().eval(ByteList.create(expression), binding, true, "inline-ruby", this);
+    }
+
+    protected RubyNilClass nil() {
+        return getContext().getCoreLibrary().getNilObject();
     }
 
 }

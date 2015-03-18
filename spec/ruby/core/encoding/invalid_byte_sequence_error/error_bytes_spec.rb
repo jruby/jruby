@@ -1,4 +1,4 @@
-# -*- encoding: US-ASCII -*-
+# -*- encoding: us-ascii -*-
 require File.expand_path('../../fixtures/classes', __FILE__)
 
 with_feature :encoding do

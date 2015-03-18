@@ -53,7 +53,7 @@ public abstract class MatchDataNodes {
             final int normalizedIndex = RubyArray.normalizeIndex(values.length, index);
 
             if ((normalizedIndex < 0) || (normalizedIndex >= values.length)) {
-                return getContext().getCoreLibrary().getNilObject();
+                return nil();
             } else {
                 return values[normalizedIndex];
             }

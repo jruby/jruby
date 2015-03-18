@@ -48,7 +48,10 @@ unless ENV['MSPEC_RUNNER']
   end
 end
 
-CODE_LOADING_DIR = File.expand_path "../fixtures/code", __FILE__
+dir = "../fixtures/code"
+CODE_LOADING_DIR = defined?(:require_relative) ?
+                     File.realpath(dir, __FILE__) :
+                     File.expand_path(dir, __FILE__)
 
 minimum_version = "1.5.17"
 unless MSpec::VERSION >= minimum_version

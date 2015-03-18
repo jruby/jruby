@@ -104,6 +104,13 @@ class String
   def append(other)
     self << other
   end
+
+  def shorten!(size)
+    self.modify!
+    return if @num_bytes == 0
+    self.num_bytes -= size
+  end
+
 end
 
 module Kernel
@@ -134,14 +141,6 @@ class Rational
 end
 
 ENV['TZ'] = 'UTC'
-
-class BasicObject
-
-  def instance_exec(*args)
-    # TODO (nirvdrum 06-Mar-15) Properly implement this.  The stub is just to get the specs even loading.
-  end
-
-end
 
 class Method
 
@@ -201,11 +200,19 @@ module Rubinius
   end
 end
 
-class Binding
+class IO
 
-  def eval(string)
-    Kernel.eval(string, self)
-  end
+  RDONLY = 0
+  WRONLY = 1
+  RDWR = 2
+
+  CREAT = 512
+  EXCL = 2048
+  NOCTTY = 131072
+  TRUNC = 1024
+  APPEND = 8
+  NONBLOCK = 4
+  SYNC = 128
+  SEEK_SET = 0
 
 end
-

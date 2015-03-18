@@ -34,6 +34,17 @@ describe "Kernel#instance_eval" do
     lambda { Object.new.foo }.should raise_error(NoMethodError)
   end
 
+  it "preserves self in the original block when passed a block argument" do
+    prc = proc { self }
+
+    old_self = prc.call
+
+    new_self = Object.new
+    new_self.instance_eval(&prc).should == new_self
+
+    prc.call.should == old_self
+  end
+
   # TODO: This should probably be replaced with a "should behave like" that uses
   # the many scoping/binding specs from kernel/eval_spec, since most of those
   # behaviors are the same for instance_eval. See also module_eval/class_eval.

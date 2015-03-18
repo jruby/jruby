@@ -1,5 +1,3 @@
-require File.expand_path('../../fixtures/methods', __FILE__)
-
 describe :time_isdst, :shared => true do
   it "dst? returns whether time is during daylight saving time" do
     with_timezone("America/Los_Angeles") do

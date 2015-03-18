@@ -5,16 +5,16 @@ require 'mspec/commands/mkspec'
 describe "The -c, --constant CONSTANT option" do
   before :each do
     @options = MSpecOptions.new
-    MSpecOptions.stub!(:new).and_return(@options)
+    MSpecOptions.stub(:new).and_return(@options)
     @script = MkSpec.new
     @config = @script.config
   end
 
   it "is enabled by #options" do
-    @options.stub!(:on)
+    @options.stub(:on)
     @options.should_receive(:on).with("-c", "--constant", "CONSTANT",
       an_instance_of(String))
-    @script.options
+    @script.options []
   end
 
   it "adds CONSTANT to the list of constants" do
@@ -29,13 +29,13 @@ end
 describe "The -b, --base DIR option" do
   before :each do
     @options = MSpecOptions.new
-    MSpecOptions.stub!(:new).and_return(@options)
+    MSpecOptions.stub(:new).and_return(@options)
     @script = MkSpec.new
     @config = @script.config
   end
 
   it "is enabled by #options" do
-    @options.stub!(:on)
+    @options.stub(:on)
     @options.should_receive(:on).with("-b", "--base", "DIR",
       an_instance_of(String))
     @script.options
@@ -53,13 +53,13 @@ end
 describe "The -r, --require LIBRARY option" do
   before :each do
     @options = MSpecOptions.new
-    MSpecOptions.stub!(:new).and_return(@options)
+    MSpecOptions.stub(:new).and_return(@options)
     @script = MkSpec.new
     @config = @script.config
   end
 
   it "is enabled by #options" do
-    @options.stub!(:on)
+    @options.stub(:on)
     @options.should_receive(:on).with("-r", "--require", "LIBRARY",
       an_instance_of(String))
     @script.options
@@ -77,13 +77,13 @@ end
 describe "The -V, --version-guard VERSION option" do
   before :each do
     @options = MSpecOptions.new
-    MSpecOptions.stub!(:new).and_return(@options)
+    MSpecOptions.stub(:new).and_return(@options)
     @script = MkSpec.new
     @config = @script.config
   end
 
   it "is enabled by #options" do
-    @options.stub!(:on)
+    @options.stub(:on)
     @options.should_receive(:on).with("-V", "--version-guard", "VERSION",
       an_instance_of(String))
     @script.options
@@ -101,7 +101,7 @@ end
 describe MkSpec, "#options" do
   before :each do
     @options = MSpecOptions.new
-    MSpecOptions.stub!(:new).and_return(@options)
+    MSpecOptions.stub(:new).and_return(@options)
     @script = MkSpec.new
   end
 
@@ -117,8 +117,8 @@ describe MkSpec, "#options" do
 
   it "prints help and exits if passed an unrecognized option" do
     @options.should_receive(:raise).with(MSpecOptions::ParseError, an_instance_of(String))
-    @options.stub!(:puts)
-    @options.stub!(:exit)
+    @options.stub(:puts)
+    @options.stub(:exit)
     @script.options "--iunknown"
   end
 end
@@ -162,8 +162,8 @@ describe MkSpec, "#write_requires" do
     @script = MkSpec.new
     @script.config[:base] = "spec"
 
-    @file = mock("file")
-    File.stub!(:open).and_yield(@file)
+    @file = double("file")
+    File.stub(:open).and_yield(@file)
   end
 
   it "writes the spec_helper require line" do
@@ -172,7 +172,7 @@ describe MkSpec, "#write_requires" do
   end
 
   it "writes require lines for each library specified on the command line" do
-    @file.stub!(:puts)
+    @file.stub(:puts)
     @file.should_receive(:puts).with("require File.expand_path('../../../../spec_helper', __FILE__)")
     @file.should_receive(:puts).with("require 'complex'")
     @script.config[:requires] << 'complex'
@@ -183,14 +183,14 @@ end
 describe MkSpec, "#write_spec" do
   before :each do
     @file = IOStub.new
-    File.stub!(:open).and_yield(@file)
+    File.stub(:open).and_yield(@file)
 
     @script = MkSpec.new
-    @script.stub!(:puts)
+    @script.stub(:puts)
 
-    @response = mock("system command response")
-    @response.stub!(:=~).and_return(false)
-    @script.stub!(:`).and_return(@response)
+    @response = double("system command response")
+    @response.stub(:=~).and_return(false)
+    @script.stub(:`).and_return(@response)
   end
 
   it "checks if specs exist for the method if the spec file exists" do
@@ -206,12 +206,12 @@ describe MkSpec, "#write_spec" do
   end
 
   it "returns nil if the spec file exists and contains a spec for the method" do
-    @response.stub!(:=~).and_return(true)
+    @response.stub(:=~).and_return(true)
     @script.write_spec("spec/core/tcejbo/inspect_spec.rb", "Object#inspect", true).should == nil
   end
 
   it "does not print the spec file name if it exists and contains a spec for the method" do
-    @response.stub!(:=~).and_return(true)
+    @response.stub(:=~).and_return(true)
     @script.should_not_receive(:puts)
     @script.write_spec("spec/core/tcejbo/inspect_spec.rb", "Object#inspect", true)
   end
@@ -262,10 +262,10 @@ end
 describe MkSpec, "#create_file" do
   before :each do
     @script = MkSpec.new
-    @script.stub!(:write_requires)
-    @script.stub!(:write_spec)
+    @script.stub(:write_requires)
+    @script.stub(:write_spec)
 
-    File.stub!(:exist?).and_return(false)
+    File.stub(:exist?).and_return(false)
   end
 
   it "generates a file name based on the directory, class/module, and method" do
@@ -297,19 +297,19 @@ end
 describe MkSpec, "#run" do
   before :each do
     @options = MSpecOptions.new
-    MSpecOptions.stub!(:new).and_return(@options)
+    MSpecOptions.stub(:new).and_return(@options)
 
     @map = NameMap.new
-    NameMap.stub!(:new).and_return(@map)
+    NameMap.stub(:new).and_return(@map)
 
     @script = MkSpec.new
-    @script.stub!(:create_directory).and_return("spec/mkspec")
-    @script.stub!(:create_file)
+    @script.stub(:create_directory).and_return("spec/mkspec")
+    @script.stub(:create_file)
     @script.config[:constants] = [MkSpec]
   end
 
   it "loads files in the requires list" do
-    @script.stub!(:require)
+    @script.stub(:require)
     @script.should_receive(:require).with("alib")
     @script.should_receive(:require).with("blib")
     @script.config[:requires] = ["alib", "blib"]
@@ -336,8 +336,8 @@ end
 
 describe MkSpec, ".main" do
   before :each do
-    @script = mock("MkSpec").as_null_object
-    MkSpec.stub!(:new).and_return(@script)
+    @script = double("MkSpec").as_null_object
+    MkSpec.stub(:new).and_return(@script)
   end
 
   it "sets MSPEC_RUNNER = '1' in the environment" do

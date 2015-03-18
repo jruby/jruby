@@ -21,7 +21,7 @@ describe :kernel_require_basic, :shared => true do
 
     it "raises a LoadError if the file does not exist" do
       path = File.expand_path "nonexistent.rb", CODE_LOADING_DIR
-      File.exists?(path).should be_false
+      File.exist?(path).should be_false
       lambda { @object.send(@method, path) }.should raise_error(LoadError)
       ScratchPad.recorded.should == []
     end
@@ -41,7 +41,7 @@ describe :kernel_require_basic, :shared => true do
         end
 
         it "raises a LoadError" do
-          File.exists?(@path).should be_true
+          File.exist?(@path).should be_true
           lambda { @object.send(@method, @path) }.should raise_error(LoadError)
         end
       end
@@ -114,20 +114,19 @@ describe :kernel_require_basic, :shared => true do
       ScratchPad.recorded.should == [:loaded]
     end
 
-    ruby_bug "http://redmine.ruby-lang.org/issues/show/2578", "1.8" do
-      it "loads a ./ relative path from the current working directory with empty $LOAD_PATH" do
-        Dir.chdir CODE_LOADING_DIR do
-          @object.send(@method, "./load_fixture.rb").should be_true
-        end
-        ScratchPad.recorded.should == [:loaded]
+    # "http://redmine.ruby-lang.org/issues/show/2578"
+    it "loads a ./ relative path from the current working directory with empty $LOAD_PATH" do
+      Dir.chdir CODE_LOADING_DIR do
+        @object.send(@method, "./load_fixture.rb").should be_true
       end
+      ScratchPad.recorded.should == [:loaded]
+    end
 
-      it "loads a ../ relative path from the current working directory with empty $LOAD_PATH" do
-        Dir.chdir CODE_LOADING_DIR do
-          @object.send(@method, "../code/load_fixture.rb").should be_true
-        end
-        ScratchPad.recorded.should == [:loaded]
+    it "loads a ../ relative path from the current working directory with empty $LOAD_PATH" do
+      Dir.chdir CODE_LOADING_DIR do
+        @object.send(@method, "../code/load_fixture.rb").should be_true
       end
+      ScratchPad.recorded.should == [:loaded]
     end
 
     it "loads a ./ relative path from the current working directory with non-empty $LOAD_PATH" do
@@ -245,7 +244,7 @@ describe :kernel_require, :shared => true do
   describe "(file extensions)" do
     it "loads a .rb extensioned file when passed a non-extensioned path" do
       path = File.expand_path "load_fixture", CODE_LOADING_DIR
-      File.exists?(path).should be_true
+      File.exist?(path).should be_true
       @object.require(path).should be_true
       ScratchPad.recorded.should == [:loaded]
     end
@@ -269,7 +268,7 @@ describe :kernel_require, :shared => true do
 
     it "loads a .rb extensioned file when passed a non-.rb extensioned path" do
       path = File.expand_path "load_fixture.ext", CODE_LOADING_DIR
-      File.exists?(path).should be_true
+      File.exist?(path).should be_true
       @object.require(path).should be_true
       ScratchPad.recorded.should == [:loaded]
     end
@@ -461,216 +460,212 @@ describe :kernel_require, :shared => true do
       ENV["HOME"] = @env_home
     end
 
-    ruby_bug "#3171", "1.8.7.249" do
-      it "performs tilde expansion on a .rb file before storing paths in $LOADED_FEATURES" do
-        path = File.expand_path("load_fixture.rb", CODE_LOADING_DIR)
-        @object.require("~/load_fixture.rb").should be_true
-        $LOADED_FEATURES.should == [path]
-      end
+    # "#3171"
+    it "performs tilde expansion on a .rb file before storing paths in $LOADED_FEATURES" do
+      path = File.expand_path("load_fixture.rb", CODE_LOADING_DIR)
+      @object.require("~/load_fixture.rb").should be_true
+      $LOADED_FEATURES.should == [path]
+    end
 
-      it "performs tilde expansion on a non-extensioned file before storing paths in $LOADED_FEATURES" do
-        path = File.expand_path("load_fixture.rb", CODE_LOADING_DIR)
-        @object.require("~/load_fixture").should be_true
-        $LOADED_FEATURES.should == [path]
-      end
+    it "performs tilde expansion on a non-extensioned file before storing paths in $LOADED_FEATURES" do
+      path = File.expand_path("load_fixture.rb", CODE_LOADING_DIR)
+      @object.require("~/load_fixture").should be_true
+      $LOADED_FEATURES.should == [path]
     end
   end
 
-  with_feature :require_19 do
-    describe "(concurrently)" do
-      before :each do
-        ScratchPad.record []
-        @path = File.expand_path "concurrent.rb", CODE_LOADING_DIR
-        @path2 = File.expand_path "concurrent2.rb", CODE_LOADING_DIR
-        @path3 = File.expand_path "concurrent3.rb", CODE_LOADING_DIR
+  describe "(concurrently)" do
+    before :each do
+      ScratchPad.record []
+      @path = File.expand_path "concurrent.rb", CODE_LOADING_DIR
+      @path2 = File.expand_path "concurrent2.rb", CODE_LOADING_DIR
+      @path3 = File.expand_path "concurrent3.rb", CODE_LOADING_DIR
+    end
+
+    after :each do
+      ScratchPad.clear
+      $LOADED_FEATURES.delete @path
+      $LOADED_FEATURES.delete @path2
+      $LOADED_FEATURES.delete @path3
+    end
+
+    # Quick note about these specs:
+    #
+    # You'll notice in concurrent.rb that there are some sleep calls. This seems
+    # like a bad form for specs testing concurrency since using sleep to force
+    # thread progression is a mega hack, there is currently no other way to spec
+    # the behavior. Here is why:
+    #
+    # The behavior we're spec'ing requires that t2 enter #require, see t1 is
+    # loading @path, grab a lock, and wait on it.
+    #
+    # We do make sure that t2 starts the require once t1 is in the middle
+    # of concurrent.rb, but we then need to get t2 to get far enough into #require
+    # to see t1's lock and try to lock it.
+    #
+    # Because #require is completely opapque, there is no other way to hold t1 until
+    # t2 has progress that far other than just having t1 sleep for a little bit
+    # and hope that t2 has progressed and is now holding the lock for @path.
+    #
+    # Sucks? Yep. But we haven't come up with a better solution.
+    #
+    it "blocks a second thread from returning while the 1st is still requiring" do
+      start = false
+      fin = false
+
+      t1_res = nil
+      t2_res = nil
+
+      t1 = Thread.new do
+        t1_res = @object.require(@path)
+        Thread.pass until fin
+        ScratchPad.recorded << :t1_post
       end
 
-      after :each do
-        ScratchPad.clear
-        $LOADED_FEATURES.delete @path
-        $LOADED_FEATURES.delete @path2
-        $LOADED_FEATURES.delete @path3
-      end
-
-      # Quick note about these specs:
-      #
-      # You'll notice in concurrent.rb that there are some sleep calls. This seems
-      # like a bad form for specs testing concurrency since using sleep to force
-      # thread progression is a mega hack, there is currently no other way to spec
-      # the behavior. Here is why:
-      #
-      # The behavior we're spec'ing requires that t2 enter #require, see t1 is
-      # loading @path, grab a lock, and wait on it.
-      #
-      # We do make sure that t2 starts the require once t1 is in the middle
-      # of concurrent.rb, but we then need to get t2 to get far enough into #require
-      # to see t1's lock and try to lock it.
-      #
-      # Because #require is completely opapque, there is no other way to hold t1 until
-      # t2 has progress that far other than just having t1 sleep for a little bit
-      # and hope that t2 has progressed and is now holding the lock for @path.
-      #
-      # Sucks? Yep. But we haven't come up with a better solution.
-      #
-      it "blocks a second thread from returning while the 1st is still requiring" do
-        start = false
-        fin = false
-
-        t1_res = nil
-        t2_res = nil
-
-        t1 = Thread.new do
-          t1_res = @object.require(@path)
-          Thread.pass until fin
-          ScratchPad.recorded << :t1_post
-        end
-
-        t2 = Thread.new do
-          Thread.pass until t1 && t1[:in_concurrent_rb]
-          begin
-            t2_res = @object.require(@path)
-            ScratchPad.recorded << :t2_post
-          ensure
-            fin = true
-          end
-        end
-
-        t1.join
-        t2.join
-
-        t1_res.should be_true
-        t2_res.should be_false
-
-        ScratchPad.recorded.should == [:con_pre, :con_post, :t2_post, :t1_post]
-      end
-
-      it "blocks based on the path" do
-        start = false
-
-        t1 = Thread.new do
-          Thread.pass until start
-          # Yes, using sleep for synchronization is broken and wrong. See the
-          # comment above. Alternatively, fix Ruby.
-          sleep 0.1
-          @object.require(@path2).should be_true
-          ScratchPad.recorded << :t1_post
-        end
-
-        t2 = Thread.new do
-          start = true
-          @object.require(@path3).should be_true
+      t2 = Thread.new do
+        Thread.pass until t1 && t1[:in_concurrent_rb]
+        begin
+          t2_res = @object.require(@path)
           ScratchPad.recorded << :t2_post
-        end
-
-        t1.join
-        t2.join
-
-        ScratchPad.recorded.should == [:con3_post, :t2_post, :con2_post, :t1_post]
-      end
-
-      it "allows a 2nd require if the 1st raised an exception" do
-        start = false
-        fin = false
-
-        t2_res = nil
-
-        t1 = Thread.new do
-          Thread.current[:con_raise] = true
-
-          lambda {
-            @object.require(@path)
-          }.should raise_error(RuntimeError)
-
-          Thread.pass until fin
-          ScratchPad.recorded << :t1_post
-        end
-
-        t2 = Thread.new do
-          Thread.pass until t1 && t1[:in_concurrent_rb]
-          begin
-            t2_res = @object.require(@path)
-            ScratchPad.recorded << :t2_post
-          ensure
-            fin = true
-          end
-        end
-
-        t1.join
-        t2.join
-
-        t2_res.should be_true
-
-        ScratchPad.recorded.should == [:con_pre, :con_pre, :con_post, :t2_post, :t1_post]
-      end
-
-      ruby_bug "redmine #5754", "1.9.3" do
-        it "blocks a 3rd require if the 1st raises an exception and the 2nd is still running" do
-          start = false
-          fin = false
-
-          t1_res = nil
-          t2_res = nil
-          
-          t1_running = false
-          t2_running = false
-          
-          t2 = nil
-
-          t1 = Thread.new do
-            Thread.current[:con_raise] = true
-            t1_running = true
-            
-            lambda {
-              @object.require(@path)
-            }.should raise_error(RuntimeError)
-            
-            # This hits the bug. Because MRI removes it's internal lock from a table
-            # when the exception is raised, this #require doesn't see that t2 is
-            # in the middle of requiring the file, so this #require runs when it should
-            # not.
-            #
-            # Sometimes this raises a ThreadError also, but I'm not sure why.
-            Thread.pass until t2_running && t2[:in_concurrent_rb] == true
-            t1_res = @object.require(@path)
-
-            Thread.pass until fin
-            
-            ScratchPad.recorded << :t1_post
-          end
-          
-          t2 = Thread.new do
-            t2_running = true
-            
-            Thread.pass until t1_running && t1[:in_concurrent_rb] == true
-            
-            begin
-              t2_res = @object.require(@path)
-              
-              ScratchPad.recorded << :t2_post
-            ensure
-              fin = true
-            end
-          end
-          
-          t1.join
-          t2.join
-
-          t1_res.should be_false
-          t2_res.should be_true
-
-          ScratchPad.recorded.should == [:con_pre, :con_pre, :con_post, :t2_post, :t1_post]
+        ensure
+          fin = true
         end
       end
+
+      t1.join
+      t2.join
+
+      t1_res.should be_true
+      t2_res.should be_false
+
+      ScratchPad.recorded.should == [:con_pre, :con_post, :t2_post, :t1_post]
     end
 
-    it "stores the missing path in a LoadError object" do
-      path = "abcd1234"
+    it "blocks based on the path" do
+      start = false
 
-      lambda {
-        @object.send(@method, path)
-      }.should(raise_error(LoadError) { |e|
-        e.path.should == path
-      })
+      t1 = Thread.new do
+        Thread.pass until start
+        # Yes, using sleep for synchronization is broken and wrong. See the
+        # comment above. Alternatively, fix Ruby.
+        sleep 0.1
+        @object.require(@path2).should be_true
+        ScratchPad.recorded << :t1_post
+      end
+
+      t2 = Thread.new do
+        start = true
+        @object.require(@path3).should be_true
+        ScratchPad.recorded << :t2_post
+      end
+
+      t1.join
+      t2.join
+
+      ScratchPad.recorded.should == [:con3_post, :t2_post, :con2_post, :t1_post]
     end
+
+    it "allows a 2nd require if the 1st raised an exception" do
+      start = false
+      fin = false
+
+      t2_res = nil
+
+      t1 = Thread.new do
+        Thread.current[:con_raise] = true
+
+        lambda {
+          @object.require(@path)
+        }.should raise_error(RuntimeError)
+
+        Thread.pass until fin
+        ScratchPad.recorded << :t1_post
+      end
+
+      t2 = Thread.new do
+        Thread.pass until t1 && t1[:in_concurrent_rb]
+        begin
+          t2_res = @object.require(@path)
+          ScratchPad.recorded << :t2_post
+        ensure
+          fin = true
+        end
+      end
+
+      t1.join
+      t2.join
+
+      t2_res.should be_true
+
+      ScratchPad.recorded.should == [:con_pre, :con_pre, :con_post, :t2_post, :t1_post]
+    end
+
+    # "redmine #5754"
+    it "blocks a 3rd require if the 1st raises an exception and the 2nd is still running" do
+      start = false
+      fin = false
+
+      t1_res = nil
+      t2_res = nil
+
+      t1_running = false
+      t2_running = false
+
+      t2 = nil
+
+      t1 = Thread.new do
+        Thread.current[:con_raise] = true
+        t1_running = true
+
+        lambda {
+          @object.require(@path)
+        }.should raise_error(RuntimeError)
+
+        # This hits the bug. Because MRI removes it's internal lock from a table
+        # when the exception is raised, this #require doesn't see that t2 is
+        # in the middle of requiring the file, so this #require runs when it should
+        # not.
+        #
+        # Sometimes this raises a ThreadError also, but I'm not sure why.
+        Thread.pass until t2_running && t2[:in_concurrent_rb] == true
+        t1_res = @object.require(@path)
+
+        Thread.pass until fin
+
+        ScratchPad.recorded << :t1_post
+      end
+
+      t2 = Thread.new do
+        t2_running = true
+
+        Thread.pass until t1_running && t1[:in_concurrent_rb] == true
+
+        begin
+          t2_res = @object.require(@path)
+
+          ScratchPad.recorded << :t2_post
+        ensure
+          fin = true
+        end
+      end
+
+      t1.join
+      t2.join
+
+      t1_res.should be_false
+      t2_res.should be_true
+
+      ScratchPad.recorded.should == [:con_pre, :con_pre, :con_post, :t2_post, :t1_post]
+    end
+  end
+
+  it "stores the missing path in a LoadError object" do
+    path = "abcd1234"
+
+    lambda {
+      @object.send(@method, path)
+    }.should(raise_error(LoadError) { |e|
+      e.path.should == path
+    })
   end
 end

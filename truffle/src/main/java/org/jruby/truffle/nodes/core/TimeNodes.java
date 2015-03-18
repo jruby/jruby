@@ -38,7 +38,7 @@ public abstract class TimeNodes {
         @Specialization
         public boolean internalGMT(RubyTime time) {
             // TODO CS 15-Feb-15 we've ended up with both null and nil here - should simplify
-            return (time.getOffset() == null || time.getOffset() == getContext().getCoreLibrary().getNilObject()) && (time.getDateTime().getZone().equals(DateTimeZone.UTC) || time.getDateTime().getZone().getOffset(time.getDateTime().getMillis()) == 0);
+            return (time.getOffset() == null || time.getOffset() == nil()) && (time.getDateTime().getZone().equals(DateTimeZone.UTC) || time.getDateTime().getZone().getOffset(time.getDateTime().getMillis()) == 0);
         }
     }
 
@@ -77,7 +77,7 @@ public abstract class TimeNodes {
             final Object offset = time.getOffset();
             
             if (offset == null) {
-                return getContext().getCoreLibrary().getNilObject();
+                return nil();
             } else {
                 return offset;
             }

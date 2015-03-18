@@ -11,10 +11,7 @@
 package org.jruby.truffle.runtime.subsystems;
 
 import com.oracle.truffle.api.frame.VirtualFrame;
-import com.oracle.truffle.api.instrument.Instrument;
-import com.oracle.truffle.api.instrument.Probe;
-import com.oracle.truffle.api.instrument.StandardSyntaxTag;
-import com.oracle.truffle.api.instrument.impl.SimpleEventListener;
+import com.oracle.truffle.api.instrument.*;
 import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.source.LineLocation;
 import com.oracle.truffle.api.source.Source;
@@ -42,12 +39,24 @@ public class AttachmentsManager {
     }
 
     public synchronized void attach(String file, int line, final RubyProc block) {
-        final Instrument instrument = Instrument.create(new SimpleEventListener() {
+        final Instrument instrument = Instrument.create(new ASTInstrumentListener() {
 
             @Override
-            public void enter(Node node, VirtualFrame frame) {
+            public void enter(Probe probe, Node node, VirtualFrame frame) {
                 final RubyBinding binding = new RubyBinding(context.getCoreLibrary().getBindingClass(), RubyArguments.getSelf(frame.getArguments()), frame.materialize());
                 block.rootCall(binding);
+            }
+
+            @Override
+            public void returnVoid(Probe probe, Node node, VirtualFrame virtualFrame) {
+            }
+
+            @Override
+            public void returnValue(Probe probe, Node node, VirtualFrame virtualFrame, Object o) {
+            }
+
+            @Override
+            public void returnExceptional(Probe probe, Node node, VirtualFrame virtualFrame, Exception e) {
             }
 
         }, String.format("Truffle::Primitive.attach@%s:%d", file, line));

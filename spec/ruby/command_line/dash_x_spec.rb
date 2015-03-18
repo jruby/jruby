@@ -7,6 +7,6 @@ describe "The -x command line option" do
     result = `#{RUBY_EXE} -x #{@file}`
     result.should == "success\n"
   end
-  
+
   it "needs to be reviewed for spec completeness"
 end

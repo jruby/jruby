@@ -1,12 +1,14 @@
 package org.jruby.ir.operands;
 
 import org.jruby.ir.IRVisitor;
+import org.jruby.ir.persistence.IRReaderDecoder;
 import org.jruby.ir.persistence.IRWriterEncoder;
 import org.jruby.ir.transformations.inlining.CloneInfo;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jcodings.Encoding;
 
 import java.util.List;
 import java.util.Map;
@@ -43,7 +45,10 @@ public class DynamicSymbol extends Operand {
 
     @Override
     public Object retrieve(ThreadContext context, IRubyObject self, StaticScope currScope, DynamicScope currDynScope, Object[] temp) {
-        return context.runtime.newSymbol(((IRubyObject) symbolName.retrieve(context, self, currScope, currDynScope, temp)).asJavaString());
+        IRubyObject obj = (IRubyObject) symbolName.retrieve(context, self, currScope, currDynScope, temp);
+        String str = obj.asJavaString();
+        Encoding encoding = obj.asString().getByteList().getEncoding();
+        return context.runtime.newSymbol(str, encoding);
     }
 
     @Override
@@ -55,6 +60,10 @@ public class DynamicSymbol extends Operand {
     public void encode(IRWriterEncoder e) {
         super.encode(e);
         e.encode(symbolName);
+    }
+
+    public static DynamicSymbol decode(IRReaderDecoder d) {
+        return new DynamicSymbol(d.decodeOperand());
     }
 
     @Override

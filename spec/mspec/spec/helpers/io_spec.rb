@@ -71,7 +71,7 @@ describe Object, "#new_fd" do
   end
 
   it "accepts an options Hash" do
-    FeatureGuard.stub!(:enabled?).and_return(true)
+    FeatureGuard.stub(:enabled?).and_return(true)
     fd = new_fd @name, { :mode => 'w:utf-8' }
     fd.should be_an_instance_of(Fixnum)
 
@@ -83,7 +83,7 @@ describe Object, "#new_fd" do
   end
 
   it "raises an ArgumentError if the options Hash does not include :mode" do
-    FeatureGuard.stub!(:enabled?).and_return(true)
+    FeatureGuard.stub(:enabled?).and_return(true)
     lambda { new_fd @name, { :encoding => "utf-8" } }.should raise_error(ArgumentError)
   end
 end

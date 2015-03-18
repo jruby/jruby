@@ -1,0 +1,1 @@
+fails:StringIO#lines when passed no arguments yields a LocalJumpError when passed no block

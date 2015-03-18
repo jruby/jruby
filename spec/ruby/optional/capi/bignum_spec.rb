@@ -153,39 +153,41 @@ describe "CApiBignumSpecs" do
     end
   end
 
-  describe "RBIGNUM_SIGN" do
-    it "returns C true if the Bignum has a positive sign" do
-      @s.RBIGNUM_SIGN(bignum_value()).should be_true
+  ruby_version_is ""..."2.2" do
+    describe "RBIGNUM_SIGN" do
+      it "returns C true if the Bignum has a positive sign" do
+        @s.RBIGNUM_SIGN(bignum_value()).should be_true
+      end
+
+      it "retuns C false if the Bignum has a negative sign" do
+        @s.RBIGNUM_SIGN(-bignum_value()).should be_false
+      end
     end
 
-    it "retuns C false if the Bignum has a negative sign" do
-      @s.RBIGNUM_SIGN(-bignum_value()).should be_false
-    end
-  end
+    describe "RBIGNUM_POSITIVE_P" do
+      it "returns C true if the Bignum has a positive sign" do
+        @s.RBIGNUM_POSITIVE_P(bignum_value()).should be_true
+      end
 
-  describe "RBIGNUM_POSITIVE_P" do
-    it "returns C true if the Bignum has a positive sign" do
-      @s.RBIGNUM_POSITIVE_P(bignum_value()).should be_true
-    end
-
-    it "retuns C false if the Bignum has a negative sign" do
-      @s.RBIGNUM_POSITIVE_P(-bignum_value()).should be_false
-    end
-  end
-
-  describe "RBIGNUM_NEGATIVE_P" do
-    it "returns C false if the Bignum has a positive sign" do
-      @s.RBIGNUM_NEGATIVE_P(bignum_value()).should be_false
+      it "retuns C false if the Bignum has a negative sign" do
+        @s.RBIGNUM_POSITIVE_P(-bignum_value()).should be_false
+      end
     end
 
-    it "retuns C true if the Bignum has a negative sign" do
-      @s.RBIGNUM_NEGATIVE_P(-bignum_value()).should be_true
-    end
-  end
+    describe "RBIGNUM_NEGATIVE_P" do
+      it "returns C false if the Bignum has a positive sign" do
+        @s.RBIGNUM_NEGATIVE_P(bignum_value()).should be_false
+      end
 
-  describe "RBIGNUM_LEN" do
-    it "returns the number of BDIGITS needed for the bignum" do
-      @s.RBIGNUM_LEN(bignum_value * 2).should == 3
+      it "retuns C true if the Bignum has a negative sign" do
+        @s.RBIGNUM_NEGATIVE_P(-bignum_value()).should be_true
+      end
+    end
+
+    describe "RBIGNUM_LEN" do
+      it "returns the number of BDIGITS needed for the bignum" do
+        @s.RBIGNUM_LEN(bignum_value * 2).should == 3
+      end
     end
   end
 end

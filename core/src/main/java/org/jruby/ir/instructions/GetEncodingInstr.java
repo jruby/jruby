@@ -6,6 +6,7 @@ import org.jruby.ir.Operation;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.StringLiteral;
 import org.jruby.ir.operands.Variable;
+import org.jruby.ir.persistence.IRReaderDecoder;
 import org.jruby.ir.persistence.IRWriterEncoder;
 import org.jruby.ir.transformations.inlining.CloneInfo;
 import org.jruby.parser.StaticScope;
@@ -44,7 +45,11 @@ public class GetEncodingInstr extends ResultBaseInstr implements FixedArityInstr
     @Override
     public void encode(IRWriterEncoder e) {
         super.encode(e);
-        e.encode(getEncoding().toString());
+        e.encode(getEncoding());
+    }
+
+    public static GetEncodingInstr decode(IRReaderDecoder d) {
+        return new GetEncodingInstr(d.decodeVariable(), d.decodeEncoding());
     }
 
     @Override

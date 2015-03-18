@@ -1,10 +1,12 @@
 package org.jruby.ir.instructions;
 
+import org.jruby.RubyInstanceConfig;
 import org.jruby.RubyModule;
 import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Operation;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.Variable;
+import org.jruby.ir.persistence.IRReaderDecoder;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.ir.transformations.inlining.CloneInfo;
 import org.jruby.parser.StaticScope;
@@ -26,6 +28,27 @@ public class ClassSuperInstr extends CallInstr {
                 cloneCallArgs(ii), getClosureArg() == null ? null : getClosureArg().cloneForInlining(ii));
     }
 
+    public static ClassSuperInstr decode(IRReaderDecoder d) {
+        if (RubyInstanceConfig.IR_READING_DEBUG) System.out.println("decoding super");
+        int callTypeOrdinal = d.decodeInt();
+        if (RubyInstanceConfig.IR_READING_DEBUG) System.out.println("decoding super, calltype(ord):  "+ callTypeOrdinal);
+        String methAddr = d.decodeString();
+        if (RubyInstanceConfig.IR_READING_DEBUG) System.out.println("decoding super, methaddr:  "+ methAddr);
+        Operand receiver = d.decodeOperand();
+        int argsCount = d.decodeInt();
+        boolean hasClosureArg = argsCount < 0;
+        int argsLength = hasClosureArg ? (-1 * (argsCount + 1)) : argsCount;
+        if (RubyInstanceConfig.IR_READING_DEBUG) System.out.println("ARGS: " + argsLength + ", CLOSURE: " + hasClosureArg);
+        Operand[] args = new Operand[argsLength];
+
+        for (int i = 0; i < argsLength; i++) {
+            args[i] = d.decodeOperand();
+        }
+
+        Operand closure = hasClosureArg ? d.decodeOperand() : null;
+
+        return new ClassSuperInstr(d.decodeVariable(), receiver, methAddr, args, closure);
+    }
     // We cannot convert this into a NoCallResultInstr
     @Override
     public Instr discardResult() {

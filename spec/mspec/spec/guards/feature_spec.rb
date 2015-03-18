@@ -30,7 +30,7 @@ describe Object, "#with_feature" do
     ScratchPad.clear
 
     @guard = FeatureGuard.new :encoding
-    FeatureGuard.stub!(:new).and_return(@guard)
+    FeatureGuard.stub(:new).and_return(@guard)
   end
 
   it "sets the name of the guard to :with_feature" do

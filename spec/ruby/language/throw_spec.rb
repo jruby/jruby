@@ -38,7 +38,7 @@ describe "The throw keyword" do
     $!.should be_nil
   end
 
-  it "only any object as its argument" do
+  it "allows any object as its argument" do
     lambda { catch(1) { throw 1 } }.should_not raise_error
     lambda { o = Object.new; catch(o) { throw o } }.should_not raise_error
   end

@@ -2,13 +2,21 @@
 require File.expand_path('../../../spec_helper', __FILE__)
 
 describe "ENV.[]" do
+  before :each do
+    @variable = "returns_only_frozen_values"
+  end
+
+  after :each do
+    ENV.delete @variable
+  end
+
   it "returns nil if the variable isn't found" do
     ENV["this_var_is_never_set"].should == nil
   end
 
   it "returns only frozen values" do
-    ENV["returns_only_frozen_values"] = "a non-frozen string"
-    ENV["returns_only_frozen_values"].frozen?.should == true
+    ENV[@variable] = "a non-frozen string"
+    ENV[@variable].frozen?.should == true
   end
 end
 
@@ -33,8 +41,10 @@ with_feature :encoding do
     it "uses the locale encoding if Encoding.default_internal is nil" do
       Encoding.default_internal = nil
 
+      locale = Encoding.find('locale')
+      locale = Encoding::ASCII_8BIT if locale == Encoding::US_ASCII
       ENV[@variable] = "\xC3\xB8"
-      ENV[@variable].encoding.should == Encoding.find('locale')
+      ENV[@variable].encoding.should == locale
     end
 
     it "transcodes from the locale encoding to Encoding.default_internal if set" do

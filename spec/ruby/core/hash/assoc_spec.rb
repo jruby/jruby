@@ -21,12 +21,24 @@ describe "Hash#assoc" do
     @h.assoc(:banana).last.should == :yellow
   end
 
-  it "only returns the first matching key-value pair for identity hashes" do
-    @h.compare_by_identity
-    @h['pear'] = :red
-    @h['pear'] = :green
-    @h.keys.grep(/pear/).size.should == 2
-    @h.assoc('pear').should == ['pear', :red]
+  ruby_version_is ''...'2.2' do
+    it "only returns the first matching key-value pair for identity hashes" do
+      @h.compare_by_identity
+      @h['pear'] = :red
+      @h['pear'] = :green
+      @h.keys.grep(/pear/).size.should == 2
+      @h.assoc('pear').should == ['pear', :red]
+    end
+  end
+
+  ruby_version_is '2.2' do
+    it "only returns the first matching key-value pair for identity hashes" do
+      @h.compare_by_identity
+      @h['pear'] = :red
+      @h['pear'] = :green
+      @h.keys.grep(/pear/).size.should == 1
+      @h.assoc('pear').should == ['pear', :green]
+    end
   end
 
   it "uses #== to compare the argument to the keys" do

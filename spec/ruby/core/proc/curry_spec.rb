@@ -59,17 +59,17 @@ describe "Proc#curry" do
     l = lambda { |*a| }
     l.curry.arity.should == -1
   end
-  
+
   it "produces Procs that raise ArgumentError for #binding" do
     lambda do
       @proc_add.curry.binding
     end.should raise_error(ArgumentError)
   end
-  
+
   it "produces Procs that return [[:rest]] for #parameters" do
     @proc_add.curry.parameters.should == [[:rest]]
   end
-  
+
   it "produces Procs that return nil for #source_location" do
     @proc_add.curry.source_location.should == nil
   end

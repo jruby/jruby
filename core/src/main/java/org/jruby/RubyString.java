@@ -271,23 +271,6 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
         return StringSupport.isSingleByteOptimizable(this, enc);
     }
 
-    // rb_enc_compatible
-    private Encoding isCompatibleWith(RubyString other) {
-        Encoding enc1 = value.getEncoding();
-        Encoding enc2 = other.value.getEncoding();
-
-        if (enc1 == enc2) return enc1;
-
-        if (other.value.getRealSize() == 0) return enc1;
-        if (value.getRealSize() == 0) {
-            return (enc1.isAsciiCompatible() && other.isAsciiOnly()) ? enc1 : enc2;
-        }
-
-        if (!enc1.isAsciiCompatible() || !enc2.isAsciiCompatible()) return null;
-
-        return RubyEncoding.areCompatible(enc1, scanForCodeRange(), enc2, other.scanForCodeRange());
-    }
-
     final Encoding isCompatibleWith(EncodingCapable other) {
         if (other instanceof RubyString) return checkEncoding((RubyString)other);
         Encoding enc1 = value.getEncoding();
@@ -303,7 +286,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
 
     // rb_enc_check
     public final Encoding checkEncoding(RubyString other) {
-        return checkEncoding((ByteListHolder) other);
+        return checkEncoding((CodeRangeable) other);
     }
 
     final Encoding checkEncoding(EncodingCapable other) {
@@ -314,9 +297,8 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
     }
 
     @Override
-    public final Encoding checkEncoding(ByteListHolder other) {
-        // TODO (nirvdrum 13-Jan-15): This cast is untenable.  It's a temporary measure until isCompatibleWith and its call graph are generalized.
-        Encoding enc = isCompatibleWith((RubyString) other);
+    public final Encoding checkEncoding(CodeRangeable other) {
+        Encoding enc = StringSupport.areCompatible(this, other);
         if (enc == null) throw getRuntime().newEncodingCompatibilityError("incompatible character encodings: " +
                 value.getEncoding() + " and " + other.getByteList().getEncoding());
         return enc;
@@ -327,22 +309,6 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
         if (enc.isDummy()) throw getRuntime().newEncodingCompatibilityError(
                 "incompatible encoding with this operation: " + enc);
         return enc;
-    }
-
-    private boolean isComparableWith(RubyString other) {
-        ByteList otherValue = other.value;
-        if (value.getEncoding() == otherValue.getEncoding() ||
-            value.getRealSize() == 0 || otherValue.getRealSize() == 0) return true;
-        return isComparableViaCodeRangeWith(other);
-    }
-
-    private boolean isComparableViaCodeRangeWith(RubyString other) {
-        int cr1 = scanForCodeRange();
-        int cr2 = other.scanForCodeRange();
-
-        if (cr1 == CR_7BIT && (cr2 == CR_7BIT || other.value.getEncoding().isAsciiCompatible())) return true;
-        if (cr2 == CR_7BIT && value.getEncoding().isAsciiCompatible()) return true;
-        return false;
     }
 
     public final int strLength() {
@@ -369,7 +335,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
     // rb_str_hash_cmp
     private boolean eql19(Ruby runtime, IRubyObject other) {
         RubyString otherString = (RubyString)other;
-        return isComparableWith(otherString) && value.equal(((RubyString)other).value);
+        return StringSupport.areComparable(this, otherString) && value.equal(((RubyString)other).value);
     }
 
     public RubyString(Ruby runtime, RubyClass rubyClass) {
@@ -1122,7 +1088,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
         if (this == other) return runtime.getTrue();
         if (other instanceof RubyString) {
             RubyString otherString = (RubyString)other;
-            return isComparableWith(otherString) && value.equal(otherString.value) ? runtime.getTrue() : runtime.getFalse();
+            return StringSupport.areComparable(this, otherString) && value.equal(otherString.value) ? runtime.getTrue() : runtime.getFalse();
         }
         return op_equalCommon(context, other);
     }
@@ -1141,18 +1107,10 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
     public IRubyObject op_plus19(ThreadContext context, IRubyObject _str) {
         RubyString str = _str.convertToString();
         Encoding enc = checkEncoding(str);
-        RubyString resultStr = newStringNoCopy(context.runtime, addByteLists(value, str.value),
+        RubyString resultStr = newStringNoCopy(context.runtime, StringSupport.addByteLists(value, str.value),
                                     enc, CodeRangeSupport.codeRangeAnd(getCodeRange(), str.getCodeRange()));
         resultStr.infectBy(flags | str.flags);
         return resultStr;
-    }
-
-    private ByteList addByteLists(ByteList value1, ByteList value2) {
-        ByteList result = new ByteList(value1.getRealSize() + value2.getRealSize());
-        result.setRealSize(value1.getRealSize() + value2.getRealSize());
-        System.arraycopy(value1.getUnsafeBytes(), value1.getBegin(), result.getUnsafeBytes(), 0, value1.getRealSize());
-        System.arraycopy(value2.getUnsafeBytes(), value2.getBegin(), result.getUnsafeBytes(), value1.getRealSize(), value2.getRealSize());
-        return result;
     }
 
     public IRubyObject op_mul(ThreadContext context, IRubyObject other) {
@@ -1291,7 +1249,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
      */
     public final int op_cmp(RubyString other) {
         int ret = value.cmp(other.value);
-        if (ret == 0 && !isComparableWith(other)) {
+        if (ret == 0 && !StringSupport.areComparable(this, other)) {
             return value.getEncoding().getIndex() > other.value.getEncoding().getIndex() ? 1 : -1;
         }
         return ret;
@@ -1568,7 +1526,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
     public IRubyObject casecmp19(ThreadContext context, IRubyObject other) {
         Ruby runtime = context.runtime;
         RubyString otherStr = other.convertToString();
-        Encoding enc = isCompatibleWith(otherStr);
+        Encoding enc = StringSupport.areCompatible(this, otherStr);
         if (enc == null) return runtime.getNil();
 
         if (singleByteOptimizable() && otherStr.singleByteOptimizable()) {
@@ -1764,7 +1722,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
         Ruby runtime = context.runtime;
         if (other instanceof RubyString) {
             RubyString otherString = (RubyString)other;
-            if (isComparableWith(otherString) && value.equal(otherString.value)) return runtime.getTrue();
+            if (StringSupport.areComparable(this, otherString) && value.equal(otherString.value)) return runtime.getTrue();
         }
         return runtime.getFalse();
     }
@@ -2469,7 +2427,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
         final int end = matcher.getEnd();
         int cr = getCodeRange();
 
-        Encoding enc = isCompatibleWith(repl);
+        Encoding enc = StringSupport.areCompatible(this, repl);
         if (enc == null) enc = subBangVerifyEncoding(context, repl, beg, end);
 
         final int plen = end - beg;
@@ -4148,7 +4106,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
     public IRubyObject chop19(ThreadContext context) {
         Ruby runtime = context.runtime;
         if (value.getRealSize() == 0) return newEmptyString(runtime, getMetaClass(), value.getEncoding()).infectBy(this);
-        return makeShared19(runtime, 0, choppedLength19(runtime));
+        return makeShared19(runtime, 0, StringSupport.choppedLength19(this, runtime));
     }
 
     @JRubyMethod(name = "chop!")
@@ -4156,31 +4114,11 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
         modifyCheck();
         Ruby runtime = context.runtime;
         if (value.getRealSize() == 0) return runtime.getNil();
-        view(0, choppedLength19(runtime));
+        view(0, StringSupport.choppedLength19(this, runtime));
         if (getCodeRange() != CR_7BIT) clearCodeRange();
         return this;
     }
 
-    private int choppedLength19(Ruby runtime) {
-        int p = value.getBegin();
-        int end = p + value.getRealSize();
-
-        if (p > end) return 0;
-        byte bytes[] = value.getUnsafeBytes();
-        Encoding enc = value.getEncoding();
-
-        int s = enc.prevCharHead(bytes, p, end, end);
-        if (s == -1) return 0;
-        if (s > p && codePoint(runtime, enc, bytes, s, end) == '\n') {
-            int s2 = enc.prevCharHead(bytes, p, s, end);
-            if (s2 != -1 && codePoint(runtime, enc, bytes, s2, end) == '\r') s = s2;
-        }
-        return s - p;
-    }
-
-    /** rb_str_chop
-     *
-     */
     public RubyString chomp(ThreadContext context) {
         return chomp19(context);
     }

@@ -5,9 +5,11 @@ import org.jruby.ir.IRScope;
 import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Operation;
 import org.jruby.ir.operands.*;
+import org.jruby.ir.persistence.IRReaderDecoder;
 import org.jruby.ir.persistence.IRWriterEncoder;
 import org.jruby.ir.transformations.inlining.CloneInfo;
 import org.jruby.lexer.yacc.ISourcePosition;
+import org.jruby.lexer.yacc.SimpleSourcePosition;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.DynamicScope;
@@ -60,6 +62,11 @@ public class BuildLambdaInstr extends ResultBaseInstr implements FixedArityInstr
         e.encode(getLambdaBody());
         e.encode(getPosition().getFile());
         e.encode(getPosition().getLine());
+    }
+
+    public static BuildLambdaInstr decode(IRReaderDecoder d) {
+        return new BuildLambdaInstr(d.decodeVariable(), d.decodeOperand(),
+                new SimpleSourcePosition(d.decodeString(), d.decodeInt()));
     }
 
     @Override

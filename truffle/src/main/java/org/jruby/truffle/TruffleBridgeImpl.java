@@ -39,6 +39,7 @@ import org.jruby.util.cli.Options;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 public class TruffleBridgeImpl implements TruffleBridge {
@@ -146,7 +147,9 @@ public class TruffleBridgeImpl implements TruffleBridge {
         loadPath.slowPush(truffleContext.makeString(new File(home, "lib/ruby/truffle/truffle").toString()));
 
         // Libraries from RubySL
-        loadPath.slowPush(truffleContext.makeString(new File(home, "lib/ruby/truffle/rubysl/rubysl-strscan/lib").toString()));
+        for (String lib : Arrays.asList("rubysl-strscan", "rubysl-stringio")) {
+            loadPath.slowPush(truffleContext.makeString(new File(home, "lib/ruby/truffle/rubysl/" + lib + "/lib").toString()));
+        }
 
         // Shims
         loadPath.slowPush(truffleContext.makeString(new File(home, "lib/ruby/truffle/shims").toString()));

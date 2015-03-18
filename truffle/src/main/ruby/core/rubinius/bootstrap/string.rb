@@ -43,6 +43,11 @@ class String
     raise PrimitiveFailure, "String#find_string primitive failed"
   end
 
+  def chr_at(byte)
+    Rubinius.primitive :string_chr_at
+    raise ArgumentError, "String#chr_at primitive failed"
+  end
+
   def byteslice(index_or_range, length=undefined)
     Rubinius.primitive :string_byte_substring
 
@@ -83,6 +88,11 @@ class String
 
   def num_bytes
     @num_bytes
+  end
+  
+  def byte_append(str)
+    Rubinius.primitive :string_byte_append
+    raise TypeError, "String#byte_append primitive only accepts Strings"
   end
 
 end

@@ -13,13 +13,15 @@ describe "String#split with String" do
   end
 
   with_feature :encoding do
-    it "throws an ArgumentError if the pattern is not a valid string" do
-      str = 'проверка'
-      broken_str = 'проверка'
-      broken_str.force_encoding('binary')
-      broken_str.chop!
-      broken_str.force_encoding('utf-8')
-      lambda { str.split(broken_str) }.should raise_error(ArgumentError)
+    ruby_bug "#10886", "2.2.0.79" do
+      it "throws an ArgumentError if the pattern is not a valid string" do
+        str = 'проверка'
+        broken_str = 'проверка'
+        broken_str.force_encoding('binary')
+        broken_str.chop!
+        broken_str.force_encoding('utf-8')
+        lambda { str.split(broken_str) }.should raise_error(ArgumentError)
+      end
     end
 
     it "splits on multibyte characters" do

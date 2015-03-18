@@ -5,6 +5,7 @@ import org.jruby.ir.Operation;
 import org.jruby.ir.instructions.FixedArityInstr;
 import org.jruby.ir.instructions.Instr;
 import org.jruby.ir.operands.Operand;
+import org.jruby.ir.persistence.IRReaderDecoder;
 import org.jruby.ir.persistence.IRWriterEncoder;
 import org.jruby.ir.transformations.inlining.CloneInfo;
 import org.jruby.parser.StaticScope;
@@ -30,6 +31,10 @@ public class RestoreErrorInfoInstr extends Instr implements FixedArityInstr {
     public void encode(IRWriterEncoder e) {
         super.encode(e);
         e.encode(getArg());
+    }
+
+    public static RestoreErrorInfoInstr decode(IRReaderDecoder d) {
+        return new RestoreErrorInfoInstr(d.decodeOperand());
     }
 
     @Override

@@ -17,7 +17,7 @@ describe JUnitFormatter, "#print" do
   before :each do
     $stdout = IOStub.new
     @out = IOStub.new
-    File.stub!(:open).and_return(@out)
+    File.stub(:open).and_return(@out)
     @formatter = JUnitFormatter.new "some/file"
   end
 
@@ -49,25 +49,25 @@ end
 
 describe JUnitFormatter, "#finish" do
   before :each do
-    @tally = mock("tally").as_null_object
-    @counter = mock("counter").as_null_object
-    @tally.stub!(:counter).and_return(@counter)
-    TallyAction.stub!(:new).and_return(@tally)
+    @tally = double("tally").as_null_object
+    @counter = double("counter").as_null_object
+    @tally.stub(:counter).and_return(@counter)
+    TallyAction.stub(:new).and_return(@tally)
 
-    @timer = mock("timer").as_null_object
-    TimerAction.stub!(:new).and_return(@timer)
+    @timer = double("timer").as_null_object
+    TimerAction.stub(:new).and_return(@timer)
 
     $stdout = IOStub.new
     context = ContextState.new "describe"
     @state = ExampleState.new(context, "it")
 
     @formatter = JUnitFormatter.new
-    @formatter.stub!(:backtrace).and_return("")
-    MSpec.stub!(:register)
+    @formatter.stub(:backtrace).and_return("")
+    MSpec.stub(:register)
     @formatter.register
 
     exc = ExceptionState.new @state, nil, MSpecExampleError.new("broken")
-    exc.stub!(:backtrace).and_return("path/to/some/file.rb:35:in method")
+    exc.stub(:backtrace).and_return("path/to/some/file.rb:35:in method")
     @formatter.exception exc
     @formatter.after @state
   end
@@ -90,7 +90,7 @@ describe JUnitFormatter, "#finish" do
 
   it "encodes message and backtrace in latin1 for jenkins" do
     exc = ExceptionState.new @state, nil, MSpecExampleError.new("broken…")
-    exc.stub!(:backtrace).and_return("path/to/some/file.rb:35:in methød")
+    exc.stub(:backtrace).and_return("path/to/some/file.rb:35:in methød")
     @formatter.exception exc
     @formatter.finish
     $stdout.should =~ /MSpecExampleError: broken((\.\.\.)|\?)\n/

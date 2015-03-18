@@ -689,9 +689,9 @@ describe "Global variable $0" do
 
   platform_is :linux, :darwin do
     it "actually sets the program name" do
-      $0 = "rbx-custom"
-
-      `ps -f`.include?('rbx-custom').should == true
+      title = "rubyspec-dollar0-test"
+      $0 = title
+      `ps -ocommand= -p#{$$}`.should include(title)
     end
   end
 

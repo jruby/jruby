@@ -320,3 +320,23 @@ describe "rb_fd_fix_cloexec" do
   end
 
 end
+
+describe "rb_cloexec_open" do
+  before :each do
+    @o = CApiIOSpecs.new
+    @name = tmp("c_api_rb_io_specs")
+    touch @name
+
+    @io = nil
+  end
+
+  after :each do
+    @io.close unless @io.nil? || @io.closed?
+    rm_r @name
+  end
+
+  it "sets close_on_exec on the newly-opened IO" do
+    @io = @o.rb_cloexec_open(@name, 0, 0)
+    @io.close_on_exec?.should be_true
+  end
+end

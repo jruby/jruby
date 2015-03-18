@@ -77,7 +77,7 @@ public abstract class IntegerNodes {
                 }
             }
 
-            return getContext().getCoreLibrary().getNilObject();
+            return nil();
         }
 
         @Specialization
@@ -293,7 +293,7 @@ public abstract class IntegerNodes {
                 }
             }
 
-            return getContext().getCoreLibrary().getNilObject();
+            return nil();
         }
 
         @Specialization
@@ -336,7 +336,7 @@ public abstract class IntegerNodes {
                 }
             }
 
-            return getContext().getCoreLibrary().getNilObject();
+            return nil();
         }
 
     }

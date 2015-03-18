@@ -7,7 +7,7 @@ describe Object, "#process_is_foreground" do
     ScratchPad.clear
 
     @guard = BackgroundGuard.new
-    BackgroundGuard.stub!(:new).and_return(@guard)
+    BackgroundGuard.stub(:new).and_return(@guard)
   end
 
   it "yields if MSpec.mode?(:background) is false" do

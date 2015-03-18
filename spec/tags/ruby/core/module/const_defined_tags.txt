@@ -5,3 +5,4 @@ fails:Module#const_defined? returns true when passed a scoped constant name for 
 fails:Module#const_defined? returns true when passed a scoped constant name for a constant in the inheritance hierarchy and the inherited flag is true
 fails:Module#const_defined? returns false when passed a scoped constant name for a constant in the inheritance hierarchy and the inherited flag is false
 fails:Module#const_defined? returns false when the name begins with '::' and the toplevel constant does not exist
+fails:Module#const_defined? returns true or false for the nested name

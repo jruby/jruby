@@ -3,10 +3,13 @@ describe :hash_key_p, :shared => true do
     h = new_hash(:a => 1, :b => 2, :c => 3, 4 => 0)
     h.send(@method, :a).should == true
     h.send(@method, :b).should == true
-    h.send(@method, 'b').should == false
     h.send(@method, 2).should == false
     h.send(@method, 4).should == true
-    h.send(@method, 4.0).should == false
+
+    not_compliant_on :opal do
+      h.send(@method, 'b').should == false
+      h.send(@method, 4.0).should == false
+    end
   end
 
   it "returns true if the key's matching value was nil" do

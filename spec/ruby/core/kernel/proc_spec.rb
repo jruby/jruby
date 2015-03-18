@@ -23,5 +23,15 @@ describe "Kernel.proc" do
 end
 
 describe "Kernel#proc" do
+  it "uses the implicit block from an enclosing method" do
+    def some_method
+      proc
+    end
+
+    prc = some_method { "hello" }
+
+    prc.call.should == "hello"
+  end
+
   it "needs to be reviewed for spec completeness"
 end

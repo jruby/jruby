@@ -1,0 +1,5 @@
+fails:ARGF.readline reads one line of a file
+fails:ARGF.readline reads all lines of a file
+fails:ARGF.readline reads all lines of two files
+fails:ARGF.readline sets $_ global variable with each line read
+fails:ARGF.readline raises an EOFError when reaching end of files

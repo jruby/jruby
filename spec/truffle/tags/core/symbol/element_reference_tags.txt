@@ -12,8 +12,6 @@ fails:Symbol#[] with a Range slice that is out of bounds returns nil if the firs
 fails:Symbol#[] with a Range slice with Float values converts the first value to an Integer
 fails:Symbol#[] with a Range slice with Float values converts the last value to an Integer
 fails:Symbol#[] with a Range subclass slice returns a slice
-fails:Symbol#[] with a Regex slice without a capture index returns a tainted string if the regexp is tainted
-fails:Symbol#[] with a Regex slice without a capture index returns an untrusted string if the regexp is untrusted
 fails:Symbol#[] with a String slice does not set $~
 fails:Symbol#[] with a String slice returns a string if there is match
 fails:Symbol#[] with a String slice returns nil if there is not a match

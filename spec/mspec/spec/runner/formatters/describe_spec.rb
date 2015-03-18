@@ -4,12 +4,12 @@ require 'mspec/runner/example'
 
 describe DescribeFormatter, "#finish" do
   before :each do
-    MSpec.stub!(:register)
-    MSpec.stub!(:unregister)
+    MSpec.stub(:register)
+    MSpec.stub(:unregister)
 
-    @timer = mock("timer").as_null_object
-    TimerAction.stub!(:new).and_return(@timer)
-    @timer.stub!(:format).and_return("Finished in 2.0 seconds")
+    @timer = double("timer").as_null_object
+    TimerAction.stub(:new).and_return(@timer)
+    @timer.stub(:format).and_return("Finished in 2.0 seconds")
 
     $stdout = @out = IOStub.new
     context = ContextState.new "Class#method"
@@ -52,7 +52,7 @@ Finished in 2.0 seconds
 
   it "prints a summary of failures and errors for each describe block" do
     exc = ExceptionState.new @state, nil, MSpecExampleError.new("broken")
-    exc.stub!(:backtrace).and_return("path/to/some/file.rb:35:in method")
+    exc.stub(:backtrace).and_return("path/to/some/file.rb:35:in method")
     @formatter.exception exc
     @formatter.finish
     @out.should == %[

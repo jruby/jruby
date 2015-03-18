@@ -62,8 +62,11 @@ class Tally
   end
 
   def format
-    results = [ file, example, expectation, failure, error, tag ]
-    results << guard if [:report, :report_on, :verify].any? { |m| MSpec.mode? m }
+    results = [ file, example, expectation, failure, error ]
+    if [:report, :report_on, :verify].any? { |m| MSpec.mode? m }
+      results << guard
+      results << tag
+    end
     results.join(", ")
   end
 
@@ -86,16 +89,16 @@ class TallyAction
     MSpec.register :load,        self
     MSpec.register :exception,   self
     MSpec.register :example,     self
+    MSpec.register :tagged,      self
     MSpec.register :expectation, self
-    MSpec.register :tagged,    self
   end
 
   def unregister
     MSpec.unregister :load,        self
     MSpec.unregister :exception,   self
     MSpec.unregister :example,     self
+    MSpec.unregister :tagged,      self
     MSpec.unregister :expectation, self
-    MSpec.unregister :tagged,    self
   end
 
   def load

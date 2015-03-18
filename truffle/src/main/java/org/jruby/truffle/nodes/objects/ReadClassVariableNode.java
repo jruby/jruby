@@ -39,7 +39,7 @@ public class ReadClassVariableNode extends RubyNode {
         if (value == null) {
             // TODO(CS): is this right?
             // TODO: NameError!
-            return getContext().getCoreLibrary().getNilObject();
+            return nil();
         }
 
         return value;
@@ -52,7 +52,7 @@ public class ReadClassVariableNode extends RubyNode {
         final Object value = ModuleOperations.lookupClassVariable(moduleObject, name);
 
         if (value == null) {
-            return getContext().getCoreLibrary().getNilObject();
+            return nil();
         } else {
             return getContext().makeString("class variable");
         }

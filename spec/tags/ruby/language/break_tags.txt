@@ -1,0 +1,4 @@
+fails:The break statement in a captured block when the invocation of the scope creating the block is still active raises a LocalJumpError when invoking the block from the scope creating the block
+fails:The break statement in a captured block when the invocation of the scope creating the block is still active raises a LocalJumpError when invoking the block from a method
+fails:The break statement in a captured block when the invocation of the scope creating the block is still active raises a LocalJumpError when yielding to the block
+fails:The break statement in a captured block from a scope that has returned raises a LocalJumpError when calling the block from a method

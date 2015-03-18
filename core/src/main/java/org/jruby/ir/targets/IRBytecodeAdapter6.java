@@ -10,6 +10,7 @@ import java.math.BigInteger;
 import org.jcodings.Encoding;
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
+import org.jruby.RubyBasicObject;
 import org.jruby.RubyBignum;
 import org.jruby.RubyBoolean;
 import org.jruby.RubyClass;
@@ -34,6 +35,7 @@ import org.jruby.runtime.callsite.CachingCallSite;
 import org.jruby.runtime.callsite.FunctionalCachingCallSite;
 import org.jruby.runtime.callsite.NormalCachingCallSite;
 import org.jruby.runtime.callsite.VariableCachingCallSite;
+import org.jruby.runtime.ivars.VariableAccessor;
 import org.jruby.util.ByteList;
 import org.jruby.util.JavaNameMangler;
 import org.jruby.util.RegexpOptions;
@@ -194,16 +196,19 @@ public class IRBytecodeAdapter6 extends IRBytecodeAdapter{
         }
     }
 
-    public void pushSymbol(String sym, Encoding encoding) {
-        loadRuntime();
-        adapter.ldc(sym);
+    public void pushSymbol(final String sym, final Encoding encoding) {
+        cacheValuePermanently(newFieldName("symbol"), RubySymbol.class, new Runnable() {
+            @Override
+            public void run() {
+                loadRuntime();
+                adapter.ldc(sym);
+                loadContext();
+                adapter.ldc(encoding.toString());
+                invokeIRHelper("retrieveJCodingsEncoding", sig(Encoding.class, ThreadContext.class, String.class));
 
-        // FIXME: Should be a helper somewhere?  Load Encoding
-        loadContext();
-        adapter.ldc(encoding.toString());
-        invokeIRHelper("retrieveJCodingsEncoding", sig(Encoding.class, ThreadContext.class, String.class));
-
-        adapter.invokestatic(p(RubySymbol.class), "newSymbol", sig(RubySymbol.class, Ruby.class, String.class, Encoding.class));
+                adapter.invokestatic(p(RubySymbol.class), "newSymbol", sig(RubySymbol.class, Ruby.class, String.class, Encoding.class));
+            }
+        });
     }
 
     public void loadRuntime() {
@@ -211,10 +216,15 @@ public class IRBytecodeAdapter6 extends IRBytecodeAdapter{
         adapter.getfield(p(ThreadContext.class), "runtime", ci(Ruby.class));
     }
 
-    public void pushEncoding(Encoding encoding) {
-        loadContext();
-        adapter.ldc(encoding.toString());
-        invokeIRHelper("retrieveEncoding", sig(RubyEncoding.class, ThreadContext.class, String.class));
+    public void pushEncoding(final Encoding encoding) {
+        cacheValuePermanently(newFieldName("symbol"), RubySymbol.class, new Runnable() {
+            @Override
+            public void run() {
+                loadContext();
+                adapter.ldc(encoding.toString());
+                invokeIRHelper("retrieveEncoding", sig(RubyEncoding.class, ThreadContext.class, String.class));
+            }
+        });
     }
 
     public void invokeOther(String name, int arity, boolean hasClosure) {
@@ -579,15 +589,67 @@ public class IRBytecodeAdapter6 extends IRBytecodeAdapter{
     }
 
     public void putField(String name) {
-        adapter.ldc(name);
-        invokeIRHelper("setInstanceVariable", sig(IRubyObject.class, IRubyObject.class, IRubyObject.class, String.class));
-        adapter.pop();
+        adapter.dup2(); // self, value, self, value
+        adapter.pop(); // self, value, self
+        cacheVariableAccessor(name, true); // self, value, accessor
+        invokeIRHelper("setVariableWithAccessor", sig(void.class, IRubyObject.class, IRubyObject.class, VariableAccessor.class));
     }
 
     public void getField(String name) {
-        loadRuntime();
-        adapter.ldc(name);
-        invokeHelper("getInstanceVariable", sig(IRubyObject.class, IRubyObject.class, Ruby.class, String.class));
+        adapter.dup(); // self, self
+        cacheVariableAccessor(name, false); // self, accessor
+        loadContext(); // self, accessor, context
+        invokeIRHelper("getVariableWithAccessor", sig(IRubyObject.class, IRubyObject.class, VariableAccessor.class, ThreadContext.class));
+    }
+
+    /**
+     * Retrieve the proper variable accessor for the given arguments. The source object is expected to be on stack.
+     * @param name name of the variable
+     * @param write whether the accessor will be used for a write operation
+     */
+    private void cacheVariableAccessor(String name, boolean write) {
+        SkinnyMethodAdapter adapter2;
+        String incomingSig = sig(VariableAccessor.class, params(JVM.OBJECT));
+
+        String methodName = (write ? "ivarSet" : "ivarGet") + getClassData().callSiteCount.getAndIncrement() + ":" + JavaNameMangler.mangleMethodName(name);
+
+        adapter2 = new SkinnyMethodAdapter(
+                adapter.getClassVisitor(),
+                Opcodes.ACC_PRIVATE | Opcodes.ACC_STATIC | Opcodes.ACC_SYNTHETIC,
+                methodName,
+                incomingSig,
+                null,
+                null);
+
+        // call site object field
+        adapter.getClassVisitor().visitField(Opcodes.ACC_PRIVATE | Opcodes.ACC_STATIC, methodName, ci(VariableAccessor.class), null, null).visitEnd();
+
+        // retrieve accessor, verifying if non-null
+        adapter2.getstatic(getClassData().clsName, methodName, ci(VariableAccessor.class));
+        adapter2.dup();
+        Label get = new Label();
+        adapter2.ifnull(get);
+
+        // this might be a little faster if we cached the last class ID seen and used that rather than getMetaClass().getRealClass() in VariableAccessor
+        adapter2.dup();
+        adapter2.aload(0);
+        adapter2.invokevirtual(p(VariableAccessor.class), "verify", sig(boolean.class, Object.class));
+        adapter2.iffalse(get);
+        adapter2.areturn();
+
+        adapter2.label(get);
+        adapter2.pop();
+        adapter2.aload(0);
+        adapter2.ldc(name);
+        adapter2.invokestatic(p(IRRuntimeHelpers.class), write ? "getVariableAccessorForWrite" : "getVariableAccessorForRead", sig(VariableAccessor.class, IRubyObject.class, String.class));
+        adapter2.dup();
+        adapter2.putstatic(getClassData().clsName, methodName, ci(VariableAccessor.class));
+        adapter2.areturn();
+
+        adapter2.end();
+
+        // call it from original method to get accessor
+        adapter.invokestatic(getClassData().clsName, methodName, incomingSig);
     }
 
     public void array(int length) {

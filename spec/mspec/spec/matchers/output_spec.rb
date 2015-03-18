@@ -20,7 +20,7 @@ describe OutputMatcher do
   end
 
   it "provides a useful failure message" do
-    proc = Proc.new { puts "unexpected"; $stderr.puts "unerror" }
+    proc = Proc.new { print "unexpected"; $stderr.print "unerror" }
     matcher = OutputMatcher.new("expected", "error")
     matcher.matches?(proc)
     matcher.failure_message.should ==

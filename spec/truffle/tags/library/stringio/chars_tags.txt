@@ -1,0 +1,4 @@
+fails:StringIO#chars yields each character code in turn
+fails:StringIO#chars returns nil
+fails:StringIO#chars yields a LocalJumpError when passed no block
+fails:StringIO#chars returns an Enumerator when passed no block

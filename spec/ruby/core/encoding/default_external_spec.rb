@@ -67,7 +67,7 @@ with_feature :encoding do
 
     it "calls #to_s on arguments that are neither Strings nor Encodings" do
       string = mock('string')
-      string.should_receive(:to_str).twice.and_return('US-ASCII')
+      string.should_receive(:to_str).at_least(1).and_return('US-ASCII')
       Encoding.default_external = string
       Encoding.default_external.should == Encoding::ASCII
     end

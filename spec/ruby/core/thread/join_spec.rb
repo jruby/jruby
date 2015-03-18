@@ -13,6 +13,16 @@ describe "Thread#join" do
     t.join(0).should equal(t)
   end
 
+  it "coerces timeout to a Float if it is not nil" do
+    t = Thread.new {}
+    t.join
+    t.join(0).should equal(t)
+    t.join(0.0).should equal(t)
+    t.join(nil).should equal(t)
+    lambda { t.join(:foo) }.should raise_error TypeError
+    lambda { t.join("bar") }.should raise_error TypeError
+  end
+
   it "returns nil if it is not finished when given a timeout" do
     c = Channel.new
     t = Thread.new { c.receive }

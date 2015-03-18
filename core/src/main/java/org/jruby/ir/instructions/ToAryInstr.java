@@ -6,6 +6,7 @@ import org.jruby.ir.Operation;
 import org.jruby.ir.operands.Array;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.Variable;
+import org.jruby.ir.persistence.IRReaderDecoder;
 import org.jruby.ir.persistence.IRWriterEncoder;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.ir.transformations.inlining.CloneInfo;
@@ -52,6 +53,10 @@ public class ToAryInstr extends ResultBaseInstr implements FixedArityInstr {
     public void encode(IRWriterEncoder e) {
         super.encode(e);
         e.encode(getArray());
+    }
+
+    public static ToAryInstr decode(IRReaderDecoder d) {
+        return new ToAryInstr(d.decodeVariable(), d.decodeOperand());
     }
 
     @Override

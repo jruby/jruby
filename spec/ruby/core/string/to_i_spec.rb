@@ -29,6 +29,10 @@ describe "String#to_i" do
     end
   end
 
+  it "accepts '+' at the beginning of a String" do
+    "+0d56".to_i.should == 56
+  end
+
   it "interprets leading characters as a number in the given base" do
     "100110010010".to_i(2).should == 0b100110010010
     "100110201001".to_i(3).should == 186409
@@ -95,6 +99,11 @@ describe "String#to_i" do
     "0d11".to_i(16).should == 0xd11
     "0o11".to_i(25).should == 15026
     "0x11".to_i(34).should == 38183
+
+    "0B11".to_i(16).should == 0xb11
+    "0D11".to_i(16).should == 0xd11
+    "0O11".to_i(25).should == 15026
+    "0X11".to_i(34).should == 38183
   end
 
   it "tries to convert the base to an integer using to_int" do

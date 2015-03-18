@@ -20,8 +20,8 @@ import org.jruby.runtime.Helpers;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.objects.Allocator;
 import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.util.ByteList;
-import org.jruby.util.ByteListHolder;
 import org.jruby.util.CodeRangeable;
 import org.jruby.util.StringSupport;
 
@@ -211,9 +211,24 @@ public class RubyString extends RubyBasicObject implements CodeRangeable {
     }
 
     @Override
-    public Encoding checkEncoding(ByteListHolder other) {
-        // TODO (nirvdrum Jan. 13, 2015): This should check if the encodings are compatible rather than just always succeeding.
-        return bytes.getEncoding();
+    public Encoding checkEncoding(CodeRangeable other) {
+        // TODO (nirvdrum 16-Mar-15) This will return null for bad cases and we really don't want to propagate that.  Need a way to raise an appropriate exception while adhering to the interface.
+        return StringSupport.areCompatible(this, other);
+    }
+
+    public Encoding checkEncoding(CodeRangeable other, Node node) {
+        final Encoding encoding = checkEncoding(other);
+
+        if (encoding == null) {
+            throw new RaiseException(
+                    getContext().getCoreLibrary().encodingCompatibilityErrorIncompatible(
+                            this.getByteList().getEncoding().toString(),
+                            other.getByteList().getEncoding().toString(),
+                            node)
+            );
+        }
+
+        return encoding;
     }
 
     @Override

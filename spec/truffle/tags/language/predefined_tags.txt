@@ -9,3 +9,5 @@ windows:The predefined global constant STDIN has the encodings set by #set_encod
 windows:The predefined global constant STDIN retains the encoding set by #set_encoding when Encoding.default_external is changed
 windows:The predefined global constant STDOUT has the encodings set by #set_encoding
 windows:The predefined global constant STDERR has the encodings set by #set_encoding
+fails:Predefined global $_ is set to the last line read by e.g. StringIO#gets
+fails:Predefined global $_ is set at the method-scoped level rather than block-scoped

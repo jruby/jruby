@@ -188,4 +188,9 @@ public class TestRubyHash extends TestRubyBase {
         RubyHash rubyHash = new RubyHash(Ruby.getGlobalRuntime());
         assertEquals(null, rubyHash.get("Non matching key"));
     }
+
+    // https://github.com/jruby/jruby/issues/2591
+    public void testDoubleQuotedUtf8HashKey() throws Exception {
+        assertEquals("UTF-8", eval("# encoding: utf-8\n h = { \"Ãa1\": true }\n puts h.keys.first.encoding"));
+    }
 }

@@ -101,7 +101,7 @@ public abstract class ArrayWriteNormalizedNode extends RubyNode {
         final Object[] store = new Object[index + 1];
 
         for (int n = 0; n < index; n++) {
-            store[n] = getContext().getCoreLibrary().getNilObject();
+            store[n] = nil();
         }
 
         store[index] = value;
@@ -284,7 +284,7 @@ public abstract class ArrayWriteNormalizedNode extends RubyNode {
         final Object[] objectStore = ((Object[]) array.getStore());
 
         for (int n = array.getSize(); n < index; n++) {
-            objectStore[n] = getContext().getCoreLibrary().getNilObject();
+            objectStore[n] = nil();
         }
 
         objectStore[index] = value;
@@ -300,7 +300,7 @@ public abstract class ArrayWriteNormalizedNode extends RubyNode {
         final Object[] objectStore = ((Object[]) array.getStore());
 
         for (int n = array.getSize(); n < index; n++) {
-            objectStore[n] = getContext().getCoreLibrary().getNilObject();
+            objectStore[n] = nil();
         }
 
         objectStore[index] = value;

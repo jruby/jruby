@@ -37,8 +37,10 @@ describe "Kernel#frozen?" do
       @symbol = :symbol
     end
 
-    it "returns true" do
-      @symbol.frozen?.should be_true
+    ruby_version_is "2.1" do
+      it "returns true" do
+        @symbol.frozen?.should be_true
+      end
     end
   end
 end

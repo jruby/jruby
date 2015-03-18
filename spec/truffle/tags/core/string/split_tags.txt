@@ -1,4 +1,3 @@
-fails:String#split with String throws an ArgumentError if the pattern is not a valid string
 fails:String#split with String splits on multibyte characters
 fails:String#split with String returns subclass instances based on self
 fails:String#split with String taints the resulting strings if self is tainted

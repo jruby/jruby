@@ -98,7 +98,7 @@ describe "IO#reopen with a String" do
 
   platform_is_not :windows do
     it "passes all mode flags through" do
-      @io.reopen(@name, "ab")
+      @io.reopen(@tmp_file, "ab")
       (@io.fcntl(Fcntl::F_GETFL) & File::APPEND).should == File::APPEND
     end
   end
@@ -119,12 +119,14 @@ describe "IO#reopen with a String" do
   before :each do
     @name = tmp("io_reopen.txt")
     @other_name = tmp("io_reopen_other.txt")
+    @other_io = nil
 
     rm_r @other_name
   end
 
   after :each do
     @io.close unless @io.closed?
+    @other_io.close if @other_io and not @other_io.closed?
     rm_r @name, @other_name
   end
 
@@ -140,18 +142,31 @@ describe "IO#reopen with a String" do
     @other_name.should have_data("new data")
   end
 
+  it "closes the file descriptor obtained by opening the new file" do
+    @io = new_io @name, "w"
+
+    @other_io = File.open @other_name, "w"
+    max = @other_io.fileno
+    @other_io.close
+
+    @io.reopen @other_name
+
+    @other_io = File.open @other_name, "w"
+    @other_io.fileno.should == max
+  end
+
   it "creates the file if it doesn't exist if the IO is opened in write mode" do
     @io = new_io @name, "w"
 
     @io.reopen(@other_name)
-    File.exists?(@other_name).should be_true
+    File.exist?(@other_name).should be_true
   end
 
   it "creates the file if it doesn't exist if the IO is opened in write mode" do
     @io = new_io @name, "a"
 
     @io.reopen(@other_name)
-    File.exists?(@other_name).should be_true
+    File.exist?(@other_name).should be_true
   end
 end
 

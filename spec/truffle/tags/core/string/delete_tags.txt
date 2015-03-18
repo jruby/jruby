@@ -1,2 +1,2 @@
 fails:String#delete deletes multibyte characters
-fails:String#delete raises if the given ranges are invalid
+fails:String#delete deletes all chars in a sequence

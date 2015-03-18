@@ -474,6 +474,42 @@ class Array
     self
   end
 
+  # WARNING: This method does no boundary checking. It is expected that
+  # the caller handle that, eg #slice!
+  def delete_range(index, del_length)
+    # optimize for fast removal..
+    reg_start = index + del_length
+    reg_length = @total - reg_start
+    if reg_start <= @total
+      # If we're removing from the front, also reset @start to better
+      # use the Tuple
+      if index == 0
+        # Use a shift start optimization if we're only removing one
+        # element and the shift started isn't already huge.
+        if del_length == 1
+          @start += 1
+        else
+          @tuple.copy_from @tuple, reg_start + @start, reg_length, 0
+          @start = 0
+        end
+      else
+        @tuple.copy_from @tuple, reg_start + @start, reg_length,
+                         @start + index
+      end
+
+      # TODO we leave the old references in the Tuple, we should
+      # probably clear them out though.
+      # MODIFIED Can't -= the @total to modify length
+      #@total -= del_length
+      del_length.times do
+        self.pop
+      end
+
+    end
+  end
+
+  private :delete_range
+
   def fill(a=undefined, b=undefined, c=undefined)
     Rubinius.check_frozen
 
@@ -575,6 +611,28 @@ class Array
 
     nil
   end
+
+
+  def inspect
+    return "[]".force_encoding(Encoding::US_ASCII) if @total == 0
+    comma = ", "
+    result = "["
+
+    return "[...]" if Thread.detect_recursion self do
+      each_with_index do |element, index|
+        temp = element.inspect
+        result.force_encoding(temp.encoding) if index == 0
+        result << temp << comma
+      end
+    end
+
+    Rubinius::Type.infect(result, self)
+    result.shorten!(2)
+    result << "]"
+    result
+  end
+
+  alias_method :to_s, :inspect
 
   def keep_if(&block)
     return to_enum :keep_if unless block_given?
@@ -879,6 +937,77 @@ class Array
     self
   end
 
+  def slice!(start, length=undefined)
+    Rubinius.check_frozen
+
+    if undefined.equal? length
+      if start.kind_of? Range
+        range = start
+        out = self[range]
+
+        range_start = Rubinius::Type.coerce_to_collection_index range.begin
+        if range_start < 0
+          range_start = range_start + @total
+        end
+
+        range_end = Rubinius::Type.coerce_to_collection_index range.end
+        if range_end < 0
+          range_end = range_end + @total
+        elsif range_end >= @total
+          range_end = @total - 1
+          range_end += 1 if range.exclude_end?
+        end
+
+        range_length = range_end - range_start
+        range_length += 1 unless range.exclude_end?
+        range_end    -= 1 if     range.exclude_end?
+
+        if range_start < @total && range_start >= 0 && range_end < @total && range_end >= 0 && range_length > 0
+          delete_range(range_start, range_length)
+        end
+      else
+        # make sure that negative values are not passed through to the
+        # []= assignment
+        start = Rubinius::Type.coerce_to_collection_index start
+        start = start + @total if start < 0
+        # This is to match the MRI behaviour of not extending the array
+        # with nil when specifying an index greater than the length
+        # of the array.
+        return out unless start >= 0 and start < @total
+
+        out = @tuple.at start + @start
+
+        # Check for shift style.
+        if start == 0
+          @tuple.put @start, nil
+          # @total -= 1 # MODIFIED Can't modify size using @total
+          self.shift
+          @start += 1
+        else
+          delete_range(start, 1)
+        end
+      end
+    else
+      start = Rubinius::Type.coerce_to_collection_index start
+      length = Rubinius::Type.coerce_to_collection_index length
+
+      out = self[start, length]
+
+      if start < 0
+        start = @total + start
+      end
+      if start + length > @total
+        length = @total - start
+      end
+
+      if start < @total && start >= 0
+        delete_range(start, length)
+      end
+    end
+
+    out
+  end
+
   def to_ary
     self
   end
@@ -904,5 +1033,61 @@ class Array
 
     out
   end
+
+  # Insertion sort in-place between the given indexes.
+  def isort!(left, right)
+    i = left + 1
+
+    tup = @tuple
+
+    while i < right
+      j = i
+
+      while j > left
+        jp = j - 1
+        el1 = tup.at(jp)
+        el2 = tup.at(j)
+
+        unless cmp = (el1 <=> el2)
+          raise ArgumentError, "comparison of #{el1.inspect} with #{el2.inspect} failed (#{j})"
+        end
+
+        break unless cmp > 0
+
+        tup.put(j, el1)
+        tup.put(jp, el2)
+
+        j = jp
+      end
+
+      i += 1
+    end
+  end
+  private :isort!
+
+  # Insertion sort in-place between the given indexes using a block.
+  def isort_block!(left, right, block)
+    i = left + 1
+
+    while i < right
+      j = i
+
+      while j > left
+        block_result = block.call(@tuple.at(j - 1), @tuple.at(j))
+
+        if block_result.nil?
+          raise ArgumentError, 'block returned nil'
+        elsif block_result > 0
+          @tuple.swap(j, (j - 1))
+          j -= 1
+        else
+          break
+        end
+      end
+
+      i += 1
+    end
+  end
+  private :isort_block!
 
 end

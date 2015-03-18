@@ -6,8 +6,8 @@ class ExceptionState
 
     @description = location ? "An exception occurred during: #{location}" : ""
     if state
-      @description << "\n" unless @description.empty?
-      @description << state.description
+      @description += "\n" unless @description.empty?
+      @description += state.description
       @describe = state.describe
       @it = state.it
     else

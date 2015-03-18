@@ -43,7 +43,7 @@ public abstract class AssertConstantNode extends RubyNode {
             throw new RaiseException(getContext().getCoreLibrary().internalError("Value was not constant", this));
         }
 
-        return getContext().getCoreLibrary().getNilObject();
+        return nil();
     }
 
 }

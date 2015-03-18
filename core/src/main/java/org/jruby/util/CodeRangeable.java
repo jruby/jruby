@@ -26,6 +26,8 @@
 
 package org.jruby.util;
 
+import org.jcodings.Encoding;
+
 public interface CodeRangeable extends ByteListHolder {
     public int getCodeRange();
     public int scanForCodeRange();
@@ -33,4 +35,5 @@ public interface CodeRangeable extends ByteListHolder {
     public void setCodeRange(int codeRange);
     public void clearCodeRange();
     public void keepCodeRange();
+    public Encoding checkEncoding(CodeRangeable other);
 }

@@ -562,7 +562,7 @@
       </modules>
     </profile>
     <profile>
-      <id>truffle-specs-rubysl</id>
+      <id>truffle-specs-library</id>
       <build>
         <defaultGoal>package</defaultGoal>
       </build>
@@ -589,7 +589,7 @@
       </modules>
     </profile>
     <profile>
-      <id>truffle-specs-rubysl-report</id>
+      <id>truffle-specs-library-report</id>
       <build>
         <defaultGoal>package</defaultGoal>
       </build>

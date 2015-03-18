@@ -1540,6 +1540,15 @@ public class BodyTranslator extends Translator {
             }
         }
 
+        if (sourceSection.getSource().getPath().equals("core:/core/rubinius/bootstrap/string.rb") ||
+                sourceSection.getSource().getPath().equals("core:/core/rubinius/common/string.rb")) {
+
+            if (name.equals("@hash")) {
+                return StringNodesFactory.ModifyBangNodeFactory.create(context, sourceSection, new RubyNode[]{});
+            }
+        }
+
+
         return new WriteInstanceVariableNode(context, sourceSection, name, self, rhs, false);
     }
 

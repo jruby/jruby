@@ -1,3 +1,2 @@
-fails:Kernel#extend requires multiple arguments
 fails:Kernel#extend calls extend_object on argument
 fails:Kernel#extend calls extended on argument

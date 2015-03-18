@@ -13,12 +13,12 @@ describe :regexp_quote, :shared => true do
   end
 
   it "sets the encoding of the result to US-ASCII if there are only US-ASCII characters present in the input String" do
-    str = encode("abc", "euc-jp")
+    str = "abc".force_encoding("euc-jp")
     Regexp.send(@method, str).encoding.should == Encoding::US_ASCII
   end
 
   it "sets the encoding of the result to the encoding of the String if any non-US-ASCII characters are present in an input String with valid encoding" do
-    str = encode("ありがとう", "utf-8")
+    str = "ありがとう".force_encoding("utf-8")
     str.valid_encoding?.should be_true
     Regexp.send(@method, str).encoding.should == Encoding::UTF_8
   end

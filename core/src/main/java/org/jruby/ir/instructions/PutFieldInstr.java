@@ -4,6 +4,7 @@ import org.jruby.RubyClass;
 import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Operation;
 import org.jruby.ir.operands.Operand;
+import org.jruby.ir.persistence.IRReaderDecoder;
 import org.jruby.ir.transformations.inlining.CloneInfo;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.DynamicScope;
@@ -32,6 +33,10 @@ public class PutFieldInstr extends PutInstr implements FixedArityInstr {
         clazz.getVariableAccessorForWrite(getRef()).set(object,
                 getValue().retrieve(context, self, currScope, currDynScope, temp));
         return null;
+    }
+
+    public static PutFieldInstr decode(IRReaderDecoder d) {
+        return new PutFieldInstr(d.decodeOperand(), d.decodeString(), d.decodeOperand());
     }
 
     @Override

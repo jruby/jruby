@@ -4,6 +4,7 @@ import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Operation;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.Variable;
+import org.jruby.ir.persistence.IRReaderDecoder;
 import org.jruby.ir.persistence.IRWriterEncoder;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.ir.transformations.inlining.CloneInfo;
@@ -34,6 +35,10 @@ public class BlockGivenInstr extends ResultBaseInstr implements FixedArityInstr 
     public void encode(IRWriterEncoder e) {
         super.encode(e);
         e.encode(getBlockArg());
+    }
+
+    public static BlockGivenInstr decode(IRReaderDecoder d) {
+        return new BlockGivenInstr(d.decodeVariable(), d.decodeOperand());
     }
 
     @Override

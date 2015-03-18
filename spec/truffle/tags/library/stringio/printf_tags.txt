@@ -1,0 +1,1 @@
+fails:StringIO#printf performs format conversion

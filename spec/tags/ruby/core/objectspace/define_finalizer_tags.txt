@@ -1,3 +1,4 @@
 fails:ObjectSpace.define_finalizer calls finalizer on process termination
 fails:ObjectSpace.define_finalizer calls finalizer at exit even if it is self-referencing
 fails:ObjectSpace.define_finalizer raises a RuntimeError if the object is not garbage collectable
+fails:ObjectSpace.define_finalizer raises ArgumentError trying to define a finalizer on a non-reference

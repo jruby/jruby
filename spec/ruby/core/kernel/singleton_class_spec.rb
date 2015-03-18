@@ -26,28 +26,30 @@ describe "Kernel#singleton_class" do
   end
 end
 
-describe "Kernel#singleton_class?" do
-  it "returns true for singleton classes" do
-    xs = self.singleton_class
-    xs.singleton_class?.should == true
-  end
-
-  it "returns false for other objects" do
-    c = Class.new
-    c.singleton_class?.should == false
-  end
-
-  describe("with singleton values") do
-    it "returns false for nil's singleton class" do
-      NilClass.singleton_class?.should == false
+ruby_version_is "2.1" do
+  describe "Kernel#singleton_class?" do
+    it "returns true for singleton classes" do
+      xs = self.singleton_class
+      xs.singleton_class?.should == true
     end
 
-    it "returns false for true's singleton class" do
-      TrueClass.singleton_class?.should == false
+    it "returns false for other objects" do
+      c = Class.new
+      c.singleton_class?.should == false
     end
 
-    it "returns false for false's singleton class" do
-      FalseClass.singleton_class?.should == false
+    describe("with singleton values") do
+      it "returns false for nil's singleton class" do
+        NilClass.singleton_class?.should == false
+      end
+
+      it "returns false for true's singleton class" do
+        TrueClass.singleton_class?.should == false
+      end
+
+      it "returns false for false's singleton class" do
+        FalseClass.singleton_class?.should == false
+      end
     end
   end
 end

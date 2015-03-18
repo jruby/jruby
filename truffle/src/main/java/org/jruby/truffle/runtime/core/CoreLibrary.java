@@ -126,6 +126,7 @@ public class CoreLibrary {
     private final RubyClass edomClass;
     private final RubyClass einvalClass;
     private final RubyClass enoentClass;
+    private final RubyClass enotemptyClass;
     private final RubyClass encodingConverterClass;
     private final RubyClass encodingCompatibilityErrorClass;
     private final RubyClass methodClass;
@@ -144,6 +145,8 @@ public class CoreLibrary {
     private final ArrayNodes.MaxBlock arrayMaxBlock;
 
     @CompilerDirectives.CompilationFinal private RubySymbol eachSymbol;
+    @CompilerDirectives.CompilationFinal private RubySymbol mapSymbol;
+    @CompilerDirectives.CompilationFinal private RubySymbol mapBangSymbol;
     @CompilerDirectives.CompilationFinal private RubyHash envHash;
 
     public CoreLibrary(RubyContext context) {
@@ -233,7 +236,7 @@ public class CoreLibrary {
         edomClass = new RubyClass(context, errnoModule, systemCallErrorClass, "EDOM");
         new RubyClass(context, errnoModule, systemCallErrorClass, "EEXIST");
         enoentClass = new RubyClass(context, errnoModule, systemCallErrorClass, "ENOENT");
-        new RubyClass(context, errnoModule, systemCallErrorClass, "ENOTEMPTY");
+        enotemptyClass = new RubyClass(context, errnoModule, systemCallErrorClass, "ENOTEMPTY");
         new RubyClass(context, errnoModule, systemCallErrorClass, "EPERM");
         new RubyClass(context, errnoModule, systemCallErrorClass, "EXDEV");
         einvalClass = new RubyClass(context, errnoModule, systemCallErrorClass, "EINVAL");
@@ -363,6 +366,8 @@ public class CoreLibrary {
 
         // Common symbols
         eachSymbol = getContext().getSymbolTable().getSymbol("each");
+        mapBangSymbol = getContext().getSymbolTable().getSymbol("map!");
+        mapSymbol = getContext().getSymbolTable().getSymbol("map");
     }
 
     private void initializeGlobalVariables() {
@@ -866,6 +871,11 @@ public class CoreLibrary {
         return new RubyException(enoentClass, context.makeString(String.format("No such file or directory -  %s", fileName)), RubyCallStack.getBacktrace(currentNode));
     }
 
+    public RubyException dirNotEmptyError(String path, Node currentNode) {
+        CompilerAsserts.neverPartOfCompilation();
+        return new RubyException(enotemptyClass, context.makeString(String.format("Directory not empty - %s", path)), RubyCallStack.getBacktrace(currentNode));
+    }
+
     public RubyException rangeError(int code, RubyEncoding encoding, Node currentNode) {
         CompilerAsserts.neverPartOfCompilation();
         return rangeError(String.format("invalid codepoint %x in %s", code, encoding.getEncoding()), currentNode);
@@ -1158,4 +1168,13 @@ public class CoreLibrary {
     public RubySymbol getEachSymbol() {
         return eachSymbol;
     }
+
+    public RubySymbol getMapBangSymbol() {
+        return mapBangSymbol;
+    }
+
+    public RubySymbol getMapSymbol() {
+        return mapSymbol;
+    }
+
 }
