@@ -283,10 +283,21 @@ public class JavaUtil {
         return converter == null ? NUMERIC_TO_OTHER : converter;
     }
 
+    /**
+     * Test if a passed instance is a wrapper Java object.
+     * @param object
+     * @return true if the object is wrapping a Java object
+     */
     public static boolean isJavaObject(final IRubyObject object) {
         return object instanceof JavaProxy || object.dataGetStruct() instanceof JavaObject;
     }
 
+    /**
+     * Unwrap a wrapped Java object.
+     * @param object
+     * @return Java object
+     * @see JavaUtil#isJavaObject(IRubyObject)
+     */
     public static Object unwrapJavaObject(final IRubyObject object) {
         if ( object instanceof JavaProxy ) {
             return ((JavaProxy) object).getObject();
@@ -294,6 +305,7 @@ public class JavaUtil {
         return ((JavaObject) object.dataGetStruct()).getValue();
     }
 
+    @Deprecated // no longer used
     public static Object unwrapJavaValue(final Ruby runtime, final IRubyObject object, final String errorMessage) {
         if ( object instanceof JavaProxy ) {
             return ((JavaProxy) object).getObject();
@@ -309,17 +321,37 @@ public class JavaUtil {
     }
 
     /**
+     * @param object
+     * @note Returns null if not a wrapped Java value.
+     * @return unwrapped Java (object's) value
+     */
+    public static Object unwrapJavaValue(final IRubyObject object) {
+        if ( object instanceof JavaProxy ) {
+            return ((JavaProxy) object).getObject();
+        }
+        if ( object instanceof JavaObject ) {
+            return ((JavaObject) object).getValue();
+        }
+        final Object unwrap = object.dataGetStruct();
+        if ( unwrap != null && unwrap instanceof IRubyObject ) {
+            return unwrapJavaValue((IRubyObject) unwrap);
+        }
+        return null;
+    }
+
+    /**
      * For methods that match /(get|set|is)([A-Z0-9])(.*)/, return the "name"
      * part of the property with leading lower-case.
      *
-     * Does not use regex for performance reasons.
+     * @note Does not use regular expression for performance reasons.
      *
      * @param beanMethodName the bean method from which to extract a name
-     * @return the bean property name
+     * @return the bean property name (or null)
      */
     public static String getJavaPropertyName(final String beanMethodName) {
         final int length = beanMethodName.length(); char ch;
-        if ( ( beanMethodName.startsWith("get") || beanMethodName.startsWith("set") ) && length > 3 ) {
+        final boolean maybeGetOrSet = length > 3 && beanMethodName.charAt(2) == 't';
+        if ( maybeGetOrSet && ( beanMethodName.startsWith("get") || beanMethodName.startsWith("set") ) ) {
             if (isUpperDigit(ch = beanMethodName.charAt(3))) {
                 if ( length == 4 ) return Character.toString(toLowerCase(ch));
                 return "" + toLowerCase(ch) + beanMethodName.substring(4);
@@ -335,8 +367,10 @@ public class JavaUtil {
     }
 
     /**
-     * Build a Ruby name from a Java name by treating aA as _ divider and successive
+     * Build a Ruby name from a Java name by treating '_' as divider and successive
      * caps as all the same word.
+     * @param javaCasedName
+     * @return Ruby (under-score) cased named e.g. "get_foo_bar"
      */
     public static String getRubyCasedName(final String javaCasedName) {
         final char[] javaName = javaCasedName.toCharArray();
@@ -419,60 +453,71 @@ public class JavaUtil {
     public static Set<String> getRubyNamesForJavaName(final String javaName, final List<Method> methods) {
         final String javaPropertyName = getJavaPropertyName(javaName);
         final String rubyName = getRubyCasedName(javaName);
-        final Set<String> nameSet = new LinkedHashSet<String>();
+
+        final int len = methods.size();
+
+        final LinkedHashSet<String> nameSet = new LinkedHashSet<String>(6 * len + 2, 1f); // worse-case 6
         nameSet.add(javaName);
         nameSet.add(rubyName);
 
-        for ( final Method method : methods ) {
-            final Class<?> resultType = method.getReturnType();
+        if ( len == 1 ) { // hot-path - most of the time no-overloads for a given method name
+            addRubyNamesForJavaName(javaName, methods.get(0), javaPropertyName, rubyName, nameSet);
+        }
+        else {
+            for ( int i = 0; i < len; i++ ) { // passed list is ArrayList
+                addRubyNamesForJavaName(javaName, methods.get(i), javaPropertyName, rubyName, nameSet);
+            }
+        }
+        return nameSet;
+    }
 
-            // Add property name aliases
-            if (javaPropertyName != null) {
-                final Class<?>[] argTypes = method.getParameterTypes();
-                final int argCount = argTypes.length;
-                // string starts-with "get_" or "set_" micro-optimization :
-                final boolean maybeGetOrSet_ = rubyName.length() > 3 && rubyName.charAt(3) == '_';
+    private static void addRubyNamesForJavaName(final String javaName, final Method method,
+        final String javaPropertyName, final String rubyName, final LinkedHashSet<String> nameSet) {
+        final Class<?> resultType = method.getReturnType();
 
-                if (maybeGetOrSet_ && rubyName.startsWith("get")) { // rubyName.startsWith("get_")
+        // Add property name aliases
+        if (javaPropertyName != null) {
+            final Class<?>[] argTypes = method.getParameterTypes();
+            final int argCount = argTypes.length;
+            // string starts-with "get_" or "set_" micro-optimization :
+            final boolean maybeGetOrSet_ = rubyName.length() > 3 && rubyName.charAt(3) == '_';
+
+            if (maybeGetOrSet_ && rubyName.startsWith("get")) { // rubyName.startsWith("get_")
+                if (argCount == 0 ||                                // getFoo      => foo
+                    argCount == 1 && argTypes[0] == int.class) {    // getFoo(int) => foo(int)
                     final String rubyPropertyName = rubyName.substring(4);
-                    if (argCount == 0 ||                                // getFoo      => foo
-                        argCount == 1 && argTypes[0] == int.class) {    // getFoo(int) => foo(int)
-
-                        nameSet.add(javaPropertyName);
-                        nameSet.add(rubyPropertyName);
-                        if (resultType == boolean.class) {              // getFooBar() => fooBar?, foo_bar?(*)
-                            nameSet.add(javaPropertyName + '?');
-                            nameSet.add(rubyPropertyName + '?');
-                        }
-                    }
-                }
-                else if (maybeGetOrSet_ && rubyName.startsWith("set")) { // rubyName.startsWith("set_")
-                    final String rubyPropertyName = rubyName.substring(4);
-                    if (argCount == 1 && resultType == void.class) {    // setFoo(Foo) => foo=(Foo)
-                        nameSet.add(javaPropertyName + '=');
-                        nameSet.add(rubyPropertyName + '=');
-                    }
-                }
-                else if (rubyName.startsWith("is_")) {
-                    final String rubyPropertyName = rubyName.substring(3);
-                    if (resultType == boolean.class) {                  // isFoo() => foo, isFoo(*) => foo(*)
-                        nameSet.add(javaPropertyName);
-                        nameSet.add(rubyPropertyName);
+                    nameSet.add(javaPropertyName);
+                    nameSet.add(rubyPropertyName);
+                    if (resultType == boolean.class) {              // getFooBar() => fooBar?, foo_bar?(*)
                         nameSet.add(javaPropertyName + '?');
                         nameSet.add(rubyPropertyName + '?');
                     }
                 }
-            } else {
-                // If not a property, but is boolean add ?-postfixed aliases.
-                if (resultType == boolean.class) {
-                    // is_something?, contains_thing?
-                    nameSet.add(javaName + '?');
-                    nameSet.add(rubyName + '?');
+            }
+            else if (maybeGetOrSet_ && rubyName.startsWith("set")) { // rubyName.startsWith("set_")
+                if (argCount == 1 && resultType == void.class) {    // setFoo(Foo) => foo=(Foo)
+                    final String rubyPropertyName = rubyName.substring(4);
+                    nameSet.add(javaPropertyName + '=');
+                    nameSet.add(rubyPropertyName + '=');
                 }
             }
+            else if (rubyName.startsWith("is_")) {
+                if (resultType == boolean.class) {                  // isFoo() => foo, isFoo(*) => foo(*)
+                    final String rubyPropertyName = rubyName.substring(3);
+                    nameSet.add(javaPropertyName);
+                    nameSet.add(rubyPropertyName);
+                    nameSet.add(javaPropertyName + '?');
+                    nameSet.add(rubyPropertyName + '?');
+                }
+            }
+        } else {
+            // If not a property, but is boolean add ?-postfixed aliases.
+            if (resultType == boolean.class) {
+                // is_something?, contains_thing?
+                    nameSet.add(javaName + '?');
+                    nameSet.add(rubyName + '?');
+            }
         }
-
-        return nameSet;
     }
 
     public static abstract class JavaConverter {
