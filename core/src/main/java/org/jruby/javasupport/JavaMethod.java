@@ -220,10 +220,12 @@ public class JavaMethod extends JavaCallable {
             return invokeWithExceptionHandling(method, null, arguments);
         }
 
-        Object javaInvokee = null;
-
+        final Object javaInvokee;
         if (!isStatic()) {
-            javaInvokee = JavaUtil.unwrapJavaValue(getRuntime(), invokee, "invokee not a java object");
+            javaInvokee = JavaUtil.unwrapJavaValue(invokee);
+            if ( javaInvokee == null ) {
+                throw getRuntime().newTypeError("invokee not a java object");
+            }
 
             if ( ! method.getDeclaringClass().isInstance(javaInvokee) ) {
                 throw getRuntime().newTypeError(
@@ -246,6 +248,10 @@ public class JavaMethod extends JavaCallable {
                 }
             }
         }
+        else {
+            javaInvokee = null;
+        }
+
         return invokeWithExceptionHandling(method, javaInvokee, arguments);
     }
 

@@ -44,6 +44,7 @@ import org.jruby.RubyModule;
 import org.jruby.RubyString;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
+import org.jruby.exceptions.RaiseException;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -112,12 +113,16 @@ public class JavaField extends JavaAccessibleObject {
 
     @JRubyMethod
     public IRubyObject value(ThreadContext context, IRubyObject object) {
-        Ruby runtime = context.runtime;
+        final Ruby runtime = context.runtime;
 
-        Object javaObject = null;
+        final Object javaObject;
         if ( ! Modifier.isStatic( field.getModifiers() ) ) {
-            javaObject = JavaUtil.unwrapJavaValue(runtime, object, "not a java object");
+            javaObject = unwrapJavaObject(object);
         }
+        else {
+            javaObject = null;
+        }
+
         try {
             return convertToRuby(runtime, field.get(javaObject));
         }
@@ -128,10 +133,14 @@ public class JavaField extends JavaAccessibleObject {
 
     @JRubyMethod
     public IRubyObject set_value(IRubyObject object, IRubyObject value) {
-        Object javaObject = null;
+        final Object javaObject;
         if ( ! Modifier.isStatic( field.getModifiers() ) ) {
-            javaObject  = JavaUtil.unwrapJavaValue(getRuntime(), object, "not a java object: " + object);
+            javaObject = unwrapJavaObject(object);
         }
+        else {
+            javaObject = null;
+        }
+
         final Object javaValue = convertValueToJava(value);
         try {
             field.set(javaObject, javaValue);
@@ -189,6 +198,14 @@ public class JavaField extends JavaAccessibleObject {
     @Override
     public AccessibleObject accessibleObject() {
         return field;
+    }
+
+    private Object unwrapJavaObject(final IRubyObject object) throws RaiseException {
+        Object javaObject = JavaUtil.unwrapJavaValue(object);
+        if ( javaObject == null ) {
+            throw getRuntime().newTypeError("not a java object: " + object);
+        }
+        return javaObject;
     }
 
     private Object convertValueToJava(IRubyObject value) {
