@@ -5,43 +5,10 @@ class MSpecScript
   set :language, [ 'language' ]
 
   # Core library specs
-  set :core, [
-    'core',
-  ]
+  set :core, [ 'core' ]
 
   # Standard library specs
-  set :library, [
-    'library',
-
-    # obsolete libraries
-    '^library/cgi-lib',
-    '^library/date2',
-    '^library/enumerator',
-    '^library/eregex',
-    '^library/finalize',
-    '^library/ftools',
-    '^library/generator',
-    '^library/getopts',
-    '^library/importenv',
-    '^library/jcode',
-    '^library/mailread',
-    '^library/parsearg',
-    '^library/parsedate',
-    '^library/ping',
-    '^library/readbytes',
-    '^library/rubyunit',
-    '^library/runit',
-    '^library/soap',
-    '^library/wsdl',
-    '^library/xsd',
-    '^library/Win32API',
-
-    '^library/test/unit/collector',
-    '^library/test/unit/ui',
-    '^library/test/unit/util',
-
-    '^library/dl',  # reimplemented and API changed
-  ]
+  set :library, [ 'library' ]
 
   # An ordered list of the directories containing specs to run
   set :files, get(:language) + get(:core) + get(:library)
@@ -49,10 +16,10 @@ class MSpecScript
   # This set of files is run by mspec ci
   set :ci_files, get(:files)
 
-  # Optional library specs
+  # Optional specs
   set :capi, 'optional/capi'
 
-  # A list of _all_ optional library specs
+  # A list of _all_ optional specs
   set :optional, [get(:capi)]
 
   # The default implementation to run the specs.

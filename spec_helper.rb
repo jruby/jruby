@@ -49,7 +49,7 @@ unless ENV['MSPEC_RUNNER']
 end
 
 dir = "../fixtures/code"
-CODE_LOADING_DIR = defined?(:require_relative) ?
+CODE_LOADING_DIR = defined?(require_relative) ?
                      File.realpath(dir, __FILE__) :
                      File.expand_path(dir, __FILE__)
 

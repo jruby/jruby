@@ -21,7 +21,7 @@ class ObjectSpecDupInitCopy
   private :initialize_copy
 end
 
-describe :object_dup_clone, :shared => true do
+describe :kernel_dup_clone, :shared => true do
   it "returns a new object duplicated from the original" do
     o = ObjectSpecDup.new
     o2 = ObjectSpecDup.new

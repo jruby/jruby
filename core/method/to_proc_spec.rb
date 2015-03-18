@@ -13,6 +13,11 @@ describe "Method#to_proc" do
     @meth.to_proc.kind_of?(Proc).should == true
   end
 
+  it "returns a Proc which does not depends on the value of self" do
+    3.instance_exec(4, &5.method(:+)).should == 9
+  end
+
+
   it "returns a Proc object with the correct arity" do
     # This may seem redundant but this bug has cropped up in jruby, mri and yarv.
     # http://jira.codehaus.org/browse/JRUBY-124

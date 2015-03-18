@@ -3,6 +3,7 @@ require File.expand_path('../fixtures/classes', __FILE__)
 
 describe "Module#ancestors" do
   it "returns a list of modules included in self (including self)" do
+    BasicObject.ancestors.should == [BasicObject]
     ModuleSpecs.ancestors.should         include(ModuleSpecs)
     ModuleSpecs::Basic.ancestors.should  include(ModuleSpecs::Basic)
     ModuleSpecs::Super.ancestors.should  include(ModuleSpecs::Super, ModuleSpecs::Basic)

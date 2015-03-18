@@ -15,7 +15,7 @@ describe "Time#zone" do
   it "returns the correct timezone for a local time" do
     t = Time.new(2005, 2, 27, 22, 50, 0, -3600)
 
-    with_timezone("US/Eastern") do
+    with_timezone("America/New_York") do
       t.getlocal.zone.should == "EST"
     end
   end
@@ -23,7 +23,7 @@ describe "Time#zone" do
   it "returns nil when getting the local time with a fixed offset" do
     t = Time.new(2005, 2, 27, 22, 50, 0, -3600)
 
-    with_timezone("US/Eastern") do
+    with_timezone("America/New_York") do
       t.getlocal("+05:00").zone.should be_nil
     end
   end
@@ -42,7 +42,7 @@ describe "Time#zone" do
       it "returns the string with the default internal encoding" do
         t = Time.new(2005, 2, 27, 22, 50, 0, -3600)
 
-        with_timezone("US/Eastern") do
+        with_timezone("America/New_York") do
           t.getlocal.zone.encoding.should == Encoding::UTF_8
         end
       end
@@ -53,7 +53,7 @@ describe "Time#zone" do
         it "returns an ASCII string" do
           t = Time.new(2005, 2, 27, 22, 50, 0, -3600)
 
-          with_timezone("US/Eastern") do
+          with_timezone("America/New_York") do
             t.getlocal.zone.encoding.should == Encoding::US_ASCII
           end
         end
