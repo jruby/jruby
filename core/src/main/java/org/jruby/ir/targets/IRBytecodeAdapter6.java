@@ -109,7 +109,7 @@ public class IRBytecodeAdapter6 extends IRBytecodeAdapter{
     }
 
     public void pushByteList(final ByteList bl) {
-        cacheValuePermanently("byteList", ByteList.class, keyFor("bytelist", bl), new Runnable() {
+        cacheValuePermanently("bytelist", ByteList.class, keyFor("bytelist", bl), new Runnable() {
             @Override
             public void run() {
                 loadRuntime();
@@ -168,13 +168,8 @@ public class IRBytecodeAdapter6 extends IRBytecodeAdapter{
     private static String keyFor(Object... objs) {
         StringBuilder sb = new StringBuilder();
         for (Object obj : objs) {
-            if (obj instanceof ByteList) {
-                for (byte b : ((ByteList)obj).bytes()) sb.append(String.format("%2x", b));
-                sb.append('_');
-                sb.append(((ByteList)obj).getEncoding());
-            } else {
-                sb.append(obj.toString());
-            }
+            sb.append(obj.toString());
+            if (obj instanceof ByteList) sb.append('_').append(((ByteList) obj).getEncoding());
             sb.append("_");
         }
         return sb.toString();
