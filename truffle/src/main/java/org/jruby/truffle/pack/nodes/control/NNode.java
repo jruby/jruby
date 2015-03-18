@@ -10,8 +10,7 @@
 package org.jruby.truffle.pack.nodes.control;
 
 import com.oracle.truffle.api.CompilerDirectives;
-import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.truffle.pack.runtime.ByteWriter;
+import com.oracle.truffle.api.frame.VirtualFrame;
 import org.jruby.truffle.pack.nodes.PackNode;
 
 public class NNode extends PackNode {
@@ -25,68 +24,16 @@ public class NNode extends PackNode {
     }
 
     @Override
-    public int pack(int[] source, int source_pos, int source_len, ByteWriter writer) {
+    public Object execute(VirtualFrame frame) {
         for (int i = 0; i < repeats; i++) {
-            source_pos = child.pack(source, source_pos, source_len, writer);
+            child.execute(frame);
         }
 
         if (CompilerDirectives.inInterpreter()) {
             getRootNode().reportLoopCount(repeats);
         }
 
-        return source_pos;
-    }
-
-    @Override
-    public int pack(long[] source, int source_pos, int source_len, ByteWriter writer) {
-        for (int i = 0; i < repeats; i++) {
-            source_pos = child.pack(source, source_pos, source_len, writer);
-        }
-
-        if (CompilerDirectives.inInterpreter()) {
-            getRootNode().reportLoopCount(repeats);
-        }
-
-        return source_pos;
-    }
-
-    @Override
-    public int pack(double[] source, int source_pos, int source_len, ByteWriter writer) {
-        for (int i = 0; i < repeats; i++) {
-            source_pos = child.pack(source, source_pos, source_len, writer);
-        }
-
-        if (CompilerDirectives.inInterpreter()) {
-            getRootNode().reportLoopCount(repeats);
-        }
-
-        return source_pos;
-    }
-
-    @Override
-    public int pack(IRubyObject[] source, int source_pos, int source_len, ByteWriter writer) {
-        for (int i = 0; i < repeats; i++) {
-            source_pos = child.pack(source, source_pos, source_len, writer);
-        }
-
-        if (CompilerDirectives.inInterpreter()) {
-            getRootNode().reportLoopCount(repeats);
-        }
-
-        return source_pos;
-    }
-
-    @Override
-    public int pack(Object[] source, int source_pos, int source_len, ByteWriter writer) {
-        for (int i = 0; i < repeats; i++) {
-            source_pos = child.pack(source, source_pos, source_len, writer);
-        }
-
-        if (CompilerDirectives.inInterpreter()) {
-            getRootNode().reportLoopCount(repeats);
-        }
-
-        return source_pos;
+        return null;
     }
 
 }

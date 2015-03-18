@@ -231,7 +231,7 @@ public class TruffleBridgeImpl implements TruffleBridge {
 
             @Override
             public ByteList pack(Object[] store, int size) {
-                return (ByteList) packCallTarget.call(store, size);
+                return new ByteList((byte[]) packCallTarget.call(store, size));
             }
 
         };

@@ -10,8 +10,7 @@
 package org.jruby.truffle.pack.nodes.control;
 
 import com.oracle.truffle.api.CompilerDirectives;
-import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.truffle.pack.runtime.ByteWriter;
+import com.oracle.truffle.api.frame.VirtualFrame;
 import org.jruby.truffle.pack.nodes.PackNode;
 
 public class StarNode extends PackNode {
@@ -23,11 +22,11 @@ public class StarNode extends PackNode {
     }
 
     @Override
-    public int pack(int[] source, int source_pos, int source_len, ByteWriter writer) {
+    public Object execute(VirtualFrame frame) {
         int loops = 0;
 
-        while (source_pos < source_len) {
-            source_pos = child.pack(source, source_pos, source_len, writer);
+        while (getSourcePosition(frame) < getSourceLength(frame)) {
+            child.execute(frame);
 
             if (CompilerDirectives.inInterpreter()) {
                 loops++;
@@ -38,83 +37,7 @@ public class StarNode extends PackNode {
             getRootNode().reportLoopCount(loops);
         }
 
-        return source_pos;
-    }
-
-    @Override
-    public int pack(long[] source, int source_pos, int source_len, ByteWriter writer) {
-        int loops = 0;
-
-        while (source_pos < source_len) {
-            source_pos = child.pack(source, source_pos, source_len, writer);
-
-            if (CompilerDirectives.inInterpreter()) {
-                loops++;
-            }
-        }
-
-        if (CompilerDirectives.inInterpreter()) {
-            getRootNode().reportLoopCount(loops);
-        }
-
-        return source_pos;
-    }
-
-    @Override
-    public int pack(double[] source, int source_pos, int source_len, ByteWriter writer) {
-        int loops = 0;
-
-        while (source_pos < source_len) {
-            source_pos = child.pack(source, source_pos, source_len, writer);
-
-            if (CompilerDirectives.inInterpreter()) {
-                loops++;
-            }
-        }
-
-        if (CompilerDirectives.inInterpreter()) {
-            getRootNode().reportLoopCount(loops);
-        }
-
-        return source_pos;
-    }
-
-    @Override
-    public int pack(IRubyObject[] source, int source_pos, int source_len, ByteWriter writer) {
-        int loops = 0;
-
-        while (source_pos < source_len) {
-            source_pos = child.pack(source, source_pos, source_len, writer);
-
-            if (CompilerDirectives.inInterpreter()) {
-                loops++;
-            }
-        }
-
-        if (CompilerDirectives.inInterpreter()) {
-            getRootNode().reportLoopCount(loops);
-        }
-
-        return source_pos;
-    }
-
-    @Override
-    public int pack(Object[] source, int source_pos, int source_len, ByteWriter writer) {
-        int loops = 0;
-
-        while (source_pos < source_len) {
-            source_pos = child.pack(source, source_pos, source_len, writer);
-
-            if (CompilerDirectives.inInterpreter()) {
-                loops++;
-            }
-        }
-
-        if (CompilerDirectives.inInterpreter()) {
-            getRootNode().reportLoopCount(loops);
-        }
-
-        return source_pos;
+        return null;
     }
 
 }

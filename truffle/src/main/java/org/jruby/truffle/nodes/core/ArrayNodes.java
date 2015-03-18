@@ -2471,7 +2471,7 @@ public abstract class ArrayNodes {
                 callPackNode = insert(Truffle.getRuntime().createDirectCallNode(packCallTarget));
             }
 
-            return getContext().makeString((ByteList) callPackNode.call(frame, new Object[]{array.getStore(), array.getSize()}));
+            return getContext().makeString((byte[]) callPackNode.call(frame, new Object[]{array.getStore(), array.getSize()}));
         }
 
         @Specialization

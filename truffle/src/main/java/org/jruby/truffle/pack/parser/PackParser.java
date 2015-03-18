@@ -13,13 +13,16 @@ import com.oracle.truffle.api.CallTarget;
 import com.oracle.truffle.api.Truffle;
 import org.jruby.truffle.pack.nodes.PackNode;
 import org.jruby.truffle.pack.nodes.PackRootNode;
+import org.jruby.truffle.pack.nodes.SourceNode;
 import org.jruby.truffle.pack.nodes.control.BackNode;
 import org.jruby.truffle.pack.nodes.control.NNode;
 import org.jruby.truffle.pack.nodes.control.SequenceNode;
 import org.jruby.truffle.pack.nodes.control.StarNode;
+import org.jruby.truffle.pack.nodes.type.IntegerNode;
+import org.jruby.truffle.pack.nodes.type.IntegerNodeGen;
 import org.jruby.truffle.pack.nodes.type.NullNode;
-import org.jruby.truffle.pack.nodes.type.UInt32BENode;
-import org.jruby.truffle.pack.nodes.type.UInt32LENode;
+import org.jruby.truffle.pack.runtime.Endianness;
+import org.jruby.truffle.pack.runtime.Signedness;
 
 import java.nio.ByteOrder;
 import java.util.ArrayList;
@@ -32,8 +35,6 @@ public class PackParser {
             format = recoverLoop(format);
             extended = true;
         }
-
-        System.err.println(format);
 
         final PackTokenizer tokenizer = new PackTokenizer(format, extended);
         final PackNode body = parse(tokenizer, false);
@@ -64,16 +65,10 @@ public class PackParser {
                             throw new UnsupportedOperationException("unbalanced parens");
                         }
                     case 'N':
-                        node = new UInt32BENode();
+                        node = IntegerNodeGen.create(32, Signedness.UNSIGNED, Endianness.BIG, new SourceNode());
                         break;
                     case 'L':
-                        if (ByteOrder.nativeOrder() == ByteOrder.BIG_ENDIAN) {
-                            node = new UInt32BENode();
-                        } else if (ByteOrder.nativeOrder() == ByteOrder.LITTLE_ENDIAN) {
-                            node = new UInt32LENode();
-                        } else {
-                            throw new UnsupportedOperationException(String.format("unknown byte order %s", ByteOrder.nativeOrder()));
-                        }
+                        node = IntegerNodeGen.create(32, Signedness.UNSIGNED, nativeEndianness(), new SourceNode());
                         break;
                     case 'X':
                         node = new BackNode();
@@ -190,6 +185,16 @@ public class PackParser {
         }
 
         return format;
+    }
+
+    private static Endianness nativeEndianness() {
+        if (ByteOrder.nativeOrder() == ByteOrder.BIG_ENDIAN) {
+            return Endianness.BIG;
+        } else if (ByteOrder.nativeOrder() == ByteOrder.LITTLE_ENDIAN) {
+            return Endianness.LITTLE;
+        } else {
+            throw new UnsupportedOperationException(String.format("unknown byte order %s", ByteOrder.nativeOrder()));
+        }
     }
 
 }

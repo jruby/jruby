@@ -10,11 +10,13 @@
 package org.jruby.truffle.pack.nodes;
 
 import com.oracle.truffle.api.CompilerDirectives;
+import com.oracle.truffle.api.frame.FrameSlotTypeException;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.RootNode;
-import org.jruby.truffle.pack.runtime.ByteWriter;
+import com.oracle.truffle.api.nodes.UnexpectedResultException;
+import com.oracle.truffle.api.source.NullSourceSection;
+import org.jruby.truffle.pack.runtime.PackFrame;
 import org.jruby.truffle.runtime.util.ArrayUtils;
-import org.jruby.util.ByteList;
 
 public class PackRootNode extends RootNode {
 
@@ -25,29 +27,39 @@ public class PackRootNode extends RootNode {
     @CompilerDirectives.CompilationFinal private int expectedLength = ArrayUtils.capacity(0, 0);
 
     public PackRootNode(String description, PackNode child) {
+        super(new NullSourceSection("pack", description), PackFrame.INSTANCE.getFrameDescriptor());
         this.description = description;
         this.child = child;
     }
 
-    public ByteList executeByteList(VirtualFrame frame) {
-        final Object source = frame.getArguments()[0];
-        final int source_len = (int) frame.getArguments()[1];
-
-        final ByteWriter writer = new ByteWriter(expectedLength);
-
-        child.pack(source, 0, source_len, writer);
-
-        if (writer.getLength() > expectedLength) {
-            CompilerDirectives.transferToInterpreterAndInvalidate();
-            expectedLength = ArrayUtils.capacity(expectedLength, writer.getLength());
-        }
-
-        return writer.toByteList();
-    }
-
     @Override
     public Object execute(VirtualFrame frame) {
-        return executeByteList(frame);
+        frame.setObject(PackFrame.INSTANCE.getSourceSlot(), frame.getArguments()[0]);
+        frame.setInt(PackFrame.INSTANCE.getSourceLengthSlot(), (int) frame.getArguments()[1]);
+        frame.setInt(PackFrame.INSTANCE.getSourcePositionSlot(), 0);
+        frame.setObject(PackFrame.INSTANCE.getOutputSlot(), new byte[expectedLength]);
+        frame.setInt(PackFrame.INSTANCE.getOutputPositionSlot(), 0);
+
+        child.execute(frame);
+
+        final int outputLength;
+
+        try {
+            outputLength = frame.getInt(PackFrame.INSTANCE.getOutputPositionSlot());
+        } catch (FrameSlotTypeException e) {
+            throw new IllegalStateException(e);
+        }
+
+        if (outputLength > expectedLength) {
+            CompilerDirectives.transferToInterpreterAndInvalidate();
+            expectedLength = ArrayUtils.capacity(expectedLength, outputLength);
+        }
+
+        try {
+            return frame.getObject(PackFrame.INSTANCE.getOutputSlot());
+        } catch (FrameSlotTypeException e) {
+            throw new IllegalStateException(e);
+        }
     }
 
     @Override
@@ -59,4 +71,5 @@ public class PackRootNode extends RootNode {
     public String toString() {
         return description;
     }
+
 }

@@ -9,40 +9,15 @@
  */
 package org.jruby.truffle.pack.nodes.control;
 
-import org.jruby.runtime.builtin.IRubyObject;
+import com.oracle.truffle.api.frame.VirtualFrame;
 import org.jruby.truffle.pack.nodes.PackNode;
-import org.jruby.truffle.pack.runtime.ByteWriter;
 
 public class BackNode extends PackNode {
 
     @Override
-    public int pack(int[] source, int source_pos, int source_len, ByteWriter writer) {
-        writer.back();
-        return source_pos;
-    }
-
-    @Override
-    public int pack(long[] source, int source_pos, int source_len, ByteWriter writer) {
-        writer.back();
-        return source_pos;
-    }
-
-    @Override
-    public int pack(double[] source, int source_pos, int source_len, ByteWriter writer) {
-        writer.back();
-        return source_pos;
-    }
-
-    @Override
-    public int pack(IRubyObject[] source, int source_pos, int source_len, ByteWriter writer) {
-        writer.back();
-        return source_pos;
-    }
-
-    @Override
-    public int pack(Object[] source, int source_pos, int source_len, ByteWriter writer) {
-        writer.back();
-        return source_pos;
+    public Object execute(VirtualFrame frame) {
+        setOutputPosition(frame, getOutputPosition(frame) - 1);
+        return null;
     }
 
 }

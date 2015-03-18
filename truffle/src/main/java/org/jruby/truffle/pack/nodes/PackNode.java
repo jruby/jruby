@@ -10,73 +10,118 @@
 package org.jruby.truffle.pack.nodes;
 
 import com.oracle.truffle.api.CompilerDirectives;
+import com.oracle.truffle.api.dsl.TypeSystemReference;
+import com.oracle.truffle.api.frame.FrameSlotTypeException;
+import com.oracle.truffle.api.frame.VirtualFrame;
+import com.oracle.truffle.api.nodes.ExplodeLoop;
 import com.oracle.truffle.api.nodes.Node;
+import com.oracle.truffle.api.nodes.UnexpectedResultException;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.truffle.pack.runtime.ByteWriter;
+import org.jruby.truffle.pack.runtime.PackFrame;
 
+import java.util.Arrays;
+
+@TypeSystemReference(PackTypes.class)
 public abstract class PackNode extends Node {
 
-    @CompilerDirectives.CompilationFinal private boolean seenInt;
-    @CompilerDirectives.CompilationFinal private boolean seenLong;
-    @CompilerDirectives.CompilationFinal private boolean seenDouble;
-    @CompilerDirectives.CompilationFinal private boolean seenIObject;
-    @CompilerDirectives.CompilationFinal private boolean seenObject;
+    public abstract Object execute(VirtualFrame frame);
 
-    public abstract int pack(int[] source, int source_pos, int source_len, ByteWriter writer);
-    public abstract int pack(long[] source, int source_pos, int source_len, ByteWriter writer);
-    public abstract int pack(double[] source, int source_pos, int source_len, ByteWriter writer);
-    public abstract int pack(IRubyObject[] source, int source_pos, int source_len, ByteWriter writer);
-    public abstract int pack(Object[] source, int source_pos, int source_len, ByteWriter writer);
+    public int getSourceLength(VirtualFrame frame) {
+        try {
+            return frame.getInt(PackFrame.INSTANCE.getSourceLengthSlot());
+        } catch (FrameSlotTypeException e) {
+            throw new IllegalStateException(e);
+        }
+    }
 
-    public int pack(Object source, int source_pos, int source_len, ByteWriter writer) {
-        if (seenInt && source instanceof int[]) {
-            return pack((int[]) source, source_pos, source_len, writer);
+    protected int getSourcePosition(VirtualFrame frame) {
+        try {
+            return frame.getInt(PackFrame.INSTANCE.getSourcePositionSlot());
+        } catch (FrameSlotTypeException e) {
+            throw new IllegalStateException(e);
+        }
+    }
+
+    protected void setSourcePosition(VirtualFrame frame, int position) {
+        frame.setInt(PackFrame.INSTANCE.getSourcePositionSlot(), position);
+    }
+
+    protected byte[] getOutput(VirtualFrame frame) {
+        try {
+            return (byte[]) frame.getObject(PackFrame.INSTANCE.getOutputSlot());
+        } catch (FrameSlotTypeException e) {
+            throw new IllegalStateException(e);
+        }
+    }
+
+    protected void setOutput(VirtualFrame frame, byte[] output) {
+        frame.setObject(PackFrame.INSTANCE.getOutputSlot(), output);
+    }
+
+    protected int getOutputPosition(VirtualFrame frame) {
+        try {
+            return frame.getInt(PackFrame.INSTANCE.getOutputPositionSlot());
+        } catch (FrameSlotTypeException e) {
+            throw new IllegalStateException(e);
+        }
+    }
+
+    protected void setOutputPosition(VirtualFrame frame, int position) {
+        frame.setInt(PackFrame.INSTANCE.getOutputPositionSlot(), position);
+    }
+
+    protected int readInt(VirtualFrame frame, int[] source) {
+        final int sourcePosition = getSourcePosition(frame);
+
+        if (sourcePosition == getSourceLength(frame)) {
+            CompilerDirectives.transferToInterpreter();
+            throw new UnsupportedOperationException();
         }
 
-        if (seenLong && source instanceof long[]) {
-            return pack((long[]) source, source_pos, source_len, writer);
+        setSourcePosition(frame, sourcePosition + 1);
+
+        return source[sourcePosition];
+    }
+
+    protected int readInt(VirtualFrame frame, IRubyObject[] source) {
+        final int sourcePosition = getSourcePosition(frame);
+
+        if (sourcePosition == getSourceLength(frame)) {
+            CompilerDirectives.transferToInterpreter();
+            throw new UnsupportedOperationException();
         }
 
-        if (seenDouble && source instanceof double[]) {
-            return pack((double[]) source, source_pos, source_len, writer);
+        setSourcePosition(frame, sourcePosition + 1);
+
+        return toInt(source[sourcePosition]);
+    }
+
+    @CompilerDirectives.TruffleBoundary
+    private int toInt(IRubyObject object) {
+        return object.convertToInteger().getIntValue();
+    }
+
+    protected void write32UnsignedLittle(VirtualFrame frame, int value) {
+        write(frame, (byte) value, (byte) (value >>> 8), (byte) (value >>> 16), (byte) (value >>> 24));
+    }
+
+    protected void write32UnsignedBig(VirtualFrame frame, int value) {
+        write(frame, (byte) (value >>> 24), (byte) (value >>> 16), (byte) (value >>> 8), (byte) value);
+    }
+
+    @ExplodeLoop
+    protected void write(VirtualFrame frame, byte... values) {
+        byte[] output = getOutput(frame);
+        final int outputPosition = getOutputPosition(frame);
+
+        if (outputPosition + values.length > output.length) {
+            CompilerDirectives.transferToInterpreterAndInvalidate();
+            output = Arrays.copyOf(output, output.length * 2);
+            setOutput(frame, output);
         }
 
-        if (seenIObject && source instanceof IRubyObject[]) {
-            return pack((IRubyObject[]) source, source_pos, source_len, writer);
-        }
-
-        if (seenObject && source instanceof Object[]) {
-            return pack((Object[]) source, source_pos, source_len, writer);
-        }
-
-        CompilerDirectives.transferToInterpreterAndInvalidate();
-
-        if (source instanceof int[]) {
-            seenInt = true;
-            return pack((int[]) source, source_pos, source_len, writer);
-        }
-
-        if (source instanceof long[]) {
-            seenLong = true;
-            return pack((long[]) source, source_pos, source_len, writer);
-        }
-
-        if (source instanceof double[]) {
-            seenDouble = true;
-            return pack((double[]) source, source_pos, source_len, writer);
-        }
-
-        if (source instanceof IRubyObject[]) {
-            seenIObject = true;
-            return pack((IRubyObject[]) source, source_pos, source_len, writer);
-        }
-
-        if (source instanceof Object[]) {
-            seenObject = true;
-            return pack((Object[]) source, source_pos, source_len, writer);
-        }
-
-        throw new UnsupportedOperationException();
+        System.arraycopy(values, 0, output, outputPosition, values.length);
+        setOutputPosition(frame, outputPosition + values.length);
     }
 
 }

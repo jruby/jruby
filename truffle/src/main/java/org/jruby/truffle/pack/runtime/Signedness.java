@@ -7,17 +7,9 @@
  * GNU General Public License version 2
  * GNU Lesser General Public License version 2.1
  */
-package org.jruby.truffle.pack.nodes.type;
+package org.jruby.truffle.pack.runtime;
 
-import com.oracle.truffle.api.frame.VirtualFrame;
-import org.jruby.truffle.pack.nodes.PackNode;
-
-public class NullNode extends PackNode {
-
-    @Override
-    public Object execute(VirtualFrame frame) {
-        write(frame, (byte) 0);
-        return null;
-    }
-
+public enum Signedness {
+    UNSIGNED,
+    SIGNED
 }
