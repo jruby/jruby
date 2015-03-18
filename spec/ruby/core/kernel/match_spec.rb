@@ -1,6 +1,14 @@
 require File.expand_path('../../../spec_helper', __FILE__)
-require File.expand_path('../fixtures/classes', __FILE__)
 
 describe "Kernel#=~" do
-  it "needs to be reviewed for spec completeness"
+  it "returns nil matching any object" do
+    o = Object.new
+
+    (o =~ /Object/).should   be_nil
+    (o =~ 'Object').should   be_nil
+    (o =~ Object).should     be_nil
+    (o =~ Object.new).should be_nil
+    (o =~ nil).should        be_nil
+    (o =~ true).should       be_nil
+  end
 end

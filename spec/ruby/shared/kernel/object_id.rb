@@ -1,5 +1,5 @@
-# These examples hold for both BasicObject#__id__ and Object#object_id.
-describe :basic_object_id, :shared => true do
+# These examples hold for both BasicObject#__id__ and Kernel#object_id.
+describe :object_id, :shared => true do
   it "returns an integer" do
     o1 = @object.new
     o1.__send__(@method).should be_kind_of(Integer)
@@ -15,10 +15,7 @@ describe :basic_object_id, :shared => true do
     o2 = @object.new
     o1.__send__(@method).should_not == o2.__send__(@method)
   end
-end
 
-# These examples hold for Object#object_id, or for specific subclasses.
-describe :object_id, :shared => true do
   it "returns the same value for two Fixnums with the same value" do
     o1 = 1
     o2 = 1
