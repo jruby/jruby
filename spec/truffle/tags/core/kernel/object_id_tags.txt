@@ -1,0 +1,1 @@
+fails:Kernel#object_id returns a different value for two Float literals
