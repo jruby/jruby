@@ -27,10 +27,25 @@ module Utilities
   end
 
   def self.find_graal
+    base_graal_path = if graal_version.include?('SNAPSHOT')
+      'basic-graal/jdk1.8.0_05/product'
+    else
+      'graalvm-jdk1.8.0'
+    end
+
+    graal_locations = [
+      ENV["GRAAL_BIN_#{mangle_for_env(git_branch)}"],
+      ENV['GRAAL_BIN'],
+      "#{base_graal_path}/bin/java",
+      "../#{base_graal_path}/bin/java",
+      "../../#{base_graal_path}/bin/java",
+    ].compact.map { |path| File.expand_path(path, JRUBY_DIR) }
+
     not_found = -> {
       raise "couldn't find graal - download it from http://lafo.ssw.uni-linz.ac.at/graalvm/ and extract it into the JRuby repository or parent directory"
     }
-    GRAAL_LOCATIONS.find(not_found) do |location|
+
+    graal_locations.find(not_found) do |location|
       File.executable?(location)
     end
   end
@@ -40,7 +55,7 @@ module Utilities
   end
 
   def self.mangle_for_env(name)
-    name.upcase.gsub('-', '_')
+    name.upcase.tr('-', '_')
   end
 
   def self.find_graal_mx
@@ -71,10 +86,17 @@ module Utilities
   end
 
   def self.find_bench
+    bench_locations = [
+      ENV['BENCH_DIR'],
+      'bench9000',
+      '../bench9000'
+    ].compact.map { |path| File.expand_path(path, JRUBY_DIR) }
+
     not_found = -> {
       raise "couldn't find bench9000 - clone it from https://github.com/jruby/bench9000.git into the JRuby repository or parent directory"
     }
-    BENCH_LOCATIONS.find(not_found) do |location|
+
+    bench_locations.find(not_found) do |location|
       Dir.exist?(location)
     end
   end
@@ -82,26 +104,6 @@ module Utilities
   def self.jruby_version
     File.read("#{JRUBY_DIR}/VERSION").strip
   end
-
-  base_graal_path = if Utilities.graal_version.include?('SNAPSHOT')
-    'basic-graal/jdk1.8.0_05/product'
-  else
-    'graalvm-jdk1.8.0'
-  end
-
-  GRAAL_LOCATIONS = [
-    ENV["GRAAL_BIN_#{mangle_for_env(git_branch)}"],
-    ENV['GRAAL_BIN'],
-    "#{base_graal_path}/bin/java",
-    "../#{base_graal_path}/bin/java",
-    "../../#{base_graal_path}/bin/java",
-  ].compact.map { |path| File.expand_path(path, JRUBY_DIR) }
-
-  BENCH_LOCATIONS = [
-    ENV['BENCH_DIR'],
-    'bench9000',
-    '../bench9000'
-  ].compact.map { |path| File.expand_path(path, JRUBY_DIR) }
 
 end
 
