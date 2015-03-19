@@ -9,7 +9,7 @@
 
 # A workflow tool for JRuby+Truffle development
 
-# Recommended: function jt { ruby PATH/TO/jruby/tool/jt.rb $@; }
+# Recommended: function jt { ruby tool/jt.rb $@; }
 
 require 'fileutils'
 require 'digest/sha1'
