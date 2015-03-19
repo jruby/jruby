@@ -13,10 +13,14 @@ import com.oracle.truffle.api.dsl.TypeSystem;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.truffle.pack.runtime.Endianness;
 import org.jruby.truffle.pack.runtime.Signedness;
+import org.jruby.truffle.runtime.core.RubyString;
+import org.jruby.util.ByteList;
 
 @TypeSystem({
         int.class,
         long.class,
+        ByteList.class,
+        RubyString.class,
         int[].class,
         long[].class,
         double[].class,

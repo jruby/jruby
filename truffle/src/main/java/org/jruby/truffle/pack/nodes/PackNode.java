@@ -18,6 +18,7 @@ import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.nodes.UnexpectedResultException;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.truffle.pack.runtime.PackFrame;
+import org.jruby.truffle.runtime.core.RubyString;
 
 import java.util.Arrays;
 
@@ -83,19 +84,30 @@ public abstract class PackNode extends Node {
         frame.setInt(PackFrame.INSTANCE.getOutputPositionSlot(), position);
     }
 
-    @ExplodeLoop
     protected void write(VirtualFrame frame, byte... values) {
+        write(frame, values, 0, values.length);
+    }
+
+    protected void write(VirtualFrame frame, byte[] values, int valuesStart, int valuesLength) {
         byte[] output = getOutput(frame);
         final int outputPosition = getOutputPosition(frame);
 
-        if (outputPosition + values.length > output.length) {
+        if (outputPosition + valuesLength > output.length) {
             CompilerDirectives.transferToInterpreterAndInvalidate();
             output = Arrays.copyOf(output, output.length * 2);
             setOutput(frame, output);
         }
 
-        System.arraycopy(values, 0, output, outputPosition, values.length);
-        setOutputPosition(frame, outputPosition + values.length);
+        System.arraycopy(values, valuesStart, output, outputPosition, valuesLength);
+        setOutputPosition(frame, outputPosition + valuesLength);
+    }
+
+    protected boolean isRubyString(Object object) {
+        return object instanceof RubyString;
+    }
+
+    protected boolean isIRubyArray(Object[] array) {
+        return array instanceof IRubyObject[];
     }
 
 }

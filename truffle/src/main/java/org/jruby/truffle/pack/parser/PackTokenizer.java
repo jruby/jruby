@@ -11,7 +11,7 @@ package org.jruby.truffle.pack.parser;
 
 public class PackTokenizer {
 
-    private static final String simpleTokens = "CSLQcslqnNvVXx*";
+    private static final String simpleTokens = "CSLQcslqnNvVaXx*";
 
     private final String format;
     private final boolean extended;

@@ -22,6 +22,7 @@ import org.jruby.truffle.pack.nodes.type.*;
 import org.jruby.truffle.pack.runtime.Endianness;
 import org.jruby.truffle.pack.runtime.Signedness;
 import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.util.Pack;
 
 import java.nio.ByteOrder;
 import java.util.ArrayList;
@@ -36,6 +37,8 @@ public class PackParser {
     }
 
     public CallTarget parse(String format, boolean extended) {
+        System.err.println(format);
+
         if (format.length() > 32) {
             format = recoverLoop(format);
             extended = true;
@@ -70,29 +73,53 @@ public class PackParser {
                             throw new UnsupportedOperationException("unbalanced parens");
                         }
                     case 'C':
-                        return writeInteger(8, Signedness.UNSIGNED, nativeEndianness());
+                        node = writeInteger(8, Signedness.UNSIGNED, nativeEndianness());
+                        break;
                     case 'S':
-                        return writeInteger(16, Signedness.UNSIGNED, nativeEndianness());
+                        node = writeInteger(16, Signedness.UNSIGNED, nativeEndianness());
+                        break;
                     case 'L':
-                        return writeInteger(32, Signedness.UNSIGNED, nativeEndianness());
+                        node = writeInteger(32, Signedness.UNSIGNED, nativeEndianness());
+                        break;
                     case 'Q':
-                        return writeInteger(64, Signedness.UNSIGNED, nativeEndianness());
+                        node = writeInteger(64, Signedness.UNSIGNED, nativeEndianness());
+                        break;
                     case 'c':
-                        return writeInteger(8, Signedness.SIGNED, nativeEndianness());
+                        node = writeInteger(8, Signedness.SIGNED, nativeEndianness());
+                        break;
                     case 's':
-                        return writeInteger(16, Signedness.SIGNED, nativeEndianness());
+                        node = writeInteger(16, Signedness.SIGNED, nativeEndianness());
+                        break;
                     case 'l':
-                        return writeInteger(32, Signedness.SIGNED, nativeEndianness());
+                        node = writeInteger(32, Signedness.SIGNED, nativeEndianness());
+                        break;
                     case 'q':
-                        return writeInteger(64, Signedness.SIGNED, nativeEndianness());
+                        node = writeInteger(64, Signedness.SIGNED, nativeEndianness());
+                        break;
                     case 'n':
-                        return writeInteger(16, Signedness.UNSIGNED, Endianness.BIG);
+                        node = writeInteger(16, Signedness.UNSIGNED, Endianness.BIG);
+                        break;
                     case 'N':
-                        return writeInteger(32, Signedness.UNSIGNED, Endianness.BIG);
+                        node = writeInteger(32, Signedness.UNSIGNED, Endianness.BIG);
+                        break;
                     case 'v':
-                        return writeInteger(16, Signedness.UNSIGNED, Endianness.LITTLE);
+                        node = writeInteger(16, Signedness.UNSIGNED, Endianness.LITTLE);
+                        break;
                     case 'V':
-                        return writeInteger(32, Signedness.UNSIGNED, Endianness.LITTLE);
+                        node = writeInteger(32, Signedness.UNSIGNED, Endianness.LITTLE);
+                        break;
+                    case 'a':
+                        final boolean pad;
+                        final int width;
+                        if (tokenizer.peek() instanceof Integer) {
+                            pad = true;
+                            width = (int) tokenizer.next();
+                        } else {
+                            pad = false;
+                            width = 0;
+                        }
+                        node = WriteBinaryStringNodeGen.create(pad, width, (byte) 0, ReadStringNodeGen.create(context, new SourceNode()));
+                        break;
                     case 'X':
                         node = new BackNode();
                         break;

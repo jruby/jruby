@@ -2484,19 +2484,29 @@ public abstract class ArrayNodes {
             return pack(frame, array, format, false);
         }
 
-        @Specialization(guards = "!isRubyString(format)")
+        @Specialization
+        public Object pack(VirtualFrame frame, RubyArray array, int format, Object extended) {
+            return ruby(frame, "raise TypeError");
+        }
+
+        @Specialization
+        public Object pack(VirtualFrame frame, RubyArray array, long format, Object extended) {
+            return ruby(frame, "raise TypeError");
+        }
+
+        @Specialization
         public Object pack(VirtualFrame frame, RubyArray array, RubyNilClass format, Object extended) {
             return ruby(frame, "raise TypeError");
         }
 
         @Specialization(guards = {"!isRubyString(format)", "!isRubyNilClass(format)"})
         public Object pack(VirtualFrame frame, RubyArray array, Object format, UndefinedPlaceholder extended) {
-            return ruby(frame, "pack(format.to_s)", "format", format);
+            return ruby(frame, "pack(format.to_str)", "format", format);
         }
 
         @Specialization(guards = {"!isRubyString(format)", "!isRubyNilClass(format)"})
         public Object pack(VirtualFrame frame, RubyArray array, Object format, boolean extended) {
-            return ruby(frame, "pack(format.to_s, extended)", "format", format, "extended", extended);
+            return ruby(frame, "pack(format.to_str, extended)", "format", format, "extended", extended);
         }
 
     }

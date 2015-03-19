@@ -50,7 +50,7 @@ public abstract class ToLongNode extends PackNode {
     public long toLong(VirtualFrame frame, Object object) {
         if (toIntNode == null) {
             CompilerDirectives.transferToInterpreter();
-            toIntNode = insert(DispatchHeadNodeFactory.createMethodCall(context));
+            toIntNode = insert(DispatchHeadNodeFactory.createMethodCall(context, true));
         }
 
         final Object value = toIntNode.call(frame, object, "to_int", null);
