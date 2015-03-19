@@ -27,8 +27,8 @@ module Utilities
     end
   end
 
-  def self.branch
-    `git rev-parse --abbrev-ref HEAD`.strip
+  def self.git_branch
+    @git_branch ||= `git rev-parse --abbrev-ref HEAD`.strip
   end
 
   def self.mangle_for_env(name)
@@ -76,7 +76,7 @@ module Utilities
   end
 
   GRAAL_LOCATIONS = [
-    ENV["GRAAL_BIN_#{mangle_for_env(branch)}"],
+    ENV["GRAAL_BIN_#{mangle_for_env(git_branch)}"],
     ENV['GRAAL_BIN'],
     'graalvm-jdk1.8.0/bin/java',
     '../graalvm-jdk1.8.0/bin/java',
@@ -159,7 +159,7 @@ module Commands
     puts 'recognised environment variables:'
     puts
     puts '  GRAAL_BIN                                  GraalVM executable (java command) to use'
-    puts '  GRAAL_BIN_...branch_name...                GraalVM executable to use for a given branch'
+    puts '  GRAAL_BIN_...git_branch_name...            GraalVM executable to use for a given branch'
     puts '           branch names are mangled - eg truffle-head becomes GRAAL_BIN_TRUFFLE_HEAD'
   end
 
@@ -209,7 +209,7 @@ module Commands
     end
 
     if args.delete('--igv')
-      raise "--igv doesn't work on master - you need a branch that builds against latest graal" if Utilities.branch == 'master'
+      raise "--igv doesn't work on master - you need a branch that builds against latest graal" if Utilities.git_branch == 'master'
       Utilities.ensure_igv_running
       jruby_args += %w[-J-G:Dump=TrufflePartialEscape]
     end
