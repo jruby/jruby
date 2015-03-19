@@ -18,6 +18,14 @@ JRUBY_DIR = File.expand_path('../..', __FILE__)
 
 module Utilities
 
+  def self.graal_version
+    File.foreach("#{JRUBY_DIR}/truffle/pom.rb").each do |line|
+      if /jar 'com.oracle:truffle:(\d+\.\d+(?:-SNAPSHOT)?)'/ =~ line
+        break $1
+      end
+    end
+  end
+
   def self.find_graal
     not_found = -> {
       raise "couldn't find graal - download it from http://lafo.ssw.uni-linz.ac.at/graalvm/ and extract it into the JRuby repository or parent directory"
@@ -75,12 +83,18 @@ module Utilities
     File.read("#{JRUBY_DIR}/VERSION").strip
   end
 
+  base_graal_path = if Utilities.graal_version.include?('SNAPSHOT')
+    'basic-graal/jdk1.8.0_05/product'
+  else
+    'graalvm-jdk1.8.0'
+  end
+
   GRAAL_LOCATIONS = [
     ENV["GRAAL_BIN_#{mangle_for_env(git_branch)}"],
     ENV['GRAAL_BIN'],
-    'graalvm-jdk1.8.0/bin/java',
-    '../graalvm-jdk1.8.0/bin/java',
-    '../../graal/graalvm-jdk1.8.0/bin/java'
+    "#{base_graal_path}/bin/java",
+    "../#{base_graal_path}/bin/java",
+    "../../#{base_graal_path}/bin/java",
   ].compact.map { |path| File.expand_path(path, JRUBY_DIR) }
 
   BENCH_LOCATIONS = [
