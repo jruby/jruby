@@ -461,6 +461,12 @@ class TestHigherJavasupport < Test::Unit::TestCase
     end
   end
 
+  def test_exposed_java_proxy_types
+    Java::JavaProxyClass
+    Java::JavaProxyMethod
+    Java::JavaProxyConstructor
+  end
+
   Properties = Java::java.util.Properties
 
   def test_declare_constant

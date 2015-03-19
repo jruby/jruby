@@ -63,6 +63,8 @@ import org.jruby.javasupport.JavaUtil;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.builtin.IRubyObject;
 
+import static org.jruby.javasupport.JavaClass.EMPTY_CLASS_ARRAY;
+
 /**
  * Generalized proxy for classes and interfaces.
  *
@@ -81,8 +83,6 @@ import org.jruby.runtime.builtin.IRubyObject;
  */
 public class JavaProxyClass extends JavaProxyReflectionObject {
     static ThreadLocal<Ruby> runtimeTLS = new ThreadLocal<Ruby>();
-
-    static final Class[] EMPTY_CLASS_ARRAY = new Class[0];
 
     private final Class proxyClass;
     private final ArrayList<JavaProxyMethod> methods = new ArrayList<JavaProxyMethod>();
@@ -206,7 +206,7 @@ public class JavaProxyClass extends JavaProxyReflectionObject {
         return proxyClass;
     }
 
-    @JRubyClass(name="JavaProxy::JavaProxyMethod")
+    @JRubyClass(name="Java::JavaProxyMethod")
     public static class ProxyMethodImpl extends JavaProxyReflectionObject
         implements JavaProxyMethod {
 
