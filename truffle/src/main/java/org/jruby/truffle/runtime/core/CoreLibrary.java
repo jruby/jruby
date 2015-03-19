@@ -641,7 +641,7 @@ public class CoreLibrary {
 
     public RubyException frozenError(String className, Node currentNode) {
         CompilerAsserts.neverPartOfCompilation();
-        return runtimeError(String.format("FrozenError: can't modify frozen %s", className), currentNode);
+        return runtimeError(String.format("can't modify frozen %s", className), currentNode);
     }
 
     public RubyException argumentError(String message, Node currentNode) {
