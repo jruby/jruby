@@ -701,9 +701,15 @@ public abstract class ArrayNodes {
         public RubyArray concatIntegerFixnum(RubyArray array, RubyArray other) {
             notDesignedForCompilation();
 
-            // TODO(CS): is there already space in array?
-            System.arraycopy(other.getStore(), 0, array.getStore(), array.getSize(), other.getSize());
-            array.setStore(Arrays.copyOf((int[]) array.getStore(), array.getSize() + other.getSize()), array.getSize() + other.getSize());
+            final int newSize = array.getSize() + other.getSize();
+            int[] store = (int[]) array.getStore();
+
+            if ( store.length < newSize) {
+                store = Arrays.copyOf((int[]) array.getStore(), ArrayUtils.capacity(store.length, newSize));
+            }
+
+            System.arraycopy(other.getStore(), 0, store, array.getSize(), other.getSize());
+            array.setStore(store, newSize);
             return array;
         }
 
@@ -711,9 +717,15 @@ public abstract class ArrayNodes {
         public RubyArray concatLongFixnum(RubyArray array, RubyArray other) {
             notDesignedForCompilation();
 
-            // TODO(CS): is there already space in array?
-            System.arraycopy(other.getStore(), 0, array.getStore(), array.getSize(), other.getSize());
-            array.setStore(Arrays.copyOf((long[]) array.getStore(), array.getSize() + other.getSize()), array.getSize() + other.getSize());
+            final int newSize = array.getSize() + other.getSize();
+            long[] store = (long[]) array.getStore();
+
+            if ( store.length < newSize) {
+                store = Arrays.copyOf((long[]) array.getStore(), ArrayUtils.capacity(store.length, newSize));
+            }
+
+            System.arraycopy(other.getStore(), 0, store, array.getSize(), other.getSize());
+            array.setStore(store, newSize);
             return array;
         }
 
@@ -721,9 +733,15 @@ public abstract class ArrayNodes {
         public RubyArray concatDouble(RubyArray array, RubyArray other) {
             notDesignedForCompilation();
 
-            // TODO(CS): is there already space in array?
-            System.arraycopy(other.getStore(), 0, array.getStore(), array.getSize(), other.getSize());
-            array.setStore(Arrays.copyOf((double[]) array.getStore(), array.getSize() + other.getSize()), array.getSize() + other.getSize());
+            final int newSize = array.getSize() + other.getSize();
+            double[] store = (double[]) array.getStore();
+
+            if ( store.length < newSize) {
+                store = Arrays.copyOf((double[]) array.getStore(), ArrayUtils.capacity(store.length, newSize));
+            }
+
+            System.arraycopy(other.getStore(), 0, store, array.getSize(), other.getSize());
+            array.setStore(store, newSize);
             return array;
         }
 
@@ -731,8 +749,8 @@ public abstract class ArrayNodes {
         public RubyArray concatObject(RubyArray array, RubyArray other) {
             notDesignedForCompilation();
 
-            int size = array.getSize();
-            int newSize = size + other.getSize();
+            final int size = array.getSize();
+            final int newSize = size + other.getSize();
             Object[] store = (Object[]) array.getStore();
 
             if (newSize > store.length) {
@@ -748,12 +766,22 @@ public abstract class ArrayNodes {
         public RubyArray concat(RubyArray array, RubyArray other) {
             notDesignedForCompilation();
 
-            // TODO(CS): is there already space in array?
-            // TODO(CS): if array is Object[], use Arrays.copyOf
-            final Object[] newStore = new Object[array.getSize() + other.getSize()];
-            ArrayUtils.copy(array.getStore(), newStore, 0, array.getSize());
-            ArrayUtils.copy(other.getStore(), newStore, array.getSize(), other.getSize());
-            array.setStore(newStore, array.getSize() + other.getSize());
+            final int newSize = array.getSize() + other.getSize();
+
+            Object[] store;
+            if (array.getStore() instanceof Object[]) {
+                store = (Object[]) array.getStore();
+                if (store.length < newSize) {
+                    store = Arrays.copyOf(store, ArrayUtils.capacity(store.length, newSize));
+                }
+                ArrayUtils.copy(other.getStore(), store, array.getSize(), other.getSize());
+            } else {
+                store = new Object[newSize];
+                ArrayUtils.copy(array.getStore(), store, 0, array.getSize());
+                ArrayUtils.copy(other.getStore(), store, array.getSize(), other.getSize());
+            }
+
+            array.setStore(store, newSize);
             return array;
         }
 

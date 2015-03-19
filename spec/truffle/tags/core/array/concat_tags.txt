@@ -1,6 +1,0 @@
-fails:Array#concat is not infected by the other
-fails:Array#concat is not infected untrustedness by the other
-fails:Array#concat returns the array itself
-fails:Array#concat appends the elements in the other array
-fails:Array#concat keeps tainted status
-fails:Array#concat keeps untrusted status
