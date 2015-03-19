@@ -877,8 +877,7 @@ public abstract class FixnumNodes {
                 "!isRubyBignum(arguments[1])"
         })
         public Object equal(VirtualFrame frame, Object a, Object b) {
-            InternalMethod method = RubyArguments.getMethod(frame.getArguments());
-            return reverseCallNode.call(frame, b, method.getName(), null, a);
+            return reverseCallNode.call(frame, b, "==", null, a);
         }
 
     }
