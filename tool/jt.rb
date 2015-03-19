@@ -19,7 +19,7 @@ JRUBY_DIR = File.expand_path('../..', __FILE__)
 module Utilities
 
   def self.graal_version
-    File.foreach("#{JRUBY_DIR}/truffle/pom.rb").each do |line|
+    File.foreach("#{JRUBY_DIR}/truffle/pom.rb") do |line|
       if /jar 'com.oracle:truffle:(\d+\.\d+(?:-SNAPSHOT)?)'/ =~ line
         break $1
       end
