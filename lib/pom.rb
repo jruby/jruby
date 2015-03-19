@@ -72,7 +72,7 @@ project 'JRuby Lib Setup' do
   end
 
   # just depends on jruby-core so we are sure the jruby.jar is in place
-  jar "org.jruby:jruby-core:#{version}", :scope => 'provided'
+  jar "org.jruby:jruby-core:#{version}", :scope => 'test'
 
   repository( :url => 'http://rubygems-proxy.torquebox.org/releases',
               :id => 'rubygems-releases' )
@@ -85,14 +85,18 @@ project 'JRuby Lib Setup' do
 
   # tell maven to download the respective gem artifacts
   default_gems.each do |g|
-    dependency 'rubygems', g.name, g.version, :type => 'gem' do
+    # use provided scope so it is not a real dependency for runtime
+    dependency 'rubygems', g.name, g.version, :type => 'gem', :scope => :provided do
       exclusion 'rubygems:jar-dependencies'
     end
   end
 
   gem 'ruby-maven', '3.1.1.0.8', :scope => :provided
 
-  plugin :dependency, :useRepositoryLayout => true, :outputDirectory => 'ruby/stdlib', :excludeGroupIds => 'rubygems', :includeScope => :runtime do
+  default_gemnames = default_gems.collect { |g| g.name }
+
+  # TODO no hardcoded group-ids
+  plugin :dependency, :useRepositoryLayout => true, :outputDirectory => 'ruby/stdlib', :excludeGroupIds => 'rubygems', :includeScope => :provided do
     execute_goal 'copy-dependencies', :phase => 'package'
   end
 
@@ -114,7 +118,7 @@ project 'JRuby Lib Setup' do
     ruby_dir = File.join( ctx.project.basedir.to_pathname, 'ruby' )
     FileUtils.mkdir_p( default_specs )
 
-    # have an empty openssl.rb so we do not run in trob=uble with not having
+    # have an empty openssl.rb so we do not run in trouble with not having
     # jopenssl which is part of the default gems
     lib_dir = File.join( target, 'lib' )
     openssl = File.join( lib_dir, 'openssl.rb' )
@@ -138,7 +142,7 @@ project 'JRuby Lib Setup' do
     ctx.project.artifacts.select do |a|
       a.group_id == 'rubygems' || a.group_id == 'org.jruby.gems'
     end.each do |a|
-      ghome = a.scope == 'compile' ? gem_home : jruby_gems
+      ghome = default_gemnames.member?( a.artifact_id ) ? gem_home : jruby_gems
       if Dir[ File.join( ghome, 'cache', File.basename( a.file.to_pathname ).sub( /.gem/, '*.gem' ) ) ].empty?
         puts a.file.to_pathname
         # do not set bin_dir since its create absolute symbolic links
@@ -205,7 +209,7 @@ project 'JRuby Lib Setup' do
           specfile = Dir[ File.join( specs,  specfile_wildcard ) ].first
 
           unless specfile
-            raise Errno::ENOENT, "gemspec #{specfile_wildcard} not found; dependency unspecified in lib/pom.xml?"
+            raise Errno::ENOENT, "gemspec #{specfile_wildcard} not found in #{specs}; dependency unspecified in lib/pom.xml?"
           end
 
           specname = File.basename( specfile )
