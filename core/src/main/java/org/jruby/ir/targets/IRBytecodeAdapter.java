@@ -500,6 +500,6 @@ public abstract class IRBytecodeAdapter {
     private int variableCount = 0;
     private Map<Integer, Type> variableTypes = new HashMap<Integer, Type>();
     private Map<Integer, String> variableNames = new HashMap<Integer, String>();
-    private final Signature signature;
+    protected final Signature signature;
     private final ClassData classData;
 }

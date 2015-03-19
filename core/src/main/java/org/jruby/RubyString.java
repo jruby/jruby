@@ -5618,9 +5618,9 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
     @JRubyMethod
     public IRubyObject b(ThreadContext context) {
         Encoding encoding = ASCIIEncoding.INSTANCE;
-        RubyString dup = (RubyString)dup();
-        dup.associateEncoding(encoding);
-        dup.clearCodeRange();
+        RubyString dup = strDup(context.runtime);
+        dup.modify19();
+        dup.setEncoding(encoding);
         return dup;
     }
 

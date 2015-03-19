@@ -30,7 +30,7 @@ import java.math.BigInteger;
 @CoreClass(name = "Integer")
 public abstract class IntegerNodes {
 
-    @CoreMethod(names = "downto", needsBlock = true, required = 1, unsupportedOperationBehavior = UnsupportedOperationBehavior.ARGUMENT_ERROR)
+    @CoreMethod(names = "downto", needsBlock = true, required = 1, returnsEnumeratorIfNoBlock = true, unsupportedOperationBehavior = UnsupportedOperationBehavior.ARGUMENT_ERROR)
     public abstract static class DownToNode extends YieldingCoreMethodNode {
 
         private final BranchProfile breakProfile = BranchProfile.create();
@@ -246,7 +246,7 @@ public abstract class IntegerNodes {
 
     }
 
-    @CoreMethod(names = "upto", needsBlock = true, required = 1, unsupportedOperationBehavior = UnsupportedOperationBehavior.ARGUMENT_ERROR)
+    @CoreMethod(names = "upto", needsBlock = true, required = 1, returnsEnumeratorIfNoBlock = true, unsupportedOperationBehavior = UnsupportedOperationBehavior.ARGUMENT_ERROR)
     public abstract static class UpToNode extends YieldingCoreMethodNode {
 
         private final BranchProfile breakProfile = BranchProfile.create();

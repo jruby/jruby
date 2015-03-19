@@ -1,2 +1,0 @@
-fails:String#upcase is locale insensitive (only replaces a-z)
-fails:String#upcase! returns nil if no modifications were made

@@ -28,9 +28,9 @@ properties( 'tesla.dump.pom' => 'pom.xml',
             'tesla.dump.readonly' => true,
             'jruby.plugins.version' => '1.0.7',
             # we share the already installed gems
-            'gem.home' => '${jruby.home}/lib/ruby/gems/shared',
+            'gem.home' => '${jruby_home}/lib/ruby/gems/shared',
             # need jruby_home but not jruby.home as name otherwise
-            # tesla-plugin will pick the jruby from jruby.home
+            # polyglot-plugin will pick the jruby from jruby.home
             'jruby_home' => '${basedir}/../../' )
 
   unless version =~ /-SNAPSHOT/
@@ -40,11 +40,11 @@ properties( 'tesla.dump.pom' => 'pom.xml',
 execute 'copy jruby.jar', 'prepare-package' do |ctx|
   source = File.expand_path( ctx.project.properties[ 'jruby_home' ].to_pathname )
   # TODO somehow the lib/jruby.jar gets moved away to avoid conflicts
-  FileUtils.cp( Dir[ File.join( source, "core/target/jruby-core-#{version}-complete.jar" ) ].first,
+  FileUtils.cp( Dir[ File.join( source, "lib/jruby.jar" ) ].first,
                 File.join( ctx.project.basedir.to_pathname, 
                            'lib',
                            "jruby-core-#{ctx.project.version}-complete.jar" ) )
-  FileUtils.cp( Dir[ File.join( source, "truffle/target/jruby-truffle-#{version}-complete.jar" ) ].first,
+  FileUtils.cp( Dir[ File.join( source, "lib/jruby-truffle.jar" ) ].first,
                 File.join( ctx.project.basedir.to_pathname, 
                            'lib',
                            "jruby-truffle-#{ctx.project.version}-complete.jar" ) )

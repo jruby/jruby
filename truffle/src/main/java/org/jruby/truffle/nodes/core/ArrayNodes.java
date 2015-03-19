@@ -43,6 +43,7 @@ import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.control.RedoException;
 import org.jruby.truffle.runtime.core.*;
 import org.jruby.truffle.runtime.methods.Arity;
+import org.jruby.truffle.runtime.methods.InternalMethod;
 import org.jruby.truffle.runtime.methods.SharedMethodInfo;
 import org.jruby.truffle.runtime.util.ArrayUtils;
 import org.jruby.util.ByteList;
@@ -329,8 +330,9 @@ public abstract class ArrayNodes {
                 fallbackNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext()));
             }
 
+            InternalMethod method = RubyArguments.getMethod(frame.getArguments());
             return fallbackNode.call(frame, array, "element_reference_fallback", null,
-                    getContext().makeString(getName()), args);
+                    getContext().makeString(method.getName()), args);
         }
 
     }
@@ -492,12 +494,32 @@ public abstract class ArrayNodes {
             return setObject(frame, array, normalizedStart, length, other);
         }
 
-        @Specialization
+        @Specialization(guards = "!areBothIntegerFixnum")
         public Object setRangeArray(VirtualFrame frame, RubyArray array, RubyRange.IntegerFixnumRange range, RubyArray other, UndefinedPlaceholder unused) {
             final int normalizedStart = array.normalizeIndex(range.getBegin());
             final int normalizedEnd = range.doesExcludeEnd() ? array.normalizeIndex(range.getEnd()) - 1 : array.normalizeIndex(range.getEnd());
             final int length = normalizedEnd - normalizedStart + 1;
             return setOtherArray(frame, array, normalizedStart, length, other);
+        }
+
+        @Specialization(guards = "areBothIntegerFixnum" )
+        public Object setIntegerFixnumRange(VirtualFrame frame, RubyArray array, RubyRange.IntegerFixnumRange range, RubyArray other, UndefinedPlaceholder unused) {
+            if (range.doesExcludeEnd()) {
+                CompilerDirectives.transferToInterpreter();
+                return setRangeArray(frame, array, range, other, unused);
+            } else {
+                int normalizedBegin = array.normalizeIndex(range.getBegin());
+                int normalizedEnd = array.normalizeIndex(range.getEnd());
+
+                if (normalizedBegin == 0 && normalizedEnd == array.getSize() - 1) {
+                    array.setStore(Arrays.copyOf((int[]) other.getStore(), other.getSize()), other.getSize());
+                } else {
+                    CompilerDirectives.transferToInterpreter();
+                    return setRangeArray(frame, array, range, other, unused);
+                }
+            }
+
+            return other;
         }
 
     }
@@ -679,9 +701,15 @@ public abstract class ArrayNodes {
         public RubyArray concatIntegerFixnum(RubyArray array, RubyArray other) {
             notDesignedForCompilation();
 
-            // TODO(CS): is there already space in array?
-            System.arraycopy(other.getStore(), 0, array.getStore(), array.getSize(), other.getSize());
-            array.setStore(Arrays.copyOf((int[]) array.getStore(), array.getSize() + other.getSize()), array.getSize() + other.getSize());
+            final int newSize = array.getSize() + other.getSize();
+            int[] store = (int[]) array.getStore();
+
+            if ( store.length < newSize) {
+                store = Arrays.copyOf((int[]) array.getStore(), ArrayUtils.capacity(store.length, newSize));
+            }
+
+            System.arraycopy(other.getStore(), 0, store, array.getSize(), other.getSize());
+            array.setStore(store, newSize);
             return array;
         }
 
@@ -689,9 +717,15 @@ public abstract class ArrayNodes {
         public RubyArray concatLongFixnum(RubyArray array, RubyArray other) {
             notDesignedForCompilation();
 
-            // TODO(CS): is there already space in array?
-            System.arraycopy(other.getStore(), 0, array.getStore(), array.getSize(), other.getSize());
-            array.setStore(Arrays.copyOf((long[]) array.getStore(), array.getSize() + other.getSize()), array.getSize() + other.getSize());
+            final int newSize = array.getSize() + other.getSize();
+            long[] store = (long[]) array.getStore();
+
+            if ( store.length < newSize) {
+                store = Arrays.copyOf((long[]) array.getStore(), ArrayUtils.capacity(store.length, newSize));
+            }
+
+            System.arraycopy(other.getStore(), 0, store, array.getSize(), other.getSize());
+            array.setStore(store, newSize);
             return array;
         }
 
@@ -699,9 +733,15 @@ public abstract class ArrayNodes {
         public RubyArray concatDouble(RubyArray array, RubyArray other) {
             notDesignedForCompilation();
 
-            // TODO(CS): is there already space in array?
-            System.arraycopy(other.getStore(), 0, array.getStore(), array.getSize(), other.getSize());
-            array.setStore(Arrays.copyOf((double[]) array.getStore(), array.getSize() + other.getSize()), array.getSize() + other.getSize());
+            final int newSize = array.getSize() + other.getSize();
+            double[] store = (double[]) array.getStore();
+
+            if ( store.length < newSize) {
+                store = Arrays.copyOf((double[]) array.getStore(), ArrayUtils.capacity(store.length, newSize));
+            }
+
+            System.arraycopy(other.getStore(), 0, store, array.getSize(), other.getSize());
+            array.setStore(store, newSize);
             return array;
         }
 
@@ -709,8 +749,8 @@ public abstract class ArrayNodes {
         public RubyArray concatObject(RubyArray array, RubyArray other) {
             notDesignedForCompilation();
 
-            int size = array.getSize();
-            int newSize = size + other.getSize();
+            final int size = array.getSize();
+            final int newSize = size + other.getSize();
             Object[] store = (Object[]) array.getStore();
 
             if (newSize > store.length) {
@@ -726,12 +766,22 @@ public abstract class ArrayNodes {
         public RubyArray concat(RubyArray array, RubyArray other) {
             notDesignedForCompilation();
 
-            // TODO(CS): is there already space in array?
-            // TODO(CS): if array is Object[], use Arrays.copyOf
-            final Object[] newStore = new Object[array.getSize() + other.getSize()];
-            ArrayUtils.copy(array.getStore(), newStore, 0, array.getSize());
-            ArrayUtils.copy(other.getStore(), newStore, array.getSize(), other.getSize());
-            array.setStore(newStore, array.getSize() + other.getSize());
+            final int newSize = array.getSize() + other.getSize();
+
+            Object[] store;
+            if (array.getStore() instanceof Object[]) {
+                store = (Object[]) array.getStore();
+                if (store.length < newSize) {
+                    store = Arrays.copyOf(store, ArrayUtils.capacity(store.length, newSize));
+                }
+                ArrayUtils.copy(other.getStore(), store, array.getSize(), other.getSize());
+            } else {
+                store = new Object[newSize];
+                ArrayUtils.copy(array.getStore(), store, 0, array.getSize());
+                ArrayUtils.copy(other.getStore(), store, array.getSize(), other.getSize());
+            }
+
+            array.setStore(store, newSize);
             return array;
         }
 
@@ -1672,58 +1722,11 @@ public abstract class ArrayNodes {
 
     }
 
-    @CoreMethod(names = "join", optional = 1)
-    public abstract static class JoinNode extends ArrayCoreMethodNode {
-
-        public JoinNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
-        public JoinNode(JoinNode prev) {
-            super(prev);
-        }
-
-        @Specialization
-        public RubyString join(RubyArray array, UndefinedPlaceholder unused) {
-            Object separator = getContext().getCoreLibrary().getGlobalVariablesObject().getInstanceVariable("$,");
-            if (separator == nil()) {
-                separator = getContext().makeString("");
-            }
-
-            if (separator instanceof RubyString) {
-                return join(array, (RubyString) separator);
-            } else {
-                throw new UnsupportedOperationException();
-            }
-        }
-
-        @Specialization
-        public RubyString join(RubyArray array, RubyString separator) {
-            notDesignedForCompilation();
-
-            final StringBuilder builder = new StringBuilder();
-
-            final Object[] objects = array.slowToArray();
-
-            for (int n = 0; n < objects.length; n++) {
-                if (n > 0) {
-                    builder.append(separator);
-                }
-
-                builder.append(objects[n]);
-            }
-
-            return getContext().makeString(builder.toString());
-        }
-
-    }
-
-    @CoreMethod(names = {"map", "collect"}, needsBlock = true)
+    @CoreMethod(names = {"map", "collect"}, needsBlock = true, returnsEnumeratorIfNoBlock = true)
     @ImportGuards(ArrayGuards.class)
     public abstract static class MapNode extends YieldingCoreMethodNode {
 
         @Child private ArrayBuilderNode arrayBuilder;
-        @Child private CallDispatchHeadNode toEnumNode;
 
         private final BranchProfile breakProfile = BranchProfile.create();
         private final BranchProfile nextProfile = BranchProfile.create();
@@ -1737,17 +1740,6 @@ public abstract class ArrayNodes {
         public MapNode(MapNode prev) {
             super(prev);
             arrayBuilder = prev.arrayBuilder;
-            toEnumNode = prev.toEnumNode;
-        }
-
-        @Specialization
-        public Object eachEnumerator(VirtualFrame frame, RubyArray array, UndefinedPlaceholder block) {
-            if (toEnumNode == null) {
-                CompilerDirectives.transferToInterpreter();
-                toEnumNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext()));
-            }
-
-            return toEnumNode.call(frame, array, "to_enum", null, getContext().getCoreLibrary().getMapSymbol());
         }
 
         @Specialization(guards = "isNull")
@@ -1908,11 +1900,10 @@ public abstract class ArrayNodes {
         }
     }
 
-    @CoreMethod(names = {"map!", "collect!"}, needsBlock = true)
+    @CoreMethod(names = {"map!", "collect!"}, needsBlock = true, returnsEnumeratorIfNoBlock = true, raiseIfFrozenSelf = true)
     @ImportGuards(ArrayGuards.class)
     public abstract static class MapInPlaceNode extends YieldingCoreMethodNode {
 
-        @Child private CallDispatchHeadNode toEnumNode;
         @Child private ArrayWriteDenormalizedNode writeNode;
 
         private final BranchProfile breakProfile = BranchProfile.create();
@@ -1925,18 +1916,7 @@ public abstract class ArrayNodes {
 
         public MapInPlaceNode(MapInPlaceNode prev) {
             super(prev);
-            toEnumNode = prev.toEnumNode;
             writeNode = prev.writeNode;
-        }
-
-        @Specialization
-        public Object eachEnumerator(VirtualFrame frame, RubyArray array, UndefinedPlaceholder block) {
-            if (toEnumNode == null) {
-                CompilerDirectives.transferToInterpreter();
-                toEnumNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext()));
-            }
-
-            return toEnumNode.call(frame, array, "to_enum", null, getContext().getCoreLibrary().getMapBangSymbol());
         }
 
         @Specialization(guards = "isNull")
@@ -2793,7 +2773,7 @@ public abstract class ArrayNodes {
 
     }
 
-    @CoreMethod(names = "reject", needsBlock = true)
+    @CoreMethod(names = "reject", needsBlock = true, returnsEnumeratorIfNoBlock = true)
     @ImportGuards(ArrayGuards.class)
     public abstract static class RejectNode extends YieldingCoreMethodNode {
 
@@ -2882,7 +2862,7 @@ public abstract class ArrayNodes {
 
     }
 
-    @CoreMethod(names = { "reject!", "delete_if" }, needsBlock = true, raiseIfFrozenSelf = true)
+    @CoreMethod(names = { "reject!", "delete_if" }, needsBlock = true, returnsEnumeratorIfNoBlock = true, raiseIfFrozenSelf = true)
     @ImportGuards(ArrayGuards.class)
     public abstract static class RejectInPlaceNode extends YieldingCoreMethodNode {
 
@@ -2986,7 +2966,7 @@ public abstract class ArrayNodes {
 
     }
 
-    @CoreMethod(names = "select", needsBlock = true)
+    @CoreMethod(names = "select", needsBlock = true, returnsEnumeratorIfNoBlock = true)
     @ImportGuards(ArrayGuards.class)
     public abstract static class SelectNode extends YieldingCoreMethodNode {
 

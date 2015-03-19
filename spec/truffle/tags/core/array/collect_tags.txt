@@ -1,5 +1,0 @@
-fails:Array#collect! when frozen raises a RuntimeError when calling #each on the returned Enumerator
-fails:Array#collect! when frozen raises a RuntimeError when calling #each on the returned Enumerator when emptyfails:Array#collect! when frozen raises a RuntimeError
-fails:Array#collect! when frozen raises a RuntimeError
-fails:Array#collect! when frozen raises a RuntimeError when empty
-fails:Array#collect! when frozen raises a RuntimeError when calling #each on the returned Enumerator when empty

@@ -19,13 +19,7 @@ project 'JRuby Complete' do
   end
 
   scope :provided do
-    jar( 'org.jruby:jruby-core:${project.version}:noasm',
-         :exclusions => [ 'com.github.jnr:jnr-ffi',
-                          'org.ow2.asm:asm',
-                          'org.ow2.asm:asm-commons',
-                          'org.ow2.asm:asm-analysis',
-                          'org.ow2.asm:asm-util' ] )
-    jar 'org.jruby:jruby-truffle:${project.version}'
+    jar 'org.jruby:jruby-core:${project.version}'
     jar 'org.jruby:jruby-stdlib:${project.version}'
   end
 

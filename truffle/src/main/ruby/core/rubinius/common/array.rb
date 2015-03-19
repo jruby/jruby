@@ -634,6 +634,52 @@ class Array
 
   alias_method :to_s, :inspect
 
+  def join(sep=nil)
+    return "".force_encoding(Encoding::US_ASCII) if @total == 0
+
+    out = ""
+    raise ArgumentError, "recursive array join" if Thread.detect_recursion self do
+      sep = sep.nil? ? $, : StringValue(sep)
+
+      # We've manually unwound the first loop entry for performance
+      # reasons.
+      x = @tuple[@start]
+
+      if str = String.try_convert(x)
+        x = str
+      elsif ary = Array.try_convert(x)
+        x = ary.join(sep)
+      else
+        x = x.to_s
+      end
+
+      out.force_encoding(x.encoding)
+      out << x
+
+      total = @start + size()
+      i = @start + 1
+
+      while i < total
+        out << sep if sep
+
+        x = @tuple[i]
+
+        if str = String.try_convert(x)
+          x = str
+        elsif ary = Array.try_convert(x)
+          x = ary.join(sep)
+        else
+          x = x.to_s
+        end
+
+        out << x
+        i += 1
+      end
+    end
+
+    Rubinius::Type.infect(out, self)
+  end
+
   def keep_if(&block)
     return to_enum :keep_if unless block_given?
 

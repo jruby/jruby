@@ -19,7 +19,7 @@ describe "Time#getlocal" do
     t = Time.new(2005, 2, 27, 22, 50, 0, -3600)
     t.utc_offset.should == -3600
 
-    with_timezone("US/Eastern") do
+    with_timezone("America/New_York") do
       t.getlocal.utc_offset.should == -18000
     end
   end
