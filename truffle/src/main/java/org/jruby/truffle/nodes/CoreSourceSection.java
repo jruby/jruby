@@ -25,12 +25,4 @@ public final class CoreSourceSection extends NullSourceSection {
         this.methodName = methodName;
     }
 
-    public String getClassName() {
-        return className;
-    }
-
-    public String getMethodName() {
-        return methodName;
-    }
-
 }

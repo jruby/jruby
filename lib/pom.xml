@@ -7,13 +7,15 @@
     <artifactId>jruby-parent</artifactId>
     <version>9.0.0.0-SNAPSHOT</version>
   </parent>
-  <artifactId>jruby-lib</artifactId>
-  <packaging>pom</packaging>
+  <artifactId>jruby-stdlib</artifactId>
   <name>JRuby Lib Setup</name>
   <properties>
     <tesla.dump.readonly>true</tesla.dump.readonly>
+    <jruby.complete.gems>${jruby.complete.home}/lib/ruby/gems/shared</jruby.complete.gems>
+    <gem.home>${basedir}/ruby/gems/shared</gem.home>
     <jruby.plugins.version>1.0.5</jruby.plugins.version>
     <tesla.dump.pom>pom.xml</tesla.dump.pom>
+    <jruby.complete.home>${project.build.outputDirectory}/META-INF/jruby.home</jruby.complete.home>
     <tesla.version>0.1.1</tesla.version>
   </properties>
   <dependencies>
@@ -21,13 +23,14 @@
       <groupId>org.jruby</groupId>
       <artifactId>jruby-core</artifactId>
       <version>9.0.0.0-SNAPSHOT</version>
-      <scope>provided</scope>
+      <scope>test</scope>
     </dependency>
     <dependency>
       <groupId>rubygems</groupId>
       <artifactId>jruby-openssl</artifactId>
       <version>0.9.6</version>
       <type>gem</type>
+      <scope>provided</scope>
       <exclusions>
         <exclusion>
           <artifactId>jar-dependencies</artifactId>
@@ -40,6 +43,7 @@
       <artifactId>jruby-readline</artifactId>
       <version>1.0</version>
       <type>gem</type>
+      <scope>provided</scope>
       <exclusions>
         <exclusion>
           <artifactId>jar-dependencies</artifactId>
@@ -52,6 +56,7 @@
       <artifactId>rake</artifactId>
       <version>${rake.version}</version>
       <type>gem</type>
+      <scope>provided</scope>
       <exclusions>
         <exclusion>
           <artifactId>jar-dependencies</artifactId>
@@ -64,6 +69,7 @@
       <artifactId>rdoc</artifactId>
       <version>${rdoc.version}</version>
       <type>gem</type>
+      <scope>provided</scope>
       <exclusions>
         <exclusion>
           <artifactId>jar-dependencies</artifactId>
@@ -76,6 +82,7 @@
       <artifactId>json</artifactId>
       <version>${json.version}</version>
       <type>gem</type>
+      <scope>provided</scope>
       <exclusions>
         <exclusion>
           <artifactId>jar-dependencies</artifactId>
@@ -88,6 +95,7 @@
       <artifactId>jar-dependencies</artifactId>
       <version>0.1.8</version>
       <type>gem</type>
+      <scope>provided</scope>
       <exclusions>
         <exclusion>
           <artifactId>jar-dependencies</artifactId>
@@ -100,6 +108,7 @@
       <artifactId>minitest</artifactId>
       <version>${minitest.version}</version>
       <type>gem</type>
+      <scope>provided</scope>
       <exclusions>
         <exclusion>
           <artifactId>jar-dependencies</artifactId>
@@ -112,6 +121,7 @@
       <artifactId>test-unit</artifactId>
       <version>${test-unit.version}</version>
       <type>gem</type>
+      <scope>provided</scope>
       <exclusions>
         <exclusion>
           <artifactId>jar-dependencies</artifactId>
@@ -124,6 +134,7 @@
       <artifactId>power_assert</artifactId>
       <version>${power_assert.version}</version>
       <type>gem</type>
+      <scope>provided</scope>
       <exclusions>
         <exclusion>
           <artifactId>jar-dependencies</artifactId>
@@ -136,6 +147,7 @@
       <artifactId>psych</artifactId>
       <version>2.0.9-SNAPSHOT</version>
       <type>gem</type>
+      <scope>provided</scope>
       <exclusions>
         <exclusion>
           <artifactId>jar-dependencies</artifactId>
@@ -158,6 +170,42 @@
     </repository>
   </repositories>
   <build>
+    <resources>
+      <resource>
+        <targetPath>${jruby.complete.gems}</targetPath>
+        <directory>${gem.home}</directory>
+        <includes>
+          <include>gems/rake-${rake.version}/bin/r*</include>
+          <include>gems/rdoc-${rdoc.version}/bin/r*</include>
+          <include>specifications/default/*.gemspec</include>
+        </includes>
+      </resource>
+      <resource>
+        <targetPath>${jruby.complete.home}</targetPath>
+        <directory>${basedir}/..</directory>
+        <includes>
+          <include>bin/ast*</include>
+          <include>bin/gem*</include>
+          <include>bin/irb*</include>
+          <include>bin/jgem*</include>
+          <include>bin/jirb*</include>
+          <include>bin/jruby*</include>
+          <include>bin/rake*</include>
+          <include>bin/ri*</include>
+          <include>bin/rdoc*</include>
+          <include>bin/testrb*</include>
+          <include>lib/ruby/stdlib/**</include>
+          <include>lib/ruby/truffle/**</include>
+        </includes>
+        <excludes>
+          <exclude>bin/jruby</exclude>
+          <exclude>bin/jruby*_*</exclude>
+          <exclude>bin/jruby*-*</exclude>
+          <exclude>**/.*</exclude>
+          <exclude>lib/ruby/stdlib/rubygems/defaults/jruby_native.rb</exclude>
+        </excludes>
+      </resource>
+    </resources>
     <plugins>
       <plugin>
         <artifactId>maven-clean-plugin</artifactId>
@@ -179,18 +227,6 @@
         </configuration>
       </plugin>
       <plugin>
-        <artifactId>maven-deploy-plugin</artifactId>
-        <configuration>
-          <skip>true</skip>
-        </configuration>
-      </plugin>
-      <plugin>
-        <artifactId>maven-invoker-plugin</artifactId>
-        <configuration>
-          <skipInstallation>true</skipInstallation>
-        </configuration>
-      </plugin>
-      <plugin>
         <artifactId>maven-dependency-plugin</artifactId>
         <executions>
           <execution>
@@ -204,8 +240,18 @@
           <useRepositoryLayout>true</useRepositoryLayout>
           <outputDirectory>ruby/stdlib</outputDirectory>
           <excludeGroupIds>rubygems</excludeGroupIds>
-          <includeScope>runtime</includeScope>
+          <includeScope>provided</includeScope>
         </configuration>
+      </plugin>
+      <plugin>
+        <artifactId>maven-source-plugin</artifactId>
+        <configuration>
+          <skipSource>true</skipSource>
+        </configuration>
+      </plugin>
+      <plugin>
+        <groupId>org.codehaus.mojo</groupId>
+        <artifactId>build-helper-maven-plugin</artifactId>
       </plugin>
       <plugin>
         <groupId>io.tesla.polyglot</groupId>
@@ -214,12 +260,45 @@
         <executions>
           <execution>
             <id>install_gems</id>
-            <phase>package</phase>
+            <phase>initialize</phase>
             <goals>
               <goal>execute</goal>
             </goals>
             <configuration>
               <taskId>install_gems</taskId>
+              <nativePom>pom.rb</nativePom>
+            </configuration>
+          </execution>
+          <execution>
+            <id>fix shebang on gem bin files and add *.bat files</id>
+            <phase>prepare-resources</phase>
+            <goals>
+              <goal>execute</goal>
+            </goals>
+            <configuration>
+              <taskId>fix shebang on gem bin files and add *.bat files</taskId>
+              <nativePom>pom.rb</nativePom>
+            </configuration>
+          </execution>
+          <execution>
+            <id>copy bin/jruby.bash to bin/jruby</id>
+            <phase>process-resources</phase>
+            <goals>
+              <goal>execute</goal>
+            </goals>
+            <configuration>
+              <taskId>copy bin/jruby.bash to bin/jruby</taskId>
+              <nativePom>pom.rb</nativePom>
+            </configuration>
+          </execution>
+          <execution>
+            <id>jrubydir</id>
+            <phase>prepare-package</phase>
+            <goals>
+              <goal>execute</goal>
+            </goals>
+            <configuration>
+              <taskId>jrubydir</taskId>
               <nativePom>pom.rb</nativePom>
             </configuration>
           </execution>

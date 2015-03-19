@@ -18,12 +18,18 @@ freezing to) a specific jruby-complete jar version.</description>
   <licenses>
     <license>
       <name>EPL-1.0</name>
+      <url>http://opensource.org/licenses/EPL-1.0</url>
+      <comments>Eclipse Public License 1.0</comments>
     </license>
     <license>
       <name>GPL-2.0</name>
+      <url>http://opensource.org/licenses/GPL-2.0</url>
+      <comments>GNU General Public License version 2.0</comments>
     </license>
     <license>
       <name>LGPL-2.1</name>
+      <url>http://opensource.org/licenses/LGPL-2.1</url>
+      <comments>GNU Library or "Lesser" General Public License version 2.1</comments>
     </license>
   </licenses>
   <developers>
@@ -38,10 +44,9 @@ freezing to) a specific jruby-complete jar version.</description>
   </scm>
   <properties>
     <tesla.dump.readonly>true</tesla.dump.readonly>
-    <gem.home>${jruby.home}/lib/ruby/gems/shared</gem.home>
+    <gem.home>${jruby_home}/lib/ruby/gems/shared</gem.home>
     <jruby.plugins.version>1.0.7</jruby.plugins.version>
     <tesla.dump.pom>pom.xml</tesla.dump.pom>
-    <project.build.sourceEncoding>utf-8</project.build.sourceEncoding>
     <jruby_home>${basedir}/../../</jruby_home>
     <tesla.version>0.1.1</tesla.version>
   </properties>

@@ -1,1 +1,0 @@
-fails:ObjectSpace.each_object returns an enumerator if not given a block

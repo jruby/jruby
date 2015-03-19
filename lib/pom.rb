@@ -54,21 +54,25 @@ project 'JRuby Lib Setup' do
   version = File.read( File.join( basedir, '..', 'VERSION' ) ).strip
 
   model_version '4.0.0'
-  id 'jruby-lib'
+  id 'jruby-stdlib'
   inherit "org.jruby:jruby-parent", version
-  packaging 'pom'
 
   properties( 'tesla.dump.pom' => 'pom.xml',
               'tesla.dump.readonly' => true,
               'tesla.version' => '0.1.1',
-              'jruby.plugins.version' => '1.0.5' )
+              'jruby.plugins.version' => '1.0.5',
+              'gem.home' => '${basedir}/ruby/gems/shared',
+              # we copy everything into the target/classes/META-INF
+              # so the jar plugin just packs it - see build/resources below
+              'jruby.complete.home' => '${project.build.outputDirectory}/META-INF/jruby.home',
+              'jruby.complete.gems' => '${jruby.complete.home}/lib/ruby/gems/shared' )
 
   unless version =~ /-SNAPSHOT/
     properties 'jruby.home' => '${basedir}/..'
   end
 
   # just depends on jruby-core so we are sure the jruby.jar is in place
-  jar "org.jruby:jruby-core:#{version}", :scope => 'provided'
+  jar "org.jruby:jruby-core:#{version}", :scope => 'test'
 
   repository( :url => 'http://rubygems-proxy.torquebox.org/releases',
               :id => 'rubygems-releases' )
@@ -81,23 +85,22 @@ project 'JRuby Lib Setup' do
 
   # tell maven to download the respective gem artifacts
   default_gems.each do |g|
-    dependency 'rubygems', g.name, g.version, :type => 'gem' do
+    # use provided scope so it is not a real dependency for runtime
+    dependency 'rubygems', g.name, g.version, :type => 'gem', :scope => :provided do
       exclusion 'rubygems:jar-dependencies'
     end
   end
 
-  # this is not an artifact for maven central
-  plugin :deploy, :skip => true
-
-  plugin :invoker, :skipInstallation => true
-
   gem 'ruby-maven', '3.1.1.0.8', :scope => :provided
 
-  plugin :dependency, :useRepositoryLayout => true, :outputDirectory => 'ruby/stdlib', :excludeGroupIds => 'rubygems', :includeScope => :runtime do
+  default_gemnames = default_gems.collect { |g| g.name }
+
+  # TODO no hardcoded group-ids
+  plugin :dependency, :useRepositoryLayout => true, :outputDirectory => 'ruby/stdlib', :excludeGroupIds => 'rubygems', :includeScope => :provided do
     execute_goal 'copy-dependencies', :phase => 'package'
   end
 
-  execute :install_gems, :'package' do |ctx|
+  execute :install_gems, :'initialize' do |ctx|
     require 'fileutils'
 
     puts "using jruby #{JRUBY_VERSION}"
@@ -115,7 +118,7 @@ project 'JRuby Lib Setup' do
     ruby_dir = File.join( ctx.project.basedir.to_pathname, 'ruby' )
     FileUtils.mkdir_p( default_specs )
 
-    # have an empty openssl.rb so we do not run in trob=uble with not having
+    # have an empty openssl.rb so we do not run in trouble with not having
     # jopenssl which is part of the default gems
     lib_dir = File.join( target, 'lib' )
     openssl = File.join( lib_dir, 'openssl.rb' )
@@ -139,7 +142,7 @@ project 'JRuby Lib Setup' do
     ctx.project.artifacts.select do |a|
       a.group_id == 'rubygems' || a.group_id == 'org.jruby.gems'
     end.each do |a|
-      ghome = a.scope == 'compile' ? gem_home : jruby_gems
+      ghome = default_gemnames.member?( a.artifact_id ) ? gem_home : jruby_gems
       if Dir[ File.join( ghome, 'cache', File.basename( a.file.to_pathname ).sub( /.gem/, '*.gem' ) ) ].empty?
         puts a.file.to_pathname
         # do not set bin_dir since its create absolute symbolic links
@@ -206,7 +209,7 @@ project 'JRuby Lib Setup' do
           specfile = Dir[ File.join( specs,  specfile_wildcard ) ].first
 
           unless specfile
-            raise Errno::ENOENT, "gemspec #{specfile_wildcard} not found; dependency unspecified in lib/pom.xml?"
+            raise Errno::ENOENT, "gemspec #{specfile_wildcard} not found in #{specs}; dependency unspecified in lib/pom.xml?"
           end
 
           specname = File.basename( specfile )
@@ -233,5 +236,74 @@ project 'JRuby Lib Setup' do
     ( Dir[ File.join( jruby_gems, '**/*' ) ] + Dir[ File.join( jruby_gems, '**/.*' ) ] ).each do |f|
       File.chmod( 0644, f ) rescue nil if File.file?( f )
     end
-  end  
+  end
+
+  execute( 'fix shebang on gem bin files and add *.bat files',
+           'prepare-resources' ) do |ctx|
+    
+    puts 'fix the gem stub files'
+    jruby_home = ctx.project.basedir.to_pathname + '/../'
+    bindir = File.join( jruby_home, 'lib', 'ruby', 'gems', 'shared', 'bin' )
+    Dir[ File.join( bindir, '*' ) ].each do |f|
+      content = File.read( f )
+      new_content = content.sub( /#!.*/, "#!/usr/bin/env jruby
+" )
+      File.open( f, "w" ) { |file| file.print( new_content ) }
+    end
+    
+    puts 'generate the missing bat files'
+    Dir[File.join( jruby_home, 'bin', '*' )].each do |fn|
+      next unless File.file?(fn)
+      next if fn =~ /.bat$/
+      next if File.exist?("#{fn}.bat")
+      next unless File.open(fn, 'r', :internal_encoding => 'ASCII-8BIT') do |io|
+        line = io.readline rescue ""
+        line =~ /^#!.*ruby/
+      end
+      puts "Generating #{File.basename(fn)}.bat"
+      File.open("#{fn}.bat", "wb") do |f|
+        f.print "@ECHO OFF\r\n"
+        f.print "@\"%~dp0jruby.exe\" -S #{File.basename(fn)} %*\r\n"
+      end
+    end
+  end
+  
+  execute( 'copy bin/jruby.bash to bin/jruby',
+           'process-resources' ) do |ctx|
+    require 'fileutils'
+    jruby_complete = ctx.project.properties.get_property( 'jruby.complete.home' )
+    FileUtils.cp( File.join( jruby_complete, 'bin', 'jruby.bash' ), 
+                  File.join( jruby_complete, 'bin', 'jruby' ) )
+  end
+
+  execute 'jrubydir', 'prepare-package' do |ctx|
+    require( ctx.project.basedir.to_pathname + '/../core/src/main/ruby/jruby/commands.rb' )
+    JRuby::Commands.generate_dir_info( ctx.project.build.output_directory.to_pathname + '/META-INF/jruby.home' )
+  end
+
+  # we have no sources and attach an empty jar later in the build to
+  # satisfy oss.sonatype.org upload
+
+  plugin( :source, 'skipSource' =>  'true' )
+
+  # this plugin is configured to attach empty jars for sources and javadocs
+  plugin( 'org.codehaus.mojo:build-helper-maven-plugin' )
+
+  build do
+
+    # both resources are includes for the $jruby_home/lib directory
+
+    resource do
+      directory '${gem.home}'
+      includes 'gems/rake-${rake.version}/bin/r*', 'gems/rdoc-${rdoc.version}/bin/r*', 'specifications/default/*.gemspec'
+      target_path '${jruby.complete.gems}'
+    end
+
+    resource do
+      directory '${basedir}/..'
+      includes 'bin/ast*', 'bin/gem*', 'bin/irb*', 'bin/jgem*', 'bin/jirb*', 'bin/jruby*', 'bin/rake*', 'bin/ri*', 'bin/rdoc*', 'bin/testrb*', 'lib/ruby/stdlib/**', 'lib/ruby/truffle/**'
+      excludes 'bin/jruby', 'bin/jruby*_*', 'bin/jruby*-*', '**/.*', 'lib/ruby/stdlib/rubygems/defaults/jruby_native.rb'
+      target_path '${jruby.complete.home}'
+    end
+  end
 end

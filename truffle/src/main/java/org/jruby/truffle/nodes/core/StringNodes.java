@@ -39,6 +39,7 @@ import org.jcodings.Encoding;
 import org.jcodings.specific.ASCIIEncoding;
 import org.joni.Matcher;
 import org.joni.Option;
+import org.jruby.Ruby;
 import org.jruby.runtime.Visibility;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.cast.CmpIntNode;
@@ -917,7 +918,7 @@ public abstract class StringNodes {
         @Specialization
         public RubyString downcase(RubyString string) {
             notDesignedForCompilation();
-            ByteList newByteList = StringNodesHelper.downcase(string);
+            final ByteList newByteList = StringNodesHelper.downcase(getContext().getRuntime(), string.getByteList());
 
             return string.getContext().makeString(string.getLogicalClass(), newByteList);
         }
@@ -938,7 +939,7 @@ public abstract class StringNodes {
         public RubyBasicObject downcase(RubyString string) {
             notDesignedForCompilation();
 
-            ByteList newByteList = StringNodesHelper.downcase(string);
+            final ByteList newByteList = StringNodesHelper.downcase(getContext().getRuntime(), string.getByteList());
 
             if (newByteList.equal(string.getBytes())) {
                 return nil();
@@ -949,7 +950,7 @@ public abstract class StringNodes {
         }
     }
 
-    @CoreMethod(names = "each_byte", needsBlock = true)
+    @CoreMethod(names = "each_byte", needsBlock = true, returnsEnumeratorIfNoBlock = true)
     public abstract static class EachByteNode extends YieldingCoreMethodNode {
 
         @Child private CallDispatchHeadNode toEnumNode;
@@ -960,18 +961,6 @@ public abstract class StringNodes {
 
         public EachByteNode(EachByteNode prev) {
             super(prev);
-        }
-
-        @Specialization
-        public Object eachByte(VirtualFrame frame, RubyString string, @SuppressWarnings("unused") UndefinedPlaceholder block) {
-            notDesignedForCompilation();
-
-            if (toEnumNode == null) {
-                CompilerDirectives.transferToInterpreter();
-                toEnumNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext()));
-            }
-
-            return toEnumNode.call(frame, string, "to_enum", null, getContext().newSymbol("each_byte"));
         }
 
         @Specialization
@@ -990,7 +979,7 @@ public abstract class StringNodes {
 
     }
 
-    @CoreMethod(names = "each_char", needsBlock = true)
+    @CoreMethod(names = "each_char", needsBlock = true, returnsEnumeratorIfNoBlock = true)
     public abstract static class EachCharNode extends YieldingCoreMethodNode {
 
         @Child private CallDispatchHeadNode toEnumNode;
@@ -1001,18 +990,6 @@ public abstract class StringNodes {
 
         public EachCharNode(EachCharNode prev) {
             super(prev);
-        }
-
-        @Specialization
-        public Object eachChar(VirtualFrame frame, RubyString string, @SuppressWarnings("unused") UndefinedPlaceholder block) {
-            notDesignedForCompilation();
-
-            if (toEnumNode == null) {
-                CompilerDirectives.transferToInterpreter();
-                toEnumNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext()));
-            }
-
-            return toEnumNode.call(frame, string, "to_enum", null, getContext().newSymbol("each_char"));
         }
 
         @Specialization(guards = "isValidOr7BitEncoding(string)")
@@ -2088,7 +2065,7 @@ public abstract class StringNodes {
         @Specialization
         public RubyString upcase(RubyString string) {
             notDesignedForCompilation();
-            final ByteList byteListString = StringNodesHelper.upcase(string);
+            final ByteList byteListString = StringNodesHelper.upcase(getContext().getRuntime(), string.getByteList());
 
             return string.getContext().makeString(string.getLogicalClass(), byteListString);
         }
@@ -2107,12 +2084,17 @@ public abstract class StringNodes {
         }
 
         @Specialization
-        public RubyString upcaseBang(RubyString string) {
+        public RubyBasicObject upcaseBang(RubyString string) {
             notDesignedForCompilation();
-            final ByteList byteListString = StringNodesHelper.upcase(string);
-            string.set(byteListString);
 
-            return string;
+            final ByteList byteListString = StringNodesHelper.upcase(getContext().getRuntime(), string.getByteList());
+
+            if (byteListString.equal(string.getByteList())) {
+                return nil();
+            } else {
+                string.set(byteListString);
+                return string;
+            }
         }
     }
 
@@ -2253,18 +2235,13 @@ public abstract class StringNodes {
         }
 
         @TruffleBoundary
-        public static ByteList upcase(RubyString string) {
-            ByteList byteListString = ByteList.create(string.toString().toUpperCase(Locale.ENGLISH));
-            byteListString.setEncoding(string.getBytes().getEncoding());
-            return byteListString;
+        public static ByteList upcase(Ruby runtime, ByteList string) {
+            return runtime.newString(string).upcase(runtime.getCurrentContext()).getByteList();
         }
 
         @TruffleBoundary
-        public static ByteList downcase(RubyString string) {
-            ByteList newByteList = ByteList.create(string.toString().toLowerCase(Locale.ENGLISH));
-            newByteList.setEncoding(string.getBytes().getEncoding());
-
-            return newByteList;
+        public static ByteList downcase(Ruby runtime, ByteList string) {
+            return runtime.newString(string).downcase(runtime.getCurrentContext()).getByteList();
         }
 
         @TruffleBoundary

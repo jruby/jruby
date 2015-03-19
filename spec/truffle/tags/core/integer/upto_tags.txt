@@ -1,1 +1,0 @@
-fails:Integer#upto [stop] when self and stop are Fixnums returns an Enumerator

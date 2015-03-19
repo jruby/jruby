@@ -1,7 +1,4 @@
-fails:Array#reject returns an Enumerator if no block given
 fails:Array#reject! removes elements for which block is true
 fails:Array#reject! properly handles recursive arrays
 fails:Array#reject! returns nil when called on an Array emptied with #shift
 fails:Array#reject! returns nil if no changes are made
-fails:Array#reject! returns an Enumerator if no block given, and the array is frozen
-fails:Array#reject! returns an Enumerator if no block given

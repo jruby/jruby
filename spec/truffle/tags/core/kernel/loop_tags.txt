@@ -1,3 +1,2 @@
-fails:Kernel.loop returns an enumerator if no block given
 fails:Kernel.loop rescues StopIteration
 fails:Kernel.loop rescues StopIteration's subclasses

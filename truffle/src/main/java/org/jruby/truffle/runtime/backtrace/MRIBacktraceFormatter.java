@@ -11,7 +11,9 @@ package org.jruby.truffle.runtime.backtrace;
 
 import com.oracle.truffle.api.source.NullSourceSection;
 import com.oracle.truffle.api.source.SourceSection;
+
 import org.jruby.truffle.nodes.CoreSourceSection;
+import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.TruffleFatalException;
 import org.jruby.truffle.runtime.core.RubyException;
@@ -49,13 +51,14 @@ public class MRIBacktraceFormatter implements BacktraceFormatter {
     private static String formatInLine(List<Activation> activations, RubyException exception) {
         final StringBuilder builder = new StringBuilder();
 
-        final SourceSection sourceSection = activations.get(0).getCallNode().getEncapsulatingSourceSection();
+        final Activation activation = activations.get(0);
+        final SourceSection sourceSection = activation.getCallNode().getEncapsulatingSourceSection();
         final SourceSection reportedSourceSection;
         final String reportedName;
 
         if (sourceSection instanceof CoreSourceSection) {
             reportedSourceSection = nextUserSourceSection(activations, 1);
-            reportedName = ((CoreSourceSection) sourceSection).getMethodName();
+            reportedName = RubyArguments.getMethod(activation.getMaterializedFrame().getArguments()).getName();
         } else {
             reportedSourceSection = sourceSection;
             reportedName = reportedSourceSection.getIdentifier();
@@ -92,13 +95,14 @@ public class MRIBacktraceFormatter implements BacktraceFormatter {
     }
 
     public static String formatCallerLine(List<Activation> activations, int n) {
-        final SourceSection sourceSection = activations.get(n).getCallNode().getEncapsulatingSourceSection();
+        final Activation activation = activations.get(n);
+        final SourceSection sourceSection = activation.getCallNode().getEncapsulatingSourceSection();
         final SourceSection reportedSourceSection;
         final String reportedName;
 
         if (sourceSection instanceof CoreSourceSection) {
             reportedSourceSection = activations.get(n + 1).getCallNode().getEncapsulatingSourceSection();
-            reportedName = ((CoreSourceSection) sourceSection).getMethodName();
+            reportedName = RubyArguments.getMethod(activation.getMaterializedFrame().getArguments()).getName();
         } else {
             reportedSourceSection = sourceSection;
             reportedName = sourceSection.getIdentifier();

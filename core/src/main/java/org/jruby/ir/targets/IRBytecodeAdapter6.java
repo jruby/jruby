@@ -6,6 +6,8 @@ package org.jruby.ir.targets;
 
 import com.headius.invokebinder.Signature;
 import java.math.BigInteger;
+import java.util.HashMap;
+import java.util.Map;
 
 import org.jcodings.Encoding;
 import org.jruby.Ruby;
@@ -58,7 +60,7 @@ public class IRBytecodeAdapter6 extends IRBytecodeAdapter{
     }
 
     public void pushFixnum(final long l) {
-        cacheValuePermanently(newFieldName("fixnum"), RubyFixnum.class, new Runnable() {
+        cacheValuePermanently("fixnum", RubyFixnum.class, keyFor("fixnum", l), new Runnable() {
             @Override
             public void run() {
                 loadRuntime();
@@ -69,7 +71,7 @@ public class IRBytecodeAdapter6 extends IRBytecodeAdapter{
     }
 
     public void pushFloat(final double d) {
-        cacheValuePermanently(newFieldName("float"), RubyFloat.class, new Runnable() {
+        cacheValuePermanently("float", RubyFloat.class, keyFor("float", Double.doubleToLongBits(d)), new Runnable() {
             @Override
             public void run() {
                 loadRuntime();
@@ -95,7 +97,7 @@ public class IRBytecodeAdapter6 extends IRBytecodeAdapter{
      * @param bl ByteList for the String to push
      */
     public void pushFrozenString(final ByteList bl) {
-        cacheValuePermanently(newFieldName("frozenString"), RubyString.class, new Runnable() {
+        cacheValuePermanently("fstring", RubyString.class, keyFor("fstring", bl), new Runnable() {
             @Override
             public void run() {
                 loadRuntime();
@@ -107,7 +109,7 @@ public class IRBytecodeAdapter6 extends IRBytecodeAdapter{
     }
 
     public void pushByteList(final ByteList bl) {
-        cacheValuePermanently(newFieldName("byteList"), ByteList.class, new Runnable() {
+        cacheValuePermanently("bytelist", ByteList.class, keyFor("bytelist", bl), new Runnable() {
             @Override
             public void run() {
                 loadRuntime();
@@ -118,22 +120,41 @@ public class IRBytecodeAdapter6 extends IRBytecodeAdapter{
         });
     }
 
-    public void cacheValuePermanently(String cacheField, Class type, Runnable construction) {
-        // FIXME: too much bytecode...make it a separate method?
-        Label done = new Label();
-        adapter.getClassVisitor().visitField(Opcodes.ACC_PRIVATE | Opcodes.ACC_STATIC, cacheField, ci(type), null, null).visitEnd();
-        adapter.getstatic(getClassData().clsName, cacheField, ci(type));
-        adapter.dup();
-        adapter.ifnonnull(done);
-        adapter.pop();
-        construction.run();
-        adapter.dup();
-        adapter.putstatic(getClassData().clsName, cacheField, ci(type));
-        adapter.label(done);
+    public void cacheValuePermanently(String what, Class type, Object key, Runnable construction) {
+        String cacheField = key == null ? null : cacheFieldNames.get(key);
+        if (cacheField == null) {
+            cacheField = newFieldName(what);
+            cacheFieldNames.put(key, cacheField);
+
+            SkinnyMethodAdapter tmp = adapter;
+            adapter = new SkinnyMethodAdapter(
+                    adapter.getClassVisitor(),
+                    Opcodes.ACC_PRIVATE | Opcodes.ACC_STATIC | Opcodes.ACC_SYNTHETIC,
+                    cacheField,
+                    sig(type, ThreadContext.class),
+                    null,
+                    null);
+            Label done = new Label();
+            adapter.getClassVisitor().visitField(Opcodes.ACC_PRIVATE | Opcodes.ACC_STATIC, cacheField, ci(type), null, null).visitEnd();
+            adapter.getstatic(getClassData().clsName, cacheField, ci(type));
+            adapter.dup();
+            adapter.ifnonnull(done);
+            adapter.pop();
+            construction.run();
+            adapter.dup();
+            adapter.putstatic(getClassData().clsName, cacheField, ci(type));
+            adapter.label(done);
+            adapter.areturn();
+            adapter.end();
+            adapter = tmp;
+        }
+
+        loadContext();
+        adapter.invokestatic(getClassData().clsName, cacheField, sig(type, ThreadContext.class));
     }
 
     public void pushRegexp(final ByteList source, final int options) {
-        cacheValuePermanently(newFieldName("regexp"), RubyRegexp.class, new Runnable() {
+        cacheValuePermanently("regexp", RubyRegexp.class, keyFor("regexp", source, options), new Runnable() {
             @Override
             public void run() {
                 loadContext();
@@ -142,6 +163,16 @@ public class IRBytecodeAdapter6 extends IRBytecodeAdapter{
                 invokeIRHelper("newLiteralRegexp", sig(RubyRegexp.class, ThreadContext.class, ByteList.class, int.class));
             }
         });
+    }
+
+    private static String keyFor(Object... objs) {
+        StringBuilder sb = new StringBuilder();
+        for (Object obj : objs) {
+            sb.append(obj.toString());
+            if (obj instanceof ByteList) sb.append('_').append(((ByteList) obj).getEncoding());
+            sb.append("_");
+        }
+        return sb.toString();
     }
 
     public void pushDRegexp(Runnable callback, RegexpOptions options, int arity) {
@@ -197,7 +228,7 @@ public class IRBytecodeAdapter6 extends IRBytecodeAdapter{
     }
 
     public void pushSymbol(final String sym, final Encoding encoding) {
-        cacheValuePermanently(newFieldName("symbol"), RubySymbol.class, new Runnable() {
+        cacheValuePermanently("symbol", RubySymbol.class, keyFor("symbol", sym, encoding), new Runnable() {
             @Override
             public void run() {
                 loadRuntime();
@@ -217,7 +248,7 @@ public class IRBytecodeAdapter6 extends IRBytecodeAdapter{
     }
 
     public void pushEncoding(final Encoding encoding) {
-        cacheValuePermanently(newFieldName("symbol"), RubySymbol.class, new Runnable() {
+        cacheValuePermanently("encoding", RubySymbol.class, keyFor("encoding", encoding), new Runnable() {
             @Override
             public void run() {
                 loadContext();
@@ -599,7 +630,8 @@ public class IRBytecodeAdapter6 extends IRBytecodeAdapter{
         adapter.dup(); // self, self
         cacheVariableAccessor(name, false); // self, accessor
         loadContext(); // self, accessor, context
-        invokeIRHelper("getVariableWithAccessor", sig(IRubyObject.class, IRubyObject.class, VariableAccessor.class, ThreadContext.class));
+        adapter.ldc(name);
+        invokeIRHelper("getVariableWithAccessor", sig(IRubyObject.class, IRubyObject.class, VariableAccessor.class, ThreadContext.class, String.class));
     }
 
     /**
@@ -749,4 +781,6 @@ public class IRBytecodeAdapter6 extends IRBytecodeAdapter{
                 "callThreadPoll",
                 sig(void.class));
     }
+
+    private final Map<Object, String> cacheFieldNames = new HashMap<>();
 }

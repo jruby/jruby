@@ -19,6 +19,7 @@ import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.TruffleFatalException;
 import org.jruby.truffle.runtime.core.RubyException;
+import org.jruby.truffle.runtime.methods.InternalMethod;
 import org.jruby.util.cli.Options;
 
 import java.util.ArrayList;
@@ -77,10 +78,10 @@ public class DebugBacktraceFormatter implements BacktraceFormatter {
         final SourceSection sourceSection = activation.getCallNode().getEncapsulatingSourceSection();
 
         if (sourceSection instanceof CoreSourceSection) {
-            final CoreSourceSection coreSourceSection = (CoreSourceSection) sourceSection;
-            builder.append(coreSourceSection.getClassName());
+            final InternalMethod method = RubyArguments.getMethod(activation.getMaterializedFrame().getArguments());
+            builder.append(method.getDeclaringModule().getName());
             builder.append("#");
-            builder.append(coreSourceSection.getMethodName());
+            builder.append(method.getName());
         } else {
             builder.append(sourceSection.getSource().getName());
             builder.append(":");
