@@ -1475,14 +1475,14 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
     }
 
     // MRI: reg_match_pos
-    private int matchPos(ThreadContext context, IRubyObject[] holder, int pos) {
-        IRubyObject _str = holder[0];
+    private int matchPos(ThreadContext context, IRubyObject[] strp, int pos) {
+        IRubyObject _str = strp[0];
         if (_str.isNil()) {
             context.setBackRef(context.nil);
             return -1;
         }
         RubyString str;
-        holder[0] = str = operandCheck(_str);
+        strp[0] = str = operandCheck(_str);
         if (pos != 0) {
             if (pos < 0) {
                 int l = str.strLength();
@@ -1621,17 +1621,11 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
         }
 
         if (match.isNil()) {
-//            int err;
-
             match = createMatchData19(context, str, matcher, reg);
-//            onig_region_free(regs, 0);
-//            if (err) rb_memerror();
         }
         else {
-//            if (rb_safe_level() >= 3)
-//                OBJ_TAINT(match);
-//            else
-//                FL_UNSET(match, FL_TAINT);
+            // FIXME: This could be reusing the MatchData object
+            match = createMatchData19(context, str, matcher, reg);
         }
 
         if (setBackrefStr) {

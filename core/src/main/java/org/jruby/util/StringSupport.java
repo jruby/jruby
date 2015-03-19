@@ -88,7 +88,7 @@ public final class StringSupport {
     // rb_enc_mbclen
     public static int length(Encoding enc, byte[]bytes, int p, int end) {
         int n = enc.length(bytes, p, end);
-        if (MBCLEN_CHARFOUND_P(n) && MBCLEN_CHARFOUND_LEN(n) < end - p) return MBCLEN_CHARFOUND_LEN(n);
+        if (MBCLEN_CHARFOUND_P(n) && MBCLEN_CHARFOUND_LEN(n) <= end - p) return MBCLEN_CHARFOUND_LEN(n);
         int min = enc.minLength();
         return min <= end - p ? min : end - p;
     }
@@ -255,26 +255,47 @@ public final class StringSupport {
         return utf8Length(bytes.getUnsafeBytes(), bytes.getBegin(), bytes.getBegin() + bytes.getRealSize());
     }
 
+    // MRI: rb_enc_strlen
     public static int strLength(Encoding enc, byte[]bytes, int p, int end) {
+        return strLength(enc, bytes, p, end, CR_UNKNOWN);
+    }
+
+    // MRI: enc_strlen
+    public static int strLength(Encoding enc, byte[]bytes, int p, int e, int cr) {
+        int c;
         if (enc.isFixedWidth()) {
-            return (end - p + enc.minLength() - 1) / enc.minLength();
+            return (e - p + enc.minLength() - 1) / enc.minLength();
         } else if (enc.isAsciiCompatible()) {
-            int c = 0;
-            while (p < end) {
-                if (Encoding.isAscii(bytes[p])) {
-                    int q = searchNonAscii(bytes, p, end);
-                    if (q == -1) return c + (end - p);
-                    c += q - p;
-                    p = q;
+            c = 0;
+            if (cr == CR_7BIT || cr == CR_VALID) {
+                while (p < e) {
+                    if (Encoding.isAscii(bytes[p])) {
+                        int q = searchNonAscii(bytes, p, e);
+                        if (q == -1) return c + (e - p);
+                        c += q - p;
+                        p = q;
+                    }
+                    p += encFastMBCLen(bytes, p, e, enc);
+                    c++;
                 }
-                p += length(enc, bytes, p, end);
-                c++;
+            } else {
+                while (p < e) {
+                    if (Encoding.isAscii(bytes[p])) {
+                        int q = searchNonAscii(bytes, p, e);
+                        if (q == -1) return c + (e - p);
+                        c += q - p;
+                        p = q;
+                    }
+                    p += length(enc, bytes, p, e);
+                    c++;
+                }
             }
             return c;
         }
         
-        int c;
-        for (c = 0; end > p; c++) p += length(enc, bytes, p, end);
+        for (c = 0; p < e; c++) {
+            p += length(enc, bytes, p, e);
+        }
         return c;
     }
 
