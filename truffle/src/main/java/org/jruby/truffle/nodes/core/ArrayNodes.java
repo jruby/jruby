@@ -1728,52 +1728,6 @@ public abstract class ArrayNodes {
 
     }
 
-    @CoreMethod(names = "join", optional = 1)
-    public abstract static class JoinNode extends ArrayCoreMethodNode {
-
-        public JoinNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
-        public JoinNode(JoinNode prev) {
-            super(prev);
-        }
-
-        @Specialization
-        public RubyString join(RubyArray array, UndefinedPlaceholder unused) {
-            Object separator = getContext().getCoreLibrary().getGlobalVariablesObject().getInstanceVariable("$,");
-            if (separator == nil()) {
-                separator = getContext().makeString("");
-            }
-
-            if (separator instanceof RubyString) {
-                return join(array, (RubyString) separator);
-            } else {
-                throw new UnsupportedOperationException();
-            }
-        }
-
-        @Specialization
-        public RubyString join(RubyArray array, RubyString separator) {
-            notDesignedForCompilation();
-
-            final StringBuilder builder = new StringBuilder();
-
-            final Object[] objects = array.slowToArray();
-
-            for (int n = 0; n < objects.length; n++) {
-                if (n > 0) {
-                    builder.append(separator);
-                }
-
-                builder.append(objects[n]);
-            }
-
-            return getContext().makeString(builder.toString());
-        }
-
-    }
-
     @CoreMethod(names = {"map", "collect"}, needsBlock = true, returnsEnumeratorIfNoBlock = true)
     @ImportStatic(ArrayGuards.class)
     public abstract static class MapNode extends YieldingCoreMethodNode {

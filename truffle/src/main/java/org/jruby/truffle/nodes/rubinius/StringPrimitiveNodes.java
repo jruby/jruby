@@ -55,7 +55,6 @@ package org.jruby.truffle.nodes.rubinius;
 
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.dsl.Specialization;
-import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.utilities.ConditionProfile;
 import org.jcodings.Encoding;
@@ -65,8 +64,6 @@ import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.cast.TaintResultNode;
 import org.jruby.truffle.nodes.core.StringNodes;
 import org.jruby.truffle.nodes.core.StringNodesFactory;
-import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
-import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.UndefinedPlaceholder;
 import org.jruby.truffle.runtime.control.RaiseException;
@@ -577,13 +574,13 @@ public abstract class StringPrimitiveNodes {
     }
 
     @RubiniusPrimitive(name = "string_character_byte_index", needsSelf = false)
-    public static abstract class StringCharacterByteIndexPrimitiveNode extends RubiniusPrimitiveNode {
+    public static abstract class CharacterByteIndexNode extends RubiniusPrimitiveNode {
 
-        public StringCharacterByteIndexPrimitiveNode(RubyContext context, SourceSection sourceSection) {
+        public CharacterByteIndexNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
         }
 
-        public StringCharacterByteIndexPrimitiveNode(StringCharacterByteIndexPrimitiveNode prev) {
+        public CharacterByteIndexNode(CharacterByteIndexNode prev) {
             super(prev);
         }
 
