@@ -1596,7 +1596,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
         Matcher matcher = reg.matcher(rangeBL.unsafeBytes(), rangeBL.begin(), rangeBL.begin() + rangeBL.realSize());
         JOniException exception = null;
         try {
-            result = matcherSearch(runtime, matcher, pos, range, RE_OPTION_NONE);
+            result = matcherSearch(runtime, matcher, rangeBL.begin() + pos, range, RE_OPTION_NONE);
         } catch (JOniException je) {
             exception = je;
         }
