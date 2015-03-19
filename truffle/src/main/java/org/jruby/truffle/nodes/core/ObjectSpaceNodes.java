@@ -87,7 +87,7 @@ public abstract class ObjectSpaceNodes {
 
     }
 
-    @CoreMethod(names = "each_object", isModuleFunction = true, needsBlock = true, optional = 1)
+    @CoreMethod(names = "each_object", isModuleFunction = true, needsBlock = true, optional = 1, returnsEnumeratorIfNoBlock = true)
     public abstract static class EachObjectNode extends YieldingCoreMethodNode {
 
         public EachObjectNode(RubyContext context, SourceSection sourceSection) {

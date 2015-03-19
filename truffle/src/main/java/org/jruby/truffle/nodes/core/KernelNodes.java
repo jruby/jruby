@@ -1270,7 +1270,7 @@ public abstract class KernelNodes {
 
     }
 
-    @CoreMethod(names = "loop", isModuleFunction = true)
+    @CoreMethod(names = "loop", isModuleFunction = true, returnsEnumeratorIfNoBlock = true)
     public abstract static class LoopNode extends CoreMethodNode {
 
         @Child private WhileNode whileNode;

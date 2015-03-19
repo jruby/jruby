@@ -134,7 +134,7 @@ public abstract class RangeNodes {
 
     }
 
-    @CoreMethod(names = "each", needsBlock = true, lowerFixnumSelf = true)
+    @CoreMethod(names = "each", needsBlock = true, lowerFixnumSelf = true, returnsEnumeratorIfNoBlock = true)
     public abstract static class EachNode extends YieldingCoreMethodNode {
 
         private final BranchProfile breakProfile = BranchProfile.create();
@@ -324,7 +324,7 @@ public abstract class RangeNodes {
 
     }
 
-    @CoreMethod(names = "step", needsBlock = true, required = 1)
+    @CoreMethod(names = "step", needsBlock = true, required = 1, returnsEnumeratorIfNoBlock = true)
     public abstract static class StepNode extends YieldingCoreMethodNode {
 
         private final BranchProfile breakProfile = BranchProfile.create();
