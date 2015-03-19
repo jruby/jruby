@@ -129,20 +129,19 @@ public class JavaMethod extends JavaCallable {
 
     public static JavaMethod create(Ruby runtime, Class<?> javaClass, String methodName, Class<?>[] argumentTypes) {
         try {
-            Method method = javaClass.getMethod(methodName, argumentTypes);
-            return create(runtime, method);
-        } catch (NoSuchMethodException e) {
-            throw runtime.newNameError("undefined method '" + methodName + "' for class '" + javaClass.getName() + "'",
-                    methodName);
+            return create(runtime, javaClass.getMethod(methodName, argumentTypes));
+        }
+        catch (NoSuchMethodException e) {
+            throw runtime.newNameError("undefined method '" + methodName + "' for class '" + javaClass.getName() + "'", methodName);
         }
     }
 
     public static JavaMethod createDeclared(Ruby runtime, Class<?> javaClass, String methodName, Class<?>[] argumentTypes) {
         try {
             return create(runtime, javaClass.getDeclaredMethod(methodName, argumentTypes));
-        } catch (NoSuchMethodException e) {
-            throw runtime.newNameError("undefined method '" + methodName + "' for class '" + javaClass.getName() + "'",
-                    methodName);
+        }
+        catch (NoSuchMethodException e) {
+            throw runtime.newNameError("undefined method '" + methodName + "' for class '" + javaClass.getName() + "'", methodName);
         }
     }
 
@@ -553,9 +552,19 @@ public class JavaMethod extends JavaCallable {
         return method.isVarArgs();
     }
 
-    @Override
+    @Override // not used
     protected String nameOnInspection() {
-        return "#<" + getType().toString() + "/" + method.getName() + "(";
+        return getType().toString() + '/' + method.getName();
+    }
+
+    @JRubyMethod
+    public RubyString inspect() {
+        StringBuilder str = new StringBuilder();
+        str.append("#<");
+        str.append( getType().toString() ).append('/').append(method.getName());
+        inspectParameterTypes(str, this);
+        str.append(">");
+        return getRuntime().newString( str.toString() );
     }
 
     @JRubyMethod(name = "static?")

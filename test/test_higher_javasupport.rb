@@ -427,6 +427,23 @@ class TestHigherJavasupport < Test::Unit::TestCase
     assert_equal true, value1_field.final?
   end
 
+  def test_reflected_callable_to_s_and_inspect
+    java_class = Java::JavaClass.for_name('java.util.ArrayList')
+    constructors = java_class.constructors
+    c = constructors.find { |constructor| constructor.parameter_types == [ Java::int.java_class ] }
+    assert_equal '#<Java::JavaConstructor(int)>', c.inspect
+    assert_equal 'public java.util.ArrayList(int)', c.to_s
+    c = constructors.find { |constructor| constructor.parameter_types == [] }
+    assert_equal '#<Java::JavaConstructor()>', c.inspect
+
+    m = java_class.java_instance_methods.find { |method| method.name == 'get' }
+    assert_equal '#<Java::JavaMethod/get(int)>', m.inspect
+    assert_equal 'public java.lang.Object java.util.ArrayList.get(int)', m.to_s
+
+    m = java_class.java_instance_methods.find { |method| method.name == 'set' }
+    assert_equal '#<Java::JavaMethod/set(int,java.lang.Object)>', m.inspect
+  end
+
   Properties = Java::java.util.Properties
 
   def test_declare_constant
