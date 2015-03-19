@@ -40,6 +40,37 @@ module Utilities
     end
   end
 
+  def self.branch
+    `git rev-parse --abbrev-ref HEAD`
+  end
+
+  def self.find_graal_mx
+    mx = File.expand_path('../../../../mx.sh', '../../graal/basic-graal/jdk1.8.0_31/product/bin/java')
+    raise "couldn't find mx.sh - set GRAAL_BIN, and are need to use a checkout of Graal, not a build" unless File.executable?(mx)
+    mx
+  end
+
+  def self.igv_running?
+    `ps`.lines.any? { |p| p.include? 'mxtool/mx.py igv' }
+  end
+
+  def self.ensure_igv_running
+    unless igv_running?
+      spawn "#{find_graal_mx} igv"
+      sleep 5
+      puts
+      puts
+      puts "-------------"
+      puts "Waiting for IGV start"
+      puts "The first time you run IGV it may take several minutes to download dependencies and compile"
+      puts "Press enter when you see the IGV window"
+      puts "-------------"
+      puts
+      puts
+      $stdin.gets
+    end
+  end
+
   def self.find_bench
     not_found = -> {
       raise "couldn't find bench9000 - clone it from https://github.com/jruby/bench9000.git into the JRuby repository or parent directory"
@@ -98,6 +129,7 @@ module Commands
     puts '    --graal        use Graal (set GRAAL_BIN or it will try to automagically find it)'
     puts '    --asm          show assembly (implies --graal)'
     puts '    --server       run an instrumentation server on port 8080'
+    puts '    --igv          make sure IGV is running and dump Graal graphs after partial escape (implies --graal)'
     puts 'jt test                                      run all specs'
     puts 'jt test fast                                 run all specs except sub-processes, GC, sleep, ...'
     puts 'jt test spec/ruby/language                   run specs in this directory'
@@ -144,7 +176,7 @@ module Commands
     env_vars = {}
     jruby_args = %w[-X+T]
 
-    { '--asm' => '--graal' }.each_pair do |arg, dep|
+    { '--asm' => '--graal', '--igv' => '--graal' }.each_pair do |arg, dep|
       args.unshift dep if args.include?(arg)
     end
 
@@ -163,6 +195,12 @@ module Commands
 
     if args.delete('--server')
       jruby_args += %w[-Xtruffle.instrumentation_server_port=8080 -Xtruffle.passalot=1]
+    end
+
+    if args.delete('--igv')
+      raise "--igv doesn't work on master - you need a branch that builds against latest graal" if Utilities.branch == 'master'
+      Utilities.ensure_igv_running
+      jruby_args += %w[-J-G:Dump=TrufflePartialEscape]
     end
 
     raw_sh(env_vars, "#{JRUBY_DIR}/bin/jruby", *jruby_args, *args)
