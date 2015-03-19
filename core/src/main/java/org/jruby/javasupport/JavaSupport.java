@@ -88,6 +88,7 @@ public class JavaSupport {
     private RubyClass arrayProxyClass;
     private RubyClass concreteProxyClass;
     private RubyClass mapJavaProxy;
+    private RubyClass javaProxyConstructor;
 
     private final Map<String, JavaClass> nameClassMap = new HashMap<String, JavaClass>(64);
 
@@ -234,6 +235,12 @@ public class JavaSupport {
         RubyClass clazz;
         if ((clazz = javaObjectClass) != null) return clazz;
         return javaObjectClass = getJavaModule().getClass("JavaObject");
+    }
+
+    public RubyClass getJavaProxyConstructor() {
+        RubyClass clazz;
+        if ((clazz = javaProxyConstructor) != null) return clazz;
+        return javaProxyConstructor = getJavaModule().getClass("JavaProxyConstructor");
     }
 
     public JavaClass getObjectJavaClass() {
