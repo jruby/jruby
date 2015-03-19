@@ -123,7 +123,7 @@ public class JavaClass extends JavaObject {
         return toRubyArray(runtime, classes);
     }
 
-    static RubyArray toRubyArray(final Ruby runtime, final Class<?>[] classes) {
+    public static RubyArray toRubyArray(final Ruby runtime, final Class<?>[] classes) {
         IRubyObject[] javaClasses = new IRubyObject[classes.length];
         for ( int i = classes.length; --i >= 0; ) {
             javaClasses[i] = get(runtime, classes[i]);
