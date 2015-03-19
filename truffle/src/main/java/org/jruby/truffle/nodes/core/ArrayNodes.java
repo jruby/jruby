@@ -35,6 +35,8 @@ import org.jruby.truffle.nodes.dispatch.*;
 import org.jruby.truffle.nodes.methods.arguments.MissingArgumentBehaviour;
 import org.jruby.truffle.nodes.methods.arguments.ReadPreArgumentNode;
 import org.jruby.truffle.nodes.methods.locals.ReadLevelVariableNodeFactory;
+import org.jruby.truffle.nodes.objects.IsFrozenNode;
+import org.jruby.truffle.nodes.objects.IsFrozenNodeFactory;
 import org.jruby.truffle.nodes.yield.YieldDispatchHeadNode;
 import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.control.BreakException;
@@ -791,6 +793,7 @@ public abstract class ArrayNodes {
     public abstract static class DeleteNode extends ArrayCoreMethodNode {
 
         @Child private KernelNodes.SameOrEqualNode equalNode;
+        @Child private IsFrozenNode isFrozenNode;
 
         public DeleteNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -800,6 +803,7 @@ public abstract class ArrayNodes {
         public DeleteNode(DeleteNode prev) {
             super(prev);
             equalNode = prev.equalNode;
+            isFrozenNode = prev.isFrozenNode;
         }
 
         @Specialization(guards = "isIntegerFixnum")
@@ -809,11 +813,20 @@ public abstract class ArrayNodes {
             Object found = nil();
 
             int i = 0;
-
-            for (int n = 0; n < array.getSize(); n++) {
+            int n = 0;
+            for (; n < array.getSize(); n++) {
                 final Object stored = store[n];
 
                 if (equalNode.executeSameOrEqual(frame, stored, value)) {
+                    if (isFrozenNode == null) {
+                        CompilerDirectives.transferToInterpreter();
+                        isFrozenNode = insert(IsFrozenNodeFactory.create(getContext(), getSourceSection(), null));
+                    }
+                    if (isFrozenNode.executeIsFrozen(array)) {
+                        CompilerDirectives.transferToInterpreter();
+                        throw new RaiseException(
+                            getContext().getCoreLibrary().frozenError(array.getLogicalClass().getName(), this));
+                    }
                     found = store[n];
                     continue;
                 }
@@ -824,8 +837,9 @@ public abstract class ArrayNodes {
 
                 i++;
             }
-
-            array.setStore(store, i);
+            if(i != n){
+                array.setStore(store, i);
+            }
             return found;
         }
 
@@ -836,11 +850,20 @@ public abstract class ArrayNodes {
             Object found = nil();
 
             int i = 0;
-
-            for (int n = 0; n < array.getSize(); n++) {
+            int n = 0;
+            for (; n < array.getSize(); n++) {
                 final Object stored = store[n];
 
                 if (equalNode.executeSameOrEqual(frame, stored, value)) {
+                    if (isFrozenNode == null) {
+                        CompilerDirectives.transferToInterpreter();
+                        isFrozenNode = insert(IsFrozenNodeFactory.create(getContext(), getSourceSection(), null));
+                    }
+                    if (isFrozenNode.executeIsFrozen(array)) {
+                        CompilerDirectives.transferToInterpreter();
+                        throw new RaiseException(
+                            getContext().getCoreLibrary().frozenError(array.getLogicalClass().getName(), this));
+                    }
                     found = store[n];
                     continue;
                 }
@@ -852,7 +875,9 @@ public abstract class ArrayNodes {
                 i++;
             }
 
-            array.setStore(store, i);
+            if(i != n){
+                array.setStore(store, i);
+            }
             return found;
         }
 
