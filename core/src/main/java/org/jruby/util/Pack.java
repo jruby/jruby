@@ -1135,61 +1135,116 @@ public class Pack {
                     int index = 0;
                     int s = -1;
 
-                    while (encode.hasRemaining()) {
-                        a = b = c = d = -1;
-                        
-                        // obtain a
-                        s = safeGet(encode);
-                        while (((a = b64_xtable[s]) == -1) && encode.hasRemaining()) {
-                            s = safeGet(encode);
+                    if (occurrences == 0){
+                        if (encode.remaining()%4 != 0) {
+                            throw runtime.newArgumentError("invalid base64");
                         }
-                        if (a == -1) break;
-                        
-                        // obtain b
-                        s = safeGet(encode);
-                        while (((b = b64_xtable[s]) == -1) && encode.hasRemaining()) {
-                            s = safeGet(encode);
-                        }
-                        if (b == -1) break;
-                        
-                        // obtain c
-                        s = safeGet(encode);
-                        while (((c = b64_xtable[s]) == -1) && encode.hasRemaining()) {
-                            if (s == '=') break;
-                            s = safeGet(encode);
-                        }
-                        if ((s == '=') || c == -1) {
-                            if (s == '=') {
-                                encode.position(encode.position() - 1);
-                            }
-                            break;
-                        }
-                        
-                        // obtain d
-                        s = safeGet(encode);
-                        while (((d = b64_xtable[s]) == -1) && encode.hasRemaining()) {
-                            if (s == '=') break;
-                            s = safeGet(encode);
-                        }
-                        if ((s == '=') || d == -1) {
-                            if (s == '=') {
-                                encode.position(encode.position() - 1);
-                            }
-                            break;
-                        }
+                        while (encode.hasRemaining() && s != '=') {
+                            a = b = c = -1;
+                            d = -2;
 
-                        // calculate based on a, b, c and d
-                        lElem[index++] = (byte)((a << 2 | b >> 4) & 255);
-                        lElem[index++] = (byte)((b << 4 | c >> 2) & 255);
-                        lElem[index++] = (byte)((c << 6 | d) & 255);
-                    }
+                            // obtain a
+                            s = safeGet(encode);
+                            a = b64_xtable[s];
+                            if (a == -1) throw runtime.newArgumentError("invalid base64");
 
-                    if (a != -1 && b != -1) {
-                        if (c == -1 && s == '=') {
-                            lElem[index++] = (byte)((a << 2 | b >> 4) & 255);
-                        } else if(c != -1 && s == '=') {
+                            // obtain b
+                            s = safeGet(encode);
+                            b = b64_xtable[s];
+                            if (b == -1) throw runtime.newArgumentError("invalid base64");
+
+                            // obtain c
+                            s = safeGet(encode);
+                            c = b64_xtable[s];
+                            if (s == '=') {
+                                if (safeGet(encode) != '=') throw runtime.newArgumentError("invalid base64");
+                                break;
+                            }
+                            if (c == -1) throw runtime.newArgumentError("invalid base64");
+
+                            // obtain d
+                            s = safeGet(encode);
+                            d = b64_xtable[s];
+                            if (s == '=') break;
+                            if (d == -1) throw runtime.newArgumentError("invalid base64");
+
+                            // calculate based on a, b, c and d
                             lElem[index++] = (byte)((a << 2 | b >> 4) & 255);
                             lElem[index++] = (byte)((b << 4 | c >> 2) & 255);
+                            lElem[index++] = (byte)((c << 6 | d) & 255);
+                        }
+
+                        if (encode.hasRemaining()) throw runtime.newArgumentError("invalid base64");
+
+                        if (a != -1 && b != -1) {
+                            if (c == -1 && s == '=') {
+                                if ((b & 15) > 0) throw runtime.newArgumentError("invalid base64");
+                                lElem[index++] = (byte)((a << 2 | b >> 4) & 255);
+                            } else if(c != -1 && s == '=') {
+                                if ((c & 3) > 0) throw runtime.newArgumentError("invalid base64");
+                                lElem[index++] = (byte)((a << 2 | b >> 4) & 255);
+                                lElem[index++] = (byte)((b << 4 | c >> 2) & 255);
+                            }
+                        }
+                    }
+                    else {
+
+                        while (encode.hasRemaining()) {
+                            a = b = c = d = -1;
+
+                            // obtain a
+                            s = safeGet(encode);
+                            while (((a = b64_xtable[s]) == -1) && encode.hasRemaining()) {
+                                s = safeGet(encode);
+                            }
+                            if (a == -1) break;
+
+                            // obtain b
+                            s = safeGet(encode);
+                            while (((b = b64_xtable[s]) == -1) && encode.hasRemaining()) {
+                                s = safeGet(encode);
+                            }
+                            if (b == -1) break;
+
+                            // obtain c
+                            s = safeGet(encode);
+                            while (((c = b64_xtable[s]) == -1) && encode.hasRemaining()) {
+                                if (s == '=') break;
+                                s = safeGet(encode);
+                            }
+                            if ((s == '=') || c == -1) {
+                                if (s == '=') {
+                                    encode.position(encode.position() - 1);
+                                }
+                                break;
+                            }
+
+                            // obtain d
+                            s = safeGet(encode);
+                            while (((d = b64_xtable[s]) == -1) && encode.hasRemaining()) {
+                                if (s == '=') break;
+                                s = safeGet(encode);
+                            }
+                            if ((s == '=') || d == -1) {
+                                if (s == '=') {
+                                    encode.position(encode.position() - 1);
+                                }
+                                break;
+                            }
+
+                            // calculate based on a, b, c and d
+                            lElem[index++] = (byte)((a << 2 | b >> 4) & 255);
+                            lElem[index++] = (byte)((b << 4 | c >> 2) & 255);
+                            lElem[index++] = (byte)((c << 6 | d) & 255);
+                        }
+
+                        if (a != -1 && b != -1) {
+                            if (c == -1 && s == '=') {
+                                lElem[index++] = (byte)((a << 2 | b >> 4) & 255);
+                            } else if(c != -1 && s == '=') {
+                                lElem[index++] = (byte)((a << 2 | b >> 4) & 255);
+                                lElem[index++] = (byte)((b << 4 | c >> 2) & 255);
+                            }
                         }
                     }
                     result.append(RubyString.newString(runtime, new ByteList(lElem, 0, index,

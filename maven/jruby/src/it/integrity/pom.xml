@@ -131,7 +131,7 @@
             </configuration>
 	  </execution>
 	  <execution>
-	    <id>there is org.objectweb.asm.ClassWriter</id>
+	    <id>ensure there is no org.objectweb.asm.ClassWriter</id>
 	    <phase>test</phase>
 	    <goals>
               <goal>exec</goal>
@@ -148,10 +148,10 @@
 		<!-- make sure openssl loads -->
 		<argument>
 		  begin
-		    java_import "org.objectweb.asm.ClassWriter"
-		    puts "there is org.objectweb.asm.ClassWriter on the classpath"
+		    import_java "org.objectweb.asm.ClassWriter"
+		    raise "error there is org.objectweb.asm.ClassWriter on the classpath"
 		  rescue NameError => e
-		    raise "error there is NO org.objectweb.asm.ClassWriter on the classpath"
+		    puts "there is NO org.objectweb.asm.ClassWriter on the classpath"
                   end
 		</argument>
               </arguments>

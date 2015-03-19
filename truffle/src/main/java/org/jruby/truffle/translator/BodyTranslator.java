@@ -1049,7 +1049,7 @@ public class BodyTranslator extends Translator {
 
     @Override
     public RubyNode visitDefnNode(org.jruby.ast.DefnNode node) {
-        final SourceSection sourceSection = translate(node.getPosition());
+        final SourceSection sourceSection = translate(node.getPosition(), node.getName());
         final RubyNode classNode;
 
         if (parent == null) {
@@ -1072,7 +1072,7 @@ public class BodyTranslator extends Translator {
 
     @Override
     public RubyNode visitDefsNode(org.jruby.ast.DefsNode node) {
-        final SourceSection sourceSection = translate(node.getPosition());
+        final SourceSection sourceSection = translate(node.getPosition(), node.getName());
 
         final RubyNode objectNode = node.getReceiverNode().accept(this);
 

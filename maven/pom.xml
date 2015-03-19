@@ -50,8 +50,6 @@
       <id>all</id>
       <modules>
         <module>jruby</module>
-        <module>jruby-noasm</module>
-        <module>jruby-stdlib</module>
         <module>jruby-complete</module>
         <module>jruby-jars</module>
         <module>jruby-dist</module>
@@ -61,8 +59,6 @@
       <id>release</id>
       <modules>
         <module>jruby</module>
-        <module>jruby-noasm</module>
-        <module>jruby-stdlib</module>
         <module>jruby-complete</module>
         <module>jruby-jars</module>
         <module>jruby-dist</module>
@@ -72,16 +68,12 @@
       <id>main</id>
       <modules>
         <module>jruby</module>
-        <module>jruby-noasm</module>
-        <module>jruby-stdlib</module>
       </modules>
     </profile>
     <profile>
       <id>osgi</id>
       <modules>
         <module>jruby</module>
-        <module>jruby-noasm</module>
-        <module>jruby-stdlib</module>
         <module>jruby-complete</module>
       </modules>
     </profile>
@@ -89,35 +81,30 @@
       <id>j2ee</id>
       <modules>
         <module>jruby</module>
-        <module>jruby-stdlib</module>
       </modules>
     </profile>
     <profile>
       <id>complete</id>
       <modules>
-        <module>jruby-stdlib</module>
         <module>jruby-complete</module>
-      </modules>
-    </profile>
-    <profile>
-      <id>dist</id>
-      <modules>
-        <module>jruby-stdlib</module>
-        <module>jruby-dist</module>
-      </modules>
-    </profile>
-    <profile>
-      <id>jruby-jars</id>
-      <modules>
-        <module>jruby-stdlib</module>
-        <module>jruby-jars</module>
       </modules>
     </profile>
     <profile>
       <id>jruby_complete_jar_extended</id>
       <modules>
-        <module>jruby-stdlib</module>
         <module>jruby-complete</module>
+      </modules>
+    </profile>
+    <profile>
+      <id>jruby-jars</id>
+      <modules>
+        <module>jruby-jars</module>
+      </modules>
+    </profile>
+    <profile>
+      <id>dist</id>
+      <modules>
+        <module>jruby-dist</module>
       </modules>
     </profile>
   </profiles>

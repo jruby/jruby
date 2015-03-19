@@ -1351,8 +1351,15 @@ public class IRRuntimeHelpers {
     }
 
     @JIT
-    public static IRubyObject getVariableWithAccessor(IRubyObject self, VariableAccessor accessor, ThreadContext context) {
-        return Helpers.nullToNil((IRubyObject)accessor.get(self), context);
+    public static IRubyObject getVariableWithAccessor(IRubyObject self, VariableAccessor accessor, ThreadContext context, String name) {
+        IRubyObject result = (IRubyObject)accessor.get(self);
+        if (result == null) {
+            if (context.runtime.isVerbose()) {
+                context.runtime.getWarnings().warning(IRubyWarnings.ID.IVAR_NOT_INITIALIZED, "instance variable " + name + " not initialized");
+            }
+            result = context.nil;
+        }
+        return result;
     }
 
     @JIT

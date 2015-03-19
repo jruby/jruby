@@ -49,17 +49,4 @@ project 'JRuby Truffle' do
       includes '**/*rb'
     end
   end
-
-  [ :dist, :'jruby-jars', :all, :release ].each do |name|
-    profile name do
-      plugin :shade do
-        execute_goals( 'shade',
-                       :id => 'pack jruby-truffle-complete.jar',
-                       :phase => 'verify',
-                       :artifactSet => { :includes => [ 'com.oracle:truffle' ] },
-                       :shadedArtifactAttached =>  'true',
-                       :shadedClassifierName =>  'complete' )
-      end
-    end
-  end
 end

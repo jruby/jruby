@@ -38,7 +38,7 @@ if ( !log.contains( expected ) )
 {
     throw new RuntimeException( "log file does not contain '" + expected + "'" );
 }
-expected = "there is org.objectweb.asm.ClassWriter on the classpath";
+expected = "there is NO org.objectweb.asm.ClassWriter on the classpath";
 if ( !log.contains( expected ) )
 {
     throw new RuntimeException( "log file does not contain '" + expected + "'" );
