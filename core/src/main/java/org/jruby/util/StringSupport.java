@@ -41,6 +41,8 @@ import org.jruby.RubyObject;
 import org.jruby.RubyString;
 import org.jruby.runtime.builtin.IRubyObject;
 
+import org.jruby.util.collections.IntHashMap;
+import org.jruby.util.io.EncodingUtils;
 import sun.misc.Unsafe;
 
 import java.util.Arrays;
@@ -931,106 +933,138 @@ public final class StringSupport {
         private IntHash<IRubyObject> del, noDel;
     }
 
-    public static TrTables trSetupTable(ByteList value, Ruby runtime, boolean[] table, TrTables tables, boolean init, Encoding enc) {
-        final TR tr = new TR(value);
-        boolean cflag = false;
-        if (value.getRealSize() > 1) {
-            if (enc.isAsciiCompatible()) {
-                if ((value.getUnsafeBytes()[value.getBegin()] & 0xff) == '^') {
-                    cflag = true;
-                    tr.p++;
-                }
-            } else {
-                int l = preciseLength(enc, tr.buf, tr.p, tr.pend);
-                if (enc.mbcToCode(tr.buf, tr.p, tr.pend) == '^') {
-                    cflag = true;
-                    tr.p += l;
-                }
-            }
-        }
-
-        if (init) {
-            for (int i=0; i< TRANS_SIZE; i++) table[i] = true;
-            table[TRANS_SIZE] = cflag;
-        } else if (table[TRANS_SIZE] && !cflag) {
-            table[TRANS_SIZE] = false;
-        }
-
-        final boolean[]buf = new boolean[TRANS_SIZE];
-        for (int i=0; i< TRANS_SIZE; i++) buf[i] = cflag;
-
+    public static TrTables trSetupTable(ByteList str, Ruby runtime, boolean[] stable, TrTables tables, boolean first, Encoding enc) {
+        int errc = -1;
+        byte[] buf = new byte[256];
+        final TR tr = new TR(str);
         int c;
-        IntHash<IRubyObject> hash = null, phash = null;
-        while ((c = trNext(tr, runtime, enc)) >= 0) {
+        IntHash<IRubyObject> table = null, ptable = null;
+        int i, l[] = {0};
+        boolean cflag = false;
+
+        tr.buf = str.unsafeBytes(); tr.p = str.begin(); tr.pend = tr.p + str.realSize();
+        tr.gen = false;
+        tr.now = tr.max = 0;
+
+        if (str.realSize() > 1 && EncodingUtils.encAscget(tr.buf, tr.p, tr.pend, l, enc) == '^') {
+            cflag = true;
+            tr.p += l[0];
+        }
+        if (first) {
+            for (i=0; i<TRANS_SIZE; i++) {
+                stable[i] = true;
+            }
+            stable[TRANS_SIZE] = cflag;
+        }
+        else if (stable[TRANS_SIZE] && !cflag) {
+            stable[TRANS_SIZE] = false;
+        }
+        for (i=0; i<TRANS_SIZE; i++) {
+            buf[i] = (byte)(cflag ? 1 : 0);
+        }
+
+        while ((c = trNext(tr, runtime, enc)) != errc) {
             if (c < TRANS_SIZE) {
-                buf[c & 0xff] = !cflag;
-            } else {
-                if (hash == null) {
-                    hash = new IntHash<IRubyObject>();
-                    if (tables == null) tables = new TrTables();
+                buf[c & 0xff] = (byte)(cflag ? 0 : 1);
+            }
+            else {
+                int key = c;
+
+                if (tables == null) tables = new TrTables();
+                if (table == null && (first || tables.del != null || stable[TRANS_SIZE])) {
                     if (cflag) {
-                        phash = tables.noDel;
-                        tables.noDel = hash;
-                    } else {
-                        phash  = tables.del;
-                        tables.del = hash;
+                        ptable = tables.noDel;
+                        table = ptable != null ? ptable : new IntHash();
+                        tables.noDel = table;
+                    }
+                    else {
+                        table = new IntHash();
+                        ptable = tables.del;
+                        tables.del = table;
                     }
                 }
-                if (phash == null || phash.get(c) != null) hash.put(c, RubyBasicObject.NEVER);
+                if (table != null && (ptable == null || (cflag ^ ptable.get(key) == null))) {
+                    table.put(key, RubyBasicObject.NEVER);
+                }
             }
         }
+        for (i=0; i<TRANS_SIZE; i++) {
+            stable[i] = stable[i] && buf[i] != 0;
+        }
+        if (table != null && !cflag) {
+            tables.del = null;
+        }
 
-        for (int i=0; i< TRANS_SIZE; i++) table[i] = table[i] && buf[i];
         return tables;
     }
 
     public static boolean trFind(int c, boolean[] table, TrTables tables) {
-        if (c < TRANS_SIZE) {
+        if (c < 256) {
             return table[c];
         } else {
-            if (tables != null) {
-                if (tables.del != null) {
-                    if (tables.noDel == null || tables.noDel.get(c) == null) return true;
-                } else if (tables.noDel != null && tables.noDel.get(c) != null) return false;
+            int v = c;
+
+            if (tables.del != null) {
+                if (tables.del.get(v) != null &&
+                        (tables.noDel == null || tables.noDel.get(v) == null)) {
+                    return true;
+                }
             }
-            return table[TRANS_SIZE];
+            else if (tables.noDel != null && tables.noDel.get(v) != null) {
+                return false;
+            }
+            return table[TRANS_SIZE] ? true : false;
         }
     }
 
     public static int trNext(TR t, Ruby runtime, Encoding enc) {
-        byte[]buf = t.buf;
-
         for (;;) {
             if (!t.gen) {
-                if (t.p == t.pend) return -1;
-                if (t.p < t.pend -1 && buf[t.p] == '\\') t.p++;
-                t.now = codePoint(runtime, enc, buf, t.p, t.pend);
-                t.p += codeLength(runtime, enc, t.now);
-                if (t.p < t.pend - 1 && buf[t.p] == '-') {
-                    t.p++;
-                    if (t.p < t.pend) {
-                        int c = codePoint(runtime, enc, buf, t.p, t.pend);
-                        t.p += codeLength(runtime, enc, c);
-                        if (t.now > c) {
-                            if (t.now < 0x80 && c < 0x80) {
-                                throw runtime.newArgumentError("invalid range \""
-                                        + (char) t.now + "-" + (char) c + "\" in string transliteration");
-                            }
-
-                            throw runtime.newArgumentError("invalid range in string transliteration");
-                        }
-                        t.gen = true;
-                        t.max = c;
+                return trNext_nextpart(t, runtime, enc);
+            } else {
+                while (enc.codeToMbcLength(++t.now) <= 0) {
+                    if (t.now == t.max) {
+                        t.gen = false;
+                        return trNext_nextpart(t, runtime, enc);
                     }
                 }
-                return t.now;
-            } else if (++t.now < t.max) {
-                return t.now;
-            } else {
-                t.gen = false;
-                return t.max;
+                if (t.now < t.max) {
+                    return t.now;
+                } else {
+                    t.gen = false;
+                    return t.max;
+                }
             }
         }
+    }
+
+    private static int trNext_nextpart(TR t, Ruby runtime, Encoding enc) {
+        int[] n = {0};
+
+        if (t.p == t.pend) return -1;
+        if (EncodingUtils.encAscget(t.buf, t.p, t.pend, n, enc) == '\\' && t.p + n[0] < t.pend) {
+            t.p += n[0];
+        }
+        t.now = EncodingUtils.encCodepointLength(runtime, t.buf, t.p, t.pend, n, enc);
+        t.p += n[0];
+        if (EncodingUtils.encAscget(t.buf, t.p, t.pend, n, enc) == '-' && t.p + n[0] < t.pend) {
+            t.p += n[0];
+            if (t.p < t.pend) {
+                int c = EncodingUtils.encCodepointLength(runtime, t.buf, t.p, t.pend, n, enc);
+                t.p += n[0];
+                if (t.now > c) {
+                    if (t.now < 0x80 && c < 0x80) {
+                        throw runtime.newArgumentError("invalid range \""
+                                + (char) t.now + "-" + (char) c + "\" in string transliteration");
+                    }
+
+                    throw runtime.newArgumentError("invalid range in string transliteration");
+                }
+                t.gen = true;
+                t.max = c;
+            }
+        }
+        return t.now;
     }
 
     /**
