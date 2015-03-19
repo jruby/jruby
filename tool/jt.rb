@@ -36,8 +36,8 @@ module Utilities
   end
 
   def self.find_graal_mx
-    mx = File.expand_path('../../../../mx.sh', '../../graal/basic-graal/jdk1.8.0_31/product/bin/java')
-    raise "couldn't find mx.sh - set GRAAL_BIN, and are need to use a checkout of Graal, not a build" unless File.executable?(mx)
+    mx = File.expand_path('../../../../mx.sh', find_graal)
+    raise "couldn't find mx.sh - set GRAAL_BIN, and you need to use a checkout of Graal, not a build" unless File.executable?(mx)
     mx
   end
 
