@@ -4932,7 +4932,6 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
                 clen = codeLength(runtime, e1, c);
                 tlen = enc == e1 ? clen : codeLength(runtime, enc, c);
 
-                c = trCode(c, trans, hash, cflag, last, true);
                 if (c < TRANS_SIZE) {
                     c = trans[c];
                 } else if (hash != null) {

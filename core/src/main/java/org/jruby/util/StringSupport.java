@@ -988,6 +988,8 @@ public final class StringSupport {
             buf[i] = (byte)(cflag ? 1 : 0);
         }
 
+        if (tables == null) tables = new TrTables();
+
         while ((c = trNext(tr, runtime, enc)) != errc) {
             if (c < TRANS_SIZE) {
                 buf[c & 0xff] = (byte)(cflag ? 0 : 1);
@@ -995,7 +997,6 @@ public final class StringSupport {
             else {
                 int key = c;
 
-                if (tables == null) tables = new TrTables();
                 if (table == null && (first || tables.del != null || stable[TRANS_SIZE])) {
                     if (cflag) {
                         ptable = tables.noDel;
@@ -1024,7 +1025,7 @@ public final class StringSupport {
     }
 
     public static boolean trFind(int c, boolean[] table, TrTables tables) {
-        if (c < 256) {
+        if (c < TRANS_SIZE) {
             return table[c];
         } else {
             int v = c;
