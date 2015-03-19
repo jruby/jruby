@@ -1593,7 +1593,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
         if (!reverse) {
             range += str.size();
         }
-        Matcher matcher = reg.matcher(rangeBL.unsafeBytes(), rangeBL.begin(), range + rangeBL.realSize());
+        Matcher matcher = reg.matcher(rangeBL.unsafeBytes(), rangeBL.begin(), rangeBL.begin() + rangeBL.realSize());
         JOniException exception = null;
         try {
             result = matcherSearch(runtime, matcher, pos, range, RE_OPTION_NONE);
