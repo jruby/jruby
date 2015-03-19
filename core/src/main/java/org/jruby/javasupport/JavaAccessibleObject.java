@@ -13,7 +13,7 @@
  *
  * Copyright (C) 2004 Stefan Matthias Aust <sma@3plus4.de>
  * Copyright (C) 2004 David Corbin <dcorbin@users.sourceforge.net>
- * 
+ *
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
  * or the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
@@ -52,13 +52,19 @@ public abstract class JavaAccessibleObject extends RubyObject {
 
     public abstract AccessibleObject accessibleObject();
 
-    public boolean equals(Object other) {
+    public boolean equals(final Object other) {
+        if ( this == other ) return true;
         return other instanceof JavaAccessibleObject &&
-                this.accessibleObject() == ((JavaAccessibleObject) other).accessibleObject();
+            this.accessibleObject().equals( ((JavaAccessibleObject) other).accessibleObject() );
+    }
+
+    boolean same(final JavaAccessibleObject that) {
+        if ( this == that ) return true;
+        return this.accessibleObject() == that.accessibleObject();
     }
 
     public int hashCode() {
-        return this.accessibleObject().hashCode();
+        return accessibleObject().hashCode();
     }
 
     @JRubyMethod
@@ -67,13 +73,14 @@ public abstract class JavaAccessibleObject extends RubyObject {
     }
 
     @JRubyMethod(name = {"==", "eql?"})
-    public IRubyObject op_equal(IRubyObject other) {
-        return other instanceof JavaAccessibleObject && accessibleObject().equals(((JavaAccessibleObject) other).accessibleObject()) ? getRuntime().getTrue() : getRuntime().getFalse();
+    public RubyBoolean op_equal(final IRubyObject other) {
+        return RubyBoolean.newBoolean(getRuntime(), equals(other));
     }
 
     @JRubyMethod(name = "equal?")
-    public IRubyObject same(IRubyObject other) {
-        return getRuntime().newBoolean(equals(other));
+    public RubyBoolean same(final IRubyObject other) {
+        final boolean same = other instanceof JavaAccessibleObject && same((JavaAccessibleObject) other);
+        return same ? getRuntime().getTrue() : getRuntime().getFalse();
     }
 
     @JRubyMethod(name = "accessible?")
@@ -89,11 +96,12 @@ public abstract class JavaAccessibleObject extends RubyObject {
 
     @SuppressWarnings("unchecked")
     @JRubyMethod
-    public IRubyObject annotation(IRubyObject annoClass) {
-        if (!(annoClass instanceof JavaClass)) {
+    public IRubyObject annotation(final IRubyObject annoClass) {
+        if ( ! ( annoClass instanceof JavaClass ) ) {
             throw getRuntime().newTypeError(annoClass, getRuntime().getJavaSupport().getJavaClassClass());
         }
-        return Java.getInstance(getRuntime(), accessibleObject().getAnnotation(((JavaClass) annoClass).javaClass()));
+        final Class annotation = ((JavaClass) annoClass).javaClass();
+        return Java.getInstance(getRuntime(), accessibleObject().getAnnotation(annotation));
     }
 
     @JRubyMethod
@@ -116,12 +124,14 @@ public abstract class JavaAccessibleObject extends RubyObject {
         return getRuntime().newBoolean(accessibleObject().getDeclaredAnnotations().length > 0);
     }
 
+    @SuppressWarnings("unchecked")
     @JRubyMethod(name = "annotation_present?")
-    public IRubyObject annotation_present_p(IRubyObject annoClass) {
-        if (!(annoClass instanceof JavaClass)) {
+    public IRubyObject annotation_present_p(final IRubyObject annoClass) {
+        if ( ! ( annoClass instanceof JavaClass ) ) {
             throw getRuntime().newTypeError(annoClass, getRuntime().getJavaSupport().getJavaClassClass());
         }
-        return getRuntime().newBoolean(this.accessibleObject().isAnnotationPresent(((JavaClass) annoClass).javaClass()));
+        final Class annotation = ((JavaClass) annoClass).javaClass();
+        return getRuntime().newBoolean( accessibleObject().isAnnotationPresent(annotation) );
     }
 
     // for our purposes, Accessibles are also Members, and vice-versa,
@@ -129,9 +139,7 @@ public abstract class JavaAccessibleObject extends RubyObject {
     @JRubyMethod
     public IRubyObject declaring_class() {
         Class<?> clazz = ((Member) accessibleObject()).getDeclaringClass();
-        if (clazz != null) {
-            return JavaClass.get(getRuntime(), clazz);
-        }
+        if ( clazz != null ) return JavaClass.get(getRuntime(), clazz);
         return getRuntime().getNil();
     }
 
@@ -152,6 +160,20 @@ public abstract class JavaAccessibleObject extends RubyObject {
 
     @JRubyMethod(name = {"to_s", "to_string"})
     public RubyString to_string() {
-        return getRuntime().newString(accessibleObject().toString());
+        return getRuntime().newString( toString() );
     }
+
+    @Override
+    public String toString() {
+        return accessibleObject().toString();
+    }
+
+    @Override
+    public Object toJava(Class target) {
+        if ( AccessibleObject.class.isAssignableFrom(target) ) {
+            return accessibleObject();
+        }
+        return super.toJava(target);
+    }
+
 }

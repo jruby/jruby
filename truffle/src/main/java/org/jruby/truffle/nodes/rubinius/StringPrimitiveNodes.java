@@ -54,6 +54,7 @@
 package org.jruby.truffle.nodes.rubinius;
 
 import com.oracle.truffle.api.CompilerDirectives;
+import com.oracle.truffle.api.dsl.ImportGuards;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.utilities.ConditionProfile;
@@ -62,6 +63,7 @@ import org.jcodings.exception.EncodingException;
 import org.jcodings.specific.ASCIIEncoding;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.cast.TaintResultNode;
+import org.jruby.truffle.nodes.core.StringGuards;
 import org.jruby.truffle.nodes.core.StringNodes;
 import org.jruby.truffle.nodes.core.StringNodesFactory;
 import org.jruby.truffle.runtime.RubyContext;
@@ -574,6 +576,7 @@ public abstract class StringPrimitiveNodes {
     }
 
     @RubiniusPrimitive(name = "string_character_byte_index", needsSelf = false)
+    @ImportGuards(StringGuards.class)
     public static abstract class CharacterByteIndexNode extends RubiniusPrimitiveNode {
 
         public CharacterByteIndexNode(RubyContext context, SourceSection sourceSection) {
@@ -595,10 +598,6 @@ public abstract class StringPrimitiveNodes {
 
             return StringSupport.nth(bytes.getEncoding(), bytes.getUnsafeBytes(), bytes.getBegin(),
                     bytes.getBegin() + bytes.getRealSize(), start + index);
-        }
-
-        public static boolean isSingleByteOptimizable(RubyString string) {
-            return StringSupport.isSingleByteOptimizable(string, string.getBytes().getEncoding());
         }
     }
 

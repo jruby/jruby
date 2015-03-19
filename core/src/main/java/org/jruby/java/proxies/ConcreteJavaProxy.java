@@ -173,12 +173,12 @@ public class ConcreteJavaProxy extends JavaProxy {
 
     }
 
-    protected static void initialize(final RubyClass concreteJavaProxy) {
-        concreteJavaProxy.addMethod("initialize", new InitializeMethod(concreteJavaProxy));
+    protected static void initialize(final RubyClass ConcreteJavaProxy) {
+        ConcreteJavaProxy.addMethod("initialize", new InitializeMethod(ConcreteJavaProxy));
         // We define a custom "new" method to ensure that __jcreate! is getting called,
         // so that if the user doesn't call super in their subclasses, the object will
         // still get set up properly. See JRUBY-4704.
-        RubyClass singleton = concreteJavaProxy.getSingletonClass();
+        RubyClass singleton = ConcreteJavaProxy.getSingletonClass();
         singleton.addMethod("new", new NewMethod(singleton));
     }
 
