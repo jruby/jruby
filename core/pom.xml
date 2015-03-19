@@ -546,11 +546,6 @@
               </transformers>
             </configuration>
           </execution>
-        </executions>
-      </plugin>
-      <plugin>
-        <artifactId>maven-shade-plugin</artifactId>
-        <executions>
           <execution>
             <id>shade the asm classes</id>
             <phase>verify</phase>

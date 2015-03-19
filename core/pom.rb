@@ -253,9 +253,6 @@ project 'JRuby Core' do
                    'outputFile' => '${jruby.basedir}/lib/jruby.jar',
                    'transformers' => [ { '@implementation' => 'org.apache.maven.plugins.shade.resource.ManifestResourceTransformer',
                                          'mainClass' => 'org.jruby.Main' } ] )
-  end
-
-  plugin :shade do
     execute_goals( 'shade',
                    :id => 'shade the asm classes',
                    :phase => 'verify',
