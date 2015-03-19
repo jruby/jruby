@@ -38,6 +38,8 @@ import org.jruby.RubyFixnum;
 import org.jruby.RubyModule;
 import org.jruby.RubyObject;
 import org.jruby.RubyProc;
+import org.jruby.RubyString;
+import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.internal.runtime.methods.DynamicMethod;
@@ -51,6 +53,9 @@ import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
+import static org.jruby.javasupport.JavaCallable.inspectParameterTypes;
+
+@JRubyClass(name="Java::JavaProxyConstructor")
 public class JavaProxyConstructor extends JavaProxyReflectionObject implements ParameterTypes {
 
     private final Constructor<?> proxyConstructor;
@@ -58,8 +63,8 @@ public class JavaProxyConstructor extends JavaProxyReflectionObject implements P
 
     private final JavaProxyClass declaringProxyClass;
 
-    public static RubyClass createJavaProxyConstructorClass(Ruby runtime, RubyModule javaProxyModule) {
-        RubyClass JavaProxyConstructor = javaProxyModule.defineClassUnder(
+    public static RubyClass createJavaProxyConstructorClass(Ruby runtime, RubyModule Java) {
+        RubyClass JavaProxyConstructor = Java.defineClassUnder(
                 "JavaProxyConstructor",
                 runtime.getObject(), ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR
         );
@@ -121,31 +126,26 @@ public class JavaProxyConstructor extends JavaProxyReflectionObject implements P
         return getParameterTypes().length;
     }
 
+    @Override
     public boolean equals(Object other) {
         return other instanceof JavaProxyConstructor &&
             this.proxyConstructor == ((JavaProxyConstructor)other).proxyConstructor;
     }
 
+    @Override
     public int hashCode() {
         return proxyConstructor.hashCode();
     }
 
-    protected String nameOnInspection() {
-        return getDeclaringClass().nameOnInspection();
-    }
-
-    public IRubyObject inspect() {
-        StringBuilder result = new StringBuilder();
-        result.append(nameOnInspection());
-        Class<?>[] parameterTypes = getParameterTypes();
-        for (int i = 0; i < parameterTypes.length; i++) {
-            result.append(parameterTypes[i].getName());
-            if (i < parameterTypes.length - 1) {
-                result.append(',');
-            }
-        }
-        result.append(")>");
-        return getRuntime().newString(result.toString());
+    @Override
+    @JRubyMethod
+    public RubyString inspect() {
+        StringBuilder str = new StringBuilder();
+        str.append("#<");
+        str.append( getDeclaringClass().nameOnInspection() );
+        inspectParameterTypes(str, this);
+        str.append(">");
+        return getRuntime().newString( str.toString() );
     }
 
     @JRubyMethod

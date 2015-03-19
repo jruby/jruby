@@ -198,9 +198,7 @@ public class JavaProxyClass extends JavaProxyReflectionObject {
     }
 
     /** return the class of instances of this proxy class */
-    Class getProxyClass() {
-        return proxyClass;
-    }
+    final Class getProxyClass() { return proxyClass; }
 
     @Override
     public Class getJavaClass() {
@@ -753,7 +751,7 @@ public class JavaProxyClass extends JavaProxyReflectionObject {
         return this.constructors = toRubyArray( getConstructors() );
     }
 
-    public String nameOnInspection() {
+    public final String nameOnInspection() {
         return "[Proxy:" + getSuperclass().getName() + "]";
     }
 }
