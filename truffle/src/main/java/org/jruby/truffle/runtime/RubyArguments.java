@@ -57,6 +57,12 @@ public final class RubyArguments {
         return ArrayUtils.extractRange(arguments, RUNTIME_ARGUMENT_COUNT, arguments.length);
     }
 
+    public static Object[] extractUserArgumentsWithUnshift(Object first, Object[] arguments) {
+        final Object[] range = ArrayUtils.extractRange(arguments, BLOCK_INDEX, arguments.length);
+        range[0] = first;
+        return range;
+    }
+
     public static int getUserArgumentsCount(Object[] internalArguments) {
         return internalArguments.length - RUNTIME_ARGUMENT_COUNT;
     }

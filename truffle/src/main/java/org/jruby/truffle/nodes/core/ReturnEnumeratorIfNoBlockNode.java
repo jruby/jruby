@@ -34,21 +34,13 @@ public class ReturnEnumeratorIfNoBlockNode extends RubyNode {
                 toEnumNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext()));
             }
 
-            return toEnumNode.call(frame, RubyArguments.getSelf(frame.getArguments()), "to_enum", null, unshift(getContext().getSymbolTable().getSymbol(methodName), RubyArguments.extractUserArguments(frame.getArguments())));
+            return toEnumNode.call(frame, RubyArguments.getSelf(frame.getArguments()), "to_enum", null, RubyArguments.extractUserArgumentsWithUnshift(getContext().getSymbolTable().getSymbol(methodName), frame.getArguments()));
 
         } else {
 
             return method.execute(frame);
 
         }
-    }
-
-    private static <T> T[] unshift(T first, T[] array) {
-        final int length = array.length;
-        final T[] result = Arrays.copyOf(array, length + 1);
-        System.arraycopy(array, 0, result, 1, length);
-        result[0] = first;
-        return result;
     }
 
 }

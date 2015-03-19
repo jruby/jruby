@@ -9,7 +9,7 @@
 
 # A workflow tool for JRuby+Truffle development
 
-# Recommended: function jt { ruby PATH/TO/jruby/tool/jt.rb $@; }
+# Recommended: function jt { ruby tool/jt.rb $@; }
 
 require 'fileutils'
 require 'digest/sha1'
@@ -18,21 +18,44 @@ JRUBY_DIR = File.expand_path('../..', __FILE__)
 
 module Utilities
 
+  def self.graal_version
+    File.foreach("#{JRUBY_DIR}/truffle/pom.rb").each do |line|
+      if /jar 'com.oracle:truffle:(\d+\.\d+(?:-SNAPSHOT)?)'/ =~ line
+        break $1
+      end
+    end
+  end
+
   def self.find_graal
+    base_graal_path = if graal_version.include?('SNAPSHOT')
+      'basic-graal/jdk1.8.0_05/product'
+    else
+      'graalvm-jdk1.8.0'
+    end
+
+    graal_locations = [
+      ENV["GRAAL_BIN_#{mangle_for_env(git_branch)}"],
+      ENV['GRAAL_BIN'],
+      "#{base_graal_path}/bin/java",
+      "../#{base_graal_path}/bin/java",
+      "../../#{base_graal_path}/bin/java",
+    ].compact.map { |path| File.expand_path(path, JRUBY_DIR) }
+
     not_found = -> {
       raise "couldn't find graal - download it from http://lafo.ssw.uni-linz.ac.at/graalvm/ and extract it into the JRuby repository or parent directory"
     }
-    GRAAL_LOCATIONS.find(not_found) do |location|
+
+    graal_locations.find(not_found) do |location|
       File.executable?(location)
     end
   end
 
-  def self.branch
-    `git rev-parse --abbrev-ref HEAD`.strip
+  def self.git_branch
+    @git_branch ||= `git rev-parse --abbrev-ref HEAD`.strip
   end
 
   def self.mangle_for_env(name)
-    name.upcase.gsub('-', '_')
+    name.upcase.tr('-', '_')
   end
 
   def self.find_graal_mx
@@ -63,10 +86,17 @@ module Utilities
   end
 
   def self.find_bench
+    bench_locations = [
+      ENV['BENCH_DIR'],
+      'bench9000',
+      '../bench9000'
+    ].compact.map { |path| File.expand_path(path, JRUBY_DIR) }
+
     not_found = -> {
       raise "couldn't find bench9000 - clone it from https://github.com/jruby/bench9000.git into the JRuby repository or parent directory"
     }
-    BENCH_LOCATIONS.find(not_found) do |location|
+
+    bench_locations.find(not_found) do |location|
       Dir.exist?(location)
     end
   end
@@ -74,20 +104,6 @@ module Utilities
   def self.jruby_version
     File.read("#{JRUBY_DIR}/VERSION").strip
   end
-
-  GRAAL_LOCATIONS = [
-    ENV["GRAAL_BIN_#{mangle_for_env(branch)}"],
-    ENV['GRAAL_BIN'],
-    'graalvm-jdk1.8.0/bin/java',
-    '../graalvm-jdk1.8.0/bin/java',
-    '../../graal/graalvm-jdk1.8.0/bin/java'
-  ].compact.map { |path| File.expand_path(path, JRUBY_DIR) }
-
-  BENCH_LOCATIONS = [
-    ENV['BENCH_DIR'],
-    'bench9000',
-    '../bench9000'
-  ].compact.map { |path| File.expand_path(path, JRUBY_DIR) }
 
 end
 
@@ -159,7 +175,7 @@ module Commands
     puts 'recognised environment variables:'
     puts
     puts '  GRAAL_BIN                                  GraalVM executable (java command) to use'
-    puts '  GRAAL_BIN_...branch_name...                GraalVM executable to use for a given branch'
+    puts '  GRAAL_BIN_...git_branch_name...            GraalVM executable to use for a given branch'
     puts '           branch names are mangled - eg truffle-head becomes GRAAL_BIN_TRUFFLE_HEAD'
   end
 
@@ -209,7 +225,7 @@ module Commands
     end
 
     if args.delete('--igv')
-      raise "--igv doesn't work on master - you need a branch that builds against latest graal" if Utilities.branch == 'master'
+      raise "--igv doesn't work on master - you need a branch that builds against latest graal" if Utilities.git_branch == 'master'
       Utilities.ensure_igv_running
       jruby_args += %w[-J-G:Dump=TrufflePartialEscape]
     end
