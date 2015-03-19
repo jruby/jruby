@@ -7,7 +7,6 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.List;
 import org.jruby.Ruby;
 import org.jruby.RubyModule;
 import org.jruby.exceptions.RaiseException;
@@ -28,12 +27,16 @@ import org.jruby.util.collections.IntHashMap;
 
 public abstract class RubyToJavaInvoker extends JavaMethod {
 
+    private static final IntHashMap<JavaCallable> NULL_CACHE = IntHashMap.nullMap();
+
     protected final JavaCallable javaCallable; /* null if multiple callable members */
     protected final JavaCallable[][] javaCallables; /* != null if javaCallable == null */
     protected final JavaCallable[] javaVarargsCallables; /* != null if any var args callables */
     protected final int minVarargsArity;
 
-    final IntHashMap<JavaCallable> cache = new IntHashMap<JavaCallable>();
+    // in case multiple callables (overloaded Java method - same name different args)
+    // for the invoker exists  CallableSelector caches resolution based on args here
+    final IntHashMap<JavaCallable> cache;
 
     private final Ruby runtime;
     private final Member[] members;
@@ -49,28 +52,35 @@ public abstract class RubyToJavaInvoker extends JavaMethod {
         final JavaCallable callable;
         final JavaCallable[][] callables;
         JavaCallable[] varargsCallables = null;
-        int varargsArity = Integer.MAX_VALUE;
+        int varArgsArity = Integer.MAX_VALUE;
 
-        if (members.length == 1) {
+        final int length = members.length;
+        if ( length == 1 ) {
             callable = createCallable(runtime, members[0]);
             if ( callable.isVarArgs() ) {
                 varargsCallables = createCallableArray(callable);
             }
             callables = null;
+
+            cache = NULL_CACHE; // if there's a single callable - matching (and thus the cache) won't be used
         }
         else {
             callable = null;
 
-            IntHashMap<List<JavaCallable>> arityMap = new IntHashMap<List<JavaCallable>>(members.length);
-            ArrayList<JavaCallable> varArgs = null;
-            int maxArity = 0;
-            for ( final Member method : members ) {
+            IntHashMap<ArrayList<JavaCallable>> arityMap = new IntHashMap<ArrayList<JavaCallable>>(length, 1);
+
+            ArrayList<JavaCallable> varArgs = null; int maxArity = 0;
+            for ( int i = 0; i < length; i++ ) {
+                final Member method = members[i];
                 final int currentArity = getMemberParameterTypes(method).length;
                 maxArity = Math.max(currentArity, maxArity);
 
-                List<JavaCallable> methodsForArity = arityMap.get(currentArity);
+                ArrayList<JavaCallable> methodsForArity = arityMap.get(currentArity);
                 if (methodsForArity == null) {
-                    methodsForArity = new ArrayList<JavaCallable>(8);
+                    // most calls have 2-3 callables length (a.k.a. overrides)
+                    // using capacity of length is a win-win here - will (likely)
+                    // use small internal [len] + no resizing even in worst case
+                    methodsForArity = new ArrayList<JavaCallable>(length);
                     arityMap.put(currentArity, methodsForArity);
                 }
 
@@ -78,29 +88,31 @@ public abstract class RubyToJavaInvoker extends JavaMethod {
                 methodsForArity.add(javaMethod);
 
                 if ( isMemberVarArgs(method) ) {
-                    varargsArity = Math.min(currentArity - 1, varargsArity);
-                    if (varArgs == null) varArgs = new ArrayList<JavaCallable>();
+                    varArgsArity = Math.min(currentArity - 1, varArgsArity);
+                    if (varArgs == null) varArgs = new ArrayList<JavaCallable>(length);
                     varArgs.add(javaMethod);
                 }
             }
 
             callables = createCallableArrayArray(maxArity + 1);
-            for (IntHashMap.Entry<List<JavaCallable>> entry : arityMap.entrySet()) {
-                List<JavaCallable> methodsForArity = entry.getValue();
+            for (IntHashMap.Entry<ArrayList<JavaCallable>> entry : arityMap.entrySet()) {
+                ArrayList<JavaCallable> methodsForArity = entry.getValue();
 
                 JavaCallable[] methodsArray = methodsForArity.toArray(createCallableArray(methodsForArity.size()));
-                callables[ entry.getKey() ] = methodsArray;
+                callables[ entry.getKey() /* int */ ] = methodsArray;
             }
 
             if (varArgs != null /* && varargsMethods.size() > 0 */) {
                 varargsCallables = varArgs.toArray( createCallableArray(varArgs.size()) );
             }
+
+            cache = new IntHashMap<JavaCallable>(8);
         }
 
         this.javaCallable = callable;
         this.javaCallables = callables;
         this.javaVarargsCallables = varargsCallables;
-        this.minVarargsArity = varargsArity;
+        this.minVarargsArity = varArgsArity;
 
         // if it's not overloaded, set up a NativeCall
         if (javaCallable != null) {
@@ -109,7 +121,8 @@ public abstract class RubyToJavaInvoker extends JavaMethod {
                 setNativeCallIfPublic( ((org.jruby.javasupport.JavaMethod) javaCallable).getValue() );
             }
         } else { // use the lowest-arity non-overload
-            for (JavaCallable[] callablesForArity : javaCallables) {
+            for ( int i = 0; i< javaCallables.length; i++ ) {
+                final JavaCallable[] callablesForArity = javaCallables[i];
                 if ( callablesForArity == null || callablesForArity.length != 1 ) continue;
                 if ( callablesForArity[0] instanceof org.jruby.javasupport.JavaMethod ) {
                     setNativeCallIfPublic( ((org.jruby.javasupport.JavaMethod) callablesForArity[0]).getValue() );
@@ -120,7 +133,7 @@ public abstract class RubyToJavaInvoker extends JavaMethod {
 
     private void setNativeCallIfPublic(final Method method) {
         final int mod = method.getModifiers(); // only public, since non-public don't bind
-        if ( Modifier.isPublic(mod) && Modifier.isPublic(method.getDeclaringClass().getModifiers()) ) {
+        if ( Modifier.isPublic(mod) && Modifier.isPublic( method.getDeclaringClass().getModifiers() ) ) {
             setNativeCall(method.getDeclaringClass(), method.getName(), method.getReturnType(), method.getParameterTypes(), Modifier.isStatic(mod), true);
         }
     }
