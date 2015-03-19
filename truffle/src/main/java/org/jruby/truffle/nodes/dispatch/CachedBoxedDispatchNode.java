@@ -72,8 +72,48 @@ public class CachedBoxedDispatchNode extends CachedDispatchNode {
                 argumentNodes,
                 block,
                 isSplatted);
-     }
-     
+    }
+
+
+    /**
+     * Allows to give the assumption, which is different than the expectedClass assumption for constant lookup.
+     */
+    public CachedBoxedDispatchNode(
+            RubyContext context,
+            Object cachedName,
+            DispatchNode next,
+            RubyClass expectedClass,
+            Assumption unmodifiedAssumption,
+            Object value,
+            InternalMethod method,
+            boolean indirect,
+            DispatchAction dispatchAction,
+            RubyNode[] argumentNodes,
+            ProcOrNullNode block,
+            boolean isSplatted) {
+        //expandedArgumentNodes(context, method, argumentNodes, isSplatted)
+        super(context, cachedName, next, indirect, dispatchAction, argumentNodes, block, isSplatted);
+
+        this.expectedClass = expectedClass;
+        this.unmodifiedAssumption = unmodifiedAssumption;
+        this.next = next;
+        this.value = value;
+        this.method = method;
+
+        if (method != null) {
+            if (indirect) {
+                indirectCallNode = Truffle.getRuntime().createIndirectCallNode();
+            } else {
+                callNode = Truffle.getRuntime().createDirectCallNode(method.getCallTarget());
+
+                if (callNode.isCallTargetCloningAllowed() && method.getSharedMethodInfo().shouldAlwaysSplit()) {
+                    insert(callNode);
+                    callNode.cloneCallTarget();
+                }
+            }
+        }
+    }
+
     public static RubyNode[] expandedArgumentNodes(RubyContext context,
             InternalMethod method, RubyNode[] argumentNodes, boolean isSplatted) {
         final RubyNode[] result;
@@ -183,44 +223,6 @@ public class CachedBoxedDispatchNode extends CachedDispatchNode {
         }
         
         return result;
-    }
-
-    /**
-     * Allows to give the assumption, which is different than the expectedClass assumption for constant lookup.
-     */
-    public CachedBoxedDispatchNode(
-            RubyContext context,
-            Object cachedName,
-            DispatchNode next,
-            RubyClass expectedClass,
-            Assumption unmodifiedAssumption,
-            Object value,
-            InternalMethod method,
-            boolean indirect,
-            DispatchAction dispatchAction,
-            RubyNode[] argumentNodes,
-            ProcOrNullNode block,
-            boolean isSplatted) {
-        super(context, cachedName, next, indirect, dispatchAction, expandedArgumentNodes(context, method, argumentNodes, isSplatted), block, isSplatted);
-
-        this.expectedClass = expectedClass;
-        this.unmodifiedAssumption = unmodifiedAssumption;
-        this.next = next;
-        this.value = value;
-        this.method = method;
-
-        if (method != null) {
-            if (indirect) {
-                indirectCallNode = Truffle.getRuntime().createIndirectCallNode();
-            } else {
-                callNode = Truffle.getRuntime().createDirectCallNode(method.getCallTarget());
-
-                if (callNode.isCallTargetCloningAllowed() && method.getSharedMethodInfo().shouldAlwaysSplit()) {
-                    insert(callNode);
-                    callNode.cloneCallTarget();
-                }
-            }
-        }
     }
 
     @Override
