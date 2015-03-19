@@ -123,10 +123,12 @@ public class JavaMethod extends JavaCallable {
         returnConverter = JavaUtil.getJavaConverter(returnType);
     }
 
+    @Deprecated // no-longer used
     public static JavaMethod create(Ruby runtime, Method method) {
         return new JavaMethod(runtime, method);
     }
 
+    @Deprecated // no-longer used
     public static JavaMethod create(Ruby runtime, Class<?> javaClass, String methodName, Class<?>[] argumentTypes) {
         try {
             return create(runtime, javaClass.getMethod(methodName, argumentTypes));
@@ -136,6 +138,7 @@ public class JavaMethod extends JavaCallable {
         }
     }
 
+    @Deprecated // no-longer used
     public static JavaMethod createDeclared(Ruby runtime, Class<?> javaClass, String methodName, Class<?>[] argumentTypes) {
         try {
             return create(runtime, javaClass.getDeclaredMethod(methodName, argumentTypes));
@@ -150,17 +153,17 @@ public class JavaMethod extends JavaCallable {
         // include superclass methods.  also, the getDeclared calls may throw SecurityException if
         // we're running under a restrictive security policy.
         try {
-            return create(runtime, javaClass.getDeclaredMethod(methodName, argumentTypes));
+            return new JavaMethod(runtime, javaClass.getDeclaredMethod(methodName, argumentTypes));
         }
         catch (NoSuchMethodException e) {
             // search through all declared methods to find a closest match
-            MethodSearch: for (Method method : javaClass.getDeclaredMethods()) {
-                if (method.getName().equals(methodName)) {
+            MethodSearch: for ( Method method : javaClass.getDeclaredMethods() ) {
+                if ( method.getName().equals(methodName) ) {
                     Class<?>[] targetTypes = method.getParameterTypes();
 
                     // for zero args case we can stop searching
                     if (targetTypes.length == 0 && argumentTypes.length == 0) {
-                        return create(runtime, method);
+                        return new JavaMethod(runtime, method);
                     }
 
                     TypeScan: for (int i = 0; i < argumentTypes.length; i++) {
@@ -175,7 +178,7 @@ public class JavaMethod extends JavaCallable {
 
                     // if we get here, we found a matching method, use it
                     // TODO: choose narrowest method by continuing to search
-                    return create(runtime, method);
+                    return new JavaMethod(runtime, method);
                 }
             }
         }

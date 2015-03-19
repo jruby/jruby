@@ -444,6 +444,23 @@ class TestHigherJavasupport < Test::Unit::TestCase
     assert_equal '#<Java::JavaMethod/set(int,java.lang.Object)>', m.inspect
   end
 
+  def test_java_class_callable_methods
+    java_class = Java::JavaClass.for_name('java.util.ArrayList')
+    assert java_class.declared_constructor
+    assert java_class.constructor Java::int
+
+    assert java_class.declared_method 'add', java.lang.Object
+    assert java_class.declared_method 'add', 'int', 'java.lang.Object'
+    assert java_class.declared_method 'size'
+    assert java_class.declared_method 'indexOf', java.lang.Object.java_class
+    begin
+      java_class.declared_method 'indexOf'
+      fail('not failed')
+    rescue NameError => e
+      assert e.message.index "undefined method 'indexOf'"
+    end
+  end
+
   Properties = Java::java.util.Properties
 
   def test_declare_constant
