@@ -2735,7 +2735,18 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
                 pos = subLength(pos);
             }
         } else if (sub instanceof RubyString) {
-            pos = StringSupport.rindex(value, StringSupport.strLengthFromRubyString(this, this.checkEncoding((RubyString) sub)), StringSupport.strLengthFromRubyString(((RubyString) sub), this.checkEncoding((RubyString) sub)), pos, (RubyString) sub, this.checkEncoding((RubyString) sub));
+            Encoding enc = this.checkEncoding((RubyString) sub);
+            pos = StringSupport.rindex(
+                    value,
+                    StringSupport.strLengthFromRubyString(
+                            this,
+                            enc),
+                    StringSupport.strLengthFromRubyString(
+                            ((RubyString) sub),
+                            enc),
+                    pos,
+                    (RubyString) sub,
+                    this.checkEncoding((RubyString) sub));
         } else {
             IRubyObject tmp = sub.checkStringType();
             if (tmp.isNil()) throw runtime.newTypeError("type mismatch: " + sub.getMetaClass().getName() + " given");

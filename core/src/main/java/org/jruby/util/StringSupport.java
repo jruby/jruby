@@ -86,8 +86,9 @@ public final class StringSupport {
     // rb_enc_mbclen
     public static int length(Encoding enc, byte[]bytes, int p, int end) {
         int n = enc.length(bytes, p, end);
-        if (n > 0 && end - p >= n) return n;
-        return end - p >= enc.minLength() ? enc.minLength() : end - p;
+        if (MBCLEN_CHARFOUND_P(n) && MBCLEN_CHARFOUND_LEN(n) < end - p) return MBCLEN_CHARFOUND_LEN(n);
+        int min = enc.minLength();
+        return min <= end - p ? min : end - p;
     }
 
     // rb_enc_precise_mbclen
@@ -409,6 +410,7 @@ public final class StringSupport {
         } else {
             p = nthNonAsciiCompatible(enc, bytes, p, end, n);
         }
+        if (p < 0) return -1;
         return p > end ? end : p;
     }
 
@@ -839,30 +841,46 @@ public final class StringSupport {
     /**
      * rb_str_rindex_m
      */
-    public static int rindex(ByteList source, int sourceLen, int subLen, int endPosition, CodeRangeable subStringCodeRangeable, Encoding enc) {
+    public static int rindex(ByteList source, int sourceChars, int subChars, int pos, CodeRangeable subStringCodeRangeable, Encoding enc) {
         if (subStringCodeRangeable.scanForCodeRange() == CR_BROKEN) return -1;
 
-        if (sourceLen < subLen) return -1;
-        if (sourceLen - endPosition < subLen) endPosition = sourceLen - subLen;
-        if (sourceLen == 0) return endPosition;
-
-        byte[]bytes = source.getUnsafeBytes();
-        int p = source.getBegin();
-        int end = p + source.getRealSize();
-
         final ByteList subString = subStringCodeRangeable.getByteList();
-        byte[]sbytes = subString.bytes();
-        subLen = subString.getRealSize();
 
-        int s = nth(enc, bytes, p, end, endPosition);
-        while (s >= 0) {
-            if (ByteList.memcmp(bytes, s, sbytes, 0, subLen) == 0) return endPosition;
+        int sourceSize = source.realSize();
+        int subSize = subString.realSize();
 
-            if (endPosition == 0) break;
-            endPosition--;
+        if (sourceChars < subChars || sourceSize < subSize) return -1;
+        if (sourceChars - pos < subChars) pos = sourceChars - subChars;
+        if (sourceChars == 0) return pos;
 
-            s = enc.prevCharHead(bytes, p, s, end);
+        byte[] sourceBytes = source.getUnsafeBytes();
+        int sbeg = source.getBegin();
+        int end = sbeg + source.getRealSize();
+
+        if (pos == 0) {
+            if (ByteList.memcmp(sourceBytes, sbeg, subString.getUnsafeBytes(), subString.begin(), subString.getRealSize()) == 0) {
+                return 0;
+            } else {
+                return -1;
+            }
         }
+
+        int s = nth(enc, sourceBytes, sbeg, end, pos);
+        byte[] subBytes = subString.bytes();
+
+        // switch to byte size here; this is now MRI:str_rindex
+        if (subSize == 0) return pos;
+        int t = subString.begin();
+
+        while (s > 0 && s + subSize <= sourceSize) {
+            if (ByteList.memcmp(sourceBytes, s, subBytes, t, subSize) == 0) {
+                return pos;
+            }
+            if (pos == 0) break;
+            pos--;
+            s = enc.prevCharHead(sourceBytes, sbeg, s, end);
+        }
+
         return -1;
     }
 
