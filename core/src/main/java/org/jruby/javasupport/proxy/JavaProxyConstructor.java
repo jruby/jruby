@@ -58,14 +58,26 @@ public class JavaProxyConstructor extends JavaProxyReflectionObject implements P
 
     private final JavaProxyClass declaringProxyClass;
 
+    public static RubyClass createJavaProxyConstructorClass(Ruby runtime, RubyModule javaProxyModule) {
+        RubyClass JavaProxyConstructor = javaProxyModule.defineClassUnder(
+                "JavaProxyConstructor",
+                runtime.getObject(), ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR
+        );
+
+        JavaProxyReflectionObject.registerRubyMethods(runtime, JavaProxyConstructor);
+        JavaProxyConstructor.defineAnnotatedMethods(JavaProxyConstructor.class);
+        return JavaProxyConstructor;
+
+    }
+
     JavaProxyConstructor(Ruby runtime, JavaProxyClass proxyClass, Constructor<?> constructor) {
         super(runtime, runtime.getJavaSupport().getJavaProxyConstructor());
         this.declaringProxyClass = proxyClass;
         this.proxyConstructor = constructor;
+
         Class<?>[] parameterTypes = constructor.getParameterTypes();
-        int len = parameterTypes.length - 1;
-        this.apparentParameterTypes = new Class<?>[len];
-        System.arraycopy(parameterTypes, 0, apparentParameterTypes, 0, len);
+        final int len = parameterTypes.length - 1;
+        System.arraycopy(parameterTypes, 0, apparentParameterTypes = new Class<?>[len], 0, len);
     }
 
     public final Class<?>[] getParameterTypes() {
@@ -85,36 +97,28 @@ public class JavaProxyConstructor extends JavaProxyReflectionObject implements P
         return declaringProxyClass;
     }
 
-    public Object newInstance(Object[] args, JavaProxyInvocationHandler handler)
-            throws IllegalArgumentException, InstantiationException,
-            IllegalAccessException, InvocationTargetException {
-        if (args.length != apparentParameterTypes.length) {
+    public final Object newInstance(Object[] args, JavaProxyInvocationHandler handler)
+        throws IllegalArgumentException, InstantiationException,
+               IllegalAccessException, InvocationTargetException {
+        final int len = args.length;
+        if ( len != apparentParameterTypes.length ) {
             throw new IllegalArgumentException("wrong number of parameters");
         }
 
-        Object[] realArgs = new Object[args.length + 1];
-        System.arraycopy(args, 0, realArgs, 0, args.length);
-        realArgs[args.length] = handler;
+        final Object[] argsWithHandler = new Object[ len + 1 ];
+        System.arraycopy(args, 0, argsWithHandler, 0, len);
+        argsWithHandler[ len ] = handler;
 
-        return proxyConstructor.newInstance(realArgs);
-    }
-
-    public static RubyClass createJavaProxyConstructorClass(Ruby runtime,
-            RubyModule javaProxyModule) {
-        RubyClass result = javaProxyModule.defineClassUnder("JavaProxyConstructor",
-                runtime.getObject(), ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
-
-        JavaProxyReflectionObject.registerRubyMethods(runtime, result);
-
-        result.defineAnnotatedMethods(JavaProxyConstructor.class);
-
-        return result;
-
+        return proxyConstructor.newInstance(argsWithHandler);
     }
 
     @JRubyMethod
     public RubyFixnum arity() {
-        return getRuntime().newFixnum(getParameterTypes().length);
+        return getRuntime().newFixnum(getArity());
+    }
+
+    public final int getArity() {
+        return getParameterTypes().length;
     }
 
     public boolean equals(Object other) {
@@ -145,8 +149,8 @@ public class JavaProxyConstructor extends JavaProxyReflectionObject implements P
     }
 
     @JRubyMethod
-    public RubyArray argument_types() {
-        return buildRubyArray(getParameterTypes());
+    public final RubyArray argument_types() {
+        return toRubyArray(getParameterTypes());
     }
 
     @JRubyMethod(rest = true)
@@ -157,8 +161,7 @@ public class JavaProxyConstructor extends JavaProxyReflectionObject implements P
         final IRubyObject self = args[0];
         final Object[] convertedArgs = convertArguments((RubyArray) args[1]); // constructor arguments
 
-        JavaProxyInvocationHandler handler = new JavaProxyInvocationHandlerImpl(runtime, self);
-
+        JavaProxyInvocationHandler handler = new MethodInvocationHandler(runtime, self);
         try {
             return JavaObject.wrap(runtime, newInstance(convertedArgs, handler));
         }
@@ -170,8 +173,9 @@ public class JavaProxyConstructor extends JavaProxyReflectionObject implements P
     }
 
     public JavaObject newInstance(final IRubyObject self, Object[] args) throws RaiseException {
-        final Ruby runtime = self.getRuntime();
-        JavaProxyInvocationHandler handler = new JavaProxyInvocationHandlerImpl(runtime, self);
+        final Ruby runtime = getRuntime();
+
+        JavaProxyInvocationHandler handler = new MethodInvocationHandler(runtime, self);
         try {
             return JavaObject.wrap(runtime, newInstance(args, handler));
         }
@@ -183,12 +187,12 @@ public class JavaProxyConstructor extends JavaProxyReflectionObject implements P
         }
     }
 
-    private static class JavaProxyInvocationHandlerImpl implements JavaProxyInvocationHandler {
+    private static class MethodInvocationHandler implements JavaProxyInvocationHandler {
 
         private final Ruby runtime;
         private final IRubyObject self;
 
-        JavaProxyInvocationHandlerImpl(final Ruby runtime, final IRubyObject self) {
+        MethodInvocationHandler(final Ruby runtime, final IRubyObject self) {
             this.runtime = runtime; this.self = self;
         }
 
@@ -242,41 +246,39 @@ public class JavaProxyConstructor extends JavaProxyReflectionObject implements P
 
         final Object[] convertedArgs = convertArguments((RubyArray) args[0]);
 
-        final IRubyObject self = this;
-
-        JavaProxyInvocationHandler handler = new JavaProxyInvocationHandler() {
-            public IRubyObject getOrig() {
-                return null;
-            }
-
-            public Object invoke(Object proxy, JavaProxyMethod method,
-                    Object[] nargs) throws Throwable {
-                int length = nargs == null ? 0 : nargs.length;
-                IRubyObject[] rubyArgs = new IRubyObject[length + 2];
-                rubyArgs[0] = JavaObject.wrap(self.getRuntime(), proxy);
-                rubyArgs[1] = method;
-                for (int i = 0; i < length; i++) {
-                    rubyArgs[i + 2] = JavaUtil.convertJavaToRuby(getRuntime(),
-                            nargs[i]);
-                }
-                IRubyObject call_result = proc.call(getRuntime().getCurrentContext(), rubyArgs);
-                Object converted_result = call_result.toJava(method.getReturnType());
-                return converted_result;
-            }
-
-        };
-
-        Object result;
+        JavaProxyInvocationHandler handler = new ProcInvocationHandler(runtime, proc);
         try {
-            result = newInstance(convertedArgs, handler);
+            return JavaObject.wrap(runtime, newInstance(convertedArgs, handler));
         }
         catch (Exception e) {
-            RaiseException ex = getRuntime().newArgumentError("Constructor invocation failed: " + e.getMessage());
+            RaiseException ex = runtime.newArgumentError("Constructor invocation failed: " + e.getMessage());
             ex.initCause(e);
             throw ex;
         }
+    }
 
-        return JavaObject.wrap(getRuntime(), result);
+    private static class ProcInvocationHandler implements JavaProxyInvocationHandler {
+
+        private final Ruby runtime;
+        private final RubyProc proc;
+
+        ProcInvocationHandler(final Ruby runtime, final RubyProc proc) {
+            this.runtime = runtime; this.proc = proc;
+        }
+
+        public IRubyObject getOrig() { return null; }
+
+        public Object invoke(Object proxy, JavaProxyMethod method, Object[] nargs) throws Throwable {
+            final int length = nargs == null ? 0 : nargs.length;
+            final IRubyObject[] rubyArgs = new IRubyObject[length + 2];
+            rubyArgs[0] = JavaObject.wrap(runtime, proxy);
+            rubyArgs[1] = method;
+            for ( int i = 0; i < length; i++ ) {
+                rubyArgs[i + 2] = JavaUtil.convertJavaToRuby(runtime, nargs[i]);
+            }
+            IRubyObject procResult = proc.call(runtime.getCurrentContext(), rubyArgs);
+            return procResult.toJava( method.getReturnType() );
+        }
 
     }
 
