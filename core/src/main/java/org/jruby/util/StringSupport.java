@@ -403,10 +403,14 @@ public final class StringSupport {
     }
 
     public static int nth(Encoding enc, byte[]bytes, int p, int end, int n) {
-        if (enc.isSingleByte()) {
+        return nth(enc, bytes, p, end, n, enc.isSingleByte());
+    }
+
+    public static int nth(Encoding enc, byte[]bytes, int p, int end, int n, boolean singlebyte) {
+        if (singlebyte) {
             p += n;
         } else if (enc.isFixedWidth()) {
-            p += n * enc.maxLength();             
+            p += n * enc.maxLength();
         } else if (enc.isAsciiCompatible()) {
             p = nthAsciiCompatible(enc, bytes, p, end, n);
         } else {

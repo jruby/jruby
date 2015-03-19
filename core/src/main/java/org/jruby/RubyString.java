@@ -95,6 +95,8 @@ import static org.jruby.util.StringSupport.TRANS_SIZE;
 import static org.jruby.util.StringSupport.codeLength;
 import static org.jruby.util.StringSupport.codePoint;
 import static org.jruby.util.StringSupport.codeRangeScan;
+import static org.jruby.util.StringSupport.isSingleByteOptimizable;
+import static org.jruby.util.StringSupport.nth;
 import static org.jruby.util.StringSupport.searchNonAscii;
 import static org.jruby.util.StringSupport.strLengthWithCodeRange;
 import static org.jruby.util.StringSupport.toLower;
@@ -317,6 +319,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
         return StringSupport.strLengthFromRubyString(this);
     }
 
+    // MRI: rb_str_sublen
     final int subLength(int pos) {
         if (singleByteOptimizable() || pos < 0) return pos;
         return StringSupport.strLength(value.getEncoding(), value.getUnsafeBytes(), value.getBegin(), value.getBegin() + pos);
@@ -944,7 +947,8 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
         }
     }
 
-    // rb_str_new_frozen, at least in spirit
+    // MRI: rb_str_new_frozen, at least in spirit
+    // also aliased to rb_str_new4
     public RubyString newFrozen() {
         RubyClass klass;
         RubyString str = this;
@@ -6000,6 +6004,21 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
             ((RubyString)buf).setEncodingAndCodeRange(enc, CR_VALID);
             return buf;
         }
+    }
+
+    // MRI: rb_str_offset
+    public int rbStrOffset(int pos) {
+        return strOffset(pos, isSingleByteOptimizable(this, getEncoding()));
+    }
+
+    // MRI: str_offset
+    private int strOffset(int nth, boolean singlebyte) {
+        int p = value.begin();
+        int size = value.realSize();
+        int e = p + size;
+        int pp = nth(value.getEncoding(), value.unsafeBytes(), p, e, nth, singlebyte);
+        if (pp == -1) return size;
+        return pp - p;
     }
 
     @Deprecated
