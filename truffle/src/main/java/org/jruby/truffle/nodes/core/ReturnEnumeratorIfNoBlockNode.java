@@ -9,6 +9,8 @@ import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.core.RubyProc;
 
+import java.util.Arrays;
+
 public class ReturnEnumeratorIfNoBlockNode extends RubyNode {
 
     @Child private RubyNode method;
@@ -32,13 +34,21 @@ public class ReturnEnumeratorIfNoBlockNode extends RubyNode {
                 toEnumNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext()));
             }
 
-            return toEnumNode.call(frame, RubyArguments.getSelf(frame.getArguments()), "to_enum", null, getContext().getSymbolTable().getSymbol(methodName));
+            return toEnumNode.call(frame, RubyArguments.getSelf(frame.getArguments()), "to_enum", null, unshift(getContext().getSymbolTable().getSymbol(methodName), RubyArguments.extractUserArguments(frame.getArguments())));
 
         } else {
 
             return method.execute(frame);
 
         }
+    }
+
+    private static <T> T[] unshift(T first, T[] array) {
+        final int length = array.length;
+        final T[] result = Arrays.copyOf(array, length + 1);
+        System.arraycopy(array, 0, result, 1, length);
+        result[0] = first;
+        return result;
     }
 
 }
