@@ -2468,7 +2468,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
         Encoding strEnc = value.getEncoding();
         if (codeRangeScan(strEnc, bytes, p, beg) != CR_7BIT ||
             codeRangeScan(strEnc, bytes, p + end, len - end) != CR_7BIT) {
-            throw context.runtime.newArgumentError(
+            throw context.runtime.newEncodingCompatibilityError(
                     "incompatible character encodings " + strEnc + " and " + repl.value.getEncoding());
         }
         return repl.value.getEncoding();
