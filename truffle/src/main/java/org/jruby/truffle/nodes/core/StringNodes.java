@@ -27,7 +27,7 @@ package org.jruby.truffle.nodes.core;
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.dsl.CreateCast;
-import com.oracle.truffle.api.dsl.ImportGuards;
+import com.oracle.truffle.api.dsl.ImportStatic;
 import com.oracle.truffle.api.dsl.NodeChild;
 import com.oracle.truffle.api.dsl.NodeChildren;
 import com.oracle.truffle.api.dsl.Specialization;
@@ -1791,7 +1791,7 @@ public abstract class StringNodes {
     }
 
     @CoreMethod(names = {"size", "length"})
-    @ImportGuards(StringGuards.class)
+    @ImportStatic(StringGuards.class)
     public abstract static class SizeNode extends CoreMethodNode {
 
         public SizeNode(RubyContext context, SourceSection sourceSection) {
@@ -1802,12 +1802,12 @@ public abstract class StringNodes {
             super(prev);
         }
 
-        @Specialization(guards = "isSingleByteOptimizable")
+        @Specialization(guards = "isSingleByteOptimizable(string)")
         public int sizeSingleByte(RubyString string) {
             return string.getByteList().getRealSize();
         }
 
-        @Specialization(guards = "!isSingleByteOptimizable")
+        @Specialization(guards = "!isSingleByteOptimizable(string)")
         public int size(RubyString string) {
             return StringSupport.strLengthFromRubyString(string);
         }

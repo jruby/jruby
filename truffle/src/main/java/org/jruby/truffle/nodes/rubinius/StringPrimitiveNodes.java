@@ -54,7 +54,7 @@
 package org.jruby.truffle.nodes.rubinius;
 
 import com.oracle.truffle.api.CompilerDirectives;
-import com.oracle.truffle.api.dsl.ImportGuards;
+import com.oracle.truffle.api.dsl.ImportStatic;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.utilities.ConditionProfile;
@@ -576,7 +576,7 @@ public abstract class StringPrimitiveNodes {
     }
 
     @RubiniusPrimitive(name = "string_character_byte_index", needsSelf = false)
-    @ImportGuards(StringGuards.class)
+    @ImportStatic(StringGuards.class)
     public static abstract class CharacterByteIndexNode extends RubiniusPrimitiveNode {
 
         public CharacterByteIndexNode(RubyContext context, SourceSection sourceSection) {
