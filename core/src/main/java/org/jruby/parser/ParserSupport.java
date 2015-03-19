@@ -46,6 +46,7 @@ import org.jruby.ast.types.ILiteralNode;
 import org.jruby.ast.types.INameNode;
 import org.jruby.common.IRubyWarnings;
 import org.jruby.common.IRubyWarnings.ID;
+import org.jruby.exceptions.RaiseException;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.lexer.yacc.ISourcePositionHolder;
 import org.jruby.lexer.yacc.RubyLexer;
@@ -1222,8 +1223,13 @@ public class ParserSupport {
     // MRI: reg_fragment_check
     public void regexpFragmentCheck(RegexpNode end, ByteList value) {
         setRegexpEncoding(end, value);
-        RubyRegexp.preprocessCheck(configuration.getRuntime(), value);
+        try {
+            RubyRegexp.preprocessCheck(configuration.getRuntime(), value);
+        } catch (RaiseException re) {
+            compile_error(re.getMessage());
+        }
     }        // 1.9 mode overrides to do extra checking...
+
     private List<Integer> allocateNamedLocals(RegexpNode regexpNode) {
         RubyRegexp pattern = RubyRegexp.newRegexp(configuration.getRuntime(), regexpNode.getValue(), regexpNode.getOptions());
         pattern.setLiteral();
