@@ -64,6 +64,7 @@ import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.builtin.IRubyObject;
 
 import static org.jruby.javasupport.JavaClass.EMPTY_CLASS_ARRAY;
+import static org.jruby.javasupport.JavaCallable.inspectParameterTypes;
 
 /**
  * Generalized proxy for classes and interfaces.
@@ -333,7 +334,7 @@ public class JavaProxyClass extends JavaProxyReflectionObject {
         }
 
         @JRubyMethod(name = "declaring_class")
-        public JavaProxyClass getDeclaringClass() {
+        public final JavaProxyClass getDeclaringClass() {
             return proxyClass;
         }
 
@@ -352,24 +353,20 @@ public class JavaProxyClass extends JavaProxyReflectionObject {
             return getRuntime().newFixnum(getArity());
         }
 
+        @Deprecated
         protected String nameOnInspection() {
             return getDeclaringClass().nameOnInspection() + "/" + getName();
         }
 
         @Override
-        public IRubyObject inspect() {
-            StringBuilder result = new StringBuilder();
-            result.append(nameOnInspection());
-            result.append("(");
-            Class[] parameterTypes = getParameterTypes();
-            for (int i = 0; i < parameterTypes.length; i++) {
-                result.append(parameterTypes[i].getName());
-                if (i < parameterTypes.length - 1) {
-                    result.append(',');
-                }
-            }
-            result.append(")>");
-            return getRuntime().newString(result.toString());
+        @JRubyMethod
+        public RubyString inspect() {
+            StringBuilder str = new StringBuilder();
+            str.append("#<");
+            str.append( getDeclaringClass().nameOnInspection() ).append('/').append( getName() );
+            inspectParameterTypes(str, this);
+            str.append(">");
+            return getRuntime().newString( str.toString() );
         }
 
         @JRubyMethod(name = "invoke", rest = true)
