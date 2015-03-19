@@ -15,7 +15,7 @@
  * Copyright (C) 2002-2004 Jan Arne Petersen <jpetersen@uni-bonn.de>
  * Copyright (C) 2004 Thomas E Enebo <enebo@acm.org>
  * Copyright (C) 2004 Stefan Matthias Aust <sma@3plus4.de>
- * 
+ *
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
  * or the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
@@ -44,20 +44,23 @@ import org.jruby.runtime.builtin.IRubyObject;
 
 @JRubyClass(name="Java::JavaArray", parent="Java::JavaObject")
 public class JavaArray extends JavaObject {
-    private JavaUtil.JavaConverter javaConverter;
-    
+
+    private final JavaUtil.JavaConverter javaConverter;
+
     public JavaArray(Ruby runtime, Object array) {
         super(runtime, runtime.getJavaSupport().getJavaArrayClass(), array);
         assert array.getClass().isArray();
         javaConverter = JavaUtil.getJavaConverter(array.getClass().getComponentType());
     }
 
-    public static RubyClass createJavaArrayClass(Ruby runtime, RubyModule javaModule) {
-        // FIXME: NOT_ALLOCATABLE_ALLOCATOR is probably not right here, since we might
-        // eventually want JavaArray to be marshallable. JRUBY-414
-        return javaModule.defineClassUnder("JavaArray", javaModule.getClass("JavaObject"), ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
+    public static RubyClass createJavaArrayClass(final Ruby runtime, final RubyModule Java) {
+        return createJavaArrayClass(runtime, Java, Java.getClass("JavaObject"));
     }
-    
+
+    static RubyClass createJavaArrayClass(final Ruby runtime, RubyModule Java, RubyClass JavaObject) {
+        return Java.defineClassUnder("JavaArray", JavaObject, ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
+    }
+
     public Class getComponentType() {
         return getValue().getClass().getComponentType();
     }
@@ -88,16 +91,16 @@ public class JavaArray extends JavaObject {
             throw getRuntime().newTypeError("not a java object:" + value);
         }
         Object javaObject = ((JavaObject) value).getValue();
-        
+
         ArrayUtils.setWithExceptionHandlingDirect(getRuntime(), javaObject, intIndex, javaObject);
-        
+
         return value;
     }
 
     public IRubyObject asetDirect(Ruby runtime, int intIndex, IRubyObject value) {
         return ArrayUtils.asetDirect(runtime, getValue(), javaConverter, intIndex, value);
     }
-    
+
     public void setWithExceptionHandling(int intIndex, Object javaObject) {
         ArrayUtils.setWithExceptionHandlingDirect(getRuntime(), getValue(), intIndex, javaObject);
     }
@@ -118,7 +121,7 @@ public class JavaArray extends JavaObject {
         fillWithExceptionHandling(intIndex, intEndIndex, javaObject);
         return value;
     }
-    
+
     public void fillWithExceptionHandling(int intIndex, int intEndIndex, Object javaObject) {
         try {
           for ( ; intIndex < intEndIndex; intIndex++) {

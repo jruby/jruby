@@ -65,7 +65,7 @@ import org.jruby.util.JRubyObjectInputStream;
 public class JavaObject extends RubyObject {
 
     private static final Object NULL_LOCK = new Object();
-    
+
     private final VariableAccessor objectAccessor;
 
     protected JavaObject(Ruby runtime, RubyClass rubyClass, Object value) {
@@ -123,18 +123,18 @@ public class JavaObject extends RubyObject {
     public static RubyClass createJavaObjectClass(Ruby runtime, RubyModule javaModule) {
         // FIXME: Ideally JavaObject instances should be marshallable, which means that
         // the JavaObject metaclass should have an appropriate allocator. JRUBY-414
-        RubyClass result = javaModule.defineClassUnder("JavaObject", runtime.getObject(), JAVA_OBJECT_ALLOCATOR);
+        RubyClass JavaObject = javaModule.defineClassUnder("JavaObject", runtime.getObject(), JAVA_OBJECT_ALLOCATOR);
 
-        registerRubyMethods(runtime, result);
+        registerRubyMethods(runtime, JavaObject);
 
-        result.getMetaClass().undefineMethod("new");
-        result.getMetaClass().undefineMethod("allocate");
+        JavaObject.getMetaClass().undefineMethod("new");
+        JavaObject.getMetaClass().undefineMethod("allocate");
 
-        return result;
+        return JavaObject;
     }
 
-    protected static void registerRubyMethods(Ruby runtime, RubyClass result) {
-        result.defineAnnotatedMethods(JavaObject.class);
+    protected static void registerRubyMethods(Ruby runtime, RubyClass JavaObject) {
+        JavaObject.defineAnnotatedMethods(JavaObject.class);
     }
 
     @Override
@@ -316,7 +316,7 @@ public class JavaObject extends RubyObject {
     }
 
     private static final ObjectAllocator JAVA_OBJECT_ALLOCATOR = new ObjectAllocator() {
-        public IRubyObject allocate(Ruby runtime, RubyClass klazz) {
+        public JavaObject allocate(Ruby runtime, RubyClass klazz) {
             return new JavaObject(runtime, klazz, null);
         }
     };

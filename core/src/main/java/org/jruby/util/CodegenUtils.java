@@ -13,7 +13,6 @@ import org.objectweb.asm.AnnotationVisitor;
 import org.objectweb.asm.Type;
 
 import javax.lang.model.element.Name;
-import java.lang.annotation.Annotation;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
@@ -101,18 +100,18 @@ public class CodegenUtils {
     public static String human(Class n) {
         return n.getCanonicalName();
     }
-    
+
     public static String humanShort(Class n) {
         return n.getSimpleName();
     }
-    
+
     /**
      * Create a method signature from the given param types and return values
      */
     public static String sig(Class retval, Class... params) {
         return sigParams(params) + ci(retval);
     }
-    
+
     public static String sig(Class[] retvalParams) {
         Class[] justParams = new Class[retvalParams.length - 1];
         System.arraycopy(retvalParams, 1, justParams, 0, justParams.length);
@@ -125,13 +124,13 @@ public class CodegenUtils {
 
     public static String sigParams(Class... params) {
         StringBuilder signature = new StringBuilder("(");
-        
+
         for (int i = 0; i < params.length; i++) {
             signature.append(ci(params[i]));
         }
-        
+
         signature.append(")");
-        
+
         return signature.toString();
     }
 
@@ -139,7 +138,7 @@ public class CodegenUtils {
         StringBuilder signature = new StringBuilder("(");
 
         signature.append(descriptor);
-        
+
         for (int i = 0; i < params.length; i++) {
             signature.append(ci(params[i]));
         }
@@ -148,61 +147,61 @@ public class CodegenUtils {
 
         return signature.toString();
     }
-    
+
     public static String pretty(Class retval, Class... params) {
         return prettyParams(params) + human(retval);
     }
-    
+
     public static String prettyParams(Class... params) {
         StringBuilder signature = new StringBuilder("(");
-        
+
         for (int i = 0; i < params.length; i++) {
             signature.append(human(params[i]));
             if (i < params.length - 1) signature.append(',');
         }
-        
+
         signature.append(")");
-        
+
         return signature.toString();
     }
-    
+
     public static String prettyShortParams(Class... params) {
         StringBuilder signature = new StringBuilder("(");
-        
+
         for (int i = 0; i < params.length; i++) {
             signature.append(humanShort(params[i]));
             if (i < params.length - 1) signature.append(',');
         }
-        
+
         signature.append(")");
-        
+
         return signature.toString();
     }
-    
+
     public static Class[] params(Class... classes) {
         return classes;
     }
-    
+
     public static Class[] params(Class cls, int times) {
         Class[] classes = new Class[times];
         Arrays.fill(classes, cls);
         return classes;
     }
-    
+
     public static Class[] params(Class cls1, Class clsFill, int times) {
         Class[] classes = new Class[times + 1];
         Arrays.fill(classes, 1, 1 + times, clsFill);
         classes[0] = cls1;
         return classes;
     }
-    
+
     public static Class[] params(Class cls1, Class cls2, Class clsFill, int times) {
         Class[] classes = new Class[times + 2];
         Arrays.fill(classes, 2, 2 + times, clsFill);
         classes[0] = cls1;
         classes[1] = cls2;
         return classes;
-    }    
+    }
 
     public static Class[] params(Class cls1, Class cls2, Class cls3, Class clsFill, int times) {
         Class[] classes = new Class[times + 3];
@@ -272,7 +271,7 @@ public class CodegenUtils {
         }
         return classes;
     }
-    
+
     public static String getAnnotatedBindingClassName(Name javaMethodName, CharSequence typeName, boolean isStatic, int required, int optional, boolean multi, boolean framed) {
         return getAnnotatedBindingClassName(javaMethodName.toString(), typeName, isStatic, required, optional, multi, framed);
     }
