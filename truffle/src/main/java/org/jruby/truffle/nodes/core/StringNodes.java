@@ -949,7 +949,7 @@ public abstract class StringNodes {
         }
     }
 
-    @CoreMethod(names = "each_byte", needsBlock = true)
+    @CoreMethod(names = "each_byte", needsBlock = true, returnsEnumeratorIfNoBlock = true)
     public abstract static class EachByteNode extends YieldingCoreMethodNode {
 
         @Child private CallDispatchHeadNode toEnumNode;
@@ -960,18 +960,6 @@ public abstract class StringNodes {
 
         public EachByteNode(EachByteNode prev) {
             super(prev);
-        }
-
-        @Specialization
-        public Object eachByte(VirtualFrame frame, RubyString string, @SuppressWarnings("unused") UndefinedPlaceholder block) {
-            notDesignedForCompilation();
-
-            if (toEnumNode == null) {
-                CompilerDirectives.transferToInterpreter();
-                toEnumNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext()));
-            }
-
-            return toEnumNode.call(frame, string, "to_enum", null, getContext().newSymbol("each_byte"));
         }
 
         @Specialization
@@ -990,7 +978,7 @@ public abstract class StringNodes {
 
     }
 
-    @CoreMethod(names = "each_char", needsBlock = true)
+    @CoreMethod(names = "each_char", needsBlock = true, returnsEnumeratorIfNoBlock = true)
     public abstract static class EachCharNode extends YieldingCoreMethodNode {
 
         @Child private CallDispatchHeadNode toEnumNode;
@@ -1001,18 +989,6 @@ public abstract class StringNodes {
 
         public EachCharNode(EachCharNode prev) {
             super(prev);
-        }
-
-        @Specialization
-        public Object eachChar(VirtualFrame frame, RubyString string, @SuppressWarnings("unused") UndefinedPlaceholder block) {
-            notDesignedForCompilation();
-
-            if (toEnumNode == null) {
-                CompilerDirectives.transferToInterpreter();
-                toEnumNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext()));
-            }
-
-            return toEnumNode.call(frame, string, "to_enum", null, getContext().newSymbol("each_char"));
         }
 
         @Specialization(guards = "isValidOr7BitEncoding")
