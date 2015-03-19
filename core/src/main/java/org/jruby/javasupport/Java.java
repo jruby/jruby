@@ -168,7 +168,7 @@ public class Java implements Library {
         MapJavaProxy.createMapJavaProxy(runtime);
 
         // also create the JavaProxy* classes
-        JavaProxyClass.createJavaProxyModule(runtime);
+        JavaProxyClass.createJavaProxyClasses(runtime, Java);
 
         // The template for interface modules
         JavaInterfaceTemplate.createJavaInterfaceTemplateModule(context);

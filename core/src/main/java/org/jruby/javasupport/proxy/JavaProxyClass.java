@@ -86,14 +86,12 @@ public class JavaProxyClass extends JavaProxyReflectionObject {
 
     private final Class proxyClass;
     private final ArrayList<JavaProxyMethod> methods = new ArrayList<JavaProxyMethod>();
-    private final HashMap<String, List<JavaProxyMethod>> methodMap = new HashMap<String, List<JavaProxyMethod>>();
-    private final RubyArray constructors;
+    private final HashMap<String, ArrayList<JavaProxyMethod>> methodMap = new HashMap<String, ArrayList<JavaProxyMethod>>();
 
     /* package scope */
-    JavaProxyClass(Class proxyClass) {
+    JavaProxyClass(final Class<?> proxyClass) {
         super(getThreadLocalRuntime(), getThreadLocalRuntime().getModule("Java").getClass("JavaProxyClass"));
         this.proxyClass = proxyClass;
-        this.constructors = buildRubyArray( getConstructors() );
     }
 
     @Override
@@ -130,7 +128,7 @@ public class JavaProxyClass extends JavaProxyReflectionObject {
 
     public static JavaProxyClass getProxyClass(Ruby runtime, Class superClass,
             Class[] interfaces) throws InvocationTargetException {
-        return getProxyClass(runtime,superClass,interfaces,null);
+        return getProxyClass(runtime, superClass, interfaces, null);
     }
 
     public static Object newProxyInstance(Ruby runtime, Class superClass, Class[] interfaces,
@@ -154,30 +152,29 @@ public class JavaProxyClass extends JavaProxyReflectionObject {
     public Class[] getInterfaces() {
         Class[] ifaces = proxyClass.getInterfaces();
         Class[] result = new Class[ifaces.length - 1];
-        int pos = 0;
-        for (int i = 0; i < ifaces.length; i++) {
-            if (ifaces[i] != InternalJavaProxy.class) {
-                result[pos++] = ifaces[i];
-            }
+        for ( int i = 0, j = 0; i < ifaces.length; i++ ) {
+            if ( ifaces[i] == InternalJavaProxy.class ) continue;
+            result[ j++ ] = ifaces[i];
         }
         return result;
     }
 
     public JavaProxyConstructor[] getConstructors() {
-        Constructor[] cons = proxyClass.getConstructors();
-        JavaProxyConstructor[] result = new JavaProxyConstructor[cons.length];
-        for (int i = 0; i < cons.length; i++) {
-            result[i] = new JavaProxyConstructor(getRuntime(), this, cons[i]);
+        final Ruby runtime = getRuntime();
+        final Constructor[] constructors = proxyClass.getConstructors();
+        JavaProxyConstructor[] result = new JavaProxyConstructor[constructors.length];
+        for ( int i = 0; i < constructors.length; i++ ) {
+            result[i] = new JavaProxyConstructor(runtime, this, constructors[i]);
         }
         return result;
     }
 
-    public JavaProxyConstructor getConstructor(Class[] args)
-            throws SecurityException, NoSuchMethodException {
+    public JavaProxyConstructor getConstructor(final Class[] args)
+        throws SecurityException, NoSuchMethodException {
 
-        Class[] realArgs = new Class[args.length + 1];
+        final Class[] realArgs = new Class[args.length + 1];
         System.arraycopy(args, 0, realArgs, 0, args.length);
-        realArgs[args.length] = JavaProxyInvocationHandler.class;
+        realArgs[ args.length ] = JavaProxyInvocationHandler.class;
 
         @SuppressWarnings("unchecked")
         Constructor<?> constructor = proxyClass.getConstructor(realArgs);
@@ -189,11 +186,11 @@ public class JavaProxyClass extends JavaProxyReflectionObject {
     }
 
     public JavaProxyMethod getMethod(String name, Class[] parameterTypes) {
-        List<JavaProxyMethod> methods = methodMap.get(name);
-        if (methods != null) {
+        final List<JavaProxyMethod> methods = methodMap.get(name);
+        if ( methods != null && methods.size() > 0 ) {
             for ( int i = methods.size(); --i >= 0; ) {
-                ProxyMethodImpl jpm = (ProxyMethodImpl) methods.get(i);
-                if (jpm.matches(name, parameterTypes)) return jpm;
+                ProxyMethodImpl impl = (ProxyMethodImpl) methods.get(i);
+                if ( impl.matches(name, parameterTypes) ) return impl;
             }
         }
         return null;
@@ -217,9 +214,18 @@ public class JavaProxyClass extends JavaProxyReflectionObject {
         private final Method superMethod;
         private final Class[] parameterTypes;
 
-        private final JavaProxyClass clazz;
+        private final JavaProxyClass proxyClass;
 
         private Object state;
+
+        public static RubyClass createJavaProxyMethodClass(Ruby runtime, RubyModule Java) {
+            RubyClass JavaProxyMethod = Java.defineClassUnder("JavaProxyMethod",
+                runtime.getObject(), ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
+
+            JavaProxyReflectionObject.registerRubyMethods(runtime, JavaProxyMethod);
+            JavaProxyMethod.defineAnnotatedMethods(ProxyMethodImpl.class);
+            return JavaProxyMethod;
+        }
 
         public ProxyMethodImpl(Ruby runtime, final JavaProxyClass clazz,
             final Method method, final Method superMethod) {
@@ -227,7 +233,7 @@ public class JavaProxyClass extends JavaProxyReflectionObject {
             this.method = method;
             this.parameterTypes = method.getParameterTypes();
             this.superMethod = superMethod;
-            this.clazz = clazz;
+            this.proxyClass = clazz;
         }
 
         private static RubyClass getJavaProxyMethod(final Ruby runtime) {
@@ -262,15 +268,15 @@ public class JavaProxyClass extends JavaProxyReflectionObject {
             return method.getName();
         }
 
-        public Class<?>[] getExceptionTypes() {
+        public final Class<?>[] getExceptionTypes() {
             return method.getExceptionTypes();
         }
 
-        public Class<?>[] getParameterTypes() {
+        public final Class<?>[] getParameterTypes() {
             return parameterTypes;
         }
 
-        public boolean isVarArgs() {
+        public final boolean isVarArgs() {
             return method.isVarArgs();
         }
 
@@ -314,23 +320,12 @@ public class JavaProxyClass extends JavaProxyReflectionObject {
             return null;
         }
 
-        public boolean matches(String name, Class[] parameterTypes) {
+        public final boolean matches(final String name, final Class<?>[] parameterTypes) {
             return method.getName().equals(name) && Arrays.equals(this.parameterTypes, parameterTypes);
         }
 
-        public Class getReturnType() {
+        public final Class<?> getReturnType() {
             return method.getReturnType();
-        }
-
-        public static RubyClass createJavaProxyMethodClass(Ruby runtime, RubyModule javaProxyModule) {
-            RubyClass result = javaProxyModule.defineClassUnder("JavaProxyMethod",
-                    runtime.getObject(), ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
-
-            JavaProxyReflectionObject.registerRubyMethods(runtime, result);
-
-            result.defineAnnotatedMethods(ProxyMethodImpl.class);
-
-            return result;
         }
 
         public RubyObject name() {
@@ -339,12 +334,12 @@ public class JavaProxyClass extends JavaProxyReflectionObject {
 
         @JRubyMethod(name = "declaring_class")
         public JavaProxyClass getDeclaringClass() {
-            return clazz;
+            return proxyClass;
         }
 
         @JRubyMethod
         public RubyArray argument_types() {
-            return buildRubyArray(getParameterTypes());
+            return toRubyArray(getParameterTypes());
         }
 
         @JRubyMethod(name = "super?")
@@ -362,7 +357,6 @@ public class JavaProxyClass extends JavaProxyReflectionObject {
         }
 
         @Override
-        @JRubyMethod
         public IRubyObject inspect() {
             StringBuilder result = new StringBuilder();
             result.append(nameOnInspection());
@@ -425,8 +419,7 @@ public class JavaProxyClass extends JavaProxyReflectionObject {
     }
 
     @SuppressWarnings("unchecked")
-    JavaProxyMethod initMethod(final String name,
-        final String desc, final boolean hasSuper) {
+    JavaProxyMethod initMethod(final String name, final String desc, final boolean hasSuper) {
         final Class proxy = this.proxyClass;
         try {
             Class[] paramTypes = parse(proxy.getClassLoader(), desc);
@@ -439,7 +432,7 @@ public class JavaProxyClass extends JavaProxyReflectionObject {
             JavaProxyMethod proxyMethod = new ProxyMethodImpl(getRuntime(), this, method, superMethod);
             methods.add(proxyMethod);
 
-            List<JavaProxyMethod> methodsWithName = this.methodMap.get(name);
+            ArrayList<JavaProxyMethod> methodsWithName = this.methodMap.get(name);
             if (methodsWithName == null) {
                 methodsWithName = new ArrayList<JavaProxyMethod>(2);
                 methodMap.put(name, methodsWithName);
@@ -459,8 +452,7 @@ public class JavaProxyClass extends JavaProxyReflectionObject {
         }
     }
 
-    private static Class[] parse(final ClassLoader loader, String desc)
-            throws ClassNotFoundException {
+    private static Class[] parse(final ClassLoader loader, String desc) throws ClassNotFoundException {
         final List<Class> types = new ArrayList<Class>();
         int idx = 1;
         while (desc.charAt(idx) != ')') {
@@ -517,15 +509,24 @@ public class JavaProxyClass extends JavaProxyReflectionObject {
     // Ruby-level methods
     //
 
-    public static RubyClass createJavaProxyClassClass(final Ruby runtime,
-        final RubyModule Java) {
-        RubyClass javaProxyClass = Java.defineClassUnder("JavaProxyClass",
+    @Deprecated
+    public static void createJavaProxyModule(Ruby runtime) {
+        createJavaProxyClasses(runtime, runtime.getJavaSupport().getJavaModule());
+    }
+
+    public static void createJavaProxyClasses(final Ruby runtime, final RubyModule Java) {
+        JavaProxyClass.createJavaProxyClassClass(runtime, Java);
+        ProxyMethodImpl.createJavaProxyMethodClass(runtime, Java);
+        JavaProxyConstructor.createJavaProxyConstructorClass(runtime, Java);
+    }
+
+    public static RubyClass createJavaProxyClassClass(final Ruby runtime, final RubyModule Java) {
+        RubyClass JavaProxyClass = Java.defineClassUnder("JavaProxyClass",
             runtime.getObject(), ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR
         );
-
-        JavaProxyReflectionObject.registerRubyMethods(runtime, javaProxyClass);
-        javaProxyClass.defineAnnotatedMethods(JavaProxyClass.class);
-        return javaProxyClass;
+        JavaProxyReflectionObject.registerRubyMethods(runtime, JavaProxyClass);
+        JavaProxyClass.defineAnnotatedMethods(JavaProxyClass.class);
+        return JavaProxyClass;
     }
 
     @JRubyMethod(meta = true)
@@ -738,26 +739,21 @@ public class JavaProxyClass extends JavaProxyReflectionObject {
 
     @JRubyMethod
     public RubyArray methods() {
-        return buildRubyArray(getMethods());
+        return toRubyArray(getMethods());
     }
 
     @JRubyMethod
     public RubyArray interfaces() {
-        return buildRubyArray(getInterfaces());
+        return toRubyArray(getInterfaces());
     }
+
+    private RubyArray constructors;
 
     @JRubyMethod
-    public RubyArray constructors() {
-        return this.constructors;
-    }
-
-    public static void createJavaProxyModule(Ruby runtime) {
-        // TODO Auto-generated method stub
-
-        RubyModule javaProxyModule = runtime.getJavaSupport().getJavaModule();
-        JavaProxyClass.createJavaProxyClassClass(runtime, javaProxyModule);
-        ProxyMethodImpl.createJavaProxyMethodClass(runtime, javaProxyModule);
-        JavaProxyConstructor.createJavaProxyConstructorClass(runtime, javaProxyModule);
+    public final RubyArray constructors() {
+        final RubyArray constructors = this.constructors;
+        if ( constructors != null ) return constructors;
+        return this.constructors = toRubyArray( getConstructors() );
     }
 
     public String nameOnInspection() {
