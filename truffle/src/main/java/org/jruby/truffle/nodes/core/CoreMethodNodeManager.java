@@ -119,12 +119,6 @@ public abstract class CoreMethodNodeManager {
         for (String name : names) {
             final RubyRootNode rootNodeCopy = NodeUtil.cloneNode(rootNode);
 
-            final CoreMethodNode coreMethodNode = NodeUtil.findFirstNodeInstance(rootNodeCopy, CoreMethodNode.class);
-
-            if (coreMethodNode != null) {
-                coreMethodNode.setName(name);
-            }
-
             final InternalMethod method = new InternalMethod(rootNodeCopy.getSharedMethodInfo(), name, module, visibility, false,
                     Truffle.getRuntime().createCallTarget(rootNodeCopy), null);
 

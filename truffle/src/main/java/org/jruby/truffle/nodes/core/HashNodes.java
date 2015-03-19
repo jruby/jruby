@@ -26,6 +26,7 @@ import org.jruby.truffle.nodes.dispatch.*;
 import org.jruby.truffle.nodes.hash.FindEntryNode;
 import org.jruby.truffle.nodes.yield.YieldDispatchHeadNode;
 import org.jruby.truffle.runtime.DebugOperations;
+import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.UndefinedPlaceholder;
 import org.jruby.truffle.runtime.control.RaiseException;
@@ -34,6 +35,7 @@ import org.jruby.truffle.runtime.hash.Entry;
 import org.jruby.truffle.runtime.hash.HashOperations;
 import org.jruby.truffle.runtime.hash.HashSearchResult;
 import org.jruby.truffle.runtime.hash.KeyValue;
+import org.jruby.truffle.runtime.methods.InternalMethod;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -716,7 +718,8 @@ public abstract class HashNodes {
                 toEnumNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext(), true));
             }
 
-            return toEnumNode.call(frame, hash, "to_enum", null, getContext().getSymbolTable().getSymbol(getName()));
+            InternalMethod method = RubyArguments.getMethod(frame.getArguments());
+            return toEnumNode.call(frame, hash, "to_enum", null, getContext().getSymbolTable().getSymbol(method.getName()));
         }
 
     }
