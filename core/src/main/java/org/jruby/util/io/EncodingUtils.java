@@ -686,7 +686,9 @@ public class EncodingUtils {
         int c;
         int l;
 
-        // if e < p check unnecessary
+        if (e <= p) {
+            return -1;
+        }
 
         if (encAsciicompat(enc)) {
             c = pBytes[p] & 0xFF;

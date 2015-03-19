@@ -4437,6 +4437,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
         throw context.runtime.newArgumentError("wrong number of arguments");
     }
 
+    // MRI: rb_str_count, first half
     @JRubyMethod(name = "count")
     public IRubyObject count19(ThreadContext context, IRubyObject arg) {
         Ruby runtime = context.runtime;
@@ -4448,7 +4449,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
 
         if (otherBL.length() == 1 && enc.isAsciiCompatible() &&
                 enc.isReverseMatchAllowed(otherBL.unsafeBytes(), otherBL.begin(), otherBL.begin() + otherBL.getRealSize()) &&
-                scanForCodeRange() != CR_BROKEN) {
+                !isCodeRangeBroken()) {
             int n = 0;
             int[] len_p = {0};
             int c = EncodingUtils.encCodepointLength(runtime, otherBL.unsafeBytes(), otherBL.begin(), otherBL.begin() + otherBL.getRealSize(), len_p, enc);
@@ -4468,6 +4469,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
         return runtime.newFixnum(StringSupport.countCommon19(value, runtime, table, tables, enc));
     }
 
+    // MRI: rb_str_count for arity > 1, first half
     @JRubyMethod(name = "count", required = 1, rest = true)
     public IRubyObject count19(ThreadContext context, IRubyObject[] args) {
         Ruby runtime = context.runtime;
