@@ -40,7 +40,6 @@ import org.jruby.javasupport.binding.AssignedName;
 import org.jruby.javasupport.proxy.JavaProxyClass;
 import org.jruby.javasupport.util.ObjectProxyCache;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.util.collections.*;
 import org.jruby.util.collections.ClassValue;
 
 import java.lang.reflect.Member;

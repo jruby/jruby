@@ -77,7 +77,7 @@ class TestHigherJavasupport < Test::Unit::TestCase
 
   def test_dispatching_on_nil
     sb = TestHelper.getInterfacedInstance()
-    assert_equal(nil , sb.dispatchObject(nil))
+    assert_equal(nil, sb.dispatchObject(nil))
   end
 
   def test_class_methods
@@ -407,6 +407,34 @@ class TestHigherJavasupport < Test::Unit::TestCase
     assert_equal(0, a.size)
   end
 
+  def test_reflected_field
+    j_integer = Java::JavaClass.for_name('java.lang.Integer')
+    begin
+      j_integer.field('value')
+      fail('value field is not public!')
+    rescue NameError => e
+      assert e
+    end
+    value_field = j_integer.declared_field('value')
+    assert_equal false, value_field.static?
+    assert_equal false, value_field.public?
+    assert_equal true, value_field.final?
+    assert_equal false, value_field.accessible?
+    value_field.accessible = true
+    assert_equal 123456789, value_field.value( 123456789.to_java(:int) )
+    assert_equal 'int', value_field.value_type
+
+    value1_field = Java::JavaClass.for_name('java.lang.reflect.Method').field(:DECLARED)
+    value2_field = Java::JavaLangReflect::Constructor.java_class.field('DECLARED')
+
+    assert_equal value1_field, value2_field
+    assert_equal true, value2_field.eql?(value1_field)
+    assert_equal 1, value2_field.static_value
+    assert_equal true, value1_field.static?
+    assert_equal true, value2_field.public?
+    assert_equal true, value1_field.final?
+  end
+
   Properties = Java::java.util.Properties
 
   def test_declare_constant
@@ -456,7 +484,6 @@ class TestHigherJavasupport < Test::Unit::TestCase
   end
 
   # Disabled temporarily...keeps failing for no obvious reason
-=begin
   def test_that_multiple_threads_including_classes_dont_step_on_each_other
     # we swallow the output to $stderr, so testers don't have to see the
     # warnings about redefining constants over and over again.
@@ -472,10 +499,10 @@ class TestHigherJavasupport < Test::Unit::TestCase
       end
 
       # wait for threads to all stop, then wake them up
-      threads.each {|t| Thread.pass until t.stop?}
-      threads.each {|t| t.run}
+      threads.each { |t| Thread.pass until t.stop? }
+      threads.each(&:run)
       # join each to let them run
-      threads.each {|t| t.join }
+      threads.each(&:join)
       # confirm they all successfully called currentTimeMillis and freeMemory
     ensure
       $stderr.reopen(old_stream)
@@ -486,7 +513,6 @@ class TestHigherJavasupport < Test::Unit::TestCase
       assert(t[:mem])
     end
   end
-=end
 
   if javax.xml.namespace.NamespaceContext.instance_of?(Module)
 
@@ -938,41 +964,29 @@ CLASSDEF
   end
 
   def test_no_warnings_on_concurrent_package_const_initialization
-    stderr = $stderr; require 'stringio'
-    begin
-      $stderr = StringIO.new
+    output = with_stderr_captured do
       threads = (0..10).map do # smt not yet initialized :
         Thread.new { Java::JavaTextSpi::CollatorProvider }
       end
-
       threads.each { |thread| thread.join }
-
-      # expect no already initialized constant warning written e.g.
-      # file:/.../jruby.jar!/jruby/java/java_module.rb:4 warning: already initialized constant JavaTextSpi
-      assert ! $stderr.string.index('already initialized constant'), $stderr.string
-    ensure
-      $stderr = stderr
     end
+    # expect no already initialized constant warning written e.g.
+    # file:/.../jruby.jar!/jruby/java/java_module.rb:4 warning: already initialized constant JavaTextSpi
+    assert ! output.index('already initialized constant'), output
   end
 
   def test_no_warnings_on_concurrent_class_const_initialization
     Java.send :remove_const, :DefaultPackageClass if Java.const_defined? :DefaultPackageClass
 
-    stderr = $stderr; require 'stringio'
-    begin
-      $stderr = StringIO.new
+    output = with_stderr_captured do
       threads = (0..10).map do
         Thread.new { Java::DefaultPackageClass }
       end
-
       threads.each { |thread| thread.join }
-
-      # expect no already initialized constant warning written e.g.
-      # ... warning: already initialized constant DefaultPackageClass
-      assert ! $stderr.string.index('already initialized constant'), $stderr.string
-    ensure
-      $stderr = stderr
     end
+    # expect no already initialized constant warning written e.g.
+    # ... warning: already initialized constant DefaultPackageClass
+    assert ! output.index('already initialized constant'), output
   end
 
   # reproducing https://github.com/jruby/jruby/issues/2014
@@ -1011,6 +1025,61 @@ CLASSDEF
       end
     ensure
       threads_to_kill.each { |thread| thread.exit rescue nil }
+    end
+  end
+
+  def test_no_ambiguous_java_constructor_warning_for_exact_match
+    output = with_stderr_captured do # exact match should not warn :
+      color = java.awt.Color.new(100.to_java(:int), 1.to_java(:int), 1.to_java(:int))
+      assert_equal 100, color.getRed # assert we called (int,int,int)
+    end
+    # warning: ambiguous Java methods found, using java.awt.Color(int,int,int)
+    assert ! output.index('ambiguous'), output
+  end
+
+  def test_no_ambiguous_java_constructor_warning_with_semi_exact_match
+    output = with_stderr_captured do # exact match should not warn :
+      color = java.awt.Color.new(10, 10, 10)
+      assert_equal 10, color.getRed # assert we called (int,int,int)
+    end
+    # warning: ambiguous Java methods found, using java.awt.Color(int,int,int)
+    assert ! output.index('ambiguous'), output
+
+    output = with_stderr_captured do # exact match should not warn :
+      color = java.awt.Color.new(1.0, 1.0, 1.0)
+      assert_equal 255, color.getRed # assert we called (float,float,float)
+    end
+    # warning: ambiguous Java methods found, using java.awt.Color(int,int,int)
+    assert ! output.index('ambiguous'), output
+  end
+
+# NOTE: this might be desired to be implemented - except coercion it's all in
+#  def test_java_constructor_with_prefered_match
+#    output = with_stderr_captured do # exact match should not warn :
+#      color = java.awt.Color.new(10, 10, 1.0)
+#      assert_equal 10, color.getRed # assert we called (int,int,int)
+#    end
+#    # warning: ambiguous Java methods found, using java.awt.Color(int,int,int)
+#    assert ! output.index('ambiguous'), output
+#
+#    output = with_stderr_captured do # exact match should not warn :
+#      color = java.awt.Color.new(1.0, 0.1, 1)
+#      assert_equal 255, color.getRed # assert we called (float,float,float)
+#    end
+#    # warning: ambiguous Java methods found, using java.awt.Color(int,int,int)
+#    assert ! output.index('ambiguous'), output
+#  end
+
+  private
+
+  def with_stderr_captured
+    stderr = $stderr; require 'stringio'
+    begin
+      $stderr = StringIO.new
+      yield
+      $stderr.string
+    ensure
+      $stderr = stderr
     end
   end
 

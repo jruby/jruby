@@ -124,9 +124,9 @@ public class Java implements Library {
         runtime.getLoadService().load("jruby/java.rb", false);
         
         // rewite ArrayJavaProxy superclass to point at Object, so it inherits Object behaviors
-        RubyClass ajp = runtime.getClass("ArrayJavaProxy");
-        ajp.setSuperClass(runtime.getJavaSupport().getObjectJavaClass().getProxyClass());
-        ajp.includeModule(runtime.getEnumerable());
+        final RubyClass ArrayJavaProxy = runtime.getClass("ArrayJavaProxy");
+        ArrayJavaProxy.setSuperClass(runtime.getJavaSupport().getObjectJavaClass().getProxyClass());
+        ArrayJavaProxy.includeModule(runtime.getEnumerable());
 
         RubyClassPathVariable.createClassPathVariable(runtime);
 
@@ -138,18 +138,20 @@ public class Java implements Library {
         runtime.getObject().setConstantQuiet("ENV_JAVA", new MapJavaProxy(runtime, proxyClass, systemProperties));
     }
 
+    @SuppressWarnings("deprecation")
     public static RubyModule createJavaModule(final Ruby runtime) {
-        ThreadContext context = runtime.getCurrentContext();
-        RubyModule javaModule = runtime.defineModule("Java");
+        final ThreadContext context = runtime.getCurrentContext();
 
-        javaModule.defineAnnotatedMethods(Java.class);
+        final RubyModule Java = runtime.defineModule("Java");
 
-        JavaObject.createJavaObjectClass(runtime, javaModule);
-        JavaArray.createJavaArrayClass(runtime, javaModule);
-        JavaClass.createJavaClassClass(runtime, javaModule);
-        JavaMethod.createJavaMethodClass(runtime, javaModule);
-        JavaConstructor.createJavaConstructorClass(runtime, javaModule);
-        JavaField.createJavaFieldClass(runtime, javaModule);
+        Java.defineAnnotatedMethods(Java.class);
+
+        final RubyClass _JavaObject = JavaObject.createJavaObjectClass(runtime, Java);
+        JavaArray.createJavaArrayClass(runtime, Java, _JavaObject);
+        JavaClass.createJavaClassClass(runtime, Java, _JavaObject);
+        JavaMethod.createJavaMethodClass(runtime, Java);
+        JavaConstructor.createJavaConstructorClass(runtime, Java);
+        JavaField.createJavaFieldClass(runtime, Java);
 
         // set of utility methods for Java-based proxy objects
         JavaProxyMethods.createJavaProxyMethods(context);
@@ -162,7 +164,7 @@ public class Java implements Library {
         ArrayJavaProxy.createArrayJavaProxy(context);
 
         // creates ruby's hash methods' proxy for Map interface
-        MapJavaProxy.createMapJavaProxy(context);
+        MapJavaProxy.createMapJavaProxy(runtime);
 
         // also create the JavaProxy* classes
         JavaProxyClass.createJavaProxyModule(runtime);
@@ -170,9 +172,7 @@ public class Java implements Library {
         // The template for interface modules
         JavaInterfaceTemplate.createJavaInterfaceTemplateModule(context);
 
-        RubyModule javaUtils = runtime.defineModule("JavaUtilities");
-
-        javaUtils.defineAnnotatedMethods(JavaUtilities.class);
+        runtime.defineModule("JavaUtilities").defineAnnotatedMethods(JavaUtilities.class);
 
         JavaArrayUtilities.createJavaArrayUtilitiesModule(runtime);
 
@@ -192,7 +192,7 @@ public class Java implements Library {
         // add some base Java classes everyone will need
         runtime.getJavaSupport().setObjectJavaClass( JavaClass.get(runtime, Object.class) );
 
-        return javaModule;
+        return Java;
     }
 
     public static class OldStyleExtensionInherited {
@@ -722,10 +722,11 @@ public class Java implements Library {
         if ( ! ( subclazz instanceof RubyClass ) ) {
             throw runtime.newTypeError(subclazz, runtime.getClassClass());
         }
-        return setupJavaSubclass(context, (RubyClass) subclazz);
+        setupJavaSubclass(context, (RubyClass) subclazz);
+        return context.nil;
     }
 
-    private static IRubyObject setupJavaSubclass(final ThreadContext context, final RubyClass subclass) {
+    private static void setupJavaSubclass(final ThreadContext context, final RubyClass subclass) {
 
         subclass.getInstanceVariables().setInstanceVariable("@java_proxy_class", context.nil);
 
@@ -753,17 +754,15 @@ public class Java implements Library {
                     self.getMetaClass().getInstanceVariables().setInstanceVariable("@java_proxy_class", proxyClass);
                 }
 
-                JavaProxyClass realProxyClass = (JavaProxyClass)proxyClass;
-                RubyArray constructors = realProxyClass.constructors();
-                ArrayList<JavaProxyConstructor> forArity = new ArrayList<JavaProxyConstructor>();
-                for (int i = 0; i < constructors.size(); i++) {
-                    JavaProxyConstructor constructor = (JavaProxyConstructor)constructors.eltInternal(i);
-                    if (constructor.getParameterTypes().length == args.length) {
-                        forArity.add(constructor);
-                    }
+                final int argsLength = args.length;
+                final RubyArray constructors = ((JavaProxyClass) proxyClass).constructors();
+                ArrayList<JavaProxyConstructor> forArity = new ArrayList<JavaProxyConstructor>(constructors.size());
+                for ( int i = 0; i < constructors.size(); i++ ) {
+                    JavaProxyConstructor constructor = (JavaProxyConstructor) constructors.eltInternal(i);
+                    if ( constructor.getParameterTypes().length == argsLength ) forArity.add(constructor);
                 }
 
-                if (forArity.size() == 0) {
+                if ( forArity.size() == 0 ) {
                     throw context.runtime.newArgumentError("wrong number of arguments for constructor");
                 }
 
@@ -775,18 +774,16 @@ public class Java implements Library {
                     throw context.runtime.newArgumentError("wrong number of arguments for constructor");
                 }
 
-                Object[] newArgs = new Object[args.length];
+                final Object[] javaArgs = new Object[argsLength];
                 Class[] parameterTypes = matching.getParameterTypes();
-                for (int i = 0; i < args.length; i++) {
-                    newArgs[i] = args[i].toJava(parameterTypes[i]);
+                for ( int i = 0; i < argsLength; i++ ) {
+                    javaArgs[i] = args[i].toJava(parameterTypes[i]);
                 }
 
-                JavaObject newObject = matching.newInstance(self, newArgs);
+                JavaObject newObject = matching.newInstance(self, javaArgs);
                 return JavaUtilities.set_java_object(self, self, newObject);
             }
         });
-
-        return context.nil;
     }
 
     // package scheme 2: separate module for each full package name, constructed
@@ -1112,17 +1109,37 @@ public class Java implements Library {
         // constant access won't pay the "penalty" for adding dynamic methods ...
         final RubyModule packageOrClass = getTopLevelProxyOrPackage(runtime, constName, false);
         if ( packageOrClass != null ) {
-            final RubyModule javaModule = (RubyModule) self;
+            final RubyModule Java = (RubyModule) self;
             // NOTE: if it's a package createPackageModule already set the constant
             // ... but in case it's a (top-level) Java class name we still need to:
-            synchronized (javaModule) {
-                final IRubyObject alreadySet = javaModule.fetchConstant(constName);
+            synchronized (Java) {
+                final IRubyObject alreadySet = Java.fetchConstant(constName);
                 if ( alreadySet != null ) return (RubyModule) alreadySet;
-                javaModule.setConstant(constName, packageOrClass);
+                Java.setConstant(constName, packageOrClass);
             }
             return packageOrClass;
         }
         return context.nil; // TODO compatibility - should be throwing instead, right !?
+    }
+
+    @JRubyMethod(name = "method_missing", meta = true, required = 1)
+    public static IRubyObject method_missing(ThreadContext context, final IRubyObject self,
+        final IRubyObject name) { // JavaUtilities.get_top_level_proxy_or_package(name)
+        // NOTE: getTopLevelProxyOrPackage will bind the (cached) method for us :
+        final RubyModule result = getTopLevelProxyOrPackage(context.runtime, name.asJavaString(), true);
+        if ( result != null ) return result;
+        return context.nil; // TODO compatibility - should be throwing instead, right !?
+    }
+
+    @JRubyMethod(name = "method_missing", meta = true, rest = true)
+    public static IRubyObject method_missing(ThreadContext context, final IRubyObject self,
+        final IRubyObject[] args) {
+        final IRubyObject name = args[0];
+        if ( args.length > 1 ) {
+            final int count = args.length - 1;
+            throw context.runtime.newArgumentError("Java does not have a method `"+ name +"' with " + count + " arguments");
+        }
+        return method_missing(context, self, name);
     }
 
     public static IRubyObject get_top_level_proxy_or_package(final ThreadContext context,
@@ -1150,7 +1167,6 @@ public class Java implements Library {
         }
     }
 
-    // TODO: Formalize conversion mechanisms between Java and Ruby
     /**
      * High-level object conversion utility.
      */
