@@ -28,9 +28,9 @@ properties( 'tesla.dump.pom' => 'pom.xml',
             'tesla.dump.readonly' => true,
             'jruby.plugins.version' => '1.0.7',
             # we share the already installed gems
-            'gem.home' => '${jruby.home}/lib/ruby/gems/shared',
+            'gem.home' => '${jruby_home}/lib/ruby/gems/shared',
             # need jruby_home but not jruby.home as name otherwise
-            # tesla-plugin will pick the jruby from jruby.home
+            # polyglot-plugin will pick the jruby from jruby.home
             'jruby_home' => '${basedir}/../../' )
 
   unless version =~ /-SNAPSHOT/

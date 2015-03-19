@@ -63,24 +63,18 @@ function check {
 }
 
 check test/target/jruby-tests-$jar_version.jar 1
-check maven/jruby-stdlib/target/jruby-stdlib-$jar_version.jar 8
+check maven/lib/target/jruby-stdlib-$jar_version.jar 8
 check maven/jruby-jars/pkg/jruby-jars-$gem_version.gem 25
-check maven/jruby-jars/lib/jruby-core-$jar_version-complete.jar 12
+check maven/jruby-jars/lib/jruby-core-$jar_version-complete.jar 13
 check maven/jruby-jars/lib/jruby-truffle-$jar_version-complete.jar 9
 check maven/jruby-jars/lib/jruby-stdlib-$jar_version.jar 8
 check maven/jruby-complete/target/jruby-complete-$jar_version.jar 27
-check maven/jruby/target/jruby-$jar_version.jar 1
-check maven/jruby-noasm/target/jruby-noasm-$jar_version.jar 9
-check maven/jruby-dist/target/jruby-dist-$jar_version-bin.tar.gz 37 jruby-$jar_version
+check maven/jruby/target/jruby-$jar_version.jar 9
+check maven/jruby-dist/target/jruby-dist-$jar_version-bin.tar.gz 38 jruby-$jar_version
 check maven/jruby-dist/target/jruby-dist-$jar_version-bin200.tar.gz 17 jruby-$jar_version
-check maven/jruby-dist/target/jruby-dist-$jar_version-src.tar.gz 8 jruby-$jar_version
 check maven/jruby-dist/target/jruby-dist-$jar_version-src.zip 13 jruby-$jar_version
 check maven/jruby-dist/target/jruby-dist-$jar_version-bin.zip 38 jruby-$jar_version
-check maven/jruby-dist/target/jruby-dist-$jar_version-bin200.zip 18 jruby-$jar_version
-check core/target/jruby-core-$jar_version-noasm.jar 9
 check core/target/jruby-core-$jar_version.jar 9
-check core/target/jruby-core-$jar_version-complete.jar 12
-check truffle/target/jruby-truffle-$jar_version.jar 8
-check truffle/target/jruby-truffle-$jar_version-complete.jar 8
+check truffle/target/jruby-truffle-$jar_version.jar 9
 
 exit "${failed[0]}"

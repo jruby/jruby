@@ -44,7 +44,7 @@ freezing to) a specific jruby-complete jar version.</description>
   </scm>
   <properties>
     <tesla.dump.readonly>true</tesla.dump.readonly>
-    <gem.home>${jruby.home}/lib/ruby/gems/shared</gem.home>
+    <gem.home>${jruby_home}/lib/ruby/gems/shared</gem.home>
     <jruby.plugins.version>1.0.7</jruby.plugins.version>
     <tesla.dump.pom>pom.xml</tesla.dump.pom>
     <jruby_home>${basedir}/../../</jruby_home>
