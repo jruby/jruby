@@ -18,19 +18,6 @@ JRUBY_DIR = File.expand_path('../..', __FILE__)
 
 module Utilities
 
-  GRAAL_LOCATIONS = [
-    ENV['GRAAL_BIN'],
-    'graalvm-jdk1.8.0/bin/java',
-    '../graalvm-jdk1.8.0/bin/java',
-    '../../graal/graalvm-jdk1.8.0/bin/java'
-  ].compact.map { |path| File.expand_path(path, JRUBY_DIR) }
-
-  BENCH_LOCATIONS = [
-    ENV['BENCH_DIR'],
-    'bench9000',
-    '../bench9000'
-  ].compact.map { |path| File.expand_path(path, JRUBY_DIR) }
-
   def self.find_graal
     not_found = -> {
       raise "couldn't find graal - download it from http://lafo.ssw.uni-linz.ac.at/graalvm/ and extract it into the JRuby repository or parent directory"
@@ -41,7 +28,11 @@ module Utilities
   end
 
   def self.branch
-    `git rev-parse --abbrev-ref HEAD`
+    `git rev-parse --abbrev-ref HEAD`.strip
+  end
+
+  def self.mangle_for_env(name)
+    name.upcase.gsub('-', '_')
   end
 
   def self.find_graal_mx
@@ -83,6 +74,20 @@ module Utilities
   def self.jruby_version
     File.read("#{JRUBY_DIR}/VERSION").strip
   end
+
+  GRAAL_LOCATIONS = [
+    ENV["GRAAL_BIN_#{mangle_for_env(branch)}"],
+    ENV['GRAAL_BIN'],
+    'graalvm-jdk1.8.0/bin/java',
+    '../graalvm-jdk1.8.0/bin/java',
+    '../../graal/graalvm-jdk1.8.0/bin/java'
+  ].compact.map { |path| File.expand_path(path, JRUBY_DIR) }
+
+  BENCH_LOCATIONS = [
+    ENV['BENCH_DIR'],
+    'bench9000',
+    '../bench9000'
+  ].compact.map { |path| File.expand_path(path, JRUBY_DIR) }
 
 end
 
@@ -150,6 +155,12 @@ module Commands
     puts 'jt install ..../graal/mx/suite.py            install a JRuby distribution into an mx suite'
     puts
     puts 'you can also put build or rebuild in front of any command'
+    puts
+    puts 'recognised environment variables:'
+    puts
+    puts '  GRAAL_BIN                                  GraalVM executable (java command) to use'
+    puts '  GRAAL_BIN_...branch_name...                GraalVM executable to use for a given branch'
+    puts '           branch names are mangled - eg truffle-head becomes GRAAL_BIN_TRUFFLE_HEAD'
   end
 
   def build(project = nil)
