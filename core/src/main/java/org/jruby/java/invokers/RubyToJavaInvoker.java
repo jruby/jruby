@@ -125,17 +125,20 @@ public abstract class RubyToJavaInvoker extends JavaMethod {
                 final JavaCallable[] callablesForArity = javaCallables[i];
                 if ( callablesForArity == null || callablesForArity.length != 1 ) continue;
                 if ( callablesForArity[0] instanceof org.jruby.javasupport.JavaMethod ) {
-                    setNativeCallIfPublic( ((org.jruby.javasupport.JavaMethod) callablesForArity[0]).getValue() );
+                    final Method method = ((org.jruby.javasupport.JavaMethod) callablesForArity[0]).getValue();
+                    if ( setNativeCallIfPublic( method ) ) break;
                 }
             }
         }
     }
 
-    private void setNativeCallIfPublic(final Method method) {
+    private boolean setNativeCallIfPublic(final Method method) {
         final int mod = method.getModifiers(); // only public, since non-public don't bind
         if ( Modifier.isPublic(mod) && Modifier.isPublic( method.getDeclaringClass().getModifiers() ) ) {
             setNativeCall(method.getDeclaringClass(), method.getName(), method.getReturnType(), method.getParameterTypes(), Modifier.isStatic(mod), true);
+            return true;
         }
+        return false;
     }
 
     protected final Member[] getMembers() {
