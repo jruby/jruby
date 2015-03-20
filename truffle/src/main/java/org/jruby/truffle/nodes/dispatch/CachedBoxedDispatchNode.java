@@ -177,4 +177,8 @@ public class CachedBoxedDispatchNode extends CachedDispatchNode {
         return method.getSharedMethodInfo().getArity().getKeywordArguments() != null && next instanceof UnresolvedDispatchNode;
     }
 
+    public InternalMethod getMethod() {
+        return method;
+    }
+
 }

@@ -69,6 +69,7 @@ public class CheckArityNode extends RubyNode {
         if (!keywordsRest && keywordArguments != null) {
             for (KeyValue keyValue : HashOperations.verySlowToKeyValues(keywordArguments)) {
                 if (!keywordAllowed(keyValue.getKey().toString())) {
+                    CompilerDirectives.transferToInterpreter();
                     throw new RaiseException(getContext().getCoreLibrary().argumentError("unknown keyword: " + keyValue.getKey().toString(), this));
                 }
             }
