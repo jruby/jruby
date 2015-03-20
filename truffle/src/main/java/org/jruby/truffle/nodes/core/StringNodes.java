@@ -1191,12 +1191,15 @@ public abstract class StringNodes {
     @CoreMethod(names = "force_encoding", required = 1)
     public abstract static class ForceEncodingNode extends CoreMethodNode {
 
+        @Child private ToStrNode toStrNode;
+
         public ForceEncodingNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
         }
 
         public ForceEncodingNode(ForceEncodingNode prev) {
             super(prev);
+            toStrNode = prev.toStrNode;
         }
 
         @TruffleBoundary
@@ -1210,6 +1213,16 @@ public abstract class StringNodes {
         public RubyString forceEncoding(RubyString string, RubyEncoding encoding) {
             string.forceEncoding(encoding.getEncoding());
             return string;
+        }
+
+        @Specialization(guards = { "!isRubyString(arguments[1])", "!isRubyEncoding(arguments[1])" })
+        public RubyString forceEncoding(VirtualFrame frame, RubyString string, Object encoding) {
+            if (toStrNode == null) {
+                CompilerDirectives.transferToInterpreter();
+                toStrNode = insert(ToStrNodeFactory.create(getContext(), getSourceSection(), null));
+            }
+
+            return forceEncoding(string, toStrNode.executeRubyString(frame, encoding));
         }
 
     }
