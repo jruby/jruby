@@ -1340,7 +1340,9 @@ public abstract class StringNodes {
                 return self;
             }
 
-            self.getBytes().replace(from.getBytes().bytes());
+            self.getByteList().replace(from.getByteList().bytes());
+            self.getByteList().setEncoding(from.getByteList().getEncoding());
+            self.setCodeRange(from.getCodeRange());
 
             return self;
         }
