@@ -3835,27 +3835,25 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
         return context.runtime.getFalse();
     }
 
-    private boolean end_with_pCommon(IRubyObject arg) {
-        RubyString otherString = arg.convertToString();
+    // MRI: rb_str_end_with, loop body
+    private boolean end_with_pCommon(IRubyObject tmp) {
+        int p, s, e;
+        Encoding enc;
 
-        Encoding enc = checkEncoding(otherString);
-
-        int otherLength = otherString.value.getRealSize();
-
-        if (otherLength == 0) {
-            // other is '', so return true
+        tmp = tmp.convertToString();
+        ByteList tmpBL = ((RubyString)tmp).value;
+        enc = checkEncoding((RubyString)tmp);
+        if (value.realSize() < tmpBL.realSize()) return false;
+        p = value.begin();
+        e = p + value.realSize();
+        s = e - tmpBL.realSize();
+        if (enc.leftAdjustCharHead(value.unsafeBytes(), p, s, e) != s) {
+            return false;
+        }
+        if (ByteList.memcmp(value.unsafeBytes(), s, tmpBL.unsafeBytes(), tmpBL.begin(), tmpBL.realSize()) == 0) {
             return true;
         }
-
-        if (value.getRealSize() < otherLength) return false;
-
-        int p = value.getBegin();
-        int end = p + value.getRealSize();
-        int s = end - otherLength;
-
-        if (enc.leftAdjustCharHead(value.getUnsafeBytes(), p, s, end) != s) return false;
-
-        return value.endsWith(otherString.value);
+        return false;
     }
 
     private static final ByteList SPACE_BYTELIST = new ByteList(ByteList.plain(" "));
