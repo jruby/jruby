@@ -1,2 +1,1 @@
 fails:String#delete deletes multibyte characters
-fails:String#delete deletes all chars in a sequence
