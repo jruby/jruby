@@ -37,7 +37,9 @@ import com.oracle.truffle.api.utilities.BranchProfile;
 
 import com.oracle.truffle.api.utilities.ConditionProfile;
 import org.jcodings.Encoding;
+import org.jcodings.exception.EncodingException;
 import org.jcodings.specific.ASCIIEncoding;
+import org.jcodings.specific.USASCIIEncoding;
 import org.joni.Matcher;
 import org.joni.Option;
 import org.jruby.Ruby;
@@ -321,22 +323,41 @@ public abstract class StringNodes {
 
         @Specialization
         public RubyString concat(RubyString string, int other) {
-            string.getByteList().append((byte) other);
-            return string;
+            if (other < 0) {
+                CompilerDirectives.transferToInterpreter();
+
+                throw new RaiseException(charRangeException(other));
+            }
+
+            return concatNumeric(string, other);
         }
 
         @Specialization
         public RubyString concat(RubyString string, long other) {
-            string.getByteList().append((byte) other);
-            return string;
+            if (other < 0) {
+                CompilerDirectives.transferToInterpreter();
+
+                throw new RaiseException(charRangeException(other));
+            }
+
+            return concatNumeric(string, (int) other);
+        }
+
+        @Specialization
+        public RubyString concat(RubyString string, RubyBignum other) {
+            if (other.bigIntegerValue().signum() < 0) {
+                CompilerDirectives.transferToInterpreter();
+
+                throw new RaiseException(
+                        getContext().getCoreLibrary().rangeError("bignum out of char range", this));
+            }
+
+            return concatNumeric(string, other.bigIntegerValue().intValue());
         }
 
         @TruffleBoundary
         @Specialization
         public RubyString concat(RubyString string, RubyString other) {
-            // TODO (nirvdrum 06-Feb-15) This shouldn't be designed for compilation because we don't support all the String semantics yet, but a bench9000 benchmark has it on a hot path, so commenting out for now.
-            //notDesignedForCompilation();
-
             final int codeRange = other.getCodeRange();
             final int[] ptr_cr_ret = { codeRange };
 
@@ -356,10 +377,49 @@ public abstract class StringNodes {
             return string;
         }
 
-        @Specialization(guards = {"!isInteger(other)", "!isLong(other)", "!isRubyString(other)"})
+        @Specialization(guards = {"!isInteger(other)", "!isLong(other)", "!isRubyBignum(other)", "!isRubyString(other)"})
         public Object concat(VirtualFrame frame, RubyString string, Object other) {
             notDesignedForCompilation();
             return ruby(frame, "concat StringValue(other)", "other", other);
+        }
+
+        @TruffleBoundary
+        private RubyString concatNumeric(RubyString string, int c) {
+            // Taken from org.jruby.RubyString#concatNumeric
+
+            final ByteList value = string.getByteList();
+            Encoding enc = value.getEncoding();
+            int cl;
+
+            try {
+                cl = StringSupport.codeLength(getContext().getRuntime(), enc, c);
+                string.modify(value.getRealSize() + cl);
+                string.clearCodeRange();
+
+                if (enc == USASCIIEncoding.INSTANCE) {
+                    if (c > 0xff) {
+                        throw new RaiseException(charRangeException(c));
+
+                    }
+                    if (c > 0x79) {
+                        value.setEncoding(ASCIIEncoding.INSTANCE);
+                        enc = value.getEncoding();
+                    }
+                }
+
+                enc.codeToMbc(c, value.getUnsafeBytes(), value.getBegin() + value.getRealSize());
+            } catch (EncodingException e) {
+                throw new RaiseException(charRangeException(c));
+            }
+
+            value.setRealSize(value.getRealSize() + cl);
+
+            return string;
+        }
+
+        private RubyException charRangeException(Number value) {
+            return getContext().getCoreLibrary().rangeError(
+                    String.format("%d out of char range", value), this);
         }
     }
 
