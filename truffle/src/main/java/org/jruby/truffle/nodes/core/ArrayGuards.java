@@ -26,6 +26,10 @@ public class ArrayGuards {
         return array.getStore() == null;
     }
 
+    public static boolean isNullOrEmpty(RubyArray array) {
+        return array.getStore() == null || array.getSize() == 0;
+    }
+
     public static boolean isIntegerFixnum(RubyArray array) {
         return array.getStore() instanceof int[];
     }
