@@ -520,7 +520,10 @@ public class RubyBigDecimal extends RubyNumeric {
 
         BigDecimal decimal;
         try {
+		System.err.println("newInstance " + strValue );
+		System.err.println("newInstance " + mathContext );
             decimal = new BigDecimal(strValue, mathContext);
+		System.err.println("newInstance " + decimal );
         } catch (NumberFormatException e) {
             if (isOverflowExceptionMode(context.runtime)) throw context.runtime.newFloatDomainError("exponent overflow");
 
@@ -545,7 +548,9 @@ public class RubyBigDecimal extends RubyNumeric {
     
     @JRubyMethod(name = "new", meta = true)
     public static RubyBigDecimal newInstance(ThreadContext context, IRubyObject recv, IRubyObject arg, IRubyObject mathArg) {
+	System.err.println( "margs" + mathArg);
         int digits = (int) mathArg.convertToInteger().getLongValue();
+	System.err.println( "margs" + digits);
         if (digits < 0) throw context.runtime.newArgumentError("argument must be positive");
 
         MathContext mathContext = new MathContext(digits);
