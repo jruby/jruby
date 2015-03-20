@@ -948,6 +948,138 @@ public abstract class ArrayNodes {
             }
         }
 
+        @Specialization(guards = "isLongFixnum", rewriteOn = UnexpectedResultException.class)
+        public long deleteAtLongFixnumInBounds(RubyArray array, int index) throws UnexpectedResultException {
+            final int normalizedIndex = array.normalizeIndex(index);
+
+            if (normalizedIndex < 0) {
+                throw new UnexpectedResultException(nil());
+            } else if (normalizedIndex >= array.getSize()) {
+                throw new UnexpectedResultException(nil());
+            } else {
+                final long[] store = (long[]) array.getStore();
+                final long value = store[normalizedIndex];
+                System.arraycopy(store, normalizedIndex + 1, store, normalizedIndex, array.getSize() - normalizedIndex - 1);
+                array.setStore(store, array.getSize() - 1);
+                return value;
+            }
+        }
+
+        @Specialization(contains = "deleteAtLongFixnumInBounds", guards = "isLongFixnum")
+        public Object deleteAtLongFixnum(RubyArray array, int index) {
+            notDesignedForCompilation();
+
+            int normalizedIndex = index;
+
+            if (normalizedIndex < 0) {
+                normalizedIndex = array.getSize() + index;
+            }
+
+            if (normalizedIndex < 0) {
+                tooSmallBranch.enter();
+                return nil();
+            } else if (normalizedIndex >= array.getSize()) {
+                beyondEndBranch.enter();
+                return nil();
+            } else {
+                final long[] store = (long[]) array.getStore();
+                final long value = store[normalizedIndex];
+                System.arraycopy(store, normalizedIndex + 1, store, normalizedIndex, array.getSize() - normalizedIndex - 1);
+                array.setStore(store, array.getSize() - 1);
+                return value;
+            }
+        }
+
+        @Specialization(guards = "isFloat", rewriteOn = UnexpectedResultException.class)
+        public double deleteAtFloatInBounds(RubyArray array, int index) throws UnexpectedResultException {
+            final int normalizedIndex = array.normalizeIndex(index);
+
+            if (normalizedIndex < 0) {
+                throw new UnexpectedResultException(nil());
+            } else if (normalizedIndex >= array.getSize()) {
+                throw new UnexpectedResultException(nil());
+            } else {
+                final double[] store = (double[]) array.getStore();
+                final double value = store[normalizedIndex];
+                System.arraycopy(store, normalizedIndex + 1, store, normalizedIndex, array.getSize() - normalizedIndex - 1);
+                array.setStore(store, array.getSize() - 1);
+                return value;
+            }
+        }
+
+        @Specialization(contains = "deleteAtFloatInBounds", guards = "isFloat")
+        public Object deleteAtFloat(RubyArray array, int index) {
+            notDesignedForCompilation();
+
+            int normalizedIndex = index;
+
+            if (normalizedIndex < 0) {
+                normalizedIndex = array.getSize() + index;
+            }
+
+            if (normalizedIndex < 0) {
+                tooSmallBranch.enter();
+                return nil();
+            } else if (normalizedIndex >= array.getSize()) {
+                beyondEndBranch.enter();
+                return nil();
+            } else {
+                final double[] store = (double[]) array.getStore();
+                final double value = store[normalizedIndex];
+                System.arraycopy(store, normalizedIndex + 1, store, normalizedIndex, array.getSize() - normalizedIndex - 1);
+                array.setStore(store, array.getSize() - 1);
+                return value;
+            }
+        }
+
+        @Specialization(guards = "isObject", rewriteOn = UnexpectedResultException.class)
+        public Object deleteAtObjectInBounds(RubyArray array, int index) throws UnexpectedResultException {
+            final int normalizedIndex = array.normalizeIndex(index);
+
+            if (normalizedIndex < 0) {
+                throw new UnexpectedResultException(nil());
+            } else if (normalizedIndex >= array.getSize()) {
+                throw new UnexpectedResultException(nil());
+            } else {
+                final Object[] store = (Object[]) array.getStore();
+                final Object value = store[normalizedIndex];
+                System.arraycopy(store, normalizedIndex + 1, store, normalizedIndex, array.getSize() - normalizedIndex - 1);
+                array.setStore(store, array.getSize() - 1);
+                return value;
+            }
+        }
+
+        @Specialization(contains = "deleteAtObjectInBounds", guards = "isObject")
+        public Object deleteAtObject(RubyArray array, int index) {
+            notDesignedForCompilation();
+
+            int normalizedIndex = index;
+
+            if (normalizedIndex < 0) {
+                normalizedIndex = array.getSize() + index;
+            }
+
+            if (normalizedIndex < 0) {
+                tooSmallBranch.enter();
+                return nil();
+            } else if (normalizedIndex >= array.getSize()) {
+                beyondEndBranch.enter();
+                return nil();
+            } else {
+                final Object[] store = (Object[]) array.getStore();
+                final Object value = store[normalizedIndex];
+                System.arraycopy(store, normalizedIndex + 1, store, normalizedIndex, array.getSize() - normalizedIndex - 1);
+                array.setStore(store, array.getSize() - 1);
+                return value;
+            }
+        }
+
+        @Specialization(guards = "isNullOrEmpty")
+        public Object deleteAtNullOrEmpty(RubyArray array, int index) {
+            return nil();
+        }
+
+
     }
 
     @CoreMethod(names = "each", needsBlock = true)
