@@ -5631,10 +5631,10 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
 
     @JRubyMethod
     public IRubyObject force_encoding(ThreadContext context, IRubyObject enc) {
-        return force_encoding(context, context.runtime.getEncodingService().getEncodingFromObject(enc));
+        return force_encoding(EncodingUtils.rbToEncoding(context, enc));
     }
 
-    private IRubyObject force_encoding(ThreadContext context, Encoding encoding) {
+    private IRubyObject force_encoding(Encoding encoding) {
         modify19();
         associateEncoding(encoding);
         clearCodeRange();
