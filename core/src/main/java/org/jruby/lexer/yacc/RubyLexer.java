@@ -635,7 +635,7 @@ public class RubyLexer {
      * @return whether c is an multibyte char or not
      */
     protected boolean isMultiByteChar(int c) {
-        return encoding.codeToMbcLength(c) != 1;
+        return encoding.length((byte)c) > 1;
     }
 
     // STR_NEW3/parser_str_new
