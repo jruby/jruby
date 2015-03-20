@@ -2000,26 +2000,8 @@ public abstract class StringNodes {
         }
     }
 
-    @CoreMethod(names = "reverse", taintFromSelf = true)
-    public abstract static class ReverseNode extends CoreMethodNode {
-
-        public ReverseNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
-        public ReverseNode(ReverseNode prev) {
-            super(prev);
-        }
-
-        @Specialization
-        public RubyString reverse(RubyString string) {
-            notDesignedForCompilation();
-
-            return RubyString.fromByteList(string.getLogicalClass(), StringNodesHelper.reverse(string));
-        }
-    }
-
     @CoreMethod(names = "reverse!", raiseIfFrozenSelf = true)
+    @ImportGuards(StringGuards.class)
     public abstract static class ReverseBangNode extends CoreMethodNode {
 
         public ReverseBangNode(RubyContext context, SourceSection sourceSection) {
@@ -2030,12 +2012,68 @@ public abstract class StringNodes {
             super(prev);
         }
 
-        @Specialization
-        public RubyString reverse(RubyString string) {
-            notDesignedForCompilation();
-
-            string.set(StringNodesHelper.reverse(string));
+        @Specialization(guards = "reverseIsEqualToSelf")
+        public RubyString reverseNoOp(RubyString string) {
             return string;
+        }
+
+        @Specialization(guards = { "!reverseIsEqualToSelf", "isSingleByteOptimizable" })
+        public RubyString reverseSingleByteOptimizable(RubyString string) {
+            // Taken from org.jruby.RubyString#reverse!
+
+            string.modify();
+
+            final byte[] bytes = string.getByteList().getUnsafeBytes();
+            final int p = string.getByteList().getBegin();
+            final int len = string.getByteList().getRealSize();
+
+            for (int i = 0; i < len >> 1; i++) {
+                byte b = bytes[p + i];
+                bytes[p + i] = bytes[p + len - i - 1];
+                bytes[p + len - i - 1] = b;
+            }
+
+            return string;
+        }
+
+        @Specialization(guards = { "!reverseIsEqualToSelf", "!isSingleByteOptimizable" })
+        public RubyString reverse(RubyString string) {
+            // Taken from org.jruby.RubyString#reverse!
+
+            string.modify();
+
+            final byte[] bytes = string.getByteList().getUnsafeBytes();
+            int p = string.getByteList().getBegin();
+            final int len = string.getByteList().getRealSize();
+
+            final Encoding enc = string.getByteList().getEncoding();
+            final int end = p + len;
+            int op = len;
+            final byte[] obytes = new byte[len];
+            boolean single = true;
+
+            while (p < end) {
+                int cl = StringSupport.length(enc, bytes, p, end);
+                if (cl > 1 || (bytes[p] & 0x80) != 0) {
+                    single = false;
+                    op -= cl;
+                    System.arraycopy(bytes, p, obytes, op, cl);
+                    p += cl;
+                } else {
+                    obytes[--op] = bytes[p++];
+                }
+            }
+
+            string.getByteList().setUnsafeBytes(obytes);
+            if (string.getCodeRange() == StringSupport.CR_UNKNOWN) {
+                string.setCodeRange(single ? StringSupport.CR_7BIT : StringSupport.CR_VALID);
+            }
+
+            return string;
+        }
+
+        public static boolean reverseIsEqualToSelf(RubyString string) {
+            return string.getByteList().getRealSize() <= 1;
         }
     }
 
@@ -2265,14 +2303,6 @@ public abstract class StringNodes {
             byteList.setEncoding(string.getBytes().getEncoding());
 
             return byteList;
-        }
-
-        @TruffleBoundary
-        public static ByteList reverse(RubyString string) {
-            ByteList byteListString = ByteList.create(new StringBuilder(string.toString()).reverse().toString());
-            byteListString.setEncoding(string.getBytes().getEncoding());
-
-            return byteListString;
         }
 
         @TruffleBoundary
