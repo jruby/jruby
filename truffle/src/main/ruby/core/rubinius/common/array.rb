@@ -1080,6 +1080,14 @@ class Array
     out
   end
 
+  def sort_by!(&block)
+    Rubinius.check_frozen
+
+    return to_enum :sort_by! unless block_given?
+
+    replace sort_by(&block)
+  end
+
   # Insertion sort in-place between the given indexes.
   def isort!(left, right)
     i = left + 1
