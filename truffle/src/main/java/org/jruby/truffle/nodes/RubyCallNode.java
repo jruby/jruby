@@ -129,7 +129,7 @@ public class RubyCallNode extends RubyNode {
                     keywordOptimizedArgumentsLength = optimized.length;
 
                     for (int n = 0; n < keywordOptimizedArgumentsLength; n++) {
-                        keywordOptimizedArguments[n] = optimized[n];
+                        keywordOptimizedArguments[n] = insert(optimized[n]);
                     }
                 }
             }
