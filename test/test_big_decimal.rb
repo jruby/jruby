@@ -262,5 +262,10 @@ class TestBigDecimal < Test::Unit::TestCase
       b = BigDecimal.new(1.05, 10)/1.48
       assert (b.to_f - 0.7094594594594595) < Float::EPSILON
     end
+
+    def test_GH_2650
+      assert_equal(BigDecimal.new("10.91231", 1).to_f, 10.91231)
+      assert_equal(BigDecimal.new("10.9", 2).to_f, 10.9)
+    end
   end
 end
