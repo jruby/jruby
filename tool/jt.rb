@@ -16,6 +16,9 @@ require 'digest/sha1'
 
 JRUBY_DIR = File.expand_path('../..', __FILE__)
 
+# wait for sub-processes to handle the interrupt
+trap(:INT) {}
+
 module Utilities
 
   def self.graal_version
@@ -111,15 +114,10 @@ module ShellUtils
   private
 
   def raw_sh(*args)
-    begin
-      result = system(*args)
-    rescue Interrupt
-      abort # Ignore Ctrl+C
-    else
-      unless result
-        $stderr.puts "FAILED (#{$?}): #{args * ' '}"
-        exit $?.exitstatus
-      end
+    result = system(*args)
+    unless result
+      $stderr.puts "FAILED (#{$?}): #{args * ' '}"
+      exit $?.exitstatus
     end
   end
 
