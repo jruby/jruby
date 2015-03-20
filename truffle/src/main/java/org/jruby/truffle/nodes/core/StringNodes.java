@@ -1672,6 +1672,7 @@ public abstract class StringNodes {
     }
 
     @CoreMethod(names = "dump", taintFromSelf = true)
+    @ImportGuards(StringGuards.class)
     public abstract static class DumpNode extends CoreMethodNode {
 
         public DumpNode(RubyContext context, SourceSection sourceSection) {
@@ -1682,13 +1683,41 @@ public abstract class StringNodes {
             super(prev);
         }
 
-        @Specialization
-        public RubyString rstrip(RubyString string) {
-            notDesignedForCompilation();
+        @Specialization(guards = "isAsciiCompatible")
+        public RubyString dumpAsciiCompatible(RubyString string) {
+            // Taken from org.jruby.RubyString#dump
 
-            return string.dump();
+            ByteList outputBytes = dumpCommon(string);
+
+            final RubyString result = getContext().makeString(string.getLogicalClass(), outputBytes);
+            result.getByteList().setEncoding(string.getByteList().getEncoding());
+            result.setCodeRange(StringSupport.CR_7BIT);
+
+            return result;
         }
 
+        @Specialization(guards = "!isAsciiCompatible")
+        public RubyString dump(RubyString string) {
+            // Taken from org.jruby.RubyString#dump
+
+            ByteList outputBytes = dumpCommon(string);
+
+            outputBytes.append(".force_encoding(\"".getBytes());
+            outputBytes.append(string.getByteList().getEncoding().getName());
+            outputBytes.append((byte) '"');
+            outputBytes.append((byte) ')');
+
+            final RubyString result = getContext().makeString(string.getLogicalClass(), outputBytes);
+            result.getByteList().setEncoding(ASCIIEncoding.INSTANCE);
+            result.setCodeRange(StringSupport.CR_7BIT);
+
+            return result;
+        }
+
+        @TruffleBoundary
+        private ByteList dumpCommon(RubyString string) {
+            return StringSupport.dumpCommon(getContext().getRuntime(), string.getByteList());
+        }
     }
 
     @CoreMethod(names = "scan", required = 1, needsBlock = true, taintFromParameters = 0)
