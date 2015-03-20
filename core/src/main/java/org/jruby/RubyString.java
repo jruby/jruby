@@ -4561,18 +4561,19 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
         Ruby runtime = context.runtime;
         if (value.getRealSize() == 0) return runtime.getNil();
 
-        RubyString otherStr = args[0].convertToString();
-        Encoding enc = checkEncoding(otherStr);
-        boolean[]squeeze = new boolean[StringSupport.TRANS_SIZE + 1];
-        StringSupport.TrTables tables = StringSupport.trSetupTable(otherStr.value, runtime, squeeze, null, true, enc);
-        for (int i=1; i<args.length; i++) {
+        RubyString otherStr;
+        Encoding enc = null;
+        boolean[] squeeze = new boolean[StringSupport.TRANS_SIZE + 1];
+        StringSupport.TrTables tables = null;
+
+        for (int i=0; i<args.length; i++) {
             otherStr = args[i].convertToString();
             enc = checkEncoding(otherStr);
-            tables = StringSupport.trSetupTable(otherStr.value, runtime, squeeze, tables, false, enc);
+            tables = StringSupport.trSetupTable(otherStr.value, runtime, squeeze, tables, i == 0, enc);
         }
 
         if (StringSupport.delete_bangCommon19(this, runtime, squeeze, tables, enc) == null) {
-            return runtime.getNil();
+            return context.nil;
         }
 
         return this;
