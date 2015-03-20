@@ -4101,12 +4101,17 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
 
     @JRubyMethod(name = "chop!")
     public IRubyObject chop_bang19(ThreadContext context) {
-        modifyCheck();
-        Ruby runtime = context.runtime;
-        if (value.getRealSize() == 0) return runtime.getNil();
-        view(0, StringSupport.choppedLength19(this, runtime));
-        if (getCodeRange() != CR_7BIT) clearCodeRange();
-        return this;
+        modifyAndKeepCodeRange();
+        if (size() > 0) {
+            int len;
+            len = StringSupport.choppedLength19(this, context.runtime);
+            value.realSize(len);
+            if (getCodeRange() != CR_7BIT) {
+                clearCodeRange();
+            }
+            return this;
+        }
+        return context.nil;
     }
 
     public RubyString chomp(ThreadContext context) {

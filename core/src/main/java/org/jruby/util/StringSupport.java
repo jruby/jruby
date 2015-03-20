@@ -1405,24 +1405,23 @@ public final class StringSupport {
     }
 
     /**
-     * rb_str_chop
+     * MRI: chopped_length
      */
-    public static int choppedLength19(CodeRangeable rubyString, Ruby runtime) {
-        final ByteList value = rubyString.getByteList();
-        int p = value.getBegin();
-        int end = p + value.getRealSize();
+    public static int choppedLength19(CodeRangeable str, Ruby runtime) {
+        ByteList bl = str.getByteList();
+        Encoding enc = bl.getEncoding();
+        int p, p2, beg, end;
 
-        if (p > end) return 0;
-        byte bytes[] = value.getUnsafeBytes();
-        Encoding enc = value.getEncoding();
-
-        int s = enc.prevCharHead(bytes, p, end, end);
-        if (s == -1) return 0;
-        if (s > p && codePoint(runtime, enc, bytes, s, end) == '\n') {
-            int s2 = enc.prevCharHead(bytes, p, s, end);
-            if (s2 != -1 && codePoint(runtime, enc, bytes, s2, end) == '\r') s = s2;
+        beg = bl.begin();
+        end = beg + bl.realSize();
+        if (beg > end) return 0;
+        p = enc.prevCharHead(bl.unsafeBytes(), beg, end, end);
+        if (p == 0) return 0;
+        if (p > beg && EncodingUtils.encAscget(bl.unsafeBytes(), p, end, null, enc) == '\n') {
+            p2 = enc.prevCharHead(bl.unsafeBytes(), beg, p, end);
+            if (p2 != 0 && EncodingUtils.encAscget(bl.unsafeBytes(),  p2, end, null, enc) == '\r') p = p2;
         }
-        return s - p;
+        return p - beg;
     }
 
     /**
