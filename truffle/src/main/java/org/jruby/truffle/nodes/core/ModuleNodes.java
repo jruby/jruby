@@ -684,7 +684,7 @@ public abstract class ModuleNodes {
             yield = prev.yield;
         }
 
-        public abstract Object executeClassEval(VirtualFrame frame, RubyModule self, Object[] args, RubyProc block);
+        public abstract Object executeClassExec(VirtualFrame frame, RubyModule self, Object[] args, RubyProc block);
 
         @Specialization
         public Object classExec(VirtualFrame frame, RubyModule self, Object[] args, RubyProc block) {
@@ -1002,7 +1002,7 @@ public abstract class ModuleNodes {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
                 classExecNode = insert(ModuleNodesFactory.ClassExecNodeFactory.create(getContext(), getSourceSection(), new RubyNode[]{null,null,null}));
             }
-            classExecNode.executeClassEval(frame, module, new Object[]{}, block);
+            classExecNode.executeClassExec(frame, module, new Object[]{}, block);
         }
 
         @Specialization
