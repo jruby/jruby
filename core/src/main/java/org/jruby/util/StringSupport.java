@@ -1017,7 +1017,7 @@ public final class StringSupport {
         for (i=0; i<TRANS_SIZE; i++) {
             stable[i] = stable[i] && buf[i] != 0;
         }
-        if (table != null && !cflag) {
+        if (table == null && !cflag) {
             tables.del = null;
         }
 
