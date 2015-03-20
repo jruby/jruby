@@ -154,17 +154,10 @@ public class CoreLibrary {
 
         // Create the cyclic classes and modules
 
-        classClass = new RubyClass(context, null, null, null, "Class", false, null);
-        classClass.setAllocator(new RubyClass.ClassAllocator());
-
-        basicObjectClass = RubyClass.createBootClass(context, classClass, "BasicObject");
-        basicObjectClass.setAllocator(new RubyBasicObject.BasicObjectAllocator());
-
-        objectClass = RubyClass.createBootClass(context, classClass, "Object");
-        objectClass.setAllocator(basicObjectClass.getAllocator());
-
-        moduleClass = new RubyClass(context, classClass, null, null, "Module", false, null);
-        moduleClass.setAllocator(new RubyModule.ModuleAllocator());
+        classClass = RubyClass.createBootClass(context, null, "Class", new RubyClass.ClassAllocator());
+        basicObjectClass = RubyClass.createBootClass(context, classClass, "BasicObject", new RubyBasicObject.BasicObjectAllocator());
+        objectClass = RubyClass.createBootClass(context, classClass, "Object", basicObjectClass.getAllocator());
+        moduleClass = RubyClass.createBootClass(context, classClass, "Module", new RubyModule.ModuleAllocator());
 
         // Close the cycles
         classClass.unsafeSetLogicalClass(classClass);
@@ -185,8 +178,7 @@ public class CoreLibrary {
         // Create Exception classes 
 
         // Exception
-        exceptionClass = defineClass("Exception");
-        exceptionClass.setAllocator(new RubyException.ExceptionAllocator());
+        exceptionClass = defineClass("Exception", new RubyException.ExceptionAllocator());
 
         // EncodingError
         encodingErrorClass = defineClass(exceptionClass, "EncodingError");
@@ -229,14 +221,14 @@ public class CoreLibrary {
         // StandardError > SystemCallError
         systemCallErrorClass = defineClass(standardErrorClass, "SystemCallError");
         errnoModule = defineModule("Errno");
-        new RubyClass(context, errnoModule, systemCallErrorClass, "EACCES");
-        edomClass = new RubyClass(context, errnoModule, systemCallErrorClass, "EDOM");
-        new RubyClass(context, errnoModule, systemCallErrorClass, "EEXIST");
-        enoentClass = new RubyClass(context, errnoModule, systemCallErrorClass, "ENOENT");
-        enotemptyClass = new RubyClass(context, errnoModule, systemCallErrorClass, "ENOTEMPTY");
-        new RubyClass(context, errnoModule, systemCallErrorClass, "EPERM");
-        new RubyClass(context, errnoModule, systemCallErrorClass, "EXDEV");
-        einvalClass = new RubyClass(context, errnoModule, systemCallErrorClass, "EINVAL");
+        defineClass(errnoModule, systemCallErrorClass, "EACCES");
+        edomClass = defineClass(errnoModule, systemCallErrorClass, "EDOM");
+        defineClass(errnoModule, systemCallErrorClass, "EEXIST");
+        enoentClass = defineClass(errnoModule, systemCallErrorClass, "ENOENT");
+        enotemptyClass = defineClass(errnoModule, systemCallErrorClass, "ENOTEMPTY");
+        defineClass(errnoModule, systemCallErrorClass, "EPERM");
+        defineClass(errnoModule, systemCallErrorClass, "EXDEV");
+        einvalClass = defineClass(errnoModule, systemCallErrorClass, "EINVAL");
 
         // ScriptError
         RubyClass scriptErrorClass = defineClass(exceptionClass, "ScriptError");
@@ -308,18 +300,17 @@ public class CoreLibrary {
 
         // The rest
 
-        encodingCompatibilityErrorClass = new RubyClass(context, encodingClass, standardErrorClass, "CompatibilityError");
+        encodingCompatibilityErrorClass = defineClass(encodingClass, standardErrorClass, "CompatibilityError");
 
-        encodingConverterClass = new RubyClass(context, encodingClass, objectClass, "Converter");
-        encodingConverterClass.setAllocator(new RubyEncodingConverter.EncodingConverterAllocator());
+        encodingConverterClass = defineClass(encodingClass, objectClass, "Converter", new RubyEncodingConverter.EncodingConverterAllocator());
 
         truffleModule = defineModule("Truffle");
         truffleDebugModule = defineModule(truffleModule, "Debug");
         defineModule(truffleModule, "Primitive");
 
         rubiniusModule = defineModule("Rubinius");
-        byteArrayClass = new RubyClass(context, rubiniusModule, objectClass, "ByteArray");
-        stringDataClass = new RubyClass(context, rubiniusModule, objectClass, "StringData");
+        byteArrayClass = defineClass(rubiniusModule, objectClass, "ByteArray");
+        stringDataClass = defineClass(rubiniusModule, objectClass, "StringData");
 
         // Include the core modules
 
@@ -452,13 +443,19 @@ public class CoreLibrary {
     }
 
     private RubyClass defineClass(RubyClass superclass, String name) {
-        return new RubyClass(context, objectClass, superclass, name);
+        return new RubyClass(context, objectClass, superclass, name, superclass.getAllocator());
     }
 
     private RubyClass defineClass(RubyClass superclass, String name, Allocator allocator) {
-        RubyClass rubyClass = new RubyClass(context, objectClass, superclass, name);
-        rubyClass.setAllocator(allocator);
-        return rubyClass;
+        return new RubyClass(context, objectClass, superclass, name, allocator);
+    }
+
+    private RubyClass defineClass(RubyModule lexicalParent, RubyClass superclass, String name) {
+        return new RubyClass(context, lexicalParent, superclass, name, superclass.getAllocator());
+    }
+
+    private RubyClass defineClass(RubyModule lexicalParent, RubyClass superclass, String name, Allocator allocator) {
+        return new RubyClass(context, lexicalParent, superclass, name, allocator);
     }
 
     private RubyModule defineModule(String name) {
