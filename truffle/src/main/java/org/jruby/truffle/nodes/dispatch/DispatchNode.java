@@ -15,24 +15,17 @@ import com.oracle.truffle.api.dsl.NodeChildren;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.nodes.NodeUtil;
+
 import org.jruby.truffle.nodes.RubyNode;
-import org.jruby.truffle.nodes.cast.ProcOrNullNode;
 import org.jruby.truffle.runtime.LexicalScope;
 import org.jruby.truffle.runtime.ModuleOperations;
 import org.jruby.truffle.runtime.RubyConstant;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
-import org.jruby.truffle.runtime.core.RubyArray;
 import org.jruby.truffle.runtime.core.RubyClass;
 import org.jruby.truffle.runtime.core.RubyModule;
 import org.jruby.truffle.runtime.core.RubyProc;
 import org.jruby.truffle.runtime.methods.InternalMethod;
-import org.jruby.truffle.runtime.util.ArrayUtils;
-import com.oracle.truffle.api.CompilerDirectives;
-import com.oracle.truffle.api.frame.VirtualFrame;
-import com.oracle.truffle.api.nodes.ExplodeLoop;
-import com.oracle.truffle.api.nodes.NodeUtil;
-import com.oracle.truffle.api.utilities.BranchProfile;
 import org.jruby.util.cli.Options;
 
 public abstract class DispatchNode extends RubyNode {
@@ -42,38 +35,20 @@ public abstract class DispatchNode extends RubyNode {
     public static final boolean DISPATCH_METAPROGRAMMING_ALWAYS_INDIRECT = Options.TRUFFLE_DISPATCH_METAPROGRAMMING_ALWAYS_INDIRECT.load();
 
     private final DispatchAction dispatchAction;
-    
-    protected final boolean isSplatted;
-    private final BranchProfile splatNotArrayProfile = BranchProfile.create();
-    
-    @CompilerDirectives.CompilationFinal private boolean seenNullInUnsplat = false;
-    @CompilerDirectives.CompilationFinal private boolean seenIntegerFixnumInUnsplat = false;
-    @CompilerDirectives.CompilationFinal private boolean seenLongFixnumInUnsplat = false;
-    @CompilerDirectives.CompilationFinal private boolean seenFloatInUnsplat = false;
-    @CompilerDirectives.CompilationFinal private boolean seenObjectInUnsplat = false;
-
-    @Children protected final RubyNode[] argumentNodes;
-    @Child protected ProcOrNullNode block;
 
     private static final class Missing {
     }
 
     public static final Object MISSING = new Missing();
 
-    public DispatchNode(RubyContext context, DispatchAction dispatchAction, RubyNode[] argumentNodes, ProcOrNullNode block, boolean isSplatted) {
+    public DispatchNode(RubyContext context, DispatchAction dispatchAction) {
         super(context, null);
         this.dispatchAction = dispatchAction;
-        this.argumentNodes = argumentNodes;
-        this.block = block;
-        this.isSplatted = isSplatted;
         assert dispatchAction != null;
     }
 
     public DispatchNode(DispatchNode prev) {
         super(prev);
-        argumentNodes = prev.getHeadNode().getArgumentNodes();
-        block = prev.getHeadNode().getBlock();
-        isSplatted = prev.isSplatted;
         dispatchAction = prev.dispatchAction;
     }
 
@@ -175,83 +150,6 @@ public abstract class DispatchNode extends RubyNode {
 
     public DispatchAction getDispatchAction() {
         return dispatchAction;
-    }
-    
-    private Object[] splat(Object argument) {
-        // TODO(CS): what happens if isn't just one argument, or it isn't an Array?
-
-        if (!(argument instanceof RubyArray)) {
-            splatNotArrayProfile.enter();
-            notDesignedForCompilation();
-            throw new UnsupportedOperationException();
-        }
-
-        final RubyArray array = (RubyArray) argument;
-        final int size = array.getSize();
-        final Object store = array.getStore();
-
-        if (seenNullInUnsplat && store == null) {
-            return new Object[]{};
-        } else if (seenIntegerFixnumInUnsplat && store instanceof int[]) {
-            return ArrayUtils.boxUntil((int[]) store, size);
-        } else if (seenLongFixnumInUnsplat && store instanceof long[]) {
-            return ArrayUtils.boxUntil((long[]) store, size);
-        } else if (seenObjectInUnsplat && store instanceof Object[]) {
-            return ArrayUtils.extractRange((Object[]) store, 0, size);
-        }
-
-        CompilerDirectives.transferToInterpreterAndInvalidate();
-
-        if (store == null) {
-            seenNullInUnsplat = true;
-            return new Object[]{};
-        } else if (store instanceof int[]) {
-            seenIntegerFixnumInUnsplat = true;
-            return ArrayUtils.boxUntil((int[]) store, size);
-        } else if (store instanceof long[]) {
-            seenLongFixnumInUnsplat = true;
-            return ArrayUtils.boxUntil((long[]) store, size);
-        } else if (store instanceof Object[]) {
-            seenObjectInUnsplat = true;
-            return ArrayUtils.extractRange((Object[]) store, 0, size);
-        }
-
-        throw new UnsupportedOperationException();
-    }
-    
-    @ExplodeLoop
-    protected Object executeArguments(VirtualFrame frame, Object argumentOverride) {
-       if (argumentOverride != null) {
-           return argumentOverride;
-       }
-       
-        final Object[] argumentsObjects = new Object[argumentNodes.length];
-
-        for (int i = 0; i < argumentNodes.length; i++) {
-            argumentsObjects[i] = argumentNodes[i].execute(frame);
-        }
-
-        if (isSplatted) {
-            return splat(argumentsObjects[0]);
-        } else {
-            return argumentsObjects;
-        }
-    }
-    
-    protected Object executeBlock(VirtualFrame frame, Object blockOverride) {
-        if (blockOverride != null) {
-            return blockOverride;
-        }
-        
-        if (block != null) {
-            return block.executeRubyProc(frame);
-        } else {
-            return null;
-        }
-    }
-    
-    public boolean isSplatted() {
-       return isSplatted();
     }
 
 }

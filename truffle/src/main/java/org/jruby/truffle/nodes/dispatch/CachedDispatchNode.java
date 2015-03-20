@@ -10,13 +10,9 @@
 package org.jruby.truffle.nodes.dispatch;
 
 import com.oracle.truffle.api.utilities.BranchProfile;
-
-import org.jruby.truffle.nodes.RubyNode;
-import org.jruby.truffle.nodes.cast.ProcOrNullNode;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyString;
 import org.jruby.truffle.runtime.core.RubySymbol;
-import org.jruby.truffle.runtime.methods.InternalMethod;
 
 public abstract class CachedDispatchNode extends DispatchNode {
 
@@ -33,11 +29,8 @@ public abstract class CachedDispatchNode extends DispatchNode {
             Object cachedName,
             DispatchNode next,
             boolean indirect,
-            DispatchAction dispatchAction,
-            RubyNode[] argumentNodes,
-            ProcOrNullNode block,
-            boolean isSplatted) {
-        super(context, dispatchAction, argumentNodes, block, isSplatted);
+            DispatchAction dispatchAction) {
+        super(context, dispatchAction);
 
         assert (cachedName instanceof String) || (cachedName instanceof RubySymbol) || (cachedName instanceof RubyString);
         this.cachedName = cachedName;
@@ -95,10 +88,6 @@ public abstract class CachedDispatchNode extends DispatchNode {
 
     public boolean isIndirect() {
         return indirect;
-    }
-    
-    protected RubyNode[] argumentsWithDecodedKwargsHash(RubyNode[] arguments, InternalMethod method) {
-        return null;
     }
 
 }

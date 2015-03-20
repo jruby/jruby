@@ -10,8 +10,11 @@
 package org.jruby.truffle.nodes;
 
 import com.oracle.truffle.api.CompilerAsserts;
+import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.frame.VirtualFrame;
+import com.oracle.truffle.api.nodes.ExplodeLoop;
 import com.oracle.truffle.api.source.SourceSection;
+import com.oracle.truffle.api.utilities.BranchProfile;
 import org.jruby.truffle.nodes.cast.BooleanCastNode;
 import org.jruby.truffle.nodes.cast.BooleanCastNodeFactory;
 import org.jruby.truffle.nodes.cast.ProcOrNullNode;
@@ -20,17 +23,31 @@ import org.jruby.truffle.nodes.dispatch.*;
 import org.jruby.truffle.runtime.ModuleOperations;
 import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.runtime.core.RubyArray;
+import org.jruby.truffle.runtime.core.RubyProc;
 import org.jruby.truffle.runtime.methods.InternalMethod;
+import org.jruby.truffle.runtime.util.ArrayUtils;
 
 public class RubyCallNode extends RubyNode {
 
     private final String methodName;
 
     @Child private RubyNode receiver;
+    @Child private ProcOrNullNode block;
+    @Children private final RubyNode[] arguments;
 
+    private final boolean isSplatted;
     private final boolean isVCall;
 
     @Child private CallDispatchHeadNode dispatchHead;
+
+    private final BranchProfile splatNotArrayProfile = BranchProfile.create();
+
+    @CompilerDirectives.CompilationFinal private boolean seenNullInUnsplat = false;
+    @CompilerDirectives.CompilationFinal private boolean seenIntegerFixnumInUnsplat = false;
+    @CompilerDirectives.CompilationFinal private boolean seenLongFixnumInUnsplat = false;
+    @CompilerDirectives.CompilationFinal private boolean seenFloatInUnsplat = false;
+    @CompilerDirectives.CompilationFinal private boolean seenObjectInUnsplat = false;
 
     @Child private CallDispatchHeadNode respondToMissing;
     @Child private BooleanCastNode respondToMissingCast;
@@ -49,16 +66,20 @@ public class RubyCallNode extends RubyNode {
         super(context, section);
 
         this.methodName = methodName;
+
         this.receiver = receiver;
 
-        ProcOrNullNode blockNode = null;
-        if (block != null) {
-            blockNode = ProcOrNullNodeFactory.create(context, section, block);
+        if (block == null) {
+            this.block = null;
+        } else {
+            this.block = ProcOrNullNodeFactory.create(context, section, block);
         }
 
+        this.arguments = arguments;
+        this.isSplatted = isSplatted;
         this.isVCall = isVCall;
 
-        dispatchHead = DispatchHeadNodeFactory.createMethodCall(context, ignoreVisibility, false, MissingBehavior.CALL_METHOD_MISSING, arguments, blockNode, isSplatted);
+        dispatchHead = DispatchHeadNodeFactory.createMethodCall(context, ignoreVisibility, false, MissingBehavior.CALL_METHOD_MISSING);
         respondToMissing = DispatchHeadNodeFactory.createMethodCall(context, true, MissingBehavior.RETURN_MISSING);
         respondToMissingCast = BooleanCastNodeFactory.create(context, section, null);
 
@@ -68,9 +89,82 @@ public class RubyCallNode extends RubyNode {
     @Override
     public Object execute(VirtualFrame frame) {
         final Object receiverObject = receiver.execute(frame);
-        return dispatchHead.call(frame, receiverObject, methodName, null, (Object[]) null);
+        final Object[] argumentsObjects = executeArguments(frame);
+        final RubyProc blockObject = executeBlock(frame);
+
+        return dispatchHead.call(frame, receiverObject, methodName, blockObject, argumentsObjects);
     }
-    
+
+    private RubyProc executeBlock(VirtualFrame frame) {
+        if (block != null) {
+            return block.executeRubyProc(frame);
+        } else {
+            return null;
+        }
+    }
+
+    @ExplodeLoop
+    private Object[] executeArguments(VirtualFrame frame) {
+        final Object[] argumentsObjects = new Object[arguments.length];
+
+        for (int i = 0; i < arguments.length; i++) {
+            argumentsObjects[i] = arguments[i].execute(frame);
+        }
+
+        if (isSplatted) {
+            return splat(argumentsObjects[0]);
+        } else {
+            return argumentsObjects;
+        }
+    }
+
+    private Object[] splat(Object argument) {
+        // TODO(CS): what happens if isn't just one argument, or it isn't an Array?
+
+        if (!(argument instanceof RubyArray)) {
+            splatNotArrayProfile.enter();
+            notDesignedForCompilation();
+            throw new UnsupportedOperationException();
+        }
+
+        final RubyArray array = (RubyArray) argument;
+        final int size = array.getSize();
+        final Object store = array.getStore();
+
+        if (seenNullInUnsplat && store == null) {
+            return new Object[]{};
+        } else if (seenIntegerFixnumInUnsplat && store instanceof int[]) {
+            return ArrayUtils.boxUntil((int[]) store, size);
+        } else if (seenLongFixnumInUnsplat && store instanceof long[]) {
+            return ArrayUtils.boxUntil((long[]) store, size);
+        } else if (seenFloatInUnsplat && store instanceof double[]) {
+            return ArrayUtils.boxUntil((double[]) store, size);
+        } else if (seenObjectInUnsplat && store instanceof Object[]) {
+            return ArrayUtils.extractRange((Object[]) store, 0, size);
+        }
+
+        CompilerDirectives.transferToInterpreterAndInvalidate();
+
+        if (store == null) {
+            seenNullInUnsplat = true;
+            return new Object[]{};
+        } else if (store instanceof int[]) {
+            seenIntegerFixnumInUnsplat = true;
+            return ArrayUtils.boxUntil((int[]) store, size);
+        } else if (store instanceof long[]) {
+            seenLongFixnumInUnsplat = true;
+            return ArrayUtils.boxUntil((long[]) store, size);
+        } else if (store instanceof double[]) {
+            seenFloatInUnsplat = true;
+            return ArrayUtils.boxUntil((double[]) store, size);
+        } else if (store instanceof Object[]) {
+            seenObjectInUnsplat = true;
+            return ArrayUtils.extractRange((Object[]) store, 0, size);
+        }
+
+        throw new UnsupportedOperationException();
+    }
+
     @Override
     public Object isDefined(VirtualFrame frame) {
         notDesignedForCompilation();
@@ -79,7 +173,7 @@ public class RubyCallNode extends RubyNode {
             return nil();
         }
 
-        for (RubyNode argument : dispatchHead.getArgumentNodes()) {
+        for (RubyNode argument : arguments) {
             if (argument.isDefined(frame) == nil()) {
                 return nil();
             }

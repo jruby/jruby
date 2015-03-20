@@ -9,9 +9,8 @@
  */
 package org.jruby.truffle.nodes.dispatch;
 
-import org.jruby.truffle.nodes.RubyNode;
-import org.jruby.truffle.nodes.cast.ProcOrNullNode;
 import java.util.concurrent.Callable;
+
 import com.oracle.truffle.api.Assumption;
 import com.oracle.truffle.api.CompilerAsserts;
 import com.oracle.truffle.api.CompilerDirectives;
@@ -30,9 +29,6 @@ import org.jruby.truffle.runtime.core.RubyString;
 import org.jruby.truffle.runtime.core.RubySymbol;
 import org.jruby.truffle.runtime.methods.InternalMethod;
 import org.jruby.util.cli.Options;
-import com.oracle.truffle.api.Assumption;
-import com.oracle.truffle.api.CompilerDirectives;
-import com.oracle.truffle.api.frame.VirtualFrame;
 
 public final class UnresolvedDispatchNode extends DispatchNode {
 
@@ -49,12 +45,8 @@ public final class UnresolvedDispatchNode extends DispatchNode {
             boolean ignoreVisibility,
             boolean indirect,
             MissingBehavior missingBehavior,
-            DispatchAction dispatchAction,
-            RubyNode[] argumentNodes,
-            ProcOrNullNode block,
-            boolean isSplatted) {
-        super(context, dispatchAction, argumentNodes, block, isSplatted);
-        
+            DispatchAction dispatchAction) {
+        super(context, dispatchAction);
         this.ignoreVisibility = ignoreVisibility;
         this.indirect = indirect;
         this.missingBehavior = missingBehavior;
@@ -79,6 +71,7 @@ public final class UnresolvedDispatchNode extends DispatchNode {
             public DispatchNode call() throws Exception {
                 final DispatchNode first = getHeadNode().getFirstDispatchNode();
 
+                // First try to see if we did not a miss a specialization added by another thread.
 
                 DispatchNode lookupDispatch = first;
                 while (lookupDispatch != null) {
@@ -94,7 +87,7 @@ public final class UnresolvedDispatchNode extends DispatchNode {
                 final DispatchNode newDispathNode;
 
                 if (depth == DISPATCH_POLYMORPHIC_MAX) {
-                    newDispathNode = new UncachedDispatchNode(getContext(), ignoreVisibility, getDispatchAction(), argumentNodes, block, isSplatted, missingBehavior);
+                    newDispathNode = new UncachedDispatchNode(getContext(), ignoreVisibility, getDispatchAction(), missingBehavior);
                 } else {
                     depth++;
                     if (isRubyBasicObject(receiverObject)) {
@@ -167,14 +160,11 @@ public final class UnresolvedDispatchNode extends DispatchNode {
                 return new CachedBooleanDispatchNode(getContext(),
                         methodName, first,
                         falseUnmodifiedAssumption, null, falseMethod,
-                        trueUnmodifiedAssumption, null, trueMethod, indirect, getDispatchAction(),
-                        argumentNodes, block, isSplatted);
+                        trueUnmodifiedAssumption, null, trueMethod, indirect, getDispatchAction());
             } else {
                 return new CachedUnboxedDispatchNode(getContext(),
                         methodName, first, receiverObject.getClass(),
-                        getContext().getCoreLibrary().getLogicalClass(receiverObject).getUnmodifiedAssumption(), null, method, indirect, getDispatchAction(),
-                        argumentNodes, block, isSplatted);
-
+                        getContext().getCoreLibrary().getLogicalClass(receiverObject).getUnmodifiedAssumption(), null, method, indirect, getDispatchAction());
             }
         } else {
             throw new UnsupportedOperationException();
@@ -204,10 +194,10 @@ public final class UnresolvedDispatchNode extends DispatchNode {
             }
 
             if (receiverObject instanceof RubySymbol) {
-                return new CachedBoxedSymbolDispatchNode(getContext(), methodName, first, null, method, indirect, getDispatchAction(), argumentNodes, block, isSplatted);
+                return new CachedBoxedSymbolDispatchNode(getContext(), methodName, first, null, method, indirect, getDispatchAction());
             } else {
                 return new CachedBoxedDispatchNode(getContext(), methodName, first,
-                        getContext().getCoreLibrary().getMetaClass(receiverObject), null, method, indirect, getDispatchAction(), argumentNodes, block, isSplatted);
+                        getContext().getCoreLibrary().getMetaClass(receiverObject), null, method, indirect, getDispatchAction());
             }
 
         } else if (dispatchAction == DispatchAction.READ_CONSTANT) {
@@ -234,7 +224,7 @@ public final class UnresolvedDispatchNode extends DispatchNode {
             // But we want to check the module assumption, not its singleton class assumption.
             return new CachedBoxedDispatchNode(getContext(), methodName, first,
                     module.getSingletonClass(null), module.getUnmodifiedAssumption(), constant.getValue(),
-                    null, indirect, getDispatchAction(), argumentNodes, block, isSplatted);
+                    null, indirect, getDispatchAction());
         } else {
             throw new UnsupportedOperationException();
         }
@@ -252,7 +242,7 @@ public final class UnresolvedDispatchNode extends DispatchNode {
         switch (missingBehavior) {
             case RETURN_MISSING: {
                 return new CachedBoxedReturnMissingDispatchNode(getContext(), methodName, first,
-                        receiverObject.getMetaClass(), indirect, getDispatchAction(), argumentNodes, block, isSplatted);
+                        receiverObject.getMetaClass(), indirect, getDispatchAction());
             }
 
             case CALL_CONST_MISSING: {
@@ -264,11 +254,11 @@ public final class UnresolvedDispatchNode extends DispatchNode {
                 }
 
                 if (DISPATCH_METAPROGRAMMING_ALWAYS_UNCACHED) {
-                    return new UncachedDispatchNode(getContext(), ignoreVisibility, getDispatchAction(), argumentNodes, block, isSplatted, missingBehavior);
+                    return new UncachedDispatchNode(getContext(), ignoreVisibility, getDispatchAction(), missingBehavior);
                 }
 
                 return new CachedBoxedMethodMissingDispatchNode(getContext(), methodName, first,
-                        receiverObject.getMetaClass(), method, DISPATCH_METAPROGRAMMING_ALWAYS_INDIRECT, getDispatchAction(), argumentNodes, block, isSplatted);
+                        receiverObject.getMetaClass(), method, DISPATCH_METAPROGRAMMING_ALWAYS_INDIRECT, getDispatchAction());
             }
 
             default: {
@@ -284,7 +274,7 @@ public final class UnresolvedDispatchNode extends DispatchNode {
         switch (missingBehavior) {
             case RETURN_MISSING: {
                 return new CachedBoxedReturnMissingDispatchNode(getContext(), methodName, first,
-                        getContext().getCoreLibrary().getMetaClass(receiverObject), indirect, getDispatchAction(), argumentNodes, block, isSplatted);
+                        getContext().getCoreLibrary().getMetaClass(receiverObject), indirect, getDispatchAction());
             }
 
             case CALL_METHOD_MISSING: {
@@ -296,11 +286,11 @@ public final class UnresolvedDispatchNode extends DispatchNode {
                 }
 
                 if (DISPATCH_METAPROGRAMMING_ALWAYS_UNCACHED) {
-                    return new UncachedDispatchNode(getContext(), ignoreVisibility, getDispatchAction(), argumentNodes, block, isSplatted, missingBehavior);
+                    return new UncachedDispatchNode(getContext(), ignoreVisibility, getDispatchAction(), missingBehavior);
                 }
 
                 return new CachedBoxedMethodMissingDispatchNode(getContext(), methodName, first,
-                        getContext().getCoreLibrary().getMetaClass(receiverObject), method, Options.TRUFFLE_DISPATCH_METAPROGRAMMING_ALWAYS_INDIRECT.load(), getDispatchAction(), argumentNodes, block, isSplatted);
+                        getContext().getCoreLibrary().getMetaClass(receiverObject), method, DISPATCH_METAPROGRAMMING_ALWAYS_INDIRECT, getDispatchAction());
             }
 
             default: {

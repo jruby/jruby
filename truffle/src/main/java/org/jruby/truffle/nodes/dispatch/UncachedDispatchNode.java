@@ -9,8 +9,12 @@
  */
 package org.jruby.truffle.nodes.dispatch;
 
-import org.jruby.truffle.nodes.RubyNode;
-import org.jruby.truffle.nodes.cast.ProcOrNullNode;
+import com.oracle.truffle.api.CompilerDirectives;
+import com.oracle.truffle.api.Truffle;
+import com.oracle.truffle.api.dsl.Specialization;
+import com.oracle.truffle.api.frame.VirtualFrame;
+import com.oracle.truffle.api.nodes.IndirectCallNode;
+import com.oracle.truffle.api.utilities.BranchProfile;
 import org.jruby.truffle.nodes.conversion.ToJavaStringNode;
 import org.jruby.truffle.nodes.conversion.ToJavaStringNodeFactory;
 import org.jruby.truffle.nodes.conversion.ToSymbolNode;
@@ -24,12 +28,6 @@ import org.jruby.truffle.runtime.core.RubyModule;
 import org.jruby.truffle.runtime.core.RubyProc;
 import org.jruby.truffle.runtime.methods.InternalMethod;
 
-import com.oracle.truffle.api.CompilerDirectives;
-import com.oracle.truffle.api.Truffle;
-import com.oracle.truffle.api.frame.VirtualFrame;
-import com.oracle.truffle.api.nodes.IndirectCallNode;
-import com.oracle.truffle.api.utilities.BranchProfile;
-
 public class UncachedDispatchNode extends DispatchNode {
 
     private final boolean ignoreVisibility;
@@ -42,8 +40,8 @@ public class UncachedDispatchNode extends DispatchNode {
     private final BranchProfile constantMissingProfile = BranchProfile.create();
     private final BranchProfile methodMissingProfile = BranchProfile.create();
 
-    public UncachedDispatchNode(RubyContext context, boolean ignoreVisibility, DispatchAction dispatchAction, RubyNode[] argumentNodes, ProcOrNullNode block,boolean isSplatted, MissingBehavior missingBehavior) {
-        super(context, dispatchAction, argumentNodes, block, isSplatted);
+    public UncachedDispatchNode(RubyContext context, boolean ignoreVisibility, DispatchAction dispatchAction, MissingBehavior missingBehavior) {
+        super(context, dispatchAction);
         this.ignoreVisibility = ignoreVisibility;
         this.missingBehavior = missingBehavior;
         callNode = Truffle.getRuntime().createIndirectCallNode();
@@ -102,9 +100,6 @@ public class UncachedDispatchNode extends DispatchNode {
 
             if (method != null) {
                 if (dispatchAction == DispatchAction.CALL_METHOD) {
-                    argumentsObjects = executeArguments(frame, argumentsObjects);
-                    blockObject = executeBlock(frame, blockObject);
-
                     return callNode.call(
                             frame,
                             method.getCallTarget(),
@@ -140,14 +135,13 @@ public class UncachedDispatchNode extends DispatchNode {
             }
 
             if (dispatchAction == DispatchAction.CALL_METHOD) {
-                final Object[] argumentsObjectsArray = CompilerDirectives.unsafeCast(executeArguments(frame, argumentsObjects), Object[].class, true);
+                final Object[] argumentsObjectsArray = (Object[]) argumentsObjects;
+
                 final Object[] modifiedArgumentsObjects = new Object[1 + argumentsObjectsArray.length];
 
                 modifiedArgumentsObjects[0] = toSymbolNode.executeRubySymbol(frame, name);
 
                 RubyArguments.arraycopy(argumentsObjectsArray, 0, modifiedArgumentsObjects, 1, argumentsObjectsArray.length);
-
-                blockObject = executeBlock(frame, blockObject);
 
                 return callNode.call(
                         frame,

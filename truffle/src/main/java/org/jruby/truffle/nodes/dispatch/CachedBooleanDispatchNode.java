@@ -12,14 +12,12 @@ package org.jruby.truffle.nodes.dispatch;
 import com.oracle.truffle.api.Assumption;
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.Truffle;
+import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.DirectCallNode;
 import com.oracle.truffle.api.nodes.IndirectCallNode;
 import com.oracle.truffle.api.nodes.InvalidAssumptionException;
 import com.oracle.truffle.api.utilities.BranchProfile;
-
-import org.jruby.truffle.nodes.RubyNode;
-import org.jruby.truffle.nodes.cast.ProcOrNullNode;
 import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyProc;
@@ -54,12 +52,8 @@ public class CachedBooleanDispatchNode extends CachedDispatchNode {
             Object trueValue,
             InternalMethod trueMethod,
             boolean indirect,
-            DispatchAction dispatchAction, 
-            RubyNode[] argumentNodes,
-            ProcOrNullNode block,
-            boolean isSplatted) {
-        super(context, cachedName, next, indirect, dispatchAction,
-                argumentNodes, block, isSplatted);
+            DispatchAction dispatchAction) {
+        super(context, cachedName, next, indirect, dispatchAction);
 
         this.falseUnmodifiedAssumption = falseUnmodifiedAssumption;
         this.falseMethod = falseMethod;
@@ -134,8 +128,6 @@ public class CachedBooleanDispatchNode extends CachedDispatchNode {
 
             switch (getDispatchAction()) {
                 case CALL_METHOD: {
-                    argumentsObjects = executeArguments(frame, argumentsObjects);
-                    blockObject = executeBlock(frame, blockObject);
                     if (isIndirect()) {
                         return indirectCallNode.call(
                                 frame,
@@ -184,8 +176,6 @@ public class CachedBooleanDispatchNode extends CachedDispatchNode {
 
             switch (getDispatchAction()) {
                 case CALL_METHOD: {
-                    argumentsObjects = executeArguments(frame, argumentsObjects);
-                    blockObject = executeBlock(frame, blockObject);
                     if (isIndirect()) {
                         return indirectCallNode.call(
                                 frame,

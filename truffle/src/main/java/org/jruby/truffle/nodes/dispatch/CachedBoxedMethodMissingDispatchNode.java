@@ -9,8 +9,14 @@
  */
 package org.jruby.truffle.nodes.dispatch;
 
-import org.jruby.truffle.nodes.RubyNode;
-import org.jruby.truffle.nodes.cast.ProcOrNullNode;
+import com.oracle.truffle.api.Assumption;
+import com.oracle.truffle.api.CompilerDirectives;
+import com.oracle.truffle.api.Truffle;
+import com.oracle.truffle.api.dsl.Specialization;
+import com.oracle.truffle.api.frame.VirtualFrame;
+import com.oracle.truffle.api.nodes.DirectCallNode;
+import com.oracle.truffle.api.nodes.IndirectCallNode;
+import com.oracle.truffle.api.nodes.InvalidAssumptionException;
 import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
@@ -18,14 +24,6 @@ import org.jruby.truffle.runtime.core.RubyClass;
 import org.jruby.truffle.runtime.core.RubyProc;
 import org.jruby.truffle.runtime.methods.InternalMethod;
 import org.jruby.util.cli.Options;
-
-import com.oracle.truffle.api.Assumption;
-import com.oracle.truffle.api.CompilerDirectives;
-import com.oracle.truffle.api.Truffle;
-import com.oracle.truffle.api.frame.VirtualFrame;
-import com.oracle.truffle.api.nodes.DirectCallNode;
-import com.oracle.truffle.api.nodes.IndirectCallNode;
-import com.oracle.truffle.api.nodes.InvalidAssumptionException;
 
 public class CachedBoxedMethodMissingDispatchNode extends CachedDispatchNode {
 
@@ -46,11 +44,8 @@ public class CachedBoxedMethodMissingDispatchNode extends CachedDispatchNode {
             RubyClass expectedClass,
             InternalMethod method,
             boolean indirect,
-            DispatchAction dispatchAction,
-            RubyNode[] argumentNodes,
-            ProcOrNullNode block,
-            boolean isSplatted) {
-        super(context, cachedName, next, indirect, dispatchAction, argumentNodes, block, isSplatted);
+            DispatchAction dispatchAction) {
+        super(context, cachedName, next, indirect, dispatchAction);
 
         this.expectedClass = expectedClass;
         unmodifiedAssumption = expectedClass.getUnmodifiedAssumption();
@@ -121,12 +116,11 @@ public class CachedBoxedMethodMissingDispatchNode extends CachedDispatchNode {
             case CALL_METHOD: {
                 // When calling #method_missing we need to prepend the symbol
 
-                final Object[] argumentsObjectsArray = CompilerDirectives.unsafeCast(executeArguments(frame, argumentsObjects), Object[].class, true);
+                final Object[] argumentsObjectsArray = (Object[]) argumentsObjects;
                 final Object[] modifiedArgumentsObjects = new Object[1 + argumentsObjectsArray.length];
                 modifiedArgumentsObjects[0] = getCachedNameAsSymbol();
                 RubyArguments.arraycopy(argumentsObjectsArray, 0, modifiedArgumentsObjects, 1, argumentsObjectsArray.length);
-                blockObject = executeBlock(frame, blockObject);
-                
+
                 if (isIndirect()) {
                     return indirectCallNode.call(
                             frame,
@@ -153,7 +147,6 @@ public class CachedBoxedMethodMissingDispatchNode extends CachedDispatchNode {
                 return false;
 
             case READ_CONSTANT: {
-                blockObject = executeBlock(frame, blockObject);
                 if (isIndirect()) {
                     return indirectCallNode.call(
                             frame,

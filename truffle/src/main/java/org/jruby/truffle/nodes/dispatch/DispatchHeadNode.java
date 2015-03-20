@@ -9,13 +9,13 @@
  */
 package org.jruby.truffle.nodes.dispatch;
 
-import org.jruby.truffle.nodes.RubyNode;
-import org.jruby.truffle.nodes.cast.ProcOrNullNode;
-import org.jruby.truffle.runtime.LexicalScope;
-import org.jruby.truffle.runtime.RubyContext;
-
+import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.Node;
+import org.jruby.truffle.runtime.LexicalScope;
+import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.runtime.control.RaiseException;
+import org.jruby.truffle.runtime.core.RubyProc;
 
 public class DispatchHeadNode extends Node {
 
@@ -25,10 +25,6 @@ public class DispatchHeadNode extends Node {
     protected final MissingBehavior missingBehavior;
     protected final LexicalScope lexicalScope;
     protected final DispatchAction dispatchAction;
-    protected final boolean isSplatted;
-
-    @Children private final RubyNode[] argumentNodes;
-    @Child private ProcOrNullNode block;
 
     @Child private DispatchNode first;
 
@@ -38,20 +34,14 @@ public class DispatchHeadNode extends Node {
             boolean indirect,
             MissingBehavior missingBehavior,
             LexicalScope lexicalScope,
-            DispatchAction dispatchAction,
-            RubyNode[] argumentNodes,
-            ProcOrNullNode block,
-            boolean isSplatted) {
+            DispatchAction dispatchAction) {
         this.context = context;
         this.ignoreVisibility = ignoreVisibility;
         this.indirect = indirect;
         this.missingBehavior = missingBehavior;
         this.lexicalScope = lexicalScope;
         this.dispatchAction = dispatchAction;
-        this.argumentNodes = argumentNodes;
-        this.isSplatted = isSplatted;
-        this.block = block;
-        first = new UnresolvedDispatchNode(context, ignoreVisibility, indirect, missingBehavior, dispatchAction, argumentNodes, block, isSplatted);
+        first = new UnresolvedDispatchNode(context, ignoreVisibility, indirect, missingBehavior, dispatchAction);
     }
 
     public Object dispatch(
@@ -70,7 +60,7 @@ public class DispatchHeadNode extends Node {
 
     public void reset(String reason) {
         first.replace(new UnresolvedDispatchNode(
-                context, ignoreVisibility, indirect, missingBehavior, dispatchAction, argumentNodes, block, isSplatted), reason);
+                context, ignoreVisibility, indirect, missingBehavior, dispatchAction), reason);
     }
 
     public DispatchNode getFirstDispatchNode() {
@@ -87,14 +77,7 @@ public class DispatchHeadNode extends Node {
 
     public void forceUncached() {
         adoptChildren();
-        first.replace(new UncachedDispatchNode(context, ignoreVisibility, dispatchAction, argumentNodes, block, isSplatted, missingBehavior));
-    }
-    
-    public RubyNode[] getArgumentNodes() {
-        return argumentNodes;
+        first.replace(new UncachedDispatchNode(context, ignoreVisibility, dispatchAction, missingBehavior));
     }
 
-    public ProcOrNullNode getBlock() {
-        return block;
-    }
 }
