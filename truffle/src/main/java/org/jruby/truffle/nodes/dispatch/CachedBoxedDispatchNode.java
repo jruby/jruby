@@ -93,7 +93,7 @@ public class CachedBoxedDispatchNode extends CachedDispatchNode {
     }
 
     @Override
-    protected boolean guard(Object methodName, Object receiver) {
+    public boolean guard(Object methodName, Object receiver) {
         return guardName(methodName) &&
                 (receiver instanceof RubyBasicObject) &&
                 ((RubyBasicObject) receiver).getMetaClass() == expectedClass;
@@ -181,4 +181,7 @@ public class CachedBoxedDispatchNode extends CachedDispatchNode {
         return method;
     }
 
+    public Assumption getUnmodifiedAssumption() {
+        return unmodifiedAssumption;
+    }
 }

@@ -99,7 +99,7 @@ public final class RubyArguments {
     public static int getNamedUserArgumentsCount(Object[] internalArguments) {
         if (isKwOptimized(internalArguments)) {
             return getUserArgumentsCount(internalArguments)
-                    - getMethod(internalArguments).getSharedMethodInfo()
+                    - getMethod(internalArguments).getSharedMethodInfo().getArity()
                             .getKeywordArguments().size() - 1;
         } else {
             return getUserArgumentsCount(internalArguments);

@@ -113,15 +113,17 @@ public class RubyCallNode extends RubyNode {
         final Object[] argumentsObjects;
 
         if (dispatchHead.getFirstDispatchNode().couldOptimizeKeywordArguments() && !cannotOptimize) {
+            final CachedBoxedDispatchNode dispatchNode = (CachedBoxedDispatchNode) dispatchHead.getFirstDispatchNode();
+
             if (keywordOptimizedArguments[0] == null) {
                 CompilerDirectives.transferToInterpreter();
 
                 System.err.println("optimizing for keyword arguments!");
 
-                final RubyNode[] optimized = expandedArgumentNodes(((CachedBoxedDispatchNode) dispatchHead.getFirstDispatchNode()).getMethod(), arguments, isSplatted);
+                final RubyNode[] optimized = expandedArgumentNodes(dispatchNode.getMethod(), arguments, isSplatted);
 
-                if (optimized.length > keywordOptimizedArguments.length) {
-                    System.err.println("couldn't optimize as there wasn't the space :(");
+                if (optimized == null || optimized.length > keywordOptimizedArguments.length) {
+                    System.err.println("couldn't optimize :(");
                     cannotOptimize = true;
                 } else {
                     keywordOptimizedArgumentsLength = optimized.length;
@@ -132,7 +134,12 @@ public class RubyCallNode extends RubyNode {
                 }
             }
 
-            argumentsObjects = executeKeywordOptimizedArguments(frame);
+            if (dispatchNode.guard(methodName, receiverObject) && dispatchNode.getUnmodifiedAssumption().isValid()) {
+                argumentsObjects = executeKeywordOptimizedArguments(frame);
+            } else {
+                argumentsObjects = executeArguments(frame);
+            }
+
         } else {
             argumentsObjects = executeArguments(frame);
         }
