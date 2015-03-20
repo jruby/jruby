@@ -2652,9 +2652,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
                             value.getBegin() + value.getRealSize(),
                                       pos) - value.getBegin();
             pos = regSub.adjustStartPos19(this, pos, false);
-            IRubyObject[] holder = {context.nil};
-            pos = regSub.search19(context, this, pos, false, holder);
-            context.setBackRef(holder[0]);
+            pos = regSub.search19(context, this, pos, false);
             pos = subLength(pos);
         } else if (sub instanceof RubyString) {
             pos = StringSupport.index(this, (RubyString) sub, pos, this.checkEncoding((RubyString) sub));
@@ -2710,9 +2708,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
                                       pos) - value.getBegin();
             if (regSub.length() > 0) {
                 pos = regSub.adjustStartPos19(this, pos, true);
-                IRubyObject[] holder = {context.nil};
-                pos = regSub.search19(context, this, pos, true, holder);
-                context.setBackRef(holder[0]);
+                pos = regSub.search19(context, this, pos, true);
                 pos = subLength(pos);
             }
         } else if (sub instanceof RubyString) {
@@ -2958,15 +2954,13 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
 
     private void subpatSet19(ThreadContext context, RubyRegexp regexp, IRubyObject backref, IRubyObject repl) {
         Ruby runtime = context.runtime;
-        IRubyObject[] holder = {context.nil};
 
-        int result = regexp.search19(context, this, 0, false, holder);
-        context.setBackRef(holder[0]);
+        int result = regexp.search19(context, this, 0, false);
 
         if (result < 0) throw runtime.newIndexError("regexp not matched");
 
         // this cast should be ok, since nil matchdata will be < 0 above
-        RubyMatchData match = (RubyMatchData)holder[0];
+        RubyMatchData match = (RubyMatchData)context.getBackRef();
 
         int nth = backref == null ? 0 : subpatSetCheck(runtime, match.backrefNumber(backref), match.regs);
 
@@ -2987,13 +2981,10 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
     }
 
     private IRubyObject subpat19(Ruby runtime, ThreadContext context, RubyRegexp regex, IRubyObject backref) {
-        IRubyObject[] holder = {context.nil};
-
-        int result = regex.search19(context, this, 0, false, holder);
-        context.setBackRef(holder[0]);
+        int result = regex.search19(context, this, 0, false);
 
         if (result >= 0) {
-            RubyMatchData match = (RubyMatchData)holder[0];
+            RubyMatchData match = (RubyMatchData)context.getBackRef();
             return RubyRegexp.nth_match(match.backrefNumber(backref), match);
         }
 
@@ -3003,8 +2994,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
     private IRubyObject subpat19(Ruby runtime, ThreadContext context, RubyRegexp regex) {
         IRubyObject[] holder = {context.nil};
 
-        int result = regex.search19(context, this, 0, false, holder);
-        context.setBackRef(holder[0]);
+        int result = regex.search19(context, this, 0, false);
 
         if (result >= 0) {
             return RubyRegexp.nth_match(0, holder[0]);
@@ -4024,10 +4014,8 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
         final RubyString sep;
         if (arg instanceof RubyRegexp) {
             RubyRegexp regex = (RubyRegexp)arg;
-            IRubyObject[] holder = {context.nil};
 
-            pos = regex.search19(context, this, 0, false, holder);
-            context.setBackRef(holder[0]);
+            pos = regex.search19(context, this, 0, false);
             if (pos < 0) return partitionMismatch(runtime);
             sep = (RubyString)subpat19(runtime, context, regex);
             if (pos == 0 && sep.value.getRealSize() == 0) return partitionMismatch(runtime);
@@ -4056,13 +4044,11 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
         final RubyString sep;
         if (arg instanceof RubyRegexp) {
             RubyRegexp regex = (RubyRegexp)arg;
-            IRubyObject[] holder = {context.nil};
 
-            pos = regex.search19(context, this, value.getRealSize(), true, holder);
-            context.setBackRef(holder[0]);
+            pos = regex.search19(context, this, value.getRealSize(), true);
 
             if (pos < 0) return rpartitionMismatch(runtime);
-            sep = (RubyString)RubyRegexp.nth_match(0, holder[0]);
+            sep = (RubyString)RubyRegexp.nth_match(0, context.getBackRef());
         } else {
             IRubyObject tmp = arg.checkStringType();
             if (tmp.isNil()) throw runtime.newTypeError("type mismatch: " + arg.getMetaClass().getName() + " given");
