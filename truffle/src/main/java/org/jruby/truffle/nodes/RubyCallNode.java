@@ -35,6 +35,7 @@ public class RubyCallNode extends RubyNode {
     @Child private RubyNode receiver;
     @Child private ProcOrNullNode block;
     @Children private final RubyNode[] arguments;
+    @Children private final RubyNode[] keywordOptimizedArguments = null;
 
     private final boolean isSplatted;
     private final boolean isVCall;
@@ -88,6 +89,8 @@ public class RubyCallNode extends RubyNode {
 
     @Override
     public Object execute(VirtualFrame frame) {
+        CompilerAsserts.compilationConstant(dispatchHead.getFirstDispatchNode().couldOptimizeKeywordArguments());
+
         final Object receiverObject = receiver.execute(frame);
         final Object[] argumentsObjects = executeArguments(frame);
         final RubyProc blockObject = executeBlock(frame);

@@ -173,4 +173,8 @@ public class CachedBoxedDispatchNode extends CachedDispatchNode {
                 method == null ? "null" : method.toString());
     }
 
+    public boolean couldOptimizeKeywordArguments() {
+        return method.getSharedMethodInfo().getArity().getKeywordArguments() != null && next instanceof UnresolvedDispatchNode;
+    }
+
 }

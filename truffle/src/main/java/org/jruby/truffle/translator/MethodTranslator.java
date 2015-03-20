@@ -241,7 +241,8 @@ class MethodTranslator extends BodyTranslator {
     public static Arity getArity(org.jruby.ast.ArgsNode argsNode) {
         final int minimum = argsNode.getRequiredArgsCount();
         final int maximum = argsNode.getMaxArgumentsCount();
-        return new Arity(minimum, argsNode.getOptionalArgsCount(), maximum == -1, argsNode.hasKwargs(), argsNode.hasKeyRest(), argsNode.countKeywords());
+        // TODO CS 19-Mar-15 collect up the keyword argument names here
+        return new Arity(minimum, argsNode.getOptionalArgsCount(), maximum == -1, argsNode.hasKwargs(), argsNode.hasKeyRest(), argsNode.countKeywords(), argsNode);
     }
 
     @Override

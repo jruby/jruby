@@ -37,8 +37,6 @@ public class SharedMethodInfo {
     private final boolean isBlock;
     private final org.jruby.ast.Node parseTree;
     private final boolean alwaysSplit;
-    
-    private final List<String> keywordArguments;
 
     public SharedMethodInfo(SourceSection sourceSection, LexicalScope lexicalScope, Arity arity, String name, boolean isBlock, Node parseTree, boolean alwaysSplit) {
         assert sourceSection != null;
@@ -51,45 +49,6 @@ public class SharedMethodInfo {
         this.isBlock = isBlock;
         this.parseTree = parseTree;
         this.alwaysSplit = alwaysSplit;
-        this.keywordArguments = null;
-    }
-    
-    public SharedMethodInfo(SourceSection sourceSection,
-            LexicalScope lexicalScope, Arity arity, String name, boolean isBlock,
-            org.jruby.ast.Node parseTree, boolean alwaysSplit, ArgsNode argsNode) {
-        assert sourceSection != null;
-        assert name != null;
-
-        this.sourceSection = sourceSection;
-        this.lexicalScope = lexicalScope;
-        this.arity = arity;
-        this.name = name;
-        this.isBlock = isBlock;
-        this.parseTree = parseTree;
-        this.alwaysSplit = alwaysSplit;
-
-        if (argsNode.hasKwargs()) {
-            keywordArguments = new ArrayList<String>();
-            if (argsNode.getKeywords() != null) {
-                for (Node node : argsNode.getKeywords().childNodes()) {
-                    final KeywordArgNode kwarg = (KeywordArgNode) node;
-                    final AssignableNode assignableNode = kwarg.getAssignable();
-
-                    if (assignableNode instanceof LocalAsgnNode) {
-                        keywordArguments.add(((LocalAsgnNode) assignableNode)
-                                .getName());
-                    } else if (assignableNode instanceof DAsgnNode) {
-                        keywordArguments.add(((DAsgnNode) assignableNode)
-                                .getName());
-                    } else {
-                        throw new UnsupportedOperationException(
-                                "unsupported keyword arg " + node);
-                    }
-                }
-            }
-        } else {
-            keywordArguments = null;
-        }
     }
 
     public SourceSection getSourceSection() {
@@ -137,10 +96,6 @@ public class SharedMethodInfo {
         builder.append(sourceSection.getShortDescription());
 
         return builder.toString();
-    }
-    
-    public List<String> getKeywordArguments() {
-        return keywordArguments;
     }
 
 }
