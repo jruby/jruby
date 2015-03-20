@@ -1,4 +1,5 @@
 require 'test/unit'
+require 'bigdecimal'
 
 class TestBignum < Test::Unit::TestCase
   # others tested in FixnumBignumAutoconversion test
@@ -40,6 +41,11 @@ class TestBignum < Test::Unit::TestCase
 
   def test_bignum_aref_with_bignum_arg_no_exception
     assert_equal(0, (2**64)[2**32])
+  end
+
+  def test_GH_2650
+    assert_equal(BigDecimal.new("10.91231", 1).to_f, 10.91231)
+    assert_equal(BigDecimal.new("10.9", 2).to_f, 10.9)
   end
   # more to come
   
