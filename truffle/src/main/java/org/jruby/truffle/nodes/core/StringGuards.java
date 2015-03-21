@@ -19,4 +19,8 @@ public class StringGuards {
         return StringSupport.isSingleByteOptimizable(string, string.getBytes().getEncoding());
     }
 
+    public static boolean isAsciiCompatible(RubyString string) {
+        return string.getByteList().getEncoding().isAsciiCompatible();
+    }
+
 }

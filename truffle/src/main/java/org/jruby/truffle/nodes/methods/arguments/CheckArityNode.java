@@ -44,8 +44,16 @@ public class CheckArityNode extends RubyNode {
     @Override
     public void executeVoid(VirtualFrame frame) {
         final Object[] frameArguments = frame.getArguments();
-        final int given = RubyArguments.getUserArgumentsCount(frameArguments);
+        final int given;
         final RubyHash keywordArguments;
+        
+        //TODO (MS): Check merge 
+        if (RubyArguments.isKwOptimized(frame.getArguments())) {
+            given = RubyArguments.getUserArgumentsCount(frame.getArguments())
+                    - arity.getCountKeywords() - 2;
+        } else {
+            given = RubyArguments.getUserArgumentsCount(frame.getArguments());
+        }
 
         if (arity.hasKeywords()) {
             keywordArguments = RubyArguments.getUserKeywordsHash(frameArguments, arity.getRequired());
@@ -61,6 +69,7 @@ public class CheckArityNode extends RubyNode {
         if (!keywordsRest && keywordArguments != null) {
             for (KeyValue keyValue : HashOperations.verySlowToKeyValues(keywordArguments)) {
                 if (!keywordAllowed(keyValue.getKey().toString())) {
+                    CompilerDirectives.transferToInterpreter();
                     throw new RaiseException(getContext().getCoreLibrary().argumentError("unknown keyword: " + keyValue.getKey().toString(), this));
                 }
             }

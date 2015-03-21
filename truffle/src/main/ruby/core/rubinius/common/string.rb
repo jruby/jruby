@@ -52,6 +52,10 @@ class String
     to_inum(16, false)
   end
 
+  def reverse
+    dup.reverse!
+  end
+
   def split(pattern=nil, limit=undefined)
     Rubinius::Splitter.split(self, pattern, limit)
   end

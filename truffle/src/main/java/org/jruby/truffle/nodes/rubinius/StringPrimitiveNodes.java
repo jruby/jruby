@@ -318,6 +318,27 @@ public abstract class StringPrimitiveNodes {
         @CompilerDirectives.TruffleBoundary
         @Specialization
         public Object stringChrAt(RubyString string, int byteIndex) {
+            // Taken from Rubinius's Character::create_from.
+
+            final ByteList bytes = string.getByteList();
+
+            if (byteIndex < 0 || byteIndex >= bytes.getRealSize()) {
+                return nil();
+            }
+
+            final int p = bytes.getBegin();
+            final int end = p + bytes.getRealSize();
+            final int c = StringSupport.preciseLength(bytes.getEncoding(), bytes.getUnsafeBytes(), p, end);
+
+            if (! StringSupport.MBCLEN_CHARFOUND_P(c)) {
+                return nil();
+            }
+
+            final int n = StringSupport.MBCLEN_CHARFOUND_LEN(c);
+            if (n + byteIndex > end) {
+                return nil();
+            }
+
             if (stringByteSubstringNode == null) {
                 CompilerDirectives.transferToInterpreter();
 
@@ -327,20 +348,6 @@ public abstract class StringPrimitiveNodes {
                                 getSourceSection(),
                                 new RubyNode[]{})
                 );
-            }
-
-            final ByteList bytes = string.getByteList();
-            final int p = bytes.getBegin();
-            final int end = p + bytes.getRealSize();
-            final int c = StringSupport.preciseLength(bytes.getEncoding(), bytes.getUnsafeBytes(), p, end);
-
-            if (! StringSupport.MBCLEN_CHARFOUND_P(c)) {
-                return getContext().getCoreLibrary().getNilObject();
-            }
-
-            final int n = StringSupport.MBCLEN_CHARFOUND_LEN(c);
-            if (n + byteIndex > end) {
-                return getContext().getCoreLibrary().getNilObject();
             }
 
             return stringByteSubstringNode.stringByteSubstring(string, byteIndex, n);
@@ -691,6 +698,8 @@ public abstract class StringPrimitiveNodes {
 
         @Specialization
         public Object stringPreviousByteIndex(RubyString string, int index) {
+            // Port of Rubinius's String::previous_byte_index.
+
             if (index < 0) {
                 CompilerDirectives.transferToInterpreter();
                 throw new RaiseException(getContext().getCoreLibrary().argumentError("negative index given", this));
@@ -700,17 +709,13 @@ public abstract class StringPrimitiveNodes {
             final int p = bytes.getBegin();
             final int end = p + bytes.getRealSize();
 
-            if (p > end) {
-                return 0;
+            final int b = bytes.getEncoding().prevCharHead(bytes.getUnsafeBytes(), p, p + index, end);
+
+            if (b == -1) {
+                return nil();
             }
 
-            final int s = bytes.getEncoding().prevCharHead(bytes.getUnsafeBytes(), p, p + index, end);
-
-            if (s == -1) {
-                return 0;
-            }
-
-            return s - p;
+            return b - p;
         }
 
     }

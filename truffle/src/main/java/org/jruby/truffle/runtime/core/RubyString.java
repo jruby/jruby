@@ -124,14 +124,6 @@ public class RubyString extends RubyBasicObject implements CodeRangeable {
         return StringSupport.countCommon19(getBytes(), getContext().getRuntime(), table, tables, enc);
     }
 
-    public RubyString dump() {
-        ByteList outputBytes = StringSupport.dumpCommon(getContext().getRuntime(), bytes);
-
-        final RubyString result = getContext().makeString(getLogicalClass(), outputBytes);
-
-        return result;
-    }
-
     @Override
     @TruffleBoundary
     public String toString() {

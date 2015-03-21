@@ -1402,45 +1402,9 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
 
     @JRubyMethod(name = "reverse")
     public IRubyObject reverse19(ThreadContext context) {
-        Ruby runtime = context.runtime;
-        if (value.getRealSize() <= 1) return strDup(context.runtime);
-
-        byte[]bytes = value.getUnsafeBytes();
-        int p = value.getBegin();
-        int len = value.getRealSize();
-        byte[]obytes = new byte[len];
-
-        boolean single = true;
-        Encoding enc = value.getEncoding();
-        // this really needs to be inlined here
-        if (singleByteOptimizable(enc)) {
-            for (int i = 0; i <= len >> 1; i++) {
-                obytes[i] = bytes[p + len - i - 1];
-                obytes[len - i - 1] = bytes[p + i];
-            }
-        } else {
-            int end = p + len;
-            int op = len;
-            while (p < end) {
-                int cl = StringSupport.length(enc, bytes, p, end);
-                if (cl > 1 || (bytes[p] & 0x80) != 0) {
-                    single = false;
-                    op -= cl;
-                    System.arraycopy(bytes, p, obytes, op, cl);
-                    p += cl;
-                } else {
-                    obytes[--op] = bytes[p++];
-                }
-            }
-        }
-
-        RubyString result = new RubyString(runtime, getMetaClass(), new ByteList(obytes, false));
-
-        if (getCodeRange() == CR_UNKNOWN) setCodeRange(single ? CR_7BIT : CR_VALID);
-        Encoding encoding = value.getEncoding();
-        result.value.setEncoding(encoding);
-        result.copyCodeRangeForSubstr(this, encoding);
-        return result.infectBy(this);
+        RubyString str = strDup(context.runtime);
+        str.reverse_bang19(context);
+        return str;
     }
 
     public RubyString reverse_bang(ThreadContext context) {

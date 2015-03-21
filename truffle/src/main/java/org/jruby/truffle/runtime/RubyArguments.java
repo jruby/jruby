@@ -9,14 +9,15 @@
  */
 package org.jruby.truffle.runtime;
 
-import com.oracle.truffle.api.frame.MaterializedFrame;
-import com.oracle.truffle.api.frame.VirtualFrame;
-import com.oracle.truffle.api.nodes.ExplodeLoop;
-
+import org.jruby.truffle.nodes.methods.MarkerNode;
 import org.jruby.truffle.runtime.core.RubyHash;
 import org.jruby.truffle.runtime.core.RubyProc;
 import org.jruby.truffle.runtime.methods.InternalMethod;
 import org.jruby.truffle.runtime.util.ArrayUtils;
+
+import com.oracle.truffle.api.frame.MaterializedFrame;
+import com.oracle.truffle.api.frame.VirtualFrame;
+import com.oracle.truffle.api.nodes.ExplodeLoop;
 
 /**
  * Pack and unpack Ruby method arguments to and from an array of objects.
@@ -39,6 +40,15 @@ public final class RubyArguments {
         ArrayUtils.arraycopy(arguments, 0, packed, RUNTIME_ARGUMENT_COUNT, arguments.length);
 
         return packed;
+    }
+    
+    public static Object getOptimizedKeywordArgument(Object[] arguments,
+            int index) {
+        return arguments[arguments.length - 1 + index];
+    }
+
+    public static boolean isKwOptimized(Object[] arguments) {
+        return arguments[arguments.length - 1] instanceof MarkerNode.Marker;
     }
 
     public static InternalMethod getMethod(Object[] arguments) {
@@ -65,6 +75,16 @@ public final class RubyArguments {
 
     public static int getUserArgumentsCount(Object[] internalArguments) {
         return internalArguments.length - RUNTIME_ARGUMENT_COUNT;
+    }
+
+    public static int getNamedUserArgumentsCount(Object[] internalArguments) {
+        if (isKwOptimized(internalArguments)) {
+            return getUserArgumentsCount(internalArguments)
+                    - getMethod(internalArguments).getSharedMethodInfo().getArity()
+                            .getKeywordArguments().size() - 1;
+        } else {
+            return getUserArgumentsCount(internalArguments);
+        }
     }
 
     public static Object getUserArgument(Object[] internalArguments, int index) {
