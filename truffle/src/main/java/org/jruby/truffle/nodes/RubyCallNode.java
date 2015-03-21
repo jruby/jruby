@@ -13,6 +13,7 @@ import com.oracle.truffle.api.CompilerAsserts;
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.ExplodeLoop;
+import com.oracle.truffle.api.nodes.NodeUtil;
 import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.utilities.BranchProfile;
 import org.jruby.truffle.nodes.cast.BooleanCastNode;
@@ -129,7 +130,7 @@ public class RubyCallNode extends RubyNode {
                     keywordOptimizedArgumentsLength = optimized.length;
 
                     for (int n = 0; n < keywordOptimizedArgumentsLength; n++) {
-                        keywordOptimizedArguments[n] = insert(optimized[n]);
+                        keywordOptimizedArguments[n] = insert(NodeUtil.cloneNode(optimized[n]));
                     }
                 }
             }
@@ -291,7 +292,8 @@ public class RubyCallNode extends RubyNode {
 
                 if (!keyIsSymbol) {
                     // cannot optimize case where keyword label is dynamic (not a fixed RubySymbol)
-                    return argumentNodes;
+                    cannotOptimize = true;
+                    return null;
                 }
 
                 final String label = ((ObjectLiteralNode) hashNode.getKey(j)).getObject().toString();
