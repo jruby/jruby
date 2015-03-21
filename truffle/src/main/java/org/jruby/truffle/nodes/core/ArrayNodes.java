@@ -3031,18 +3031,18 @@ public abstract class ArrayNodes {
             super(prev);
         }
 
-        @Specialization(guards = "isNull")
+        @Specialization(guards = "isNullArray")
         public Object rejectInPlaceNull(VirtualFrame frame, RubyArray array, RubyProc block) {
             return array;
         }
 
-        @Specialization(guards = "isObject")
-        public Object rejectInPlaceObject(VirtualFrame frame, RubyArray array, RubyProc block) {
-            final Object[] store = (Object[]) array.getStore();
+        @Specialization(guards = "isIntArray")
+        public Object rejectInPlaceInt(VirtualFrame frame, RubyArray array, RubyProc block) {
+            final int[] store = (int[]) array.getStore();
 
             int i = 0;
-
-            for (int n = 0; n < array.getSize(); n++) {
+            int n = 0;
+            for (; n < array.getSize(); n++) {
                 if (yieldIsTruthy(frame, block, store[n])) {
                     continue;
                 }
@@ -3053,9 +3053,95 @@ public abstract class ArrayNodes {
 
                 i++;
             }
+            if (i != n) {
+                final int[] filler = new int[n - i];
+                System.arraycopy(filler, 0, store, i, n - i);
+                array.setStore(store, i);
+                return array;
+            } else {
+                return nil();
+            }
+        }
 
-            array.setStore(store, i);
-            return array;
+        @Specialization(guards = "isLongArray")
+        public Object rejectInPlaceLong(VirtualFrame frame, RubyArray array, RubyProc block) {
+            final long[] store = (long[]) array.getStore();
+
+            int i = 0;
+            int n = 0;
+            for (; n < array.getSize(); n++) {
+                if (yieldIsTruthy(frame, block, store[n])) {
+                    continue;
+                }
+
+                if (i != n) {
+                    store[i] = store[n];
+                }
+
+                i++;
+            }
+            if (i != n) {
+                final long[] filler = new long[n - i];
+                System.arraycopy(filler, 0, store, i, n - i);
+                array.setStore(store, i);
+                return array;
+            } else {
+                return nil();
+            }
+        }
+
+        @Specialization(guards = "isDoubleArray")
+        public Object rejectInPlaceDouble(VirtualFrame frame, RubyArray array, RubyProc block) {
+            final double[] store = (double[]) array.getStore();
+
+            int i = 0;
+            int n = 0;
+            for (; n < array.getSize(); n++) {
+                if (yieldIsTruthy(frame, block, store[n])) {
+                    continue;
+                }
+
+                if (i != n) {
+                    store[i] = store[n];
+                }
+
+                i++;
+            }
+            if (i != n) {
+                final double[] filler = new double[n - i];
+                System.arraycopy(filler, 0, store, i, n - i);
+                array.setStore(store, i);
+                return array;
+            } else {
+                return nil();
+            }
+        }
+
+        @Specialization(guards = "isObjectArray")
+        public Object rejectInPlaceObject(VirtualFrame frame, RubyArray array, RubyProc block) {
+            final Object[] store = (Object[]) array.getStore();
+
+            int i = 0;
+            int n = 0;
+            for (; n < array.getSize(); n++) {
+                if (yieldIsTruthy(frame, block, store[n])) {
+                    continue;
+                }
+
+                if (i != n) {
+                    store[i] = store[n];
+                }
+
+                i++;
+            }
+            if (i != n) {
+                final Object[] filler = new Object[n - i];
+                System.arraycopy(filler, 0, store, i, n - i);
+                array.setStore(store, i);
+                return array;
+            } else {
+                return nil();
+            }
         }
 
     }
