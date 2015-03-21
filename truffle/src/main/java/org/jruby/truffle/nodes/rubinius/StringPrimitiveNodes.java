@@ -691,6 +691,8 @@ public abstract class StringPrimitiveNodes {
 
         @Specialization
         public Object stringPreviousByteIndex(RubyString string, int index) {
+            // Port of Rubinius's String::previous_byte_index.
+
             if (index < 0) {
                 CompilerDirectives.transferToInterpreter();
                 throw new RaiseException(getContext().getCoreLibrary().argumentError("negative index given", this));
@@ -700,17 +702,13 @@ public abstract class StringPrimitiveNodes {
             final int p = bytes.getBegin();
             final int end = p + bytes.getRealSize();
 
-            if (p > end) {
-                return 0;
+            final int b = bytes.getEncoding().prevCharHead(bytes.getUnsafeBytes(), p, p + index, end);
+
+            if (b == -1) {
+                return nil();
             }
 
-            final int s = bytes.getEncoding().prevCharHead(bytes.getUnsafeBytes(), p, p + index, end);
-
-            if (s == -1) {
-                return 0;
-            }
-
-            return s - p;
+            return b - p;
         }
 
     }
