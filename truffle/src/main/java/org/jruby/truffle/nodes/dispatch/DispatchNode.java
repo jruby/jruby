@@ -152,4 +152,8 @@ public abstract class DispatchNode extends RubyNode {
         return dispatchAction;
     }
 
+    public boolean couldOptimizeKeywordArguments() {
+        return false;
+    }
+
 }

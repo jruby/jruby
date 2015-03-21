@@ -9,8 +9,12 @@
  */
 package org.jruby.truffle.nodes.methods.arguments;
 
+import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.SourceSection;
+import com.oracle.truffle.api.utilities.ConditionProfile;
+import com.oracle.truffle.api.utilities.ValueProfile;
+
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
@@ -22,39 +26,60 @@ public class ReadKeywordArgumentNode extends RubyNode {
 
     private final int minimum;
     private final String name;
+    private final int kwIndex;
+    private final ValueProfile argumentValueProfile = ValueProfile.createPrimitiveProfile();
+
+    private ConditionProfile optimizedProfile = ConditionProfile.createBinaryProfile();
+    private ConditionProfile defaultProfile = ConditionProfile.createBinaryProfile();
+    
     @Child private RubyNode defaultValue;
 
-    public ReadKeywordArgumentNode(RubyContext context, SourceSection sourceSection, int minimum, String name, RubyNode defaultValue) {
+    public ReadKeywordArgumentNode(RubyContext context, SourceSection sourceSection, int minimum, String name, RubyNode defaultValue, int kwIndex) {
         super(context, sourceSection);
         this.minimum = minimum;
         this.name = name;
         this.defaultValue = defaultValue;
+        this.kwIndex = kwIndex;
     }
 
     @Override
     public Object execute(VirtualFrame frame) {
-        notDesignedForCompilation();
+        if (optimizedProfile.profile(RubyArguments.isKwOptimized(frame.getArguments()))) {
+            Object kwarg = argumentValueProfile
+                    .profile(RubyArguments.getOptimizedKeywordArgument(
+                            frame.getArguments(), kwIndex));
 
-        final RubyHash hash = RubyArguments.getUserKeywordsHash(frame.getArguments(), minimum);
+            if (defaultProfile.profile(kwarg instanceof OptionalKeywordArgMissingNode.OptionalKeywordArgMissing)) {
+                return defaultValue.execute(frame);
+            } else {
+                return kwarg;
+            }
+        } else {
+            final RubyHash hash = RubyArguments.getUserKeywordsHash(frame.getArguments(), minimum);
 
-        if (hash == null) {
-            return defaultValue.execute(frame);
+            if (defaultProfile.profile(hash == null)) {
+                return defaultValue.execute(frame);
+            }
+
+            Object value = lookupKeywordInHash(hash);
+
+            if (defaultProfile.profile(value == null)) {
+                return defaultValue.execute(frame);
+            }
+
+            return value;
         }
+    }
 
-        Object value = null;
-
+    @CompilerDirectives.TruffleBoundary
+    private Object lookupKeywordInHash(RubyHash hash) {
         for (KeyValue keyValue : HashOperations.verySlowToKeyValues(hash)) {
             if (keyValue.getKey().toString().equals(name)) {
-                value = keyValue.getValue();
-                break;
+                return keyValue.getValue();
             }
         }
 
-        if (value == null) {
-            return defaultValue.execute(frame);
-        }
-
-        return value;
+        return null;
     }
 
 }

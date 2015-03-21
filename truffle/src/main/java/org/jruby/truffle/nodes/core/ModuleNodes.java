@@ -399,7 +399,7 @@ public abstract class ModuleNodes {
         public static void attrReader(Node currentNode, RubyContext context, SourceSection sourceSection, RubyModule module, String name) {
             CompilerDirectives.transferToInterpreter();
 
-            final CheckArityNode checkArity = new CheckArityNode(context, sourceSection, new Arity(0, 0, false, false));
+            final CheckArityNode checkArity = new CheckArityNode(context, sourceSection, new Arity(0, 0, false, false, false, 0));
 
             final SelfNode self = new SelfNode(context, sourceSection);
             final ReadInstanceVariableNode readInstanceVariable = new ReadInstanceVariableNode(context, sourceSection, "@" + name, self, false);
@@ -451,7 +451,7 @@ public abstract class ModuleNodes {
         public static void attrWriter(Node currentNode, RubyContext context, SourceSection sourceSection, RubyModule module, String name) {
             CompilerDirectives.transferToInterpreter();
 
-            final CheckArityNode checkArity = new CheckArityNode(context, sourceSection, new Arity(1, 0, false, false));
+            final CheckArityNode checkArity = new CheckArityNode(context, sourceSection, new Arity(1, 0, false, false, false, 0));
 
             final SelfNode self = new SelfNode(context, sourceSection);
             final ReadPreArgumentNode readArgument = new ReadPreArgumentNode(context, sourceSection, 0, MissingArgumentBehaviour.RUNTIME_ERROR);
