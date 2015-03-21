@@ -3022,7 +3022,10 @@ public class RubyModule extends RubyObject {
 
         RubyModule mod = this;
 
-        if (symbol.startsWith("::")) mod = runtime.getObject();
+        if (symbol.startsWith("::")) {
+          mod = runtime.getObject();
+          symbol = symbol.substring(2);
+        }
 
         int sep;
         while((sep = symbol.indexOf("::")) != -1) {
