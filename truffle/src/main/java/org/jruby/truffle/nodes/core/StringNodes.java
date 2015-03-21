@@ -69,6 +69,7 @@ import org.jruby.util.Pack;
 import org.jruby.util.StringSupport;
 import org.jruby.util.io.EncodingUtils;
 
+import java.io.UnsupportedEncodingException;
 import java.util.Arrays;
 import java.util.Locale;
 
@@ -1762,7 +1763,12 @@ public abstract class StringNodes {
 
             ByteList outputBytes = dumpCommon(string);
 
-            outputBytes.append(".force_encoding(\"".getBytes());
+            try {
+                outputBytes.append(".force_encoding(\"".getBytes("UTF-8"));
+            } catch (UnsupportedEncodingException e) {
+                throw new UnsupportedOperationException(e);
+            }
+
             outputBytes.append(string.getByteList().getEncoding().getName());
             outputBytes.append((byte) '"');
             outputBytes.append((byte) ')');
