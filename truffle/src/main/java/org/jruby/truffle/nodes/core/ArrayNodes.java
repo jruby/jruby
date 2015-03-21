@@ -2685,7 +2685,7 @@ public abstract class ArrayNodes {
 
         @Specialization(guards = "isIntegerFixnum", rewriteOn = UnexpectedResultException.class)
         public RubyArray popIntegerFixnumInBoundsWithNum(VirtualFrame frame, RubyArray array, int num) throws UnexpectedResultException {
-            if(num < 0){
+            if (num < 0) {
                 CompilerDirectives.transferToInterpreter();
                 throw new RaiseException(getContext().getCoreLibrary().argumentError("negative array size", this));
             }
@@ -2704,7 +2704,7 @@ public abstract class ArrayNodes {
 
         @Specialization(contains = "popIntegerFixnumInBoundsWithNum", guards = "isIntegerFixnum")
         public Object popIntegerFixnumWithNum(VirtualFrame frame, RubyArray array, int num) {
-            if(num < 0){
+            if (num < 0) {
                 CompilerDirectives.transferToInterpreter();
                 throw new RaiseException(getContext().getCoreLibrary().argumentError("negative array size", this));
             }
@@ -2723,7 +2723,7 @@ public abstract class ArrayNodes {
 
         @Specialization(guards = "isLongFixnum", rewriteOn = UnexpectedResultException.class)
         public RubyArray popLongFixnumInBoundsWithNum(VirtualFrame frame, RubyArray array, int num) throws UnexpectedResultException {
-            if(num < 0){
+            if (num < 0) {
                 CompilerDirectives.transferToInterpreter();
                 throw new RaiseException(getContext().getCoreLibrary().argumentError("negative array size", this));
             }
@@ -2742,7 +2742,7 @@ public abstract class ArrayNodes {
 
         @Specialization(contains = "popLongFixnumInBoundsWithNum", guards = "isLongFixnum")
         public Object popLongFixnumWithNum(VirtualFrame frame, RubyArray array, int num) {
-            if(num < 0){
+            if (num < 0) {
                 CompilerDirectives.transferToInterpreter();
                 throw new RaiseException(getContext().getCoreLibrary().argumentError("negative array size", this));
             }
@@ -2760,7 +2760,7 @@ public abstract class ArrayNodes {
 
         @Specialization(guards = "isFloat", rewriteOn = UnexpectedResultException.class)
         public RubyArray popFloatInBoundsWithNum(VirtualFrame frame, RubyArray array, int num) throws UnexpectedResultException {
-            if(num < 0){
+            if (num < 0) {
                 CompilerDirectives.transferToInterpreter();
                 throw new RaiseException(getContext().getCoreLibrary().argumentError("negative array size", this));
             }
@@ -2778,7 +2778,7 @@ public abstract class ArrayNodes {
 
         @Specialization(contains = "popFloatInBoundsWithNum", guards = "isFloat")
         public Object popFloatWithNum(VirtualFrame frame, RubyArray array, int num) {
-            if(num < 0){
+            if (num < 0) {
                 CompilerDirectives.transferToInterpreter();
                 throw new RaiseException(getContext().getCoreLibrary().argumentError("negative array size", this));
             }
@@ -2796,7 +2796,7 @@ public abstract class ArrayNodes {
 
         @Specialization(guards = "isObject")
         public Object popObjectWithNum(VirtualFrame frame, RubyArray array, int num) {
-            if(num < 0){
+            if (num < 0) {
                 CompilerDirectives.transferToInterpreter();
                 throw new RaiseException(getContext().getCoreLibrary().argumentError("negative array size", this));
             }
@@ -2820,7 +2820,7 @@ public abstract class ArrayNodes {
                 toIntNode = insert(ToIntNodeFactory.create(getContext(), getSourceSection(), null));
             }
             final int num = toIntNode.executeIntegerFixnum(frame, object);
-            if(num < 0){
+            if (num < 0) {
                 CompilerDirectives.transferToInterpreter();
                 throw new RaiseException(getContext().getCoreLibrary().argumentError("negative array size", this));
             }
@@ -2844,7 +2844,7 @@ public abstract class ArrayNodes {
                 toIntNode = insert(ToIntNodeFactory.create(getContext(), getSourceSection(), null));
             }
             final int num = toIntNode.executeIntegerFixnum(frame, object);
-            if(num < 0){
+            if (num < 0) {
                 CompilerDirectives.transferToInterpreter();
                 throw new RaiseException(getContext().getCoreLibrary().argumentError("negative array size", this));
             }
@@ -2868,7 +2868,7 @@ public abstract class ArrayNodes {
                 toIntNode = insert(ToIntNodeFactory.create(getContext(), getSourceSection(), null));
             }
             final int num = toIntNode.executeIntegerFixnum(frame, object);
-            if(num < 0){
+            if (num < 0) {
                 CompilerDirectives.transferToInterpreter();
                 throw new RaiseException(getContext().getCoreLibrary().argumentError("negative array size", this));
             }
@@ -2892,7 +2892,7 @@ public abstract class ArrayNodes {
                 toIntNode = insert(ToIntNodeFactory.create(getContext(), getSourceSection(), null));
             }
             final int num = toIntNode.executeIntegerFixnum(frame, object);
-            if(num < 0){
+            if (num < 0) {
                 CompilerDirectives.transferToInterpreter();
                 throw new RaiseException(getContext().getCoreLibrary().argumentError("negative array size", this));
             }
@@ -2915,7 +2915,7 @@ public abstract class ArrayNodes {
                 toIntNode = insert(ToIntNodeFactory.create(getContext(), getSourceSection(), null));
             }
             final int num = toIntNode.executeIntegerFixnum(frame, object);
-            if(num < 0){
+            if (num < 0) {
                 CompilerDirectives.transferToInterpreter();
                 throw new RaiseException(getContext().getCoreLibrary().argumentError("negative array size", this));
             }
@@ -2938,7 +2938,7 @@ public abstract class ArrayNodes {
                 toIntNode = insert(ToIntNodeFactory.create(getContext(), getSourceSection(), null));
             }
             final int num = toIntNode.executeIntegerFixnum(frame, object);
-            if(num < 0){
+            if (num < 0) {
                 CompilerDirectives.transferToInterpreter();
                 throw new RaiseException(getContext().getCoreLibrary().argumentError("negative array size", this));
             }
@@ -2961,7 +2961,7 @@ public abstract class ArrayNodes {
                 toIntNode = insert(ToIntNodeFactory.create(getContext(), getSourceSection(), null));
             }
             final int num = toIntNode.executeIntegerFixnum(frame, object);
-            if(num < 0){
+            if (num < 0) {
                 CompilerDirectives.transferToInterpreter();
                 throw new RaiseException(getContext().getCoreLibrary().argumentError("negative array size", this));
             }
