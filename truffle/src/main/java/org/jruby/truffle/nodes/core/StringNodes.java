@@ -465,6 +465,7 @@ public abstract class StringNodes {
         @Child private CallDispatchHeadNode includeNode;
         @Child private CallDispatchHeadNode matchNode;
         @Child private KernelNodes.DupNode dupNode;
+        @Child private StringPrimitiveNodes.StringSubstringPrimitiveNode substringNode;
 
         private final BranchProfile outOfBounds = BranchProfile.create();
 
@@ -523,22 +524,15 @@ public abstract class StringNodes {
         }
 
         @Specialization
-        public Object slice(RubyString string, int start, int length) {
-            // TODO(CS): not sure if this is right - encoding
-            final ByteList bytes = string.getBytes();
-            final int begin = string.normalizeIndex(start);
+        public Object slice(VirtualFrame frame, RubyString string, int start, int length) {
+            if (substringNode == null) {
+                CompilerDirectives.transferToInterpreter();
 
-            if (begin < 0 || begin > bytes.length() || length < 0) {
-                outOfBounds.enter();
-                return nil();
-            } else {
-                final int end = Math.min(bytes.length(), begin + length);
-
-                final ByteList byteList = new ByteList(bytes, begin, end - begin);
-                byteList.setEncoding(string.getByteList().getEncoding());
-
-                return getContext().makeString(string.getLogicalClass(), byteList);
+                substringNode = insert(StringPrimitiveNodesFactory.StringSubstringPrimitiveNodeFactory.create(
+                        getContext(), getSourceSection(), new RubyNode[] { null, null, null }));
             }
+
+            return substringNode.executeRubyString(frame, string, start, length);
         }
 
         @Specialization(guards = "!isUndefinedPlaceholder(arguments[2])")
@@ -550,7 +544,7 @@ public abstract class StringNodes {
                 toIntNode = insert(ToIntNodeFactory.create(getContext(), getSourceSection(), null));
             }
 
-            return slice(string, start, toIntNode.executeIntegerFixnum(frame, length));
+            return slice(frame, string, start, toIntNode.executeIntegerFixnum(frame, length));
         }
 
         @Specialization(guards = { "!isRubyRange(arguments[1])", "!isRubyRegexp(arguments[1])", "!isRubyString(arguments[1])", "!isUndefinedPlaceholder(arguments[2])" })
@@ -562,7 +556,7 @@ public abstract class StringNodes {
                 toIntNode = insert(ToIntNodeFactory.create(getContext(), getSourceSection(), null));
             }
 
-            return slice(string, toIntNode.executeIntegerFixnum(frame, start), toIntNode.executeIntegerFixnum(frame, length));
+            return slice(frame, string, toIntNode.executeIntegerFixnum(frame, start), toIntNode.executeIntegerFixnum(frame, length));
         }
 
         @Specialization
@@ -1442,7 +1436,7 @@ public abstract class StringNodes {
         }
 
         @Specialization
-        public RubyString insert(RubyString string, int index, RubyString otherString) {
+        public RubyString insert(VirtualFrame frame, RubyString string, int index, RubyString otherString) {
             notDesignedForCompilation();
 
             if (index == -1) {
@@ -1470,8 +1464,8 @@ public abstract class StringNodes {
             }
 
             // TODO (Kevin): using node directly and cast
-            RubyString firstPart = (RubyString) getIndexNode.slice(string, 0, index);
-            RubyString secondPart = (RubyString) getIndexNode.slice(string, index, string.length());
+            RubyString firstPart = (RubyString) getIndexNode.slice(frame, string, 0, index);
+            RubyString secondPart = (RubyString) getIndexNode.slice(frame, string, index, string.length());
 
             RubyString concatenated = concatNode.concat(concatNode.concat(firstPart, otherString), secondPart);
 

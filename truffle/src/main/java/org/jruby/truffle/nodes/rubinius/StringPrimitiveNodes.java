@@ -56,6 +56,7 @@ package org.jruby.truffle.nodes.rubinius;
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.dsl.ImportGuards;
 import com.oracle.truffle.api.dsl.Specialization;
+import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.utilities.ConditionProfile;
 import org.jcodings.Encoding;
@@ -864,7 +865,10 @@ public abstract class StringPrimitiveNodes {
 
         public StringSubstringPrimitiveNode(StringSubstringPrimitiveNode prev) {
             super(prev);
+            taintResultNode = prev.taintResultNode;
         }
+
+        public abstract RubyString executeRubyString(VirtualFrame frame, RubyString string, int beg, int len);
 
         @Specialization(guards = "isSingleByteOptimizable")
         public Object stringSubstringSingleByteOptimizable(RubyString string, int beg, int len) {
