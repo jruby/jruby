@@ -11,9 +11,12 @@ package org.jruby.truffle.nodes.core;
 
 import java.util.concurrent.locks.ReentrantLock;
 
+import com.oracle.truffle.api.object.HiddenKey;
+import org.jruby.truffle.nodes.objectstorage.ReadHeadObjectFieldNode;
+import org.jruby.truffle.nodes.objectstorage.WriteHeadObjectFieldNode;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
-import org.jruby.truffle.runtime.core.RubyMutex;
+import org.jruby.truffle.runtime.core.RubyBasicObject;
 import org.jruby.truffle.runtime.core.RubyThread;
 import org.jruby.truffle.runtime.subsystems.ThreadManager.BlockingActionWithoutGlobalLock;
 
@@ -24,20 +27,49 @@ import com.oracle.truffle.api.source.SourceSection;
 @CoreClass(name = "Mutex")
 public abstract class MutexNodes {
 
+    private static final HiddenKey LOCK_IDENTIFIER = new HiddenKey("lock");
+
+    @CoreMethod(names = "initialize")
+    public abstract static class InitializeNode extends UnaryCoreMethodNode {
+
+        @Child private WriteHeadObjectFieldNode writeLock;
+
+        public InitializeNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+            writeLock = new WriteHeadObjectFieldNode(LOCK_IDENTIFIER);
+        }
+
+        public InitializeNode(InitializeNode prev) {
+            super(prev);
+            writeLock = prev.writeLock;
+        }
+
+        @Specialization
+        public RubyBasicObject lock(RubyBasicObject mutex) {
+            writeLock.execute(mutex, new ReentrantLock());
+            return mutex;
+        }
+
+    }
+
     @CoreMethod(names = "lock")
     public abstract static class LockNode extends UnaryCoreMethodNode {
 
+        @Child private ReadHeadObjectFieldNode readLock;
+
         public LockNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
+            readLock = new ReadHeadObjectFieldNode(LOCK_IDENTIFIER);
         }
 
         public LockNode(LockNode prev) {
             super(prev);
+            readLock = prev.readLock;
         }
 
         @Specialization
-        public RubyMutex lock(RubyMutex mutex) {
-            final ReentrantLock lock = mutex.getReentrantLock();
+        public RubyBasicObject lock(RubyBasicObject mutex) {
+            final ReentrantLock lock = (ReentrantLock) readLock.execute(mutex);
 
             if (lock.isHeldByCurrentThread()) {
                 CompilerDirectives.transferToInterpreter();
@@ -63,18 +95,21 @@ public abstract class MutexNodes {
     @CoreMethod(names = "locked?")
     public abstract static class IsLockedNode extends UnaryCoreMethodNode {
 
+        @Child private ReadHeadObjectFieldNode readLock;
+
         public IsLockedNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
+            readLock = new ReadHeadObjectFieldNode(LOCK_IDENTIFIER);
         }
 
         public IsLockedNode(IsLockedNode prev) {
             super(prev);
+            readLock = prev.readLock;
         }
 
         @Specialization
-        public boolean isLocked(RubyMutex mutex) {
-            final ReentrantLock lock = mutex.getReentrantLock();
-
+        public boolean isLocked(RubyBasicObject mutex) {
+            final ReentrantLock lock = (ReentrantLock) readLock.execute(mutex);
             return lock.isLocked();
         }
 
@@ -83,18 +118,21 @@ public abstract class MutexNodes {
     @CoreMethod(names = "owned?")
     public abstract static class IsOwnedNode extends UnaryCoreMethodNode {
 
+        @Child private ReadHeadObjectFieldNode readLock;
+
         public IsOwnedNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
+            readLock = new ReadHeadObjectFieldNode(LOCK_IDENTIFIER);
         }
 
         public IsOwnedNode(IsOwnedNode prev) {
             super(prev);
+            readLock = prev.readLock;
         }
 
         @Specialization
-        public boolean isOwned(RubyMutex mutex) {
-            final ReentrantLock lock = mutex.getReentrantLock();
-
+        public boolean isOwned(RubyBasicObject mutex) {
+            final ReentrantLock lock = (ReentrantLock) readLock.execute(mutex);
             return lock.isHeldByCurrentThread();
         }
 
@@ -103,17 +141,21 @@ public abstract class MutexNodes {
     @CoreMethod(names = "try_lock")
     public abstract static class TryLockNode extends UnaryCoreMethodNode {
 
+        @Child private ReadHeadObjectFieldNode readLock;
+
         public TryLockNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
+            readLock = new ReadHeadObjectFieldNode(LOCK_IDENTIFIER);
         }
 
         public TryLockNode(TryLockNode prev) {
             super(prev);
+            readLock = prev.readLock;
         }
 
         @Specialization
-        public boolean tryLock(RubyMutex mutex) {
-            final ReentrantLock lock = mutex.getReentrantLock();
+        public boolean tryLock(RubyBasicObject mutex) {
+            final ReentrantLock lock = (ReentrantLock) readLock.execute(mutex);
 
             if (lock.isHeldByCurrentThread()) {
                 return false;
@@ -133,17 +175,22 @@ public abstract class MutexNodes {
     @CoreMethod(names = "unlock")
     public abstract static class UnlockNode extends UnaryCoreMethodNode {
 
+        @Child private ReadHeadObjectFieldNode readLock;
+
         public UnlockNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
+            readLock = new ReadHeadObjectFieldNode(LOCK_IDENTIFIER);
         }
 
         public UnlockNode(UnlockNode prev) {
             super(prev);
+            readLock = prev.readLock;
         }
 
         @Specialization
-        public RubyMutex unlock(RubyMutex mutex) {
-            final ReentrantLock lock = mutex.getReentrantLock();
+        public RubyBasicObject unlock(RubyBasicObject mutex) {
+            final ReentrantLock lock = (ReentrantLock) readLock.execute(mutex);
+
             final RubyThread thread = getContext().getThreadManager().getCurrentThread();
 
             try {

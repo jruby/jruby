@@ -272,7 +272,7 @@ public class CoreLibrary {
         hashClass = defineClass("Hash", new RubyHash.HashAllocator());
         matchDataClass = defineClass("MatchData");
         methodClass = defineClass("Method");
-        defineClass("Mutex", new RubyMutex.MutexAllocator());
+        defineClass("Mutex");
         nilClass = defineClass("NilClass");
         procClass = defineClass("Proc", new RubyProc.ProcAllocator());
         processModule = defineModule("Process");
