@@ -532,7 +532,7 @@ public abstract class StringNodes {
                         getContext(), getSourceSection(), new RubyNode[] { null, null, null }));
             }
 
-            return substringNode.executeRubyString(frame, string, start, length);
+            return substringNode.execute(frame, string, start, length);
         }
 
         @Specialization(guards = "!isUndefinedPlaceholder(arguments[2])")

@@ -868,7 +868,7 @@ public abstract class StringPrimitiveNodes {
             taintResultNode = prev.taintResultNode;
         }
 
-        public abstract RubyString executeRubyString(VirtualFrame frame, RubyString string, int beg, int len);
+        public abstract Object execute(VirtualFrame frame, RubyString string, int beg, int len);
 
         @Specialization(guards = "isSingleByteOptimizable")
         public Object stringSubstringSingleByteOptimizable(RubyString string, int beg, int len) {
