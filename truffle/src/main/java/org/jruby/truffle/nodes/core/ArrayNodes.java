@@ -3616,8 +3616,10 @@ public abstract class ArrayNodes {
 
     }
 
-    @CoreMethod(names = "shift", raiseIfFrozenSelf = true)
-    public abstract static class ShiftNode extends CoreMethodNode {
+    @CoreMethod(names = "shift", raiseIfFrozenSelf = true, optional = 1)
+    public abstract static class ShiftNode extends ArrayCoreMethodNode {
+
+        @Child private ToIntNode toIntNode;
 
         public ShiftNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -3627,13 +3629,450 @@ public abstract class ArrayNodes {
             super(prev);
         }
 
-        @Specialization
-        public Object shift(RubyArray array) {
-            notDesignedForCompilation();
+        public abstract Object executeShift(VirtualFrame frame, RubyArray array, Object n);
 
-            return array.slowShift();
+        @Specialization(guards = "isNullOrEmpty")
+        public Object shiftNil(VirtualFrame frame, RubyArray array, UndefinedPlaceholder undefinedPlaceholder) {
+            return nil();
         }
 
+        @Specialization(guards = "isIntegerFixnum", rewriteOn = UnexpectedResultException.class)
+        public int shiftIntegerFixnumInBounds(VirtualFrame frame, RubyArray array, UndefinedPlaceholder undefinedPlaceholder) throws UnexpectedResultException {
+            if (CompilerDirectives.injectBranchProbability(CompilerDirectives.UNLIKELY_PROBABILITY, array.getSize() == 0)) {
+                throw new UnexpectedResultException(nil());
+            } else {
+                final int[] store = ((int[]) array.getStore());
+                final int value = store[0];
+                System.arraycopy(store, 1, store, 0, array.getSize() - 1);
+                final int[] filler = new int[1];
+                System.arraycopy(filler, 0, store, array.getSize() - 1, 1);
+                array.setStore(store, array.getSize() - 1);
+                return value;
+            }
+        }
+
+        @Specialization(contains = "shiftIntegerFixnumInBounds", guards = "isIntegerFixnum")
+        public Object shiftIntegerFixnum(VirtualFrame frame, RubyArray array, UndefinedPlaceholder undefinedPlaceholder) {
+            if (CompilerDirectives.injectBranchProbability(CompilerDirectives.UNLIKELY_PROBABILITY, array.getSize() == 0)) {
+                return nil();
+            } else {
+                final int[] store = ((int[]) array.getStore());
+                final int value = store[0];
+                System.arraycopy(store, 1, store, 0, array.getSize() - 1);
+                final int[] filler = new int[1];
+                System.arraycopy(filler, 0, store, array.getSize() - 1, 1);
+                array.setStore(store, array.getSize() - 1);
+                return value;
+            }
+        }
+
+        @Specialization(guards = "isLongFixnum", rewriteOn = UnexpectedResultException.class)
+        public long shiftLongFixnumInBounds(VirtualFrame frame, RubyArray array, UndefinedPlaceholder undefinedPlaceholder) throws UnexpectedResultException {
+            if (CompilerDirectives.injectBranchProbability(CompilerDirectives.UNLIKELY_PROBABILITY, array.getSize() == 0)) {
+                throw new UnexpectedResultException(nil());
+            } else {
+                final long[] store = ((long[]) array.getStore());
+                final long value = store[0];
+                System.arraycopy(store, 1, store, 0, array.getSize() - 1);
+                final long[] filler = new long[1];
+                System.arraycopy(filler, 0, store, array.getSize() - 1, 1);
+                array.setStore(store, array.getSize() - 1);
+                return value;
+            }
+        }
+
+        @Specialization(contains = "shiftLongFixnumInBounds", guards = "isLongFixnum")
+        public Object shiftLongFixnum(VirtualFrame frame, RubyArray array, UndefinedPlaceholder undefinedPlaceholder) {
+            if (CompilerDirectives.injectBranchProbability(CompilerDirectives.UNLIKELY_PROBABILITY, array.getSize() == 0)) {
+                return nil();
+            } else {
+                final long[] store = ((long[]) array.getStore());
+                final long value = store[0];
+                System.arraycopy(store, 1, store, 0, array.getSize() - 1);
+                final long[] filler = new long[1];
+                System.arraycopy(filler, 0, store, array.getSize() - 1, 1);
+                array.setStore(store, array.getSize() - 1);
+                return value;
+            }
+        }
+
+        @Specialization(guards = "isFloat", rewriteOn = UnexpectedResultException.class)
+        public double shiftFloatInBounds(VirtualFrame frame, RubyArray array, UndefinedPlaceholder undefinedPlaceholder) throws UnexpectedResultException {
+            if (CompilerDirectives.injectBranchProbability(CompilerDirectives.UNLIKELY_PROBABILITY, array.getSize() == 0)) {
+                throw new UnexpectedResultException(nil());
+            } else {
+                final double[] store = ((double[]) array.getStore());
+                final double value = store[0];
+                System.arraycopy(store, 1, store, 0, array.getSize() - 1);
+                final double[] filler = new double[1];
+                System.arraycopy(filler, 0, store, array.getSize() - 1, 1);
+                array.setStore(store, array.getSize() - 1);
+                return value;
+            }
+        }
+
+        @Specialization(contains = "shiftFloatInBounds", guards = "isFloat")
+        public Object shiftFloat(VirtualFrame frame, RubyArray array, UndefinedPlaceholder undefinedPlaceholder) {
+            if (CompilerDirectives.injectBranchProbability(CompilerDirectives.UNLIKELY_PROBABILITY, array.getSize() == 0)) {
+                return nil();
+            } else {
+                final double[] store = ((double[]) array.getStore());
+                final double value = store[0];
+                System.arraycopy(store, 1, store, 0, array.getSize() - 1);
+                final double[] filler = new double[1];
+                System.arraycopy(filler, 0, store, array.getSize() - 1, 1);
+                array.setStore(store, array.getSize() - 1);
+                return value;
+            }
+        }
+
+        @Specialization(guards = "isObject")
+        public Object shiftObject(VirtualFrame frame, RubyArray array, UndefinedPlaceholder undefinedPlaceholder) {
+            if (CompilerDirectives.injectBranchProbability(CompilerDirectives.UNLIKELY_PROBABILITY, array.getSize() == 0)) {
+                return nil();
+            } else {
+                final Object[] store = ((Object[]) array.getStore());
+                final Object value = store[0];
+                System.arraycopy(store, 1, store, 0, array.getSize() - 1);
+                final Object[] filler = new Object[1];
+                System.arraycopy(filler, 0, store, array.getSize() - 1, 1);
+                array.setStore(store, array.getSize() - 1);
+                return value;
+            }
+        }
+
+        @Specialization(guards = {"isNullOrEmpty","!isUndefinedPlaceholder(arguments[1])"})
+        public Object shiftNilWithNum(VirtualFrame frame, RubyArray array, Object object) {
+            if (object instanceof Integer && ((Integer) object) < 0) {
+                CompilerDirectives.transferToInterpreter();
+                throw new RaiseException(getContext().getCoreLibrary().argumentError("negative array size", this));
+            } else {
+                if (toIntNode == null) {
+                    CompilerDirectives.transferToInterpreter();
+                    toIntNode = insert(ToIntNodeFactory.create(getContext(), getSourceSection(), null));
+                }
+                final int n = toIntNode.executeIntegerFixnum(frame, object);
+                if (n < 0) {
+                    CompilerDirectives.transferToInterpreter();
+                    throw new RaiseException(getContext().getCoreLibrary().argumentError("negative array size", this));
+                }
+            }
+            return new RubyArray(getContext().getCoreLibrary().getArrayClass(), null, 0);
+        }
+
+        @Specialization(guards = "isIntegerFixnum", rewriteOn = UnexpectedResultException.class)
+        public RubyArray popIntegerFixnumInBoundsWithNum(VirtualFrame frame, RubyArray array, int num) throws UnexpectedResultException {
+            if (num < 0) {
+                CompilerDirectives.transferToInterpreter();
+                throw new RaiseException(getContext().getCoreLibrary().argumentError("negative array size", this));
+            }
+            if (CompilerDirectives.injectBranchProbability(CompilerDirectives.UNLIKELY_PROBABILITY, array.getSize() == 0)) {
+                throw new UnexpectedResultException(nil());
+            } else {
+                final int numShift = array.getSize() < num ? array.getSize() : num;
+                final int[] store = ((int[]) array.getStore());
+                final RubyArray result = new RubyArray(getContext().getCoreLibrary().getArrayClass(), Arrays.copyOfRange(store, 0 , numShift), numShift);
+                final int[] filler = new int[numShift];
+                System.arraycopy(store, numShift, store, 0 , array.getSize() - numShift);
+                System.arraycopy(filler, 0, store, array.getSize() - numShift, numShift);
+                array.setStore(store, array.getSize() - numShift);
+                return result;
+            }
+        }
+
+        @Specialization(contains = "popIntegerFixnumInBoundsWithNum", guards = "isIntegerFixnum")
+        public Object popIntegerFixnumWithNum(VirtualFrame frame, RubyArray array, int num) {
+            if (num < 0) {
+                CompilerDirectives.transferToInterpreter();
+                throw new RaiseException(getContext().getCoreLibrary().argumentError("negative array size", this));
+            }
+            if (CompilerDirectives.injectBranchProbability(CompilerDirectives.UNLIKELY_PROBABILITY, array.getSize() == 0)) {
+                return nil();
+            } else {
+                final int numShift = array.getSize() < num ? array.getSize() : num;
+                final int[] store = ((int[]) array.getStore());
+                final RubyArray result = new RubyArray(getContext().getCoreLibrary().getArrayClass(), Arrays.copyOfRange(store, 0 , numShift), numShift);
+                final int[] filler = new int[numShift];
+                System.arraycopy(store, numShift, store, 0 , array.getSize() - numShift);
+                System.arraycopy(filler, 0, store, array.getSize() - numShift, numShift);
+                array.setStore(store, array.getSize() - numShift);
+                return result;
+            }
+        }
+
+        @Specialization(guards = "isLongFixnum", rewriteOn = UnexpectedResultException.class)
+        public RubyArray shiftLongFixnumInBoundsWithNum(VirtualFrame frame, RubyArray array, int num) throws UnexpectedResultException {
+            if (num < 0) {
+                CompilerDirectives.transferToInterpreter();
+                throw new RaiseException(getContext().getCoreLibrary().argumentError("negative array size", this));
+            }
+            if (CompilerDirectives.injectBranchProbability(CompilerDirectives.UNLIKELY_PROBABILITY, array.getSize() == 0)) {
+                throw new UnexpectedResultException(nil());
+            } else {
+                final int numShift = array.getSize() < num ? array.getSize() : num;
+                final long[] store = ((long[]) array.getStore());
+                final RubyArray result = new RubyArray(getContext().getCoreLibrary().getArrayClass(), Arrays.copyOfRange(store, 0 , numShift), numShift);
+                final long[] filler = new long[numShift];
+                System.arraycopy(store, numShift, store, 0 , array.getSize() - numShift);
+                System.arraycopy(filler, 0, store, array.getSize() - numShift, numShift);
+                array.setStore(store, array.getSize() - numShift);
+                return result;
+            }
+        }
+
+        @Specialization(contains = "shiftLongFixnumInBoundsWithNum", guards = "isLongFixnum")
+        public Object shiftLongFixnumWithNum(VirtualFrame frame, RubyArray array, int num) {
+            if (num < 0) {
+                CompilerDirectives.transferToInterpreter();
+                throw new RaiseException(getContext().getCoreLibrary().argumentError("negative array size", this));
+            }
+            if (CompilerDirectives.injectBranchProbability(CompilerDirectives.UNLIKELY_PROBABILITY, array.getSize() == 0)) {
+                return nil();
+            } else {
+                final int numShift = array.getSize() < num ? array.getSize() : num;
+                final long[] store = ((long[]) array.getStore());
+                final RubyArray result = new RubyArray(getContext().getCoreLibrary().getArrayClass(), Arrays.copyOfRange(store, 0 , numShift), numShift);
+                final long[] filler = new long[numShift];
+                System.arraycopy(store, numShift, store, 0 , array.getSize() - numShift);
+                System.arraycopy(filler, 0, store, array.getSize() - numShift, numShift);
+                array.setStore(store, array.getSize() - numShift);
+                return result;
+            }
+        }
+
+        @Specialization(guards = "isFloat", rewriteOn = UnexpectedResultException.class)
+        public RubyArray shiftFloatInBoundsWithNum(VirtualFrame frame, RubyArray array, int num) throws UnexpectedResultException {
+            if (num < 0) {
+                CompilerDirectives.transferToInterpreter();
+                throw new RaiseException(getContext().getCoreLibrary().argumentError("negative array size", this));
+            }
+            if (CompilerDirectives.injectBranchProbability(CompilerDirectives.UNLIKELY_PROBABILITY, array.getSize() == 0)) {
+                throw new UnexpectedResultException(nil());
+            } else {
+                final int numShift = array.getSize() < num ? array.getSize() : num;
+                final double[] store = ((double[]) array.getStore());
+                final RubyArray result = new RubyArray(getContext().getCoreLibrary().getArrayClass(), Arrays.copyOfRange(store, 0, numShift), numShift);
+                final double[] filler = new double[numShift];
+                System.arraycopy(store, numShift, store, 0, array.getSize() - numShift);
+                System.arraycopy(filler, 0, store, array.getSize() - numShift, numShift);
+                array.setStore(store, array.getSize() - numShift);
+                return result;
+            }
+        }
+
+        @Specialization(contains = "shiftFloatInBoundsWithNum", guards = "isFloat")
+        public Object shiftFloatWithNum(VirtualFrame frame, RubyArray array, int num) {
+            if (num < 0) {
+                CompilerDirectives.transferToInterpreter();
+                throw new RaiseException(getContext().getCoreLibrary().argumentError("negative array size", this));
+            }
+            if (CompilerDirectives.injectBranchProbability(CompilerDirectives.UNLIKELY_PROBABILITY, array.getSize() == 0)) {
+                return nil();
+            } else {
+                final int numShift = array.getSize() < num ? array.getSize() : num;
+                final double[] store = ((double[]) array.getStore());
+                final RubyArray result = new RubyArray(getContext().getCoreLibrary().getArrayClass(), Arrays.copyOfRange(store, 0, numShift), numShift);
+                final double[] filler = new double[numShift];
+                System.arraycopy(store, numShift, store, 0, array.getSize() - numShift);
+                System.arraycopy(filler, 0, store, array.getSize() - numShift, numShift);
+                array.setStore(store, array.getSize() - numShift);
+                return result;
+            }
+        }
+
+        @Specialization(guards = "isObject")
+        public Object shiftObjectWithNum(VirtualFrame frame, RubyArray array, int num) {
+            if (num < 0) {
+                CompilerDirectives.transferToInterpreter();
+                throw new RaiseException(getContext().getCoreLibrary().argumentError("negative array size", this));
+            }
+            if (CompilerDirectives.injectBranchProbability(CompilerDirectives.UNLIKELY_PROBABILITY, array.getSize() == 0)) {
+                return nil();
+            } else {
+                final int numShift = array.getSize() < num ? array.getSize() : num;
+                final Object[] store = ((Object[]) array.getStore());
+                final RubyArray result = new RubyArray(getContext().getCoreLibrary().getArrayClass(), Arrays.copyOfRange(store, 0, numShift), numShift);
+                final Object[] filler = new Object[numShift];
+                System.arraycopy(store, numShift, store, 0, array.getSize() - numShift);
+                System.arraycopy(filler, 0, store, array.getSize() - numShift, numShift);
+                array.setStore(store, array.getSize() - numShift);
+                return result;
+            }
+        }
+
+        @Specialization(guards = {"isIntegerFixnum","!isInteger(arguments[1])","!isUndefinedPlaceholder(arguments[1])"}, rewriteOn = UnexpectedResultException.class)
+        public RubyArray shiftIntegerFixnumInBoundsWithNumObj(VirtualFrame frame, RubyArray array, Object object) throws UnexpectedResultException {
+            if (toIntNode == null) {
+                CompilerDirectives.transferToInterpreter();
+                toIntNode = insert(ToIntNodeFactory.create(getContext(), getSourceSection(), null));
+            }
+            final int num = toIntNode.executeIntegerFixnum(frame, object);
+            if (num < 0) {
+                CompilerDirectives.transferToInterpreter();
+                throw new RaiseException(getContext().getCoreLibrary().argumentError("negative array size", this));
+            }
+            if (CompilerDirectives.injectBranchProbability(CompilerDirectives.UNLIKELY_PROBABILITY, array.getSize() == 0)) {
+                throw new UnexpectedResultException(nil());
+            } else {
+                final int numShift = array.getSize() < num ? array.getSize() : num;
+                final int[] store = ((int[]) array.getStore());
+                final RubyArray result = new RubyArray(getContext().getCoreLibrary().getArrayClass(), Arrays.copyOfRange(store, 0 , numShift), numShift);
+                final int[] filler = new int[numShift];
+                System.arraycopy(store, numShift, store, 0 , array.getSize() - numShift);
+                System.arraycopy(filler, 0, store, array.getSize() - numShift, numShift);
+                array.setStore(store, array.getSize() - numShift);
+                return result;
+            }
+        }
+
+        @Specialization(contains = "shiftIntegerFixnumInBoundsWithNumObj", guards = {"isIntegerFixnum","!isInteger(arguments[1])","!isUndefinedPlaceholder(arguments[1])"} )
+        public Object shiftIntegerFixnumWithNumObj(VirtualFrame frame, RubyArray array, Object object) {
+            if (toIntNode == null) {
+                CompilerDirectives.transferToInterpreter();
+                toIntNode = insert(ToIntNodeFactory.create(getContext(), getSourceSection(), null));
+            }
+            final int num = toIntNode.executeIntegerFixnum(frame, object);
+            if (num < 0) {
+                CompilerDirectives.transferToInterpreter();
+                throw new RaiseException(getContext().getCoreLibrary().argumentError("negative array size", this));
+            }
+            if (CompilerDirectives.injectBranchProbability(CompilerDirectives.UNLIKELY_PROBABILITY, array.getSize() == 0)) {
+                return nil();
+            } else {
+                final int numShift = array.getSize() < num ? array.getSize() : num;
+                final int[] store = ((int[]) array.getStore());
+                final RubyArray result = new RubyArray(getContext().getCoreLibrary().getArrayClass(), Arrays.copyOfRange(store, 0 , numShift), numShift);
+                final int[] filler = new int[numShift];
+                System.arraycopy(store, numShift, store, 0 , array.getSize() - numShift);
+                System.arraycopy(filler, 0, store, array.getSize() - numShift, numShift);
+                array.setStore(store, array.getSize() - numShift);
+                return result;
+            }
+        }
+
+        @Specialization(guards = {"isLongFixnum","!isInteger(arguments[1])","!isUndefinedPlaceholder(arguments[1])"} , rewriteOn = UnexpectedResultException.class)
+        public RubyArray shiftLongFixnumInBoundsWithNumObj(VirtualFrame frame, RubyArray array, Object object) throws UnexpectedResultException {
+            if (toIntNode == null) {
+                CompilerDirectives.transferToInterpreter();
+                toIntNode = insert(ToIntNodeFactory.create(getContext(), getSourceSection(), null));
+            }
+            final int num = toIntNode.executeIntegerFixnum(frame, object);
+            if (num < 0) {
+                CompilerDirectives.transferToInterpreter();
+                throw new RaiseException(getContext().getCoreLibrary().argumentError("negative array size", this));
+            }
+            if (CompilerDirectives.injectBranchProbability(CompilerDirectives.UNLIKELY_PROBABILITY, array.getSize() == 0)) {
+                throw new UnexpectedResultException(nil());
+            } else {
+                final int numShift = array.getSize() < num ? array.getSize() : num;
+                final long[] store = ((long[]) array.getStore());
+                final RubyArray result = new RubyArray(getContext().getCoreLibrary().getArrayClass(), Arrays.copyOfRange(store, 0 , numShift), numShift);
+                final long[] filler = new long[numShift];
+                System.arraycopy(store, numShift, store, 0 , array.getSize() - numShift);
+                System.arraycopy(filler, 0, store, array.getSize() - numShift, numShift);
+                array.setStore(store, array.getSize() - numShift);
+                return result;
+            }
+        }
+
+        @Specialization(contains = "shiftLongFixnumInBoundsWithNumObj", guards = {"isLongFixnum","!isInteger(arguments[1])","!isUndefinedPlaceholder(arguments[1])"})
+        public Object shiftLongFixnumWithNumObj(VirtualFrame frame, RubyArray array, Object object) {
+            if (toIntNode == null) {
+                CompilerDirectives.transferToInterpreter();
+                toIntNode = insert(ToIntNodeFactory.create(getContext(), getSourceSection(), null));
+            }
+            final int num = toIntNode.executeIntegerFixnum(frame, object);
+            if (num < 0) {
+                CompilerDirectives.transferToInterpreter();
+                throw new RaiseException(getContext().getCoreLibrary().argumentError("negative array size", this));
+            }
+            if (CompilerDirectives.injectBranchProbability(CompilerDirectives.UNLIKELY_PROBABILITY, array.getSize() == 0)) {
+                return nil();
+            } else {
+                final int numShift = array.getSize() < num ? array.getSize() : num;
+                final long[] store = ((long[]) array.getStore());
+                final RubyArray result = new RubyArray(getContext().getCoreLibrary().getArrayClass(), Arrays.copyOfRange(store, 0 , numShift), numShift);
+                final long[] filler = new long[numShift];
+                System.arraycopy(store, numShift, store, 0 , array.getSize() - numShift);
+                System.arraycopy(filler, 0, store, array.getSize() - numShift, numShift);
+                array.setStore(store, array.getSize() - numShift);
+                return result;          }
+        }
+
+        @Specialization(guards = {"isFloat","!isInteger(arguments[1])","!isUndefinedPlaceholder(arguments[1])"}, rewriteOn = UnexpectedResultException.class)
+        public RubyArray shiftFloatInBoundsWithNumObj(VirtualFrame frame, RubyArray array, Object object) throws UnexpectedResultException {
+            if (toIntNode == null) {
+                CompilerDirectives.transferToInterpreter();
+                toIntNode = insert(ToIntNodeFactory.create(getContext(), getSourceSection(), null));
+            }
+            final int num = toIntNode.executeIntegerFixnum(frame, object);
+            if (num < 0) {
+                CompilerDirectives.transferToInterpreter();
+                throw new RaiseException(getContext().getCoreLibrary().argumentError("negative array size", this));
+            }
+            if (CompilerDirectives.injectBranchProbability(CompilerDirectives.UNLIKELY_PROBABILITY, array.getSize() == 0)) {
+                throw new UnexpectedResultException(nil());
+            } else {
+                final int numShift = array.getSize() < num ? array.getSize() : num;
+                final double[] store = ((double[]) array.getStore());
+                final RubyArray result = new RubyArray(getContext().getCoreLibrary().getArrayClass(), Arrays.copyOfRange(store, 0, array.getSize() - numShift), numShift);
+                final double[] filler = new double[numShift];
+                System.arraycopy(store, numShift, store, 0, array.getSize() - numShift);
+                System.arraycopy(filler, 0, store, array.getSize() - numShift, numShift);
+                array.setStore(store, array.getSize() - numShift);
+                return result;
+            }
+        }
+
+        @Specialization(contains = "shiftFloatInBoundsWithNumObj", guards = {"isFloat","!isInteger(arguments[1])","!isUndefinedPlaceholder(arguments[1])"})
+        public Object shiftFloatWithNumObj(VirtualFrame frame, RubyArray array, Object object) {
+            if (toIntNode == null) {
+                CompilerDirectives.transferToInterpreter();
+                toIntNode = insert(ToIntNodeFactory.create(getContext(), getSourceSection(), null));
+            }
+            final int num = toIntNode.executeIntegerFixnum(frame, object);
+            if (num < 0) {
+                CompilerDirectives.transferToInterpreter();
+                throw new RaiseException(getContext().getCoreLibrary().argumentError("negative array size", this));
+            }
+            if (CompilerDirectives.injectBranchProbability(CompilerDirectives.UNLIKELY_PROBABILITY, array.getSize() == 0)) {
+                return nil();
+            } else {
+                final int numShift = array.getSize() < num ? array.getSize() : num;
+                final double[] store = ((double[]) array.getStore());
+                final RubyArray result = new RubyArray(getContext().getCoreLibrary().getArrayClass(), Arrays.copyOfRange(store, 0, array.getSize() - numShift), numShift);
+                final double[] filler = new double[numShift];
+                System.arraycopy(store, numShift, store, 0, array.getSize() - numShift);
+                System.arraycopy(filler, 0, store, array.getSize() - numShift, numShift);
+                array.setStore(store, array.getSize() - numShift);
+                return result;
+            }
+        }
+
+        @Specialization(guards = {"isObject","!isInteger(arguments[1])","!isUndefinedPlaceholder(arguments[1])"})
+        public Object shiftObjectWithNumObj(VirtualFrame frame, RubyArray array, Object object) {
+            if (toIntNode == null) {
+                CompilerDirectives.transferToInterpreter();
+                toIntNode = insert(ToIntNodeFactory.create(getContext(), getSourceSection(), null));
+            }
+            final int num = toIntNode.executeIntegerFixnum(frame, object);
+            if (num < 0) {
+                CompilerDirectives.transferToInterpreter();
+                throw new RaiseException(getContext().getCoreLibrary().argumentError("negative array size", this));
+            }
+            if (CompilerDirectives.injectBranchProbability(CompilerDirectives.UNLIKELY_PROBABILITY, array.getSize() == 0)) {
+                return nil();
+            } else {
+                final int numShift = array.getSize() < num ? array.getSize() : num;
+                final Object[] store = ((Object[]) array.getStore());
+                final RubyArray result = new RubyArray(getContext().getCoreLibrary().getArrayClass(), Arrays.copyOfRange(store, 0, array.getSize() - numShift), numShift);
+                final Object[] filler = new Object[numShift];
+                System.arraycopy(store, numShift, store, 0, array.getSize() - numShift);
+                System.arraycopy(filler, 0, store, array.getSize() - numShift, numShift);
+                array.setStore(store, array.getSize() - numShift);
+                return result;
+            }
+        }
     }
 
     @CoreMethod(names = {"size", "length"})
