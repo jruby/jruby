@@ -2350,32 +2350,6 @@ public abstract class StringNodes {
         }
     }
 
-    @CoreMethod(names = "chr")
-    public abstract static class ChrNode extends CoreMethodNode {
-
-        public ChrNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
-        public ChrNode(ChrNode prev) {
-            super(prev);
-        }
-
-        @Specialization
-        public RubyString chr(RubyString string) {
-            notDesignedForCompilation();
-            if (string.toString().isEmpty()) {
-                return string;
-            } else {
-                String head = string.toString().substring(0, 1);
-                ByteList byteString = ByteList.create(head);
-                byteString.setEncoding(string.getBytes().getEncoding());
-
-                return string.getContext().makeString(byteString);
-            }
-        }
-    }
-
     public static class StringNodesHelper {
 
         @TruffleBoundary

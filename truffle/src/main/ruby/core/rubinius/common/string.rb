@@ -202,6 +202,10 @@ class String
     to_inum(base, false)
   end
 
+  def chr
+    substring 0, 1
+  end
+
   def each_line(sep=$/)
     return to_enum(:each_line, sep) unless block_given?
 
