@@ -5935,7 +5935,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
             }
 
             while (p < e) {
-                int ret = enc.length(pBytes, p, e);
+                int ret = StringSupport.preciseLength(enc, pBytes, p, e);
                 if (MBCLEN_NEEDMORE_P(ret)) {
                     break;
                 }
