@@ -49,11 +49,15 @@ public class RubyBasicObject {
     @CompilationFinal protected RubyClass metaClass;
 
     public RubyBasicObject(RubyClass rubyClass) {
-        this(rubyClass, rubyClass.getContext());
+        this(rubyClass, LAYOUT.newInstance(rubyClass.getContext().getEmptyShape()));
     }
 
-    public RubyBasicObject(RubyClass rubyClass, RubyContext context) {
-        dynamicObject = LAYOUT.newInstance(context.getEmptyShape());
+    public RubyBasicObject(RubyClass rubyClass, DynamicObject dynamicObject) {
+        this(rubyClass.getContext(), rubyClass, dynamicObject);
+    }
+
+    public RubyBasicObject(RubyContext context, RubyClass rubyClass, DynamicObject dynamicObject) {
+        this.dynamicObject = dynamicObject;
 
         if (rubyClass != null) {
             unsafeSetLogicalClass(rubyClass);

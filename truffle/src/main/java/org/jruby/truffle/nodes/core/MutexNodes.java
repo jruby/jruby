@@ -9,14 +9,21 @@
  */
 package org.jruby.truffle.nodes.core;
 
+import java.util.EnumSet;
 import java.util.concurrent.locks.ReentrantLock;
 
+import com.oracle.truffle.api.nodes.Node;
+import com.oracle.truffle.api.object.DynamicObjectFactory;
 import com.oracle.truffle.api.object.HiddenKey;
-import org.jruby.truffle.nodes.objectstorage.ReadHeadObjectFieldNode;
-import org.jruby.truffle.nodes.objectstorage.WriteHeadObjectFieldNode;
+import com.oracle.truffle.api.object.LocationModifier;
+import com.oracle.truffle.api.object.Property;
+import com.oracle.truffle.api.object.Shape;
+
+import org.jruby.truffle.nodes.objects.Allocator;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
+import org.jruby.truffle.runtime.core.RubyClass;
 import org.jruby.truffle.runtime.core.RubyThread;
 import org.jruby.truffle.runtime.subsystems.ThreadManager.BlockingActionWithoutGlobalLock;
 
@@ -28,48 +35,45 @@ import com.oracle.truffle.api.source.SourceSection;
 public abstract class MutexNodes {
 
     private static final HiddenKey LOCK_IDENTIFIER = new HiddenKey("lock");
+    private static final Property LOCK_PROPERTY;
 
-    @CoreMethod(names = "initialize")
-    public abstract static class InitializeNode extends UnaryCoreMethodNode {
+    static {
+        Shape.Allocator allocator = RubyBasicObject.LAYOUT.createAllocator();
+        LOCK_PROPERTY = Property.create(LOCK_IDENTIFIER, allocator.locationForType(ReentrantLock.class, EnumSet.of(LocationModifier.Final, LocationModifier.NonNull)), 0);
+    }
 
-        @Child private WriteHeadObjectFieldNode writeLock;
+    public static Allocator createMutexAllocator(Shape emptyShape) {
+        Shape shape = emptyShape.addProperty(LOCK_PROPERTY);
+        final DynamicObjectFactory factory = shape.createFactory();
 
-        public InitializeNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-            writeLock = new WriteHeadObjectFieldNode(LOCK_IDENTIFIER);
-        }
+        return new Allocator() {
+            @Override
+            public RubyBasicObject allocate(RubyContext context, RubyClass rubyClass, Node currentNode) {
+                return new RubyBasicObject(rubyClass, factory.newInstance(new ReentrantLock()));
+            }
+        };
+    }
 
-        public InitializeNode(InitializeNode prev) {
-            super(prev);
-            writeLock = prev.writeLock;
-        }
-
-        @Specialization
-        public RubyBasicObject lock(RubyBasicObject mutex) {
-            writeLock.execute(mutex, new ReentrantLock());
-            return mutex;
-        }
-
+    protected static ReentrantLock getLock(RubyBasicObject mutex) {
+        // mutex has the proper shape since Ruby disallow calling Mutex methods on non-Mutex instances.
+        assert mutex.getDynamicObject().getShape().hasProperty(LOCK_IDENTIFIER);
+        return (ReentrantLock) LOCK_PROPERTY.get(mutex.getDynamicObject(), true);
     }
 
     @CoreMethod(names = "lock")
     public abstract static class LockNode extends UnaryCoreMethodNode {
 
-        @Child private ReadHeadObjectFieldNode readLock;
-
         public LockNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            readLock = new ReadHeadObjectFieldNode(LOCK_IDENTIFIER);
         }
 
         public LockNode(LockNode prev) {
             super(prev);
-            readLock = prev.readLock;
         }
 
         @Specialization
         public RubyBasicObject lock(RubyBasicObject mutex) {
-            final ReentrantLock lock = (ReentrantLock) readLock.execute(mutex);
+            final ReentrantLock lock = getLock(mutex);
 
             if (lock.isHeldByCurrentThread()) {
                 CompilerDirectives.transferToInterpreter();
@@ -95,22 +99,17 @@ public abstract class MutexNodes {
     @CoreMethod(names = "locked?")
     public abstract static class IsLockedNode extends UnaryCoreMethodNode {
 
-        @Child private ReadHeadObjectFieldNode readLock;
-
         public IsLockedNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            readLock = new ReadHeadObjectFieldNode(LOCK_IDENTIFIER);
         }
 
         public IsLockedNode(IsLockedNode prev) {
             super(prev);
-            readLock = prev.readLock;
         }
 
         @Specialization
         public boolean isLocked(RubyBasicObject mutex) {
-            final ReentrantLock lock = (ReentrantLock) readLock.execute(mutex);
-            return lock.isLocked();
+            return getLock(mutex).isLocked();
         }
 
     }
@@ -118,22 +117,17 @@ public abstract class MutexNodes {
     @CoreMethod(names = "owned?")
     public abstract static class IsOwnedNode extends UnaryCoreMethodNode {
 
-        @Child private ReadHeadObjectFieldNode readLock;
-
         public IsOwnedNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            readLock = new ReadHeadObjectFieldNode(LOCK_IDENTIFIER);
         }
 
         public IsOwnedNode(IsOwnedNode prev) {
             super(prev);
-            readLock = prev.readLock;
         }
 
         @Specialization
         public boolean isOwned(RubyBasicObject mutex) {
-            final ReentrantLock lock = (ReentrantLock) readLock.execute(mutex);
-            return lock.isHeldByCurrentThread();
+            return getLock(mutex).isHeldByCurrentThread();
         }
 
     }
@@ -141,21 +135,17 @@ public abstract class MutexNodes {
     @CoreMethod(names = "try_lock")
     public abstract static class TryLockNode extends UnaryCoreMethodNode {
 
-        @Child private ReadHeadObjectFieldNode readLock;
-
         public TryLockNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            readLock = new ReadHeadObjectFieldNode(LOCK_IDENTIFIER);
         }
 
         public TryLockNode(TryLockNode prev) {
             super(prev);
-            readLock = prev.readLock;
         }
 
         @Specialization
         public boolean tryLock(RubyBasicObject mutex) {
-            final ReentrantLock lock = (ReentrantLock) readLock.execute(mutex);
+            final ReentrantLock lock = getLock(mutex);
 
             if (lock.isHeldByCurrentThread()) {
                 return false;
@@ -175,21 +165,17 @@ public abstract class MutexNodes {
     @CoreMethod(names = "unlock")
     public abstract static class UnlockNode extends UnaryCoreMethodNode {
 
-        @Child private ReadHeadObjectFieldNode readLock;
-
         public UnlockNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            readLock = new ReadHeadObjectFieldNode(LOCK_IDENTIFIER);
         }
 
         public UnlockNode(UnlockNode prev) {
             super(prev);
-            readLock = prev.readLock;
         }
 
         @Specialization
         public RubyBasicObject unlock(RubyBasicObject mutex) {
-            final ReentrantLock lock = (ReentrantLock) readLock.execute(mutex);
+            final ReentrantLock lock = getLock(mutex);
 
             final RubyThread thread = getContext().getThreadManager().getCurrentThread();
 

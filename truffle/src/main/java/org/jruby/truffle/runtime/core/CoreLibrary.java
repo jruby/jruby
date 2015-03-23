@@ -21,6 +21,7 @@ import org.jruby.runtime.encoding.EncodingService;
 import org.jruby.runtime.load.LoadServiceResource;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.core.ArrayNodes;
+import org.jruby.truffle.nodes.core.MutexNodes;
 import org.jruby.truffle.nodes.core.ProcessNodes;
 import org.jruby.truffle.nodes.methods.SetMethodDeclarationContext;
 import org.jruby.truffle.nodes.objects.Allocator;
@@ -272,7 +273,7 @@ public class CoreLibrary {
         hashClass = defineClass("Hash", new RubyHash.HashAllocator());
         matchDataClass = defineClass("MatchData");
         methodClass = defineClass("Method");
-        defineClass("Mutex");
+        defineClass("Mutex", MutexNodes.createMutexAllocator(context.getEmptyShape()));
         nilClass = defineClass("NilClass");
         procClass = defineClass("Proc", new RubyProc.ProcAllocator());
         processModule = defineModule("Process");
@@ -1167,5 +1168,4 @@ public class CoreLibrary {
     public RubySymbol getMapSymbol() {
         return mapSymbol;
     }
-
 }
