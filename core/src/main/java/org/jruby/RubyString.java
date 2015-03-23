@@ -4921,7 +4921,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
             }
         } else {
             int clen, tlen, max = (int)(value.realSize() * 1.2);
-            byte[]buf = new byte[max];
+            byte[] buf = new byte[max];
             int t = 0;
 
             while (s < send) {
@@ -4960,12 +4960,13 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
                     max <<= 1;
                     buf = Arrays.copyOf(buf, max);
                 }
-                if (s != t) {
+                // headius: I don't see how s and t could ever be the same, since they refer to different buffers
+//                if (s != t) {
                     enc.codeToMbc(c, buf, t);
                     if (mayModify && ByteList.memcmp(sbytes, s, buf, t, tlen) != 0) {
                         modify = true;
                     }
-                }
+//                }
 
                 if (cr == CR_7BIT && !Encoding.isAscii(c)) cr = CR_VALID;
                 s += clen;
