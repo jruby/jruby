@@ -926,6 +926,15 @@ class Array
     return count == size ? result : result[0, count]
   end
 
+  def select!(&block)
+    return to_enum :select! unless block_given?
+
+    Rubinius.check_frozen
+
+    ary = select(&block)
+    replace ary unless size == ary.size
+  end
+
   def find_index(obj=undefined)
     super
   end
