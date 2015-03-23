@@ -1595,7 +1595,11 @@ public abstract class StringNodes {
     }
 
     @CoreMethod(names = "replace", required = 1, raiseIfFrozenSelf = true, taintFromParameters = 0)
-    public abstract static class ReplaceNode extends CoreMethodNode {
+    @NodeChildren({
+        @NodeChild(value = "string"),
+        @NodeChild(value = "other")
+    })
+    public abstract static class ReplaceNode extends RubyNode {
 
         public ReplaceNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -1605,15 +1609,18 @@ public abstract class StringNodes {
             super(prev);
         }
 
+        @CreateCast("other") public RubyNode coerceOtherToString(RubyNode other) {
+            return ToStrNodeFactory.create(getContext(), getSourceSection(), other);
+        }
+
         @Specialization
         public RubyString replace(RubyString string, RubyString other) {
-            notDesignedForCompilation();
-
             if (string == other) {
                 return string;
             }
 
             string.getByteList().replace(other.getByteList().bytes());
+            string.getByteList().setEncoding(other.getByteList().getEncoding());
             string.setCodeRange(other.getCodeRange());
 
             return string;
