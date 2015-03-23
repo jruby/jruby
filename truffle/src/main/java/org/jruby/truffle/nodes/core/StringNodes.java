@@ -53,6 +53,7 @@ import org.jruby.truffle.nodes.coerce.ToIntNodeFactory;
 import org.jruby.truffle.nodes.coerce.ToStrNode;
 import org.jruby.truffle.nodes.coerce.ToStrNodeFactory;
 import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
+import org.jruby.truffle.nodes.dispatch.DispatchHeadNode;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.nodes.objects.IsFrozenNode;
 import org.jruby.truffle.nodes.objects.IsFrozenNodeFactory;
@@ -1423,61 +1424,56 @@ public abstract class StringNodes {
 
     }
 
-    @CoreMethod(names = "insert", required = 2, lowerFixnumParameters = 0, raiseIfFrozenSelf = true, taintFromParameters = 1)
-    public abstract static class InsertNode extends CoreMethodNode {
+    @CoreMethod(names = "insert", required = 2, lowerFixnumParameters = 0, raiseIfFrozenSelf = true)
+    @NodeChildren({
+        @NodeChild(value = "string"),
+        @NodeChild(value = "index"),
+        @NodeChild(value = "otherString")
+    })
+    public abstract static class InsertNode extends RubyNode {
 
-        @Child private ConcatNode concatNode;
-        @Child private GetIndexNode getIndexNode;
+        @Child private CallDispatchHeadNode concatNode;
+        @Child private TaintResultNode taintResultNode;
 
         public InsertNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            concatNode = StringNodesFactory.ConcatNodeFactory.create(context, sourceSection, null, null);
-            getIndexNode = StringNodesFactory.GetIndexNodeFactory.create(context, sourceSection, new RubyNode[]{});
+            concatNode = DispatchHeadNodeFactory.createMethodCall(context);
+            taintResultNode = new TaintResultNode(context, sourceSection, false, new int[] {});
         }
 
         public InsertNode(InsertNode prev) {
             super(prev);
             concatNode = prev.concatNode;
-            getIndexNode = prev.getIndexNode;
+            taintResultNode = prev.taintResultNode;
+        }
+
+        @CreateCast("index") public RubyNode coerceIndexToInt(RubyNode index) {
+            return ToIntNodeFactory.create(getContext(), getSourceSection(), index);
+        }
+
+        @CreateCast("otherString") public RubyNode coerceOtherToString(RubyNode other) {
+            return ToStrNodeFactory.create(getContext(), getSourceSection(), other);
         }
 
         @Specialization
-        public RubyString insert(VirtualFrame frame, RubyString string, int index, RubyString otherString) {
-            notDesignedForCompilation();
-
+        public Object insert(VirtualFrame frame, RubyString string, int index, RubyString otherString) {
             if (index == -1) {
-                concatNode.concat(string, otherString);
-
-                return string;
+                return concatNode.call(frame, string, "<<", null, otherString);
 
             } else if (index < 0) {
                 // Incrementing first seems weird, but MRI does it and it's significant because it uses the modified
                 // index value in its error messages.  This seems wrong, but we should be compatible.
                 index++;
-
-                if (-index > string.length()) {
-                    CompilerDirectives.transferToInterpreter();
-
-                    throw new RaiseException(getContext().getCoreLibrary().indexError(String.format("index %d out of string", index), this));
-                }
-
-                index = index + string.length();
-
-            } else if (index > string.length()) {
-                CompilerDirectives.transferToInterpreter();
-
-                throw new RaiseException(getContext().getCoreLibrary().indexError(String.format("index %d out of string", index), this));
             }
 
-            // TODO (Kevin): using node directly and cast
-            RubyString firstPart = (RubyString) getIndexNode.slice(frame, string, 0, index);
-            RubyString secondPart = (RubyString) getIndexNode.slice(frame, string, index, string.length());
+            replaceInternal(string, StringNodesHelper.checkIndex(string, index, this), 0, otherString);
 
-            RubyString concatenated = concatNode.concat(concatNode.concat(firstPart, otherString), secondPart);
+            return taintResultNode.maybeTaint(otherString, string);
+        }
 
-            string.set(concatenated.getBytes());
-
-            return string;
+        @TruffleBoundary
+        private void replaceInternal(RubyString string, int start, int length, RubyString replacement) {
+            StringSupport.replaceInternal19(start, length, string, replacement);
         }
     }
 
@@ -2414,6 +2410,28 @@ public abstract class StringNodes {
             byteListString.setEncoding(string.getBytes().getEncoding());
 
             return byteListString;
+        }
+
+        public static int checkIndex(RubyString string, int index, RubyNode node) {
+            if (index > string.length()) {
+                CompilerDirectives.transferToInterpreter();
+
+                throw new RaiseException(
+                        node.getContext().getCoreLibrary().indexError(String.format("index %d out of string", index), node));
+            }
+
+            if (index < 0) {
+                if (-index > string.length()) {
+                    CompilerDirectives.transferToInterpreter();
+
+                    throw new RaiseException(
+                            node.getContext().getCoreLibrary().indexError(String.format("index %d out of string", index), node));
+                }
+
+                index += string.length();
+            }
+
+            return index;
         }
     }
 
