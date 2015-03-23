@@ -27,7 +27,7 @@ public final class StaticMethodInvoker extends MethodInvoker {
         final Object[] convertedArgs;
         JavaMethod method = (JavaMethod)findCallable(self, name, args, len);
         if (method.isVarArgs()) {
-            len = method.getParameterTypes().length - 1;
+            len = method.getArity() - 1;
             convertedArgs = new Object[len + 1];
             for (int i = 0; i < len && i < args.length; i++) {
                 convertedArgs[i] = convertArg(args[i], method, i);
@@ -96,9 +96,8 @@ public final class StaticMethodInvoker extends MethodInvoker {
             }
 
             return method.invokeStaticDirect(convertedArgs);
-        } else {
-            return call(context, self, clazz, name, args);
         }
+        return call(context, self, clazz, name, args);
     }
 
     @Override
@@ -109,9 +108,8 @@ public final class StaticMethodInvoker extends MethodInvoker {
             Object cArg0 = convertArg(proc, method, 0);
 
             return method.invokeStaticDirect(cArg0);
-        } else {
-            return call(context, self, clazz, name);
         }
+        return call(context, self, clazz, name);
     }
 
     @Override
@@ -123,9 +121,8 @@ public final class StaticMethodInvoker extends MethodInvoker {
             Object cArg1 = convertArg(proc, method, 1);
 
             return method.invokeStaticDirect(cArg0, cArg1);
-        } else {
-            return call(context, self, clazz, name, arg0);
         }
+        return call(context, self, clazz, name, arg0);
     }
 
     @Override
@@ -138,9 +135,8 @@ public final class StaticMethodInvoker extends MethodInvoker {
             Object cArg2 = convertArg(proc, method, 2);
 
             return method.invokeStaticDirect(cArg0, cArg1, cArg2);
-        } else {
-            return call(context, self, clazz, name, arg0, arg1);
         }
+        return call(context, self, clazz, name, arg0, arg1);
     }
 
     @Override
@@ -154,8 +150,7 @@ public final class StaticMethodInvoker extends MethodInvoker {
             Object cArg3 = convertArg(proc, method, 3);
 
             return method.invokeStaticDirect(cArg0, cArg1, cArg2, cArg3);
-        } else {
-            return call(context, self, clazz, name, arg0, arg1, arg2);
         }
+        return call(context, self, clazz, name, arg0, arg1, arg2);
     }
 }

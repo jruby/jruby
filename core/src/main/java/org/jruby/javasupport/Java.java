@@ -764,7 +764,7 @@ public class Java implements Library {
                 ArrayList<JavaProxyConstructor> forArity = new ArrayList<JavaProxyConstructor>(constructors.size());
                 for ( int i = 0; i < constructors.size(); i++ ) {
                     JavaProxyConstructor constructor = (JavaProxyConstructor) constructors.eltInternal(i);
-                    if ( constructor.getParameterTypes().length == argsLength ) forArity.add(constructor);
+                    if ( constructor.getArity() == argsLength ) forArity.add(constructor);
                 }
 
                 if ( forArity.size() == 0 ) {

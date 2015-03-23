@@ -59,7 +59,7 @@ public final class ConstructorInvoker extends RubyToJavaInvoker {
         final Object[] convertedArgs;
         JavaConstructor constructor = (JavaConstructor) findCallable(self, name, args, len);
         if (constructor.isVarArgs()) {
-            len = constructor.getParameterTypes().length - 1;
+            len = constructor.getArity() - 1;
             convertedArgs = new Object[len + 1];
             for (int i = 0; i < len && i < args.length; i++) {
                 convertedArgs[i] = convertArg(args[i], constructor, i);

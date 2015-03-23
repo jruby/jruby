@@ -31,7 +31,7 @@ public final class SingletonMethodInvoker extends MethodInvoker {
         final Object[] convertedArgs;
         JavaMethod method = (JavaMethod)findCallable(self, name, args, len);
         if (method.isVarArgs()) {
-            len = method.getParameterTypes().length - 1;
+            len = method.getArity() - 1;
             convertedArgs = new Object[len + 1];
             for (int i = 0; i < len && i < args.length; i++) {
                 convertedArgs[i] = convertArg(args[i], method, i);
