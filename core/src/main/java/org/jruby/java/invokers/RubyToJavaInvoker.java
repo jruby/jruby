@@ -6,7 +6,7 @@ import java.lang.reflect.Member;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.ArrayList;
-import java.util.Arrays;
+
 import org.jruby.Ruby;
 import org.jruby.RubyModule;
 import org.jruby.exceptions.RaiseException;
@@ -203,13 +203,6 @@ public abstract class RubyToJavaInvoker extends JavaMethod {
         }
     }
 
-    private RaiseException noMatchingCallableError(String name, IRubyObject proxy, Object... args) {
-        final int len = args.length;
-        final Class[] argTypes = new Class[len];
-        for ( int i = 0; i < len; i++ ) argTypes[i] = args[i].getClass();
-        return runtime.newArgumentError("no " + name + " with arguments matching " + Arrays.toString(argTypes) + " on object " + proxy.getMetaClass());
-    }
-
     protected JavaCallable findCallable(IRubyObject self, String name, IRubyObject[] args, final int arity) {
         JavaCallable callable = this.javaCallable;
         if ( callable == null ) {
@@ -223,7 +216,7 @@ public abstract class RubyToJavaInvoker extends JavaMethod {
             callable = CallableSelector.matchingCallableArityN(runtime, cache, callablesForArity, args);
             if ( callable == null ) {
                 if ( ( callable = matchVarArgsCallableArityN(self, args) ) == null ) {
-                    throw newNameErrorDueArgumentTypeMismatch(runtime, self, callablesForArity, args);
+                    throw newErrorDueArgumentTypeMismatch(self, callablesForArity, args);
                 }
             }
         }
@@ -238,7 +231,7 @@ public abstract class RubyToJavaInvoker extends JavaMethod {
         if ( varArgsCallables != null ) {
             JavaCallable callable = CallableSelector.matchingCallableArityN(runtime, cache, varArgsCallables, args);
             if ( callable == null ) {
-                throw newNameErrorDueArgumentTypeMismatch(runtime, self, varArgsCallables, args);
+                throw newErrorDueArgumentTypeMismatch(self, varArgsCallables, args);
             }
             return callable;
         }
@@ -251,7 +244,7 @@ public abstract class RubyToJavaInvoker extends JavaMethod {
             // TODO: varargs?
             final JavaCallable[] callablesForArity;
             if ( javaCallables.length == 0 || (callablesForArity = javaCallables[0]) == null ) {
-                throw noMatchingCallableError(name, self);
+                throw newErrorDueNoMatchingCallable(self, name);
             }
             callable = callablesForArity[0];
         }
@@ -271,7 +264,7 @@ public abstract class RubyToJavaInvoker extends JavaMethod {
             }
             callable = CallableSelector.matchingCallableArityOne(runtime, cache, callablesForArity, arg0);
             if ( callable == null ) {
-                throw newNameErrorDueArgumentTypeMismatch(runtime, self, callablesForArity, arg0);
+                throw newErrorDueArgumentTypeMismatch(self, callablesForArity, arg0);
             }
         }
         else {
@@ -290,7 +283,7 @@ public abstract class RubyToJavaInvoker extends JavaMethod {
             }
             callable = CallableSelector.matchingCallableArityTwo(runtime, cache, callablesForArity, arg0, arg1);
             if ( callable == null ) {
-                throw newNameErrorDueArgumentTypeMismatch(runtime, self, callablesForArity, arg0, arg1);
+                throw newErrorDueArgumentTypeMismatch(self, callablesForArity, arg0, arg1);
             }
         }
         else {
@@ -309,7 +302,7 @@ public abstract class RubyToJavaInvoker extends JavaMethod {
             }
             callable = CallableSelector.matchingCallableArityThree(runtime, cache, callablesForArity, arg0, arg1, arg2);
             if ( callable == null ) {
-                throw newNameErrorDueArgumentTypeMismatch(runtime, self, callablesForArity, arg0, arg1, arg2);
+                throw newErrorDueArgumentTypeMismatch(self, callablesForArity, arg0, arg1, arg2);
             }
         }
         else {
@@ -328,7 +321,7 @@ public abstract class RubyToJavaInvoker extends JavaMethod {
             }
             callable = CallableSelector.matchingCallableArityFour(runtime, cache, callablesForArity, arg0, arg1, arg2, arg3);
             if ( callable == null ) {
-                throw newNameErrorDueArgumentTypeMismatch(runtime, self, callablesForArity, arg0, arg1, arg2, arg3);
+                throw newErrorDueArgumentTypeMismatch(self, callablesForArity, arg0, arg1, arg2, arg3);
             }
         }
         else {
@@ -342,37 +335,46 @@ public abstract class RubyToJavaInvoker extends JavaMethod {
         if ( arity != expected ) throw runtime.newArgumentError(expected, arity);
     }
 
-    static RaiseException newNameErrorDueArgumentTypeMismatch(final Ruby runtime,
-        final IRubyObject receiver, final JavaCallable[] methods, IRubyObject... args) {
+    private JavaCallable someCallable() {
+        if ( javaCallable == null ) {
+            for ( int i = 0; i < javaCallables.length; i++ ) {
+                JavaCallable[] callables = javaCallables[i];
+                if ( callables != null && callables.length > 0 ) {
+                    for ( int j = 0; j < callables.length; j++ ) {
+                        if ( callables[j] != null ) return callables[j];
+                    }
+                }
+            }
+            return null; // not expected to happen ...
+        }
+        return javaCallable;
+    }
+
+    private boolean isConstructor() {
+        return someCallable() instanceof JavaConstructor;
+    }
+
+    RaiseException newErrorDueArgumentTypeMismatch(final IRubyObject receiver,
+        final JavaCallable[] methods, IRubyObject... args) {
 
         final Class[] argTypes = new Class[args.length];
         for (int i = 0; i < args.length; i++) {
             argTypes[i] = getClass( args[i] );
         }
 
-        final boolean constructor = methods[0] instanceof JavaConstructor; // || methods[0] instanceof JavaProxyConstructor;
-
-        final StringBuilder error = new StringBuilder(32);
+        final StringBuilder error = new StringBuilder(64);
 
         error.append("no ");
-        if ( constructor ) {
-            error.append("constructor");
-        }
+        if ( isConstructor() ) error.append("constructor");
         else {
             org.jruby.javasupport.JavaMethod method = (org.jruby.javasupport.JavaMethod) methods[0];
             error.append("method '").append( method.getValue().getName() ).append("'");
         }
         error.append(" for arguments ");
         prettyParams(error, argTypes);
-        error.append(" on ");
+        error.append(" on ").append( formatReceiver(receiver) );
 
-        if (receiver instanceof RubyModule) {
-            error.append( ((RubyModule) receiver).getName() );
-        } else {
-            error.append( receiver.getMetaClass().getRealClass().getName() );
-        }
-
-        if (methods.length > 1) {
+        if ( methods.length > 1 ) {
             error.append("\n  available overloads:");
             for (ParameterTypes method : methods) {
                 Class<?>[] paramTypes = method.getParameterTypes();
@@ -384,6 +386,18 @@ public abstract class RubyToJavaInvoker extends JavaMethod {
         return runtime.newNameError(error.toString(), null);
     }
 
+    private RaiseException newErrorDueNoMatchingCallable(final IRubyObject receiver, final String name) {
+        final StringBuilder error = new StringBuilder(48);
+
+        error.append("no ");
+        if ( isConstructor() ) error.append("constructor");
+        else {
+            error.append("method '").append( name ).append("'");
+        }
+        error.append(" (for zero arguments) on ").append( formatReceiver(receiver) );
+        return runtime.newArgumentError( error.toString() );
+    }
+
     private static Class<?> getClass(final IRubyObject object) {
         if (object == null) return void.class;
 
@@ -391,6 +405,13 @@ public abstract class RubyToJavaInvoker extends JavaMethod {
             return ((ConcreteJavaProxy) object).getJavaClass();
         }
         return object.getClass();
+    }
+
+    private static String formatReceiver(final IRubyObject object) {
+        if ( object instanceof RubyModule ) {
+            return ((RubyModule) object).getName();
+        }
+        return object.getMetaClass().getRealClass().getName();
     }
 
 }

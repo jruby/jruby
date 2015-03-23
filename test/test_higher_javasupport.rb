@@ -1085,6 +1085,48 @@ CLASSDEF
     end
   end
 
+  def test_callable_no_match_raised_errors
+    begin
+      java.lang.StringBuilder.new([])
+      fail 'expected to raise'
+    rescue NameError => e
+      msg = e.message
+      assert msg.start_with?('no constructor for arguments (org.jruby.RubyArray) on Java::JavaLang::StringBuilder'), msg
+      assert msg.index('available overloads'), msg
+      assert msg.index('  (int)'), msg
+      assert msg.index('  (java.lang.String)'), msg
+      assert msg.index('  (java.lang.CharSequence)'), msg
+    end
+
+    begin
+      java.lang.Short.valueOf({})
+      fail 'expected to raise'
+    rescue => e # NameError
+      msg = e.message
+      assert msg.start_with?("no method 'valueOf' for arguments (org.jruby.RubyHash) on Java::JavaLang::Short"), msg
+      assert msg.index('available overloads'), msg
+      assert msg.index('  (short)'), msg
+      assert msg.index('  (java.lang.String)'), msg
+    end
+
+    begin
+      java.lang.Short.valueOf
+      fail 'expected to raise'
+    rescue ArgumentError => e
+      assert e.message.start_with?("no method 'valueOf' (for zero arguments) on Java::JavaLang::Short"), e.message
+    end
+
+    begin
+      java.lang.String.new('').getBytes 42
+      fail 'expected to raise'
+    rescue => e # NameError
+      msg = e.message
+      assert msg.start_with?("no method 'getBytes' for arguments (org.jruby.RubyFixnum) on Java::JavaLang::String"), msg
+      assert msg.index('available overloads'), msg
+      assert msg.index('  (java.lang.String)'), msg
+    end
+  end
+
   def test_no_ambiguous_java_constructor_warning_for_exact_match
     output = with_stderr_captured do # exact match should not warn :
       color = java.awt.Color.new(100.to_java(:int), 1.to_java(:int), 1.to_java(:int))
