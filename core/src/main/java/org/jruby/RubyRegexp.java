@@ -1133,7 +1133,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
             for(int i = 0; i < args.length; i++) {
                 IRubyObject e = args[i];
                 if (i > 0) source.cat((byte)'|');
-                IRubyObject v = TypeConverter.convertToTypeWithCheck(args[i], runtime.getRegexp(), "to_regexp");
+                IRubyObject v = TypeConverter.convertToTypeWithCheck(e, runtime.getRegexp(), "to_regexp");
                 Encoding enc;
                 if (!v.isNil()) {
                     RubyRegexp regex = (RubyRegexp) v;
@@ -1155,7 +1155,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
                     }
                     v = regex.to_s();
                 } else {
-                    RubyString str = args[i].convertToString();
+                    RubyString str = e.convertToString();
                     enc = str.getEncoding();
 
                     if (!enc.isAsciiCompatible()) {
