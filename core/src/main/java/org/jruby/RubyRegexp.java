@@ -400,6 +400,13 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
         return regexp;
     }
 
+    // MRI: rb_reg_new_str
+    public static RubyRegexp newRegexpFromStr(Ruby runtime, RubyString s, int options) {
+        RubyRegexp re = (RubyRegexp)runtime.getRegexp().allocate();
+        re.initializeCommon19(s, RegexpOptions.fromJoniOptions(options));
+        return re;
+    }
+
     /** rb_reg_options
      */
     public RegexpOptions getOptions() {
@@ -1116,7 +1123,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
             return runtime.getRegexp().newInstance(context, runtime.newString("(?!)"), Block.NULL_BLOCK);
         } else if (args.length == 1) {
             IRubyObject re = TypeConverter.convertToTypeWithCheck(args[0], runtime.getRegexp(), "to_regexp");
-            return !re.isNil() ? re : newRegexp(runtime, ((RubyString)quote19(context, recv, args[0])).getByteList());
+            return !re.isNil() ? re : newRegexpFromStr(runtime, (RubyString)quote19(context, recv, args[0]), 0);
         } else {
             boolean hasAsciiOnly = false;
             RubyString source = runtime.newString();
