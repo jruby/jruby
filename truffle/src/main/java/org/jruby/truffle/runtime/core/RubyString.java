@@ -197,6 +197,7 @@ public class RubyString extends RubyBasicObject implements CodeRangeable {
     }
 
     @Override
+    @TruffleBoundary
     public Encoding checkEncoding(CodeRangeable other) {
         final Encoding encoding = StringSupport.areCompatible(this, other);
 
@@ -211,6 +212,7 @@ public class RubyString extends RubyBasicObject implements CodeRangeable {
         return encoding;
     }
 
+    @TruffleBoundary
     public Encoding checkEncoding(CodeRangeable other, Node node) {
         final Encoding encoding = StringSupport.areCompatible(this, other);
 
