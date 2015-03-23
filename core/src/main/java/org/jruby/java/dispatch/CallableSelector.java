@@ -180,7 +180,11 @@ public class CallableSelector {
                         final Class<?> msType = msTypes[i], cType = cTypes[i];
                         if ( msType == cType || msType.isAssignableFrom(cType) || cType.isAssignableFrom(msType) ) {
                             ambiguous = false; continue OUTER;
-                        } else {
+                        }
+                        else if ( cType.isPrimitive() && msType.isAssignableFrom(getBoxType(cType)) ) {
+                            ambiguous = false; continue OUTER;
+                        }
+                        else {
                             ambiguous = true;
                         }
                     }

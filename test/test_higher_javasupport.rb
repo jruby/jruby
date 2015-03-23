@@ -1092,6 +1092,19 @@ CLASSDEF
     end
     # warning: ambiguous Java methods found, using java.awt.Color(int,int,int)
     assert ! output.index('ambiguous'), output
+
+    output = with_stderr_captured do # java.lang.Object match should not warn
+      # ... when overloaded methods are primitive and we're not passing one :
+      format = Java::JavaText::DecimalFormat.new('')
+      value = java.math.BigDecimal.new('10.000000000012')
+      assert_equal "10.000000000012", format.format(value) # format(java.lang.Object)
+
+      value = java.lang.Float.valueOf('0.0000000001')
+      assert format.format(value).start_with?('.00000000010') # format(double)
+      assert format.format(value.to_java).start_with?('.00000000010') # format(double)
+    end
+    # warning: ambiguous Java methods found, using format(java.lang.Object)
+    assert ! output.index('ambiguous'), output
   end
 
   def test_no_ambiguous_java_constructor_warning_with_semi_exact_match
