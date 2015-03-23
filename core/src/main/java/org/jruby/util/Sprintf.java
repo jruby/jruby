@@ -228,6 +228,10 @@ public class Sprintf {
         return rubySprintf(to, format, new Args(runtime, (long)arg));
     }
 
+    public static boolean sprintf(Ruby runtime, ByteList to, CharSequence format, long arg) {
+        return rubySprintf(to, format, new Args(runtime, arg));
+    }
+
     public static boolean sprintf(ByteList to, RubyString format, IRubyObject args) {
         return rubySprintf(to, format.getByteList(), new Args(args));
     }

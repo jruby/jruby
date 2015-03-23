@@ -2067,22 +2067,29 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
             int cc = 0;
 
             int n = StringSupport.preciseLength(enc, bytes, p, end);
-            if (n <= 0) {
+            if (!MBCLEN_CHARFOUND_P(n)) {
                 if (p > prev) result.cat(bytes, prev, p - prev);
                 n = enc.minLength();
                 if (end < p + n) n = end - p;
                 while (n-- > 0) {
+                    result.modifyExpand(result.size() + 4);
                     Sprintf.sprintf(runtime, result.getByteList() ,"\\x%02X", bytes[p] & 0377);
                     prev = ++p;
                 }
                 continue;
             }
+            n = MBCLEN_CHARFOUND_LEN(n);
             int c = enc.mbcToCode(bytes, p, end);
             p += n;
             if ((asciiCompat || isUnicode) &&
                     (c == '"' || c == '\\' ||
-                        (c == '#' && p < end && (StringSupport.preciseLength(enc, bytes, p, end) > 0) &&
-                        (cc = codePoint(runtime, enc, bytes, p, end)) == '$' || cc == '@' || cc == '{'))) {
+                            (c == '#' &&
+                                    p < end &&
+                                    MBCLEN_CHARFOUND_P(StringSupport.preciseLength(enc, bytes, p, end)) &&
+                                    ((cc = codePoint(runtime, enc, bytes, p, end)) == '$' ||
+                                            cc == '@' || cc == '{')
+                            )
+                    )) {
                 if (p - n > prev) result.cat(bytes, prev, p - n - prev);
                 result.cat('\\');
                 if (asciiCompat || enc == resultEnc) {
@@ -2111,11 +2118,12 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
                 continue;
             }
 
-            if ((enc == resultEnc && enc.isPrint(c)) || (asciiCompat && Encoding.isAscii(c) && enc.isPrint(c))) {
+            // FIXME: Can't use Encoding.isAscii because it does not treat int as unsigned 32-bit
+            if ((enc == resultEnc && enc.isPrint(c)) || (asciiCompat && (c < 128 && c > 0) && enc.isPrint(c))) {
                 continue;
             } else {
                 if (p - n > prev) result.cat(bytes, prev, p - n - prev);
-                Sprintf.sprintf(runtime, result.getByteList() , StringSupport.escapedCharFormat(c, isUnicode), c);
+                Sprintf.sprintf(runtime, result.getByteList() , StringSupport.escapedCharFormat(c, isUnicode), (c & 0xFFFFFFFFL));
                 prev = p;
                 continue;
             }

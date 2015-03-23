@@ -573,9 +573,10 @@ public final class StringSupport {
 
     public static String escapedCharFormat(int c, boolean isUnicode) {
         String format;
+        // c comparisons must be unsigned 32-bit
         if (isUnicode) {
 
-            if (c < 0x7F && Encoding.isAscii(c) && ASCIIEncoding.INSTANCE.isPrint(c)) {
+            if ((c & 0xFFFFFFFFL) < 0x7F && Encoding.isAscii(c) && ASCIIEncoding.INSTANCE.isPrint(c)) {
                 format = "%c"; 
             } else if (c < 0x10000) {
                 format = "\\u%04X";
@@ -583,7 +584,7 @@ public final class StringSupport {
                 format = "\\u{%X}";
             }
         } else {
-            if (c < 0x100) {
+            if ((c & 0xFFFFFFFFL) < 0x100) {
                 format = "\\x%02X";
             } else {
                 format = "\\x{%X}";
