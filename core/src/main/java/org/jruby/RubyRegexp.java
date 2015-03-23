@@ -574,7 +574,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
         int chLen = 0;
 
         p = readEscapedByte(runtime, chBuf, chLen++, bytes, p, end, str, mode);
-        while (chLen < enc.maxLength() && StringSupport.preciseLength(enc, chBuf, 0, chLen) < -1) { // MBCLEN_NEEDMORE_P
+        while (chLen < enc.maxLength() && StringSupport.MBCLEN_NEEDMORE_P(StringSupport.preciseLength(enc, chBuf, 0, chLen))) {
             p = readEscapedByte(runtime, chBuf, chLen++, bytes, p, end, str, mode);
         }
 
