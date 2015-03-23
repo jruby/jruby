@@ -637,25 +637,8 @@ public abstract class StringNodes {
 
         @Specialization
         public RubyString elementSet(VirtualFrame frame, RubyString string, int index, Object replacement) {
-            notDesignedForCompilation();
-
-            if (index < 0) {
-                if (-index > string.length()) {
-                    CompilerDirectives.transferToInterpreter();
-
-                    throw new RaiseException(getContext().getCoreLibrary().indexError(String.format("index %d out of string", index), this));
-                }
-
-                index = index + string.length();
-
-            } else if (index > string.length()) {
-                CompilerDirectives.transferToInterpreter();
-
-                throw new RaiseException(getContext().getCoreLibrary().indexError(String.format("index %d out of string", index), this));
-            }
-
             final RubyString coerced = toStrNode.executeRubyString(frame, replacement);
-            StringSupport.replaceInternal19(index, 1, string, coerced);
+            StringNodesHelper.replaceInternal(string, StringNodesHelper.checkIndex(string, index, this), 1, coerced);
 
             return coerced;
         }
@@ -700,7 +683,7 @@ public abstract class StringNodes {
             }
 
             final RubyString coerced = toStrNode.executeRubyString(frame, replacement);
-            StringSupport.replaceInternal19(begin, length, string, coerced);
+            StringNodesHelper.replaceInternal(string, StringNodesHelper.checkIndex(string, begin, this), length, coerced);
 
             return coerced;
         }
@@ -1466,14 +1449,9 @@ public abstract class StringNodes {
                 index++;
             }
 
-            replaceInternal(string, StringNodesHelper.checkIndex(string, index, this), 0, otherString);
+            StringNodesHelper.replaceInternal(string, StringNodesHelper.checkIndex(string, index, this), 0, otherString);
 
             return taintResultNode.maybeTaint(otherString, string);
-        }
-
-        @TruffleBoundary
-        private void replaceInternal(RubyString string, int start, int length, RubyString replacement) {
-            StringSupport.replaceInternal19(start, length, string, replacement);
         }
     }
 
@@ -2432,6 +2410,11 @@ public abstract class StringNodes {
             }
 
             return index;
+        }
+
+        @TruffleBoundary
+        public static void replaceInternal(RubyString string, int start, int length, RubyString replacement) {
+            StringSupport.replaceInternal19(start, length, string, replacement);
         }
     }
 
