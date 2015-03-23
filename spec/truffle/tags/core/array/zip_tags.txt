@@ -1,6 +1,0 @@
-fails:Array#zip returns an array of arrays containing corresponding elements of each array
-fails:Array#zip fills in missing values with nil
-fails:Array#zip properly handles recursive arrays
-fails:Array#zip calls #to_ary to convert the argument to an Array
-fails:Array#zip uses #each to extract arguments' elements when #to_ary fails
-fails:Array#zip calls block if supplied
