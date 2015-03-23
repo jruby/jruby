@@ -173,8 +173,11 @@ public abstract class ArrayNodes {
 
     }
 
-    @CoreMethod(names = "*", required = 1, lowerFixnumParameters = 0)
+    @CoreMethod(names = "*", required = 1, lowerFixnumParameters = 0, taintFromSelf = true)
     public abstract static class MulNode extends ArrayCoreMethodNode {
+
+        @Child private KernelNodes.RespondToNode respondToToStrNode;
+        @Child private ToIntNode toIntNode;
 
         public MulNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -182,15 +185,26 @@ public abstract class ArrayNodes {
 
         public MulNode(MulNode prev) {
             super(prev);
+            respondToToStrNode = prev.respondToToStrNode;
+            toIntNode = prev.toIntNode;
         }
+
 
         @Specialization(guards = "isNull")
         public RubyArray mulEmpty(RubyArray array, int count) {
-            return new RubyArray(getContext().getCoreLibrary().getArrayClass());
+            if (count < 0) {
+                CompilerDirectives.transferToInterpreter();
+                throw new RaiseException(getContext().getCoreLibrary().argumentError("negative argument", this));
+            }
+            return new RubyArray(array.getLogicalClass());
         }
 
         @Specialization(guards = "isIntegerFixnum")
         public RubyArray mulIntegerFixnum(RubyArray array, int count) {
+            if (count < 0) {
+                CompilerDirectives.transferToInterpreter();
+                throw new RaiseException(getContext().getCoreLibrary().argumentError("negative argument", this));
+            }
             final int[] store = (int[]) array.getStore();
             final int storeLength = store.length;
             final int newStoreLength = storeLength * count;
@@ -200,11 +214,15 @@ public abstract class ArrayNodes {
                 System.arraycopy(store, 0, newStore, storeLength * n, storeLength);
             }
 
-            return new RubyArray(getContext().getCoreLibrary().getArrayClass(), array.getAllocationSite(), newStore, newStoreLength);
+            return new RubyArray(array.getLogicalClass(), array.getAllocationSite(), newStore, newStoreLength);
         }
 
         @Specialization(guards = "isLongFixnum")
         public RubyArray mulLongFixnum(RubyArray array, int count) {
+            if (count < 0) {
+                CompilerDirectives.transferToInterpreter();
+                throw new RaiseException(getContext().getCoreLibrary().argumentError("negative argument", this));
+            }
             final long[] store = (long[]) array.getStore();
             final int storeLength = store.length;
             final int newStoreLength = storeLength * count;
@@ -214,11 +232,15 @@ public abstract class ArrayNodes {
                 System.arraycopy(store, 0, newStore, storeLength * n, storeLength);
             }
 
-            return new RubyArray(getContext().getCoreLibrary().getArrayClass(), array.getAllocationSite(), newStore, newStoreLength);
+            return new RubyArray(array.getLogicalClass(), array.getAllocationSite(), newStore, newStoreLength);
         }
 
         @Specialization(guards = "isFloat")
         public RubyArray mulFloat(RubyArray array, int count) {
+            if (count < 0) {
+                CompilerDirectives.transferToInterpreter();
+                throw new RaiseException(getContext().getCoreLibrary().argumentError("negative argument", this));
+            }
             final double[] store = (double[]) array.getStore();
             final int storeLength = store.length;
             final int newStoreLength = storeLength * count;
@@ -228,11 +250,15 @@ public abstract class ArrayNodes {
                 System.arraycopy(store, 0, newStore, storeLength * n, storeLength);
             }
 
-            return new RubyArray(getContext().getCoreLibrary().getArrayClass(), array.getAllocationSite(), newStore, newStoreLength);
+            return new RubyArray(array.getLogicalClass(), array.getAllocationSite(), newStore, newStoreLength);
         }
 
         @Specialization(guards = "isObject")
         public RubyArray mulObject(RubyArray array, int count) {
+            if (count < 0) {
+                CompilerDirectives.transferToInterpreter();
+                throw new RaiseException(getContext().getCoreLibrary().argumentError("negative argument", this));
+            }
             final Object[] store = (Object[]) array.getStore();
             final int storeLength = store.length;
             final int newStoreLength = storeLength * count;
@@ -242,7 +268,47 @@ public abstract class ArrayNodes {
                 System.arraycopy(store, 0, newStore, storeLength * n, storeLength);
             }
 
-            return new RubyArray(getContext().getCoreLibrary().getArrayClass(), array.getAllocationSite(), newStore, newStoreLength);
+            return new RubyArray(array.getLogicalClass(), array.getAllocationSite(), newStore, newStoreLength);
+        }
+
+        @Specialization(guards = "isRubyString(arguments[1])")
+        public Object mulObject(VirtualFrame frame, RubyArray array, RubyString string) {
+            notDesignedForCompilation();
+            return ruby(frame, "join(sep)", "sep", string);
+        }
+
+        @Specialization(guards = {"!isRubyString(arguments[1])"})
+        public Object mulObjectCount(VirtualFrame frame, RubyArray array, Object object) {
+            notDesignedForCompilation();
+            if (respondToToStrNode == null) {
+                CompilerDirectives.transferToInterpreter();
+                respondToToStrNode = insert(KernelNodesFactory.RespondToNodeFactory.create(getContext(), getSourceSection(), new RubyNode[]{null, null, null}));
+            }
+            if (respondToToStrNode.doesRespondTo(frame, object, getContext().makeString("to_str"), false)) {
+                return ruby(frame, "join(sep.to_str)", "sep", object);
+            } else {
+                if (toIntNode == null) {
+                    CompilerDirectives.transferToInterpreter();
+                    toIntNode = insert(ToIntNodeFactory.create(getContext(), getSourceSection(), null));
+                }
+                final int count = toIntNode.executeIntegerFixnum(frame, object);
+                if (count < 0) {
+                    CompilerDirectives.transferToInterpreter();
+                    throw new RaiseException(getContext().getCoreLibrary().argumentError("negative argument", this));
+                }
+                if (array.getStore() instanceof int[]) {
+                    return mulIntegerFixnum(array, count);
+                } else if (array.getStore() instanceof long[]) {
+                    return mulLongFixnum(array, count);
+                } else if (array.getStore() instanceof double[]) {
+                    return mulFloat(array, count);
+                } else if (array.getStore() == null) {
+                    return mulEmpty(array, count);
+                } else {
+                    return mulObject(array, count);
+                }
+
+            }
         }
 
     }
