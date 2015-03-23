@@ -1127,6 +1127,26 @@ CLASSDEF
 #    assert ! output.index('ambiguous'), output
 #  end
 
+  # original report: https://jira.codehaus.org/browse/JRUBY-5582
+  # NOTE: we're not testing this "early" on still a good JI exercise
+  def test_set_security_manager
+    security_manager = java.lang.System.getSecurityManager
+    begin
+      java.lang.System.setSecurityManager( JRubySecurityManager.new )
+      assert java.lang.System.getSecurityManager.is_a?(JRubySecurityManager)
+      #puts java.lang.System.getSecurityManager.checked_perms.inspect
+    ensure
+      java.lang.System.setSecurityManager( security_manager )
+    end
+  end
+
+  class JRubySecurityManager < java.lang.SecurityManager
+    def initialize; @checked = [] end
+    def checked_perms; @checked end
+
+    def checkPermission( perm ); @checked << perm end
+  end
+
   private
 
   def with_stderr_captured
