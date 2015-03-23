@@ -1126,7 +1126,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
     public IRubyObject op_mul19(ThreadContext context, IRubyObject other) {
         RubyString result = multiplyByteList(context, other);
         result.value.setEncoding(value.getEncoding());
-        result.copyCodeRange(this);
+        result.copyCodeRangeForSubstr(this, value.getEncoding());
         return result;
     }
 
