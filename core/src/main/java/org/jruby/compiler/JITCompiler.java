@@ -250,7 +250,10 @@ public class JITCompiler implements JITCompilerMBean {
                             || config.getExcludedMethods().contains(excludeModuleName + "#" + methodName)
                             || config.getExcludedMethods().contains(methodName))) {
                         method.setCallCount(-1);
-                        log(method.getImplementationClass(), method.getFile(), method.getLine(), methodName, "skipping method: " + excludeModuleName + "#" + methodName);
+
+                        if (config.isJitLogging()) {
+                            log(method.getImplementationClass(), method.getFile(), method.getLine(), methodName, "skipping method: " + excludeModuleName + "#" + methodName);
+                        }
                         return;
                     }
                 }
