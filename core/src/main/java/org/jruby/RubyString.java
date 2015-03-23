@@ -2211,11 +2211,11 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
     public RubyString concat19(ThreadContext context, IRubyObject other) {
         Ruby runtime = context.runtime;
         if (other instanceof RubyFixnum) {
-            int c = RubyNumeric.num2int(other);
+            long c = RubyNumeric.num2long(other);
             if (c < 0) {
-                throw runtime.newRangeError("negative string size (or size too big)");
+                throw runtime.newRangeError("" + c + " out of char range");
             }
-            return concatNumeric(runtime, c);
+            return concatNumeric(runtime, (int)(c & 0xFFFFFFFF));
         } else if (other instanceof RubyBignum) {
             if (((RubyBignum) other).getBigIntegerValue().signum() < 0) {
                 throw runtime.newRangeError("negative string size (or size too big)");
