@@ -1214,25 +1214,6 @@ public abstract class StringNodes {
         }
     }
 
-    @CoreMethod(names = "end_with?", required = 1)
-    public abstract static class EndWithNode extends CoreMethodNode {
-
-        public EndWithNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
-        public EndWithNode(EndWithNode prev) {
-            super(prev);
-        }
-
-        @Specialization
-        public boolean endWith(RubyString string, RubyString b) {
-            notDesignedForCompilation();
-
-            return string.toString().endsWith(b.toString());
-        }
-    }
-
     @CoreMethod(names = "force_encoding", required = 1)
     public abstract static class ForceEncodingNode extends CoreMethodNode {
 
