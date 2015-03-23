@@ -706,6 +706,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
      */
     private static boolean unescapeNonAscii(Ruby runtime, ByteList to, byte[]bytes, int p, int end, Encoding enc, Encoding[]encp, ByteList str, ErrorMode mode) {
         boolean hasProperty = false;
+        byte[] buf = null;
 
         while (p < end) {
             int cl = StringSupport.preciseLength(enc, bytes, p, end);
@@ -738,7 +739,17 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
                 case 'c': /* \cX, \c\M-X */
                 case 'C': /* \C-X, \C-\M-X */
                 case 'M': /* \M-X, \M-\C-X, \M-\cX */
-                    p = unescapeEscapedNonAscii(runtime, to, bytes, p - 2, end, enc, encp, str, mode);
+                    p -= 2;
+                    if (enc == USASCIIEncoding.INSTANCE) {
+                        if (buf == null) buf = new byte[1];
+                        p = readEscapedByte(runtime, buf, 0, bytes, p, end, str, mode);
+                        c = buf[0];
+                        if (c == (char)-1) return false;
+                        if (to != null) to.append(c);
+                    }
+                    else {
+                       p = unescapeEscapedNonAscii(runtime, to, bytes, p, end, enc, encp, str, mode);
+                    }
                     break;
 
                 case 'u':
