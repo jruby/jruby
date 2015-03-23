@@ -82,6 +82,32 @@ class Array
     out
   end
 
+  def zip(*others)
+    out = Array.new(size) { [] }
+    others = others.map do |ary|
+      if ary.respond_to?(:to_ary)
+        ary.to_ary
+      else
+        elements = []
+        ary.each { |e| elements << e }
+        elements
+      end
+    end
+
+    size.times do |i|
+      slot = out.at(i)
+      slot << @tuple.at(@start + i)
+      others.each { |ary| slot << ary.at(i) }
+    end
+
+    if block_given?
+      out.each { |ary| yield ary }
+      return nil
+    end
+
+    out
+  end
+
   def first(n = undefined)
     return at(0) if undefined.equal?(n)
 

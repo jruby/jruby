@@ -4470,53 +4470,5 @@ public abstract class ArrayNodes {
 
     }
 
-    @CoreMethod(names = "zip", required = 1)
-    public abstract static class ZipNode extends ArrayCoreMethodNode {
-
-        public ZipNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
-        public ZipNode(ZipNode prev) {
-            super(prev);
-        }
-
-        @Specialization(guards = {"isObject", "isOtherIntegerFixnum"})
-        public RubyArray zipObjectIntegerFixnum(RubyArray array, RubyArray other) {
-            final Object[] a = (Object[]) array.getStore();
-            final int aLength = array.getSize();
-
-            final int[] b = (int[]) other.getStore();
-            final int bLength = other.getSize();
-
-            final int zippedLength = Math.min(aLength, bLength);
-            final Object[] zipped = new Object[zippedLength];
-
-            for (int n = 0; n < zippedLength; n++) {
-                zipped[n] = new RubyArray(getContext().getCoreLibrary().getArrayClass(), new Object[]{a[n], b[n]}, 2);
-            }
-
-            return new RubyArray(getContext().getCoreLibrary().getArrayClass(), zipped, zippedLength);
-        }
-
-        @Specialization(guards = {"isObject", "isOtherObject"})
-        public RubyArray zipObjectObject(RubyArray array, RubyArray other) {
-            final Object[] a = (Object[]) array.getStore();
-            final int aLength = array.getSize();
-
-            final Object[] b = (Object[]) other.getStore();
-            final int bLength = other.getSize();
-
-            final int zippedLength = Math.min(aLength, bLength);
-            final Object[] zipped = new Object[zippedLength];
-
-            for (int n = 0; n < zippedLength; n++) {
-                zipped[n] = new RubyArray(getContext().getCoreLibrary().getArrayClass(), new Object[]{a[n], b[n]}, 2);
-            }
-
-            return new RubyArray(getContext().getCoreLibrary().getArrayClass(), zipped, zippedLength);
-        }
-
-    }
 
 }
