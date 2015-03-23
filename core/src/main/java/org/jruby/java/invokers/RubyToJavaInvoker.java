@@ -22,12 +22,13 @@ import org.jruby.javasupport.ParameterTypes;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
-import static org.jruby.util.CodegenUtils.prettyParams;
 import org.jruby.util.collections.IntHashMap;
+import static org.jruby.java.dispatch.CallableSelector.newCallableCache;
+import static org.jruby.util.CodegenUtils.prettyParams;
 
 public abstract class RubyToJavaInvoker extends JavaMethod {
 
-    private static final IntHashMap<JavaCallable> NULL_CACHE = IntHashMap.nullMap();
+    static final IntHashMap<JavaCallable> NULL_CACHE = IntHashMap.nullMap();
 
     protected final JavaCallable javaCallable; /* null if multiple callable members */
     protected final JavaCallable[][] javaCallables; /* != null if javaCallable == null */
@@ -106,7 +107,7 @@ public abstract class RubyToJavaInvoker extends JavaMethod {
                 varargsCallables = varArgs.toArray( createCallableArray(varArgs.size()) );
             }
 
-            cache = new IntHashMap<JavaCallable>(8);
+            cache = newCallableCache();
         }
 
         this.javaCallable = callable;

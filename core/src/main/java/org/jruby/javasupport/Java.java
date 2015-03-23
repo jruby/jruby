@@ -109,6 +109,8 @@ import org.jruby.util.ClassProvider;
 import org.jruby.util.CodegenUtils;
 import org.jruby.util.IdUtil;
 import org.jruby.util.cli.Options;
+import org.jruby.util.collections.IntHashMap;
+import static org.jruby.java.dispatch.CallableSelector.newCallableCache;
 
 @JRubyModule(name = "Java")
 public class Java implements Library {
@@ -746,7 +748,9 @@ public class Java implements Library {
         });
 
         subclass.addMethod("__jcreate!", new JavaMethodN(subclassSingleton, PUBLIC) {
-            private final Map<Integer, ParameterTypes> methodCache = new HashMap<Integer, ParameterTypes>();
+
+            private final IntHashMap<JavaProxyConstructor> cache = newCallableCache();
+
             @Override
             public IRubyObject call(final ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args) {
                 IRubyObject proxyClass = self.getMetaClass().getInstanceVariables().getInstanceVariable("@java_proxy_class");
@@ -767,11 +771,12 @@ public class Java implements Library {
                     throw context.runtime.newArgumentError("wrong number of arguments for constructor");
                 }
 
-                JavaProxyConstructor matching = (JavaProxyConstructor)CallableSelector.matchingCallableArityN(
-                        context.runtime, methodCache,
-                        forArity.toArray(new JavaProxyConstructor[forArity.size()]), args);
+                final JavaProxyConstructor matching = CallableSelector.matchingCallableArityN(
+                        context.runtime, cache,
+                        forArity.toArray(new JavaProxyConstructor[forArity.size()]), args
+                );
 
-                if (matching == null) {
+                if ( matching == null ) {
                     throw context.runtime.newArgumentError("wrong number of arguments for constructor");
                 }
 

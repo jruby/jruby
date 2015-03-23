@@ -582,4 +582,13 @@ public class CallableSelector {
         return arg != null ? arg.getJavaClass() : void.class;
     }
 
+    /**
+     * Internal helper to allocate a callable map to cache argument method matches.
+     * @param <T> the callable type
+     * @return cache usable with {@link CallableSelector}
+     */
+    public static <T extends ParameterTypes> IntHashMap<T> newCallableCache() {
+        return new IntHashMap<T>(8);
+    }
+
 }
