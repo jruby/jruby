@@ -30,6 +30,7 @@ import static org.jcodings.Encoding.CHAR_INVALID;
 import org.jcodings.Encoding;
 import org.jcodings.ascii.AsciiTables;
 import org.jcodings.constants.CharacterType;
+import org.jcodings.exception.EncodingException;
 import org.jcodings.specific.ASCIIEncoding;
 import org.jcodings.specific.UTF8Encoding;
 import org.jcodings.util.IntHash;
@@ -379,8 +380,13 @@ public final class StringSupport {
     }
 
     public static int codeLength(Ruby runtime, Encoding enc, int c) {
-        int n = enc.codeToMbcLength(c);
-        if (n == 0) throw runtime.newRangeError("invalid codepoint " + String.format("0x%x in ", c) + enc.getName());
+        int n = 0;
+        try {
+            n = enc.codeToMbcLength(c);
+        } catch (EncodingException ee) {
+            // raise as ArgumentError below
+        }
+        if (n == 0) throw runtime.newArgumentError("invalid codepoint " + String.format("0x%x in ", c) + enc.getName());
         return n;
     }
 
