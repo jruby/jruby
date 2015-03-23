@@ -1185,7 +1185,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
                     }
                 }
 
-                // Enebo: not sure why this is needed.
+                // set encoding for first append
                 if (i == 0) source.setEncoding(enc);
                 source.append(v);
             }
