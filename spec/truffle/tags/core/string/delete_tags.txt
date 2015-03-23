@@ -1,1 +1,1 @@
-fails:String#delete deletes multibyte characters
+fails(inherited):String#delete deletes multibyte characters
