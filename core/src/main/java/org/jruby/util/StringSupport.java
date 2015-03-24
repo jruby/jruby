@@ -1338,6 +1338,7 @@ public final class StringSupport {
         return source.getByteList();
     }
 
+    // headius: TODO: This version does not raise errors in proper places
     public static void replaceInternal19(int beg, int len, CodeRangeable source, CodeRangeable repl) {
         Encoding enc = source.checkEncoding(repl);
         int p = source.getByteList().getBegin();
@@ -1360,6 +1361,26 @@ public final class StringSupport {
         associateEncoding(source, enc);
         cr = CodeRangeSupport.codeRangeAnd(cr, repl.getCodeRange());
         if (cr != CR_BROKEN) source.setCodeRange(cr);
+    }
+
+    public static void replaceInternal19(Ruby runtime, int beg, int len, RubyString source, RubyString repl) {
+        source.checkEncoding(repl);
+        int slen = strLengthFromRubyString(source);
+
+        if (slen < beg) {
+            throw runtime.newIndexError("index " + beg + " out of string");
+        }
+        if (beg < 0) {
+            if (-beg > slen) {
+                throw runtime.newIndexError("index " + beg + " out of string");
+            }
+            beg += slen;
+        }
+        if (slen < len || slen < beg + len) {
+            len = slen - beg;
+        }
+
+        replaceInternal19(beg, len, source, repl);
     }
 
     public static boolean isAsciiOnly(CodeRangeable string) {

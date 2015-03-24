@@ -906,7 +906,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
         clearCodeRange();
     }
 
-    private void modifyAndKeepCodeRange() {
+    public void modifyAndKeepCodeRange() {
         modify();
         keepCodeRange();
     }
@@ -2884,7 +2884,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
     }
 
     private void replaceInternal19(int beg, int len, RubyString repl) {
-        StringSupport.replaceInternal19(beg, len, this, repl);
+        StringSupport.replaceInternal19(getRuntime(), beg, len, this, repl);
         infectBy(repl);
     }
 
@@ -3055,7 +3055,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
     }
 
     private IRubyObject op_aset19(ThreadContext context, int idx, IRubyObject arg1) {
-        replaceInternal19(checkIndex(idx, strLength()), 1, arg1.convertToString());
+        StringSupport.replaceInternal19(context.runtime, idx, 1, this, arg1.convertToString());
         return arg1;
     }
 
@@ -3068,7 +3068,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
             int len = RubyNumeric.num2int(arg1);
             checkLength(len);
             RubyString repl = arg2.convertToString();
-            replaceInternal19(checkIndex(beg, strLength()), len, repl);
+            StringSupport.replaceInternal19(context.runtime, beg, len, this, repl);
         }
         return arg2;
     }
