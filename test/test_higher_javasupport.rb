@@ -165,6 +165,33 @@ class TestHigherJavasupport < Test::Unit::TestCase
     assert_equal 256, ( array[0] = 256 )
   end
 
+  def test_ruby_array_to_java_array
+    array = [ 1 ].to_java(:int)
+    assert_equal 1, array.length
+    assert_equal 1, array[0]
+    assert_equal Java::int, array.component_type
+    array[0] = 1000001
+    array[0] = java.lang.Integer.valueOf(100000)
+    assert_equal 100000, array[0]
+
+    array = [ 1, 2 ].to_java(:byte)
+    assert_equal 2, array.length
+    array[1] = 10
+    begin
+      array[1] = 1000
+    rescue => e # RangeError: too big for byte: 1000
+      assert e.message
+    end
+  end
+
+  def test_ruby_array_to_multi_dimensional_java_array
+    array = [ [ 1 ] ].to_java
+    assert_equal 1, array.length
+    assert_equal java.lang.Object, array.component_type
+    assert_equal [ 1 ], array[0]
+    assert_equal Array, array[0].class
+  end
+
   class IntLike
     def initialize(value)
       @value = value

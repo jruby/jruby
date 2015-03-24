@@ -10,11 +10,13 @@ import org.jruby.RubyFixnum;
 import org.jruby.RubyInteger;
 import org.jruby.RubyModule;
 import org.jruby.RubyRange;
+import org.jruby.RubyString;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.java.util.ArrayUtils;
 import org.jruby.javasupport.Java;
 import org.jruby.javasupport.JavaArray;
+import org.jruby.javasupport.JavaClass;
 import org.jruby.javasupport.JavaUtil;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ObjectAllocator;
@@ -160,8 +162,15 @@ public class ArrayJavaProxy extends JavaProxy {
         return JavaUtil.convertJavaArrayToRubyWithNesting(context, array);
     }
 
+    @JRubyMethod(name = {"component_type"})
+    public IRubyObject component_type(ThreadContext context) {
+        Class<?> componentType = getObject().getClass().getComponentType();
+        final JavaClass javaClass = JavaClass.get(context.runtime, componentType);
+        return Java.getProxyClass(context.runtime, javaClass);
+    }
+
     @JRubyMethod
-    public IRubyObject inspect(ThreadContext context) {
+    public RubyString inspect(ThreadContext context) {
         final StringBuilder buffer = new StringBuilder();
         Class<?> componentClass = getObject().getClass().getComponentType();
 
@@ -196,7 +205,7 @@ public class ArrayJavaProxy extends JavaProxy {
             buffer.append(Arrays.toString((Object[]) getObject()));
         }
         buffer.append('@').append(Integer.toHexString(inspectHashCode()));
-        return context.runtime.newString(buffer.toString());
+        return RubyString.newString(context.runtime, buffer.toString());
     }
 
     @JRubyMethod(name = "==")
