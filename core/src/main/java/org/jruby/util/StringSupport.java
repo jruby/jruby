@@ -1125,10 +1125,11 @@ public final class StringSupport {
         boolean alnumSeen = false;
         while ((s = enc.prevCharHead(bytes, p, s, end)) != -1) {
             if (neighbor == NeighborChar.NOT_CHAR && lastAlnum != -1) {
-                if (ASCIIEncoding.INSTANCE.isAlpha(bytes[lastAlnum] & 0xff) ?
-                        ASCIIEncoding.INSTANCE.isDigit(bytes[s] & 0xff) :
-                        ASCIIEncoding.INSTANCE.isDigit(bytes[lastAlnum] & 0xff) ?
-                                ASCIIEncoding.INSTANCE.isAlpha(bytes[s] & 0xff) : false) {
+                ASCIIEncoding ascii = ASCIIEncoding.INSTANCE;
+                if (ascii.isAlpha(bytes[lastAlnum] & 0xff) ?
+                        ascii.isDigit(bytes[s] & 0xff) :
+                        ascii.isDigit(bytes[lastAlnum] & 0xff) ?
+                                ascii.isAlpha(bytes[s] & 0xff) : false) {
                     s = lastAlnum;
                     break;
                 }
