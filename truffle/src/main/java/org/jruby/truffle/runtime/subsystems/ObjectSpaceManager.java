@@ -26,7 +26,6 @@ import org.jruby.truffle.runtime.core.RubyBasicObject;
 import org.jruby.truffle.runtime.core.RubyProc;
 import org.jruby.truffle.runtime.core.RubyThread;
 import org.jruby.truffle.runtime.subsystems.ThreadManager.BlockingActionWithoutGlobalLock;
-import org.jruby.truffle.runtime.util.Consumer;
 
 import com.oracle.truffle.api.Truffle;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
@@ -156,7 +155,7 @@ public class ObjectSpaceManager {
 
             @Override
             public boolean visit(RubyBasicObject object) {
-                return liveObjects.put(object.getObjectID(), object) == null;
+                return liveObjects.put(object.verySlowGetObjectID(), object) == null;
             }
 
         };

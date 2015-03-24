@@ -94,7 +94,7 @@ public class TruffleBridgeImpl implements TruffleBridge {
         CoreMethodNodeManager.addCoreMethodNodes(rubyObjectClass, SymbolNodesFactory.getFactories());
         CoreMethodNodeManager.addCoreMethodNodes(rubyObjectClass, ThreadNodesFactory.getFactories());
         CoreMethodNodeManager.addCoreMethodNodes(rubyObjectClass, TrueClassNodesFactory.getFactories());
-        CoreMethodNodeManager.addCoreMethodNodes(rubyObjectClass, PrimitiveNodesFactory.getFactories());
+        CoreMethodNodeManager.addCoreMethodNodes(rubyObjectClass, TrufflePrimitiveNodesFactory.getFactories());
         CoreMethodNodeManager.addCoreMethodNodes(rubyObjectClass, EncodingNodesFactory.getFactories());
         CoreMethodNodeManager.addCoreMethodNodes(rubyObjectClass, EncodingConverterNodesFactory.getFactories());
         CoreMethodNodeManager.addCoreMethodNodes(rubyObjectClass, MethodNodesFactory.getFactories());
@@ -164,7 +164,7 @@ public class TruffleBridgeImpl implements TruffleBridge {
 
     @Override
     public Object execute(final Object self, final org.jruby.ast.RootNode rootNode) {
-	return execute(TranslatorDriver.ParserContext.TOP_LEVEL, self, null, rootNode);
+        return execute(TranslatorDriver.ParserContext.TOP_LEVEL, self, null, rootNode);
     }
 
     public Object execute(final TranslatorDriver.ParserContext parserContext, final Object self, final MaterializedFrame parentFrame, final org.jruby.ast.RootNode rootNode) {

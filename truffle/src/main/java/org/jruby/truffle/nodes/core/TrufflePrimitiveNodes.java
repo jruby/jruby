@@ -32,7 +32,7 @@ import org.jruby.util.Memo;
 import java.util.Locale;
 
 @CoreClass(name = "Truffle::Primitive")
-public abstract class PrimitiveNodes {
+public abstract class TrufflePrimitiveNodes {
 
     @CoreMethod(names = "binding_of_caller", onSingleton = true)
     public abstract static class BindingOfCallerNode extends CoreMethodNode {

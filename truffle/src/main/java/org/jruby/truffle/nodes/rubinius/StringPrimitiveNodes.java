@@ -54,6 +54,7 @@
 package org.jruby.truffle.nodes.rubinius;
 
 import com.oracle.truffle.api.CompilerDirectives;
+import com.oracle.truffle.api.dsl.ImportGuards;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.SourceSection;
@@ -61,12 +62,12 @@ import com.oracle.truffle.api.utilities.ConditionProfile;
 import org.jcodings.Encoding;
 import org.jcodings.exception.EncodingException;
 import org.jcodings.specific.ASCIIEncoding;
+import org.jcodings.specific.UTF8Encoding;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.cast.TaintResultNode;
+import org.jruby.truffle.nodes.core.StringGuards;
 import org.jruby.truffle.nodes.core.StringNodes;
 import org.jruby.truffle.nodes.core.StringNodesFactory;
-import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
-import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.UndefinedPlaceholder;
 import org.jruby.truffle.runtime.control.RaiseException;
@@ -319,6 +320,27 @@ public abstract class StringPrimitiveNodes {
         @CompilerDirectives.TruffleBoundary
         @Specialization
         public Object stringChrAt(RubyString string, int byteIndex) {
+            // Taken from Rubinius's Character::create_from.
+
+            final ByteList bytes = string.getByteList();
+
+            if (byteIndex < 0 || byteIndex >= bytes.getRealSize()) {
+                return nil();
+            }
+
+            final int p = bytes.getBegin();
+            final int end = p + bytes.getRealSize();
+            final int c = StringSupport.preciseLength(bytes.getEncoding(), bytes.getUnsafeBytes(), p, end);
+
+            if (! StringSupport.MBCLEN_CHARFOUND_P(c)) {
+                return nil();
+            }
+
+            final int n = StringSupport.MBCLEN_CHARFOUND_LEN(c);
+            if (n + byteIndex > end) {
+                return nil();
+            }
+
             if (stringByteSubstringNode == null) {
                 CompilerDirectives.transferToInterpreter();
 
@@ -328,20 +350,6 @@ public abstract class StringPrimitiveNodes {
                                 getSourceSection(),
                                 new RubyNode[]{})
                 );
-            }
-
-            final ByteList bytes = string.getByteList();
-            final int p = bytes.getBegin();
-            final int end = p + bytes.getRealSize();
-            final int c = StringSupport.preciseLength(bytes.getEncoding(), bytes.getUnsafeBytes(), p, end);
-
-            if (! StringSupport.MBCLEN_CHARFOUND_P(c)) {
-                return getContext().getCoreLibrary().getNilObject();
-            }
-
-            final int n = StringSupport.MBCLEN_CHARFOUND_LEN(c);
-            if (n + byteIndex > end) {
-                return getContext().getCoreLibrary().getNilObject();
             }
 
             return stringByteSubstringNode.stringByteSubstring(string, byteIndex, n);
@@ -577,13 +585,14 @@ public abstract class StringPrimitiveNodes {
     }
 
     @RubiniusPrimitive(name = "string_character_byte_index", needsSelf = false)
-    public static abstract class StringCharacterByteIndexPrimitiveNode extends RubiniusPrimitiveNode {
+    @ImportGuards(StringGuards.class)
+    public static abstract class CharacterByteIndexNode extends RubiniusPrimitiveNode {
 
-        public StringCharacterByteIndexPrimitiveNode(RubyContext context, SourceSection sourceSection) {
+        public CharacterByteIndexNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
         }
 
-        public StringCharacterByteIndexPrimitiveNode(StringCharacterByteIndexPrimitiveNode prev) {
+        public CharacterByteIndexNode(CharacterByteIndexNode prev) {
             super(prev);
         }
 
@@ -598,10 +607,6 @@ public abstract class StringPrimitiveNodes {
 
             return StringSupport.nth(bytes.getEncoding(), bytes.getUnsafeBytes(), bytes.getBegin(),
                     bytes.getBegin() + bytes.getRealSize(), start + index);
-        }
-
-        public static boolean isSingleByteOptimizable(RubyString string) {
-            return StringSupport.isSingleByteOptimizable(string, string.getBytes().getEncoding());
         }
     }
 
@@ -695,6 +700,8 @@ public abstract class StringPrimitiveNodes {
 
         @Specialization
         public Object stringPreviousByteIndex(RubyString string, int index) {
+            // Port of Rubinius's String::previous_byte_index.
+
             if (index < 0) {
                 CompilerDirectives.transferToInterpreter();
                 throw new RaiseException(getContext().getCoreLibrary().argumentError("negative index given", this));
@@ -704,17 +711,13 @@ public abstract class StringPrimitiveNodes {
             final int p = bytes.getBegin();
             final int end = p + bytes.getRealSize();
 
-            if (p > end) {
-                return 0;
+            final int b = bytes.getEncoding().prevCharHead(bytes.getUnsafeBytes(), p, p + index, end);
+
+            if (b == -1) {
+                return nil();
             }
 
-            final int s = bytes.getEncoding().prevCharHead(bytes.getUnsafeBytes(), p, p + index, end);
-
-            if (s == -1) {
-                return 0;
-            }
-
-            return s - p;
+            return b - p;
         }
 
     }
@@ -846,6 +849,147 @@ public abstract class StringPrimitiveNodes {
             notDesignedForCompilation();
             string.getByteList().append(other.getByteList());
             return string;
+        }
+
+    }
+
+    @RubiniusPrimitive(name = "string_substring")
+    @ImportGuards(StringGuards.class)
+    public static abstract class StringSubstringPrimitiveNode extends RubiniusPrimitiveNode {
+
+        @Child private TaintResultNode taintResultNode;
+
+        public StringSubstringPrimitiveNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public StringSubstringPrimitiveNode(StringSubstringPrimitiveNode prev) {
+            super(prev);
+            taintResultNode = prev.taintResultNode;
+        }
+
+        public abstract Object execute(VirtualFrame frame, RubyString string, int beg, int len);
+
+        @Specialization(guards = "isSingleByteOptimizable")
+        public Object stringSubstringSingleByteOptimizable(RubyString string, int beg, int len) {
+            // Taken from org.jruby.RubyString#substr19.
+
+            if (len < 0) {
+                return nil();
+            }
+
+            final int length = string.getByteList().getRealSize();
+            if (length == 0) {
+                len = 0;
+            }
+
+            if (beg > length) {
+                return nil();
+            }
+
+            if (beg < 0) {
+                beg += length;
+
+                if (beg < 0) {
+                    return nil();
+                }
+            }
+
+            if ((beg + len) > length) {
+                len = length - beg;
+            }
+
+            if (len <= 0) {
+                len = 0;
+                beg = 0;
+            }
+
+            return makeSubstring(string, beg, len);
+        }
+
+        @Specialization(guards = "!isSingleByteOptimizable")
+        public Object stringSubstring(RubyString string, int beg, int len) {
+            // Taken from org.jruby.RubyString#substr19 & org.jruby.RubyString#multibyteSubstr19.
+
+            if (len < 0) {
+                return nil();
+            }
+
+            final int length = string.getByteList().getRealSize();
+            if (length == 0) {
+                len = 0;
+            }
+
+            if ((beg + len) > length) {
+                len = length - beg;
+            }
+
+            final ByteList value = string.getByteList();
+            final Encoding enc = value.getEncoding();
+            int p;
+            int s = value.getBegin();
+            int end = s + length;
+            byte[]bytes = value.getUnsafeBytes();
+
+            if (beg < 0) {
+                if (len > -beg) len = -beg;
+                if (-beg * enc.maxLength() < length >>> 3) {
+                    beg = -beg;
+                    int e = end;
+                    while (beg-- > len && (e = enc.prevCharHead(bytes, s, e, e)) != -1) {} // nothing
+                    p = e;
+                    if (p == -1) {
+                        return nil();
+                    }
+                    while (len-- > 0 && (p = enc.prevCharHead(bytes, s, p, e)) != -1) {} // nothing
+                    if (p == -1) {
+                        return nil();
+                    }
+                    return makeSubstring(string, p - s, e - p);
+                } else {
+                    beg += StringSupport.strLengthFromRubyString(string, enc);
+                    if (beg < 0) {
+                        return nil();
+                    }
+                }
+            } else if (beg > 0 && beg > StringSupport.strLengthFromRubyString(string, enc)) {
+                return nil();
+            }
+            if (len == 0) {
+                p = 0;
+            } else if (string.isCodeRangeValid() && enc instanceof UTF8Encoding) {
+                p = StringSupport.utf8Nth(bytes, s, end, beg);
+                len = StringSupport.utf8Offset(bytes, p, end, len);
+            } else if (enc.isFixedWidth()) {
+                int w = enc.maxLength();
+                p = s + beg * w;
+                if (p > end) {
+                    p = end;
+                    len = 0;
+                } else if (len * w > end - p) {
+                    len = end - p;
+                } else {
+                    len *= w;
+                }
+            } else if ((p = StringSupport.nth(enc, bytes, s, end, beg)) == end) {
+                len = 0;
+            } else {
+                len = StringSupport.offset(enc, bytes, p, end, len);
+            }
+            return makeSubstring(string, p - s, len);
+        }
+
+        private RubyString makeSubstring(RubyString string, int beg, int len) {
+            if (taintResultNode == null) {
+                CompilerDirectives.transferToInterpreter();
+                taintResultNode = insert(new TaintResultNode(getContext(), getSourceSection(), true, new int[]{}));
+            }
+
+            final RubyString ret = getContext().makeString(string.getLogicalClass(), new ByteList(string.getByteList(), beg, len));
+            ret.getByteList().setEncoding(string.getByteList().getEncoding());
+            taintResultNode.maybeTaint(string, ret);
+
+            return ret;
         }
 
     }

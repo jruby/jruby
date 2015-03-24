@@ -12,15 +12,20 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import org.jruby.Ruby;
 import org.jruby.RubyModule;
+import org.jruby.exceptions.RaiseException;
 import org.jruby.internal.runtime.methods.CallConfiguration;
 import org.jruby.internal.runtime.methods.JavaMethod;
 import org.jruby.java.dispatch.CallableSelector;
 import org.jruby.java.proxies.ArrayJavaProxy;
+import org.jruby.java.proxies.ConcreteJavaProxy;
 import org.jruby.java.proxies.JavaProxy;
 import org.jruby.javasupport.JavaCallable;
+import org.jruby.javasupport.JavaConstructor;
+import org.jruby.javasupport.ParameterTypes;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.util.CodegenUtils;
 import org.jruby.util.collections.IntHashMap;
 
 public abstract class RubyToJavaInvoker extends JavaMethod {
@@ -105,13 +110,13 @@ public abstract class RubyToJavaInvoker extends JavaMethod {
         if (javaCallable != null) {
             // no constructor support yet
             if (javaCallable instanceof org.jruby.javasupport.JavaMethod) {
-                setNativeCallIfPublic( (Method) ((org.jruby.javasupport.JavaMethod) javaCallable).getValue() );
+                setNativeCallIfPublic( ((org.jruby.javasupport.JavaMethod) javaCallable).getValue() );
             }
         } else { // use the lowest-arity non-overload
             for (JavaCallable[] callablesForArity : javaCallables) {
                 if ( callablesForArity == null || callablesForArity.length != 1 ) continue;
                 if ( callablesForArity[0] instanceof org.jruby.javasupport.JavaMethod ) {
-                    setNativeCallIfPublic( (Method) ((org.jruby.javasupport.JavaMethod) callablesForArity[0]).getValue() );
+                    setNativeCallIfPublic( ((org.jruby.javasupport.JavaMethod) callablesForArity[0]).getValue() );
                 }
             }
         }
@@ -201,7 +206,7 @@ public abstract class RubyToJavaInvoker extends JavaMethod {
                 if (javaVarargsCallables != null) {
                     callable = CallableSelector.matchingCallableArityN(runtime, cache, javaVarargsCallables, args, arity);
                     if (callable == null) {
-                        throw CallableSelector.argTypesDoNotMatch(runtime, self, javaVarargsCallables, (Object[])args);
+                        throw newNameErrorDueArgumentTypeMismatch(runtime, self, javaVarargsCallables, args);
                     }
                     return callable;
                 } else {
@@ -212,12 +217,12 @@ public abstract class RubyToJavaInvoker extends JavaMethod {
             if (callable == null && javaVarargsCallables != null) {
                 callable = CallableSelector.matchingCallableArityN(runtime, cache, javaVarargsCallables, args, arity);
                 if (callable == null) {
-                    throw CallableSelector.argTypesDoNotMatch(runtime, self, javaVarargsCallables, (Object[])args);
+                    throw newNameErrorDueArgumentTypeMismatch(runtime, self, javaVarargsCallables, args);
                 }
                 return callable;
             }
             if (callable == null) {
-                throw CallableSelector.argTypesDoNotMatch(runtime, self, callablesForArity, (Object[])args);
+                throw newNameErrorDueArgumentTypeMismatch(runtime, self, callablesForArity, args);
             }
         } else {
             if (!callable.isVarArgs() && callable.getParameterTypes().length != args.length) {
@@ -254,7 +259,7 @@ public abstract class RubyToJavaInvoker extends JavaMethod {
             }
             callable = CallableSelector.matchingCallableArityOne(runtime, cache, callablesForArity, arg0);
             if (callable == null) {
-                throw CallableSelector.argTypesDoNotMatch(runtime, self, callablesForArity, arg0);
+                throw newNameErrorDueArgumentTypeMismatch(runtime, self, callablesForArity, arg0);
             }
         } else {
             if (callable.getParameterTypes().length != 1) {
@@ -274,7 +279,7 @@ public abstract class RubyToJavaInvoker extends JavaMethod {
             }
             callable = CallableSelector.matchingCallableArityTwo(runtime, cache, callablesForArity, arg0, arg1);
             if (callable == null) {
-                throw CallableSelector.argTypesDoNotMatch(runtime, self, callablesForArity, arg0, arg1);
+                throw newNameErrorDueArgumentTypeMismatch(runtime, self, callablesForArity, arg0, arg1);
             }
         } else {
             if (callable.getParameterTypes().length != 2) {
@@ -294,7 +299,7 @@ public abstract class RubyToJavaInvoker extends JavaMethod {
             }
             callable = CallableSelector.matchingCallableArityThree(runtime, cache, callablesForArity, arg0, arg1, arg2);
             if (callable == null) {
-                throw CallableSelector.argTypesDoNotMatch(runtime, self, callablesForArity, arg0, arg1, arg2);
+                throw newNameErrorDueArgumentTypeMismatch(runtime, self, callablesForArity, arg0, arg1, arg2);
             }
         } else {
             if (callable.getParameterTypes().length != 3) {
@@ -314,7 +319,7 @@ public abstract class RubyToJavaInvoker extends JavaMethod {
             }
             callable = CallableSelector.matchingCallableArityFour(runtime, cache, callablesForArity, arg0, arg1, arg2, arg3);
             if (callable == null) {
-                throw CallableSelector.argTypesDoNotMatch(runtime, self, callablesForArity, arg0, arg1, arg2, arg3);
+                throw newNameErrorDueArgumentTypeMismatch(runtime, self, callablesForArity, arg0, arg1, arg2, arg3);
             }
         } else {
             if (callable.getParameterTypes().length != 4) {
@@ -323,4 +328,56 @@ public abstract class RubyToJavaInvoker extends JavaMethod {
         }
         return callable;
     }
+
+    static RaiseException newNameErrorDueArgumentTypeMismatch(final Ruby runtime,
+        final IRubyObject receiver, final JavaCallable[] methods, IRubyObject... args) {
+
+        final Class[] argTypes = new Class[args.length];
+        for (int i = 0; i < args.length; i++) {
+            argTypes[i] = getClass( args[i] );
+        }
+
+        final boolean constructor = methods[0] instanceof JavaConstructor; // || methods[0] instanceof JavaProxyConstructor;
+
+        final StringBuilder error = new StringBuilder(32);
+
+        error.append("no ");
+        if ( constructor ) {
+            error.append("constructor");
+        }
+        else {
+            org.jruby.javasupport.JavaMethod method = (org.jruby.javasupport.JavaMethod) methods[0];
+            error.append("method '").append( method.getValue().getName() ).append("'");
+        }
+        error.append(" for arguments ")
+             .append( CodegenUtils.prettyParams(argTypes) )
+             .append(" on ");
+
+        if (receiver instanceof RubyModule) {
+            error.append( ((RubyModule) receiver).getName() );
+        } else {
+            error.append( receiver.getMetaClass().getRealClass().getName() );
+        }
+
+        if (methods.length > 1) {
+            error.append("\n  available overloads:");
+            for (ParameterTypes method : methods) {
+                Class<?>[] paramTypes = method.getParameterTypes();
+                error.append("\n    ").append( CodegenUtils.prettyParams(paramTypes) );
+            }
+        }
+
+        // TODO should have been ArgumentError - might break users to refactor at this point
+        return runtime.newNameError(error.toString(), null);
+    }
+
+    private static Class<?> getClass(final IRubyObject object) {
+        if (object == null) return void.class;
+
+        if (object instanceof ConcreteJavaProxy) {
+            return ((ConcreteJavaProxy)object).getJavaClass();
+        }
+        return object.getClass();
+    }
+
 }

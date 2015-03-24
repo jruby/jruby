@@ -13,6 +13,7 @@ import com.oracle.truffle.api.utilities.BranchProfile;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyString;
 import org.jruby.truffle.runtime.core.RubySymbol;
+import org.jruby.truffle.runtime.methods.InternalMethod;
 
 public abstract class CachedDispatchNode extends DispatchNode {
 
@@ -89,5 +90,4 @@ public abstract class CachedDispatchNode extends DispatchNode {
     public boolean isIndirect() {
         return indirect;
     }
-
 }

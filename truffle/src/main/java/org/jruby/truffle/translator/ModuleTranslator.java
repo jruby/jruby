@@ -78,7 +78,7 @@ class ModuleTranslator extends BodyTranslator {
 
     @Override
     public RubyNode visitDefnNode(org.jruby.ast.DefnNode node) {
-        final SourceSection sourceSection = translate(node.getPosition());
+        final SourceSection sourceSection = translate(node.getPosition(), node.getName());
         final SelfNode classNode = new SelfNode(context, sourceSection);
         return translateMethodDefinition(sourceSection, classNode, node.getName(), node, node.getArgsNode(), node.getBodyNode());
     }

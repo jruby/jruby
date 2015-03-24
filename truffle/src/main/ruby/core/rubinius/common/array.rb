@@ -634,6 +634,52 @@ class Array
 
   alias_method :to_s, :inspect
 
+  def join(sep=nil)
+    return "".force_encoding(Encoding::US_ASCII) if @total == 0
+
+    out = ""
+    raise ArgumentError, "recursive array join" if Thread.detect_recursion self do
+      sep = sep.nil? ? $, : StringValue(sep)
+
+      # We've manually unwound the first loop entry for performance
+      # reasons.
+      x = @tuple[@start]
+
+      if str = String.try_convert(x)
+        x = str
+      elsif ary = Array.try_convert(x)
+        x = ary.join(sep)
+      else
+        x = x.to_s
+      end
+
+      out.force_encoding(x.encoding)
+      out << x
+
+      total = @start + size()
+      i = @start + 1
+
+      while i < total
+        out << sep if sep
+
+        x = @tuple[i]
+
+        if str = String.try_convert(x)
+          x = str
+        elsif ary = Array.try_convert(x)
+          x = ary.join(sep)
+        else
+          x = x.to_s
+        end
+
+        out << x
+        i += 1
+      end
+    end
+
+    Rubinius::Type.infect(out, self)
+  end
+
   def keep_if(&block)
     return to_enum :keep_if unless block_given?
 
@@ -880,6 +926,15 @@ class Array
     return count == size ? result : result[0, count]
   end
 
+  def select!(&block)
+    return to_enum :select! unless block_given?
+
+    Rubinius.check_frozen
+
+    ary = select(&block)
+    replace ary unless size == ary.size
+  end
+
   def find_index(obj=undefined)
     super
   end
@@ -1032,6 +1087,14 @@ class Array
     end
 
     out
+  end
+
+  def sort_by!(&block)
+    Rubinius.check_frozen
+
+    return to_enum :sort_by! unless block_given?
+
+    replace sort_by(&block)
   end
 
   # Insertion sort in-place between the given indexes.

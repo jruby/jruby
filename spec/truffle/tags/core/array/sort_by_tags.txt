@@ -1,7 +1,2 @@
-fails:Array#sort_by! sorts array in place by passing each element to the given block
-fails:Array#sort_by! returns an Enumerator if not given a block
-fails:Array#sort_by! completes when supplied a block that always returns the same result
-fails:Array#sort_by! raises a RuntimeError on a frozen array
-fails:Array#sort_by! raises a RuntimeError on an empty frozen array
 fails:Array#sort_by! returns the specified value when it would break in the given block
 fails:Array#sort_by! makes some modification even if finished sorting when it would break in the given block

@@ -90,4 +90,8 @@
     <Class name="org.jruby.truffle.nodes.debug.AssertNotCompiledNode" />
     <Bug pattern="ST_WRITE_TO_STATIC_FROM_INSTANCE_METHOD" />
   </Match>
+  <Match>
+    <Class name="org.jruby.truffle.nodes.RubyCallNode" />
+    <Bug pattern="PZLA_PREFER_ZERO_LENGTH_ARRAYS" />
+  </Match>
 </FindBugsFilter>

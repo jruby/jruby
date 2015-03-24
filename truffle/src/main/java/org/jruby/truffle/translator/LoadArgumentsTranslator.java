@@ -66,6 +66,8 @@ public class LoadArgumentsTranslator extends Translator {
 
     private int required;
     private int index;
+    private int kwIndex;
+    private int countKwArgs;
     private int indexFromEnd = 1;
     private State state;
     private boolean hasKeywordArguments;
@@ -127,8 +129,15 @@ public class LoadArgumentsTranslator extends Translator {
         }
 
         if (hasKeywordArguments) {
+            kwIndex = 0;
+            countKwArgs = 0;
+            for (org.jruby.ast.Node arg : node.getKeywords().childNodes()) {
+                countKwArgs++;
+            }
+            
             for (org.jruby.ast.Node arg : node.getKeywords().childNodes()) {
                 sequence.add(arg.accept(this));
+                kwIndex++;
             }
         }
 
@@ -147,7 +156,7 @@ public class LoadArgumentsTranslator extends Translator {
     public RubyNode visitKeywordRestArgNode(org.jruby.ast.KeywordRestArgNode node) {
         final SourceSection sourceSection = translate(node.getPosition());
 
-        final RubyNode readNode = new ReadKeywordRestArgumentNode(context, sourceSection, required, excludedKeywords.toArray(new String[excludedKeywords.size()]));
+        final RubyNode readNode = new ReadKeywordRestArgumentNode(context, sourceSection, required, excludedKeywords.toArray(new String[excludedKeywords.size()]), -countKwArgs - 1);
         final FrameSlot slot = methodBodyTranslator.getEnvironment().getFrameDescriptor().findOrAddFrameSlot(node.getName());
 
         return WriteLocalVariableNodeFactory.create(context, sourceSection, slot, readNode);
@@ -192,7 +201,7 @@ public class LoadArgumentsTranslator extends Translator {
 
         excludedKeywords.add(name);
 
-        final RubyNode readNode = new ReadKeywordArgumentNode(context, sourceSection, required, name, defaultValue);
+        final RubyNode readNode = new ReadKeywordArgumentNode(context, sourceSection, required, name, defaultValue, kwIndex - countKwArgs);
         final FrameSlot slot = methodBodyTranslator.getEnvironment().getFrameDescriptor().findOrAddFrameSlot(name);
 
         return WriteLocalVariableNodeFactory.create(context, sourceSection, slot, readNode);

@@ -119,12 +119,6 @@ public abstract class CoreMethodNodeManager {
         for (String name : names) {
             final RubyRootNode rootNodeCopy = NodeUtil.cloneNode(rootNode);
 
-            final CoreMethodNode coreMethodNode = NodeUtil.findFirstNodeInstance(rootNodeCopy, CoreMethodNode.class);
-
-            if (coreMethodNode != null) {
-                coreMethodNode.setName(name);
-            }
-
             final InternalMethod method = new InternalMethod(rootNodeCopy.getSharedMethodInfo(), name, module, visibility, false,
                     Truffle.getRuntime().createCallTarget(rootNodeCopy), null);
 
@@ -144,7 +138,7 @@ public abstract class CoreMethodNodeManager {
             optional = methodDetails.getMethodAnnotation().optional();
         }
 
-        final Arity arity = new Arity(required,  optional, methodDetails.getMethodAnnotation().argumentsAsArray(), false);
+        final Arity arity = new Arity(required,  optional, methodDetails.getMethodAnnotation().argumentsAsArray(), false, false, 0);
 
         final SharedMethodInfo sharedMethodInfo = new SharedMethodInfo(sourceSection, null, arity, methodDetails.getIndicativeName(), false, null, true);
 
