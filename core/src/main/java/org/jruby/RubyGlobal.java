@@ -128,7 +128,6 @@ public class RubyGlobal {
         runtime.defineGlobalConstant("RUBY_PATCHLEVEL", patchlevel);
         runtime.defineGlobalConstant("RUBY_RELEASE_DATE", release);
         runtime.defineGlobalConstant("RUBY_PLATFORM", platform);
-        runtime.defineGlobalConstant("RUBY_ENGINE", engine);
 
         IRubyObject description = runtime.newString(OutputStrings.getVersionString(runtime.getInstanceConfig().getCompatVersion())).freeze(context);
         runtime.defineGlobalConstant("RUBY_DESCRIPTION", description);
@@ -143,6 +142,9 @@ public class RubyGlobal {
         IRubyObject jrubyRevision = runtime.newString(Constants.REVISION).freeze(context);
         runtime.defineGlobalConstant("JRUBY_VERSION", jrubyVersion);
         runtime.defineGlobalConstant("JRUBY_REVISION", jrubyRevision);
+
+        runtime.defineGlobalConstant("RUBY_ENGINE", engine);
+        runtime.defineGlobalConstant("RUBY_ENGINE_VERSION", jrubyVersion);
 
         if (runtime.is2_0()) {
             // needs to be a fixnum, but our revision is a sha1 hash from git
