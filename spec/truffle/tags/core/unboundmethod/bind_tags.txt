@@ -1,2 +1,0 @@
-fails:UnboundMethod#bind raises TypeError if object is not kind_of? the Module the method defined in
-fails:UnboundMethod#bind will raise when binding a an object singleton's method to another object
