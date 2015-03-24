@@ -76,7 +76,7 @@ public abstract class UnboundMethodNodes {
         public RubyMethod bind(VirtualFrame frame, RubyUnboundMethod unboundMethod, Object object) {
             notDesignedForCompilation();
             RubyModule module = unboundMethod.getMethod().getDeclaringModule();
-            if (!module.isOnlyAModule()) {
+            if (module instanceof RubyClass) {
                 if (!ModuleOperations.assignableTo(metaClass(frame, object), module)) {
                     CompilerDirectives.transferToInterpreter();
                     if (((RubyClass) module).isSingleton()) {
