@@ -2240,18 +2240,20 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
         RubyString otherStr = other.convertToString().strDup(context.runtime);
         otherStr.modify();
         otherStr.associateEncoding(ascii8bit);
-        String salt = otherStr.asJavaString();
-        if (otherStr.getByteList().length() < 2) {
+        ByteList otherBL = otherStr.getByteList();
+        if (otherBL.length() < 2) {
             throw context.runtime.newArgumentError("salt too short(need >=2 bytes)");
         }
 
         POSIX posix = context.runtime.getPosix();
-        CharSequence cryptedString = posix.crypt(asJavaString(), salt);
+        byte[] keyBytes = Arrays.copyOfRange(value.unsafeBytes(), value.begin(), value.realSize());
+        byte[] saltBytes = Arrays.copyOfRange(otherBL.unsafeBytes(), otherBL.begin(), otherBL.realSize());
+        byte[] cryptedString = posix.crypt(keyBytes, saltBytes);
         // We differ from MRI in that we do not process salt to make it work and we will
         // return any errors via errno.
         if (cryptedString == null) throw context.runtime.newErrnoFromInt(posix.errno());
 
-        RubyString result = RubyString.newString(context.runtime, cryptedString.toString());
+        RubyString result = RubyString.newStringNoCopy(context.runtime, cryptedString, 0, cryptedString.length - 1);
         result.associateEncoding(ascii8bit);
         result.infectBy(this);
         result.infectBy(otherStr);
