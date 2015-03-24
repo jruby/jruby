@@ -3000,12 +3000,10 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
     }
 
     private IRubyObject subpat19(Ruby runtime, ThreadContext context, RubyRegexp regex) {
-        IRubyObject[] holder = {context.nil};
-
         int result = regex.search19(context, this, 0, false);
 
         if (result >= 0) {
-            return RubyRegexp.nth_match(0, holder[0]);
+            return RubyRegexp.nth_match(0, context.getBackRef());
         }
 
         return runtime.getNil();
