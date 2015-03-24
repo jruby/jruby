@@ -4470,7 +4470,7 @@ public abstract class ArrayNodes {
 
     }
 
-    @CoreMethod(names = "zip", required = 1)
+    @CoreMethod(names = "zip", required = 1, argumentsAsArray = true)
     public abstract static class ZipNode extends ArrayCoreMethodNode {
 
         public ZipNode(RubyContext context, SourceSection sourceSection) {
@@ -4481,40 +4481,92 @@ public abstract class ArrayNodes {
             super(prev);
         }
 
-        @Specialization(guards = {"isObject", "isOtherIntegerFixnum"})
-        public RubyArray zipObjectIntegerFixnum(RubyArray array, RubyArray other) {
+        @Specialization(guards = {"isObject", "isOtherSingleIntegerFixnumArray"})
+        public RubyArray zipObjectIntegerFixnum(RubyArray array, Object[] others) {
+            final RubyArray other = (RubyArray) others[0];
             final Object[] a = (Object[]) array.getStore();
-            final int aLength = array.getSize();
 
             final int[] b = (int[]) other.getStore();
             final int bLength = other.getSize();
 
-            final int zippedLength = Math.min(aLength, bLength);
+            final int zippedLength = array.getSize();
             final Object[] zipped = new Object[zippedLength];
 
-            for (int n = 0; n < zippedLength; n++) {
-                zipped[n] = new RubyArray(getContext().getCoreLibrary().getArrayClass(), new Object[]{a[n], b[n]}, 2);
+            final boolean areSameLength = bLength == zippedLength;
+
+            if (areSameLength) {
+                for (int n = 0; n < zippedLength; n++) {
+                    zipped[n] = new RubyArray(getContext().getCoreLibrary().getArrayClass(), new Object[]{a[n], b[n]}, 2);
+                }
+            } else {
+                for (int n = 0; n < zippedLength; n++) {
+                    if (n < bLength) {
+                        zipped[n] = new RubyArray(getContext().getCoreLibrary().getArrayClass(), new Object[]{a[n], b[n]}, 2);
+                    } else {
+                        zipped[n] = new RubyArray(getContext().getCoreLibrary().getArrayClass(), new Object[]{a[n], nil()}, 2);
+                    }
+                }
             }
 
             return new RubyArray(getContext().getCoreLibrary().getArrayClass(), zipped, zippedLength);
         }
 
-        @Specialization(guards = {"isObject", "isOtherObject"})
-        public RubyArray zipObjectObject(RubyArray array, RubyArray other) {
+        @Specialization(guards = {"isObject", "isOtherSingleObjectArray"})
+        public RubyArray zipObjectObject(RubyArray array, Object[] others) {
+            final RubyArray other = (RubyArray) others[0];
             final Object[] a = (Object[]) array.getStore();
-            final int aLength = array.getSize();
 
             final Object[] b = (Object[]) other.getStore();
             final int bLength = other.getSize();
 
-            final int zippedLength = Math.min(aLength, bLength);
+            final int zippedLength = array.getSize();
             final Object[] zipped = new Object[zippedLength];
 
-            for (int n = 0; n < zippedLength; n++) {
-                zipped[n] = new RubyArray(getContext().getCoreLibrary().getArrayClass(), new Object[]{a[n], b[n]}, 2);
+            final boolean areSameLength = bLength == zippedLength;
+
+            if (areSameLength) {
+                for (int n = 0; n < zippedLength; n++) {
+                    zipped[n] = new RubyArray(getContext().getCoreLibrary().getArrayClass(), new Object[]{a[n], b[n]}, 2);
+                }
+            } else {
+                for (int n = 0; n < zippedLength; n++) {
+                    if (n < bLength) {
+                        zipped[n] = new RubyArray(getContext().getCoreLibrary().getArrayClass(), new Object[]{a[n], b[n]}, 2);
+                    } else {
+                        zipped[n] = new RubyArray(getContext().getCoreLibrary().getArrayClass(), new Object[]{a[n], nil()}, 2);
+                    }
+                }
             }
 
+
             return new RubyArray(getContext().getCoreLibrary().getArrayClass(), zipped, zippedLength);
+        }
+
+        @Specialization(guards = {"!isOtherSingleObjectArray"})
+        public Object zipObjectObjectNotSingleObject(VirtualFrame frame, RubyArray array, Object[] others) {
+            RubyBasicObject proc = RubyArguments.getBlock(frame.getArguments());
+            if (proc == null) {
+                proc = nil();
+            }
+            return ruby(frame, "zip_internal(nil, *others)", "others", new RubyArray(getContext().getCoreLibrary().getArrayClass(), others, others.length), "block", proc);
+        }
+
+        @Specialization(guards = {"!isOtherSingleIntegerFixnumArray"})
+        public Object zipObjectObjectNotSingleInteger(VirtualFrame frame, RubyArray array, Object[] others) {
+            RubyBasicObject proc = RubyArguments.getBlock(frame.getArguments());
+            if (proc == null) {
+                proc = nil();
+            }
+            return ruby(frame, "zip_internal(block, *others)", "others", new RubyArray(getContext().getCoreLibrary().getArrayClass(), others, others.length), "block", proc);
+        }
+
+        @Specialization(guards = {"!isObject"})
+        public Object zipObjectObjectNotObject(VirtualFrame frame, RubyArray array, Object[] others) {
+            RubyBasicObject proc = RubyArguments.getBlock(frame.getArguments());
+            if (proc == null) {
+                proc = nil();
+            }
+            return ruby(frame, "zip_internal(block, *others)", "others", new RubyArray(getContext().getCoreLibrary().getArrayClass(), others, others.length), "block", proc);
         }
 
     }
