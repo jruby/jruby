@@ -37,36 +37,30 @@ describe "Date::Infinity" do
 
   # These checks fail on MRI because of a bug in Date::Infinity#<=>
   # Fixed in 1.8.7
-  ruby_bug "#", "1.8.6" do
-    it "should be able to compare Infinity objects" do
-      i1 = Date::Infinity.new
-      i2 = Date::Infinity.new(-1)
-      i3 = Date::Infinity.new(0)
-      i4 = Date::Infinity.new
-      (i4 <=> i1).should == 0
-      (i3 <=> i1).should == -1
-      (i2 <=> i1).should == -1
-      (i3 <=> i2).should == 1
-    end
+  it "should be able to compare Infinity objects" do
+    i1 = Date::Infinity.new
+    i2 = Date::Infinity.new(-1)
+    i3 = Date::Infinity.new(0)
+    i4 = Date::Infinity.new
+    (i4 <=> i1).should == 0
+    (i3 <=> i1).should == -1
+    (i2 <=> i1).should == -1
+    (i3 <=> i2).should == 1
   end
 
   # Also fails because of the same bug as the previous spec
   # Fixed in 1.8.7
-  ruby_bug "#", "1.8.6" do
-    it "should be able to return plus Infinity for abs" do
-      i1 = Date::Infinity.new
-      i2 = Date::Infinity.new(-1)
-      i3 = Date::Infinity.new(0)
-      (i2.abs <=> i1).should == 0
-      (i3.abs <=> i1).should == 0
-    end
+  it "should be able to return plus Infinity for abs" do
+    i1 = Date::Infinity.new
+    i2 = Date::Infinity.new(-1)
+    i3 = Date::Infinity.new(0)
+    (i2.abs <=> i1).should == 0
+    (i3.abs <=> i1).should == 0
   end
 
-  ruby_bug "#222", "1.8.6" do
-    it "should be able to use -@ and +@ for Date::Infinity" do
-      (Date::Infinity.new <=> +Date::Infinity.new).should == 0
-      (Date::Infinity.new(-1) <=> -Date::Infinity.new).should == 0
-    end
+  it "should be able to use -@ and +@ for Date::Infinity" do
+    (Date::Infinity.new <=> +Date::Infinity.new).should == 0
+    (Date::Infinity.new(-1) <=> -Date::Infinity.new).should == 0
   end
 
   it "should be able to coerce a Date::Infinity object" do

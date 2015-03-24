@@ -48,45 +48,43 @@ describe :hash_equal, :shared => true do
     (h == h[:a]).should be_true
   end
 
-  ruby_bug "redmine #2448", "1.9.1" do
-    it "computes equality for complex recursive hashes" do
-      a, b = {}, {}
-      a.merge! :self => a, :other => b
-      b.merge! :self => b, :other => a
-      a.send(@method, b).should be_true # they both have the same structure!
+  it "computes equality for complex recursive hashes" do
+    a, b = {}, {}
+    a.merge! :self => a, :other => b
+    b.merge! :self => b, :other => a
+    a.send(@method, b).should be_true # they both have the same structure!
 
-      c = {}
-      c.merge! :other => c, :self => c
-      c.send(@method, a).should be_true # subtle, but they both have the same structure!
-      a[:delta] = c[:delta] = a
-      c.send(@method, a).should be_false # not quite the same structure, as a[:other][:delta] = nil
-      c[:delta] = 42
-      c.send(@method, a).should be_false
-      a[:delta] = 42
-      c.send(@method, a).should be_false
-      b[:delta] = 42
-      c.send(@method, a).should be_true
-    end
+    c = {}
+    c.merge! :other => c, :self => c
+    c.send(@method, a).should be_true # subtle, but they both have the same structure!
+    a[:delta] = c[:delta] = a
+    c.send(@method, a).should be_false # not quite the same structure, as a[:other][:delta] = nil
+    c[:delta] = 42
+    c.send(@method, a).should be_false
+    a[:delta] = 42
+    c.send(@method, a).should be_false
+    b[:delta] = 42
+    c.send(@method, a).should be_true
+  end
 
-    it "computes equality for recursive hashes & arrays" do
-      x, y, z = [], [], []
-      a, b, c = {:foo => x, :bar => 42}, {:foo => y, :bar => 42}, {:foo => z, :bar => 42}
-      x << a
-      y << c
-      z << b
-      b.send(@method, c).should be_true # they clearly have the same structure!
-      y.send(@method, z).should be_true
-      a.send(@method, b).should be_true # subtle, but they both have the same structure!
-      x.send(@method, y).should be_true
-      y << x
-      y.send(@method, z).should be_false
-      z << x
-      y.send(@method, z).should be_true
+  it "computes equality for recursive hashes & arrays" do
+    x, y, z = [], [], []
+    a, b, c = {:foo => x, :bar => 42}, {:foo => y, :bar => 42}, {:foo => z, :bar => 42}
+    x << a
+    y << c
+    z << b
+    b.send(@method, c).should be_true # they clearly have the same structure!
+    y.send(@method, z).should be_true
+    a.send(@method, b).should be_true # subtle, but they both have the same structure!
+    x.send(@method, y).should be_true
+    y << x
+    y.send(@method, z).should be_false
+    z << x
+    y.send(@method, z).should be_true
 
-      a[:foo], a[:bar] = a[:bar], a[:foo]
-      a.send(@method, b).should be_false
-      b[:bar] = b[:foo]
-      b.send(@method, c).should be_false
-    end
-  end # ruby_bug
+    a[:foo], a[:bar] = a[:bar], a[:foo]
+    a.send(@method, b).should be_false
+    b[:bar] = b[:foo]
+    b.send(@method, c).should be_false
+  end
 end

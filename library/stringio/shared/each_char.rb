@@ -12,29 +12,17 @@ describe :stringio_each_char, :shared => true do
     seen.should == ["x", "y", "z", " ", "ä", "ö", "ü"]
   end
 
-  ruby_version_is "" ... "1.8.7" do
-    it "returns nil" do
-      @io.send(@method) {}.should be_nil
-    end
-
-    it "yields a LocalJumpError when passed no block" do
-      lambda { @io.send(@method) }.should raise_error(LocalJumpError)
-    end
+  it "returns self" do
+    @io.send(@method) {}.should equal(@io)
   end
 
-  ruby_version_is "1.8.7" do
-    it "returns self" do
-      @io.send(@method) {}.should equal(@io)
-    end
+  it "returns an Enumerator when passed no block" do
+    enum = @io.send(@method)
+    enum.instance_of?(enumerator_class).should be_true
 
-    it "returns an Enumerator when passed no block" do
-      enum = @io.send(@method)
-      enum.instance_of?(enumerator_class).should be_true
-
-      seen = []
-      enum.each { |c| seen << c }
-      seen.should == ["x", "y", "z", " ", "ä", "ö", "ü"]
-    end
+    seen = []
+    enum.each { |c| seen << c }
+    seen.should == ["x", "y", "z", " ", "ä", "ö", "ü"]
   end
 end
 

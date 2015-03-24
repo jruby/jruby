@@ -12,12 +12,10 @@ describe "Complex#rationalize" do
     Complex(2<<63+5).rationalize.should == Rational(2<<63+5,1)
   end
 
-  ruby_bug "redmine #5178", "1.9.3.0" do
-    it "sends #rationalize to the real part" do
-      real = mock_numeric('real')
-      real.should_receive(:rationalize).with(0.1).and_return(:result)
-      Complex(real, 0).rationalize(0.1).should == :result
-    end
+  it "sends #rationalize to the real part" do
+    real = mock_numeric('real')
+    real.should_receive(:rationalize).with(0.1).and_return(:result)
+    Complex(real, 0).rationalize(0.1).should == :result
   end
 
   it "ignores a single argument" do

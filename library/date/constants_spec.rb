@@ -4,17 +4,13 @@ require File.expand_path('../../../spec_helper', __FILE__)
 describe "Date constants" do
 
   # Fixes in 1.8.7
-  ruby_bug "#", "1.8.6" do
-    it "defines JULIAN" do
-      (Date::JULIAN <=> Date::Infinity.new).should == 0
-    end
+  it "defines JULIAN" do
+    (Date::JULIAN <=> Date::Infinity.new).should == 0
   end
 
   # Fixed in 1.8.7
-  ruby_bug "#", "1.8.6" do
-    it "defines GREGORIAN" do
-      (Date::GREGORIAN <=> -Date::Infinity.new).should == 0
-    end
+  it "defines GREGORIAN" do
+    (Date::GREGORIAN <=> -Date::Infinity.new).should == 0
   end
 
   it "defines ITALY" do
@@ -44,67 +40,6 @@ describe "Date constants" do
       ary.compact.each do |name|
         lambda { name << "modified" }.should raise_error
       end
-    end
-  end
-
-  ruby_version_is "" ... "1.8.7" do
-    it "defines UNIXEPOCH" do
-      Date::UNIXEPOCH.should == 2440588
-    end
-  end
-
-  ruby_version_is "1.8.7" ... "1.9.3"do
-
-    it "defines HALF_DAYS_IN_DAY" do
-      Date::HALF_DAYS_IN_DAY.should == Rational(1, 2)
-    end
-
-    it "defines HOURS_IN_DAY" do
-      Date::HOURS_IN_DAY.should == Rational(1, 24)
-    end
-
-    it "defines MINUTES_IN_DAY" do
-      Date::MINUTES_IN_DAY.should == Rational(1, 1440)
-    end
-
-    it "defines SECONDS_IN_DAY" do
-      Date::SECONDS_IN_DAY.should == Rational(1, 86400)
-    end
-
-    it "defines MILLISECONDS_IN_DAY" do
-      Date::MILLISECONDS_IN_DAY.should == Rational(1, 86400*10**3)
-    end
-
-    it "defines NANOSECONDS_IN_DAY" do
-      Date::NANOSECONDS_IN_DAY.should == Rational(1, 86400*10**9)
-    end
-
-    it "defines MILLISECONDS_IN_SECOND" do
-      Date::MILLISECONDS_IN_SECOND.should == Rational(1, 10**3)
-    end
-
-    it "defines NANOSECONDS_IN_SECOND" do
-      Date::NANOSECONDS_IN_SECOND.should == Rational(1, 10**9)
-    end
-
-    it "defines MJD_EPOCH_IN_AJD" do
-      Date::MJD_EPOCH_IN_AJD.should == Rational(4800001, 2) # 1858-11-17
-    end
-
-    it "defines UNIX_EPOCH_IN_AJD" do
-      Date::UNIX_EPOCH_IN_AJD.should == Rational(4881175, 2) # 1970-01-01
-    end
-
-    it "defines MJD_EPOCH_IN_CJD" do
-      Date::MJD_EPOCH_IN_CJD.should == 2400001
-    end
-
-    it "defines UNIX_EPOCH_IN_CJD" do
-      Date::UNIX_EPOCH_IN_CJD.should == 2440588
-    end
-
-    it "defines LD_EPOCH_IN_CJD" do
-      Date::LD_EPOCH_IN_CJD.should == 2299160
     end
   end
 

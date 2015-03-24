@@ -31,18 +31,16 @@ describe "Mutex#lock" do
 
   # Unable to find a specific ticket but behavior change may be
   # related to this ML thread.
-  ruby_bug "[ruby-core:23457]", "1.8.7.174" do
-    it "raises a ThreadError when used recursively" do
-      m = Mutex.new
+  it "raises a ThreadError when used recursively" do
+    m = Mutex.new
 
-      th = Thread.new do
-        m.lock
-        m.lock
-      end
-
-      lambda do
-        th.join
-      end.should raise_error(ThreadError)
+    th = Thread.new do
+      m.lock
+      m.lock
     end
+
+    lambda do
+      th.join
+    end.should raise_error(ThreadError)
   end
 end

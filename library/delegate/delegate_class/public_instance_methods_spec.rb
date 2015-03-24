@@ -6,41 +6,20 @@ describe "DelegateClass.public_instance_methods" do
     @methods = DelegateSpecs::DelegateClass.public_instance_methods
   end
 
-  ruby_version_is ""..."1.9" do
-    it "includes all public methods of the delegated class" do
-      @methods.should include "pub"
-    end
-
-    it "does not include the protected methods of the delegated class" do
-      @methods.should_not include "prot"
-    end
-
-    it "includes public instance methods of the DelegateClass class" do
-      @methods.should include "extra"
-    end
-
-    it "does not include private methods" do
-      @methods.should_not include "priv"
-      @methods.should_not include "extra_private"
-    end
+  it "includes all public methods of the delegated class" do
+    @methods.should include :pub
   end
 
-  ruby_version_is "1.9" do
-    it "includes all public methods of the delegated class" do
-      @methods.should include :pub
-    end
+  it "does not include the protected methods of the delegated class" do
+    @methods.should_not include :prot
+  end
 
-    it "does not include the protected methods of the delegated class" do
-      @methods.should_not include :prot
-    end
+  it "includes public instance methods of the DelegateClass class" do
+    @methods.should include :extra
+  end
 
-    it "includes public instance methods of the DelegateClass class" do
-      @methods.should include :extra
-    end
-
-    it "does not include private methods" do
-      @methods.should_not include :priv
-      @methods.should_not include :extra_private
-    end
+  it "does not include private methods" do
+    @methods.should_not include :priv
+    @methods.should_not include :extra_private
   end
 end

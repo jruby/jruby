@@ -29,42 +29,17 @@ describe "StringIO#ungetc when passed [char]" do
     @io.string.should == "1234\000\000\000\000\000\000\000\000\000\000A"
   end
 
-  ruby_version_is "1.8.6" .. "1.8.6.367" do
-    it "does nothing when at the beginning of self" do
-      @io.ungetc(65)
-      @io.string.should == '1234'
-    end
+  it "tries to convert the passed argument to an String using #to_str" do
+    obj = mock("to_str")
+    obj.should_receive(:to_str).and_return(?A)
+
+    @io.pos = 1
+    @io.ungetc(obj)
+    @io.string.should == "A234"
   end
 
-  ruby_version_is "" ... "1.9" do
-    it "tries to convert the passed length to an Integer using #to_int" do
-      obj = mock("to_int")
-      obj.should_receive(:to_int).and_return(?A)
-
-      @io.pos = 1
-      @io.ungetc(obj)
-      @io.string.should == "A234"
-    end
-
-    it "raises a TypeError when the passed length can't be converted to an Integer" do
-      lambda { @io.ungetc(Object.new) }.should raise_error(TypeError)
-      lambda { @io.ungetc("A") }.should raise_error(TypeError)
-    end
-  end
-
-  ruby_version_is "1.9" do
-    it "tries to convert the passed argument to an String using #to_str" do
-      obj = mock("to_str")
-      obj.should_receive(:to_str).and_return(?A)
-
-      @io.pos = 1
-      @io.ungetc(obj)
-      @io.string.should == "A234"
-    end
-
-    it "raises a TypeError when the passed length can't be converted to an Integer or String" do
-      lambda { @io.ungetc(Object.new) }.should raise_error(TypeError)
-    end
+  it "raises a TypeError when the passed length can't be converted to an Integer or String" do
+    lambda { @io.ungetc(Object.new) }.should raise_error(TypeError)
   end
 end
 
@@ -84,16 +59,14 @@ end
 # Note: This is incorrect.
 #
 # describe "StringIO#ungetc when self is not writable" do
-#   ruby_bug "#", "1.8.7.17" do
-#     it "raises an IOError" do
-#       io = StringIO.new("test", "r")
-#       io.pos = 1
-#       lambda { io.ungetc(?A) }.should raise_error(IOError)
+#   it "raises an IOError" do
+#     io = StringIO.new("test", "r")
+#     io.pos = 1
+#     lambda { io.ungetc(?A) }.should raise_error(IOError)
 #
-#       io = StringIO.new("test")
-#       io.pos = 1
-#       io.close_write
-#       lambda { io.ungetc(?A) }.should raise_error(IOError)
-#     end
+#     io = StringIO.new("test")
+#     io.pos = 1
+#     io.close_write
+#     lambda { io.ungetc(?A) }.should raise_error(IOError)
 #   end
 # end

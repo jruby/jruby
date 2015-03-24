@@ -6,12 +6,10 @@ describe "SortedSet#reject!" do
     @set = SortedSet["one", "two", "three"]
   end
 
-  ruby_bug "http://redmine.ruby-lang.org/issues/show/115", "1.8.7.7" do
-    it "yields each Object in self in sorted order" do
-      res = []
-      @set.reject! { |x| res << x }
-      res.should == ["one", "two", "three"].sort
-    end
+  it "yields each Object in self in sorted order" do
+    res = []
+    @set.reject! { |x| res << x }
+    res.should == ["one", "two", "three"].sort
   end
 
   it "deletes every element from self for which the passed block returns true" do
@@ -31,22 +29,14 @@ describe "SortedSet#reject!" do
     @set.reject! { |x| false }.should be_nil
   end
 
-  ruby_version_is "" ... "1.8.8" do
-    it "raises a LocalJumpError when passed no block" do
-      lambda { @set.reject! }.should raise_error(LocalJumpError)
-    end
-  end
+  it "returns an Enumerator when passed no block" do
+    enum = @set.reject!
+    enum.should be_an_instance_of(enumerator_class)
 
-  ruby_version_is "1.8.8" do
-    it "returns an Enumerator when passed no block" do
-      enum = @set.reject!
-      enum.should be_an_instance_of(enumerator_class)
+    enum.each { |x| x.size == 3 }
 
-      enum.each { |x| x.size == 3 }
-
-      @set.should_not include("one")
-      @set.should_not include("two")
-      @set.should include("three")
-    end
+    @set.should_not include("one")
+    @set.should_not include("two")
+    @set.should include("three")
   end
 end

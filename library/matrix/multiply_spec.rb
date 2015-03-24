@@ -35,40 +35,34 @@ describe "Matrix#*" do
     lambda { @a * Matrix[ [1] ] }.should raise_error(Matrix::ErrDimensionMismatch)
   end
 
-  ruby_bug "redmine:1532", "1.8.7" do
-    it "returns a zero matrix if (nx0) * (0xn)" do
-      (Matrix[[],[],[]] * Matrix.columns([[],[],[]])).should == Matrix.zero(3)
-    end
-
-    it "returns an empty matrix if (0xn) * (nx0)" do
-      (Matrix.columns([[],[],[]]) * Matrix[[],[],[]]).should == Matrix[]
-    end
-
-    it "returns a mx0 matrix if (mxn) * (nx0)" do
-      (Matrix[[1,2],[3,4],[5,6]] * Matrix[[],[]]).should == Matrix[[],[],[]]
-    end
-
-    it "returns a 0xm matrix if (0xm) * (mxn)" do
-      (Matrix.columns([[], [], []]) * Matrix[[1,2],[3,4],[5,6]]).should == Matrix.columns([[],[]])
-    end
+  it "returns a zero matrix if (nx0) * (0xn)" do
+    (Matrix[[],[],[]] * Matrix.columns([[],[],[]])).should == Matrix.zero(3)
   end
 
-  ruby_bug "redmine:2365", "1.8.7" do
-    it "raises a TypeError if other is of wrong type" do
-      lambda { @a * nil        }.should raise_error(TypeError)
-      lambda { @a * "a"        }.should raise_error(TypeError)
-      lambda { @a * [ [1, 2] ] }.should raise_error(TypeError)
-      lambda { @a * Object.new }.should raise_error(TypeError)
-    end
+  it "returns an empty matrix if (0xn) * (nx0)" do
+    (Matrix.columns([[],[],[]]) * Matrix[[],[],[]]).should == Matrix[]
   end
 
-  ruby_bug "redmine #5307", "1.9.3" do
-    describe "for a subclass of Matrix" do
-      it "returns an instance of that subclass" do
-        m = MatrixSub.ins
-        (m*m).should be_an_instance_of(MatrixSub)
-        (m*1).should be_an_instance_of(MatrixSub)
-      end
+  it "returns a mx0 matrix if (mxn) * (nx0)" do
+    (Matrix[[1,2],[3,4],[5,6]] * Matrix[[],[]]).should == Matrix[[],[],[]]
+  end
+
+  it "returns a 0xm matrix if (0xm) * (mxn)" do
+    (Matrix.columns([[], [], []]) * Matrix[[1,2],[3,4],[5,6]]).should == Matrix.columns([[],[]])
+  end
+
+  it "raises a TypeError if other is of wrong type" do
+    lambda { @a * nil        }.should raise_error(TypeError)
+    lambda { @a * "a"        }.should raise_error(TypeError)
+    lambda { @a * [ [1, 2] ] }.should raise_error(TypeError)
+    lambda { @a * Object.new }.should raise_error(TypeError)
+  end
+
+  describe "for a subclass of Matrix" do
+    it "returns an instance of that subclass" do
+      m = MatrixSub.ins
+      (m*m).should be_an_instance_of(MatrixSub)
+      (m*1).should be_an_instance_of(MatrixSub)
     end
   end
 end

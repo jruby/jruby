@@ -15,11 +15,9 @@ describe "Matrix#[]" do
     end
   end
 
-  ruby_bug "#1518", "1.8.7" do
-    it "returns nil for an invalid index pair" do
-      @m[8,1].should be_nil
-      @m[1,8].should be_nil
-    end
+  it "returns nil for an invalid index pair" do
+    @m[8,1].should be_nil
+    @m[1,8].should be_nil
   end
 
 end

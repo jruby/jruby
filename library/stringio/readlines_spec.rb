@@ -26,11 +26,9 @@ describe "StringIO#readlines when passed [separator]" do
     $_.should == "test"
   end
 
-  ruby_bug "", "1.8.8" do
-    it "returns an Array containing all paragraphs when the passed separator is an empty String" do
-      io = StringIO.new("this is\n\nan example")
-      io.readlines("").should == ["this is\n\n", "an example"]
-    end
+  it "returns an Array containing all paragraphs when the passed separator is an empty String" do
+    io = StringIO.new("this is\n\nan example")
+    io.readlines("").should == ["this is\n\n", "an example"]
   end
 
   it "returns the remaining content as one line starting at the current position when passed nil" do

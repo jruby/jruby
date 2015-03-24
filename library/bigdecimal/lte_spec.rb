@@ -68,24 +68,20 @@ describe "BigDecimal#<=" do
     (@infinity_neg <= @infinity).should == true
   end
 
-  ruby_bug "redmine:2349", "1.8.7" do
-    it "properly handles NaN values" do
-      @values += [@infinity, @infinity_neg, @nan]
-      @values.each { |val|
-        (@nan <= val).should == false
-        (val <= @nan).should == false
-      }
-    end
+  it "properly handles NaN values" do
+    @values += [@infinity, @infinity_neg, @nan]
+    @values.each { |val|
+      (@nan <= val).should == false
+      (val <= @nan).should == false
+    }
   end
 
-  ruby_bug "redmine:2349", "1.8.7" do
-    it "raises an ArgumentError if the argument can't be coerced into a BigDecimal" do
-      lambda {@zero         <= nil }.should raise_error(ArgumentError)
-      lambda {@infinity     <= nil }.should raise_error(ArgumentError)
-      lambda {@infinity_neg <= nil }.should raise_error(ArgumentError)
-      lambda {@mixed        <= nil }.should raise_error(ArgumentError)
-      lambda {@pos_int      <= nil }.should raise_error(ArgumentError)
-      lambda {@neg_frac     <= nil }.should raise_error(ArgumentError)
-    end
+  it "raises an ArgumentError if the argument can't be coerced into a BigDecimal" do
+    lambda {@zero         <= nil }.should raise_error(ArgumentError)
+    lambda {@infinity     <= nil }.should raise_error(ArgumentError)
+    lambda {@infinity_neg <= nil }.should raise_error(ArgumentError)
+    lambda {@mixed        <= nil }.should raise_error(ArgumentError)
+    lambda {@pos_int      <= nil }.should raise_error(ArgumentError)
+    lambda {@neg_frac     <= nil }.should raise_error(ArgumentError)
   end
 end

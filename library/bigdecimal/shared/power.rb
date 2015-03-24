@@ -57,27 +57,16 @@ describe :bigdecimal_power, :shared => true do
     BigDecimal("NaN").send(@method, 5).nan?.should == true
   end
 
-  ruby_version_is "" ... "1.8.8" do
-    it "returns NaN if self is infinite" do
-      BigDecimal("Infinity").send(@method, -5).nan?.should == true
-      BigDecimal("-Infinity").send(@method, -5).nan?.should == true
-      BigDecimal("Infinity").send(@method, 5).nan?.should == true
-      BigDecimal("-Infinity").send(@method, 5).nan?.should == true
-    end
+  it "returns 0.0 if self is infinite and argument is negative" do
+    BigDecimal("Infinity").send(@method, -5).should == 0
+    BigDecimal("-Infinity").send(@method, -5).should == 0
   end
 
-  ruby_version_is "1.8.8" do # this behavior may be backported to 1.8.7 [ruby-dev:40182]
-    it "returns 0.0 if self is infinite and argument is negative" do
-      BigDecimal("Infinity").send(@method, -5).should == 0
-      BigDecimal("-Infinity").send(@method, -5).should == 0
-    end
-
-    it "returns infinite if self is infinite and argument is positive" do
-      infinity = BigDecimal("Infinity")
-      BigDecimal("Infinity").send(@method, 4).should == infinity
-      BigDecimal("-Infinity").send(@method, 4).should == infinity
-      BigDecimal("Infinity").send(@method, 5).should == infinity
-      BigDecimal("-Infinity").send(@method, 5).should == -infinity
-    end
+  it "returns infinite if self is infinite and argument is positive" do
+    infinity = BigDecimal("Infinity")
+    BigDecimal("Infinity").send(@method, 4).should == infinity
+    BigDecimal("-Infinity").send(@method, 4).should == infinity
+    BigDecimal("Infinity").send(@method, 5).should == infinity
+    BigDecimal("-Infinity").send(@method, 5).should == -infinity
   end
 end

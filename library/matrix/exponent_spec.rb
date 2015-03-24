@@ -36,27 +36,11 @@ describe "Matrix#**" do
     end
   end
 
-  ruby_version_is "" ... "1.9.1" do
-    it "raises a ErrOperationNotDefined exception for powers that aren't Integers" do
-      lambda {Matrix[ [1,2], [8,2] ] ** 2.5}.should \
-        raise_error(Matrix::ErrOperationNotDefined)
-    end
-  end
-
-  ruby_version_is "1.9.1" ... "1.9.3" do
-    it "raises a ErrOperationNotImplemented exception for powers that aren't Integers" do
-      lambda {Matrix[ [1,2], [8,2] ] ** 2.5}.should \
-        raise_error(Matrix::ErrOperationNotImplemented)
-    end
-  end
-
-  ruby_version_is "1.9.3" do
-    it "returns the power for non integer powers" do
-      a = Matrix[[5, 4], [4, 5]]
-      ((a ** 0.5) ** 2).round(8).should == a
-      a = Matrix[[7, 10], [15, 22]]
-      ((a ** 0.25) ** 4).round(8).should == a
-    end
+  it "returns the power for non integer powers" do
+    a = Matrix[[5, 4], [4, 5]]
+    ((a ** 0.5) ** 2).round(8).should == a
+    a = Matrix[[7, 10], [15, 22]]
+    ((a ** 0.25) ** 4).round(8).should == a
   end
 
   describe "for a subclass of Matrix" do

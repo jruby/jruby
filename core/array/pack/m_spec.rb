@@ -179,10 +179,8 @@ describe "Array#pack with format 'M'" do
     [1.0].pack("M").should == "1.0=\n"
   end
 
-  ruby_bug "#3273", "1.8.7" do
-    it "converts Floats to the minimum unique representation" do
-      [1.0 / 3.0].pack("M").should == "0.3333333333333333=\n"
-    end
+  it "converts Floats to the minimum unique representation" do
+    [1.0 / 3.0].pack("M").should == "0.3333333333333333=\n"
   end
 
   it "sets the output string to US-ASCII encoding" do

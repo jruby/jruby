@@ -49,13 +49,11 @@ describe "Fixnum#[]" do
     lambda { 3[obj] }.should raise_error(TypeError)
   end
 
-  ruby_bug "#", "1.8.6" do # Fixed at MRI 1.8.7
-    it "calls #to_int to coerce a String to a Bignum and returns 0" do
-      obj = mock('bignum value')
-      obj.should_receive(:to_int).and_return(bignum_value())
+  it "calls #to_int to coerce a String to a Bignum and returns 0" do
+    obj = mock('bignum value')
+    obj.should_receive(:to_int).and_return(bignum_value())
 
-      3[obj].should == 0
-    end
+    3[obj].should == 0
   end
 
   it "returns 0 when passed a Float in the range of a Bignum" do

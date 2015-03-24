@@ -112,33 +112,31 @@ describe "Array#sample" do
   end
 
   describe "when the object returned by #rand is not a Fixnum but responds to #to_int" do
-    ruby_bug "GH-379", "2.0.0.322" do
-      it "calls #to_int on the Object" do
-        value = mock("array_sample_random_value")
-        value.should_receive(:to_int).and_return(1)
-        random = mock("array_sample_random")
-        random.should_receive(:rand).and_return(value)
+    it "calls #to_int on the Object" do
+      value = mock("array_sample_random_value")
+      value.should_receive(:to_int).and_return(1)
+      random = mock("array_sample_random")
+      random.should_receive(:rand).and_return(value)
 
-        [1, 2].sample(:random => random).should == 2
-      end
+      [1, 2].sample(:random => random).should == 2
+    end
 
-      it "raises a RangeError if the value is less than zero" do
-        value = mock("array_sample_random_value")
-        value.should_receive(:to_int).and_return(-1)
-        random = mock("array_sample_random")
-        random.should_receive(:rand).and_return(value)
+    it "raises a RangeError if the value is less than zero" do
+      value = mock("array_sample_random_value")
+      value.should_receive(:to_int).and_return(-1)
+      random = mock("array_sample_random")
+      random.should_receive(:rand).and_return(value)
 
-        lambda { [1, 2].sample(:random => random) }.should raise_error(RangeError)
-      end
+      lambda { [1, 2].sample(:random => random) }.should raise_error(RangeError)
+    end
 
-      it "raises a RangeError if the value is equal to the Array size" do
-        value = mock("array_sample_random_value")
-        value.should_receive(:to_int).and_return(2)
-        random = mock("array_sample_random")
-        random.should_receive(:rand).and_return(value)
+    it "raises a RangeError if the value is equal to the Array size" do
+      value = mock("array_sample_random_value")
+      value.should_receive(:to_int).and_return(2)
+      random = mock("array_sample_random")
+      random.should_receive(:rand).and_return(value)
 
-        lambda { [1, 2].sample(:random => random) }.should raise_error(RangeError)
-      end
+      lambda { [1, 2].sample(:random => random) }.should raise_error(RangeError)
     end
   end
 end

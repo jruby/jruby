@@ -10,30 +10,15 @@ describe "GzipReader#getc" do
     @io = StringIO.new @zip
   end
 
-  ruby_version_is ''...'1.9' do
-    it "returns the next byte from the stream" do
-      gz = Zlib::GzipReader.new @io
-      gz.pos.should == 0
+  it "returns the next character from the stream" do
+    gz = Zlib::GzipReader.new @io
+    gz.pos.should == 0
 
-      gz.getc.should == ?1
-      gz.getc.should == ?2
-      gz.getc.should == ?3
-      gz.getc.should == ?4
-      gz.getc.should == ?5
-    end
-  end
-
-  ruby_version_is '1.9' do
-    it "returns the next character from the stream" do
-      gz = Zlib::GzipReader.new @io
-      gz.pos.should == 0
-
-      gz.getc.should == '1'
-      gz.getc.should == '2'
-      gz.getc.should == '3'
-      gz.getc.should == '4'
-      gz.getc.should == '5'
-    end
+    gz.getc.should == '1'
+    gz.getc.should == '2'
+    gz.getc.should == '3'
+    gz.getc.should == '4'
+    gz.getc.should == '5'
   end
 
   it "increments position" do

@@ -11,16 +11,8 @@ describe "SimpleDelegator.new" do
     @delegate.pub.should == :foo
   end
 
-  ruby_version_is ""..."2.0" do
-    it "forwards protected method calls" do
-      @delegate.prot.should == :protected
-    end
-  end
-
-  ruby_version_is "2.0" do
-    it "forwards protected method calls" do
-      lambda{ @delegate.prot }.should raise_error( NoMethodError )
-    end
+  it "forwards protected method calls" do
+    lambda{ @delegate.prot }.should raise_error( NoMethodError )
   end
 
   it "doesn't forward private method calls" do

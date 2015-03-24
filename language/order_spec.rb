@@ -45,33 +45,31 @@ describe "A method call" do
     a.should == 10
   end
 
-  ruby_bug "redmine #1034", "1.8" do
-    it "evaluates block pass after arguments" do
-      a = 0
-      p = proc {true}
-      @obj.foo1(a += 1, &(a += 1; p)).should == [1, true]
-      @obj.foo2(a += 1, a += 1, &(a += 1; p)).should == [3, 4, true]
-      @obj.foo3(a += 1, a += 1, a += 1, &(a += 1; p)).should == [6, 7, 8, true]
-      @obj.foo4(a += 1, a += 1, a += 1, a += 1, &(a += 1; p)).should == [10, 11, 12, 13, true]
-      a.should == 14
-    end
+  it "evaluates block pass after arguments" do
+    a = 0
+    p = proc {true}
+    @obj.foo1(a += 1, &(a += 1; p)).should == [1, true]
+    @obj.foo2(a += 1, a += 1, &(a += 1; p)).should == [3, 4, true]
+    @obj.foo3(a += 1, a += 1, a += 1, &(a += 1; p)).should == [6, 7, 8, true]
+    @obj.foo4(a += 1, a += 1, a += 1, a += 1, &(a += 1; p)).should == [10, 11, 12, 13, true]
+    a.should == 14
+  end
 
-    it "evaluates block pass after receiver" do
-      p1 = proc {true}
-      p2 = proc {false}
-      p1.should_not == p2
+  it "evaluates block pass after receiver" do
+    p1 = proc {true}
+    p2 = proc {false}
+    p1.should_not == p2
 
-      p = p1
-      (p = p2; @obj).foo0(&p).should == [false]
-      p = p1
-      (p = p2; @obj).foo1(1, &p).should == [1, false]
-      p = p1
-      (p = p2; @obj).foo2(1, 1, &p).should == [1, 1, false]
-      p = p1
-      (p = p2; @obj).foo3(1, 1, 1, &p).should == [1, 1, 1, false]
-      p = p1
-      (p = p2; @obj).foo4(1, 1, 1, 1, &p).should == [1, 1, 1, 1, false]
-      p = p1
-    end
+    p = p1
+    (p = p2; @obj).foo0(&p).should == [false]
+    p = p1
+    (p = p2; @obj).foo1(1, &p).should == [1, false]
+    p = p1
+    (p = p2; @obj).foo2(1, 1, &p).should == [1, 1, false]
+    p = p1
+    (p = p2; @obj).foo3(1, 1, 1, &p).should == [1, 1, 1, false]
+    p = p1
+    (p = p2; @obj).foo4(1, 1, 1, 1, &p).should == [1, 1, 1, 1, false]
+    p = p1
   end
 end

@@ -402,7 +402,8 @@ describe "C-API Encoding function" do
     end
 
     it "sets the encoding of a Symbol to the encoding" do
-      lambda { @s.rb_enc_associate_index(:symbol, "US-ASCII") }.should raise_error(TypeError)
+      index = @s.rb_enc_find_index("UTF-8")
+      lambda { @s.rb_enc_associate_index(:symbol, index) }.should raise_error(RuntimeError)
     end
   end
 
