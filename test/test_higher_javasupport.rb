@@ -192,6 +192,21 @@ class TestHigherJavasupport < Test::Unit::TestCase
     assert_equal Array, array[0].class
   end
 
+  def test_ruby_array_with_java_array_element_to_array
+    array = [ "foo".to_java_bytes ]
+    array = array.to_java Java::byte[]
+    assert_equal 1, array.size
+    assert_equal 3, array[0].size
+    assert_equal Java::byte, array[0].component_type
+
+    array = [ [ 1 ], "bar".to_java_bytes, [ 2 ] ].to_java(Java::byte[])
+    assert_equal 3, array.length
+    assert_equal Java::byte[], array.component_type
+    assert_equal 3, array[1].length
+    assert_equal 1, array[0][0]
+    assert_equal 2, array[2][0]
+  end
+
   class IntLike
     def initialize(value)
       @value = value
