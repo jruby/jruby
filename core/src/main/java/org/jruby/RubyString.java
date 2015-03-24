@@ -4436,7 +4436,6 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
     @JRubyMethod(name = "count")
     public IRubyObject count19(ThreadContext context, IRubyObject arg) {
         Ruby runtime = context.runtime;
-        if (value.getRealSize() == 0) return RubyFixnum.zero(runtime);
 
         RubyString otherStr = arg.convertToString();
         ByteList otherBL = otherStr.getByteList();
