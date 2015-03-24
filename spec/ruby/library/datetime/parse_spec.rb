@@ -69,46 +69,20 @@ describe "DateTime.parse" do
       lambda{DateTime.parse("2012-12-31T25:43:59")}.should raise_error(ArgumentError)
     end
 
-    ruby_version_is ""..."2.0" do
-      #this seems like unexpected behaviour why not raise an ArgumentError?
-      #also according to ISO8601 seconds can be 60 to allow for a leap second
-      it "truncates seconds down to 59" do
-        d = DateTime.parse("2012-11-08T15:43:61")
-
-        d.should == DateTime.civil(2012, 11, 8, 15, 43, 59)
-      end
-    end
-
-    ruby_version_is "2.0" do
-      it "throws an argument error for invalid second values" do
-        lambda{DateTime.parse("2012-11-08T15:43:61")}.should raise_error(ArgumentError)
-      end
+    it "throws an argument error for invalid second values" do
+      lambda{DateTime.parse("2012-11-08T15:43:61")}.should raise_error(ArgumentError)
     end
 
   end
 
-  ruby_version_is "" ... "1.9" do
-    it "parses YYDDD as year and day number" do
-      d = DateTime.parse("10100")
-      d.should == DateTime.civil(10, 4, 10)
-    end
-
-    it "parses YYMMDD as year, month and day" do
-      d = DateTime.parse("201023")
-      d.should == DateTime.civil(20, 10, 23)
-    end
+  it "parses YYDDD as year and day number in 1969--2068" do
+    d = DateTime.parse("10100")
+    d.should == DateTime.civil(2010, 4, 10)
   end
 
-  ruby_version_is "1.9" do
-    it "parses YYDDD as year and day number in 1969--2068" do
-      d = DateTime.parse("10100")
-      d.should == DateTime.civil(2010, 4, 10)
-    end
-
-    it "parses YYMMDD as year, month and day in 1969--2068" do
-      d = DateTime.parse("201023")
-      d.should == DateTime.civil(2020, 10, 23)
-    end
+  it "parses YYMMDD as year, month and day in 1969--2068" do
+    d = DateTime.parse("201023")
+    d.should == DateTime.civil(2020, 10, 23)
   end
 
   it "parses YYYYDDD as year and day number" do
@@ -122,46 +96,32 @@ describe "DateTime.parse" do
   end
 end
 
-ruby_version_is "1.8.7" do
-  describe "DateTime.parse(.)" do
-    it "parses YYYY.MM.DD into a DateTime object" do
-      d = DateTime.parse("2007.10.01")
-      d.year.should  == 2007
-      d.month.should == 10
-      d.day.should   == 1
-    end
-
-    it "parses DD.MM.YYYY into a DateTime object" do
-      d = DateTime.parse("10.01.2007")
-      d.year.should  == 2007
-      d.month.should == 1
-      d.day.should   == 10
-    end
-
-    ruby_version_is "" ... "1.9" do
-      it "parses YY.MM.DD into a DateTime object using the year YY" do
-        d = DateTime.parse("10.01.07")
-        d.year.should  == 10
-        d.month.should == 1
-        d.day.should   == 7
-      end
-    end
-
-    ruby_version_is "1.9" do
-      it "parses YY.MM.DD into a DateTime object using the year 20YY" do
-        d = DateTime.parse("10.01.07")
-        d.year.should  == 2010
-        d.month.should == 1
-        d.day.should   == 7
-      end
-    end
-
-    it "parses YY.MM.DD using the year digits as 20YY when given true as additional argument" do
-      d = DateTime.parse("10.01.07", true)
-      d.year.should  == 2010
-      d.month.should == 1
-      d.day.should   == 7
-    end
+describe "DateTime.parse(.)" do
+  it "parses YYYY.MM.DD into a DateTime object" do
+    d = DateTime.parse("2007.10.01")
+    d.year.should  == 2007
+    d.month.should == 10
+    d.day.should   == 1
   end
 
+  it "parses DD.MM.YYYY into a DateTime object" do
+    d = DateTime.parse("10.01.2007")
+    d.year.should  == 2007
+    d.month.should == 1
+    d.day.should   == 10
+  end
+
+  it "parses YY.MM.DD into a DateTime object using the year 20YY" do
+    d = DateTime.parse("10.01.07")
+    d.year.should  == 2010
+    d.month.should == 1
+    d.day.should   == 7
+  end
+
+  it "parses YY.MM.DD using the year digits as 20YY when given true as additional argument" do
+    d = DateTime.parse("10.01.07", true)
+    d.year.should  == 2010
+    d.month.should == 1
+    d.day.should   == 7
+  end
 end

@@ -19,45 +19,26 @@ platform_is_not :windows do
       @name = `id -gn`.strip
     end
 
-    ruby_version_is "" ... "1.9" do
-      it "returns a Struct::Group struct instance for the given user" do
-        gr = Etc.getgrgid(@gid)
+    it "returns a Etc::Group struct instance for the given user" do
+      gr = Etc.getgrgid(@gid)
 
-        gr.is_a?(Struct::Group).should == true
-        gr.gid.should == @gid
-        gr.name.should == @name
-      end
-
-      it "returns the Struct::Group for a given gid if it exists" do
-        grp = Etc.getgrgid(@gid)
-        grp.should be_kind_of(Struct::Group)
-        grp.gid.should == @gid
-        grp.name.should == @name
-      end
+      gr.is_a?(Etc::Group).should == true
+      gr.gid.should == @gid
+      gr.name.should == @name
     end
 
-    ruby_version_is "1.9" do
-      it "returns a Etc::Group struct instance for the given user" do
-        gr = Etc.getgrgid(@gid)
+    it "returns the Etc::Group for a given gid if it exists" do
+      grp = Etc.getgrgid(@gid)
+      grp.should be_kind_of(Etc::Group)
+      grp.gid.should == @gid
+      grp.name.should == @name
+    end
 
-        gr.is_a?(Etc::Group).should == true
-        gr.gid.should == @gid
-        gr.name.should == @name
-      end
+    it "uses Process.gid as the default value for the argument" do
+      gr = Etc.getgrgid
 
-      it "returns the Etc::Group for a given gid if it exists" do
-        grp = Etc.getgrgid(@gid)
-        grp.should be_kind_of(Etc::Group)
-        grp.gid.should == @gid
-        grp.name.should == @name
-      end
-
-      it "uses Process.gid as the default value for the argument" do
-        gr = Etc.getgrgid
-
-        gr.gid.should == @gid
-        gr.name.should == @name
-      end
+      gr.gid.should == @gid
+      gr.name.should == @name
     end
 
     it "returns the Group for a given gid if it exists" do

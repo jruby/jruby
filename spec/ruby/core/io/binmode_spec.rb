@@ -16,10 +16,8 @@ describe "IO#binmode" do
     @io.binmode.should equal(@io)
   end
 
-  ruby_bug "#2046", "1.8.7.174" do
-    it "raises an IOError on closed stream" do
-      lambda { IOSpecs.closed_io.binmode }.should raise_error(IOError)
-    end
+  it "raises an IOError on closed stream" do
+    lambda { IOSpecs.closed_io.binmode }.should raise_error(IOError)
   end
 
   it "sets external encoding to binary" do

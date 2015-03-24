@@ -13,12 +13,10 @@ describe "DelegateClass.instance_method" do
     m.bind(@obj).call.should == :foo
   end
 
-  ruby_bug "#2496", "1.8" do
-    it "returns a method object for protected instance methods of the delegated class" do
-      m = @klass.instance_method(:prot)
-      m.should be_an_instance_of(UnboundMethod)
-      m.bind(@obj).call.should == :protected
-    end
+  it "returns a method object for protected instance methods of the delegated class" do
+    m = @klass.instance_method(:prot)
+    m.should be_an_instance_of(UnboundMethod)
+    m.bind(@obj).call.should == :protected
   end
 
   it "raises a NameError for a private instance methods of the delegated class" do

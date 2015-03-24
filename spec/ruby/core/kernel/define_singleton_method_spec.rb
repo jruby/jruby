@@ -17,25 +17,23 @@ describe "Kernel#define_singleton_method" do
       DefineSingletonMethodSpecClass.should have_method(:another_test_method)
     end
 
-    ruby_bug "redmine:2117", "1.8.7" do
-      it "defines any Child class method from any Parent's class methods" do
-        um = KernelSpecs::Parent.method(:parent_class_method).unbind
-        KernelSpecs::Child.send :define_singleton_method, :child_class_method, um
-        KernelSpecs::Child.child_class_method.should == :foo
-        lambda{KernelSpecs::Parent.child_class_method}.should raise_error(NoMethodError)
-      end
+    it "defines any Child class method from any Parent's class methods" do
+      um = KernelSpecs::Parent.method(:parent_class_method).unbind
+      KernelSpecs::Child.send :define_singleton_method, :child_class_method, um
+      KernelSpecs::Child.child_class_method.should == :foo
+      lambda{KernelSpecs::Parent.child_class_method}.should raise_error(NoMethodError)
+    end
 
-      it "will raise when attempting to define an object's singleton method from another object's singleton method" do
-        other = KernelSpecs::Parent.new
-        p = KernelSpecs::Parent.new
-        class << p
-          def singleton_method
-            :single
-          end
+    it "will raise when attempting to define an object's singleton method from another object's singleton method" do
+      other = KernelSpecs::Parent.new
+      p = KernelSpecs::Parent.new
+      class << p
+        def singleton_method
+          :single
         end
-        um = p.method(:singleton_method).unbind
-        lambda{ other.send :define_singleton_method, :other_singleton_method, um }.should raise_error(TypeError)
       end
+      um = p.method(:singleton_method).unbind
+      lambda{ other.send :define_singleton_method, :other_singleton_method, um }.should raise_error(TypeError)
     end
 
   end

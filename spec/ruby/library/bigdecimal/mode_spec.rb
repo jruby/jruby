@@ -17,49 +17,20 @@ describe "BigDecimal.mode" do
     BigDecimal("1").quo(BigDecimal("0")).should == BigDecimal("Infinity")
   end
 
-  ruby_version_is "" ... "1.9" do
-    it "returns zero when too big" do
-      BigDecimal("1E11111111111111111111").zero?.should == true
-      (BigDecimal("1E11111111111")*BigDecimal("1E11111111111")).zero?.should == true
-    end
+  it "returns Infinity when too big" do
+    BigDecimal("1E11111111111111111111").should == BigDecimal("Infinity")
+    (BigDecimal("1E1000000000000000000")**10).should == BigDecimal("Infinity")
   end
 
-  ruby_version_is "1.9" ... "1.9.3" do
-    it "returns Infinity when too big" do
-      BigDecimal("1E11111111111111111111").should == BigDecimal("Infinity")
-      (BigDecimal("1E11111111111")*BigDecimal("1E11111111111")).should ==
-        BigDecimal("Infinity")
-    end
-
-    it "raise an exception if the flag is true" do
-      BigDecimal::mode(BigDecimal::EXCEPTION_NaN, true)
-      lambda { BigDecimal("NaN").add(BigDecimal("1"),0) }.should raise_error(FloatDomainError)
-      BigDecimal::mode(BigDecimal::EXCEPTION_INFINITY, true)
-      lambda { BigDecimal("0").add(BigDecimal("Infinity"),0) }.should raise_error(FloatDomainError)
-      BigDecimal::mode(BigDecimal::EXCEPTION_ZERODIVIDE, true)
-      lambda { BigDecimal("1").quo(BigDecimal("0")) }.should raise_error(FloatDomainError)
-      BigDecimal::mode(BigDecimal::EXCEPTION_OVERFLOW, true)
-      lambda { BigDecimal("1E11111111111111111111") }.should raise_error(FloatDomainError)
-      lambda { (BigDecimal("1E11111111111")*BigDecimal("1E11111111111")) }.should raise_error(FloatDomainError)
-    end
-  end
-
-  ruby_version_is "1.9.3" do
-    it "returns Infinity when too big" do
-      BigDecimal("1E11111111111111111111").should == BigDecimal("Infinity")
-      (BigDecimal("1E1000000000000000000")**10).should == BigDecimal("Infinity")
-    end
-
-    it "raise an exception if the flag is true" do
-      BigDecimal::mode(BigDecimal::EXCEPTION_NaN, true)
-      lambda { BigDecimal("NaN").add(BigDecimal("1"),0) }.should raise_error(FloatDomainError)
-      BigDecimal::mode(BigDecimal::EXCEPTION_INFINITY, true)
-      lambda { BigDecimal("0").add(BigDecimal("Infinity"),0) }.should raise_error(FloatDomainError)
-      BigDecimal::mode(BigDecimal::EXCEPTION_ZERODIVIDE, true)
-      lambda { BigDecimal("1").quo(BigDecimal("0")) }.should raise_error(FloatDomainError)
-      BigDecimal::mode(BigDecimal::EXCEPTION_OVERFLOW, true)
-      lambda { BigDecimal("1E11111111111111111111") }.should raise_error(FloatDomainError)
-      lambda { (BigDecimal("1E1000000000000000000")**10) }.should raise_error(FloatDomainError)
-    end
+  it "raise an exception if the flag is true" do
+    BigDecimal::mode(BigDecimal::EXCEPTION_NaN, true)
+    lambda { BigDecimal("NaN").add(BigDecimal("1"),0) }.should raise_error(FloatDomainError)
+    BigDecimal::mode(BigDecimal::EXCEPTION_INFINITY, true)
+    lambda { BigDecimal("0").add(BigDecimal("Infinity"),0) }.should raise_error(FloatDomainError)
+    BigDecimal::mode(BigDecimal::EXCEPTION_ZERODIVIDE, true)
+    lambda { BigDecimal("1").quo(BigDecimal("0")) }.should raise_error(FloatDomainError)
+    BigDecimal::mode(BigDecimal::EXCEPTION_OVERFLOW, true)
+    lambda { BigDecimal("1E11111111111111111111") }.should raise_error(FloatDomainError)
+    lambda { (BigDecimal("1E1000000000000000000")**10) }.should raise_error(FloatDomainError)
   end
 end

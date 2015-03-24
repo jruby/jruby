@@ -25,52 +25,50 @@ describe :array_eql, :shared => true do
     [obj]     .send(@method,    []     ).should be_false
   end
 
-  ruby_bug "ruby-core #1448", "1.9.1" do
-    it "handles well recursive arrays" do
-      a = ArraySpecs.empty_recursive_array
-      a       .send(@method,    [a]    ).should be_true
-      a       .send(@method,    [[a]]  ).should be_true
-      [a]     .send(@method,    a      ).should be_true
-      [[a]]   .send(@method,    a      ).should be_true
-      # These may be surprising, but no difference can be
-      # found between these arrays, so they are ==.
-      # There is no "path" that will lead to a difference
-      # (contrary to other examples below)
+  it "handles well recursive arrays" do
+    a = ArraySpecs.empty_recursive_array
+    a       .send(@method,    [a]    ).should be_true
+    a       .send(@method,    [[a]]  ).should be_true
+    [a]     .send(@method,    a      ).should be_true
+    [[a]]   .send(@method,    a      ).should be_true
+    # These may be surprising, but no difference can be
+    # found between these arrays, so they are ==.
+    # There is no "path" that will lead to a difference
+    # (contrary to other examples below)
 
-      a2 = ArraySpecs.empty_recursive_array
-      a       .send(@method,    a2     ).should be_true
-      a       .send(@method,    [a2]   ).should be_true
-      a       .send(@method,    [[a2]] ).should be_true
-      [a]     .send(@method,    a2     ).should be_true
-      [[a]]   .send(@method,    a2     ).should be_true
+    a2 = ArraySpecs.empty_recursive_array
+    a       .send(@method,    a2     ).should be_true
+    a       .send(@method,    [a2]   ).should be_true
+    a       .send(@method,    [[a2]] ).should be_true
+    [a]     .send(@method,    a2     ).should be_true
+    [[a]]   .send(@method,    a2     ).should be_true
 
-      back = []
-      forth = [back]; back << forth;
-      back   .send(@method,  a  ).should be_true
+    back = []
+    forth = [back]; back << forth;
+    back   .send(@method,  a  ).should be_true
 
-      x = []; x << x << x
-      x       .send(@method,    a                ).should be_false  # since x.size != a.size
-      x       .send(@method,    [a, a]           ).should be_false  # since x[0].size != [a, a][0].size
-      x       .send(@method,    [x, a]           ).should be_false  # since x[1].size != [x, a][1].size
-      [x, a]  .send(@method,    [a, x]           ).should be_false  # etc...
-      x       .send(@method,    [x, x]           ).should be_true
-      x       .send(@method,    [[x, x], [x, x]] ).should be_true
+    x = []; x << x << x
+    x       .send(@method,    a                ).should be_false  # since x.size != a.size
+    x       .send(@method,    [a, a]           ).should be_false  # since x[0].size != [a, a][0].size
+    x       .send(@method,    [x, a]           ).should be_false  # since x[1].size != [x, a][1].size
+    [x, a]  .send(@method,    [a, x]           ).should be_false  # etc...
+    x       .send(@method,    [x, x]           ).should be_true
+    x       .send(@method,    [[x, x], [x, x]] ).should be_true
 
-      tree = [];
-      branch = []; branch << tree << tree; tree << branch
-      tree2 = [];
-      branch2 = []; branch2 << tree2 << tree2; tree2 << branch2
-      forest = [tree, branch, :bird, a]; forest << forest
-      forest2 = [tree2, branch2, :bird, a2]; forest2 << forest2
+    tree = [];
+    branch = []; branch << tree << tree; tree << branch
+    tree2 = [];
+    branch2 = []; branch2 << tree2 << tree2; tree2 << branch2
+    forest = [tree, branch, :bird, a]; forest << forest
+    forest2 = [tree2, branch2, :bird, a2]; forest2 << forest2
 
-      forest .send(@method,     forest2         ).should be_true
-      forest .send(@method,     [tree2, branch, :bird, a, forest2]).should be_true
+    forest .send(@method,     forest2         ).should be_true
+    forest .send(@method,     [tree2, branch, :bird, a, forest2]).should be_true
 
-      diffforest = [branch2, tree2, :bird, a2]; diffforest << forest2
-      forest .send(@method,     diffforest      ).should be_false # since forest[0].size == 1 != 3 == diffforest[0]
-      forest .send(@method,     [nil]           ).should be_false
-      forest .send(@method,     [forest]        ).should be_false
-    end
+    diffforest = [branch2, tree2, :bird, a2]; diffforest << forest2
+    forest .send(@method,     diffforest      ).should be_false # since forest[0].size == 1 != 3 == diffforest[0]
+    forest .send(@method,     [nil]           ).should be_false
+    forest .send(@method,     [forest]        ).should be_false
   end
 
   it "does not call #to_ary on its argument" do

@@ -28,11 +28,9 @@ platform_is :windows do
       ole_type.should be_kind_of WIN32OLE_TYPE
     end
 
-    ruby_version_is "1.9" do
-      it "creates WIN32OLE_TYPE object from CLSID and valid type" do
-        ole_type2 = WIN32OLE_TYPE.new("{13709620-C279-11CE-A49E-444553540000}", "Shell")
-        ole_type2.should be_kind_of WIN32OLE_TYPE
-      end
+    it "creates WIN32OLE_TYPE object from CLSID and valid type" do
+      ole_type2 = WIN32OLE_TYPE.new("{13709620-C279-11CE-A49E-444553540000}", "Shell")
+      ole_type2.should be_kind_of WIN32OLE_TYPE
     end
 
   end

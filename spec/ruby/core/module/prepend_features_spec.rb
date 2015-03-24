@@ -41,10 +41,8 @@ describe "Module#prepend_features" do
   end
 
   describe "on Class" do
-    ruby_bug "GH-376", "2.0.0.312" do
-      it "is undefined" do
-        Class.should_not have_private_instance_method(:prepend_features, true)
-      end
+    it "is undefined" do
+      Class.should_not have_private_instance_method(:prepend_features, true)
     end
 
     it "raises a TypeError if calling after rebinded to Class" do

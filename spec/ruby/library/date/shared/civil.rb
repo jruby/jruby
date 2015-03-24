@@ -54,16 +54,4 @@ describe :date_civil, :shared => true do
     d2 = Date.send(@method, 1582, 10, 4, Date::ENGLAND)
     d2.succ.day.should == 5
   end
-
-  ruby_version_is ""..."1.9.3" do
-    it "chooses an arbitrary reform date" do
-      r  = Date.send(@method, 2000, 2, 3)
-
-      d3 = Date.send(@method, 2000, 2, 3, r.jd)
-      (d3 - 1).day.should == 20
-      (d3 - 1).month.should == 1
-
-      lambda { Date.send(@method, 2000, 2, 2, r.jd) }.should raise_error(ArgumentError)
-    end
-  end
 end

@@ -63,13 +63,11 @@ describe :bigdecimal_modulo, :shared => true do
     @one_minus.modulo(BigDecimal('0.2')).should == @zero
   end
 
-  ruby_bug "#", "1.9.2" do
-    it "returns a [Float value] when the argument is Float" do
-      @two.send(@method, 2.0).should == 0.0
-      @one.send(@method, 2.0).should == 1.0
-      res = @two.send(@method, 5.0)
-      res.kind_of?(BigDecimal).should == true
-    end
+  it "returns a [Float value] when the argument is Float" do
+    @two.send(@method, 2.0).should == 0.0
+    @one.send(@method, 2.0).should == 1.0
+    res = @two.send(@method, 5.0)
+    res.kind_of?(BigDecimal).should == true
   end
 
   it "returns NaN if NaN is involved" do
@@ -94,20 +92,10 @@ describe :bigdecimal_modulo, :shared => true do
     @infinity_minus.send(@method, @infinity).nan?.should == true
   end
 
-  ruby_version_is "" ... "1.9" do
-    it "returns NaN if the divisor is Infinity" do
-      @one.send(@method, @infinity).nan?.should == true
-      @one.send(@method, @infinity_minus).nan?.should == true
-      @frac_2.send(@method, @infinity_minus).nan?.should == true
-    end
-  end
-
-  ruby_version_is "1.9" do
-    it "returns the dividend if the divisor is Infinity" do
-      @one.send(@method, @infinity).should == @one
-      @one.send(@method, @infinity_minus).should == @one
-      @frac_2.send(@method, @infinity_minus).should == @frac_2
-    end
+  it "returns the dividend if the divisor is Infinity" do
+    @one.send(@method, @infinity).should == @one
+    @one.send(@method, @infinity_minus).should == @one
+    @frac_2.send(@method, @infinity_minus).should == @frac_2
   end
 
   it "raises TypeError if the argument cannot be coerced to BigDecimal" do
@@ -118,23 +106,11 @@ describe :bigdecimal_modulo, :shared => true do
 end
 
 describe :bigdecimal_modulo_zerodivisionerror, :shared => true do
-  ruby_version_is "" ... "1.9" do
-    it "does NOT raise ZeroDivisionError if other is zero" do
-      bd5667 = BigDecimal.new("5667.19")
+  it "raises ZeroDivisionError if other is zero" do
+    bd5667 = BigDecimal.new("5667.19")
 
-      bd5667.send(@method, 0).nan?.should == true
-      bd5667.send(@method, BigDecimal("0")).nan?.should == true
-      @zero.send(@method, @zero).nan?.should == true
-    end
-  end
-
-  ruby_version_is "1.9" do
-    it "raises ZeroDivisionError if other is zero" do
-      bd5667 = BigDecimal.new("5667.19")
-
-      lambda { bd5667.send(@method, 0) }.should raise_error(ZeroDivisionError)
-      lambda { bd5667.send(@method, BigDecimal("0")) }.should raise_error(ZeroDivisionError)
-      lambda { @zero.send(@method, @zero) }.should raise_error(ZeroDivisionError)
-    end
+    lambda { bd5667.send(@method, 0) }.should raise_error(ZeroDivisionError)
+    lambda { bd5667.send(@method, BigDecimal("0")) }.should raise_error(ZeroDivisionError)
+    lambda { @zero.send(@method, @zero) }.should raise_error(ZeroDivisionError)
   end
 end

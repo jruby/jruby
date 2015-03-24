@@ -229,12 +229,10 @@ describe "IO#reopen with an IO" do
     @io.gets.should == "Line 1\n"
   end
 
-  ruby_bug '#', '1.8' do
-    it "reads from the current position of the other IO's stream" do
-      @other_io.gets.should == "Line 1\n"
-      @io.reopen @other_io
-      @io.gets.should == "Line 2\n"
-    end
+  it "reads from the current position of the other IO's stream" do
+    @other_io.gets.should == "Line 1\n"
+    @io.reopen @other_io
+    @io.gets.should == "Line 2\n"
   end
 end
 

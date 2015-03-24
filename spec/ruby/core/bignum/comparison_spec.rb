@@ -130,23 +130,19 @@ describe "Bignum#<=>" do
   end
 
   # The tests below are taken from matz's revision 23730 for Ruby trunk
-  ruby_bug "[ruby-dev:38672] [Bug #1645]", "1.8.7.334" do
-    it "returns 1 when self is Infinity and other is a Bignum" do
-      (infinity_value <=> Float::MAX.to_i*2).should == 1
-    end
-
-    it "returns -1 when self is negative and other is Infinty" do
-      (-Float::MAX.to_i*2 <=> infinity_value).should == -1
-    end
+  it "returns 1 when self is Infinity and other is a Bignum" do
+    (infinity_value <=> Float::MAX.to_i*2).should == 1
   end
 
-  ruby_bug "[ruby-dev:38672] [Bug #1645]", "1.8.7.302" do
-    it "returns 1 when self is negative and other is -Infinity" do
-      (-Float::MAX.to_i*2 <=> -infinity_value).should == 1
-    end
+  it "returns -1 when self is negative and other is Infinty" do
+    (-Float::MAX.to_i*2 <=> infinity_value).should == -1
+  end
 
-    it "returns -1 when self is -Infinity and other is negative" do
-      (-infinity_value <=> -Float::MAX.to_i*2).should == -1
-    end
+  it "returns 1 when self is negative and other is -Infinity" do
+    (-Float::MAX.to_i*2 <=> -infinity_value).should == 1
+  end
+
+  it "returns -1 when self is -Infinity and other is negative" do
+    (-infinity_value <=> -Float::MAX.to_i*2).should == -1
   end
 end

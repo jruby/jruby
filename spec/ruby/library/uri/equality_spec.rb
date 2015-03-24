@@ -8,10 +8,8 @@ describe "URI#==" do
     URI("http://exAMPLE.cOm").should == URI("http://example.com")
   end
 
-  ruby_bug "redmine:2525", "1.8.7" do
-    it "ignores capitalization of scheme" do
-      URI("hTTp://example.com").should == URI("http://example.com")
-    end
+  it "ignores capitalization of scheme" do
+    URI("hTTp://example.com").should == URI("http://example.com")
   end
 
   it "treats a blank path and a path of '/' as the same" do

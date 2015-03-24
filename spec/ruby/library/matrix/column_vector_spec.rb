@@ -10,28 +10,16 @@ describe "Matrix.column_vector" do
     m.should == Matrix[ [4],[5],[6] ]
   end
 
-  ruby_bug "redmine:1532", "1.8.7" do
-    it "returns an empty Matrix when called with an empty Array" do
-      m = Matrix.column_vector([])
-      m.should be_an_instance_of(Matrix)
-      m.row_size.should == 0
-      m.column_size.should == 1
-    end
+  it "returns an empty Matrix when called with an empty Array" do
+    m = Matrix.column_vector([])
+    m.should be_an_instance_of(Matrix)
+    m.row_size.should == 0
+    m.column_size.should == 1
   end
 
-  ruby_version_is ""..."1.9" do
-    describe "for a subclass of Matrix" do
-      it "returns an instance of Matrix" do
-        MatrixSub.column_vector([4,5,6]).should be_an_instance_of(Matrix)
-      end
-    end
-  end
-
-  ruby_version_is "1.9" do
-    describe "for a subclass of Matrix" do
-      it "returns an instance of that subclass" do
-        MatrixSub.column_vector([4,5,6]).should be_an_instance_of(MatrixSub)
-      end
+  describe "for a subclass of Matrix" do
+    it "returns an instance of that subclass" do
+      MatrixSub.column_vector([4,5,6]).should be_an_instance_of(MatrixSub)
     end
   end
 end

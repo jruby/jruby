@@ -17,17 +17,15 @@ describe "Array#|" do
     ([ 1, 2, 3, 1 ] | [ 1, 3, 4, 5 ]).should == [1, 2, 3, 4, 5]
   end
 
-  ruby_bug "#", "1.8.6.277" do
-    it "properly handles recursive arrays" do
-      empty = ArraySpecs.empty_recursive_array
-      (empty | empty).should == empty
+  it "properly handles recursive arrays" do
+    empty = ArraySpecs.empty_recursive_array
+    (empty | empty).should == empty
 
-      array = ArraySpecs.recursive_array
-      (array | []).should == [1, 'two', 3.0, array]
-      ([] | array).should == [1, 'two', 3.0, array]
-      (array | array).should == [1, 'two', 3.0, array]
-      (array | empty).should == [1, 'two', 3.0, array, empty]
-    end
+    array = ArraySpecs.recursive_array
+    (array | []).should == [1, 'two', 3.0, array]
+    ([] | array).should == [1, 'two', 3.0, array]
+    (array | array).should == [1, 'two', 3.0, array]
+    (array | empty).should == [1, 'two', 3.0, array, empty]
   end
 
   it "tries to convert the passed argument to an Array using #to_ary" do

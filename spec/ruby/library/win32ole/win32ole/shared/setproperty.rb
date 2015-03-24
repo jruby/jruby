@@ -14,9 +14,6 @@ platform_is :windows do
       height = 500
       result = @ie.send(@method, 'Height', height)
       result.should == nil
-      ruby_version_is ""..."1.9" do # 1.9 does not support collection for WIN32OLE objects
-        @ie['Height'].should == height
-      end
     end
 
   end

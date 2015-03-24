@@ -16,10 +16,8 @@ describe "Delegator#taint" do
     @delegate.tainted?.should be_true
   end
 
-  ruby_bug "redmine:2223", "1.8" do
-    it "taints the delegated object" do
-      @delegate.taint
-      @delegate.__getobj__.tainted?.should be_true
-    end
+  it "taints the delegated object" do
+    @delegate.taint
+    @delegate.__getobj__.tainted?.should be_true
   end
 end

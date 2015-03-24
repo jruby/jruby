@@ -13,18 +13,9 @@ end
 
 platform_is_not :windows do
   describe "Etc.getpwnam" do
-    ruby_version_is "" ... "1.9" do
-      it "returns a Passwd struct instance for the given user" do
-        pw = Etc.getpwnam(`whoami`.strip)
-        pw.is_a?(Struct::Passwd).should == true
-      end
-    end
-
-    ruby_version_is "1.9" do
-      it "returns a Etc::Passwd struct instance for the given user" do
-        pw = Etc.getpwnam(`whoami`.strip)
-        pw.is_a?(Etc::Passwd).should == true
-      end
+    it "returns a Etc::Passwd struct instance for the given user" do
+      pw = Etc.getpwnam(`whoami`.strip)
+      pw.is_a?(Etc::Passwd).should == true
     end
 
     it "only accepts strings as argument" do

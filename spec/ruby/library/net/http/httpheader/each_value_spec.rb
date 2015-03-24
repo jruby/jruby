@@ -21,26 +21,15 @@ describe "Net::HTTPHeader#each_value" do
   end
 
   describe "when passed no block" do
-    ruby_version_is "" ... "1.8.7" do
-      it "raises a LocalJumpError" do
-        lambda { @headers.each_value }.should raise_error(LocalJumpError)
-      end
-    end
+    it "returns an Enumerator" do
+      enumerator = @headers.each_value
+      enumerator.should be_an_instance_of(enumerator_class)
 
-    # TODO: This should return an Enumerator and not raise an Error
-    ruby_version_is "1.8.7" do
-      ruby_bug "http://redmine.ruby-lang.org/issues/show/447", "1.8.7" do
-        it "returns an Enumerator" do
-          enumerator = @headers.each_value
-          enumerator.should be_an_instance_of(enumerator_class)
-
-          res = []
-          enumerator.each do |key|
-            res << key
-          end
-          res.sort.should == ["a, b", "test"]
-        end
+      res = []
+      enumerator.each do |key|
+        res << key
       end
+      res.sort.should == ["a, b", "test"]
     end
   end
 end

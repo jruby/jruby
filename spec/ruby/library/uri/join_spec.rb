@@ -6,22 +6,18 @@ describe "URI.join" do
     URI.join("http://localhost/","main.rbx").should == URI.parse("http://localhost/main.rbx")
   end
 
-  ruby_bug "redmine:3505", "1.9.2" do
-    it "accepts URI objects" do
-      URI.join(URI("http://localhost/"),"main.rbx").should == URI.parse("http://localhost/main.rbx")
-      URI.join("http://localhost/",URI("main.rbx")).should == URI.parse("http://localhost/main.rbx")
-      URI.join(URI("http://localhost/"),URI("main.rbx")).should == URI.parse("http://localhost/main.rbx")
-    end
+  it "accepts URI objects" do
+    URI.join(URI("http://localhost/"),"main.rbx").should == URI.parse("http://localhost/main.rbx")
+    URI.join("http://localhost/",URI("main.rbx")).should == URI.parse("http://localhost/main.rbx")
+    URI.join(URI("http://localhost/"),URI("main.rbx")).should == URI.parse("http://localhost/main.rbx")
   end
 
-  ruby_bug "redmine:3506", "1.9.2" do
-    it "accepts string-like arguments with to_str" do
-      str = mock('string-like')
-      str.should_receive(:to_str).and_return("http://ruby-lang.org")
-      str2 = mock('string-like also')
-      str2.should_receive(:to_str).and_return("foo/bar")
-      URI.join(str, str2).should == URI.parse("http://ruby-lang.org/foo/bar")
-    end
+  it "accepts string-like arguments with to_str" do
+    str = mock('string-like')
+    str.should_receive(:to_str).and_return("http://ruby-lang.org")
+    str2 = mock('string-like also')
+    str2.should_receive(:to_str).and_return("foo/bar")
+    URI.join(str, str2).should == URI.parse("http://ruby-lang.org/foo/bar")
   end
 
   it "raises an error if given no argument" do

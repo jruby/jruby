@@ -13,32 +13,30 @@ describe "Matrix#minor" do
       @matrix.minor(1,2,1,1).should == Matrix[ [4], [6] ]
     end
 
-    ruby_bug "redmine:1532", "1.8.7" do
-      it "returns an empty Matrix if nrows or ncols is 0" do
-        @matrix.minor(0,0,0,0).should == Matrix[]
-        @matrix.minor(1,0,1,0).should == Matrix[]
-        @matrix.minor(1,0,1,1).should == Matrix.columns([[]])
-        @matrix.minor(1,1,1,0).should == Matrix[[]]
-      end
+    it "returns an empty Matrix if nrows or ncols is 0" do
+      @matrix.minor(0,0,0,0).should == Matrix[]
+      @matrix.minor(1,0,1,0).should == Matrix[]
+      @matrix.minor(1,0,1,1).should == Matrix.columns([[]])
+      @matrix.minor(1,1,1,0).should == Matrix[[]]
+    end
 
-      it "returns nil for out-of-bounds start_row/col" do
-        r = @matrix.row_size + 1
-        c = @matrix.column_size + 1
-        @matrix.minor(r,0,0,10).should == nil
-        @matrix.minor(0,10,c,9).should == nil
-        @matrix.minor(-r,0,0,10).should == nil
-        @matrix.minor(0,10,-c,9).should == nil
-      end
+    it "returns nil for out-of-bounds start_row/col" do
+      r = @matrix.row_size + 1
+      c = @matrix.column_size + 1
+      @matrix.minor(r,0,0,10).should == nil
+      @matrix.minor(0,10,c,9).should == nil
+      @matrix.minor(-r,0,0,10).should == nil
+      @matrix.minor(0,10,-c,9).should == nil
+    end
 
-      it "returns nil for negative nrows or ncols" do
-        @matrix.minor(0,1,0,-1).should == nil
-        @matrix.minor(0,-1,0,1).should == nil
-      end
+    it "returns nil for negative nrows or ncols" do
+      @matrix.minor(0,1,0,-1).should == nil
+      @matrix.minor(0,-1,0,1).should == nil
+    end
 
-      it "start counting backwards for start_row or start_col below zero" do
-        @matrix.minor(0, 1, -1, 1).should == @matrix.minor(0, 1, 1, 1)
-        @matrix.minor(-1, 1, 0, 1).should == @matrix.minor(2, 1, 0, 1)
-      end
+    it "start counting backwards for start_row or start_col below zero" do
+      @matrix.minor(0, 1, -1, 1).should == @matrix.minor(0, 1, 1, 1)
+      @matrix.minor(-1, 1, 0, 1).should == @matrix.minor(2, 1, 0, 1)
     end
 
     it "returns empty matrices for extreme start_row/col" do
@@ -60,32 +58,28 @@ describe "Matrix#minor" do
       @matrix.minor(1...3, 1...3).should == Matrix[ [4], [6] ]
     end
 
-    ruby_bug "redmine:1532", "1.8.7" do
-      it "returns nil if col_range or row_range is out of range" do
-        r = @matrix.row_size + 1
-        c = @matrix.column_size + 1
-        @matrix.minor(r..6, c..6).should == nil
-        @matrix.minor(0..1, c..6).should == nil
-        @matrix.minor(r..6, 0..1).should == nil
-        @matrix.minor(-r..6, -c..6).should == nil
-        @matrix.minor(0..1, -c..6).should == nil
-        @matrix.minor(-r..6, 0..1).should == nil
-      end
+    it "returns nil if col_range or row_range is out of range" do
+      r = @matrix.row_size + 1
+      c = @matrix.column_size + 1
+      @matrix.minor(r..6, c..6).should == nil
+      @matrix.minor(0..1, c..6).should == nil
+      @matrix.minor(r..6, 0..1).should == nil
+      @matrix.minor(-r..6, -c..6).should == nil
+      @matrix.minor(0..1, -c..6).should == nil
+      @matrix.minor(-r..6, 0..1).should == nil
+    end
 
-      it "start counting backwards for col_range or row_range below zero" do
-        @matrix.minor(0..1, -2..-1).should == @matrix.minor(0..1, 0..1)
-        @matrix.minor(0..1, -2..1).should == @matrix.minor(0..1, 0..1)
-        @matrix.minor(-2..-1, 0..1).should == @matrix.minor(1..2, 0..1)
-        @matrix.minor(-2..2, 0..1).should == @matrix.minor(1..2, 0..1)
-      end
+    it "start counting backwards for col_range or row_range below zero" do
+      @matrix.minor(0..1, -2..-1).should == @matrix.minor(0..1, 0..1)
+      @matrix.minor(0..1, -2..1).should == @matrix.minor(0..1, 0..1)
+      @matrix.minor(-2..-1, 0..1).should == @matrix.minor(1..2, 0..1)
+      @matrix.minor(-2..2, 0..1).should == @matrix.minor(1..2, 0..1)
     end
   end
 
-  ruby_bug "redmine #5307", "1.9.3" do
-    describe "for a subclass of Matrix" do
-      it "returns an instance of that subclass" do
-        MatrixSub.ins.minor(0, 1, 0, 1).should be_an_instance_of(MatrixSub)
-      end
+  describe "for a subclass of Matrix" do
+    it "returns an instance of that subclass" do
+      MatrixSub.ins.minor(0, 1, 0, 1).should be_an_instance_of(MatrixSub)
     end
   end
 end

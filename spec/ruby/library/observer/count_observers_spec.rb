@@ -16,18 +16,8 @@ describe "Observer#count_observers" do
     @observable.count_observers.should == 2
   end
 
-  ruby_version_is "" ... "1.9" do
-    it "returns the number observers including duplicates" do
-      2.times { @observable.add_observer(@observer) }
-      @observable.count_observers.should == 2
-    end
+  it "returns the number of unique observers" do
+    2.times { @observable.add_observer(@observer) }
+    @observable.count_observers.should == 1
   end
-
-  ruby_version_is "1.9" do
-    it "returns the number of unique observers" do
-      2.times { @observable.add_observer(@observer) }
-      @observable.count_observers.should == 1
-    end
-  end
-
 end
