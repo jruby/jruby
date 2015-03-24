@@ -87,17 +87,29 @@ class TestHigherJavasupport < Test::Unit::TestCase
 
   def test_using_arrays
     list = JArray.new
-    list.add(10)
-    list.add(20)
+    list.add(10); list.add(20)
     array = list.toArray
     assert_equal(10, array[0])
     assert_equal(20, array[1])
-    assert_equal(2, array.length)
+    assert_equal 2, array.length
+
     array[1] = 1234
-    assert_equal(10, array[0])
-    assert_equal(1234, array[1])
-    assert_equal([10, 1234], array.entries)
-    assert_equal(10, array.min)
+    assert_equal 10, array[0]
+    assert_equal 1234, array[1]
+    assert_equal [10, 1234], array.entries
+    assert_equal 10, array.min
+
+    assert_raises(ArgumentError) { array[3] } # IndexOutOfBoundsException
+
+    array = Java::int[5].new
+    assert_equal 5, array.size
+    assert_equal 0, array[0]
+    array[1] = 1; array[2] = 2; array[3] = 3; array[4] = 4
+    assert_equal 1, array[1]
+    assert_equal 4, array.max
+
+    assert_raises(ArgumentError) { array[6] } # IndexOutOfBoundsException
+    assert_raises(ArgumentError) { array[-1] } # IndexOutOfBoundsException
   end
 
   def test_creating_arrays
@@ -107,6 +119,50 @@ class TestHigherJavasupport < Test::Unit::TestCase
     array[2] = 17.0
     assert_equal(3.14, array[0])
     assert_equal(17.0, array[2])
+
+    array = Java::double[3, 2].new
+    assert_equal(3, array.length)
+    assert_equal(2, array[0].length)
+    assert_equal(2, array[1].length)
+    array[0][0] = 4.2
+    array[1][1] = 0.1
+
+    array = Java::byte[3]
+    array = array[2].new # [3, 2]
+    assert_equal 3, array.length
+    assert_equal 2, array[0].length
+    assert_equal 2, array[1].size
+    array[0][0] = 1
+    array[1][1] = 2
+
+    array = java.lang.String[3, 2][1].new_instance
+    assert_equal 3, array.length
+    assert_equal 2, array[0].size
+    assert_equal 2, array[1].length
+    assert_equal 1, array[0][0].length
+    assert_equal 1, array[0][1].size
+    assert_equal 1, array[1][1].length
+    array[0][0][0] = '0'
+    array[1][1][0] = '1'
+
+    args = []; 1025.times { args << 1025 }
+    begin
+      array = java.lang.Object[ *args ]
+      array.new
+      fail "expected to raise (creating 1025 dimensional array)"
+    rescue ArgumentError => e
+      assert e.message
+    end
+  end
+
+  def test_creating_arrays_proxy_class
+    array = java.lang.String.new_array(10)
+    assert_equal 10, array.length
+    assert_equal 'jedna', ( array[1] = 'jedna' )
+
+    array = Java::short.new_array(2)
+    assert_equal 2, array.size
+    assert_equal 256, ( array[0] = 256 )
   end
 
   class IntLike
@@ -1109,14 +1165,14 @@ CLASSDEF
       assert msg.index('  (java.lang.String)'), msg
     end
 
-    begin
+    begin # no arguments (has special handling)
       java.lang.Short.valueOf
       fail 'expected to raise'
     rescue ArgumentError => e
       assert e.message.start_with?("no method 'valueOf' (for zero arguments) on Java::JavaLang::Short"), e.message
     end
 
-    begin
+    begin # instance method
       java.lang.String.new('').getBytes 42
       fail 'expected to raise'
     rescue => e # NameError
@@ -1124,6 +1180,23 @@ CLASSDEF
       assert msg.start_with?("no method 'getBytes' for arguments (org.jruby.RubyFixnum) on Java::JavaLang::String"), msg
       assert msg.index('available overloads'), msg
       assert msg.index('  (java.lang.String)'), msg
+    end
+  end
+
+  def test_raised_errors_on_array_proxy
+    begin # array proxy
+      Java::byte[3].new.length('')
+      fail 'expected to raise'
+    rescue ArgumentError => e
+      msg = e.message
+      assert msg.start_with?("wrong number of arguments calling `length` (1 for 0)"), msg
+    end
+
+    begin # array proxy class
+      Java::byte[3].size
+      fail 'expected to raise'
+    rescue NoMethodError => e
+      assert e.message # undefined method `size' for #<ArrayJavaProxyCreator:0x3125fd2d>
     end
   end
 
