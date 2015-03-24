@@ -1,8 +1,6 @@
 language: ruby
 script:
   - bundle exec rspec
-jdk:
-  - openjdk7
 rvm:
   - 1.8.7
   - 1.9.3
