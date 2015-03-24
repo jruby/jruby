@@ -1447,7 +1447,7 @@ public final class StringSupport {
         if (p == 0) return 0;
         if (p > beg && EncodingUtils.encAscget(bl.unsafeBytes(), p, end, null, enc) == '\n') {
             p2 = enc.prevCharHead(bl.unsafeBytes(), beg, p, end);
-            if (p2 != 0 && EncodingUtils.encAscget(bl.unsafeBytes(),  p2, end, null, enc) == '\r') p = p2;
+            if (p2 != -1 && EncodingUtils.encAscget(bl.unsafeBytes(),  p2, end, null, enc) == '\r') p = p2;
         }
         return p - beg;
     }

@@ -1448,12 +1448,12 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
 
             RubyString s = inspect(context, safeArrayRef(values, begin + i));
             if (s.isTaint()) tainted = true;
-            if (i > 0) str.cat(',', UTF16BEEncoding.INSTANCE).cat(' ', UTF16BEEncoding.INSTANCE);
+            if (i > 0) str.cat(',', encoding).cat(' ', encoding);
             else str.setEncoding(s.getEncoding());
 
             str.cat19(s);
         }
-        str.cat(']', UTF16BEEncoding.INSTANCE);
+        str.cat(']', encoding);
 
         if (tainted) str.setTaint(true);
 
