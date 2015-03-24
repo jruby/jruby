@@ -2237,7 +2237,8 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
     @JRubyMethod(name = "crypt")
     public RubyString crypt(ThreadContext context, IRubyObject other) {
         Encoding ascii8bit = context.runtime.getEncodingService().getAscii8bitEncoding();
-        RubyString otherStr = other.convertToString();
+        RubyString otherStr = other.convertToString().strDup(context.runtime);
+        otherStr.modify();
         otherStr.associateEncoding(ascii8bit);
         String salt = otherStr.asJavaString();
         if (otherStr.getByteList().length() < 2) {
