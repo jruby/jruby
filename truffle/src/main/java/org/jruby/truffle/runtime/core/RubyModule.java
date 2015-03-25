@@ -269,7 +269,7 @@ public class RubyModule extends RubyBasicObject implements ModuleChain {
 
         assert method != null;
 
-        if (getContext().getCoreLibrary() != null && getContext().getCoreLibrary().isLoadingCoreLibrary()) {
+        if (getContext().getCoreLibrary().isLoadingCoreLibrary()) {
             final InternalMethod currentMethod = methods.get(method.getName());
 
             if (currentMethod != null && currentMethod.getSharedMethodInfo().getSourceSection() instanceof CoreSourceSection) {
