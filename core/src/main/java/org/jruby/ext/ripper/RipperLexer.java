@@ -114,6 +114,18 @@ public class RipperLexer {
         return current_enc;
     }
 
+    private void ambiguousOperator(String op, String syn) {
+        warn("`" + op + "' after local variable is interpreted as binary operator\nevent though it seems like \"" + syn + "\"");
+    }
+
+    private void warn_balanced(int c, boolean spaceSeen, String op, String syn) {
+        if (false && last_state != LexState.EXPR_CLASS && last_state != LexState.EXPR_DOT &&
+                last_state != LexState.EXPR_FNAME && last_state != LexState.EXPR_ENDFN &&
+                last_state != LexState.EXPR_ENDARG && spaceSeen && !Character.isWhitespace(c)) {
+            ambiguousOperator(op, syn);
+        }
+    }
+
     private int getFloatToken(String number) {
         double d;
         try {
@@ -226,6 +238,7 @@ public class RipperLexer {
     // Additional context surrounding tokens that both the lexer and
     // grammar use.
     private LexState lex_state;
+    private LexState last_state;
     
     // Tempory buffer to build up a potential token.  Consumer takes responsibility to reset 
     // this before use.
@@ -806,6 +819,17 @@ public class RipperLexer {
             setState(LexState.EXPR_FNAME);
             return Tokens.tSYMBEG;
 
+        case 'I':
+            lex_strterm = new StringTerm(str_dquote | STR_FUNC_QWORDS, begin, end);
+            do {c = nextc();} while (Character.isWhitespace(c));
+            pushback(c);
+            return Tokens.tSYMBOLS_BEG;
+
+        case 'i':
+            lex_strterm = new StringTerm(/* str_squote | */STR_FUNC_QWORDS, begin, end);
+            do {c = nextc();} while (Character.isWhitespace(c));
+            pushback(c);
+            return Tokens.tQSYMBOLS_BEG;
         default:
             compile_error("Unknown type of %string. Expected 'Q', 'q', 'w', 'x', 'r' or any non letter character, but found '" + c + "'.");
             return -1; //notreached
@@ -1350,7 +1374,21 @@ public class RipperLexer {
         
         if (lex_strterm != null) {
             int tok = lex_strterm.parseString(this, src);
-            if (tok == Tokens.tSTRING_END || tok == Tokens.tREGEXP_END) {
+
+            if (tok == Tokens.tSTRING_END && (yaccValue.equals("\"") || yaccValue.equals("'"))) {
+                if (((lex_state == LexState.EXPR_BEG || lex_state == LexState.EXPR_ENDFN) && !conditionState.isInState() ||
+                        isARG()) && peek(':')) {
+                    int c1 = nextc();
+                    if (peek(':')) { // "mod"::SOMETHING (hack MRI does not do this)
+                        pushback(c1);
+                    } else {
+                        nextc();
+                        tok = Tokens.tLABEL_END;
+                    }
+                }
+            }
+
+            if (tok == Tokens.tSTRING_END || tok == Tokens.tREGEXP_END|| tok == org.jruby.parser.Tokens.tLABEL_END) {
                 lex_strterm = null;
                 setState(LexState.EXPR_END);
             }
@@ -1363,6 +1401,7 @@ public class RipperLexer {
 
         loop: for(;;) {
             boolean fallthru = false;
+            last_state = lex_state;
             c = nextc();
             switch(c) {
             case '\000': /* NUL */
@@ -1681,7 +1720,7 @@ public class RipperLexer {
 
         getIdentifier(c);
 
-        LexState last_state = lex_state;
+        last_state = lex_state;
         setState(LexState.EXPR_END);
 
         return identifierToken(last_state, result, tokenBuffer.toString().intern());
@@ -1802,7 +1841,7 @@ public class RipperLexer {
     }
     
     private int dollar() throws IOException {
-        LexState last_state = lex_state;
+        last_state = lex_state;
         setState(LexState.EXPR_END);
         int c = nextc();
         
@@ -1980,7 +2019,7 @@ public class RipperLexer {
         
         int result = 0;
 
-        LexState last_state = lex_state;
+        last_state = lex_state;
         if (lastBangOrPredicate) {
             result = Tokens.tFID;
         } else {
@@ -2378,7 +2417,8 @@ public class RipperLexer {
         conditionState.restart();
         cmdArgumentState.restart();
         setState(LexState.EXPR_ENDARG);
-        return Tokens.tRCURLY;
+        int tok = /*braceNest != 0 ? Tokens.tSTRING_DEND : */ Tokens.tRCURLY;
+        return tok;
     }
 
     private int rightParen() {
@@ -2431,7 +2471,16 @@ public class RipperLexer {
                 return Tokens.tOP_ASGN;
             }
             pushback(c);
-            c = Tokens.tPOW;
+
+            if (isSpaceArg(c, spaceSeen)) {
+                if (isVerbose()) warning("`**' interpreted as argument prefix");
+                c = Tokens.tDSTAR;
+            } else if (isBEG()) {
+                c = Tokens.tDSTAR;
+            } else {
+                warn_balanced(c, spaceSeen, "*", "argument prefix");
+                c = Tokens.tPOW;
+            }
             break;
         case '=':
             setState(LexState.EXPR_BEG);

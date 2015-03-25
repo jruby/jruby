@@ -162,6 +162,11 @@ public interface Tokens {
     int tLAMBDA     = RipperParser.tLAMBDA;
     int tLAMBEG     = RipperParser.tLAMBEG;
     int tLABEL      = RipperParser.tLABEL;
+    int tSYMBOLS_BEG = RipperParser.tSYMBOLS_BEG;
+    int tQSYMBOLS_BEG = RipperParser.tQSYMBOLS_BEG;
+    int tDSTAR = RipperParser.tDSTAR;
+    int tLABEL_END = RipperParser.tLABEL_END;
+    int tSTRING_DEND = RipperParser.tSTRING_DEND;
     int tCHAR       = RipperParser.tCHAR;
     
     int tIGNORED_NL = RipperParser.tIGNORED_NL;
