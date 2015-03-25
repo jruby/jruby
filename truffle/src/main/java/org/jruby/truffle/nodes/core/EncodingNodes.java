@@ -553,24 +553,38 @@ public abstract class EncodingNodes {
                 lookupTableWriteNode.call(frame, ret, "[]=", null, key, value);
             }
 
+            final Encoding defaultInternalEncoding = getContext().getRuntime().getDefaultInternalEncoding();
+            final Object internalTuple = newTupleNode.call(
+                    frame,
+                    getContext().getCoreLibrary().getTupleClass(),
+                    "create",
+                    null,
+                    getContext().makeString("internal"),
+                    defaultInternalEncoding == null ? nil() : defaultInternalEncoding.getIndex()
+            );
+
+            lookupTableWriteNode.call(frame, ret, "[]=", null, getContext().newSymbol("INTERNAL"), internalTuple);
+
+            final Encoding defaultExternalEncoding = getContext().getRuntime().getDefaultExternalEncoding();
             final Object externalTuple = newTupleNode.call(
                     frame,
                     getContext().getCoreLibrary().getTupleClass(),
                     "create",
                     null,
                     getContext().makeString("external"),
-                    getContext().getRuntime().getDefaultExternalEncoding().getIndex()
+                    defaultExternalEncoding == null ? nil() : defaultExternalEncoding.getIndex()
             );
 
             lookupTableWriteNode.call(frame, ret, "[]=", null, getContext().newSymbol("EXTERNAL"), externalTuple);
 
+            final Encoding localeEncoding = getContext().getRuntime().getEncodingService().getLocaleEncoding();
             final Object localeTuple = newTupleNode.call(
                     frame,
                     getContext().getCoreLibrary().getTupleClass(),
                     "create",
                     null,
                     getContext().makeString("locale"),
-                    getContext().getRuntime().getEncodingService().getLocaleEncoding().getIndex()
+                    localeEncoding == null ? nil() : localeEncoding.getIndex()
             );
 
             lookupTableWriteNode.call(frame, ret, "[]=", null, getContext().newSymbol("LOCALE"), localeTuple);
