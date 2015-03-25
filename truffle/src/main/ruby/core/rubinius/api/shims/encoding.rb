@@ -2,6 +2,9 @@ class Encoding
   TranscodingMap = Encoding::Converter.transcoding_map
   EncodingMap = Encoding.encoding_map
   EncodingList = Encoding.list
+
+  @default_external = undefined
+  @default_internal = undefined
 end
 
 Encoding::TranscodingMap[:'UTF-16BE'] = Rubinius::LookupTable.new;
