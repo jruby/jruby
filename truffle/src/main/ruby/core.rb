@@ -20,6 +20,8 @@ require_relative 'core/rubinius/api/shims/thread'
 require_relative 'core/rubinius/api/shims/tuple'
 require_relative 'core/rubinius/api/shims/undefined'
 require_relative 'core/rubinius/api/shims/metrics'
+require_relative 'core/rubinius/api/shims/config'
+require_relative 'core/rubinius/api/shims/module'
 
 # Load bootstrap (ordered according to Rubinius' load_order.txt)
 require_relative 'core/rubinius/bootstrap/basic_object'
