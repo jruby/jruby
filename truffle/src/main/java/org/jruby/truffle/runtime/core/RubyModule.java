@@ -198,7 +198,7 @@ public class RubyModule extends RubyBasicObject implements ModuleChain {
      */
     @TruffleBoundary
     public void setConstant(Node currentNode, String name, Object value) {
-        if (isCore(currentNode)) {
+        if (getContext().getCoreLibrary() != null && getContext().getCoreLibrary().isLoadingCoreLibrary()) {
             final RubyConstant currentConstant = constants.get(name);
 
             if (currentConstant != null) {
@@ -269,7 +269,7 @@ public class RubyModule extends RubyBasicObject implements ModuleChain {
 
         assert method != null;
 
-        if (isCore(currentNode)) {
+        if (getContext().getCoreLibrary() != null && getContext().getCoreLibrary().isLoadingCoreLibrary()) {
             final InternalMethod currentMethod = methods.get(method.getName());
 
             if (currentMethod != null && currentMethod.getSharedMethodInfo().getSourceSection() instanceof CoreSourceSection) {
@@ -607,14 +607,6 @@ public class RubyModule extends RubyBasicObject implements ModuleChain {
             return new RubyModule(context, null, null, currentNode);
         }
 
-    }
-
-    private boolean isCore(Node node) {
-        if (node == null || node.getEncapsulatingSourceSection() == null || node.getEncapsulatingSourceSection().getSource() == null) {
-            return false;
-        }
-
-        return node.getEncapsulatingSourceSection().getSource().getName().startsWith("core:/");
     }
 
 }
