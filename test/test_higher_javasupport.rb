@@ -145,6 +145,14 @@ class TestHigherJavasupport < Test::Unit::TestCase
     array[0][0][0] = '0'
     array[1][1][0] = '1'
 
+    array = java.lang.CharSequence[10].new
+    assert_equal 10, array.size
+    array[9] = 'ferko-suska'
+
+    array = Java::JavaLang::Runnable[1, 2].new
+    assert_equal 1, array.size
+    assert_equal 2, array[0].size
+
     args = []; 1025.times { args << 1025 }
     begin
       array = java.lang.Object[ *args ]
@@ -564,6 +572,11 @@ class TestHigherJavasupport < Test::Unit::TestCase
     Java::JavaProxyMethod
     Java::JavaProxyConstructor
   end
+
+#  def test_java_class_equality
+#    long_class = java.lang.Long
+#    assert_equal long_class, Java::DefaultPackageClass.returnLongClass
+#  end
 
   Properties = Java::java.util.Properties
 
