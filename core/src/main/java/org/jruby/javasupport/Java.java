@@ -1095,14 +1095,17 @@ public class Java implements Library {
         }
 
         @Override
-        public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name) {
+        public final IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name) {
             return this.packageOrClass;
         }
 
         @Override
-        public Arity getArity() {
-            return Arity.noArguments();
+        public final IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, Block block) {
+            return this.packageOrClass;
         }
+
+        @Override
+        public Arity getArity() { return Arity.noArguments(); }
 
     }
 
