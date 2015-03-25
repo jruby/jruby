@@ -1703,13 +1703,13 @@ public class RipperLexer {
             result = Tokens.tIVAR;                    
         }
         
-        if (Character.isDigit(c)) {
+        if (c != EOF && (Character.isDigit(c) || !isIdentifierChar(c))) {
             if (tokenBuffer.length() == 1) {
-                compile_error("`@" + c + "' is not allowed as an instance variable name");
+                compile_error("`@" + ((char) c) + "' is not allowed as an instance variable name");
                 return EOF;
             }
 
-            compile_error("`@@" + c + "' is not allowed as a class variable name");
+            compile_error("`@@" + ((char) c) + "' is not allowed as a class variable name");
             return EOF;
         }
         
