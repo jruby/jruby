@@ -1116,6 +1116,31 @@ class Array
     out
   end
 
+  def uniq(&block)
+    dup.uniq!(&block) or dup
+  end
+
+  def uniq!(&block)
+    Rubinius.check_frozen
+
+    if block_given?
+      im = Rubinius::IdentityMap.from(self, &block)
+    else
+      im = Rubinius::IdentityMap.from(self)
+    end
+    return if im.size == size
+
+    m = Rubinius::Mirror::Array.reflect im.to_array
+    @tuple = m.tuple
+    @start = m.start
+    @total = m.total
+
+    # MODIFIED added copy_from and delete_range to modify the store
+    copy_from(m.tuple, 0, m.total, 0)
+    delete_range(m.total, self.size - m.total)
+    self
+  end
+
   def sort_by!(&block)
     Rubinius.check_frozen
 
