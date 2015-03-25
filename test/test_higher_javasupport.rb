@@ -224,6 +224,15 @@ class TestHigherJavasupport < Test::Unit::TestCase
     assert_equal 2, array[2][0]
   end
 
+  def test_ruby_array_dimensions
+    assert_equal [ 0 ], [].dimensions
+    assert_equal [ 1 ], [ 0 ].dimensions
+    assert_equal [ 1 ], [ 42 ].dimensions
+    assert_equal [ 1, 1 ], [ [ 42 ] ].dimensions
+    assert_equal [ 2, 3 ], [ [ 0 ], [ 1, [2, 3], 4 ] ].dimensions
+    assert_equal [ 2, 1 ], [ [], [ 0 ] ].dimensions
+  end
+
   def test_void
     assert Java::void
     assert Java::Void
