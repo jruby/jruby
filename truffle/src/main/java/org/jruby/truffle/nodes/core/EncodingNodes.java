@@ -586,6 +586,17 @@ public abstract class EncodingNodes {
             );
             lookupTableWriteNode.call(frame, ret, "[]=", null, getContext().newSymbol("LOCALE"), localeTuple);
 
+            final Encoding filesystemEncoding = getContext().getRuntime().getEncodingService().getLocaleEncoding();
+            final Object filesystemTuple = newTupleNode.call(
+                    frame,
+                    getContext().getCoreLibrary().getTupleClass(),
+                    "create",
+                    null,
+                    getContext().makeString("filesystem"),
+                    indexLookup(encodings, filesystemEncoding)
+            );
+            lookupTableWriteNode.call(frame, ret, "[]=", null, getContext().newSymbol("FILESYSTEM"), filesystemTuple);
+
             return ret;
         }
 
