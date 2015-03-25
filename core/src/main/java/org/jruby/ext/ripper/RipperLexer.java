@@ -1312,15 +1312,19 @@ public class RipperLexer {
             case Tokens.tOP_ASGN: return "on_op";
             case Tokens.tOROP: return "on_op";
             case Tokens.tPOW: return "on_op";
+            case Tokens.tQSYMBOLS_BEG: return "on_qsymbols_beg";
+            case Tokens.tSYMBOLS_BEG: return "on_symbols_beg";
             case Tokens.tQWORDS_BEG: return "on_qwords_beg";
             case Tokens.tREGEXP_BEG:return "on_regexp_beg";
             case Tokens.tREGEXP_END: return "on_regexp_end";
             case Tokens.tRPAREN: return "on_rparen";
             case Tokens.tRSHFT: return "on_op";
             case Tokens.tSTAR: return "on_op";
+            case Tokens.tDSTAR: return "on_op";
             case Tokens.tSTRING_BEG: return "on_tstring_beg";
             case Tokens.tSTRING_CONTENT: return "on_tstring_content";
             case Tokens.tSTRING_DBEG: return "on_embexpr_beg";
+            case Tokens.tSTRING_DEND: return "on_embexpr_end";
             case Tokens.tSTRING_DVAR: return "on_embvar";
             case Tokens.tSTRING_END: return "on_tstring_end";
             case Tokens.tSYMBEG: return "on_symbeg";
@@ -1330,6 +1334,7 @@ public class RipperLexer {
             case Tokens.tWORDS_BEG: return "on_words_beg";
             case Tokens.tXSTRING_BEG: return "on_backtick";
             case Tokens.tLABEL: return "on_label";
+            case Tokens.tLABEL_END: return "on_label_end";
             case Tokens.tLAMBDA: return "on_tlambda";
             case Tokens.tLAMBEG: return "on_tlambeg";
 
@@ -1375,20 +1380,19 @@ public class RipperLexer {
         if (lex_strterm != null) {
             int tok = lex_strterm.parseString(this, src);
 
-            if (tok == Tokens.tSTRING_END && (yaccValue.equals("\"") || yaccValue.equals("'"))) {
+            if (tok == Tokens.tSTRING_END && (peek('"', -1) || peek('\'', -1))) {
                 if (((lex_state == LexState.EXPR_BEG || lex_state == LexState.EXPR_ENDFN) && !conditionState.isInState() ||
                         isARG()) && peek(':')) {
                     int c1 = nextc();
                     if (peek(':')) { // "mod"::SOMETHING (hack MRI does not do this)
                         pushback(c1);
                     } else {
-                        nextc();
                         tok = Tokens.tLABEL_END;
                     }
                 }
             }
 
-            if (tok == Tokens.tSTRING_END || tok == Tokens.tREGEXP_END|| tok == org.jruby.parser.Tokens.tLABEL_END) {
+            if (tok == Tokens.tSTRING_END || tok == Tokens.tREGEXP_END|| tok == Tokens.tLABEL_END) {
                 lex_strterm = null;
                 setState(LexState.EXPR_END);
             }
