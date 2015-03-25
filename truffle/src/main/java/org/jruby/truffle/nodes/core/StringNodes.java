@@ -1436,33 +1436,6 @@ public abstract class StringNodes {
         }
     }
 
-    @CoreMethod(names = "ljust", required = 1, optional = 1, lowerFixnumParameters = 0)
-    public abstract static class LjustNode extends CoreMethodNode {
-
-        public LjustNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
-        public LjustNode(LjustNode prev) {
-            super(prev);
-        }
-
-        @Specialization
-        public RubyString ljust(RubyString string, int length, @SuppressWarnings("unused") UndefinedPlaceholder padding) {
-            notDesignedForCompilation();
-
-            return getContext().makeString(RubyString.ljust(string.toString(), length, " "));
-        }
-
-        @Specialization
-        public RubyString ljust(RubyString string, int length, RubyString padding) {
-            notDesignedForCompilation();
-
-            return getContext().makeString(RubyString.ljust(string.toString(), length, padding.toString()));
-        }
-
-    }
-
     @CoreMethod(names = "match", required = 1, taintFromSelf = true)
     public abstract static class MatchNode extends CoreMethodNode {
 

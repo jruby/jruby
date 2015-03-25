@@ -200,11 +200,6 @@ class Hash
     self
   end
 
-  # Returns true if there are no entries.
-  def empty?
-    @size == 0
-  end
-
   def assoc(key)
     each_item { |e| return e.key, e.value if key == e.key }
   end

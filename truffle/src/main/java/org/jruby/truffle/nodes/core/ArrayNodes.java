@@ -3090,38 +3090,6 @@ public abstract class ArrayNodes {
 
     }
 
-    @CoreMethod(names = "product", required = 1)
-    public abstract static class ProductNode extends ArrayCoreMethodNode {
-
-        public ProductNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
-        public ProductNode(ProductNode prev) {
-            super(prev);
-        }
-
-        @Specialization(guards = {"isObject", "isOtherObject"})
-        public Object product(RubyArray array, RubyArray other) {
-            final Object[] a = (Object[]) array.getStore();
-            final int aLength = array.getSize();
-
-            final Object[] b = (Object[]) other.getStore();
-            final int bLength = other.getSize();
-
-            final Object[] pairs = new Object[aLength * bLength];
-
-            for (int an = 0; an < aLength; an++) {
-                for (int bn = 0; bn < bLength; bn++) {
-                    pairs[an * bLength + bn] = new RubyArray(getContext().getCoreLibrary().getArrayClass(), new Object[]{a[an], b[bn]}, 2);
-                }
-            }
-
-            return new RubyArray(getContext().getCoreLibrary().getArrayClass(), pairs, pairs.length);
-        }
-
-    }
-
     @CoreMethod(names = {"push", "<<", "__append__"}, argumentsAsArray = true, raiseIfFrozenSelf = true)
     public abstract static class PushNode extends ArrayCoreMethodNode {
 
