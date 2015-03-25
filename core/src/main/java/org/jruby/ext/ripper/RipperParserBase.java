@@ -166,7 +166,11 @@ public class RipperParserBase {
     public IRubyObject dispatch(String method_name, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3, IRubyObject arg4, IRubyObject arg5) {
         return Helpers.invoke(context, ripper, method_name, escape(arg1), escape(arg2), escape(arg3), escape(arg4), escape(arg5));
     }
-    
+
+    public IRubyObject dispatch(String method_name, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3, IRubyObject arg4, IRubyObject arg5, IRubyObject arg6, IRubyObject arg7) {
+        return Helpers.invoke(context, ripper, method_name, escape(arg1), escape(arg2), escape(arg3), escape(arg4), escape(arg5), escape(arg6), escape(arg7));
+    }
+
     public IRubyObject escape(IRubyObject arg) {
         return arg == null ? context.runtime.getNil() : arg;
     }
@@ -212,14 +216,16 @@ public class RipperParserBase {
         return hash;
     }
 
-    public IRubyObject new_args_tail(IRubyObject kwarg, IRubyObject kwargRest, IRubyObject block) {
-        RubyArray array = context.runtime.newArray(3);
+    public IRubyObject new_args(IRubyObject f, IRubyObject o, IRubyObject r, IRubyObject p, ArgsTailHolder tail) {
+        if (tail != null) {
+            return dispatch("on_params", f, o, r, p, tail.getKeywordArgs(), tail.getKeywordRestArg(), tail.getBlockArg());
+        }
 
-        array.append(kwarg == null ? context.nil : kwarg);
-        array.append(kwargRest == null ? context.nil : kwargRest);
-        array.append(block == null ? context.nil : block);
+        return dispatch("on_params", f, o, r, p, null, null, null);
+    }
 
-        return array;
+    public ArgsTailHolder new_args_tail(IRubyObject kwarg, IRubyObject kwargRest, IRubyObject block) {
+        return new ArgsTailHolder(kwarg, kwargRest, block);
     }
 
     public IRubyObject method_add_block(IRubyObject method, IRubyObject block) {

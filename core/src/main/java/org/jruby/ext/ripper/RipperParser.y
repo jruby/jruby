@@ -130,8 +130,8 @@ public class RipperParser extends RipperParserBase {
 %type <IRubyObject> qword_list word_list
 %type <RubyArray> f_arg f_optarg
 %type <IRubyObject> f_marg_list, symbol_list
-%type <RubyArray> qsym_list, symbols, qsymbols
-%type <IRubyObject> opt_args_tail, opt_block_args_tail, block_args_tail, args_tail
+%type <IRubyObject> qsym_list, symbols, qsymbols
+%type <ArgsTailHolder> opt_args_tail, opt_block_args_tail, block_args_tail, args_tail
 %type <IRubyObject> f_kw, f_block_kw
 %type <RubyArray> f_block_kwarg, f_kwarg
 
@@ -1269,50 +1269,50 @@ opt_block_args_tail : ',' block_args_tail {
 
 // [!null]
 block_param     : f_arg ',' f_block_optarg ',' f_rest_arg opt_block_args_tail {
-                    $$ = p.dispatch("on_params", $1, $3, $5, null, $6);
+                    $$ = p.new_args($1, $3, $5, null, $6);
                 }
                 | f_arg ',' f_block_optarg ',' f_rest_arg ',' f_arg opt_block_args_tail {
-                    $$ = p.dispatch("on_params", $1, $3, $5, $7, $8);
+                    $$ = p.new_args($1, $3, $5, $7, $8);
                 }
                 | f_arg ',' f_block_optarg opt_block_args_tail {
-                    $$ = p.dispatch("on_params", $1, $3, null, null, $4);
+                    $$ = p.new_args($1, $3, null, null, $4);
                 }
                 | f_arg ',' f_block_optarg ',' f_arg opt_block_args_tail {
-                    $$ = p.dispatch("on_params",$1, $3, null, $5, $6);
+                    $$ = p.new_args($1, $3, null, $5, $6);
                 }
                 | f_arg ',' f_rest_arg opt_block_args_tail {
-                    $$ = p.dispatch("on_params", $1, null, $3, null, $4);
+                    $$ = p.new_args($1, null, $3, null, $4);
                 }
                 | f_arg ',' {
                     $$ = p.dispatch("on_excessed_comma", 
-                                    p.dispatch("on_params", $1, null, null, null, null));
+                                    p.new_args($1, null, null, null, null));
                 }
                 | f_arg ',' f_rest_arg ',' f_arg opt_block_args_tail {
-                    $$ = p.dispatch("on_params", $1, null, $3, $5, $6);
+                    $$ = p.new_args($1, null, $3, $5, $6);
                 }
                 | f_arg opt_block_args_tail {
-                    $$ = p.dispatch("on_params", $1, null, null, null, $2);
+                    $$ = p.new_args($1, null, null, null, $2);
                 }
                 | f_block_optarg ',' f_rest_arg opt_block_args_tail {
-                    $$ = p.dispatch("on_params", null, $1, $3, null, $4);
+                    $$ = p.new_args(null, $1, $3, null, $4);
                 }
                 | f_block_optarg ',' f_rest_arg ',' f_arg opt_block_args_tail {
-                    $$ = p.dispatch("on_params", null, $1, $3, $5, $6);
+                    $$ = p.new_args(null, $1, $3, $5, $6);
                 }
                 | f_block_optarg opt_block_args_tail {
-                    $$ = p.dispatch("on_params", null, $1, null, null, $2);
+                    $$ = p.new_args(null, $1, null, null, $2);
                 }
                 | f_block_optarg ',' f_arg opt_block_args_tail {
-                    $$ = p.dispatch("on_params", null, $1, null, $3, $4);
+                    $$ = p.new_args(null, $1, null, $3, $4);
                 }
                 | f_rest_arg opt_block_args_tail {
-                    $$ = p.dispatch("on_params", null, null, $1, null, $2);     
+                    $$ = p.new_args(null, null, $1, null, $2);     
                 }
                 | f_rest_arg ',' f_arg opt_block_args_tail {
-                    $$ = p.dispatch("on_params", null, null, $1, $3, $4);
+                    $$ = p.new_args(null, null, $1, $3, $4);
                 }
                 | block_args_tail {
-                    $$ = p.dispatch("on_params", null, null, null, null, $1);
+                    $$ = p.new_args(null, null, null, null, $1);
                 }
 
 opt_block_param : none 
@@ -1322,12 +1322,12 @@ opt_block_param : none
 
 block_param_def : tPIPE opt_bv_decl tPIPE {
                     $$ = p.dispatch("on_block_var", 
-                                    p.dispatch("on_params", null, null, null, null, null), 
+                                    p.new_args(null, null, null, null, null), 
                                     $2);
                 }
                 | tOROP {
                     $$ = p.dispatch("on_block_var", 
-                                    p.dispatch("on_params", null, null, null, null, null), 
+                                    p.new_args(null, null, null, null, null), 
                                     null);
                 }
                 | tPIPE block_param opt_bv_decl tPIPE {
@@ -1797,49 +1797,49 @@ opt_args_tail   : ',' args_tail {
 
 // [!null]
 f_args          : f_arg ',' f_optarg ',' f_rest_arg opt_args_tail {
-                    $$ = p.dispatch("on_params", $1, $3, $5, null, $6);
+                    $$ = p.new_args($1, $3, $5, null, $6);
                 }
                 | f_arg ',' f_optarg ',' f_rest_arg ',' f_arg opt_args_tail {
-                    $$ = p.dispatch("on_params", $1, $3, $5, $7, $8);
+                    $$ = p.new_args($1, $3, $5, $7, $8);
                 }
                 | f_arg ',' f_optarg opt_args_tail {
-                    $$ = p.dispatch("on_params", $1, $3, null, null, $4);
+                    $$ = p.new_args($1, $3, null, null, $4);
                 }
                 | f_arg ',' f_optarg ',' f_arg opt_args_tail {
-                    $$ = p.dispatch("on_params", $1, $3, null, $5, $6);
+                    $$ = p.new_args($1, $3, null, $5, $6);
                 }
                 | f_arg ',' f_rest_arg opt_args_tail {
-                    $$ = p.dispatch("on_params", $1, null, $3, null, $4);
+                    $$ = p.new_args($1, null, $3, null, $4);
                 }
                 | f_arg ',' f_rest_arg ',' f_arg opt_args_tail {
-                    $$ = p.dispatch("on_params", $1, null, $3, $5, $6);
+                    $$ = p.new_args($1, null, $3, $5, $6);
                 }
                 | f_arg opt_args_tail {
-                    $$ = p.dispatch("on_params", $1, null, null, null, $2);
+                    $$ = p.new_args($1, null, null, null, $2);
                 }
                 | f_optarg ',' f_rest_arg opt_args_tail {
-                    $$ = p.dispatch("on_params", null, $1, $3, null, $4);
+                    $$ = p.new_args(null, $1, $3, null, $4);
                 }
                 | f_optarg ',' f_rest_arg ',' f_arg opt_args_tail {
-                    $$ = p.dispatch("on_params", null, $1, $3, $5, $6);
+                    $$ = p.new_args(null, $1, $3, $5, $6);
                 }
                 | f_optarg opt_args_tail {
-                    $$ = p.dispatch("on_params", null, $1, null, null, $2);
+                    $$ = p.new_args(null, $1, null, null, $2);
                 }
                 | f_optarg ',' f_arg opt_args_tail {
-                    $$ = p.dispatch("on_params", null, $1, null, $3, $4);
+                    $$ = p.new_args(null, $1, null, $3, $4);
                 }
                 | f_rest_arg opt_args_tail {
-                    $$ = p.dispatch("on_params", null, null, $1, null, $2);
+                    $$ = p.new_args(null, null, $1, null, $2);
                 }
                 | f_rest_arg ',' f_arg opt_args_tail {
-                    $$ = p.dispatch("on_params", null, null, $1, $3, $4);
+                    $$ = p.new_args(null, null, $1, $3, $4);
                 }
                 | args_tail {
-                    $$ = p.dispatch("on_params", null, null, null, null, $1);
+                    $$ = p.new_args(null, null, null, null, $1);
                 }
                 | /* none */ {
-                    $$ = p.dispatch("on_params", null, null, null, null, null);
+                    $$ = p.new_args(null, null, null, null, null);
                 }
 
 f_bad_arg       : tCONSTANT {
