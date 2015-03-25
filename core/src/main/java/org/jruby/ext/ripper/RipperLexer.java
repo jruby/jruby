@@ -221,7 +221,7 @@ public class RipperLexer {
     private LexerSource src;
     
     // Used for tiny smidgen of grammar in lexer (see setParserSupport())
-    private RipperParser parser = null;
+    private RipperParserBase parser = null;
 
     // Additional context surrounding tokens that both the lexer and
     // grammar use.
@@ -274,7 +274,7 @@ public class RipperLexer {
         leftParenBegin = value;
     }
 
-    public RipperLexer(RipperParser parser, LexerSource src) {
+    public RipperLexer(RipperParserBase parser, LexerSource src) {
         this.parser = parser;
     	token = 0;
     	yaccValue = null;
@@ -557,7 +557,7 @@ public class RipperLexer {
      * 
      * @param parserSupport
      */
-    public void setParser(RipperParser parserSupport) {
+    public void setParser(RipperParserBase parserSupport) {
         this.parser = parserSupport;
     }
 
@@ -717,7 +717,7 @@ public class RipperLexer {
                 // Do nothing like MRI
             } else if (getEncoding() == USASCII_ENCODING &&
                     bufferEncoding != UTF8_ENCODING) {
-                codeRange = RipperParser.associateEncoding(buffer, ASCII8BIT_ENCODING, codeRange);
+                codeRange = RipperParserBase.associateEncoding(buffer, ASCII8BIT_ENCODING, codeRange);
             }
         }
 

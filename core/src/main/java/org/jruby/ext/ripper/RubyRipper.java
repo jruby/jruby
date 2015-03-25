@@ -260,7 +260,7 @@ public class RubyRipper extends RubyObject {
     @JRubyMethod(visibility = Visibility.PRIVATE)
     public IRubyObject initialize(ThreadContext context, IRubyObject src,IRubyObject file, IRubyObject line) {
         filename = filenameAsString(context, file);
-        parser = new Ripper19Parser(context, this, source(context, src, filename.asJavaString(), lineAsInt(context, line)));
+        parser = new RipperParser(context, this, source(context, src, filename.asJavaString(), lineAsInt(context, line)));
          
         return context.runtime.getNil();
     }
@@ -346,7 +346,7 @@ public class RubyRipper extends RubyObject {
         return RubyNumeric.fix2int(line.convertToInteger());
     }
     
-    private RipperParser parser = null;
+    private RipperParserBase parser = null;
     private IRubyObject filename = null;
     private boolean parseStarted = false;
 }
