@@ -215,6 +215,17 @@ class TestHigherJavasupport < Test::Unit::TestCase
     assert_equal 2, array[2][0]
   end
 
+  def test_void
+    assert Java::void
+    assert Java::Void
+    begin
+      Java::void[1].new
+      fail "expected to raise"
+    rescue ArgumentError => e
+      assert_equal "Java package `void' does not have a method `[]'", e.message
+    end
+  end
+
   class IntLike
     def initialize(value)
       @value = value

@@ -225,53 +225,45 @@ public class Java implements Library {
      * @param nameClassMap
      */
     private static void addNameClassMappings(final Ruby runtime, final Map<String, JavaClass> nameClassMap) {
-        JavaClass booleanPrimClass = JavaClass.get(runtime, Boolean.TYPE);
         JavaClass booleanClass = JavaClass.get(runtime, Boolean.class);
-        nameClassMap.put("boolean", booleanPrimClass);
+        nameClassMap.put("boolean", JavaClass.get(runtime, Boolean.TYPE));
         nameClassMap.put("Boolean", booleanClass);
         nameClassMap.put("java.lang.Boolean", booleanClass);
 
-        JavaClass bytePrimClass = JavaClass.get(runtime, Byte.TYPE);
         JavaClass byteClass = JavaClass.get(runtime, Byte.class);
-        nameClassMap.put("byte", bytePrimClass);
+        nameClassMap.put("byte", JavaClass.get(runtime, Byte.TYPE));
         nameClassMap.put("Byte", byteClass);
         nameClassMap.put("java.lang.Byte", byteClass);
 
-        JavaClass shortPrimClass = JavaClass.get(runtime, Short.TYPE);
         JavaClass shortClass = JavaClass.get(runtime, Short.class);
-        nameClassMap.put("short", shortPrimClass);
+        nameClassMap.put("short", JavaClass.get(runtime, Short.TYPE));
         nameClassMap.put("Short", shortClass);
         nameClassMap.put("java.lang.Short", shortClass);
 
-        JavaClass charPrimClass = JavaClass.get(runtime, Character.TYPE);
         JavaClass charClass = JavaClass.get(runtime, Character.class);
-        nameClassMap.put("char", charPrimClass);
+        nameClassMap.put("char", JavaClass.get(runtime, Character.TYPE));
         nameClassMap.put("Character", charClass);
         nameClassMap.put("Char", charClass);
         nameClassMap.put("java.lang.Character", charClass);
 
-        JavaClass intPrimClass = JavaClass.get(runtime, Integer.TYPE);
         JavaClass intClass = JavaClass.get(runtime, Integer.class);
-        nameClassMap.put("int", intPrimClass);
+        nameClassMap.put("int", JavaClass.get(runtime, Integer.TYPE));
         nameClassMap.put("Integer", intClass);
         nameClassMap.put("Int", intClass);
         nameClassMap.put("java.lang.Integer", intClass);
 
-        JavaClass longPrimClass = JavaClass.get(runtime, Long.TYPE);
         JavaClass longClass = JavaClass.get(runtime, Long.class);
-        nameClassMap.put("long", longPrimClass);
+        nameClassMap.put("long", JavaClass.get(runtime, Long.TYPE));
         nameClassMap.put("Long", longClass);
         nameClassMap.put("java.lang.Long", longClass);
 
-        JavaClass floatPrimClass = JavaClass.get(runtime, Float.TYPE);
         JavaClass floatClass = JavaClass.get(runtime, Float.class);
-        nameClassMap.put("float", floatPrimClass);
+        nameClassMap.put("float", JavaClass.get(runtime, Float.TYPE));
         nameClassMap.put("Float", floatClass);
         nameClassMap.put("java.lang.Float", floatClass);
 
-        JavaClass doublePrimClass = JavaClass.get(runtime, Double.TYPE);
         JavaClass doubleClass = JavaClass.get(runtime, Double.class);
-        nameClassMap.put("double", doublePrimClass);
+        nameClassMap.put("double", JavaClass.get(runtime, Double.TYPE));
         nameClassMap.put("Double", doubleClass);
         nameClassMap.put("java.lang.Double", doubleClass);
 
@@ -295,6 +287,9 @@ public class Java implements Library {
         nameClassMap.put("string", stringClass);
         nameClassMap.put("String", stringClass);
         nameClassMap.put("java.lang.String", stringClass);
+
+        nameClassMap.put("void", JavaClass.get(runtime, Void.TYPE));
+        nameClassMap.put("Void", JavaClass.get(runtime, Void.class));
     }
 
     private static class JavaPackageClassProvider implements ClassProvider {
@@ -419,17 +414,17 @@ public class Java implements Library {
         return getInterfaceModule(runtime, javaClass);
     }
 
-    public static RubyModule get_proxy_class(final IRubyObject self, final IRubyObject java_class_object) {
+    public static RubyModule get_proxy_class(final IRubyObject self, final IRubyObject java_class) {
         final Ruby runtime = self.getRuntime();
         final JavaClass javaClass;
-        if ( java_class_object instanceof RubyString ) {
-            javaClass = JavaClass.for_name(self, java_class_object);
+        if ( java_class instanceof RubyString ) {
+            javaClass = JavaClass.for_name(self, java_class);
         }
-        else if ( java_class_object instanceof JavaClass ) {
-            javaClass = (JavaClass) java_class_object;
+        else if ( java_class instanceof JavaClass ) {
+            javaClass = (JavaClass) java_class;
         }
         else {
-            throw runtime.newTypeError(java_class_object, runtime.getJavaSupport().getJavaClassClass());
+            throw runtime.newTypeError(java_class, runtime.getJavaSupport().getJavaClassClass());
         }
         return getProxyClass(runtime, javaClass);
     }
