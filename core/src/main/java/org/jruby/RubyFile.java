@@ -321,7 +321,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
     }
 
     // rb_file_initialize
-    @JRubyMethod(name = "initialize", required = 1, optional = 2, visibility = PRIVATE)
+    @JRubyMethod(name = "initialize", required = 1, optional = 3, visibility = PRIVATE)
     public IRubyObject initialize(ThreadContext context, IRubyObject[] args, Block block) {
         if (openFile != null) {
             throw context.runtime.newRuntimeError("reinitializing File");
@@ -1225,7 +1225,12 @@ public class RubyFile extends RubyIO implements EncodingCapable {
                 break;
             }
             case 4:
-                options = args[3].convertToHash();
+                if (!args[3].isNil()) {
+                    options = TypeConverter.convertToTypeWithCheck(args[3], context.runtime.getHash(), "to_hash");
+                    if (options.isNil()) {
+                        throw runtime.newArgumentError("wrong number of arguments (4 for 1..3)");
+                    }
+                }
                 vperm(pm, args[2]);
                 vmode(pm, args[1]);
                 break;
