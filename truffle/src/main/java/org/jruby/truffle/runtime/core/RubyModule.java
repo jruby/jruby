@@ -198,7 +198,7 @@ public class RubyModule extends RubyBasicObject implements ModuleChain {
      */
     @TruffleBoundary
     public void setConstant(Node currentNode, String name, Object value) {
-        if (getContext().getCoreLibrary() != null && getContext().getCoreLibrary().isLoadingCoreLibrary()) {
+        if (getContext().getCoreLibrary().isLoadingCoreLibrary()) {
             final RubyConstant currentConstant = constants.get(name);
 
             if (currentConstant != null) {

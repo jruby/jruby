@@ -172,10 +172,6 @@ public class CoreLibrary {
         objectClass.getAdoptedByLexicalParent(objectClass, "Object", null);
         moduleClass.getAdoptedByLexicalParent(objectClass, "Module", null);
 
-        // BasicObject knows itself
-
-        basicObjectClass.setConstant(null, "BasicObject", basicObjectClass);
-
         // Create Exception classes 
 
         // Exception
@@ -390,6 +386,9 @@ public class CoreLibrary {
         objectClass.setConstant(null, "RUBY_PLATFORM", RubyString.fromJavaString(stringClass, Constants.PLATFORM));
         objectClass.setConstant(null, "RUBY_RELEASE_DATE", RubyString.fromJavaString(stringClass, Constants.COMPILE_DATE));
         objectClass.setConstant(null, "RUBY_DESCRIPTION", RubyString.fromJavaString(stringClass, OutputStrings.getVersionString()));
+
+        // BasicObject knows itself
+        basicObjectClass.setConstant(null, "BasicObject", basicObjectClass);
 
         // TODO(cs): this should be a separate exception
         mathModule.setConstant(null, "DomainError", edomClass);
