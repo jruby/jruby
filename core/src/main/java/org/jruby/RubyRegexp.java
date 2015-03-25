@@ -1574,8 +1574,8 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
         int result = -1;
         IRubyObject match;
 //        Region regs = null;
-        ByteList rangeBL = str.getByteList();
-        int range = rangeBL.begin();
+        ByteList strBL = str.getByteList();
+        int range = strBL.begin();
         Regex reg;
         boolean tmpreg;
 
@@ -1603,10 +1603,10 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
         if (!reverse) {
             range += str.size();
         }
-        Matcher matcher = reg.matcher(rangeBL.unsafeBytes(), rangeBL.begin(), rangeBL.begin() + rangeBL.realSize());
+        Matcher matcher = reg.matcher(strBL.unsafeBytes(), strBL.begin(), strBL.begin() + strBL.realSize());
         JOniException exception = null;
         try {
-            result = matcherSearch(runtime, matcher, rangeBL.begin() + pos, range, RE_OPTION_NONE);
+            result = matcherSearch(runtime, matcher, strBL.begin() + pos, range, RE_OPTION_NONE);
         } catch (JOniException je) {
             exception = je;
         }
