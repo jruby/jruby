@@ -13,6 +13,8 @@ class TestHigherJavasupport < Test::Unit::TestCase
   Annotation = java.lang.annotation.Annotation
   ClassWithPrimitive = org.jruby.test.ClassWithPrimitive
 
+  ALLOW_UPPERCASE_PACKAGE_NAMES = JRuby.runtime.getInstanceConfig.getAllowUppercasePackageNames
+
   def test_java_int_primitive_assignment
     assert_nothing_raised {
       cwp = ClassWithPrimitive.new
@@ -447,8 +449,10 @@ class TestHigherJavasupport < Test::Unit::TestCase
   end
 
   def test_that_misspelt_fq_class_names_dont_stop_future_fq_class_names_with_same_inner_most_package
+    # NOTE: with ALLOW_UPPERCASE_PACKAGE_NAMES this raises nothing !
     assert_raises(NameError) { Java::java.til.zip.ZipFile }
-    assert_nothing_raised { Java::java.util.zip.ZipFile }
+    Java::java.util.zip.ZipFile
+    Java::java.util.zip.ZipFile::OPEN_READ
   end
 
   def test_that_subpackages_havent_leaked_into_other_packages
@@ -464,6 +468,19 @@ class TestHigherJavasupport < Test::Unit::TestCase
   def test_that_we_get_the_same_package_instance_on_subsequent_calls
     assert(com.flirble.equal?(com.flirble))
   end
+
+  def test_uppercase_package_name_and_lowercase_class_name # and upper-case method
+    Java::org.jruby.javasupport.TestApp
+    Java::org.jruby.javasupport.TestApp.UpperClass
+    assert_equal 'UGLY!', Java::org.jruby.javasupport.TestApp::UpperClass.UglyMethod
+
+    Java::org.jruby.javasupport.TestApp::lowerClass
+    assert_equal 'ugly!', Java::org.jruby.javasupport.TestApp.lowerClass.UglyMethod
+
+    # NOTE: can not work due package case conventions :
+    # Java::OrgJrubyJavasupportTestApp::UpperClass
+    # Java::OrgJrubyJavasupportTestApp::lowerClass
+  end if ALLOW_UPPERCASE_PACKAGE_NAMES
 
   @@include_proc = Proc.new do
     Thread.stop
