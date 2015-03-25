@@ -509,12 +509,16 @@ public abstract class EncodingNodes {
     @CoreMethod(names = "encoding_map", onSingleton = true)
     public abstract static class EncodingMapNode extends CoreMethodNode {
 
+        @Child private CallDispatchHeadNode upcaseNode;
+        @Child private CallDispatchHeadNode toSymNode;
         @Child private CallDispatchHeadNode newLookupTableNode;
         @Child private CallDispatchHeadNode lookupTableWriteNode;
         @Child private CallDispatchHeadNode newTupleNode;
 
         public EncodingMapNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
+            upcaseNode = DispatchHeadNodeFactory.createMethodCall(context);
+            toSymNode = DispatchHeadNodeFactory.createMethodCall(context);
             newLookupTableNode = DispatchHeadNodeFactory.createMethodCall(context);
             lookupTableWriteNode = DispatchHeadNodeFactory.createMethodCall(context);
             newTupleNode = DispatchHeadNodeFactory.createMethodCall(context);
@@ -522,6 +526,8 @@ public abstract class EncodingNodes {
 
         public EncodingMapNode(EncodingMapNode prev) {
             super(prev);
+            upcaseNode = prev.upcaseNode;
+            toSymNode = prev.toSymNode;
             newLookupTableNode = prev.newLookupTableNode;
             lookupTableWriteNode = prev.lookupTableWriteNode;
             newTupleNode = prev.newTupleNode;
@@ -533,7 +539,8 @@ public abstract class EncodingNodes {
 
             final RubyEncoding[] encodings = RubyEncoding.cloneEncodingList();
             for (int i = 0; i < encodings.length; i++) {
-                final RubySymbol key = getContext().newSymbol(encodings[i].getName());
+                final Object upcased = upcaseNode.call(frame, getContext().makeString(encodings[i].getName()), "upcase", null);
+                final Object key = toSymNode.call(frame, upcased, "to_sym", null);
                 final Object value = newTupleNode.call(frame, getContext().getCoreLibrary().getTupleClass(), "create", null, nil(), i);
 
                 lookupTableWriteNode.call(frame, ret, "[]=", null, key, value);
@@ -544,7 +551,8 @@ public abstract class EncodingNodes {
                 final CaseInsensitiveBytesHash.CaseInsensitiveBytesHashEntry<EncodingDB.Entry> e =
                         ((CaseInsensitiveBytesHash.CaseInsensitiveBytesHashEntry<EncodingDB.Entry>)i.next());
 
-                final RubySymbol key = getContext().newSymbol(new ByteList(e.bytes, e.p, e.end - e.p));
+                final Object upcased = upcaseNode.call(frame, getContext().makeString(new ByteList(e.bytes, e.p, e.end - e.p)), "upcase", null);
+                final Object key = toSymNode.call(frame, upcased, "to_sym", null);
                 final RubyString alias = getContext().makeString(new ByteList(e.bytes, e.p, e.end - e.p));
                 final int index = e.value.getIndex();
 
