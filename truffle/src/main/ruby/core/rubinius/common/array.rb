@@ -91,8 +91,7 @@ class Array
     Array.new self[0, n]
   end
 
-  # MODIFIED to handle blocks from java
-  def zip_internal(block, *others)
+  def zip_internal(*others)
     out = Array.new(size) { [] }
     others = others.map do |ary|
       if ary.respond_to?(:to_ary)
@@ -110,8 +109,8 @@ class Array
       others.each { |ary| slot << ary.at(i) }
     end
 
-    unless block.nil?
-      out.each { |ary| block.call(ary) }
+    if block_given?
+      out.each { |ary| yield ary }
       return nil
     end
 

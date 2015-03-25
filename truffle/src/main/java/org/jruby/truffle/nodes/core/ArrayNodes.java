@@ -4587,29 +4587,25 @@ public abstract class ArrayNodes {
 
         @Specialization(guards = {"!isOtherSingleObjectArray"})
         public Object zipObjectObjectNotSingleObject(VirtualFrame frame, RubyArray array, Object[] others) {
-            RubyBasicObject proc = RubyArguments.getBlock(frame.getArguments());
-            if (proc == null) {
-                proc = nil();
-            }
-            return ruby(frame, "zip_internal(nil, *others)", "others", new RubyArray(getContext().getCoreLibrary().getArrayClass(), others, others.length), "block", proc);
+            return zipRuby(frame, others);
         }
 
         @Specialization(guards = {"!isOtherSingleIntegerFixnumArray"})
         public Object zipObjectObjectNotSingleInteger(VirtualFrame frame, RubyArray array, Object[] others) {
-            RubyBasicObject proc = RubyArguments.getBlock(frame.getArguments());
-            if (proc == null) {
-                proc = nil();
-            }
-            return ruby(frame, "zip_internal(block, *others)", "others", new RubyArray(getContext().getCoreLibrary().getArrayClass(), others, others.length), "block", proc);
+            return zipRuby(frame, others);
         }
 
         @Specialization(guards = {"!isObject"})
         public Object zipObjectObjectNotObject(VirtualFrame frame, RubyArray array, Object[] others) {
+            return zipRuby(frame, others);
+        }
+
+        private Object zipRuby(VirtualFrame frame, Object[] others) {
             RubyBasicObject proc = RubyArguments.getBlock(frame.getArguments());
             if (proc == null) {
                 proc = nil();
             }
-            return ruby(frame, "zip_internal(block, *others)", "others", new RubyArray(getContext().getCoreLibrary().getArrayClass(), others, others.length), "block", proc);
+            return ruby(frame, "zip_internal(*others, &block)", "others", new RubyArray(getContext().getCoreLibrary().getArrayClass(), others, others.length), "block", proc);
         }
 
     }
