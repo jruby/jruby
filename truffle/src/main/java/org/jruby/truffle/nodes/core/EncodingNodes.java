@@ -30,9 +30,13 @@ import org.jruby.runtime.encoding.EncodingService;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.coerce.ToStrNode;
 import org.jruby.truffle.nodes.coerce.ToStrNodeFactory;
+import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
+import org.jruby.truffle.nodes.dispatch.DispatchHeadNode;
+import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.RubyArray;
+import org.jruby.truffle.runtime.core.RubyBasicObject;
 import org.jruby.truffle.runtime.core.RubyEncoding;
 import org.jruby.truffle.runtime.core.RubyHash;
 import org.jruby.truffle.runtime.core.RubyNilClass;
@@ -498,6 +502,80 @@ public abstract class EncodingNodes {
             notDesignedForCompilation();
 
             return encoding.isDummy();
+        }
+    }
+
+    @RubiniusOnly
+    @CoreMethod(names = "encoding_map", onSingleton = true)
+    public abstract static class EncodingMapNode extends CoreMethodNode {
+
+        @Child private CallDispatchHeadNode newLookupTableNode;
+        @Child private CallDispatchHeadNode lookupTableWriteNode;
+        @Child private CallDispatchHeadNode newTupleNode;
+
+        public EncodingMapNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+            newLookupTableNode = DispatchHeadNodeFactory.createMethodCall(context);
+            lookupTableWriteNode = DispatchHeadNodeFactory.createMethodCall(context);
+            newTupleNode = DispatchHeadNodeFactory.createMethodCall(context);
+        }
+
+        public EncodingMapNode(EncodingMapNode prev) {
+            super(prev);
+            newLookupTableNode = prev.newLookupTableNode;
+            lookupTableWriteNode = prev.lookupTableWriteNode;
+            newTupleNode = prev.newTupleNode;
+        }
+
+        @Specialization
+        public Object encodingMap(VirtualFrame frame) {
+            Object ret = newLookupTableNode.call(frame, getContext().getCoreLibrary().getLookupTableClass(), "new", null);
+
+            final RubyEncoding[] encodings = RubyEncoding.cloneEncodingList();
+            for (int i = 0; i < encodings.length; i++) {
+                final RubySymbol key = getContext().newSymbol(encodings[i].getName());
+                final Object value = newTupleNode.call(frame, getContext().getCoreLibrary().getTupleClass(), "create", null, nil(), i);
+
+                lookupTableWriteNode.call(frame, ret, "[]=", null, key, value);
+            }
+
+            final Hash.HashEntryIterator i = getContext().getRuntime().getEncodingService().getAliases().entryIterator();
+            while (i.hasNext()) {
+                final CaseInsensitiveBytesHash.CaseInsensitiveBytesHashEntry<EncodingDB.Entry> e =
+                        ((CaseInsensitiveBytesHash.CaseInsensitiveBytesHashEntry<EncodingDB.Entry>)i.next());
+
+                final RubySymbol key = getContext().newSymbol(new ByteList(e.bytes, e.p, e.end - e.p));
+                final RubyString alias = getContext().makeString(new ByteList(e.bytes, e.p, e.end - e.p));
+                final int index = e.value.getIndex();
+
+
+                final Object value = newTupleNode.call(frame, getContext().getCoreLibrary().getTupleClass(), "create", null, alias, index);
+                lookupTableWriteNode.call(frame, ret, "[]=", null, key, value);
+            }
+
+            final Object externalTuple = newTupleNode.call(
+                    frame,
+                    getContext().getCoreLibrary().getTupleClass(),
+                    "create",
+                    null,
+                    getContext().makeString("external"),
+                    getContext().getRuntime().getDefaultExternalEncoding().getIndex()
+            );
+
+            lookupTableWriteNode.call(frame, ret, "[]=", null, getContext().newSymbol("EXTERNAL"), externalTuple);
+
+            final Object localeTuple = newTupleNode.call(
+                    frame,
+                    getContext().getCoreLibrary().getTupleClass(),
+                    "create",
+                    null,
+                    getContext().makeString("locale"),
+                    getContext().getRuntime().getEncodingService().getLocaleEncoding().getIndex()
+            );
+
+            lookupTableWriteNode.call(frame, ret, "[]=", null, getContext().newSymbol("LOCALE"), localeTuple);
+
+            return ret;
         }
     }
 

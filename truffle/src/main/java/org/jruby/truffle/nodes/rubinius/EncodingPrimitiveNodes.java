@@ -20,6 +20,97 @@ import org.jruby.truffle.runtime.core.*;
  */
 public abstract class EncodingPrimitiveNodes {
 
+    @RubiniusPrimitive(name = "encoding_converter_allocate")
+    public static abstract class EncodingConverterAllocateNode extends RubiniusPrimitiveNode {
+
+        public EncodingConverterAllocateNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public EncodingConverterAllocateNode(EncodingConverterAllocateNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public Object encodingConverterAllocate(RubyEncoding fromEncoding, RubyEncoding toEncoding, RubyHash options) {
+            return new RubyEncodingConverter(getContext().getCoreLibrary().getEncodingConverterClass(), null);
+        }
+
+    }
+
+    @RubiniusPrimitive(name = "encoding_converter_primitive_convert")
+    public static abstract class EncodingConverterPrimitiveConvertNode extends RubiniusPrimitiveNode {
+
+        public EncodingConverterPrimitiveConvertNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public EncodingConverterPrimitiveConvertNode(EncodingConverterPrimitiveConvertNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public Object encodingConverterPrimitiveConvert(RubyBasicObject encodingConverter, RubyString source,
+                                                        RubyString target, int offset, int size, RubyHash options) {
+            throw new UnsupportedOperationException("not implemented");
+        }
+
+    }
+
+    @RubiniusPrimitive(name = "encoding_converter_putback")
+    public static abstract class EncodingConverterPutbackNode extends RubiniusPrimitiveNode {
+
+        public EncodingConverterPutbackNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public EncodingConverterPutbackNode(EncodingConverterPutbackNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public Object encodingConverterPutback(RubyBasicObject encodingConverter, int maxBytes) {
+            throw new UnsupportedOperationException("not implemented");
+        }
+
+    }
+
+    @RubiniusPrimitive(name = "encoding_converter_last_error")
+    public static abstract class EncodingConverterLastErrorNode extends RubiniusPrimitiveNode {
+
+        public EncodingConverterLastErrorNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public EncodingConverterLastErrorNode(EncodingConverterLastErrorNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public Object encodingConverterLastError(RubyBasicObject encodingConverter) {
+            throw new UnsupportedOperationException("not implemented");
+        }
+
+    }
+
+    @RubiniusPrimitive(name = "encoding_converter_primitive_errinfo")
+    public static abstract class EncodingConverterErrinfoNode extends RubiniusPrimitiveNode {
+
+        public EncodingConverterErrinfoNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public EncodingConverterErrinfoNode(EncodingConverterErrinfoNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public Object encodingConverterLastError(RubyBasicObject encodingConverter) {
+            throw new UnsupportedOperationException("not implemented");
+        }
+
+    }
+
     @RubiniusPrimitive(name = "encoding_get_object_encoding", needsSelf = false)
     public static abstract class EncodingGetObjectEncodingNode extends RubiniusPrimitiveNode {
 
