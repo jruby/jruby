@@ -867,7 +867,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
         frozenCheck();
     }
 
-    private void modifyCheck(byte[] b, int len) {
+    public void modifyCheck(byte[] b, int len) {
         if (value.getUnsafeBytes() != b || value.getRealSize() != len) throw getRuntime().newRuntimeError("string modified");
     }
 
@@ -5047,14 +5047,12 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
 
     @JRubyMethod(name = "each_line")
     public IRubyObject each_line19(ThreadContext context, Block block) {
-        return block.isGiven() ? each_lineCommon19(context, block) :
-            enumeratorize(context.runtime, this, "each_line");
+        return StringSupport.rbStrEnumerateLines(this, context, "each_line", context.runtime.getGlobalVariables().getDefaultSeparator(), block, false);
     }
 
     @JRubyMethod(name = "each_line")
     public IRubyObject each_line19(ThreadContext context, IRubyObject arg, Block block) {
-        return block.isGiven() ? each_lineCommon19(context, arg, block) :
-            enumeratorize(context.runtime, this, "each_line", arg);
+        return StringSupport.rbStrEnumerateLines(this, context, "each_line", arg, block, false);
     }
 
     public IRubyObject lines(ThreadContext context, Block block) {
@@ -5067,99 +5065,12 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
 
     @JRubyMethod(name = "lines")
     public IRubyObject lines20(ThreadContext context, Block block) {
-        if (block.isGiven()) {
-            context.runtime.getWarnings().warn("passing a block to String#lines is deprecated");
-            return each_lineCommon19(context, block);
-        }
-        // FIXME: Inefficient; build array manually rather than via Enumerator
-        return enumeratorize(context.runtime, this, "each_line").callMethod(context, "to_a");
+        return StringSupport.rbStrEnumerateLines(this, context, "lines", context.runtime.getGlobalVariables().getDefaultSeparator(), block, true);
     }
 
     @JRubyMethod(name = "lines")
     public IRubyObject lines20(ThreadContext context, IRubyObject arg, Block block) {
-        if (block.isGiven()) {
-            context.runtime.getWarnings().warn("passing a block to String#lines is deprecated");
-            return each_lineCommon19(context, arg, block);
-        }
-        // FIXME: Inefficient; build array manually rather than via Enumerator
-        return enumeratorize(context.runtime, this, "each_line", arg).callMethod(context, "to_a");
-    }
-
-    private IRubyObject each_lineCommon19(ThreadContext context, Block block) {
-        return each_lineCommon19(context, context.runtime.getGlobalVariables().get("$/"), block);
-    }
-
-    private IRubyObject each_lineCommon19(ThreadContext context, IRubyObject sep, Block block) {
-        Ruby runtime = context.runtime;
-        if (sep.isNil()) {
-            block.yield(context, this);
-            return this;
-        }
-        if (! sep.respondsTo("to_str")) {
-            throw runtime.newTypeError("can't convert " + sep.getMetaClass() + " into String");
-        }
-
-        ByteList val = value.shallowDup();
-        int p = val.getBegin();
-        int s = p;
-        int offset = p;
-        int len = val.getRealSize();
-        int end = p + len;
-        byte[]bytes = val.getUnsafeBytes();
-
-        final Encoding enc;
-        RubyString sepStr = sep.convertToString();
-        if (sepStr == runtime.getGlobalVariables().getDefaultSeparator()) {
-            enc = val.getEncoding();
-            while (p < end) {
-                if (bytes[p] == (byte)'\n') {
-                    int p0 = enc.leftAdjustCharHead(bytes, s, p, end);
-                    if (enc.isNewLine(bytes, p0, end)) {
-                        p = p0 + StringSupport.length(enc, bytes, p0, end);
-                        block.yield(context, makeShared19(runtime, val, s - offset, p - s).infectBy(this));
-                        s = p;
-                        continue;
-                    }
-                }
-                p++;
-            }
-        } else {
-            enc = checkEncoding(sepStr);
-            ByteList sepValue = sepStr.value;
-            final int newLine;
-            int rslen = sepValue.getRealSize();
-            if (rslen == 0) {
-                newLine = '\n';
-            } else {
-                newLine = codePoint(runtime, enc, sepValue.getUnsafeBytes(), sepValue.getBegin(), sepValue.getBegin() + sepValue.getRealSize());
-            }
-
-            while (p < end) {
-                int c = codePoint(runtime, enc, bytes, p, end);
-                again: do {
-                    int n = codeLength(runtime, enc, c);
-                    if (rslen == 0 && c == newLine) {
-                        p += n;
-                        if (p < end && (c = codePoint(runtime, enc, bytes, p, end)) != newLine) continue again;
-                        while (p < end && codePoint(runtime, enc, bytes, p, end) == newLine) p += n;
-                        p -= n;
-                    }
-                    if (c == newLine &&
-                            rslen <= end - p &&
-                            (rslen <= 1 ||
-                            ByteList.memcmp(sepValue.getUnsafeBytes(), sepValue.getBegin(), rslen, bytes, p, rslen) == 0)) {
-                        block.yield(context, makeShared19(runtime, val, s - offset, p - s + (rslen != 0 ? rslen : n)).infectBy(this));
-                        s = p + (rslen != 0 ? rslen : n);
-                    }
-                    p += n;
-                } while (false);
-            }
-        }
-
-        if (s != end) {
-            block.yield(context, makeShared19(runtime, val, s-offset, end - s).infectBy(this));
-        }
-        return this;
+        return StringSupport.rbStrEnumerateLines(this, context, "lines", arg, block, true);
     }
 
     /**

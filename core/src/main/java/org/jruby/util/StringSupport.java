@@ -26,6 +26,7 @@
 package org.jruby.util;
 
 import static org.jcodings.Encoding.CHAR_INVALID;
+import static org.jruby.RubyEnumerator.enumeratorize;
 
 import org.jcodings.Encoding;
 import org.jcodings.ascii.AsciiTables;
@@ -36,10 +37,14 @@ import org.jcodings.specific.UTF8Encoding;
 import org.jcodings.util.IntHash;
 import org.joni.Matcher;
 import org.jruby.Ruby;
+import org.jruby.RubyArray;
 import org.jruby.RubyBasicObject;
 import org.jruby.RubyEncoding;
+import org.jruby.RubyIO;
 import org.jruby.RubyObject;
 import org.jruby.RubyString;
+import org.jruby.runtime.Block;
+import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
 import org.jruby.util.collections.IntHashMap;
@@ -1495,5 +1500,253 @@ public final class StringSupport {
         if (cr1 == CR_7BIT && (cr2 == CR_7BIT || other.getByteList().getEncoding().isAsciiCompatible())) return true;
         if (cr2 == CR_7BIT && string.getByteList().getEncoding().isAsciiCompatible()) return true;
         return false;
+    }
+
+    public static IRubyObject rbStrEnumerateLines(RubyString str, ThreadContext context, String name, IRubyObject arg, Block block, boolean wantarray) {
+        Ruby runtime = context.runtime;
+
+        Encoding enc;
+        IRubyObject line, rs, orig = str;
+        int ptr, pend, subptr, subend, rsptr, hit, adjusted;
+        int pos, len, rslen;
+        boolean paragraph_mode = false;
+
+        IRubyObject ary = null;
+
+        rs = arg;
+
+        if (block.isGiven()) {
+            if (wantarray) {
+                // this code should be live in 3.0
+                if (false) { // #if STRING_ENUMERATORS_WANTARRAY
+                    runtime.getWarnings().warn("given block not used");
+                    ary = runtime.newEmptyArray();
+                } else {
+                    runtime.getWarnings().warning("passing a block to String#lines is deprecated");
+                    wantarray = false;
+                }
+            }
+        }
+        else {
+            if (wantarray) {
+                ary = runtime.newEmptyArray();
+            } else {
+                return enumeratorize(runtime, str, name);
+            }
+        }
+
+        if (rs.isNil()) {
+            if (wantarray) {
+                ((RubyArray)ary).push(str);
+                return ary;
+            }
+            else {
+                block.yieldSpecific(context, str);
+                return orig;
+            }
+        }
+
+        str = str.newFrozen();
+        byte[] strBytes = str.getByteList().unsafeBytes();
+        ptr = subptr = str.getByteList().begin();
+        pend = ptr + str.size();
+        len = str.size();
+        rs = rs.convertToString();
+        rslen = ((RubyString)rs).size();
+
+        if (rs == runtime.getGlobalVariables().getDefaultSeparator())
+            enc = str.getEncoding();
+        else
+            enc = str.checkEncoding((RubyString) rs);
+
+        byte[] rsbytes;
+        if (rslen == 0) {
+            rsbytes = RubyIO.PARAGRAPH_SEPARATOR.unsafeBytes();
+            rsptr = RubyIO.PARAGRAPH_SEPARATOR.begin();
+            rslen = 2;
+            paragraph_mode = true;
+        }
+        else {
+            rsbytes = ((RubyString)rs).getByteList().unsafeBytes();
+            rsptr = ((RubyString)rs).getByteList().begin();
+        }
+
+        if ((rs == runtime.getGlobalVariables().getDefaultSeparator() || paragraph_mode) && !enc.isAsciiCompatible()) {
+            rs = RubyString.newString(runtime, rsbytes, rsptr, rslen);
+            rs = EncodingUtils.rbStrEncode(context, rs, runtime.getEncodingService().convertEncodingToRubyEncoding(enc), 0, context.nil);
+            rsbytes = ((RubyString)rs).getByteList().unsafeBytes();
+            rsptr = ((RubyString)rs).getByteList().begin();
+            rslen = ((RubyString)rs).getByteList().realSize();
+        }
+
+        while (subptr < pend) {
+            pos = rb_memsearch(rsbytes, rsptr, rslen, strBytes, subptr, pend - subptr, enc);
+            if (pos < 0) break;
+            hit = subptr + pos;
+            adjusted = enc.rightAdjustCharHead(strBytes, subptr, hit, pend);
+            if (hit != adjusted) {
+                subptr = adjusted;
+                continue;
+            }
+            subend = hit + rslen;
+            if (paragraph_mode) {
+                while (subend < pend && enc.isNewLine(strBytes, subend, pend)) {
+                    subend += enc.length(strBytes, subend, pend);
+                }
+            }
+            line = str.substr(runtime, subptr - ptr, subend - subptr);
+            if (wantarray) {
+                ((RubyArray)ary).push(line);
+            } else {
+                block.yieldSpecific(context, line);
+                str.modifyCheck(strBytes, len);
+            }
+            subptr = subend;
+        }
+
+        if (subptr != pend) {
+            line = str.substr(subptr - ptr, pend - subptr);
+            if (wantarray) {
+                ((RubyArray) ary).push(line);
+            } else {
+                block.yieldSpecific(context, line);
+            }
+        }
+
+        return wantarray ? ary : orig;
+    }
+
+    private static int rb_memsearch(byte[] xBytes, int x0, int m, byte[] yBytes, int y0, int n, Encoding enc) {
+        int x = x0, y = y0;
+
+        if (m > n) return -1;
+        else if (m == n) {
+            return ByteList.memcmp(xBytes, x0, yBytes, y0, m) == 0 ? 0 : -1;
+        }
+        else if (m < 1) {
+            return 0;
+        }
+        else if (m == 1) {
+            int ys = memchr(yBytes, y, xBytes[x], n);
+
+            if (ys != 0)
+                return ys - y;
+            else
+                return -1;
+        }
+        else if (m <= 8) { // SIZEOF_VALUE...meaningless here, but this logic catches short strings
+            return rb_memsearch_ss(xBytes, x0, m, yBytes, y0, n);
+        }
+        else if (enc == UTF8Encoding.INSTANCE){
+            return rb_memsearch_qs_utf8(xBytes, x0, m, yBytes, y0, n);
+        }
+        else {
+            return rb_memsearch_qs(xBytes, x0, m, yBytes, y0, n);
+        }
+    }
+
+    private static int rb_memsearch_ss(byte[] xsBytes, int xs, int m, byte[] ysBytes, int ys, int n) {
+        int y;
+
+        if ((y = memmem(ysBytes, ys, n, xsBytes, xs, m)) != -1)
+            return y - ys;
+        else
+            return -1;
+    }
+
+    // Knuth-Morris-Pratt pattern match
+    public static int memmem(byte[] aBytes, int aStart, int aLen, byte[] p, int pStart, int pLen) {
+        int[] f = failure(p, pStart, pLen);
+
+        int j = 0;
+
+        for (int i = 0; i < aLen; i++) {
+            while (j > 0 && p[pStart + j] != aBytes[aStart + i]) j = f[j - 1];
+
+            if (p[pStart + j] == aBytes[aStart + i]) j++;
+
+            if (j == pLen) return aStart + i - pLen + 1;
+        }
+        return -1;
+    }
+
+    private static int[] failure(byte[] p, int pStart, int pLen) {
+        int[] f = new int[pLen];
+
+        int j = 0;
+        for (int i = 1; i < pLen; i++) {
+            while (j>0 && p[pStart + j] != p[pStart + i]) j = f[j - 1];
+
+            if (p[pStart + j] == p[pStart + i]) j++;
+
+            f[i] = j;
+        }
+
+        return f;
+    }
+
+    private static int rb_memsearch_qs(byte[] xsBytes, int xs, int m, byte[] ysBytes, int ys, int n) {
+        int x = xs, xe = xs + m;
+        int y = ys;
+        int qstable[] = new int[256];
+
+        /* Preprocessing */
+        Arrays.fill(qstable, m + 1);
+        for (; x < xe; ++x)
+            qstable[xsBytes[x] & 0xFF] = xe - x;
+        /* Searching */
+        for (; y + m <= ys + n; y += qstable[ysBytes[y + m] & 0xFF]) {
+            if (xsBytes[xs] == ysBytes[y] && ByteList.memcmp(xsBytes, xs, ysBytes, y, m) == 0)
+                return y - ys;
+        }
+        return -1;
+    }
+
+    private static int rb_memsearch_qs_utf8_hash(byte[] xBytes, int x) {
+        int mix = 8353;
+        int h = xBytes[x] & 0xFF;
+        if (h < 0xC0) {
+            return h + 256;
+        }
+        else if (h < 0xE0) {
+            h *= mix;
+            h += xBytes[x + 1];
+        }
+        else if (h < 0xF0) {
+            h *= mix;
+            h += xBytes[x + 1];
+            h *= mix;
+            h += xBytes[x + 2];
+        }
+        else if (h < 0xF5) {
+            h *= mix;
+            h += xBytes[x + 1];
+            h *= mix;
+            h += xBytes[x + 2];
+            h *= mix;
+            h += xBytes[x + 3];
+        }
+        else {
+            return h + 256;
+        }
+        return h;
+    }
+
+    private static int rb_memsearch_qs_utf8(byte[] xsBytes, int xs, int m, byte[] ysBytes, int ys, int n) {
+        int x = xs, xe = xs + m;
+        int y = ys;
+        int qstable[] = new int[512];
+
+        /* Preprocessing */
+        Arrays.fill(qstable, m + 1);
+        for (; x < xe; ++x) {
+            qstable[rb_memsearch_qs_utf8_hash(xsBytes, x)] = xe - x;
+        }
+        /* Searching */
+        for (; y + m <= ys + n; y += qstable[rb_memsearch_qs_utf8_hash(ysBytes, y+m)]) {
+            if (xsBytes[xs] == ysBytes[y] && ByteList.memcmp(xsBytes, xs, ysBytes, y, m) == 0)
+                return y - ys;
+        }
+        return -1;
     }
 }
