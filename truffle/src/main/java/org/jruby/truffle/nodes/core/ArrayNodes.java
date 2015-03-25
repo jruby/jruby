@@ -4423,43 +4423,6 @@ public abstract class ArrayNodes {
 
     }
 
-    @CoreMethod(names = "uniq")
-    public abstract static class UniqNode extends CoreMethodNode {
-
-        public UniqNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
-        public UniqNode(UniqNode prev) {
-            super(prev);
-        }
-
-        @Specialization
-        public RubyArray uniq(RubyArray array) {
-            notDesignedForCompilation();
-
-            final RubyArray uniq = new RubyArray(getContext().getCoreLibrary().getArrayClass(), null, 0);
-
-            for (Object value : array.slowToArray()) {
-                boolean duplicate = false;
-
-                for (Object compare : uniq.slowToArray()) {
-                    if ((boolean) DebugOperations.send(getContext(), value, "==", null, compare)) {
-                        duplicate = true;
-                        break;
-                    }
-                }
-
-                if (!duplicate) {
-                    uniq.slowPush(value);
-                }
-            }
-
-            return uniq;
-        }
-
-    }
-
     @CoreMethod(names = "unshift", argumentsAsArray = true, raiseIfFrozenSelf = true)
     public abstract static class UnshiftNode extends CoreMethodNode {
 
