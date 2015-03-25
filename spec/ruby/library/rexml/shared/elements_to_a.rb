@@ -19,10 +19,8 @@ describe :rexml_elements_to_a, :shared => true do
   # always needs the first param (even if it's nil).
   # A patch was submitted:
   # http://rubyforge.org/tracker/index.php?func=detail&aid=19354&group_id=426&atid=1698
-  ruby_bug "#", "1.8.6.114" do
-    it "returns all childs if xpath is nil" do
-      @e.elements.send(@method).should == [@first, @second]
-    end
+  it "returns all childs if xpath is nil" do
+    @e.elements.send(@method).should == [@first, @second]
   end
 
 end

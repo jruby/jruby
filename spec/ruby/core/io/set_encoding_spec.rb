@@ -150,12 +150,10 @@ with_feature :encoding do
       @io.internal_encoding.should be_nil
     end
 
-    ruby_bug "http://redmine.ruby-lang.org/issues/5568", "1.9.3" do
-      it "ignores the internal encoding if the same as external when passed Encoding objects" do
-        @io.set_encoding(Encoding::UTF_8, Encoding::UTF_8)
-        @io.external_encoding.should == Encoding::UTF_8
-        @io.internal_encoding.should be_nil
-      end
+    it "ignores the internal encoding if the same as external when passed Encoding objects" do
+      @io.set_encoding(Encoding::UTF_8, Encoding::UTF_8)
+      @io.external_encoding.should == Encoding::UTF_8
+      @io.internal_encoding.should be_nil
     end
 
     it "ignores the internal encoding if the same as external when passed encoding names separanted by ':'" do

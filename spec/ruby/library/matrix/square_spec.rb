@@ -20,11 +20,9 @@ describe "Matrix#square?" do
     Matrix[ [1], [2] ].square?.should be_false
   end
 
-  ruby_bug "redmine:1532", "1.8.7" do
-    it "returns handles empty matrices" do
-      Matrix[].square?.should be_true
-      Matrix[[]].square?.should be_false
-      Matrix.columns([[]]).square?.should be_false
-    end
+  it "returns handles empty matrices" do
+    Matrix[].square?.should be_true
+    Matrix[[]].square?.should be_false
+    Matrix.columns([[]]).square?.should be_false
   end
 end

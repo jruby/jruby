@@ -900,7 +900,7 @@ public abstract class KernelNodes {
         public int hash(RubyBasicObject self) {
             // TODO(CS 8 Jan 15) we shouldn't use the Java class hierarchy like this - every class should define it's
             // own @CoreMethod hash
-            return self.hashCode();
+            return System.identityHashCode(self);
         }
 
     }

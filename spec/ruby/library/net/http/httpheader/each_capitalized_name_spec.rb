@@ -21,25 +21,15 @@ describe "Net::HTTPHeader#each_capitalized_name" do
   end
 
   describe "when passed no block" do
-    ruby_version_is "" ... "1.8.7" do
-      it "raises a LocalJumpError" do
-        lambda { @headers.each_capitalized_name }.should raise_error(LocalJumpError)
-      end
-    end
+    it "returns an Enumerator" do
+      enumerator = @headers.each_capitalized_name
+      enumerator.should be_an_instance_of(enumerator_class)
 
-    ruby_version_is "1.8.7" do
-      ruby_bug "http://redmine.ruby-lang.org/issues/show/447", "1.8.7" do
-        it "returns an Enumerator" do
-          enumerator = @headers.each_capitalized_name
-          enumerator.should be_an_instance_of(enumerator_class)
-
-          res = []
-          enumerator.each do |key|
-            res << key
-          end
-          res.sort.should == ["My-Header", "My-Other-Header"]
-        end
+      res = []
+      enumerator.each do |key|
+        res << key
       end
+      res.sort.should == ["My-Header", "My-Other-Header"]
     end
   end
 end

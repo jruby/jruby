@@ -112,4 +112,21 @@ public class ArrayGuards {
         return array.getStore() instanceof Object[];
     }
 
+    public static boolean isOtherSingleIntegerFixnumArray(RubyArray array, Object[] others) {
+        return others.length == 1 && others[0] instanceof RubyArray && ((RubyArray) others[0]).getStore() instanceof int[];
+    }
+
+    public static boolean isOtherSingleObjectArray(RubyArray array, Object[] others) {
+        return others.length == 1 && others[0] instanceof RubyArray && ((RubyArray) others[0]).getStore() instanceof Object[];
+    }
+
+    public static boolean isArgsLengthTwo(RubyArray array, Object[] others) {
+        return others.length == 2;
+    }
+
+    public static boolean isIntIndexAndOtherSingleObjectArg(RubyArray array, Object[] others) {
+        return others.length == 2 && others[0] instanceof Integer && others[1] instanceof Object;
+    }
+
+
 }

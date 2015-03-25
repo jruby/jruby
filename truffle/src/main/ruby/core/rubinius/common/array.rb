@@ -91,6 +91,34 @@ class Array
     Array.new self[0, n]
   end
 
+  # MODIFIED to handle blocks from java
+  def zip_internal(block, *others)
+    out = Array.new(size) { [] }
+    others = others.map do |ary|
+      if ary.respond_to?(:to_ary)
+        ary.to_ary
+      else
+        elements = []
+        ary.each { |e| elements << e }
+        elements
+      end
+    end
+
+    size.times do |i|
+      slot = out.at(i)
+      slot << @tuple.at(@start + i)
+      others.each { |ary| slot << ary.at(i) }
+    end
+
+    unless block.nil?
+      out.each { |ary| block.call(ary) }
+      return nil
+    end
+
+    out
+  end
+
+
   def hash
     hash_val = size
     mask = Fixnum::MAX >> 1
@@ -924,6 +952,15 @@ class Array
     end
 
     return count == size ? result : result[0, count]
+  end
+
+  def select!(&block)
+    return to_enum :select! unless block_given?
+
+    Rubinius.check_frozen
+
+    ary = select(&block)
+    replace ary unless size == ary.size
   end
 
   def find_index(obj=undefined)

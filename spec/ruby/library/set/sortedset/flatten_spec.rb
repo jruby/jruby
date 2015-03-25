@@ -13,32 +13,28 @@ module SortedSet_FlattenSpecs
 end
 
 describe "SortedSet#flatten" do
-  ruby_bug "http://redmine.ruby-lang.org/projects/ruby-18/issues/show?id=117", "1.8.7" do
-    it "returns a copy of self with each included SortedSet flattened" do
-      klass = SortedSet_FlattenSpecs::ComparableSortedSet
-      set = klass[klass[1,2], klass[3,4], klass[5,6,7], klass[8]]
-      flattened_set = set.flatten
+  it "returns a copy of self with each included SortedSet flattened" do
+    klass = SortedSet_FlattenSpecs::ComparableSortedSet
+    set = klass[klass[1,2], klass[3,4], klass[5,6,7], klass[8]]
+    flattened_set = set.flatten
 
-      flattened_set.should_not equal(set)
-      flattened_set.should == klass[1, 2, 3, 4, 5, 6, 7, 8]
-    end
+    flattened_set.should_not equal(set)
+    flattened_set.should == klass[1, 2, 3, 4, 5, 6, 7, 8]
   end
 end
 
 describe "SortedSet#flatten!" do
-  ruby_bug "http://redmine.ruby-lang.org/projects/ruby-18/issues/show?id=117", "1.8.7" do
-    it "flattens self" do
-      klass = SortedSet_FlattenSpecs::ComparableSortedSet
-      set = klass[klass[1,2], klass[3,4], klass[5,6,7], klass[8]]
-      set.flatten!
-      set.should == klass[1, 2, 3, 4, 5, 6, 7, 8]
-    end
+  it "flattens self" do
+    klass = SortedSet_FlattenSpecs::ComparableSortedSet
+    set = klass[klass[1,2], klass[3,4], klass[5,6,7], klass[8]]
+    set.flatten!
+    set.should == klass[1, 2, 3, 4, 5, 6, 7, 8]
+  end
 
-    it "returns self when self was modified" do
-      klass = SortedSet_FlattenSpecs::ComparableSortedSet
-      set = klass[klass[1,2], klass[3,4]]
-      set.flatten!.should equal(set)
-    end
+  it "returns self when self was modified" do
+    klass = SortedSet_FlattenSpecs::ComparableSortedSet
+    set = klass[klass[1,2], klass[3,4]]
+    set.flatten!.should equal(set)
   end
 
   it "returns nil when self was not modified" do

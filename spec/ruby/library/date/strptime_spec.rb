@@ -82,10 +82,8 @@ describe "Date#strptime" do
   end
 
   # See http://redmine.ruby-lang.org/repositories/diff/ruby-19?rev=24500
-  ruby_bug "http://redmine.ruby-lang.org/issues/show/2556", "1.8" do
-    it "parses a week number for a week starting on Monday" do
-      Date.strptime("2010/1", "%Y/%W").should == Date.civil(2010, 1, 4)
-    end
+  it "parses a week number for a week starting on Monday" do
+    Date.strptime("2010/1", "%Y/%W").should == Date.civil(2010, 1, 4)
   end
 
   it "parses a commercial week day" do

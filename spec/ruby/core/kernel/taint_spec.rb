@@ -53,16 +53,7 @@ describe "Kernel#taint" do
     end
   end
 
-  ruby_version_is ""..."2.0" do
-    it "has no effect on immediate values" do
-      [1].each do |v|
-        v.taint
-        v.tainted?.should == false
-      end
-    end
-  end
-
-  ruby_version_is "2.0"..."2.2" do
+  ruby_version_is ""..."2.2" do
     it "raises error on fixnum values" do
       [1].each do |v|
         lambda { v.taint }.should raise_error(RuntimeError)

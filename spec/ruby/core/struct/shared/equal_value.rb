@@ -16,18 +16,16 @@ describe :struct_equal_value, :shared => true do
     car.send(@method, different_car).should == false
   end
 
-  ruby_bug "redmine #1885", "1.8" do
-    it "handles recursive structures by returning false if a difference can be found" do
-      MyClass = Struct.new(:foo)
-      x = StructClasses::Car.new("Honda", "Accord", "1998")
-      x[:make] = x
-      stepping = StructClasses::Car.new("Honda", "Accord", "1998")
-      stone = StructClasses::Car.new(stepping, "Accord", "1998")
-      stepping[:make] = stone
-      x.send(@method, stepping).should == true
+  it "handles recursive structures by returning false if a difference can be found" do
+    MyClass = Struct.new(:foo)
+    x = StructClasses::Car.new("Honda", "Accord", "1998")
+    x[:make] = x
+    stepping = StructClasses::Car.new("Honda", "Accord", "1998")
+    stone = StructClasses::Car.new(stepping, "Accord", "1998")
+    stepping[:make] = stone
+    x.send(@method, stepping).should == true
 
-      stone[:year] = "1999" # introduce a difference
-      x.send(@method, stepping).should == false
-    end
+    stone[:year] = "1999" # introduce a difference
+    x.send(@method, stepping).should == false
   end
 end

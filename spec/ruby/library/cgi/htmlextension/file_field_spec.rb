@@ -56,19 +56,17 @@ describe "CGI::HtmlExtension#file_field" do
   end
 
   describe "when passed a Hash" do
-    ruby_bug "http://redmine.ruby-lang.org/issues/show/255", "1.8.7" do
-      it "returns a file-'input'-element using the passed Hash for attributes" do
-        output = @html.file_field("NAME" => "test", "SIZE" => 40)
-        output.should equal_element("INPUT", {"NAME" => "test", "SIZE" => 40}, "", :not_closed => true)
+    it "returns a file-'input'-element using the passed Hash for attributes" do
+      output = @html.file_field("NAME" => "test", "SIZE" => 40)
+      output.should equal_element("INPUT", {"NAME" => "test", "SIZE" => 40}, "", :not_closed => true)
 
-        output = @html.file_field("NAME" => "test", "MAXLENGTH" => 100)
-        output.should equal_element("INPUT", {"NAME" => "test", "MAXLENGTH" => 100}, "", :not_closed => true)
-      end
+      output = @html.file_field("NAME" => "test", "MAXLENGTH" => 100)
+      output.should equal_element("INPUT", {"NAME" => "test", "MAXLENGTH" => 100}, "", :not_closed => true)
+    end
 
-      it "ignores a passed block" do
-        output = @html.file_field("NAME" => "test", "SIZE" => 40) { "test" }
-        output.should equal_element("INPUT", {"NAME" => "test", "SIZE" => 40}, "", :not_closed => true)
-      end
+    it "ignores a passed block" do
+      output = @html.file_field("NAME" => "test", "SIZE" => 40) { "test" }
+      output.should equal_element("INPUT", {"NAME" => "test", "SIZE" => 40}, "", :not_closed => true)
     end
   end
 end

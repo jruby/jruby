@@ -7,19 +7,9 @@ describe "URI::FTP#to_s" do
     @url = URI.parse('ftp://example.com')
   end
 
-  ruby_version_is ""..."1.9" do
-    it "does not escape the leading /" do
-      @url.path = '//foo'
+  it "escapes the leading /" do
+    @url.path = '/foo'
 
-      @url.to_s.should == 'ftp://example.com//foo'
-    end
-  end
-
-  ruby_version_is "1.9" do
-    it "escapes the leading /" do
-      @url.path = '/foo'
-
-      @url.to_s.should == 'ftp://example.com/%2Ffoo'
-    end
+    @url.to_s.should == 'ftp://example.com/%2Ffoo'
   end
 end

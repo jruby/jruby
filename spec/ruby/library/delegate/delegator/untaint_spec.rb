@@ -17,10 +17,8 @@ describe "Delegator#untaint" do
     # "for real" the delegator has no consequence
   end
 
-  ruby_bug "redmine:2223", "1.8" do
-    it "untaints the delegated object" do
-      @delegate.untaint
-      @delegate.__getobj__.tainted?.should be_false
-    end
+  it "untaints the delegated object" do
+    @delegate.untaint
+    @delegate.__getobj__.tainted?.should be_false
   end
 end

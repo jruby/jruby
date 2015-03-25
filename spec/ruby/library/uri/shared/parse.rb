@@ -50,90 +50,44 @@ describe :uri_parse, :shared => true do
     @object.parse("https://example.com/").port.should == 443
   end
 
-  ruby_version_is "".."1.8.6" do
-    it "populates the components of a parsed URI::FTP object" do
-      # generic, empty password.
-      url = @object.parse("ftp://anonymous@ruby-lang.org/pub/ruby/1.8/ruby-1.8.6.tar.bz2;type=i")
-      url.should be_kind_of(URI::FTP)
-      URISpec.components(url).should == {
-        :scheme => "ftp",
-        :userinfo => "anonymous",
-        :host => "ruby-lang.org",
-        :port => 21,
-        :path => "pub/ruby/1.8/ruby-1.8.6.tar.bz2",
-        :typecode => "i"
-      }
+  it "populates the components of a parsed URI::FTP object" do
+    # generic, empty password.
+    url = @object.parse("ftp://anonymous@ruby-lang.org/pub/ruby/1.8/ruby-1.8.6.tar.bz2;type=i")
+    url.should be_kind_of(URI::FTP)
+    URISpec.components(url).should == {
+      :scheme => "ftp",
+      :userinfo => "anonymous",
+      :host => "ruby-lang.org",
+      :port => 21,
+      :path => "pub/ruby/1.8/ruby-1.8.6.tar.bz2",
+      :typecode => "i"
+    }
 
-      # multidomain, no user or password
-      url = @object.parse('ftp://ftp.is.co.za/rfc/rfc1808.txt')
-      url.should be_kind_of(URI::FTP)
-      URISpec.components(url).should == {
-        :scheme => "ftp",
-        :userinfo => nil,
-        :host => "ftp.is.co.za",
-        :port => 21,
-        :path => "rfc/rfc1808.txt",
-        :typecode => nil
-      }
+    # multidomain, no user or password
+    url = @object.parse('ftp://ftp.is.co.za/rfc/rfc1808.txt')
+    url.should be_kind_of(URI::FTP)
+    URISpec.components(url).should == {
+      :scheme => "ftp",
+      :userinfo => nil,
+      :host => "ftp.is.co.za",
+      :port => 21,
+      :path => "rfc/rfc1808.txt",
+      :typecode => nil
+    }
 
-      # empty user
-      url = @object.parse('ftp://:pass@localhost/')
-      url.should be_kind_of(URI::FTP)
-      URISpec.components(url).should == {
-        :scheme => "ftp",
-        :userinfo => ":pass",
-        :host => "localhost",
-        :port => 21,
-        :path => "/",
-        :typecode => nil
-      }
-      url.password.should == "pass"
-
-    end
+    # empty user
+    url = @object.parse('ftp://:pass@localhost/')
+    url.should be_kind_of(URI::FTP)
+    URISpec.components(url).should == {
+      :scheme => "ftp",
+      :userinfo => ":pass",
+      :host => "localhost",
+      :port => 21,
+      :path => "",
+      :typecode => nil
+    }
+    url.password.should == "pass"
   end
-
-  ruby_version_is "1.8.7".."" do
-    it "populates the components of a parsed URI::FTP object" do
-      # generic, empty password.
-      url = @object.parse("ftp://anonymous@ruby-lang.org/pub/ruby/1.8/ruby-1.8.6.tar.bz2;type=i")
-      url.should be_kind_of(URI::FTP)
-      URISpec.components(url).should == {
-        :scheme => "ftp",
-        :userinfo => "anonymous",
-        :host => "ruby-lang.org",
-        :port => 21,
-        :path => "/pub/ruby/1.8/ruby-1.8.6.tar.bz2",
-        :typecode => "i"
-      }
-
-      # multidomain, no user or password
-      url = @object.parse('ftp://ftp.is.co.za/rfc/rfc1808.txt')
-      url.should be_kind_of(URI::FTP)
-      URISpec.components(url).should == {
-        :scheme => "ftp",
-        :userinfo => nil,
-        :host => "ftp.is.co.za",
-        :port => 21,
-        :path => "/rfc/rfc1808.txt",
-        :typecode => nil
-      }
-
-      # empty user
-      url = @object.parse('ftp://:pass@localhost/')
-      url.should be_kind_of(URI::FTP)
-      URISpec.components(url).should == {
-        :scheme => "ftp",
-        :userinfo => ":pass",
-        :host => "localhost",
-        :port => 21,
-        :path => "/",
-        :typecode => nil
-      }
-      url.password.should == "pass"
-
-    end
-  end
-
 
   it "returns a URI::LDAP object when parsing an LDAP URI" do
     #taken from http://www.faqs.org/rfcs/rfc2255.html 'cause I don't really know what an LDAP url looks like

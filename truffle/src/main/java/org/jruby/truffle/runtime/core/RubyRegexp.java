@@ -146,7 +146,7 @@ public class RubyRegexp extends RubyBasicObject {
                 final Object groupString;
 
                 if (start > -1 && end > -1) {
-                    groupString = new RubyString(context.getCoreLibrary().getStringClass(), bytes.makeShared(start, end - start).dup());
+                    groupString = makeString(source, start, end - start);
                 } else {
                     groupString = getContext().getCoreLibrary().getNilObject();
                 }
@@ -156,15 +156,14 @@ public class RubyRegexp extends RubyBasicObject {
                 if (start == -1 || end == -1) {
                     values[n] = getContext().getCoreLibrary().getNilObject();
                 } else {
-                    final RubyString groupString = new RubyString(context.getCoreLibrary().getStringClass(), bytes.makeShared(start, end - start).dup());
-                    values[n] = groupString;
+                    values[n] = makeString(source, start, end - start);
                 }
             }
         }
 
-        final RubyString pre = new RubyString(context.getCoreLibrary().getStringClass(), bytes.makeShared(0, region.beg[0]).dup());
-        final RubyString post = new RubyString(context.getCoreLibrary().getStringClass(), bytes.makeShared(region.end[0], bytes.length() - region.end[0]).dup());
-        final RubyString global = new RubyString(context.getCoreLibrary().getStringClass(), bytes.makeShared(region.beg[0], region.end[0] - region.beg[0]).dup());
+        final RubyString pre = makeString(source, 0, region.beg[0]);
+        final RubyString post = makeString(source, region.end[0], bytes.length() - region.end[0]);
+        final RubyString global = makeString(source, region.beg[0], region.end[0] - region.beg[0]);
 
         final RubyMatchData matchObject = new RubyMatchData(context.getCoreLibrary().getMatchDataClass(), source, regex, region, values, pre, post, global);
 
@@ -196,7 +195,7 @@ public class RubyRegexp extends RubyBasicObject {
                     final int start = region.beg[nth];
                     final int end = region.end[nth];
                     if (start != -1) {
-                        value = new RubyString(context.getCoreLibrary().getStringClass(), bytes.makeShared(start, end - start).dup());
+                        value = makeString(source, start, end - start);
                     } else {
                         value = getContext().getCoreLibrary().getNilObject();
                     }
@@ -211,6 +210,15 @@ public class RubyRegexp extends RubyBasicObject {
         } else {
             return matchObject;
         }
+    }
+
+    private RubyString makeString(RubyString source, int start, int length) {
+        final RubyString ret = getContext().makeString(source.getLogicalClass(), source.getByteList().makeShared(start, length).dup());
+
+        ret.getByteList().setEncoding(source.getByteList().getEncoding());
+        ret.setCodeRange(source.getCodeRange());
+
+        return ret;
     }
 
     private void setFrame(Frame frame, String name, Object value) {

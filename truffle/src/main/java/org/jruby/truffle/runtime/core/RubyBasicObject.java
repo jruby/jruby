@@ -51,11 +51,15 @@ public class RubyBasicObject implements TruffleObject {
     @CompilationFinal protected RubyClass metaClass;
 
     public RubyBasicObject(RubyClass rubyClass) {
-        this(rubyClass, rubyClass.getContext());
+        this(rubyClass, LAYOUT.newInstance(rubyClass.getContext().getEmptyShape()));
     }
 
-    public RubyBasicObject(RubyClass rubyClass, RubyContext context) {
-        dynamicObject = LAYOUT.newInstance(context.getEmptyShape());
+    public RubyBasicObject(RubyClass rubyClass, DynamicObject dynamicObject) {
+        this(rubyClass.getContext(), rubyClass, dynamicObject);
+    }
+
+    public RubyBasicObject(RubyContext context, RubyClass rubyClass, DynamicObject dynamicObject) {
+        this.dynamicObject = dynamicObject;
 
         if (rubyClass != null) {
             unsafeSetLogicalClass(rubyClass);
@@ -112,7 +116,7 @@ public class RubyBasicObject implements TruffleObject {
         }
 
         metaClass = RubyClass.createSingletonClassOfObject(getContext(), logicalClass, attached,
-                String.format("#<Class:#<%s:0x%x>>", logicalClass.getName(), getObjectID()));
+                String.format("#<Class:#<%s:0x%x>>", logicalClass.getName(), verySlowGetObjectID()));
 
         if (DebugOperations.verySlowIsFrozen(this)) {
             DebugOperations.verySlowFreeze(metaClass);
@@ -122,7 +126,7 @@ public class RubyBasicObject implements TruffleObject {
     }
 
     @CompilerDirectives.TruffleBoundary
-    public long getObjectID() {
+    public long verySlowGetObjectID() {
         // TODO(CS): we should specialise on reading this in the #object_id method and anywhere else it's used
         Property property = dynamicObject.getShape().getProperty(OBJECT_ID_IDENTIFIER);
 

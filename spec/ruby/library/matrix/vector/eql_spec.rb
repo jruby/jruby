@@ -10,9 +10,7 @@ describe "Vector#eql?" do
     @vector.eql?(@vector).should be_true
   end
 
-  ruby_bug("[ruby-dev:36298]", "1.8.7") do
-    it "returns false when there are a pair corresponding elements which are not equal in the sense of Object#eql?" do
-      @vector.eql?(Vector[1, 2, 3, 4, 5.0]).should be_false
-    end
+  it "returns false when there are a pair corresponding elements which are not equal in the sense of Kernel#eql?" do
+    @vector.eql?(Vector[1, 2, 3, 4, 5.0]).should be_false
   end
 end

@@ -443,6 +443,8 @@ public class RubyContext extends ExecutionContext {
         switch (jrubyException.getMetaClass().getName()) {
             case "ArgumentError":
                 return getCoreLibrary().argumentError(jrubyException.getMessage().toString(), currentNode);
+            case "Encoding::CompatibilityError":
+                return getCoreLibrary().encodingCompatibilityError(jrubyException.getMessage().toString(), currentNode);
             case "TypeError":
                 return getCoreLibrary().typeError(jrubyException.getMessage().toString(), currentNode);
         }

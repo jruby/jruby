@@ -26,7 +26,7 @@ public abstract class ProcessNodes {
     public static final int CLOCK_MONOTONIC = 1;
     public static final int CLOCK_REALTIME = 2;
 
-    @CoreMethod(names = "clock_gettime", isModuleFunction = true, required = 1, optional = 1)
+    @CoreMethod(names = "clock_gettime", onSingleton = true, required = 1, optional = 1)
     public abstract static class ClockGetTimeNode extends CoreMethodNode {
 
         private final RubySymbol floatSecondSymbol;
@@ -86,7 +86,7 @@ public abstract class ProcessNodes {
 
     }
 
-    @CoreMethod(names = "kill", isModuleFunction = true, required = 2)
+    @CoreMethod(names = "kill", onSingleton = true, required = 2)
     public abstract static class KillNode extends CoreMethodNode {
 
         public KillNode(RubyContext context, SourceSection sourceSection) {
@@ -115,7 +115,7 @@ public abstract class ProcessNodes {
 
     }
 
-    @CoreMethod(names = "pid", isModuleFunction = true)
+    @CoreMethod(names = "pid", onSingleton = true)
     public abstract static class PidNode extends CoreMethodNode {
 
         public PidNode(RubyContext context, SourceSection sourceSection) {

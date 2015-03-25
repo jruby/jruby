@@ -284,19 +284,17 @@ describe "Module#autoload" do
     lambda { ModuleSpecs.autoload "a name", @non_existent }.should raise_error(NameError)
   end
 
-  ruby_bug "redmine #620", "1.8.6.322" do
-    it "shares the autoload request across dup'ed copies of modules" do
-      filename = fixture(__FILE__, "autoload_t.rb")
-      mod1 = Module.new { autoload :T, filename }
-      ModuleSpecs::Autoload::S = mod1
-      mod2 = mod1.dup
+  it "shares the autoload request across dup'ed copies of modules" do
+    filename = fixture(__FILE__, "autoload_t.rb")
+    mod1 = Module.new { autoload :T, filename }
+    ModuleSpecs::Autoload::S = mod1
+    mod2 = mod1.dup
 
-      mod1.autoload?(:T).should == filename
-      mod2.autoload?(:T).should == filename
+    mod1.autoload?(:T).should == filename
+    mod2.autoload?(:T).should == filename
 
-      mod1::T.should == :autoload_t
-      lambda { mod2::T }.should raise_error(NameError)
-    end
+    mod1::T.should == :autoload_t
+    lambda { mod2::T }.should raise_error(NameError)
   end
 
   it "raises a TypeError if opening a class with a different superclass than the class defined in the autoload file" do

@@ -27,13 +27,11 @@ describe "REXML::Element#delete_element" do
 
   # According to the docs this should return the deleted element
   # but it won't if it's an Element.
-  ruby_bug "REXMLTracker#161", "1.8" do
-    it "deletes Element and returns it" do
-      node = REXML::Element.new("some_node")
-      @root.add_element node
-      del_node = @root.delete_element node
-      del_node.should == node
-    end
+  it "deletes Element and returns it" do
+    node = REXML::Element.new("some_node")
+    @root.add_element node
+    del_node = @root.delete_element node
+    del_node.should == node
   end
 
   # Note how passing the string will return the removed element

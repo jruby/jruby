@@ -203,13 +203,24 @@ public class RubyString extends RubyBasicObject implements CodeRangeable {
     }
 
     @Override
+    @TruffleBoundary
     public Encoding checkEncoding(CodeRangeable other) {
-        // TODO (nirvdrum 16-Mar-15) This will return null for bad cases and we really don't want to propagate that.  Need a way to raise an appropriate exception while adhering to the interface.
-        return StringSupport.areCompatible(this, other);
+        final Encoding encoding = StringSupport.areCompatible(this, other);
+
+        // TODO (nirvdrum 23-Mar-15) We need to raise a proper Truffle+JRuby exception here, rather than a non-Truffle JRuby exception.
+        if (encoding == null) {
+            throw getContext().getRuntime().newEncodingCompatibilityError(
+                    String.format("incompatible character encodings: %s and %s",
+                            getByteList().getEncoding().toString(),
+                            other.getByteList().getEncoding().toString()));
+        }
+
+        return encoding;
     }
 
+    @TruffleBoundary
     public Encoding checkEncoding(CodeRangeable other, Node node) {
-        final Encoding encoding = checkEncoding(other);
+        final Encoding encoding = StringSupport.areCompatible(this, other);
 
         if (encoding == null) {
             throw new RaiseException(

@@ -113,7 +113,7 @@ public class RubyModule extends RubyBasicObject implements ModuleChain {
     }
 
     protected RubyModule(RubyContext context, RubyClass selfClass, RubyModule lexicalParent, String name, Node currentNode) {
-        super(selfClass, context);
+        super(context, selfClass, LAYOUT.newInstance(context.getEmptyShape()));
         this.context = context;
 
         unmodifiedAssumption = new CyclicAssumption(name + " is unmodified");
@@ -353,7 +353,7 @@ public class RubyModule extends RubyBasicObject implements ModuleChain {
         if (name != null) {
             return name;
         } else {
-            return "#<" + logicalClass.getName() + ":0x" + Long.toHexString(getObjectID()) + ">";
+            return "#<" + logicalClass.getName() + ":0x" + Long.toHexString(verySlowGetObjectID()) + ">";
         }
     }
 

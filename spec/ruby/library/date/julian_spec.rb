@@ -14,35 +14,3 @@ describe "Date#julian?" do
   end
 
 end
-
-ruby_version_is "" ... "1.9" do
-  describe "Date.julian?" do
-
-    it "marks the date as not Julian if using the Gregorian calendar" do
-      Date.julian?(Date.civil(1007, 2, 27).jd, Date::GREGORIAN).should be_false
-    end
-
-    it "marks the date as Julian if using the Julian calendar" do
-      Date.julian?(Date.civil(1007, 2, 27).jd, Date::JULIAN).should be_true
-    end
-
-    it "marks the date before the English Day of Calendar Reform as Julian" do
-      Date.julian?(Date.civil(1752, 9, 13).jd, Date::ENGLAND).should be_true
-    end
-
-    it "marks the date after the English Day of Calendar Reform as not Julian" do
-      Date.julian?(Date.civil(1752, 9, 14).jd, Date::ENGLAND).should be_false
-    end
-
-    it "marks the date before the Italian Day of Calendar Reform as Julian" do
-      Date.julian?(Date.civil(1582, 10, 4).jd, Date::ITALY).should be_true
-    end
-
-    it "marks the date after the Italian Day of Calendar Reform as not Julian" do
-      Date.julian?(Date.civil(1582, 10, 15).jd, Date::ITALY).should be_false
-    end
-
-  end
-
-end
-

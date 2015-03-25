@@ -16,14 +16,12 @@ describe :inverse, :shared => true do
     ]
   end
 
-  ruby_bug "?", "1.8.7" do
-    it "returns the inverse of the Matrix (other case)" do
-      Matrix[
-        [1, 2, 3],    [0, 1, 4],     [5, 6, 0]
-      ].send(@method).should be_close_to_matrix([
-        [-24, 18, 5], [20, -15, -4], [-5, 4, 1]
-      ])
-    end
+  it "returns the inverse of the Matrix (other case)" do
+    Matrix[
+      [1, 2, 3],    [0, 1, 4],     [5, 6, 0]
+    ].send(@method).should be_close_to_matrix([
+      [-24, 18, 5], [20, -15, -4], [-5, 4, 1]
+    ])
   end
 
   it "raises a ErrDimensionMismatch if the Matrix is not square" do
@@ -32,11 +30,9 @@ describe :inverse, :shared => true do
     }.should raise_error(Matrix::ErrDimensionMismatch)
   end
 
-  ruby_bug "redmine #5307", "1.9.3" do
-    describe "for a subclass of Matrix" do
-      it "returns an instance of that subclass" do
-        MatrixSub.ins.send(@method).should be_an_instance_of(MatrixSub)
-      end
+  describe "for a subclass of Matrix" do
+    it "returns an instance of that subclass" do
+      MatrixSub.ins.send(@method).should be_an_instance_of(MatrixSub)
     end
   end
 end

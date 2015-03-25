@@ -202,6 +202,10 @@ class String
     to_inum(base, false)
   end
 
+  def chr
+    substring 0, 1
+  end
+
   def each_line(sep=$/)
     return to_enum(:each_line, sep) unless block_given?
 
@@ -521,6 +525,17 @@ class String
     else
       each_codepoint.to_a
     end
+  end
+
+  def end_with?(*suffixes)
+    suffixes.each do |original_suffix|
+      suffix = Rubinius::Type.check_convert_type original_suffix, String, :to_str
+      unless suffix
+        raise TypeError, "no implicit conversion of #{original_suffix.class} into String"
+      end
+      return true if self[-suffix.length, suffix.length] == suffix
+    end
+    false
   end
 
   def to_sub_replacement(result, match)

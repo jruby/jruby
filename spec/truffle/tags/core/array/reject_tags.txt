@@ -1,2 +1,0 @@
-fails:Array#reject! returns nil when called on an Array emptied with #shift
-

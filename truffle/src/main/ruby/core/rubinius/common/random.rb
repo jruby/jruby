@@ -23,10 +23,9 @@
 # CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
 # OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-#
+
 # Only part of Rubinius' random.rb
-# Extracted from https://github.com/rubinius/rubinius/blob/v2.4.1/kernel/common/random.rb
-#
+
 class Rubinius::Randomizer
 
   def initialize

@@ -68,18 +68,16 @@ describe "CGI::HtmlExtension#img" do
   end
 
   describe "when passed Hash" do
-    ruby_bug "http://redmine.ruby-lang.org/issues/show/255", "1.8.7" do
-      it "returns an 'img'-element with the passed Hash as attributes" do
-        attributes = { "SRC" => "src", "ALT" => "alt", "WIDTH" => 100, "HEIGHT" => 50 }
-        output = @html.img(attributes)
-        output.should equal_element("IMG", attributes, "", :not_closed => true)
-      end
+    it "returns an 'img'-element with the passed Hash as attributes" do
+      attributes = { "SRC" => "src", "ALT" => "alt", "WIDTH" => 100, "HEIGHT" => 50 }
+      output = @html.img(attributes)
+      output.should equal_element("IMG", attributes, "", :not_closed => true)
+    end
 
-      it "ignores a passed block" do
-        attributes = { "SRC" => "src", "ALT" => "alt", "WIDTH" => 100, "HEIGHT" => 50 }
-        output = @html.img(attributes) { "test" }
-        output.should equal_element("IMG", attributes, "", :not_closed => true)
-      end
+    it "ignores a passed block" do
+      attributes = { "SRC" => "src", "ALT" => "alt", "WIDTH" => 100, "HEIGHT" => 50 }
+      output = @html.img(attributes) { "test" }
+      output.should equal_element("IMG", attributes, "", :not_closed => true)
     end
   end
 end

@@ -15,17 +15,15 @@ describe "String#rindex with object" do
     lambda { "hello".rindex(obj) }.should raise_error(TypeError)
   end
 
-  ruby_bug "#", "1.8.6" do # Fixed at MRI 1.8.7
-    it "tries to convert obj to a string via to_str" do
-      obj = mock('lo')
-      def obj.to_str() "lo" end
-      "hello".rindex(obj).should == "hello".rindex("lo")
+  it "tries to convert obj to a string via to_str" do
+    obj = mock('lo')
+    def obj.to_str() "lo" end
+    "hello".rindex(obj).should == "hello".rindex("lo")
 
-      obj = mock('o')
-      def obj.respond_to?(arg, *) true end
-      def obj.method_missing(*args) "o" end
-      "hello".rindex(obj).should == "hello".rindex("o")
-    end
+    obj = mock('o')
+    def obj.respond_to?(arg, *) true end
+    def obj.method_missing(*args) "o" end
+    "hello".rindex(obj).should == "hello".rindex("o")
   end
 end
 

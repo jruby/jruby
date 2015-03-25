@@ -1,1 +1,0 @@
-fails:Array#delete_if returns self when called on an Array emptied with #shift

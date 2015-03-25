@@ -38,11 +38,9 @@ describe "Tempfile.open" do
     @tempfile.instance_of?(Tempfile).should be_true
   end
 
-  ruby_version_is "1.8.7" do
-    it "is passed an array [base, suffix] as first argument" do
-      Tempfile.open(["specs", ".tt"]) { |tempfile| @tempfile = tempfile }
-      @tempfile.path.should =~ /specs.*\.tt$/
-    end
+  it "is passed an array [base, suffix] as first argument" do
+    Tempfile.open(["specs", ".tt"]) { |tempfile| @tempfile = tempfile }
+    @tempfile.path.should =~ /specs.*\.tt$/
   end
 end
 
@@ -68,22 +66,11 @@ describe "Tempfile.open when passed a block" do
     ScratchPad.recorded.should == :yielded
   end
 
-  ruby_version_is ""..."1.9" do
-    it "returns nil" do
-      value = Tempfile.open("specs") do |tempfile|
-        true
-      end
-      value.should be_nil
+  it "returns the value of the block" do
+    value = Tempfile.open("specs") do |tempfile|
+      "return"
     end
-  end
-
-  ruby_version_is "1.9" do
-    it "returns the value of the block" do
-      value = Tempfile.open("specs") do |tempfile|
-        "return"
-      end
-      value.should == "return"
-    end
+    value.should == "return"
   end
 
   it "closes the yielded Tempfile after the block" do

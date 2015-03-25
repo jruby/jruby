@@ -18,11 +18,9 @@ describe "URI#route_to" do
     URI("mailto:foo@example.com#bar").route_to('mailto:foo@example.com').to_s.should == ""
   end
 
-  ruby_bug "redmine:3506", "1.9.2" do
-    it "accepts a string-like argument" do
-      str = mock('string-like')
-      str.should_receive(:to_str).and_return("http://example.com/b.html")
-      URI("http://example.com/a.html").route_to(str).to_s.should == "b.html"
-    end
+  it "accepts a string-like argument" do
+    str = mock('string-like')
+    str.should_receive(:to_str).and_return("http://example.com/b.html")
+    URI("http://example.com/a.html").route_to(str).to_s.should == "b.html"
   end
 end

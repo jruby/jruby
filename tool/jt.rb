@@ -230,6 +230,7 @@ module Commands
 
     raw_sh(env_vars, "#{JRUBY_DIR}/bin/jruby", *jruby_args, *args)
   end
+  alias ruby run
 
   def test(*args)
     return test_pe if args == ['pe']

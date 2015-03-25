@@ -17,11 +17,9 @@ describe "the URI method" do
     URI(str).should == URI.parse("http://ruby-lang.org")
   end
 
-  ruby_bug "redmine:3505", "1.9.2" do
-    it "returns the argument if it is a URI object" do
-      result = URI.parse("http://ruby-lang.org")
-      URI(result).should equal(result)
-    end
+  it "returns the argument if it is a URI object" do
+    result = URI.parse("http://ruby-lang.org")
+    URI(result).should equal(result)
   end
 
   #apparently this was a concern?  imported from MRI tests

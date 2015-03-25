@@ -38,6 +38,11 @@ class String
     raise PrimitiveFailure, "String.pattern primitive failed"
   end
 
+  def substring(start, count)
+    Rubinius.primitive :string_substring
+    raise PrimitiveFailure, "String#substring primitive failed"
+  end
+
   def find_string(pattern, start)
     Rubinius.primitive :string_index
     raise PrimitiveFailure, "String#find_string primitive failed"

@@ -35,24 +35,12 @@ describe "BigDecimal#mod_part_of_divmod" do
 
   it_behaves_like :bigdecimal_modulo, :mod_part_of_divmod
 
-  ruby_version_is "" ... "1.9" do
-    it "does NOT raise ZeroDivisionError if other is zero" do
-      bd5667 = BigDecimal.new("5667.19")
+  it "raises ZeroDivisionError if other is zero" do
+    bd5667 = BigDecimal.new("5667.19")
 
-      bd5667.send(@method, 0).nan?.should == true
-      bd5667.send(@method, BigDecimal("0")).nan?.should == true
-      @zero.send(@method, @zero).nan?.should == true
-    end
-  end
-
-  ruby_version_is "1.9" do
-    it "raises ZeroDivisionError if other is zero" do
-      bd5667 = BigDecimal.new("5667.19")
-
-      lambda { bd5667.send(@method, 0) }.should raise_error(ZeroDivisionError)
-      lambda { bd5667.send(@method, BigDecimal("0")) }.should raise_error(ZeroDivisionError)
-      lambda { @zero.send(@method, @zero) }.should raise_error(ZeroDivisionError)
-    end
+    lambda { bd5667.send(@method, 0) }.should raise_error(ZeroDivisionError)
+    lambda { bd5667.send(@method, BigDecimal("0")) }.should raise_error(ZeroDivisionError)
+    lambda { @zero.send(@method, @zero) }.should raise_error(ZeroDivisionError)
   end
 end
 
@@ -123,98 +111,62 @@ describe "BigDecimal#divmod" do
     # TODO: file MRI bug:
     # BigDecimal('1').divmod(BigDecimal('3E-9'))[0] #=> 0.3E9,
     # but really should be 0.333333333E9
-    ruby_bug "#206", "1.8" do #MRI's precision is very low in some cases
-      values << BigDecimal('1E-10')
-      values << BigDecimal('-1E-10')
-      values << BigDecimal('2E55')
-      values << BigDecimal('-2E55')
-      values << BigDecimal('2E-5555')
-      values << BigDecimal('-2E-5555')
+    values << BigDecimal('1E-10')
+    values << BigDecimal('-1E-10')
+    values << BigDecimal('2E55')
+    values << BigDecimal('-2E55')
+    values << BigDecimal('2E-5555')
+    values << BigDecimal('-2E-5555')
 
 
-      values_and_zeroes = values + @zeroes
-      values_and_zeroes.each do |val1|
-        values.each do |val2|
-          res = val1.divmod(val2)
-          DivmodSpecs::check_both_bigdecimal(res)
-          res[0].should == ((val1/val2).floor)
-          res[1].should == (val1 - res[0] * val2)
-        end
+    values_and_zeroes = values + @zeroes
+    values_and_zeroes.each do |val1|
+      values.each do |val2|
+        res = val1.divmod(val2)
+        DivmodSpecs::check_both_bigdecimal(res)
+        res[0].should == ((val1/val2).floor)
+        res[1].should == (val1 - res[0] * val2)
       end
     end
   end
 
-  ruby_version_is "" ... "1.9" do
-    it "properly handles special values" do
-      values = @special_vals + @zeroes
-      values.each do |val1|
-        values.each do |val2|
-          DivmodSpecs::check_both_nan(val1.divmod(val2))
-        end
-      end
-
-      @special_vals.each do |val1|
-        @regular_vals.each do |val2|
-          DivmodSpecs::check_both_nan(val1.divmod(val2))
-        end
-      end
-
-      @regular_vals.each do |val1|
-        @special_vals.each do |val2|
-          DivmodSpecs::check_both_nan(val1.divmod(val2))
-        end
-      end
-    end
-
-    it "returns an array of two NaNs if the argument is zero" do
-      values = @regular_vals + @special_vals
-      values.each do |val1|
-        @zeroes.each do |val2|
-          DivmodSpecs::check_both_nan(val1.divmod(val2))
-        end
-      end
+  it "returns an array of two NaNs if NaN is involved" do
+    (@special_vals + @regular_vals + @zeroes).each do |val|
+      DivmodSpecs::check_both_nan(val.divmod(@nan))
+      DivmodSpecs::check_both_nan(@nan.divmod(val))
     end
   end
 
-  ruby_version_is "1.9" do
-    it "returns an array of two NaNs if NaN is involved" do
-      (@special_vals + @regular_vals + @zeroes).each do |val|
-        DivmodSpecs::check_both_nan(val.divmod(@nan))
-        DivmodSpecs::check_both_nan(@nan.divmod(val))
-      end
-    end
-
-    it "raises ZeroDivisionError if the divisor is zero" do
-      (@special_vals + @regular_vals + @zeroes - [@nan]).each do |val|
-        @zeroes.each do |zero|
-          lambda { val.divmod(zero) }.should raise_error(ZeroDivisionError)
-        end
-      end
-    end
-
-    it "returns an array of Infinity and NaN if the dividend is Infinity" do
-      @regular_vals.each do |val|
-        array = @infinity.divmod(val)
-        array.length.should == 2
-        array[0].infinite?.should == (val > 0 ? 1 : -1)
-        array[1].nan?.should == true
-      end
-    end
-
-    it "returns an array of zero and the dividend if the divisor is Infinity" do
-      @regular_vals.each do |val|
-        array = val.divmod(@infinity)
-        array.length.should == 2
-        array[0].should == @zero
-        array[1].should == val
-      end
-    end
-
-    it "returns an array of two zero if the diviend is zero" do
+  it "raises ZeroDivisionError if the divisor is zero" do
+    (@special_vals + @regular_vals + @zeroes - [@nan]).each do |val|
       @zeroes.each do |zero|
-        @regular_vals.each do |val|
-          zero.divmod(val).should == [@zero, @zero]
-        end
+        lambda { val.divmod(zero) }.should raise_error(ZeroDivisionError)
+      end
+    end
+  end
+
+  it "returns an array of Infinity and NaN if the dividend is Infinity" do
+    @regular_vals.each do |val|
+      array = @infinity.divmod(val)
+      array.length.should == 2
+      array[0].infinite?.should == (val > 0 ? 1 : -1)
+      array[1].nan?.should == true
+    end
+  end
+
+  it "returns an array of zero and the dividend if the divisor is Infinity" do
+    @regular_vals.each do |val|
+      array = val.divmod(@infinity)
+      array.length.should == 2
+      array[0].should == @zero
+      array[1].should == val
+    end
+  end
+
+  it "returns an array of two zero if the diviend is zero" do
+    @zeroes.each do |zero|
+      @regular_vals.each do |val|
+        zero.divmod(val).should == [@zero, @zero]
       end
     end
   end
