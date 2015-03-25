@@ -194,39 +194,29 @@ class TestJavaExtension < Test::Unit::TestCase
     assert(JString.new("Bedroom").hashCode() == room1.hash())
     assert(JString.new("Bathroom").hashCode() == room3.hash())
     assert(room1.hash() != room3.hash())
-
-    roomArray = Room[1].new
-    roomArray[0] = room1
-    assert_equal(room1, roomArray[0])
-    assert_equal(1, roomArray.length)
   end
 
   def test_synchronized_method_available
     # FIXME: this doesn't actually test that we're successfully synchronizing
     obj = java.lang.Object.new
     result = nil
-    assert_nothing_raised {
-        result = obj.synchronized { "foo" }
-    }
+    assert_nothing_raised { result = obj.synchronized { "foo" } }
     assert_equal("foo", result)
 
     begin
       obj.wait 1
-    rescue java.lang.IllegalMonitorStateException
-      assert true
+    rescue java.lang.IllegalMonitorStateException => e
+      assert e
     else
-      assert false, "java.lang.IllegalMonitorStateException was not thrown"
+      fail "java.lang.IllegalMonitorStateException was not thrown"
     end
 
-    assert_nothing_raised {
-        obj.synchronized { obj.wait 1 }
-    }
+    assert_nothing_raised { obj.synchronized { obj.wait 1 } }
   end
-
 
   def test_java_interface_impl_with_block
     ran = false
-    SimpleExecutor::WrappedByMethodCall.new.execute(Runnable.impl {ran = true})
+    SimpleExecutor::WrappedByMethodCall.new.execute(Java::JavaLang::Runnable.impl { ran = true })
     assert ran
   end
 
@@ -248,19 +238,19 @@ class TestJavaExtension < Test::Unit::TestCase
 
   def test_ruby_proc_passed_to_ctor_as_last_argument
     ran = false
-    SimpleExecutor::WrappedByConstructor.new(proc {ran = true}).execute
+    SimpleExecutor::WrappedByConstructor.new(proc { ran = true }).execute
     assert ran
   end
 
   def test_ruby_proc_duck_typed_as_runnable
     ran = false
-    SimpleExecutor::WrappedByMethodCall.new.execute(proc {ran = true})
+    SimpleExecutor::WrappedByMethodCall.new.execute(proc { ran = true })
     assert ran
   end
 
   def test_ruby_proc_duck_typed_as_runnable_last_argument
     ran = 0
-    SimpleExecutor::MultipleArguments.new.execute(2, proc {ran += 1})
+    SimpleExecutor::MultipleArguments.new.execute(2, proc { ran += 1 })
     assert_equal 2, ran
   end
 
@@ -272,8 +262,8 @@ class TestJavaExtension < Test::Unit::TestCase
 
   def test_ruby_block_duck_typed_as_runnable_last_argument
     ran = 0
-    SimpleExecutor::MultipleArguments.new.execute(2) {ran += 1}
-    assert_equal 2, ran
+    SimpleExecutor::MultipleArguments.new.execute(3) { ran += 1 }
+    assert_equal 3, ran
   end
 
   def test_ruby_block_with_args_as_interface

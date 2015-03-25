@@ -85,6 +85,8 @@ class TestHigherJavasupport < Test::Unit::TestCase
     assert_nothing_raised { org.jruby.javasupport.test.ConstantHolder }
   end
 
+  java_import org.jruby.javasupport.test.Room
+
   def test_using_arrays
     list = JArray.new
     list.add(10); list.add(20)
@@ -110,6 +112,13 @@ class TestHigherJavasupport < Test::Unit::TestCase
 
     assert_raises(ArgumentError) { array[6] } # IndexOutOfBoundsException
     assert_raises(ArgumentError) { array[-1] } # IndexOutOfBoundsException
+
+    room_array = Room[1].new
+    assert_equal 1, room_array.length
+    room1 = Room.new("Bedroom")
+    room_array[0] = room1
+    assert_equal room1, room_array[0]
+    assert_equal 1, room_array.length
   end
 
   def test_creating_arrays
