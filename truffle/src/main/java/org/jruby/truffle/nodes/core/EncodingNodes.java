@@ -560,9 +560,8 @@ public abstract class EncodingNodes {
                     "create",
                     null,
                     getContext().makeString("internal"),
-                    defaultInternalEncoding == null ? nil() : defaultInternalEncoding.getIndex()
+                    indexLookup(encodings, defaultInternalEncoding)
             );
-
             lookupTableWriteNode.call(frame, ret, "[]=", null, getContext().newSymbol("INTERNAL"), internalTuple);
 
             final Encoding defaultExternalEncoding = getContext().getRuntime().getDefaultExternalEncoding();
@@ -572,9 +571,8 @@ public abstract class EncodingNodes {
                     "create",
                     null,
                     getContext().makeString("external"),
-                    defaultExternalEncoding == null ? nil() : defaultExternalEncoding.getIndex()
+                    indexLookup(encodings, defaultExternalEncoding)
             );
-
             lookupTableWriteNode.call(frame, ret, "[]=", null, getContext().newSymbol("EXTERNAL"), externalTuple);
 
             final Encoding localeEncoding = getContext().getRuntime().getEncodingService().getLocaleEncoding();
@@ -584,12 +582,27 @@ public abstract class EncodingNodes {
                     "create",
                     null,
                     getContext().makeString("locale"),
-                    localeEncoding == null ? nil() : localeEncoding.getIndex()
+                    indexLookup(encodings, localeEncoding)
             );
-
             lookupTableWriteNode.call(frame, ret, "[]=", null, getContext().newSymbol("LOCALE"), localeTuple);
 
             return ret;
+        }
+
+        @TruffleBoundary
+        public Object indexLookup(RubyEncoding[] encodings, Encoding encoding) {
+            // TODO (nirvdrum 25-Mar-15): Build up this lookup table in RubyEncoding as we register encodings.
+            if (encoding == null) {
+                return nil();
+            }
+
+            for (int i = 0; i < encodings.length; i++) {
+                if (encodings[i].getEncoding() == encoding) {
+                    return i;
+                }
+            }
+
+            throw new UnsupportedOperationException(String.format("Could not find encoding %s in the registered encoding list", encoding.toString()));
         }
     }
 
