@@ -75,6 +75,6 @@ check maven/jruby-dist/target/jruby-dist-$jar_version-bin200.tar.gz 17 jruby-$ja
 check maven/jruby-dist/target/jruby-dist-$jar_version-src.zip 13 jruby-$jar_version
 check maven/jruby-dist/target/jruby-dist-$jar_version-bin.zip 38 jruby-$jar_version
 check core/target/jruby-core-$jar_version.jar 9
-check truffle/target/jruby-truffle-$jar_version.jar 9
+check truffle/target/jruby-truffle-$jar_version.jar 15
 
 exit "${failed[0]}"
