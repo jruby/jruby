@@ -27,6 +27,7 @@ package org.jruby.util;
 
 import static org.jcodings.Encoding.CHAR_INVALID;
 import static org.jruby.RubyEnumerator.enumeratorize;
+import static org.jruby.util.StringSupport.nth;
 
 import org.jcodings.Encoding;
 import org.jcodings.ascii.AsciiTables;
@@ -438,6 +439,17 @@ public final class StringSupport {
         return nth(enc, bytes, p, end, n, enc.isSingleByte());
     }
 
+    /**
+     * Get the position of the nth character in the given byte array, using the given encoding and range.
+     *
+     * @param enc encoding to use
+     * @param bytes bytes to scan
+     * @param p starting byte offset
+     * @param end ending byte offset
+     * @param n index of character for which to find byte offset
+     * @param singlebyte whether the byte contents are in a single byte encoding
+     * @return the offset of the nth character in the string, or -1 if nth is out of the string
+     */
     public static int nth(Encoding enc, byte[]bytes, int p, int end, int n, boolean singlebyte) {
         if (singlebyte) {
             p += n;
@@ -1349,32 +1361,36 @@ public final class StringSupport {
         return source.getByteList();
     }
 
-    // headius: TODO: This version does not raise errors in proper places
+    // MRI: rb_str_update, second half
     public static void replaceInternal19(int beg, int len, CodeRangeable source, CodeRangeable repl) {
         Encoding enc = source.checkEncoding(repl);
-        int p = source.getByteList().getBegin();
-        int e;
-        if (isSingleByteOptimizable(source, source.getByteList().getEncoding())) {
-            p += beg;
-            e = p + len;
-        } else {
-            int end = p + source.getByteList().getRealSize();
-            byte[]bytes = source.getByteList().getUnsafeBytes();
-            p = StringSupport.nth(enc, bytes, p, end, beg);
-            if (p == -1) p = end;
-            e = StringSupport.nth(enc, bytes, p, end, len);
-            if (e == -1) e = end;
-        }
 
-        int cr = source.getCodeRange();
-        if (cr == CR_BROKEN) source.clearCodeRange();
-        replaceInternal(p - source.getByteList().getBegin(), e - p, source, repl);
+        source.modify();
+        source.keepCodeRange();
+        ByteList sourceBL = source.getByteList();
+        byte[] sourceBytes = sourceBL.unsafeBytes();
+        int sourceBeg = sourceBL.begin();
+        int sourceEnd = sourceBeg + sourceBL.realSize();
+        boolean singlebyte = isSingleByteOptimizable(source, source.getByteList().getEncoding());
+        int p = nth(enc, sourceBytes, sourceBeg, sourceEnd, beg, singlebyte);
+        if (p == -1) p = sourceEnd;
+        int e = nth(enc, sourceBytes, p, sourceEnd, len, singlebyte);
+        if (e == -1) e = sourceEnd;
+        /* error check */
+        beg = p - sourceBeg; /* physical position */
+        len = e - p; /* physical length */
+        replaceInternal(beg, len, source, repl);
         associateEncoding(source, enc);
-        cr = CodeRangeSupport.codeRangeAnd(cr, repl.getCodeRange());
+        int cr = CodeRangeSupport.codeRangeAnd(source.getCodeRange(), repl.getCodeRange());
         if (cr != CR_BROKEN) source.setCodeRange(cr);
     }
 
+    // MRI: rb_str_update, first half
     public static void replaceInternal19(Ruby runtime, int beg, int len, RubyString source, RubyString repl) {
+        source.checkEncoding(repl);
+
+        if (len < 0) throw runtime.newIndexError("negative length " + len);
+
         source.checkEncoding(repl);
         int slen = strLengthFromRubyString(source);
 

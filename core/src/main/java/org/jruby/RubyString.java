@@ -1958,7 +1958,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
         int index = RubyNumeric.num2int(indexArg);
         if (index == -1) return append19(stringArg);
         if (index < 0) index++;
-        replaceInternal19(checkIndex(index, strLength()), 0, str);
+        replaceInternal19(index, 0, str);
         return this;
     }
 
