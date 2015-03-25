@@ -2006,6 +2006,13 @@ assoc           : arg_value tASSOC arg_value {
                 | tLABEL arg_value {
                     $$ = p.dispatch("on_assoc_new", $1, $2);
                 }
+                | tSTRING_BEG string_contents tLABEL_END arg_value {
+                    $$ = p.dispatch("on_assoc_new", p.dispatch("on_dyna_symbol", $2), $4);
+                }
+                | tDSTAR arg_value {
+                    $$ = p.dispatch("on_assoc_splat", $2);
+                }
+ 
 
 operation       : tIDENTIFIER | tCONSTANT | tFID
 operation2      : tIDENTIFIER | tCONSTANT | tFID | op
