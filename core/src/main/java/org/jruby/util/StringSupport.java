@@ -486,6 +486,11 @@ public final class StringSupport {
         return pp == -1 ? end - p : pp - p; 
     }
 
+    public static int offset(Encoding enc, byte[]bytes, int p, int end, int n, boolean singlebyte) {
+        int pp = nth(enc, bytes, p, end, n, singlebyte);
+        return pp == -1 ? end - p : pp - p;
+    }
+
     public static int offset(RubyString str, int pos) {
         ByteList value = str.getByteList();
         return offset(str.getEncoding(), value.getUnsafeBytes(), value.getBegin(), value.getBegin() + value.getRealSize(), pos);

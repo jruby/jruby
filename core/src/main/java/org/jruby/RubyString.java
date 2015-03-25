@@ -2677,12 +2677,10 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
     private IRubyObject rindexCommon19(Ruby runtime, ThreadContext context, final IRubyObject sub, int pos) {
         if (sub instanceof RubyRegexp) {
             RubyRegexp regSub = (RubyRegexp) sub;
-            pos = singleByteOptimizable() ? pos :
-                    StringSupport.nth(value.getEncoding(), value.getUnsafeBytes(), value.getBegin(),
-                            value.getBegin() + value.getRealSize(),
-                                      pos) - value.getBegin();
+            pos = StringSupport.offset(
+                    value.getEncoding(), value.getUnsafeBytes(), value.getBegin(), value.getBegin() + value.getRealSize(),
+                    pos, singleByteOptimizable());
             if (regSub.length() > 0) {
-                pos = regSub.adjustStartPos19(this, pos, true);
                 pos = regSub.search19(context, this, pos, true);
                 pos = subLength(pos);
             }
@@ -3805,6 +3803,8 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
 
         tmp = tmp.convertToString();
         ByteList tmpBL = ((RubyString)tmp).value;
+        // MRI does not have this condition because starting at end of string can still dereference \0
+        if (tmpBL.getRealSize() == 0) return true;
         enc = checkEncoding((RubyString)tmp);
         if (value.realSize() < tmpBL.realSize()) return false;
         p = value.begin();
