@@ -1899,9 +1899,10 @@ public abstract class ArrayNodes {
 
     }
 
-    @CoreMethod(names = "insert", required = 2, raiseIfFrozenSelf = true)
+    @CoreMethod(names = "insert", required = 1, raiseIfFrozenSelf = true, argumentsAsArray = true)
     public abstract static class InsertNode extends ArrayCoreMethodNode {
 
+        @Child private ToIntNode toIntNode;
         private final BranchProfile tooSmallBranch = BranchProfile.create();
 
         public InsertNode(RubyContext context, SourceSection sourceSection) {
@@ -1910,12 +1911,18 @@ public abstract class ArrayNodes {
 
         public InsertNode(InsertNode prev) {
             super(prev);
+            this.toIntNode = prev.toIntNode;
         }
 
-        @Specialization(guards = "isNull")
-        public Object insert(RubyArray array, int index, Object value) {
+        @Specialization(guards = {"isNull", "isIntIndexAndOtherSingleObjectArg"})
+        public Object insertNull(RubyArray array, Object[] values) {
             notDesignedForCompilation();
-
+            final int index = (int) values[0];
+            if (index < 0) {
+                CompilerDirectives.transferToInterpreter();
+                throw new UnsupportedOperationException();
+            }
+            final Object value = (Object) values[1];
             final Object[] store = new Object[index + 1];
             Arrays.fill(store, nil());
             store[index] = value;
@@ -1923,22 +1930,58 @@ public abstract class ArrayNodes {
             return array;
         }
 
-        @Specialization(guards = "isIntegerFixnum")
-        public Object insert(RubyArray array, int index, int value) {
-            final int normalizedIndex = array.normalizeIndex(index);
+        @Specialization(guards = "isArgsLengthTwo", rewriteOn = {ClassCastException.class, IndexOutOfBoundsException.class})
+        public Object insert(RubyArray array, Object[] values) {
+            final int index = (int) values[0];
+            final int value = (int) values[1];
             final int[] store = (int[]) array.getStore();
+            System.arraycopy(store, index, store, index + 1, array.getSize() - index);
+            store[index] = value;
+            array.setStore(store, array.getSize() + 1);
+            return array;
+        }
 
-            if (normalizedIndex < 0) {
-                tooSmallBranch.enter();
-                throw new UnsupportedOperationException();
-            } else if (array.getSize() > store.length + 1) {
-                CompilerDirectives.transferToInterpreter();
-                throw new UnsupportedOperationException();
-            } else {
-                System.arraycopy(store, normalizedIndex, store, normalizedIndex + 1, array.getSize() - normalizedIndex);
-                store[normalizedIndex] = value;
-                array.setStore(store, array.getSize() + 1);
+        @Specialization(contains = {"insert", "insertNull"})
+        public Object insertBoxed(VirtualFrame frame, RubyArray array, Object[] values) {
+            notDesignedForCompilation();
+            if (values.length == 1) {
+                return array;
             }
+
+            int index;
+            if (values[0] instanceof Integer) {
+                index = (int) values[0];
+            } else {
+                if (toIntNode == null) {
+                    CompilerDirectives.transferToInterpreter();
+                    toIntNode = insert(ToIntNodeFactory.create(getContext(), getSourceSection(), null));
+                }
+                index = toIntNode.executeIntegerFixnum(frame, values[0]);
+            }
+
+            final int valuesLength = values.length - 1;
+            final int normalizedIndex = index < 0 ? array.normalizeIndex(index) + 1 : array.normalizeIndex(index);
+            if (normalizedIndex < 0) {
+                CompilerDirectives.transferToInterpreter();
+                String errMessage = "index " + index + " too small for array; minimum: " + Integer.toString(-array.getSize());
+                throw new RaiseException(getContext().getCoreLibrary().indexError(errMessage, this));
+            }
+
+            Object[] store = ArrayUtils.box(array.getStore());
+            final int newSize = normalizedIndex < array.getSize() ? array.getSize() + valuesLength : normalizedIndex + valuesLength;
+            store = Arrays.copyOf(store, newSize);
+            if (normalizedIndex >= array.getSize()) {
+                for (int i = array.getSize(); i < normalizedIndex; i++) {
+                    store[i] = nil();
+                }
+            }
+            final int dest = normalizedIndex + valuesLength;
+            final int len = array.getSize() - normalizedIndex;
+            if (normalizedIndex < array.getSize()) {
+                System.arraycopy(store, normalizedIndex, store, dest, len);
+            }
+            System.arraycopy(values, 1, store, normalizedIndex, valuesLength);
+            array.setStore(store, newSize);
 
             return array;
         }
