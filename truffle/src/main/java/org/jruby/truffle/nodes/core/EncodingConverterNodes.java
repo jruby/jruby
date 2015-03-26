@@ -105,17 +105,23 @@ public abstract class EncodingConverterNodes {
     @CoreMethod(names = "transcoding_map", onSingleton = true)
     public abstract static class TranscodingMapNode extends CoreMethodNode {
 
+        @Child private CallDispatchHeadNode upcaseNode;
+        @Child private CallDispatchHeadNode toSymNode;
         @Child private CallDispatchHeadNode newLookupTableNode;
         @Child private CallDispatchHeadNode lookupTableWriteNode;
 
         public TranscodingMapNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
+            upcaseNode = DispatchHeadNodeFactory.createMethodCall(context);
+            toSymNode = DispatchHeadNodeFactory.createMethodCall(context);
             newLookupTableNode = DispatchHeadNodeFactory.createMethodCall(context);
             lookupTableWriteNode = DispatchHeadNodeFactory.createMethodCall(context);
         }
 
         public TranscodingMapNode(TranscodingMapNode prev) {
             super(prev);
+            upcaseNode = prev.upcaseNode;
+            toSymNode = prev.toSymNode;
             newLookupTableNode = prev.newLookupTableNode;
             lookupTableWriteNode = prev.lookupTableWriteNode;
         }
@@ -125,7 +131,8 @@ public abstract class EncodingConverterNodes {
             List<KeyValue> entries = new ArrayList<>();
 
             for (RubyEncoding e : RubyEncoding.cloneEncodingList()) {
-                final RubySymbol key = getContext().newSymbol(e.getName());
+                final Object upcased = upcaseNode.call(frame, getContext().makeString(e.getName()), "upcase", null);
+                final Object key = toSymNode.call(frame, upcased, "to_sym", null);
                 final Object value = newLookupTableNode.call(frame, getContext().getCoreLibrary().getLookupTableClass(), "new", null);
 
                 final Object tupleValues = new Object[2];
