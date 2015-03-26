@@ -642,4 +642,43 @@ public class RubyMatchData extends RubyObject {
         return getRuntime().newFixnum(pattern.hashCode() ^ str.hashCode());
     }
 
+    /**
+     * Get the begin offset of the given region, or -1 if the region does not exist.
+     *
+     * @param i the region for which to fetch the begin offset
+     * @return the begin offset for the region
+     */
+    public int begin(int i) {
+        if (regs == null) {
+            if (i > 1) return -1;
+            return begin;
+        }
+        if (i > regs.numRegs) return -1;
+        return regs.beg[i];
+    }
+
+    /**
+     * Get the end offset of the given region, or -1 if the region does not exist.
+     *
+     * @param i the region for which to fetch the end offset
+     * @return the end offset for the region
+     */
+    public int end(int i) {
+        if (regs == null) {
+            if (i > 1) return -1;
+            return end;
+        }
+        if (i > regs.numRegs) return -1;
+        return regs.end[i];
+    }
+
+    /**
+     * Fetch the number of regions in this match.
+     *
+     * @return the number of regions in this match
+     */
+    public int numRegs() {
+        return regs == null ? 1 : regs.numRegs;
+    }
+
 }
