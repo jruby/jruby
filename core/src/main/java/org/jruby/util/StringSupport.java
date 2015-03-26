@@ -1601,7 +1601,7 @@ public final class StringSupport {
         }
 
         while (subptr < pend) {
-            pos = rb_memsearch(rsbytes, rsptr, rslen, strBytes, subptr, pend - subptr, enc);
+            pos = memsearch(rsbytes, rsptr, rslen, strBytes, subptr, pend - subptr, enc);
             if (pos < 0) break;
             hit = subptr + pos;
             adjusted = enc.rightAdjustCharHead(strBytes, subptr, hit, pend);
@@ -1637,7 +1637,7 @@ public final class StringSupport {
         return wantarray ? ary : orig;
     }
 
-    private static int rb_memsearch(byte[] xBytes, int x0, int m, byte[] yBytes, int y0, int n, Encoding enc) {
+    public static int memsearch(byte[] xBytes, int x0, int m, byte[] yBytes, int y0, int n, Encoding enc) {
         int x = x0, y = y0;
 
         if (m > n) return -1;
