@@ -1960,8 +1960,8 @@ public class RipperLexer {
             return identifierToken(last_state, Tokens.tGVAR, ("$" + (char) c).intern());
         default:
             if (!isIdentifierChar(c)) {
-                pushback(c);
-                return '$';
+                compile_error("`$" + ((char) c) + "' is not allowed as a global variable name");
+                return EOF;
             }
         
             // $blah
