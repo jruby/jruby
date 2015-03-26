@@ -3465,7 +3465,8 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
                 Encoding spatEnc = spatValue.getEncoding();
                 ((RubyString)spat).mustnotBroken(context);
                 if (len == 0) {
-                    RubyRegexp pattern = RubyRegexp.newRegexp(context.runtime, ((RubyString)spat).getByteList());
+                    // headius FIXME: MRI has a single-entry global cache here to reduce this cost in a loop
+                    RubyRegexp pattern = RubyRegexp.newRegexpFromStr(context.runtime, (RubyString) spat, 0);
                     result = regexSplit19(context, pattern, limit, lim, i, useBackref);
                 } else {
                     final int c;
@@ -3496,9 +3497,9 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
     private RubyArray regexSplit19(ThreadContext context, RubyRegexp pattern, boolean limit, int lim, int i, boolean useBackref) {
         Ruby runtime = context.runtime;
 
-        int begin = value.getBegin();
+        int ptr = value.getBegin();
         int len = value.getRealSize();
-        int range = begin + len;
+        int range = ptr + len;
         byte[]bytes = value.getUnsafeBytes();
 
         RubyArray result = runtime.newArray();
@@ -3510,22 +3511,26 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
         int start = beg;
         while ((end = pattern.search19(context, this, start, false)) >= 0) {
             RubyMatchData match = (RubyMatchData)context.getBackRef();
-            if (start == end + begin && match.begin(0) == match.end(0)) {
+            if (start == end && match.begin(0) == match.end(0)) {
                 if (len == 0) {
                     result.append(newEmptyString(runtime, getMetaClass()).infectBy(this));
                     break;
                 } else if (lastNull) {
-                    result.append(makeShared19(runtime, beg, StringSupport.length(enc, bytes, begin + beg, range)));
-                    beg = start - begin;
+                    result.append(makeShared19(runtime, beg, StringSupport.length(enc, bytes, ptr + beg, ptr + len)));
+                    beg = start;
                 } else {
-                    start += start == range ? 1 : StringSupport.length(enc, bytes, start, range);
+                    if ((ptr + start) == ptr + len) {
+                        start++;
+                    } else {
+                        start += StringSupport.length(enc, bytes, ptr + start, ptr + len);
+                    }
                     lastNull = true;
                     continue;
                 }
             } else {
                 result.append(makeShared19(runtime, beg, end - beg));
                 beg = match.end(0);
-                start = begin + beg;
+                start = beg;
             }
             lastNull = false;
 
