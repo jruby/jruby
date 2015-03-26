@@ -1,7 +1,5 @@
 exclude :test_embexpr_end, "needs investigation"
 exclude :test_event_coverage, "needs investigation"
-exclude :test_imaginary, "needs parser support for imaginary literals"
 exclude :test_lex, "needs investigation"
-exclude :test_rational, "needs parser support for rational literals"
 exclude :test_tokenize, "needs investigation"
 exclude :test_tstring_content_HEREDOC, "needs investigation"

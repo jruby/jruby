@@ -92,8 +92,10 @@ public interface Tokens {
     int tIVAR       = RipperParser.tIVAR;
     int tCONSTANT   = RipperParser.tCONSTANT;
     int tCVAR       = RipperParser.tCVAR;
+    int tIMAGINARY  = RipperParser.tIMAGINARY;
     int tINTEGER    = RipperParser.tINTEGER;
     int tFLOAT      = RipperParser.tFLOAT;
+    int tRATIONAL   = RipperParser.tRATIONAL;
     int tSTRING_CONTENT     = RipperParser.tSTRING_CONTENT;
     int tSTRING_BEG = RipperParser.tSTRING_BEG;
     int tSTRING_END = RipperParser.tSTRING_END;

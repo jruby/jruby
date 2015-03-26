@@ -29,6 +29,7 @@
 package org.jruby.ext.ripper;
 
 import java.io.IOException;
+import java.math.BigDecimal;
 import java.util.HashMap;
 import org.jcodings.Encoding;
 import org.jcodings.specific.ASCIIEncoding;
@@ -59,6 +60,10 @@ public class RipperLexer {
     private static ByteList END_DOC_MARKER = new ByteList(new byte[] {'e', 'n', 'd'});
     private static ByteList CODING = new ByteList(new byte[] {'c', 'o', 'd', 'i', 'n', 'g'});
     private static final HashMap<String, Keyword> map;
+
+    private static final int SUFFIX_R = 1<<0;
+    private static final int SUFFIX_I = 1<<1;
+    private static final int SUFFIX_ALL = 3;
 
     static {
         map = new HashMap<String, Keyword>();
@@ -126,7 +131,21 @@ public class RipperLexer {
         }
     }
 
-    private int getFloatToken(String number) {
+    private int getFloatToken(String number, int suffix) {
+        if ((suffix & SUFFIX_R) != 0) {
+            BigDecimal bd = new BigDecimal(number);
+            BigDecimal denominator = BigDecimal.ONE.scaleByPowerOfTen(bd.scale());
+            BigDecimal numerator = bd.multiply(denominator);
+
+            try {
+                numerator.longValueExact();
+                denominator.longValueExact();
+            } catch (ArithmeticException ae) {
+                compile_error("Rational (" + numerator + "/" + denominator + ") out of range.");
+            }
+            return considerComplex(Tokens.tRATIONAL, suffix);
+        }
+
         double d;
         try {
             d = SafeDoubleParser.parseDouble(number);
@@ -137,8 +156,17 @@ public class RipperLexer {
         }
         ByteList buf = new ByteList(number.getBytes());
         yaccValue = new Token(buf);
-        return Tokens.tFLOAT;
+        return considerComplex(Tokens.tFLOAT, suffix);
     }
+
+    private int considerComplex(int token, int suffix) {
+        if ((suffix & SUFFIX_I) == 0) {
+            return token;
+        } else {
+            return Tokens.tIMAGINARY;
+        }
+    }
+
 
     public boolean isVerbose() {
         return parser.getRuntime().isVerbose();
@@ -675,10 +703,6 @@ public class RipperLexer {
             setState(LexState.EXPR_BEG);
             break;
         }
-    }
-
-    private Object getInteger(String value, int radix) {
-        return new Token(value);
     }
 
 	/**
@@ -1290,6 +1314,7 @@ public class RipperLexer {
             case Tokens.tGEQ: return "on_op";
             case Tokens.tGVAR: return "on_gvar";
             case Tokens.tIDENTIFIER: return "on_ident";
+            case Tokens.tIMAGINARY: return "on_imaginary";
             case Tokens.tINTEGER: return "on_int";
             case Tokens.tIVAR: return "on_ivar";
             case Tokens.tLBRACE: return "on_lbrace";
@@ -1313,6 +1338,7 @@ public class RipperLexer {
             case Tokens.tOROP: return "on_op";
             case Tokens.tPOW: return "on_op";
             case Tokens.tQSYMBOLS_BEG: return "on_qsymbols_beg";
+            case Tokens.tRATIONAL: return "on_rational";
             case Tokens.tSYMBOLS_BEG: return "on_symbols_beg";
             case Tokens.tQWORDS_BEG: return "on_qwords_beg";
             case Tokens.tREGEXP_BEG:return "on_regexp_beg";
@@ -2566,8 +2592,7 @@ public class RipperLexer {
                     } else if (nondigit != '\0') {
                         compile_error("Trailing '_' in number.");
                     }
-                    yaccValue = getInteger(tokenBuffer.toString(), 16);
-                    return Tokens.tINTEGER;
+                    return setIntegerLiteral(tokenBuffer.toString(), numberLiteralSuffix(SUFFIX_ALL));
                 case 'b' :
                 case 'B' : // binary
                     c = nextc();
@@ -2591,8 +2616,7 @@ public class RipperLexer {
                     } else if (nondigit != '\0') {
                         compile_error("Trailing '_' in number.");
                     }
-                    yaccValue = getInteger(tokenBuffer.toString(), 2);
-                    return Tokens.tINTEGER;
+                    return setIntegerLiteral(tokenBuffer.toString(), numberLiteralSuffix(SUFFIX_ALL));
                 case 'd' :
                 case 'D' : // decimal
                     c = nextc();
@@ -2616,8 +2640,7 @@ public class RipperLexer {
                     } else if (nondigit != '\0') {
                         compile_error("Trailing '_' in number.");
                     }
-                    yaccValue = getInteger(tokenBuffer.toString(), 10);
-                    return Tokens.tINTEGER;
+                    return setIntegerLiteral(tokenBuffer.toString(), numberLiteralSuffix(SUFFIX_ALL));
                 case 'o':
                 case 'O':
                     c = nextc();
@@ -2640,8 +2663,7 @@ public class RipperLexer {
 
                         if (nondigit != '\0') compile_error("Trailing '_' in number.");
 
-                        yaccValue = getInteger(tokenBuffer.toString(), 8);
-                        return Tokens.tINTEGER;
+                        return setIntegerLiteral(tokenBuffer.toString(), numberLiteralSuffix(SUFFIX_ALL));
                     }
                 case '8' :
                 case '9' :
@@ -2682,7 +2704,7 @@ public class RipperLexer {
                         compile_error("Trailing '_' in number.");
                     } else if (seen_point || seen_e) {
                         pushback(c);
-                        return getNumberToken(tokenBuffer.toString(), true, nondigit);
+                        return getNumberLiteral(tokenBuffer.toString(), seen_e, seen_point, nondigit);
                     } else {
                     	int c2;
                         if (!Character.isDigit(c2 = nextc())) {
@@ -2692,8 +2714,7 @@ public class RipperLexer {
                             		// Enebo:  c can never be antrhign but '.'
                             		// Why did I put this here?
                             } else {
-                                yaccValue = getInteger(tokenBuffer.toString(), 10);
-                                return Tokens.tINTEGER;
+                                return getNumberLiteral(tokenBuffer.toString(), seen_e, seen_point, nondigit);
                             }
                         } else {
                             tokenBuffer.append('.');
@@ -2709,7 +2730,7 @@ public class RipperLexer {
                         compile_error("Trailing '_' in number.");
                     } else if (seen_e) {
                         pushback(c);
-                        return getNumberToken(tokenBuffer.toString(), true, nondigit);
+                        return getNumberLiteral(tokenBuffer.toString(), seen_e, seen_point, nondigit);
                     } else {
                         tokenBuffer.append((char) c);
                         seen_e = true;
@@ -2731,20 +2752,55 @@ public class RipperLexer {
                     break;
                 default :
                     pushback(c);
-                    return getNumberToken(tokenBuffer.toString(), seen_e || seen_point, nondigit);
+                    return getNumberLiteral(tokenBuffer.toString(), seen_e, seen_point, nondigit);
             }
         }
     }
 
-    private int getNumberToken(String number, boolean isFloat, int nondigit) {
-        if (nondigit != '\0') {
-            compile_error("Trailing '_' in number.");
-        } else if (isFloat) {
-            return getFloatToken(number);
-        }
-        yaccValue = getInteger(number, 10);
-        return Tokens.tINTEGER;
+    // MRI: This is decode_num: chunk
+    private int getNumberLiteral(String number, boolean seen_e, boolean seen_point, int nondigit) throws IOException {
+        if (nondigit != '\0') compile_error("Trailing '_' in number.");
+
+        boolean isFloat = seen_e || seen_point;
+        if (isFloat) return getFloatToken(number, numberLiteralSuffix(seen_e ? SUFFIX_I : SUFFIX_ALL));
+
+        return setIntegerLiteral(number, numberLiteralSuffix(SUFFIX_ALL));
     }
+
+    private int setNumberLiteral(String number, int type, int suffix) {
+        if ((suffix & SUFFIX_I) != 0) type = Tokens.tIMAGINARY;
+
+        return type;
+    }
+
+    private int setIntegerLiteral(String value, int suffix) {
+        int type = (suffix & SUFFIX_R) != 0 ? Tokens.tRATIONAL : Tokens.tINTEGER;
+
+        return setNumberLiteral(value, type, suffix);
+    }
+
+    private int numberLiteralSuffix(int mask) throws IOException {
+        int c = nextc();
+
+        if (c == 'i') return (mask & SUFFIX_I) != 0 ?  mask & SUFFIX_I : 0;
+
+        if (c == 'r') {
+            int result = 0;
+            if ((mask & SUFFIX_R) != 0) result |= (mask & SUFFIX_R);
+
+            if (peek('i') && (mask & SUFFIX_I) != 0) {
+                nextc();
+                result |= (mask & SUFFIX_I);
+            }
+
+            return result;
+        }
+        pushback(c);
+
+        return 0;
+    }
+
+
 
     // Note: parser_tokadd_utf8 variant just for regexp literal parsing.  This variant is to be
     // called when string_literal and regexp_literal.
