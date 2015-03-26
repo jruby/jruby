@@ -579,9 +579,9 @@ class Encoding
   #  EncodingList
   #end
 
-  def self.locale_charmap
-    LocaleCharmap
-  end
+  #def self.locale_charmap
+  #  LocaleCharmap
+  #end
 
   def self.name_list
     EncodingMap.map do |n, r|
