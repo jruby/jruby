@@ -5028,7 +5028,8 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
                     buf = Arrays.copyOf(buf, max);
                 }
                 enc.codeToMbc(c, buf, t);
-                if (mayModify && ByteList.memcmp(sbytes, s, buf, t, tlen) != 0) modify = true;
+                // MRI does not check s < send again because their null terminator can still be compared
+                if (mayModify && (s >= send || ByteList.memcmp(sbytes, s, buf, t, tlen) != 0)) modify = true;
                 if (cr == CR_7BIT && !Encoding.isAscii(c)) cr = CR_VALID;
                 t += tlen;
             }
