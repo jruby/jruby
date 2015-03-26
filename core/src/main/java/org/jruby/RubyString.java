@@ -3733,7 +3733,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
         int[] startp = {0};
         byte[] pBytes = value.unsafeBytes();
         int p = value.begin();
-        int len = p + value.realSize();
+        int len = value.realSize();
 
 
         pat = getPatternQuoted(context, pat, true);
@@ -3754,7 +3754,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
             last = prev;
             prev = startp[0];
             block.yieldSpecific(context, result);
-            modifyCheck(pBytes, len);
+            str.modifyCheck(pBytes, len);
         }
         if (last >= 0) patternSearch(context, pat, str, last, true);
         return this;
