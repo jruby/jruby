@@ -1,6 +1,3 @@
-exclude :test_assign_error_const, "needs investigation"
-exclude :test_assign_error_const_qualified, "needs investigation"
-exclude :test_assign_error_const_toplevel, "needs investigation"
 exclude :test_dyna_symbol, "needs investigation"
 exclude :test_event_coverage, "needs investigation"
 exclude :test_local_variables, "needs investigation"

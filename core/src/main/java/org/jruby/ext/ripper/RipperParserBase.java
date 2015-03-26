@@ -317,11 +317,17 @@ public class RipperParserBase {
 
     public void yyerror(String message) {
         compile_error(message);
+        error();
         throw new SyntaxException(message, message);
     }
     
     public void yyerror(String message, String[] expected, String found) {
         compile_error(message + ", unexpected " + found + "\n");
+        error();
+    }
+
+    public void error() {
+        this.isError = true;
     }
 
     public Integer getLeftParenBegin() {
@@ -396,7 +402,11 @@ public class RipperParserBase {
     public boolean isEndSeen() {
         return lexer.isEndSeen();
     }
-    
+
+    public boolean isError() {
+        return isError;
+    }
+
     public ThreadContext getContext() {
         return context;
     }
@@ -407,6 +417,7 @@ public class RipperParserBase {
     protected StaticScope currentScope;
     protected boolean inDefinition;
     protected boolean yydebug; // FIXME: Hook up to yydebug
+    protected boolean isError;
     
     // Is the parser current within a singleton (value is number of nested singletons)
     protected int inSingleton;

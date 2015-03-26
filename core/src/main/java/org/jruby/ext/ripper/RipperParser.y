@@ -283,6 +283,7 @@ stmt            : kALIAS fitem {
                 }
                 | kALIAS tGVAR tNTH_REF {
                     $$ = p.dispatch("on_alias_error", p.dispatch("on_var_alias", $2, $3));
+                    p.error();
                 }
                 | kUNDEF undef_list {
                     $$ = p.dispatch("on_undef", $2);
@@ -346,6 +347,7 @@ stmt            : kALIAS fitem {
                                     p.dispatch("on_assign", 
                                     p.dispatch("on_var_field", $1), 
                                     $3));
+                    p.error();
                }
                 | lhs '=' mrhs {
                     $$ = p.dispatch("on_assign", $1, $3);
@@ -531,7 +533,7 @@ mlhs_node       : /*mri:user_variable*/ tIDENTIFIER {
                     $$ = $1;
                 }
                 | tCONSTANT {
-                    $$ = $1;
+                    $$ = p.assignable($1);
                 }
                 | tCVAR {
                     $$ = $1;
@@ -578,17 +580,24 @@ mlhs_node       : /*mri:user_variable*/ tIDENTIFIER {
 		    $$ = p.dispatch("on_field", $1, p.intern("."), $3);
                 }
                 | primary_value tCOLON2 tCONSTANT {
-                    if (p.isInDef() || p.isInSingle()) {
-                        p.yyerror("dynamic constant assignment");
-                    }
-
                     $$ = p.dispatch("on_const_path_field", $1, $3);
+
+                    if (p.isInDef() || p.isInSingle()) {
+                        $$ = p.dispatch("on_assign_error", $<IRubyObject>$);
+                        p.error();
+                    }
                 }
                 | tCOLON3 tCONSTANT {
                     $$ = p.dispatch("on_top_const_field", $2);
+
+                    if (p.isInDef() || p.isInSingle()) {
+                        $$ = p.dispatch("on_assign_error", $<IRubyObject>$);
+                        p.error();
+                    }
                 }
                 | backref {
                     $$ = p.dispatch("on_assign_error", p.dispatch("on_var_field", $1));
+                    p.error();
                 }
 
 lhs             : /*mri:user_variable*/ tIDENTIFIER {
@@ -644,6 +653,7 @@ lhs             : /*mri:user_variable*/ tIDENTIFIER {
 
                     if (p.isInDef() || p.isInSingle()) {
                         val = p.dispatch("on_assign_error", val);
+                        p.error();
                     }
 
                     $$ = val;
@@ -653,16 +663,19 @@ lhs             : /*mri:user_variable*/ tIDENTIFIER {
 
                     if (p.isInDef() || p.isInSingle()) {
                         val = p.dispatch("on_assign_error", val);
+                        p.error();
                     }
 
                     $$ = val;
                 }
                 | backref {
                     $$ = p.dispatch("on_assign_error", $1);
+                    p.error();
                 }
 
 cname           : tIDENTIFIER {
                     $$ = p.dispatch("on_class_name_error", $1);
+                    p.error();
                 }
                 | tCONSTANT
 
@@ -776,6 +789,7 @@ arg             : lhs '=' arg {
                                     p.dispatch("on_opassign",
                                                p.dispatch("on_var_field", $1),
                                                $2, $3));
+                    p.error();
                 }
                 | arg tDOT2 arg {
                     $$ = p.dispatch("on_dot2", $1, $3);
@@ -1676,9 +1690,9 @@ var_ref         : /*mri:user_variable*/ tIDENTIFIER {
                 }
                 | tCONSTANT {
                     if (p.is_id_var($1)) {
-                        $$ = p.dispatch("on_var_ref", $1);
+                        $$ = p.dispatch("on_var_ref", p.assignable($1));
                     } else {
-                        $$ = p.dispatch("on_vcall", $1);
+                        $$ = p.dispatch("on_vcall", p.assignable($1));
                     }
                 }
                 | tCVAR {
@@ -1844,15 +1858,19 @@ f_args          : f_arg ',' f_optarg ',' f_rest_arg opt_args_tail {
 
 f_bad_arg       : tCONSTANT {
                     $$ = p.dispatch("on_param_error", $1);
+                    p.error();
                 }
                 | tIVAR {
                     $$ = p.dispatch("on_param_error", $1);
+                    p.error();
                 }
                 | tGVAR {
                     $$ = p.dispatch("on_param_error", $1);
+                    p.error();
                 }
                 | tCVAR {
                     $$ = p.dispatch("on_param_error", $1);
+                    p.error();
                 }
 
 // Token:f_norm_arg [!null]

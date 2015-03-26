@@ -293,7 +293,11 @@ public class RubyRipper extends RubyObject {
     public IRubyObject end_seen_p(ThreadContext context) {
         return context.runtime.newBoolean(parser.isEndSeen());
     }
-    
+
+    @JRubyMethod(name = "error?")
+    public IRubyObject error_p(ThreadContext context) {
+        return context.runtime.newBoolean(parser.isError());
+    }
     @JRubyMethod
     public IRubyObject filename(ThreadContext context) {
         return filename;
