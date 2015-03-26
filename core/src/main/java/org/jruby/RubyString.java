@@ -3410,12 +3410,20 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
         return split19(context, arg0, arg1);
     }
 
-    private void populateCapturesForSplit(Ruby runtime, RubyArray result, Matcher matcher, boolean is19) {
+    private void populateCapturesForSplit(Ruby runtime, RubyArray result, Matcher matcher) {
         Region region = matcher.getRegion();
         for (int i = 1; i < region.numRegs; i++) {
             int beg = region.beg[i];
             if (beg == -1) continue;
-            result.append(is19 ? makeShared19(runtime, beg, region.end[i] - beg) : makeShared(runtime, beg, region.end[i] - beg));
+            result.append(makeShared19(runtime, beg, region.end[i] - beg));
+        }
+    }
+
+    private void populateCapturesForSplit(Ruby runtime, RubyArray result, RubyMatchData match) {
+        for (int i = 1; i < match.numRegs(); i++) {
+            int beg = match.begin(i);
+            if (beg == -1) continue;
+            result.append(makeShared19(runtime, beg, match.end(i) - beg));
         }
     }
 
@@ -3444,18 +3452,21 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
         return splitCommon19(arg0, useBackref, flags, flags, context, useBackref);
     }
 
+    // MRI: rb_str_split_m, overall structure
     private RubyArray splitCommon19(IRubyObject spat, final boolean limit, final int lim, final int i, ThreadContext context, boolean useBackref) {
         final RubyArray result;
         if (spat.isNil() && (spat = context.runtime.getGlobalVariables().get("$;")).isNil()) {
             result = awkSplit19(limit, lim, i);
         } else {
+            spat = getPatternQuoted(context, spat, false);
             if (spat instanceof RubyString) {
                 ByteList spatValue = ((RubyString)spat).value;
                 int len = spatValue.getRealSize();
                 Encoding spatEnc = spatValue.getEncoding();
+                ((RubyString)spat).mustnotBroken(context);
                 if (len == 0) {
-                    Regex pattern = RubyRegexp.getRegexpFromCache(context.runtime, spatValue, spatEnc, new RegexpOptions());
-                    result = regexSplit19(context, pattern, pattern, limit, lim, i, useBackref);
+                    RubyRegexp pattern = RubyRegexp.newRegexp(context.runtime, ((RubyString)spat).getByteList());
+                    result = regexSplit19(context, pattern, limit, lim, i, useBackref);
                 } else {
                     final int c;
                     byte[]bytes = spatValue.getUnsafeBytes();
@@ -3468,18 +3479,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
                     result = c == ' ' ? awkSplit19(limit, lim, i) : stringSplit19(context, (RubyString)spat, limit, lim, i);
                 }
             } else {
-                final Regex pattern, prepared;
-
-                Ruby runtime = context.runtime;
-                if (spat instanceof RubyRegexp) {
-                    RubyRegexp regexp = (RubyRegexp)spat;
-                    pattern = regexp.getPattern();
-                    prepared = regexp.preparePattern(this);
-                } else {
-                    pattern = getStringPattern19(runtime, spat);
-                    prepared = RubyRegexp.preparePattern(runtime, pattern, this);
-                }
-                result = regexSplit19(context, pattern, prepared, limit, lim, i, useBackref);
+                result = regexSplit19(context, (RubyRegexp)spat, limit, lim, i, useBackref);
             }
         }
 
@@ -3492,7 +3492,8 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
         return result;
     }
 
-    private RubyArray regexSplit19(ThreadContext context, Regex pattern, Regex prepared, boolean limit, int lim, int i, boolean useBackref) {
+    // MRI: rb_str_split_m, when split_type = regexp
+    private RubyArray regexSplit19(ThreadContext context, RubyRegexp pattern, boolean limit, int lim, int i, boolean useBackref) {
         Ruby runtime = context.runtime;
 
         int begin = value.getBegin();
@@ -3500,17 +3501,16 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
         int range = begin + len;
         byte[]bytes = value.getUnsafeBytes();
 
-        final Matcher matcher = prepared.matcher(bytes, begin, range);
-
         RubyArray result = runtime.newArray();
         Encoding enc = value.getEncoding();
-        boolean captures = pattern.numberOfCaptures() != 0;
+        boolean captures = pattern.getPattern().numberOfCaptures() != 0;
 
         int end, beg = 0;
         boolean lastNull = false;
         int start = begin;
-        while ((end = RubyRegexp.matcherSearch(runtime, matcher, start, range, Option.NONE)) >= 0) {
-            if (start == end + begin && matcher.getBegin() == matcher.getEnd()) {
+        while ((end = pattern.search19(context, this, start, false)) >= 0) {
+            RubyMatchData match = (RubyMatchData)context.getBackRef();
+            if (start == end + begin && match.begin(0) == match.end(0)) {
                 if (len == 0) {
                     result.append(newEmptyString(runtime, getMetaClass()).infectBy(this));
                     break;
@@ -3524,12 +3524,12 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
                 }
             } else {
                 result.append(makeShared19(runtime, beg, end - beg));
-                beg = matcher.getEnd();
+                beg = match.end(0);
                 start = begin + beg;
             }
             lastNull = false;
 
-            if (captures) populateCapturesForSplit(runtime, result, matcher, true);
+            if (captures) populateCapturesForSplit(runtime, result, match);
             if (limit && lim <= ++i) break;
         }
 
@@ -3540,6 +3540,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
         return result;
     }
 
+    // MRI: rb_str_split_m, when split_type = awk
     private RubyArray awkSplit19(boolean limit, int lim, int i) {
         Ruby runtime = getRuntime();
         RubyArray result = runtime.newArray();
@@ -3587,10 +3588,10 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
         return result;
     }
 
+    // MRI: rb_str_split_m, when split_type = string
     private RubyArray stringSplit19(ThreadContext context, RubyString spat, boolean limit, int lim, int i) {
         Ruby runtime = context.runtime;
-        if (scanForCodeRange() == CR_BROKEN) throw runtime.newArgumentError("invalid byte sequence in " + value.getEncoding());
-        if (spat.scanForCodeRange() == CR_BROKEN) throw runtime.newArgumentError("invalid byte sequence in " + spat.value.getEncoding());
+        mustnotBroken(context);
 
         RubyArray result = runtime.newArray();
         Encoding enc = checkEncoding(spat);
