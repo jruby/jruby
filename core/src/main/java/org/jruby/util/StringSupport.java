@@ -1121,13 +1121,10 @@ public final class StringSupport {
         return t.now;
     }
 
-    /**
-     * succ
-     */
-
     public static enum NeighborChar {NOT_CHAR, FOUND, WRAPPED}
 
-    public static ByteList succCommon(ByteList original) {
+    // MRI: str_succ
+    public static ByteList succCommon(Ruby runtime, ByteList original) {
         byte carry[] = new byte[org.jcodings.Config.ENC_CODE_TO_MBC_MAXLEN];
         int carryP = 0;
         carry[0] = 1;
@@ -1158,7 +1155,7 @@ public final class StringSupport {
 
             int cl = preciseLength(enc, bytes, s, end);
             if (cl <= 0) continue;
-            switch (neighbor = succAlnumChar(enc, bytes, s, cl, carry, 0)) {
+            switch (neighbor = succAlnumChar(runtime, enc, bytes, s, cl, carry, 0)) {
                 case NOT_CHAR: continue;
                 case FOUND:    return valueCopy;
                 case WRAPPED:  lastAlnum = s;
@@ -1173,9 +1170,9 @@ public final class StringSupport {
             while ((s = enc.prevCharHead(bytes, p, s, end)) != -1) {
                 int cl = preciseLength(enc, bytes, s, end);
                 if (cl <= 0) continue;
-                neighbor = succChar(enc, bytes, s, cl);
+                neighbor = succChar(runtime, enc, bytes, s, cl);
                 if (neighbor == NeighborChar.FOUND) return valueCopy;
-                if (preciseLength(enc, bytes, s, s + 1) != cl) succChar(enc, bytes, s, cl); /* wrapped to \0...\0.  search next valid char. */
+                if (preciseLength(enc, bytes, s, s + 1) != cl) succChar(runtime, enc, bytes, s, cl); /* wrapped to \0...\0.  search next valid char. */
                 if (!enc.isAsciiCompatible()) {
                     System.arraycopy(bytes, s, carry, 0, cl);
                     carryLen = cl;
@@ -1191,31 +1188,60 @@ public final class StringSupport {
         return valueCopy;
     }
 
-    public static NeighborChar succChar(Encoding enc, byte[] bytes, int p, int len) {
+    // MRI: enc_succ_char
+    public static NeighborChar succChar(Ruby runtime, Encoding enc, byte[] bytes, int p, int len) {
+        int l;
+        if (enc.minLength() > 1) {
+	        /* wchar, trivial case */
+            int r = preciseLength(enc, bytes, p, p + len), c;
+            if (!MBCLEN_CHARFOUND_P(r)) {
+                return NeighborChar.NOT_CHAR;
+            }
+            c = codePoint(runtime, enc, bytes, p, p + len) + 1;
+            l = codeLength(runtime, enc, c);
+            if (l == 0) return NeighborChar.NOT_CHAR;
+            if (l != len) return NeighborChar.WRAPPED;
+            EncodingUtils.encMbcput(c, bytes, p, enc);
+            r = preciseLength(enc, bytes, p, p + len);
+            if (!MBCLEN_CHARFOUND_P(r)) {
+                return NeighborChar.NOT_CHAR;
+            }
+            return NeighborChar.FOUND;
+        }
+
         while (true) {
             int i = len - 1;
             for (; i >= 0 && bytes[p + i] == (byte)0xff; i--) bytes[p + i] = 0;
             if (i < 0) return NeighborChar.WRAPPED;
             bytes[p + i] = (byte)((bytes[p + i] & 0xff) + 1);
-            int cl = preciseLength(enc, bytes, p, p + len);
-            if (cl > 0) {
-                if (cl == len) {
+            l = preciseLength(enc, bytes, p, p + len);
+            if (MBCLEN_CHARFOUND_P(l)) {
+                l = MBCLEN_CHARFOUND_LEN(l);
+                if (l == len) {
                     return NeighborChar.FOUND;
                 } else {
-                    for (int j = p + cl; j < p + len - cl; j++) bytes[j] = (byte)0xff;
+                    int start = p + l;
+                    int end = start + (len - l);
+                    Arrays.fill(bytes, start, end, (byte) 0xff);
                 }
             }
-            if (cl == -1 && i < len - 1) {
-                int len2 = len - 1;
-                for (; len2 > 0; len2--) {
-                    if (preciseLength(enc, bytes, p, p + len2) != -1) break;
+            if (MBCLEN_INVALID_P(l) && i < len - 1) {
+                int len2;
+                int l2;
+                for (len2 = len-1; 0 < len2; len2--) {
+                    l2 = preciseLength(enc, bytes, p, p + len2);
+                    if (!MBCLEN_INVALID_P(l2))
+                        break;
                 }
-                for (int j = p + len2 + 1; j < p + len - (len2 + 1); j++) bytes[j] = (byte)0xff;
+                int start = p+len2+1;
+                int end = start + len-(len2+1);
+                Arrays.fill(bytes, start, end, (byte)0xff);
             }
         }
     }
 
-    private static NeighborChar succAlnumChar(Encoding enc, byte[]bytes, int p, int len, byte[]carry, int carryP) {
+    // MRI: enc_succ_alnum_char
+    private static NeighborChar succAlnumChar(Ruby runtime, Encoding enc, byte[]bytes, int p, int len, byte[]carry, int carryP) {
         byte save[] = new byte[org.jcodings.Config.ENC_CODE_TO_MBC_MAXLEN];
         int c = enc.mbcToCode(bytes, p, p + len);
 
@@ -1229,7 +1255,7 @@ public final class StringSupport {
         }
 
         System.arraycopy(bytes, p, save, 0, len);
-        NeighborChar ret = succChar(enc, bytes, p, len);
+        NeighborChar ret = succChar(runtime, enc, bytes, p, len);
         if (ret == NeighborChar.FOUND) {
             c = enc.mbcToCode(bytes, p, p + len);
             if (enc.isCodeCType(c, cType)) return NeighborChar.FOUND;
@@ -1240,7 +1266,7 @@ public final class StringSupport {
 
         while (true) {
             System.arraycopy(bytes, p, save, 0, len);
-            ret = predChar(enc, bytes, p, len);
+            ret = predChar(runtime, enc, bytes, p, len);
             if (ret == NeighborChar.FOUND) {
                 c = enc.mbcToCode(bytes, p, p + len);
                 if (!enc.isCodeCType(c, cType)) {
@@ -1262,30 +1288,58 @@ public final class StringSupport {
         }
 
         System.arraycopy(bytes, p, carry, carryP, len);
-        succChar(enc, carry, carryP, len);
+        succChar(runtime, enc, carry, carryP, len);
         return NeighborChar.WRAPPED;
     }
 
-    private static NeighborChar predChar(Encoding enc, byte[]bytes, int p, int len) {
+    private static NeighborChar predChar(Ruby runtime, Encoding enc, byte[]bytes, int p, int len) {
+        int l;
+        if (enc.minLength() > 1) {
+	        /* wchar, trivial case */
+            int r = preciseLength(enc, bytes, p, p + len), c;
+            if (!MBCLEN_CHARFOUND_P(r)) {
+                return NeighborChar.NOT_CHAR;
+            }
+            c = codePoint(runtime, enc, bytes, p, p + len);
+            if (c == 0) return NeighborChar.NOT_CHAR;
+            --c;
+            l = codeLength(runtime, enc, c);
+            if (l == 0) return NeighborChar.NOT_CHAR;
+            if (l != len) return NeighborChar.WRAPPED;
+            EncodingUtils.encMbcput(c, bytes, p, enc);
+            r = preciseLength(enc, bytes, p, p + len);
+            if (!MBCLEN_CHARFOUND_P(r)) {
+                return NeighborChar.NOT_CHAR;
+            }
+            return NeighborChar.FOUND;
+        }
         while (true) {
             int i = len - 1;
             for (; i >= 0 && bytes[p + i] == 0; i--) bytes[p + i] = (byte)0xff;
             if (i < 0) return NeighborChar.WRAPPED;
             bytes[p + i] = (byte)((bytes[p + i] & 0xff) - 1);
-            int cl = preciseLength(enc, bytes, p, p + len);
-            if (cl > 0) {
-                if (cl == len) {
+            l = preciseLength(enc, bytes, p, p + len);
+            if (MBCLEN_CHARFOUND_P(l)) {
+                l = MBCLEN_CHARFOUND_LEN(l);
+                if (l == len) {
                     return NeighborChar.FOUND;
                 } else {
-                    for (int j = p + cl; j < p + len - cl; j++) bytes[j] = 0;
+                    int start = p + l;
+                    int end = start + (len - l);
+                    Arrays.fill(bytes, start, end, (byte) 0x0);
                 }
             }
-            if (cl == -1 && i < len - 1) {
-                int len2 = len - 1;
-                for (; len2 > 0; len2--) {
-                    if (preciseLength(enc, bytes, p, p + len2) != -1) break;
+            if (!MBCLEN_CHARFOUND_P(l) && i < len-1) {
+                int len2;
+                int l2;
+                for (len2 = len-1; 0 < len2; len2--) {
+                    l2 = preciseLength(enc, bytes, p, p + len2);
+                    if (!MBCLEN_INVALID_P(l2))
+                        break;
                 }
-                for (int j = p + len2 + 1; j < p + len - (len2 + 1); j++) bytes[j] = 0;
+                int start = p + len2 + 1;
+                int end = start + (len - (len2 + 1));
+                Arrays.fill(bytes, start, end, (byte) 0);
             }
         }
     }

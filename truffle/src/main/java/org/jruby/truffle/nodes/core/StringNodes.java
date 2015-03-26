@@ -1900,7 +1900,7 @@ public abstract class StringNodes {
             notDesignedForCompilation();
 
             if (string.length() > 0) {
-                return getContext().makeString(string.getLogicalClass(), StringSupport.succCommon(string.getBytes()));
+                return getContext().makeString(string.getLogicalClass(), StringSupport.succCommon(getContext().getRuntime(), string.getBytes()));
             } else {
                 return getContext().makeString(string.getLogicalClass(), "");
             }
@@ -1923,7 +1923,7 @@ public abstract class StringNodes {
             notDesignedForCompilation();
 
             if (string.length() > 0) {
-                string.set(StringSupport.succCommon(string.getBytes()));
+                string.set(StringSupport.succCommon(getContext().getRuntime(), string.getBytes()));
             }
 
             return string;

@@ -3135,7 +3135,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
         Ruby runtime = context.runtime;
         final RubyString str;
         if (value.getRealSize() > 0) {
-            str = new RubyString(runtime, getMetaClass(), StringSupport.succCommon(value));
+            str = new RubyString(runtime, getMetaClass(), StringSupport.succCommon(runtime, value));
             // TODO: rescan code range ?
         } else {
             str = newEmptyString(runtime, getType(), value.getEncoding());
@@ -3147,7 +3147,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
     public IRubyObject succ_bang19() {
         modifyCheck();
         if (value.getRealSize() > 0) {
-            value = StringSupport.succCommon(value);
+            value = StringSupport.succCommon(getRuntime(), value);
             shareLevel = SHARE_LEVEL_NONE;
             // TODO: rescan code range ?
         }
