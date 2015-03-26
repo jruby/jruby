@@ -51,32 +51,7 @@ public abstract class EncodingConverterNodes {
 
         @TruffleBoundary
         @Specialization
-        public RubyNilClass initialize(RubyEncodingConverter self, RubyString source, RubyString destination, UndefinedPlaceholder options) {
-            notDesignedForCompilation();
-
-            // Adapted from RubyConverter - see attribution there
-
-            Ruby runtime = getContext().getRuntime();
-            Encoding[] encs = {null, null};
-            byte[][] encNames = {null, null};
-            int[] ecflags = {0};
-            IRubyObject[] ecopts = {runtime.getNil()};
-
-            EncodingUtils.econvArgs(runtime.getCurrentContext(), new IRubyObject[]{getContext().toJRuby(source), getContext().toJRuby(destination)}, encNames, encs, ecflags, ecopts);
-            EConv econv = EncodingUtils.econvOpenOpts(runtime.getCurrentContext(), encNames[0], encNames[1], ecflags[0], ecopts[0]);
-
-            if (econv == null) {
-                throw new UnsupportedOperationException();
-            }
-
-            self.setEConv(econv);
-
-            return nil();
-        }
-
-        @TruffleBoundary
-        @Specialization
-        public RubyNilClass initialize(RubyEncodingConverter self, RubyString source, RubyString destination, RubyHash options) {
+        public RubyNilClass initialize(RubyEncodingConverter self, Object source, Object destination, Object options) {
             notDesignedForCompilation();
 
             // Adapted from RubyConverter - see attribution there

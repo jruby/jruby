@@ -331,8 +331,10 @@ public class RubyContext extends ExecutionContext {
             return toJRuby((RubyString) object);
         } else if (object instanceof RubyArray) {
             return toJRuby((RubyArray) object);
+        } else if (object instanceof RubyEncoding) {
+            return toJRuby((RubyEncoding) object);
         } else {
-            throw getRuntime().newRuntimeError("cannot pass " + object + " to JRuby");
+            throw getRuntime().newRuntimeError("cannot pass " + object + " (" + object.getClass().getName()  + ") to JRuby");
         }
     }
 
@@ -347,6 +349,10 @@ public class RubyContext extends ExecutionContext {
         }
 
         return runtime.newArray(store);
+    }
+
+    public IRubyObject toJRuby(RubyEncoding encoding) {
+        return runtime.getEncodingService().rubyEncodingFromObject(runtime.newString(encoding.getName()));
     }
 
     public org.jruby.RubyString toJRuby(RubyString string) {
