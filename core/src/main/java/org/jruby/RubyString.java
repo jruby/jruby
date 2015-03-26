@@ -3507,7 +3507,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
 
         int end, beg = 0;
         boolean lastNull = false;
-        int start = begin;
+        int start = beg;
         while ((end = pattern.search19(context, this, start, false)) >= 0) {
             RubyMatchData match = (RubyMatchData)context.getBackRef();
             if (start == end + begin && match.begin(0) == match.end(0)) {
