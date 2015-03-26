@@ -1680,8 +1680,7 @@ public class RubyLexer {
         default:
             if (!isIdentifierChar(c)) {
                 src.unread(c);
-                yaccValue = "$";
-                return '$';
+                throw new SyntaxException(PID.CVAR_BAD_NAME, getPosition(), src.getCurrentLine(), "`$" + ((char) c) + "' is not allowed as a global variable name");
             }
         
             // $blah
