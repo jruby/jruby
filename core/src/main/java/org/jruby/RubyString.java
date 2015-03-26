@@ -4799,10 +4799,6 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
     @JRubyMethod(name = "squeeze!")
     public IRubyObject squeeze_bang19(ThreadContext context, IRubyObject arg) {
         Ruby runtime = context.runtime;
-        if (value.getRealSize() == 0) {
-            modifyCheck();
-            return runtime.getNil();
-        }
 
         RubyString otherStr = arg.convertToString();
         final boolean squeeze[] = new boolean[StringSupport.TRANS_SIZE + 1];
