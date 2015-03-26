@@ -1600,7 +1600,12 @@ public abstract class ArrayNodes {
     @ImportGuards(ArrayGuards.class)
     public abstract static class InitializeNode extends YieldingCoreMethodNode {
 
+        @Child private ToIntNode toIntNode;
+        @Child private CallDispatchHeadNode toAryNode;
+        @Child private KernelNodes.RespondToNode respondToToAryNode;
         @Child private ArrayBuilderNode arrayBuilder;
+
+        private final BranchProfile breakProfile = BranchProfile.create();
 
         public InitializeNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -1610,11 +1615,52 @@ public abstract class ArrayNodes {
         public InitializeNode(InitializeNode prev) {
             super(prev);
             arrayBuilder = prev.arrayBuilder;
+            toIntNode = prev.toIntNode;
+            respondToToAryNode = prev.respondToToAryNode;
         }
+
+        @Specialization(guards = {"!isInteger(arguments[1])", "!isLong(arguments[1])", "!isUndefinedPlaceholder(arguments[1])", "!isRubyArray(arguments[1])"})
+        public RubyArray initialize(VirtualFrame frame, RubyArray array, Object object, UndefinedPlaceholder defaultValue, UndefinedPlaceholder block) {
+
+            RubyArray copy = null;
+            if (respondToToAryNode == null) {
+                CompilerDirectives.transferToInterpreter();
+                respondToToAryNode = insert(KernelNodesFactory.RespondToNodeFactory.create(getContext(), getSourceSection(), new RubyNode[]{null, null, null}));
+            }
+            if (respondToToAryNode.doesRespondTo(frame, object, getContext().makeString("to_ary"), false)) {
+                if (toAryNode == null) {
+                    CompilerDirectives.transferToInterpreter();
+                    toAryNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext(), false));
+                }
+                Object toAryResult = toAryNode.call(frame, object, "to_ary", null);
+                if (toAryResult instanceof RubyArray) {
+                    copy = (RubyArray) toAryResult;
+                }
+
+            }
+
+            if (copy != null) {
+                return initialize(array, copy, UndefinedPlaceholder.INSTANCE, UndefinedPlaceholder.INSTANCE);
+            } else {
+                if (toIntNode == null) {
+                    CompilerDirectives.transferToInterpreter();
+                    toIntNode = insert(ToIntNodeFactory.create(getContext(), getSourceSection(), null));
+                }
+                int size = toIntNode.executeIntegerFixnum(frame, object);
+                return initialize(array, size, UndefinedPlaceholder.INSTANCE, UndefinedPlaceholder.INSTANCE);
+            }
+
+        }
+
 
         @Specialization
         public RubyArray initialize(RubyArray array, UndefinedPlaceholder size, UndefinedPlaceholder defaultValue, UndefinedPlaceholder block) {
             return initialize(array, 0, nil(), block);
+        }
+
+        @Specialization
+        public RubyArray initialize(RubyArray array, UndefinedPlaceholder size, UndefinedPlaceholder defaultValue, RubyProc block) {
+            return initialize(array, 0, nil(), UndefinedPlaceholder.INSTANCE);
         }
 
         @Specialization
@@ -1625,13 +1671,17 @@ public abstract class ArrayNodes {
         @Specialization
         public RubyArray initialize(RubyArray array, long size, UndefinedPlaceholder defaultValue, UndefinedPlaceholder block) {
             if (size > Integer.MAX_VALUE) {
-                throw new IllegalStateException();
+                throw new RaiseException(getContext().getCoreLibrary().argumentError("array size too big", this));
             }
             return initialize(array, (int) size, nil(), block);
         }
 
         @Specialization
         public RubyArray initialize(RubyArray array, int size, int defaultValue, UndefinedPlaceholder block) {
+            if (size < 0) {
+                CompilerDirectives.transferToInterpreter();
+                throw new RaiseException(getContext().getCoreLibrary().argumentError("negative array size", this));
+            }
             final int[] store = new int[size];
             Arrays.fill(store, defaultValue);
             array.setStore(store, size);
@@ -1640,6 +1690,10 @@ public abstract class ArrayNodes {
 
         @Specialization
         public RubyArray initialize(RubyArray array, int size, long defaultValue, UndefinedPlaceholder block) {
+            if (size < 0) {
+                CompilerDirectives.transferToInterpreter();
+                throw new RaiseException(getContext().getCoreLibrary().argumentError("negative array size", this));
+            }
             final long[] store = new long[size];
             Arrays.fill(store, defaultValue);
             array.setStore(store, size);
@@ -1648,6 +1702,10 @@ public abstract class ArrayNodes {
 
         @Specialization
         public RubyArray initialize(RubyArray array, int size, double defaultValue, UndefinedPlaceholder block) {
+            if (size < 0) {
+                CompilerDirectives.transferToInterpreter();
+                throw new RaiseException(getContext().getCoreLibrary().argumentError("negative array size", this));
+            }
             final double[] store = new double[size];
             Arrays.fill(store, defaultValue);
             array.setStore(store, size);
@@ -1656,15 +1714,38 @@ public abstract class ArrayNodes {
 
         @Specialization(guards = "!isUndefinedPlaceholder(arguments[2])")
         public RubyArray initialize(RubyArray array, int size, Object defaultValue, UndefinedPlaceholder block) {
+            if (size < 0) {
+                CompilerDirectives.transferToInterpreter();
+                throw new RaiseException(getContext().getCoreLibrary().argumentError("negative array size", this));
+            }
             final Object[] store = new Object[size];
             Arrays.fill(store, defaultValue);
             array.setStore(store, size);
             return array;
         }
 
+        @Specialization(guards = {"!isInteger(arguments[1])", "!isUndefinedPlaceholder(arguments[2])"})
+        public RubyArray initialize(VirtualFrame frame, RubyArray array, Object sizeObject, Object defaultValue, UndefinedPlaceholder block) {
+            if (toIntNode == null) {
+                CompilerDirectives.transferToInterpreter();
+                toIntNode = insert(ToIntNodeFactory.create(getContext(), getSourceSection(), null));
+            }
+            int size = toIntNode.executeIntegerFixnum(frame, sizeObject);
+            return initialize(array, size, defaultValue, UndefinedPlaceholder.INSTANCE);
+        }
+
+        @Specialization(guards = "!isUndefinedPlaceholder(arguments[2])")
+        public Object initialize(VirtualFrame frame, RubyArray array, int size, Object defaultValue, RubyProc block) {
+            return initialize(frame, array, size, UndefinedPlaceholder.INSTANCE, block);
+        }
+
         @Specialization
-        public RubyArray initialize(VirtualFrame frame, RubyArray array, int size, UndefinedPlaceholder defaultValue, RubyProc block) {
-            Object store = arrayBuilder.start(size);
+        public Object initialize(VirtualFrame frame, RubyArray array, int size, UndefinedPlaceholder defaultValue, RubyProc block) {
+            if (size < 0) {
+                CompilerDirectives.transferToInterpreter();
+                throw new RaiseException(getContext().getCoreLibrary().argumentError("negative array size", this));
+            }
+            Object store = arrayBuilder.start();
 
             int count = 0;
             try {
@@ -1673,7 +1754,14 @@ public abstract class ArrayNodes {
                         count++;
                     }
 
-                    store = arrayBuilder.append(store, n, yield(frame, block, n));
+                    try {
+                        store = arrayBuilder.append(store, n, yield(frame, block, n));
+                    } catch (BreakException e) {
+                        breakProfile.enter();
+                        array.setStore(arrayBuilder.finish(store, n), n);
+                        return e.getResult();
+                    }
+
                 }
             } finally {
                 if (CompilerDirectives.inInterpreter()) {
@@ -1691,6 +1779,14 @@ public abstract class ArrayNodes {
             array.setStore(copy.slowToArray(), copy.getSize());
             return array;
         }
+
+        @Specialization
+        public RubyArray initialize(RubyArray array, RubyArray copy, UndefinedPlaceholder defaultValue, RubyProc block) {
+            notDesignedForCompilation();
+            array.setStore(copy.slowToArray(), copy.getSize());
+            return array;
+        }
+
 
     }
 
