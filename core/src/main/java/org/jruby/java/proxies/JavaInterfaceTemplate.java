@@ -2,6 +2,7 @@ package org.jruby.java.proxies;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
+import java.util.Arrays;
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubyClass;
@@ -14,7 +15,6 @@ import org.jruby.internal.runtime.methods.JavaMethod.JavaMethodN;
 import org.jruby.internal.runtime.methods.JavaMethod.JavaMethodOne;
 import org.jruby.internal.runtime.methods.JavaMethod.JavaMethodOneBlock;
 import org.jruby.internal.runtime.methods.JavaMethod.JavaMethodZero;
-import org.jruby.internal.runtime.methods.UndefinedMethod;
 import org.jruby.javasupport.Java;
 import org.jruby.javasupport.JavaClass;
 import org.jruby.javasupport.JavaObject;
@@ -28,15 +28,16 @@ import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 
 public class JavaInterfaceTemplate {
-    public static RubyModule createJavaInterfaceTemplateModule(ThreadContext context) {
-        Ruby runtime = context.runtime;
-        RubyModule javaInterfaceTemplate = runtime.defineModule("JavaInterfaceTemplate");
 
-        RubyClass singleton = javaInterfaceTemplate.getSingletonClass();
+    public static RubyModule createJavaInterfaceTemplateModule(ThreadContext context) {
+        final Ruby runtime = context.runtime;
+        RubyModule JavaInterfaceTemplate = runtime.defineModule("JavaInterfaceTemplate");
+
+        RubyClass singleton = JavaInterfaceTemplate.getSingletonClass();
         singleton.addReadAttribute(context, "java_class");
         singleton.defineAnnotatedMethods(JavaInterfaceTemplate.class);
 
-        return javaInterfaceTemplate;
+        return JavaInterfaceTemplate;
     }
 
     // not intended to be called directly by users (private)
@@ -45,67 +46,75 @@ public class JavaInterfaceTemplate {
     // check for reserved Ruby names, conflicting methods, etc.
     @JRubyMethod(visibility = Visibility.PRIVATE)
     public static IRubyObject implement(ThreadContext context, IRubyObject self, IRubyObject clazz) {
-        Ruby runtime = context.runtime;
-
-        if (!(clazz instanceof RubyModule)) {
+        if ( ! (clazz instanceof RubyModule) ) {
+            final Ruby runtime = context.runtime;
             throw runtime.newTypeError(clazz, runtime.getModule());
         }
 
-        RubyModule targetModule = (RubyModule)clazz;
-        JavaClass javaClass = (JavaClass)self.getInstanceVariables().getInstanceVariable("@java_class");
-        
-        Method[] javaInstanceMethods = javaClass.javaClass().getMethods();
-        DynamicMethod dummyMethod = new org.jruby.internal.runtime.methods.JavaMethod(targetModule, Visibility.PUBLIC) {
-            @Override
-            public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args, Block block) {
-                // dummy bodies for default impls
-                return context.runtime.getNil();
-            }
-        };
-        
+        final RubyModule targetModule = (RubyModule) clazz;
+        final JavaClass javaClass = getJavaClassForInterface(self);
+
+        final Method[] javaInstanceMethods = javaClass.javaClass().getMethods();
+        final DynamicMethod dummyMethodImpl = new DummyMethodImpl(targetModule);
+
         for (int i = 0; i < javaInstanceMethods.length; i++) {
-            Method method = javaInstanceMethods[i];
-            String name = method.getName();
-            if (targetModule.searchMethod(name) != UndefinedMethod.INSTANCE) continue;
-            
-            targetModule.addMethod(name, dummyMethod);
+            final Method javaMethod = javaInstanceMethods[i];
+            final String name = javaMethod.getName();
+            if ( targetModule.searchMethod(name).isUndefined() ) {
+                targetModule.addMethod(name, dummyMethodImpl); // only those not-defined
+            }
         }
-        
-        return runtime.getNil();
+
+        return context.nil;
     }
 
-    // framed for invokeSuper
-    @JRubyMethod(frame = true)
+    private static class DummyMethodImpl extends org.jruby.internal.runtime.methods.JavaMethod {
+
+        DummyMethodImpl(RubyModule targetModule) {
+            super(targetModule, Visibility.PUBLIC);
+        }
+
+        @Override
+        public final IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args, Block block) {
+            return context.nil; // dummy bodies for default impls
+        }
+
+    }
+
+    @JRubyMethod(frame = true) // framed for invokeSuper
     public static IRubyObject append_features(ThreadContext context, IRubyObject self, IRubyObject clazz, Block block) {
-        if (clazz instanceof RubyClass) {
-            appendFeaturesToClass(context, self, (RubyClass)clazz);
-        } else if (clazz instanceof RubyModule) {
-            appendFeaturesToModule(context, self, (RubyModule)clazz);
-        } else {
+        if ( clazz instanceof RubyClass ) {
+            appendFeaturesToClass(context, self, (RubyClass) clazz);
+        }
+        else if ( clazz instanceof RubyModule ) {
+            appendFeaturesToModule(context, self, (RubyModule) clazz);
+        }
+        else {
             throw context.runtime.newTypeError("received " + clazz + ", expected Class/Module");
         }
 
         return Helpers.invokeSuper(context, self, clazz, block);
     }
 
-    private static void appendFeaturesToClass(ThreadContext context, IRubyObject self, final RubyClass clazz) {
-        Ruby runtime = context.runtime;
+    private static void appendFeaturesToClass(ThreadContext context, final IRubyObject self, final RubyClass clazz) {
+        final Ruby runtime = context.runtime;
         checkAlreadyReified(clazz, runtime);
 
-        IRubyObject javaClassObj = Helpers.getInstanceVariable(self, runtime, "@java_class");
-        IRubyObject javaInterfaces;
-        if (!clazz.hasInstanceVariable("@java_interfaces")) {
-            javaInterfaces = RubyArray.newArray(runtime, javaClassObj);
-            Helpers.setInstanceVariable(javaInterfaces, clazz, "@java_interfaces");
+        final JavaClass javaClass = getJavaClassForInterface(self);
+        RubyArray javaInterfaces;
+        if ( ! clazz.hasInstanceVariable("@java_interfaces") ) {
+            javaInterfaces = RubyArray.newArray(runtime, javaClass);
+            clazz.setInstanceVariable("@java_interfaces", javaInterfaces);
 
             initInterfaceImplMethods(context, clazz);
-        } else {
-            javaInterfaces = Helpers.getInstanceVariable(clazz, runtime, "@java_interfaces");
+        }
+        else {
+            javaInterfaces = (RubyArray) clazz.getInstanceVariable("@java_interfaces");
             // we've already done the above priming logic, just add another interface
             // to the list of intentions unless we're past the point of no return or
             // already intend to implement the given interface
-            if (!(javaInterfaces.isFrozen() || ((RubyArray)javaInterfaces).includes(context, javaClassObj))) {
-                ((RubyArray)javaInterfaces).append(javaClassObj);
+            if ( ! ( javaInterfaces.isFrozen() || javaInterfaces.includes(context, javaClass) ) ) {
+                javaInterfaces.append(javaClass);
             }
         }
     }
@@ -114,19 +123,19 @@ public class JavaInterfaceTemplate {
         // not allowed for original (non-generated) Java classes
         // note: not allowing for any previously created class right now;
         // this restriction might be loosened later for generated classes
-        if ((Java.NEW_STYLE_EXTENSION && clazz.getReifiedClass() != null)
+        if ( ( Java.NEW_STYLE_EXTENSION && clazz.getReifiedClass() != null )
                 ||
-                (clazz.hasInstanceVariable("@java_class")
+                ( clazz.hasInstanceVariable("@java_class")
                     && clazz.getInstanceVariable("@java_class").isTrue()
-                    && !clazz.getSingletonClass().isMethodBound("java_proxy_class", false))
+                    && !clazz.getSingletonClass().isMethodBound("java_proxy_class", false) )
                 ||
-                (clazz.hasInstanceVariable("@java_proxy_class")
-                    && clazz.getInstanceVariable("@java_proxy_class").isTrue())) {
+                ( clazz.hasInstanceVariable("@java_proxy_class")
+                    && clazz.getInstanceVariable("@java_proxy_class").isTrue() ) ) {
             throw runtime.newArgumentError("can not add Java interface to existing Java class");
         }
     }
 
-    private static void initInterfaceImplMethods(ThreadContext context, RubyClass clazz) {
+    private static void initInterfaceImplMethods(ThreadContext context, final RubyClass clazz) {
         // setup new, etc unless this is a ConcreteJavaProxy subclass
         // For JRUBY-4571, check both these, since JavaProxy extension stuff adds the former and this code adds the latter
         if (!(clazz.isMethodBound("__jcreate!", false) || clazz.isMethodBound("__jcreate_meta!", false))) {
@@ -138,9 +147,8 @@ public class JavaInterfaceTemplate {
             // list of interfaces we implement
             singleton.addReadAttribute(context, "java_interfaces");
 
-            if (
-                    (!Java.NEW_STYLE_EXTENSION && clazz.getSuperClass().getRealClass().hasInstanceVariable("@java_class"))
-                    || RubyInstanceConfig.INTERFACES_USE_PROXY) {
+            if ( ( ! Java.NEW_STYLE_EXTENSION && clazz.getSuperClass().getRealClass().hasInstanceVariable("@java_class") )
+                || RubyInstanceConfig.INTERFACES_USE_PROXY ) {
                 // superclass is a Java class...use old style impl for now
 
                 // The replacement "new" allocates and inits the Ruby object as before, but
@@ -156,13 +164,7 @@ public class JavaInterfaceTemplate {
 
                 // jcreate instantiates the proxy object which implements all interfaces
                 // and which is wrapped and implemented by this object
-                clazz.addMethod("__jcreate!", new JavaMethodN(clazz, Visibility.PRIVATE) {
-
-                    @Override
-                    public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args) {
-                        return jcreateProxy(self);
-                    }
-                });
+                clazz.addMethod("__jcreate!", new InterfaceProxyFactory(clazz));
             } else {
                 // The new "new" actually generates a real Java class to use for the Ruby class's
                 // backing store, instantiates that, and then calls initialize on it.
@@ -174,28 +176,10 @@ public class JavaInterfaceTemplate {
 
             // Used by our duck-typification of Proc into interface types, to allow
             // coercing a simple proc into an interface parameter.
-            clazz.addMethod("__jcreate_meta!", new JavaMethodN(clazz, Visibility.PRIVATE) {
-
-                @Override
-                public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args) {
-                    IRubyObject result = jcreateProxy(self);
-                    return result;
-                }
-            });
+            clazz.addMethod("__jcreate_meta!", new InterfaceProxyFactory(clazz));
 
             // If we hold a Java object, we need a java_class accessor
-            clazz.addMethod("java_class", new JavaMethodZero(clazz, Visibility.PUBLIC) {
-
-                @Override
-                public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name) {
-                    Object dgs = self.dataGetStruct();
-                    if (dgs != null) {
-                        return ((JavaObject)dgs).java_class();
-                    } else {
-                        return JavaClass.get(context.runtime, self.getClass());
-                    }
-                }
-            });
+            clazz.addMethod("java_class", new JavaClassAccessor(clazz));
 
             // Because we implement Java interfaces now, we need a new === that's
             // aware of those additional "virtual" supertypes
@@ -211,7 +195,7 @@ public class JavaInterfaceTemplate {
                             assert interfaces instanceof RubyArray : "interface list was not an array";
 
                             return context.runtime.newBoolean(((RubyArray) interfaces).op_diff(
-                                    ((JavaClass) ((JavaObject) arg.dataGetStruct()).java_class()).interfaces()).equals(RubyArray.newArray(context.runtime)));
+                                    ((JavaObject) arg.dataGetStruct()).java_class().interfaces()).equals(RubyArray.newArray(context.runtime)));
                         } else {
                             return Helpers.invoke(context, self, "old_eqq", arg);
                         }
@@ -221,8 +205,8 @@ public class JavaInterfaceTemplate {
         }
 
         // Now we add an "implement" and "implement_all" methods to the class
-        if (!clazz.isMethodBound("implement", false)) {
-            RubyClass singleton = clazz.getSingletonClass();
+        if ( ! clazz.isMethodBound("implement", false) ) {
+            final RubyClass singleton = clazz.getSingletonClass();
 
             // implement is called to force this class to create stubs for all
             // methods in the given interface, so they'll show up in the list
@@ -230,12 +214,12 @@ public class JavaInterfaceTemplate {
             singleton.addMethod("implement", new JavaMethodOne(clazz, Visibility.PRIVATE) {
 
                 @Override
-                public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg) {
-                    IRubyObject javaInterfaces = self.getInstanceVariables().getInstanceVariable("@java_interfaces");
-                    if (javaInterfaces != null && ((RubyArray) javaInterfaces).includes(context, arg)) {
-                        return Helpers.invoke(context, arg, "implement", self);
+                public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject iface) {
+                    final RubyArray ifaces = getJavaInterfaces(self);
+                    if ( ifaces != null && ifaces.includes(context, iface) ) {
+                        return Helpers.invoke(context, iface, "implement", self);
                     }
-                    return context.runtime.getNil();
+                    return context.nil;
                 }
             });
 
@@ -245,17 +229,49 @@ public class JavaInterfaceTemplate {
 
                 @Override
                 public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg) {
-                    RubyArray javaInterfaces = (RubyArray) self.getInstanceVariables().getInstanceVariable("@java_interfaces");
-                    for (int i = 0; i < javaInterfaces.size(); i++) {
-                        Helpers.invoke(context, JavaUtilities.get_interface_module(self, javaInterfaces.eltInternal(i)), "implement", self);
+                    final RubyArray ifaces = getJavaInterfaces(self);
+                    if ( ifaces == null ) return context.nil;
+                    for ( int i = 0; i < ifaces.size(); i++ ) {
+                        final RubyModule iface = Java.get_interface_module(context.runtime, ifaces.eltInternal(i));
+                        Helpers.invoke(context, iface, "implement", self);
                     }
-                    return javaInterfaces;
+                    return ifaces;
                 }
             });
         }
     }
 
-    public static void addRealImplClassNew(RubyClass clazz) {
+    private static class InterfaceProxyFactory extends JavaMethodN { // __jcreate! and __jcreate_meta!
+
+        InterfaceProxyFactory(final RubyClass clazz) { super(clazz, Visibility.PRIVATE); }
+
+        @Override
+        public final IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args) {
+            return newInterfaceProxy(self);
+        }
+
+    }
+
+    private static class JavaClassAccessor extends JavaMethodZero {
+
+        JavaClassAccessor(final RubyClass klass) { super(klass, Visibility.PUBLIC); }
+
+        @Override
+        public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name) {
+            final Object wrapped = self.dataGetStruct();
+            final Class<?> javaClass;
+            if ( wrapped != null ) {
+                javaClass = ((JavaObject) wrapped).getJavaClass();
+            }
+            else {
+                javaClass = self.getClass(); // NOTE what is this for?
+            }
+            return JavaClass.get(context.runtime, javaClass);
+        }
+
+    }
+
+    public static void addRealImplClassNew(final RubyClass clazz) {
         clazz.setAllocator(new ObjectAllocator() {
             private Constructor proxyConstructor;
             public IRubyObject allocate(Ruby runtime, RubyClass klazz) {
@@ -274,67 +290,69 @@ public class JavaInterfaceTemplate {
         });
     }
 
-    private static IRubyObject jcreateProxy(IRubyObject self) {
-        RubyClass current = self.getMetaClass();
-
+    private static IRubyObject newInterfaceProxy(final IRubyObject self) {
+        final RubyClass current = self.getMetaClass();
         // construct the new interface impl and set it into the object
         IRubyObject newObject = Java.newInterfaceImpl(self, Java.getInterfacesFromRubyClass(current));
-        return JavaUtilities.set_java_object(self, self, newObject);
+        JavaUtilities.set_java_object(self, self, newObject);
+        return newObject;
     }
 
-    private static void appendFeaturesToModule(ThreadContext context, IRubyObject self, RubyModule module) {
+    private static void appendFeaturesToModule(ThreadContext context, final IRubyObject self, final RubyModule module) {
         // assuming the user wants a collection of interfaces that can be
         // included together. make it so.
-
-        Ruby runtime = context.runtime;
+        final Ruby runtime = context.runtime;
 
         // not allowed for existing Java interface modules
         if (module.getInstanceVariables().hasInstanceVariable("@java_class") &&
-                module.getInstanceVariables().getInstanceVariable("@java_class").isTrue()) {
+            module.getInstanceVariables().getInstanceVariable("@java_class").isTrue()) {
             throw runtime.newTypeError("can not add Java interface to existing Java interface");
         }
-        
+
         // To turn a module into an "interface collection" we add a class instance
         // variable to hold the list of interfaces, and modify append_features
         // for this module to call append_features on each of those interfaces as
         // well
         synchronized (module) {
-            if (!module.getInstanceVariables().hasInstanceVariable("@java_interface_mods")) {
-                RubyArray javaInterfaceMods = RubyArray.newArray(runtime, self);
-                module.getInstanceVariables().setInstanceVariable("@java_interface_mods", javaInterfaceMods);
-                RubyClass singleton = module.getSingletonClass();
-
-                singleton.addMethod("append_features", new JavaMethodOneBlock(singleton, Visibility.PUBLIC) {
-                    @Override
-                    public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg, Block block) {
-                        if (!(arg instanceof RubyModule)) {
-                            throw context.runtime.newTypeError("append_features called with non-module");
-                        }
-                        RubyModule target = (RubyModule)arg;
-                        RubyArray javaInterfaceMods = (RubyArray)self.getInstanceVariables().getInstanceVariable("@java_interface_mods");
-
-                        target.include(javaInterfaceMods.toJavaArray());
-
-                        return Helpers.invokeAs(context, clazz.getSuperClass(), self, name, arg, block);
-                    }
-                });
-            } else {
+            if ( initInterfaceModules(self, module) ) { // true - initialized
+                final RubyClass singleton = module.getSingletonClass();
+                singleton.addMethod("append_features", new AppendFeatures(singleton));
+            }
+            else {
                 // already set up append_features, just add the interface if we haven't already
-                RubyArray javaInterfaceMods =(RubyArray)module.getInstanceVariables().getInstanceVariable("@java_interface_mods");
-                if (!javaInterfaceMods.includes(context, self)) {
-                    javaInterfaceMods.append(self);
+                final RubyArray interfaceModules = getInterfaceModules(module);
+                if ( ! interfaceModules.includes(context, self) ) {
+                    interfaceModules.append(self);
                 }
             }
         }
     }
 
+    private static class AppendFeatures extends JavaMethodOneBlock {
+
+        AppendFeatures(RubyModule singletonClass) { super(singletonClass, Visibility.PUBLIC); }
+
+        @Override
+        public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg, Block block) {
+            if ( ! ( arg instanceof RubyModule ) ) {
+                throw context.runtime.newTypeError("append_features called with non-module");
+            }
+
+            final RubyModule target = (RubyModule) arg;
+            target.include( getInterfaceModules(self).toJavaArray() );
+
+            return Helpers.invokeAs(context, clazz.getSuperClass(), self, name, arg, block);
+        }
+
+    }
+
     @JRubyMethod
     public static IRubyObject extended(ThreadContext context, IRubyObject self, IRubyObject object) {
-        if (!(self instanceof RubyModule)) {
+        if ( ! (self instanceof RubyModule) ) {
             throw context.runtime.newTypeError(self, context.runtime.getModule());
         }
         RubyClass singleton = object.getSingletonClass();
-        singleton.include(new IRubyObject[] {self});
+        singleton.include(new IRubyObject[] { self });
         return singleton;
     }
 
@@ -343,47 +361,113 @@ public class JavaInterfaceTemplate {
         return JavaProxy.op_aref(context, self, args);
     }
 
-    @JRubyMethod(rest = true)
+    @JRubyMethod(name = "impl", rest = true)
     public static IRubyObject impl(ThreadContext context, IRubyObject self, IRubyObject[] args, final Block implBlock) {
-        Ruby runtime = context.runtime;
+        final Ruby runtime = context.runtime;
 
-        if (!implBlock.isGiven()) throw runtime.newArgumentError("block required to call #impl on a Java interface");
+        if ( ! implBlock.isGiven() ) {
+            throw runtime.newArgumentError("block required to call #impl on a Java interface");
+        }
 
-        final RubyArray methodNames = (args.length > 0) ? runtime.newArray(args) : null;
+        final IRubyObject[] methodNames;
+        if ( args.length == 0 ) methodNames = null;
+        else {
+            methodNames = args.clone();
+            Arrays.sort(methodNames); // binarySearch needs a sorted array
+        }
 
         RubyClass implClass = RubyClass.newClass(runtime, runtime.getObject());
-        implClass.include(new IRubyObject[] {self});
+        implClass.include(new IRubyObject[] { self });
 
-        IRubyObject implObject = implClass.callMethod(context, "new");
+        final IRubyObject implObject = implClass.callMethod(context, "new");
 
-        implClass.addMethod("method_missing",
-                new org.jruby.internal.runtime.methods.JavaMethod(implClass, Visibility.PUBLIC) {
-                    @Override
-                    public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args, Block block) {
-                        Arity.checkArgumentCount(context.runtime, name, args.length, 1, -1);
-
-                        if (methodNames == null || methodNames.include_p(context, args[0]).isTrue()) {
-                            return implBlock.call(context, args);
-                        } else {
-                            return clazz.getSuperClass().callMethod(context, "method_missing", args, block);
-                        }
-                    }
-                });
+        implClass.addMethod("method_missing", new BlockInterfaceImpl(implClass, implBlock, methodNames));
 
         return implObject;
     }
 
-    @JRubyMethod(name = "new", rest = true)
-    public static IRubyObject rbNew(ThreadContext context, IRubyObject self, IRubyObject[] args, Block block) {
-        Ruby runtime = context.runtime;
+    private static class BlockInterfaceImpl extends org.jruby.internal.runtime.methods.JavaMethod {
 
-        RubyClass implClass = (RubyClass)self.getInstanceVariables().getInstanceVariable("@__implementation");
+        private final IRubyObject[] methodNames; // RubySymbol[] (or RubyString[] on 1.8)
+        private final Block implBlock;
+
+        BlockInterfaceImpl(final RubyClass implClass, final Block implBlock, final IRubyObject[] methodNames) {
+            super(implClass, Visibility.PUBLIC);
+            this.implBlock = implBlock; this.methodNames = methodNames;
+        }
+
+        @Override // method_missing impl
+        public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args, Block block) {
+            Arity.checkArgumentCount(context.runtime, name, args.length, 1, -1);
+
+            return callImpl(context, clazz, block, args);
+        }
+
+        private IRubyObject callImpl(ThreadContext context, RubyModule clazz, Block block, IRubyObject... args) {
+            if ( methodNames == null ) return implBlock.call(context, args); // "hot" path
+
+            if ( methodNames.length == 1 ) {
+                if ( methodNames[0].equals(args[0]) ) return implBlock.call(context, args);
+            }
+            else if ( Arrays.binarySearch(methodNames, args[0]) >= 0 ) {
+                return implBlock.call(context, args);
+            }
+
+            return clazz.getSuperClass().callMethod(context, "method_missing", args, block);
+        }
+
+        @Override
+        public final IRubyObject call(ThreadContext context, IRubyObject self, RubyModule klazz, String name, IRubyObject arg0, Block block) {
+            return callImpl(context, klazz, block, arg0); // avoids checkArgumentCount
+        }
+
+        @Override
+        public final IRubyObject call(ThreadContext context, IRubyObject self, RubyModule klazz, String name, IRubyObject arg0, IRubyObject arg1, Block block) {
+            return callImpl(context, klazz, block, arg0, arg1); // avoids checkArgumentCount
+        }
+
+        @Override
+        public final IRubyObject call(ThreadContext context, IRubyObject self, RubyModule klazz, String name, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Block block) {
+            return callImpl(context, klazz, block, arg0, arg1, arg2); // avoids checkArgumentCount
+        }
+
+        //public DynamicMethod dup() { return this; }
+
+    }
+
+    @JRubyMethod(name = "new", rest = true)
+    public static IRubyObject new_impl(ThreadContext context, IRubyObject self, IRubyObject[] args, Block block) {
+        final Ruby runtime = context.runtime;
+
+        RubyClass implClass = (RubyClass) self.getInstanceVariables().getInstanceVariable("@__implementation");
         if (implClass == null) {
-            implClass = RubyClass.newClass(runtime, (RubyClass)runtime.getClass("InterfaceJavaProxy"));
-            implClass.include(new IRubyObject[] {self});
+            implClass = RubyClass.newClass(runtime, runtime.getClass("InterfaceJavaProxy"));
+            implClass.include(new IRubyObject[] { self });
             Helpers.setInstanceVariable(implClass, self, "@__implementation");
         }
 
         return Helpers.invoke(context, implClass, "new", args, block);
     }
+
+    private static JavaClass getJavaClassForInterface(final IRubyObject module) {
+        return (JavaClass) module.getInstanceVariables().getInstanceVariable("@java_class");
+    }
+
+    private static RubyArray getJavaInterfaces(final IRubyObject module) {
+        return (RubyArray) module.getInstanceVariables().getInstanceVariable("@java_interfaces");
+    }
+
+    private static RubyArray getInterfaceModules(final IRubyObject module) {
+        return (RubyArray) module.getInstanceVariables().getInstanceVariable("@java_interface_mods");
+    }
+
+    private static boolean initInterfaceModules(final IRubyObject self, final IRubyObject module) {
+        if ( ! module.getInstanceVariables().hasInstanceVariable("@java_interface_mods") ) {
+            final RubyArray interfaceMods = RubyArray.newArray(self.getRuntime(), self);
+            module.getInstanceVariables().setInstanceVariable("@java_interface_mods", interfaceMods);
+            return true;
+        }
+        return false;
+    }
+
 }

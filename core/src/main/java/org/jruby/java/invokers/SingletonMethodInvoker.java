@@ -11,17 +11,18 @@ import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
-public class SingletonMethodInvoker extends MethodInvoker {
-    private Object singleton;
+public final class SingletonMethodInvoker extends MethodInvoker {
+
+    private final Object singleton;
 
     public SingletonMethodInvoker(Object singleton, RubyClass host, List<Method> methods) {
         super(host, methods);
-	this.singleton = singleton;
+        this.singleton = singleton;
     }
 
     public SingletonMethodInvoker(Object singleton, RubyClass host, Method method) {
         super(host, method);
-	this.singleton = singleton;
+        this.singleton = singleton;
     }
 
     @Override
@@ -30,12 +31,12 @@ public class SingletonMethodInvoker extends MethodInvoker {
         final Object[] convertedArgs;
         JavaMethod method = (JavaMethod)findCallable(self, name, args, len);
         if (method.isVarArgs()) {
-            len = method.getParameterTypes().length - 1;
+            len = method.getArity() - 1;
             convertedArgs = new Object[len + 1];
             for (int i = 0; i < len && i < args.length; i++) {
                 convertedArgs[i] = convertArg(args[i], method, i);
             }
-            convertedArgs[len] = convertVarargs(args, method);
+            convertedArgs[len] = convertVarArgs(args, method);
         } else {
             convertedArgs = new Object[len];
             for (int i = 0; i < len && i < args.length; i++) {

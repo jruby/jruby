@@ -13,7 +13,7 @@ import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
-public class ConstructorInvoker extends RubyToJavaInvoker {
+public final class ConstructorInvoker extends RubyToJavaInvoker {
 
     public ConstructorInvoker(RubyModule host, List<Constructor> ctors) {
         super(host, ctors.toArray(new Constructor[ctors.size()]));
@@ -59,12 +59,12 @@ public class ConstructorInvoker extends RubyToJavaInvoker {
         final Object[] convertedArgs;
         JavaConstructor constructor = (JavaConstructor) findCallable(self, name, args, len);
         if (constructor.isVarArgs()) {
-            len = constructor.getParameterTypes().length - 1;
+            len = constructor.getArity() - 1;
             convertedArgs = new Object[len + 1];
             for (int i = 0; i < len && i < args.length; i++) {
                 convertedArgs[i] = convertArg(args[i], constructor, i);
             }
-            convertedArgs[len] = convertVarargs(args, constructor);
+            convertedArgs[len] = convertVarArgs(args, constructor);
         } else {
             convertedArgs = new Object[len];
             for (int i = 0; i < len && i < args.length; i++) {

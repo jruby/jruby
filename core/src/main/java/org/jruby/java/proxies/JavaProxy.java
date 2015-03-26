@@ -122,6 +122,10 @@ public class JavaProxy extends RubyObject {
         return getObject().getClass();
     }
 
+    static JavaClass java_class(final ThreadContext context, final RubyModule module) {
+        return (JavaClass) Helpers.invoke(context, module, "java_class");
+    }
+
     @JRubyMethod(meta = true, frame = true) // framed for invokeSuper
     public static IRubyObject inherited(ThreadContext context, IRubyObject recv, IRubyObject subclass) {
         IRubyObject subJavaClass = Helpers.invoke(context, subclass, "java_class");
@@ -139,23 +143,19 @@ public class JavaProxy extends RubyObject {
 
     @JRubyMethod(name = "[]", meta = true, rest = true)
     public static IRubyObject op_aref(ThreadContext context, IRubyObject self, IRubyObject[] args) {
-        IRubyObject javaClass = Helpers.invoke(context, self, "java_class");
+        final JavaClass javaClass = java_class(context, (RubyModule) self);
         if ( args.length > 0 ) { // construct new array proxy (ArrayJavaProxy)
-            ArrayJavaProxyCreator arrayProxyCreator = new ArrayJavaProxyCreator(context.runtime);
-            arrayProxyCreator.setup(context, javaClass, args);
-            return arrayProxyCreator;
+            return new ArrayJavaProxyCreator(context, javaClass, args); // e.g. Byte[64]
         }
         return Java.get_proxy_class(javaClass, Helpers.invoke(context, javaClass, "array_class"));
     }
 
     @JRubyMethod(meta = true)
-    public static IRubyObject new_array(ThreadContext context, IRubyObject recv, IRubyObject arg0) {
-        JavaClass javaClass = (JavaClass) Helpers.invoke(context, recv, "java_class");
-        RubyClass proxyClass = (RubyClass)recv;
-        Class componentType = javaClass.javaClass();
-
-        // construct new array proxy (ArrayJavaProxy)
-        return new ArrayJavaProxy(context.runtime, proxyClass, Array.newInstance(componentType, (int) arg0.convertToInteger().getLongValue()));
+    public static IRubyObject new_array(ThreadContext context, IRubyObject self, IRubyObject len) {
+        final JavaClass javaClass = java_class(context, (RubyModule) self);
+        final Class<?> componentType = javaClass.javaClass();
+        final int length = (int) len.convertToInteger().getLongValue();
+        return ArrayJavaProxy.newArray(context.runtime, componentType, length);
     }
 
     @JRubyMethod(name = "__persistent__=", meta = true)
@@ -442,9 +442,9 @@ public class JavaProxy extends RubyObject {
     private RubyMethod getRubyMethod(ThreadContext context, String name, Class... argTypes) {
         Method jmethod = getMethod(context, name, argTypes);
         if (Modifier.isStatic(jmethod.getModifiers())) {
-            return RubyMethod.newMethod(metaClass.getSingletonClass(), CodegenUtils.prettyParams(argTypes), metaClass.getSingletonClass(), name, getMethodInvoker(jmethod), getMetaClass());
+            return RubyMethod.newMethod(metaClass.getSingletonClass(), CodegenUtils.prettyParams(argTypes).toString(), metaClass.getSingletonClass(), name, getMethodInvoker(jmethod), getMetaClass());
         } else {
-            return RubyMethod.newMethod(metaClass, CodegenUtils.prettyParams(argTypes), metaClass, name, getMethodInvoker(jmethod), this);
+            return RubyMethod.newMethod(metaClass, CodegenUtils.prettyParams(argTypes).toString(), metaClass, name, getMethodInvoker(jmethod), this);
         }
     }
 
@@ -486,14 +486,15 @@ public class JavaProxy extends RubyObject {
     }
 
     private void confirmCachedProxy(String message) {
-        RubyClass realClass = metaClass.getRealClass();
-        if (!realClass.getCacheProxy()) {
+        final RubyClass realClass = metaClass.getRealClass();
+        if ( ! realClass.getCacheProxy() ) {
+            final Ruby runtime = getRuntime();
             if (Java.OBJECT_PROXY_CACHE) {
-                getRuntime().getWarnings().warnOnce(IRubyWarnings.ID.NON_PERSISTENT_JAVA_PROXY, MessageFormat.format(message, realClass));
+                runtime.getWarnings().warnOnce(IRubyWarnings.ID.NON_PERSISTENT_JAVA_PROXY, MessageFormat.format(message, realClass));
             } else {
-                getRuntime().getWarnings().warn(MessageFormat.format(message, realClass));
+                runtime.getWarnings().warn(MessageFormat.format(message, realClass));
                 realClass.setCacheProxy(true);
-                getRuntime().getJavaSupport().getObjectProxyCache().put(getObject(), this);
+                runtime.getJavaSupport().getObjectProxyCache().put(getObject(), this);
             }
         }
     }

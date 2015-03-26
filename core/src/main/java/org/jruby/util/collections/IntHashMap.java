@@ -258,7 +258,7 @@ public class IntHashMap<V> {
 
 	private class KeyIterator extends HashIterator<Integer> {
 		public Integer next() {
-			return Integer.valueOf(nextEntry().key);
+			return nextEntry().key;
 		}
 	}
 
@@ -395,6 +395,47 @@ public class IntHashMap<V> {
 	        if (! i.hasNext()) return sb.append('}').toString();
 	        sb.append(", ");
 	    }
+    }
+
+    @SuppressWarnings("unchecked")
+    public static <U> IntHashMap<U> nullMap() { return NullMap.INSTANCE; }
+
+    private static final class NullMap<U> extends IntHashMap<U> {
+
+        static final NullMap INSTANCE = new NullMap();
+
+        private NullMap() { super(0); }
+
+        @Override
+        public boolean contains(Object value) {
+            return false;
+        }
+
+        @Override
+        public boolean containsKey(int key) {
+            return false;
+        }
+
+        @Override
+        public U get(int key) {
+            return null;
+        }
+
+        @Override
+        public U put(int key, U value) {
+            return null;
+        }
+
+        @Override
+        public U remove(int key) {
+            return null;
+        }
+
+        @Override
+        protected void rehash() {
+            // NO-OP
+        }
+
     }
 
 }

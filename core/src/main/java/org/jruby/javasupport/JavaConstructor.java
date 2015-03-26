@@ -43,6 +43,7 @@ import java.lang.reflect.Type;
 import org.jruby.Ruby;
 import org.jruby.RubyClass;
 import org.jruby.RubyModule;
+import org.jruby.RubyString;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.runtime.ObjectAllocator;
@@ -117,17 +118,30 @@ public class JavaConstructor extends JavaCallable {
         return null; // no matching ctor found
     }
 
+    @Override
     public final boolean equals(Object other) {
         return other instanceof JavaConstructor &&
             this.constructor.equals( ((JavaConstructor) other).constructor );
     }
 
+    @Override
     public final int hashCode() {
         return constructor.hashCode();
     }
 
+    @Override // not-used
     protected String nameOnInspection() {
         return getType().toString();
+    }
+
+    @JRubyMethod
+    public RubyString inspect() {
+        StringBuilder str = new StringBuilder();
+        str.append("#<");
+        str.append( getType().toString() );
+        inspectParameterTypes(str, this);
+        str.append(">");
+        return getRuntime().newString( str.toString() );
     }
 
     //@Override
@@ -311,5 +325,7 @@ public class JavaConstructor extends JavaCallable {
             return handleThrowable(context, t);
         }
     }
-    
+
+    boolean isConstructor() { return true; } // for error message in base class
+
 }

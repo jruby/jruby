@@ -126,26 +126,6 @@ public abstract class JavaCallable extends JavaAccessibleObject implements Param
         return getRuntime().newString(toGenericString());
     }
 
-    @JRubyMethod
-    public RubyString inspect() {
-        StringBuilder str = new StringBuilder();
-        str.append( nameOnInspection() );
-        dumpParameterTypes(str, false);
-        str.append(")>");
-        return getRuntime().newString( str.toString() );
-    }
-
-    private CharSequence dumpParameterTypes(final StringBuilder str, final boolean brackets) {
-        if ( brackets ) str.append('[');
-        final Class<?>[] types = parameterTypes;
-        for ( int i = 0; i < types.length; i++ ) {
-            str.append( types[i].getName() );
-            if ( i < types.length - 1 ) str.append(',');
-        }
-        if ( brackets ) str.append(']');
-        return str;
-    }
-
     @JRubyMethod(name = "public?")
     public RubyBoolean public_p() {
         return RubyBoolean.newBoolean(getRuntime(), Modifier.isPublic(getModifiers()));
@@ -195,7 +175,7 @@ public abstract class JavaCallable extends JavaAccessibleObject implements Param
         final StringBuilder msg = new StringBuilder(64);
         msg.append("for method ").append( target.getDeclaringClass().getSimpleName() )
            .append('.').append( target.getName() );
-        msg.append(" expected "); dumpParameterTypes(msg, true);
+        msg.append(" expected "); dumpParameterTypes(msg);
         msg.append("; got: "); dumpArgTypes(arguments, msg);
         msg.append("; error: ").append( ex.getMessage() );
         throw getRuntime().newTypeError( msg.toString() );
@@ -210,10 +190,16 @@ public abstract class JavaCallable extends JavaAccessibleObject implements Param
         if ( targetInfo ) {
             msg.append("for constructor of type ").append( target.getDeclaringClass().getSimpleName() );
         }
-        msg.append(" expected "); dumpParameterTypes(msg, true);
+        msg.append(" expected "); dumpParameterTypes(msg);
         msg.append("; got: "); dumpArgTypes(arguments, msg);
         msg.append("; error: ").append( ex.getMessage() );
         throw getRuntime().newTypeError( msg.toString() );
+    }
+
+    private void dumpParameterTypes(final StringBuilder str) {
+        str.append('[');
+        inspectParameterTypes(str, this, false);
+        str.append(']');
     }
 
     static CharSequence dumpArgTypes(final Object[] args, final StringBuilder str) {
@@ -224,6 +210,23 @@ public abstract class JavaCallable extends JavaAccessibleObject implements Param
             else str.append( args[i].getClass().getName() );
         }
         str.append(']');
+        return str;
+    }
+
+    public static StringBuilder inspectParameterTypes(
+        final StringBuilder str, final ParameterTypes target) {
+        return inspectParameterTypes(str, target, true);
+    }
+
+    private static StringBuilder inspectParameterTypes(
+        final StringBuilder str, final ParameterTypes target, final boolean brackets) {
+        if ( brackets ) str.append('(');
+        final Class<?>[] types = target.getParameterTypes();
+        for ( int i = 0; i < types.length; i++ ) {
+            str.append( types[i].getName() );
+            if ( i < types.length - 1 ) str.append(',');
+        }
+        if ( brackets ) str.append(')');
         return str;
     }
 
