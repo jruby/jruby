@@ -10,7 +10,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 
 public class ArrayJavaAddons {
 
-    @JRubyMethod
+    @JRubyMethod(name = "copy_data")
     public static IRubyObject copy_data(final ThreadContext context,
         final IRubyObject fromRuby, final IRubyObject toJava, final IRubyObject fillValue) {
         JavaArray javaArray = (JavaArray) toJava.dataGetStruct();
@@ -42,24 +42,30 @@ public class ArrayJavaAddons {
         return toJava;
     }
 
-    @JRubyMethod
-    public static IRubyObject copy_data_simple(final ThreadContext context,
+    @JRubyMethod(name = { "copy_data", "copy_data_simple" })
+    public static IRubyObject copy_data(final ThreadContext context,
         IRubyObject fromRuby, IRubyObject toJava) {
         JavaArray javaArray = (JavaArray) toJava.dataGetStruct();
         RubyArray rubyArray = (RubyArray) fromRuby;
 
-        copyDataToJavaArray(context, rubyArray, javaArray);
+        copyDataToJavaArray(rubyArray, javaArray, 0);
 
         return toJava;
     }
 
+    @Deprecated // not used
     public static void copyDataToJavaArray(final ThreadContext context,
         final RubyArray rubyArray, final JavaArray javaArray) {
+        copyDataToJavaArray(rubyArray, javaArray, 0);
+    }
+
+    private static void copyDataToJavaArray(
+        final RubyArray rubyArray, final JavaArray javaArray, int offset) {
         int length = javaArray.getLength();
         if ( length > rubyArray.getLength() ) length = rubyArray.getLength();
 
         final Class<?> targetType = javaArray.getComponentType();
-        for ( int i = 0; i < length; i++ ) {
+        for ( int i = offset; i < length; i++ ) {
             javaArray.setWithExceptionHandling(i, rubyArray.eltInternal(i).toJava(targetType));
         }
     }

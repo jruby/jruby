@@ -224,6 +224,24 @@ class TestHigherJavasupport < Test::Unit::TestCase
     assert_equal 2, array[2][0]
   end
 
+  def test_ruby_array_copy_data
+    array = Java::short[5].new
+    [ 0, 1, 2 ].copy_data array, 10
+    assert_equal 0, array[0]
+    assert_equal 1, array[1]
+    assert_equal 2, array[2]
+    assert_equal 10, array[3]
+    assert_equal 10, array[4]
+
+    array = java.lang.Long[5].new
+    [ 0, 1, 2 ].copy_data array
+    assert_equal 0, array[0]
+    assert_equal 1, array[1]
+    assert_equal 2, array[2]
+    assert_equal nil, array[3]
+    assert_equal nil, array[4]
+  end
+
   def test_ruby_array_dimensions
     assert_equal [ 0 ], [].dimensions
     assert_equal [ 1 ], [ 0 ].dimensions
