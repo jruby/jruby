@@ -200,3 +200,23 @@ class IO
   SEEK_SET = 0
 
 end
+
+# We use Rubinius's encoding subsystem for the most part, but we need to keep JRuby's up to date in case we
+# delegate to any of their methods.  Otherwise, they won't see the updated encoding and return incorrect results.
+class Encoding
+  class << self
+    alias_method :default_external_rubinius=, :default_external=
+
+    def default_external=(enc)
+      self.default_external_rubinius = enc
+      self.default_external_jruby = enc
+    end
+
+    alias_method :default_internal_rubinius=, :default_internal=
+
+    def default_internal=(enc)
+      self.default_internal_rubinius = enc
+      self.default_internal_jruby = enc
+    end
+  end
+end

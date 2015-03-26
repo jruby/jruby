@@ -287,7 +287,8 @@ public abstract class EncodingNodes {
 
     }
 
-    @CoreMethod(names = "default_external=", onSingleton = true, required = 1)
+    @RubiniusOnly
+    @CoreMethod(names = "default_external_jruby=", onSingleton = true, required = 1)
     public abstract static class SetDefaultExternalNode extends CoreMethodNode {
 
         public SetDefaultExternalNode(RubyContext context, SourceSection sourceSection) {
@@ -324,7 +325,8 @@ public abstract class EncodingNodes {
 
     }
 
-    @CoreMethod(names = "default_internal=", onSingleton = true, required = 1)
+    @RubiniusOnly
+    @CoreMethod(names = "default_internal_jruby=", onSingleton = true, required = 1)
     public abstract static class SetDefaultInternalNode extends CoreMethodNode {
 
         @Child private ToStrNode toStrNode;
