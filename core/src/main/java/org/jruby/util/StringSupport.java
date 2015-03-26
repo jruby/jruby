@@ -893,9 +893,7 @@ public final class StringSupport {
         return i;
     }
 
-    /**
-     * rb_str_rindex_m
-     */
+    // MRI: rb_str_rindex
     public static int rindex(ByteList source, int sourceChars, int subChars, int pos, CodeRangeable subStringCodeRangeable, Encoding enc) {
         if (subStringCodeRangeable.scanForCodeRange() == CR_BROKEN) return -1;
 
@@ -927,7 +925,8 @@ public final class StringSupport {
         if (subSize == 0) return pos;
         int t = subString.begin();
 
-        while (s > 0 && s + subSize <= sourceSize) {
+        // s >= 0 because -1 is our OOB, where MRI's is null pointer (0)
+        while (s >= 0 && s + subSize <= sourceSize) {
             if (ByteList.memcmp(sourceBytes, s, subBytes, t, subSize) == 0) {
                 return pos;
             }
