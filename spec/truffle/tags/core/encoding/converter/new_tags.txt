@@ -1,0 +1,5 @@
+fails:Encoding::Converter.new accepts an Encoding object for the source encoding
+fails:Encoding::Converter.new accepts an Encoding object for the destination encoding
+fails:Encoding::Converter.new calls #to_str to convert the source encoding argument to an encoding name
+fails:Encoding::Converter.new calls #to_str to convert the destination encoding argument to an encoding name
+fails:Encoding::Converter.new calls #to_hash to convert the options argument to a Hash if not a Fixnum

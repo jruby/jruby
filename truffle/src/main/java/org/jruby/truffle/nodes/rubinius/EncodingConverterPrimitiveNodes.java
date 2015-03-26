@@ -11,12 +11,19 @@ package org.jruby.truffle.nodes.rubinius;
 
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.source.SourceSection;
+import org.jcodings.Encoding;
+import org.jcodings.transcode.EConv;
+import org.jruby.Ruby;
+import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.runtime.core.RubyArray;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
 import org.jruby.truffle.runtime.core.RubyEncoding;
 import org.jruby.truffle.runtime.core.RubyEncodingConverter;
 import org.jruby.truffle.runtime.core.RubyHash;
 import org.jruby.truffle.runtime.core.RubyString;
+import org.jruby.util.ByteList;
+import org.jruby.util.io.EncodingUtils;
 
 /**
  * Rubinius primitives associated with the Ruby {@code Encoding::Converter} class..
@@ -109,7 +116,26 @@ public abstract class EncodingConverterPrimitiveNodes {
 
         @Specialization
         public Object encodingConverterLastError(RubyEncodingConverter encodingConverter) {
-            throw new UnsupportedOperationException("not implemented");
+            notDesignedForCompilation();
+
+            final EConv ec = encodingConverter.getEConv();
+
+            final Object[] ret = { getContext().newSymbol(ec.lastError.getResult().symbolicName()), nil(), nil(), nil(), nil() };
+
+            if (ec.lastError.getSource() != null) {
+                ret[1] = getContext().makeString(new ByteList(ec.lastError.getSource()));
+            }
+
+            if (ec.lastError.getDestination() != null) {
+                ret[2] = getContext().makeString(new ByteList(ec.lastError.getDestination()));
+            }
+
+            if (ec.lastError.getErrorBytes() != null) {
+                ret[3] = getContext().makeString(new ByteList(ec.lastError.getErrorBytes(), ec.lastError.getErrorBytesP(), ec.lastError.getErrorBytesLength()));
+                ret[4] = getContext().makeString(new ByteList(ec.lastError.getErrorBytes(), ec.lastError.getErrorBytesP() + ec.lastError.getErrorBytesLength(), ec.lastError.getReadAgainLength()));
+            }
+
+            return new RubyArray(getContext().getCoreLibrary().getArrayClass(), ret, ret.length);
         }
 
     }

@@ -85,7 +85,8 @@ public abstract class EncodingConverterNodes {
 
     }
 
-    @CoreMethod(names = "initialize", required = 2, optional = 1)
+    @RubiniusOnly
+    @CoreMethod(names = "initialize_jruby", required = 2, optional = 1)
     public abstract static class InitializeNode extends CoreMethodNode {
 
         public InitializeNode(RubyContext context, SourceSection sourceSection) {

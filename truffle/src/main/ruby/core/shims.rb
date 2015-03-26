@@ -220,3 +220,15 @@ class Encoding
     end
   end
 end
+
+# We use Rubinius's encoding class hierarchy, but do the encoding conversion in Java.  In order to properly initialize
+# the converter, we need to initialize in both Rubinius and JRuby.
+class Encoding::Converter
+  alias_method :initialize_rubinius, :initialize
+
+  def initialize(*args)
+    initialize_rubinius(*args)
+    initialize_jruby(*args)
+  end
+end
+
