@@ -575,13 +575,13 @@ class Encoding
     raise ArgumentError, "unknown encoding name - #{name}"
   end
 
-  #def self.list
-  #  EncodingList
-  #end
+  def self.list
+    EncodingList
+  end
 
-  #def self.locale_charmap
-  #  LocaleCharmap
-  #end
+  def self.locale_charmap
+    LocaleCharmap
+  end
 
   def self.name_list
     EncodingMap.map do |n, r|

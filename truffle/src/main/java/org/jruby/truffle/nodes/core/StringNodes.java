@@ -1128,7 +1128,7 @@ public abstract class StringNodes {
     public abstract static class EncodeNode extends CoreMethodNode {
 
         @Child private ToStrNode toStrNode;
-        @Child private EncodingNodes.DefaultInternalNode defaultInternalNode;
+        @Child private CallDispatchHeadNode defaultInternalNode;
 
         public EncodeNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -1178,14 +1178,14 @@ public abstract class StringNodes {
         }
 
         @Specialization
-        public RubyString encode(RubyString string, @SuppressWarnings("unused") UndefinedPlaceholder encoding, @SuppressWarnings("unused") UndefinedPlaceholder options) {
+        public RubyString encode(VirtualFrame frame, RubyString string, @SuppressWarnings("unused") UndefinedPlaceholder encoding, @SuppressWarnings("unused") UndefinedPlaceholder options) {
 
             if (defaultInternalNode == null) {
                 CompilerDirectives.transferToInterpreter();
-                defaultInternalNode = insert(EncodingNodesFactory.DefaultInternalNodeFactory.create(getContext(), getSourceSection(), new RubyNode[]{}));
+                defaultInternalNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext()));
             }
 
-            final Object defaultInternalEncoding = defaultInternalNode.defaultInternal();
+            final Object defaultInternalEncoding = defaultInternalNode.call(frame, getContext().getCoreLibrary().getEncodingClass(), "default_internal", null);
 
             if (defaultInternalEncoding == nil()) {
                 return encode(string, RubyEncoding.getEncoding("UTF-8"), UndefinedPlaceholder.INSTANCE);
