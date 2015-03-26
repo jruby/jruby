@@ -89,6 +89,9 @@ require_relative 'core/rubinius/common/gc'
 # Load delta (ordered according to Rubinius' load_order.txt)
 require_relative 'core/rubinius/delta/struct'
 
+# Eagerly-load files that are normally lazily loaded via Rubinius::CodeLoader.require_compiled.
+require_relative 'core/rubinius/delta/converter_paths'
+
 # Load JRuby+Truffle classes
 require_relative 'core/array'
 require_relative 'core/fixnum'

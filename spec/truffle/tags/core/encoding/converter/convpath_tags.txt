@@ -1,4 +1,3 @@
-fails:Encoding::Converter#convpath indicates if crlf_newline conversion would occur
 slow:Encoding::Converter#convpath returns an Array
 slow:Encoding::Converter#convpath returns each encoding pair as a sub-Array
 slow:Encoding::Converter#convpath returns each encoding as an Encoding object

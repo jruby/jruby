@@ -16,6 +16,7 @@ import com.oracle.truffle.api.source.Source;
 
 import org.jcodings.Encoding;
 import org.jcodings.EncodingDB;
+import org.jcodings.transcode.EConvFlags;
 import org.jruby.runtime.Constants;
 import org.jruby.runtime.encoding.EncodingService;
 import org.jruby.runtime.load.LoadServiceResource;
@@ -419,6 +420,20 @@ public class CoreLibrary {
 
         processClass.setConstant(null, "CLOCK_MONOTONIC", ProcessNodes.CLOCK_MONOTONIC);
         processClass.setConstant(null, "CLOCK_REALTIME", ProcessNodes.CLOCK_REALTIME);
+
+        encodingConverterClass.setConstant(null, "INVALID_MASK", EConvFlags.INVALID_MASK);
+        encodingConverterClass.setConstant(null, "INVALID_REPLACE", EConvFlags.INVALID_REPLACE);
+        encodingConverterClass.setConstant(null, "UNDEF_MASK", EConvFlags.UNDEF_MASK);
+        encodingConverterClass.setConstant(null, "UNDEF_REPLACE", EConvFlags.UNDEF_REPLACE);
+        encodingConverterClass.setConstant(null, "UNDEF_HEX_CHARREF", EConvFlags.UNDEF_HEX_CHARREF);
+        encodingConverterClass.setConstant(null, "PARTIAL_INPUT", EConvFlags.PARTIAL_INPUT);
+        encodingConverterClass.setConstant(null, "AFTER_OUTPUT", EConvFlags.AFTER_OUTPUT);
+        encodingConverterClass.setConstant(null, "UNIVERSAL_NEWLINE_DECORATOR", EConvFlags.UNIVERSAL_NEWLINE_DECORATOR);
+        encodingConverterClass.setConstant(null, "CRLF_NEWLINE_DECORATOR", EConvFlags.CRLF_NEWLINE_DECORATOR);
+        encodingConverterClass.setConstant(null, "CR_NEWLINE_DECORATOR", EConvFlags.CR_NEWLINE_DECORATOR);
+        encodingConverterClass.setConstant(null, "XML_TEXT_DECORATOR", EConvFlags.XML_TEXT_DECORATOR);
+        encodingConverterClass.setConstant(null, "XML_ATTR_CONTENT_DECORATOR", EConvFlags.XML_ATTR_CONTENT_DECORATOR);
+        encodingConverterClass.setConstant(null, "XML_ATTR_QUOTE_DECORATOR", EConvFlags.XML_ATTR_QUOTE_DECORATOR);
     }
 
     private void initializeSignalConstants() {
