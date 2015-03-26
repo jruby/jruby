@@ -477,6 +477,7 @@ public class RipperLexer {
     }
     
     public void compile_error(String message) {
+        parser.error();
         parser.dispatch("compile_error", getRuntime().newString(message));
 //        throw new SyntaxException(lexb.toString(), message);
     }
