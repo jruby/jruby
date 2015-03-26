@@ -2,7 +2,6 @@ fails:Encoding::Converter.new accepts a String for the source encoding
 fails:Encoding::Converter.new accepts a String for the destination encoding
 fails:Encoding::Converter.new accepts an Encoding object for the source encoding
 fails:Encoding::Converter.new accepts an Encoding object for the destination encoding
-fails:Encoding::Converter.new raises an Encoding::ConverterNotFoundError if both encodings are the same
 fails:Encoding::Converter.new calls #to_str to convert the source encoding argument to an encoding name
 fails:Encoding::Converter.new calls #to_str to convert the destination encoding argument to an encoding name
 fails:Encoding::Converter.new sets replacement from the options Hash
