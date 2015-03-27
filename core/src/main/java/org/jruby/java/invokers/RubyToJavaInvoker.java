@@ -162,17 +162,17 @@ public abstract class RubyToJavaInvoker extends JavaMethod {
 
     protected abstract boolean isMemberVarArgs(Member member);
 
-    static Object convertArg(IRubyObject arg, JavaCallable method, int index) {
-        return arg.toJava(method.getParameterTypes()[index]);
-    }
+    //final int getMemberArity(Member member) {
+    //    return getMemberParameterTypes(member).length;
+    //}
 
     static Object convertVarArgs(IRubyObject[] args, JavaCallable method) {
         final Class[] types = method.getParameterTypes();
-        final Class<?> varArrayType = types[types.length - 1];
         final int varStart = types.length - 1;
         final int varCount = args.length - varStart;
+        final Class<?> varArrayType = types[ varStart ];
 
-        if ( args.length == 0 ) {
+        if ( args.length == 0 || varCount <= 0 ) {
             return Array.newInstance(varArrayType.getComponentType(), 0);
         }
 
@@ -182,7 +182,7 @@ public abstract class RubyToJavaInvoker extends JavaMethod {
             varArgs = args[varStart].toJava(varArrayType);
         }
         else {
-            final Class compType = varArrayType.getComponentType();
+            final Class<?> compType = varArrayType.getComponentType();
             varArgs = Array.newInstance(compType, varCount);
             for ( int i = 0; i < varCount; i++ ) {
                 Array.set(varArgs, i, args[varStart + i].toJava(compType));

@@ -25,18 +25,20 @@ public final class StaticMethodInvoker extends MethodInvoker {
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args) {
         int len = args.length;
         final Object[] convertedArgs;
-        JavaMethod method = (JavaMethod)findCallable(self, name, args, len);
-        if (method.isVarArgs()) {
+        JavaMethod method = (JavaMethod) findCallable(self, name, args, len);
+        final Class<?>[] paramTypes = method.getParameterTypes();
+
+        if ( method.isVarArgs() ) {
             len = method.getArity() - 1;
             convertedArgs = new Object[len + 1];
             for (int i = 0; i < len && i < args.length; i++) {
-                convertedArgs[i] = convertArg(args[i], method, i);
+                convertedArgs[i] = args[i].toJava(paramTypes[i]);
             }
             convertedArgs[len] = convertVarArgs(args, method);
         } else {
             convertedArgs = new Object[len];
             for (int i = 0; i < len && i < args.length; i++) {
-                convertedArgs[i] = convertArg(args[i], method, i);
+                convertedArgs[i] = args[i].toJava(paramTypes[i]);
             }
         }
         return method.invokeStaticDirect(convertedArgs);
@@ -45,7 +47,7 @@ public final class StaticMethodInvoker extends MethodInvoker {
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name) {
         if (javaVarargsCallables != null) return call(context, self, clazz, name, IRubyObject.NULL_ARRAY);
-        JavaMethod method = (JavaMethod)findCallableArityZero(self, name);
+        JavaMethod method = (JavaMethod) findCallableArityZero(self, name);
 
         return method.invokeStaticDirect();
     }
@@ -53,9 +55,10 @@ public final class StaticMethodInvoker extends MethodInvoker {
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0) {
         if (javaVarargsCallables != null) return call(context, self, clazz, name, new IRubyObject[] {arg0});
-        JavaMethod method = (JavaMethod)findCallableArityOne(self, name, arg0);
+        JavaMethod method = (JavaMethod) findCallableArityOne(self, name, arg0);
         if (method.isVarArgs()) return call(context, self, clazz, name, new IRubyObject[] {arg0});
-        Object cArg0 = convertArg(arg0, method, 0);
+        final Class<?>[] paramTypes = method.getParameterTypes();
+        Object cArg0 = arg0.toJava(paramTypes[0]);
 
         return method.invokeStaticDirect(cArg0);
     }
@@ -63,9 +66,10 @@ public final class StaticMethodInvoker extends MethodInvoker {
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0, IRubyObject arg1) {
         if (javaVarargsCallables != null) return call(context, self, clazz, name, new IRubyObject[] {arg0, arg1});
-        JavaMethod method = (JavaMethod)findCallableArityTwo(self, name, arg0, arg1);
-        Object cArg0 = convertArg(arg0, method, 0);
-        Object cArg1 = convertArg(arg1, method, 1);
+        JavaMethod method = (JavaMethod) findCallableArityTwo(self, name, arg0, arg1);
+        final Class<?>[] paramTypes = method.getParameterTypes();
+        Object cArg0 = arg0.toJava(paramTypes[0]);
+        Object cArg1 = arg1.toJava(paramTypes[1]);
 
         return method.invokeStaticDirect(cArg0, cArg1);
     }
@@ -73,10 +77,11 @@ public final class StaticMethodInvoker extends MethodInvoker {
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2) {
         if (javaVarargsCallables != null) return call(context, self, clazz, name, new IRubyObject[] {arg0, arg1, arg2});
-        JavaMethod method = (JavaMethod)findCallableArityThree(self, name, arg0, arg1, arg2);
-        Object cArg0 = convertArg(arg0, method, 0);
-        Object cArg1 = convertArg(arg1, method, 1);
-        Object cArg2 = convertArg(arg2, method, 2);
+        JavaMethod method = (JavaMethod) findCallableArityThree(self, name, arg0, arg1, arg2);
+        final Class<?>[] paramTypes = method.getParameterTypes();
+        Object cArg0 = arg0.toJava(paramTypes[0]);
+        Object cArg1 = arg1.toJava(paramTypes[1]);
+        Object cArg2 = arg2.toJava(paramTypes[2]);
 
         return method.invokeStaticDirect(cArg0, cArg1, cArg2);
     }
@@ -90,9 +95,11 @@ public final class StaticMethodInvoker extends MethodInvoker {
             IRubyObject[] intermediate = new IRubyObject[len + 1];
             System.arraycopy(args, 0, intermediate, 0, len);
             intermediate[len] = RubyProc.newProc(context.runtime, block, block.type);
-            JavaMethod method = (JavaMethod)findCallable(self, name, intermediate, len + 1);
+
+            JavaMethod method = (JavaMethod) findCallable(self, name, intermediate, len + 1);
+            final Class<?>[] paramTypes = method.getParameterTypes();
             for (int i = 0; i < len + 1; i++) {
-                convertedArgs[i] = convertArg(intermediate[i], method, i);
+                convertedArgs[i] = intermediate[i].toJava(paramTypes[i]);
             }
 
             return method.invokeStaticDirect(convertedArgs);
@@ -104,8 +111,9 @@ public final class StaticMethodInvoker extends MethodInvoker {
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, Block block) {
         if (block.isGiven()) {
             RubyProc proc = RubyProc.newProc(context.runtime, block, block.type);
-            JavaMethod method = (JavaMethod)findCallableArityOne(self, name, proc);
-            Object cArg0 = convertArg(proc, method, 0);
+            JavaMethod method = (JavaMethod) findCallableArityOne(self, name, proc);
+            final Class<?>[] paramTypes = method.getParameterTypes();
+            Object cArg0 = proc.toJava(paramTypes[0]);
 
             return method.invokeStaticDirect(cArg0);
         }
@@ -116,9 +124,10 @@ public final class StaticMethodInvoker extends MethodInvoker {
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0, Block block) {
         if (block.isGiven()) {
             RubyProc proc = RubyProc.newProc(context.runtime, block, block.type);
-            JavaMethod method = (JavaMethod)findCallableArityTwo(self, name, arg0, proc);
-            Object cArg0 = convertArg(arg0, method, 0);
-            Object cArg1 = convertArg(proc, method, 1);
+            JavaMethod method = (JavaMethod) findCallableArityTwo(self, name, arg0, proc);
+            final Class<?>[] paramTypes = method.getParameterTypes();
+            Object cArg0 = arg0.toJava(paramTypes[0]);
+            Object cArg1 = proc.toJava(paramTypes[1]);
 
             return method.invokeStaticDirect(cArg0, cArg1);
         }
@@ -129,10 +138,11 @@ public final class StaticMethodInvoker extends MethodInvoker {
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0, IRubyObject arg1, Block block) {
         if (block.isGiven()) {
             RubyProc proc = RubyProc.newProc(context.runtime, block, block.type);
-            JavaMethod method = (JavaMethod)findCallableArityThree(self, name, arg0, arg1, proc);
-            Object cArg0 = convertArg(arg0, method, 0);
-            Object cArg1 = convertArg(arg1, method, 1);
-            Object cArg2 = convertArg(proc, method, 2);
+            JavaMethod method = (JavaMethod) findCallableArityThree(self, name, arg0, arg1, proc);
+            final Class<?>[] paramTypes = method.getParameterTypes();
+            Object cArg0 = arg0.toJava(paramTypes[0]);
+            Object cArg1 = arg1.toJava(paramTypes[1]);
+            Object cArg2 = proc.toJava(paramTypes[2]);
 
             return method.invokeStaticDirect(cArg0, cArg1, cArg2);
         }
@@ -143,11 +153,12 @@ public final class StaticMethodInvoker extends MethodInvoker {
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Block block) {
         if (block.isGiven()) {
             RubyProc proc = RubyProc.newProc(context.runtime, block, block.type);
-            JavaMethod method = (JavaMethod)findCallableArityFour(self, name, arg0, arg1, arg2, proc);
-            Object cArg0 = convertArg(arg0, method, 0);
-            Object cArg1 = convertArg(arg1, method, 1);
-            Object cArg2 = convertArg(arg2, method, 2);
-            Object cArg3 = convertArg(proc, method, 3);
+            JavaMethod method = (JavaMethod) findCallableArityFour(self, name, arg0, arg1, arg2, proc);
+            final Class<?>[] paramTypes = method.getParameterTypes();
+            Object cArg0 = arg0.toJava(paramTypes[0]);
+            Object cArg1 = arg1.toJava(paramTypes[1]);
+            Object cArg2 = arg2.toJava(paramTypes[2]);
+            Object cArg3 = proc.toJava(paramTypes[3]);
 
             return method.invokeStaticDirect(cArg0, cArg1, cArg2, cArg3);
         }
