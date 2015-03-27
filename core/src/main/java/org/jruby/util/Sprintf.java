@@ -35,6 +35,7 @@ import java.util.Locale;
 import java.util.Map;
 
 import org.jcodings.Encoding;
+import org.jcodings.exception.EncodingException;
 import org.jcodings.specific.UTF8Encoding;
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
@@ -503,7 +504,11 @@ public class Sprintf {
                     else {
                         // unsigned bits
                         c = (int)arg.convertToInteger().getLongValue() & 0xFFFFFFFF;
-                        n = StringSupport.codeLength(encoding, c);
+                        try {
+                            n = StringSupport.codeLength(encoding, c);
+                        } catch (EncodingException e) {
+                            n = -1;
+                        }
                     }
                     if (n <= 0) {
                         throw runtime.newArgumentError("invalid character");
