@@ -412,7 +412,7 @@ public class JavaProxyClass extends JavaProxyReflectionObject {
             }
         }
 
-        private int getArity() {
+        public final int getArity() {
             return getParameterTypes().length;
         }
 
