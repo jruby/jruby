@@ -724,6 +724,7 @@ public class Java implements Library {
         return context.nil;
     }
 
+    // called for Ruby sub-classes of a Java class
     private static void setupJavaSubclass(final ThreadContext context, final RubyClass subclass) {
 
         subclass.getInstanceVariables().setInstanceVariable("@java_proxy_class", context.nil);
@@ -755,10 +756,10 @@ public class Java implements Library {
                 }
 
                 final int argsLength = args.length;
-                final RubyArray constructors = ((JavaProxyClass) proxyClass).constructors();
-                ArrayList<JavaProxyConstructor> forArity = new ArrayList<JavaProxyConstructor>(constructors.size());
-                for ( int i = 0; i < constructors.size(); i++ ) {
-                    JavaProxyConstructor constructor = (JavaProxyConstructor) constructors.eltInternal(i);
+                final JavaProxyConstructor[] constructors = ((JavaProxyClass) proxyClass).getConstructors();
+                ArrayList<JavaProxyConstructor> forArity = new ArrayList<JavaProxyConstructor>(constructors.length);
+                for ( int i = 0; i < constructors.length; i++ ) {
+                    final JavaProxyConstructor constructor = constructors[i];
                     if ( constructor.getArity() == argsLength ) forArity.add(constructor);
                 }
 
