@@ -15,6 +15,7 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.SourceSection;
 
 import org.jcodings.Encoding;
+import org.jcodings.EncodingDB;
 import org.jcodings.transcode.EConv;
 import org.jcodings.transcode.Transcoder;
 import org.jcodings.transcode.TranscoderDB;
@@ -62,12 +63,27 @@ public abstract class EncodingConverterNodes {
             int[] ecflags = {0};
             IRubyObject[] ecopts = {runtime.getNil()};
 
-            EncodingUtils.econvArgs(runtime.getCurrentContext(), new IRubyObject[]{getContext().toJRuby(source), getContext().toJRuby(destination)}, encNames, encs, ecflags, ecopts);
+            final IRubyObject sourceAsJRubyObj = getContext().toJRuby(source);
+            final IRubyObject destinationAsJRubyObj = getContext().toJRuby(destination);
+
+            EncodingUtils.econvArgs(runtime.getCurrentContext(), new IRubyObject[]{sourceAsJRubyObj, destinationAsJRubyObj}, encNames, encs, ecflags, ecopts);
             EConv econv = EncodingUtils.econvOpenOpts(runtime.getCurrentContext(), encNames[0], encNames[1], ecflags[0], ecopts[0]);
 
             if (econv == null) {
                 throw new UnsupportedOperationException();
             }
+
+            if (!EncodingUtils.DECORATOR_P(encNames[0], encNames[1])) {
+                if (encs[0] == null) {
+                    encs[0] = EncodingDB.dummy(encNames[0]).getEncoding();
+                }
+                if (encs[1] == null) {
+                    encs[1] = EncodingDB.dummy(encNames[1]).getEncoding();
+                }
+            }
+
+            econv.sourceEncoding = encs[0];
+            econv.destinationEncoding = encs[1];
 
             self.setEConv(econv);
 
