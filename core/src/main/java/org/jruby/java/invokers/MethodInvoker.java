@@ -22,7 +22,7 @@ public abstract class MethodInvoker extends RubyToJavaInvoker {
 
     @Override
     protected final JavaCallable createCallable(Ruby runtime, Member member) {
-        return JavaMethod.create(runtime, (Method) member);
+        return new JavaMethod(runtime, (Method) member);
     }
 
     @Override
@@ -41,12 +41,12 @@ public abstract class MethodInvoker extends RubyToJavaInvoker {
     }
 
     @Override
-    protected Class[] getMemberParameterTypes(Member member) {
+    protected final Class[] getMemberParameterTypes(Member member) {
         return ((Method) member).getParameterTypes();
     }
 
     @Override
-    protected boolean isMemberVarArgs(Member member) {
+    protected final boolean isMemberVarArgs(Member member) {
         return ((Method) member).isVarArgs();
     }
 
