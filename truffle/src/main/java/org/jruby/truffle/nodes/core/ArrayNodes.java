@@ -1647,7 +1647,12 @@ public abstract class ArrayNodes {
                     toIntNode = insert(ToIntNodeFactory.create(getContext(), getSourceSection(), null));
                 }
                 int size = toIntNode.executeIntegerFixnum(frame, object);
-                return initialize(array, size, UndefinedPlaceholder.INSTANCE, UndefinedPlaceholder.INSTANCE);
+                if (size < 0) {
+                    return initializeNegative(array, size, UndefinedPlaceholder.INSTANCE, UndefinedPlaceholder.INSTANCE);
+                } else {
+                    return initialize(array, size, UndefinedPlaceholder.INSTANCE, UndefinedPlaceholder.INSTANCE);
+                }
+
             }
 
         }
@@ -1663,12 +1668,18 @@ public abstract class ArrayNodes {
             return initialize(array, 0, nil(), UndefinedPlaceholder.INSTANCE);
         }
 
-        @Specialization
+        @Specialization(guards = "!isNegative")
         public RubyArray initialize(RubyArray array, int size, UndefinedPlaceholder defaultValue, UndefinedPlaceholder block) {
             return initialize(array, size, nil(), block);
         }
 
-        @Specialization
+        @Specialization(guards = "isNegative")
+        public RubyArray initializeNegative(RubyArray array, int size, UndefinedPlaceholder defaultValue, UndefinedPlaceholder block) {
+            CompilerDirectives.transferToInterpreter();
+            throw new RaiseException(getContext().getCoreLibrary().argumentError("negative array size", this));
+        }
+
+        @Specialization(guards = "!isNegative")
         public RubyArray initialize(RubyArray array, long size, UndefinedPlaceholder defaultValue, UndefinedPlaceholder block) {
             if (size > Integer.MAX_VALUE) {
                 throw new RaiseException(getContext().getCoreLibrary().argumentError("array size too big", this));
@@ -1676,52 +1687,66 @@ public abstract class ArrayNodes {
             return initialize(array, (int) size, nil(), block);
         }
 
-        @Specialization
+        @Specialization(guards = "isNegative")
+        public RubyArray initializeNegative(RubyArray array, long size, UndefinedPlaceholder defaultValue, UndefinedPlaceholder block) {
+            CompilerDirectives.transferToInterpreter();
+            throw new RaiseException(getContext().getCoreLibrary().argumentError("negative array size", this));
+        }
+
+        @Specialization(guards = "!isNegative")
         public RubyArray initialize(RubyArray array, int size, int defaultValue, UndefinedPlaceholder block) {
-            if (size < 0) {
-                CompilerDirectives.transferToInterpreter();
-                throw new RaiseException(getContext().getCoreLibrary().argumentError("negative array size", this));
-            }
             final int[] store = new int[size];
             Arrays.fill(store, defaultValue);
             array.setStore(store, size);
             return array;
         }
 
-        @Specialization
+        @Specialization(guards = "isNegative")
+        public RubyArray initializeNegative(RubyArray array, int size, int defaultValue, UndefinedPlaceholder block) {
+            CompilerDirectives.transferToInterpreter();
+            throw new RaiseException(getContext().getCoreLibrary().argumentError("negative array size", this));
+        }
+
+        @Specialization(guards = "!isNegative")
         public RubyArray initialize(RubyArray array, int size, long defaultValue, UndefinedPlaceholder block) {
-            if (size < 0) {
-                CompilerDirectives.transferToInterpreter();
-                throw new RaiseException(getContext().getCoreLibrary().argumentError("negative array size", this));
-            }
             final long[] store = new long[size];
             Arrays.fill(store, defaultValue);
             array.setStore(store, size);
             return array;
         }
 
-        @Specialization
+        @Specialization(guards = "isNegative")
+        public RubyArray initializeNegative(RubyArray array, int size, long defaultValue, UndefinedPlaceholder block) {
+            CompilerDirectives.transferToInterpreter();
+            throw new RaiseException(getContext().getCoreLibrary().argumentError("negative array size", this));
+        }
+
+        @Specialization(guards = "!isNegative")
         public RubyArray initialize(RubyArray array, int size, double defaultValue, UndefinedPlaceholder block) {
-            if (size < 0) {
-                CompilerDirectives.transferToInterpreter();
-                throw new RaiseException(getContext().getCoreLibrary().argumentError("negative array size", this));
-            }
             final double[] store = new double[size];
             Arrays.fill(store, defaultValue);
             array.setStore(store, size);
             return array;
         }
 
-        @Specialization(guards = "!isUndefinedPlaceholder(arguments[2])")
+        @Specialization(guards = "isNegative")
+        public RubyArray initializeNegative(RubyArray array, int size, double defaultValue, UndefinedPlaceholder block) {
+            CompilerDirectives.transferToInterpreter();
+            throw new RaiseException(getContext().getCoreLibrary().argumentError("negative array size", this));
+        }
+
+        @Specialization(guards = {"!isUndefinedPlaceholder(arguments[2])", "!isNegative"})
         public RubyArray initialize(RubyArray array, int size, Object defaultValue, UndefinedPlaceholder block) {
-            if (size < 0) {
-                CompilerDirectives.transferToInterpreter();
-                throw new RaiseException(getContext().getCoreLibrary().argumentError("negative array size", this));
-            }
             final Object[] store = new Object[size];
             Arrays.fill(store, defaultValue);
             array.setStore(store, size);
             return array;
+        }
+
+        @Specialization(guards = {"!isUndefinedPlaceholder(arguments[2])", "isNegative"})
+        public RubyArray initializeNegative(RubyArray array, int size, Object defaultValue, UndefinedPlaceholder block) {
+            CompilerDirectives.transferToInterpreter();
+            throw new RaiseException(getContext().getCoreLibrary().argumentError("negative array size", this));
         }
 
         @Specialization(guards = {"!isInteger(arguments[1])", "!isUndefinedPlaceholder(arguments[2])"})
@@ -1731,20 +1756,27 @@ public abstract class ArrayNodes {
                 toIntNode = insert(ToIntNodeFactory.create(getContext(), getSourceSection(), null));
             }
             int size = toIntNode.executeIntegerFixnum(frame, sizeObject);
-            return initialize(array, size, defaultValue, UndefinedPlaceholder.INSTANCE);
+            if (size < 0) {
+                return initializeNegative(array, size, defaultValue, UndefinedPlaceholder.INSTANCE);
+            } else {
+                return initialize(array, size, defaultValue, UndefinedPlaceholder.INSTANCE);
+            }
+
         }
 
-        @Specialization(guards = "!isUndefinedPlaceholder(arguments[2])")
+        @Specialization(guards = {"!isUndefinedPlaceholder(arguments[2])", "!isNegative"})
         public Object initialize(VirtualFrame frame, RubyArray array, int size, Object defaultValue, RubyProc block) {
             return initialize(frame, array, size, UndefinedPlaceholder.INSTANCE, block);
         }
 
-        @Specialization
+        @Specialization(guards = {"!isUndefinedPlaceholder(arguments[2])", "isNegative"})
+        public Object initializeNegative(VirtualFrame frame, RubyArray array, int size, Object defaultValue, RubyProc block) {
+            CompilerDirectives.transferToInterpreter();
+            throw new RaiseException(getContext().getCoreLibrary().argumentError("negative array size", this));
+        }
+
+        @Specialization(guards = "!isNegative")
         public Object initialize(VirtualFrame frame, RubyArray array, int size, UndefinedPlaceholder defaultValue, RubyProc block) {
-            if (size < 0) {
-                CompilerDirectives.transferToInterpreter();
-                throw new RaiseException(getContext().getCoreLibrary().argumentError("negative array size", this));
-            }
             Object store = arrayBuilder.start();
 
             int count = 0;
@@ -1771,6 +1803,12 @@ public abstract class ArrayNodes {
 
             array.setStore(arrayBuilder.finish(store, size), size);
             return array;
+        }
+
+        @Specialization(guards = "isNegative")
+        public Object initializeNegative(VirtualFrame frame, RubyArray array, int size, UndefinedPlaceholder defaultValue, RubyProc block) {
+            CompilerDirectives.transferToInterpreter();
+            throw new RaiseException(getContext().getCoreLibrary().argumentError("negative array size", this));
         }
 
         @Specialization
