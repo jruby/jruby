@@ -59,7 +59,8 @@ import static org.jruby.javasupport.JavaCallable.inspectParameterTypes;
 public class JavaProxyConstructor extends JavaProxyReflectionObject implements ParameterTypes {
 
     private final Constructor<?> proxyConstructor;
-    private final Class<?>[] apparentParameterTypes;
+    private final Class<?>[] actualParameterTypes;
+    private final boolean actualVarArgs;
 
     private final JavaProxyClass declaringProxyClass;
 
@@ -79,23 +80,22 @@ public class JavaProxyConstructor extends JavaProxyReflectionObject implements P
         super(runtime, runtime.getJavaSupport().getJavaProxyConstructorClass());
         this.declaringProxyClass = proxyClass;
         this.proxyConstructor = constructor;
-
         Class<?>[] parameterTypes = constructor.getParameterTypes();
-        final int len = parameterTypes.length - 1;
-        System.arraycopy(parameterTypes, 0, apparentParameterTypes = new Class<?>[len], 0, len);
+        final int len = parameterTypes.length - 1; // last argument is our invocation handler
+        // see JavaProxyClassFactory's generateConstructor ...
+        System.arraycopy(parameterTypes, 0, actualParameterTypes = new Class<?>[len], 0, len);
+        this.actualVarArgs = JavaProxyClassFactory.isVarArgs(proxyConstructor);
     }
 
     public final Class<?>[] getParameterTypes() {
-        return apparentParameterTypes;
+        return actualParameterTypes;
     }
 
     public final Class<?>[] getExceptionTypes() {
         return proxyConstructor.getExceptionTypes();
     }
 
-    public final boolean isVarArgs() {
-        return proxyConstructor.isVarArgs();
-    }
+    public final boolean isVarArgs() { return actualVarArgs; }
 
     @JRubyMethod(name = "declaring_class")
     public JavaProxyClass getDeclaringClass() {
@@ -106,7 +106,7 @@ public class JavaProxyConstructor extends JavaProxyReflectionObject implements P
         throws IllegalArgumentException, InstantiationException,
                IllegalAccessException, InvocationTargetException {
         final int len = args.length;
-        if ( len != apparentParameterTypes.length ) {
+        if ( len != actualParameterTypes.length ) {
             throw new IllegalArgumentException("wrong number of parameters");
         }
 
@@ -146,6 +146,11 @@ public class JavaProxyConstructor extends JavaProxyReflectionObject implements P
         inspectParameterTypes(str, this);
         str.append(">");
         return getRuntime().newString( str.toString() );
+    }
+
+    @Override
+    public String toString() {
+        return inspect().toString();
     }
 
     @JRubyMethod
@@ -203,6 +208,14 @@ public class JavaProxyConstructor extends JavaProxyReflectionObject implements P
             final String name = proxyMethod.getName();
             final DynamicMethod method = metaClass.searchMethod(name);
 
+            final IRubyObject result = invokeRuby(method, proxyMethod, metaClass, name, nargs);
+
+            final Class<?> returnType = proxyMethod.getReturnType();
+            return returnType == void.class ? null : result.toJava( returnType );
+        }
+
+        private IRubyObject invokeRuby(final DynamicMethod method, final JavaProxyMethod proxyMethod,
+            final RubyClass metaClass, final String name, final Object[] nargs) {
             final IRubyObject[] newArgs = new IRubyObject[nargs.length];
             for ( int i = nargs.length; --i >= 0; ) {
                 newArgs[i] = JavaUtil.convertJavaToUsableRubyObject(runtime, nargs[i]);
@@ -210,22 +223,16 @@ public class JavaProxyConstructor extends JavaProxyReflectionObject implements P
 
             final int arity = method.getArity().getValue();
 
-            final IRubyObject result;
             if ( arity < 0 || arity == newArgs.length ) {
                 final ThreadContext context = runtime.getCurrentContext();
-                result = method.call(context, self, metaClass, name, newArgs);
+                return method.call(context, self, metaClass, name, newArgs);
             }
-            else if ( proxyMethod.hasSuperImplementation() ) {
+            if ( proxyMethod.hasSuperImplementation() ) {
                 final ThreadContext context = runtime.getCurrentContext();
                 final RubyClass superClass = metaClass.getSuperClass();
-                result = Helpers.invokeAs(context, superClass, self, name, newArgs, Block.NULL_BLOCK);
+                return Helpers.invokeAs(context, superClass, self, name, newArgs, Block.NULL_BLOCK);
             }
-            else {
-                throw runtime.newArgumentError(newArgs.length, arity);
-            }
-
-            final Class<?> returnType = proxyMethod.getReturnType();
-            return returnType == void.class ? null : result.toJava( returnType );
+            throw runtime.newArgumentError(newArgs.length, arity);
         }
 
     }

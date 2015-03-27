@@ -12,7 +12,7 @@
  * rights and limitations under the License.
  *
  * Copyright (C) 2004 Thomas E Enebo <enebo@acm.org>
- * 
+ *
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
  * or the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
@@ -27,7 +27,59 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.javasupport.test;
 
-public class ConstantHolder {
+public class VariableArguments {
 
-	public static final String _LEADING_UNDERSCORE = "Foo";
+	public static final String _LEADING_UNDERSCORE = "_";
+
+    public Object[] constants;
+    protected final String[] arguments;
+
+    public VariableArguments() {
+        constants = arguments = null;
+    }
+
+    public VariableArguments(String... args) {
+        constants = arguments = args;
+    }
+
+    public String[] getArgs() { return arguments; }
+
+    public void setConstants(String constants) {
+        this.constants = constants.split(",");
+    }
+
+    public void setConstants(String const1, String const2) {
+        this.constants = new String[] { const1, const2 };
+    }
+
+    public void setConstants(String c, String... constants) {
+        this.constants = new String[constants.length + 1];
+        this.constants[0] = c;
+        System.arraycopy(constants, 0, this.constants, 1, constants.length);
+    }
+
+    public void setConstants(String... constants) {
+        this.constants = constants;
+    }
+
+    public static class VarArgOnly extends VariableArguments {
+
+        public VarArgOnly(String... constants) {
+            super(constants);
+        }
+
+    }
+
+    public static class SingleArg extends VariableArguments {
+
+        public SingleArg(String constants) {
+            super(constants + "_single");
+        }
+
+        public SingleArg(String... constants) {
+            super(constants);
+        }
+
+    }
+
 }

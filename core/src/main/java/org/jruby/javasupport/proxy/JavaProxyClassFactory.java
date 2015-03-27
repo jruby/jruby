@@ -28,6 +28,10 @@
 
 package org.jruby.javasupport.proxy;
 
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
@@ -364,8 +368,8 @@ public class JavaProxyClassFactory {
         clazzInit.putStatic(selfType, field_name, PROXY_METHOD_TYPE);
 
         org.objectweb.asm.commons.Method sm = new org.objectweb.asm.commons.Method(
-                "__super$" + m.getName(), m.getReturnType(), m
-                        .getArgumentTypes());
+                "__super$" + m.getName(), m.getReturnType(), m.getArgumentTypes()
+        );
 
         //
         // construct the proxy method
@@ -374,8 +378,7 @@ public class JavaProxyClassFactory {
                 ex, cw);
 
         ga.loadThis();
-        ga.getField(selfType, INVOCATION_HANDLER_FIELD_NAME,
-                INVOCATION_HANDLER_TYPE);
+        ga.getField(selfType, INVOCATION_HANDLER_FIELD_NAME, INVOCATION_HANDLER_TYPE);
 
         // if the method is extending something, then we have
         // to test if the handler is initialized...
@@ -397,7 +400,7 @@ public class JavaProxyClassFactory {
 
         if (m.getArgumentTypes().length == 0) {
             // load static empty array
-            ga.getStatic(JAVA_PROXY_TYPE, "NO_ARGS", Type.getType(Object[].class));
+            ga.getStatic(JAVA_PROXY_TYPE, "NO_ARGS", toType(Object[].class));
         } else {
             // box arguments
             ga.loadArgArray();
@@ -423,16 +426,15 @@ public class JavaProxyClassFactory {
         ga.visitTryCatchBlock(before, after, rethrow, "java/lang/Error");
         ga.visitTryCatchBlock(before, after, rethrow, "java/lang/RuntimeException");
 
-        Type thr = Type.getType(Throwable.class);
+        Type thr = toType(Throwable.class);
         Label handler = ga.mark();
-        Type udt = Type.getType(UndeclaredThrowableException.class);
+        Type udt = toType(UndeclaredThrowableException.class);
         int loc = ga.newLocal(thr);
         ga.storeLocal(loc, thr);
         ga.newInstance(udt);
         ga.dup();
         ga.loadLocal(loc, thr);
-        ga.invokeConstructor(udt, org.objectweb.asm.commons.Method
-                .getMethod("void <init>(java.lang.Throwable)"));
+        ga.invokeConstructor(udt, org.objectweb.asm.commons.Method.getMethod("void <init>(java.lang.Throwable)"));
         ga.throwException();
 
         ga.visitTryCatchBlock(before, after, handler, "java/lang/Throwable");
@@ -475,7 +477,7 @@ public class JavaProxyClassFactory {
         String[] exceptionNames = toInternalNames( superConstructorExceptions );
         MethodVisitor mv = cw.visitMethod(access, m.getName(), m.getDescriptor(), signature, exceptionNames);
         // marking with @SafeVarargs so that we can correctly detect proxied var-arg consturctors :
-        if ( superConstructorVarArgs ) mv.visitAnnotation(Type.getDescriptor(SafeVarargs.class), true);
+        if ( superConstructorVarArgs ) mv.visitAnnotation(Type.getDescriptor(VarArgs.class), true);
         GeneratorAdapter ga = new GeneratorAdapter(access, m, mv);
 
         ga.loadThis();
@@ -494,13 +496,11 @@ public class JavaProxyClassFactory {
     }
 
     static boolean isVarArgs(final Constructor<?> ctor) {
-        // @SafeVarags marks proxies var-arg (super) constructor :
-        return ctor.isVarArgs() || ctor.getAnnotation(SafeVarargs.class) != null;
+        return ctor.isVarArgs() || ctor.getAnnotation(VarArgs.class) != null;
     }
 
     //static boolean isVarArgs(final Method method) {
-    //    // @SafeVarags marks proxies var-arg (super) method :
-    //    return method.isVarArgs() || method.getAnnotation(SafeVarargs.class) != null;
+    //    return method.isVarArgs() || method.getAnnotation(VarArgs.class) != null;
     //}
 
     private static String toInternalClassName(Class clazz) {
@@ -801,5 +801,13 @@ public class JavaProxyClassFactory {
         if ( idx == -1 ) return "org.jruby.proxy";
         return "org.jruby.proxy." + clazzName.substring(0, idx);
     }
+
+    /**
+     * Variable arguments marker for generated constructor.
+     * @note could have used @SafeVarargs but it's Java 7+
+     */
+    @Retention(RetentionPolicy.RUNTIME)
+    @Target({ElementType.CONSTRUCTOR, ElementType.METHOD})
+    public static @interface VarArgs {}
 
 }

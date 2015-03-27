@@ -79,10 +79,78 @@ class TestHigherJavasupport < Test::Unit::TestCase
 
   Character = java.lang.Character
   def test_constants
-    assert_equal(9223372036854775807, Long::MAX_VALUE)
+    assert_equal 9223372036854775807, Long::MAX_VALUE
     assert(! defined? Character::Y_DATA)  # Known private field in Character
+
     # class definition with "_" constant causes error
-    assert_nothing_raised { org.jruby.javasupport.test.ConstantHolder }
+    org.jruby.javasupport.test.VariableArguments
+    assert_equal '_', org.jruby.javasupport.test.VariableArguments::_LEADING_UNDERSCORE
+  end
+
+  VarArgsCtor = org.jruby.javasupport.test.VariableArguments
+
+  def test_varargs_constructor
+    holder = VarArgsCtor.new
+    assert_equal nil, holder.constants
+
+    holder = VarArgsCtor.new '0'
+    assert_equal '0', holder.constants[0]
+
+    holder = org.jruby.javasupport.test.VariableArguments.new '0', '1'
+    assert_equal '1', holder.constants[1]
+
+    assert_raises(NameError) do
+      org.jruby.javasupport.test.VariableArguments.new '0', 1
+    end
+  end
+
+  class RubyVarArgsCtor1 < VarArgsCtor
+    def initialize(a1, a2); super(a1, a2) end
+  end
+
+  class RubyVarArgsCtor2 < VarArgsCtor
+    def initialize(); super(nil) end
+  end
+
+  class RubyVarArgsCtor3 < VarArgsCtor
+    def initialize(); super() end
+  end
+
+  class RubyVarArgsCtor4 < VarArgsCtor
+    # implicit initialize()
+  end
+
+  VarArgOnly = org.jruby.javasupport.test.VariableArguments::VarArgOnly
+
+  class RubyVarArgsOnlyCtor1 < VarArgOnly
+    # implicit initialize()
+  end
+
+  class RubyVarArgsOnlyCtor2 < VarArgOnly
+    def initialize(); end
+  end
+
+  def test_varargs_constructor_in_ruby_subclass
+    holder = RubyVarArgsCtor1.new 'foo', 'bar'
+    assert_equal 'foo', holder.constants[0]
+    assert_equal 'bar', holder.constants[1]
+
+    holder = RubyVarArgsCtor2.new
+    assert_equal nil, holder.constants[0]
+
+    holder = RubyVarArgsCtor3.new
+    assert_equal nil, holder.constants
+
+    holder = RubyVarArgsCtor4.new
+    assert_equal nil, holder.constants
+
+    #
+
+    holder = RubyVarArgsOnlyCtor1.new
+    assert_equal 0, holder.constants.length
+
+    holder = RubyVarArgsOnlyCtor2.new
+    assert_equal 0, holder.constants.length
   end
 
   java_import org.jruby.javasupport.test.Room
