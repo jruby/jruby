@@ -21,6 +21,7 @@ import org.jcodings.transcode.Transcoder;
 import org.jcodings.transcode.TranscoderDB;
 import org.jruby.Ruby;
 import org.jruby.runtime.ThreadContext;
+import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
@@ -39,7 +40,7 @@ import java.util.List;
 public abstract class EncodingConverterNodes {
 
     @RubiniusOnly
-    @CoreMethod(names = "initialize_jruby", required = 2, optional = 1)
+    @CoreMethod(names = "initialize_jruby", required = 2, optional = 1, visibility = Visibility.PRIVATE)
     public abstract static class InitializeNode extends CoreMethodNode {
 
         public InitializeNode(RubyContext context, SourceSection sourceSection) {
