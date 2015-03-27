@@ -1,1 +1,0 @@
-fails:String#<< with Integer concatencates the argument interpreted as a codepoint
