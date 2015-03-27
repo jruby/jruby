@@ -1213,16 +1213,10 @@ public class RubyIO extends RubyObject implements IOEncodable {
 
         fd = sysopenInternal(runtime, data);
         if (fd == null) {
-            if (data.errno == Errno.EMFILE || data.errno == Errno.ENFILE) {
-                System.gc();
-                data.errno = null;
-                fd = sysopenInternal(runtime, data);
-            }
-            if (fd == null) {
-                if (data.errno != null) {
-                    throw runtime.newErrnoFromErrno(data.errno, fname);
-                }
-                throw runtime.newSystemCallError(fname);
+            if (data.errno != null) {
+                throw runtime.newErrnoFromErrno(data.errno, fname.toString());
+            } else {
+                throw runtime.newSystemCallError(fname.toString());
             }
         }
         return fd;
