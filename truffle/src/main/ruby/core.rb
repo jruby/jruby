@@ -15,7 +15,6 @@ require_relative 'core/rubinius/api/kernel/common/type'
 require_relative 'core/rubinius/api/shims/lookuptable'
 require_relative 'core/rubinius/api/shims/array'
 require_relative 'core/rubinius/api/shims/rubinius'
-require_relative 'core/rubinius/api/shims/lookuptable'
 require_relative 'core/rubinius/api/shims/thread'
 require_relative 'core/rubinius/api/shims/tuple'
 require_relative 'core/rubinius/api/shims/undefined'
@@ -57,6 +56,8 @@ require_relative 'core/rubinius/common/ctype'
 require_relative 'core/rubinius/common/integer'
 require_relative 'core/rubinius/common/bignum'
 require_relative 'core/rubinius/common/fixnum'
+require_relative 'core/rubinius/api/shims/encoding'
+require_relative 'core/rubinius/common/encoding'
 require_relative 'core/rubinius/common/false'
 require_relative 'core/rubinius/common/float'
 require_relative 'core/rubinius/common/immediate'
@@ -87,6 +88,9 @@ require_relative 'core/rubinius/common/gc'
 
 # Load delta (ordered according to Rubinius' load_order.txt)
 require_relative 'core/rubinius/delta/struct'
+
+# Eagerly-load files that are normally lazily loaded via Rubinius::CodeLoader.require_compiled.
+require_relative 'core/rubinius/delta/converter_paths'
 
 # Load JRuby+Truffle classes
 require_relative 'core/array'

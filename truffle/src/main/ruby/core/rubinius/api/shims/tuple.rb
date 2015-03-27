@@ -14,6 +14,16 @@ module Rubinius
        Tuple.new(num, val)
     end
 
+    def self.create(*args)
+      ret = Tuple.new(args.size)
+
+      args.each_with_index do |arg, index|
+        ret[index] = arg
+      end
+
+      ret
+    end
+
 
   end
 
