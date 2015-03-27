@@ -1630,8 +1630,8 @@ public final class StringSupport {
             rsptr = RubyIO.PARAGRAPH_SEPARATOR.begin();
             rslen = 2;
             paragraph_mode = true;
-        }
-        else {
+        } else {
+
             rsbytes = ((RubyString)rs).getByteList().unsafeBytes();
             rsptr = ((RubyString)rs).getByteList().begin();
         }
