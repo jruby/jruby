@@ -109,72 +109,73 @@ public class CodegenUtils {
      * Create a method signature from the given param types and return values
      */
     public static String sig(Class retval, Class... params) {
-        return sigParams(params) + ci(retval);
+        return sigParams(new StringBuilder(), null, params).append( ci(retval) ).toString();
     }
 
     public static String sig(Class[] retvalParams) {
         Class[] justParams = new Class[retvalParams.length - 1];
         System.arraycopy(retvalParams, 1, justParams, 0, justParams.length);
-        return sigParams(justParams) + ci(retvalParams[0]);
+        return sigParams(new StringBuilder(), null, justParams).append( ci(retvalParams[0]) ).toString();
     }
 
     public static String sig(Class retval, String descriptor, Class... params) {
-        return sigParams(descriptor, params) + ci(retval);
+        return sigParams(new StringBuilder(), descriptor, params).append( ci(retval) ).toString();
     }
 
+    @Deprecated // not used
     public static String sigParams(Class... params) {
-        StringBuilder signature = new StringBuilder("(");
-
-        for (int i = 0; i < params.length; i++) {
-            signature.append(ci(params[i]));
-        }
-
-        signature.append(")");
-
-        return signature.toString();
+        return sigParams(new StringBuilder(), null, params).toString();
     }
 
+    @Deprecated // not used
     public static String sigParams(String descriptor, Class... params) {
-        StringBuilder signature = new StringBuilder("(");
+        return sigParams(new StringBuilder(), descriptor, params).toString();
+    }
 
-        signature.append(descriptor);
+    private static StringBuilder sigParams(final StringBuilder str,
+        final String descriptor, final Class... params) {
+        str.append('(');
+        if ( descriptor != null ) str.append(descriptor);
 
         for (int i = 0; i < params.length; i++) {
-            signature.append(ci(params[i]));
+            str.append( ci( params[i] ) );
         }
 
-        signature.append(")");
-
-        return signature.toString();
+        return str.append(')');
     }
 
     public static String pretty(Class retval, Class... params) {
         return prettyParams(params) + human(retval);
     }
 
-    public static String prettyParams(Class... params) {
-        StringBuilder signature = new StringBuilder("(");
-
-        for (int i = 0; i < params.length; i++) {
-            signature.append(human(params[i]));
-            if (i < params.length - 1) signature.append(',');
-        }
-
-        signature.append(")");
-
-        return signature.toString();
+    public static CharSequence prettyParams(final Class... types) {
+        return prettyParams(new StringBuilder(), types);
     }
 
-    public static String prettyShortParams(Class... params) {
-        StringBuilder signature = new StringBuilder("(");
+    public static StringBuilder prettyParams(final StringBuilder str, final Class... types) {
+        final int len1 = types.length - 1;
+        str.append('(');
 
-        for (int i = 0; i < params.length; i++) {
-            signature.append(humanShort(params[i]));
-            if (i < params.length - 1) signature.append(',');
+        for ( int i = 0; i <= len1; i++ ) {
+            str.append( human( types[i] ) );
+            if ( i < len1 ) str.append(',');
         }
 
-        signature.append(")");
+        return str.append(')');
+    }
 
+    public static String prettyShortParams(final Class... types) {
+        final int len1 = types.length - 1;
+
+        StringBuilder signature = new StringBuilder();
+        signature.append('(');
+
+        for (int i = 0; i <= len1; i++) {
+            signature.append( humanShort(types[i]) );
+            if ( i < len1 ) signature.append(',');
+        }
+
+        signature.append(')');
         return signature.toString();
     }
 
@@ -293,6 +294,7 @@ public class CodegenUtils {
                 String key = fieldEntry.getKey();
 
                 if (value instanceof Map) {
+                    @SuppressWarnings("unchecked")
                     Map<Class, Map<String, Object>> nestedAnnotationMap = (Map<Class, Map<String, Object>>) value;
 
                     for (Map.Entry<Class, Map<String, Object>> nestedAnnotation : nestedAnnotationMap.entrySet()) {

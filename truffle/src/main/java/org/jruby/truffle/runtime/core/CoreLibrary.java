@@ -148,6 +148,8 @@ public class CoreLibrary {
     @CompilerDirectives.CompilationFinal private RubySymbol mapBangSymbol;
     @CompilerDirectives.CompilationFinal private RubyHash envHash;
 
+    private boolean loadingCoreLibrary;
+
     public CoreLibrary(RubyContext context) {
         this.context = context;
 
@@ -172,10 +174,6 @@ public class CoreLibrary {
         basicObjectClass.getAdoptedByLexicalParent(objectClass, "BasicObject", null);
         objectClass.getAdoptedByLexicalParent(objectClass, "Object", null);
         moduleClass.getAdoptedByLexicalParent(objectClass, "Module", null);
-
-        // BasicObject knows itself
-
-        basicObjectClass.setConstant(null, "BasicObject", basicObjectClass);
 
         // Create Exception classes 
 
@@ -392,6 +390,9 @@ public class CoreLibrary {
         objectClass.setConstant(null, "RUBY_RELEASE_DATE", RubyString.fromJavaString(stringClass, Constants.COMPILE_DATE));
         objectClass.setConstant(null, "RUBY_DESCRIPTION", RubyString.fromJavaString(stringClass, OutputStrings.getVersionString()));
 
+        // BasicObject knows itself
+        basicObjectClass.setConstant(null, "BasicObject", basicObjectClass);
+
         // TODO(cs): this should be a separate exception
         mathModule.setConstant(null, "DomainError", edomClass);
 
@@ -477,6 +478,7 @@ public class CoreLibrary {
 
         if (LOAD_CORE) {
             try {
+                loadingCoreLibrary = true;
                 loadRubyCore("core.rb");
             } catch (RaiseException e) {
                 final RubyException rubyException = e.getRubyException();
@@ -486,6 +488,8 @@ public class CoreLibrary {
                 }
 
                 throw new TruffleFatalException("couldn't load the core library", e);
+            } finally {
+                loadingCoreLibrary = false;
             }
         }
     }
@@ -1170,5 +1174,9 @@ public class CoreLibrary {
 
     public RubySymbol getMapSymbol() {
         return mapSymbol;
+    }
+
+    public boolean isLoadingCoreLibrary() {
+        return loadingCoreLibrary;
     }
 }

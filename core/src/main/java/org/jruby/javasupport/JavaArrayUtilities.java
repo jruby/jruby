@@ -12,7 +12,7 @@
  * rights and limitations under the License.
  *
  * Copyright (C) 2007 William N Dortch <bill.dortch@gmail.com>
- * 
+ *
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
  * or the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
@@ -51,44 +51,40 @@ public class JavaArrayUtilities {
         javaArrayUtils.defineAnnotatedMethods(JavaArrayUtilities.class);
         return javaArrayUtils;
     }
-    
+
     @JRubyMethod(module = true, visibility = Visibility.PRIVATE)
     public static IRubyObject bytes_to_ruby_string(ThreadContext context, IRubyObject recv, IRubyObject wrappedObject) {
         return bytes_to_ruby_string(context, recv, wrappedObject, context.nil);
     }
-    
+
     @JRubyMethod(module = true, visibility = Visibility.PRIVATE)
     public static IRubyObject bytes_to_ruby_string(ThreadContext context, IRubyObject recv, IRubyObject wrappedObject, IRubyObject encoding) {
-        Ruby runtime = recv.getRuntime();
         byte[] bytes = null;
-        
+
         if (wrappedObject instanceof JavaProxy) {
-            Object wrapped = ((JavaProxy)wrappedObject).getObject();
-            if (wrapped instanceof byte[]) {
-                bytes = (byte[])wrapped;
-            }
+            Object wrapped = ((JavaProxy) wrappedObject).getObject();
+            if ( wrapped instanceof byte[] ) bytes = (byte[]) wrapped;
         } else {
-            IRubyObject byteArray = (IRubyObject)wrappedObject.dataGetStruct();
-            if (byteArray instanceof JavaArray &&
-                    ((JavaArray)byteArray).getValue() instanceof byte[]) {
-                bytes = (byte[])((JavaArray)byteArray).getValue();
+            IRubyObject byteArray = (IRubyObject) wrappedObject.dataGetStruct();
+            if (byteArray instanceof JavaArray) {
+                final Object wrapped = ((JavaArray) byteArray).getValue();
+                if ( wrapped instanceof byte[] ) bytes = (byte[]) wrapped;
             }
         }
 
         if (bytes == null) {
-            throw runtime.newTypeError("wrong argument type " + wrappedObject.getMetaClass() +
-                    " (expected byte[])");
+            throw context.runtime.newTypeError("wrong argument type " +
+                wrappedObject.getMetaClass() + " (expected byte[])"
+            );
         }
 
-        RubyString string = runtime.newString(new ByteList(bytes, true));
-        
-        if (!encoding.isNil()) {
-            string.force_encoding(context, encoding);
-        }
-        
+        RubyString string = context.runtime.newString(new ByteList(bytes, true));
+
+        if ( ! encoding.isNil() ) string.force_encoding(context, encoding);
+
         return string;
     }
-    
+
     @JRubyMethod(module = true, visibility = Visibility.PRIVATE)
     public static IRubyObject ruby_string_to_bytes(IRubyObject recv, IRubyObject string) {
         Ruby runtime = recv.getRuntime();

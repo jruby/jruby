@@ -10,10 +10,13 @@ import org.jruby.RubyFixnum;
 import org.jruby.RubyInteger;
 import org.jruby.RubyModule;
 import org.jruby.RubyRange;
+import org.jruby.RubyString;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.java.util.ArrayUtils;
+import org.jruby.javasupport.Java;
 import org.jruby.javasupport.JavaArray;
+import org.jruby.javasupport.JavaClass;
 import org.jruby.javasupport.JavaUtil;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ObjectAllocator;
@@ -25,12 +28,12 @@ public class ArrayJavaProxy extends JavaProxy {
 
     private final JavaUtil.JavaConverter converter;
 
-    public ArrayJavaProxy(Ruby runtime, RubyClass klazz, Object ary) {
-        this(runtime, klazz, ary, JavaUtil.getJavaConverter(ary.getClass().getComponentType()));
+    public ArrayJavaProxy(Ruby runtime, RubyClass klazz, Object array) {
+        this(runtime, klazz, array, JavaUtil.getJavaConverter(array.getClass().getComponentType()));
     }
 
-    public ArrayJavaProxy(Ruby runtime, RubyClass klazz, Object ary, JavaUtil.JavaConverter converter) {
-        super(runtime, klazz, ary);
+    public ArrayJavaProxy(Ruby runtime, RubyClass klazz, Object array, JavaUtil.JavaConverter converter) {
+        super(runtime, klazz, array);
         this.converter = converter;
     }
 
@@ -50,6 +53,17 @@ public class ArrayJavaProxy extends JavaProxy {
         return arrayJavaProxy;
     }
 
+    static ArrayJavaProxy newArray(final Ruby runtime, final Class<?> elementType, final int... dimensions) {
+        final Object array;
+        try {
+            array = Array.newInstance(elementType, dimensions);
+        }
+        catch (IllegalArgumentException e) {
+            throw runtime.newArgumentError("can not create " + dimensions.length + " dimensional array");
+        }
+        return new ArrayJavaProxy(runtime, Java.getProxyClassForObject(runtime, array), array);
+    }
+
     public JavaArray getJavaArray() {
         JavaArray javaArray = (JavaArray) dataGetStruct();
 
@@ -62,12 +76,12 @@ public class ArrayJavaProxy extends JavaProxy {
     }
 
     @JRubyMethod(name = {"length", "size"})
-    public IRubyObject length(ThreadContext context) {
+    public RubyFixnum length(ThreadContext context) {
         return context.runtime.newFixnum( Array.getLength( getObject() ) );
     }
 
     @JRubyMethod(name = "empty?")
-    public IRubyObject empty(ThreadContext context) {
+    public RubyBoolean empty_p(ThreadContext context) {
         return context.runtime.newBoolean( Array.getLength( getObject() ) == 0 );
     }
 
@@ -148,8 +162,15 @@ public class ArrayJavaProxy extends JavaProxy {
         return JavaUtil.convertJavaArrayToRubyWithNesting(context, array);
     }
 
+    @JRubyMethod(name = {"component_type"})
+    public IRubyObject component_type(ThreadContext context) {
+        Class<?> componentType = getObject().getClass().getComponentType();
+        final JavaClass javaClass = JavaClass.get(context.runtime, componentType);
+        return Java.getProxyClass(context.runtime, javaClass);
+    }
+
     @JRubyMethod
-    public IRubyObject inspect(ThreadContext context) {
+    public RubyString inspect(ThreadContext context) {
         final StringBuilder buffer = new StringBuilder();
         Class<?> componentClass = getObject().getClass().getComponentType();
 
@@ -184,7 +205,7 @@ public class ArrayJavaProxy extends JavaProxy {
             buffer.append(Arrays.toString((Object[]) getObject()));
         }
         buffer.append('@').append(Integer.toHexString(inspectHashCode()));
-        return context.runtime.newString(buffer.toString());
+        return RubyString.newString(context.runtime, buffer.toString());
     }
 
     @JRubyMethod(name = "==")

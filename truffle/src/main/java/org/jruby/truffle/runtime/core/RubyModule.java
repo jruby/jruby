@@ -22,6 +22,7 @@ import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.utilities.CyclicAssumption;
 
 import org.jruby.runtime.Visibility;
+import org.jruby.truffle.nodes.CoreSourceSection;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.objects.Allocator;
 import org.jruby.truffle.runtime.*;
@@ -197,6 +198,14 @@ public class RubyModule extends RubyBasicObject implements ModuleChain {
      */
     @TruffleBoundary
     public void setConstant(Node currentNode, String name, Object value) {
+        if (getContext().getCoreLibrary().isLoadingCoreLibrary()) {
+            final RubyConstant currentConstant = constants.get(name);
+
+            if (currentConstant != null) {
+                return;
+            }
+        }
+
         if (value instanceof RubyModule) {
             ((RubyModule) value).getAdoptedByLexicalParent(this, name, currentNode);
         } else {
@@ -259,6 +268,14 @@ public class RubyModule extends RubyBasicObject implements ModuleChain {
         RubyNode.notDesignedForCompilation();
 
         assert method != null;
+
+        if (getContext().getCoreLibrary().isLoadingCoreLibrary()) {
+            final InternalMethod currentMethod = methods.get(method.getName());
+
+            if (currentMethod != null && currentMethod.getSharedMethodInfo().getSourceSection() instanceof CoreSourceSection) {
+                return;
+            }
+        }
 
         checkFrozen(currentNode);
         methods.put(method.getName(), method.withDeclaringModule(this));

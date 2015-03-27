@@ -50,7 +50,7 @@ import org.jruby.Ruby;
 import org.jruby.util.cli.Options;
 import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
-import static org.jruby.javasupport.proxy.JavaProxyClass.EMPTY_CLASS_ARRAY;
+import static org.jruby.javasupport.JavaClass.EMPTY_CLASS_ARRAY;
 
 import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.ClassWriter;

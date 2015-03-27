@@ -91,8 +91,7 @@ class Array
     Array.new self[0, n]
   end
 
-  # MODIFIED to handle blocks from java
-  def zip_internal(block, *others)
+  def zip_internal(*others)
     out = Array.new(size) { [] }
     others = others.map do |ary|
       if ary.respond_to?(:to_ary)
@@ -110,8 +109,8 @@ class Array
       others.each { |ary| slot << ary.at(i) }
     end
 
-    unless block.nil?
-      out.each { |ary| block.call(ary) }
+    if block_given?
+      out.each { |ary| yield ary }
       return nil
     end
 
@@ -1115,6 +1114,31 @@ class Array
     end
 
     out
+  end
+
+  def uniq(&block)
+    dup.uniq!(&block) or dup
+  end
+
+  def uniq!(&block)
+    Rubinius.check_frozen
+
+    if block_given?
+      im = Rubinius::IdentityMap.from(self, &block)
+    else
+      im = Rubinius::IdentityMap.from(self)
+    end
+    return if im.size == size
+
+    m = Rubinius::Mirror::Array.reflect im.to_array
+    @tuple = m.tuple
+    @start = m.start
+    @total = m.total
+
+    # MODIFIED added copy_from and delete_range to modify the store
+    copy_from(m.tuple, 0, m.total, 0)
+    delete_range(m.total, self.size - m.total)
+    self
   end
 
   def sort_by!(&block)

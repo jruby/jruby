@@ -3095,38 +3095,6 @@ public abstract class ArrayNodes {
 
     }
 
-    @CoreMethod(names = "product", required = 1)
-    public abstract static class ProductNode extends ArrayCoreMethodNode {
-
-        public ProductNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
-        public ProductNode(ProductNode prev) {
-            super(prev);
-        }
-
-        @Specialization(guards = {"isObject(array)", "isOtherObject(array, other)"})
-        public Object product(RubyArray array, RubyArray other) {
-            final Object[] a = (Object[]) array.getStore();
-            final int aLength = array.getSize();
-
-            final Object[] b = (Object[]) other.getStore();
-            final int bLength = other.getSize();
-
-            final Object[] pairs = new Object[aLength * bLength];
-
-            for (int an = 0; an < aLength; an++) {
-                for (int bn = 0; bn < bLength; bn++) {
-                    pairs[an * bLength + bn] = new RubyArray(getContext().getCoreLibrary().getArrayClass(), new Object[]{a[an], b[bn]}, 2);
-                }
-            }
-
-            return new RubyArray(getContext().getCoreLibrary().getArrayClass(), pairs, pairs.length);
-        }
-
-    }
-
     @CoreMethod(names = {"push", "<<", "__append__"}, argumentsAsArray = true, raiseIfFrozenSelf = true)
     public abstract static class PushNode extends ArrayCoreMethodNode {
 
@@ -4459,43 +4427,6 @@ public abstract class ArrayNodes {
 
     }
 
-    @CoreMethod(names = "uniq")
-    public abstract static class UniqNode extends CoreMethodNode {
-
-        public UniqNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
-        public UniqNode(UniqNode prev) {
-            super(prev);
-        }
-
-        @Specialization
-        public RubyArray uniq(RubyArray array) {
-            notDesignedForCompilation();
-
-            final RubyArray uniq = new RubyArray(getContext().getCoreLibrary().getArrayClass(), null, 0);
-
-            for (Object value : array.slowToArray()) {
-                boolean duplicate = false;
-
-                for (Object compare : uniq.slowToArray()) {
-                    if ((boolean) DebugOperations.send(getContext(), value, "==", null, compare)) {
-                        duplicate = true;
-                        break;
-                    }
-                }
-
-                if (!duplicate) {
-                    uniq.slowPush(value);
-                }
-            }
-
-            return uniq;
-        }
-
-    }
-
     @CoreMethod(names = "unshift", argumentsAsArray = true, raiseIfFrozenSelf = true)
     public abstract static class UnshiftNode extends CoreMethodNode {
 
@@ -4591,29 +4522,25 @@ public abstract class ArrayNodes {
 
         @Specialization(guards = {"!isOtherSingleObjectArray(array, others)"})
         public Object zipObjectObjectNotSingleObject(VirtualFrame frame, RubyArray array, Object[] others) {
-            RubyBasicObject proc = RubyArguments.getBlock(frame.getArguments());
-            if (proc == null) {
-                proc = nil();
-            }
-            return ruby(frame, "zip_internal(nil, *others)", "others", new RubyArray(getContext().getCoreLibrary().getArrayClass(), others, others.length), "block", proc);
+            return zipRuby(frame, others);
         }
 
         @Specialization(guards = {"!isOtherSingleIntegerFixnumArray(array, others)"})
         public Object zipObjectObjectNotSingleInteger(VirtualFrame frame, RubyArray array, Object[] others) {
-            RubyBasicObject proc = RubyArguments.getBlock(frame.getArguments());
-            if (proc == null) {
-                proc = nil();
-            }
-            return ruby(frame, "zip_internal(block, *others)", "others", new RubyArray(getContext().getCoreLibrary().getArrayClass(), others, others.length), "block", proc);
+            return zipRuby(frame, others);
         }
 
         @Specialization(guards = {"!isObject(array)"})
         public Object zipObjectObjectNotObject(VirtualFrame frame, RubyArray array, Object[] others) {
+            return zipRuby(frame, others);
+        }
+
+        private Object zipRuby(VirtualFrame frame, Object[] others) {
             RubyBasicObject proc = RubyArguments.getBlock(frame.getArguments());
             if (proc == null) {
                 proc = nil();
             }
-            return ruby(frame, "zip_internal(block, *others)", "others", new RubyArray(getContext().getCoreLibrary().getArrayClass(), others, others.length), "block", proc);
+            return ruby(frame, "zip_internal(*others, &block)", "others", new RubyArray(getContext().getCoreLibrary().getArrayClass(), others, others.length), "block", proc);
         }
 
     }

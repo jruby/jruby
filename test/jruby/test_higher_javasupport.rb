@@ -16,6 +16,8 @@ class TestHigherJavasupport < Test::Unit::TestCase
   Annotation = java.lang.annotation.Annotation
   ClassWithPrimitive = org.jruby.test.ClassWithPrimitive
 
+  ALLOW_UPPERCASE_PACKAGE_NAMES = JRuby.runtime.getInstanceConfig.getAllowUppercasePackageNames
+
   def test_java_int_primitive_assignment
     assert_nothing_raised {
       cwp = ClassWithPrimitive.new
@@ -99,19 +101,40 @@ class TestHigherJavasupport < Test::Unit::TestCase
     assert_nothing_raised { org.jruby.javasupport.test.ConstantHolder }
   end
 
+  java_import org.jruby.javasupport.test.Room
+
   def test_using_arrays
     list = JArray.new
-    list.add(10)
-    list.add(20)
+    list.add(10); list.add(20)
     array = list.toArray
     assert_equal(10, array[0])
     assert_equal(20, array[1])
-    assert_equal(2, array.length)
+    assert_equal 2, array.length
+
     array[1] = 1234
-    assert_equal(10, array[0])
-    assert_equal(1234, array[1])
-    assert_equal([10, 1234], array.entries)
-    assert_equal(10, array.min)
+    assert_equal 10, array[0]
+    assert_equal 1234, array[1]
+    assert_equal [10, 1234], array.entries
+    assert_equal 10, array.min
+
+    assert_raises(ArgumentError) { array[3] } # IndexOutOfBoundsException
+
+    array = Java::int[5].new
+    assert_equal 5, array.size
+    assert_equal 0, array[0]
+    array[1] = 1; array[2] = 2; array[3] = 3; array[4] = 4
+    assert_equal 1, array[1]
+    assert_equal 4, array.max
+
+    assert_raises(ArgumentError) { array[6] } # IndexOutOfBoundsException
+    assert_raises(ArgumentError) { array[-1] } # IndexOutOfBoundsException
+
+    room_array = Room[1].new
+    assert_equal 1, room_array.length
+    room1 = Room.new("Bedroom")
+    room_array[0] = room1
+    assert_equal room1, room_array[0]
+    assert_equal 1, room_array.length
   end
 
   def test_creating_arrays
@@ -121,6 +144,138 @@ class TestHigherJavasupport < Test::Unit::TestCase
     array[2] = 17.0
     assert_equal(3.14, array[0])
     assert_equal(17.0, array[2])
+
+    array = Java::double[3, 2].new
+    assert_equal(3, array.length)
+    assert_equal(2, array[0].length)
+    assert_equal(2, array[1].length)
+    array[0][0] = 4.2
+    array[1][1] = 0.1
+
+    array = Java::byte[3]
+    array = array[2].new # [3, 2]
+    assert_equal 3, array.length
+    assert_equal 2, array[0].length
+    assert_equal 2, array[1].size
+    array[0][0] = 1
+    array[1][1] = 2
+
+    array = java.lang.String[3, 2][1].new_instance
+    assert_equal 3, array.length
+    assert_equal 2, array[0].size
+    assert_equal 2, array[1].length
+    assert_equal 1, array[0][0].length
+    assert_equal 1, array[0][1].size
+    assert_equal 1, array[1][1].length
+    array[0][0][0] = '0'
+    array[1][1][0] = '1'
+
+    array = java.lang.CharSequence[10].new
+    assert_equal 10, array.size
+    array[9] = 'ferko-suska'
+
+    array = Java::JavaLang::Runnable[1, 2].new
+    assert_equal 1, array.size
+    assert_equal 2, array[0].size
+
+    args = []; 1025.times { args << 1025 }
+    begin
+      array = java.lang.Object[ *args ]
+      array.new
+      fail "expected to raise (creating 1025 dimensional array)"
+    rescue ArgumentError => e
+      assert e.message
+    end
+  end
+
+  def test_creating_arrays_proxy_class
+    array = java.lang.String.new_array(10)
+    assert_equal 10, array.length
+    assert_equal 'jedna', ( array[1] = 'jedna' )
+
+    array = Java::short.new_array(2)
+    assert_equal 2, array.size
+    assert_equal 256, ( array[0] = 256 )
+  end
+
+  def test_ruby_array_to_java_array
+    array = [ 1 ].to_java(:int)
+    assert_equal 1, array.length
+    assert_equal 1, array[0]
+    assert_equal Java::int, array.component_type
+    array[0] = 1000001
+    array[0] = java.lang.Integer.valueOf(100000)
+    assert_equal 100000, array[0]
+
+    array = [ 1, 2 ].to_java(:byte)
+    assert_equal 2, array.length
+    array[1] = 10
+    begin
+      array[1] = 1000
+    rescue => e # RangeError: too big for byte: 1000
+      assert e.message
+    end
+  end
+
+  def test_ruby_array_to_multi_dimensional_java_array
+    array = [ [ 1 ] ].to_java
+    assert_equal 1, array.length
+    assert_equal java.lang.Object, array.component_type
+    assert_equal [ 1 ], array[0]
+    assert_equal Array, array[0].class
+  end
+
+  def test_ruby_array_with_java_array_element_to_array
+    array = [ "foo".to_java_bytes ]
+    array = array.to_java Java::byte[]
+    assert_equal 1, array.size
+    assert_equal 3, array[0].size
+    assert_equal Java::byte, array[0].component_type
+
+    array = [ [ 1 ], "bar".to_java_bytes, [ 2 ] ].to_java(Java::byte[])
+    assert_equal 3, array.length
+    assert_equal Java::byte[], array.component_type
+    assert_equal 3, array[1].length
+    assert_equal 1, array[0][0]
+    assert_equal 2, array[2][0]
+  end
+
+  def test_ruby_array_copy_data
+    array = Java::short[5].new
+    [ 0, 1, 2 ].copy_data array, 10
+    assert_equal 0, array[0]
+    assert_equal 1, array[1]
+    assert_equal 2, array[2]
+    assert_equal 10, array[3]
+    assert_equal 10, array[4]
+
+    array = java.lang.Long[5].new
+    [ 0, 1, 2 ].copy_data array
+    assert_equal 0, array[0]
+    assert_equal 1, array[1]
+    assert_equal 2, array[2]
+    assert_equal nil, array[3]
+    assert_equal nil, array[4]
+  end
+
+  def test_ruby_array_dimensions
+    assert_equal [ 0 ], [].dimensions
+    assert_equal [ 1 ], [ 0 ].dimensions
+    assert_equal [ 1 ], [ 42 ].dimensions
+    assert_equal [ 1, 1 ], [ [ 42 ] ].dimensions
+    assert_equal [ 2, 3 ], [ [ 0 ], [ 1, [2, 3], 4 ] ].dimensions
+    assert_equal [ 2, 1 ], [ [], [ 0 ] ].dimensions
+  end
+
+  def test_void
+    assert Java::void
+    assert Java::Void
+    begin
+      Java::void[1].new
+      fail "expected to raise"
+    rescue ArgumentError => e
+      assert_equal "Java package `void' does not have a method `[]'", e.message
+    end
   end
 
   class IntLike
@@ -435,6 +590,51 @@ class TestHigherJavasupport < Test::Unit::TestCase
     assert_equal true, value1_field.final?
   end
 
+  def test_reflected_callable_to_s_and_inspect
+    java_class = Java::JavaClass.for_name('java.util.ArrayList')
+    constructors = java_class.constructors
+    c = constructors.find { |constructor| constructor.parameter_types == [ Java::int.java_class ] }
+    assert_equal '#<Java::JavaConstructor(int)>', c.inspect
+    assert_equal 'public java.util.ArrayList(int)', c.to_s
+    c = constructors.find { |constructor| constructor.parameter_types == [] }
+    assert_equal '#<Java::JavaConstructor()>', c.inspect
+
+    m = java_class.java_instance_methods.find { |method| method.name == 'get' }
+    assert_equal '#<Java::JavaMethod/get(int)>', m.inspect
+    assert_equal 'public java.lang.Object java.util.ArrayList.get(int)', m.to_s
+
+    m = java_class.java_instance_methods.find { |method| method.name == 'set' }
+    assert_equal '#<Java::JavaMethod/set(int,java.lang.Object)>', m.inspect
+  end
+
+  def test_java_class_callable_methods
+    java_class = Java::JavaClass.for_name('java.util.ArrayList')
+    assert java_class.declared_constructor
+    assert java_class.constructor Java::int
+
+    assert java_class.declared_method 'add', java.lang.Object
+    assert java_class.declared_method 'add', 'int', 'java.lang.Object'
+    assert java_class.declared_method 'size'
+    assert java_class.declared_method 'indexOf', java.lang.Object.java_class
+    begin
+      java_class.declared_method 'indexOf'
+      fail('not failed')
+    rescue NameError => e
+      assert e.message.index "undefined method 'indexOf'"
+    end
+  end
+
+  def test_exposed_java_proxy_types
+    Java::JavaProxyClass
+    Java::JavaProxyMethod
+    Java::JavaProxyConstructor
+  end
+
+#  def test_java_class_equality
+#    long_class = java.lang.Long
+#    assert_equal long_class, Java::DefaultPackageClass.returnLongClass
+#  end
+
   Properties = Java::java.util.Properties
 
   def test_declare_constant
@@ -457,8 +657,10 @@ class TestHigherJavasupport < Test::Unit::TestCase
   end
 
   def test_that_misspelt_fq_class_names_dont_stop_future_fq_class_names_with_same_inner_most_package
+    # NOTE: with ALLOW_UPPERCASE_PACKAGE_NAMES this raises nothing !
     assert_raises(NameError) { Java::java.til.zip.ZipFile }
-    assert_nothing_raised { Java::java.util.zip.ZipFile }
+    Java::java.util.zip.ZipFile
+    Java::java.util.zip.ZipFile::OPEN_READ
   end
 
   def test_that_subpackages_havent_leaked_into_other_packages
@@ -474,6 +676,19 @@ class TestHigherJavasupport < Test::Unit::TestCase
   def test_that_we_get_the_same_package_instance_on_subsequent_calls
     assert(com.flirble.equal?(com.flirble))
   end
+
+  def test_uppercase_package_name_and_lowercase_class_name # and upper-case method
+    Java::org.jruby.javasupport.TestApp
+    Java::org.jruby.javasupport.TestApp.UpperClass
+    assert_equal 'UGLY!', Java::org.jruby.javasupport.TestApp::UpperClass.UglyMethod
+
+    Java::org.jruby.javasupport.TestApp::lowerClass
+    assert_equal 'ugly!', Java::org.jruby.javasupport.TestApp.lowerClass.UglyMethod
+
+    # NOTE: can not work due package case conventions :
+    # Java::OrgJrubyJavasupportTestApp::UpperClass
+    # Java::OrgJrubyJavasupportTestApp::lowerClass
+  end if ALLOW_UPPERCASE_PACKAGE_NAMES
 
   @@include_proc = Proc.new do
     Thread.stop
@@ -848,6 +1063,7 @@ CLASSDEF
     # get resource as URL
     url = jc.resource_as_url(file)
     assert(java.net.URL === url)
+    assert(url.path == File.expand_path(url.path))
     assert(/^foo=bar/ =~ java.io.DataInputStream.new(url.content).read_line)
 
     # get resource as stream
@@ -1028,12 +1244,84 @@ CLASSDEF
     end
   end
 
+  def test_callable_no_match_raised_errors
+    begin
+      java.lang.StringBuilder.new([])
+      fail 'expected to raise'
+    rescue NameError => e
+      msg = e.message
+      assert msg.start_with?('no constructor for arguments (org.jruby.RubyArray) on Java::JavaLang::StringBuilder'), msg
+      assert msg.index('available overloads'), msg
+      assert msg.index('  (int)'), msg
+      assert msg.index('  (java.lang.String)'), msg
+      assert msg.index('  (java.lang.CharSequence)'), msg
+    end
+
+    begin
+      java.lang.Short.valueOf({})
+      fail 'expected to raise'
+    rescue => e # NameError
+      msg = e.message
+      assert msg.start_with?("no method 'valueOf' for arguments (org.jruby.RubyHash) on Java::JavaLang::Short"), msg
+      assert msg.index('available overloads'), msg
+      assert msg.index('  (short)'), msg
+      assert msg.index('  (java.lang.String)'), msg
+    end
+
+    begin # no arguments (has special handling)
+      java.lang.Short.valueOf
+      fail 'expected to raise'
+    rescue ArgumentError => e
+      assert e.message.start_with?("no method 'valueOf' (for zero arguments) on Java::JavaLang::Short"), e.message
+    end
+
+    begin # instance method
+      java.lang.String.new('').getBytes 42
+      fail 'expected to raise'
+    rescue => e # NameError
+      msg = e.message
+      assert msg.start_with?("no method 'getBytes' for arguments (org.jruby.RubyFixnum) on Java::JavaLang::String"), msg
+      assert msg.index('available overloads'), msg
+      assert msg.index('  (java.lang.String)'), msg
+    end
+  end
+
+  def test_raised_errors_on_array_proxy
+    begin # array proxy
+      Java::byte[3].new.length('')
+      fail 'expected to raise'
+    rescue ArgumentError => e
+      msg = e.message
+      assert msg.start_with?("wrong number of arguments calling `length` (1 for 0)"), msg
+    end
+
+    begin # array proxy class
+      Java::byte[3].size
+      fail 'expected to raise'
+    rescue NoMethodError => e
+      assert e.message # undefined method `size' for #<ArrayJavaProxyCreator:0x3125fd2d>
+    end
+  end
+
   def test_no_ambiguous_java_constructor_warning_for_exact_match
     output = with_stderr_captured do # exact match should not warn :
       color = java.awt.Color.new(100.to_java(:int), 1.to_java(:int), 1.to_java(:int))
       assert_equal 100, color.getRed # assert we called (int,int,int)
     end
     # warning: ambiguous Java methods found, using java.awt.Color(int,int,int)
+    assert ! output.index('ambiguous'), output
+
+    output = with_stderr_captured do # java.lang.Object match should not warn
+      # ... when overloaded methods are primitive and we're not passing one :
+      format = Java::JavaText::DecimalFormat.new('')
+      value = java.math.BigDecimal.new('10.000000000012')
+      assert_equal "10.000000000012", format.format(value) # format(java.lang.Object)
+
+      value = java.lang.Float.valueOf('0.0000000001')
+      assert format.format(value).start_with?('.00000000010') # format(double)
+      assert format.format(value.to_java).start_with?('.00000000010') # format(double)
+    end
+    # warning: ambiguous Java methods found, using format(java.lang.Object)
     assert ! output.index('ambiguous'), output
   end
 
@@ -1069,6 +1357,26 @@ CLASSDEF
 #    # warning: ambiguous Java methods found, using java.awt.Color(int,int,int)
 #    assert ! output.index('ambiguous'), output
 #  end
+
+  # original report: https://jira.codehaus.org/browse/JRUBY-5582
+  # NOTE: we're not testing this "early" on still a good JI exercise
+  def test_set_security_manager
+    security_manager = java.lang.System.getSecurityManager
+    begin
+      java.lang.System.setSecurityManager( JRubySecurityManager.new )
+      assert java.lang.System.getSecurityManager.is_a?(JRubySecurityManager)
+      #puts java.lang.System.getSecurityManager.checked_perms.inspect
+    ensure
+      java.lang.System.setSecurityManager( security_manager )
+    end
+  end
+
+  class JRubySecurityManager < java.lang.SecurityManager
+    def initialize; @checked = [] end
+    def checked_perms; @checked end
+
+    def checkPermission( perm ); @checked << perm end
+  end
 
   private
 
