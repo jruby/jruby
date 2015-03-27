@@ -498,12 +498,12 @@ public class Sprintf {
                         }
                         ByteList bl = ((RubyString)tmp).getByteList();
                         c = StringSupport.codePoint(runtime, encoding, bl.unsafeBytes(), bl.begin(), bl.begin() + bl.realSize());
-                        n = StringSupport.codeLength(runtime, bl.getEncoding(), c);
+                        n = StringSupport.codeLength(bl.getEncoding(), c);
                     }
                     else {
                         // unsigned bits
                         c = (int)arg.convertToInteger().getLongValue() & 0xFFFFFFFF;
-                        n = StringSupport.codeLength(runtime, encoding, c);
+                        n = StringSupport.codeLength(encoding, c);
                     }
                     if (n <= 0) {
                         throw runtime.newArgumentError("invalid character");

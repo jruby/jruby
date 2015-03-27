@@ -32,7 +32,6 @@ import static org.jruby.util.StringSupport.nth;
 import org.jcodings.Encoding;
 import org.jcodings.ascii.AsciiTables;
 import org.jcodings.constants.CharacterType;
-import org.jcodings.exception.EncodingException;
 import org.jcodings.specific.ASCIIEncoding;
 import org.jcodings.specific.UTF8Encoding;
 import org.jcodings.util.IntHash;
@@ -384,15 +383,8 @@ public final class StringSupport {
         return enc.mbcToCode(bytes, p, end); 
     }
 
-    public static int codeLength(Ruby runtime, Encoding enc, int c) {
-        int n = 0;
-        try {
-            n = enc.codeToMbcLength(c);
-        } catch (EncodingException ee) {
-            // raise as ArgumentError below
-        }
-        if (n == 0) throw runtime.newArgumentError("invalid codepoint " + String.format("0x%x in ", c) + enc.getName());
-        return n;
+    public static int codeLength(Encoding enc, int c) {
+        return enc.codeToMbcLength(c);
     }
 
     public static long getAscii(Encoding enc, byte[]bytes, int p, int end) {
@@ -884,7 +876,7 @@ public final class StringSupport {
                 p++;
             } else {
                 c = codePoint(runtime, enc, bytes, p, end);
-                int cl = codeLength(runtime, enc, c);
+                int cl = codeLength(enc, c);
                 if (trFind(c, table, tables)) i++;
                 p += cl;
             }
@@ -1197,7 +1189,7 @@ public final class StringSupport {
                 return NeighborChar.NOT_CHAR;
             }
             c = codePoint(runtime, enc, bytes, p, p + len) + 1;
-            l = codeLength(runtime, enc, c);
+            l = codeLength(enc, c);
             if (l == 0) return NeighborChar.NOT_CHAR;
             if (l != len) return NeighborChar.WRAPPED;
             EncodingUtils.encMbcput(c, bytes, p, enc);
@@ -1302,7 +1294,7 @@ public final class StringSupport {
             c = codePoint(runtime, enc, bytes, p, p + len);
             if (c == 0) return NeighborChar.NOT_CHAR;
             --c;
-            l = codeLength(runtime, enc, c);
+            l = codeLength(enc, c);
             if (l == 0) return NeighborChar.NOT_CHAR;
             if (l != len) return NeighborChar.WRAPPED;
             EncodingUtils.encMbcput(c, bytes, p, enc);
@@ -1494,7 +1486,7 @@ public final class StringSupport {
                 s++;
             } else {
                 c = codePoint(runtime, enc, bytes, s, send);
-                int cl = codeLength(runtime, enc, c);
+                int cl = codeLength(enc, c);
                 if (trFind(c, squeeze, tables)) {
                     modify = true;
                 } else {

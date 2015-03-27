@@ -1334,7 +1334,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
     }
 
     public final RubyString cat(int code, Encoding enc) {
-        int n = codeLength(getRuntime(), enc, code);
+        int n = codeLength(enc, code);
         modify(value.getRealSize() + n);
         enc.codeToMbc(code, value.getUnsafeBytes(), value.getBegin() + value.getRealSize());
         value.setRealSize(value.getRealSize() + n);
@@ -1358,7 +1358,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
             int end = ptr + ptrLen;
             while (ptr < end) {
                 int c = bytes[ptr];
-                int len = codeLength(getRuntime(), enc, c);
+                int len = codeLength(enc, c);
                 EncodingUtils.encMbcput(c, buf, 0, enc);
                 EncodingUtils.encCrStrBufCat(getRuntime(), this, buf, 0, len, enc, CR_VALID, null);
                 ptr++;
@@ -1637,14 +1637,14 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
             modify = true;
         }
 
-        s += codeLength(runtime, enc, c);
+        s += codeLength(enc, c);
         while (s < end) {
             c = codePoint(runtime, enc, bytes, s, end);
             if (enc.isUpper(c)) {
                 enc.codeToMbc(toLower(enc, c), bytes, s);
                 modify = true;
             }
-            s += codeLength(runtime, enc, c);
+            s += codeLength(enc, c);
         }
 
         return modify ? this : runtime.getNil();
@@ -1774,7 +1774,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
                     enc.codeToMbc(toUpper(enc, c), bytes, s);
                     modify = true;
                 }
-                s += codeLength(runtime, enc, c);
+                s += codeLength(enc, c);
             }
         }
         return modify ? this : runtime.getNil();
@@ -1850,7 +1850,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
                     enc.codeToMbc(toLower(enc, c), bytes, s);
                     modify = true;
                 }
-                s += codeLength(runtime, enc, c);
+                s += codeLength(enc, c);
             }
         }
         return modify ? this : runtime.getNil();
@@ -1924,7 +1924,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
                 enc.codeToMbc(toUpper(enc, c), bytes, s);
                 modify = true;
             }
-            s += codeLength(runtime, enc, c);
+            s += codeLength(enc, c);
         }
 
         return modify ? this : runtime.getNil();
@@ -2213,7 +2213,12 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
         int cl;
 
         try {
-            cl = codeLength(runtime, enc, c);
+            cl = codeLength(enc, c);
+
+            if (cl <= 0) {
+                throw runtime.newRangeError(c + " out of char range or invalid code point");
+            }
+
             modify19(value.getRealSize() + cl);
 
             if (enc == USASCIIEncoding.INSTANCE) {
@@ -4443,7 +4448,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
         while (p < end) {
             int c = codePoint(runtime, enc, bytes, p, end);
             if (!ASCII.isSpace(c)) break;
-            p += codeLength(runtime, enc, c);
+            p += codeLength(enc, c);
         }
 
         if (p > s) {
@@ -4861,7 +4866,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
                 s++;
             } else {
                 c = codePoint(runtime, enc, bytes, s, send);
-                int cl = codeLength(runtime, enc, c);
+                int cl = codeLength(enc, c);
                 if (c != save || (isArg && !StringSupport.trFind(c, squeeze, tables))) {
                     if (t != s) enc.codeToMbc(c, bytes, t);
                     save = c;
@@ -4966,7 +4971,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
                 if (r == -1) r = trRepl.now;
                 if (c < StringSupport.TRANS_SIZE) {
                     trans[c] = r;
-                    if (codeLength(runtime, enc, r) != 1) singlebyte = false;
+                    if (codeLength(enc, r) != 1) singlebyte = false;
                 } else {
                     if (hash == null) hash = new IntHash<Integer>();
                     hash.put(c, r);
@@ -4991,8 +4996,8 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
             while (s < send) {
                 boolean mayModify = false;
                 c0 = c = codePoint(runtime, e1, sbytes, s, send);
-                clen = codeLength(runtime, e1, c);
-                tlen = enc == e1 ? clen : codeLength(runtime, enc, c);
+                clen = codeLength(e1, c);
+                tlen = enc == e1 ? clen : codeLength(enc, c);
                 s += clen;
 
                 if (c < TRANS_SIZE) {
@@ -5020,7 +5025,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
                         continue;
                     }
                     save = c;
-                    tlen = codeLength(runtime, enc, c);
+                    tlen = codeLength(enc, c);
                     modify = true;
                 } else {
                     save = -1;
@@ -5063,8 +5068,8 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
             while (s < send) {
                 boolean mayModify = false;
                 c0 = c = codePoint(runtime, e1, sbytes, s, send);
-                clen = codeLength(runtime, e1, c);
-                tlen = enc == e1 ? clen : codeLength(runtime, enc, c);
+                clen = codeLength(e1, c);
+                tlen = enc == e1 ? clen : codeLength(enc, c);
 
                 if (c < TRANS_SIZE) {
                     c = trans[c];
@@ -5086,7 +5091,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
                     c = cflag ? last : -1;
                 }
                 if (c != -1) {
-                    tlen = codeLength(runtime, enc, c);
+                    tlen = codeLength(enc, c);
                     modify = true;
                 } else {
                     c = c0;
@@ -5410,7 +5415,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
 
         while (ptr < end) {
             c = codePoint(runtime, enc, ptrBytes, ptr, end);
-            n = codeLength(runtime, enc, c);
+            n = codeLength(enc, c);
             if (wantarray)
                 ary.push(RubyFixnum.newFixnum(runtime, c));
             else

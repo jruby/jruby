@@ -53,7 +53,6 @@ import org.jruby.truffle.nodes.coerce.ToIntNodeFactory;
 import org.jruby.truffle.nodes.coerce.ToStrNode;
 import org.jruby.truffle.nodes.coerce.ToStrNodeFactory;
 import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
-import org.jruby.truffle.nodes.dispatch.DispatchHeadNode;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.nodes.objects.IsFrozenNode;
 import org.jruby.truffle.nodes.objects.IsFrozenNodeFactory;
@@ -394,7 +393,7 @@ public abstract class StringNodes {
             int cl;
 
             try {
-                cl = StringSupport.codeLength(getContext().getRuntime(), enc, c);
+                cl = StringSupport.codeLength(enc, c);
                 string.modify(value.getRealSize() + cl);
                 string.clearCodeRange();
 
