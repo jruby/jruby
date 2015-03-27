@@ -673,6 +673,11 @@ public class RipperLexer {
         return c != EOF && (Character.isLetterOrDigit(c) || c == '_');
     }
 
+    // mri: parser_isascii
+    public boolean isASCII() {
+        return Encoding.isMbcAscii((byte)lexb.get(lex_p-1));
+    }
+
     private boolean isBEG() {
         return lex_state == LexState.EXPR_BEG || lex_state == LexState.EXPR_MID ||
                 lex_state == LexState.EXPR_CLASS || lex_state == LexState.EXPR_VALUE;
@@ -783,7 +788,10 @@ public class RipperLexer {
             shortHand = false;
             begin = nextc();
             value = value + (char) begin;
-            if (Character.isLetterOrDigit(begin) /* no mb || ismbchar(term)*/) compile_error("unknown type of %string");
+            if (Character.isLetterOrDigit(begin) || !isASCII()) {
+                compile_error("unknown type of %string");
+                return EOF;
+            }
         }
         if (c == EOF || begin == EOF) {
             compile_error("unterminated quoted string meets end of file");
@@ -882,9 +890,10 @@ public class RipperLexer {
             }
 
             markerValue = new ByteList();
+            markerValue.setEncoding(current_enc);
             term = c;
             while ((c = nextc()) != EOF && c != term) {
-                markerValue.append(c);
+                if (!tokenAddMBC(c, markerValue)) return EOF;
             }
             if (c == EOF) compile_error("unterminated here document identifier");
         } else {
@@ -899,7 +908,7 @@ public class RipperLexer {
             term = '"';
             func |= str_dquote;
             do {
-                markerValue.append(c);
+                if (!tokenAddMBC(c, markerValue)) return EOF;
             } while ((c = nextc()) != EOF && isIdentifierChar(c));
 
             pushback(c);
@@ -2397,11 +2406,13 @@ public class RipperLexer {
             pushback(c);
             setState(LexState.EXPR_VALUE);
             return '?';
-            /*} else if (ismbchar(c)) { // ruby - we don't support them either?
-                rb_warn("multibyte character literal not supported yet; use ?\\" + c);
-                support.unread(c);
-                lexState = LexState.EXPR_BEG;
-                return '?';*/
+        } else if (isASCII()) {
+            ByteList buffer = new ByteList(1);
+            if (!tokenAddMBC(c, buffer)) return EOF;
+
+            setState(LexState.EXPR_END);
+            yaccValue = new Token(buffer);
+            return Tokens.tCHAR;
         } else if (isIdentifierChar(c) && !peek('\n') && isNext_identchar()) {
             pushback(c);
             setState(LexState.EXPR_VALUE);
@@ -2830,21 +2841,39 @@ public class RipperLexer {
 
     private byte[] mbcBuf = new byte[6];
 
-    //FIXME: This seems like it could be more efficient to ensure size in bytelist and then pass
-    // in bytelists byte backing store.  This method would look ugly since realSize would need
-    // to be tweaked and I don't know how many bytes this codepoint has up front so I would need
-    // to grow by 6 (which may be wasteful).  Another idea is to make Encoding accept an interface
-    // for populating bytes and then make ByteList implement that interface.  I like this last idea
-    // since it would not leak bytelist impl details all over the place.
     // mri: parser_tokadd_mbchar
-    public int tokenAddMBC(int codepoint, ByteList buffer) {
-        int length = buffer.getEncoding().codeToMbc(codepoint, mbcBuf, 0);
+    // This is different than MRI in that we return a boolean since we only care whether it was added
+    // or not.  The MRI version returns the byte supplied which is never used as a value.
+    public boolean tokenAddMBC(int first_byte, ByteList buffer) {
+        int length = precise_mbclen();
 
-        if (length <= 0) return EOF;
+        if (length <= 0) {
+            compile_error("invalid multibyte char (" + getEncoding().getName() + ")");
+            return false;
+        }
 
-        buffer.append(mbcBuf, 0, length);
+        tokAdd(first_byte, buffer);                  // add first byte since we have it.
+        lex_p += length - 1;                         // we already read first byte so advance pointer for remainder
+        if (length > 1) tokCopy(length - 1, buffer); // copy next n bytes over.
 
-        return length;
+        return true;
+    }
+
+    public void tokCopy(int length, ByteList buffer) {
+        buffer.append(lexb, lex_p - length, length);
+    }
+
+
+    public void tokAdd(int value, ByteList buffer) {
+        buffer.append((byte) value);
+    }
+
+    public int precise_mbclen() {
+        byte[] data = lexb.getUnsafeBytes();
+        int p = lex_p - 1;
+        int begin = lexb.begin();
+
+        return current_enc.length(data, begin+p, lex_pend-p);
     }
 
     public void tokenAddMBCFromSrc(int c, ByteList buffer) throws IOException {

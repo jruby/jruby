@@ -1,5 +1,4 @@
 exclude :test_embexpr_end, "needs investigation"
-exclude :test_event_coverage, "needs investigation"
-exclude :test_lex, "needs investigation"
+exclude :test_event_coverage, "embexpr_end due to parser/lexer bug"
 exclude :test_tokenize, "needs investigation"
-exclude :test_tstring_content_HEREDOC, "needs investigation"
+
