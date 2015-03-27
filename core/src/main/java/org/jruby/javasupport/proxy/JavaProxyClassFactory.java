@@ -56,6 +56,7 @@ import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.FieldVisitor;
 import org.objectweb.asm.Label;
+import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
 import org.objectweb.asm.commons.GeneratorAdapter;
@@ -256,7 +257,7 @@ public class JavaProxyClassFactory {
         ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_MAXS);
 
         // start class
-        cw.visit(Opcodes.V1_3, Opcodes.ACC_PUBLIC | Opcodes.ACC_FINAL | Opcodes.ACC_SUPER,
+        cw.visit(Opcodes.V1_5, Opcodes.ACC_PUBLIC | Opcodes.ACC_FINAL | Opcodes.ACC_SUPER,
                 toInternalClassName(className), /*signature*/ null,
                 toInternalClassName(superClass),
                 interfaceNamesForProxyClass(interfaces));
@@ -346,7 +347,7 @@ public class JavaProxyClassFactory {
         if (!md.generateProxyMethod()) return;
 
         org.objectweb.asm.commons.Method m = md.getMethod();
-        Type[] ex = toType(md.getExceptions());
+        Type[] ex = toTypes(md.getExceptions());
 
         String field_name = "__mth$" + md.getName() + md.scrambledSignature();
 
@@ -464,24 +465,26 @@ public class JavaProxyClassFactory {
         String name1 = "<init>";
         String signature = null;
         Class[] superConstructorExceptions = constructor.getExceptionTypes();
+        boolean superConstructorVarArgs = constructor.isVarArgs();
 
         org.objectweb.asm.commons.Method super_m = new org.objectweb.asm.commons.Method(
-                name1, Type.VOID_TYPE, toType(superConstructorParameterTypes));
+                name1, Type.VOID_TYPE, toTypes(superConstructorParameterTypes));
         org.objectweb.asm.commons.Method m = new org.objectweb.asm.commons.Method(
-                name1, Type.VOID_TYPE, toType(newConstructorParameterTypes));
+                name1, Type.VOID_TYPE, toTypes(newConstructorParameterTypes));
 
-        GeneratorAdapter ga = new GeneratorAdapter(access, m, signature,
-                toType(superConstructorExceptions), cw);
+        String[] exceptionNames = toInternalNames( superConstructorExceptions );
+        MethodVisitor mv = cw.visitMethod(access, m.getName(), m.getDescriptor(), signature, exceptionNames);
+        // marking with @SafeVarargs so that we can correctly detect proxied var-arg consturctors :
+        if ( superConstructorVarArgs ) mv.visitAnnotation(Type.getDescriptor(SafeVarargs.class), true);
+        GeneratorAdapter ga = new GeneratorAdapter(access, m, mv);
 
         ga.loadThis();
         ga.loadArgs(0, superConstructorParameterTypes.length);
-        ga.invokeConstructor(Type.getType(constructor.getDeclaringClass()),
-                super_m);
+        ga.invokeConstructor(toType(constructor.getDeclaringClass()), super_m);
 
         ga.loadThis();
         ga.loadArg(superConstructorParameterTypes.length);
-        ga.putField(selfType, INVOCATION_HANDLER_FIELD_NAME,
-                INVOCATION_HANDLER_TYPE);
+        ga.putField(selfType, INVOCATION_HANDLER_FIELD_NAME, INVOCATION_HANDLER_TYPE);
 
         // do a void return
         ga.returnValue();
@@ -489,6 +492,16 @@ public class JavaProxyClassFactory {
 
         return newConstructorParameterTypes;
     }
+
+    static boolean isVarArgs(final Constructor<?> ctor) {
+        // @SafeVarags marks proxies var-arg (super) constructor :
+        return ctor.isVarArgs() || ctor.getAnnotation(SafeVarargs.class) != null;
+    }
+
+    //static boolean isVarArgs(final Method method) {
+    //    // @SafeVarags marks proxies var-arg (super) method :
+    //    return method.isVarArgs() || method.getAnnotation(SafeVarargs.class) != null;
+    //}
 
     private static String toInternalClassName(Class clazz) {
         return toInternalClassName(clazz.getName());
@@ -498,12 +511,25 @@ public class JavaProxyClassFactory {
         return name.replace('.', '/');
     }
 
-    private static Type[] toType(Class[] parameterTypes) {
-        Type[] result = new Type[parameterTypes.length];
-        for (int i = 0; i < result.length; i++) {
-            result[i] = Type.getType(parameterTypes[i]);
+    private static Type toType(Class clazz) {
+        return Type.getType(clazz);
+    }
+
+    private static Type[] toTypes(Class[] params) {
+        Type[] types = new Type[params.length];
+        for (int i = 0; i < types.length; i++) {
+            types[i] = Type.getType(params[i]);
         }
-        return result;
+        return types;
+    }
+
+    private static String[] toInternalNames(final Class[] params) {
+        if (params == null) return null;
+        String[] names = new String[params.length];
+        for (int i = 0; i < names.length; ++i) {
+            names[i] = Type.getType(params[i]).getInternalName();
+        }
+        return names;
     }
 
     private static Map<MethodKey, MethodData> collectMethods(
