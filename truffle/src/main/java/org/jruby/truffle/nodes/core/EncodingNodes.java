@@ -396,47 +396,19 @@ public abstract class EncodingNodes {
             }
 
             final Encoding defaultInternalEncoding = getContext().getRuntime().getDefaultInternalEncoding();
-            final Object internalTuple = newTupleNode.call(
-                    frame,
-                    getContext().getCoreLibrary().getTupleClass(),
-                    "create",
-                    null,
-                    getContext().makeString("internal"),
-                    indexLookup(encodings, defaultInternalEncoding)
-            );
+            final Object internalTuple = getContext().makeTuple(frame, newTupleNode, getContext().makeString("internal"), indexLookup(encodings, defaultInternalEncoding));
             lookupTableWriteNode.call(frame, ret, "[]=", null, getContext().newSymbol("INTERNAL"), internalTuple);
 
             final Encoding defaultExternalEncoding = getContext().getRuntime().getDefaultExternalEncoding();
-            final Object externalTuple = newTupleNode.call(
-                    frame,
-                    getContext().getCoreLibrary().getTupleClass(),
-                    "create",
-                    null,
-                    getContext().makeString("external"),
-                    indexLookup(encodings, defaultExternalEncoding)
-            );
+            final Object externalTuple = getContext().makeTuple(frame, newTupleNode, getContext().makeString("external"), indexLookup(encodings, defaultExternalEncoding));
             lookupTableWriteNode.call(frame, ret, "[]=", null, getContext().newSymbol("EXTERNAL"), externalTuple);
 
             final Encoding localeEncoding = getContext().getRuntime().getEncodingService().getLocaleEncoding();
-            final Object localeTuple = newTupleNode.call(
-                    frame,
-                    getContext().getCoreLibrary().getTupleClass(),
-                    "create",
-                    null,
-                    getContext().makeString("locale"),
-                    indexLookup(encodings, localeEncoding)
-            );
+            final Object localeTuple = getContext().makeTuple(frame, newTupleNode, getContext().makeString("locale"), indexLookup(encodings, localeEncoding));
             lookupTableWriteNode.call(frame, ret, "[]=", null, getContext().newSymbol("LOCALE"), localeTuple);
 
             final Encoding filesystemEncoding = getContext().getRuntime().getEncodingService().getLocaleEncoding();
-            final Object filesystemTuple = newTupleNode.call(
-                    frame,
-                    getContext().getCoreLibrary().getTupleClass(),
-                    "create",
-                    null,
-                    getContext().makeString("filesystem"),
-                    indexLookup(encodings, filesystemEncoding)
-            );
+            final Object filesystemTuple = getContext().makeTuple(frame, newTupleNode, getContext().makeString("filesystem"), indexLookup(encodings, filesystemEncoding));
             lookupTableWriteNode.call(frame, ret, "[]=", null, getContext().newSymbol("FILESYSTEM"), filesystemTuple);
 
             return ret;
