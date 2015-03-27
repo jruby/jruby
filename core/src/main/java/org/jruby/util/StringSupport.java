@@ -1596,7 +1596,7 @@ public final class StringSupport {
             if (wantarray) {
                 ary = runtime.newEmptyArray();
             } else {
-                return enumeratorize(runtime, str, name);
+                return enumeratorize(runtime, str, name, arg);
             }
         }
 
@@ -1619,7 +1619,7 @@ public final class StringSupport {
         rs = rs.convertToString();
         rslen = ((RubyString)rs).size();
 
-        if (rs == runtime.getGlobalVariables().getDefaultSeparator())
+        if (rs == context.runtime.getGlobalVariables().get("$/"))
             enc = str.getEncoding();
         else
             enc = str.checkEncoding((RubyString) rs);
@@ -1636,7 +1636,7 @@ public final class StringSupport {
             rsptr = ((RubyString)rs).getByteList().begin();
         }
 
-        if ((rs == runtime.getGlobalVariables().getDefaultSeparator() || paragraph_mode) && !enc.isAsciiCompatible()) {
+        if ((rs == context.runtime.getGlobalVariables().get("$/") || paragraph_mode) && !enc.isAsciiCompatible()) {
             rs = RubyString.newString(runtime, rsbytes, rsptr, rslen);
             rs = EncodingUtils.rbStrEncode(context, rs, runtime.getEncodingService().convertEncodingToRubyEncoding(enc), 0, context.nil);
             rsbytes = ((RubyString)rs).getByteList().unsafeBytes();
