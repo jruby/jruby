@@ -1121,6 +1121,10 @@ public abstract class HashNodes {
             hash.setFirstInSequence(first.getNextInSequence());
             
             if (first.getPreviousInSequence() != null) {
+                first.getPreviousInSequence().setNextInSequence(null);
+            }
+
+            if (first.getNextInSequence() != null) {
                 first.getNextInSequence().setPreviousInSequence(null);
             }
 
