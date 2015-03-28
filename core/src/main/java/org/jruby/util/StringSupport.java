@@ -1694,7 +1694,7 @@ public final class StringSupport {
         else if (m == 1) {
             int ys = memchr(yBytes, y, xBytes[x], n);
 
-            if (ys != 0)
+            if (ys != -1)
                 return ys - y;
             else
                 return -1;
