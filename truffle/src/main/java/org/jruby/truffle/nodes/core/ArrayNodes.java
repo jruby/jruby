@@ -1787,6 +1787,7 @@ public abstract class ArrayNodes {
                     }
 
                     try {
+                        arrayBuilder.ensure(store, n + 1);
                         store = arrayBuilder.append(store, n, yield(frame, block, n));
                     } catch (BreakException e) {
                         breakProfile.enter();
