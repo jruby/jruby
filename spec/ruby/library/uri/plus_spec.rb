@@ -105,13 +105,7 @@ describe "URI#+" do
     url = @base_url.merge('?y')
     url.should be_kind_of(URI::HTTP)
 
-    ruby_version_is "" ... "1.8.7" do
-      url.to_s.should == 'http://a/b/c/?y'
-    end
-
-    ruby_version_is "1.8.7" do
-      url.to_s.should == 'http://a/b/c/d;p?y'
-    end
+    url.to_s.should == 'http://a/b/c/d;p?y'
 
     url = @base_url.route_to('http://a/b/c/?y')
     url.should be_kind_of(URI::Generic)
@@ -269,13 +263,7 @@ describe "URI#+" do
     url = @base_url.merge('/./g')
     url.should be_kind_of(URI::HTTP)
 
-    ruby_version_is "" ... "1.8.7" do
-      url.to_s.should == 'http://a/./g'
-    end
-
-    ruby_version_is "1.8.7" do
-      url.to_s.should == 'http://a/g'
-    end
+    url.to_s.should == 'http://a/g'
 
     url = @base_url.route_to('http://a/./g')
     url.should be_kind_of(URI::Generic)
@@ -286,13 +274,7 @@ describe "URI#+" do
     url = @base_url.merge('/../g')
     url.should be_kind_of(URI::HTTP)
 
-    ruby_version_is "" ... "1.8.7" do
-      url.to_s.should == 'http://a/../g'
-    end
-
-    ruby_version_is "1.8.7" do
-      url.to_s.should == 'http://a/g'
-    end
+    url.to_s.should == 'http://a/g'
 
     url = @base_url.route_to('http://a/../g')
     url.should be_kind_of(URI::Generic)
@@ -339,13 +321,7 @@ describe "URI#+" do
     url = @base_url.merge('../../../g')
     url.should be_kind_of(URI::HTTP)
 
-    ruby_version_is "" ... "1.8.7" do
-      url.to_s.should == 'http://a/../g'
-    end
-
-    ruby_version_is "1.8.7" do
-      url.to_s.should == 'http://a/g'
-    end
+    url.to_s.should == 'http://a/g'
 
     url = @base_url.route_to('http://a/../g')
     url.should be_kind_of(URI::Generic)
@@ -357,13 +333,7 @@ describe "URI#+" do
     url = @base_url.merge('../../../../g')
     url.should be_kind_of(URI::HTTP)
 
-    ruby_version_is "" ... "1.8.7" do
-      url.to_s.should == 'http://a/../../g'
-    end
-
-    ruby_version_is "1.8.7" do
-      url.to_s.should == 'http://a/g'
-    end
+    url.to_s.should == 'http://a/g'
 
     url = @base_url.route_to('http://a/../../g')
     url.should be_kind_of(URI::Generic)

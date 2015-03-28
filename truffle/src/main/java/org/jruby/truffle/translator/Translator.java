@@ -46,10 +46,14 @@ public abstract class Translator extends org.jruby.ast.visitor.AbstractNodeVisit
     }
 
     protected SourceSection translate(org.jruby.lexer.yacc.ISourcePosition sourcePosition) {
-        return translate(source, sourcePosition);
+        return translate(source, sourcePosition, getIdentifier());
     }
 
-    public SourceSection translate(Source source, org.jruby.lexer.yacc.ISourcePosition sourcePosition) {
+    protected SourceSection translate(org.jruby.lexer.yacc.ISourcePosition sourcePosition, String identifier) {
+        return translate(source, sourcePosition, identifier);
+    }
+
+    private SourceSection translate(Source source, org.jruby.lexer.yacc.ISourcePosition sourcePosition, String identifier) {
         if (sourcePosition == InvalidSourcePosition.INSTANCE) {
             if (parentSourceSection.peek() == null) {
                 throw new UnsupportedOperationException("Truffle doesn't want invalid positions - find a way to give me a real position!");
@@ -60,13 +64,13 @@ public abstract class Translator extends org.jruby.ast.visitor.AbstractNodeVisit
             final DetailedSourcePosition detailedSourcePosition = (DetailedSourcePosition) sourcePosition;
 
             try {
-                return source.createSection(getIdentifier(), detailedSourcePosition.getOffset(), detailedSourcePosition.getLength());
+                return source.createSection(identifier, detailedSourcePosition.getOffset(), detailedSourcePosition.getLength());
             } catch (IllegalArgumentException e) {
                 // In some cases we still get bad offsets with the detailed source positions
-                return source.createSection(getIdentifier(), sourcePosition.getLine() + 1);
+                return source.createSection(identifier, sourcePosition.getLine() + 1);
             }
         } else if (ALLOW_SIMPLE_SOURCE_SECTIONS) {
-            return source.createSection(getIdentifier(), sourcePosition.getLine() + 1);
+            return source.createSection(identifier, sourcePosition.getLine() + 1);
         } else {
             throw new UnsupportedOperationException("Truffle needs detailed source positions unless you know what you are doing and set truffle.allow_simple_source_sections - got " + sourcePosition.getClass());
         }

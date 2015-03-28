@@ -91,6 +91,33 @@ class Array
     Array.new self[0, n]
   end
 
+  def zip_internal(*others)
+    out = Array.new(size) { [] }
+    others = others.map do |ary|
+      if ary.respond_to?(:to_ary)
+        ary.to_ary
+      else
+        elements = []
+        ary.each { |e| elements << e }
+        elements
+      end
+    end
+
+    size.times do |i|
+      slot = out.at(i)
+      slot << @tuple.at(@start + i)
+      others.each { |ary| slot << ary.at(i) }
+    end
+
+    if block_given?
+      out.each { |ary| yield ary }
+      return nil
+    end
+
+    out
+  end
+
+
   def hash
     hash_val = size
     mask = Fixnum::MAX >> 1
@@ -634,6 +661,52 @@ class Array
 
   alias_method :to_s, :inspect
 
+  def join(sep=nil)
+    return "".force_encoding(Encoding::US_ASCII) if @total == 0
+
+    out = ""
+    raise ArgumentError, "recursive array join" if Thread.detect_recursion self do
+      sep = sep.nil? ? $, : StringValue(sep)
+
+      # We've manually unwound the first loop entry for performance
+      # reasons.
+      x = @tuple[@start]
+
+      if str = String.try_convert(x)
+        x = str
+      elsif ary = Array.try_convert(x)
+        x = ary.join(sep)
+      else
+        x = x.to_s
+      end
+
+      out.force_encoding(x.encoding)
+      out << x
+
+      total = @start + size()
+      i = @start + 1
+
+      while i < total
+        out << sep if sep
+
+        x = @tuple[i]
+
+        if str = String.try_convert(x)
+          x = str
+        elsif ary = Array.try_convert(x)
+          x = ary.join(sep)
+        else
+          x = x.to_s
+        end
+
+        out << x
+        i += 1
+      end
+    end
+
+    Rubinius::Type.infect(out, self)
+  end
+
   def keep_if(&block)
     return to_enum :keep_if unless block_given?
 
@@ -880,6 +953,15 @@ class Array
     return count == size ? result : result[0, count]
   end
 
+  def select!(&block)
+    return to_enum :select! unless block_given?
+
+    Rubinius.check_frozen
+
+    ary = select(&block)
+    replace ary unless size == ary.size
+  end
+
   def find_index(obj=undefined)
     super
   end
@@ -1032,6 +1114,39 @@ class Array
     end
 
     out
+  end
+
+  def uniq(&block)
+    dup.uniq!(&block) or dup
+  end
+
+  def uniq!(&block)
+    Rubinius.check_frozen
+
+    if block_given?
+      im = Rubinius::IdentityMap.from(self, &block)
+    else
+      im = Rubinius::IdentityMap.from(self)
+    end
+    return if im.size == size
+
+    m = Rubinius::Mirror::Array.reflect im.to_array
+    @tuple = m.tuple
+    @start = m.start
+    @total = m.total
+
+    # MODIFIED added copy_from and delete_range to modify the store
+    copy_from(m.tuple, 0, m.total, 0)
+    delete_range(m.total, self.size - m.total)
+    self
+  end
+
+  def sort_by!(&block)
+    Rubinius.check_frozen
+
+    return to_enum :sort_by! unless block_given?
+
+    replace sort_by(&block)
   end
 
   # Insertion sort in-place between the given indexes.

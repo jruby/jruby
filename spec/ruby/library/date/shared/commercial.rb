@@ -1,40 +1,17 @@
 describe :date_commercial, :shared => true do
-  ruby_version_is "" ... "1.9" do
-    it "creates a Date for the day of Julian calendar reform in Italy by default" do
-      d = Date.send(@method)
-      d.year.should  == 1582
-      d.month.should == 10
-      d.day.should   == 15
-    end
+  it "creates a Date for Julian Day Number day 0 by default" do
+    d = Date.send(@method)
+    d.year.should  == -4712
+    d.month.should == 1
+    d.day.should   == 1
   end
 
-  ruby_version_is "1.9" do
-    it "creates a Date for Julian Day Number day 0 by default" do
-      d = Date.send(@method)
-      d.year.should  == -4712
-      d.month.should == 1
-      d.day.should   == 1
-    end
-  end
-
-  ruby_version_is "" ... "1.9" do
-    it "Creates a Date for the friday in the year and week given" do
-      d = Date.send(@method, 2000, 1)
-      d.year.should  == 2000
-      d.month.should == 1
-      d.day.should   == 7
-      d.cwday.should == 5
-    end
-  end
-
-  ruby_version_is "1.9" do
-    it "Creates a Date for the monday in the year and week given" do
-      d = Date.send(@method, 2000, 1)
-      d.year.should  == 2000
-      d.month.should == 1
-      d.day.should   == 3
-      d.cwday.should == 1
-    end
+  it "Creates a Date for the monday in the year and week given" do
+    d = Date.send(@method, 2000, 1)
+    d.year.should  == 2000
+    d.month.should == 1
+    d.day.should   == 3
+    d.cwday.should == 1
   end
 
   it "Creates a Date for the correct day given the year, week and day number" do

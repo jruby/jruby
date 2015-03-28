@@ -27,14 +27,14 @@ MSpec attempts to use the simplest Ruby language features
 so that beginning Ruby implementations can run it.
                       EOS
   gem.has_rdoc                  = true
-  gem.extra_rdoc_files          = %w[ README LICENSE ]
+  gem.extra_rdoc_files          = %w[ README.md LICENSE ]
   gem.rubygems_version  = %q{1.3.5}
   gem.rubyforge_project         = 'http://rubyforge.org/projects/mspec'
 
   gem.rdoc_options  << '--title' << 'MSpec Gem' <<
-                    '--main' << 'README' <<
+                    '--main' << 'README.md' <<
                     '--line-numbers'
 
   gem.add_development_dependency "rake",   "~> 10.0"
-  gem.add_development_dependency "rspec",  "~> 2.8"
+  gem.add_development_dependency "rspec",  "~> 2.14.1"
 end

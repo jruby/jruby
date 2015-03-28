@@ -26,10 +26,8 @@ describe "REXML::Document#new" do
     d.attributes.should == s.attributes
   end
 
-  ruby_bug "#", "1.8.6.111" do
-    it "raises an error if source is not a Document, String or IO" do
-      lambda {REXML::Document.new(3)}.should raise_error(RuntimeError)
-    end
+  it "raises an error if source is not a Document, String or IO" do
+    lambda {REXML::Document.new(3)}.should raise_error(RuntimeError)
   end
 
   it "does not perform XML validation" do

@@ -1,3 +1,0 @@
-fails:String#chop removes a multi-byte character
-fails:String#chop removes the final carriage return, newline from a multibyte String
-fails:String#chop removes the final carriage return, newline from a non-ASCII String

@@ -1,1 +1,6 @@
 fails:Regexp.union raises ArgumentError if the arguments include conflicting fixed encoding Regexps
+fails:Regexp.union returns a regular expression that will match passed arguments
+fails:Regexp.union quotes any string arguments
+fails:Regexp.union returns a Regexp if an array of string with special characters is passed
+fails:Regexp.union uses to_str to convert arguments (if not Regexp)
+fails:Regexp.union accepts a single array of patterns as arguments

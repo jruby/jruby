@@ -16,12 +16,13 @@ import com.oracle.truffle.api.source.Source;
 
 import org.jcodings.Encoding;
 import org.jcodings.EncodingDB;
-import org.jcodings.specific.UTF8Encoding;
+import org.jcodings.transcode.EConvFlags;
 import org.jruby.runtime.Constants;
 import org.jruby.runtime.encoding.EncodingService;
 import org.jruby.runtime.load.LoadServiceResource;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.core.ArrayNodes;
+import org.jruby.truffle.nodes.core.MutexNodes;
 import org.jruby.truffle.nodes.core.ProcessNodes;
 import org.jruby.truffle.nodes.methods.SetMethodDeclarationContext;
 import org.jruby.truffle.nodes.objects.Allocator;
@@ -34,7 +35,6 @@ import org.jruby.truffle.runtime.hash.HashOperations;
 import org.jruby.truffle.runtime.hash.KeyValue;
 import org.jruby.truffle.runtime.signal.SignalOperations;
 import org.jruby.truffle.translator.NodeWrapper;
-import org.jruby.truffle.translator.TranslatorDriver;
 import org.jruby.util.cli.Options;
 import org.jruby.util.cli.OutputStrings;
 
@@ -80,6 +80,7 @@ public class CoreLibrary {
     private final RubyClass keyErrorClass;
     private final RubyClass loadErrorClass;
     private final RubyClass localJumpErrorClass;
+    private final RubyClass lookupTableClass;
     private final RubyClass matchDataClass;
     private final RubyClass moduleClass;
     private final RubyClass nameErrorClass;
@@ -90,7 +91,7 @@ public class CoreLibrary {
     private final RubyClass numericClass;
     private final RubyClass objectClass;
     private final RubyClass procClass;
-    private final RubyModule processModule;
+    private final RubyClass processClass;
     private final RubyClass rangeClass;
     private final RubyClass rangeErrorClass;
     private final RubyClass rationalClass;
@@ -110,6 +111,7 @@ public class CoreLibrary {
     private final RubyClass threadClass;
     private final RubyClass timeClass;
     private final RubyClass trueClass;
+    private final RubyClass tupleClass;
     private final RubyClass typeErrorClass;
     private final RubyClass zeroDivisionErrorClass;
     private final RubyModule configModule;
@@ -149,6 +151,8 @@ public class CoreLibrary {
     @CompilerDirectives.CompilationFinal private RubySymbol mapBangSymbol;
     @CompilerDirectives.CompilationFinal private RubyHash envHash;
 
+    private boolean loadingCoreLibrary;
+
     public CoreLibrary(RubyContext context) {
         this.context = context;
 
@@ -157,17 +161,10 @@ public class CoreLibrary {
 
         // Create the cyclic classes and modules
 
-        classClass = new RubyClass(context, null, null, null, "Class", false, null);
-        classClass.setAllocator(new RubyClass.ClassAllocator());
-
-        basicObjectClass = RubyClass.createBootClass(context, classClass, "BasicObject");
-        basicObjectClass.setAllocator(new RubyBasicObject.BasicObjectAllocator());
-
-        objectClass = RubyClass.createBootClass(context, classClass, "Object");
-        objectClass.setAllocator(basicObjectClass.getAllocator());
-
-        moduleClass = new RubyClass(context, classClass, null, null, "Module", false, null);
-        moduleClass.setAllocator(new RubyModule.ModuleAllocator());
+        classClass = RubyClass.createBootClass(context, null, "Class", new RubyClass.ClassAllocator());
+        basicObjectClass = RubyClass.createBootClass(context, classClass, "BasicObject", new RubyBasicObject.BasicObjectAllocator());
+        objectClass = RubyClass.createBootClass(context, classClass, "Object", basicObjectClass.getAllocator());
+        moduleClass = RubyClass.createBootClass(context, classClass, "Module", new RubyModule.ModuleAllocator());
 
         // Close the cycles
         classClass.unsafeSetLogicalClass(classClass);
@@ -181,18 +178,10 @@ public class CoreLibrary {
         objectClass.getAdoptedByLexicalParent(objectClass, "Object", null);
         moduleClass.getAdoptedByLexicalParent(objectClass, "Module", null);
 
-        // BasicObject knows itself
-
-        basicObjectClass.setConstant(null, "BasicObject", basicObjectClass);
-
         // Create Exception classes 
 
         // Exception
-        exceptionClass = defineClass("Exception");
-        exceptionClass.setAllocator(new RubyException.ExceptionAllocator());
-
-        // EncodingError
-        encodingErrorClass = defineClass(exceptionClass, "EncodingError");
+        exceptionClass = defineClass("Exception", new RubyException.ExceptionAllocator());
 
         // FiberError
         fiberErrorClass = defineClass(exceptionClass, "FiberError");
@@ -206,6 +195,7 @@ public class CoreLibrary {
         // StandardError
         standardErrorClass = defineClass(exceptionClass, "StandardError");
         argumentErrorClass = defineClass(standardErrorClass, "ArgumentError");
+        encodingErrorClass = defineClass(standardErrorClass, "EncodingError");
         ioErrorClass = defineClass(standardErrorClass, "IOError");
         localJumpErrorClass = defineClass(standardErrorClass, "LocalJumpError");
         regexpErrorClass = defineClass(standardErrorClass, "RegexpError");
@@ -232,14 +222,14 @@ public class CoreLibrary {
         // StandardError > SystemCallError
         systemCallErrorClass = defineClass(standardErrorClass, "SystemCallError");
         errnoModule = defineModule("Errno");
-        new RubyClass(context, errnoModule, systemCallErrorClass, "EACCES");
-        edomClass = new RubyClass(context, errnoModule, systemCallErrorClass, "EDOM");
-        new RubyClass(context, errnoModule, systemCallErrorClass, "EEXIST");
-        enoentClass = new RubyClass(context, errnoModule, systemCallErrorClass, "ENOENT");
-        enotemptyClass = new RubyClass(context, errnoModule, systemCallErrorClass, "ENOTEMPTY");
-        new RubyClass(context, errnoModule, systemCallErrorClass, "EPERM");
-        new RubyClass(context, errnoModule, systemCallErrorClass, "EXDEV");
-        einvalClass = new RubyClass(context, errnoModule, systemCallErrorClass, "EINVAL");
+        defineClass(errnoModule, systemCallErrorClass, "EACCES");
+        edomClass = defineClass(errnoModule, systemCallErrorClass, "EDOM");
+        defineClass(errnoModule, systemCallErrorClass, "EEXIST");
+        enoentClass = defineClass(errnoModule, systemCallErrorClass, "ENOENT");
+        enotemptyClass = defineClass(errnoModule, systemCallErrorClass, "ENOTEMPTY");
+        defineClass(errnoModule, systemCallErrorClass, "EPERM");
+        defineClass(errnoModule, systemCallErrorClass, "EXDEV");
+        einvalClass = defineClass(errnoModule, systemCallErrorClass, "EINVAL");
 
         // ScriptError
         RubyClass scriptErrorClass = defineClass(exceptionClass, "ScriptError");
@@ -259,7 +249,6 @@ public class CoreLibrary {
 
         // SystemStackError
         systemStackErrorClass = defineClass(exceptionClass, "SystemStackError");
-
 
         // Create core classes and modules
 
@@ -285,10 +274,10 @@ public class CoreLibrary {
         hashClass = defineClass("Hash", new RubyHash.HashAllocator());
         matchDataClass = defineClass("MatchData");
         methodClass = defineClass("Method");
-        defineClass("Mutex", new RubyMutex.MutexAllocator());
+        defineClass("Mutex", MutexNodes.createMutexAllocator(context.getEmptyShape()));
         nilClass = defineClass("NilClass");
         procClass = defineClass("Proc", new RubyProc.ProcAllocator());
-        processModule = defineModule("Process");
+        processClass = defineClass("Process");
         rangeClass = defineClass("Range", new RubyRange.RangeAllocator());
         regexpClass = defineClass("Regexp", new RubyRegexp.RegexpAllocator());
         stringClass = defineClass("String", new RubyString.StringAllocator());
@@ -311,18 +300,19 @@ public class CoreLibrary {
 
         // The rest
 
-        encodingCompatibilityErrorClass = new RubyClass(context, encodingClass, standardErrorClass, "CompatibilityError");
+        encodingCompatibilityErrorClass = defineClass(encodingClass, encodingErrorClass, "CompatibilityError");
 
-        encodingConverterClass = new RubyClass(context, encodingClass, objectClass, "Converter");
-        encodingConverterClass.setAllocator(new RubyEncodingConverter.EncodingConverterAllocator());
+        encodingConverterClass = defineClass(encodingClass, objectClass, "Converter", new RubyEncodingConverter.EncodingConverterAllocator());
 
         truffleModule = defineModule("Truffle");
         truffleDebugModule = defineModule(truffleModule, "Debug");
         defineModule(truffleModule, "Primitive");
 
         rubiniusModule = defineModule("Rubinius");
-        byteArrayClass = new RubyClass(context, rubiniusModule, objectClass, "ByteArray");
-        stringDataClass = new RubyClass(context, rubiniusModule, objectClass, "StringData");
+        byteArrayClass = defineClass(rubiniusModule, objectClass, "ByteArray");
+        lookupTableClass = defineClass(rubiniusModule, hashClass, "LookupTable");
+        stringDataClass = defineClass(rubiniusModule, objectClass, "StringData");
+        tupleClass = defineClass(rubiniusModule, arrayClass, "Tuple");
 
         // Include the core modules
 
@@ -403,6 +393,9 @@ public class CoreLibrary {
         objectClass.setConstant(null, "RUBY_RELEASE_DATE", RubyString.fromJavaString(stringClass, Constants.COMPILE_DATE));
         objectClass.setConstant(null, "RUBY_DESCRIPTION", RubyString.fromJavaString(stringClass, OutputStrings.getVersionString()));
 
+        // BasicObject knows itself
+        basicObjectClass.setConstant(null, "BasicObject", basicObjectClass);
+
         // TODO(cs): this should be a separate exception
         mathModule.setConstant(null, "DomainError", edomClass);
 
@@ -428,8 +421,22 @@ public class CoreLibrary {
         fileClass.setConstant(null, "PATH_SEPARATOR", RubyString.fromJavaString(stringClass, File.pathSeparator));
         fileClass.setConstant(null, "FNM_SYSCASE", 0);
 
-        processModule.setConstant(null, "CLOCK_MONOTONIC", ProcessNodes.CLOCK_MONOTONIC);
-        processModule.setConstant(null, "CLOCK_REALTIME", ProcessNodes.CLOCK_REALTIME);
+        processClass.setConstant(null, "CLOCK_MONOTONIC", ProcessNodes.CLOCK_MONOTONIC);
+        processClass.setConstant(null, "CLOCK_REALTIME", ProcessNodes.CLOCK_REALTIME);
+
+        encodingConverterClass.setConstant(null, "INVALID_MASK", EConvFlags.INVALID_MASK);
+        encodingConverterClass.setConstant(null, "INVALID_REPLACE", EConvFlags.INVALID_REPLACE);
+        encodingConverterClass.setConstant(null, "UNDEF_MASK", EConvFlags.UNDEF_MASK);
+        encodingConverterClass.setConstant(null, "UNDEF_REPLACE", EConvFlags.UNDEF_REPLACE);
+        encodingConverterClass.setConstant(null, "UNDEF_HEX_CHARREF", EConvFlags.UNDEF_HEX_CHARREF);
+        encodingConverterClass.setConstant(null, "PARTIAL_INPUT", EConvFlags.PARTIAL_INPUT);
+        encodingConverterClass.setConstant(null, "AFTER_OUTPUT", EConvFlags.AFTER_OUTPUT);
+        encodingConverterClass.setConstant(null, "UNIVERSAL_NEWLINE_DECORATOR", EConvFlags.UNIVERSAL_NEWLINE_DECORATOR);
+        encodingConverterClass.setConstant(null, "CRLF_NEWLINE_DECORATOR", EConvFlags.CRLF_NEWLINE_DECORATOR);
+        encodingConverterClass.setConstant(null, "CR_NEWLINE_DECORATOR", EConvFlags.CR_NEWLINE_DECORATOR);
+        encodingConverterClass.setConstant(null, "XML_TEXT_DECORATOR", EConvFlags.XML_TEXT_DECORATOR);
+        encodingConverterClass.setConstant(null, "XML_ATTR_CONTENT_DECORATOR", EConvFlags.XML_ATTR_CONTENT_DECORATOR);
+        encodingConverterClass.setConstant(null, "XML_ATTR_QUOTE_DECORATOR", EConvFlags.XML_ATTR_QUOTE_DECORATOR);
     }
 
     private void initializeSignalConstants() {
@@ -455,13 +462,19 @@ public class CoreLibrary {
     }
 
     private RubyClass defineClass(RubyClass superclass, String name) {
-        return new RubyClass(context, objectClass, superclass, name);
+        return new RubyClass(context, objectClass, superclass, name, superclass.getAllocator());
     }
 
     private RubyClass defineClass(RubyClass superclass, String name, Allocator allocator) {
-        RubyClass rubyClass = new RubyClass(context, objectClass, superclass, name);
-        rubyClass.setAllocator(allocator);
-        return rubyClass;
+        return new RubyClass(context, objectClass, superclass, name, allocator);
+    }
+
+    private RubyClass defineClass(RubyModule lexicalParent, RubyClass superclass, String name) {
+        return new RubyClass(context, lexicalParent, superclass, name, superclass.getAllocator());
+    }
+
+    private RubyClass defineClass(RubyModule lexicalParent, RubyClass superclass, String name, Allocator allocator) {
+        return new RubyClass(context, lexicalParent, superclass, name, allocator);
     }
 
     private RubyModule defineModule(String name) {
@@ -482,6 +495,7 @@ public class CoreLibrary {
 
         if (LOAD_CORE) {
             try {
+                loadingCoreLibrary = true;
                 loadRubyCore("core.rb");
             } catch (RaiseException e) {
                 final RubyException rubyException = e.getRubyException();
@@ -491,6 +505,8 @@ public class CoreLibrary {
                 }
 
                 throw new TruffleFatalException("couldn't load the core library", e);
+            } finally {
+                loadingCoreLibrary = false;
             }
         }
     }
@@ -645,7 +661,7 @@ public class CoreLibrary {
 
     public RubyException frozenError(String className, Node currentNode) {
         CompilerAsserts.neverPartOfCompilation();
-        return runtimeError(String.format("FrozenError: can't modify frozen %s", className), currentNode);
+        return runtimeError(String.format("can't modify frozen %s", className), currentNode);
     }
 
     public RubyException argumentError(String message, Node currentNode) {
@@ -1157,8 +1173,16 @@ public class CoreLibrary {
         return byteArrayClass;
     }
 
+    public RubyClass getLookupTableClass() {
+        return lookupTableClass;
+    }
+
     public RubyClass getStringDataClass() {
         return stringDataClass;
+    }
+
+    public RubyClass getTupleClass() {
+        return tupleClass;
     }
 
     public RubyBasicObject getRubiniusUndefined() {
@@ -1177,4 +1201,7 @@ public class CoreLibrary {
         return mapSymbol;
     }
 
+    public boolean isLoadingCoreLibrary() {
+        return loadingCoreLibrary;
+    }
 }

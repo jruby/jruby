@@ -18,22 +18,20 @@ describe "Hash#hash" do
     (h.hash == h[:a].hash).should == true
   end
 
-  ruby_bug "redmine #1852", "1.9.1" do
-    it "returns the same hash for recursive hashes" do
-      h = {} ; h[:x] = h
-      h.hash.should == {:x => h}.hash
-      h.hash.should == {:x => {:x => h}}.hash
-      # This is because h.eql?(:x => h)
-      # Remember that if two objects are eql?
-      # then the need to have the same hash.
-      # Check the Hash#eql? specs!
-    end
+  it "returns the same hash for recursive hashes" do
+    h = {} ; h[:x] = h
+    h.hash.should == {:x => h}.hash
+    h.hash.should == {:x => {:x => h}}.hash
+    # This is because h.eql?(:x => h)
+    # Remember that if two objects are eql?
+    # then the need to have the same hash.
+    # Check the Hash#eql? specs!
+  end
 
-    it "returns the same hash for recursive hashes through arrays" do
-      h = {} ; rec = [h] ; h[:x] = rec
-      h.hash.should == {:x => rec}.hash
-      h.hash.should == {:x => [h]}.hash
-      # Like above, because h.eql?(:x => [h])
-    end
+  it "returns the same hash for recursive hashes through arrays" do
+    h = {} ; rec = [h] ; h[:x] = rec
+    h.hash.should == {:x => rec}.hash
+    h.hash.should == {:x => [h]}.hash
+    # Like above, because h.eql?(:x => [h])
   end
 end

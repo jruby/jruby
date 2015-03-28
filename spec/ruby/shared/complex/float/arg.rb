@@ -1,11 +1,9 @@
 require File.expand_path('../../../../spec_helper', __FILE__)
 
 describe :float_arg, :shared => true do
-  ruby_bug "#1715", "1.8.6.369" do
-    it "returns NaN if NaN" do
-      f = nan_value
-      f.send(@method).nan?.should be_true
-    end
+  it "returns NaN if NaN" do
+    f = nan_value
+    f.send(@method).nan?.should be_true
   end
 
   it "returns self if NaN" do

@@ -25,11 +25,9 @@ describe "REXML::Document#write" do
 
   # REXML in 1.8 is screwed up:
   # Document#write uses wrong arity for Formatters::Transitive#initialize
-  ruby_bug "REXMLTracker#162", "1.8" do
-    it "returns document with transitive support" do
-      @d.write(@str, 2, true)
-      @str.should =~ /\s*<Springfield\s*><EvergreenTerrace\s*><House742\s*\/><\/EvergreenTerrace\s*><\/Springfield\s*>/
-    end
+  it "returns document with transitive support" do
+    @d.write(@str, 2, true)
+    @str.should =~ /\s*<Springfield\s*><EvergreenTerrace\s*><House742\s*\/><\/EvergreenTerrace\s*><\/Springfield\s*>/
   end
 
   it "returns document with support for IE" do

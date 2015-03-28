@@ -31,5 +31,5 @@ package org.jruby.ext.ripper;
 /**
  */
 public interface RipperParserState {
-    public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop);    
+    public Object execute(RipperParser p, Object yyVal, Object[] yyVals, int yyTop);
 }

@@ -97,18 +97,16 @@ describe "File.new" do
     File.exist?(@file).should == true
   end
 
-  ruby_bug "[ruby-dev:40397]", "1.8.8" do
-    it "returns a new File when use File::APPEND mode" do
-      @fh = File.new(@file, File::APPEND)
-      @fh.should be_kind_of(File)
-      File.exist?(@file).should == true
-    end
+  it "returns a new File when use File::APPEND mode" do
+    @fh = File.new(@file, File::APPEND)
+    @fh.should be_kind_of(File)
+    File.exist?(@file).should == true
+  end
 
-    it "returns a new File when use File::RDONLY|File::APPEND mode" do
-      @fh = File.new(@file, File::RDONLY|File::APPEND)
-      @fh.should be_kind_of(File)
-      File.exist?(@file).should == true
-    end
+  it "returns a new File when use File::RDONLY|File::APPEND mode" do
+    @fh = File.new(@file, File::RDONLY|File::APPEND)
+    @fh.should be_kind_of(File)
+    File.exist?(@file).should == true
   end
 
   it "returns a new File when use File::RDONLY|File::WRONLY mode" do

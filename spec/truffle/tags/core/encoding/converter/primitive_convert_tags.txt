@@ -1,31 +1,4 @@
 fails:Encoding::Converter#primitive_convert accepts a nil source buffer
-fails:Encoding::Converter#primitive_convert accepts a String as the source buffer
-fails:Encoding::Converter#primitive_convert accepts nil for the destination byte offset
-fails:Encoding::Converter#primitive_convert accepts an integer for the destination byte offset
-fails:Encoding::Converter#primitive_convert calls #to_int to convert the destination byte offset
-fails:Encoding::Converter#primitive_convert raises an ArgumentError if the destination byte offset is greater than the bytesize of the destination buffer
-fails:Encoding::Converter#primitive_convert uses the destination byte offset to determine where to write the result in the destination buffer
-fails:Encoding::Converter#primitive_convert accepts nil for the destination bytesize
-fails:Encoding::Converter#primitive_convert accepts an integer for the destination bytesize
-fails:Encoding::Converter#primitive_convert allows a destination bytesize value greater than the bytesize of the source buffer
-fails:Encoding::Converter#primitive_convert allows a destination bytesize value less than the bytesize of the source buffer
 fails:Encoding::Converter#primitive_convert calls #to_int to convert the destination byte size
-fails:Encoding::Converter#primitive_convert uses destination bytesize as the maximumn bytesize of the destination buffer
-fails:Encoding::Converter#primitive_convert allows a destination buffer of unlimited size if destination bytesize is nil
-fails:Encoding::Converter#primitive_convert accepts an options hash
-fails:Encoding::Converter#primitive_convert sets the destination buffer's encoding to the destination encoding if the conversion suceeded
-fails:Encoding::Converter#primitive_convert sets the destination buffer's encoding to the destination encoding if the conversion failed
-fails:Encoding::Converter#primitive_convert removes the undefined part from the source buffer when returning :undefined_conversion
-fails:Encoding::Converter#primitive_convert returns :incomplete_input when source buffer ends unexpectedly and :partial_input isn't specified
-fails:Encoding::Converter#primitive_convert clears the source buffer when returning :incomplete_input
-fails:Encoding::Converter#primitive_convert returns :source_buffer_empty when source buffer ends unexpectedly and :partial_input is true
-fails:Encoding::Converter#primitive_convert clears the source buffer when returning :source_buffer_empty
-fails:Encoding::Converter#primitive_convert returns :undefined_conversion when a character in the source buffer is not representable in the output encoding
-fails:Encoding::Converter#primitive_convert returns :invalid_byte_sequence when an invalid byte sequence was found in the source buffer
-fails:Encoding::Converter#primitive_convert removes consumed and erroneous bytes from the source buffer when returning :invalid_byte_sequence
-fails:Encoding::Converter#primitive_convert returns :finished when the conversion succeeded
-fails:Encoding::Converter#primitive_convert clears the source buffer when returning :finished
-fails:Encoding::Converter#primitive_convert returns :destination_buffer_full when the destination buffer is too small
-fails:Encoding::Converter#primitive_convert clears the source buffer when returning :destination_buffer_full
 fails:Encoding::Converter#primitive_convert keeps removing invalid bytes from the source buffer
 fails:Encoding::Converter#primitive_convert reuses read-again bytes after the first error

@@ -49,22 +49,11 @@ describe "Net::HTTP.new" do
   end
 
   describe "when passed address, port, *proxy_options" do
-    ruby_version_is ""..."2.0" do
-      it "returns a instance of singletone class" do
-        http = Net::HTTP.new("localhost", 3333, "localhost")
-        http.proxy?.should be_true
-        http.instance_of?(Net::HTTP).should be_false
-        http.should be_kind_of(Net::HTTP)
-      end
-    end
-
-    ruby_version_is "2.0" do
-      it "returns a Net::HTTP instance" do
-        http = Net::HTTP.new("localhost", 3333, "localhost")
-        http.proxy?.should be_true
-        http.instance_of?(Net::HTTP).should be_true
-        http.should be_kind_of(Net::HTTP)
-      end
+    it "returns a Net::HTTP instance" do
+      http = Net::HTTP.new("localhost", 3333, "localhost")
+      http.proxy?.should be_true
+      http.instance_of?(Net::HTTP).should be_true
+      http.should be_kind_of(Net::HTTP)
     end
 
     it "correctly sets the passed Proxy options" do

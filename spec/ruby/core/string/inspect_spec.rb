@@ -313,7 +313,7 @@ describe "String#inspect" do
     ].should be_computed_by(:inspect)
   end
 
-  ruby_version_is "1.9".."2.1" do
+  ruby_version_is "".."2.1" do
     it "returns a string with a NUL character replaced by \\x notation" do
       0.chr.inspect.should == '"\\x00"'
     end
@@ -387,7 +387,7 @@ describe "String#inspect" do
       ].should be_computed_by(:inspect)
     end
 
-    ruby_version_is "1.9".."2.1" do
+    ruby_version_is "".."2.1" do
       it "returns a string with a NUL character replaced by \\u notation" do
         0.chr('utf-8').inspect.should == '"\\u0000"'
       end

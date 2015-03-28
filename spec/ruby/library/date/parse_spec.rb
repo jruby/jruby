@@ -45,28 +45,14 @@ describe "Date#parse" do
     d.should == Date.civil(Date.today.year, 11, 8)
   end
 
-  ruby_version_is "" ... "1.9" do
-    it "parses YYDDD as year and day number" do
-      d = Date.parse("10100")
-      d.should == Date.civil(10, 4, 10)
-    end
-
-    it "parses YYMMDD as year, month and day" do
-      d = Date.parse("201023")
-      d.should == Date.civil(20, 10, 23)
-    end
+  it "parses YYDDD as year and day number in 1969--2068" do
+    d = Date.parse("10100")
+    d.should == Date.civil(2010, 4, 10)
   end
 
-  ruby_version_is "1.9" do
-    it "parses YYDDD as year and day number in 1969--2068" do
-      d = Date.parse("10100")
-      d.should == Date.civil(2010, 4, 10)
-    end
-
-    it "parses YYMMDD as year, month and day in 1969--2068" do
-      d = Date.parse("201023")
-      d.should == Date.civil(2020, 10, 23)
-    end
+  it "parses YYMMDD as year, month and day in 1969--2068" do
+    d = Date.parse("201023")
+    d.should == Date.civil(2020, 10, 23)
   end
 
   it "parses YYYYDDD as year and day number" do
@@ -112,16 +98,6 @@ describe "Date#parse with '/' separator US-style" do
   it_should_behave_like "date_parse_us"
 end
 
-ruby_version_is "" ... "1.8.7" do
-  describe "Date#parse with '.' separator US-style" do
-    before :all do
-      @sep = '.'
-    end
-
-    it_should_behave_like "date_parse_us"
-  end
-end
-
 describe "Date#parse with '-' separator EU-style" do
   before :all do
     @sep = '-'
@@ -130,45 +106,32 @@ describe "Date#parse with '-' separator EU-style" do
   it_should_behave_like "date_parse_eu"
 end
 
-ruby_version_is "1.8.7" do
-  describe "Date#parse(.)" do
-    it "parses YYYY.MM.DD into a Date object" do
-      d = Date.parse("2007.10.01")
-      d.year.should  == 2007
-      d.month.should == 10
-      d.day.should   == 1
-    end
+describe "Date#parse(.)" do
+  it "parses YYYY.MM.DD into a Date object" do
+    d = Date.parse("2007.10.01")
+    d.year.should  == 2007
+    d.month.should == 10
+    d.day.should   == 1
+  end
 
-    it "parses DD.MM.YYYY into a Date object" do
-      d = Date.parse("10.01.2007")
-      d.year.should  == 2007
-      d.month.should == 1
-      d.day.should   == 10
-    end
+  it "parses DD.MM.YYYY into a Date object" do
+    d = Date.parse("10.01.2007")
+    d.year.should  == 2007
+    d.month.should == 1
+    d.day.should   == 10
+  end
 
-    ruby_version_is "" ... "1.9" do
-      it "parses YY.MM.DD into a Date object using the year YY" do
-        d = Date.parse("10.01.07")
-        d.year.should  == 10
-        d.month.should == 1
-        d.day.should   == 7
-      end
-    end
+  it "parses YY.MM.DD into a Date object using the year 20YY" do
+    d = Date.parse("10.01.07")
+    d.year.should  == 2010
+    d.month.should == 1
+    d.day.should   == 7
+  end
 
-    ruby_version_is "1.9" do
-      it "parses YY.MM.DD into a Date object using the year 20YY" do
-        d = Date.parse("10.01.07")
-        d.year.should  == 2010
-        d.month.should == 1
-        d.day.should   == 7
-      end
-    end
-
-    it "parses YY.MM.DD using the year digits as 20YY when given true as additional argument" do
-      d = Date.parse("10.01.07", true)
-      d.year.should  == 2010
-      d.month.should == 1
-      d.day.should   == 7
-    end
+  it "parses YY.MM.DD using the year digits as 20YY when given true as additional argument" do
+    d = Date.parse("10.01.07", true)
+    d.year.should  == 2010
+    d.month.should == 1
+    d.day.should   == 7
   end
 end

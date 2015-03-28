@@ -9,21 +9,65 @@
  */
 package org.jruby.truffle.runtime.methods;
 
+import org.jruby.ast.*;
+
+import java.util.ArrayList;
+import java.util.List;
+
 public class Arity {
 
-    public static final Arity NO_ARGUMENTS = new Arity(0, 0, false, false);
-    public static final Arity ONE_REQUIRED = new Arity(1, 0, false, false);
+    public static final Arity NO_ARGUMENTS = new Arity(0, 0, false, false, false, 0);
+    public static final Arity ONE_REQUIRED = new Arity(1, 0, false, false, false, 0);
 
     private final int required;
     private final int optional;
     private final boolean allowsMore;
+    private final int definedKeywords;
     private final boolean hasKeywords;
+    private final boolean hasKeyRest;
 
-    public Arity(int required, int optional, boolean allowsMore, boolean hasKeywords) {
+    private final List<String> keywordArguments;
+
+    public Arity(int required, int optional, boolean allowsMore, boolean hasKeywords, boolean hasKeyRest, int definedKeywords) {
         this.required = required;
         this.optional = optional;
         this.allowsMore = allowsMore;
+        this.definedKeywords = definedKeywords;
         this.hasKeywords = hasKeywords;
+        this.hasKeyRest = hasKeyRest;
+        keywordArguments = null;
+    }
+
+    public Arity(int required, int optional, boolean allowsMore, boolean hasKeywords, boolean hasKeyRest, int definedKeywords, ArgsNode argsNode) {
+        this.required = required;
+        this.optional = optional;
+        this.allowsMore = allowsMore;
+        this.definedKeywords = definedKeywords;
+        this.hasKeywords = hasKeywords;
+        this.hasKeyRest = hasKeyRest;
+
+        if (argsNode.hasKwargs()) {
+            keywordArguments = new ArrayList<>();
+            if (argsNode.getKeywords() != null) {
+                for (Node node : argsNode.getKeywords().childNodes()) {
+                    final KeywordArgNode kwarg = (KeywordArgNode) node;
+                    final AssignableNode assignableNode = kwarg.getAssignable();
+
+                    if (assignableNode instanceof LocalAsgnNode) {
+                        keywordArguments.add(((LocalAsgnNode) assignableNode)
+                                .getName());
+                    } else if (assignableNode instanceof DAsgnNode) {
+                        keywordArguments.add(((DAsgnNode) assignableNode)
+                                .getName());
+                    } else {
+                        throw new UnsupportedOperationException(
+                                "unsupported keyword arg " + node);
+                    }
+                }
+            }
+        } else {
+            keywordArguments = null;
+        }
     }
 
     public int getRequired() {
@@ -42,6 +86,14 @@ public class Arity {
         return hasKeywords;
     }
 
+    public int getCountKeywords() {
+        return definedKeywords;
+    }
+
+    public boolean hasKeyRest() {
+        return hasKeyRest;
+    }
+
     public int getArityNumber() {
         int count = required;
 
@@ -56,14 +108,19 @@ public class Arity {
         return count;
     }
 
+    public List<String> getKeywordArguments() {
+        return keywordArguments;
+    }
+
     @Override
     public String toString() {
         return "Arity{" +
                 "required=" + required +
                 ", optional=" + optional +
                 ", allowsMore=" + allowsMore +
+                ", definedKeywords=" + definedKeywords +
                 ", hasKeywords=" + hasKeywords +
+                ", hasKeyRest=" + hasKeyRest +
                 '}';
     }
-
 }

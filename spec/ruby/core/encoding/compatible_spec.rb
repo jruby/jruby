@@ -39,12 +39,10 @@ with_feature :encoding do
         ].should be_computed_by(:compatible?)
       end
 
-      ruby_bug "#5968", "2.0" do
-        it "returns the first's Encoding if the second is ASCII compatible and ASCII only" do
-          [ [Encoding, "abc".force_encoding("ASCII-8BIT"), "123".force_encoding("US-ASCII"), Encoding::ASCII_8BIT],
-            [Encoding, "123".force_encoding("US-ASCII"), "abc".force_encoding("ASCII-8BIT"), Encoding::US_ASCII]
-          ].should be_computed_by(:compatible?)
-        end
+      it "returns the first's Encoding if the second is ASCII compatible and ASCII only" do
+        [ [Encoding, "abc".force_encoding("ASCII-8BIT"), "123".force_encoding("US-ASCII"), Encoding::ASCII_8BIT],
+          [Encoding, "123".force_encoding("US-ASCII"), "abc".force_encoding("ASCII-8BIT"), Encoding::US_ASCII]
+        ].should be_computed_by(:compatible?)
       end
 
       it "returns the second's Encoding if the second is ASCII compatible but not ASCII only" do
@@ -154,27 +152,25 @@ with_feature :encoding do
   end
 
   describe "Encoding.compatible? String, Symbol" do
-    ruby_bug "#5921", "1.9.3.0" do
-      it "returns US-ASCII if both are ASCII only" do
-        str = "abc".force_encoding("us-ascii")
-        Encoding.compatible?(str, :abc).should == Encoding::US_ASCII
-      end
+    it "returns US-ASCII if both are ASCII only" do
+      str = "abc".force_encoding("us-ascii")
+      Encoding.compatible?(str, :abc).should == Encoding::US_ASCII
+    end
 
-      it "returns the String's Encoding if it is not US-ASCII but both are ASCII only" do
-        [ [Encoding, "abc",                     Encoding::ASCII_8BIT],
-          [Encoding, "abc".encode("utf-8"),     Encoding::UTF_8],
-          [Encoding, "abc".encode("euc-jp"),    Encoding::EUC_JP],
-          [Encoding, "abc".encode("shift_jis"), Encoding::Shift_JIS],
-        ].should be_computed_by(:compatible?, :abc)
-      end
+    it "returns the String's Encoding if it is not US-ASCII but both are ASCII only" do
+      [ [Encoding, "abc",                     Encoding::ASCII_8BIT],
+        [Encoding, "abc".encode("utf-8"),     Encoding::UTF_8],
+        [Encoding, "abc".encode("euc-jp"),    Encoding::EUC_JP],
+        [Encoding, "abc".encode("shift_jis"), Encoding::Shift_JIS],
+      ].should be_computed_by(:compatible?, :abc)
+    end
 
-      it "returns the String's Encoding if the String is not ASCII only" do
-        [ [Encoding, "\xff",                                  Encoding::ASCII_8BIT],
-          [Encoding, "\u3042".encode("utf-8"),                Encoding::UTF_8],
-          [Encoding, "\xa4\xa2".force_encoding("euc-jp"),     Encoding::EUC_JP],
-          [Encoding, "\x82\xa0".force_encoding("shift_jis"),  Encoding::Shift_JIS],
-        ].should be_computed_by(:compatible?, :abc)
-      end
+    it "returns the String's Encoding if the String is not ASCII only" do
+      [ [Encoding, "\xff",                                  Encoding::ASCII_8BIT],
+        [Encoding, "\u3042".encode("utf-8"),                Encoding::UTF_8],
+        [Encoding, "\xa4\xa2".force_encoding("euc-jp"),     Encoding::EUC_JP],
+        [Encoding, "\x82\xa0".force_encoding("shift_jis"),  Encoding::Shift_JIS],
+      ].should be_computed_by(:compatible?, :abc)
     end
   end
 
@@ -205,23 +201,19 @@ with_feature :encoding do
       Encoding.compatible?(/abc/, :def).should == Encoding::US_ASCII
     end
 
-    ruby_bug "#5921", "1.9.3.0" do
-      it "returns the first's Encoding if it is not US-ASCII and not ASCII only" do
-        [ [Encoding, Regexp.new("\xff"),                                  Encoding::ASCII_8BIT],
-          [Encoding, Regexp.new("\u3042".encode("utf-8")),                Encoding::UTF_8],
-          [Encoding, Regexp.new("\xa4\xa2".force_encoding("euc-jp")),     Encoding::EUC_JP],
-          [Encoding, Regexp.new("\x82\xa0".force_encoding("shift_jis")),  Encoding::Shift_JIS],
-        ].should be_computed_by(:compatible?, /abc/)
-      end
+    it "returns the first's Encoding if it is not US-ASCII and not ASCII only" do
+      [ [Encoding, Regexp.new("\xff"),                                  Encoding::ASCII_8BIT],
+        [Encoding, Regexp.new("\u3042".encode("utf-8")),                Encoding::UTF_8],
+        [Encoding, Regexp.new("\xa4\xa2".force_encoding("euc-jp")),     Encoding::EUC_JP],
+        [Encoding, Regexp.new("\x82\xa0".force_encoding("shift_jis")),  Encoding::Shift_JIS],
+      ].should be_computed_by(:compatible?, /abc/)
     end
   end
 
   describe "Encoding.compatible? Symbol, String" do
-    ruby_bug "#5921", "1.9.3.0" do
-      it "returns US-ASCII if both are ASCII only" do
-        str = "abc".force_encoding("us-ascii")
-        Encoding.compatible?(str, :abc).should == Encoding::US_ASCII
-      end
+    it "returns US-ASCII if both are ASCII only" do
+      str = "abc".force_encoding("us-ascii")
+      Encoding.compatible?(str, :abc).should == Encoding::US_ASCII
     end
   end
 
@@ -230,19 +222,17 @@ with_feature :encoding do
       Encoding.compatible?(:abc, /def/).should == Encoding::US_ASCII
     end
 
-    ruby_bug "#5921", "1.9.3.0" do
-      it "returns the Regexp's Encoding if it is not US-ASCII and not ASCII only" do
-        a = Regexp.new("\xff")
-        b = Regexp.new("\u3042".encode("utf-8"))
-        c = Regexp.new("\xa4\xa2".force_encoding("euc-jp"))
-        d = Regexp.new("\x82\xa0".force_encoding("shift_jis"))
+    it "returns the Regexp's Encoding if it is not US-ASCII and not ASCII only" do
+      a = Regexp.new("\xff")
+      b = Regexp.new("\u3042".encode("utf-8"))
+      c = Regexp.new("\xa4\xa2".force_encoding("euc-jp"))
+      d = Regexp.new("\x82\xa0".force_encoding("shift_jis"))
 
-        [ [Encoding, :abc, a, Encoding::ASCII_8BIT],
-          [Encoding, :abc, b, Encoding::UTF_8],
-          [Encoding, :abc, c, Encoding::EUC_JP],
-          [Encoding, :abc, d, Encoding::Shift_JIS],
-        ].should be_computed_by(:compatible?)
-      end
+      [ [Encoding, :abc, a, Encoding::ASCII_8BIT],
+        [Encoding, :abc, b, Encoding::UTF_8],
+        [Encoding, :abc, c, Encoding::EUC_JP],
+        [Encoding, :abc, d, Encoding::Shift_JIS],
+      ].should be_computed_by(:compatible?)
     end
   end
 
@@ -251,14 +241,12 @@ with_feature :encoding do
       Encoding.compatible?(:abc, :def).should == Encoding::US_ASCII
     end
 
-    ruby_bug "#5921", "1.9.3.0" do
-      it "returns the first's Encoding if it is not ASCII only" do
-        [ [Encoding, "\xff".to_sym,                                  Encoding::ASCII_8BIT],
-          [Encoding, "\u3042".encode("utf-8").to_sym,                Encoding::UTF_8],
-          [Encoding, "\xa4\xa2".force_encoding("euc-jp").to_sym,     Encoding::EUC_JP],
-          [Encoding, "\x82\xa0".force_encoding("shift_jis").to_sym,  Encoding::Shift_JIS],
-        ].should be_computed_by(:compatible?, :abc)
-      end
+    it "returns the first's Encoding if it is not ASCII only" do
+      [ [Encoding, "\xff".to_sym,                                  Encoding::ASCII_8BIT],
+        [Encoding, "\u3042".encode("utf-8").to_sym,                Encoding::UTF_8],
+        [Encoding, "\xa4\xa2".force_encoding("euc-jp").to_sym,     Encoding::EUC_JP],
+        [Encoding, "\x82\xa0".force_encoding("shift_jis").to_sym,  Encoding::Shift_JIS],
+      ].should be_computed_by(:compatible?, :abc)
     end
   end
 

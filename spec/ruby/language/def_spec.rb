@@ -174,7 +174,7 @@ describe "An instance method with a default argument" do
     foo(2,3,3).should == [2,3,[3]]
   end
 
-  ruby_version_is "2.0"..."2.2" do
+  ruby_version_is ""..."2.2" do
     it "calls a method with the same name as the local" do
       def bar
         1

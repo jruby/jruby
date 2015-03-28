@@ -187,23 +187,21 @@ public class IRRuntimeHelpers {
         }
     }
 
-    @Interp @JIT
+    @JIT
     public static IRubyObject handleBreakAndReturnsInLambdas(ThreadContext context, StaticScope scope, DynamicScope dynScope, Object exc, Block.Type blockType) throws RuntimeException {
         if ((exc instanceof IRBreakJump) && inNonMethodBodyLambda(scope, blockType)) {
             // We just unwound all the way up because of a non-local break
-            if (((IRBreakJump)exc).scopeToReturnTo == dynScope) throw IRException.BREAK_LocalJumpError.getException(context.getRuntime());
-        }
-
-        if (exc instanceof IRReturnJump && (blockType == null || inLambda(blockType))) {
+            throw IRException.BREAK_LocalJumpError.getException(context.getRuntime());
+        } else if (exc instanceof IRReturnJump && (blockType == null || inLambda(blockType))) {
             // Ignore non-local return processing in non-lambda blocks.
             // Methods have a null blocktype
             return handleNonlocalReturn(scope, dynScope, exc, blockType);
+        } else {
+            // Propagate
+            Helpers.throwException((Throwable)exc);
+            // should not get here
+            return null;
         }
-
-        // Propagate
-        Helpers.throwException((Throwable)exc);
-        // should not get here
-        return null;
     }
 
     @JIT
@@ -1351,8 +1349,15 @@ public class IRRuntimeHelpers {
     }
 
     @JIT
-    public static IRubyObject getVariableWithAccessor(IRubyObject self, VariableAccessor accessor, ThreadContext context) {
-        return Helpers.nullToNil((IRubyObject)accessor.get(self), context);
+    public static IRubyObject getVariableWithAccessor(IRubyObject self, VariableAccessor accessor, ThreadContext context, String name) {
+        IRubyObject result = (IRubyObject)accessor.get(self);
+        if (result == null) {
+            if (context.runtime.isVerbose()) {
+                context.runtime.getWarnings().warning(IRubyWarnings.ID.IVAR_NOT_INITIALIZED, "instance variable " + name + " not initialized");
+            }
+            result = context.nil;
+        }
+        return result;
     }
 
     @JIT

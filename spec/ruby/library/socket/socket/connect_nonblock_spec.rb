@@ -52,12 +52,10 @@ describe "Socket#connect_nonblock" do
       end.should raise_error(Errno::EINPROGRESS)
     end
 
-    ruby_version_is "1.9.2" do
-      it "raises Errno::EINPROGRESS with IO::WaitWritable mixed in when the connect would block" do
-        lambda do
-          @socket.connect_nonblock(@addr)
-        end.should raise_error(IO::WaitWritable)
-      end
+    it "raises Errno::EINPROGRESS with IO::WaitWritable mixed in when the connect would block" do
+      lambda do
+        @socket.connect_nonblock(@addr)
+      end.should raise_error(IO::WaitWritable)
     end
   end
 end

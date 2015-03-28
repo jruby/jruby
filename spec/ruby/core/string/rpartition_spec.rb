@@ -20,12 +20,10 @@ describe "String#rpartition with String" do
     matched_string.should == $~[0]
   end
 
-  ruby_bug "redmine #1510", '1.9.1' do
-    it "converts its argument using :to_str" do
-      find = mock('l')
-      find.should_receive(:to_str).and_return("l")
-      "hello".rpartition(find).should == ["hel","l","o"]
-    end
+  it "converts its argument using :to_str" do
+    find = mock('l')
+    find.should_receive(:to_str).and_return("l")
+    "hello".rpartition(find).should == ["hel","l","o"]
   end
 
   it "raises an error if not convertible to string" do

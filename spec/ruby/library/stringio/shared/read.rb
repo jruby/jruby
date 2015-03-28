@@ -27,16 +27,8 @@ describe :stringio_read, :shared => true do
     lambda { @io.send(@method, 7, Object.new) }.should raise_error(TypeError)
   end
 
-  ruby_version_is "" ... "1.9" do
-    it "raises an error when passed a frozen String as buffer" do
-      lambda { @io.send(@method, 7, "".freeze) }.should raise_error(TypeError)
-    end
-  end
-
-  ruby_version_is "1.9" do
-    it "raises an error when passed a frozen String as buffer" do
-      lambda { @io.send(@method, 7, "".freeze) }.should raise_error(RuntimeError)
-    end
+  it "raises an error when passed a frozen String as buffer" do
+    lambda { @io.send(@method, 7, "".freeze) }.should raise_error(RuntimeError)
   end
 end
 
@@ -76,10 +68,8 @@ describe :stringio_read_length, :shared => true do
     lambda { @io.send(@method, -2) }.should raise_error(ArgumentError)
   end
 
-  ruby_version_is "1.9" do
-    it "returns a binary String" do
-      @io.send(@method, 4).encoding.should == Encoding::ASCII_8BIT
-    end
+  it "returns a binary String" do
+    @io.send(@method, 4).encoding.should == Encoding::ASCII_8BIT
   end
 end
 

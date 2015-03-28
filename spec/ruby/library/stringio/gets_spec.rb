@@ -48,12 +48,10 @@ describe "StringIO#gets when passed [separator]" do
     @io.lineno.should eql(3)
   end
 
-  ruby_bug "", "1.8.8" do
-    it "returns the next paragraph when the passed separator is an empty String" do
-      io = StringIO.new("this is\n\nan example")
-      io.gets("").should == "this is\n\n"
-      io.gets("").should == "an example"
-    end
+  it "returns the next paragraph when the passed separator is an empty String" do
+    io = StringIO.new("this is\n\nan example")
+    io.gets("").should == "this is\n\n"
+    io.gets("").should == "an example"
   end
 
   it "returns the remaining content starting at the current position when passed nil" do
@@ -127,106 +125,104 @@ describe "StringIO#gets when passed no argument" do
   end
 end
 
-ruby_version_is "1.9" do
-  describe "StringIO#gets when passed [limit]" do
-    before(:each) do
-      @io = StringIO.new("this>is>an>example")
-    end
-
-    it "returns the data read until the limit is met" do
-      @io.gets(4).should == "this"
-      @io.gets(3).should == ">is"
-      @io.gets(5).should == ">an>e"
-      @io.gets(6).should == "xample"
-    end
-
-    it "sets $_ to the read content" do
-      @io.gets(4)
-      $_.should == "this"
-      @io.gets(3)
-      $_.should == ">is"
-      @io.gets(5)
-      $_.should == ">an>e"
-      @io.gets(6)
-      $_.should == "xample"
-      @io.gets(3)
-      $_.should be_nil
-    end
-
-    it "updates self's lineno by one" do
-      @io.gets(3)
-      @io.lineno.should eql(1)
-
-      @io.gets(3)
-      @io.lineno.should eql(2)
-
-      @io.gets(3)
-      @io.lineno.should eql(3)
-    end
-
-    it "tries to convert the passed limit to an Integer using #to_int" do
-      obj = mock('to_int')
-      obj.should_receive(:to_int).and_return(4)
-      @io.gets(obj).should == "this"
-    end
-
-    it "returns a blank string when passed a limit of 0" do
-      @io.gets(0).should == ""
-    end
+describe "StringIO#gets when passed [limit]" do
+  before(:each) do
+    @io = StringIO.new("this>is>an>example")
   end
 
-  describe "StringIO#gets when passed [separator] and [limit]" do
-    before(:each) do
-      @io = StringIO.new("this>is>an>example")
-    end
+  it "returns the data read until the limit is met" do
+    @io.gets(4).should == "this"
+    @io.gets(3).should == ">is"
+    @io.gets(5).should == ">an>e"
+    @io.gets(6).should == "xample"
+  end
 
-    it "returns the data read until the limit is consumed or the separator is met" do
-      @io.gets('>', 8).should == "this>"
-      @io.gets('>', 2).should == "is"
-      @io.gets('>', 10).should == ">"
-      @io.gets('>', 6).should == "an>"
-      @io.gets('>', 5).should == "examp"
-    end
+  it "sets $_ to the read content" do
+    @io.gets(4)
+    $_.should == "this"
+    @io.gets(3)
+    $_.should == ">is"
+    @io.gets(5)
+    $_.should == ">an>e"
+    @io.gets(6)
+    $_.should == "xample"
+    @io.gets(3)
+    $_.should be_nil
+  end
 
-    it "sets $_ to the read content" do
-      @io.gets('>', 8)
-      $_.should == "this>"
-      @io.gets('>', 2)
-      $_.should == "is"
-      @io.gets('>', 10)
-      $_.should == ">"
-      @io.gets('>', 6)
-      $_.should == "an>"
-      @io.gets('>', 5)
-      $_.should == "examp"
-    end
+  it "updates self's lineno by one" do
+    @io.gets(3)
+    @io.lineno.should eql(1)
 
-    it "updates self's lineno by one" do
-      @io.gets('>', 3)
-      @io.lineno.should eql(1)
+    @io.gets(3)
+    @io.lineno.should eql(2)
 
-      @io.gets('>', 3)
-      @io.lineno.should eql(2)
+    @io.gets(3)
+    @io.lineno.should eql(3)
+  end
 
-      @io.gets('>', 3)
-      @io.lineno.should eql(3)
-    end
+  it "tries to convert the passed limit to an Integer using #to_int" do
+    obj = mock('to_int')
+    obj.should_receive(:to_int).and_return(4)
+    @io.gets(obj).should == "this"
+  end
 
-    it "tries to convert the passed separator to a String using #to_str" do
-      obj = mock('to_str')
-      obj.should_receive(:to_str).and_return('>')
-      @io.gets(obj, 5).should == "this>"
-    end
+  it "returns a blank string when passed a limit of 0" do
+    @io.gets(0).should == ""
+  end
+end
 
-    it "does not raise TypeError if passed separator is nil" do
-      @io.gets(nil, 5).should == "this>"
-    end
+describe "StringIO#gets when passed [separator] and [limit]" do
+  before(:each) do
+    @io = StringIO.new("this>is>an>example")
+  end
 
-    it "tries to convert the passed limit to an Integer using #to_int" do
-      obj = mock('to_int')
-      obj.should_receive(:to_int).and_return(5)
-      @io.gets('>', obj).should == "this>"
-    end
+  it "returns the data read until the limit is consumed or the separator is met" do
+    @io.gets('>', 8).should == "this>"
+    @io.gets('>', 2).should == "is"
+    @io.gets('>', 10).should == ">"
+    @io.gets('>', 6).should == "an>"
+    @io.gets('>', 5).should == "examp"
+  end
+
+  it "sets $_ to the read content" do
+    @io.gets('>', 8)
+    $_.should == "this>"
+    @io.gets('>', 2)
+    $_.should == "is"
+    @io.gets('>', 10)
+    $_.should == ">"
+    @io.gets('>', 6)
+    $_.should == "an>"
+    @io.gets('>', 5)
+    $_.should == "examp"
+  end
+
+  it "updates self's lineno by one" do
+    @io.gets('>', 3)
+    @io.lineno.should eql(1)
+
+    @io.gets('>', 3)
+    @io.lineno.should eql(2)
+
+    @io.gets('>', 3)
+    @io.lineno.should eql(3)
+  end
+
+  it "tries to convert the passed separator to a String using #to_str" do
+    obj = mock('to_str')
+    obj.should_receive(:to_str).and_return('>')
+    @io.gets(obj, 5).should == "this>"
+  end
+
+  it "does not raise TypeError if passed separator is nil" do
+    @io.gets(nil, 5).should == "this>"
+  end
+
+  it "tries to convert the passed limit to an Integer using #to_int" do
+    obj = mock('to_int')
+    obj.should_receive(:to_int).and_return(5)
+    @io.gets('>', obj).should == "this>"
   end
 end
 

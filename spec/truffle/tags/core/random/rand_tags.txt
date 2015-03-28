@@ -1,12 +1,5 @@
-fails:Random.rand returns a Float if no max argument is passed
-fails:Random.rand returns a Float >= 0 if no max argument is passed
-fails:Random.rand returns a Float < 1 if no max argument is passed
 fails:Random.rand returns the same sequence for a given seed if no max argument is passed
-fails:Random.rand returns an Integer if an Integer argument is passed
-fails:Random.rand returns an Integer >= 0 if an Integer argument is passed
-fails:Random.rand returns an Integer < the max argument if an Integer argument is passed
 fails:Random.rand returns the same sequence for a given seed if an Integer argument is passed
-fails:Random.rand coerces arguments to Integers with #to_int
 fails:Random#rand with Fixnum eventually returns all possible values
 fails:Random#rand with Bignum typically returns a Bignum
 fails:Random#rand with Bignum returns the same sequence for a given seed

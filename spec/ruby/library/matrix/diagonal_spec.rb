@@ -39,36 +39,34 @@ describe "Matrix.diagonal" do
   end
 end
 
-ruby_version_is "1.9.3" do
-  describe "Matrix.diagonal?" do
-    it "returns true for a diagonal Matrix" do
-      Matrix.diagonal([1, 2, 3]).diagonal?.should be_true
-    end
+describe "Matrix.diagonal?" do
+  it "returns true for a diagonal Matrix" do
+    Matrix.diagonal([1, 2, 3]).diagonal?.should be_true
+  end
 
-    it "returns true for a zero square Matrix" do
-      Matrix.zero(3).diagonal?.should be_true
-    end
+  it "returns true for a zero square Matrix" do
+    Matrix.zero(3).diagonal?.should be_true
+  end
 
-    it "returns false for a non diagonal square Matrix" do
-      Matrix[[0, 1], [0, 0]].diagonal?.should be_false
-      Matrix[[1, 2, 3], [1, 2, 3], [1, 2, 3]].diagonal?.should be_false
-    end
+  it "returns false for a non diagonal square Matrix" do
+    Matrix[[0, 1], [0, 0]].diagonal?.should be_false
+    Matrix[[1, 2, 3], [1, 2, 3], [1, 2, 3]].diagonal?.should be_false
+  end
 
-    it "returns true for an empty 0x0 matrix" do
-      Matrix.empty(0,0).diagonal?.should be_true
-    end
+  it "returns true for an empty 0x0 matrix" do
+    Matrix.empty(0,0).diagonal?.should be_true
+  end
 
-    it "raises an error for rectangular matrices" do
-      [
-        Matrix[[0], [0]],
-        Matrix[[0, 0]],
-        Matrix.empty(0, 2),
-        Matrix.empty(2, 0),
-      ].each do |rectangual_matrix|
-        lambda {
-          rectangual_matrix.diagonal?
-        }.should raise_error(Matrix::ErrDimensionMismatch)
-      end
+  it "raises an error for rectangular matrices" do
+    [
+      Matrix[[0], [0]],
+      Matrix[[0, 0]],
+      Matrix.empty(0, 2),
+      Matrix.empty(2, 0),
+    ].each do |rectangual_matrix|
+      lambda {
+        rectangual_matrix.diagonal?
+      }.should raise_error(Matrix::ErrDimensionMismatch)
     end
   end
 end

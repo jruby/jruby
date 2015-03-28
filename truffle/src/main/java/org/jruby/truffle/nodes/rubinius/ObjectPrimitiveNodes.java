@@ -14,7 +14,6 @@ import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.SourceSection;
 
-import org.jruby.truffle.nodes.core.FixnumOrBignumNode;
 import org.jruby.truffle.nodes.objects.IsTaintedNode;
 import org.jruby.truffle.nodes.objects.IsTaintedNodeFactory;
 import org.jruby.truffle.nodes.objects.TaintNode;
@@ -22,7 +21,6 @@ import org.jruby.truffle.nodes.objects.TaintNodeFactory;
 import org.jruby.truffle.runtime.ObjectIDOperations;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
-import org.jruby.truffle.runtime.core.RubyBignum;
 import org.jruby.truffle.runtime.core.RubyNilClass;
 
 /**
@@ -95,7 +93,8 @@ public abstract class ObjectPrimitiveNodes {
 
         @Specialization
         public long objectID(RubyBasicObject object) {
-            return object.getObjectID();
+            // TODO: CS 22-Mar-15 need to write this using nodes
+            return object.verySlowGetObjectID();
         }
 
         protected boolean isSmallFixnum(long fixnum) {

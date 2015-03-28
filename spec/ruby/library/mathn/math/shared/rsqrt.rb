@@ -13,19 +13,9 @@ describe :mathn_math_rsqrt, :shared => true do
     @object.send(:rsqrt, 12.34).should == Math.sqrt!(12.34)
   end
 
-  ruby_version_is ""..."1.9" do
-    it "raises an Errno::EDOM if the argument is a negative number" do
-      lambda { @object.send(:rsqrt, -1) }.should raise_error(Errno::EDOM)
-      lambda { @object.send(:rsqrt, -4.0) }.should raise_error(Errno::EDOM)
-      lambda { @object.send(:rsqrt, -16/64) }.should raise_error(Errno::EDOM)
-    end
-  end
-
-  ruby_version_is "1.9" do
-    it "raises an Math::DomainError if the argument is a negative number" do
-      lambda { @object.send(:rsqrt, -1) }.should raise_error(Math::DomainError)
-      lambda { @object.send(:rsqrt, -4.0) }.should raise_error(Math::DomainError)
-      lambda { @object.send(:rsqrt, -16/64) }.should raise_error(Math::DomainError)
-    end
+  it "raises an Math::DomainError if the argument is a negative number" do
+    lambda { @object.send(:rsqrt, -1) }.should raise_error(Math::DomainError)
+    lambda { @object.send(:rsqrt, -4.0) }.should raise_error(Math::DomainError)
+    lambda { @object.send(:rsqrt, -16/64) }.should raise_error(Math::DomainError)
   end
 end

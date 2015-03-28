@@ -13,22 +13,8 @@ describe "Logger#close" do
     rm_r @path
   end
 
-  ruby_version_is "" ... "1.9" do
-    it "closes the logging device" do
-      @logger.close
-      lambda { @logger.add(nil, "Foo") }.should raise_error(IOError)
-    end
-
-    it "fails when called on a closed device" do
-      @logger.close
-      lambda { @logger.close }.should raise_error(IOError)
-    end
-  end
-
-  ruby_version_is "1.9" do
-    it "closes the logging device" do
-      @logger.close
-      lambda { @logger.add(nil, "Foo") }.should complain(/\Alog writing failed\./)
-    end
+  it "closes the logging device" do
+    @logger.close
+    lambda { @logger.add(nil, "Foo") }.should complain(/\Alog writing failed\./)
   end
 end

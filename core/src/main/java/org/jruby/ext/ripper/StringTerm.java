@@ -165,7 +165,7 @@ public class StringTerm extends StrTerm {
         return buf.toString();
     }
 
-    private void mixedEscape(RipperLexer lexer, Encoding foundEncoding, Encoding parserEncoding) {
+    private void mixed_error(RipperLexer lexer, Encoding foundEncoding, Encoding parserEncoding) {
         lexer.compile_error(" mixed within " + parserEncoding);
     }
 
@@ -223,24 +223,28 @@ public class StringTerm extends StrTerm {
                     }
 
                     if (hasNonAscii && buffer.getEncoding() != enc[0]) {
-                        mixedEscape(lexer, buffer.getEncoding(), enc[0]);
+                        mixed_error(lexer, buffer.getEncoding(), enc[0]);
                     }
 
                     continue;
                 default:
                     if (c == RipperLexer.EOF) return RipperLexer.EOF;
                     
-                    if (!Encoding.isAscii(c)) {
+                    if (!lexer.isASCII()) {
                         if (expand) buffer.append('\\');
                         
                         // goto non_ascii
                         hasNonAscii = true;
+
                         if (buffer.getEncoding() != enc[0]) {
-                            mixedEscape(lexer, buffer.getEncoding(), enc[0]);
+                            mixed_error(lexer, buffer.getEncoding(), enc[0]);
                             continue;
                         }
-                        
-                        if (lexer.tokenAddMBC(c, buffer) == RipperLexer.EOF) return RipperLexer.EOF;
+
+                        if (!lexer.tokenAddMBC(c, buffer)) { // FIXME: Hack
+                            lexer.compile_error("invalid multibyte char (" + enc[0] + ")");
+                            return RipperLexer.EOF;
+                        }
 
                         continue;
                         // end of goto non_ascii
@@ -254,7 +258,7 @@ public class StringTerm extends StrTerm {
                         parseEscapeIntoBuffer(lexer, src, buffer);
 
                         if (hasNonAscii && buffer.getEncoding() != enc[0]) {
-                            mixedEscape(lexer, buffer.getEncoding(), enc[0]);
+                            mixed_error(lexer, buffer.getEncoding(), enc[0]);
                         }
                         
                         continue;
@@ -268,19 +272,18 @@ public class StringTerm extends StrTerm {
                         buffer.append('\\');
                     }
                 }
-            } else if (!Encoding.isAscii((byte) c)) {
+            } else if (!lexer.isASCII()) {
+                hasNonAscii = true;
+
                 if (buffer.getEncoding() != enc[0]) {
-                    mixedEscape(lexer, buffer.getEncoding(), enc[0]);
-                    continue;
-                }
-                c = lexer.readCodepoint(c, enc[0]);
-                if (c == -2) { // FIXME: Hack
-                    lexer.compile_error("invalid multibyte char (" + enc[0] + ")");
+                    mixed_error(lexer, buffer.getEncoding(), enc[0]);
                     continue;
                 }
 
-                // FIXME: We basically go from bytes to codepoint back to bytes to append them...fix this
-                if (lexer.tokenAddMBC(c, buffer) == RipperLexer.EOF) return RipperLexer.EOF;
+                if (!lexer.tokenAddMBC(c, buffer)) { // FIXME: Hack
+                    lexer.compile_error("invalid multibyte char (" + enc[0] + ")");
+                    return RipperLexer.EOF;
+                }
 
                 continue;
             } else if (qwords && Character.isWhitespace(c)) {
@@ -296,7 +299,7 @@ public class StringTerm extends StrTerm {
             if ((c & 0x80) != 0) {
                 hasNonAscii = true;
                 if (buffer.getEncoding() != enc[0]) {
-                    mixedEscape(lexer, buffer.getEncoding(), enc[0]);
+                    mixed_error(lexer, buffer.getEncoding(), enc[0]);
                 }
             }
             buffer.append(c);

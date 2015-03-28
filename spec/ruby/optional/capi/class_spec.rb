@@ -26,10 +26,8 @@ describe :rb_path_to_class, :shared => true do
     lambda { @s.send(@method, "CApiClassSpecs::A::C") }.should raise_error(TypeError)
   end
 
-  ruby_bug '#5691', '1.9.3' do
-    it "raises an ArgumentError even if a constant in the path exists on toplevel" do
-      lambda { @s.send(@method, "CApiClassSpecs::Object") }.should raise_error(ArgumentError)
-    end
+  it "raises an ArgumentError even if a constant in the path exists on toplevel" do
+    lambda { @s.send(@method, "CApiClassSpecs::Object") }.should raise_error(ArgumentError)
   end
 end
 

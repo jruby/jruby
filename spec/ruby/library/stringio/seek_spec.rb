@@ -61,16 +61,7 @@ describe "StringIO#seek when self is closed" do
     @io.close
   end
 
-  ruby_version_is "" ... "1.8.7" do
-    it "does not raise an IOError" do
-      @io.seek(5)
-      @io.pos.should eql(5)
-    end
-  end
-
-  ruby_version_is "1.8.7" do
-    it "raises an IOError" do
-      lambda { @io.seek(5) }.should raise_error(IOError)
-    end
+  it "raises an IOError" do
+    lambda { @io.seek(5) }.should raise_error(IOError)
   end
 end

@@ -37,7 +37,7 @@ describe DescribeFormatter, "#finish" do
 
   it "prints a tally of counts" do
     @formatter.finish
-    @out.should =~ /^1 file, 1 example, 2 expectations, 0 failures, 0 errors$/
+    @out.should =~ /^1 file, 1 example, 2 expectations, 0 failures, 0 errors, 0 tagged$/
   end
 
   it "does not print exceptions" do
@@ -46,7 +46,7 @@ describe DescribeFormatter, "#finish" do
 
 Finished in 2.0 seconds
 
-1 file, 1 example, 2 expectations, 0 failures, 0 errors
+1 file, 1 example, 2 expectations, 0 failures, 0 errors, 0 tagged
 ]
   end
 
@@ -61,7 +61,7 @@ Class#method                             0 failures, 1 error
 
 Finished in 2.0 seconds
 
-1 file, 1 example, 2 expectations, 0 failures, 0 errors
+1 file, 1 example, 2 expectations, 0 failures, 0 errors, 0 tagged
 ]
   end
 end

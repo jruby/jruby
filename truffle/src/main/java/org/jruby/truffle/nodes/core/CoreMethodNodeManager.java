@@ -119,12 +119,6 @@ public abstract class CoreMethodNodeManager {
         for (String name : names) {
             final RubyRootNode rootNodeCopy = NodeUtil.cloneNode(rootNode);
 
-            final CoreMethodNode coreMethodNode = NodeUtil.findFirstNodeInstance(rootNodeCopy, CoreMethodNode.class);
-
-            if (coreMethodNode != null) {
-                coreMethodNode.setName(name);
-            }
-
             final InternalMethod method = new InternalMethod(rootNodeCopy.getSharedMethodInfo(), name, module, visibility, false,
                     Truffle.getRuntime().createCallTarget(rootNodeCopy), null);
 
@@ -144,7 +138,7 @@ public abstract class CoreMethodNodeManager {
             optional = methodDetails.getMethodAnnotation().optional();
         }
 
-        final Arity arity = new Arity(required,  optional, methodDetails.getMethodAnnotation().argumentsAsArray(), false);
+        final Arity arity = new Arity(required,  optional, methodDetails.getMethodAnnotation().argumentsAsArray(), false, false, 0);
 
         final SharedMethodInfo sharedMethodInfo = new SharedMethodInfo(sourceSection, null, arity, methodDetails.getIndicativeName(), false, null, true);
 
@@ -175,7 +169,7 @@ public abstract class CoreMethodNodeManager {
                 }
 
                 if (ArrayUtils.contains(methodDetails.getMethodAnnotation().raiseIfFrozenParameters(), n)) {
-                    readArgumentNode = new FixnumLowerNode(readArgumentNode);
+                    readArgumentNode = new RaiseIfFrozenNode(readArgumentNode);
                 }
 
                 argumentsNodes.add(readArgumentNode);
@@ -210,6 +204,11 @@ public abstract class CoreMethodNodeManager {
 
         final CheckArityNode checkArity = new CheckArityNode(context, sourceSection, arity);
         RubyNode sequence = SequenceNode.sequence(context, sourceSection, checkArity, methodNode);
+
+        if (methodDetails.getMethodAnnotation().returnsEnumeratorIfNoBlock()) {
+            // TODO BF 3-18-2015 Handle multiple method names correctly
+            sequence = new ReturnEnumeratorIfNoBlockNode(methodDetails.getMethodAnnotation().names()[0], sequence);
+        }
 
         if (methodDetails.getMethodAnnotation().taintFromSelf() || methodDetails.getMethodAnnotation().taintFromParameters().length > 0) {
             sequence = new TaintResultNode(methodDetails.getMethodAnnotation().taintFromSelf(),

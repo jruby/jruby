@@ -9,11 +9,9 @@ describe "GC::Profiler.enabled?" do
     @status ? GC::Profiler.enable : GC::Profiler.disable
   end
 
-  ruby_bug "#6821", "1.9" do
-    it "reports as enabled when enabled" do
-      GC::Profiler.enable
-      GC::Profiler.enabled?.should be_true
-    end
+  it "reports as enabled when enabled" do
+    GC::Profiler.enable
+    GC::Profiler.enabled?.should be_true
   end
 
   it "reports as disabled when disabled" do

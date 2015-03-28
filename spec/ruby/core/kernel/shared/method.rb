@@ -38,20 +38,18 @@ describe :kernel_method, :shared => true do
     lambda { KernelSpecs::Foo.send(@method, :baz) }.should raise_error(NameError)
   end
 
-  ruby_bug "redmine:1151", "1.8.7" do
-    it "changes the method called for super on a target aliased method" do
-      c1 = Class.new do
-        def a; 'a'; end
-        def b; 'b'; end
-      end
-      c2 = Class.new(c1) do
-        def a; super; end
-        alias b a
-      end
-
-      c2.new.a.should == 'a'
-      c2.new.b.should == 'a'
-      c2.new.send(@method, :b).call.should == 'a'
+  it "changes the method called for super on a target aliased method" do
+    c1 = Class.new do
+      def a; 'a'; end
+      def b; 'b'; end
     end
+    c2 = Class.new(c1) do
+      def a; super; end
+      alias b a
+    end
+
+    c2.new.a.should == 'a'
+    c2.new.b.should == 'a'
+    c2.new.send(@method, :b).call.should == 'a'
   end
 end

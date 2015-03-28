@@ -139,7 +139,10 @@ public class HeredocTerm extends StrTerm {
                 if (pend < lexer.lex_pend) str.append('\n');
                 lexer.lex_goto_eol();
                 if (lexer.nextc() == -1) {
-                    if (str != null) return error(lexer, len, str, eos);
+                    if (str != null) {
+                        str = null;
+                        return error(lexer, len, str, eos);
+                    }
                 }
             } while(!lexer.whole_match_p(eos, indent));
         } else {

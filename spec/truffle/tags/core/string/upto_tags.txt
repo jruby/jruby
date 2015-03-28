@@ -1,1 +1,0 @@
-fails:String#upto on sequence of numbers calls the block as Integer#upto

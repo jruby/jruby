@@ -9,11 +9,21 @@
  */
 package org.jruby.truffle.nodes.core;
 
+import java.util.EnumSet;
 import java.util.concurrent.locks.ReentrantLock;
 
+import com.oracle.truffle.api.nodes.Node;
+import com.oracle.truffle.api.object.DynamicObjectFactory;
+import com.oracle.truffle.api.object.HiddenKey;
+import com.oracle.truffle.api.object.LocationModifier;
+import com.oracle.truffle.api.object.Property;
+import com.oracle.truffle.api.object.Shape;
+
+import org.jruby.truffle.nodes.objects.Allocator;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
-import org.jruby.truffle.runtime.core.RubyMutex;
+import org.jruby.truffle.runtime.core.RubyBasicObject;
+import org.jruby.truffle.runtime.core.RubyClass;
 import org.jruby.truffle.runtime.core.RubyThread;
 import org.jruby.truffle.runtime.subsystems.ThreadManager.BlockingActionWithoutGlobalLock;
 
@@ -23,6 +33,32 @@ import com.oracle.truffle.api.source.SourceSection;
 
 @CoreClass(name = "Mutex")
 public abstract class MutexNodes {
+
+    private static final HiddenKey LOCK_IDENTIFIER = new HiddenKey("lock");
+    private static final Property LOCK_PROPERTY;
+
+    static {
+        Shape.Allocator allocator = RubyBasicObject.LAYOUT.createAllocator();
+        LOCK_PROPERTY = Property.create(LOCK_IDENTIFIER, allocator.locationForType(ReentrantLock.class, EnumSet.of(LocationModifier.Final, LocationModifier.NonNull)), 0);
+    }
+
+    public static Allocator createMutexAllocator(Shape emptyShape) {
+        Shape shape = emptyShape.addProperty(LOCK_PROPERTY);
+        final DynamicObjectFactory factory = shape.createFactory();
+
+        return new Allocator() {
+            @Override
+            public RubyBasicObject allocate(RubyContext context, RubyClass rubyClass, Node currentNode) {
+                return new RubyBasicObject(rubyClass, factory.newInstance(new ReentrantLock()));
+            }
+        };
+    }
+
+    protected static ReentrantLock getLock(RubyBasicObject mutex) {
+        // mutex has the proper shape since Ruby disallow calling Mutex methods on non-Mutex instances.
+        assert mutex.getDynamicObject().getShape().hasProperty(LOCK_IDENTIFIER);
+        return (ReentrantLock) LOCK_PROPERTY.get(mutex.getDynamicObject(), true);
+    }
 
     @CoreMethod(names = "lock")
     public abstract static class LockNode extends UnaryCoreMethodNode {
@@ -36,8 +72,8 @@ public abstract class MutexNodes {
         }
 
         @Specialization
-        public RubyMutex lock(RubyMutex mutex) {
-            final ReentrantLock lock = mutex.getReentrantLock();
+        public RubyBasicObject lock(RubyBasicObject mutex) {
+            final ReentrantLock lock = getLock(mutex);
 
             if (lock.isHeldByCurrentThread()) {
                 CompilerDirectives.transferToInterpreter();
@@ -72,10 +108,8 @@ public abstract class MutexNodes {
         }
 
         @Specialization
-        public boolean isLocked(RubyMutex mutex) {
-            final ReentrantLock lock = mutex.getReentrantLock();
-
-            return lock.isLocked();
+        public boolean isLocked(RubyBasicObject mutex) {
+            return getLock(mutex).isLocked();
         }
 
     }
@@ -92,10 +126,8 @@ public abstract class MutexNodes {
         }
 
         @Specialization
-        public boolean isOwned(RubyMutex mutex) {
-            final ReentrantLock lock = mutex.getReentrantLock();
-
-            return lock.isHeldByCurrentThread();
+        public boolean isOwned(RubyBasicObject mutex) {
+            return getLock(mutex).isHeldByCurrentThread();
         }
 
     }
@@ -112,8 +144,8 @@ public abstract class MutexNodes {
         }
 
         @Specialization
-        public boolean tryLock(RubyMutex mutex) {
-            final ReentrantLock lock = mutex.getReentrantLock();
+        public boolean tryLock(RubyBasicObject mutex) {
+            final ReentrantLock lock = getLock(mutex);
 
             if (lock.isHeldByCurrentThread()) {
                 return false;
@@ -142,8 +174,9 @@ public abstract class MutexNodes {
         }
 
         @Specialization
-        public RubyMutex unlock(RubyMutex mutex) {
-            final ReentrantLock lock = mutex.getReentrantLock();
+        public RubyBasicObject unlock(RubyBasicObject mutex) {
+            final ReentrantLock lock = getLock(mutex);
+
             final RubyThread thread = getContext().getThreadManager().getCurrentThread();
 
             try {

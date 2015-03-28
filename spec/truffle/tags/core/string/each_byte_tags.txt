@@ -1,1 +1,0 @@
-fails:String#each_byte keeps iterating from the old position (to new string end) when self changes

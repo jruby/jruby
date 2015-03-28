@@ -48,7 +48,7 @@ describe "Numeric#quo" do
     end
   end
 
-  ruby_version_is "1.9"..."2.1" do
+  ruby_version_is ""..."2.1" do
     it "returns the result of calling self#/ with other" do
       obj = NumericSpecs::Subclass.new
       obj.should_receive(:coerce).twice.and_return([19,19])

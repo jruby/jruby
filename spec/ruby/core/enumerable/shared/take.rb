@@ -52,14 +52,12 @@ describe :enumerable_take, :shared => true do
     multi.send(@method, 1).should == [[1, 2]]
   end
 
-  ruby_bug "#1554", "1.9.1" do
-    it "consumes only what is needed" do
-      thrower = EnumerableSpecs::ThrowingEach.new
-      thrower.send(@method, 0).should == []
-      counter = EnumerableSpecs::EachCounter.new(1,2,3,4)
-      counter.send(@method, 2).should == [1,2]
-      counter.times_called.should == 1
-      counter.times_yielded.should == 2
-    end
+  it "consumes only what is needed" do
+    thrower = EnumerableSpecs::ThrowingEach.new
+    thrower.send(@method, 0).should == []
+    counter = EnumerableSpecs::EachCounter.new(1,2,3,4)
+    counter.send(@method, 2).should == [1,2]
+    counter.times_called.should == 1
+    counter.times_yielded.should == 2
   end
 end

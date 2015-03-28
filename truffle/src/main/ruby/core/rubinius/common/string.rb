@@ -52,6 +52,10 @@ class String
     to_inum(16, false)
   end
 
+  def reverse
+    dup.reverse!
+  end
+
   def split(pattern=nil, limit=undefined)
     Rubinius::Splitter.split(self, pattern, limit)
   end
@@ -196,6 +200,10 @@ class String
     end
 
     to_inum(base, false)
+  end
+
+  def chr
+    substring 0, 1
   end
 
   def each_line(sep=$/)
@@ -517,6 +525,109 @@ class String
     else
       each_codepoint.to_a
     end
+  end
+
+  def encode!(to=undefined, from=undefined, options=undefined)
+    Rubinius.check_frozen
+
+    case to
+      when Encoding
+        to_enc = to
+      when Hash
+        options = to
+        to_enc = Encoding.default_internal
+      when undefined
+        to_enc = Encoding.default_internal
+        return self unless to_enc
+      else
+        opts = Rubinius::Type::check_convert_type to, Hash, :to_hash
+
+        if opts
+          options = opts
+          to_enc = Encoding.default_internal
+        else
+          to_enc = Rubinius::Type.try_convert_to_encoding to
+        end
+    end
+
+    case from
+      when undefined
+        from_enc = encoding
+      when Encoding
+        from_enc = from
+      when Hash
+        options = from
+        from_enc = encoding
+      else
+        opts = Rubinius::Type::check_convert_type from, Hash, :to_hash
+
+        if opts
+          options = opts
+          from_enc = encoding
+        else
+          from_enc = Rubinius::Type.coerce_to_encoding from
+        end
+    end
+
+    if undefined.equal? from_enc or undefined.equal? to_enc
+      raise Encoding::ConverterNotFoundError, "undefined code converter (#{from} to #{to})"
+    end
+
+    case options
+      when undefined
+        options = 0
+      when Hash
+        # do nothing
+      else
+        options = Rubinius::Type.coerce_to options, Hash, :to_hash
+    end
+
+    if ascii_only? and from_enc.ascii_compatible? and to_enc and to_enc.ascii_compatible?
+      force_encoding to_enc
+    elsif to_enc and from_enc != to_enc
+      ec = Encoding::Converter.new from_enc, to_enc, options
+      dest = ""
+      status = ec.primitive_convert self.dup, dest, nil, nil, ec.options
+      raise ec.last_error unless status == :finished
+      replace dest
+    end
+
+    # TODO: replace this hack with transcoders
+    if options.kind_of? Hash
+      case xml = options[:xml]
+        when :text
+          gsub!(/[&><]/, '&' => '&amp;', '>' => '&gt;', '<' => '&lt;')
+        when :attr
+          gsub!(/[&><"]/, '&' => '&amp;', '>' => '&gt;', '<' => '&lt;', '"' => '&quot;')
+          insert(0, '"')
+          insert(-1, '"')
+        when nil
+          # nothing
+        else
+          raise ArgumentError, "unexpected value for xml option: #{xml.inspect}"
+      end
+
+      if options[:universal_newline]
+        gsub!(/\r\n|\r/, "\r\n" => "\n", "\r" => "\n")
+      end
+    end
+
+    self
+  end
+
+  def encode(to=undefined, from=undefined, options=undefined)
+    dup.encode! to, from, options
+  end
+
+  def end_with?(*suffixes)
+    suffixes.each do |original_suffix|
+      suffix = Rubinius::Type.check_convert_type original_suffix, String, :to_str
+      unless suffix
+        raise TypeError, "no implicit conversion of #{original_suffix.class} into String"
+      end
+      return true if self[-suffix.length, suffix.length] == suffix
+    end
+    false
   end
 
   def to_sub_replacement(result, match)

@@ -143,7 +143,7 @@ describe MSpecMain, "#report" do
 
 Finished in 42 seconds
 
-2 files, 2 examples, 4 expectations, 0 failures, 0 errors
+2 files, 2 examples, 4 expectations, 0 failures, 0 errors, 0 tagged
 ]
   end
 
@@ -174,7 +174,7 @@ foo.rb:2
 
 Finished in 42 seconds
 
-1 file, 1 example, 2 expectations, 0 failures, 0 errors
+1 file, 1 example, 2 expectations, 0 failures, 0 errors, 0 tagged
 ]
   end
 end

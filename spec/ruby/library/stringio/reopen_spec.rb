@@ -48,16 +48,8 @@ describe "StringIO#reopen when passed [Object, Integer]" do
     lambda { @io.reopen("burn".freeze, IO::WRONLY | IO::APPEND) }.should raise_error(Errno::EACCES)
   end
 
-  ruby_version_is "" ... "1.9" do
-    it "raises a TypeError when trying to reopen self with a frozen String in truncate-mode" do
-      lambda { @io.reopen("burn".freeze, IO::RDONLY | IO::TRUNC) }.should raise_error(TypeError)
-    end
-  end
-
-  ruby_version_is "1.9" do
-    it "raises a RuntimeError when trying to reopen self with a frozen String in truncate-mode" do
-      lambda { @io.reopen("burn".freeze, IO::RDONLY | IO::TRUNC) }.should raise_error(RuntimeError)
-    end
+  it "raises a RuntimeError when trying to reopen self with a frozen String in truncate-mode" do
+    lambda { @io.reopen("burn".freeze, IO::RDONLY | IO::TRUNC) }.should raise_error(RuntimeError)
   end
 
   it "does not raise IOError when passed a frozen String in read-mode" do
@@ -118,18 +110,16 @@ describe "StringIO#reopen when passed [Object, Object]" do
     lambda { @io.reopen(Object.new, "r") }.should raise_error(TypeError)
   end
 
-  ruby_bug "#", "1.8.7" do
-    it "resets self's position to 0" do
-      @io.read(5)
-      @io.reopen("reopened")
-      @io.pos.should eql(0)
-    end
+  it "resets self's position to 0" do
+    @io.read(5)
+    @io.reopen("reopened")
+    @io.pos.should eql(0)
+  end
 
-    it "resets self's line number to 0" do
-      @io.gets
-      @io.reopen("reopened")
-      @io.lineno.should eql(0)
-    end
+  it "resets self's line number to 0" do
+    @io.gets
+    @io.reopen("reopened")
+    @io.lineno.should eql(0)
   end
 
   it "tries to convert the passed mode Object to an Integer using #to_str" do
@@ -176,18 +166,16 @@ describe "StringIO#reopen when passed [String]" do
     @io.tainted?.should be_false
   end
 
-  ruby_bug "#", "1.8.7" do
-    it "resets self's position to 0" do
-      @io.read(5)
-      @io.reopen("reopened")
-      @io.pos.should eql(0)
-    end
+  it "resets self's position to 0" do
+    @io.read(5)
+    @io.reopen("reopened")
+    @io.pos.should eql(0)
+  end
 
-    it "resets self's line number to 0" do
-      @io.gets
-      @io.reopen("reopened")
-      @io.lineno.should eql(0)
-    end
+  it "resets self's line number to 0" do
+    @io.gets
+    @io.reopen("reopened")
+    @io.lineno.should eql(0)
   end
 end
 
@@ -232,18 +220,16 @@ describe "StringIO#reopen when passed no arguments" do
     @io.closed_write?.should be_false
   end
 
-  ruby_bug "#", "1.8.7" do
-    it "resets self's position to 0" do
-      @io.read(5)
-      @io.reopen
-      @io.pos.should eql(0)
-    end
+  it "resets self's position to 0" do
+    @io.read(5)
+    @io.reopen
+    @io.pos.should eql(0)
+  end
 
-    it "resets self's line number to 0" do
-      @io.gets
-      @io.reopen
-      @io.lineno.should eql(0)
-    end
+  it "resets self's line number to 0" do
+    @io.gets
+    @io.reopen
+    @io.lineno.should eql(0)
   end
 end
 
@@ -256,34 +242,32 @@ describe "StringIO#reopen" do
   end
 
   # TODO: find out if this is really a bug
-  ruby_bug "#", "1.8.6.114" do
-    it "reopens a stream when given a String argument" do
-      @io.reopen('goodbye').should == @io
-      @io.string.should == 'goodbye'
-      @io << 'x'
-      @io.string.should == 'xoodbye'
-    end
+  it "reopens a stream when given a String argument" do
+    @io.reopen('goodbye').should == @io
+    @io.string.should == 'goodbye'
+    @io << 'x'
+    @io.string.should == 'xoodbye'
+  end
 
-    it "reopens a stream in append mode when flagged as such" do
-      @io.reopen('goodbye', 'a').should == @io
-      @io.string.should == 'goodbye'
-      @io << 'x'
-      @io.string.should == 'goodbyex'
-    end
+  it "reopens a stream in append mode when flagged as such" do
+    @io.reopen('goodbye', 'a').should == @io
+    @io.string.should == 'goodbye'
+    @io << 'x'
+    @io.string.should == 'goodbyex'
+  end
 
-    it "reopens and truncate when reopened in write mode" do
-      @io.reopen('goodbye', 'wb').should == @io
-      @io.string.should == ''
-      @io << 'x'
-      @io.string.should == 'x'
-    end
+  it "reopens and truncate when reopened in write mode" do
+    @io.reopen('goodbye', 'wb').should == @io
+    @io.string.should == ''
+    @io << 'x'
+    @io.string.should == 'x'
+  end
 
-    it "truncates the given string, not a copy" do
-      str = 'goodbye'
-      @io.reopen(str, 'w')
-      @io.string.should == ''
-      str.should == ''
-    end
+  it "truncates the given string, not a copy" do
+    str = 'goodbye'
+    @io.reopen(str, 'w')
+    @io.string.should == ''
+    str.should == ''
   end
 
   it "taints self if the provided StringIO argument is tainted" do

@@ -20,9 +20,7 @@ describe "Socket#accept_nonblock" do
     lambda { @socket.accept_nonblock }.should raise_error(Errno::EAGAIN)
   end
 
-  ruby_version_is "1.9.2" do
-    it "raises IO::WaitReadable if the connection is not accepted yet" do
-      lambda { @socket.accept_nonblock }.should raise_error(IO::WaitReadable)
-    end
+  it "raises IO::WaitReadable if the connection is not accepted yet" do
+    lambda { @socket.accept_nonblock }.should raise_error(IO::WaitReadable)
   end
 end

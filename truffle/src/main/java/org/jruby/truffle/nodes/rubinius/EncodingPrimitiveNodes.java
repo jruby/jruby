@@ -21,13 +21,13 @@ import org.jruby.truffle.runtime.core.*;
 public abstract class EncodingPrimitiveNodes {
 
     @RubiniusPrimitive(name = "encoding_get_object_encoding", needsSelf = false)
-    public static abstract class EncodingGetObjectEncodingPrimitiveNode extends RubiniusPrimitiveNode {
+    public static abstract class EncodingGetObjectEncodingNode extends RubiniusPrimitiveNode {
 
-        public EncodingGetObjectEncodingPrimitiveNode(RubyContext context, SourceSection sourceSection) {
+        public EncodingGetObjectEncodingNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
         }
 
-        public EncodingGetObjectEncodingPrimitiveNode(EncodingGetObjectEncodingPrimitiveNode prev) {
+        public EncodingGetObjectEncodingNode(EncodingGetObjectEncodingNode prev) {
             super(prev);
         }
 

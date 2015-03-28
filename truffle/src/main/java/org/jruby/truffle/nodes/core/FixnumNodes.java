@@ -24,6 +24,7 @@ import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNode;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.nodes.methods.UnsupportedOperationBehavior;
+import org.jruby.truffle.runtime.RubyArguments;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.UndefinedPlaceholder;
 import org.jruby.truffle.runtime.control.RaiseException;
@@ -32,6 +33,7 @@ import org.jruby.truffle.runtime.core.RubyBasicObject;
 import org.jruby.truffle.runtime.core.RubyBignum;
 import org.jruby.truffle.runtime.core.RubyNilClass;
 import org.jruby.truffle.runtime.core.RubyString;
+import org.jruby.truffle.runtime.methods.InternalMethod;
 
 import java.math.BigInteger;
 
@@ -875,7 +877,7 @@ public abstract class FixnumNodes {
                 "!isRubyBignum(b)"
         })
         public Object equal(VirtualFrame frame, Object a, Object b) {
-            return reverseCallNode.call(frame, b, getName(), null, a);
+            return reverseCallNode.call(frame, b, "==", null, a);
         }
 
     }

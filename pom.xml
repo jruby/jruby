@@ -136,7 +136,7 @@
     <jruby.plugins.version>1.0.7</jruby.plugins.version>
     <json.version>1.8.0</json.version>
     <invoker.skip>true</invoker.skip>
-    <power_assert.version>0.1.4</power_assert.version>
+    <power_assert.version>0.2.3</power_assert.version>
     <version.jruby>${project.version}</version.jruby>
     <bouncy-castle.version>1.47</bouncy-castle.version>
     <main.basedir>${project.basedir}</main.basedir>

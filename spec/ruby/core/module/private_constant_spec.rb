@@ -11,16 +11,14 @@ describe "Module#private_constant" do
     end.should raise_error(NameError)
   end
 
-  ruby_bug "[ruby-list:48559]", "1.9.3" do
-    it "accepts multiple names" do
-      mod = Module.new
-      mod.const_set :Foo, true
-      mod.const_set :Bar, true
+  it "accepts multiple names" do
+    mod = Module.new
+    mod.const_set :Foo, true
+    mod.const_set :Bar, true
 
-      mod.send :private_constant, :Foo, :Bar
+    mod.send :private_constant, :Foo, :Bar
 
-      lambda {mod::Foo}.should raise_error(NameError)
-      lambda {mod::Bar}.should raise_error(NameError)
-    end
+    lambda {mod::Foo}.should raise_error(NameError)
+    lambda {mod::Bar}.should raise_error(NameError)
   end
 end

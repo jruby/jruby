@@ -1,3 +1,0 @@
-fails:String#replace replaces the encoding of self with that of other
-fails:String#replace carries over the encoding invalidity
-fails:String#replace tries to convert other to string using to_str

@@ -113,23 +113,6 @@ class String
 
 end
 
-module Kernel
-  def inspect
-    ivars = instance_variables
-
-    return to_s if ivars.empty?
-
-    prefix = "#<#{self.class}:0x#{self.object_id.to_s(16)}"
-
-    parts = []
-    ivars.each do |var|
-      parts << "#{var}=#{instance_variable_get(var).inspect}"
-    end
-
-    "#{prefix} #{parts.join(', ')}>"
-  end
-end
-
 class Rational
 
   alias :__slash__ :/
@@ -145,8 +128,9 @@ ENV['TZ'] = 'UTC'
 class Method
 
   def to_proc
+    meth = self
     proc { |*args|
-      self.call(*args)
+      meth.call(*args)
     }
   end
 
@@ -216,3 +200,35 @@ class IO
   SEEK_SET = 0
 
 end
+
+# We use Rubinius's encoding subsystem for the most part, but we need to keep JRuby's up to date in case we
+# delegate to any of their methods.  Otherwise, they won't see the updated encoding and return incorrect results.
+class Encoding
+  class << self
+    alias_method :default_external_rubinius=, :default_external=
+
+    def default_external=(enc)
+      self.default_external_rubinius = enc
+      self.default_external_jruby = enc
+    end
+
+    alias_method :default_internal_rubinius=, :default_internal=
+
+    def default_internal=(enc)
+      self.default_internal_rubinius = enc
+      self.default_internal_jruby = enc
+    end
+  end
+end
+
+# We use Rubinius's encoding class hierarchy, but do the encoding conversion in Java.  In order to properly initialize
+# the converter, we need to initialize in both Rubinius and JRuby.
+class Encoding::Converter
+  alias_method :initialize_rubinius, :initialize
+
+  def initialize(*args)
+    initialize_rubinius(*args)
+    initialize_jruby(*args)
+  end
+end
+

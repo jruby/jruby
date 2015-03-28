@@ -38,6 +38,8 @@ import org.jruby.truffle.nodes.dispatch.*;
 import org.jruby.truffle.nodes.methods.arguments.MissingArgumentBehaviour;
 import org.jruby.truffle.nodes.methods.arguments.ReadPreArgumentNode;
 import org.jruby.truffle.nodes.methods.locals.ReadLevelVariableNodeFactory;
+import org.jruby.truffle.nodes.objects.IsFrozenNode;
+import org.jruby.truffle.nodes.objects.IsFrozenNodeFactory;
 import org.jruby.truffle.nodes.yield.YieldDispatchHeadNode;
 import org.jruby.truffle.pack.parser.PackParser;
 import org.jruby.truffle.runtime.*;
@@ -47,6 +49,7 @@ import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.control.RedoException;
 import org.jruby.truffle.runtime.core.*;
 import org.jruby.truffle.runtime.methods.Arity;
+import org.jruby.truffle.runtime.methods.InternalMethod;
 import org.jruby.truffle.runtime.methods.SharedMethodInfo;
 import org.jruby.truffle.runtime.util.ArrayUtils;
 import org.jruby.util.ByteList;
@@ -174,8 +177,11 @@ public abstract class ArrayNodes {
 
     }
 
-    @CoreMethod(names = "*", required = 1, lowerFixnumParameters = 0)
+    @CoreMethod(names = "*", required = 1, lowerFixnumParameters = 0, taintFromSelf = true)
     public abstract static class MulNode extends ArrayCoreMethodNode {
+
+        @Child private KernelNodes.RespondToNode respondToToStrNode;
+        @Child private ToIntNode toIntNode;
 
         public MulNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -183,15 +189,25 @@ public abstract class ArrayNodes {
 
         public MulNode(MulNode prev) {
             super(prev);
+            respondToToStrNode = prev.respondToToStrNode;
+            toIntNode = prev.toIntNode;
         }
 
         @Specialization(guards = "isNull(array)")
         public RubyArray mulEmpty(RubyArray array, int count) {
-            return new RubyArray(getContext().getCoreLibrary().getArrayClass());
+            if (count < 0) {
+                CompilerDirectives.transferToInterpreter();
+                throw new RaiseException(getContext().getCoreLibrary().argumentError("negative argument", this));
+            }
+            return new RubyArray(array.getLogicalClass());
         }
 
         @Specialization(guards = "isIntegerFixnum(array)")
         public RubyArray mulIntegerFixnum(RubyArray array, int count) {
+            if (count < 0) {
+                CompilerDirectives.transferToInterpreter();
+                throw new RaiseException(getContext().getCoreLibrary().argumentError("negative argument", this));
+            }
             final int[] store = (int[]) array.getStore();
             final int storeLength = store.length;
             final int newStoreLength = storeLength * count;
@@ -201,11 +217,15 @@ public abstract class ArrayNodes {
                 System.arraycopy(store, 0, newStore, storeLength * n, storeLength);
             }
 
-            return new RubyArray(getContext().getCoreLibrary().getArrayClass(), array.getAllocationSite(), newStore, newStoreLength);
+            return new RubyArray(array.getLogicalClass(), array.getAllocationSite(), newStore, newStoreLength);
         }
 
         @Specialization(guards = "isLongFixnum(array)")
         public RubyArray mulLongFixnum(RubyArray array, int count) {
+            if (count < 0) {
+                CompilerDirectives.transferToInterpreter();
+                throw new RaiseException(getContext().getCoreLibrary().argumentError("negative argument", this));
+            }
             final long[] store = (long[]) array.getStore();
             final int storeLength = store.length;
             final int newStoreLength = storeLength * count;
@@ -215,11 +235,15 @@ public abstract class ArrayNodes {
                 System.arraycopy(store, 0, newStore, storeLength * n, storeLength);
             }
 
-            return new RubyArray(getContext().getCoreLibrary().getArrayClass(), array.getAllocationSite(), newStore, newStoreLength);
+            return new RubyArray(array.getLogicalClass(), array.getAllocationSite(), newStore, newStoreLength);
         }
 
         @Specialization(guards = "isFloat(array)")
         public RubyArray mulFloat(RubyArray array, int count) {
+            if (count < 0) {
+                CompilerDirectives.transferToInterpreter();
+                throw new RaiseException(getContext().getCoreLibrary().argumentError("negative argument", this));
+            }
             final double[] store = (double[]) array.getStore();
             final int storeLength = store.length;
             final int newStoreLength = storeLength * count;
@@ -229,11 +253,15 @@ public abstract class ArrayNodes {
                 System.arraycopy(store, 0, newStore, storeLength * n, storeLength);
             }
 
-            return new RubyArray(getContext().getCoreLibrary().getArrayClass(), array.getAllocationSite(), newStore, newStoreLength);
+            return new RubyArray(array.getLogicalClass(), array.getAllocationSite(), newStore, newStoreLength);
         }
 
         @Specialization(guards = "isObject(array)")
         public RubyArray mulObject(RubyArray array, int count) {
+            if (count < 0) {
+                CompilerDirectives.transferToInterpreter();
+                throw new RaiseException(getContext().getCoreLibrary().argumentError("negative argument", this));
+            }
             final Object[] store = (Object[]) array.getStore();
             final int storeLength = store.length;
             final int newStoreLength = storeLength * count;
@@ -243,7 +271,47 @@ public abstract class ArrayNodes {
                 System.arraycopy(store, 0, newStore, storeLength * n, storeLength);
             }
 
-            return new RubyArray(getContext().getCoreLibrary().getArrayClass(), array.getAllocationSite(), newStore, newStoreLength);
+            return new RubyArray(array.getLogicalClass(), array.getAllocationSite(), newStore, newStoreLength);
+        }
+
+        @Specialization(guards = "isRubyString(string)")
+        public Object mulObject(VirtualFrame frame, RubyArray array, RubyString string) {
+            notDesignedForCompilation();
+            return ruby(frame, "join(sep)", "sep", string);
+        }
+
+        @Specialization(guards = {"!isRubyString(object)"})
+        public Object mulObjectCount(VirtualFrame frame, RubyArray array, Object object) {
+            notDesignedForCompilation();
+            if (respondToToStrNode == null) {
+                CompilerDirectives.transferToInterpreter();
+                respondToToStrNode = insert(KernelNodesFactory.RespondToNodeFactory.create(getContext(), getSourceSection(), new RubyNode[]{null, null, null}));
+            }
+            if (respondToToStrNode.doesRespondTo(frame, object, getContext().makeString("to_str"), false)) {
+                return ruby(frame, "join(sep.to_str)", "sep", object);
+            } else {
+                if (toIntNode == null) {
+                    CompilerDirectives.transferToInterpreter();
+                    toIntNode = insert(ToIntNodeFactory.create(getContext(), getSourceSection(), null));
+                }
+                final int count = toIntNode.executeIntegerFixnum(frame, object);
+                if (count < 0) {
+                    CompilerDirectives.transferToInterpreter();
+                    throw new RaiseException(getContext().getCoreLibrary().argumentError("negative argument", this));
+                }
+                if (array.getStore() instanceof int[]) {
+                    return mulIntegerFixnum(array, count);
+                } else if (array.getStore() instanceof long[]) {
+                    return mulLongFixnum(array, count);
+                } else if (array.getStore() instanceof double[]) {
+                    return mulFloat(array, count);
+                } else if (array.getStore() == null) {
+                    return mulEmpty(array, count);
+                } else {
+                    return mulObject(array, count);
+                }
+
+            }
         }
 
     }
@@ -333,8 +401,9 @@ public abstract class ArrayNodes {
                 fallbackNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext()));
             }
 
+            InternalMethod method = RubyArguments.getMethod(frame.getArguments());
             return fallbackNode.call(frame, array, "element_reference_fallback", null,
-                    getContext().makeString(getName()), args);
+                    getContext().makeString(method.getName()), args);
         }
 
     }
@@ -419,7 +488,7 @@ public abstract class ArrayNodes {
                 }
                 int popLength = length - 1 < array.getSize() ? length - 1  :  array.getSize() - 1;
                 for(int i = 0; i < popLength; i++) { // TODO 3-15-2015 BF update when pop can pop multiple
-                    popNode.executePop(array);
+                    popNode.executePop(frame, array, UndefinedPlaceholder.INSTANCE);
                 }
                 return value;
             }
@@ -703,9 +772,15 @@ public abstract class ArrayNodes {
         public RubyArray concatIntegerFixnum(RubyArray array, RubyArray other) {
             notDesignedForCompilation();
 
-            // TODO(CS): is there already space in array?
-            System.arraycopy(other.getStore(), 0, array.getStore(), array.getSize(), other.getSize());
-            array.setStore(Arrays.copyOf((int[]) array.getStore(), array.getSize() + other.getSize()), array.getSize() + other.getSize());
+            final int newSize = array.getSize() + other.getSize();
+            int[] store = (int[]) array.getStore();
+
+            if ( store.length < newSize) {
+                store = Arrays.copyOf((int[]) array.getStore(), ArrayUtils.capacity(store.length, newSize));
+            }
+
+            System.arraycopy(other.getStore(), 0, store, array.getSize(), other.getSize());
+            array.setStore(store, newSize);
             return array;
         }
 
@@ -713,9 +788,15 @@ public abstract class ArrayNodes {
         public RubyArray concatLongFixnum(RubyArray array, RubyArray other) {
             notDesignedForCompilation();
 
-            // TODO(CS): is there already space in array?
-            System.arraycopy(other.getStore(), 0, array.getStore(), array.getSize(), other.getSize());
-            array.setStore(Arrays.copyOf((long[]) array.getStore(), array.getSize() + other.getSize()), array.getSize() + other.getSize());
+            final int newSize = array.getSize() + other.getSize();
+            long[] store = (long[]) array.getStore();
+
+            if ( store.length < newSize) {
+                store = Arrays.copyOf((long[]) array.getStore(), ArrayUtils.capacity(store.length, newSize));
+            }
+
+            System.arraycopy(other.getStore(), 0, store, array.getSize(), other.getSize());
+            array.setStore(store, newSize);
             return array;
         }
 
@@ -723,9 +804,15 @@ public abstract class ArrayNodes {
         public RubyArray concatDouble(RubyArray array, RubyArray other) {
             notDesignedForCompilation();
 
-            // TODO(CS): is there already space in array?
-            System.arraycopy(other.getStore(), 0, array.getStore(), array.getSize(), other.getSize());
-            array.setStore(Arrays.copyOf((double[]) array.getStore(), array.getSize() + other.getSize()), array.getSize() + other.getSize());
+            final int newSize = array.getSize() + other.getSize();
+            double[] store = (double[]) array.getStore();
+
+            if ( store.length < newSize) {
+                store = Arrays.copyOf((double[]) array.getStore(), ArrayUtils.capacity(store.length, newSize));
+            }
+
+            System.arraycopy(other.getStore(), 0, store, array.getSize(), other.getSize());
+            array.setStore(store, newSize);
             return array;
         }
 
@@ -733,8 +820,8 @@ public abstract class ArrayNodes {
         public RubyArray concatObject(RubyArray array, RubyArray other) {
             notDesignedForCompilation();
 
-            int size = array.getSize();
-            int newSize = size + other.getSize();
+            final int size = array.getSize();
+            final int newSize = size + other.getSize();
             Object[] store = (Object[]) array.getStore();
 
             if (newSize > store.length) {
@@ -750,12 +837,22 @@ public abstract class ArrayNodes {
         public RubyArray concat(RubyArray array, RubyArray other) {
             notDesignedForCompilation();
 
-            // TODO(CS): is there already space in array?
-            // TODO(CS): if array is Object[], use Arrays.copyOf
-            final Object[] newStore = new Object[array.getSize() + other.getSize()];
-            ArrayUtils.copy(array.getStore(), newStore, 0, array.getSize());
-            ArrayUtils.copy(other.getStore(), newStore, array.getSize(), other.getSize());
-            array.setStore(newStore, array.getSize() + other.getSize());
+            final int newSize = array.getSize() + other.getSize();
+
+            Object[] store;
+            if (array.getStore() instanceof Object[]) {
+                store = (Object[]) array.getStore();
+                if (store.length < newSize) {
+                    store = Arrays.copyOf(store, ArrayUtils.capacity(store.length, newSize));
+                }
+                ArrayUtils.copy(other.getStore(), store, array.getSize(), other.getSize());
+            } else {
+                store = new Object[newSize];
+                ArrayUtils.copy(array.getStore(), store, 0, array.getSize());
+                ArrayUtils.copy(other.getStore(), store, array.getSize(), other.getSize());
+            }
+
+            array.setStore(store, newSize);
             return array;
         }
 
@@ -765,6 +862,7 @@ public abstract class ArrayNodes {
     public abstract static class DeleteNode extends ArrayCoreMethodNode {
 
         @Child private KernelNodes.SameOrEqualNode equalNode;
+        @Child private IsFrozenNode isFrozenNode;
 
         public DeleteNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -774,6 +872,7 @@ public abstract class ArrayNodes {
         public DeleteNode(DeleteNode prev) {
             super(prev);
             equalNode = prev.equalNode;
+            isFrozenNode = prev.isFrozenNode;
         }
 
         @Specialization(guards = "isIntegerFixnum(array)")
@@ -783,11 +882,20 @@ public abstract class ArrayNodes {
             Object found = nil();
 
             int i = 0;
-
-            for (int n = 0; n < array.getSize(); n++) {
+            int n = 0;
+            for (; n < array.getSize(); n++) {
                 final Object stored = store[n];
 
                 if (equalNode.executeSameOrEqual(frame, stored, value)) {
+                    if (isFrozenNode == null) {
+                        CompilerDirectives.transferToInterpreter();
+                        isFrozenNode = insert(IsFrozenNodeFactory.create(getContext(), getSourceSection(), null));
+                    }
+                    if (isFrozenNode.executeIsFrozen(array)) {
+                        CompilerDirectives.transferToInterpreter();
+                        throw new RaiseException(
+                            getContext().getCoreLibrary().frozenError(array.getLogicalClass().getName(), this));
+                    }
                     found = store[n];
                     continue;
                 }
@@ -798,8 +906,9 @@ public abstract class ArrayNodes {
 
                 i++;
             }
-
-            array.setStore(store, i);
+            if(i != n){
+                array.setStore(store, i);
+            }
             return found;
         }
 
@@ -810,11 +919,20 @@ public abstract class ArrayNodes {
             Object found = nil();
 
             int i = 0;
-
-            for (int n = 0; n < array.getSize(); n++) {
+            int n = 0;
+            for (; n < array.getSize(); n++) {
                 final Object stored = store[n];
 
                 if (equalNode.executeSameOrEqual(frame, stored, value)) {
+                    if (isFrozenNode == null) {
+                        CompilerDirectives.transferToInterpreter();
+                        isFrozenNode = insert(IsFrozenNodeFactory.create(getContext(), getSourceSection(), null));
+                    }
+                    if (isFrozenNode.executeIsFrozen(array)) {
+                        CompilerDirectives.transferToInterpreter();
+                        throw new RaiseException(
+                            getContext().getCoreLibrary().frozenError(array.getLogicalClass().getName(), this));
+                    }
                     found = store[n];
                     continue;
                 }
@@ -826,7 +944,9 @@ public abstract class ArrayNodes {
                 i++;
             }
 
-            array.setStore(store, i);
+            if(i != n){
+                array.setStore(store, i);
+            }
             return found;
         }
 
@@ -896,6 +1016,138 @@ public abstract class ArrayNodes {
                 return value;
             }
         }
+
+        @Specialization(guards = "isLongFixnum(array)", rewriteOn = UnexpectedResultException.class)
+        public long deleteAtLongFixnumInBounds(RubyArray array, int index) throws UnexpectedResultException {
+            final int normalizedIndex = array.normalizeIndex(index);
+
+            if (normalizedIndex < 0) {
+                throw new UnexpectedResultException(nil());
+            } else if (normalizedIndex >= array.getSize()) {
+                throw new UnexpectedResultException(nil());
+            } else {
+                final long[] store = (long[]) array.getStore();
+                final long value = store[normalizedIndex];
+                System.arraycopy(store, normalizedIndex + 1, store, normalizedIndex, array.getSize() - normalizedIndex - 1);
+                array.setStore(store, array.getSize() - 1);
+                return value;
+            }
+        }
+
+        @Specialization(contains = "deleteAtLongFixnumInBounds", guards = "isLongFixnum(array)")
+        public Object deleteAtLongFixnum(RubyArray array, int index) {
+            notDesignedForCompilation();
+
+            int normalizedIndex = index;
+
+            if (normalizedIndex < 0) {
+                normalizedIndex = array.getSize() + index;
+            }
+
+            if (normalizedIndex < 0) {
+                tooSmallBranch.enter();
+                return nil();
+            } else if (normalizedIndex >= array.getSize()) {
+                beyondEndBranch.enter();
+                return nil();
+            } else {
+                final long[] store = (long[]) array.getStore();
+                final long value = store[normalizedIndex];
+                System.arraycopy(store, normalizedIndex + 1, store, normalizedIndex, array.getSize() - normalizedIndex - 1);
+                array.setStore(store, array.getSize() - 1);
+                return value;
+            }
+        }
+
+        @Specialization(guards = "isFloat(array)", rewriteOn = UnexpectedResultException.class)
+        public double deleteAtFloatInBounds(RubyArray array, int index) throws UnexpectedResultException {
+            final int normalizedIndex = array.normalizeIndex(index);
+
+            if (normalizedIndex < 0) {
+                throw new UnexpectedResultException(nil());
+            } else if (normalizedIndex >= array.getSize()) {
+                throw new UnexpectedResultException(nil());
+            } else {
+                final double[] store = (double[]) array.getStore();
+                final double value = store[normalizedIndex];
+                System.arraycopy(store, normalizedIndex + 1, store, normalizedIndex, array.getSize() - normalizedIndex - 1);
+                array.setStore(store, array.getSize() - 1);
+                return value;
+            }
+        }
+
+        @Specialization(contains = "deleteAtFloatInBounds", guards = "isFloat(array)")
+        public Object deleteAtFloat(RubyArray array, int index) {
+            notDesignedForCompilation();
+
+            int normalizedIndex = index;
+
+            if (normalizedIndex < 0) {
+                normalizedIndex = array.getSize() + index;
+            }
+
+            if (normalizedIndex < 0) {
+                tooSmallBranch.enter();
+                return nil();
+            } else if (normalizedIndex >= array.getSize()) {
+                beyondEndBranch.enter();
+                return nil();
+            } else {
+                final double[] store = (double[]) array.getStore();
+                final double value = store[normalizedIndex];
+                System.arraycopy(store, normalizedIndex + 1, store, normalizedIndex, array.getSize() - normalizedIndex - 1);
+                array.setStore(store, array.getSize() - 1);
+                return value;
+            }
+        }
+
+        @Specialization(guards = "isObject(array)", rewriteOn = UnexpectedResultException.class)
+        public Object deleteAtObjectInBounds(RubyArray array, int index) throws UnexpectedResultException {
+            final int normalizedIndex = array.normalizeIndex(index);
+
+            if (normalizedIndex < 0) {
+                throw new UnexpectedResultException(nil());
+            } else if (normalizedIndex >= array.getSize()) {
+                throw new UnexpectedResultException(nil());
+            } else {
+                final Object[] store = (Object[]) array.getStore();
+                final Object value = store[normalizedIndex];
+                System.arraycopy(store, normalizedIndex + 1, store, normalizedIndex, array.getSize() - normalizedIndex - 1);
+                array.setStore(store, array.getSize() - 1);
+                return value;
+            }
+        }
+
+        @Specialization(contains = "deleteAtObjectInBounds", guards = "isObject(array)")
+        public Object deleteAtObject(RubyArray array, int index) {
+            notDesignedForCompilation();
+
+            int normalizedIndex = index;
+
+            if (normalizedIndex < 0) {
+                normalizedIndex = array.getSize() + index;
+            }
+
+            if (normalizedIndex < 0) {
+                tooSmallBranch.enter();
+                return nil();
+            } else if (normalizedIndex >= array.getSize()) {
+                beyondEndBranch.enter();
+                return nil();
+            } else {
+                final Object[] store = (Object[]) array.getStore();
+                final Object value = store[normalizedIndex];
+                System.arraycopy(store, normalizedIndex + 1, store, normalizedIndex, array.getSize() - normalizedIndex - 1);
+                array.setStore(store, array.getSize() - 1);
+                return value;
+            }
+        }
+
+        @Specialization(guards = "isNullOrEmpty(array)")
+        public Object deleteAtNullOrEmpty(RubyArray array, int index) {
+            return nil();
+        }
+
 
     }
 
@@ -1351,7 +1603,12 @@ public abstract class ArrayNodes {
     @ImportStatic(ArrayGuards.class)
     public abstract static class InitializeNode extends YieldingCoreMethodNode {
 
+        @Child private ToIntNode toIntNode;
+        @Child private CallDispatchHeadNode toAryNode;
+        @Child private KernelNodes.RespondToNode respondToToAryNode;
         @Child private ArrayBuilderNode arrayBuilder;
+
+        private final BranchProfile breakProfile = BranchProfile.create();
 
         public InitializeNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -1361,7 +1618,48 @@ public abstract class ArrayNodes {
         public InitializeNode(InitializeNode prev) {
             super(prev);
             arrayBuilder = prev.arrayBuilder;
+            toIntNode = prev.toIntNode;
+            respondToToAryNode = prev.respondToToAryNode;
         }
+
+        @Specialization(guards = {"!isInteger(object)", "!isLong(object)", "!isUndefinedPlaceholder(object)", "!isRubyArray(object)"})
+        public RubyArray initialize(VirtualFrame frame, RubyArray array, Object object, UndefinedPlaceholder defaultValue, UndefinedPlaceholder block) {
+
+            RubyArray copy = null;
+            if (respondToToAryNode == null) {
+                CompilerDirectives.transferToInterpreter();
+                respondToToAryNode = insert(KernelNodesFactory.RespondToNodeFactory.create(getContext(), getSourceSection(), new RubyNode[]{null, null, null}));
+            }
+            if (respondToToAryNode.doesRespondTo(frame, object, getContext().makeString("to_ary"), false)) {
+                if (toAryNode == null) {
+                    CompilerDirectives.transferToInterpreter();
+                    toAryNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext(), false));
+                }
+                Object toAryResult = toAryNode.call(frame, object, "to_ary", null);
+                if (toAryResult instanceof RubyArray) {
+                    copy = (RubyArray) toAryResult;
+                }
+
+            }
+
+            if (copy != null) {
+                return initialize(array, copy, UndefinedPlaceholder.INSTANCE, UndefinedPlaceholder.INSTANCE);
+            } else {
+                if (toIntNode == null) {
+                    CompilerDirectives.transferToInterpreter();
+                    toIntNode = insert(ToIntNodeFactory.create(getContext(), getSourceSection(), null));
+                }
+                int size = toIntNode.executeIntegerFixnum(frame, object);
+                if (size < 0) {
+                    return initializeNegative(array, size, UndefinedPlaceholder.INSTANCE, UndefinedPlaceholder.INSTANCE);
+                } else {
+                    return initialize(array, size, UndefinedPlaceholder.INSTANCE, UndefinedPlaceholder.INSTANCE);
+                }
+
+            }
+
+        }
+
 
         @Specialization
         public RubyArray initialize(RubyArray array, UndefinedPlaceholder size, UndefinedPlaceholder defaultValue, UndefinedPlaceholder block) {
@@ -1369,19 +1667,36 @@ public abstract class ArrayNodes {
         }
 
         @Specialization
+        public RubyArray initialize(RubyArray array, UndefinedPlaceholder size, UndefinedPlaceholder defaultValue, RubyProc block) {
+            return initialize(array, 0, nil(), UndefinedPlaceholder.INSTANCE);
+        }
+
+        @Specialization(guards = "!isNegative(array, size)")
         public RubyArray initialize(RubyArray array, int size, UndefinedPlaceholder defaultValue, UndefinedPlaceholder block) {
             return initialize(array, size, nil(), block);
         }
 
-        @Specialization
+        @Specialization(guards = "isNegative(array, size)")
+        public RubyArray initializeNegative(RubyArray array, int size, UndefinedPlaceholder defaultValue, UndefinedPlaceholder block) {
+            CompilerDirectives.transferToInterpreter();
+            throw new RaiseException(getContext().getCoreLibrary().argumentError("negative array size", this));
+        }
+
+        @Specialization(guards = "!isNegative(array, size)")
         public RubyArray initialize(RubyArray array, long size, UndefinedPlaceholder defaultValue, UndefinedPlaceholder block) {
             if (size > Integer.MAX_VALUE) {
-                throw new IllegalStateException();
+                throw new RaiseException(getContext().getCoreLibrary().argumentError("array size too big", this));
             }
             return initialize(array, (int) size, nil(), block);
         }
 
-        @Specialization
+        @Specialization(guards = "isNegative(array, size)")
+        public RubyArray initializeNegative(RubyArray array, long size, UndefinedPlaceholder defaultValue, UndefinedPlaceholder block) {
+            CompilerDirectives.transferToInterpreter();
+            throw new RaiseException(getContext().getCoreLibrary().argumentError("negative array size", this));
+        }
+
+        @Specialization(guards = "!isNegative(array, size)")
         public RubyArray initialize(RubyArray array, int size, int defaultValue, UndefinedPlaceholder block) {
             final int[] store = new int[size];
             Arrays.fill(store, defaultValue);
@@ -1389,7 +1704,13 @@ public abstract class ArrayNodes {
             return array;
         }
 
-        @Specialization
+        @Specialization(guards = "isNegative(array, size)")
+        public RubyArray initializeNegative(RubyArray array, int size, int defaultValue, UndefinedPlaceholder block) {
+            CompilerDirectives.transferToInterpreter();
+            throw new RaiseException(getContext().getCoreLibrary().argumentError("negative array size", this));
+        }
+
+        @Specialization(guards = "!isNegative(array, size)")
         public RubyArray initialize(RubyArray array, int size, long defaultValue, UndefinedPlaceholder block) {
             final long[] store = new long[size];
             Arrays.fill(store, defaultValue);
@@ -1397,15 +1718,27 @@ public abstract class ArrayNodes {
             return array;
         }
 
-        @Specialization
+        @Specialization(guards = "isNegative(array, size)")
+        public RubyArray initializeNegative(RubyArray array, int size, long defaultValue, UndefinedPlaceholder block) {
+            CompilerDirectives.transferToInterpreter();
+            throw new RaiseException(getContext().getCoreLibrary().argumentError("negative array size", this));
+        }
+
+        @Specialization(guards = "!isNegative(array, size)")
         public RubyArray initialize(RubyArray array, int size, double defaultValue, UndefinedPlaceholder block) {
             final double[] store = new double[size];
             Arrays.fill(store, defaultValue);
             array.setStore(store, size);
             return array;
         }
+        
+        @Specialization(guards = "isNegative(array, size)")
+        public RubyArray initializeNegative(RubyArray array, int size, double defaultValue, UndefinedPlaceholder block) {
+            CompilerDirectives.transferToInterpreter();
+            throw new RaiseException(getContext().getCoreLibrary().argumentError("negative array size", this));
+        }
 
-        @Specialization(guards = "!isUndefinedPlaceholder(defaultValue)")
+        @Specialization(guards = {"!isUndefinedPlaceholder(defaultValue)", "!isNegative(array, size)"})
         public RubyArray initialize(RubyArray array, int size, Object defaultValue, UndefinedPlaceholder block) {
             final Object[] store = new Object[size];
             Arrays.fill(store, defaultValue);
@@ -1413,9 +1746,41 @@ public abstract class ArrayNodes {
             return array;
         }
 
-        @Specialization
-        public RubyArray initialize(VirtualFrame frame, RubyArray array, int size, UndefinedPlaceholder defaultValue, RubyProc block) {
-            Object store = arrayBuilder.start(size);
+        @Specialization(guards = {"!isUndefinedPlaceholder(defaultValue)", "isNegative(array, size)"})
+        public RubyArray initializeNegative(RubyArray array, int size, Object defaultValue, UndefinedPlaceholder block) {
+            CompilerDirectives.transferToInterpreter();
+            throw new RaiseException(getContext().getCoreLibrary().argumentError("negative array size", this));
+        }
+
+        @Specialization(guards = {"!isInteger(sizeObject)", "!isUndefinedPlaceholder(defaultValue)"})
+        public RubyArray initialize(VirtualFrame frame, RubyArray array, Object sizeObject, Object defaultValue, UndefinedPlaceholder block) {
+            if (toIntNode == null) {
+                CompilerDirectives.transferToInterpreter();
+                toIntNode = insert(ToIntNodeFactory.create(getContext(), getSourceSection(), null));
+            }
+            int size = toIntNode.executeIntegerFixnum(frame, sizeObject);
+            if (size < 0) {
+                return initializeNegative(array, size, defaultValue, UndefinedPlaceholder.INSTANCE);
+            } else {
+                return initialize(array, size, defaultValue, UndefinedPlaceholder.INSTANCE);
+            }
+
+        }
+
+        @Specialization(guards = {"!isUndefinedPlaceholder(defaultValue)", "!isNegative(array, size)"})
+        public Object initialize(VirtualFrame frame, RubyArray array, int size, Object defaultValue, RubyProc block) {
+            return initialize(frame, array, size, UndefinedPlaceholder.INSTANCE, block);
+        }
+
+        @Specialization(guards = {"!isUndefinedPlaceholder(defaultValue)", "isNegative(array, size)"})
+        public Object initializeNegative(VirtualFrame frame, RubyArray array, int size, Object defaultValue, RubyProc block) {
+            CompilerDirectives.transferToInterpreter();
+            throw new RaiseException(getContext().getCoreLibrary().argumentError("negative array size", this));
+        }
+
+        @Specialization(guards = "!isNegative(array, size)")
+        public Object initialize(VirtualFrame frame, RubyArray array, int size, UndefinedPlaceholder defaultValue, RubyProc block) {
+            Object store = arrayBuilder.start();
 
             int count = 0;
             try {
@@ -1424,7 +1789,15 @@ public abstract class ArrayNodes {
                         count++;
                     }
 
-                    store = arrayBuilder.append(store, n, yield(frame, block, n));
+                    try {
+                        arrayBuilder.ensure(store, n + 1);
+                        store = arrayBuilder.append(store, n, yield(frame, block, n));
+                    } catch (BreakException e) {
+                        breakProfile.enter();
+                        array.setStore(arrayBuilder.finish(store, n), n);
+                        return e.getResult();
+                    }
+
                 }
             } finally {
                 if (CompilerDirectives.inInterpreter()) {
@@ -1436,12 +1809,26 @@ public abstract class ArrayNodes {
             return array;
         }
 
+        @Specialization(guards = "isNegative(array, size)")
+        public Object initializeNegative(VirtualFrame frame, RubyArray array, int size, UndefinedPlaceholder defaultValue, RubyProc block) {
+            CompilerDirectives.transferToInterpreter();
+            throw new RaiseException(getContext().getCoreLibrary().argumentError("negative array size", this));
+        }
+
         @Specialization
         public RubyArray initialize(RubyArray array, RubyArray copy, UndefinedPlaceholder defaultValue, UndefinedPlaceholder block) {
             notDesignedForCompilation();
             array.setStore(copy.slowToArray(), copy.getSize());
             return array;
         }
+
+        @Specialization
+        public RubyArray initialize(RubyArray array, RubyArray copy, UndefinedPlaceholder defaultValue, RubyProc block) {
+            notDesignedForCompilation();
+            array.setStore(copy.slowToArray(), copy.getSize());
+            return array;
+        }
+
 
     }
 
@@ -1654,9 +2041,10 @@ public abstract class ArrayNodes {
 
     }
 
-    @CoreMethod(names = "insert", required = 2, raiseIfFrozenSelf = true)
+    @CoreMethod(names = "insert", required = 1, raiseIfFrozenSelf = true, argumentsAsArray = true)
     public abstract static class InsertNode extends ArrayCoreMethodNode {
 
+        @Child private ToIntNode toIntNode;
         private final BranchProfile tooSmallBranch = BranchProfile.create();
 
         public InsertNode(RubyContext context, SourceSection sourceSection) {
@@ -1665,12 +2053,18 @@ public abstract class ArrayNodes {
 
         public InsertNode(InsertNode prev) {
             super(prev);
+            this.toIntNode = prev.toIntNode;
         }
 
-        @Specialization(guards = "isNull(array)")
-        public Object insert(RubyArray array, int index, Object value) {
+        @Specialization(guards = {"isNull(array)", "isIntIndexAndOtherSingleObjectArg(array, values)"})
+        public Object insertNull(RubyArray array, Object[] values) {
             notDesignedForCompilation();
-
+            final int index = (int) values[0];
+            if (index < 0) {
+                CompilerDirectives.transferToInterpreter();
+                throw new UnsupportedOperationException();
+            }
+            final Object value = (Object) values[1];
             final Object[] store = new Object[index + 1];
             Arrays.fill(store, nil());
             store[index] = value;
@@ -1678,80 +2072,69 @@ public abstract class ArrayNodes {
             return array;
         }
 
-        @Specialization(guards = "isIntegerFixnum(array)")
-        public Object insert(RubyArray array, int index, int value) {
-            final int normalizedIndex = array.normalizeIndex(index);
+        @Specialization(guards = "isArgsLengthTwo(array, values)", rewriteOn = {ClassCastException.class, IndexOutOfBoundsException.class})
+        public Object insert(RubyArray array, Object[] values) {
+            final int index = (int) values[0];
+            final int value = (int) values[1];
             final int[] store = (int[]) array.getStore();
+            System.arraycopy(store, index, store, index + 1, array.getSize() - index);
+            store[index] = value;
+            array.setStore(store, array.getSize() + 1);
+            return array;
+        }
 
-            if (normalizedIndex < 0) {
-                tooSmallBranch.enter();
-                throw new UnsupportedOperationException();
-            } else if (array.getSize() > store.length + 1) {
-                CompilerDirectives.transferToInterpreter();
-                throw new UnsupportedOperationException();
-            } else {
-                System.arraycopy(store, normalizedIndex, store, normalizedIndex + 1, array.getSize() - normalizedIndex);
-                store[normalizedIndex] = value;
-                array.setStore(store, array.getSize() + 1);
+        @Specialization(contains = {"insert", "insertNull"})
+        public Object insertBoxed(VirtualFrame frame, RubyArray array, Object[] values) {
+            notDesignedForCompilation();
+            if (values.length == 1) {
+                return array;
             }
+
+            int index;
+            if (values[0] instanceof Integer) {
+                index = (int) values[0];
+            } else {
+                if (toIntNode == null) {
+                    CompilerDirectives.transferToInterpreter();
+                    toIntNode = insert(ToIntNodeFactory.create(getContext(), getSourceSection(), null));
+                }
+                index = toIntNode.executeIntegerFixnum(frame, values[0]);
+            }
+
+            final int valuesLength = values.length - 1;
+            final int normalizedIndex = index < 0 ? array.normalizeIndex(index) + 1 : array.normalizeIndex(index);
+            if (normalizedIndex < 0) {
+                CompilerDirectives.transferToInterpreter();
+                String errMessage = "index " + index + " too small for array; minimum: " + Integer.toString(-array.getSize());
+                throw new RaiseException(getContext().getCoreLibrary().indexError(errMessage, this));
+            }
+
+            Object[] store = ArrayUtils.box(array.getStore());
+            final int newSize = normalizedIndex < array.getSize() ? array.getSize() + valuesLength : normalizedIndex + valuesLength;
+            store = Arrays.copyOf(store, newSize);
+            if (normalizedIndex >= array.getSize()) {
+                for (int i = array.getSize(); i < normalizedIndex; i++) {
+                    store[i] = nil();
+                }
+            }
+            final int dest = normalizedIndex + valuesLength;
+            final int len = array.getSize() - normalizedIndex;
+            if (normalizedIndex < array.getSize()) {
+                System.arraycopy(store, normalizedIndex, store, dest, len);
+            }
+            System.arraycopy(values, 1, store, normalizedIndex, valuesLength);
+            array.setStore(store, newSize);
 
             return array;
         }
 
     }
 
-    @CoreMethod(names = "join", optional = 1)
-    public abstract static class JoinNode extends ArrayCoreMethodNode {
-
-        public JoinNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
-        public JoinNode(JoinNode prev) {
-            super(prev);
-        }
-
-        @Specialization
-        public RubyString join(RubyArray array, UndefinedPlaceholder unused) {
-            Object separator = getContext().getCoreLibrary().getGlobalVariablesObject().getInstanceVariable("$,");
-            if (separator == nil()) {
-                separator = getContext().makeString("");
-            }
-
-            if (separator instanceof RubyString) {
-                return join(array, (RubyString) separator);
-            } else {
-                throw new UnsupportedOperationException();
-            }
-        }
-
-        @Specialization
-        public RubyString join(RubyArray array, RubyString separator) {
-            notDesignedForCompilation();
-
-            final StringBuilder builder = new StringBuilder();
-
-            final Object[] objects = array.slowToArray();
-
-            for (int n = 0; n < objects.length; n++) {
-                if (n > 0) {
-                    builder.append(separator);
-                }
-
-                builder.append(objects[n]);
-            }
-
-            return getContext().makeString(builder.toString());
-        }
-
-    }
-
-    @CoreMethod(names = {"map", "collect"}, needsBlock = true)
+    @CoreMethod(names = {"map", "collect"}, needsBlock = true, returnsEnumeratorIfNoBlock = true)
     @ImportStatic(ArrayGuards.class)
     public abstract static class MapNode extends YieldingCoreMethodNode {
 
         @Child private ArrayBuilderNode arrayBuilder;
-        @Child private CallDispatchHeadNode toEnumNode;
 
         private final BranchProfile breakProfile = BranchProfile.create();
         private final BranchProfile nextProfile = BranchProfile.create();
@@ -1765,17 +2148,6 @@ public abstract class ArrayNodes {
         public MapNode(MapNode prev) {
             super(prev);
             arrayBuilder = prev.arrayBuilder;
-            toEnumNode = prev.toEnumNode;
-        }
-
-        @Specialization
-        public Object eachEnumerator(VirtualFrame frame, RubyArray array, UndefinedPlaceholder block) {
-            if (toEnumNode == null) {
-                CompilerDirectives.transferToInterpreter();
-                toEnumNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext()));
-            }
-
-            return toEnumNode.call(frame, array, "to_enum", null, getContext().getCoreLibrary().getMapSymbol());
         }
 
         @Specialization(guards = "isNull(array)")
@@ -1936,11 +2308,10 @@ public abstract class ArrayNodes {
         }
     }
 
-    @CoreMethod(names = {"map!", "collect!"}, needsBlock = true)
+    @CoreMethod(names = {"map!", "collect!"}, needsBlock = true, returnsEnumeratorIfNoBlock = true, raiseIfFrozenSelf = true)
     @ImportStatic(ArrayGuards.class)
     public abstract static class MapInPlaceNode extends YieldingCoreMethodNode {
 
-        @Child private CallDispatchHeadNode toEnumNode;
         @Child private ArrayWriteDenormalizedNode writeNode;
 
         private final BranchProfile breakProfile = BranchProfile.create();
@@ -1953,18 +2324,7 @@ public abstract class ArrayNodes {
 
         public MapInPlaceNode(MapInPlaceNode prev) {
             super(prev);
-            toEnumNode = prev.toEnumNode;
             writeNode = prev.writeNode;
-        }
-
-        @Specialization
-        public Object eachEnumerator(VirtualFrame frame, RubyArray array, UndefinedPlaceholder block) {
-            if (toEnumNode == null) {
-                CompilerDirectives.transferToInterpreter();
-                toEnumNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext()));
-            }
-
-            return toEnumNode.call(frame, array, "to_enum", null, getContext().getCoreLibrary().getMapBangSymbol());
         }
 
         @Specialization(guards = "isNull(array)")
@@ -2511,8 +2871,10 @@ public abstract class ArrayNodes {
 
     }
 
-    @CoreMethod(names = "pop", raiseIfFrozenSelf = true)
+    @CoreMethod(names = "pop", raiseIfFrozenSelf = true, optional = 1)
     public abstract static class PopNode extends ArrayCoreMethodNode {
+
+        @Child private ToIntNode toIntNode;
 
         public PopNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -2520,17 +2882,18 @@ public abstract class ArrayNodes {
 
         public PopNode(PopNode prev) {
             super(prev);
+            this.toIntNode = prev.toIntNode;
         }
 
-        public abstract Object executePop(RubyArray array);
+        public abstract Object executePop(VirtualFrame frame, RubyArray array, Object n);
 
-        @Specialization(guards = "isNull(array)")
-        public Object popNil(RubyArray array) {
+        @Specialization(guards = "isNullOrEmpty(array)")
+        public Object popNil(VirtualFrame frame, RubyArray array, UndefinedPlaceholder undefinedPlaceholder) {
             return nil();
         }
 
         @Specialization(guards = "isIntegerFixnum(array)", rewriteOn = UnexpectedResultException.class)
-        public int popIntegerFixnumInBounds(RubyArray array) throws UnexpectedResultException {
+        public int popIntegerFixnumInBounds(VirtualFrame frame, RubyArray array, UndefinedPlaceholder undefinedPlaceholder) throws UnexpectedResultException {
             if (CompilerDirectives.injectBranchProbability(CompilerDirectives.UNLIKELY_PROBABILITY, array.getSize() == 0)) {
                 throw new UnexpectedResultException(nil());
             } else {
@@ -2541,8 +2904,9 @@ public abstract class ArrayNodes {
             }
         }
 
+
         @Specialization(contains = "popIntegerFixnumInBounds", guards = "isIntegerFixnum(array)")
-        public Object popIntegerFixnum(RubyArray array) {
+        public Object popIntegerFixnum(VirtualFrame frame, RubyArray array, UndefinedPlaceholder undefinedPlaceholder) {
             if (CompilerDirectives.injectBranchProbability(CompilerDirectives.UNLIKELY_PROBABILITY, array.getSize() == 0)) {
                 return nil();
             } else {
@@ -2554,7 +2918,7 @@ public abstract class ArrayNodes {
         }
 
         @Specialization(guards = "isLongFixnum(array)", rewriteOn = UnexpectedResultException.class)
-        public long popLongFixnumInBounds(RubyArray array) throws UnexpectedResultException {
+        public long popLongFixnumInBounds(VirtualFrame frame, RubyArray array, UndefinedPlaceholder undefinedPlaceholder) throws UnexpectedResultException {
             if (CompilerDirectives.injectBranchProbability(CompilerDirectives.UNLIKELY_PROBABILITY, array.getSize() == 0)) {
                 throw new UnexpectedResultException(nil());
             } else {
@@ -2566,7 +2930,7 @@ public abstract class ArrayNodes {
         }
 
         @Specialization(contains = "popLongFixnumInBounds", guards = "isLongFixnum(array)")
-        public Object popLongFixnum(RubyArray array) {
+        public Object popLongFixnum(VirtualFrame frame, RubyArray array, UndefinedPlaceholder undefinedPlaceholder) {
             if (CompilerDirectives.injectBranchProbability(CompilerDirectives.UNLIKELY_PROBABILITY, array.getSize() == 0)) {
                 return nil();
             } else {
@@ -2578,7 +2942,7 @@ public abstract class ArrayNodes {
         }
 
         @Specialization(guards = "isFloat(array)", rewriteOn = UnexpectedResultException.class)
-        public double popFloatInBounds(RubyArray array) throws UnexpectedResultException {
+        public double popFloatInBounds(VirtualFrame frame, RubyArray array, UndefinedPlaceholder undefinedPlaceholder) throws UnexpectedResultException {
             if (CompilerDirectives.injectBranchProbability(CompilerDirectives.UNLIKELY_PROBABILITY, array.getSize() == 0)) {
                 throw new UnexpectedResultException(nil());
             } else {
@@ -2590,7 +2954,7 @@ public abstract class ArrayNodes {
         }
 
         @Specialization(contains = "popFloatInBounds", guards = "isFloat(array)")
-        public Object popFloat(RubyArray array) {
+        public Object popFloat(VirtualFrame frame, RubyArray array, UndefinedPlaceholder undefinedPlaceholder) {
             if (CompilerDirectives.injectBranchProbability(CompilerDirectives.UNLIKELY_PROBABILITY, array.getSize() == 0)) {
                 return nil();
             } else {
@@ -2602,7 +2966,7 @@ public abstract class ArrayNodes {
         }
 
         @Specialization(guards = "isObject(array)")
-        public Object popObject(RubyArray array) {
+        public Object popObject(VirtualFrame frame, RubyArray array, UndefinedPlaceholder undefinedPlaceholder) {
             if (CompilerDirectives.injectBranchProbability(CompilerDirectives.UNLIKELY_PROBABILITY, array.getSize() == 0)) {
                 return nil();
             } else {
@@ -2613,37 +2977,320 @@ public abstract class ArrayNodes {
             }
         }
 
-    }
-
-    @CoreMethod(names = "product", required = 1)
-    public abstract static class ProductNode extends ArrayCoreMethodNode {
-
-        public ProductNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
-        public ProductNode(ProductNode prev) {
-            super(prev);
-        }
-
-        @Specialization(guards = {"isObject(array)", "isOtherObject(array, other)"})
-        public Object product(RubyArray array, RubyArray other) {
-            final Object[] a = (Object[]) array.getStore();
-            final int aLength = array.getSize();
-
-            final Object[] b = (Object[]) other.getStore();
-            final int bLength = other.getSize();
-
-            final Object[] pairs = new Object[aLength * bLength];
-
-            for (int an = 0; an < aLength; an++) {
-                for (int bn = 0; bn < bLength; bn++) {
-                    pairs[an * bLength + bn] = new RubyArray(getContext().getCoreLibrary().getArrayClass(), new Object[]{a[an], b[bn]}, 2);
+        @Specialization(guards = {"isNullOrEmpty(array)","!isUndefinedPlaceholder(object)"})
+        public Object popNilWithNum(VirtualFrame frame, RubyArray array, Object object) {
+            if (object instanceof Integer && ((Integer) object) < 0) {
+                CompilerDirectives.transferToInterpreter();
+                throw new RaiseException(getContext().getCoreLibrary().argumentError("negative array size", this));
+            } else {
+                if (toIntNode == null) {
+                    CompilerDirectives.transferToInterpreter();
+                    toIntNode = insert(ToIntNodeFactory.create(getContext(), getSourceSection(), null));
+                }
+                final int n = toIntNode.executeIntegerFixnum(frame, object);
+                if (n < 0) {
+                    CompilerDirectives.transferToInterpreter();
+                    throw new RaiseException(getContext().getCoreLibrary().argumentError("negative array size", this));
                 }
             }
-
-            return new RubyArray(getContext().getCoreLibrary().getArrayClass(), pairs, pairs.length);
+            return new RubyArray(getContext().getCoreLibrary().getArrayClass(), null, 0);
         }
+
+        @Specialization(guards = "isIntegerFixnum(array)", rewriteOn = UnexpectedResultException.class)
+        public RubyArray popIntegerFixnumInBoundsWithNum(VirtualFrame frame, RubyArray array, int num) throws UnexpectedResultException {
+            if (num < 0) {
+                CompilerDirectives.transferToInterpreter();
+                throw new RaiseException(getContext().getCoreLibrary().argumentError("negative array size", this));
+            }
+            if (CompilerDirectives.injectBranchProbability(CompilerDirectives.UNLIKELY_PROBABILITY, array.getSize() == 0)) {
+                throw new UnexpectedResultException(nil());
+            } else {
+                final int numPop = array.getSize() < num ? array.getSize() : num;
+                final int[] store = ((int[]) array.getStore());
+                final RubyArray result = new RubyArray(getContext().getCoreLibrary().getArrayClass(), Arrays.copyOfRange(store, array.getSize() - numPop , array.getSize()), numPop);
+                final int[] filler = new int[numPop];
+                System.arraycopy(filler, 0, store, array.getSize() - numPop, numPop);
+                array.setStore(store, array.getSize() - numPop);
+                return result;
+            }
+        }
+
+        @Specialization(contains = "popIntegerFixnumInBoundsWithNum", guards = "isIntegerFixnum(array)")
+        public Object popIntegerFixnumWithNum(VirtualFrame frame, RubyArray array, int num) {
+            if (num < 0) {
+                CompilerDirectives.transferToInterpreter();
+                throw new RaiseException(getContext().getCoreLibrary().argumentError("negative array size", this));
+            }
+            if (CompilerDirectives.injectBranchProbability(CompilerDirectives.UNLIKELY_PROBABILITY, array.getSize() == 0)) {
+                return nil();
+            } else {
+                final int numPop = array.getSize() < num ? array.getSize() : num;
+                final int[] store = ((int[]) array.getStore());
+                final RubyArray result = new RubyArray(getContext().getCoreLibrary().getArrayClass(), Arrays.copyOfRange(store, array.getSize() - numPop , array.getSize()), numPop);
+                final int[] filler = new int[numPop];
+                System.arraycopy(filler, 0, store, array.getSize() - numPop, numPop);
+                array.setStore(store, array.getSize() - numPop);
+                return result;
+            }
+        }
+
+        @Specialization(guards = "isLongFixnum(array)", rewriteOn = UnexpectedResultException.class)
+        public RubyArray popLongFixnumInBoundsWithNum(VirtualFrame frame, RubyArray array, int num) throws UnexpectedResultException {
+            if (num < 0) {
+                CompilerDirectives.transferToInterpreter();
+                throw new RaiseException(getContext().getCoreLibrary().argumentError("negative array size", this));
+            }
+            if (CompilerDirectives.injectBranchProbability(CompilerDirectives.UNLIKELY_PROBABILITY, array.getSize() == 0)) {
+                throw new UnexpectedResultException(nil());
+            } else {
+                final int numPop = array.getSize() < num ? array.getSize() : num;
+                final long[] store = ((long[]) array.getStore());
+                final RubyArray result = new RubyArray(getContext().getCoreLibrary().getArrayClass(), Arrays.copyOfRange(store, array.getSize() - numPop , array.getSize()), numPop);
+                final long[] filler = new long[numPop];
+                System.arraycopy(filler, 0, store, array.getSize() - numPop, numPop);
+                array.setStore(store, array.getSize() - numPop);
+                return result;
+            }
+        }
+
+        @Specialization(contains = "popLongFixnumInBoundsWithNum", guards = "isLongFixnum(array)")
+        public Object popLongFixnumWithNum(VirtualFrame frame, RubyArray array, int num) {
+            if (num < 0) {
+                CompilerDirectives.transferToInterpreter();
+                throw new RaiseException(getContext().getCoreLibrary().argumentError("negative array size", this));
+            }
+            if (CompilerDirectives.injectBranchProbability(CompilerDirectives.UNLIKELY_PROBABILITY, array.getSize() == 0)) {
+                return nil();
+            } else {
+                final int numPop = array.getSize() < num ? array.getSize() : num;
+                final long[] store = ((long[]) array.getStore());
+                final RubyArray result = new RubyArray(getContext().getCoreLibrary().getArrayClass(), Arrays.copyOfRange(store, array.getSize() - numPop , array.getSize()), numPop);
+                final long[] filler = new long[numPop];
+                System.arraycopy(filler, 0, store, array.getSize() - numPop, numPop);
+                array.setStore(store, array.getSize() - numPop);
+                return result;            }
+        }
+
+        @Specialization(guards = "isFloat(array)", rewriteOn = UnexpectedResultException.class)
+        public RubyArray popFloatInBoundsWithNum(VirtualFrame frame, RubyArray array, int num) throws UnexpectedResultException {
+            if (num < 0) {
+                CompilerDirectives.transferToInterpreter();
+                throw new RaiseException(getContext().getCoreLibrary().argumentError("negative array size", this));
+            }
+            if (CompilerDirectives.injectBranchProbability(CompilerDirectives.UNLIKELY_PROBABILITY, array.getSize() == 0)) {
+                throw new UnexpectedResultException(nil());
+            } else {
+                final int numPop = array.getSize() < num ? array.getSize() : num;
+                final double[] store = ((double[]) array.getStore());
+                final RubyArray result = new RubyArray(getContext().getCoreLibrary().getArrayClass(), Arrays.copyOfRange(store, array.getSize() - numPop , array.getSize()), numPop);
+                final double[] filler = new double[numPop];
+                System.arraycopy(filler, 0, store, array.getSize() - numPop, numPop);
+                array.setStore(store, array.getSize() - numPop);
+                return result;}
+        }
+
+        @Specialization(contains = "popFloatInBoundsWithNum", guards = "isFloat(array)")
+        public Object popFloatWithNum(VirtualFrame frame, RubyArray array, int num) {
+            if (num < 0) {
+                CompilerDirectives.transferToInterpreter();
+                throw new RaiseException(getContext().getCoreLibrary().argumentError("negative array size", this));
+            }
+            if (CompilerDirectives.injectBranchProbability(CompilerDirectives.UNLIKELY_PROBABILITY, array.getSize() == 0)) {
+                return nil();
+            } else {
+                final int numPop = array.getSize() < num ? array.getSize() : num;
+                final double[] store = ((double[]) array.getStore());
+                final RubyArray result = new RubyArray(getContext().getCoreLibrary().getArrayClass(), Arrays.copyOfRange(store, array.getSize() - numPop , array.getSize()), numPop);
+                final double[] filler = new double[numPop];
+                System.arraycopy(filler, 0, store, array.getSize() - numPop, numPop);
+                array.setStore(store, array.getSize() - numPop);
+                return result;}
+        }
+
+        @Specialization(guards = "isObject(array)")
+        public Object popObjectWithNum(VirtualFrame frame, RubyArray array, int num) {
+            if (num < 0) {
+                CompilerDirectives.transferToInterpreter();
+                throw new RaiseException(getContext().getCoreLibrary().argumentError("negative array size", this));
+            }
+            if (CompilerDirectives.injectBranchProbability(CompilerDirectives.UNLIKELY_PROBABILITY, array.getSize() == 0)) {
+                return nil();
+            } else {
+                final int numPop = array.getSize() < num ? array.getSize() : num;
+                final Object[] store = ((Object[]) array.getStore());
+                final RubyArray result = new RubyArray(getContext().getCoreLibrary().getArrayClass(), Arrays.copyOfRange(store, array.getSize() - numPop , array.getSize()), numPop);
+                final Object[] filler = new Object[numPop];
+                System.arraycopy(filler, 0, store, array.getSize() - numPop, numPop);
+                array.setStore(store, array.getSize() - numPop);
+                return result;
+            }
+        }
+
+        @Specialization(guards = {"isIntegerFixnum(array)","!isInteger(object)","!isUndefinedPlaceholder(object)"}, rewriteOn = UnexpectedResultException.class)
+        public RubyArray popIntegerFixnumInBoundsWithNumObj(VirtualFrame frame, RubyArray array, Object object) throws UnexpectedResultException {
+            if (toIntNode == null) {
+                CompilerDirectives.transferToInterpreter();
+                toIntNode = insert(ToIntNodeFactory.create(getContext(), getSourceSection(), null));
+            }
+            final int num = toIntNode.executeIntegerFixnum(frame, object);
+            if (num < 0) {
+                CompilerDirectives.transferToInterpreter();
+                throw new RaiseException(getContext().getCoreLibrary().argumentError("negative array size", this));
+            }
+            if (CompilerDirectives.injectBranchProbability(CompilerDirectives.UNLIKELY_PROBABILITY, array.getSize() == 0)) {
+                throw new UnexpectedResultException(nil());
+            } else {
+                final int numPop = array.getSize() < num ? array.getSize() : num;
+                final int[] store = ((int[]) array.getStore());
+                final RubyArray result = new RubyArray(getContext().getCoreLibrary().getArrayClass(), Arrays.copyOfRange(store, array.getSize() - numPop , array.getSize()), numPop);
+                final int[] filler = new int[numPop];
+                System.arraycopy(filler, 0, store, array.getSize() - numPop, numPop);
+                array.setStore(store, array.getSize() - numPop);
+                return result;
+            }
+        }
+
+        @Specialization(contains = "popIntegerFixnumInBoundsWithNumObj", guards = {"isIntegerFixnum(array)","!isInteger(object)","!isUndefinedPlaceholder(object)"} )
+        public Object popIntegerFixnumWithNumObj(VirtualFrame frame, RubyArray array, Object object) {
+            if (toIntNode == null) {
+                CompilerDirectives.transferToInterpreter();
+                toIntNode = insert(ToIntNodeFactory.create(getContext(), getSourceSection(), null));
+            }
+            final int num = toIntNode.executeIntegerFixnum(frame, object);
+            if (num < 0) {
+                CompilerDirectives.transferToInterpreter();
+                throw new RaiseException(getContext().getCoreLibrary().argumentError("negative array size", this));
+            }
+            if (CompilerDirectives.injectBranchProbability(CompilerDirectives.UNLIKELY_PROBABILITY, array.getSize() == 0)) {
+                return nil();
+            } else {
+                final int numPop = array.getSize() < num ? array.getSize() : num;
+                final int[] store = ((int[]) array.getStore());
+                final RubyArray result = new RubyArray(getContext().getCoreLibrary().getArrayClass(), Arrays.copyOfRange(store, array.getSize() - numPop , array.getSize()), numPop);
+                final int[] filler = new int[numPop];
+                System.arraycopy(filler, 0, store, array.getSize() - numPop, numPop);
+                array.setStore(store, array.getSize() - numPop);
+                return result;
+            }
+        }
+
+        @Specialization(guards = {"isLongFixnum(array)","!isInteger(object)","!isUndefinedPlaceholder(object)"} , rewriteOn = UnexpectedResultException.class)
+        public RubyArray popLongFixnumInBoundsWithNumObj(VirtualFrame frame, RubyArray array, Object object) throws UnexpectedResultException {
+            if (toIntNode == null) {
+                CompilerDirectives.transferToInterpreter();
+                toIntNode = insert(ToIntNodeFactory.create(getContext(), getSourceSection(), null));
+            }
+            final int num = toIntNode.executeIntegerFixnum(frame, object);
+            if (num < 0) {
+                CompilerDirectives.transferToInterpreter();
+                throw new RaiseException(getContext().getCoreLibrary().argumentError("negative array size", this));
+            }
+            if (CompilerDirectives.injectBranchProbability(CompilerDirectives.UNLIKELY_PROBABILITY, array.getSize() == 0)) {
+                throw new UnexpectedResultException(nil());
+            } else {
+                final int numPop = array.getSize() < num ? array.getSize() : num;
+                final long[] store = ((long[]) array.getStore());
+                final RubyArray result = new RubyArray(getContext().getCoreLibrary().getArrayClass(), Arrays.copyOfRange(store, array.getSize() - numPop , array.getSize()), numPop);
+                final long[] filler = new long[numPop];
+                System.arraycopy(filler, 0, store, array.getSize() - numPop, numPop);
+                array.setStore(store, array.getSize() - numPop);
+                return result;
+            }
+        }
+
+        @Specialization(contains = "popLongFixnumInBoundsWithNumObj", guards = {"isLongFixnum(array)","!isInteger(object)","!isUndefinedPlaceholder(object)"})
+        public Object popLongFixnumWithNumObj(VirtualFrame frame, RubyArray array, Object object) {
+            if (toIntNode == null) {
+                CompilerDirectives.transferToInterpreter();
+                toIntNode = insert(ToIntNodeFactory.create(getContext(), getSourceSection(), null));
+            }
+            final int num = toIntNode.executeIntegerFixnum(frame, object);
+            if (num < 0) {
+                CompilerDirectives.transferToInterpreter();
+                throw new RaiseException(getContext().getCoreLibrary().argumentError("negative array size", this));
+            }
+            if (CompilerDirectives.injectBranchProbability(CompilerDirectives.UNLIKELY_PROBABILITY, array.getSize() == 0)) {
+                return nil();
+            } else {
+                final int numPop = array.getSize() < num ? array.getSize() : num;
+                final long[] store = ((long[]) array.getStore());
+                final RubyArray result = new RubyArray(getContext().getCoreLibrary().getArrayClass(), Arrays.copyOfRange(store, array.getSize() - numPop , array.getSize()), numPop);
+                final long[] filler = new long[numPop];
+                System.arraycopy(filler, 0, store, array.getSize() - numPop, numPop);
+                array.setStore(store, array.getSize() - numPop);
+                return result;            }
+        }
+
+        @Specialization(guards = {"isFloat(array)","!isInteger(object)","!isUndefinedPlaceholder(object)"}, rewriteOn = UnexpectedResultException.class)
+        public RubyArray popFloatInBoundsWithNumObj(VirtualFrame frame, RubyArray array, Object object) throws UnexpectedResultException {
+            if (toIntNode == null) {
+                CompilerDirectives.transferToInterpreter();
+                toIntNode = insert(ToIntNodeFactory.create(getContext(), getSourceSection(), null));
+            }
+            final int num = toIntNode.executeIntegerFixnum(frame, object);
+            if (num < 0) {
+                CompilerDirectives.transferToInterpreter();
+                throw new RaiseException(getContext().getCoreLibrary().argumentError("negative array size", this));
+            }
+            if (CompilerDirectives.injectBranchProbability(CompilerDirectives.UNLIKELY_PROBABILITY, array.getSize() == 0)) {
+                throw new UnexpectedResultException(nil());
+            } else {
+                final int numPop = array.getSize() < num ? array.getSize() : num;
+                final double[] store = ((double[]) array.getStore());
+                final RubyArray result = new RubyArray(getContext().getCoreLibrary().getArrayClass(), Arrays.copyOfRange(store, array.getSize() - numPop , array.getSize()), numPop);
+                final double[] filler = new double[numPop];
+                System.arraycopy(filler, 0, store, array.getSize() - numPop, numPop);
+                array.setStore(store, array.getSize() - numPop);
+                return result;}
+        }
+
+        @Specialization(contains = "popFloatInBoundsWithNumObj", guards = {"isFloat(array)","!isInteger(object)","!isUndefinedPlaceholder(object)"})
+        public Object popFloatWithNumObj(VirtualFrame frame, RubyArray array, Object object) {
+            if (toIntNode == null) {
+                CompilerDirectives.transferToInterpreter();
+                toIntNode = insert(ToIntNodeFactory.create(getContext(), getSourceSection(), null));
+            }
+            final int num = toIntNode.executeIntegerFixnum(frame, object);
+            if (num < 0) {
+                CompilerDirectives.transferToInterpreter();
+                throw new RaiseException(getContext().getCoreLibrary().argumentError("negative array size", this));
+            }
+            if (CompilerDirectives.injectBranchProbability(CompilerDirectives.UNLIKELY_PROBABILITY, array.getSize() == 0)) {
+                return nil();
+            } else {
+                final int numPop = array.getSize() < num ? array.getSize() : num;
+                final double[] store = ((double[]) array.getStore());
+                final RubyArray result = new RubyArray(getContext().getCoreLibrary().getArrayClass(), Arrays.copyOfRange(store, array.getSize() - numPop , array.getSize()), numPop);
+                final double[] filler = new double[numPop];
+                System.arraycopy(filler, 0, store, array.getSize() - numPop, numPop);
+                array.setStore(store, array.getSize() - numPop);
+                return result;}
+        }
+
+        @Specialization(guards = {"isObject(array)","!isInteger(object)","!isUndefinedPlaceholder(object)"})
+        public Object popObjectWithNumObj(VirtualFrame frame, RubyArray array, Object object) {
+            if (toIntNode == null) {
+                CompilerDirectives.transferToInterpreter();
+                toIntNode = insert(ToIntNodeFactory.create(getContext(), getSourceSection(), null));
+            }
+            final int num = toIntNode.executeIntegerFixnum(frame, object);
+            if (num < 0) {
+                CompilerDirectives.transferToInterpreter();
+                throw new RaiseException(getContext().getCoreLibrary().argumentError("negative array size", this));
+            }
+            if (CompilerDirectives.injectBranchProbability(CompilerDirectives.UNLIKELY_PROBABILITY, array.getSize() == 0)) {
+                return nil();
+            } else {
+                final int numPop = array.getSize() < num ? array.getSize() : num;
+                final Object[] store = ((Object[]) array.getStore());
+                final RubyArray result = new RubyArray(getContext().getCoreLibrary().getArrayClass(), Arrays.copyOfRange(store, array.getSize() - numPop , array.getSize()), numPop);
+                final Object[] filler = new Object[numPop];
+                System.arraycopy(filler, 0, store, array.getSize() - numPop, numPop);
+                array.setStore(store, array.getSize() - numPop);
+                return result;
+            }
+        }
+
 
     }
 
@@ -2882,7 +3529,7 @@ public abstract class ArrayNodes {
 
     }
 
-    @CoreMethod(names = "reject", needsBlock = true)
+    @CoreMethod(names = "reject", needsBlock = true, returnsEnumeratorIfNoBlock = true)
     @ImportStatic(ArrayGuards.class)
     public abstract static class RejectNode extends YieldingCoreMethodNode {
 
@@ -2971,7 +3618,127 @@ public abstract class ArrayNodes {
 
     }
 
-    @CoreMethod(names = { "reject!", "delete_if" }, needsBlock = true, raiseIfFrozenSelf = true)
+    @CoreMethod(names = "delete_if" , needsBlock = true, returnsEnumeratorIfNoBlock = true, raiseIfFrozenSelf = true)
+    @ImportStatic(ArrayGuards.class)
+    public abstract static class DeleteIfNode extends YieldingCoreMethodNode {
+
+        public DeleteIfNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public DeleteIfNode(DeleteIfNode prev) {
+            super(prev);
+        }
+
+        @Specialization(guards = "isNullArray(array)")
+        public Object rejectInPlaceNull(VirtualFrame frame, RubyArray array, RubyProc block) {
+            return array;
+        }
+
+        @Specialization(guards = "isIntArray(array)")
+        public Object rejectInPlaceInt(VirtualFrame frame, RubyArray array, RubyProc block) {
+            final int[] store = (int[]) array.getStore();
+
+            int i = 0;
+            int n = 0;
+            for (; n < array.getSize(); n++) {
+                if (yieldIsTruthy(frame, block, store[n])) {
+                    continue;
+                }
+
+                if (i != n) {
+                    store[i] = store[n];
+                }
+
+                i++;
+            }
+            if (i != n) {
+                final int[] filler = new int[n - i];
+                System.arraycopy(filler, 0, store, i, n - i);
+                array.setStore(store, i);
+            }
+            return array;
+        }
+
+        @Specialization(guards = "isLongArray(array)")
+        public Object rejectInPlaceLong(VirtualFrame frame, RubyArray array, RubyProc block) {
+            final long[] store = (long[]) array.getStore();
+
+            int i = 0;
+            int n = 0;
+            for (; n < array.getSize(); n++) {
+                if (yieldIsTruthy(frame, block, store[n])) {
+                    continue;
+                }
+
+                if (i != n) {
+                    store[i] = store[n];
+                }
+
+                i++;
+            }
+            if (i != n) {
+                final long[] filler = new long[n - i];
+                System.arraycopy(filler, 0, store, i, n - i);
+                array.setStore(store, i);
+            }
+            return array;
+        }
+
+        @Specialization(guards = "isDoubleArray(array)")
+        public Object rejectInPlaceDouble(VirtualFrame frame, RubyArray array, RubyProc block) {
+            final double[] store = (double[]) array.getStore();
+
+            int i = 0;
+            int n = 0;
+            for (; n < array.getSize(); n++) {
+                if (yieldIsTruthy(frame, block, store[n])) {
+                    continue;
+                }
+
+                if (i != n) {
+                    store[i] = store[n];
+                }
+
+                i++;
+            }
+            if (i != n) {
+                final double[] filler = new double[n - i];
+                System.arraycopy(filler, 0, store, i, n - i);
+                array.setStore(store, i);
+            }
+            return array;
+        }
+
+        @Specialization(guards = "isObjectArray(array)")
+        public Object rejectInPlaceObject(VirtualFrame frame, RubyArray array, RubyProc block) {
+            final Object[] store = (Object[]) array.getStore();
+
+            int i = 0;
+            int n = 0;
+            for (; n < array.getSize(); n++) {
+                if (yieldIsTruthy(frame, block, store[n])) {
+                    continue;
+                }
+
+                if (i != n) {
+                    store[i] = store[n];
+                }
+
+                i++;
+            }
+            if (i != n) {
+                final Object[] filler = new Object[n - i];
+                System.arraycopy(filler, 0, store, i, n - i);
+                array.setStore(store, i);
+            }
+            return array;
+        }
+
+    }
+
+
+    @CoreMethod(names = "reject!", needsBlock = true, returnsEnumeratorIfNoBlock = true, raiseIfFrozenSelf = true)
     @ImportStatic(ArrayGuards.class)
     public abstract static class RejectInPlaceNode extends YieldingCoreMethodNode {
 
@@ -2983,18 +3750,18 @@ public abstract class ArrayNodes {
             super(prev);
         }
 
-        @Specialization(guards = "isNull(array)")
+        @Specialization(guards = "isNullArray(array)")
         public Object rejectInPlaceNull(VirtualFrame frame, RubyArray array, RubyProc block) {
-            return array;
+            return nil();
         }
 
-        @Specialization(guards = "isObject(array)")
-        public Object rejectInPlaceObject(VirtualFrame frame, RubyArray array, RubyProc block) {
-            final Object[] store = (Object[]) array.getStore();
+        @Specialization(guards = "isIntArray(array)")
+        public Object rejectInPlaceInt(VirtualFrame frame, RubyArray array, RubyProc block) {
+            final int[] store = (int[]) array.getStore();
 
             int i = 0;
-
-            for (int n = 0; n < array.getSize(); n++) {
+            int n = 0;
+            for (; n < array.getSize(); n++) {
                 if (yieldIsTruthy(frame, block, store[n])) {
                     continue;
                 }
@@ -3005,9 +3772,95 @@ public abstract class ArrayNodes {
 
                 i++;
             }
+            if (i != n) {
+                final int[] filler = new int[n - i];
+                System.arraycopy(filler, 0, store, i, n - i);
+                array.setStore(store, i);
+                return array;
+            } else {
+                return nil();
+            }
+        }
 
-            array.setStore(store, i);
-            return array;
+        @Specialization(guards = "isLongArray(array)")
+        public Object rejectInPlaceLong(VirtualFrame frame, RubyArray array, RubyProc block) {
+            final long[] store = (long[]) array.getStore();
+
+            int i = 0;
+            int n = 0;
+            for (; n < array.getSize(); n++) {
+                if (yieldIsTruthy(frame, block, store[n])) {
+                    continue;
+                }
+
+                if (i != n) {
+                    store[i] = store[n];
+                }
+
+                i++;
+            }
+            if (i != n) {
+                final long[] filler = new long[n - i];
+                System.arraycopy(filler, 0, store, i, n - i);
+                array.setStore(store, i);
+                return array;
+            } else {
+                return nil();
+            }
+        }
+
+        @Specialization(guards = "isDoubleArray(array)")
+        public Object rejectInPlaceDouble(VirtualFrame frame, RubyArray array, RubyProc block) {
+            final double[] store = (double[]) array.getStore();
+
+            int i = 0;
+            int n = 0;
+            for (; n < array.getSize(); n++) {
+                if (yieldIsTruthy(frame, block, store[n])) {
+                    continue;
+                }
+
+                if (i != n) {
+                    store[i] = store[n];
+                }
+
+                i++;
+            }
+            if (i != n) {
+                final double[] filler = new double[n - i];
+                System.arraycopy(filler, 0, store, i, n - i);
+                array.setStore(store, i);
+                return array;
+            } else {
+                return nil();
+            }
+        }
+
+        @Specialization(guards = "isObjectArray(array)")
+        public Object rejectInPlaceObject(VirtualFrame frame, RubyArray array, RubyProc block) {
+            final Object[] store = (Object[]) array.getStore();
+
+            int i = 0;
+            int n = 0;
+            for (; n < array.getSize(); n++) {
+                if (yieldIsTruthy(frame, block, store[n])) {
+                    continue;
+                }
+
+                if (i != n) {
+                    store[i] = store[n];
+                }
+
+                i++;
+            }
+            if (i != n) {
+                final Object[] filler = new Object[n - i];
+                System.arraycopy(filler, 0, store, i, n - i);
+                array.setStore(store, i);
+                return array;
+            } else {
+                return nil();
+            }
         }
 
     }
@@ -3074,7 +3927,7 @@ public abstract class ArrayNodes {
 
     }
 
-    @CoreMethod(names = "select", needsBlock = true)
+    @CoreMethod(names = "select", needsBlock = true, returnsEnumeratorIfNoBlock = true)
     @ImportStatic(ArrayGuards.class)
     public abstract static class SelectNode extends YieldingCoreMethodNode {
 
@@ -3163,8 +4016,10 @@ public abstract class ArrayNodes {
 
     }
 
-    @CoreMethod(names = "shift", raiseIfFrozenSelf = true)
-    public abstract static class ShiftNode extends CoreMethodNode {
+    @CoreMethod(names = "shift", raiseIfFrozenSelf = true, optional = 1)
+    public abstract static class ShiftNode extends ArrayCoreMethodNode {
+
+        @Child private ToIntNode toIntNode;
 
         public ShiftNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -3174,13 +4029,450 @@ public abstract class ArrayNodes {
             super(prev);
         }
 
-        @Specialization
-        public Object shift(RubyArray array) {
-            notDesignedForCompilation();
+        public abstract Object executeShift(VirtualFrame frame, RubyArray array, Object n);
 
-            return array.slowShift();
+        @Specialization(guards = "isNullOrEmpty(array)")
+        public Object shiftNil(VirtualFrame frame, RubyArray array, UndefinedPlaceholder undefinedPlaceholder) {
+            return nil();
         }
 
+        @Specialization(guards = "isIntegerFixnum(array)", rewriteOn = UnexpectedResultException.class)
+        public int shiftIntegerFixnumInBounds(VirtualFrame frame, RubyArray array, UndefinedPlaceholder undefinedPlaceholder) throws UnexpectedResultException {
+            if (CompilerDirectives.injectBranchProbability(CompilerDirectives.UNLIKELY_PROBABILITY, array.getSize() == 0)) {
+                throw new UnexpectedResultException(nil());
+            } else {
+                final int[] store = ((int[]) array.getStore());
+                final int value = store[0];
+                System.arraycopy(store, 1, store, 0, array.getSize() - 1);
+                final int[] filler = new int[1];
+                System.arraycopy(filler, 0, store, array.getSize() - 1, 1);
+                array.setStore(store, array.getSize() - 1);
+                return value;
+            }
+        }
+
+        @Specialization(contains = "shiftIntegerFixnumInBounds", guards = "isIntegerFixnum(array)")
+        public Object shiftIntegerFixnum(VirtualFrame frame, RubyArray array, UndefinedPlaceholder undefinedPlaceholder) {
+            if (CompilerDirectives.injectBranchProbability(CompilerDirectives.UNLIKELY_PROBABILITY, array.getSize() == 0)) {
+                return nil();
+            } else {
+                final int[] store = ((int[]) array.getStore());
+                final int value = store[0];
+                System.arraycopy(store, 1, store, 0, array.getSize() - 1);
+                final int[] filler = new int[1];
+                System.arraycopy(filler, 0, store, array.getSize() - 1, 1);
+                array.setStore(store, array.getSize() - 1);
+                return value;
+            }
+        }
+
+        @Specialization(guards = "isLongFixnum(array)", rewriteOn = UnexpectedResultException.class)
+        public long shiftLongFixnumInBounds(VirtualFrame frame, RubyArray array, UndefinedPlaceholder undefinedPlaceholder) throws UnexpectedResultException {
+            if (CompilerDirectives.injectBranchProbability(CompilerDirectives.UNLIKELY_PROBABILITY, array.getSize() == 0)) {
+                throw new UnexpectedResultException(nil());
+            } else {
+                final long[] store = ((long[]) array.getStore());
+                final long value = store[0];
+                System.arraycopy(store, 1, store, 0, array.getSize() - 1);
+                final long[] filler = new long[1];
+                System.arraycopy(filler, 0, store, array.getSize() - 1, 1);
+                array.setStore(store, array.getSize() - 1);
+                return value;
+            }
+        }
+
+        @Specialization(contains = "shiftLongFixnumInBounds", guards = "isLongFixnum(array)")
+        public Object shiftLongFixnum(VirtualFrame frame, RubyArray array, UndefinedPlaceholder undefinedPlaceholder) {
+            if (CompilerDirectives.injectBranchProbability(CompilerDirectives.UNLIKELY_PROBABILITY, array.getSize() == 0)) {
+                return nil();
+            } else {
+                final long[] store = ((long[]) array.getStore());
+                final long value = store[0];
+                System.arraycopy(store, 1, store, 0, array.getSize() - 1);
+                final long[] filler = new long[1];
+                System.arraycopy(filler, 0, store, array.getSize() - 1, 1);
+                array.setStore(store, array.getSize() - 1);
+                return value;
+            }
+        }
+
+        @Specialization(guards = "isFloat(array)", rewriteOn = UnexpectedResultException.class)
+        public double shiftFloatInBounds(VirtualFrame frame, RubyArray array, UndefinedPlaceholder undefinedPlaceholder) throws UnexpectedResultException {
+            if (CompilerDirectives.injectBranchProbability(CompilerDirectives.UNLIKELY_PROBABILITY, array.getSize() == 0)) {
+                throw new UnexpectedResultException(nil());
+            } else {
+                final double[] store = ((double[]) array.getStore());
+                final double value = store[0];
+                System.arraycopy(store, 1, store, 0, array.getSize() - 1);
+                final double[] filler = new double[1];
+                System.arraycopy(filler, 0, store, array.getSize() - 1, 1);
+                array.setStore(store, array.getSize() - 1);
+                return value;
+            }
+        }
+
+        @Specialization(contains = "shiftFloatInBounds", guards = "isFloat(array)")
+        public Object shiftFloat(VirtualFrame frame, RubyArray array, UndefinedPlaceholder undefinedPlaceholder) {
+            if (CompilerDirectives.injectBranchProbability(CompilerDirectives.UNLIKELY_PROBABILITY, array.getSize() == 0)) {
+                return nil();
+            } else {
+                final double[] store = ((double[]) array.getStore());
+                final double value = store[0];
+                System.arraycopy(store, 1, store, 0, array.getSize() - 1);
+                final double[] filler = new double[1];
+                System.arraycopy(filler, 0, store, array.getSize() - 1, 1);
+                array.setStore(store, array.getSize() - 1);
+                return value;
+            }
+        }
+
+        @Specialization(guards = "isObject(array)")
+        public Object shiftObject(VirtualFrame frame, RubyArray array, UndefinedPlaceholder undefinedPlaceholder) {
+            if (CompilerDirectives.injectBranchProbability(CompilerDirectives.UNLIKELY_PROBABILITY, array.getSize() == 0)) {
+                return nil();
+            } else {
+                final Object[] store = ((Object[]) array.getStore());
+                final Object value = store[0];
+                System.arraycopy(store, 1, store, 0, array.getSize() - 1);
+                final Object[] filler = new Object[1];
+                System.arraycopy(filler, 0, store, array.getSize() - 1, 1);
+                array.setStore(store, array.getSize() - 1);
+                return value;
+            }
+        }
+
+        @Specialization(guards = {"isNullOrEmpty(array)","!isUndefinedPlaceholder(object)"})
+        public Object shiftNilWithNum(VirtualFrame frame, RubyArray array, Object object) {
+            if (object instanceof Integer && ((Integer) object) < 0) {
+                CompilerDirectives.transferToInterpreter();
+                throw new RaiseException(getContext().getCoreLibrary().argumentError("negative array size", this));
+            } else {
+                if (toIntNode == null) {
+                    CompilerDirectives.transferToInterpreter();
+                    toIntNode = insert(ToIntNodeFactory.create(getContext(), getSourceSection(), null));
+                }
+                final int n = toIntNode.executeIntegerFixnum(frame, object);
+                if (n < 0) {
+                    CompilerDirectives.transferToInterpreter();
+                    throw new RaiseException(getContext().getCoreLibrary().argumentError("negative array size", this));
+                }
+            }
+            return new RubyArray(getContext().getCoreLibrary().getArrayClass(), null, 0);
+        }
+
+        @Specialization(guards = "isIntegerFixnum(array)", rewriteOn = UnexpectedResultException.class)
+        public RubyArray popIntegerFixnumInBoundsWithNum(VirtualFrame frame, RubyArray array, int num) throws UnexpectedResultException {
+            if (num < 0) {
+                CompilerDirectives.transferToInterpreter();
+                throw new RaiseException(getContext().getCoreLibrary().argumentError("negative array size", this));
+            }
+            if (CompilerDirectives.injectBranchProbability(CompilerDirectives.UNLIKELY_PROBABILITY, array.getSize() == 0)) {
+                throw new UnexpectedResultException(nil());
+            } else {
+                final int numShift = array.getSize() < num ? array.getSize() : num;
+                final int[] store = ((int[]) array.getStore());
+                final RubyArray result = new RubyArray(getContext().getCoreLibrary().getArrayClass(), Arrays.copyOfRange(store, 0 , numShift), numShift);
+                final int[] filler = new int[numShift];
+                System.arraycopy(store, numShift, store, 0 , array.getSize() - numShift);
+                System.arraycopy(filler, 0, store, array.getSize() - numShift, numShift);
+                array.setStore(store, array.getSize() - numShift);
+                return result;
+            }
+        }
+
+        @Specialization(contains = "popIntegerFixnumInBoundsWithNum", guards = "isIntegerFixnum(array)")
+        public Object popIntegerFixnumWithNum(VirtualFrame frame, RubyArray array, int num) {
+            if (num < 0) {
+                CompilerDirectives.transferToInterpreter();
+                throw new RaiseException(getContext().getCoreLibrary().argumentError("negative array size", this));
+            }
+            if (CompilerDirectives.injectBranchProbability(CompilerDirectives.UNLIKELY_PROBABILITY, array.getSize() == 0)) {
+                return nil();
+            } else {
+                final int numShift = array.getSize() < num ? array.getSize() : num;
+                final int[] store = ((int[]) array.getStore());
+                final RubyArray result = new RubyArray(getContext().getCoreLibrary().getArrayClass(), Arrays.copyOfRange(store, 0 , numShift), numShift);
+                final int[] filler = new int[numShift];
+                System.arraycopy(store, numShift, store, 0 , array.getSize() - numShift);
+                System.arraycopy(filler, 0, store, array.getSize() - numShift, numShift);
+                array.setStore(store, array.getSize() - numShift);
+                return result;
+            }
+        }
+
+        @Specialization(guards = "isLongFixnum(array)", rewriteOn = UnexpectedResultException.class)
+        public RubyArray shiftLongFixnumInBoundsWithNum(VirtualFrame frame, RubyArray array, int num) throws UnexpectedResultException {
+            if (num < 0) {
+                CompilerDirectives.transferToInterpreter();
+                throw new RaiseException(getContext().getCoreLibrary().argumentError("negative array size", this));
+            }
+            if (CompilerDirectives.injectBranchProbability(CompilerDirectives.UNLIKELY_PROBABILITY, array.getSize() == 0)) {
+                throw new UnexpectedResultException(nil());
+            } else {
+                final int numShift = array.getSize() < num ? array.getSize() : num;
+                final long[] store = ((long[]) array.getStore());
+                final RubyArray result = new RubyArray(getContext().getCoreLibrary().getArrayClass(), Arrays.copyOfRange(store, 0 , numShift), numShift);
+                final long[] filler = new long[numShift];
+                System.arraycopy(store, numShift, store, 0 , array.getSize() - numShift);
+                System.arraycopy(filler, 0, store, array.getSize() - numShift, numShift);
+                array.setStore(store, array.getSize() - numShift);
+                return result;
+            }
+        }
+
+        @Specialization(contains = "shiftLongFixnumInBoundsWithNum", guards = "isLongFixnum(array)")
+        public Object shiftLongFixnumWithNum(VirtualFrame frame, RubyArray array, int num) {
+            if (num < 0) {
+                CompilerDirectives.transferToInterpreter();
+                throw new RaiseException(getContext().getCoreLibrary().argumentError("negative array size", this));
+            }
+            if (CompilerDirectives.injectBranchProbability(CompilerDirectives.UNLIKELY_PROBABILITY, array.getSize() == 0)) {
+                return nil();
+            } else {
+                final int numShift = array.getSize() < num ? array.getSize() : num;
+                final long[] store = ((long[]) array.getStore());
+                final RubyArray result = new RubyArray(getContext().getCoreLibrary().getArrayClass(), Arrays.copyOfRange(store, 0 , numShift), numShift);
+                final long[] filler = new long[numShift];
+                System.arraycopy(store, numShift, store, 0 , array.getSize() - numShift);
+                System.arraycopy(filler, 0, store, array.getSize() - numShift, numShift);
+                array.setStore(store, array.getSize() - numShift);
+                return result;
+            }
+        }
+
+        @Specialization(guards = "isFloat(array)", rewriteOn = UnexpectedResultException.class)
+        public RubyArray shiftFloatInBoundsWithNum(VirtualFrame frame, RubyArray array, int num) throws UnexpectedResultException {
+            if (num < 0) {
+                CompilerDirectives.transferToInterpreter();
+                throw new RaiseException(getContext().getCoreLibrary().argumentError("negative array size", this));
+            }
+            if (CompilerDirectives.injectBranchProbability(CompilerDirectives.UNLIKELY_PROBABILITY, array.getSize() == 0)) {
+                throw new UnexpectedResultException(nil());
+            } else {
+                final int numShift = array.getSize() < num ? array.getSize() : num;
+                final double[] store = ((double[]) array.getStore());
+                final RubyArray result = new RubyArray(getContext().getCoreLibrary().getArrayClass(), Arrays.copyOfRange(store, 0, numShift), numShift);
+                final double[] filler = new double[numShift];
+                System.arraycopy(store, numShift, store, 0, array.getSize() - numShift);
+                System.arraycopy(filler, 0, store, array.getSize() - numShift, numShift);
+                array.setStore(store, array.getSize() - numShift);
+                return result;
+            }
+        }
+
+        @Specialization(contains = "shiftFloatInBoundsWithNum", guards = "isFloat(array)")
+        public Object shiftFloatWithNum(VirtualFrame frame, RubyArray array, int num) {
+            if (num < 0) {
+                CompilerDirectives.transferToInterpreter();
+                throw new RaiseException(getContext().getCoreLibrary().argumentError("negative array size", this));
+            }
+            if (CompilerDirectives.injectBranchProbability(CompilerDirectives.UNLIKELY_PROBABILITY, array.getSize() == 0)) {
+                return nil();
+            } else {
+                final int numShift = array.getSize() < num ? array.getSize() : num;
+                final double[] store = ((double[]) array.getStore());
+                final RubyArray result = new RubyArray(getContext().getCoreLibrary().getArrayClass(), Arrays.copyOfRange(store, 0, numShift), numShift);
+                final double[] filler = new double[numShift];
+                System.arraycopy(store, numShift, store, 0, array.getSize() - numShift);
+                System.arraycopy(filler, 0, store, array.getSize() - numShift, numShift);
+                array.setStore(store, array.getSize() - numShift);
+                return result;
+            }
+        }
+
+        @Specialization(guards = "isObject(array)")
+        public Object shiftObjectWithNum(VirtualFrame frame, RubyArray array, int num) {
+            if (num < 0) {
+                CompilerDirectives.transferToInterpreter();
+                throw new RaiseException(getContext().getCoreLibrary().argumentError("negative array size", this));
+            }
+            if (CompilerDirectives.injectBranchProbability(CompilerDirectives.UNLIKELY_PROBABILITY, array.getSize() == 0)) {
+                return nil();
+            } else {
+                final int numShift = array.getSize() < num ? array.getSize() : num;
+                final Object[] store = ((Object[]) array.getStore());
+                final RubyArray result = new RubyArray(getContext().getCoreLibrary().getArrayClass(), Arrays.copyOfRange(store, 0, numShift), numShift);
+                final Object[] filler = new Object[numShift];
+                System.arraycopy(store, numShift, store, 0, array.getSize() - numShift);
+                System.arraycopy(filler, 0, store, array.getSize() - numShift, numShift);
+                array.setStore(store, array.getSize() - numShift);
+                return result;
+            }
+        }
+
+        @Specialization(guards = {"isIntegerFixnum(array)","!isInteger(object)","!isUndefinedPlaceholder(object)"}, rewriteOn = UnexpectedResultException.class)
+        public RubyArray shiftIntegerFixnumInBoundsWithNumObj(VirtualFrame frame, RubyArray array, Object object) throws UnexpectedResultException {
+            if (toIntNode == null) {
+                CompilerDirectives.transferToInterpreter();
+                toIntNode = insert(ToIntNodeFactory.create(getContext(), getSourceSection(), null));
+            }
+            final int num = toIntNode.executeIntegerFixnum(frame, object);
+            if (num < 0) {
+                CompilerDirectives.transferToInterpreter();
+                throw new RaiseException(getContext().getCoreLibrary().argumentError("negative array size", this));
+            }
+            if (CompilerDirectives.injectBranchProbability(CompilerDirectives.UNLIKELY_PROBABILITY, array.getSize() == 0)) {
+                throw new UnexpectedResultException(nil());
+            } else {
+                final int numShift = array.getSize() < num ? array.getSize() : num;
+                final int[] store = ((int[]) array.getStore());
+                final RubyArray result = new RubyArray(getContext().getCoreLibrary().getArrayClass(), Arrays.copyOfRange(store, 0 , numShift), numShift);
+                final int[] filler = new int[numShift];
+                System.arraycopy(store, numShift, store, 0 , array.getSize() - numShift);
+                System.arraycopy(filler, 0, store, array.getSize() - numShift, numShift);
+                array.setStore(store, array.getSize() - numShift);
+                return result;
+            }
+        }
+
+        @Specialization(contains = "shiftIntegerFixnumInBoundsWithNumObj", guards = {"isIntegerFixnum(array)", "!isInteger(object)", "!isUndefinedPlaceholder(object)"} )
+        public Object shiftIntegerFixnumWithNumObj(VirtualFrame frame, RubyArray array, Object object) {
+            if (toIntNode == null) {
+                CompilerDirectives.transferToInterpreter();
+                toIntNode = insert(ToIntNodeFactory.create(getContext(), getSourceSection(), null));
+            }
+            final int num = toIntNode.executeIntegerFixnum(frame, object);
+            if (num < 0) {
+                CompilerDirectives.transferToInterpreter();
+                throw new RaiseException(getContext().getCoreLibrary().argumentError("negative array size", this));
+            }
+            if (CompilerDirectives.injectBranchProbability(CompilerDirectives.UNLIKELY_PROBABILITY, array.getSize() == 0)) {
+                return nil();
+            } else {
+                final int numShift = array.getSize() < num ? array.getSize() : num;
+                final int[] store = ((int[]) array.getStore());
+                final RubyArray result = new RubyArray(getContext().getCoreLibrary().getArrayClass(), Arrays.copyOfRange(store, 0 , numShift), numShift);
+                final int[] filler = new int[numShift];
+                System.arraycopy(store, numShift, store, 0 , array.getSize() - numShift);
+                System.arraycopy(filler, 0, store, array.getSize() - numShift, numShift);
+                array.setStore(store, array.getSize() - numShift);
+                return result;
+            }
+        }
+
+        @Specialization(guards = {"isLongFixnum(array)", "!isInteger(object)", "!isUndefinedPlaceholder(object)"} , rewriteOn = UnexpectedResultException.class)
+        public RubyArray shiftLongFixnumInBoundsWithNumObj(VirtualFrame frame, RubyArray array, Object object) throws UnexpectedResultException {
+            if (toIntNode == null) {
+                CompilerDirectives.transferToInterpreter();
+                toIntNode = insert(ToIntNodeFactory.create(getContext(), getSourceSection(), null));
+            }
+            final int num = toIntNode.executeIntegerFixnum(frame, object);
+            if (num < 0) {
+                CompilerDirectives.transferToInterpreter();
+                throw new RaiseException(getContext().getCoreLibrary().argumentError("negative array size", this));
+            }
+            if (CompilerDirectives.injectBranchProbability(CompilerDirectives.UNLIKELY_PROBABILITY, array.getSize() == 0)) {
+                throw new UnexpectedResultException(nil());
+            } else {
+                final int numShift = array.getSize() < num ? array.getSize() : num;
+                final long[] store = ((long[]) array.getStore());
+                final RubyArray result = new RubyArray(getContext().getCoreLibrary().getArrayClass(), Arrays.copyOfRange(store, 0 , numShift), numShift);
+                final long[] filler = new long[numShift];
+                System.arraycopy(store, numShift, store, 0 , array.getSize() - numShift);
+                System.arraycopy(filler, 0, store, array.getSize() - numShift, numShift);
+                array.setStore(store, array.getSize() - numShift);
+                return result;
+            }
+        }
+
+        @Specialization(contains = "shiftLongFixnumInBoundsWithNumObj", guards = {"isLongFixnum(array)","!isInteger(object)","!isUndefinedPlaceholder(object)"})
+        public Object shiftLongFixnumWithNumObj(VirtualFrame frame, RubyArray array, Object object) {
+            if (toIntNode == null) {
+                CompilerDirectives.transferToInterpreter();
+                toIntNode = insert(ToIntNodeFactory.create(getContext(), getSourceSection(), null));
+            }
+            final int num = toIntNode.executeIntegerFixnum(frame, object);
+            if (num < 0) {
+                CompilerDirectives.transferToInterpreter();
+                throw new RaiseException(getContext().getCoreLibrary().argumentError("negative array size", this));
+            }
+            if (CompilerDirectives.injectBranchProbability(CompilerDirectives.UNLIKELY_PROBABILITY, array.getSize() == 0)) {
+                return nil();
+            } else {
+                final int numShift = array.getSize() < num ? array.getSize() : num;
+                final long[] store = ((long[]) array.getStore());
+                final RubyArray result = new RubyArray(getContext().getCoreLibrary().getArrayClass(), Arrays.copyOfRange(store, 0 , numShift), numShift);
+                final long[] filler = new long[numShift];
+                System.arraycopy(store, numShift, store, 0 , array.getSize() - numShift);
+                System.arraycopy(filler, 0, store, array.getSize() - numShift, numShift);
+                array.setStore(store, array.getSize() - numShift);
+                return result;          }
+        }
+
+        @Specialization(guards = {"isFloat(array)","!isInteger(object)","!isUndefinedPlaceholder(object)"}, rewriteOn = UnexpectedResultException.class)
+        public RubyArray shiftFloatInBoundsWithNumObj(VirtualFrame frame, RubyArray array, Object object) throws UnexpectedResultException {
+            if (toIntNode == null) {
+                CompilerDirectives.transferToInterpreter();
+                toIntNode = insert(ToIntNodeFactory.create(getContext(), getSourceSection(), null));
+            }
+            final int num = toIntNode.executeIntegerFixnum(frame, object);
+            if (num < 0) {
+                CompilerDirectives.transferToInterpreter();
+                throw new RaiseException(getContext().getCoreLibrary().argumentError("negative array size", this));
+            }
+            if (CompilerDirectives.injectBranchProbability(CompilerDirectives.UNLIKELY_PROBABILITY, array.getSize() == 0)) {
+                throw new UnexpectedResultException(nil());
+            } else {
+                final int numShift = array.getSize() < num ? array.getSize() : num;
+                final double[] store = ((double[]) array.getStore());
+                final RubyArray result = new RubyArray(getContext().getCoreLibrary().getArrayClass(), Arrays.copyOfRange(store, 0, array.getSize() - numShift), numShift);
+                final double[] filler = new double[numShift];
+                System.arraycopy(store, numShift, store, 0, array.getSize() - numShift);
+                System.arraycopy(filler, 0, store, array.getSize() - numShift, numShift);
+                array.setStore(store, array.getSize() - numShift);
+                return result;
+            }
+        }
+
+        @Specialization(contains = "shiftFloatInBoundsWithNumObj", guards = {"isFloat(array)","!isInteger(object)","!isUndefinedPlaceholder(object)"})
+        public Object shiftFloatWithNumObj(VirtualFrame frame, RubyArray array, Object object) {
+            if (toIntNode == null) {
+                CompilerDirectives.transferToInterpreter();
+                toIntNode = insert(ToIntNodeFactory.create(getContext(), getSourceSection(), null));
+            }
+            final int num = toIntNode.executeIntegerFixnum(frame, object);
+            if (num < 0) {
+                CompilerDirectives.transferToInterpreter();
+                throw new RaiseException(getContext().getCoreLibrary().argumentError("negative array size", this));
+            }
+            if (CompilerDirectives.injectBranchProbability(CompilerDirectives.UNLIKELY_PROBABILITY, array.getSize() == 0)) {
+                return nil();
+            } else {
+                final int numShift = array.getSize() < num ? array.getSize() : num;
+                final double[] store = ((double[]) array.getStore());
+                final RubyArray result = new RubyArray(getContext().getCoreLibrary().getArrayClass(), Arrays.copyOfRange(store, 0, array.getSize() - numShift), numShift);
+                final double[] filler = new double[numShift];
+                System.arraycopy(store, numShift, store, 0, array.getSize() - numShift);
+                System.arraycopy(filler, 0, store, array.getSize() - numShift, numShift);
+                array.setStore(store, array.getSize() - numShift);
+                return result;
+            }
+        }
+
+        @Specialization(guards = {"isObject(array)","!isInteger(object)","!isUndefinedPlaceholder(object)"})
+        public Object shiftObjectWithNumObj(VirtualFrame frame, RubyArray array, Object object) {
+            if (toIntNode == null) {
+                CompilerDirectives.transferToInterpreter();
+                toIntNode = insert(ToIntNodeFactory.create(getContext(), getSourceSection(), null));
+            }
+            final int num = toIntNode.executeIntegerFixnum(frame, object);
+            if (num < 0) {
+                CompilerDirectives.transferToInterpreter();
+                throw new RaiseException(getContext().getCoreLibrary().argumentError("negative array size", this));
+            }
+            if (CompilerDirectives.injectBranchProbability(CompilerDirectives.UNLIKELY_PROBABILITY, array.getSize() == 0)) {
+                return nil();
+            } else {
+                final int numShift = array.getSize() < num ? array.getSize() : num;
+                final Object[] store = ((Object[]) array.getStore());
+                final RubyArray result = new RubyArray(getContext().getCoreLibrary().getArrayClass(), Arrays.copyOfRange(store, 0, array.getSize() - numShift), numShift);
+                final Object[] filler = new Object[numShift];
+                System.arraycopy(store, numShift, store, 0, array.getSize() - numShift);
+                System.arraycopy(filler, 0, store, array.getSize() - numShift, numShift);
+                array.setStore(store, array.getSize() - numShift);
+                return result;
+            }
+        }
     }
 
     @CoreMethod(names = {"size", "length"})
@@ -3334,43 +4626,6 @@ public abstract class ArrayNodes {
 
     }
 
-    @CoreMethod(names = "uniq")
-    public abstract static class UniqNode extends CoreMethodNode {
-
-        public UniqNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
-        public UniqNode(UniqNode prev) {
-            super(prev);
-        }
-
-        @Specialization
-        public RubyArray uniq(RubyArray array) {
-            notDesignedForCompilation();
-
-            final RubyArray uniq = new RubyArray(getContext().getCoreLibrary().getArrayClass(), null, 0);
-
-            for (Object value : array.slowToArray()) {
-                boolean duplicate = false;
-
-                for (Object compare : uniq.slowToArray()) {
-                    if ((boolean) DebugOperations.send(getContext(), value, "==", null, compare)) {
-                        duplicate = true;
-                        break;
-                    }
-                }
-
-                if (!duplicate) {
-                    uniq.slowPush(value);
-                }
-            }
-
-            return uniq;
-        }
-
-    }
-
     @CoreMethod(names = "unshift", argumentsAsArray = true, raiseIfFrozenSelf = true)
     public abstract static class UnshiftNode extends CoreMethodNode {
 
@@ -3392,7 +4647,7 @@ public abstract class ArrayNodes {
 
     }
 
-    @CoreMethod(names = "zip", required = 1)
+    @CoreMethod(names = "zip", required = 1, argumentsAsArray = true)
     public abstract static class ZipNode extends ArrayCoreMethodNode {
 
         public ZipNode(RubyContext context, SourceSection sourceSection) {
@@ -3403,40 +4658,88 @@ public abstract class ArrayNodes {
             super(prev);
         }
 
-        @Specialization(guards = {"isObject(array)", "isOtherIntegerFixnum(array, other)"})
-        public RubyArray zipObjectIntegerFixnum(RubyArray array, RubyArray other) {
+        @Specialization(guards = {"isObject(array)", "isOtherSingleIntegerFixnumArray(array, others)"})
+        public RubyArray zipObjectIntegerFixnum(RubyArray array, Object[] others) {
+            final RubyArray other = (RubyArray) others[0];
             final Object[] a = (Object[]) array.getStore();
-            final int aLength = array.getSize();
 
             final int[] b = (int[]) other.getStore();
             final int bLength = other.getSize();
 
-            final int zippedLength = Math.min(aLength, bLength);
+            final int zippedLength = array.getSize();
             final Object[] zipped = new Object[zippedLength];
 
-            for (int n = 0; n < zippedLength; n++) {
-                zipped[n] = new RubyArray(getContext().getCoreLibrary().getArrayClass(), new Object[]{a[n], b[n]}, 2);
+            final boolean areSameLength = bLength == zippedLength;
+
+            if (areSameLength) {
+                for (int n = 0; n < zippedLength; n++) {
+                    zipped[n] = new RubyArray(getContext().getCoreLibrary().getArrayClass(), new Object[]{a[n], b[n]}, 2);
+                }
+            } else {
+                for (int n = 0; n < zippedLength; n++) {
+                    if (n < bLength) {
+                        zipped[n] = new RubyArray(getContext().getCoreLibrary().getArrayClass(), new Object[]{a[n], b[n]}, 2);
+                    } else {
+                        zipped[n] = new RubyArray(getContext().getCoreLibrary().getArrayClass(), new Object[]{a[n], nil()}, 2);
+                    }
+                }
             }
 
             return new RubyArray(getContext().getCoreLibrary().getArrayClass(), zipped, zippedLength);
         }
 
-        @Specialization(guards = {"isObject(array)", "isOtherObject(array, other)"})
-        public RubyArray zipObjectObject(RubyArray array, RubyArray other) {
+        @Specialization(guards = {"isObject(array)", "isOtherSingleObjectArray(array, others)"})
+        public RubyArray zipObjectObject(RubyArray array, Object[] others) {
+            final RubyArray other = (RubyArray) others[0];
             final Object[] a = (Object[]) array.getStore();
-            final int aLength = array.getSize();
 
             final Object[] b = (Object[]) other.getStore();
             final int bLength = other.getSize();
 
-            final int zippedLength = Math.min(aLength, bLength);
+            final int zippedLength = array.getSize();
             final Object[] zipped = new Object[zippedLength];
 
-            for (int n = 0; n < zippedLength; n++) {
-                zipped[n] = new RubyArray(getContext().getCoreLibrary().getArrayClass(), new Object[]{a[n], b[n]}, 2);
+            final boolean areSameLength = bLength == zippedLength;
+
+            if (areSameLength) {
+                for (int n = 0; n < zippedLength; n++) {
+                    zipped[n] = new RubyArray(getContext().getCoreLibrary().getArrayClass(), new Object[]{a[n], b[n]}, 2);
+                }
+            } else {
+                for (int n = 0; n < zippedLength; n++) {
+                    if (n < bLength) {
+                        zipped[n] = new RubyArray(getContext().getCoreLibrary().getArrayClass(), new Object[]{a[n], b[n]}, 2);
+                    } else {
+                        zipped[n] = new RubyArray(getContext().getCoreLibrary().getArrayClass(), new Object[]{a[n], nil()}, 2);
+                    }
+                }
             }
 
+
             return new RubyArray(getContext().getCoreLibrary().getArrayClass(), zipped, zippedLength);
+        }
+
+        @Specialization(guards = {"!isOtherSingleObjectArray(array, others)"})
+        public Object zipObjectObjectNotSingleObject(VirtualFrame frame, RubyArray array, Object[] others) {
+            return zipRuby(frame, others);
+        }
+
+        @Specialization(guards = {"!isOtherSingleIntegerFixnumArray(array, others)"})
+        public Object zipObjectObjectNotSingleInteger(VirtualFrame frame, RubyArray array, Object[] others) {
+            return zipRuby(frame, others);
+        }
+
+        @Specialization(guards = {"!isObject(array)"})
+        public Object zipObjectObjectNotObject(VirtualFrame frame, RubyArray array, Object[] others) {
+            return zipRuby(frame, others);
+        }
+
+        private Object zipRuby(VirtualFrame frame, Object[] others) {
+            RubyBasicObject proc = RubyArguments.getBlock(frame.getArguments());
+            if (proc == null) {
+                proc = nil();
+            }
+            return ruby(frame, "zip_internal(*others, &block)", "others", new RubyArray(getContext().getCoreLibrary().getArrayClass(), others, others.length), "block", proc);
         }
 
     }

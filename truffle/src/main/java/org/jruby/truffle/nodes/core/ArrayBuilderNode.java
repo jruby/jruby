@@ -146,7 +146,6 @@ public abstract class ArrayBuilderNode extends Node {
         private final int expectedLength;
 
         @CompilerDirectives.CompilationFinal private boolean hasAppendedIntegerArray = false;
-        @CompilerDirectives.CompilationFinal private boolean hasAppendedObjectArray = false;
 
         public IntegerArrayBuilderNode(RubyContext context, int expectedLength) {
             super(context);
@@ -200,11 +199,6 @@ public abstract class ArrayBuilderNode extends Node {
                 return store;
             }
 
-            if (hasAppendedObjectArray && otherStore instanceof Object[]) {
-                System.arraycopy(otherStore, 0, store, index, array.getSize());
-                return store;
-            }
-
             CompilerDirectives.transferToInterpreterAndInvalidate();
 
             if (otherStore instanceof int[]) {
@@ -213,13 +207,13 @@ public abstract class ArrayBuilderNode extends Node {
                 return store;
             }
 
-            if (otherStore instanceof Object[]) {
-                hasAppendedObjectArray = true;
-                System.arraycopy(otherStore, 0, store, index, array.getSize());
-                return store;
-            }
+            CompilerDirectives.transferToInterpreter();
 
-            throw new UnsupportedOperationException(array.getStore().getClass().getName());
+            replace(new ObjectArrayBuilderNode(getContext(), expectedLength));
+            final Object[] newStore = ArrayUtils.box((int[]) store);
+            System.arraycopy(otherStore, 0, newStore, index, array.getSize());
+
+            return newStore;
         }
 
         @Override
@@ -481,6 +475,10 @@ public abstract class ArrayBuilderNode extends Node {
 
         @Override
         public Object append(Object store, int index, Object value) {
+            if (index >= ((Object[]) store).length) {
+                new Exception().printStackTrace();
+            }
+
             ((Object[]) store)[index] = value;
             return store;
         }

@@ -5246,7 +5246,7 @@ states[634] = new ParserState() {
   }
 };
 }
-					// line 2511 "RubyParser.y"
+					// line 2515 "RubyParser.y"
 
     /** The parse method use an lexer stream and parse it to an AST node 
      * structure

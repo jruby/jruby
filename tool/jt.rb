@@ -9,42 +9,97 @@
 
 # A workflow tool for JRuby+Truffle development
 
-# Recommended: function jt { ruby PATH/TO/jruby/tool/jt.rb $@; }
+# Recommended: function jt { ruby tool/jt.rb $@; }
 
 require 'fileutils'
 require 'digest/sha1'
 
 JRUBY_DIR = File.expand_path('../..', __FILE__)
 
+# wait for sub-processes to handle the interrupt
+trap(:INT) {}
+
 module Utilities
 
-  GRAAL_LOCATIONS = [
-    ENV['GRAAL_BIN'],
-    'graalvm-jdk1.8.0/bin/java',
-    '../graalvm-jdk1.8.0/bin/java',
-    '../../graal/graalvm-jdk1.8.0/bin/java'
-  ].compact.map { |path| File.expand_path(path, JRUBY_DIR) }
-
-  BENCH_LOCATIONS = [
-    ENV['BENCH_DIR'],
-    'bench9000',
-    '../bench9000'
-  ].compact.map { |path| File.expand_path(path, JRUBY_DIR) }
+  def self.graal_version
+    File.foreach("#{JRUBY_DIR}/truffle/pom.rb") do |line|
+      if /jar 'com.oracle:truffle:(\d+\.\d+(?:-SNAPSHOT)?)'/ =~ line
+        break $1
+      end
+    end
+  end
 
   def self.find_graal
+    base_graal_path = if graal_version.include?('SNAPSHOT')
+      'basic-graal/jdk1.8.0_05/product'
+    else
+      'graalvm-jdk1.8.0'
+    end
+
+    graal_locations = [
+      ENV["GRAAL_BIN_#{mangle_for_env(git_branch)}"],
+      ENV['GRAAL_BIN'],
+      "#{base_graal_path}/bin/java",
+      "../#{base_graal_path}/bin/java",
+      "../../#{base_graal_path}/bin/java",
+    ].compact.map { |path| File.expand_path(path, JRUBY_DIR) }
+
     not_found = -> {
       raise "couldn't find graal - download it from http://lafo.ssw.uni-linz.ac.at/graalvm/ and extract it into the JRuby repository or parent directory"
     }
-    GRAAL_LOCATIONS.find(not_found) do |location|
+
+    graal_locations.find(not_found) do |location|
       File.executable?(location)
     end
   end
 
+  def self.git_branch
+    @git_branch ||= `git rev-parse --abbrev-ref HEAD`.strip
+  end
+
+  def self.mangle_for_env(name)
+    name.upcase.tr('-', '_')
+  end
+
+  def self.find_graal_mx
+    mx = File.expand_path('../../../../mx.sh', find_graal)
+    raise "couldn't find mx.sh - set GRAAL_BIN, and you need to use a checkout of Graal, not a build" unless File.executable?(mx)
+    mx
+  end
+
+  def self.igv_running?
+    `ps`.lines.any? { |p| p.include? 'mxtool/mx.py igv' }
+  end
+
+  def self.ensure_igv_running
+    unless igv_running?
+      spawn "#{find_graal_mx} igv", pgroup: true
+      sleep 5
+      puts
+      puts
+      puts "-------------"
+      puts "Waiting for IGV start"
+      puts "The first time you run IGV it may take several minutes to download dependencies and compile"
+      puts "Press enter when you see the IGV window"
+      puts "-------------"
+      puts
+      puts
+      $stdin.gets
+    end
+  end
+
   def self.find_bench
+    bench_locations = [
+      ENV['BENCH_DIR'],
+      'bench9000',
+      '../bench9000'
+    ].compact.map { |path| File.expand_path(path, JRUBY_DIR) }
+
     not_found = -> {
       raise "couldn't find bench9000 - clone it from https://github.com/jruby/bench9000.git into the JRuby repository or parent directory"
     }
-    BENCH_LOCATIONS.find(not_found) do |location|
+
+    bench_locations.find(not_found) do |location|
       Dir.exist?(location)
     end
   end
@@ -59,15 +114,10 @@ module ShellUtils
   private
 
   def raw_sh(*args)
-    begin
-      result = system(*args)
-    rescue Interrupt
-      abort # Ignore Ctrl+C
-    else
-      unless result
-        $stderr.puts "FAILED (#{$?}): #{args * ' '}"
-        exit $?.exitstatus
-      end
+    result = system(*args)
+    unless result
+      $stderr.puts "FAILED (#{$?}): #{args * ' '}"
+      exit $?.exitstatus
     end
   end
 
@@ -98,6 +148,7 @@ module Commands
     puts '    --graal        use Graal (set GRAAL_BIN or it will try to automagically find it)'
     puts '    --asm          show assembly (implies --graal)'
     puts '    --server       run an instrumentation server on port 8080'
+    puts '    --igv          make sure IGV is running and dump Graal graphs after partial escape (implies --graal)'
     puts 'jt test                                      run all specs'
     puts 'jt test fast                                 run all specs except sub-processes, GC, sleep, ...'
     puts 'jt test spec/ruby/language                   run specs in this directory'
@@ -118,6 +169,12 @@ module Commands
     puts 'jt install ..../graal/mx/suite.py            install a JRuby distribution into an mx suite'
     puts
     puts 'you can also put build or rebuild in front of any command'
+    puts
+    puts 'recognised environment variables:'
+    puts
+    puts '  GRAAL_BIN                                  GraalVM executable (java command) to use'
+    puts '  GRAAL_BIN_...git_branch_name...            GraalVM executable to use for a given branch'
+    puts '           branch names are mangled - eg truffle-head becomes GRAAL_BIN_TRUFFLE_HEAD'
   end
 
   def build(project = nil)
@@ -144,7 +201,7 @@ module Commands
     env_vars = {}
     jruby_args = %w[-X+T]
 
-    { '--asm' => '--graal' }.each_pair do |arg, dep|
+    { '--asm' => '--graal', '--igv' => '--graal' }.each_pair do |arg, dep|
       args.unshift dep if args.include?(arg)
     end
 
@@ -165,8 +222,15 @@ module Commands
       jruby_args += %w[-Xtruffle.instrumentation_server_port=8080 -Xtruffle.passalot=1]
     end
 
+    if args.delete('--igv')
+      raise "--igv doesn't work on master - you need a branch that builds against latest graal" if Utilities.git_branch == 'master'
+      Utilities.ensure_igv_running
+      jruby_args += %w[-J-G:Dump=TrufflePartialEscape]
+    end
+
     raw_sh(env_vars, "#{JRUBY_DIR}/bin/jruby", *jruby_args, *args)
   end
+  alias ruby run
 
   def test(*args)
     return test_pe if args == ['pe']
@@ -242,19 +306,28 @@ module Commands
   def install(arg)
     case arg
     when /.*suite.*\.py$/
-      suite_file = arg
+      mvn 'package'
       mvn '-Pcomplete'
-      sh 'tool/remove-bundled-truffle.sh'
-      jar_name = "jruby-complete-no-truffle-#{Utilities.jruby_version}.jar"
-      source_jar_name = "maven/jruby-complete/target/#{jar_name}"
-      shasum = Digest::SHA1.hexdigest File.read(source_jar_name)
-      shasum_jar_name = "jruby-complete-no-truffle-#{Utilities.jruby_version}-#{shasum}.jar"
-      FileUtils.cp source_jar_name, "#{File.expand_path('../..', suite_file)}/lib/#{shasum_jar_name}"
+
+      suite_file = arg
       suite_lines = File.readlines(suite_file)
-      line_index = suite_lines.find_index { |line| line.start_with? '      "path" : "lib/jruby-complete-no-truffle' }
-      suite_lines[line_index] = "      \"path\" : \"lib/#{shasum_jar_name}\",\n"
-      suite_lines[line_index + 1] = "      \#\"urls\" : [\"http://lafo.ssw.uni-linz.ac.at/truffle/ruby/#{shasum_jar_name}\"],\n"
-      suite_lines[line_index + 2] = "      \"sha1\" : \"#{shasum}\"\n"
+      version = Utilities.jruby_version
+
+      [
+        ['maven/jruby-complete/target', "jruby-complete"],
+        ['truffle/target', "jruby-truffle"]
+      ].each do |dir, name|
+        jar_name = "#{name}-#{version}.jar"
+        source_jar_path = "#{dir}/#{jar_name}"
+        shasum = Digest::SHA1.hexdigest File.read(source_jar_path)
+        jar_shasum_name = "#{name}-#{version}-#{shasum}.jar"
+        FileUtils.cp source_jar_path, "#{File.expand_path('../..', suite_file)}/lib/#{jar_shasum_name}"
+        line_index = suite_lines.find_index { |line| line.start_with? "      \"path\" : \"lib/#{name}" }
+        suite_lines[line_index] = "      \"path\" : \"lib/#{jar_shasum_name}\",\n"
+        suite_lines[line_index + 1] = "      \#\"urls\" : [\"http://lafo.ssw.uni-linz.ac.at/truffle/ruby/#{jar_shasum_name}\"],\n"
+        suite_lines[line_index + 2] = "      \"sha1\" : \"#{shasum}\"\n"
+      end
+
       File.write(suite_file, suite_lines.join())
     else
       raise ArgumentError, kind

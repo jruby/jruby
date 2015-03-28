@@ -30,14 +30,12 @@ describe :rexml_document_add, :shared => true do
     @doc.doctype.name.should == "transitional"
   end
 
-  ruby_bug "#19058", "1.8" do
-    # MRI 1.8.x and 1.9 bug. A patch has been submitted.
-    # http://rubyforge.org/tracker/index.php?func=detail&aid=19058&group_id=426&atid=1698
-    it "overwrites existing DocType" do
-      @doc.send(@method, REXML::DocType.new("transitional"))
-      @doc.send(@method, REXML::DocType.new("strict"))
-      @doc.doctype.name.should == "strict"
-    end
+  # MRI 1.8.x and 1.9 bug. A patch has been submitted.
+  # http://rubyforge.org/tracker/index.php?func=detail&aid=19058&group_id=426&atid=1698
+  it "overwrites existing DocType" do
+    @doc.send(@method, REXML::DocType.new("transitional"))
+    @doc.send(@method, REXML::DocType.new("strict"))
+    @doc.doctype.name.should == "strict"
   end
 
   it "adds root node unless it exists" do

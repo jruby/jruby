@@ -52,7 +52,6 @@ import org.jruby.truffle.runtime.rubinius.RubiniusByteArray;
                 RubyHash.class, //
                 RubyMatchData.class, //
                 RubyModule.class, //
-                RubyMutex.class, //
                 RubyNilClass.class, //
                 RubyProc.class, //
                 RubyRange.class, //
