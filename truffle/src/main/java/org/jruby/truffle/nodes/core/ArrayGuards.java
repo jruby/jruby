@@ -128,5 +128,13 @@ public class ArrayGuards {
         return others.length == 2 && others[0] instanceof Integer && others[1] instanceof Object;
     }
 
+    public static boolean isNegative(RubyArray array, int size) {
+        return size < 0;
+    }
+
+    public static boolean isNegative(RubyArray array, long size) {
+        return size < 0;
+    }
+
 
 }
