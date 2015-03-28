@@ -38,15 +38,13 @@ describe "GzipReader#read" do
     gz.read(0).should == ""
   end
 
-  ruby_version_is "1.9" do
-    it "respects :external_encoding option" do
-      gz = Zlib::GzipReader.new(@io, :external_encoding => 'UTF-8')
-      gz.read.encoding.should == Encoding::UTF_8
+  it "respects :external_encoding option" do
+    gz = Zlib::GzipReader.new(@io, :external_encoding => 'UTF-8')
+    gz.read.encoding.should == Encoding::UTF_8
 
-      @io.rewind
-      gz = Zlib::GzipReader.new(@io, :external_encoding => 'UTF-16LE')
-      gz.read.encoding.should == Encoding::UTF_16LE
-    end
+    @io.rewind
+    gz = Zlib::GzipReader.new(@io, :external_encoding => 'UTF-16LE')
+    gz.read.encoding.should == Encoding::UTF_16LE
   end
 
   describe "at the end of data" do

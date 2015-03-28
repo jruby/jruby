@@ -102,13 +102,11 @@ describe "Range#step" do
         ScratchPad.recorded.should eql([-1.0, -0.5, 0.0, 0.5, 1.0])
       end
 
-      ruby_bug "redmine #4576", "1.9.3" do
-        it "returns Float values of 'step * n + begin <= end'" do
-          (1.0..6.4).step(1.8) { |x| ScratchPad << x }
-          (1.0..12.7).step(1.3) { |x| ScratchPad << x }
-          ScratchPad.recorded.should eql([1.0, 2.8, 4.6, 6.4, 1.0, 2.3, 3.6,
-                                         4.9, 6.2, 7.5, 8.8, 10.1, 11.4, 12.7])
-        end
+      it "returns Float values of 'step * n + begin <= end'" do
+        (1.0..6.4).step(1.8) { |x| ScratchPad << x }
+        (1.0..12.7).step(1.3) { |x| ScratchPad << x }
+        ScratchPad.recorded.should eql([1.0, 2.8, 4.6, 6.4, 1.0, 2.3, 3.6,
+                                       4.9, 6.2, 7.5, 8.8, 10.1, 11.4, 12.7])
       end
     end
 
@@ -206,12 +204,10 @@ describe "Range#step" do
         ScratchPad.recorded.should eql([-1.0, -0.5, 0.0, 0.5])
       end
 
-      ruby_bug "redmine #4576", "1.9.3" do
-        it "returns Float values of 'step * n + begin < end'" do
-          (1.0...6.4).step(1.8) { |x| ScratchPad << x }
-          (1.0...55.6).step(18.2) { |x| ScratchPad << x }
-          ScratchPad.recorded.should eql([1.0, 2.8, 4.6, 1.0, 19.2, 37.4])
-        end
+      it "returns Float values of 'step * n + begin < end'" do
+        (1.0...6.4).step(1.8) { |x| ScratchPad << x }
+        (1.0...55.6).step(18.2) { |x| ScratchPad << x }
+        ScratchPad.recorded.should eql([1.0, 2.8, 4.6, 1.0, 19.2, 37.4])
       end
     end
 

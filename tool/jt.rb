@@ -306,19 +306,28 @@ module Commands
   def install(arg)
     case arg
     when /.*suite.*\.py$/
-      suite_file = arg
+      mvn 'package'
       mvn '-Pcomplete'
-      sh 'tool/remove-bundled-truffle.sh'
-      jar_name = "jruby-complete-no-truffle-#{Utilities.jruby_version}.jar"
-      source_jar_name = "maven/jruby-complete/target/#{jar_name}"
-      shasum = Digest::SHA1.hexdigest File.read(source_jar_name)
-      shasum_jar_name = "jruby-complete-no-truffle-#{Utilities.jruby_version}-#{shasum}.jar"
-      FileUtils.cp source_jar_name, "#{File.expand_path('../..', suite_file)}/lib/#{shasum_jar_name}"
+
+      suite_file = arg
       suite_lines = File.readlines(suite_file)
-      line_index = suite_lines.find_index { |line| line.start_with? '      "path" : "lib/jruby-complete-no-truffle' }
-      suite_lines[line_index] = "      \"path\" : \"lib/#{shasum_jar_name}\",\n"
-      suite_lines[line_index + 1] = "      \#\"urls\" : [\"http://lafo.ssw.uni-linz.ac.at/truffle/ruby/#{shasum_jar_name}\"],\n"
-      suite_lines[line_index + 2] = "      \"sha1\" : \"#{shasum}\"\n"
+      version = Utilities.jruby_version
+
+      [
+        ['maven/jruby-complete/target', "jruby-complete"],
+        ['truffle/target', "jruby-truffle"]
+      ].each do |dir, name|
+        jar_name = "#{name}-#{version}.jar"
+        source_jar_path = "#{dir}/#{jar_name}"
+        shasum = Digest::SHA1.hexdigest File.read(source_jar_path)
+        jar_shasum_name = "#{name}-#{version}-#{shasum}.jar"
+        FileUtils.cp source_jar_path, "#{File.expand_path('../..', suite_file)}/lib/#{jar_shasum_name}"
+        line_index = suite_lines.find_index { |line| line.start_with? "      \"path\" : \"lib/#{name}" }
+        suite_lines[line_index] = "      \"path\" : \"lib/#{jar_shasum_name}\",\n"
+        suite_lines[line_index + 1] = "      \#\"urls\" : [\"http://lafo.ssw.uni-linz.ac.at/truffle/ruby/#{jar_shasum_name}\"],\n"
+        suite_lines[line_index + 2] = "      \"sha1\" : \"#{shasum}\"\n"
+      end
+
       File.write(suite_file, suite_lines.join())
     else
       raise ArgumentError, kind

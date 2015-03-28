@@ -40,16 +40,8 @@ describe "Comparable#==" do
       a.should_receive(:<=>).once.and_return(nil)
     end
 
-    ruby_version_is ""..."1.9" do
-      it "returns nil" do
-        (a == b).should == nil
-      end
-    end
-
-    ruby_version_is "1.9" do
-      it "returns false" do
-        (a == b).should be_false
-      end
+    it "returns false" do
+      (a == b).should be_false
     end
   end
 
@@ -58,13 +50,7 @@ describe "Comparable#==" do
       a.should_receive(:<=>).once.and_return("abc")
     end
 
-    ruby_version_is ""..."1.9" do
-      it "returns nil" do
-        (a == b).should == nil
-      end
-    end
-
-    ruby_version_is "1.9"...no_silent_rescue do
+    ruby_version_is ""...no_silent_rescue do
       it "returns false" do
         (a == b).should be_false
       end
@@ -83,13 +69,7 @@ describe "Comparable#==" do
         a.should_receive(:<=>).once.and_raise(StandardError)
       end
 
-      ruby_version_is ""..."1.9" do
-        it "returns nil" do
-          (a == b).should == nil
-        end
-      end
-
-      ruby_version_is "1.9"...no_silent_rescue do
+      ruby_version_is ""...no_silent_rescue do
         # Behaviour confirmed by MRI test suite
         it "returns false" do
           (a == b).should be_false
@@ -109,13 +89,7 @@ describe "Comparable#==" do
         a.should_receive(:<=>).once.and_raise(TypeError)
       end
 
-      ruby_version_is ""..."1.9" do
-        it "returns nil" do
-          (a == b).should == nil
-        end
-      end
-
-      ruby_version_is "1.9"...no_silent_rescue do
+      ruby_version_is ""...no_silent_rescue do
         it "returns false" do
           (a == b).should be_false
         end

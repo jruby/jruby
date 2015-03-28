@@ -20,16 +20,14 @@ describe :bigdecimal_eql, :shared => true do
     @bigint.send(@method, 1000).should == true
   end
 
-  ruby_bug "redmine:2349", "1.8.7" do
-    it "NaN is never equal to any number" do
-      @nan.send(@method, @nan).should == false
-      @a.send(@method, @nan).should == false
-      @nan.send(@method, @a).should == false
-      @nan.send(@method, @infinity).should == false
-      @nan.send(@method, @infinity_minus).should == false
-      @infinity.send(@method, @nan).should == false
-      @infinity_minus.send(@method, @nan).should == false
-    end
+  it "NaN is never equal to any number" do
+    @nan.send(@method, @nan).should == false
+    @a.send(@method, @nan).should == false
+    @nan.send(@method, @a).should == false
+    @nan.send(@method, @infinity).should == false
+    @nan.send(@method, @infinity_minus).should == false
+    @infinity.send(@method, @nan).should == false
+    @infinity_minus.send(@method, @nan).should == false
   end
 
   it "returns true for infinity values with the same sign" do
@@ -55,11 +53,9 @@ describe :bigdecimal_eql, :shared => true do
     @a.send(@method, @infinity_minus).should == false
   end
 
-  ruby_bug "redmine:2349", "1.8.7" do
-    it "returns false when compared objects that can not be coerced into BigDecimal" do
-      @infinity.send(@method, nil).should == false
-      @bigint.send(@method, nil).should == false
-      @nan.send(@method, nil).should == false
-    end
+  it "returns false when compared objects that can not be coerced into BigDecimal" do
+    @infinity.send(@method, nil).should == false
+    @bigint.send(@method, nil).should == false
+    @nan.send(@method, nil).should == false
   end
 end

@@ -91,6 +91,33 @@ class Array
     Array.new self[0, n]
   end
 
+  def zip_internal(*others)
+    out = Array.new(size) { [] }
+    others = others.map do |ary|
+      if ary.respond_to?(:to_ary)
+        ary.to_ary
+      else
+        elements = []
+        ary.each { |e| elements << e }
+        elements
+      end
+    end
+
+    size.times do |i|
+      slot = out.at(i)
+      slot << @tuple.at(@start + i)
+      others.each { |ary| slot << ary.at(i) }
+    end
+
+    if block_given?
+      out.each { |ary| yield ary }
+      return nil
+    end
+
+    out
+  end
+
+
   def hash
     hash_val = size
     mask = Fixnum::MAX >> 1
@@ -1087,6 +1114,31 @@ class Array
     end
 
     out
+  end
+
+  def uniq(&block)
+    dup.uniq!(&block) or dup
+  end
+
+  def uniq!(&block)
+    Rubinius.check_frozen
+
+    if block_given?
+      im = Rubinius::IdentityMap.from(self, &block)
+    else
+      im = Rubinius::IdentityMap.from(self)
+    end
+    return if im.size == size
+
+    m = Rubinius::Mirror::Array.reflect im.to_array
+    @tuple = m.tuple
+    @start = m.start
+    @total = m.total
+
+    # MODIFIED added copy_from and delete_range to modify the store
+    copy_from(m.tuple, 0, m.total, 0)
+    delete_range(m.total, self.size - m.total)
+    self
   end
 
   def sort_by!(&block)

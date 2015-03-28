@@ -1600,7 +1600,12 @@ public abstract class ArrayNodes {
     @ImportGuards(ArrayGuards.class)
     public abstract static class InitializeNode extends YieldingCoreMethodNode {
 
+        @Child private ToIntNode toIntNode;
+        @Child private CallDispatchHeadNode toAryNode;
+        @Child private KernelNodes.RespondToNode respondToToAryNode;
         @Child private ArrayBuilderNode arrayBuilder;
+
+        private final BranchProfile breakProfile = BranchProfile.create();
 
         public InitializeNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -1610,7 +1615,48 @@ public abstract class ArrayNodes {
         public InitializeNode(InitializeNode prev) {
             super(prev);
             arrayBuilder = prev.arrayBuilder;
+            toIntNode = prev.toIntNode;
+            respondToToAryNode = prev.respondToToAryNode;
         }
+
+        @Specialization(guards = {"!isInteger(arguments[1])", "!isLong(arguments[1])", "!isUndefinedPlaceholder(arguments[1])", "!isRubyArray(arguments[1])"})
+        public RubyArray initialize(VirtualFrame frame, RubyArray array, Object object, UndefinedPlaceholder defaultValue, UndefinedPlaceholder block) {
+
+            RubyArray copy = null;
+            if (respondToToAryNode == null) {
+                CompilerDirectives.transferToInterpreter();
+                respondToToAryNode = insert(KernelNodesFactory.RespondToNodeFactory.create(getContext(), getSourceSection(), new RubyNode[]{null, null, null}));
+            }
+            if (respondToToAryNode.doesRespondTo(frame, object, getContext().makeString("to_ary"), false)) {
+                if (toAryNode == null) {
+                    CompilerDirectives.transferToInterpreter();
+                    toAryNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext(), false));
+                }
+                Object toAryResult = toAryNode.call(frame, object, "to_ary", null);
+                if (toAryResult instanceof RubyArray) {
+                    copy = (RubyArray) toAryResult;
+                }
+
+            }
+
+            if (copy != null) {
+                return initialize(array, copy, UndefinedPlaceholder.INSTANCE, UndefinedPlaceholder.INSTANCE);
+            } else {
+                if (toIntNode == null) {
+                    CompilerDirectives.transferToInterpreter();
+                    toIntNode = insert(ToIntNodeFactory.create(getContext(), getSourceSection(), null));
+                }
+                int size = toIntNode.executeIntegerFixnum(frame, object);
+                if (size < 0) {
+                    return initializeNegative(array, size, UndefinedPlaceholder.INSTANCE, UndefinedPlaceholder.INSTANCE);
+                } else {
+                    return initialize(array, size, UndefinedPlaceholder.INSTANCE, UndefinedPlaceholder.INSTANCE);
+                }
+
+            }
+
+        }
+
 
         @Specialization
         public RubyArray initialize(RubyArray array, UndefinedPlaceholder size, UndefinedPlaceholder defaultValue, UndefinedPlaceholder block) {
@@ -1618,19 +1664,36 @@ public abstract class ArrayNodes {
         }
 
         @Specialization
+        public RubyArray initialize(RubyArray array, UndefinedPlaceholder size, UndefinedPlaceholder defaultValue, RubyProc block) {
+            return initialize(array, 0, nil(), UndefinedPlaceholder.INSTANCE);
+        }
+
+        @Specialization(guards = "!isNegative")
         public RubyArray initialize(RubyArray array, int size, UndefinedPlaceholder defaultValue, UndefinedPlaceholder block) {
             return initialize(array, size, nil(), block);
         }
 
-        @Specialization
+        @Specialization(guards = "isNegative")
+        public RubyArray initializeNegative(RubyArray array, int size, UndefinedPlaceholder defaultValue, UndefinedPlaceholder block) {
+            CompilerDirectives.transferToInterpreter();
+            throw new RaiseException(getContext().getCoreLibrary().argumentError("negative array size", this));
+        }
+
+        @Specialization(guards = "!isNegative")
         public RubyArray initialize(RubyArray array, long size, UndefinedPlaceholder defaultValue, UndefinedPlaceholder block) {
             if (size > Integer.MAX_VALUE) {
-                throw new IllegalStateException();
+                throw new RaiseException(getContext().getCoreLibrary().argumentError("array size too big", this));
             }
             return initialize(array, (int) size, nil(), block);
         }
 
-        @Specialization
+        @Specialization(guards = "isNegative")
+        public RubyArray initializeNegative(RubyArray array, long size, UndefinedPlaceholder defaultValue, UndefinedPlaceholder block) {
+            CompilerDirectives.transferToInterpreter();
+            throw new RaiseException(getContext().getCoreLibrary().argumentError("negative array size", this));
+        }
+
+        @Specialization(guards = "!isNegative")
         public RubyArray initialize(RubyArray array, int size, int defaultValue, UndefinedPlaceholder block) {
             final int[] store = new int[size];
             Arrays.fill(store, defaultValue);
@@ -1638,7 +1701,13 @@ public abstract class ArrayNodes {
             return array;
         }
 
-        @Specialization
+        @Specialization(guards = "isNegative")
+        public RubyArray initializeNegative(RubyArray array, int size, int defaultValue, UndefinedPlaceholder block) {
+            CompilerDirectives.transferToInterpreter();
+            throw new RaiseException(getContext().getCoreLibrary().argumentError("negative array size", this));
+        }
+
+        @Specialization(guards = "!isNegative")
         public RubyArray initialize(RubyArray array, int size, long defaultValue, UndefinedPlaceholder block) {
             final long[] store = new long[size];
             Arrays.fill(store, defaultValue);
@@ -1646,7 +1715,13 @@ public abstract class ArrayNodes {
             return array;
         }
 
-        @Specialization
+        @Specialization(guards = "isNegative")
+        public RubyArray initializeNegative(RubyArray array, int size, long defaultValue, UndefinedPlaceholder block) {
+            CompilerDirectives.transferToInterpreter();
+            throw new RaiseException(getContext().getCoreLibrary().argumentError("negative array size", this));
+        }
+
+        @Specialization(guards = "!isNegative")
         public RubyArray initialize(RubyArray array, int size, double defaultValue, UndefinedPlaceholder block) {
             final double[] store = new double[size];
             Arrays.fill(store, defaultValue);
@@ -1654,7 +1729,13 @@ public abstract class ArrayNodes {
             return array;
         }
 
-        @Specialization(guards = "!isUndefinedPlaceholder(arguments[2])")
+        @Specialization(guards = "isNegative")
+        public RubyArray initializeNegative(RubyArray array, int size, double defaultValue, UndefinedPlaceholder block) {
+            CompilerDirectives.transferToInterpreter();
+            throw new RaiseException(getContext().getCoreLibrary().argumentError("negative array size", this));
+        }
+
+        @Specialization(guards = {"!isUndefinedPlaceholder(arguments[2])", "!isNegative"})
         public RubyArray initialize(RubyArray array, int size, Object defaultValue, UndefinedPlaceholder block) {
             final Object[] store = new Object[size];
             Arrays.fill(store, defaultValue);
@@ -1662,9 +1743,41 @@ public abstract class ArrayNodes {
             return array;
         }
 
-        @Specialization
-        public RubyArray initialize(VirtualFrame frame, RubyArray array, int size, UndefinedPlaceholder defaultValue, RubyProc block) {
-            Object store = arrayBuilder.start(size);
+        @Specialization(guards = {"!isUndefinedPlaceholder(arguments[2])", "isNegative"})
+        public RubyArray initializeNegative(RubyArray array, int size, Object defaultValue, UndefinedPlaceholder block) {
+            CompilerDirectives.transferToInterpreter();
+            throw new RaiseException(getContext().getCoreLibrary().argumentError("negative array size", this));
+        }
+
+        @Specialization(guards = {"!isInteger(arguments[1])", "!isUndefinedPlaceholder(arguments[2])"})
+        public RubyArray initialize(VirtualFrame frame, RubyArray array, Object sizeObject, Object defaultValue, UndefinedPlaceholder block) {
+            if (toIntNode == null) {
+                CompilerDirectives.transferToInterpreter();
+                toIntNode = insert(ToIntNodeFactory.create(getContext(), getSourceSection(), null));
+            }
+            int size = toIntNode.executeIntegerFixnum(frame, sizeObject);
+            if (size < 0) {
+                return initializeNegative(array, size, defaultValue, UndefinedPlaceholder.INSTANCE);
+            } else {
+                return initialize(array, size, defaultValue, UndefinedPlaceholder.INSTANCE);
+            }
+
+        }
+
+        @Specialization(guards = {"!isUndefinedPlaceholder(arguments[2])", "!isNegative"})
+        public Object initialize(VirtualFrame frame, RubyArray array, int size, Object defaultValue, RubyProc block) {
+            return initialize(frame, array, size, UndefinedPlaceholder.INSTANCE, block);
+        }
+
+        @Specialization(guards = {"!isUndefinedPlaceholder(arguments[2])", "isNegative"})
+        public Object initializeNegative(VirtualFrame frame, RubyArray array, int size, Object defaultValue, RubyProc block) {
+            CompilerDirectives.transferToInterpreter();
+            throw new RaiseException(getContext().getCoreLibrary().argumentError("negative array size", this));
+        }
+
+        @Specialization(guards = "!isNegative")
+        public Object initialize(VirtualFrame frame, RubyArray array, int size, UndefinedPlaceholder defaultValue, RubyProc block) {
+            Object store = arrayBuilder.start();
 
             int count = 0;
             try {
@@ -1673,7 +1786,14 @@ public abstract class ArrayNodes {
                         count++;
                     }
 
-                    store = arrayBuilder.append(store, n, yield(frame, block, n));
+                    try {
+                        store = arrayBuilder.append(store, n, yield(frame, block, n));
+                    } catch (BreakException e) {
+                        breakProfile.enter();
+                        array.setStore(arrayBuilder.finish(store, n), n);
+                        return e.getResult();
+                    }
+
                 }
             } finally {
                 if (CompilerDirectives.inInterpreter()) {
@@ -1685,12 +1805,26 @@ public abstract class ArrayNodes {
             return array;
         }
 
+        @Specialization(guards = "isNegative")
+        public Object initializeNegative(VirtualFrame frame, RubyArray array, int size, UndefinedPlaceholder defaultValue, RubyProc block) {
+            CompilerDirectives.transferToInterpreter();
+            throw new RaiseException(getContext().getCoreLibrary().argumentError("negative array size", this));
+        }
+
         @Specialization
         public RubyArray initialize(RubyArray array, RubyArray copy, UndefinedPlaceholder defaultValue, UndefinedPlaceholder block) {
             notDesignedForCompilation();
             array.setStore(copy.slowToArray(), copy.getSize());
             return array;
         }
+
+        @Specialization
+        public RubyArray initialize(RubyArray array, RubyArray copy, UndefinedPlaceholder defaultValue, RubyProc block) {
+            notDesignedForCompilation();
+            array.setStore(copy.slowToArray(), copy.getSize());
+            return array;
+        }
+
 
     }
 
@@ -1899,9 +2033,10 @@ public abstract class ArrayNodes {
 
     }
 
-    @CoreMethod(names = "insert", required = 2, raiseIfFrozenSelf = true)
+    @CoreMethod(names = "insert", required = 1, raiseIfFrozenSelf = true, argumentsAsArray = true)
     public abstract static class InsertNode extends ArrayCoreMethodNode {
 
+        @Child private ToIntNode toIntNode;
         private final BranchProfile tooSmallBranch = BranchProfile.create();
 
         public InsertNode(RubyContext context, SourceSection sourceSection) {
@@ -1910,12 +2045,18 @@ public abstract class ArrayNodes {
 
         public InsertNode(InsertNode prev) {
             super(prev);
+            this.toIntNode = prev.toIntNode;
         }
 
-        @Specialization(guards = "isNull")
-        public Object insert(RubyArray array, int index, Object value) {
+        @Specialization(guards = {"isNull", "isIntIndexAndOtherSingleObjectArg"})
+        public Object insertNull(RubyArray array, Object[] values) {
             notDesignedForCompilation();
-
+            final int index = (int) values[0];
+            if (index < 0) {
+                CompilerDirectives.transferToInterpreter();
+                throw new UnsupportedOperationException();
+            }
+            final Object value = (Object) values[1];
             final Object[] store = new Object[index + 1];
             Arrays.fill(store, nil());
             store[index] = value;
@@ -1923,22 +2064,58 @@ public abstract class ArrayNodes {
             return array;
         }
 
-        @Specialization(guards = "isIntegerFixnum")
-        public Object insert(RubyArray array, int index, int value) {
-            final int normalizedIndex = array.normalizeIndex(index);
+        @Specialization(guards = "isArgsLengthTwo", rewriteOn = {ClassCastException.class, IndexOutOfBoundsException.class})
+        public Object insert(RubyArray array, Object[] values) {
+            final int index = (int) values[0];
+            final int value = (int) values[1];
             final int[] store = (int[]) array.getStore();
+            System.arraycopy(store, index, store, index + 1, array.getSize() - index);
+            store[index] = value;
+            array.setStore(store, array.getSize() + 1);
+            return array;
+        }
 
-            if (normalizedIndex < 0) {
-                tooSmallBranch.enter();
-                throw new UnsupportedOperationException();
-            } else if (array.getSize() > store.length + 1) {
-                CompilerDirectives.transferToInterpreter();
-                throw new UnsupportedOperationException();
-            } else {
-                System.arraycopy(store, normalizedIndex, store, normalizedIndex + 1, array.getSize() - normalizedIndex);
-                store[normalizedIndex] = value;
-                array.setStore(store, array.getSize() + 1);
+        @Specialization(contains = {"insert", "insertNull"})
+        public Object insertBoxed(VirtualFrame frame, RubyArray array, Object[] values) {
+            notDesignedForCompilation();
+            if (values.length == 1) {
+                return array;
             }
+
+            int index;
+            if (values[0] instanceof Integer) {
+                index = (int) values[0];
+            } else {
+                if (toIntNode == null) {
+                    CompilerDirectives.transferToInterpreter();
+                    toIntNode = insert(ToIntNodeFactory.create(getContext(), getSourceSection(), null));
+                }
+                index = toIntNode.executeIntegerFixnum(frame, values[0]);
+            }
+
+            final int valuesLength = values.length - 1;
+            final int normalizedIndex = index < 0 ? array.normalizeIndex(index) + 1 : array.normalizeIndex(index);
+            if (normalizedIndex < 0) {
+                CompilerDirectives.transferToInterpreter();
+                String errMessage = "index " + index + " too small for array; minimum: " + Integer.toString(-array.getSize());
+                throw new RaiseException(getContext().getCoreLibrary().indexError(errMessage, this));
+            }
+
+            Object[] store = ArrayUtils.box(array.getStore());
+            final int newSize = normalizedIndex < array.getSize() ? array.getSize() + valuesLength : normalizedIndex + valuesLength;
+            store = Arrays.copyOf(store, newSize);
+            if (normalizedIndex >= array.getSize()) {
+                for (int i = array.getSize(); i < normalizedIndex; i++) {
+                    store[i] = nil();
+                }
+            }
+            final int dest = normalizedIndex + valuesLength;
+            final int len = array.getSize() - normalizedIndex;
+            if (normalizedIndex < array.getSize()) {
+                System.arraycopy(store, normalizedIndex, store, dest, len);
+            }
+            System.arraycopy(values, 1, store, normalizedIndex, valuesLength);
+            array.setStore(store, newSize);
 
             return array;
         }
@@ -3044,38 +3221,6 @@ public abstract class ArrayNodes {
             }
         }
 
-
-    }
-
-    @CoreMethod(names = "product", required = 1)
-    public abstract static class ProductNode extends ArrayCoreMethodNode {
-
-        public ProductNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
-        public ProductNode(ProductNode prev) {
-            super(prev);
-        }
-
-        @Specialization(guards = {"isObject", "isOtherObject"})
-        public Object product(RubyArray array, RubyArray other) {
-            final Object[] a = (Object[]) array.getStore();
-            final int aLength = array.getSize();
-
-            final Object[] b = (Object[]) other.getStore();
-            final int bLength = other.getSize();
-
-            final Object[] pairs = new Object[aLength * bLength];
-
-            for (int an = 0; an < aLength; an++) {
-                for (int bn = 0; bn < bLength; bn++) {
-                    pairs[an * bLength + bn] = new RubyArray(getContext().getCoreLibrary().getArrayClass(), new Object[]{a[an], b[bn]}, 2);
-                }
-            }
-
-            return new RubyArray(getContext().getCoreLibrary().getArrayClass(), pairs, pairs.length);
-        }
 
     }
 
@@ -4412,43 +4557,6 @@ public abstract class ArrayNodes {
 
     }
 
-    @CoreMethod(names = "uniq")
-    public abstract static class UniqNode extends CoreMethodNode {
-
-        public UniqNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
-        public UniqNode(UniqNode prev) {
-            super(prev);
-        }
-
-        @Specialization
-        public RubyArray uniq(RubyArray array) {
-            notDesignedForCompilation();
-
-            final RubyArray uniq = new RubyArray(getContext().getCoreLibrary().getArrayClass(), null, 0);
-
-            for (Object value : array.slowToArray()) {
-                boolean duplicate = false;
-
-                for (Object compare : uniq.slowToArray()) {
-                    if ((boolean) DebugOperations.send(getContext(), value, "==", null, compare)) {
-                        duplicate = true;
-                        break;
-                    }
-                }
-
-                if (!duplicate) {
-                    uniq.slowPush(value);
-                }
-            }
-
-            return uniq;
-        }
-
-    }
-
     @CoreMethod(names = "unshift", argumentsAsArray = true, raiseIfFrozenSelf = true)
     public abstract static class UnshiftNode extends CoreMethodNode {
 
@@ -4470,7 +4578,7 @@ public abstract class ArrayNodes {
 
     }
 
-    @CoreMethod(names = "zip", required = 1)
+    @CoreMethod(names = "zip", required = 1, argumentsAsArray = true)
     public abstract static class ZipNode extends ArrayCoreMethodNode {
 
         public ZipNode(RubyContext context, SourceSection sourceSection) {
@@ -4481,40 +4589,88 @@ public abstract class ArrayNodes {
             super(prev);
         }
 
-        @Specialization(guards = {"isObject", "isOtherIntegerFixnum"})
-        public RubyArray zipObjectIntegerFixnum(RubyArray array, RubyArray other) {
+        @Specialization(guards = {"isObject", "isOtherSingleIntegerFixnumArray"})
+        public RubyArray zipObjectIntegerFixnum(RubyArray array, Object[] others) {
+            final RubyArray other = (RubyArray) others[0];
             final Object[] a = (Object[]) array.getStore();
-            final int aLength = array.getSize();
 
             final int[] b = (int[]) other.getStore();
             final int bLength = other.getSize();
 
-            final int zippedLength = Math.min(aLength, bLength);
+            final int zippedLength = array.getSize();
             final Object[] zipped = new Object[zippedLength];
 
-            for (int n = 0; n < zippedLength; n++) {
-                zipped[n] = new RubyArray(getContext().getCoreLibrary().getArrayClass(), new Object[]{a[n], b[n]}, 2);
+            final boolean areSameLength = bLength == zippedLength;
+
+            if (areSameLength) {
+                for (int n = 0; n < zippedLength; n++) {
+                    zipped[n] = new RubyArray(getContext().getCoreLibrary().getArrayClass(), new Object[]{a[n], b[n]}, 2);
+                }
+            } else {
+                for (int n = 0; n < zippedLength; n++) {
+                    if (n < bLength) {
+                        zipped[n] = new RubyArray(getContext().getCoreLibrary().getArrayClass(), new Object[]{a[n], b[n]}, 2);
+                    } else {
+                        zipped[n] = new RubyArray(getContext().getCoreLibrary().getArrayClass(), new Object[]{a[n], nil()}, 2);
+                    }
+                }
             }
 
             return new RubyArray(getContext().getCoreLibrary().getArrayClass(), zipped, zippedLength);
         }
 
-        @Specialization(guards = {"isObject", "isOtherObject"})
-        public RubyArray zipObjectObject(RubyArray array, RubyArray other) {
+        @Specialization(guards = {"isObject", "isOtherSingleObjectArray"})
+        public RubyArray zipObjectObject(RubyArray array, Object[] others) {
+            final RubyArray other = (RubyArray) others[0];
             final Object[] a = (Object[]) array.getStore();
-            final int aLength = array.getSize();
 
             final Object[] b = (Object[]) other.getStore();
             final int bLength = other.getSize();
 
-            final int zippedLength = Math.min(aLength, bLength);
+            final int zippedLength = array.getSize();
             final Object[] zipped = new Object[zippedLength];
 
-            for (int n = 0; n < zippedLength; n++) {
-                zipped[n] = new RubyArray(getContext().getCoreLibrary().getArrayClass(), new Object[]{a[n], b[n]}, 2);
+            final boolean areSameLength = bLength == zippedLength;
+
+            if (areSameLength) {
+                for (int n = 0; n < zippedLength; n++) {
+                    zipped[n] = new RubyArray(getContext().getCoreLibrary().getArrayClass(), new Object[]{a[n], b[n]}, 2);
+                }
+            } else {
+                for (int n = 0; n < zippedLength; n++) {
+                    if (n < bLength) {
+                        zipped[n] = new RubyArray(getContext().getCoreLibrary().getArrayClass(), new Object[]{a[n], b[n]}, 2);
+                    } else {
+                        zipped[n] = new RubyArray(getContext().getCoreLibrary().getArrayClass(), new Object[]{a[n], nil()}, 2);
+                    }
+                }
             }
 
+
             return new RubyArray(getContext().getCoreLibrary().getArrayClass(), zipped, zippedLength);
+        }
+
+        @Specialization(guards = {"!isOtherSingleObjectArray"})
+        public Object zipObjectObjectNotSingleObject(VirtualFrame frame, RubyArray array, Object[] others) {
+            return zipRuby(frame, others);
+        }
+
+        @Specialization(guards = {"!isOtherSingleIntegerFixnumArray"})
+        public Object zipObjectObjectNotSingleInteger(VirtualFrame frame, RubyArray array, Object[] others) {
+            return zipRuby(frame, others);
+        }
+
+        @Specialization(guards = {"!isObject"})
+        public Object zipObjectObjectNotObject(VirtualFrame frame, RubyArray array, Object[] others) {
+            return zipRuby(frame, others);
+        }
+
+        private Object zipRuby(VirtualFrame frame, Object[] others) {
+            RubyBasicObject proc = RubyArguments.getBlock(frame.getArguments());
+            if (proc == null) {
+                proc = nil();
+            }
+            return ruby(frame, "zip_internal(*others, &block)", "others", new RubyArray(getContext().getCoreLibrary().getArrayClass(), others, others.length), "block", proc);
         }
 
     }

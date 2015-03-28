@@ -68,7 +68,7 @@
         </executions>
         <configuration>
           <encoding>utf-8</encoding>
-          <debug>false</debug>
+          <debug>true</debug>
           <verbose>false</verbose>
           <showWarnings>true</showWarnings>
           <showDeprecation>true</showDeprecation>

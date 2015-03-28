@@ -4,7 +4,7 @@ require File.expand_path('../../../fixtures/reflection', __FILE__)
 
 # TODO: rewrite
 
-# The reason why having include() and ruby_version_is is to show the specification explicitly.
+# The reason why having include() is to show the specification explicitly.
 # You should use have_protected_method() with the exception of this spec.
 describe "Kernel#protected_methods" do
   it "returns a list of the names of protected methods accessible in the object" do

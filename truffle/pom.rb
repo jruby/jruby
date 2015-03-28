@@ -17,7 +17,7 @@ project 'JRuby Truffle' do
 
   plugin( :compiler,
           'encoding' => 'utf-8',
-          'debug' => 'false',
+          'debug' => 'true',
           'verbose' => 'false',
           'showWarnings' => 'true',
           'showDeprecation' => 'true',

@@ -1,2 +1,0 @@
-fails:Process.times returns a Struct::Tms
-fails:Process.times returns current cpu times

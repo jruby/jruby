@@ -42,7 +42,7 @@ describe "StringScanner#[]" do
     lambda { @s[0..2]}.should raise_error(TypeError)
   end
 
-  ruby_version_is "1.9"..."2.1" do
+  ruby_version_is ""..."2.1" do
     it "raises a TypeError when a String is as argument" do
       @s.scan(/(\w+) (\w+) (\d+) /)
       lambda { @s["wday"]}.should raise_error(TypeError)

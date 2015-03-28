@@ -99,11 +99,9 @@ describe :time_params, :shared => true do
     Time.send(@method, 2008, 1, 1, 0, m).should == Time.send(@method, 2008, 1, 1, 0, 1)
   end
 
-  ruby_bug "6193", "2.0" do
-    it "handles a String second" do
-      Time.send(@method, 2000, 12, 1, 1, 1, "8").should ==
-        Time.send(@method, 2000, 12, 1, 1, 1, 8)
-    end
+  it "handles a String second" do
+    Time.send(@method, 2000, 12, 1, 1, 1, "8").should ==
+      Time.send(@method, 2000, 12, 1, 1, 1, 8)
   end
 
   it "coerces the second with #to_int" do
@@ -112,13 +110,11 @@ describe :time_params, :shared => true do
     Time.send(@method, 2008, 1, 1, 0, 0, m).should == Time.send(@method, 2008, 1, 1, 0, 0, 1)
   end
 
-  ruby_bug "6193", "2.0" do
-    it "interprets all numerals as base 10" do
-      Time.send(@method, "2000", "08", "08", "08", "08", "08").should ==
-        Time.send(@method, 2000, 8, 8, 8, 8, 8)
-      Time.send(@method, "2000", "09", "09", "09", "09", "09").should ==
-        Time.send(@method, 2000, 9, 9, 9, 9, 9)
-    end
+  it "interprets all numerals as base 10" do
+    Time.send(@method, "2000", "08", "08", "08", "08", "08").should ==
+      Time.send(@method, 2000, 8, 8, 8, 8, 8)
+    Time.send(@method, "2000", "09", "09", "09", "09", "09").should ==
+      Time.send(@method, 2000, 9, 9, 9, 9, 9)
   end
 
   it "handles fractional seconds as a Float" do

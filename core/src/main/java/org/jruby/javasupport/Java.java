@@ -67,6 +67,7 @@ import org.jruby.RubyInstanceConfig;
 import org.jruby.RubyMethod;
 import org.jruby.RubyModule;
 import org.jruby.RubyObject;
+import org.jruby.RubyProc;
 import org.jruby.RubyString;
 import org.jruby.RubyUnboundMethod;
 import org.jruby.javasupport.binding.Initializer;
@@ -82,6 +83,7 @@ import org.jruby.runtime.load.Library;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyModule;
 import org.jruby.exceptions.RaiseException;
+import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.internal.runtime.methods.JavaMethod.JavaMethodN;
 import org.jruby.internal.runtime.methods.JavaMethod.JavaMethodZero;
 import org.jruby.java.addons.ArrayJavaAddons;
@@ -107,6 +109,8 @@ import org.jruby.util.ClassProvider;
 import org.jruby.util.CodegenUtils;
 import org.jruby.util.IdUtil;
 import org.jruby.util.cli.Options;
+import org.jruby.util.collections.IntHashMap;
+import static org.jruby.java.dispatch.CallableSelector.newCallableCache;
 
 @JRubyModule(name = "Java")
 public class Java implements Library {
@@ -167,7 +171,7 @@ public class Java implements Library {
         MapJavaProxy.createMapJavaProxy(runtime);
 
         // also create the JavaProxy* classes
-        JavaProxyClass.createJavaProxyModule(runtime);
+        JavaProxyClass.createJavaProxyClasses(runtime, Java);
 
         // The template for interface modules
         JavaInterfaceTemplate.createJavaInterfaceTemplateModule(context);
@@ -222,53 +226,45 @@ public class Java implements Library {
      * @param nameClassMap
      */
     private static void addNameClassMappings(final Ruby runtime, final Map<String, JavaClass> nameClassMap) {
-        JavaClass booleanPrimClass = JavaClass.get(runtime, Boolean.TYPE);
         JavaClass booleanClass = JavaClass.get(runtime, Boolean.class);
-        nameClassMap.put("boolean", booleanPrimClass);
+        nameClassMap.put("boolean", JavaClass.get(runtime, Boolean.TYPE));
         nameClassMap.put("Boolean", booleanClass);
         nameClassMap.put("java.lang.Boolean", booleanClass);
 
-        JavaClass bytePrimClass = JavaClass.get(runtime, Byte.TYPE);
         JavaClass byteClass = JavaClass.get(runtime, Byte.class);
-        nameClassMap.put("byte", bytePrimClass);
+        nameClassMap.put("byte", JavaClass.get(runtime, Byte.TYPE));
         nameClassMap.put("Byte", byteClass);
         nameClassMap.put("java.lang.Byte", byteClass);
 
-        JavaClass shortPrimClass = JavaClass.get(runtime, Short.TYPE);
         JavaClass shortClass = JavaClass.get(runtime, Short.class);
-        nameClassMap.put("short", shortPrimClass);
+        nameClassMap.put("short", JavaClass.get(runtime, Short.TYPE));
         nameClassMap.put("Short", shortClass);
         nameClassMap.put("java.lang.Short", shortClass);
 
-        JavaClass charPrimClass = JavaClass.get(runtime, Character.TYPE);
         JavaClass charClass = JavaClass.get(runtime, Character.class);
-        nameClassMap.put("char", charPrimClass);
+        nameClassMap.put("char", JavaClass.get(runtime, Character.TYPE));
         nameClassMap.put("Character", charClass);
         nameClassMap.put("Char", charClass);
         nameClassMap.put("java.lang.Character", charClass);
 
-        JavaClass intPrimClass = JavaClass.get(runtime, Integer.TYPE);
         JavaClass intClass = JavaClass.get(runtime, Integer.class);
-        nameClassMap.put("int", intPrimClass);
+        nameClassMap.put("int", JavaClass.get(runtime, Integer.TYPE));
         nameClassMap.put("Integer", intClass);
         nameClassMap.put("Int", intClass);
         nameClassMap.put("java.lang.Integer", intClass);
 
-        JavaClass longPrimClass = JavaClass.get(runtime, Long.TYPE);
         JavaClass longClass = JavaClass.get(runtime, Long.class);
-        nameClassMap.put("long", longPrimClass);
+        nameClassMap.put("long", JavaClass.get(runtime, Long.TYPE));
         nameClassMap.put("Long", longClass);
         nameClassMap.put("java.lang.Long", longClass);
 
-        JavaClass floatPrimClass = JavaClass.get(runtime, Float.TYPE);
         JavaClass floatClass = JavaClass.get(runtime, Float.class);
-        nameClassMap.put("float", floatPrimClass);
+        nameClassMap.put("float", JavaClass.get(runtime, Float.TYPE));
         nameClassMap.put("Float", floatClass);
         nameClassMap.put("java.lang.Float", floatClass);
 
-        JavaClass doublePrimClass = JavaClass.get(runtime, Double.TYPE);
         JavaClass doubleClass = JavaClass.get(runtime, Double.class);
-        nameClassMap.put("double", doublePrimClass);
+        nameClassMap.put("double", JavaClass.get(runtime, Double.TYPE));
         nameClassMap.put("Double", doubleClass);
         nameClassMap.put("java.lang.Double", doubleClass);
 
@@ -292,6 +288,9 @@ public class Java implements Library {
         nameClassMap.put("string", stringClass);
         nameClassMap.put("String", stringClass);
         nameClassMap.put("java.lang.String", stringClass);
+
+        nameClassMap.put("void", JavaClass.get(runtime, Void.TYPE));
+        nameClassMap.put("Void", JavaClass.get(runtime, Void.class));
     }
 
     private static class JavaPackageClassProvider implements ClassProvider {
@@ -416,17 +415,17 @@ public class Java implements Library {
         return getInterfaceModule(runtime, javaClass);
     }
 
-    public static RubyModule get_proxy_class(final IRubyObject self, final IRubyObject java_class_object) {
+    public static RubyModule get_proxy_class(final IRubyObject self, final IRubyObject java_class) {
         final Ruby runtime = self.getRuntime();
         final JavaClass javaClass;
-        if ( java_class_object instanceof RubyString ) {
-            javaClass = JavaClass.for_name(self, java_class_object);
+        if ( java_class instanceof RubyString ) {
+            javaClass = JavaClass.for_name(self, java_class);
         }
-        else if ( java_class_object instanceof JavaClass ) {
-            javaClass = (JavaClass) java_class_object;
+        else if ( java_class instanceof JavaClass ) {
+            javaClass = (JavaClass) java_class;
         }
         else {
-            throw runtime.newTypeError(java_class_object, runtime.getJavaSupport().getJavaClassClass());
+            throw runtime.newTypeError(java_class, runtime.getJavaSupport().getJavaClassClass());
         }
         return getProxyClass(runtime, javaClass);
     }
@@ -745,7 +744,9 @@ public class Java implements Library {
         });
 
         subclass.addMethod("__jcreate!", new JavaMethodN(subclassSingleton, PUBLIC) {
-            private final Map<Integer, ParameterTypes> methodCache = new HashMap<Integer, ParameterTypes>();
+
+            private final IntHashMap<JavaProxyConstructor> cache = newCallableCache();
+
             @Override
             public IRubyObject call(final ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args) {
                 IRubyObject proxyClass = self.getMetaClass().getInstanceVariables().getInstanceVariable("@java_proxy_class");
@@ -759,18 +760,19 @@ public class Java implements Library {
                 ArrayList<JavaProxyConstructor> forArity = new ArrayList<JavaProxyConstructor>(constructors.size());
                 for ( int i = 0; i < constructors.size(); i++ ) {
                     JavaProxyConstructor constructor = (JavaProxyConstructor) constructors.eltInternal(i);
-                    if ( constructor.getParameterTypes().length == argsLength ) forArity.add(constructor);
+                    if ( constructor.getArity() == argsLength ) forArity.add(constructor);
                 }
 
                 if ( forArity.size() == 0 ) {
                     throw context.runtime.newArgumentError("wrong number of arguments for constructor");
                 }
 
-                JavaProxyConstructor matching = (JavaProxyConstructor)CallableSelector.matchingCallableArityN(
-                        context.runtime, methodCache,
-                        forArity.toArray(new JavaProxyConstructor[forArity.size()]), args, args.length);
+                final JavaProxyConstructor matching = CallableSelector.matchingCallableArityN(
+                        context.runtime, cache,
+                        forArity.toArray(new JavaProxyConstructor[forArity.size()]), args
+                );
 
-                if (matching == null) {
+                if ( matching == null ) {
                     throw context.runtime.newArgumentError("wrong number of arguments for constructor");
                 }
 
@@ -944,8 +946,13 @@ public class Java implements Library {
                         // we'll try as a package
                         result = getJavaPackageModule(runtime, fullName);
                         // NOTE result = getPackageModule(runtime, name);
+                        if ( result == null ) {
+                            throw runtime.newNameError("missing class (or package) name (`" + fullName + "')", fullName);
+                        }
                     }
-                    throw runtime.newNameError("missing class name (`" + fullName + "')", fullName);
+                    else {
+                        throw runtime.newNameError("missing class name (`" + fullName + "')", fullName);
+                    }
                 }
             }
             catch (RuntimeException e) {
@@ -1089,13 +1096,44 @@ public class Java implements Library {
         }
 
         @Override
-        public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name) {
+        public final IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name) {
             return this.packageOrClass;
         }
 
         @Override
-        public Arity getArity() {
-            return Arity.noArguments();
+        public final IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, Block block) {
+            return this.packageOrClass;
+        }
+
+        @Override
+        public Arity getArity() { return Arity.noArguments(); }
+
+    }
+
+    final static class ProcToInterface extends org.jruby.internal.runtime.methods.DynamicMethod {
+
+        ProcToInterface(final RubyClass singletonClass) {
+            super(singletonClass, PUBLIC, org.jruby.internal.runtime.methods.CallConfiguration.FrameNoneScopeNone);
+        }
+
+        @Override // method_missing impl :
+        public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args, Block block) {
+            if ( ! ( self instanceof RubyProc ) ) {
+                throw context.runtime.newTypeError("interface impl method_missing for block used with non-Proc object");
+            }
+            final RubyProc proc = (RubyProc) self;
+            final IRubyObject[] newArgs;
+            if ( args.length == 1 ) newArgs = IRubyObject.NULL_ARRAY;
+            else {
+                newArgs = new IRubyObject[ args.length - 1 ];
+                System.arraycopy(args, 1, newArgs, 0, newArgs.length);
+            }
+            return proc.call(context, newArgs);
+        }
+
+        @Override
+        public DynamicMethod dup() {
+            return this;
         }
 
     }

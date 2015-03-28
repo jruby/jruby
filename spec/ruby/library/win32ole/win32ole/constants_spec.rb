@@ -30,20 +30,12 @@ platform_is :windows do
       WIN32OLE::CP_UTF8.should == 65001
     end
 
-    # 1.8 only constants
-    ruby_version_is ""..."1.9" do
-      # there are none
+    it "defines constant LOCALE_SYSTEM_DEFAULT" do
+      WIN32OLE::LOCALE_SYSTEM_DEFAULT.should == 0x0800
     end
 
-    # 1.9 only constants
-    ruby_version_is "1.9" do
-      it "defines constant LOCALE_SYSTEM_DEFAULT" do
-        WIN32OLE::LOCALE_SYSTEM_DEFAULT.should == 0x0800
-      end
-
-      it "defines constant LOCALE_USER_DEFAULT" do
-        WIN32OLE::LOCALE_USER_DEFAULT.should == 0x0400
-      end
+    it "defines constant LOCALE_USER_DEFAULT" do
+      WIN32OLE::LOCALE_USER_DEFAULT.should == 0x0400
     end
   end
 

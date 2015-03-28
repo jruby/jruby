@@ -9,6 +9,8 @@
  */
 package org.jruby.truffle.nodes.rubinius;
 
+import jnr.constants.platform.Sysconf;
+import jnr.posix.Times;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.core.BasicObjectNodes;
 import org.jruby.truffle.nodes.core.BasicObjectNodesFactory;
@@ -21,13 +23,7 @@ import org.jruby.truffle.nodes.objects.WriteInstanceVariableNode;
 import org.jruby.truffle.nodes.yield.YieldDispatchHeadNode;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.ThrowException;
-import org.jruby.truffle.runtime.core.RubyBasicObject;
-import org.jruby.truffle.runtime.core.RubyClass;
-import org.jruby.truffle.runtime.core.RubyModule;
-import org.jruby.truffle.runtime.core.RubyNilClass;
-import org.jruby.truffle.runtime.core.RubyProc;
-import org.jruby.truffle.runtime.core.RubyString;
-import org.jruby.truffle.runtime.core.RubyThread;
+import org.jruby.truffle.runtime.core.*;
 import org.jruby.truffle.runtime.signal.ProcSignalHandler;
 import org.jruby.truffle.runtime.signal.SignalOperations;
 
@@ -37,6 +33,9 @@ import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.SourceSection;
+
+import java.lang.management.ManagementFactory;
+import java.lang.management.ThreadMXBean;
 
 /**
  * Rubinius primitives associated with the VM.
@@ -356,6 +355,80 @@ public abstract class VMPrimitiveNodes {
             notDesignedForCompilation();
 
             throw new ThrowException(tag, value);
+        }
+
+    }
+
+    @RubiniusPrimitive(name = "vm_time", needsSelf = false)
+    public abstract static class TimeNode extends RubiniusPrimitiveNode {
+
+        public TimeNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public TimeNode(TimeNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public long time() {
+            return System.currentTimeMillis() / 1000;
+        }
+
+    }
+
+    @RubiniusPrimitive(name = "vm_times", needsSelf = false)
+    public abstract static class TimesNode extends RubiniusPrimitiveNode {
+
+        public TimesNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public TimesNode(TimesNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public RubyArray times() {
+            // Copied from org/jruby/RubyProcess.java - see copyright and license information there
+
+            Times tms = getContext().getRuntime().getPosix().times();
+            double utime = 0.0d, stime = 0.0d, cutime = 0.0d, cstime = 0.0d;
+            if (tms == null) {
+                ThreadMXBean bean = ManagementFactory.getThreadMXBean();
+                if(bean.isCurrentThreadCpuTimeSupported()) {
+                    cutime = utime = bean.getCurrentThreadUserTime();
+                    cstime = stime = bean.getCurrentThreadCpuTime() - bean.getCurrentThreadUserTime();
+                }
+            } else {
+                utime = (double)tms.utime();
+                stime = (double)tms.stime();
+                cutime = (double)tms.cutime();
+                cstime = (double)tms.cstime();
+            }
+
+            long hz = getContext().getRuntime().getPosix().sysconf(Sysconf._SC_CLK_TCK);
+            if (hz == -1) {
+                hz = 60; //https://github.com/ruby/ruby/blob/trunk/process.c#L6616
+            }
+
+            utime /= hz;
+            stime /= hz;
+            cutime /= hz;
+            cstime /= hz;
+
+            // TODO CS 24-Mar-15 what are these?
+            final double tutime = 0;
+            final double tstime = 0;
+
+            return new RubyArray(getContext().getCoreLibrary().getArrayClass(), new double[]{
+                    utime,
+                    stime,
+                    cutime,
+                    cstime,
+                    tutime,
+                    tstime
+            }, 6);
         }
 
     }

@@ -14,17 +14,15 @@ describe "StringIO#readline when passed [separator]" do
     @io.readline(">").should == "example"
   end
 
-  ruby_bug "http://redmine.ruby-lang.org/issues/show/159", "1.8.7.17" do
-    it "sets $_ to the read content" do
-      @io.readline(">")
-      $_.should == "this>"
-      @io.readline(">")
-      $_.should == "is>"
-      @io.readline(">")
-      $_.should == "an>"
-      @io.readline(">")
-      $_.should == "example"
-    end
+  it "sets $_ to the read content" do
+    @io.readline(">")
+    $_.should == "this>"
+    @io.readline(">")
+    $_.should == "is>"
+    @io.readline(">")
+    $_.should == "an>"
+    @io.readline(">")
+    $_.should == "example"
   end
 
   it "updates self's lineno by one" do
@@ -38,12 +36,10 @@ describe "StringIO#readline when passed [separator]" do
     @io.lineno.should eql(3)
   end
 
-  ruby_bug "", "1.8.8" do
-    it "returns the next paragraph when the passed separator is an empty String" do
-      io = StringIO.new("this is\n\nan example")
-      io.readline("").should == "this is\n\n"
-      io.readline("").should == "an example"
-    end
+  it "returns the next paragraph when the passed separator is an empty String" do
+    io = StringIO.new("this is\n\nan example")
+    io.readline("").should == "this is\n\n"
+    io.readline("").should == "an example"
   end
 
   it "returns the remaining content starting at the current position when passed nil" do
@@ -77,15 +73,13 @@ describe "StringIO#readline when passed no argument" do
     end
   end
 
-  ruby_bug "http://redmine.ruby-lang.org/issues/show/159", "1.8.7.17" do
-    it "sets $_ to the read content" do
-      @io.readline
-      $_.should == "this is\n"
-      @io.readline
-      $_.should == "an example\n"
-      @io.readline
-      $_.should == "for StringIO#readline"
-    end
+  it "sets $_ to the read content" do
+    @io.readline
+    $_.should == "this is\n"
+    @io.readline
+    $_.should == "an example\n"
+    @io.readline
+    $_.should == "for StringIO#readline"
   end
 
   it "updates self's position" do

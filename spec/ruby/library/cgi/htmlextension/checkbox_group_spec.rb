@@ -29,13 +29,11 @@ describe "CGI::HtmlExtension#checkbox_group" do
       output[2].should equal_element("INPUT", {"NAME" => "test", "TYPE" => "checkbox", "VALUE" => "baz"}, "label for baz", :not_closed => true)
     end
 
-    ruby_bug "http://redmine.ruby-lang.org/issues/show/443", "1.8.7" do
-      it "allows passing a value as an Array containing the value, a label and the checked state" do
-        output = CGISpecs.split(@html.checkbox_group("test", ["foo", "label for foo", true], ["bar", "label for bar", false], ["baz", "label for baz", true]))
-        output[0].should equal_element("INPUT", {"CHECKED" => true, "NAME" => "test", "TYPE" => "checkbox", "VALUE" => "foo"}, "label for foo", :not_closed => true)
-        output[1].should equal_element("INPUT", {"NAME" => "test", "TYPE" => "checkbox", "VALUE" => "bar"}, "label for bar", :not_closed => true)
-        output[2].should equal_element("INPUT", {"CHECKED" => true, "NAME" => "test", "TYPE" => "checkbox", "VALUE" => "baz"}, "label for baz", :not_closed => true)
-      end
+    it "allows passing a value as an Array containing the value, a label and the checked state" do
+      output = CGISpecs.split(@html.checkbox_group("test", ["foo", "label for foo", true], ["bar", "label for bar", false], ["baz", "label for baz", true]))
+      output[0].should equal_element("INPUT", {"CHECKED" => true, "NAME" => "test", "TYPE" => "checkbox", "VALUE" => "foo"}, "label for foo", :not_closed => true)
+      output[1].should equal_element("INPUT", {"NAME" => "test", "TYPE" => "checkbox", "VALUE" => "bar"}, "label for bar", :not_closed => true)
+      output[2].should equal_element("INPUT", {"CHECKED" => true, "NAME" => "test", "TYPE" => "checkbox", "VALUE" => "baz"}, "label for baz", :not_closed => true)
     end
 
     it "returns an empty String when passed no values" do

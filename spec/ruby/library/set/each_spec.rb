@@ -16,19 +16,11 @@ describe "Set#each" do
     @set.each { |x| x }.should equal(@set)
   end
 
-  ruby_version_is "1.8.7" do
-    it "returns an Enumerator when not passed a block" do
-      enum = @set.each
+  it "returns an Enumerator when not passed a block" do
+    enum = @set.each
 
-      ret = []
-      enum.each { |x| ret << x }
-      ret.sort.should == [1, 2, 3]
-    end
-  end
-
-  ruby_version_is "" ... "1.8.7" do
-    it "raises a LocalJumpError when not passed a block" do
-      lambda { @set.each }.should raise_error(LocalJumpError)
-    end
+    ret = []
+    enum.each { |x| ret << x }
+    ret.sort.should == [1, 2, 3]
   end
 end

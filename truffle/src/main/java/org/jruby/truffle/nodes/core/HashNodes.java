@@ -44,84 +44,6 @@ import java.util.List;
 @CoreClass(name = "Hash")
 public abstract class HashNodes {
 
-    @CoreMethod(names = "==", required = 1)
-    public abstract static class EqualNode extends HashCoreMethodNode {
-
-        @Child private CallDispatchHeadNode eqlNode;
-        @Child private BasicObjectNodes.ReferenceEqualNode equalNode;
-        
-        private final ConditionProfile byIdentityProfile = ConditionProfile.createBinaryProfile();
-
-        public EqualNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-            eqlNode = DispatchHeadNodeFactory.createMethodCall(context, false, false, null);
-            equalNode = BasicObjectNodesFactory.ReferenceEqualNodeFactory.create(context, sourceSection, null, null);
-        }
-
-        public EqualNode(EqualNode prev) {
-            super(prev);
-            eqlNode = prev.eqlNode;
-            equalNode = prev.equalNode;
-        }
-
-        @Specialization(guards = {"isNull", "isNull(arguments[1])"})
-        public boolean equalNull(RubyHash a, RubyHash b) {
-            return true;
-        }
-
-        @Specialization
-        public boolean equal(RubyHash a, RubyHash b) {
-            notDesignedForCompilation();
-
-            final List<KeyValue> aEntries = HashOperations.verySlowToKeyValues(a);
-            final List<KeyValue> bEntries = HashOperations.verySlowToKeyValues(a);
-
-            if (aEntries.size() != bEntries.size()) {
-                return false;
-            }
-
-            // For each entry in a, check that there is a corresponding entry in b, and don't use entries in b more than once
-
-            final boolean[] bUsed = new boolean[bEntries.size()];
-
-            for (KeyValue aKeyValue : aEntries) {
-                boolean found = false;
-
-                for (int n = 0; n < bEntries.size(); n++) {
-                    if (!bUsed[n]) {
-                        // TODO: cast
-                        
-                        final boolean equal;
-                        
-                        if (byIdentityProfile.profile(a.isCompareByIdentity())) {
-                            equal = (boolean) DebugOperations.send(getContext(), aKeyValue.getKey(), "equal?", null, bEntries.get(n).getKey());
-                        } else {
-                            equal = (boolean) DebugOperations.send(getContext(), aKeyValue.getKey(), "eql?", null, bEntries.get(n).getKey());
-                        }
-
-                        if (equal) {
-                            bUsed[n] = true;
-                            found = true;
-                            break;
-                        }
-                    }
-                }
-
-                if (!found) {
-                    return false;
-                }
-            }
-
-            return true;
-        }
-
-        @Specialization(guards = "!isRubyHash(arguments[1])")
-        public boolean equalNonHash(RubyHash a, Object b) {
-            return false;
-        }
-
-    }
-
     @CoreMethod(names = "[]", onSingleton = true, argumentsAsArray = true, reallyDoesNeedSelf = true)
     public abstract static class ConstructNode extends HashCoreMethodNode {
 
@@ -860,57 +782,6 @@ public abstract class HashNodes {
 
     }
 
-    @CoreMethod(names = { "has_key?", "key?", "include?", "member?" }, required = 1)
-    public abstract static class KeyNode extends HashCoreMethodNode {
-
-        @Child private CallDispatchHeadNode eqlNode;
-
-        public KeyNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-            eqlNode = DispatchHeadNodeFactory.createMethodCall(context, false, false, null);
-        }
-
-        public KeyNode(KeyNode prev) {
-            super(prev);
-            eqlNode = prev.eqlNode;
-        }
-
-        @Specialization(guards = "isNull")
-        public boolean keyNull(RubyHash hash, Object key) {
-            return false;
-        }
-
-        @Specialization(guards = {"!isNull", "!isBuckets", "!isCompareByIdentity(arguments[0])"})
-        public boolean keyPackedArray(VirtualFrame frame, RubyHash hash, Object key) {
-            notDesignedForCompilation();
-
-            final int size = hash.getSize();
-            final Object[] store = (Object[]) hash.getStore();
-
-            for (int n = 0; n < HashOperations.SMALL_HASH_SIZE; n++) {
-                if (n < size && eqlNode.callBoolean(frame, store[n * 2], "eql?", null, key)) {
-                    return true;
-                }
-            }
-
-            return false;
-        }
-
-        @Specialization(guards = {"isBuckets", "!isCompareByIdentity(arguments[0])"})
-        public boolean keyBuckets(VirtualFrame frame, RubyHash hash, Object key) {
-            notDesignedForCompilation();
-
-            for (KeyValue keyValue : HashOperations.verySlowToKeyValues(hash)) {
-                if (eqlNode.callBoolean(frame, keyValue.getKey(), "eql?", null, key)) {
-                    return true;
-                }
-            }
-
-            return false;
-        }
-
-    }
-
     @CoreMethod(names = {"map", "collect"}, needsBlock = true)
     @ImportGuards(HashGuards.class)
     public abstract static class MapNode extends YieldingCoreMethodNode {
@@ -1250,6 +1121,10 @@ public abstract class HashNodes {
             hash.setFirstInSequence(first.getNextInSequence());
             
             if (first.getPreviousInSequence() != null) {
+                first.getPreviousInSequence().setNextInSequence(null);
+            }
+
+            if (first.getNextInSequence() != null) {
                 first.getNextInSequence().setPreviousInSequence(null);
             }
 

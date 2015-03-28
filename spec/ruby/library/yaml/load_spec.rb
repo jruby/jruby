@@ -65,15 +65,6 @@ describe "YAML.load" do
     YAML.load("--- abc").should == "abc"
   end
 
-  ruby_version_is "" ... "2.0" do
-    it "does not escape symbols" do
-      YAML.load("foobar: >= 123").should == { "foobar" => ">= 123"}
-      YAML.load("foobar: |= 567").should == { "foobar" => "|= 567"}
-      YAML.load("--- \n*.rb").should == "*.rb"
-      YAML.load("--- \n&.rb").should == "&.rb"
-    end
-  end
-
   it "works with block sequence shortcuts" do
     block_seq = "- - - one\n    - two\n    - three"
     YAML.load(block_seq).should == [[["one", "two", "three"]]]
@@ -103,10 +94,8 @@ describe "YAML.load" do
       ].should be_computed_by(:usec)
     end
 
-    ruby_bug "#4571", "1.9.2" do
-      it "rounds values smaller than 1 usec to 0 " do
-        YAML.load("2011-03-22t23:32:11.000000342222+01:00").usec.should == 0
-      end
+    it "rounds values smaller than 1 usec to 0 " do
+      YAML.load("2011-03-22t23:32:11.000000342222+01:00").usec.should == 0
     end
   end
 end

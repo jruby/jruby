@@ -1123,77 +1123,6 @@ public abstract class StringNodes {
         }
     }
 
-    @CoreMethod(names = "encode", optional = 2)
-    public abstract static class EncodeNode extends CoreMethodNode {
-
-        @Child private ToStrNode toStrNode;
-        @Child private EncodingNodes.DefaultInternalNode defaultInternalNode;
-
-        public EncodeNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
-        public EncodeNode(EncodeNode prev) {
-            super(prev);
-        }
-
-        @TruffleBoundary
-        @Specialization
-        public RubyString encode(RubyString string, RubyString encoding, @SuppressWarnings("unused") UndefinedPlaceholder options) {
-            final org.jruby.RubyString jrubyString = getContext().toJRuby(string);
-            final org.jruby.RubyString jrubyEncodingString = getContext().toJRuby(encoding);
-            final org.jruby.RubyString jrubyTranscoded = (org.jruby.RubyString) jrubyString.encode(getContext().getRuntime().getCurrentContext(), jrubyEncodingString);
-
-            return getContext().toTruffle(jrubyTranscoded);
-        }
-
-        @Specialization
-        public RubyString encode(RubyString string, RubyString encoding, @SuppressWarnings("unused") RubyHash options) {
-
-            // TODO (nirvdrum 20-Feb-15) We need to do something with the options hash. I'm stubbing this out just to get the jUnit mspec formatter running.
-            return encode(string, encoding, UndefinedPlaceholder.INSTANCE);
-        }
-
-        @TruffleBoundary
-        @Specialization
-        public RubyString encode(RubyString string, RubyEncoding encoding, @SuppressWarnings("unused") UndefinedPlaceholder options) {
-
-            final org.jruby.RubyString jrubyString = getContext().toJRuby(string);
-            final org.jruby.RubyString jrubyEncodingString = getContext().toJRuby(getContext().makeString(encoding.getName()));
-            final org.jruby.RubyString jrubyTranscoded = (org.jruby.RubyString) jrubyString.encode(getContext().getRuntime().getCurrentContext(), jrubyEncodingString);
-
-            return getContext().toTruffle(jrubyTranscoded);
-        }
-
-        @Specialization(guards = { "!isRubyString(arguments[1])", "!isRubyEncoding(arguments[1])", "!isUndefinedPlaceholder(arguments[1])" })
-        public RubyString encode(VirtualFrame frame, RubyString string, Object encoding, UndefinedPlaceholder options) {
-
-            if (toStrNode == null) {
-                CompilerDirectives.transferToInterpreter();
-                toStrNode = insert(ToStrNodeFactory.create(getContext(), getSourceSection(), null));
-            }
-
-            return encode(string, toStrNode.executeRubyString(frame, encoding), options);
-        }
-
-        @Specialization
-        public RubyString encode(RubyString string, @SuppressWarnings("unused") UndefinedPlaceholder encoding, @SuppressWarnings("unused") UndefinedPlaceholder options) {
-
-            if (defaultInternalNode == null) {
-                CompilerDirectives.transferToInterpreter();
-                defaultInternalNode = insert(EncodingNodesFactory.DefaultInternalNodeFactory.create(getContext(), getSourceSection(), new RubyNode[]{}));
-            }
-
-            final Object defaultInternalEncoding = defaultInternalNode.defaultInternal();
-
-            if (defaultInternalEncoding == nil()) {
-                return encode(string, RubyEncoding.getEncoding("UTF-8"), UndefinedPlaceholder.INSTANCE);
-            }
-
-            return encode(string, (RubyEncoding) defaultInternalEncoding, UndefinedPlaceholder.INSTANCE);
-        }
-    }
-
     @CoreMethod(names = "encoding")
     public abstract static class EncodingNode extends CoreMethodNode {
 
@@ -1433,33 +1362,6 @@ public abstract class StringNodes {
 
             return taintResultNode.maybeTaint(otherString, string);
         }
-    }
-
-    @CoreMethod(names = "ljust", required = 1, optional = 1, lowerFixnumParameters = 0)
-    public abstract static class LjustNode extends CoreMethodNode {
-
-        public LjustNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
-        public LjustNode(LjustNode prev) {
-            super(prev);
-        }
-
-        @Specialization
-        public RubyString ljust(RubyString string, int length, @SuppressWarnings("unused") UndefinedPlaceholder padding) {
-            notDesignedForCompilation();
-
-            return getContext().makeString(RubyString.ljust(string.toString(), length, " "));
-        }
-
-        @Specialization
-        public RubyString ljust(RubyString string, int length, RubyString padding) {
-            notDesignedForCompilation();
-
-            return getContext().makeString(RubyString.ljust(string.toString(), length, padding.toString()));
-        }
-
     }
 
     @CoreMethod(names = "match", required = 1, taintFromSelf = true)

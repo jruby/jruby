@@ -10,9 +10,7 @@ describe "TCPServer#gets" do
     @server.close
   end
 
-  ruby_bug "#", "1.8" do
-    it "raises Errno::ENOTCONN on gets" do
-      lambda { @server.gets }.should raise_error(Errno::ENOTCONN)
-    end
+  it "raises Errno::ENOTCONN on gets" do
+    lambda { @server.gets }.should raise_error(Errno::ENOTCONN)
   end
 end

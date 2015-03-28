@@ -11,10 +11,8 @@ describe "Bignum#**" do
     (@bignum ** 1.2).should be_close(57262152889751597425762.57804, TOLERANCE)
   end
 
-  ruby_version_is '1.9' do
-    it "returns a complex number when negative and raised to a fractional power" do
-      ((-@bignum) ** (1/3)).should be_close(Complex(1048576,1816186.907597341), TOLERANCE)
-      ((-@bignum) ** (1.0/3)).should be_close(Complex(1048576,1816186.907597341), TOLERANCE)
-    end
+  it "returns a complex number when negative and raised to a fractional power" do
+    ((-@bignum) ** (1/3)).should be_close(Complex(1048576,1816186.907597341), TOLERANCE)
+    ((-@bignum) ** (1.0/3)).should be_close(Complex(1048576,1816186.907597341), TOLERANCE)
   end
 end

@@ -21,12 +21,10 @@ describe "String#partition with String" do
     $2.should == "lo"
   end
 
-  ruby_bug "redmine #1510", '1.9.1' do
-    it "converts its argument using :to_str" do
-      find = mock('l')
-      find.should_receive(:to_str).and_return("l")
-      "hello".partition(find).should == ["he","l","lo"]
-    end
+  it "converts its argument using :to_str" do
+    find = mock('l')
+    find.should_receive(:to_str).and_return("l")
+    "hello".partition(find).should == ["he","l","lo"]
   end
 
   it "raises an error if not convertible to string" do

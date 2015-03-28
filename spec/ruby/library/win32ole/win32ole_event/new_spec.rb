@@ -19,11 +19,9 @@ platform_is :windows do
       lambda { WIN32OLE_EVENT.new(@ole, 'A') }.should raise_error RuntimeError
     end
 
-    ruby_bug "#3576","1.8" do
-      it "raises RuntimeError if OLE object has no events" do
-        dict = WIN32OLE.new('Scripting.Dictionary')
-        lambda { WIN32OLE_EVENT.new(dict) }.should raise_error RuntimeError
-      end
+    it "raises RuntimeError if OLE object has no events" do
+      dict = WIN32OLE.new('Scripting.Dictionary')
+      lambda { WIN32OLE_EVENT.new(dict) }.should raise_error RuntimeError
     end
 
     it "creates WIN32OLE_EVENT object" do

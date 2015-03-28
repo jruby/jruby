@@ -344,7 +344,7 @@ public abstract class ModuleNodes {
         }
     }
 
-    @CoreMethod(names = "append_features", required = 1)
+    @CoreMethod(names = "append_features", required = 1, visibility = Visibility.PRIVATE)
     public abstract static class AppendFeaturesNode extends CoreMethodNode {
 
         public AppendFeaturesNode(RubyContext context, SourceSection sourceSection) {
@@ -1047,7 +1047,7 @@ public abstract class ModuleNodes {
 
         public IncludeNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            appendFeaturesNode = DispatchHeadNodeFactory.createMethodCall(context);
+            appendFeaturesNode = DispatchHeadNodeFactory.createMethodCall(context, true);
             includedNode = DispatchHeadNodeFactory.createMethodCall(context, true);
         }
 
@@ -1382,21 +1382,16 @@ public abstract class ModuleNodes {
         public RubyArray protectedInstanceMethods(RubyModule module, boolean includeAncestors) {
             notDesignedForCompilation();
 
-            final RubyArray array = new RubyArray(getContext().getCoreLibrary().getArrayClass());
-            final List<InternalMethod> methods = new ArrayList<>(module.getMethods().values());
 
-            if (includeAncestors) {
-                for (RubyModule parent : module.parentAncestors()) {
-                    methods.addAll(parent.getMethods().values());
-                }
-            }
-            for (InternalMethod method : methods) {
-                if (method.getVisibility() == Visibility.PROTECTED){
-                    RubySymbol m = getContext().newSymbol(method.getName());
-                    array.slowPush(m);
-                }
-            }
-            return array;
+            return RubyArray.fromObjects(getContext().getCoreLibrary().getArrayClass(),
+                    module.filterMethods(includeAncestors, new RubyModule.MethodFilter() {
+
+                        @Override
+                        public boolean filter(InternalMethod method) {
+                            return method.getVisibility() == Visibility.PROTECTED;
+                        }
+
+                    }).toArray());
         }
     }
 
@@ -1420,21 +1415,15 @@ public abstract class ModuleNodes {
         public RubyArray privateInstanceMethods(RubyModule module, boolean includeAncestors) {
             notDesignedForCompilation();
 
-            final RubyArray array = new RubyArray(getContext().getCoreLibrary().getArrayClass());
-            final List<InternalMethod> methods = new ArrayList<>(module.getMethods().values());
+            return RubyArray.fromObjects(getContext().getCoreLibrary().getArrayClass(),
+                    module.filterMethods(includeAncestors, new RubyModule.MethodFilter() {
 
-            if (includeAncestors) {
-                for (RubyModule parent : module.parentAncestors()) {
-                    methods.addAll(parent.getMethods().values());
-                }
-            }
-            for (InternalMethod method : methods) {
-                if (method.getVisibility() == Visibility.PRIVATE){
-                    RubySymbol m = getContext().newSymbol(method.getName());
-                    array.slowPush(m);
-                }
-            }
-            return array;
+                        @Override
+                        public boolean filter(InternalMethod method) {
+                            return method.getVisibility() == Visibility.PRIVATE;
+                        }
+
+                    }).toArray());
         }
     }
 
@@ -1458,20 +1447,15 @@ public abstract class ModuleNodes {
         public RubyArray publicInstanceMethods(RubyModule module, boolean includeAncestors) {
             notDesignedForCompilation();
 
-            final RubyArray array = new RubyArray(getContext().getCoreLibrary().getArrayClass());
-            final List<InternalMethod> methods = new ArrayList<>(module.getMethods().values());
-            if (includeAncestors) {
-                for (RubyModule parent : module.parentAncestors()) {
-                    methods.addAll(parent.getMethods().values());
-                }
-            }
-            for (InternalMethod method : methods) {
-                if (method.getVisibility() == Visibility.PUBLIC){
-                    RubySymbol m = getContext().newSymbol(method.getName());
-                    array.slowPush(m);
-                }
-            }
-            return array;
+            return RubyArray.fromObjects(getContext().getCoreLibrary().getArrayClass(),
+                    module.filterMethods(includeAncestors, new RubyModule.MethodFilter() {
+
+                        @Override
+                        public boolean filter(InternalMethod method) {
+                            return method.getVisibility() == Visibility.PUBLIC;
+                        }
+
+                    }).toArray());
         }
     }
 

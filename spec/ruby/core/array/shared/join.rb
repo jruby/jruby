@@ -132,10 +132,8 @@ describe :array_join_with_string_separator, :shared => true do
       [].send(@method, @sep).tainted?.should be_false
     end
 
-    ruby_bug "5902", "2.0" do
-      it "does not taint the result if the array has only one element" do
-        [1].send(@method, @sep).tainted?.should be_false
-      end
+    it "does not taint the result if the array has only one element" do
+      [1].send(@method, @sep).tainted?.should be_false
     end
 
     it "taints the result if the array has two or more elements" do
@@ -152,10 +150,8 @@ describe :array_join_with_string_separator, :shared => true do
       [].send(@method, @sep).untrusted?.should be_false
     end
 
-    ruby_bug "5902", "2.0" do
-      it "does not untrust the result if the array has only one element" do
-        [1].send(@method, @sep).untrusted?.should be_false
-      end
+    it "does not untrust the result if the array has only one element" do
+      [1].send(@method, @sep).untrusted?.should be_false
     end
 
     it "untrusts the result if the array has two or more elements" do

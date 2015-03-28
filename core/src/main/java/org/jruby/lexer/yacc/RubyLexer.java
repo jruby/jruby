@@ -1436,13 +1436,13 @@ public class RubyLexer {
             result = Tokens.tIVAR;                    
         }
         
-        if (Character.isDigit(c)) {
+        if (c != -1 && (Character.isDigit(c) || !isIdentifierChar(c))) {
             if (tokenBuffer.length() == 1) {
                 throw new SyntaxException(PID.IVAR_BAD_NAME, getPosition(), getCurrentLine(),
-                        "`@" + c + "' is not allowed as an instance variable name");
+                        "`@" + ((char) c) + "' is not allowed as an instance variable name");
             }
             throw new SyntaxException(PID.CVAR_BAD_NAME, getPosition(), getCurrentLine(),
-                    "`@@" + c + "' is not allowed as a class variable name");
+                    "`@@" + ((char) c) + "' is not allowed as a class variable name");
         }
         
         if (!isIdentifierChar(c)) {
@@ -1680,8 +1680,7 @@ public class RubyLexer {
         default:
             if (!isIdentifierChar(c)) {
                 src.unread(c);
-                yaccValue = "$";
-                return '$';
+                throw new SyntaxException(PID.CVAR_BAD_NAME, getPosition(), src.getCurrentLine(), "`$" + ((char) c) + "' is not allowed as a global variable name");
             }
         
             // $blah

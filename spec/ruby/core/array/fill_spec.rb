@@ -54,9 +54,7 @@ describe "Array#fill" do
   it "raises an ArgumentError if 4 or more arguments are passed when no block given" do
     lambda { [].fill('a') }.should_not raise_error(ArgumentError)
 
-    ruby_bug "#", "1.8.6.277" do
-      lambda { [].fill('a', 1) }.should_not raise_error(ArgumentError)
-    end
+    lambda { [].fill('a', 1) }.should_not raise_error(ArgumentError)
 
     lambda { [].fill('a', 1, 2) }.should_not raise_error(ArgumentError)
     lambda { [].fill('a', 1, 2, true) }.should raise_error(ArgumentError)
@@ -69,9 +67,7 @@ describe "Array#fill" do
   it "raises an ArgumentError if 3 or more arguments are passed when a block given" do
     lambda { [].fill() {|i|} }.should_not raise_error(ArgumentError)
 
-    ruby_bug "#", "1.8.6.277" do
-      lambda { [].fill(1) {|i|} }.should_not raise_error(ArgumentError)
-    end
+    lambda { [].fill(1) {|i|} }.should_not raise_error(ArgumentError)
 
     lambda { [].fill(1, 2) {|i|} }.should_not raise_error(ArgumentError)
     lambda { [].fill(1, 2, true) {|i|} }.should raise_error(ArgumentError)
@@ -163,41 +159,35 @@ describe "Array#fill with (filler, index, length)" do
     [1, 2, 3, 4, 5].fill('a', 2, 0).should == [1, 2, 3, 4, 5]
     [1, 2, 3, 4, 5].fill('a', -2, 0).should == [1, 2, 3, 4, 5]
 
-    ruby_bug "#", "1.8.6.277" do
-      [1, 2, 3, 4, 5].fill('a', 2, -2).should == [1, 2, 3, 4, 5]
-      [1, 2, 3, 4, 5].fill('a', -2, -2).should == [1, 2, 3, 4, 5]
-    end
+    [1, 2, 3, 4, 5].fill('a', 2, -2).should == [1, 2, 3, 4, 5]
+    [1, 2, 3, 4, 5].fill('a', -2, -2).should == [1, 2, 3, 4, 5]
 
     [1, 2, 3, 4, 5].fill(2, 0, &@never_passed).should == [1, 2, 3, 4, 5]
     [1, 2, 3, 4, 5].fill(-2, 0, &@never_passed).should == [1, 2, 3, 4, 5]
 
-    ruby_bug "#", "1.8.6.277" do
-      [1, 2, 3, 4, 5].fill(2, -2, &@never_passed).should == [1, 2, 3, 4, 5]
-      [1, 2, 3, 4, 5].fill(-2, -2, &@never_passed).should == [1, 2, 3, 4, 5]
-    end
+    [1, 2, 3, 4, 5].fill(2, -2, &@never_passed).should == [1, 2, 3, 4, 5]
+    [1, 2, 3, 4, 5].fill(-2, -2, &@never_passed).should == [1, 2, 3, 4, 5]
   end
 
-  ruby_bug "#", "1.8.6.277" do
-    # See: http://blade.nagaokaut.ac.jp/cgi-bin/scat.rb/ruby/ruby-core/17481
-    it "does not raise an exception if the given length is negative and its absolute value does not exceed the index" do
-      lambda { [1, 2, 3, 4].fill('a', 3, -1)}.should_not raise_error(ArgumentError)
-      lambda { [1, 2, 3, 4].fill('a', 3, -2)}.should_not raise_error(ArgumentError)
-      lambda { [1, 2, 3, 4].fill('a', 3, -3)}.should_not raise_error(ArgumentError)
+  # See: http://blade.nagaokaut.ac.jp/cgi-bin/scat.rb/ruby/ruby-core/17481
+  it "does not raise an exception if the given length is negative and its absolute value does not exceed the index" do
+    lambda { [1, 2, 3, 4].fill('a', 3, -1)}.should_not raise_error(ArgumentError)
+    lambda { [1, 2, 3, 4].fill('a', 3, -2)}.should_not raise_error(ArgumentError)
+    lambda { [1, 2, 3, 4].fill('a', 3, -3)}.should_not raise_error(ArgumentError)
 
-      lambda { [1, 2, 3, 4].fill(3, -1, &@never_passed)}.should_not raise_error(ArgumentError)
-      lambda { [1, 2, 3, 4].fill(3, -2, &@never_passed)}.should_not raise_error(ArgumentError)
-      lambda { [1, 2, 3, 4].fill(3, -3, &@never_passed)}.should_not raise_error(ArgumentError)
-    end
+    lambda { [1, 2, 3, 4].fill(3, -1, &@never_passed)}.should_not raise_error(ArgumentError)
+    lambda { [1, 2, 3, 4].fill(3, -2, &@never_passed)}.should_not raise_error(ArgumentError)
+    lambda { [1, 2, 3, 4].fill(3, -3, &@never_passed)}.should_not raise_error(ArgumentError)
+  end
 
-    it "does not raise an exception even if the given length is negative and its absolute value exceeds the index" do
-      lambda { [1, 2, 3, 4].fill('a', 3, -4)}.should_not raise_error(ArgumentError)
-      lambda { [1, 2, 3, 4].fill('a', 3, -5)}.should_not raise_error(ArgumentError)
-      lambda { [1, 2, 3, 4].fill('a', 3, -10000)}.should_not raise_error(ArgumentError)
+  it "does not raise an exception even if the given length is negative and its absolute value exceeds the index" do
+    lambda { [1, 2, 3, 4].fill('a', 3, -4)}.should_not raise_error(ArgumentError)
+    lambda { [1, 2, 3, 4].fill('a', 3, -5)}.should_not raise_error(ArgumentError)
+    lambda { [1, 2, 3, 4].fill('a', 3, -10000)}.should_not raise_error(ArgumentError)
 
-      lambda { [1, 2, 3, 4].fill(3, -4, &@never_passed)}.should_not raise_error(ArgumentError)
-      lambda { [1, 2, 3, 4].fill(3, -5, &@never_passed)}.should_not raise_error(ArgumentError)
-      lambda { [1, 2, 3, 4].fill(3, -10000, &@never_passed)}.should_not raise_error(ArgumentError)
-    end
+    lambda { [1, 2, 3, 4].fill(3, -4, &@never_passed)}.should_not raise_error(ArgumentError)
+    lambda { [1, 2, 3, 4].fill(3, -5, &@never_passed)}.should_not raise_error(ArgumentError)
+    lambda { [1, 2, 3, 4].fill(3, -10000, &@never_passed)}.should_not raise_error(ArgumentError)
   end
 
   it "tries to convert the second and third arguments to Integers using #to_int" do

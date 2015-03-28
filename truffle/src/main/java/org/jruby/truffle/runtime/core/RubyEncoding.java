@@ -102,4 +102,9 @@ public class RubyEncoding extends RubyBasicObject {
 
     }
 
+    @Override
+    public String toString() {
+        return getName().toString();
+    }
+
 }

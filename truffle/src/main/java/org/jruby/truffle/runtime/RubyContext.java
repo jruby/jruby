@@ -12,6 +12,7 @@ package org.jruby.truffle.runtime;
 import com.oracle.truffle.api.*;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.frame.MaterializedFrame;
+import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.object.Shape;
 import com.oracle.truffle.api.source.BytesDecoder;
@@ -27,6 +28,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.truffle.TruffleHooks;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.RubyRootNode;
+import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.nodes.methods.SetMethodDeclarationContext;
 import org.jruby.truffle.nodes.rubinius.RubiniusPrimitiveManager;
 import org.jruby.truffle.runtime.control.RaiseException;
@@ -310,6 +312,10 @@ public class RubyContext extends ExecutionContext {
         return RubyString.fromByteList(stringClass, bytes);
     }
 
+    public Object makeTuple(VirtualFrame frame, CallDispatchHeadNode newTupleNode, Object... values) {
+        return newTupleNode.call(frame, getCoreLibrary().getTupleClass(), "create", null, values);
+    }
+
     public IRubyObject toJRuby(Object object) {
         RubyNode.notDesignedForCompilation();
 
@@ -331,8 +337,10 @@ public class RubyContext extends ExecutionContext {
             return toJRuby((RubyString) object);
         } else if (object instanceof RubyArray) {
             return toJRuby((RubyArray) object);
+        } else if (object instanceof RubyEncoding) {
+            return toJRuby((RubyEncoding) object);
         } else {
-            throw getRuntime().newRuntimeError("cannot pass " + object + " to JRuby");
+            throw getRuntime().newRuntimeError("cannot pass " + object + " (" + object.getClass().getName()  + ") to JRuby");
         }
     }
 
@@ -347,6 +355,10 @@ public class RubyContext extends ExecutionContext {
         }
 
         return runtime.newArray(store);
+    }
+
+    public IRubyObject toJRuby(RubyEncoding encoding) {
+        return runtime.getEncodingService().rubyEncodingFromObject(runtime.newString(encoding.getName()));
     }
 
     public org.jruby.RubyString toJRuby(RubyString string) {

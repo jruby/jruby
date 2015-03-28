@@ -31,17 +31,15 @@ describe "Struct#hash" do
     s.new.hash.should == "different"
   end
 
-  ruby_bug "redmine #1852", "1.9.1" do
-    it "returns the same hash for recursive structs" do
-      car = StructClasses::Car.new("Honda", "Accord", "1998")
-      similar_car = StructClasses::Car.new("Honda", "Accord", "1998")
-      car[:make] = car
-      similar_car[:make] = car
-      car.hash.should == similar_car.hash
-      # This is because car.eql?(similar_car).
-      # Objects that are eql? must return the same hash.
-      # See the Struct#eql? specs
-    end
+  it "returns the same hash for recursive structs" do
+    car = StructClasses::Car.new("Honda", "Accord", "1998")
+    similar_car = StructClasses::Car.new("Honda", "Accord", "1998")
+    car[:make] = car
+    similar_car[:make] = car
+    car.hash.should == similar_car.hash
+    # This is because car.eql?(similar_car).
+    # Objects that are eql? must return the same hash.
+    # See the Struct#eql? specs
   end
 
   it_behaves_like :struct_accessor, :hash

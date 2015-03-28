@@ -152,11 +152,9 @@ describe :string_concat_encoding, :shared => true do
     end
   end
 
-  ruby_bug "#", "1.9.3" do
-    describe "when self is ASCII-8BIT and argument is US-ASCII" do
-      it "uses ASCII-8BIT encoding" do
-        "abc".encode("ASCII-8BIT").send(@method, "123".encode("US-ASCII")).encoding.should == Encoding::ASCII_8BIT
-      end
+  describe "when self is ASCII-8BIT and argument is US-ASCII" do
+    it "uses ASCII-8BIT encoding" do
+      "abc".encode("ASCII-8BIT").send(@method, "123".encode("US-ASCII")).encoding.should == Encoding::ASCII_8BIT
     end
   end
 end

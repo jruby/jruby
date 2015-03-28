@@ -116,23 +116,21 @@ describe "BigDecimal#round" do
     end
   end
 
-  ruby_bug "redmine:3803/4567", "1.9.2" do
-    describe "BigDecimal::ROUND_HALF_DOWN" do
-      it "rounds values > 5 up, otherwise down" do
-        @p1_50.round(0, BigDecimal::ROUND_HALF_DOWN).should == @one
-        @p1_51.round(0, BigDecimal::ROUND_HALF_DOWN).should == @two
-        @p1_49.round(0, BigDecimal::ROUND_HALF_DOWN).should == @one
-        @n1_50.round(0, BigDecimal::ROUND_HALF_DOWN).should == @neg_one
-        @n1_51.round(0, BigDecimal::ROUND_HALF_DOWN).should == @neg_two
-        @n1_49.round(0, BigDecimal::ROUND_HALF_DOWN).should == @neg_one
+  describe "BigDecimal::ROUND_HALF_DOWN" do
+    it "rounds values > 5 up, otherwise down" do
+      @p1_50.round(0, BigDecimal::ROUND_HALF_DOWN).should == @one
+      @p1_51.round(0, BigDecimal::ROUND_HALF_DOWN).should == @two
+      @p1_49.round(0, BigDecimal::ROUND_HALF_DOWN).should == @one
+      @n1_50.round(0, BigDecimal::ROUND_HALF_DOWN).should == @neg_one
+      @n1_51.round(0, BigDecimal::ROUND_HALF_DOWN).should == @neg_two
+      @n1_49.round(0, BigDecimal::ROUND_HALF_DOWN).should == @neg_one
 
-        @p2_50.round(0, BigDecimal::ROUND_HALF_DOWN).should == @two
-        @p2_51.round(0, BigDecimal::ROUND_HALF_DOWN).should == @three
-        @p2_49.round(0, BigDecimal::ROUND_HALF_DOWN).should == @two
-        @n2_50.round(0, BigDecimal::ROUND_HALF_DOWN).should == @neg_two
-        @n2_51.round(0, BigDecimal::ROUND_HALF_DOWN).should == @neg_three
-        @n2_49.round(0, BigDecimal::ROUND_HALF_DOWN).should == @neg_two
-      end
+      @p2_50.round(0, BigDecimal::ROUND_HALF_DOWN).should == @two
+      @p2_51.round(0, BigDecimal::ROUND_HALF_DOWN).should == @three
+      @p2_49.round(0, BigDecimal::ROUND_HALF_DOWN).should == @two
+      @n2_50.round(0, BigDecimal::ROUND_HALF_DOWN).should == @neg_two
+      @n2_51.round(0, BigDecimal::ROUND_HALF_DOWN).should == @neg_three
+      @n2_49.round(0, BigDecimal::ROUND_HALF_DOWN).should == @neg_two
     end
   end
 
@@ -172,23 +170,21 @@ describe "BigDecimal#round" do
     end
   end
 
-  ruby_bug "redmine:3803/4567", "1.9.2" do
-    describe "BigDecimal::ROUND_HALF_EVEN" do
-      it "rounds values > 5 up, < 5 down and == 5 towards even neighbor" do
-        @p1_50.round(0, BigDecimal::ROUND_HALF_EVEN).should == @two
-        @p1_51.round(0, BigDecimal::ROUND_HALF_EVEN).should == @two
-        @p1_49.round(0, BigDecimal::ROUND_HALF_EVEN).should == @one
-        @n1_50.round(0, BigDecimal::ROUND_HALF_EVEN).should == @neg_two
-        @n1_51.round(0, BigDecimal::ROUND_HALF_EVEN).should == @neg_two
-        @n1_49.round(0, BigDecimal::ROUND_HALF_EVEN).should == @neg_one
+  describe "BigDecimal::ROUND_HALF_EVEN" do
+    it "rounds values > 5 up, < 5 down and == 5 towards even neighbor" do
+      @p1_50.round(0, BigDecimal::ROUND_HALF_EVEN).should == @two
+      @p1_51.round(0, BigDecimal::ROUND_HALF_EVEN).should == @two
+      @p1_49.round(0, BigDecimal::ROUND_HALF_EVEN).should == @one
+      @n1_50.round(0, BigDecimal::ROUND_HALF_EVEN).should == @neg_two
+      @n1_51.round(0, BigDecimal::ROUND_HALF_EVEN).should == @neg_two
+      @n1_49.round(0, BigDecimal::ROUND_HALF_EVEN).should == @neg_one
 
-        @p2_50.round(0, BigDecimal::ROUND_HALF_EVEN).should == @two
-        @p2_51.round(0, BigDecimal::ROUND_HALF_EVEN).should == @three
-        @p2_49.round(0, BigDecimal::ROUND_HALF_EVEN).should == @two
-        @n2_50.round(0, BigDecimal::ROUND_HALF_EVEN).should == @neg_two
-        @n2_51.round(0, BigDecimal::ROUND_HALF_EVEN).should == @neg_three
-        @n2_49.round(0, BigDecimal::ROUND_HALF_EVEN).should == @neg_two
-      end
+      @p2_50.round(0, BigDecimal::ROUND_HALF_EVEN).should == @two
+      @p2_51.round(0, BigDecimal::ROUND_HALF_EVEN).should == @three
+      @p2_49.round(0, BigDecimal::ROUND_HALF_EVEN).should == @two
+      @n2_50.round(0, BigDecimal::ROUND_HALF_EVEN).should == @neg_two
+      @n2_51.round(0, BigDecimal::ROUND_HALF_EVEN).should == @neg_three
+      @n2_49.round(0, BigDecimal::ROUND_HALF_EVEN).should == @neg_two
     end
   end
 end

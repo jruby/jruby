@@ -13,20 +13,10 @@ describe "Delegator#method" do
     m.call.should == :foo
   end
 
-  ruby_version_is ""..."2.0" do
-    it "returns a method object for protected methods of the delegate object" do
-      m = @delegate.method(:prot)
-      m.should be_an_instance_of(Method)
-      m.call.should == :protected
-    end
-  end
-
-  ruby_version_is "2.0" do
-    it "returns a method object for protected methods of the delegate object" do
-      lambda {
-        @delegate.method(:prot)
-      }.should raise_error(NameError)
-    end
+  it "returns a method object for protected methods of the delegate object" do
+    lambda {
+      @delegate.method(:prot)
+    }.should raise_error(NameError)
   end
 
   it "raises a NameError for a private methods of the delegate object" do
@@ -59,12 +49,10 @@ describe "Delegator#method" do
     }.should raise_error(NameError)
   end
 
-  ruby_version_is "1.9" do
-    it "returns a method that respond_to_missing?" do
-      m = @delegate.method(:pub_too)
-      m.should be_an_instance_of(Method)
-      m.call.should == :pub_too
-    end
+  it "returns a method that respond_to_missing?" do
+    m = @delegate.method(:pub_too)
+    m.should be_an_instance_of(Method)
+    m.call.should == :pub_too
   end
 
   it "raises a NameError if method is no longer valid because object has changed" do

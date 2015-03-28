@@ -15,23 +15,8 @@ describe "Logger::LogDevice#close" do
     rm_r @file_path
   end
 
-  ruby_version_is "" ... "1.9" do
-    it "closes the LogDevice's stream" do
-      @device.close
-      lambda { @device.write("Test") }.should raise_error
-    end
-
-    it "raises an error if it's already closed" do
-      @device.close
-      lambda { @device.close }.should raise_error
-    end
+  it "closes the LogDevice's stream" do
+    @device.close
+    lambda { @device.write("Test") }.should complain(/\Alog writing failed\./)
   end
-
-  ruby_version_is "1.9" do
-    it "closes the LogDevice's stream" do
-      @device.close
-      lambda { @device.write("Test") }.should complain(/\Alog writing failed\./)
-    end
-  end
-
 end

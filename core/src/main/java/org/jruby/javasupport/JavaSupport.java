@@ -103,6 +103,8 @@ public abstract class JavaSupport {
 
     public abstract RubyClass getJavaConstructorClass();
 
+    public abstract RubyClass getJavaProxyConstructorClass();
+
     public abstract Map<Set<?>, JavaProxyClass> getJavaProxyClassCache();
 
     public abstract ClassValue<ThreadLocal<RubyModule>> getUnfinishedProxyClassCache();

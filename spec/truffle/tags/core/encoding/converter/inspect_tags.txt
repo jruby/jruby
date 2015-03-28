@@ -1,2 +1,1 @@
 fails:Encoding::Converter#inspect needs to be reviewed for spec completeness
-fails:Encoding::Converter#inspect includes the source and destination encodings in the return value

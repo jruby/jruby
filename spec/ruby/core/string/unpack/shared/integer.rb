@@ -255,14 +255,12 @@ describe :string_unpack_64bit_le, :shared => true do
 end
 
 describe :string_unpack_64bit_le_extra, :shared => true do
-  ruby_bug "#", "1.8.7" do
-    it "adds nil for each element requested beyond the end of the String" do
-      [ ["",                  [nil, nil, nil]],
-        ["abcdefgh",          [7523094288207667809, nil, nil]],
-        ["abcdefghcdefab",    [7523094288207667809, nil, nil]],
-        ["abcdefghcdefabde",  [7523094288207667809, 7306072665971057763, nil]]
-      ].should be_computed_by(:unpack, unpack_format(3))
-    end
+  it "adds nil for each element requested beyond the end of the String" do
+    [ ["",                  [nil, nil, nil]],
+      ["abcdefgh",          [7523094288207667809, nil, nil]],
+      ["abcdefghcdefab",    [7523094288207667809, nil, nil]],
+      ["abcdefghcdefabde",  [7523094288207667809, 7306072665971057763, nil]]
+    ].should be_computed_by(:unpack, unpack_format(3))
   end
 end
 
@@ -319,14 +317,12 @@ describe :string_unpack_64bit_be, :shared => true do
 end
 
 describe :string_unpack_64bit_be_extra, :shared => true do
-  ruby_bug "#", "1.8.7" do
-    it "adds nil for each element requested beyond the end of the String" do
-      [ ["",                  [nil, nil, nil]],
-        ["hgfedcba",          [7523094288207667809, nil, nil]],
-        ["hgfedcbacdefab",    [7523094288207667809, nil, nil]],
-        ["hgfedcbaedbafedc",  [7523094288207667809, 7306072665971057763, nil]]
-      ].should be_computed_by(:unpack, unpack_format(3))
-    end
+  it "adds nil for each element requested beyond the end of the String" do
+    [ ["",                  [nil, nil, nil]],
+      ["hgfedcba",          [7523094288207667809, nil, nil]],
+      ["hgfedcbacdefab",    [7523094288207667809, nil, nil]],
+      ["hgfedcbaedbafedc",  [7523094288207667809, 7306072665971057763, nil]]
+    ].should be_computed_by(:unpack, unpack_format(3))
   end
 end
 

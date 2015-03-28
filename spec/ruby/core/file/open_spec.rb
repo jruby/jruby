@@ -158,23 +158,13 @@ describe "File.open" do
     @fh = File.open(@file)
     @fh.should be_kind_of(File)
 
-    ruby_version_is ''...'2.0' do
+    lambda {
       File.open(@fh.fileno) do |fh|
         @fd = fh.fileno
         @fh.close
       end
-      lambda { File.open(@fd) }.should raise_error(SystemCallError)
-    end
-
-    ruby_version_is '2.0' do
-      lambda {
-        File.open(@fh.fileno) do |fh|
-          @fd = fh.fileno
-          @fh.close
-        end
-      }.should raise_error(Errno::EBADF)
-      lambda { File.open(@fd) }.should raise_error(SystemCallError)
-    end
+    }.should raise_error(Errno::EBADF)
+    lambda { File.open(@fd) }.should raise_error(SystemCallError)
 
     File.exist?(@file).should == true
   end
@@ -326,14 +316,12 @@ describe "File.open" do
     end
   end
 
-  ruby_bug "#", "1.8.7.299" do
-    it "raises an IOError when read in a block opened with File::RDONLY|File::APPEND mode" do
-      lambda {
-        File.open(@file, File::RDONLY|File::APPEND ) do |f|
-          f.puts("writing")
-        end
-      }.should raise_error(IOError)
-    end
+  it "raises an IOError when read in a block opened with File::RDONLY|File::APPEND mode" do
+    lambda {
+      File.open(@file, File::RDONLY|File::APPEND ) do |f|
+        f.puts("writing")
+      end
+    }.should raise_error(IOError)
   end
 
   it "can read and write in a block when call open with RDWR mode" do
@@ -395,14 +383,12 @@ describe "File.open" do
     end
   end
 
-  ruby_bug "#", "1.8.7.299" do
-    it "raises an IOError if the file exists when open with File::RDONLY|File::APPEND" do
-      lambda {
-        File.open(@file, File::RDONLY|File::APPEND) do |f|
-          f.puts("writing").should == nil
-        end
-      }.should raise_error(IOError)
-    end
+  it "raises an IOError if the file exists when open with File::RDONLY|File::APPEND" do
+    lambda {
+      File.open(@file, File::RDONLY|File::APPEND) do |f|
+        f.puts("writing").should == nil
+      end
+    }.should raise_error(IOError)
   end
 
   platform_is_not :openbsd do
@@ -559,35 +545,33 @@ describe "File.open" do
   end
 
   platform_is_not :windows do
-    ruby_bug '#7908', '1.8.7' do
-      describe "on a FIFO" do
-        before :each do
-          @fifo = tmp("File_open_fifo")
-          system "mkfifo #{@fifo}"
+    describe "on a FIFO" do
+      before :each do
+        @fifo = tmp("File_open_fifo")
+        system "mkfifo #{@fifo}"
+      end
+
+      after :each do
+        rm_r @fifo
+      end
+
+      it "opens it as a normal file" do
+        file_w, file_r, read_bytes, written_length = nil
+
+        # open in threads, due to blocking open and writes
+        Thread.new do
+          file_w = File.open(@fifo, 'w')
+          written_length = file_w.syswrite('hello')
+        end
+        Thread.new do
+          file_r = File.open(@fifo, 'r')
+          read_bytes = file_r.sysread(5)
         end
 
-        after :each do
-          rm_r @fifo
-        end
+        Thread.pass until read_bytes && written_length
 
-        it "opens it as a normal file" do
-          file_w, file_r, read_bytes, written_length = nil
-
-          # open in threads, due to blocking open and writes
-          Thread.new do
-            file_w = File.open(@fifo, 'w')
-            written_length = file_w.syswrite('hello')
-          end
-          Thread.new do
-            file_r = File.open(@fifo, 'r')
-            read_bytes = file_r.sysread(5)
-          end
-
-          Thread.pass until read_bytes && written_length
-
-          written_length.should == 5
-          read_bytes.should == 'hello'
-        end
+        written_length.should == 5
+        read_bytes.should == 'hello'
       end
     end
   end

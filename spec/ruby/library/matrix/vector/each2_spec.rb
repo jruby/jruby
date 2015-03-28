@@ -36,18 +36,14 @@ describe "Vector.each2" do
       a.should == [[1, 4], [2, 5], [3, 6]]
     end
 
-    ruby_bug "to be submitted", "1.9.1" do
-      it "returns self when given a block" do
-        @v.each2(@v2){}.should equal(@v)
-      end
+    it "returns self when given a block" do
+      @v.each2(@v2){}.should equal(@v)
     end
 
-    ruby_version_is "1.8.8" do
-      it "returns an enumerator if no block given" do
-        enum = @v.each2(@v2)
-        enum.should be_an_instance_of(enumerator_class)
-        enum.to_a.should == [[1, 4], [2, 5], [3, 6]]
-      end
+    it "returns an enumerator if no block given" do
+      enum = @v.each2(@v2)
+      enum.should be_an_instance_of(enumerator_class)
+      enum.to_a.should == [[1, 4], [2, 5], [3, 6]]
     end
   end
 end

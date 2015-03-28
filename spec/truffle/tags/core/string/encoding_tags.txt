@@ -1,3 +1,0 @@
-fails:String#encoding returns the given encoding if #encode!has been called
-fails:String#encoding for Strings with \u escapes returns the given encoding if #encode!has been called
-fails:String#encoding for Strings with \x escapes returns the given encoding if #encode!has been called

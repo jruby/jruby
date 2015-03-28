@@ -1,10 +1,1 @@
 fails:Array#initialize calls #to_ary to convert the value to an array, even if it's private
-fails:Array#initialize with no arguments does not use the given block
-fails:Array#initialize with (array) does not use the given block
-fails:Array#initialize with (array) calls #to_ary to convert the value to an array
-fails:Array#initialize with (size, object=nil) raises an ArgumentError if size is negative
-fails:Array#initialize with (size, object=nil) raises an ArgumentError if size is too large
-fails:Array#initialize with (size, object=nil) calls #to_int to convert the size argument to an Integer when object is given
-fails:Array#initialize with (size, object=nil) calls #to_int to convert the size argument to an Integer when object is not given
-fails:Array#initialize with (size, object=nil) uses the block value instead of using the default value
-fails:Array#initialize with (size, object=nil) returns the value passed to break

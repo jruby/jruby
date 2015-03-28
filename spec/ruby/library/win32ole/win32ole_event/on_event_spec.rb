@@ -49,15 +49,11 @@ platform_is :windows do
       @event2.should == 'alternate'
     end
 
-    ruby_version_is "1.9" do
-
-      it "accepts a Symbol argument, sets event handler properly, and the handler is invoked by event loop" do
-        @ev.on_event(:StatusTextChange) { |*args| @event = 'foo' }
-        @ole.StatusText='hello'
-        WIN32OLE_EVENT.message_loop
-        @event.should =~ /foo/
-      end
-
+    it "accepts a Symbol argument, sets event handler properly, and the handler is invoked by event loop" do
+      @ev.on_event(:StatusTextChange) { |*args| @event = 'foo' }
+      @ole.StatusText='hello'
+      WIN32OLE_EVENT.message_loop
+      @event.should =~ /foo/
     end
 
   end

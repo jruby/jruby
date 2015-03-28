@@ -30,9 +30,13 @@ import org.jruby.runtime.encoding.EncodingService;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.coerce.ToStrNode;
 import org.jruby.truffle.nodes.coerce.ToStrNodeFactory;
+import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
+import org.jruby.truffle.nodes.dispatch.DispatchHeadNode;
+import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.RubyArray;
+import org.jruby.truffle.runtime.core.RubyBasicObject;
 import org.jruby.truffle.runtime.core.RubyEncoding;
 import org.jruby.truffle.runtime.core.RubyHash;
 import org.jruby.truffle.runtime.core.RubyNilClass;
@@ -48,48 +52,6 @@ import java.util.List;
 
 @CoreClass(name = "Encoding")
 public abstract class EncodingNodes {
-
-    @CoreMethod(names = "aliases", needsSelf = false, onSingleton = true, required = 0)
-    public abstract static class AliasesNode extends CoreMethodNode {
-
-        public AliasesNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
-        public AliasesNode(AliasesNode prev) {
-            super(prev);
-        }
-
-        @TruffleBoundary
-        @Specialization
-        public RubyHash aliases() {
-            notDesignedForCompilation();
-
-            final List<KeyValue> aliases = new ArrayList<>();
-
-            final Hash.HashEntryIterator i = getContext().getRuntime().getEncodingService().getAliases().entryIterator();
-            while (i.hasNext()) {
-                final CaseInsensitiveBytesHash.CaseInsensitiveBytesHashEntry<EncodingDB.Entry> e =
-                        ((CaseInsensitiveBytesHash.CaseInsensitiveBytesHashEntry<EncodingDB.Entry>)i.next());
-
-                final RubyString alias = getContext().makeString(new ByteList(e.bytes, e.p, e.end - e.p));
-                alias.freeze();
-
-                final RubyString name = getContext().makeString(RubyEncoding.getEncoding(e.value.getIndex()).getName());
-                name.freeze();
-
-                aliases.add(new KeyValue(alias, name));
-            }
-
-            aliases.add(new KeyValue(getContext().makeString("external"),
-                    getContext().makeString(new ByteList(getContext().getRuntime().getDefaultExternalEncoding().getName()))));
-
-            aliases.add(new KeyValue(getContext().makeString("locale"),
-                    getContext().makeString(new ByteList(getContext().getRuntime().getEncodingService().getLocaleEncoding().getName()))));
-
-            return HashOperations.verySlowFromEntries(getContext(), aliases, false);
-        }
-    }
 
     @CoreMethod(names = "ascii_compatible?")
     public abstract static class AsciiCompatibleNode extends CoreMethodNode {
@@ -230,60 +192,8 @@ public abstract class EncodingNodes {
 
     }
 
-    @CoreMethod(names = "default_external", onSingleton = true)
-    public abstract static class DefaultExternalNode extends CoreMethodNode {
-
-        public DefaultExternalNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
-        public DefaultExternalNode(DefaultExternalNode prev) {
-            super(prev);
-        }
-
-        @Specialization
-        public RubyEncoding defaultExternal() {
-            notDesignedForCompilation();
-
-            Encoding encoding = getContext().getRuntime().getDefaultExternalEncoding();
-
-            if (encoding == null) {
-                encoding = UTF8Encoding.INSTANCE;
-            }
-
-            return RubyEncoding.getEncoding(encoding);
-        }
-
-    }
-
-    @CoreMethod(names = "default_internal", onSingleton = true)
-    public abstract static class DefaultInternalNode extends CoreMethodNode {
-
-        public DefaultInternalNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
-        public DefaultInternalNode(DefaultInternalNode prev) {
-            super(prev);
-        }
-
-        @Specialization
-        public Object defaultInternal() {
-            notDesignedForCompilation();
-
-            Encoding encoding = getContext().getRuntime().getDefaultInternalEncoding();
-
-            if (encoding == null) {
-                return nil();
-                //encoding = UTF8Encoding.INSTANCE;
-            }
-
-            return RubyEncoding.getEncoding(encoding);
-        }
-
-    }
-
-    @CoreMethod(names = "default_external=", onSingleton = true, required = 1)
+    @RubiniusOnly
+    @CoreMethod(names = "default_external_jruby=", onSingleton = true, required = 1)
     public abstract static class SetDefaultExternalNode extends CoreMethodNode {
 
         public SetDefaultExternalNode(RubyContext context, SourceSection sourceSection) {
@@ -320,7 +230,8 @@ public abstract class EncodingNodes {
 
     }
 
-    @CoreMethod(names = "default_internal=", onSingleton = true, required = 1)
+    @RubiniusOnly
+    @CoreMethod(names = "default_internal_jruby=", onSingleton = true, required = 1)
     public abstract static class SetDefaultInternalNode extends CoreMethodNode {
 
         @Child private ToStrNode toStrNode;
@@ -366,79 +277,6 @@ public abstract class EncodingNodes {
             return encodingName;
         }
 
-    }
-
-    @CoreMethod(names = "find", onSingleton = true, required = 1)
-    @NodeChild(value = "name")
-    public abstract static class FindNode extends RubyNode {
-
-        public FindNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
-        public FindNode(FindNode prev) {
-            super(prev);
-        }
-
-        @CreateCast("name") public RubyNode coerceNameToString(RubyNode name) {
-            return ToStrNodeFactory.create(getContext(), getSourceSection(), name);
-        }
-
-        @Specialization
-        public RubyEncoding find(RubyString name) {
-            notDesignedForCompilation();
-
-            return RubyEncoding.getEncoding(name.toString());
-        }
-
-    }
-
-    @CoreMethod(names = "name_list", onSingleton = true)
-    public abstract static class NameListNode extends CoreMethodNode {
-
-        public NameListNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
-        public NameListNode(NameListNode prev) {
-            super(prev);
-        }
-
-        @TruffleBoundary
-        @Specialization
-        public RubyArray find() {
-            notDesignedForCompilation();
-
-            final EncodingService service = getContext().getRuntime().getEncodingService();
-
-            final Object[] array = new Object[service.getEncodings().size() + service.getAliases().size() + 2];
-            int n = 0;
-
-            Hash.HashEntryIterator i;
-            
-            i = service.getEncodings().entryIterator();
-
-            while (i.hasNext()) {
-                CaseInsensitiveBytesHash.CaseInsensitiveBytesHashEntry<EncodingDB.Entry> e =
-                        ((CaseInsensitiveBytesHash.CaseInsensitiveBytesHashEntry<EncodingDB.Entry>)i.next());
-                array[n++] = new RubyString(getContext().getCoreLibrary().getStringClass(), new ByteList(e.bytes, e.p, e.end - e.p));
-            }
-
-            i = service.getAliases().entryIterator();
-
-            while (i.hasNext()) {
-                CaseInsensitiveBytesHash.CaseInsensitiveBytesHashEntry<EncodingDB.Entry> e =
-                        ((CaseInsensitiveBytesHash.CaseInsensitiveBytesHashEntry<EncodingDB.Entry>)i.next());
-                array[n++] = new RubyString(getContext().getCoreLibrary().getStringClass(), new ByteList(e.bytes, e.p, e.end - e.p));
-            }
-
-            array[n++] = new RubyString(getContext().getCoreLibrary().getStringClass(), org.jruby.RubyEncoding.EXTERNAL);
-            //array[n++] = new RubyString(getContext().getCoreLibrary().getStringClass(), org.jruby.RubyEncoding.INTERNAL);
-            array[n++] = new RubyString(getContext().getCoreLibrary().getStringClass(), org.jruby.RubyEncoding.LOCALE);
-            //array[n++] = new RubyString(getContext().getCoreLibrary().getStringClass(), org.jruby.RubyEncoding.FILESYSTEM);
-
-            return new RubyArray(getContext().getCoreLibrary().getArrayClass(), array, array.length);
-        }
     }
 
     @CoreMethod(names = "list", onSingleton = true)
@@ -501,6 +339,98 @@ public abstract class EncodingNodes {
         }
     }
 
+    @RubiniusOnly
+    @CoreMethod(names = "encoding_map", onSingleton = true)
+    public abstract static class EncodingMapNode extends CoreMethodNode {
+
+        @Child private CallDispatchHeadNode upcaseNode;
+        @Child private CallDispatchHeadNode toSymNode;
+        @Child private CallDispatchHeadNode newLookupTableNode;
+        @Child private CallDispatchHeadNode lookupTableWriteNode;
+        @Child private CallDispatchHeadNode newTupleNode;
+
+        public EncodingMapNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+            upcaseNode = DispatchHeadNodeFactory.createMethodCall(context);
+            toSymNode = DispatchHeadNodeFactory.createMethodCall(context);
+            newLookupTableNode = DispatchHeadNodeFactory.createMethodCall(context);
+            lookupTableWriteNode = DispatchHeadNodeFactory.createMethodCall(context);
+            newTupleNode = DispatchHeadNodeFactory.createMethodCall(context);
+        }
+
+        public EncodingMapNode(EncodingMapNode prev) {
+            super(prev);
+            upcaseNode = prev.upcaseNode;
+            toSymNode = prev.toSymNode;
+            newLookupTableNode = prev.newLookupTableNode;
+            lookupTableWriteNode = prev.lookupTableWriteNode;
+            newTupleNode = prev.newTupleNode;
+        }
+
+        @Specialization
+        public Object encodingMap(VirtualFrame frame) {
+            Object ret = newLookupTableNode.call(frame, getContext().getCoreLibrary().getLookupTableClass(), "new", null);
+
+            final RubyEncoding[] encodings = RubyEncoding.cloneEncodingList();
+            for (int i = 0; i < encodings.length; i++) {
+                final Object upcased = upcaseNode.call(frame, getContext().makeString(encodings[i].getName()), "upcase", null);
+                final Object key = toSymNode.call(frame, upcased, "to_sym", null);
+                final Object value = newTupleNode.call(frame, getContext().getCoreLibrary().getTupleClass(), "create", null, nil(), i);
+
+                lookupTableWriteNode.call(frame, ret, "[]=", null, key, value);
+            }
+
+            final Hash.HashEntryIterator i = getContext().getRuntime().getEncodingService().getAliases().entryIterator();
+            while (i.hasNext()) {
+                final CaseInsensitiveBytesHash.CaseInsensitiveBytesHashEntry<EncodingDB.Entry> e =
+                        ((CaseInsensitiveBytesHash.CaseInsensitiveBytesHashEntry<EncodingDB.Entry>)i.next());
+
+                final Object upcased = upcaseNode.call(frame, getContext().makeString(new ByteList(e.bytes, e.p, e.end - e.p)), "upcase", null);
+                final Object key = toSymNode.call(frame, upcased, "to_sym", null);
+                final RubyString alias = getContext().makeString(new ByteList(e.bytes, e.p, e.end - e.p));
+                final int index = e.value.getIndex();
+
+
+                final Object value = newTupleNode.call(frame, getContext().getCoreLibrary().getTupleClass(), "create", null, alias, index);
+                lookupTableWriteNode.call(frame, ret, "[]=", null, key, value);
+            }
+
+            final Encoding defaultInternalEncoding = getContext().getRuntime().getDefaultInternalEncoding();
+            final Object internalTuple = getContext().makeTuple(frame, newTupleNode, getContext().makeString("internal"), indexLookup(encodings, defaultInternalEncoding));
+            lookupTableWriteNode.call(frame, ret, "[]=", null, getContext().newSymbol("INTERNAL"), internalTuple);
+
+            final Encoding defaultExternalEncoding = getContext().getRuntime().getDefaultExternalEncoding();
+            final Object externalTuple = getContext().makeTuple(frame, newTupleNode, getContext().makeString("external"), indexLookup(encodings, defaultExternalEncoding));
+            lookupTableWriteNode.call(frame, ret, "[]=", null, getContext().newSymbol("EXTERNAL"), externalTuple);
+
+            final Encoding localeEncoding = getContext().getRuntime().getEncodingService().getLocaleEncoding();
+            final Object localeTuple = getContext().makeTuple(frame, newTupleNode, getContext().makeString("locale"), indexLookup(encodings, localeEncoding));
+            lookupTableWriteNode.call(frame, ret, "[]=", null, getContext().newSymbol("LOCALE"), localeTuple);
+
+            final Encoding filesystemEncoding = getContext().getRuntime().getEncodingService().getLocaleEncoding();
+            final Object filesystemTuple = getContext().makeTuple(frame, newTupleNode, getContext().makeString("filesystem"), indexLookup(encodings, filesystemEncoding));
+            lookupTableWriteNode.call(frame, ret, "[]=", null, getContext().newSymbol("FILESYSTEM"), filesystemTuple);
+
+            return ret;
+        }
+
+        @TruffleBoundary
+        public Object indexLookup(RubyEncoding[] encodings, Encoding encoding) {
+            // TODO (nirvdrum 25-Mar-15): Build up this lookup table in RubyEncoding as we register encodings.
+            if (encoding == null) {
+                return nil();
+            }
+
+            for (int i = 0; i < encodings.length; i++) {
+                if (encodings[i].getEncoding() == encoding) {
+                    return i;
+                }
+            }
+
+            throw new UnsupportedOperationException(String.format("Could not find encoding %s in the registered encoding list", encoding.toString()));
+        }
+    }
+
     @CoreMethod(names = { "name", "to_s" })
     public abstract static class ToSNode extends CoreMethodNode {
 
@@ -521,28 +451,4 @@ public abstract class EncodingNodes {
         }
     }
 
-    @CoreMethod(names = "inspect")
-    public abstract static class InspectNode extends CoreMethodNode {
-
-        public InspectNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
-        public InspectNode(InspectNode prev) {
-            super(prev);
-        }
-
-        @CompilerDirectives.TruffleBoundary
-        @Specialization
-        public RubyString toS(RubyEncoding encoding) {
-            final ByteList nameByteList = encoding.getName().dup();
-            nameByteList.setEncoding(ASCIIEncoding.INSTANCE);
-
-            if (encoding.isDummy()) {
-                return getContext().makeString(String.format("#<Encoding:%s (dummy)>", nameByteList.toString()));
-            } else {
-                return getContext().makeString(String.format("#<Encoding:%s>", nameByteList.toString()));
-            }
-        }
-    }
 }
