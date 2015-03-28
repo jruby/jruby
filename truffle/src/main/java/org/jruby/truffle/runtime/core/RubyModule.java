@@ -600,6 +600,40 @@ public class RubyModule extends RubyBasicObject implements ModuleChain {
         };
     }
 
+    public static interface MethodFilter {
+
+        boolean filter(InternalMethod method);
+
+    }
+
+    public Collection<RubySymbol> filterMethods(boolean includeAncestors, MethodFilter filter) {
+        final Set<RubySymbol> filtered = new HashSet<>();
+
+        if (includeAncestors) {
+            for (RubyModule parent : parentAncestors()) {
+                for (InternalMethod method : parent.methods.values()) {
+                    doFilterMethod(method, filter, filtered);
+                }
+            }
+        }
+
+        for (InternalMethod method : methods.values()) {
+            doFilterMethod(method, filter, filtered);
+        }
+
+        return filtered;
+    }
+
+    private void doFilterMethod(InternalMethod method, MethodFilter filter, Set<RubySymbol> filtered) {
+        final RubySymbol symbol = getContext().getSymbolTable().getSymbol(method.getName());
+
+        if (method.isUndefined()) {
+            filtered.remove(symbol);
+        } else if (filter.filter(method)){
+            filtered.add(symbol);
+        }
+    }
+
     public static class ModuleAllocator implements Allocator {
 
         @Override

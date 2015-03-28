@@ -87,6 +87,7 @@ require_relative 'core/rubinius/common/complexifier'
 require_relative 'core/rubinius/common/gc'
 
 # Load delta (ordered according to Rubinius' load_order.txt)
+require_relative 'core/rubinius/delta/class'
 require_relative 'core/rubinius/delta/struct'
 
 # Load JRuby+Truffle classes
