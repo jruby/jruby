@@ -19,6 +19,8 @@ import org.jcodings.EncodingDB;
 import org.jcodings.transcode.EConv;
 import org.jcodings.transcode.Transcoder;
 import org.jcodings.transcode.TranscoderDB;
+import org.jcodings.util.CaseInsensitiveBytesHash;
+import org.jcodings.util.Hash;
 import org.jruby.Ruby;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
@@ -122,20 +124,48 @@ public abstract class EncodingConverterNodes {
         public RubyHash transcodingMap(VirtualFrame frame) {
             List<KeyValue> entries = new ArrayList<>();
 
-            for (RubyEncoding e : RubyEncoding.cloneEncodingList()) {
-                final Object upcased = upcaseNode.call(frame, getContext().makeString(e.getName()), "upcase", null);
-                final Object key = toSymNode.call(frame, upcased, "to_sym", null);
+            for (CaseInsensitiveBytesHash<TranscoderDB.Entry> sourceEntry : TranscoderDB.transcoders) {
+                Object key = null;
                 final Object value = newLookupTableNode.call(frame, getContext().getCoreLibrary().getLookupTableClass(), "new", null);
 
-                final Object tupleValues = new Object[2];
+                for (Hash.HashEntry<TranscoderDB.Entry> destinationEntry : sourceEntry.entryIterator()) {
+                    final TranscoderDB.Entry e = destinationEntry.value;
 
+                    if (key == null) {
+                        final Object upcased = upcaseNode.call(frame, getContext().makeString(new ByteList(e.getSource())), "upcase", null);
+                        key = toSymNode.call(frame, upcased, "to_sym", null);
+                    }
 
-                lookupTableWriteNode.call(frame, value, "[]=", null, key, nil());
+                    final Object upcasedLookupTableKey = upcaseNode.call(frame, getContext().makeString(new ByteList(e.getDestination())), "upcase", null);
+                    final Object lookupTableKey = toSymNode.call(frame, upcasedLookupTableKey, "to_sym", null);
+                    lookupTableWriteNode.call(frame, value, "[]=", null, lookupTableKey, true);
+                }
 
                 entries.add(new KeyValue(key, value));
             }
 
             return HashOperations.verySlowFromEntries(getContext().getCoreLibrary().getHashClass(), entries, true);
+        }
+    }
+
+    @RubiniusOnly
+    @CoreMethod(names = "transcoding_path_lookup", onSingleton = true, required = 2)
+    public abstract static class TranscodingPathLookupNode extends CoreMethodNode {
+
+        public TranscodingPathLookupNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public TranscodingPathLookupNode(TranscodingPathLookupNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public boolean transcodingPathLookup(RubyString sourceEncodingName, RubyString destinationEncodingName) {
+            final TranscoderDB.Entry entry = TranscoderDB.getEntry(sourceEncodingName.getByteList().getUnsafeBytes(),
+                    destinationEncodingName.getByteList().getUnsafeBytes());
+
+            return entry.getTranscoder() != null;
         }
     }
 
