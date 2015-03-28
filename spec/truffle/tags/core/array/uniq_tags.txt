@@ -1,3 +1,0 @@
-fails:Array#uniq properly handles recursive arrays
-fails:Array#uniq! properly handles recursive arrays
-

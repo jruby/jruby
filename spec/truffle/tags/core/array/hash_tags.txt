@@ -1,4 +1,1 @@
-fails:Array#hash returns the same hash for equal recursive arrays
-fails:Array#hash returns the same hash for equal recursive arrays through hashes
 fails:Array#hash calls to_int on result of calling hash on each element
-fails:Array#hash properly handles recursive arrays

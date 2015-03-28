@@ -1,8 +1,2 @@
-fails:Encoding::Converter#replacement returns '?' in US-ASCII when the destination encoding is not UTF-8
-fails:Encoding::Converter#replacement returns \uFFFD when the destination encoding is UTF-8
-fails:Encoding::Converter#replacement= accepts a String argument
-fails:Encoding::Converter#replacement= accepts a String argument of arbitrary length
-fails:Encoding::Converter#replacement= raises a TypeError if assigned a non-String argument
-fails:Encoding::Converter#replacement= sets #replacement
 fails:Encoding::Converter#replacement= raises an UndefinedConversionError is the argument cannot be converted into the destination encoding
 fails:Encoding::Converter#replacement= does not change the replacement character if the argument cannot be converted into the destination encoding

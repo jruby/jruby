@@ -13,7 +13,7 @@
 ###### Change these to tastes ######
 JAY=jay
 RUBY=/usr/bin/ruby
-PARSER_BASE=Ripper19Parser
+PARSER_BASE=RipperParser
 YYTABLE_PREFIX=
 DEBUG=true
 ###### Do not change below ######
@@ -38,8 +38,8 @@ fi
 
 echo "Generating Parser '$PARSER_BASE' w/ YYTable prefix of '$YYTABLE_PREFIX'"
 
-PARSER_DIR=ext/ripper/src/main/java/org/jruby/ext/ripper
-BACKUP_DIR=../../../../../../../../..
+PARSER_DIR=core/src/main/java/org/jruby/ext/ripper
+BACKUP_DIR=../../../../../../../..
 
 pushd $PARSER_DIR
 

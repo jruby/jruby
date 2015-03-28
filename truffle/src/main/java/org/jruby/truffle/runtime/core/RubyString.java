@@ -55,7 +55,9 @@ public class RubyString extends RubyBasicObject implements CodeRangeable {
     }
 
     public void forceEncoding(Encoding encoding) {
-        this.bytes.setEncoding(encoding);
+        modify();
+        clearCodeRange();
+        StringSupport.associateEncoding(this, encoding);
         clearCodeRange();
     }
 

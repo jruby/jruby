@@ -25,11 +25,11 @@ default_gems =
    ImportedGem.new( 'rake', 'rake.version', true ),
    ImportedGem.new( 'rdoc', 'rdoc.version', true ),
    ImportedGem.new( 'json', 'json.version', true ),
-   ImportedGem.new( 'jar-dependencies', '0.1.8', true ),
+   ImportedGem.new( 'jar-dependencies', '0.1.10', true ),
    ImportedGem.new( 'minitest', 'minitest.version', true ),
    ImportedGem.new( 'test-unit', 'test-unit.version', true ),
    ImportedGem.new( 'power_assert', 'power_assert.version', true ),
-   ImportedGem.new( 'psych', '2.0.9-SNAPSHOT', true )
+   ImportedGem.new( 'psych', '2.0.9.2', true )
   ]
 
 project 'JRuby Lib Setup' do

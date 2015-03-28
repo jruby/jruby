@@ -9,11 +9,10 @@
 class Thread
 
   # Rubinius seems to set @recursive_objects to {} in C++ - here we shim the
-  # attribute reader to initialize it. __detect_outermost_recursion__ seems
-  # to make things work - not sure why at this stage.
+  # attribute reader to initialize it.
 
   def recursive_objects
-    @recursive_objects ||= {:__detect_outermost_recursion__ => nil}
+    @recursive_objects ||= {}
   end
 
 end

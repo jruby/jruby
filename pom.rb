@@ -82,7 +82,7 @@ project 'JRuby', 'https://github.com/jruby/jruby' do
               'main.basedir' => '${project.basedir}',
               'joda.time.version' => '2.5',
               'test-unit.version' => '3.0.3',
-              'power_assert.version' => '0.1.4' )
+              'power_assert.version' => '0.2.3' )
 
   unless version =~ /-SNAPSHOT/
     properties 'jruby.home' => '${basedir}/..'
