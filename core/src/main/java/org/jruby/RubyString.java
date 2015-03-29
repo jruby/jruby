@@ -2154,12 +2154,12 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
      */
     public RubyString append(IRubyObject other) {
         if (other instanceof RubyFixnum) {
-            cat(ConvertBytes.longToByteList(((RubyFixnum)other).getLongValue()));
+            cat(ConvertBytes.longToByteList(((RubyFixnum) other).getLongValue()));
             return this;
         } else if (other instanceof RubyFloat) {
-            return cat((RubyString)((RubyFloat)other).to_s());
+            return cat((RubyString) ((RubyFloat) other).to_s());
         } else if (other instanceof RubySymbol) {
-            cat(((RubySymbol)other).getBytes());
+            cat(((RubySymbol) other).getBytes());
             return this;
         }
         RubyString otherStr = other.convertToString();
