@@ -75,7 +75,7 @@ public abstract class ToStringNode extends PackNode {
             throw new NoImplicitConversionException(object, "String");
         }
 
-        throw new UnsupportedOperationException();
+        throw new NoImplicitConversionException(object, "String");
     }
 
 }
