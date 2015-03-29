@@ -124,10 +124,12 @@ public class PackParser {
                                 case 's':
                                     size = 16;
                                     break;
-                                case 'L':
                                 case 'I':
-                                case 'l':
                                 case 'i':
+                                    size = 32;
+                                    break;
+                                case 'L':
+                                case 'l':
                                     size = 64;
                                     break;
                                 default:
