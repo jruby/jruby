@@ -50,7 +50,7 @@ public class PackTokenizer {
 
         consumeWhitespace();
 
-        if (position == format.length()) {
+        if (position >= format.length()) {
             return null;
         }
 
@@ -83,7 +83,25 @@ public class PackTokenizer {
     }
 
     private void consumeWhitespace() {
-        while (position < format.length() && (Character.isWhitespace(format.charAt(position)) || format.charAt(position) == 0)) {
+        while (position < format.length()) {
+            char c = format.charAt(position);
+
+            if (c == '#') {
+                position++;
+
+                while (position < format.length()) {
+                    c = format.charAt(position);
+
+                    if (c == '\r' || c == '\n') {
+                        break;
+                    }
+
+                    position++;
+                }
+            } else if (!Character.isWhitespace(c) && c != 0) {
+                break;
+            }
+
             position++;
         }
     }
