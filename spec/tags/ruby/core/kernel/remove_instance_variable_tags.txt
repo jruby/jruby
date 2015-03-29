@@ -1,1 +1,0 @@
-fails:Kernel#remove_instance_variable is a public method

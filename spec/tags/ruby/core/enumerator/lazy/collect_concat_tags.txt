@@ -1,4 +1,2 @@
 fails:Enumerator::Lazy#collect_concat sets nil to size
-fails:Enumerator::Lazy#collect_concat when the returned lazy enumerator is evaluated by Enumerable#first flattens elements when the given block returned an array or responding to .each and .force
 fails:Enumerator::Lazy#collect_concat on a nested Lazy sets nil to size
-fails:Enumerator::Lazy#collect_concat on a nested Lazy when the returned lazy enumerator is evaluated by Enumerable#first flattens elements when the given block returned an array or responding to .each and .force

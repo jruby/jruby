@@ -1,1 +1,0 @@
-fails:Kernel#instance_variable_set raises a NameError when the argument is '@'

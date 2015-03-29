@@ -1,1 +1,0 @@
-fails:Integer#chr with an encoding argument raises RangeError if self is invalid as a codepoint in the specified encoding

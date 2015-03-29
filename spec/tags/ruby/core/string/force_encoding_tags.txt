@@ -1,1 +1,0 @@
-fails:String#force_encoding raises a TypeError if passed nil

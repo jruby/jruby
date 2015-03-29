@@ -1,1 +1,0 @@
-fails:Matrix#rect for a subclass of Matrix returns instances of that subclass

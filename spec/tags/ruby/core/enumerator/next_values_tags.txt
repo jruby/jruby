@@ -1,7 +1,2 @@
-fails:Enumerator#next_values returns the next element in self
 fails:Enumerator#next_values advances the position of the current element
-fails:Enumerator#next_values advances the position of the enumerator each time when called multiple times
-fails:Enumerator#next_values works in concert with #rewind
-fails:Enumerator#next_values returns an array with only nil if yield is called with nil
 fails:Enumerator#next_values returns an empty array if yield is called without arguments
-fails:Enumerator#next_values raises StopIteration if called on a finished enumerator

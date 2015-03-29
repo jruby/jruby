@@ -1,0 +1,1 @@
+fails:Complex#integer? returns false for a Complex with no imaginary part

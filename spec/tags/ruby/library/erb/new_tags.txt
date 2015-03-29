@@ -1,2 +1,1 @@
-fails(https://bugs.ruby-lang.org/issues/7046):ERB.new removes spaces around '<%- -%>' when trim_mode is '-'
 fails:ERB.new remember local variables defined previous one

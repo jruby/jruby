@@ -1,0 +1,1 @@
+fails:Integer#to_r returns a Rational object

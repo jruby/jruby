@@ -1,2 +1,6 @@
 fails(JRUBY-5668):Kernel#require ($LOAD_FEATURES) when a non-extensioned file is in $LOADED_FEATURES loads a .rb extensioned file when a non extensioned file is in $LOADED_FEATURES
 fails(JRUBY-5668):Kernel.require ($LOAD_FEATURES) when a non-extensioned file is in $LOADED_FEATURES loads a .rb extensioned file when a non extensioned file is in $LOADED_FEATURES
+fails:Kernel#require (concurrently) blocks a second thread from returning while the 1st is still requiring
+fails:Kernel#require (concurrently) blocks based on the path
+fails:Kernel#require (concurrently) allows a 2nd require if the 1st raised an exception
+fails:Kernel#require (concurrently) blocks a 3rd require if the 1st raises an exception and the 2nd is still running

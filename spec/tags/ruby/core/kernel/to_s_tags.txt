@@ -1,1 +1,0 @@
-fails:Kernel#to_s returns an untrusted result if self is untrusted
