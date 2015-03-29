@@ -14,10 +14,7 @@ import com.oracle.truffle.api.Truffle;
 import org.jruby.truffle.pack.nodes.PackNode;
 import org.jruby.truffle.pack.nodes.PackRootNode;
 import org.jruby.truffle.pack.nodes.SourceNode;
-import org.jruby.truffle.pack.nodes.control.BackNode;
-import org.jruby.truffle.pack.nodes.control.NNode;
-import org.jruby.truffle.pack.nodes.control.SequenceNode;
-import org.jruby.truffle.pack.nodes.control.StarNode;
+import org.jruby.truffle.pack.nodes.control.*;
 import org.jruby.truffle.pack.nodes.type.*;
 import org.jruby.truffle.pack.runtime.Endianness;
 import org.jruby.truffle.pack.runtime.FormatException;
@@ -205,6 +202,15 @@ public class PackParser {
                         break;
                     case 'x':
                         node = new NullNode();
+                        break;
+                    case '@':
+                        final int position;
+                        if (tokenizer.peek() instanceof Integer) {
+                            position = (int) tokenizer.next();
+                        } else {
+                            position = 1;
+                        }
+                        node = new AtNode(position);
                         break;
                     default:
                         throw new UnsupportedOperationException(String.format("unexpected token %s", token));
