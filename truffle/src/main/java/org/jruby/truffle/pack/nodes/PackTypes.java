@@ -23,6 +23,8 @@ import org.jruby.util.ByteList;
         int.class,
         long.class,
         RubyBignum.class,
+        float.class,
+        double.class,
         ByteList.class,
         RubyString.class,
         RubyNilClass.class,

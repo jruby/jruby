@@ -212,6 +212,41 @@ public class PackParser {
                         }
                         node = new AtNode(position);
                         break;
+                    case 'D':
+                    case 'd':
+                        node = writeInteger(64, Signedness.UNSIGNED, nativeEndianness(),
+                                AsLongNodeGen.create(
+                                        ReadFloatNodeGen.create(context, new SourceNode())));
+                        break;
+                    case 'F':
+                    case 'f':
+                        node = writeInteger(32, Signedness.UNSIGNED, nativeEndianness(),
+                                AsLongNodeGen.create(
+                                        AsSinglePrecisionNodeGen.create(
+                                            ReadFloatNodeGen.create(context, new SourceNode()))));
+                        break;
+                    case 'E':
+                        node = writeInteger(64, Signedness.UNSIGNED, Endianness.LITTLE,
+                                AsLongNodeGen.create(
+                                        ReadFloatNodeGen.create(context, new SourceNode())));
+                        break;
+                    case 'e':
+                        node = writeInteger(32, Signedness.UNSIGNED, Endianness.LITTLE,
+                                AsLongNodeGen.create(
+                                        AsSinglePrecisionNodeGen.create(
+                                                ReadFloatNodeGen.create(context, new SourceNode()))));
+                        break;
+                    case 'G':
+                        node = writeInteger(64, Signedness.UNSIGNED, Endianness.BIG,
+                                AsLongNodeGen.create(
+                                        ReadFloatNodeGen.create(context, new SourceNode())));
+                        break;
+                    case 'g':
+                        node = writeInteger(32, Signedness.UNSIGNED, Endianness.BIG,
+                                AsLongNodeGen.create(
+                                        AsSinglePrecisionNodeGen.create(
+                                                ReadFloatNodeGen.create(context, new SourceNode()))));
+                        break;
                     default:
                         throw new UnsupportedOperationException(String.format("unexpected token %s", token));
                 }
@@ -341,7 +376,10 @@ public class PackParser {
 
     private PackNode writeInteger(int size, Signedness signedness, Endianness endianness) {
         final PackNode readNode = ReadIntegerNodeGen.create(context, new SourceNode());
+        return writeInteger(size, signedness, endianness, readNode);
+    }
 
+    private PackNode writeInteger(int size, Signedness signedness, Endianness endianness, PackNode readNode) {
         switch (size) {
             case 8:
                 return Write8NodeGen.create(readNode);

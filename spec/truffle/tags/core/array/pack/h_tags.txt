@@ -26,9 +26,5 @@ fails:Array#pack with format 'h' encodes the first character as the least signif
 fails:Array#pack with format 'h' encodes the second character as the most significant nibble of a hex value
 fails:Array#pack with format 'h' encodes the least significant nibble of a non alphanumeric character as the least significant nibble of the hex value
 fails:Array#pack with format 'h' returns an ASCII-8BIT string
-fails:Array#pack with format 'H' raises a TypeError when passed nil
-fails:Array#pack with format 'H' raises a TypeError when passed an Integer
 fails:Array#pack with format 'H' raises a TypeError if the object does not respond to #to_str
-fails:Array#pack with format 'h' raises a TypeError when passed nil
-fails:Array#pack with format 'h' raises a TypeError when passed an Integer
 fails:Array#pack with format 'h' raises a TypeError if the object does not respond to #to_str

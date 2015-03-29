@@ -9,7 +9,5 @@ fails:Array#pack with format 'w' returns an ASCII-8BIT string
 fails:Array#pack with format 'w' ignores NULL bytes between directives
 fails:Array#pack with format 'w' ignores spaces between directives
 fails:Array#pack with format 'w' raises an ArgumentError when passed a negative value
-fails:Array#pack with format 'w' raises a TypeError when passed nil
-fails:Array#pack with format 'w' raises a TypeError when passed an Integer
 fails:Array#pack with format 'w' raises a TypeError when passed true
 fails:Array#pack with format 'w' raises a TypeError when passed false
