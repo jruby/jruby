@@ -18,6 +18,8 @@ import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.nodes.UnexpectedResultException;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.truffle.pack.runtime.PackFrame;
+import org.jruby.truffle.pack.runtime.TooFewArgumentsException;
+import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.RubyString;
 
 import java.util.Arrays;
@@ -52,7 +54,7 @@ public abstract class PackNode extends Node {
 
         if (sourcePosition == getSourceLength(frame)) {
             CompilerDirectives.transferToInterpreter();
-            throw new UnsupportedOperationException();
+            throw new TooFewArgumentsException();
         }
 
         setSourcePosition(frame, sourcePosition + 1);
@@ -104,6 +106,22 @@ public abstract class PackNode extends Node {
 
     protected boolean isRubyString(Object object) {
         return object instanceof RubyString;
+    }
+
+    protected boolean isRubyNilClass(Object object) {
+        return object instanceof RubyString;
+    }
+
+    protected boolean isBoolean(Object object) {
+        return object instanceof Boolean;
+    }
+
+    protected boolean isInteger(Object object) {
+        return object instanceof Integer;
+    }
+
+    protected boolean isLong(Object object) {
+        return object instanceof Long;
     }
 
     protected boolean isIRubyArray(Object[] array) {

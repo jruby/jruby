@@ -37,8 +37,6 @@ public class PackParser {
     }
 
     public CallTarget parse(String format, boolean extended) {
-        System.err.println(format);
-
         if (format.length() > 32) {
             format = recoverLoop(format);
             extended = true;
@@ -167,13 +165,17 @@ public class PackParser {
      * We will struggle to compile that with a large value for size because it
      * will generate a huge number of nodes. Even if we could compile it, it's
      * not great for memory consumption or the instruction cache. Instead, we'd
-     * to recover the loop in there and convert it to:
+     * like to recover the loop in there and convert it to:
      * <p>
      *   <code>x(NX)1000</code>
      * <p>
      * We could try and do something really sophisticated here, with nested
      * loops and finding the optimal pattern, but for the moment we just look
-     * for...
+     * for one simple loop.
+     * <p>
+     * To do that, for each character we look 1..n characters behind and see if
+     * that pattern is repeated. If it is we have the loop. Nothing more
+     * complicated than that.
      */
     private String recoverLoop(String format) {
         int break_point = 0;
@@ -270,6 +272,15 @@ public class PackParser {
                             case LITTLE:
                                 return Write32UnsignedBigNodeGen.create(readNode);
                             case BIG:
+                                return Write32UnsignedLittleNodeGen.create(readNode);
+                        }
+                    case SIGNED:
+                        switch (endianness) {
+                            case LITTLE:
+                                // Can I just use the same node?
+                                return Write32UnsignedBigNodeGen.create(readNode);
+                            case BIG:
+                                // Can I just use the same node?
                                 return Write32UnsignedLittleNodeGen.create(readNode);
                         }
                     default:

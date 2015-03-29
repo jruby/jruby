@@ -134,7 +134,11 @@ public class ExceptionTranslatingNode extends RubyNode {
                     }
                 }
             } else {
-                builder.append(value.getClass().getName());
+                if (value == null) {
+                    builder.append("null");
+                } else {
+                    builder.append(value.getClass().getName());
+                }
             }
 
             if (value instanceof Number || value instanceof Boolean) {

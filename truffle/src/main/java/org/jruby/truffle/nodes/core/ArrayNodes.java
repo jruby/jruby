@@ -42,6 +42,8 @@ import org.jruby.truffle.nodes.objects.IsFrozenNode;
 import org.jruby.truffle.nodes.objects.IsFrozenNodeFactory;
 import org.jruby.truffle.nodes.yield.YieldDispatchHeadNode;
 import org.jruby.truffle.pack.parser.PackParser;
+import org.jruby.truffle.pack.runtime.NoImplicitConversionException;
+import org.jruby.truffle.pack.runtime.TooFewArgumentsException;
 import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.control.BreakException;
 import org.jruby.truffle.runtime.control.NextException;
@@ -2809,7 +2811,7 @@ public abstract class ArrayNodes {
 
     }
 
-    @CoreMethod(names = "pack", required = 1, optional = 1, taintFromParameters = 1)
+    @CoreMethod(names = "pack", required = 1, optional = 1, taintFromParameters = 0)
     public abstract static class PackNode extends ArrayCoreMethodNode {
 
         @Child private DirectCallNode callPackNode;
@@ -2831,17 +2833,33 @@ public abstract class ArrayNodes {
                 callPackNode = insert(Truffle.getRuntime().createDirectCallNode(packCallTarget));
             }
 
-            final RubyString result = getContext().makeString((ByteList) callPackNode.call(frame, new Object[]{array.getStore(), array.getSize()}));
+            final ByteList result;
 
-            CompilerDirectives.transferToInterpreterAndInvalidate();
-            callPackNode = null;
+            try {
+                result = (ByteList) callPackNode.call(frame, new Object[]{array.getStore(), array.getSize()});
+            } catch (TooFewArgumentsException e) {
+                CompilerDirectives.transferToInterpreter();
+                throw new RaiseException(getContext().getCoreLibrary().argumentError("too few arguments", this));
+            } catch (NoImplicitConversionException e) {
+                CompilerDirectives.transferToInterpreter();
+                throw new RaiseException(getContext().getCoreLibrary().typeErrorNoImplicitConversion(e.getObject(), e.getTarget(), this));
+            } finally {
+                // No caching at the moment - so we always want to delete the node for next time
+                CompilerDirectives.transferToInterpreterAndInvalidate();
+                callPackNode = null;
+            }
 
-            return result;
+            return getContext().makeString(result);
         }
 
         @Specialization
         public RubyString pack(VirtualFrame frame, RubyArray array, RubyString format, UndefinedPlaceholder extended) {
             return pack(frame, array, format, false);
+        }
+
+        @Specialization
+        public Object pack(VirtualFrame frame, RubyArray array, boolean format, Object extended) {
+            return ruby(frame, "raise TypeError");
         }
 
         @Specialization
@@ -2859,12 +2877,12 @@ public abstract class ArrayNodes {
             return ruby(frame, "raise TypeError");
         }
 
-        @Specialization(guards = {"!isRubyString(format)", "!isRubyNilClass(format)"})
+        @Specialization(guards = {"!isRubyString(format)", "!isBoolean(format)", "!isInteger(format)", "!isLong(format)", "!isRubyNilClass(format)"})
         public Object pack(VirtualFrame frame, RubyArray array, Object format, UndefinedPlaceholder extended) {
             return ruby(frame, "pack(format.to_str)", "format", format);
         }
 
-        @Specialization(guards = {"!isRubyString(format)", "!isRubyNilClass(format)"})
+        @Specialization(guards = {"!isRubyString(format)", "!isBoolean(format)", "!isInteger(format)", "!isLong(format)", "!isRubyNilClass(format)"})
         public Object pack(VirtualFrame frame, RubyArray array, Object format, boolean extended) {
             return ruby(frame, "pack(format.to_str, extended)", "format", format, "extended", extended);
         }

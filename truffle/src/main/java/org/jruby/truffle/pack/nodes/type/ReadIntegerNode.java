@@ -28,6 +28,16 @@ public abstract class ReadIntegerNode extends PackNode {
         toLongNode = prev.toLongNode;
     }
 
+    @Specialization(guards = "isNull(source)")
+    public long read(VirtualFrame frame, Object source) {
+        CompilerDirectives.transferToInterpreter();
+
+        // Advance will handle the error
+        advanceSourcePosition(frame);
+
+        throw new IllegalStateException();
+    }
+
     @Specialization
     public long read(VirtualFrame frame, int[] source) {
         return source[advanceSourcePosition(frame)];
@@ -61,6 +71,10 @@ public abstract class ReadIntegerNode extends PackNode {
     @CompilerDirectives.TruffleBoundary
     private long toLong(IRubyObject object) {
         return object.convertToInteger().getLongValue();
+    }
+
+    protected boolean isNull(Object object) {
+        return object == null;
     }
 
 }

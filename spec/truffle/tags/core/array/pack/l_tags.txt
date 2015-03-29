@@ -1,9 +1,3 @@
-fails:Array#pack with format 'L' ignores whitespace in the format string
-fails:Array#pack with format 'L' calls #to_str to coerce the directives string
-fails:Array#pack with format 'L' taints the output string if the format string is tainted
-fails:Array#pack with format 'l' ignores whitespace in the format string
-fails:Array#pack with format 'l' calls #to_str to coerce the directives string
-fails:Array#pack with format 'l' taints the output string if the format string is tainted
 fails:Array#pack with format 'L' with modifier '<' calls #to_int to convert the pack argument to an Integer
 fails:Array#pack with format 'L' with modifier '>' calls #to_int to convert the pack argument to an Integer
 fails:Array#pack with format 'L' with modifier '<' and '_' calls #to_int to convert the pack argument to an Integer
@@ -48,8 +42,6 @@ fails:Array#pack with format 'l' with modifier '>' and '!' encodes the number of
 fails:Array#pack with format 'l' with modifier '>' and '!' encodes all remaining elements when passed the '*' modifier
 fails:Array#pack with format 'l' with modifier '>' and '!' ignores NULL bytes between directives
 fails:Array#pack with format 'l' with modifier '>' and '!' ignores spaces between directives
-fails:Array#pack with format 'L' calls #to_int to convert the pack argument to an Integer
-fails:Array#pack with format 'l' calls #to_int to convert the pack argument to an Integer
 fails:Array#pack with format 'L' with modifier '_' calls #to_int to convert the pack argument to an Integer
 fails:Array#pack with format 'L' with modifier '_' encodes the number of array elements specified by the count modifier
 fails:Array#pack with format 'L' with modifier '_' encodes all remaining elements when passed the '*' modifier
@@ -94,11 +86,6 @@ fails:Array#pack with format 'l' with modifier '_' encodes the least significant
 fails:Array#pack with format 'l' with modifier '_' encodes the least significant 32 bits of a negative number
 fails:Array#pack with format 'l' with modifier '!' encodes the least significant 32 bits of a positive number
 fails:Array#pack with format 'l' with modifier '!' encodes the least significant 32 bits of a negative number
-fails:Array#pack with format 'L' raises an ArgumentError if there are fewer elements than the format requires
-fails:Array#pack with format 'L' returns an empty String if count is zero
-fails:Array#pack with format 'l' raises an ArgumentError if there are fewer elements than the format requires
-fails:Array#pack with format 'l' returns an empty String if count is zero
-fails:Array#pack with format 'l' returns an ASCII-8BIT string
 fails:Array#pack with format 'L' with modifier '<' encodes the least significant 32 bits of a positive number
 fails:Array#pack with format 'L' with modifier '<' encodes the least significant 32 bits of a negative number
 fails:Array#pack with format 'L' with modifier '<' encodes a Float truncated as an Integer
@@ -151,20 +138,6 @@ fails:Array#pack with format 'l' with modifier '>' and '_' encodes a Float trunc
 fails:Array#pack with format 'l' with modifier '>' and '!' encodes the least significant 64 bits of a positive number
 fails:Array#pack with format 'l' with modifier '>' and '!' encodes the least significant 64 bits of a negative number
 fails:Array#pack with format 'l' with modifier '>' and '!' encodes a Float truncated as an Integer
-fails:Array#pack with format 'L' encodes the least significant 32 bits of a positive number
-fails:Array#pack with format 'L' encodes the least significant 32 bits of a negative number
-fails:Array#pack with format 'L' encodes a Float truncated as an Integer
-fails:Array#pack with format 'L' encodes the number of array elements specified by the count modifier
-fails:Array#pack with format 'L' encodes all remaining elements when passed the '*' modifier
-fails:Array#pack with format 'L' ignores NULL bytes between directives
-fails:Array#pack with format 'L' ignores spaces between directives
-fails:Array#pack with format 'l' encodes the least significant 32 bits of a positive number
-fails:Array#pack with format 'l' encodes the least significant 32 bits of a negative number
-fails:Array#pack with format 'l' encodes a Float truncated as an Integer
-fails:Array#pack with format 'l' encodes the number of array elements specified by the count modifier
-fails:Array#pack with format 'l' encodes all remaining elements when passed the '*' modifier
-fails:Array#pack with format 'l' ignores NULL bytes between directives
-fails:Array#pack with format 'l' ignores spaces between directives
 fails:Array#pack with format 'L' with modifier '_' encodes the least significant 64 bits of a positive number
 fails:Array#pack with format 'L' with modifier '_' encodes the least significant 64 bits of a negative number
 fails:Array#pack with format 'L' with modifier '_' encodes a Float truncated as an Integer
