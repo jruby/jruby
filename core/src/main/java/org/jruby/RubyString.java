@@ -2343,7 +2343,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
         if (hash.isNil()) {
             return subBangNoIter19(runtime, context, pattern, prepared, arg1.convertToString(), regexp);
         } else {
-            return subBangIter19(runtime, context, pattern, prepared, (RubyHash)hash, block, regexp);
+            return subBangIter19(runtime, context, pattern, prepared, (RubyHash) hash, block, regexp);
         }
     }
 
