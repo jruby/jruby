@@ -86,6 +86,10 @@ public abstract class PackNode extends Node {
         frame.setInt(PackFrame.INSTANCE.getOutputPositionSlot(), position);
     }
 
+    protected void setTainted(VirtualFrame frame) {
+        frame.setBoolean(PackFrame.INSTANCE.getTaintSlot(), true);
+    }
+
     protected void write(VirtualFrame frame, byte... values) {
         write(frame, values, 0, values.length);
     }
@@ -102,6 +106,10 @@ public abstract class PackNode extends Node {
 
         System.arraycopy(values, valuesStart, output, outputPosition, valuesLength);
         setOutputPosition(frame, outputPosition + valuesLength);
+    }
+
+    protected boolean isNull(Object object) {
+        return object == null;
     }
 
     protected boolean isRubyString(Object object) {

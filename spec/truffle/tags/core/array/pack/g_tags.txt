@@ -36,3 +36,19 @@ fails:Array#pack with format 'g' encodes positive Infinity
 fails:Array#pack with format 'g' encodes negative Infinity
 fails:Array#pack with format 'g' encodes a positive Float outside the range of a single precision float
 fails:Array#pack with format 'g' encodes a negative Float outside the range of a single precision float
+fails:Array#pack with format 'G' raises a TypeError when passed nil
+fails:Array#pack with format 'G' raises a TypeError when passed an Integer
+fails:Array#pack with format 'G' raises a TypeError when passed true
+fails:Array#pack with format 'G' raises a TypeError when passed false
+fails:Array#pack with format 'G' raises a TypeError if a String does not represent a floating point number
+fails:Array#pack with format 'G' raises a TypeError when the object does not respond to #to_f
+fails:Array#pack with format 'G' raises a TypeError if passed a String representation of a floating point number
+fails:Array#pack with format 'G' encodes NaN
+fails:Array#pack with format 'g' raises a TypeError when passed nil
+fails:Array#pack with format 'g' raises a TypeError when passed an Integer
+fails:Array#pack with format 'g' raises a TypeError when passed true
+fails:Array#pack with format 'g' raises a TypeError when passed false
+fails:Array#pack with format 'g' raises a TypeError if a String does not represent a floating point number
+fails:Array#pack with format 'g' raises a TypeError when the object does not respond to #to_f
+fails:Array#pack with format 'g' raises a TypeError if passed a String representation of a floating point number
+fails:Array#pack with format 'g' encodes NaN

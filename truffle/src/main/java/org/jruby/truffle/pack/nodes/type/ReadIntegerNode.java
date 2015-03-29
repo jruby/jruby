@@ -73,8 +73,4 @@ public abstract class ReadIntegerNode extends PackNode {
         return object.convertToInteger().getLongValue();
     }
 
-    protected boolean isNull(Object object) {
-        return object == null;
-    }
-
 }

@@ -40,10 +40,13 @@ import org.jruby.truffle.nodes.methods.arguments.ReadPreArgumentNode;
 import org.jruby.truffle.nodes.methods.locals.ReadLevelVariableNodeFactory;
 import org.jruby.truffle.nodes.objects.IsFrozenNode;
 import org.jruby.truffle.nodes.objects.IsFrozenNodeFactory;
+import org.jruby.truffle.nodes.objects.TaintNode;
+import org.jruby.truffle.nodes.objects.TaintNodeFactory;
 import org.jruby.truffle.nodes.yield.YieldDispatchHeadNode;
 import org.jruby.truffle.pack.parser.PackParser;
 import org.jruby.truffle.pack.runtime.FormatException;
 import org.jruby.truffle.pack.runtime.NoImplicitConversionException;
+import org.jruby.truffle.pack.runtime.PackResult;
 import org.jruby.truffle.pack.runtime.TooFewArgumentsException;
 import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.control.BreakException;
@@ -2816,6 +2819,7 @@ public abstract class ArrayNodes {
     public abstract static class PackNode extends ArrayCoreMethodNode {
 
         @Child private DirectCallNode callPackNode;
+        @Child private TaintNode taintNode;
 
         public PackNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -2824,6 +2828,7 @@ public abstract class ArrayNodes {
         public PackNode(PackNode prev) {
             super(prev);
             callPackNode = prev.callPackNode;
+            taintNode = prev.taintNode;
         }
 
         @Specialization
@@ -2843,10 +2848,10 @@ public abstract class ArrayNodes {
                 callPackNode = insert(Truffle.getRuntime().createDirectCallNode(packCallTarget));
             }
 
-            final ByteList result;
+            final PackResult result;
 
             try {
-                result = (ByteList) callPackNode.call(frame, new Object[]{array.getStore(), array.getSize()});
+                result = (PackResult) callPackNode.call(frame, new Object[]{array.getStore(), array.getSize()});
             } catch (TooFewArgumentsException e) {
                 CompilerDirectives.transferToInterpreter();
                 throw new RaiseException(getContext().getCoreLibrary().argumentError("too few arguments", this));
@@ -2859,7 +2864,18 @@ public abstract class ArrayNodes {
                 callPackNode = null;
             }
 
-            return getContext().makeString(result);
+            final RubyString string = getContext().makeString(new ByteList(result.getOutput(), 0, result.getOutputLength()));
+
+            if (result.isTainted()) {
+                if (taintNode == null) {
+                    CompilerDirectives.transferToInterpreter();
+                    taintNode = insert(TaintNodeFactory.create(getContext(), getEncapsulatingSourceSection(), null));
+                }
+
+                taintNode.executeTaint(string);
+            }
+
+            return string;
         }
 
         @Specialization

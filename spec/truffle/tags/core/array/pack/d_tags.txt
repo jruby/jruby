@@ -46,3 +46,9 @@ fails:Array#pack with format 'd' encodes positive Infinity
 fails:Array#pack with format 'd' encodes negative Infinity
 fails:Array#pack with format 'd' encodes a positive Float outside the range of a single precision float
 fails:Array#pack with format 'd' encodes a negative Float outside the range of a single precision float
+fails:Array#pack with format 'D' raises a TypeError when passed nil
+fails:Array#pack with format 'D' raises a TypeError when passed an Integer
+fails:Array#pack with format 'D' encodes NaN
+fails:Array#pack with format 'd' raises a TypeError when passed nil
+fails:Array#pack with format 'd' raises a TypeError when passed an Integer
+fails:Array#pack with format 'd' encodes NaN

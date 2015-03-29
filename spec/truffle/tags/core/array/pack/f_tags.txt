@@ -46,3 +46,9 @@ fails:Array#pack with format 'f' encodes positive Infinity
 fails:Array#pack with format 'f' encodes negative Infinity
 fails:Array#pack with format 'f' encodes a positive Float outside the range of a single precision float
 fails:Array#pack with format 'f' encodes a negative Float outside the range of a single precision float
+fails:Array#pack with format 'F' raises a TypeError when passed nil
+fails:Array#pack with format 'F' raises a TypeError when passed an Integer
+fails:Array#pack with format 'F' encodes NaN
+fails:Array#pack with format 'f' raises a TypeError when passed nil
+fails:Array#pack with format 'f' raises a TypeError when passed an Integer
+fails:Array#pack with format 'f' encodes NaN

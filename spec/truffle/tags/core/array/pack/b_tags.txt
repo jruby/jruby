@@ -26,3 +26,7 @@ fails:Array#pack with format 'b' implicitly has count equal to the string length
 fails:Array#pack with format 'b' encodes the least significant bit of a character other than 0 or 1
 fails:Array#pack with format 'b' returns an ASCII-8BIT string
 fails:Array#pack with format 'b' encodes the string as a sequence of bytes
+fails:Array#pack with format 'B' raises a TypeError when passed nil
+fails:Array#pack with format 'B' raises a TypeError when passed an Integer
+fails:Array#pack with format 'b' raises a TypeError when passed nil
+fails:Array#pack with format 'b' raises a TypeError when passed an Integer

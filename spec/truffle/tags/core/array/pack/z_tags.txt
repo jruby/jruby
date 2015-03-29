@@ -22,3 +22,8 @@ fails:Array#pack with format 'Z' padds the output with NULL bytes when the count
 fails:Array#pack with format 'Z' adds a NULL byte when the value is nil
 fails:Array#pack with format 'Z' pads the output with NULL bytes when the value is nil
 fails:Array#pack with format 'Z' does not append a NULL byte when passed the '*' modifier and the value is nil
+fails:Array#pack with format 'Z' raises a TypeError when passed nil
+fails:Array#pack with format 'Z' raises a TypeError when passed an Integer
+fails:Array#pack with format 'Z' raises a TypeError when the object does not respond to #to_str
+fails:Array#pack with format 'Z' returns a tainted string when an empty format is tainted
+fails:Array#pack with format 'Z' returns a untrusted string when the empty format is untrusted

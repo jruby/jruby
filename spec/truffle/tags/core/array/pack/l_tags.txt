@@ -1,0 +1,24 @@
+fails:Array#pack with format 'L' with modifier '<' and '_' encodes the least significant 32 bits of a positive number
+fails:Array#pack with format 'L' with modifier '<' and '_' encodes the least significant 32 bits of a negative number
+fails:Array#pack with format 'L' with modifier '<' and '!' encodes the least significant 32 bits of a positive number
+fails:Array#pack with format 'L' with modifier '<' and '!' encodes the least significant 32 bits of a negative number
+fails:Array#pack with format 'L' with modifier '>' and '_' encodes the least significant 32 bits of a positive number
+fails:Array#pack with format 'L' with modifier '>' and '_' encodes the least significant 32 bits of a negative number
+fails:Array#pack with format 'L' with modifier '>' and '!' encodes the least significant 32 bits of a positive number
+fails:Array#pack with format 'L' with modifier '>' and '!' encodes the least significant 32 bits of a negative number
+fails:Array#pack with format 'l' with modifier '<' and '_' encodes the least significant 32 bits of a positive number
+fails:Array#pack with format 'l' with modifier '<' and '_' encodes the least significant 32 bits of a negative number
+fails:Array#pack with format 'l' with modifier '<' and '!' encodes the least significant 32 bits of a positive number
+fails:Array#pack with format 'l' with modifier '<' and '!' encodes the least significant 32 bits of a negative number
+fails:Array#pack with format 'l' with modifier '>' and '_' encodes the least significant 32 bits of a positive number
+fails:Array#pack with format 'l' with modifier '>' and '_' encodes the least significant 32 bits of a negative number
+fails:Array#pack with format 'l' with modifier '>' and '!' encodes the least significant 32 bits of a positive number
+fails:Array#pack with format 'l' with modifier '>' and '!' encodes the least significant 32 bits of a negative number
+fails:Array#pack with format 'L' with modifier '_' encodes the least significant 32 bits of a positive number
+fails:Array#pack with format 'L' with modifier '_' encodes the least significant 32 bits of a negative number
+fails:Array#pack with format 'L' with modifier '!' encodes the least significant 32 bits of a positive number
+fails:Array#pack with format 'L' with modifier '!' encodes the least significant 32 bits of a negative number
+fails:Array#pack with format 'l' with modifier '_' encodes the least significant 32 bits of a positive number
+fails:Array#pack with format 'l' with modifier '_' encodes the least significant 32 bits of a negative number
+fails:Array#pack with format 'l' with modifier '!' encodes the least significant 32 bits of a positive number
+fails:Array#pack with format 'l' with modifier '!' encodes the least significant 32 bits of a negative number

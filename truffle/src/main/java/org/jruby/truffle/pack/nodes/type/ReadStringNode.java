@@ -29,6 +29,16 @@ public abstract class ReadStringNode extends PackNode {
         toStringNode = prev.toStringNode;
     }
 
+    @Specialization(guards = "isNull(source)")
+    public long read(VirtualFrame frame, Object source) {
+        CompilerDirectives.transferToInterpreter();
+
+        // Advance will handle the error
+        advanceSourcePosition(frame);
+
+        throw new IllegalStateException();
+    }
+
     @Specialization(guards = "!isIRubyArray(source)")
     public ByteList read(VirtualFrame frame, Object[] source) {
         if (toStringNode == null) {

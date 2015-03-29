@@ -16,6 +16,7 @@ import com.oracle.truffle.api.nodes.RootNode;
 import com.oracle.truffle.api.nodes.UnexpectedResultException;
 import com.oracle.truffle.api.source.NullSourceSection;
 import org.jruby.truffle.pack.runtime.PackFrame;
+import org.jruby.truffle.pack.runtime.PackResult;
 import org.jruby.truffle.runtime.util.ArrayUtils;
 import org.jruby.util.ByteList;
 
@@ -40,6 +41,7 @@ public class PackRootNode extends RootNode {
         frame.setInt(PackFrame.INSTANCE.getSourcePositionSlot(), 0);
         frame.setObject(PackFrame.INSTANCE.getOutputSlot(), new byte[expectedLength]);
         frame.setInt(PackFrame.INSTANCE.getOutputPositionSlot(), 0);
+        frame.setBoolean(PackFrame.INSTANCE.getTaintSlot(), false);
 
         child.execute(frame);
 
@@ -64,7 +66,15 @@ public class PackRootNode extends RootNode {
             throw new IllegalStateException(e);
         }
 
-        return new ByteList(output, 0, outputLength);
+        final boolean taint;
+
+        try {
+            taint = frame.getBoolean(PackFrame.INSTANCE.getTaintSlot());
+        } catch (FrameSlotTypeException e) {
+            throw new IllegalStateException(e);
+        }
+
+        return new PackResult(output, outputLength, taint);
     }
 
     @Override

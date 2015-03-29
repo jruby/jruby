@@ -161,17 +161,44 @@ public class PackParser {
                     case 'V':
                         node = writeInteger(32, Signedness.UNSIGNED, Endianness.LITTLE);
                         break;
+                    case 'A':
                     case 'a':
+                        final byte padding;
+
+                        switch ((char) token) {
+                            case 'A':
+                                padding = ' ';
+                                break;
+                            case 'a':
+                                padding = 0;
+                                break;
+                            default:
+                                throw new UnsupportedOperationException();
+                        }
+
                         final boolean pad;
                         final int width;
+
                         if (tokenizer.peek() instanceof Integer) {
                             pad = true;
                             width = (int) tokenizer.next();
                         } else {
                             pad = false;
-                            width = 0;
+                            width = 1;
                         }
-                        node = WriteBinaryStringNodeGen.create(pad, width, (byte) 0, ReadStringNodeGen.create(context, new SourceNode()));
+                        boolean takeAll;
+
+                        if (tokenizer.peek('*')) {
+                            tokenizer.next();
+                            takeAll = true;
+                        } else {
+                            takeAll = false;
+                        }
+
+                        node = WriteBinaryStringNodeGen.create(pad, width, padding, takeAll, ReadStringNodeGen.create(context, new SourceNode()));
+                        break;
+                    case 'U':
+                        node = WriteUTF8CharacterNodeGen.create(ReadIntegerNodeGen.create(context, new SourceNode()));
                         break;
                     case 'X':
                         node = new BackNode();

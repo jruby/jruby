@@ -24,17 +24,26 @@ public abstract class WriteBinaryStringNode extends PackNode {
     private final boolean pad;
     private final int width;
     private final byte padding;
+    private final boolean takeAll;
 
-    public WriteBinaryStringNode(boolean pad, int width, byte padding) {
+    public WriteBinaryStringNode(boolean pad, int width, byte padding, boolean takeAll) {
         this.pad = pad;
         this.width = width;
         this.padding = padding;
+        this.takeAll = takeAll;
     }
 
     @Specialization
     public Object write(VirtualFrame frame, ByteList bytes) {
+        final int lengthFromBytes;
+
+        if (takeAll) {
+            lengthFromBytes = bytes.length();
+        } else {
+            lengthFromBytes = Math.min(width, bytes.length());
+        }
+
         if (pad) {
-            final int lengthFromBytes = Math.min(width, bytes.length());
             final int lengthFromPadding = width - lengthFromBytes;
 
             write(frame, bytes.getUnsafeBytes(), bytes.begin(), lengthFromBytes);
@@ -43,7 +52,7 @@ public abstract class WriteBinaryStringNode extends PackNode {
                 write(frame, padding);
             }
         } else {
-            write(frame, bytes.getUnsafeBytes(), bytes.begin(), bytes.length());
+            write(frame, bytes.getUnsafeBytes(), bytes.begin(), lengthFromBytes);
         }
 
         return null;
