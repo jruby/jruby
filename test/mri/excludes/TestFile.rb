@@ -1,0 +1,1 @@
+exclude :test_stat, "fails on Linux (Travis)"
