@@ -23,19 +23,13 @@ fails:Array#pack with format 'A' padds the output with spaces when the count exc
 fails:Array#pack with format 'A' adds a space when the value is nil
 fails:Array#pack with format 'A' pads the output with spaces when the value is nil
 fails:Array#pack with format 'A' does not pad with spaces when passed the '*' modifier and the value is nil
-fails:Array#pack with format 'a' raises ArgumentError when the format modifier is '_'
-fails:Array#pack with format 'a' raises ArgumentError when the format modifier is '!'
 fails:Array#pack with format 'a' implicitly has a count of one when no count is specified
 fails:Array#pack with format 'a' is not affected by a previous count modifier
 fails:Array#pack with format 'a' raises an ArgumentError when the Array is empty
 fails:Array#pack with format 'a' calls #to_str to convert the element to a String
 fails:Array#pack with format 'a' raises a TypeError when the object does not respond to #to_str
 fails:Array#pack with format 'a' returns a tainted string when a pack argument is tainted
-fails:Array#pack with format 'a' does not return a tainted string when the array is tainted
-fails:Array#pack with format 'a' returns a tainted string when the format is tainted
-fails:Array#pack with format 'a' returns a untrusted string when the format is untrusted
 fails:Array#pack with format 'a' returns a untrusted string when a pack argument is untrusted
-fails:Array#pack with format 'a' returns a trusted string when the array is untrusted
 fails:Array#pack with format 'a' returns a string in encoding of common to the concatenated results
 fails:Array#pack with format 'a' adds a NULL byte when the value is nil
 fails:Array#pack with format 'a' pads the output with NULL bytes when the value is nil

@@ -1,4 +1,0 @@
-fails:Array#pack with format 'V' raises ArgumentError when the format modifier is '_'
-fails:Array#pack with format 'V' raises ArgumentError when the format modifier is '!'
-fails:Array#pack with format 'v' raises ArgumentError when the format modifier is '_'
-fails:Array#pack with format 'v' raises ArgumentError when the format modifier is '!'

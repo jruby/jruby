@@ -42,6 +42,7 @@ import org.jruby.truffle.nodes.objects.IsFrozenNode;
 import org.jruby.truffle.nodes.objects.IsFrozenNodeFactory;
 import org.jruby.truffle.nodes.yield.YieldDispatchHeadNode;
 import org.jruby.truffle.pack.parser.PackParser;
+import org.jruby.truffle.pack.runtime.FormatException;
 import org.jruby.truffle.pack.runtime.NoImplicitConversionException;
 import org.jruby.truffle.pack.runtime.TooFewArgumentsException;
 import org.jruby.truffle.runtime.*;
@@ -2829,7 +2830,16 @@ public abstract class ArrayNodes {
         public RubyString pack(VirtualFrame frame, RubyArray array, RubyString format, boolean extended) {
             if (callPackNode == null) {
                 CompilerDirectives.transferToInterpreter();
-                final CallTarget packCallTarget = new PackParser(getContext()).parse(format.toString(), extended);
+
+                final CallTarget packCallTarget;
+
+                try {
+                    packCallTarget = new PackParser(getContext()).parse(format.toString(), extended);
+                } catch (FormatException e) {
+                    CompilerDirectives.transferToInterpreter();
+                    throw new RaiseException(getContext().getCoreLibrary().argumentError(e.getMessage(), this));
+                }
+
                 callPackNode = insert(Truffle.getRuntime().createDirectCallNode(packCallTarget));
             }
 

@@ -1,4 +1,0 @@
-fails:Array#pack with format 'N' raises ArgumentError when the format modifier is '_'
-fails:Array#pack with format 'N' raises ArgumentError when the format modifier is '!'
-fails:Array#pack with format 'n' raises ArgumentError when the format modifier is '_'
-fails:Array#pack with format 'n' raises ArgumentError when the format modifier is '!'

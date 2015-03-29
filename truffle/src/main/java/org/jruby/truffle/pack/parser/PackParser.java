@@ -20,6 +20,7 @@ import org.jruby.truffle.pack.nodes.control.SequenceNode;
 import org.jruby.truffle.pack.nodes.control.StarNode;
 import org.jruby.truffle.pack.nodes.type.*;
 import org.jruby.truffle.pack.runtime.Endianness;
+import org.jruby.truffle.pack.runtime.FormatException;
 import org.jruby.truffle.pack.runtime.Signedness;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.util.Pack;
@@ -165,6 +166,10 @@ public class PackParser {
                     default:
                         throw new UnsupportedOperationException(String.format("unexpected token %s", token));
                 }
+
+                if (tokenizer.peek('_') || tokenizer.peek('!')) {
+                    throw new FormatException("'" + tokenizer.next() + "' allowed only after types sSiIlLqQ");
+                }
             } else {
                 throw new UnsupportedOperationException(String.format("unexpected token %s", token));
             }
@@ -284,6 +289,8 @@ public class PackParser {
         final PackNode readNode = ReadIntegerNodeGen.create(context, new SourceNode());
 
         switch (size) {
+            case 8:
+                return Write8NodeGen.create(readNode);
             case 16:
                 switch (signedness) {
                     case UNSIGNED:

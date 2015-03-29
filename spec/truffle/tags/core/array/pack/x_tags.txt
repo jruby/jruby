@@ -1,11 +1,3 @@
-fails:Array#pack with format 'x' raises ArgumentError when the format modifier is '_'
-fails:Array#pack with format 'x' raises ArgumentError when the format modifier is '!'
-fails:Array#pack with format 'x' adds a NULL byte without consuming an element
-fails:Array#pack with format 'X' raises ArgumentError when the format modifier is '_'
-fails:Array#pack with format 'X' raises ArgumentError when the format modifier is '!'
-fails:Array#pack with format 'X' reduces the output string by one byte at the point it is encountered
-fails:Array#pack with format 'X' does not consume any elements
-fails:Array#pack with format 'X' reduces the output string by multiple bytes when passed a count modifier
 fails:Array#pack with format 'X' has no affect when passed the '*' modifier
 fails:Array#pack with format 'X' raises an ArgumentError if the output string is empty
 fails:Array#pack with format 'X' raises an ArgumentError if the count modifier is greater than the bytes in the string
