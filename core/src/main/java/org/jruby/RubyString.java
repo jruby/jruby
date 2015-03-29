@@ -3838,6 +3838,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
         match.begin = pos;
         match.end = pos + len;
         match.charOffsetUpdated = false;
+        match.regs = null;
         match.infectBy(string);
     }
 
