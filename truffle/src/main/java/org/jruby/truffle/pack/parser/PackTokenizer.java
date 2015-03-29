@@ -9,6 +9,8 @@
  */
 package org.jruby.truffle.pack.parser;
 
+import org.jruby.truffle.pack.runtime.FormatException;
+
 public class PackTokenizer {
 
     private static final String simpleTokens = "CSLIQcsliqnNvVAaUXx*<>!_@DdFfEeGg";
@@ -55,6 +57,10 @@ public class PackTokenizer {
         }
 
         final char c = format.charAt(position);
+
+        if (c == '%') {
+            throw new FormatException("% is not supported");
+        }
 
         final String chars;
 

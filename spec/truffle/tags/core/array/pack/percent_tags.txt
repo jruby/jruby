@@ -1,1 +1,0 @@
-fails:Array#pack with format '%' raises an Argument Error
