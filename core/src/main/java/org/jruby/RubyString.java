@@ -3456,8 +3456,8 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
         }
     }
 
-    public RubyArray split19(ThreadContext context, IRubyObject arg0, boolean useBackref) {
-        return splitCommon19(arg0, useBackref, flags, flags, context, useBackref);
+    public RubyArray split19(IRubyObject spat, ThreadContext context, boolean useBackref) {
+        return splitCommon19(spat, false, value.realSize(), 0, context, useBackref);
     }
 
     // MRI: rb_str_split_m, overall structure
@@ -3517,8 +3517,9 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
         int end, beg = 0;
         boolean lastNull = false;
         int start = beg;
-        while ((end = pattern.search19(context, this, start, false)) >= 0) {
-            RubyMatchData match = (RubyMatchData)context.getBackRef();
+        IRubyObject[] holder = useBackref ? null : new IRubyObject[]{context.nil};
+        while ((end = pattern.search19(context, this, start, false, holder)) >= 0) {
+            RubyMatchData match = useBackref ? (RubyMatchData)context.getBackRef() : (RubyMatchData)holder[0];
             if (start == end && match.begin(0) == match.end(0)) {
                 if (len == 0) {
                     result.append(newEmptyString(runtime, getMetaClass()).infectBy(this));
@@ -3547,7 +3548,11 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
         }
 
         // only this case affects backrefs
-        if (useBackref) context.setBackRef(runtime.getNil());
+        if (useBackref) {
+            context.setBackRef(runtime.getNil());
+        } else {
+            holder[0] = context.nil;
+        }
 
         if (len > 0 && (limit || len > beg || lim < 0)) result.append(makeShared19(runtime, beg, len - beg));
         return result;
@@ -6018,5 +6023,10 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
     @Deprecated
     public final void modify19(int length) {
         modifyExpand(length);
+    }
+
+    @Deprecated
+    public RubyArray split19(ThreadContext context, IRubyObject arg0, boolean useBackref) {
+        return splitCommon19(arg0, useBackref, flags, flags, context, useBackref);
     }
 }
