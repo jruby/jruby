@@ -14,6 +14,7 @@ import org.jruby.truffle.pack.nodes.PackNode;
 import org.jruby.truffle.pack.nodes.SourceNode;
 import org.jruby.truffle.pack.runtime.NoImplicitConversionException;
 import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.runtime.core.RubyBignum;
 import org.jruby.truffle.runtime.core.RubyNilClass;
 
 @NodeChildren({
@@ -27,6 +28,7 @@ public abstract class ToLongNode extends PackNode {
 
     @CompilerDirectives.CompilationFinal private boolean seenInt;
     @CompilerDirectives.CompilationFinal private boolean seenLong;
+    @CompilerDirectives.CompilationFinal private boolean seenBignum;
 
     public ToLongNode(RubyContext context) {
         this.context = context;
@@ -58,6 +60,12 @@ public abstract class ToLongNode extends PackNode {
     }
 
     @Specialization
+    public long toLong(VirtualFrame frame, RubyBignum object) {
+        // A truncated value is exactly what we want
+        return object.bigIntegerValue().longValue();
+    }
+
+    @Specialization
     public long toLong(VirtualFrame frame, RubyNilClass nil) {
         CompilerDirectives.transferToInterpreter();
         throw new NoImplicitConversionException(nil, "Integer");
@@ -73,11 +81,15 @@ public abstract class ToLongNode extends PackNode {
         final Object value = toIntNode.call(frame, object, "to_int", null);
 
         if (seenInt && value instanceof Integer) {
-            return (int) value;
+            return toLong(frame, (int) value);
         }
 
         if (seenLong && value instanceof Long) {
-            return (long) value;
+            return toLong(frame, (long) value);
+        }
+
+        if (seenBignum && value instanceof RubyBignum) {
+            return toLong(frame, (RubyBignum) value);
         }
 
         CompilerDirectives.transferToInterpreterAndInvalidate();
@@ -88,12 +100,17 @@ public abstract class ToLongNode extends PackNode {
 
         if (value instanceof Integer) {
             seenInt = true;
-            return (int) value;
+            return toLong(frame, (int) value);
         }
 
         if (value instanceof Long) {
             seenLong = true;
-            return (long) value;
+            return toLong(frame, (long) value);
+        }
+
+        if (value instanceof RubyBignum) {
+            seenBignum = true;
+            return toLong(frame, (RubyBignum) value);
         }
 
         throw new UnsupportedOperationException();

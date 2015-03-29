@@ -5,7 +5,6 @@ fails:Array#pack with format 'D' raises an ArgumentError if there are fewer elem
 fails:Array#pack with format 'D' raises ArgumentError when the format modifier is '_'
 fails:Array#pack with format 'D' raises ArgumentError when the format modifier is '!'
 fails:Array#pack with format 'D' returns an empty String if count is zero
-fails:Array#pack with format 'D' raises a TypeError when passed nil
 fails:Array#pack with format 'D' raises a TypeError when passed true
 fails:Array#pack with format 'D' raises a TypeError when passed false
 fails:Array#pack with format 'D' returns an ASCII-8BIT string
@@ -30,7 +29,6 @@ fails:Array#pack with format 'd' raises an ArgumentError if there are fewer elem
 fails:Array#pack with format 'd' raises ArgumentError when the format modifier is '_'
 fails:Array#pack with format 'd' raises ArgumentError when the format modifier is '!'
 fails:Array#pack with format 'd' returns an empty String if count is zero
-fails:Array#pack with format 'd' raises a TypeError when passed nil
 fails:Array#pack with format 'd' raises a TypeError when passed true
 fails:Array#pack with format 'd' raises a TypeError when passed false
 fails:Array#pack with format 'd' returns an ASCII-8BIT string

@@ -13,6 +13,7 @@ import com.oracle.truffle.api.dsl.TypeSystem;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.truffle.pack.runtime.Endianness;
 import org.jruby.truffle.pack.runtime.Signedness;
+import org.jruby.truffle.runtime.core.RubyBignum;
 import org.jruby.truffle.runtime.core.RubyNilClass;
 import org.jruby.truffle.runtime.core.RubyString;
 import org.jruby.util.ByteList;
@@ -21,6 +22,7 @@ import org.jruby.util.ByteList;
         boolean.class,
         int.class,
         long.class,
+        RubyBignum.class,
         ByteList.class,
         RubyString.class,
         RubyNilClass.class,

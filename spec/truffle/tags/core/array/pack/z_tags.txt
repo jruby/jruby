@@ -13,9 +13,7 @@ fails:Array#pack with format 'Z' calls #to_str to convert the element to a Strin
 fails:Array#pack with format 'Z' returns a tainted string when a pack argument is tainted
 fails:Array#pack with format 'Z' does not return a tainted string when the array is tainted
 fails:Array#pack with format 'Z' returns a tainted string when the format is tainted
-fails:Array#pack with format 'Z' returns a tainted string when an empty format is tainted
 fails:Array#pack with format 'Z' returns a untrusted string when the format is untrusted
-fails:Array#pack with format 'Z' returns a untrusted string when the empty format is untrusted
 fails:Array#pack with format 'Z' returns a untrusted string when a pack argument is untrusted
 fails:Array#pack with format 'Z' returns a trusted string when the array is untrusted
 fails:Array#pack with format 'Z' returns a string in encoding of common to the concatenated results

@@ -73,27 +73,65 @@ public class PackParser {
                     case 'C':
                         node = writeInteger(8, Signedness.UNSIGNED, nativeEndianness());
                         break;
-                    case 'S':
-                        node = writeInteger(16, Signedness.UNSIGNED, nativeEndianness());
-                        break;
-                    case 'L':
-                        node = writeInteger(32, Signedness.UNSIGNED, nativeEndianness());
-                        break;
-                    case 'Q':
-                        node = writeInteger(64, Signedness.UNSIGNED, nativeEndianness());
-                        break;
                     case 'c':
                         node = writeInteger(8, Signedness.SIGNED, nativeEndianness());
                         break;
+                    case 'S':
+                    case 'L':
+                    case 'I':
+                    case 'Q':
                     case 's':
-                        node = writeInteger(16, Signedness.SIGNED, nativeEndianness());
-                        break;
                     case 'l':
-                        node = writeInteger(32, Signedness.SIGNED, nativeEndianness());
-                        break;
-                    case 'q':
-                        node = writeInteger(64, Signedness.SIGNED, nativeEndianness());
-                        break;
+                    case 'i':
+                    case 'q': {
+                        int size = 0;
+                        Signedness signedness = null;
+                        Endianness endianness = nativeEndianness();
+
+                        switch ((char) token) {
+                            case 'S':
+                                size = 16;
+                                signedness = Signedness.UNSIGNED;
+                                break;
+                            case 'L':
+                            case 'I':
+                                size = 32;
+                                signedness = Signedness.UNSIGNED;
+                                break;
+                            case 'Q':
+                                size = 64;
+                                signedness = Signedness.UNSIGNED;
+                                break;
+                            case 's':
+                                size = 16;
+                                signedness = Signedness.SIGNED;
+                                break;
+                            case 'l':
+                            case 'i':
+                                size = 32;
+                                signedness = Signedness.SIGNED;
+                                break;
+                            case 'q':
+                                size = 64;
+                                signedness = Signedness.SIGNED;
+                                break;
+                        }
+
+                        if (tokenizer.peek('_') || tokenizer.peek('!')) {
+                            size = 64;
+                            tokenizer.next();
+                        }
+
+                        if (tokenizer.peek('<')) {
+                            endianness = Endianness.LITTLE;
+                            tokenizer.next();
+                        } else if (tokenizer.peek('>')) {
+                            endianness = Endianness.BIG;
+                            tokenizer.next();
+                        }
+
+                        node = writeInteger(size, signedness, endianness);
+                    } break;
                     case 'n':
                         node = writeInteger(16, Signedness.UNSIGNED, Endianness.BIG);
                         break;
@@ -131,20 +169,13 @@ public class PackParser {
                 throw new UnsupportedOperationException(String.format("unexpected token %s", token));
             }
 
-            token = tokenizer.peek();
+            if (tokenizer.peek('*')) {
+                tokenizer.next();
+                node = new StarNode(node);
+            }
 
-            if (token != null) {
-                if (token instanceof Character) {
-                    switch ((char) token) {
-                        case '*':
-                            tokenizer.next();
-                            node = new StarNode(node);
-                            break;
-                    }
-                } else if (token instanceof Integer) {
-                    tokenizer.next();
-                    node = new NNode((int) token, node);
-                }
+            if (tokenizer.peek() instanceof Integer) {
+                node = new NNode((int) tokenizer.next(), node);
             }
 
             sequenceChildren.add(node);
@@ -258,9 +289,9 @@ public class PackParser {
                     case UNSIGNED:
                         switch (endianness) {
                             case LITTLE:
-                                return Write16UnsignedBigNodeGen.create(readNode);
-                            case BIG:
                                 return Write16UnsignedLittleNodeGen.create(readNode);
+                            case BIG:
+                                return Write16UnsignedBigNodeGen.create(readNode);
                         }
                     default:
                         throw new UnsupportedOperationException();
@@ -270,18 +301,39 @@ public class PackParser {
                     case UNSIGNED:
                         switch (endianness) {
                             case LITTLE:
-                                return Write32UnsignedBigNodeGen.create(readNode);
-                            case BIG:
                                 return Write32UnsignedLittleNodeGen.create(readNode);
+                            case BIG:
+                                return Write32UnsignedBigNodeGen.create(readNode);
                         }
                     case SIGNED:
                         switch (endianness) {
                             case LITTLE:
                                 // Can I just use the same node?
-                                return Write32UnsignedBigNodeGen.create(readNode);
+                                return Write32UnsignedLittleNodeGen.create(readNode);
                             case BIG:
                                 // Can I just use the same node?
-                                return Write32UnsignedLittleNodeGen.create(readNode);
+                                return Write32UnsignedBigNodeGen.create(readNode);
+                        }
+                    default:
+                        throw new UnsupportedOperationException();
+                }
+            case 64:
+                switch (signedness) {
+                    case UNSIGNED:
+                        switch (endianness) {
+                            case LITTLE:
+                                return Write64UnsignedLittleNodeGen.create(readNode);
+                            case BIG:
+                                return Write64UnsignedBigNodeGen.create(readNode);
+                        }
+                    case SIGNED:
+                        switch (endianness) {
+                            case LITTLE:
+                                // Can I just use the same node?
+                                return Write64UnsignedLittleNodeGen.create(readNode);
+                            case BIG:
+                                // Can I just use the same node?
+                                return Write64UnsignedBigNodeGen.create(readNode);
                         }
                     default:
                         throw new UnsupportedOperationException();

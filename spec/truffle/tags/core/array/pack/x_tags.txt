@@ -1,17 +1,6 @@
-fails:Array#pack with format 'x' ignores whitespace in the format string
-fails:Array#pack with format 'x' calls #to_str to coerce the directives string
-fails:Array#pack with format 'x' taints the output string if the format string is tainted
 fails:Array#pack with format 'x' raises ArgumentError when the format modifier is '_'
 fails:Array#pack with format 'x' raises ArgumentError when the format modifier is '!'
-fails:Array#pack with format 'x' adds a NULL byte with an empty array
 fails:Array#pack with format 'x' adds a NULL byte without consuming an element
-fails:Array#pack with format 'x' is not affected by a previous count modifier
-fails:Array#pack with format 'x' adds multiple NULL bytes when passed a count modifier
-fails:Array#pack with format 'x' does not add a NULL byte if the count modifier is zero
-fails:Array#pack with format 'x' does not add a NULL byte when passed the '*' modifier
-fails:Array#pack with format 'X' ignores whitespace in the format string
-fails:Array#pack with format 'X' calls #to_str to coerce the directives string
-fails:Array#pack with format 'X' taints the output string if the format string is tainted
 fails:Array#pack with format 'X' raises ArgumentError when the format modifier is '_'
 fails:Array#pack with format 'X' raises ArgumentError when the format modifier is '!'
 fails:Array#pack with format 'X' reduces the output string by one byte at the point it is encountered

@@ -1,36 +1,11 @@
-fails:Array#pack with format 'I' ignores whitespace in the format string
-fails:Array#pack with format 'I' calls #to_str to coerce the directives string
-fails:Array#pack with format 'I' taints the output string if the format string is tainted
-fails:Array#pack with format 'i' ignores whitespace in the format string
-fails:Array#pack with format 'i' calls #to_str to coerce the directives string
-fails:Array#pack with format 'i' taints the output string if the format string is tainted
-fails:Array#pack with format 'I' with modifier '<' calls #to_int to convert the pack argument to an Integer
 fails:Array#pack with format 'I' with modifier '<' and '_' calls #to_int to convert the pack argument to an Integer
 fails:Array#pack with format 'I' with modifier '<' and '!' calls #to_int to convert the pack argument to an Integer
-fails:Array#pack with format 'I' with modifier '>' calls #to_int to convert the pack argument to an Integer
 fails:Array#pack with format 'I' with modifier '>' and '_' calls #to_int to convert the pack argument to an Integer
 fails:Array#pack with format 'I' with modifier '>' and '!' calls #to_int to convert the pack argument to an Integer
-fails:Array#pack with format 'i' with modifier '<' calls #to_int to convert the pack argument to an Integer
 fails:Array#pack with format 'i' with modifier '<' and '_' calls #to_int to convert the pack argument to an Integer
 fails:Array#pack with format 'i' with modifier '<' and '!' calls #to_int to convert the pack argument to an Integer
-fails:Array#pack with format 'i' with modifier '>' calls #to_int to convert the pack argument to an Integer
 fails:Array#pack with format 'i' with modifier '>' and '_' calls #to_int to convert the pack argument to an Integer
 fails:Array#pack with format 'i' with modifier '>' and '!' calls #to_int to convert the pack argument to an Integer
-fails:Array#pack with format 'I' calls #to_int to convert the pack argument to an Integer
-fails:Array#pack with format 'i' calls #to_int to convert the pack argument to an Integer
-fails:Array#pack with format 'I' raises an ArgumentError if there are fewer elements than the format requires
-fails:Array#pack with format 'I' returns an empty String if count is zero
-fails:Array#pack with format 'I' returns an ASCII-8BIT string
-fails:Array#pack with format 'i' raises an ArgumentError if there are fewer elements than the format requires
-fails:Array#pack with format 'i' returns an empty String if count is zero
-fails:Array#pack with format 'i' returns an ASCII-8BIT string
-fails:Array#pack with format 'I' with modifier '<' encodes the least significant 32 bits of a positive number
-fails:Array#pack with format 'I' with modifier '<' encodes the least significant 32 bits of a negative number
-fails:Array#pack with format 'I' with modifier '<' encodes a Float truncated as an Integer
-fails:Array#pack with format 'I' with modifier '<' encodes the number of array elements specified by the count modifier
-fails:Array#pack with format 'I' with modifier '<' encodes all remaining elements when passed the '*' modifier
-fails:Array#pack with format 'I' with modifier '<' ignores NULL bytes between directives
-fails:Array#pack with format 'I' with modifier '<' ignores spaces between directives
 fails:Array#pack with format 'I' with modifier '<' and '_' encodes the least significant 32 bits of a positive number
 fails:Array#pack with format 'I' with modifier '<' and '_' encodes the least significant 32 bits of a negative number
 fails:Array#pack with format 'I' with modifier '<' and '_' encodes a Float truncated as an Integer
@@ -45,13 +20,6 @@ fails:Array#pack with format 'I' with modifier '<' and '!' encodes the number of
 fails:Array#pack with format 'I' with modifier '<' and '!' encodes all remaining elements when passed the '*' modifier
 fails:Array#pack with format 'I' with modifier '<' and '!' ignores NULL bytes between directives
 fails:Array#pack with format 'I' with modifier '<' and '!' ignores spaces between directives
-fails:Array#pack with format 'I' with modifier '>' encodes the least significant 32 bits of a positive number
-fails:Array#pack with format 'I' with modifier '>' encodes the least significant 32 bits of a negative number
-fails:Array#pack with format 'I' with modifier '>' encodes a Float truncated as an Integer
-fails:Array#pack with format 'I' with modifier '>' encodes the number of array elements specified by the count modifier
-fails:Array#pack with format 'I' with modifier '>' encodes all remaining elements when passed the '*' modifier
-fails:Array#pack with format 'I' with modifier '>' ignores NULL bytes between directives
-fails:Array#pack with format 'I' with modifier '>' ignores spaces between directives
 fails:Array#pack with format 'I' with modifier '>' and '_' encodes the least significant 32 bits of a positive number
 fails:Array#pack with format 'I' with modifier '>' and '_' encodes the least significant 32 bits of a negative number
 fails:Array#pack with format 'I' with modifier '>' and '_' encodes a Float truncated as an Integer
@@ -66,13 +34,6 @@ fails:Array#pack with format 'I' with modifier '>' and '!' encodes the number of
 fails:Array#pack with format 'I' with modifier '>' and '!' encodes all remaining elements when passed the '*' modifier
 fails:Array#pack with format 'I' with modifier '>' and '!' ignores NULL bytes between directives
 fails:Array#pack with format 'I' with modifier '>' and '!' ignores spaces between directives
-fails:Array#pack with format 'i' with modifier '<' encodes the least significant 32 bits of a positive number
-fails:Array#pack with format 'i' with modifier '<' encodes the least significant 32 bits of a negative number
-fails:Array#pack with format 'i' with modifier '<' encodes a Float truncated as an Integer
-fails:Array#pack with format 'i' with modifier '<' encodes the number of array elements specified by the count modifier
-fails:Array#pack with format 'i' with modifier '<' encodes all remaining elements when passed the '*' modifier
-fails:Array#pack with format 'i' with modifier '<' ignores NULL bytes between directives
-fails:Array#pack with format 'i' with modifier '<' ignores spaces between directives
 fails:Array#pack with format 'i' with modifier '<' and '_' encodes the least significant 32 bits of a positive number
 fails:Array#pack with format 'i' with modifier '<' and '_' encodes the least significant 32 bits of a negative number
 fails:Array#pack with format 'i' with modifier '<' and '_' encodes a Float truncated as an Integer
@@ -87,13 +48,6 @@ fails:Array#pack with format 'i' with modifier '<' and '!' encodes the number of
 fails:Array#pack with format 'i' with modifier '<' and '!' encodes all remaining elements when passed the '*' modifier
 fails:Array#pack with format 'i' with modifier '<' and '!' ignores NULL bytes between directives
 fails:Array#pack with format 'i' with modifier '<' and '!' ignores spaces between directives
-fails:Array#pack with format 'i' with modifier '>' encodes the least significant 32 bits of a positive number
-fails:Array#pack with format 'i' with modifier '>' encodes the least significant 32 bits of a negative number
-fails:Array#pack with format 'i' with modifier '>' encodes a Float truncated as an Integer
-fails:Array#pack with format 'i' with modifier '>' encodes the number of array elements specified by the count modifier
-fails:Array#pack with format 'i' with modifier '>' encodes all remaining elements when passed the '*' modifier
-fails:Array#pack with format 'i' with modifier '>' ignores NULL bytes between directives
-fails:Array#pack with format 'i' with modifier '>' ignores spaces between directives
 fails:Array#pack with format 'i' with modifier '>' and '_' encodes the least significant 32 bits of a positive number
 fails:Array#pack with format 'i' with modifier '>' and '_' encodes the least significant 32 bits of a negative number
 fails:Array#pack with format 'i' with modifier '>' and '_' encodes a Float truncated as an Integer
@@ -108,13 +62,6 @@ fails:Array#pack with format 'i' with modifier '>' and '!' encodes the number of
 fails:Array#pack with format 'i' with modifier '>' and '!' encodes all remaining elements when passed the '*' modifier
 fails:Array#pack with format 'i' with modifier '>' and '!' ignores NULL bytes between directives
 fails:Array#pack with format 'i' with modifier '>' and '!' ignores spaces between directives
-fails:Array#pack with format 'I' encodes the least significant 32 bits of a positive number
-fails:Array#pack with format 'I' encodes the least significant 32 bits of a negative number
-fails:Array#pack with format 'I' encodes a Float truncated as an Integer
-fails:Array#pack with format 'I' encodes the number of array elements specified by the count modifier
-fails:Array#pack with format 'I' encodes all remaining elements when passed the '*' modifier
-fails:Array#pack with format 'I' ignores NULL bytes between directives
-fails:Array#pack with format 'I' ignores spaces between directives
 fails:Array#pack with format 'I' with modifier '_' encodes the least significant 32 bits of a number
 fails:Array#pack with format 'I' with modifier '_' encodes the number of array elements specified by the count modifier
 fails:Array#pack with format 'I' with modifier '_' encodes all remaining elements when passed the '*' modifier
@@ -123,13 +70,6 @@ fails:Array#pack with format 'I' with modifier '!' encodes the least significant
 fails:Array#pack with format 'I' with modifier '!' encodes the number of array elements specified by the count modifier
 fails:Array#pack with format 'I' with modifier '!' encodes all remaining elements when passed the '*' modifier
 fails:Array#pack with format 'I' with modifier '!' encodes the least significant 32 bits of a number that is greater than 32 bits
-fails:Array#pack with format 'i' encodes the least significant 32 bits of a positive number
-fails:Array#pack with format 'i' encodes the least significant 32 bits of a negative number
-fails:Array#pack with format 'i' encodes a Float truncated as an Integer
-fails:Array#pack with format 'i' encodes the number of array elements specified by the count modifier
-fails:Array#pack with format 'i' encodes all remaining elements when passed the '*' modifier
-fails:Array#pack with format 'i' ignores NULL bytes between directives
-fails:Array#pack with format 'i' ignores spaces between directives
 fails:Array#pack with format 'i' with modifier '_' encodes the least significant 32 bits of a number
 fails:Array#pack with format 'i' with modifier '_' encodes the number of array elements specified by the count modifier
 fails:Array#pack with format 'i' with modifier '_' encodes all remaining elements when passed the '*' modifier
