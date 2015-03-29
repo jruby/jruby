@@ -1335,8 +1335,8 @@ public class IRBuilder {
         addInstr(new ExceptionRegionStartMarkerInstr(rescueLabel));
         Object v1 = protectedCode.run(); // YIELD: Run the protected code block
         addInstr(new CopyInstr(rv, (Operand)v1));
-        addInstr(new JumpInstr(rEndLabel));
         addInstr(new ExceptionRegionEndMarkerInstr());
+        addInstr(new JumpInstr(rEndLabel));
 
         // SSS FIXME: Create an 'Exception' operand type to eliminate the constant lookup below
         // We could preload a set of constant objects that are preloaded at boot time and use them
