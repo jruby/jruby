@@ -65,7 +65,7 @@ public class EncodingUtils {
         if (!encStr.getEncoding().isAsciiCompatible()) {
             throw context.runtime.newArgumentError("invalid name encoding (non ASCII)");
         }
-        Encoding idx = context.runtime.getEncodingService().getEncodingFromObject(enc);
+        Encoding idx = context.runtime.getEncodingService().getEncodingFromObject(encStr);
         // check for missing encoding is in getEncodingFromObject
         return idx;
     }
