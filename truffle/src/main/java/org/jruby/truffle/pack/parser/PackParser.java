@@ -119,7 +119,21 @@ public class PackParser {
                         }
 
                         if (tokenizer.peek('_') || tokenizer.peek('!')) {
-                            size = 64;
+                            switch ((char) token) {
+                                case 'S':
+                                case 's':
+                                    size = 16;
+                                    break;
+                                case 'L':
+                                case 'I':
+                                case 'l':
+                                case 'i':
+                                    size = 64;
+                                    break;
+                                default:
+                                    throw new UnsupportedOperationException();
+                            }
+
                             tokenizer.next();
                         }
 
@@ -298,6 +312,15 @@ public class PackParser {
                             case LITTLE:
                                 return Write16UnsignedLittleNodeGen.create(readNode);
                             case BIG:
+                                return Write16UnsignedBigNodeGen.create(readNode);
+                        }
+                    case SIGNED:
+                        switch (endianness) {
+                            case LITTLE:
+                                // Can I just use the same node?
+                                return Write16UnsignedLittleNodeGen.create(readNode);
+                            case BIG:
+                                // Can I just use the same node?
                                 return Write16UnsignedBigNodeGen.create(readNode);
                         }
                     default:
