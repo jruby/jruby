@@ -225,6 +225,11 @@ public class PackParser {
 
             if (tokenizer.peek('*')) {
                 tokenizer.next();
+
+                if (node instanceof BackNode) {
+                    continue;
+                }
+
                 node = new StarNode(node);
             }
 

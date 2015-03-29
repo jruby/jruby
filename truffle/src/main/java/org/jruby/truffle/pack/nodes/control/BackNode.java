@@ -9,14 +9,24 @@
  */
 package org.jruby.truffle.pack.nodes.control;
 
+import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import org.jruby.truffle.pack.nodes.PackNode;
+import org.jruby.truffle.pack.runtime.OutsideOfStringException;
 
 public class BackNode extends PackNode {
 
     @Override
     public Object execute(VirtualFrame frame) {
-        setOutputPosition(frame, getOutputPosition(frame) - 1);
+        final int position = getOutputPosition(frame);
+
+        if (position == 0) {
+            CompilerDirectives.transferToInterpreter();
+            throw new OutsideOfStringException();
+        }
+
+        setOutputPosition(frame, position - 1);
+
         return null;
     }
 

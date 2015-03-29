@@ -44,10 +44,7 @@ import org.jruby.truffle.nodes.objects.TaintNode;
 import org.jruby.truffle.nodes.objects.TaintNodeFactory;
 import org.jruby.truffle.nodes.yield.YieldDispatchHeadNode;
 import org.jruby.truffle.pack.parser.PackParser;
-import org.jruby.truffle.pack.runtime.FormatException;
-import org.jruby.truffle.pack.runtime.NoImplicitConversionException;
-import org.jruby.truffle.pack.runtime.PackResult;
-import org.jruby.truffle.pack.runtime.TooFewArgumentsException;
+import org.jruby.truffle.pack.runtime.*;
 import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.control.BreakException;
 import org.jruby.truffle.runtime.control.NextException;
@@ -2858,6 +2855,9 @@ public abstract class ArrayNodes {
             } catch (NoImplicitConversionException e) {
                 CompilerDirectives.transferToInterpreter();
                 throw new RaiseException(getContext().getCoreLibrary().typeErrorNoImplicitConversion(e.getObject(), e.getTarget(), this));
+            } catch (OutsideOfStringException e) {
+                CompilerDirectives.transferToInterpreter();
+                throw new RaiseException(getContext().getCoreLibrary().argumentError("X outside of string", this));
             } finally {
                 // No caching at the moment - so we always want to delete the node for next time
                 CompilerDirectives.transferToInterpreterAndInvalidate();
