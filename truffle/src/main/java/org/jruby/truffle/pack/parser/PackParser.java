@@ -247,6 +247,11 @@ public class PackParser {
                                         AsSinglePrecisionNodeGen.create(
                                                 ReadFloatNodeGen.create(context, new SourceNode()))));
                         break;
+                    case 'P':
+                    case 'p':
+                        node = writeInteger(64, Signedness.UNSIGNED, nativeEndianness(),
+                                new PNode());
+                        break;
                     default:
                         throw new UnsupportedOperationException(String.format("unexpected token %s", token));
                 }
