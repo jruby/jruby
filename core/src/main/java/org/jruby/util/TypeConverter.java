@@ -299,7 +299,7 @@ public class TypeConverter {
         if (xt != t.getClassIndex()) {
             String tname = t.getBaseName();
             if (tname != null) {
-                throw context.runtime.newArgumentError("wrong argument type " + xt + " (expected " + t.getClassIndex());
+                throw context.runtime.newTypeError("wrong argument type " + tname + " (expected " + t.getName() + ")");
             }
             throw context.runtime.newRuntimeError("bug: unknown type " + t.getClassIndex() + " (" + xt + " given)");
         }
