@@ -911,7 +911,7 @@ public final class StringSupport {
         }
 
         int s = nth(enc, sourceBytes, sbeg, end, pos);
-        byte[] subBytes = subString.bytes();
+        byte[] subBytes = subString.unsafeBytes();
 
         // switch to byte size here; this is now MRI:str_rindex
         if (subSize == 0) return pos;
