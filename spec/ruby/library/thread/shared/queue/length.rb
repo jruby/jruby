@@ -1,6 +1,6 @@
 describe :queue_length, :shared => true do
   it "returns the number of elements" do
-    q = Queue.new
+    q = @object
     q.send(@method).should == 0
     q << Object.new
     q << Object.new
