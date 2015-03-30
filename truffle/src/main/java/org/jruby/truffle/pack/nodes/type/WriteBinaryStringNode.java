@@ -24,13 +24,15 @@ import org.jruby.util.ByteList;
 public abstract class WriteBinaryStringNode extends PackNode {
 
     private final boolean pad;
+    private final boolean padOnNil;
     private final int width;
     private final byte padding;
     private final boolean takeAll;
     private final boolean appendNull;
 
-    public WriteBinaryStringNode(boolean pad, int width, byte padding, boolean takeAll, boolean appendNull) {
+    public WriteBinaryStringNode(boolean pad, boolean padOnNil, int width, byte padding, boolean takeAll, boolean appendNull) {
         this.pad = pad;
+        this.padOnNil = padOnNil;
         this.width = width;
         this.padding = padding;
         this.takeAll = takeAll;
@@ -39,8 +41,10 @@ public abstract class WriteBinaryStringNode extends PackNode {
 
     @Specialization
     public Object write(VirtualFrame frame, Nil bytes) {
-        for (int n = 0; n < width; n++) {
-            writeBytes(frame, (byte) 0);
+        if (padOnNil) {
+            for (int n = 0; n < width; n++) {
+                writeBytes(frame, padding);
+            }
         }
 
         return null;
