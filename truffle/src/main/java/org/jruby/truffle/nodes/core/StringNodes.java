@@ -612,7 +612,7 @@ public abstract class StringNodes {
                     dupNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext()));
                 }
 
-                return dupNode.call(frame, matchStr, "dup", null);
+                throw new TaintResultNode.DoNotTaint(dupNode.call(frame, matchStr, "dup", null));
             }
 
             return nil();

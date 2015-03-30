@@ -12,6 +12,7 @@ package org.jruby.truffle.nodes.cast;
 
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.frame.VirtualFrame;
+import com.oracle.truffle.api.nodes.ControlFlowException;
 import com.oracle.truffle.api.nodes.ExplodeLoop;
 import com.oracle.truffle.api.nodes.UnexpectedResultException;
 import com.oracle.truffle.api.source.SourceSection;
@@ -70,6 +71,8 @@ public class TaintResultNode extends RubyNode {
 
         try {
             result = method.executeRubyBasicObject(frame);
+        } catch (DoNotTaint e) {
+            return e.getResult();
         } catch (UnexpectedResultException e) {
             throw new UnsupportedOperationException(e);
         }
@@ -96,5 +99,19 @@ public class TaintResultNode extends RubyNode {
         }
 
         return result;
+    }
+
+    public static class DoNotTaint extends ControlFlowException {
+        private static final long serialVersionUID = 5321304910918469059L;
+
+        private final Object result;
+
+        public DoNotTaint(Object result) {
+            this.result = result;
+        }
+
+        public Object getResult() {
+            return result;
+        }
     }
 }
