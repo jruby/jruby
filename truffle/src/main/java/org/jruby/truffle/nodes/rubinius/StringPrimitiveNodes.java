@@ -363,23 +363,30 @@ public abstract class StringPrimitiveNodes {
         private final ConditionProfile startTooLargeProfile = ConditionProfile.createBinaryProfile();
         private final ConditionProfile startTooSmallProfile = ConditionProfile.createBinaryProfile();
 
+        @Child private StringNodes.SizeNode sizeNode;
+
         public StringCompareSubstringPrimitiveNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
+            sizeNode = StringNodesFactory.SizeNodeFactory.create(context, sourceSection, new RubyNode[] { null });
         }
 
         public StringCompareSubstringPrimitiveNode(StringCompareSubstringPrimitiveNode prev) {
             super(prev);
+            sizeNode = prev.sizeNode;
         }
 
         @Specialization
-        public int stringCompareSubstring(RubyString string, RubyString other, int start, int size) {
+        public int stringCompareSubstring(VirtualFrame frame, RubyString string, RubyString other, int start, int size) {
             // Transliterated from Rubinius C++.
 
+            final int stringLength = sizeNode.executeIntegerFixnum(frame, string);
+            final int otherLength = sizeNode.executeIntegerFixnum(frame, other);
+
             if (start < 0) {
-                start += other.length();
+                start += otherLength;
             }
 
-            if (startTooLargeProfile.profile(start > other.length())) {
+            if (startTooLargeProfile.profile(start > otherLength)) {
                 CompilerDirectives.transferToInterpreter();
 
                 throw new RaiseException(
@@ -399,12 +406,12 @@ public abstract class StringPrimitiveNodes {
                         ));
             }
 
-            if (start + size > other.length()) {
-                size = other.length() - start;
+            if (start + size > otherLength) {
+                size = otherLength - start;
             }
 
-            if (size > string.length()) {
-                size = string.length();
+            if (size > stringLength) {
+                size = stringLength;
             }
 
             final ByteList bytes = string.getByteList();
