@@ -1398,11 +1398,12 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
     // TODO: must override in RubyModule to pick up constants
     public List<Variable<IRubyObject>> getInstanceVariableList() {
         Map<String, VariableAccessor> ivarAccessors = metaClass.getVariableAccessorsForRead();
-        ArrayList<Variable<IRubyObject>> list = new ArrayList<Variable<IRubyObject>>();
+        ArrayList<Variable<IRubyObject>> list = new ArrayList<Variable<IRubyObject>>(ivarAccessors.size());
         for (Map.Entry<String, VariableAccessor> entry : ivarAccessors.entrySet()) {
-            Object value = entry.getValue().get(this);
-            if (value == null || !(value instanceof IRubyObject) || !IdUtil.isInstanceVariable(entry.getKey())) continue;
-            list.add(new VariableEntry<IRubyObject>(entry.getKey(), (IRubyObject)value));
+            final String key = entry.getKey();
+            final Object value = entry.getValue().get(this);
+            if (value == null || !(value instanceof IRubyObject) || !IdUtil.isInstanceVariable(key)) continue;
+            list.add(new VariableEntry<IRubyObject>(key, (IRubyObject) value));
         }
         return list;
     }
@@ -1413,11 +1414,12 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
    // TODO: must override in RubyModule to pick up constants
    public List<String> getInstanceVariableNameList() {
         Map<String, VariableAccessor> ivarAccessors = metaClass.getVariableAccessorsForRead();
-        ArrayList<String> list = new ArrayList<String>();
+        ArrayList<String> list = new ArrayList<String>(ivarAccessors.size());
         for (Map.Entry<String, VariableAccessor> entry : ivarAccessors.entrySet()) {
-            Object value = entry.getValue().get(this);
-            if (value == null || !(value instanceof IRubyObject) || !IdUtil.isInstanceVariable(entry.getKey())) continue;
-            list.add(entry.getKey());
+            final String key = entry.getKey();
+            final Object value = entry.getValue().get(this);
+            if (value == null || !(value instanceof IRubyObject) || !IdUtil.isInstanceVariable(key)) continue;
+            list.add(key);
         }
         return list;
     }
