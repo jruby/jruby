@@ -1,6 +1,6 @@
 describe :queue_deq, :shared => true do
   it "removes an item from the Queue" do
-    q = Queue.new
+    q = @object
     q << Object.new
     q.size.should == 1
     q.send(@method)
@@ -8,7 +8,7 @@ describe :queue_deq, :shared => true do
   end
 
   it "returns items in the order they were added" do
-    q = Queue.new
+    q = @object
     q << 1
     q << 2
     q.send(@method).should == 1
@@ -16,7 +16,7 @@ describe :queue_deq, :shared => true do
   end
 
   it "blocks the thread until there are items in the queue" do
-    q = Queue.new
+    q = @object
     v = 0
 
     th = Thread.new do
@@ -31,7 +31,7 @@ describe :queue_deq, :shared => true do
   end
 
   it "raises a ThreadError if Queue is empty" do
-    q = Queue.new
+    q = @object
     lambda { q.send(@method,true) }.should raise_error(ThreadError)
   end
 end

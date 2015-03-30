@@ -1,9 +1,6 @@
-require File.expand_path('../../../spec_helper', __FILE__)
-require 'thread'
-
-describe "Queue#num_waiting" do
-  it "reports the number of threads waiting on the Queue" do
-    q = Queue.new
+describe :queue_num_waiting, :shared => true do
+  it "reports the number of threads waiting on the queue" do
+    q = @object
     threads = []
 
     5.times do |i|
