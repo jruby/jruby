@@ -1,1 +1,0 @@
-fails:Thread::SizedQueue#push raises a ThreadError if queued elements exceed size when not blocking

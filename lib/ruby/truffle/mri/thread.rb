@@ -307,11 +307,12 @@ class SizedQueue < Queue
   # Pushes +obj+ to the queue.  If there is no space left in the queue, waits
   # until space becomes available.
   #
-  def push(obj)
+  def push(obj, non_block=false)
     Thread.handle_interrupt(RuntimeError => :on_blocking) do
       @mutex.synchronize do
         while true
           break if @que.length < @max
+          raise ThreadError, "queue full" if non_block
           @num_enqueue_waiting += 1
           begin
             @enque_cond.wait @mutex
