@@ -230,6 +230,17 @@ public class PackParser {
 
                         node = WriteMIMEStringNodeGen.create(length, ReadStringNodeGen.create(context, new SourceNode()));
                     } break;
+                    case 'm': {
+                        final int length;
+
+                        if (tokenizer.peek() instanceof Integer) {
+                            length = (int) tokenizer.next();
+                        } else {
+                            length = Integer.MAX_VALUE;
+                        }
+
+                        node = WriteBase64StringNodeGen.create(length, ReadStringNodeGen.create(context, new SourceNode()));
+                    } break;
                     case 'U':
                         node = WriteUTF8CharacterNodeGen.create(ReadIntegerNodeGen.create(context, new SourceNode()));
                         break;
