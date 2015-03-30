@@ -221,6 +221,31 @@ public class PackParser {
 
                         node = WriteHexStringNodeGen.create(endianness, length, ReadStringNodeGen.create(context, new SourceNode()));
                     } break;
+                    case 'B':
+                    case 'b': {
+                        final Endianness endianness;
+
+                        switch ((char) token) {
+                            case 'B':
+                                endianness = Endianness.BIG;
+                                break;
+                            case 'b':
+                                endianness = Endianness.LITTLE;
+                                break;
+                            default:
+                                throw new UnsupportedOperationException();
+                        }
+
+                        final int length;
+
+                        if (tokenizer.peek() instanceof Integer) {
+                            length = (int) tokenizer.next();
+                        } else {
+                            length = 1;
+                        }
+
+                        node = WriteBitStringNodeGen.create(endianness, length, ReadStringNodeGen.create(context, new SourceNode()));
+                    } break;
                     case 'M': {
                         final int length;
 

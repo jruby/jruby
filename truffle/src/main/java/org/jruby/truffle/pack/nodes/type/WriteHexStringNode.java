@@ -33,13 +33,13 @@ public abstract class WriteHexStringNode extends PackNode {
     @Specialization
     public Object write(VirtualFrame frame, ByteList bytes) {
         final byte[] b = bytes.unsafeBytes();
+        int begin = bytes.begin();
 
         int currentByte = 0;
-
         int padLength = 0;
 
         for (int n = 0; n < length; n++) {
-            byte currentChar = b[n];
+            byte currentChar = b[begin + n];
 
             if (Character.isJavaIdentifierStart(currentChar)) {
                 switch (endianness) {
