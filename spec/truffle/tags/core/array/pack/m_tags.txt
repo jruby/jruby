@@ -10,6 +10,5 @@ fails:Array#pack with format 'M' converts Floats to the minimum unique represent
 fails:Array#pack with format 'M' sets the output string to US-ASCII encoding
 fails:Array#pack with format 'm' emits a newline after complete groups of count / 3 input characters when passed a count modifier
 fails:Array#pack with format 'm' implicitly has a count of 45 when passed '*', 1, 2 or no count modifier
-fails:Array#pack with format 'm' encodes all ascii characters
 fails:Array#pack with format 'm' does not emit a newline if passed zero as the count modifier
 fails:Array#pack with format 'm' sets the output string to US-ASCII encoding

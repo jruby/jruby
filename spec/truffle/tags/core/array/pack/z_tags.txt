@@ -1,3 +1,2 @@
-fails:Array#pack with format 'Z' returns a string in encoding of common to the concatenated results
 fails:Array#pack with format 'Z' adds all the bytes and appends a NULL byte when passed the '*' modifier
 fails:Array#pack with format 'Z' pads the output with NULL bytes when the value is nil

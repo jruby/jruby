@@ -102,7 +102,7 @@ public abstract class PackNode extends Node {
 
         if (outputPosition + valuesLength > output.length) {
             CompilerDirectives.transferToInterpreterAndInvalidate();
-            output = Arrays.copyOf(output, output.length * 2);
+            output = Arrays.copyOf(output, (output.length + valuesLength) * 2);
             setOutput(frame, output);
         }
 
