@@ -206,10 +206,11 @@ public abstract class DirNodes {
         @Specialization
         public int mkdir(RubyString path) {
             notDesignedForCompilation();
+            String dir = path.toString();
 
-            if (!new File(path.toString()).mkdir()) {
-                // TODO(CS, 12-Jan-15) handle failure
-                throw new UnsupportedOperationException();
+            if (!new File(dir).mkdir()) {
+                CompilerDirectives.transferToInterpreterAndInvalidate();
+                throw new RaiseException(getContext().getCoreLibrary().fileNotFoundError(dir, this));
             }
 
             return 0;
