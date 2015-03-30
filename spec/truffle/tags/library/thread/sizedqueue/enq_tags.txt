@@ -1,0 +1,1 @@
+fails:Thread::SizedQueue#enq raises a ThreadError if queued elements exceed size when not blocking

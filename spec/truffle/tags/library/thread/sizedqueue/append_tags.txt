@@ -1,0 +1,1 @@
+fails:Thread::SizedQueue#<< raises a ThreadError if queued elements exceed size when not blocking

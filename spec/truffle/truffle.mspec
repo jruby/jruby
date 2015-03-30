@@ -103,7 +103,8 @@ class MSpecScript
     "spec/ruby/library/erb",
     "spec/ruby/library/set",
     "spec/ruby/library/strscan",
-    "spec/ruby/library/stringio"
+    "spec/ruby/library/stringio",
+    "spec/ruby/library/thread"
   ]
 
   set :tags_patterns, [
