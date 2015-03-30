@@ -12,12 +12,10 @@ import org.jruby.truffle.pack.nodes.SourceNode;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyBignum;
 
-import java.math.BigInteger;
-
 @NodeChildren({
         @NodeChild(value = "source", type = SourceNode.class),
 })
-public abstract class ReadLongOrBignumNode extends PackNode {
+public abstract class ReadLongOrBigIntegerNode extends PackNode {
 
     private final RubyContext context;
 
@@ -25,11 +23,11 @@ public abstract class ReadLongOrBignumNode extends PackNode {
 
     private final ConditionProfile bignumProfile = ConditionProfile.createBinaryProfile();
 
-    public ReadLongOrBignumNode(RubyContext context) {
+    public ReadLongOrBigIntegerNode(RubyContext context) {
         this.context = context;
     }
 
-    public ReadLongOrBignumNode(ReadLongOrBignumNode prev) {
+    public ReadLongOrBigIntegerNode(ReadLongOrBigIntegerNode prev) {
         context = prev.context;
         toLongNode = prev.toLongNode;
     }

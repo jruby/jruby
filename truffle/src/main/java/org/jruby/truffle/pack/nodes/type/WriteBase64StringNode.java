@@ -34,7 +34,11 @@ public abstract class WriteBase64StringNode extends PackNode {
     @Specialization
     public Object write(VirtualFrame frame, ByteList bytes) {
         writeBytes(frame, encode(bytes));
-        writeBytes(frame, (byte) '\n');
+
+        if (bytes.length() > 0) {
+            writeBytes(frame, (byte) '\n');
+        }
+
         return null;
     }
 

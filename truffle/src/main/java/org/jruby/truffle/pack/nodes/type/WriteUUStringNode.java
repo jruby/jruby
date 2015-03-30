@@ -15,6 +15,7 @@ import com.oracle.truffle.api.dsl.NodeChildren;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import org.jruby.truffle.pack.nodes.PackNode;
+import org.jruby.truffle.pack.runtime.Nil;
 import org.jruby.util.ByteList;
 import org.jruby.util.Pack;
 import sun.misc.UUEncoder;

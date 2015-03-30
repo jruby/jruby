@@ -17,6 +17,8 @@ import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyBignum;
 import org.jruby.truffle.runtime.core.RubyNilClass;
 
+import java.math.BigInteger;
+
 @NodeChildren({
         @NodeChild(value = "value", type = PackNode.class),
 })
@@ -28,7 +30,7 @@ public abstract class ToLongNode extends PackNode {
 
     @CompilerDirectives.CompilationFinal private boolean seenInt;
     @CompilerDirectives.CompilationFinal private boolean seenLong;
-    @CompilerDirectives.CompilationFinal private boolean seenBignum;
+    @CompilerDirectives.CompilationFinal private boolean seenBigInteger;
 
     public ToLongNode(RubyContext context) {
         this.context = context;
@@ -66,12 +68,18 @@ public abstract class ToLongNode extends PackNode {
     }
 
     @Specialization
+    public long toLong(VirtualFrame frame, BigInteger object) {
+        // A truncated value is exactly what we want
+        return object.longValue();
+    }
+
+    @Specialization
     public long toLong(VirtualFrame frame, RubyNilClass nil) {
         CompilerDirectives.transferToInterpreter();
         throw new NoImplicitConversionException(nil, "Integer");
     }
 
-    @Specialization(guards = {"!isBoolean(object)", "!isInteger(object)", "!isLong(object)", "!isRubyNilClass(object)"})
+    @Specialization(guards = {"!isBoolean(object)", "!isInteger(object)", "!isLong(object)", "!isBigInteger(object)", "!isRubyBignum(object)", "!isRubyNilClass(object)"})
     public long toLong(VirtualFrame frame, Object object) {
         if (toIntNode == null) {
             CompilerDirectives.transferToInterpreter();
@@ -88,8 +96,8 @@ public abstract class ToLongNode extends PackNode {
             return toLong(frame, (long) value);
         }
 
-        if (seenBignum && value instanceof RubyBignum) {
-            return toLong(frame, (RubyBignum) value);
+        if (seenBigInteger && value instanceof BigInteger) {
+            return toLong(frame, (BigInteger) value);
         }
 
         CompilerDirectives.transferToInterpreterAndInvalidate();
@@ -108,9 +116,9 @@ public abstract class ToLongNode extends PackNode {
             return toLong(frame, (long) value);
         }
 
-        if (value instanceof RubyBignum) {
-            seenBignum = true;
-            return toLong(frame, (RubyBignum) value);
+        if (value instanceof BigInteger) {
+            seenBigInteger = true;
+            return toLong(frame, (BigInteger) value);
         }
 
         throw new UnsupportedOperationException();

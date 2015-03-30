@@ -17,9 +17,11 @@ import com.oracle.truffle.api.nodes.Node;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.truffle.pack.runtime.PackFrame;
 import org.jruby.truffle.pack.runtime.TooFewArgumentsException;
+import org.jruby.truffle.runtime.core.RubyBignum;
 import org.jruby.truffle.runtime.core.RubyString;
 import org.jruby.util.ByteList;
 
+import java.math.BigInteger;
 import java.util.Arrays;
 
 @TypeSystemReference(PackTypes.class)
@@ -132,6 +134,14 @@ public abstract class PackNode extends Node {
 
     protected boolean isLong(Object object) {
         return object instanceof Long;
+    }
+
+    protected boolean isBigInteger(Object object) {
+        return object instanceof BigInteger;
+    }
+
+    protected boolean isRubyBignum(Object object) {
+        return object instanceof RubyBignum;
     }
 
     protected boolean isIRubyArray(Object[] array) {

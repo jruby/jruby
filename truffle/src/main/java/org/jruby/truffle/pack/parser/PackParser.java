@@ -20,7 +20,6 @@ import org.jruby.truffle.pack.runtime.Endianness;
 import org.jruby.truffle.pack.runtime.FormatException;
 import org.jruby.truffle.pack.runtime.Signedness;
 import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.util.Pack;
 
 import java.nio.ByteOrder;
 import java.util.ArrayList;
@@ -351,7 +350,7 @@ public class PackParser {
                                 new PNode());
                         break;
                     case 'w':
-                        node = WriteBERNodeGen.create(ReadLongOrBignumNodeGen.create(context, new SourceNode()));
+                        node = WriteBERNodeGen.create(ReadLongOrBigIntegerNodeGen.create(context, new SourceNode()));
                         break;
                     default:
                         throw new UnsupportedOperationException(String.format("unexpected token %s", token));
