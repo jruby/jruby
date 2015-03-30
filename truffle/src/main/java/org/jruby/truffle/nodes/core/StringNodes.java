@@ -873,6 +873,7 @@ public abstract class StringNodes {
         }
     }
 
+    @RubiniusOnly
     @CoreMethod(names = "data")
     public abstract static class DataNode extends CoreMethodNode {
 
