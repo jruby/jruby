@@ -240,7 +240,6 @@ module Commands
       args.shift
       options += %w[--excl-tag slow]
     end
-    args = [':language', ':core'] if args.empty?
     mspec 'run', *options, *args
   end
 
