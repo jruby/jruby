@@ -1,8 +1,4 @@
 fails:Array#pack with format 'E' raises an ArgumentError if there are fewer elements than the format requires
-fails:Array#pack with format 'E' returns an ASCII-8BIT string
-fails:Array#pack with format 'E' converts an Integer to a Float
 fails:Array#pack with format 'e' raises an ArgumentError if there are fewer elements than the format requires
-fails:Array#pack with format 'e' returns an ASCII-8BIT string
-fails:Array#pack with format 'e' converts an Integer to a Float
 fails:Array#pack with format 'E' encodes NaN
 fails:Array#pack with format 'e' encodes NaN

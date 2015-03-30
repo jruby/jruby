@@ -1,8 +1,4 @@
 fails:Array#pack with format 'D' raises an ArgumentError if there are fewer elements than the format requires
-fails:Array#pack with format 'D' returns an ASCII-8BIT string
-fails:Array#pack with format 'D' converts an Integer to a Float
 fails:Array#pack with format 'd' raises an ArgumentError if there are fewer elements than the format requires
-fails:Array#pack with format 'd' returns an ASCII-8BIT string
-fails:Array#pack with format 'd' converts an Integer to a Float
 fails:Array#pack with format 'D' encodes NaN
 fails:Array#pack with format 'd' encodes NaN

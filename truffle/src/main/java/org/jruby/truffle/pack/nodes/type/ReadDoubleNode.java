@@ -24,6 +24,16 @@ public abstract class ReadDoubleNode extends PackNode {
     }
 
     @Specialization
+    public double read(VirtualFrame frame, int[] source) {
+        return source[advanceSourcePosition(frame)];
+    }
+
+    @Specialization
+    public double read(VirtualFrame frame, long[] source) {
+        return source[advanceSourcePosition(frame)];
+    }
+
+    @Specialization
     public double read(VirtualFrame frame, double[] source) {
         return source[advanceSourcePosition(frame)];
     }
