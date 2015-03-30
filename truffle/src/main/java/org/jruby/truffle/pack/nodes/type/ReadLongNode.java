@@ -13,17 +13,17 @@ import org.jruby.truffle.runtime.RubyContext;
 @NodeChildren({
         @NodeChild(value = "source", type = SourceNode.class),
 })
-public abstract class ReadIntegerNode extends PackNode {
+public abstract class ReadLongNode extends PackNode {
 
     private final RubyContext context;
 
     @Child private ToLongNode toLongNode;
 
-    public ReadIntegerNode(RubyContext context) {
+    public ReadLongNode(RubyContext context) {
         this.context = context;
     }
 
-    public ReadIntegerNode(ReadIntegerNode prev) {
+    public ReadLongNode(ReadLongNode prev) {
         context = prev.context;
         toLongNode = prev.toLongNode;
     }

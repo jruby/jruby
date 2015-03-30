@@ -13,7 +13,7 @@ import org.jruby.truffle.pack.runtime.FormatException;
 
 public class PackTokenizer {
 
-    private static final String simpleTokens = "CSLIQcsliqnNvVAaZUXx*<>!_@DdFfEeGgPpHhMmu";
+    private static final String simpleTokens = "CSLIQcsliqnNvVAaZUXx*<>!_@DdFfEeGgPpHhMmuw";
 
     private final String format;
     private final boolean extended;

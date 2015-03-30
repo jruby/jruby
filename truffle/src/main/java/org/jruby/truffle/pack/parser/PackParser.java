@@ -255,7 +255,7 @@ public class PackParser {
                         node = WriteUUStringNodeGen.create(length, ReadStringNodeGen.create(context, new SourceNode()));
                     } break;
                     case 'U':
-                        node = WriteUTF8CharacterNodeGen.create(ReadIntegerNodeGen.create(context, new SourceNode()));
+                        node = WriteUTF8CharacterNodeGen.create(ReadLongNodeGen.create(context, new SourceNode()));
                         break;
                     case 'X':
                         node = new BackNode();
@@ -276,41 +276,44 @@ public class PackParser {
                     case 'd':
                         node = writeInteger(64, Signedness.UNSIGNED, nativeEndianness(),
                                 AsLongNodeGen.create(
-                                        ReadFloatNodeGen.create(context, new SourceNode())));
+                                        ReadDoubleNodeGen.create(context, new SourceNode())));
                         break;
                     case 'F':
                     case 'f':
                         node = writeInteger(32, Signedness.UNSIGNED, nativeEndianness(),
                                 AsLongNodeGen.create(
                                         AsSinglePrecisionNodeGen.create(
-                                            ReadFloatNodeGen.create(context, new SourceNode()))));
+                                            ReadDoubleNodeGen.create(context, new SourceNode()))));
                         break;
                     case 'E':
                         node = writeInteger(64, Signedness.UNSIGNED, Endianness.LITTLE,
                                 AsLongNodeGen.create(
-                                        ReadFloatNodeGen.create(context, new SourceNode())));
+                                        ReadDoubleNodeGen.create(context, new SourceNode())));
                         break;
                     case 'e':
                         node = writeInteger(32, Signedness.UNSIGNED, Endianness.LITTLE,
                                 AsLongNodeGen.create(
                                         AsSinglePrecisionNodeGen.create(
-                                                ReadFloatNodeGen.create(context, new SourceNode()))));
+                                                ReadDoubleNodeGen.create(context, new SourceNode()))));
                         break;
                     case 'G':
                         node = writeInteger(64, Signedness.UNSIGNED, Endianness.BIG,
                                 AsLongNodeGen.create(
-                                        ReadFloatNodeGen.create(context, new SourceNode())));
+                                        ReadDoubleNodeGen.create(context, new SourceNode())));
                         break;
                     case 'g':
                         node = writeInteger(32, Signedness.UNSIGNED, Endianness.BIG,
                                 AsLongNodeGen.create(
                                         AsSinglePrecisionNodeGen.create(
-                                                ReadFloatNodeGen.create(context, new SourceNode()))));
+                                                ReadDoubleNodeGen.create(context, new SourceNode()))));
                         break;
                     case 'P':
                     case 'p':
                         node = writeInteger(64, Signedness.UNSIGNED, nativeEndianness(),
                                 new PNode());
+                        break;
+                    case 'w':
+                        node = WriteBERNodeGen.create(ReadLongOrBignumNodeGen.create(context, new SourceNode()));
                         break;
                     default:
                         throw new UnsupportedOperationException(String.format("unexpected token %s", token));
@@ -440,7 +443,7 @@ public class PackParser {
     }
 
     private PackNode writeInteger(int size, Signedness signedness, Endianness endianness) {
-        final PackNode readNode = ReadIntegerNodeGen.create(context, new SourceNode());
+        final PackNode readNode = ReadLongNodeGen.create(context, new SourceNode());
         return writeInteger(size, signedness, endianness, readNode);
     }
 
