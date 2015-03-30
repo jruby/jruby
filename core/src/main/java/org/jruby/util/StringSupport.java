@@ -911,20 +911,28 @@ public final class StringSupport {
         }
 
         int s = nth(enc, sourceBytes, sbeg, end, pos);
-        byte[] subBytes = subString.unsafeBytes();
 
-        // switch to byte size here; this is now MRI:str_rindex
-        if (subSize == 0) return pos;
-        int t = subString.begin();
+        return strRindex(source, subString, s, pos, enc);
+    }
 
-        // s >= 0 because -1 is our OOB, where MRI's is null pointer (0)
-        while (s >= 0 && s + subSize <= sourceSize) {
-            if (ByteList.memcmp(sourceBytes, s, subBytes, t, subSize) == 0) {
+    private static int strRindex(ByteList str, ByteList sub, int s, int pos, Encoding enc) {
+        int slen;
+        byte[] strBytes = str.unsafeBytes();
+        byte[] subBytes = sub.unsafeBytes();
+        int sbeg, e, t;
+
+        sbeg = str.begin();
+        e = str.begin() + str.realSize();
+        t = sub.begin();
+        slen = sub.realSize();
+
+        while (s >= sbeg) {
+            if (ByteList.memcmp(strBytes, s, subBytes, t, slen) == 0) {
                 return pos;
             }
             if (pos == 0) break;
             pos--;
-            s = enc.prevCharHead(sourceBytes, sbeg, s, end);
+            s = enc.prevCharHead(strBytes, sbeg, s, e);
         }
 
         return -1;
