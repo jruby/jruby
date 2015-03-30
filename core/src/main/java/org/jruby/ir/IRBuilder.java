@@ -1525,7 +1525,7 @@ public class IRBuilder {
                  }
             };
 
-                // Try verifying definition, and if we get an JumpException exception, process it with the rescue block above
+            // Try verifying definition, and if we get an JumpException exception, process it with the rescue block above
             return protectCodeWithRescue(protectedCode, rescueBlock);
         }
         case FCALLNODE: {
@@ -1543,14 +1543,14 @@ public class IRBuilder {
             return buildDefnCheckIfThenPaths(undefLabel, argsCheckDefn);
         }
         case CALLNODE: {
-            final Label undefLabel = getNewLabel();
             final CallNode callNode = (CallNode) node;
-            Operand  receiverDefn = buildGetDefinition(callNode.getReceiverNode());
-            addInstr(BEQInstr.create(receiverDefn, manager.getNil(), undefLabel));
 
             // protected main block
             CodeBlock protectedCode = new CodeBlock() {
                 public Operand run() {
+                    final Label undefLabel = getNewLabel();
+                    Operand receiverDefn = buildGetDefinition(callNode.getReceiverNode());
+                    addInstr(BEQInstr.create(receiverDefn, manager.getNil(), undefLabel));
                     Variable tmpVar = createTemporaryVariable();
                     addInstr(new RuntimeHelperCall(tmpVar, IS_DEFINED_CALL,
                             new Operand[]{build(callNode.getReceiverNode()), new StringLiteral(callNode.getName())}));
@@ -1567,14 +1567,14 @@ public class IRBuilder {
             return protectCodeWithRescue(protectedCode, rescueBlock);
         }
         case ATTRASSIGNNODE: {
-            final Label  undefLabel = getNewLabel();
             final AttrAssignNode attrAssign = (AttrAssignNode) node;
-            Operand receiverDefn = buildGetDefinition(attrAssign.getReceiverNode());
-            addInstr(BEQInstr.create(receiverDefn, manager.getNil(), undefLabel));
 
             // protected main block
             CodeBlock protectedCode = new CodeBlock() {
                 public Operand run() {
+                    final Label  undefLabel = getNewLabel();
+                    Operand receiverDefn = buildGetDefinition(attrAssign.getReceiverNode());
+                    addInstr(BEQInstr.create(receiverDefn, manager.getNil(), undefLabel));
                     /* --------------------------------------------------------------------------
                      * This basically combines checks from CALLNODE and FCALLNODE
                      *
