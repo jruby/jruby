@@ -159,6 +159,7 @@ public class PackParser {
                         node = writeInteger(32, Signedness.UNSIGNED, Endianness.LITTLE);
                         break;
                     case 'A':
+                    case 'Z':
                     case 'a': {
                         final byte padding;
 
@@ -166,6 +167,7 @@ public class PackParser {
                             case 'A':
                                 padding = ' ';
                                 break;
+                            case 'Z':
                             case 'a':
                                 padding = 0;
                                 break;
