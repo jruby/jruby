@@ -40,7 +40,7 @@ public abstract class ReadStringNode extends PackNode {
     }
 
     @Specialization(guards = "!isIRubyArray(source)")
-    public ByteList read(VirtualFrame frame, Object[] source) {
+    public Object read(VirtualFrame frame, Object[] source) {
         if (toStringNode == null) {
             CompilerDirectives.transferToInterpreter();
             toStringNode = insert(ToStringNodeGen.create(context, new NullNode()));

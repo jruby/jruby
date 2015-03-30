@@ -14,6 +14,7 @@ import com.oracle.truffle.api.dsl.NodeChildren;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import org.jruby.truffle.pack.nodes.PackNode;
+import org.jruby.truffle.pack.runtime.Nil;
 import org.jruby.util.ByteList;
 
 @NodeChildren({
@@ -31,6 +32,12 @@ public abstract class WriteBinaryStringNode extends PackNode {
         this.width = width;
         this.padding = padding;
         this.takeAll = takeAll;
+    }
+
+    @Specialization
+    public Object write(VirtualFrame frame, Nil bytes) {
+        writeBytes(frame, (byte) 0);
+        return null;
     }
 
     @Specialization

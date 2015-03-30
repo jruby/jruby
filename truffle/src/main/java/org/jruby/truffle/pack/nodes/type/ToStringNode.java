@@ -13,8 +13,10 @@ import org.jruby.truffle.nodes.dispatch.MissingBehavior;
 import org.jruby.truffle.nodes.objects.IsTaintedNode;
 import org.jruby.truffle.nodes.objects.IsTaintedNodeFactory;
 import org.jruby.truffle.pack.nodes.PackNode;
+import org.jruby.truffle.pack.runtime.Nil;
 import org.jruby.truffle.pack.runtime.NoImplicitConversionException;
 import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.runtime.core.RubyNilClass;
 import org.jruby.truffle.runtime.core.RubyString;
 import org.jruby.util.ByteList;
 
@@ -41,7 +43,12 @@ public abstract class ToStringNode extends PackNode {
         isTaintedNode = prev.isTaintedNode;
     }
 
-    public abstract ByteList executeToString(VirtualFrame frame, Object object);
+    public abstract Object executeToString(VirtualFrame frame, Object object);
+
+    @Specialization
+    public Nil toString(VirtualFrame frame, RubyNilClass nil) {
+        return Nil.INSTANCE;
+    }
 
     @Specialization
     public ByteList toString(VirtualFrame frame, RubyString string) {
