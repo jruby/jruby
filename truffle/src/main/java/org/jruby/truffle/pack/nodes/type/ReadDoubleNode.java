@@ -1,5 +1,6 @@
 package org.jruby.truffle.pack.nodes.type;
 
+import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.dsl.NodeChild;
 import com.oracle.truffle.api.dsl.NodeChildren;
 import com.oracle.truffle.api.dsl.Specialization;
@@ -21,6 +22,16 @@ public abstract class ReadDoubleNode extends PackNode {
 
     public ReadDoubleNode(ReadDoubleNode prev) {
         context = prev.context;
+    }
+
+    @Specialization(guards = "isNull(source)")
+    public double read(VirtualFrame frame, Object source) {
+        CompilerDirectives.transferToInterpreter();
+
+        // Advance will handle the error
+        advanceSourcePosition(frame);
+
+        throw new IllegalStateException();
     }
 
     @Specialization

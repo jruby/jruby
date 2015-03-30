@@ -1,4 +1,0 @@
-fails:Array#pack with format 'E' raises an ArgumentError if there are fewer elements than the format requires
-fails:Array#pack with format 'e' raises an ArgumentError if there are fewer elements than the format requires
-fails:Array#pack with format 'E' encodes NaN
-fails:Array#pack with format 'e' encodes NaN

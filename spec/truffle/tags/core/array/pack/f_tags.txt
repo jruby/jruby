@@ -1,8 +1,0 @@
-fails:Array#pack with format 'F' raises an ArgumentError if there are fewer elements than the format requires
-fails:Array#pack with format 'F' returns an ASCII-8BIT string
-fails:Array#pack with format 'F' converts an Integer to a Float
-fails:Array#pack with format 'f' raises an ArgumentError if there are fewer elements than the format requires
-fails:Array#pack with format 'f' returns an ASCII-8BIT string
-fails:Array#pack with format 'f' converts an Integer to a Float
-fails:Array#pack with format 'F' encodes NaN
-fails:Array#pack with format 'f' encodes NaN
