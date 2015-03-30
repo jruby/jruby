@@ -185,16 +185,20 @@ public class PackParser {
                             pad = false;
                             width = 1;
                         }
-                        boolean takeAll;
+
+                        final boolean takeAll;
+                        final boolean appendNull;
 
                         if (tokenizer.peek('*')) {
                             tokenizer.next();
                             takeAll = true;
+                            appendNull = (char) token == 'Z';
                         } else {
                             takeAll = false;
+                            appendNull = false;
                         }
 
-                        node = WriteBinaryStringNodeGen.create(pad, width, padding, takeAll, ReadStringNodeGen.create(context, new SourceNode()));
+                        node = WriteBinaryStringNodeGen.create(pad, width, padding, takeAll, appendNull, ReadStringNodeGen.create(context, new SourceNode()));
                     } break;
                     case 'H':
                     case 'h': {

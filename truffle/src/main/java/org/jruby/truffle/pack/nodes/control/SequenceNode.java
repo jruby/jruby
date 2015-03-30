@@ -18,7 +18,7 @@ public class SequenceNode extends PackNode {
 
     @Children private final PackNode[] children;
 
-    public SequenceNode(PackNode[] children) {
+    public SequenceNode(PackNode... children) {
         this.children = children;
     }
 

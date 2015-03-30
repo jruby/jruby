@@ -13,6 +13,7 @@ import com.oracle.truffle.api.dsl.NodeChild;
 import com.oracle.truffle.api.dsl.NodeChildren;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
+import com.oracle.truffle.api.nodes.ExplodeLoop;
 import org.jruby.truffle.pack.nodes.PackNode;
 import org.jruby.truffle.pack.runtime.Nil;
 import org.jruby.util.ByteList;
@@ -26,17 +27,22 @@ public abstract class WriteBinaryStringNode extends PackNode {
     private final int width;
     private final byte padding;
     private final boolean takeAll;
+    private final boolean appendNull;
 
-    public WriteBinaryStringNode(boolean pad, int width, byte padding, boolean takeAll) {
+    public WriteBinaryStringNode(boolean pad, int width, byte padding, boolean takeAll, boolean appendNull) {
         this.pad = pad;
         this.width = width;
         this.padding = padding;
         this.takeAll = takeAll;
+        this.appendNull = appendNull;
     }
 
     @Specialization
     public Object write(VirtualFrame frame, Nil bytes) {
-        writeBytes(frame, (byte) 0);
+        for (int n = 0; n < width; n++) {
+            writeBytes(frame, (byte) 0);
+        }
+
         return null;
     }
 
@@ -60,6 +66,10 @@ public abstract class WriteBinaryStringNode extends PackNode {
             }
         } else {
             writeBytes(frame, bytes.getUnsafeBytes(), bytes.begin(), lengthFromBytes);
+        }
+
+        if (appendNull) {
+            writeBytes(frame, (byte) 0);
         }
 
         return null;
