@@ -1,7 +1,4 @@
 fails:String#partition with String returns an array of substrings based on splitting on the given string
 fails:String#partition with String always returns 3 elements
-fails:String#partition with String accepts regexp
-fails:String#partition with String sets global vars if regexp used
 fails:String#partition with String converts its argument using :to_str
-fails:String#partition with String raises an error if not convertible to string
 fails:String#partition with String takes precedence over a given block

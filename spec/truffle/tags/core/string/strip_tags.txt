@@ -2,7 +2,4 @@ fails:String#strip returns a new string with leading and trailing whitespace rem
 fails:String#strip returns a copy of self with trailing NULL bytes and whitespace
 fails:String#strip taints the result when self is tainted
 fails:String#strip! modifies self in place and returns self
-fails:String#strip! returns nil if no modifications where made
 fails:String#strip! modifies self removing trailing NULL bytes and whitespace
-fails:String#strip! raises a RuntimeError on a frozen instance that is modified
-fails:String#strip! raises a RuntimeError on a frozen instance that would not be modified

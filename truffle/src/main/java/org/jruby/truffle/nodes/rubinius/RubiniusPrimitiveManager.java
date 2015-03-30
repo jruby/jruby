@@ -33,7 +33,7 @@ public class RubiniusPrimitiveManager {
         final RubiniusPrimitiveConstructor constructor = primitives.get(name);
 
         if (constructor == null) {
-            throw new RuntimeException(String.format("Rubinius primitive %s not found", name));
+            return primitives.get(UndefinedPrimitiveNodes.NAME);
         }
 
         return constructor;
@@ -56,6 +56,7 @@ public class RubiniusPrimitiveManager {
         nodeFactories.addAll(ModulePrimitiveNodesFactory.getFactories());
         nodeFactories.addAll(RandomPrimitiveNodesFactory.getFactories());
         nodeFactories.addAll(ArrayPrimitiveNodesFactory.getFactories());
+        nodeFactories.addAll(UndefinedPrimitiveNodesFactory.getFactories());
 
         final Map<String, RubiniusPrimitiveConstructor> primitives = new HashMap<>();
 
