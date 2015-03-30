@@ -13,14 +13,12 @@ import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.dsl.TypeSystemReference;
 import com.oracle.truffle.api.frame.FrameSlotTypeException;
 import com.oracle.truffle.api.frame.VirtualFrame;
-import com.oracle.truffle.api.nodes.ExplodeLoop;
 import com.oracle.truffle.api.nodes.Node;
-import com.oracle.truffle.api.nodes.UnexpectedResultException;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.truffle.pack.runtime.PackFrame;
 import org.jruby.truffle.pack.runtime.TooFewArgumentsException;
-import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.RubyString;
+import org.jruby.util.ByteList;
 
 import java.util.Arrays;
 
@@ -90,11 +88,15 @@ public abstract class PackNode extends Node {
         frame.setBoolean(PackFrame.INSTANCE.getTaintSlot(), true);
     }
 
-    protected void write(VirtualFrame frame, byte... values) {
-        write(frame, values, 0, values.length);
+    protected void writeBytes(VirtualFrame frame, byte... values) {
+        writeBytes(frame, values, 0, values.length);
     }
 
-    protected void write(VirtualFrame frame, byte[] values, int valuesStart, int valuesLength) {
+    protected void writeBytes(VirtualFrame frame, ByteList values) {
+        writeBytes(frame, values.getUnsafeBytes(), values.begin(), values.length());
+    }
+
+    protected void writeBytes(VirtualFrame frame, byte[] values, int valuesStart, int valuesLength) {
         byte[] output = getOutput(frame);
         final int outputPosition = getOutputPosition(frame);
 

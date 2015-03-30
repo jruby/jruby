@@ -17,8 +17,8 @@ public abstract class WriteUTF8CharacterNode extends PackNode {
     @Specialization
     public Object write(VirtualFrame frame, long value) {
         CompilerDirectives.bailout("#pack U doesn't work in the compiler yet");
-        // TODO could probably write this here, or at least pick out some common cases (ASCII)
-        write(frame, Character.toString((char) value).getBytes(StandardCharsets.UTF_8));
+        // TODO could probably writeBytes this here, or at least pick out some common cases (ASCII)
+        writeBytes(frame, Character.toString((char) value).getBytes(StandardCharsets.UTF_8));
         return null;
     }
 

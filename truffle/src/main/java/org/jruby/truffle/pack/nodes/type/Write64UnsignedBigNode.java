@@ -13,7 +13,7 @@ public abstract class Write64UnsignedBigNode extends PackNode {
 
     @Specialization
     public Object write(VirtualFrame frame, long value) {
-        write(frame,
+        writeBytes(frame,
                 (byte) (value >>> 56),
                 (byte) (value >>> 48),
                 (byte) (value >>> 40),

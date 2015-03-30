@@ -13,7 +13,7 @@ public abstract class Write32UnsignedLittleNode extends PackNode {
 
     @Specialization
     public Object write(VirtualFrame frame, long value) {
-        write(frame,
+        writeBytes(frame,
                 (byte) value,
                 (byte) (value >>> 8),
                 (byte) (value >>> 16),

@@ -542,7 +542,7 @@ public class Pack {
      * @param iLength The max number of characters to encode
      * @return the io2Append buffer
      **/
-    private static ByteList qpencode(ByteList io2Append, ByteList i2Encode, int iLength) {
+    public static ByteList qpencode(ByteList io2Append, ByteList i2Encode, int iLength) {
         io2Append.ensure(1024);
         int lCurLineLength = 0;
         int lPrevChar = -1;

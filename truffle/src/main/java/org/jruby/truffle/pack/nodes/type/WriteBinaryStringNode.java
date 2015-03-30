@@ -46,13 +46,13 @@ public abstract class WriteBinaryStringNode extends PackNode {
         if (pad) {
             final int lengthFromPadding = width - lengthFromBytes;
 
-            write(frame, bytes.getUnsafeBytes(), bytes.begin(), lengthFromBytes);
+            writeBytes(frame, bytes.getUnsafeBytes(), bytes.begin(), lengthFromBytes);
 
             for (int n = 0; n < lengthFromPadding; n++) {
-                write(frame, padding);
+                writeBytes(frame, padding);
             }
         } else {
-            write(frame, bytes.getUnsafeBytes(), bytes.begin(), lengthFromBytes);
+            writeBytes(frame, bytes.getUnsafeBytes(), bytes.begin(), lengthFromBytes);
         }
 
         return null;

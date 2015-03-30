@@ -16,7 +16,7 @@ public class NullNode extends PackNode {
 
     @Override
     public Object execute(VirtualFrame frame) {
-        write(frame, (byte) 0);
+        writeBytes(frame, (byte) 0);
         return null;
     }
 

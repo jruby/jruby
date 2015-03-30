@@ -71,13 +71,13 @@ public abstract class WriteHexStringNode extends PackNode {
                         break;
                 }
             } else {
-                write(frame, (byte) currentByte);
+                writeBytes(frame, (byte) currentByte);
                 currentByte = 0;
             }
         }
 
         if ((length & 1) != 0) {
-            write(frame, (byte) (currentByte & 0xff));
+            writeBytes(frame, (byte) (currentByte & 0xff));
             if(padLength > 0) {
                 padLength--;
             }

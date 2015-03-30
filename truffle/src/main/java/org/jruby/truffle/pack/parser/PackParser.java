@@ -159,7 +159,7 @@ public class PackParser {
                         node = writeInteger(32, Signedness.UNSIGNED, Endianness.LITTLE);
                         break;
                     case 'A':
-                    case 'a':
+                    case 'a': {
                         final byte padding;
 
                         switch ((char) token) {
@@ -193,9 +193,9 @@ public class PackParser {
                         }
 
                         node = WriteBinaryStringNodeGen.create(pad, width, padding, takeAll, ReadStringNodeGen.create(context, new SourceNode()));
-                        break;
+                    } break;
                     case 'H':
-                    case 'h':
+                    case 'h': {
                         final Endianness endianness;
 
                         switch ((char) token) {
@@ -218,7 +218,18 @@ public class PackParser {
                         }
 
                         node = WriteHexStringNodeGen.create(endianness, length, ReadStringNodeGen.create(context, new SourceNode()));
-                        break;
+                    } break;
+                    case 'M': {
+                        final int length;
+
+                        if (tokenizer.peek() instanceof Integer) {
+                            length = (int) tokenizer.next();
+                        } else {
+                            length = Integer.MAX_VALUE;
+                        }
+
+                        node = WriteMIMEStringNodeGen.create(length, ReadStringNodeGen.create(context, new SourceNode()));
+                    } break;
                     case 'U':
                         node = WriteUTF8CharacterNodeGen.create(ReadIntegerNodeGen.create(context, new SourceNode()));
                         break;
@@ -228,7 +239,7 @@ public class PackParser {
                     case 'x':
                         node = new NullNode();
                         break;
-                    case '@':
+                    case '@': {
                         final int position;
                         if (tokenizer.peek() instanceof Integer) {
                             position = (int) tokenizer.next();
@@ -236,7 +247,7 @@ public class PackParser {
                             position = 1;
                         }
                         node = new AtNode(position);
-                        break;
+                    } break;
                     case 'D':
                     case 'd':
                         node = writeInteger(64, Signedness.UNSIGNED, nativeEndianness(),
