@@ -18,11 +18,13 @@ import org.jruby.truffle.runtime.core.RubyNilClass;
 import org.jruby.truffle.runtime.core.RubyString;
 import org.jruby.util.ByteList;
 
+import java.math.BigInteger;
+
 @TypeSystem({
         boolean.class,
         int.class,
         long.class,
-        RubyBignum.class,
+        BigInteger.class,
         float.class,
         double.class,
         ByteList.class,

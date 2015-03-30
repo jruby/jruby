@@ -24,6 +24,7 @@ import com.oracle.truffle.api.nodes.UnexpectedResultException;
 import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.utilities.BranchProfile;
 
+import org.jcodings.specific.USASCIIEncoding;
 import org.jruby.RubyObject;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -2663,7 +2664,7 @@ public abstract class ArrayNodes {
             super(prev);
             toStringNode = prev.toStringNode;
         }
-        
+
         // TODO CS 3-Mar-15 to be honest these two specialisations are a bit sneaky - we'll get rid of them ASAP
 
         @Specialization(guards = {"arrayIsInts(array)", "formatIsXN2000(array, format)"})
@@ -2671,7 +2672,7 @@ public abstract class ArrayNodes {
             final int size = array.getSize();
             final int[] store = (int[]) array.getStore();
             final byte[] bytes = new byte[1 + size * 4];
-            
+
             // bytes[0] = 0 is implicit
 
             for (int n = 0; n < size; n++) {
@@ -2782,15 +2783,15 @@ public abstract class ArrayNodes {
 
         protected boolean formatIsLStar(RubyArray array, RubyString format) {
             final ByteList byteList = format.getByteList();
-            
+
             if (!byteList.getEncoding().isAsciiCompatible()) {
                 return false;
             }
-            
+
             if (byteList.length() != 2) {
                 return false;
             }
-            
+
             final byte[] bytes = byteList.unsafeBytes();
             return bytes[0] == 'L' && bytes[1] == '*';
         }
@@ -2858,6 +2859,9 @@ public abstract class ArrayNodes {
             } catch (OutsideOfStringException e) {
                 CompilerDirectives.transferToInterpreter();
                 throw new RaiseException(getContext().getCoreLibrary().argumentError("X outside of string", this));
+            } catch (CantCompressNegativeException e) {
+                CompilerDirectives.transferToInterpreter();
+                throw new RaiseException(getContext().getCoreLibrary().argumentError("can't compress negative numbers", this));
             } finally {
                 // No caching at the moment - so we always want to delete the node for next time
                 CompilerDirectives.transferToInterpreterAndInvalidate();
@@ -2865,6 +2869,10 @@ public abstract class ArrayNodes {
             }
 
             final RubyString string = getContext().makeString(new ByteList(result.getOutput(), 0, result.getOutputLength()));
+
+            if (format.getByteList().length() == 0) {
+                string.forceEncoding(USASCIIEncoding.INSTANCE);
+            }
 
             if (result.isTainted()) {
                 if (taintNode == null) {
