@@ -998,8 +998,6 @@ public abstract class StringNodes {
     @CoreMethod(names = "each_byte", needsBlock = true, returnsEnumeratorIfNoBlock = true)
     public abstract static class EachByteNode extends YieldingCoreMethodNode {
 
-        @Child private CallDispatchHeadNode toEnumNode;
-
         public EachByteNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
         }
@@ -1010,13 +1008,10 @@ public abstract class StringNodes {
 
         @Specialization
         public RubyString eachByte(VirtualFrame frame, RubyString string, RubyProc block) {
-            notDesignedForCompilation();
-
             final ByteList bytes = string.getBytes();
-            final int begin = bytes.getBegin();
 
             for (int i = 0; i < bytes.getRealSize(); i++) {
-                yield(frame, block, bytes.get(begin + i));
+                yield(frame, block, bytes.get(i) & 0xff);
             }
 
             return string;
