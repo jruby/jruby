@@ -269,6 +269,7 @@ class SizedQueue < Queue
   # Creates a fixed-length queue with a maximum size of +max+.
   #
   def initialize(max)
+    max = Rubinius::Type.num2long(max)
     raise ArgumentError, "queue size must be positive" unless max > 0
     @max = max
     @enque_cond = ConditionVariable.new
@@ -287,6 +288,7 @@ class SizedQueue < Queue
   # Sets the maximum size of the queue.
   #
   def max=(max)
+    max = Rubinius::Type.num2long(max)
     raise ArgumentError, "queue size must be positive" unless max > 0
 
     @mutex.synchronize do
