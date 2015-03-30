@@ -28,6 +28,8 @@ public class CompiledIRMethod extends JavaMethod implements MethodArgs2, Positio
     protected final IRScope method;
     private final Arity arity;
     private String[] parameterList;
+    private final StaticScope staticScope;
+    private final boolean hasExplicitCallProtocol;
 
     public CompiledIRMethod(MethodHandle variable, IRScope method, Visibility visibility, RubyModule implementationClass) {
         this(variable, null, -1, method, visibility, implementationClass);
@@ -41,6 +43,8 @@ public class CompiledIRMethod extends JavaMethod implements MethodArgs2, Positio
         this.method = method;
         this.method.getStaticScope().determineModule();
         this.arity = calculateArity();
+        this.staticScope = method.getStaticScope();
+        this.hasExplicitCallProtocol = method.hasExplicitCallProtocol();
 
         setHandle(variable);
     }
@@ -80,7 +84,7 @@ public class CompiledIRMethod extends JavaMethod implements MethodArgs2, Positio
     }
 
     protected void post(ThreadContext context) {
-        if (!method.hasExplicitCallProtocol()) {
+        if (!hasExplicitCallProtocol) {
             // update call stacks (pop: ..)
             context.popFrame();
             context.postMethodScopeOnly();
@@ -88,7 +92,7 @@ public class CompiledIRMethod extends JavaMethod implements MethodArgs2, Positio
     }
 
     protected void pre(ThreadContext context, IRubyObject self, String name, Block block) {
-        if (!method.hasExplicitCallProtocol()) {
+        if (!hasExplicitCallProtocol) {
             // update call stacks (push: frame, class, scope, etc.)
             RubyModule implementationClass = getImplementationClass();
             context.preMethodFrameAndScope(implementationClass, name, self, block, method.getStaticScope());
@@ -103,7 +107,7 @@ public class CompiledIRMethod extends JavaMethod implements MethodArgs2, Positio
         pre(context, self, name, block);
 
         try {
-            return (IRubyObject)this.variable.invokeExact(context, method.getStaticScope(), self, args, block, implementationClass, name);
+            return (IRubyObject)this.variable.invokeExact(context, staticScope, self, args, block, implementationClass, name);
         } catch (Throwable t) {
             Helpers.throwException(t);
             // not reached
@@ -119,7 +123,7 @@ public class CompiledIRMethod extends JavaMethod implements MethodArgs2, Positio
         pre(context, self, name, block);
 
         try {
-            return (IRubyObject)this.specific.invokeExact(context, method.getStaticScope(), self, block, implementationClass, name);
+            return (IRubyObject)this.specific.invokeExact(context, staticScope, self, block, implementationClass, name);
         } catch (Throwable t) {
             Helpers.throwException(t);
             // not reached
@@ -135,7 +139,7 @@ public class CompiledIRMethod extends JavaMethod implements MethodArgs2, Positio
         pre(context, self, name, block);
 
         try {
-            return (IRubyObject)this.specific.invokeExact(context, method.getStaticScope(), self, arg0, block, implementationClass, name);
+            return (IRubyObject)this.specific.invokeExact(context, staticScope, self, arg0, block, implementationClass, name);
         } catch (Throwable t) {
             Helpers.throwException(t);
             // not reached
@@ -151,7 +155,7 @@ public class CompiledIRMethod extends JavaMethod implements MethodArgs2, Positio
         pre(context, self, name, block);
 
         try {
-            return (IRubyObject)this.specific.invokeExact(context, method.getStaticScope(), self, arg0, arg1, block, implementationClass, name);
+            return (IRubyObject)this.specific.invokeExact(context, staticScope, self, arg0, arg1, block, implementationClass, name);
         } catch (Throwable t) {
             Helpers.throwException(t);
             // not reached
@@ -167,7 +171,7 @@ public class CompiledIRMethod extends JavaMethod implements MethodArgs2, Positio
         pre(context, self, name, block);
 
         try {
-            return (IRubyObject)this.specific.invokeExact(context, method.getStaticScope(), self, arg0, arg1, arg2, block, implementationClass, name);
+            return (IRubyObject)this.specific.invokeExact(context, staticScope, self, arg0, arg1, arg2, block, implementationClass, name);
         } catch (Throwable t) {
             Helpers.throwException(t);
             // not reached
