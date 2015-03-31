@@ -702,6 +702,50 @@ public abstract class StringPrimitiveNodes {
             }
         }
 
+        @Specialization
+        public Object stringByteIndex(RubyString string, RubyString pattern, int offset) {
+            // Taken from Rubinius's String::byte_index.
+
+            final int match_size = pattern.getByteList().length();
+
+            if (offset < 0) {
+                CompilerDirectives.transferToInterpreter();
+                throw new RaiseException(getContext().getCoreLibrary().argumentError("negative start given", this));
+            }
+
+            if (match_size == 0) return offset;
+
+            if (string.scanForCodeRange() == StringSupport.CR_BROKEN) {
+                return nil();
+            }
+
+            final Encoding encoding = string.checkEncoding(pattern, this);
+            int p = string.getByteList().getBegin();
+            final int e = p + string.getByteList().getRealSize();
+            int pp = pattern.getByteList().getBegin();
+            int s;
+
+            final byte[] stringBytes = string.getByteList().getUnsafeBytes();
+            final byte[] patternBytes = pattern.getByteList().getUnsafeBytes();
+
+            // This is a slightly modified version of the loop as it appears in the Rubinius source.  The code there
+            // did an extra memcmp for unknown reasons and that caused the pointer positions to shift.  Removing them
+            // seemed to yield the same results while avoiding a potential ArrayIndexOutOfBounds exception.  This
+            // removal may be misguided, so if there is a parity mismatch that's a good place to start looking.
+            for(s = p; p < e; s = ++p) {
+                if (stringBytes[p] != patternBytes[pp]) continue;
+
+                final int c = StringSupport.preciseLength(encoding, stringBytes, s, e);
+
+                if (StringSupport.MBCLEN_CHARFOUND_P(c)) {
+                    return s;
+                } else {
+                    return nil();
+                }
+            }
+
+            return nil();
+        }
     }
 
     @RubiniusPrimitive(name = "string_previous_byte_index")

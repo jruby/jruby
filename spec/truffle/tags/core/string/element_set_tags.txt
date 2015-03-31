@@ -1,14 +1,6 @@
-fails:String#[]= with Fixnum index raises IndexError if the string index doesn't match a position in the string
 fails:String#[]= with Fixnum index calls #to_int to convert the index
-fails:String#[]= with String index replaces fewer characters with more characters
-fails:String#[]= with String index replaces more characters with fewer characters
-fails:String#[]= with String index replaces characters with no characters
-fails:String#[]= with String index raises an IndexError if the search String is not found
-fails:String#[]= with String index replaces characters with a multibyte character
 fails:String#[]= with String index replaces multibyte characters with characters
 fails:String#[]= with String index replaces multibyte characters with multibyte characters
-fails:String#[]= with String index encodes the String in an encoding compatible with the replacement
-fails:String#[]= with String index raises an Encoding::CompatibilityError if the replacement encoding is incompatible
 fails:String#[]= with a Regexp index replaces characters with a multibyte character
 fails:String#[]= with a Regexp index replaces multibyte characters with characters
 fails:String#[]= with a Regexp index replaces multibyte characters with multibyte characters
