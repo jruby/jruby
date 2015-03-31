@@ -752,6 +752,8 @@ public abstract class StringPrimitiveNodes {
 
         @Specialization
         public RubyString stringCopyFrom(RubyString string, RubyString other, int start, int size, int dest) {
+            // Taken from Rubinius's String::copy_from.
+
             int src = start;
             int dst = dest;
             int cnt = size;
@@ -762,7 +764,10 @@ public abstract class StringPrimitiveNodes {
             if(src < 0) src = 0;
             if(cnt > osz - src) cnt = osz - src;
 
-            int sz = string.getByteList().length();
+            // This bounds checks on the total capacity rather than the virtual
+            // size() of the String. This allows for string adjustment within
+            // the capacity without having to change the virtual size first.
+            int sz = string.getByteList().getUnsafeBytes().length;
             if(dst >= sz) return string;
             if(dst < 0) dst = 0;
             if(cnt > sz - dst) cnt = sz - dst;
