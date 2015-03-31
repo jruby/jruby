@@ -65,27 +65,6 @@ public class RubyString extends RubyBasicObject implements CodeRangeable {
         return bytes;
     }
 
-    public int count(RubyString[] otherStrings) {
-        if (bytes.getRealSize() == 0) {
-            return 0;
-        }
-
-        RubyString otherStr = otherStrings[0];
-        Encoding enc = otherStr.getBytes().getEncoding();
-
-        final boolean[]table = new boolean[StringSupport.TRANS_SIZE + 1];
-        StringSupport.TrTables tables = StringSupport.trSetupTable(otherStr.getBytes(), getContext().getRuntime(), table, null, true, enc);
-        for (int i = 1; i < otherStrings.length; i++) {
-            otherStr = otherStrings[i];
-
-            // TODO (nirvdrum Dec. 19, 2014): This method should be encoding aware and check that the strings have compatible encodings.  See non-Truffle JRuby for a more complete solution.
-            //enc = checkEncoding(otherStr);
-            tables = StringSupport.trSetupTable(otherStr.getBytes(), getContext().getRuntime(), table, tables, false, enc);
-        }
-
-        return StringSupport.countCommon19(getBytes(), getContext().getRuntime(), table, tables, enc);
-    }
-
     @Override
     @TruffleBoundary
     public String toString() {

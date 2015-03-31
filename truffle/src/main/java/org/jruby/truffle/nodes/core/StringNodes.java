@@ -860,6 +860,10 @@ public abstract class StringNodes {
         public int count(VirtualFrame frame, RubyString string, Object[] otherStrings) {
             notDesignedForCompilation();
 
+            if (string.getByteList().getRealSize() == 0) {
+                return 0;
+            }
+
             if (otherStrings.length == 0) {
                 CompilerDirectives.transferToInterpreter();
                 throw new RaiseException(getContext().getCoreLibrary().argumentErrorEmptyVarargs(this));
@@ -876,7 +880,19 @@ public abstract class StringNodes {
                 otherStrings[i] = toStr.executeRubyString(frame, args[i]);
             }
 
-            return string.count(otherStrings);
+            RubyString otherStr = otherStrings[0];
+            Encoding enc = otherStr.getBytes().getEncoding();
+
+            final boolean[]table = new boolean[StringSupport.TRANS_SIZE + 1];
+            StringSupport.TrTables tables = StringSupport.trSetupTable(otherStr.getBytes(), getContext().getRuntime(), table, null, true, enc);
+            for (int i = 1; i < otherStrings.length; i++) {
+                otherStr = otherStrings[i];
+
+                enc = string.checkEncoding(otherStr, this);
+                tables = StringSupport.trSetupTable(otherStr.getBytes(), getContext().getRuntime(), table, tables, false, enc);
+            }
+
+            return StringSupport.countCommon19(string.getByteList(), getContext().getRuntime(), table, tables, enc);
         }
     }
 
