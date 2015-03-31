@@ -1,6 +1,4 @@
 fails:String#unpack with format 'Z' calls #to_str to coerce the directives string
-fails:String#unpack with format 'Z' raises an ArgumentError when the format modifier is '_'
-fails:String#unpack with format 'Z' raises an ArgumentError when the format modifier is '!'
 fails:String#unpack with format 'Z' returns an empty string if the input is empty
 fails:String#unpack with format 'Z' returns empty strings for repeated formats if the input is empty
 fails:String#unpack with format 'Z' returns an empty string and does not decode any bytes when the count modifier is zero
