@@ -657,8 +657,95 @@ public abstract class StringPrimitiveNodes {
         }
 
         @Specialization
-        public Object stringCharacterIndex(RubyString string, Object indexedString, Object start) {
-            throw new UnsupportedOperationException("string_character_index");
+        public Object stringCharacterIndex(RubyString string, RubyString pattern, int offset) {
+            notDesignedForCompilation();
+
+            if (offset < 0) {
+                return nil();
+            }
+
+            final int total = string.getByteList().length();
+            int p = string.getByteList().getBegin();
+            final int e = p + total;
+            int pp = pattern.getByteList().getBegin();
+            final int pe = pp + pattern.getByteList().length();
+            int s;
+            int ss;
+
+            final byte[] stringBytes = string.getByteList().getUnsafeBytes();
+            final byte[] patternBytes = pattern.getByteList().getUnsafeBytes();
+
+            if (StringSupport.isSingleByteOptimizable(string, string.getByteList().getEncoding())) {
+                for(s = p += offset, ss = pp; p < e; s = ++p) {
+                    if (stringBytes[p] != patternBytes[pp]) continue;
+
+                    while (p < e && pp < pe && stringBytes[p] == patternBytes[pp]) {
+                        p++;
+                        pp++;
+                    }
+
+                    if (pp < pe) {
+                        p = s;
+                        pp = ss;
+                    } else {
+                        return s;
+                    }
+                }
+
+                return nil();
+            }
+
+            final Encoding enc = string.getByteList().getEncoding();
+            int index = 0;
+            int c;
+
+            while(p < e && index < offset) {
+                c = StringSupport.preciseLength(enc, stringBytes, p, e);
+
+                if (StringSupport.MBCLEN_CHARFOUND_P(c)) {
+                    p += c;
+                    index++;
+                } else {
+                    return nil();
+                }
+            }
+
+            for(s = p, ss = pp; p < e; s = p += c, ++index) {
+                c = StringSupport.preciseLength(enc, stringBytes, p, e);
+                if ( !StringSupport.MBCLEN_CHARFOUND_P(c)) return nil();
+
+                if (stringBytes[p] != patternBytes[pp]) continue;
+
+                while (p < e && pp < pe) {
+                    boolean breakOut = false;
+
+                    for (int pc = p + c; p < e && p < pc && pp < pe; ) {
+                        if (stringBytes[p] == patternBytes[pp]) {
+                            ++p;
+                            ++pp;
+                        } else {
+                            breakOut = true;
+                            break;
+                        }
+                    }
+
+                    if (breakOut) {
+                        break;
+                    }
+
+                    c = StringSupport.preciseLength(enc, stringBytes, p, e);
+                    if (! StringSupport.MBCLEN_CHARFOUND_P(c)) break;
+                }
+
+                if (pp < pe) {
+                    p = s;
+                    pp = ss;
+                } else {
+                    return index;
+                }
+            }
+
+            return nil();
         }
 
     }
