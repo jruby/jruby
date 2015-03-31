@@ -1,4 +1,0 @@
-fails:Kernel#system executes with `sh` if the command contains shell characters
-fails:Kernel#system ignores SHELL env var and always uses `sh`
-fails:Kernel.system executes with `sh` if the command contains shell characters
-fails:Kernel.system ignores SHELL env var and always uses `sh`

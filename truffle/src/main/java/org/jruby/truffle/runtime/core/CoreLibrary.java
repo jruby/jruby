@@ -335,7 +335,6 @@ public class CoreLibrary {
         objectClass.include(null, kernelModule);
 
         numericClass.include(null, comparableModule);
-        stringClass.include(null, comparableModule);
         symbolClass.include(null, comparableModule);
 
         arrayClass.include(null, enumerableModule);

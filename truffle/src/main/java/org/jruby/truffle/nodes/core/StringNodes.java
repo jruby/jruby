@@ -53,7 +53,6 @@ import org.jruby.truffle.nodes.coerce.ToIntNodeFactory;
 import org.jruby.truffle.nodes.coerce.ToStrNode;
 import org.jruby.truffle.nodes.coerce.ToStrNodeFactory;
 import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
-import org.jruby.truffle.nodes.dispatch.DispatchHeadNode;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.nodes.objects.IsFrozenNode;
 import org.jruby.truffle.nodes.objects.IsFrozenNodeFactory;
@@ -394,7 +393,7 @@ public abstract class StringNodes {
             int cl;
 
             try {
-                cl = StringSupport.codeLength(getContext().getRuntime(), enc, c);
+                cl = StringSupport.codeLength(enc, c);
                 string.modify(value.getRealSize() + cl);
                 string.clearCodeRange();
 
@@ -613,7 +612,7 @@ public abstract class StringNodes {
                     dupNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext()));
                 }
 
-                return dupNode.call(frame, matchStr, "dup", null);
+                throw new TaintResultNode.DoNotTaint(dupNode.call(frame, matchStr, "dup", null));
             }
 
             return nil();
@@ -623,15 +622,18 @@ public abstract class StringNodes {
     @CoreMethod(names = "[]=", required = 2, lowerFixnumParameters = 0, raiseIfFrozenSelf = true)
     public abstract static class ElementSetNode extends CoreMethodNode {
 
+        @Child private SizeNode sizeNode;
         @Child private ToStrNode toStrNode;
 
         public ElementSetNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
+            sizeNode = StringNodesFactory.SizeNodeFactory.create(context, sourceSection, new RubyNode[] { null });
             toStrNode = ToStrNodeFactory.create(context, sourceSection, null);
         }
 
         public ElementSetNode(ElementSetNode prev) {
             super(prev);
+            sizeNode = prev.sizeNode;
             toStrNode = prev.toStrNode;
         }
 
@@ -649,7 +651,7 @@ public abstract class StringNodes {
 
             int begin = range.getBegin();
             int end = range.getEnd();
-            final int stringLength = string.length();
+            final int stringLength = sizeNode.executeIntegerFixnum(frame, string);
 
             if (begin < 0) {
                 begin += stringLength;
@@ -802,19 +804,23 @@ public abstract class StringNodes {
     @CoreMethod(names = "chop!", raiseIfFrozenSelf = true)
     public abstract static class ChopBangNode extends CoreMethodNode {
 
+        @Child private SizeNode sizeNode;
+
         public ChopBangNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
+            sizeNode = StringNodesFactory.SizeNodeFactory.create(context, sourceSection, new RubyNode[] { null });
         }
 
         public ChopBangNode(ChopBangNode prev) {
             super(prev);
+            sizeNode = prev.sizeNode;
         }
 
         @Specialization
-        public Object chopBang(RubyString string) {
+        public Object chopBang(VirtualFrame frame, RubyString string) {
             notDesignedForCompilation();
 
-            if (string.length() == 0) {
+            if (sizeNode.executeIntegerFixnum(frame, string) == 0) {
                 return nil();
             }
 
@@ -875,6 +881,7 @@ public abstract class StringNodes {
         }
     }
 
+    @RubiniusOnly
     @CoreMethod(names = "data")
     public abstract static class DataNode extends CoreMethodNode {
 
@@ -999,8 +1006,6 @@ public abstract class StringNodes {
     @CoreMethod(names = "each_byte", needsBlock = true, returnsEnumeratorIfNoBlock = true)
     public abstract static class EachByteNode extends YieldingCoreMethodNode {
 
-        @Child private CallDispatchHeadNode toEnumNode;
-
         public EachByteNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
         }
@@ -1011,13 +1016,10 @@ public abstract class StringNodes {
 
         @Specialization
         public RubyString eachByte(VirtualFrame frame, RubyString string, RubyProc block) {
-            notDesignedForCompilation();
-
             final ByteList bytes = string.getBytes();
-            final int begin = bytes.getBegin();
 
             for (int i = 0; i < bytes.getRealSize(); i++) {
-                yield(frame, block, bytes.get(begin + i));
+                yield(frame, block, bytes.get(i) & 0xff);
             }
 
             return string;
@@ -1489,38 +1491,43 @@ public abstract class StringNodes {
     @CoreMethod(names = "rindex", required = 1, optional = 1, lowerFixnumParameters = 1)
     public abstract static class RindexNode extends CoreMethodNode {
 
+        @Child private SizeNode sizeNode;
+
         public RindexNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
+            sizeNode = StringNodesFactory.SizeNodeFactory.create(context, sourceSection, new RubyNode[] { null });
         }
 
         public RindexNode(RindexNode prev) {
             super(prev);
+            sizeNode = prev.sizeNode;
         }
 
         @Specialization
-        public Object rindex(RubyString string, RubyString subString, @SuppressWarnings("unused") UndefinedPlaceholder endPosition) {
+        public Object rindex(VirtualFrame frame, RubyString string, RubyString subString, @SuppressWarnings("unused") UndefinedPlaceholder endPosition) {
             notDesignedForCompilation();
 
-            return rindex(string, subString, string.length());
+            return rindex(frame, string, subString, sizeNode.executeIntegerFixnum(frame, string));
         }
 
         @Specialization
-        public Object rindex(RubyString string, RubyString subString, int endPosition) {
+        public Object rindex(VirtualFrame frame, RubyString string, RubyString subString, int endPosition) {
             notDesignedForCompilation();
 
+            final int stringLength = sizeNode.executeIntegerFixnum(frame, string);
             int normalizedEndPosition = endPosition;
 
             if (endPosition < 0) {
-                normalizedEndPosition = endPosition + string.length();
+                normalizedEndPosition = endPosition + stringLength;
 
                 if (normalizedEndPosition < 0) {
                     return nil();
                 }
-            } else if (endPosition > string.length()) {
-                normalizedEndPosition = string.length();
+            } else if (endPosition > stringLength) {
+                normalizedEndPosition = stringLength;
             }
 
-            int result = StringSupport.rindex(string.getBytes(), string.length(), subString.length(),
+            int result = StringSupport.rindex(string.getBytes(), stringLength, subString.length(),
                     normalizedEndPosition, subString, string.getBytes().getEncoding()
             );
 
@@ -1776,6 +1783,8 @@ public abstract class StringNodes {
             super(prev);
         }
 
+        public abstract int executeIntegerFixnum(VirtualFrame frame, RubyString string);
+
         @Specialization(guards = "isSingleByteOptimizable(string)")
         public int sizeSingleByte(RubyString string) {
             return string.getByteList().getRealSize();
@@ -1803,7 +1812,7 @@ public abstract class StringNodes {
             notDesignedForCompilation();
 
             if (string.length() > 0) {
-                return getContext().makeString(string.getLogicalClass(), StringSupport.succCommon(string.getBytes()));
+                return getContext().makeString(string.getLogicalClass(), StringSupport.succCommon(getContext().getRuntime(), string.getBytes()));
             } else {
                 return getContext().makeString(string.getLogicalClass(), "");
             }
@@ -1825,8 +1834,8 @@ public abstract class StringNodes {
         public RubyString succBang(RubyString string) {
             notDesignedForCompilation();
 
-            if (string.length() > 0) {
-                string.set(StringSupport.succCommon(string.getBytes()));
+            if (string.getByteList().getRealSize() > 0) {
+                string.set(StringSupport.succCommon(getContext().getRuntime(), string.getBytes()));
             }
 
             return string;

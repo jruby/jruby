@@ -5,7 +5,6 @@ fails:String#encode when passed to, from, options calls #to_str to convert the f
 fails:String#encode when passed to, from, options calls #to_hash to convert the options object
 fails:String#encode given the :xml => :text option replaces undefined characters with their upper-case hexadecimal numeric character references
 fails:String#encode given the :xml => :attr option replaces undefined characters with their upper-case hexadecimal numeric character references
-fails:String#encode! when passed to encoding transcodes Japanese multibyte characters
 fails:String#encode! when passed to, options replaces invalid characters in the destination encoding
 fails:String#encode! when passed to, from, options replaces invalid characters in the destination encoding
 fails:String#encode! when passed to, from, options calls #to_str to convert the to object to an encoding
@@ -13,4 +12,3 @@ fails:String#encode! when passed to, from, options calls #to_str to convert the 
 fails:String#encode! when passed to, from, options calls #to_hash to convert the options object
 fails:String#encode! given the :xml => :text option replaces undefined characters with their upper-case hexadecimal numeric character references
 fails:String#encode! given the :xml => :attr option replaces undefined characters with their upper-case hexadecimal numeric character references
-fails:String#encode when passed to encoding transcodes Japanese multibyte characters

@@ -138,6 +138,8 @@ public class RubyMatchData extends RubyObject {
     }
 
     private void updateCharOffsetOnlyOneReg(ByteList value, Encoding encoding) {
+        if (charOffsetUpdated) return;
+
         if (charOffsets == null || charOffsets.numRegs < 1) charOffsets = new Region(1);
         
         if (encoding.maxLength() == 1) {
@@ -148,21 +150,32 @@ public class RubyMatchData extends RubyObject {
         }
 
         Pair[] pairs = new Pair[2];
-        pairs[0] = new Pair();
-        pairs[0].bytePos = begin;
-        pairs[1] = new Pair();
-        pairs[1].bytePos = end;
+        if (begin >= 0) {
+            pairs[0] = new Pair();
+            pairs[0].bytePos = begin;
+            pairs[1] = new Pair();
+            pairs[1].bytePos = end;
+        }
 
         updatePairs(value, encoding, pairs);
 
+        if (begin < 0) {
+            charOffsets.beg[0] = charOffsets.end[0] = -1;
+            return;
+        }
         Pair key = new Pair();
         key.bytePos = begin;
         charOffsets.beg[0] = pairs[Arrays.binarySearch(pairs, key)].charPos;
         key.bytePos = end;
-        charOffsets.end[0] = pairs[Arrays.binarySearch(pairs, key)].charPos;        
+        charOffsets.end[0] = pairs[Arrays.binarySearch(pairs, key)].charPos;
+
+        charOffsetUpdated = true;
     }
 
     private void updateCharOffsetManyRegs(ByteList value, Encoding encoding) {
+        if (charOffsetUpdated) return;
+
+        final Region regs = this.regs;
         int numRegs = regs.numRegs;
 
         if (charOffsets == null || charOffsets.numRegs < numRegs) charOffsets = new Region(numRegs);
@@ -172,6 +185,7 @@ public class RubyMatchData extends RubyObject {
                 charOffsets.beg[i] = regs.beg[i];
                 charOffsets.end[i] = regs.end[i];
             }
+            charOffsetUpdated = true;
             return;
         }
 
@@ -197,7 +211,9 @@ public class RubyMatchData extends RubyObject {
             charOffsets.beg[i] = pairs[Arrays.binarySearch(pairs, key)].charPos;
             key.bytePos = regs.end[i];
             charOffsets.end[i] = pairs[Arrays.binarySearch(pairs, key)].charPos;
-        }        
+        }
+
+        charOffsetUpdated = true;
     }
 
     private void updateCharOffset() {
@@ -454,28 +470,27 @@ public class RubyMatchData extends RubyObject {
         return regs == null ? RubyFixnum.one(runtime) : RubyFixnum.newFixnum(runtime, regs.numRegs);
     }
 
-    /** match_begin
-     *
+    /**
+     * MRI: match_begin
      */
     @JRubyMethod
     public IRubyObject begin(ThreadContext context, IRubyObject index) {
-        check();
-
-        int i = backrefNumber(index);
         Ruby runtime = context.runtime;
 
-        if (i < 0 || (regs == null ? 1 : regs.numRegs) <= i) throw runtime.newIndexError("index " + i + " out of matches");
+        int i = backrefNumber(index);
+
+        check();
+        if (i < 0 || (regs == null ? 1 : regs.numRegs) <= i) {
+            throw runtime.newIndexError("index " + i + " out of matches");
+        }
 
         int b = regs == null ? begin : regs.beg[i];
 
-        if (b < 0) return runtime.getNil();
+        if (b < 0) return context.nil;
 
-        if (!str.singleByteOptimizable()) {
-            updateCharOffset();
-            b = charOffsets.beg[i];
-        }
+        updateCharOffset();
 
-        return RubyFixnum.newFixnum(runtime, b);
+        return RubyFixnum.newFixnum(runtime, charOffsets.beg[i]);
     }
 
     /** match_end
@@ -625,6 +640,45 @@ public class RubyMatchData extends RubyObject {
     public RubyFixnum hash() {
         check();
         return getRuntime().newFixnum(pattern.hashCode() ^ str.hashCode());
+    }
+
+    /**
+     * Get the begin offset of the given region, or -1 if the region does not exist.
+     *
+     * @param i the region for which to fetch the begin offset
+     * @return the begin offset for the region
+     */
+    public int begin(int i) {
+        if (regs == null) {
+            if (i > 1) return -1;
+            return begin;
+        }
+        if (i > regs.numRegs) return -1;
+        return regs.beg[i];
+    }
+
+    /**
+     * Get the end offset of the given region, or -1 if the region does not exist.
+     *
+     * @param i the region for which to fetch the end offset
+     * @return the end offset for the region
+     */
+    public int end(int i) {
+        if (regs == null) {
+            if (i > 1) return -1;
+            return end;
+        }
+        if (i > regs.numRegs) return -1;
+        return regs.end[i];
+    }
+
+    /**
+     * Fetch the number of regions in this match.
+     *
+     * @return the number of regions in this match
+     */
+    public int numRegs() {
+        return regs == null ? 1 : regs.numRegs;
     }
 
 }

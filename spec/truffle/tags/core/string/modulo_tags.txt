@@ -99,3 +99,4 @@ fails:String#% wraps the object in an Array if #to_ary returns nil
 fails:String#% raises a TypeError if #to_ary does not return an Array
 fails:String#% supports float formats using %e, but Inf, -Inf, and NaN are not floats
 fails:String#% supports float formats using %E, but Inf, -Inf, and NaN are not floats
+fails:String#% raises an error if NULL or \n appear anywhere else in the format string

@@ -4,6 +4,7 @@ import org.jruby.RubyModule;
 import org.jruby.ir.IRFlags;
 import org.jruby.ir.IRMetaClassBody;
 import org.jruby.ir.IRScope;
+import org.jruby.parser.StaticScope;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
@@ -41,14 +42,14 @@ public class CompiledIRMetaClassBody extends CompiledIRMethod {
     }
 
     @Override
-    protected void pre(ThreadContext context, IRubyObject self, String name, Block block) {
+    protected void pre(ThreadContext context, StaticScope staticScope, RubyModule implementationClass, IRubyObject self, String name, Block block) {
         // update call stacks (push: frame, class, scope, etc.)
-        context.preMethodFrameOnly(getImplementationClass(), name, self, block);
+        context.preMethodFrameOnly(implementationClass, name, self, block);
         if (pushNewDynScope) {
             // Add a parent-link to current dynscope to support non-local returns cheaply
             // This doesn't affect variable scoping since local variables will all have
             // the right scope depth.
-            context.pushScope(DynamicScope.newDynamicScope(method.getStaticScope(), context.getCurrentScope()));
+            context.pushScope(DynamicScope.newDynamicScope(staticScope, context.getCurrentScope()));
         }
         context.setCurrentVisibility(getVisibility());
     }

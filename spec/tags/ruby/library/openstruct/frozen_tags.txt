@@ -1,3 +1,0 @@
-fails:OpenStruct.new when frozen is not writeable
-fails:OpenStruct.new when frozen cannot create new fields
-fails:OpenStruct.new when frozen creates a frozen clone

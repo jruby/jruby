@@ -28,14 +28,6 @@ describe "String#crypt" do
     "hello world".crypt("aabc").should == "aayPz4hyPS1wI"
   end
 
-  platform_is :java do
-    it "returns NULL bytes prepended to the string when the salt contains NULL bytes" do
-      "hello".crypt("\x00\x00").should == "\x00\x00dR0/E99ehpU"
-      "hello".crypt("\x00a").should == "\x00aeipc4xPxhGY"
-      "hello".crypt("a\x00").should == "a\x00GJVggM8eWwo"
-    end
-  end
-
   it "raises an ArgumentError when the salt is shorter than two characters" do
     lambda { "hello".crypt("")  }.should raise_error(ArgumentError)
     lambda { "hello".crypt("f") }.should raise_error(ArgumentError)

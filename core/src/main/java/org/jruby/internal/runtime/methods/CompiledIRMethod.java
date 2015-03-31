@@ -28,6 +28,8 @@ public class CompiledIRMethod extends JavaMethod implements MethodArgs2, Positio
     protected final IRScope method;
     private final Arity arity;
     private String[] parameterList;
+    private final StaticScope staticScope;
+    private final boolean hasExplicitCallProtocol;
 
     public CompiledIRMethod(MethodHandle variable, IRScope method, Visibility visibility, RubyModule implementationClass) {
         this(variable, null, -1, method, visibility, implementationClass);
@@ -41,6 +43,8 @@ public class CompiledIRMethod extends JavaMethod implements MethodArgs2, Positio
         this.method = method;
         this.method.getStaticScope().determineModule();
         this.arity = calculateArity();
+        this.staticScope = method.getStaticScope();
+        this.hasExplicitCallProtocol = method.hasExplicitCallProtocol();
 
         setHandle(variable);
     }
@@ -80,105 +84,155 @@ public class CompiledIRMethod extends JavaMethod implements MethodArgs2, Positio
     }
 
     protected void post(ThreadContext context) {
-        if (!method.hasExplicitCallProtocol()) {
-            // update call stacks (pop: ..)
-            context.popFrame();
-            context.postMethodScopeOnly();
-        }
+        // update call stacks (pop: ..)
+        context.postMethodFrameAndScope();
     }
 
-    protected void pre(ThreadContext context, IRubyObject self, String name, Block block) {
-        if (!method.hasExplicitCallProtocol()) {
-            // update call stacks (push: frame, class, scope, etc.)
-            RubyModule implementationClass = getImplementationClass();
-            context.preMethodFrameAndScope(implementationClass, name, self, block, method.getStaticScope());
-            // FIXME: does not seem right to use this method's visibility as current!!!
-            // See also PushFrame instruction in org.jruby.ir.targets.JVMVisitor
-            context.setCurrentVisibility(Visibility.PUBLIC);
-        }
+    protected void pre(ThreadContext context, StaticScope staticScope, RubyModule implementationClass, IRubyObject self, String name, Block block) {
+        // update call stacks (push: frame, class, scope, etc.)
+        context.preMethodFrameAndScope(implementationClass, name, self, block, staticScope);
+        context.setCurrentVisibility(Visibility.PUBLIC);
     }
 
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args, Block block) {
-        pre(context, self, name, block);
-
         try {
-            return (IRubyObject)this.variable.invokeExact(context, method.getStaticScope(), self, args, block, implementationClass, name);
+            if (!hasExplicitCallProtocol) return callNoProtocol(context, self, clazz, name, args, block);
+
+            return (IRubyObject)this.variable.invokeExact(context, staticScope, self, args, block, implementationClass, name);
         } catch (Throwable t) {
             Helpers.throwException(t);
             // not reached
             return null;
-        } finally {
-            post(context);
         }
     }
 
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, Block block) {
-        if (specificArity != 0) return call(context, self, clazz, name, IRubyObject.NULL_ARRAY, block);
-        pre(context, self, name, block);
-
         try {
-            return (IRubyObject)this.specific.invokeExact(context, method.getStaticScope(), self, block, implementationClass, name);
+            if (specificArity != 0) return call(context, self, clazz, name, IRubyObject.NULL_ARRAY, block);
+
+            if (!hasExplicitCallProtocol) return callNoProtocol(context, self, clazz, name, block);
+
+            return (IRubyObject)this.specific.invokeExact(context, staticScope, self, block, implementationClass, name);
         } catch (Throwable t) {
             Helpers.throwException(t);
             // not reached
             return null;
-        } finally {
-            post(context);
         }
     }
 
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0, Block block) {
-        if (specificArity != 1) return call(context, self, clazz, name, Helpers.arrayOf(arg0), block);
-        pre(context, self, name, block);
-
         try {
-            return (IRubyObject)this.specific.invokeExact(context, method.getStaticScope(), self, arg0, block, implementationClass, name);
+            if (!hasExplicitCallProtocol) return callNoProtocol(context, self, clazz, name, arg0, block);
+
+            if (specificArity != 1) return call(context, self, clazz, name, new IRubyObject[]{arg0}, block);
+
+            return (IRubyObject)this.specific.invokeExact(context, staticScope, self, arg0, block, implementationClass, name);
         } catch (Throwable t) {
             Helpers.throwException(t);
             // not reached
             return null;
-        } finally {
-            post(context);
         }
     }
 
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0, IRubyObject arg1, Block block) {
-        if (specificArity != 2) return call(context, self, clazz, name, Helpers.arrayOf(arg0, arg1), block);
-        pre(context, self, name, block);
-
         try {
-            return (IRubyObject)this.specific.invokeExact(context, method.getStaticScope(), self, arg0, arg1, block, implementationClass, name);
+            if (!hasExplicitCallProtocol) return callNoProtocol(context, self, clazz, name, arg0, arg1, block);
+
+            if (specificArity != 2) return call(context, self, clazz, name, new IRubyObject[] {arg0, arg1}, block);
+
+            return (IRubyObject)this.specific.invokeExact(context, staticScope, self, arg0, arg1, block, implementationClass, name);
         } catch (Throwable t) {
             Helpers.throwException(t);
             // not reached
             return null;
-        } finally {
-            post(context);
         }
     }
 
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Block block) {
-        if (specificArity != 3) return call(context, self, clazz, name, Helpers.arrayOf(arg0, arg1, arg2), block);
-        pre(context, self, name, block);
-
         try {
-            return (IRubyObject)this.specific.invokeExact(context, method.getStaticScope(), self, arg0, arg1, arg2, block, implementationClass, name);
+            if (!hasExplicitCallProtocol) return callNoProtocol(context, self, clazz, name, arg0, arg1, arg2, block);
+
+            if (specificArity != 3) return call(context, self, clazz, name, new IRubyObject[] {arg0, arg1, arg2 }, block);
+
+            return (IRubyObject)this.specific.invokeExact(context, staticScope, self, arg0, arg1, arg2, block, implementationClass, name);
         } catch (Throwable t) {
             Helpers.throwException(t);
             // not reached
             return null;
+        }
+    }
+
+    private IRubyObject callNoProtocol(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args, Block block) throws Throwable {
+        StaticScope staticScope = this.staticScope;
+        RubyModule implementationClass = this.implementationClass;
+        pre(context, staticScope, implementationClass, self, name, block);
+
+        try {
+            return (IRubyObject)this.variable.invokeExact(context, staticScope, self, args, block, implementationClass, name);
         } finally {
             post(context);
         }
     }
 
-    public boolean hasExplicitCallProtocol() {
-        return method.hasExplicitCallProtocol();
+    public IRubyObject callNoProtocol(ThreadContext context, IRubyObject self, RubyModule clazz, String name, Block block) throws Throwable {
+        if (specificArity != 0) return call(context, self, clazz, name, IRubyObject.NULL_ARRAY, block);
+
+        StaticScope staticScope = this.staticScope;
+        RubyModule implementationClass = this.implementationClass;
+        pre(context, staticScope, implementationClass, self, name, block);
+
+        try {
+            return (IRubyObject)this.specific.invokeExact(context, staticScope, self, block, implementationClass, name);
+        } finally {
+            post(context);
+        }
+    }
+
+    public IRubyObject callNoProtocol(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0, Block block) throws Throwable {
+        if (specificArity != 1) return call(context, self, clazz, name, Helpers.arrayOf(arg0), block);
+
+        StaticScope staticScope = this.staticScope;
+        RubyModule implementationClass = this.implementationClass;
+        pre(context, staticScope, implementationClass, self, name, block);
+
+        try {
+            return (IRubyObject)this.specific.invokeExact(context, staticScope, self, arg0, block, implementationClass, name);
+        } finally {
+            post(context);
+        }
+    }
+
+    public IRubyObject callNoProtocol(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0, IRubyObject arg1, Block block) throws Throwable {
+        if (specificArity != 2) return call(context, self, clazz, name, Helpers.arrayOf(arg0, arg1), block);
+
+        StaticScope staticScope = this.staticScope;
+        RubyModule implementationClass = this.implementationClass;
+        pre(context, staticScope, implementationClass, self, name, block);
+
+        try {
+            return (IRubyObject)this.specific.invokeExact(context, staticScope, self, arg0, arg1, block, implementationClass, name);
+        } finally {
+            post(context);
+        }
+    }
+
+    public IRubyObject callNoProtocol(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Block block) throws Throwable {
+        if (specificArity != 3) return call(context, self, clazz, name, Helpers.arrayOf(arg0, arg1, arg2), block);
+
+        StaticScope staticScope = this.staticScope;
+        RubyModule implementationClass = this.implementationClass;
+        pre(context, staticScope, implementationClass, self, name, block);
+
+        try {
+            return (IRubyObject)this.specific.invokeExact(context, staticScope, self, arg0, arg1, arg2, block, implementationClass, name);
+        } finally {
+            post(context);
+        }
     }
 
     @Override

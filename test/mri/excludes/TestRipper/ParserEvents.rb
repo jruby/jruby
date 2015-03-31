@@ -1,3 +1,4 @@
+exclude :test_block_variables, "missing rlimit used in this test; related to #2776"
 exclude :test_dyna_symbol, "needs investigation"
 exclude :test_event_coverage, "needs investigation"
 exclude :test_local_variables, "needs investigation"

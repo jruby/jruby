@@ -274,6 +274,16 @@ public abstract class ArrayWriteNormalizedNode extends RubyNode {
         return value;
     }
 
+    @Specialization(
+        guards={"isObjectArray(array)", "isExtendingByOne(array, index)"}
+    )
+    public int writeObjectExtendByOne(VirtualFrame frame, RubyArray array, int index, int value) {
+        ensureCapacityNode.executeEnsureCapacity(frame, array, index + 1);
+        ((Object[]) array.getStore())[index] = value;
+        array.setStore(array.getStore(), index + 1);
+        return value;
+    }
+
     // Writing beyond the end of an array - may need to generalise to Object[] or otherwise extend
 
     @Specialization(

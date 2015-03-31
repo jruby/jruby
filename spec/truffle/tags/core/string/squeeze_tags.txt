@@ -5,7 +5,6 @@ fails:String#squeeze squeezes all chars in a sequence
 fails:String#squeeze raises an ArgumentError when the parameter is out of sequence
 fails:String#squeeze taints the result when self is tainted
 fails:String#squeeze tries to convert each set arg to a string using to_str
-fails:String#squeeze raises a TypeError when one set arg can't be converted to a string
 fails:String#squeeze returns subclass instances when called on a subclass
 fails:String#squeeze! modifies self in place and returns self
 fails:String#squeeze! returns nil if no modifications were made

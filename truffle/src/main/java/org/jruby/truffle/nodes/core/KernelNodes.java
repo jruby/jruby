@@ -257,44 +257,6 @@ public abstract class KernelNodes {
         }
     }
 
-    @CoreMethod(names = "Array", isModuleFunction = true, argumentsAsArray = true)
-    public abstract static class ArrayNode extends CoreMethodNode {
-
-        @Child ArrayBuilderNode arrayBuilderNode;
-
-        public ArrayNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-            arrayBuilderNode = new ArrayBuilderNode.UninitializedArrayBuilderNode(context);
-        }
-
-        public ArrayNode(ArrayNode prev) {
-            super(prev);
-            arrayBuilderNode = prev.arrayBuilderNode;
-        }
-
-        @Specialization(guards = "isOneArrayElement(args)")
-        public RubyArray arrayOneArrayElement(Object[] args) {
-            return (RubyArray) args[0];
-        }
-
-        @Specialization(guards = "!isOneArrayElement(args)")
-        public RubyArray array(Object[] args) {
-            final int length = args.length;
-            Object store = arrayBuilderNode.start(length);
-
-            for (int n = 0; n < length; n++) {
-                store = arrayBuilderNode.append(store, n, args[n]);
-            }
-
-            return new RubyArray(getContext().getCoreLibrary().getArrayClass(), arrayBuilderNode.finish(store, length), length);
-        }
-
-        protected boolean isOneArrayElement(Object[] args) {
-            return args.length == 1 && args[0] instanceof RubyArray;
-        }
-
-    }
-
     @CoreMethod(names = "at_exit", isModuleFunction = true, needsBlock = true)
     public abstract static class AtExitNode extends CoreMethodNode {
 

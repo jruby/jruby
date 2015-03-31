@@ -39,6 +39,7 @@ package org.jruby;
 
 import org.jcodings.Encoding;
 import org.jcodings.specific.USASCIIEncoding;
+import org.jcodings.specific.UTF16BEEncoding;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.common.IRubyWarnings.ID;
@@ -1444,15 +1445,15 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
         boolean tainted = isTaint();
 
         for (int i = 0; i < realLength; i++) {
-            if (i > 0) str.cat((byte)',').cat((byte)' ');
 
-            RubyString str2 = inspect(context, safeArrayRef(values, begin + i));
-            if (i == 0 && str2.getEncoding() != encoding) str.setEncoding(str2.getEncoding());
-            if (str2.isTaint()) tainted = true;
-            
-            str.cat19(str2);
+            RubyString s = inspect(context, safeArrayRef(values, begin + i));
+            if (s.isTaint()) tainted = true;
+            if (i > 0) str.cat(',', encoding).cat(' ', encoding);
+            else str.setEncoding(s.getEncoding());
+
+            str.cat19(s);
         }
-        str.cat((byte)']');
+        str.cat(']', encoding);
 
         if (tainted) str.setTaint(true);
 

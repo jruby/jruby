@@ -1,7 +1,2 @@
-fails:Enumerator#peek_values returns the next element in self
 fails:Enumerator#peek_values does not advance the position of the current element
-fails:Enumerator#peek_values can be called repeatedly without advancing the position of the current element
-fails:Enumerator#peek_values works in concert with #rewind
-fails:Enumerator#peek_values raises StopIteration if called on a finished enumerator
-fails:Enumerator#peek_values returns an array with only nil if yield is called with nil
 fails:Enumerator#peek_values returns an empty array if yield is called without arguments

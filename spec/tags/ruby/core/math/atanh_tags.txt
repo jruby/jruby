@@ -1,0 +1,4 @@
+fails:Math.atanh raises a Math::DomainError for arguments greater than 1.0
+fails:Math.atanh raises a Math::DomainError for arguments less than -1.0
+fails:Math#atanh raises a Math::DomainError for arguments greater than 1.0
+fails:Math#atanh raises a Math::DomainError for arguments less than -1.0

@@ -269,6 +269,7 @@ class SizedQueue < Queue
   # Creates a fixed-length queue with a maximum size of +max+.
   #
   def initialize(max)
+    max = Rubinius::Type.num2long(max)
     raise ArgumentError, "queue size must be positive" unless max > 0
     @max = max
     @enque_cond = ConditionVariable.new
@@ -287,6 +288,7 @@ class SizedQueue < Queue
   # Sets the maximum size of the queue.
   #
   def max=(max)
+    max = Rubinius::Type.num2long(max)
     raise ArgumentError, "queue size must be positive" unless max > 0
 
     @mutex.synchronize do
@@ -307,11 +309,12 @@ class SizedQueue < Queue
   # Pushes +obj+ to the queue.  If there is no space left in the queue, waits
   # until space becomes available.
   #
-  def push(obj)
+  def push(obj, non_block=false)
     Thread.handle_interrupt(RuntimeError => :on_blocking) do
       @mutex.synchronize do
         while true
           break if @que.length < @max
+          raise ThreadError, "queue full" if non_block
           @num_enqueue_waiting += 1
           begin
             @enque_cond.wait @mutex

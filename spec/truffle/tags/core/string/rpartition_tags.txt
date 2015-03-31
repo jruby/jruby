@@ -1,6 +1,1 @@
-fails:String#rpartition with String returns an array of substrings based on splitting on the given string
-fails:String#rpartition with String always returns 3 elements
 fails:String#rpartition with String accepts regexp
-fails:String#rpartition with String affects $~
-fails:String#rpartition with String converts its argument using :to_str
-fails:String#rpartition with String raises an error if not convertible to string

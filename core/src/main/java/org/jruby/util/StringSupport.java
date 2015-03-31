@@ -26,6 +26,8 @@
 package org.jruby.util;
 
 import static org.jcodings.Encoding.CHAR_INVALID;
+import static org.jruby.RubyEnumerator.enumeratorize;
+import static org.jruby.util.StringSupport.nth;
 
 import org.jcodings.Encoding;
 import org.jcodings.ascii.AsciiTables;
@@ -35,12 +37,17 @@ import org.jcodings.specific.UTF8Encoding;
 import org.jcodings.util.IntHash;
 import org.joni.Matcher;
 import org.jruby.Ruby;
+import org.jruby.RubyArray;
 import org.jruby.RubyBasicObject;
 import org.jruby.RubyEncoding;
+import org.jruby.RubyIO;
 import org.jruby.RubyObject;
 import org.jruby.RubyString;
+import org.jruby.runtime.Block;
+import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
+import org.jruby.util.io.EncodingUtils;
 import sun.misc.Unsafe;
 
 import java.util.Arrays;
@@ -86,8 +93,9 @@ public final class StringSupport {
     // rb_enc_mbclen
     public static int length(Encoding enc, byte[]bytes, int p, int end) {
         int n = enc.length(bytes, p, end);
-        if (n > 0 && end - p >= n) return n;
-        return end - p >= enc.minLength() ? enc.minLength() : end - p;
+        if (MBCLEN_CHARFOUND_P(n) && MBCLEN_CHARFOUND_LEN(n) <= end - p) return MBCLEN_CHARFOUND_LEN(n);
+        int min = enc.minLength();
+        return min <= end - p ? min : end - p;
     }
 
     // rb_enc_precise_mbclen
@@ -252,26 +260,47 @@ public final class StringSupport {
         return utf8Length(bytes.getUnsafeBytes(), bytes.getBegin(), bytes.getBegin() + bytes.getRealSize());
     }
 
+    // MRI: rb_enc_strlen
     public static int strLength(Encoding enc, byte[]bytes, int p, int end) {
+        return strLength(enc, bytes, p, end, CR_UNKNOWN);
+    }
+
+    // MRI: enc_strlen
+    public static int strLength(Encoding enc, byte[]bytes, int p, int e, int cr) {
+        int c;
         if (enc.isFixedWidth()) {
-            return (end - p + enc.minLength() - 1) / enc.minLength();
+            return (e - p + enc.minLength() - 1) / enc.minLength();
         } else if (enc.isAsciiCompatible()) {
-            int c = 0;
-            while (p < end) {
-                if (Encoding.isAscii(bytes[p])) {
-                    int q = searchNonAscii(bytes, p, end);
-                    if (q == -1) return c + (end - p);
-                    c += q - p;
-                    p = q;
+            c = 0;
+            if (cr == CR_7BIT || cr == CR_VALID) {
+                while (p < e) {
+                    if (Encoding.isAscii(bytes[p])) {
+                        int q = searchNonAscii(bytes, p, e);
+                        if (q == -1) return c + (e - p);
+                        c += q - p;
+                        p = q;
+                    }
+                    p += encFastMBCLen(bytes, p, e, enc);
+                    c++;
                 }
-                p += length(enc, bytes, p, end);
-                c++;
+            } else {
+                while (p < e) {
+                    if (Encoding.isAscii(bytes[p])) {
+                        int q = searchNonAscii(bytes, p, e);
+                        if (q == -1) return c + (e - p);
+                        c += q - p;
+                        p = q;
+                    }
+                    p += length(enc, bytes, p, e);
+                    c++;
+                }
             }
             return c;
         }
         
-        int c;
-        for (c = 0; end > p; c++) p += length(enc, bytes, p, end);
+        for (c = 0; p < e; c++) {
+            p += length(enc, bytes, p, e);
+        }
         return c;
     }
 
@@ -354,10 +383,8 @@ public final class StringSupport {
         return enc.mbcToCode(bytes, p, end); 
     }
 
-    public static int codeLength(Ruby runtime, Encoding enc, int c) {
-        int n = enc.codeToMbcLength(c);
-        if (n == 0) throw runtime.newRangeError("invalid codepoint " + String.format("0x%x in ", c) + enc.getName());
-        return n;
+    public static int codeLength(Encoding enc, int c) {
+        return enc.codeToMbcLength(c);
     }
 
     public static long getAscii(Encoding enc, byte[]bytes, int p, int end) {
@@ -400,15 +427,31 @@ public final class StringSupport {
     }
 
     public static int nth(Encoding enc, byte[]bytes, int p, int end, int n) {
-        if (enc.isSingleByte()) {
+        return nth(enc, bytes, p, end, n, enc.isSingleByte());
+    }
+
+    /**
+     * Get the position of the nth character in the given byte array, using the given encoding and range.
+     *
+     * @param enc encoding to use
+     * @param bytes bytes to scan
+     * @param p starting byte offset
+     * @param end ending byte offset
+     * @param n index of character for which to find byte offset
+     * @param singlebyte whether the byte contents are in a single byte encoding
+     * @return the offset of the nth character in the string, or -1 if nth is out of the string
+     */
+    public static int nth(Encoding enc, byte[]bytes, int p, int end, int n, boolean singlebyte) {
+        if (singlebyte) {
             p += n;
         } else if (enc.isFixedWidth()) {
-            p += n * enc.maxLength();             
+            p += n * enc.maxLength();
         } else if (enc.isAsciiCompatible()) {
             p = nthAsciiCompatible(enc, bytes, p, end, n);
         } else {
             p = nthNonAsciiCompatible(enc, bytes, p, end, n);
         }
+        if (p < 0) return -1;
         return p > end ? end : p;
     }
 
@@ -444,6 +487,11 @@ public final class StringSupport {
     public static int offset(Encoding enc, byte[]bytes, int p, int end, int n) {
         int pp = nth(enc, bytes, p, end, n);
         return pp == -1 ? end - p : pp - p; 
+    }
+
+    public static int offset(Encoding enc, byte[]bytes, int p, int end, int n, boolean singlebyte) {
+        int pp = nth(enc, bytes, p, end, n, singlebyte);
+        return pp == -1 ? end - p : pp - p;
     }
 
     public static int offset(RubyString str, int pos) {
@@ -538,9 +586,10 @@ public final class StringSupport {
 
     public static String escapedCharFormat(int c, boolean isUnicode) {
         String format;
+        // c comparisons must be unsigned 32-bit
         if (isUnicode) {
 
-            if (c < 0x7F && Encoding.isAscii(c) && ASCIIEncoding.INSTANCE.isPrint(c)) {
+            if ((c & 0xFFFFFFFFL) < 0x7F && Encoding.isAscii(c) && ASCIIEncoding.INSTANCE.isPrint(c)) {
                 format = "%c"; 
             } else if (c < 0x10000) {
                 format = "\\u%04X";
@@ -548,7 +597,7 @@ public final class StringSupport {
                 format = "\\u{%X}";
             }
         } else {
-            if (c < 0x100) {
+            if ((c & 0xFFFFFFFFL) < 0x100) {
                 format = "\\x%02X";
             } else {
                 format = "\\x{%X}";
@@ -827,7 +876,7 @@ public final class StringSupport {
                 p++;
             } else {
                 c = codePoint(runtime, enc, bytes, p, end);
-                int cl = codeLength(runtime, enc, c);
+                int cl = codeLength(enc, c);
                 if (trFind(c, table, tables)) i++;
                 p += cl;
             }
@@ -836,33 +885,56 @@ public final class StringSupport {
         return i;
     }
 
-    /**
-     * rb_str_rindex_m
-     */
-    public static int rindex(ByteList source, int sourceLen, int subLen, int endPosition, CodeRangeable subStringCodeRangeable, Encoding enc) {
+    // MRI: rb_str_rindex
+    public static int rindex(ByteList source, int sourceChars, int subChars, int pos, CodeRangeable subStringCodeRangeable, Encoding enc) {
         if (subStringCodeRangeable.scanForCodeRange() == CR_BROKEN) return -1;
 
-        if (sourceLen < subLen) return -1;
-        if (sourceLen - endPosition < subLen) endPosition = sourceLen - subLen;
-        if (sourceLen == 0) return endPosition;
-
-        byte[]bytes = source.getUnsafeBytes();
-        int p = source.getBegin();
-        int end = p + source.getRealSize();
-
         final ByteList subString = subStringCodeRangeable.getByteList();
-        byte[]sbytes = subString.bytes();
-        subLen = subString.getRealSize();
 
-        int s = nth(enc, bytes, p, end, endPosition);
-        while (s >= 0) {
-            if (ByteList.memcmp(bytes, s, sbytes, 0, subLen) == 0) return endPosition;
+        int sourceSize = source.realSize();
+        int subSize = subString.realSize();
 
-            if (endPosition == 0) break;
-            endPosition--;
+        if (sourceChars < subChars || sourceSize < subSize) return -1;
+        if (sourceChars - pos < subChars) pos = sourceChars - subChars;
+        if (sourceChars == 0) return pos;
 
-            s = enc.prevCharHead(bytes, p, s, end);
+        byte[] sourceBytes = source.getUnsafeBytes();
+        int sbeg = source.getBegin();
+        int end = sbeg + source.getRealSize();
+
+        if (pos == 0) {
+            if (ByteList.memcmp(sourceBytes, sbeg, subString.getUnsafeBytes(), subString.begin(), subString.getRealSize()) == 0) {
+                return 0;
+            } else {
+                return -1;
+            }
         }
+
+        int s = nth(enc, sourceBytes, sbeg, end, pos);
+
+        return strRindex(source, subString, s, pos, enc);
+    }
+
+    private static int strRindex(ByteList str, ByteList sub, int s, int pos, Encoding enc) {
+        int slen;
+        byte[] strBytes = str.unsafeBytes();
+        byte[] subBytes = sub.unsafeBytes();
+        int sbeg, e, t;
+
+        sbeg = str.begin();
+        e = str.begin() + str.realSize();
+        t = sub.begin();
+        slen = sub.realSize();
+
+        while (s >= sbeg) {
+            if (ByteList.memcmp(strBytes, s, subBytes, t, slen) == 0) {
+                return pos;
+            }
+            if (pos == 0) break;
+            pos--;
+            s = enc.prevCharHead(strBytes, sbeg, s, e);
+        }
+
         return -1;
     }
 
@@ -913,56 +985,69 @@ public final class StringSupport {
         private IntHash<IRubyObject> del, noDel;
     }
 
-    public static TrTables trSetupTable(ByteList value, Ruby runtime, boolean[] table, TrTables tables, boolean init, Encoding enc) {
-        final TR tr = new TR(value);
-        boolean cflag = false;
-        if (value.getRealSize() > 1) {
-            if (enc.isAsciiCompatible()) {
-                if ((value.getUnsafeBytes()[value.getBegin()] & 0xff) == '^') {
-                    cflag = true;
-                    tr.p++;
-                }
-            } else {
-                int l = preciseLength(enc, tr.buf, tr.p, tr.pend);
-                if (enc.mbcToCode(tr.buf, tr.p, tr.pend) == '^') {
-                    cflag = true;
-                    tr.p += l;
-                }
-            }
-        }
-
-        if (init) {
-            for (int i=0; i< TRANS_SIZE; i++) table[i] = true;
-            table[TRANS_SIZE] = cflag;
-        } else if (table[TRANS_SIZE] && !cflag) {
-            table[TRANS_SIZE] = false;
-        }
-
-        final boolean[]buf = new boolean[TRANS_SIZE];
-        for (int i=0; i< TRANS_SIZE; i++) buf[i] = cflag;
-
+    public static TrTables trSetupTable(ByteList str, Ruby runtime, boolean[] stable, TrTables tables, boolean first, Encoding enc) {
+        int errc = -1;
+        byte[] buf = new byte[256];
+        final TR tr = new TR(str);
         int c;
-        IntHash<IRubyObject> hash = null, phash = null;
-        while ((c = trNext(tr, runtime, enc)) >= 0) {
+        IntHash<IRubyObject> table = null, ptable = null;
+        int i, l[] = {0};
+        boolean cflag = false;
+
+        tr.buf = str.unsafeBytes(); tr.p = str.begin(); tr.pend = tr.p + str.realSize();
+        tr.gen = false;
+        tr.now = tr.max = 0;
+
+        if (str.realSize() > 1 && EncodingUtils.encAscget(tr.buf, tr.p, tr.pend, l, enc) == '^') {
+            cflag = true;
+            tr.p += l[0];
+        }
+        if (first) {
+            for (i=0; i<TRANS_SIZE; i++) {
+                stable[i] = true;
+            }
+            stable[TRANS_SIZE] = cflag;
+        }
+        else if (stable[TRANS_SIZE] && !cflag) {
+            stable[TRANS_SIZE] = false;
+        }
+        for (i=0; i<TRANS_SIZE; i++) {
+            buf[i] = (byte)(cflag ? 1 : 0);
+        }
+
+        if (tables == null) tables = new TrTables();
+
+        while ((c = trNext(tr, runtime, enc)) != errc) {
             if (c < TRANS_SIZE) {
-                buf[c & 0xff] = !cflag;
-            } else {
-                if (hash == null) {
-                    hash = new IntHash<IRubyObject>();
-                    if (tables == null) tables = new TrTables();
+                buf[c & 0xff] = (byte)(cflag ? 0 : 1);
+            }
+            else {
+                int key = c;
+
+                if (table == null && (first || tables.del != null || stable[TRANS_SIZE])) {
                     if (cflag) {
-                        phash = tables.noDel;
-                        tables.noDel = hash;
-                    } else {
-                        phash  = tables.del;
-                        tables.del = hash;
+                        ptable = tables.noDel;
+                        table = ptable != null ? ptable : new IntHash();
+                        tables.noDel = table;
+                    }
+                    else {
+                        table = new IntHash();
+                        ptable = tables.del;
+                        tables.del = table;
                     }
                 }
-                if (phash == null || phash.get(c) != null) hash.put(c, RubyBasicObject.NEVER);
+                if (table != null && (ptable == null || (cflag ^ ptable.get(key) == null))) {
+                    table.put(key, RubyBasicObject.NEVER);
+                }
             }
         }
+        for (i=0; i<TRANS_SIZE; i++) {
+            stable[i] = stable[i] && buf[i] != 0;
+        }
+        if (table == null && !cflag) {
+            tables.del = null;
+        }
 
-        for (int i=0; i< TRANS_SIZE; i++) table[i] = table[i] && buf[i];
         return tables;
     }
 
@@ -970,58 +1055,75 @@ public final class StringSupport {
         if (c < TRANS_SIZE) {
             return table[c];
         } else {
-            if (tables != null) {
-                if (tables.del != null) {
-                    if (tables.noDel == null || tables.noDel.get(c) == null) return true;
-                } else if (tables.noDel != null && tables.noDel.get(c) != null) return false;
+            int v = c;
+
+            if (tables.del != null) {
+                if (tables.del.get(v) != null &&
+                        (tables.noDel == null || tables.noDel.get(v) == null)) {
+                    return true;
+                }
             }
-            return table[TRANS_SIZE];
+            else if (tables.noDel != null && tables.noDel.get(v) != null) {
+                return false;
+            }
+            return table[TRANS_SIZE] ? true : false;
         }
     }
 
     public static int trNext(TR t, Ruby runtime, Encoding enc) {
-        byte[]buf = t.buf;
-
         for (;;) {
             if (!t.gen) {
-                if (t.p == t.pend) return -1;
-                if (t.p < t.pend -1 && buf[t.p] == '\\') t.p++;
-                t.now = codePoint(runtime, enc, buf, t.p, t.pend);
-                t.p += codeLength(runtime, enc, t.now);
-                if (t.p < t.pend - 1 && buf[t.p] == '-') {
-                    t.p++;
-                    if (t.p < t.pend) {
-                        int c = codePoint(runtime, enc, buf, t.p, t.pend);
-                        t.p += codeLength(runtime, enc, c);
-                        if (t.now > c) {
-                            if (t.now < 0x80 && c < 0x80) {
-                                throw runtime.newArgumentError("invalid range \""
-                                        + (char) t.now + "-" + (char) c + "\" in string transliteration");
-                            }
-
-                            throw runtime.newArgumentError("invalid range in string transliteration");
-                        }
-                        t.gen = true;
-                        t.max = c;
+                return trNext_nextpart(t, runtime, enc);
+            } else {
+                while (enc.codeToMbcLength(++t.now) <= 0) {
+                    if (t.now == t.max) {
+                        t.gen = false;
+                        return trNext_nextpart(t, runtime, enc);
                     }
                 }
-                return t.now;
-            } else if (++t.now < t.max) {
-                return t.now;
-            } else {
-                t.gen = false;
-                return t.max;
+                if (t.now < t.max) {
+                    return t.now;
+                } else {
+                    t.gen = false;
+                    return t.max;
+                }
             }
         }
     }
 
-    /**
-     * succ
-     */
+    private static int trNext_nextpart(TR t, Ruby runtime, Encoding enc) {
+        int[] n = {0};
+
+        if (t.p == t.pend) return -1;
+        if (EncodingUtils.encAscget(t.buf, t.p, t.pend, n, enc) == '\\' && t.p + n[0] < t.pend) {
+            t.p += n[0];
+        }
+        t.now = EncodingUtils.encCodepointLength(runtime, t.buf, t.p, t.pend, n, enc);
+        t.p += n[0];
+        if (EncodingUtils.encAscget(t.buf, t.p, t.pend, n, enc) == '-' && t.p + n[0] < t.pend) {
+            t.p += n[0];
+            if (t.p < t.pend) {
+                int c = EncodingUtils.encCodepointLength(runtime, t.buf, t.p, t.pend, n, enc);
+                t.p += n[0];
+                if (t.now > c) {
+                    if (t.now < 0x80 && c < 0x80) {
+                        throw runtime.newArgumentError("invalid range \""
+                                + (char) t.now + "-" + (char) c + "\" in string transliteration");
+                    }
+
+                    throw runtime.newArgumentError("invalid range in string transliteration");
+                }
+                t.gen = true;
+                t.max = c;
+            }
+        }
+        return t.now;
+    }
 
     public static enum NeighborChar {NOT_CHAR, FOUND, WRAPPED}
 
-    public static ByteList succCommon(ByteList original) {
+    // MRI: str_succ
+    public static ByteList succCommon(Ruby runtime, ByteList original) {
         byte carry[] = new byte[org.jcodings.Config.ENC_CODE_TO_MBC_MAXLEN];
         int carryP = 0;
         carry[0] = 1;
@@ -1040,10 +1142,11 @@ public final class StringSupport {
         boolean alnumSeen = false;
         while ((s = enc.prevCharHead(bytes, p, s, end)) != -1) {
             if (neighbor == NeighborChar.NOT_CHAR && lastAlnum != -1) {
-                if (ASCIIEncoding.INSTANCE.isAlpha(bytes[lastAlnum] & 0xff) ?
-                        ASCIIEncoding.INSTANCE.isDigit(bytes[s] & 0xff) :
-                        ASCIIEncoding.INSTANCE.isDigit(bytes[lastAlnum] & 0xff) ?
-                                ASCIIEncoding.INSTANCE.isAlpha(bytes[s] & 0xff) : false) {
+                ASCIIEncoding ascii = ASCIIEncoding.INSTANCE;
+                if (ascii.isAlpha(bytes[lastAlnum] & 0xff) ?
+                        ascii.isDigit(bytes[s] & 0xff) :
+                        ascii.isDigit(bytes[lastAlnum] & 0xff) ?
+                                ascii.isAlpha(bytes[s] & 0xff) : false) {
                     s = lastAlnum;
                     break;
                 }
@@ -1051,7 +1154,7 @@ public final class StringSupport {
 
             int cl = preciseLength(enc, bytes, s, end);
             if (cl <= 0) continue;
-            switch (neighbor = succAlnumChar(enc, bytes, s, cl, carry, 0)) {
+            switch (neighbor = succAlnumChar(runtime, enc, bytes, s, cl, carry, 0)) {
                 case NOT_CHAR: continue;
                 case FOUND:    return valueCopy;
                 case WRAPPED:  lastAlnum = s;
@@ -1066,9 +1169,9 @@ public final class StringSupport {
             while ((s = enc.prevCharHead(bytes, p, s, end)) != -1) {
                 int cl = preciseLength(enc, bytes, s, end);
                 if (cl <= 0) continue;
-                neighbor = succChar(enc, bytes, s, cl);
+                neighbor = succChar(runtime, enc, bytes, s, cl);
                 if (neighbor == NeighborChar.FOUND) return valueCopy;
-                if (preciseLength(enc, bytes, s, s + 1) != cl) succChar(enc, bytes, s, cl); /* wrapped to \0...\0.  search next valid char. */
+                if (preciseLength(enc, bytes, s, s + 1) != cl) succChar(runtime, enc, bytes, s, cl); /* wrapped to \0...\0.  search next valid char. */
                 if (!enc.isAsciiCompatible()) {
                     System.arraycopy(bytes, s, carry, 0, cl);
                     carryLen = cl;
@@ -1084,31 +1187,60 @@ public final class StringSupport {
         return valueCopy;
     }
 
-    public static NeighborChar succChar(Encoding enc, byte[] bytes, int p, int len) {
+    // MRI: enc_succ_char
+    public static NeighborChar succChar(Ruby runtime, Encoding enc, byte[] bytes, int p, int len) {
+        int l;
+        if (enc.minLength() > 1) {
+	        /* wchar, trivial case */
+            int r = preciseLength(enc, bytes, p, p + len), c;
+            if (!MBCLEN_CHARFOUND_P(r)) {
+                return NeighborChar.NOT_CHAR;
+            }
+            c = codePoint(runtime, enc, bytes, p, p + len) + 1;
+            l = codeLength(enc, c);
+            if (l == 0) return NeighborChar.NOT_CHAR;
+            if (l != len) return NeighborChar.WRAPPED;
+            EncodingUtils.encMbcput(c, bytes, p, enc);
+            r = preciseLength(enc, bytes, p, p + len);
+            if (!MBCLEN_CHARFOUND_P(r)) {
+                return NeighborChar.NOT_CHAR;
+            }
+            return NeighborChar.FOUND;
+        }
+
         while (true) {
             int i = len - 1;
             for (; i >= 0 && bytes[p + i] == (byte)0xff; i--) bytes[p + i] = 0;
             if (i < 0) return NeighborChar.WRAPPED;
             bytes[p + i] = (byte)((bytes[p + i] & 0xff) + 1);
-            int cl = preciseLength(enc, bytes, p, p + len);
-            if (cl > 0) {
-                if (cl == len) {
+            l = preciseLength(enc, bytes, p, p + len);
+            if (MBCLEN_CHARFOUND_P(l)) {
+                l = MBCLEN_CHARFOUND_LEN(l);
+                if (l == len) {
                     return NeighborChar.FOUND;
                 } else {
-                    for (int j = p + cl; j < p + len - cl; j++) bytes[j] = (byte)0xff;
+                    int start = p + l;
+                    int end = start + (len - l);
+                    Arrays.fill(bytes, start, end, (byte) 0xff);
                 }
             }
-            if (cl == -1 && i < len - 1) {
-                int len2 = len - 1;
-                for (; len2 > 0; len2--) {
-                    if (preciseLength(enc, bytes, p, p + len2) != -1) break;
+            if (MBCLEN_INVALID_P(l) && i < len - 1) {
+                int len2;
+                int l2;
+                for (len2 = len-1; 0 < len2; len2--) {
+                    l2 = preciseLength(enc, bytes, p, p + len2);
+                    if (!MBCLEN_INVALID_P(l2))
+                        break;
                 }
-                for (int j = p + len2 + 1; j < p + len - (len2 + 1); j++) bytes[j] = (byte)0xff;
+                int start = p+len2+1;
+                int end = start + len-(len2+1);
+                Arrays.fill(bytes, start, end, (byte)0xff);
             }
         }
     }
 
-    private static NeighborChar succAlnumChar(Encoding enc, byte[]bytes, int p, int len, byte[]carry, int carryP) {
+    // MRI: enc_succ_alnum_char
+    private static NeighborChar succAlnumChar(Ruby runtime, Encoding enc, byte[]bytes, int p, int len, byte[]carry, int carryP) {
         byte save[] = new byte[org.jcodings.Config.ENC_CODE_TO_MBC_MAXLEN];
         int c = enc.mbcToCode(bytes, p, p + len);
 
@@ -1122,7 +1254,7 @@ public final class StringSupport {
         }
 
         System.arraycopy(bytes, p, save, 0, len);
-        NeighborChar ret = succChar(enc, bytes, p, len);
+        NeighborChar ret = succChar(runtime, enc, bytes, p, len);
         if (ret == NeighborChar.FOUND) {
             c = enc.mbcToCode(bytes, p, p + len);
             if (enc.isCodeCType(c, cType)) return NeighborChar.FOUND;
@@ -1133,7 +1265,7 @@ public final class StringSupport {
 
         while (true) {
             System.arraycopy(bytes, p, save, 0, len);
-            ret = predChar(enc, bytes, p, len);
+            ret = predChar(runtime, enc, bytes, p, len);
             if (ret == NeighborChar.FOUND) {
                 c = enc.mbcToCode(bytes, p, p + len);
                 if (!enc.isCodeCType(c, cType)) {
@@ -1155,30 +1287,58 @@ public final class StringSupport {
         }
 
         System.arraycopy(bytes, p, carry, carryP, len);
-        succChar(enc, carry, carryP, len);
+        succChar(runtime, enc, carry, carryP, len);
         return NeighborChar.WRAPPED;
     }
 
-    private static NeighborChar predChar(Encoding enc, byte[]bytes, int p, int len) {
+    private static NeighborChar predChar(Ruby runtime, Encoding enc, byte[]bytes, int p, int len) {
+        int l;
+        if (enc.minLength() > 1) {
+	        /* wchar, trivial case */
+            int r = preciseLength(enc, bytes, p, p + len), c;
+            if (!MBCLEN_CHARFOUND_P(r)) {
+                return NeighborChar.NOT_CHAR;
+            }
+            c = codePoint(runtime, enc, bytes, p, p + len);
+            if (c == 0) return NeighborChar.NOT_CHAR;
+            --c;
+            l = codeLength(enc, c);
+            if (l == 0) return NeighborChar.NOT_CHAR;
+            if (l != len) return NeighborChar.WRAPPED;
+            EncodingUtils.encMbcput(c, bytes, p, enc);
+            r = preciseLength(enc, bytes, p, p + len);
+            if (!MBCLEN_CHARFOUND_P(r)) {
+                return NeighborChar.NOT_CHAR;
+            }
+            return NeighborChar.FOUND;
+        }
         while (true) {
             int i = len - 1;
             for (; i >= 0 && bytes[p + i] == 0; i--) bytes[p + i] = (byte)0xff;
             if (i < 0) return NeighborChar.WRAPPED;
             bytes[p + i] = (byte)((bytes[p + i] & 0xff) - 1);
-            int cl = preciseLength(enc, bytes, p, p + len);
-            if (cl > 0) {
-                if (cl == len) {
+            l = preciseLength(enc, bytes, p, p + len);
+            if (MBCLEN_CHARFOUND_P(l)) {
+                l = MBCLEN_CHARFOUND_LEN(l);
+                if (l == len) {
                     return NeighborChar.FOUND;
                 } else {
-                    for (int j = p + cl; j < p + len - cl; j++) bytes[j] = 0;
+                    int start = p + l;
+                    int end = start + (len - l);
+                    Arrays.fill(bytes, start, end, (byte) 0x0);
                 }
             }
-            if (cl == -1 && i < len - 1) {
-                int len2 = len - 1;
-                for (; len2 > 0; len2--) {
-                    if (preciseLength(enc, bytes, p, p + len2) != -1) break;
+            if (!MBCLEN_CHARFOUND_P(l) && i < len-1) {
+                int len2;
+                int l2;
+                for (len2 = len-1; 0 < len2; len2--) {
+                    l2 = preciseLength(enc, bytes, p, p + len2);
+                    if (!MBCLEN_INVALID_P(l2))
+                        break;
                 }
-                for (int j = p + len2 + 1; j < p + len - (len2 + 1); j++) bytes[j] = 0;
+                int start = p + len2 + 1;
+                int end = start + (len - (len2 + 1));
+                Arrays.fill(bytes, start, end, (byte) 0);
             }
         }
     }
@@ -1253,28 +1413,55 @@ public final class StringSupport {
         return source.getByteList();
     }
 
+    // MRI: rb_str_update, second half
     public static void replaceInternal19(int beg, int len, CodeRangeable source, CodeRangeable repl) {
         Encoding enc = source.checkEncoding(repl);
-        int p = source.getByteList().getBegin();
-        int e;
-        if (isSingleByteOptimizable(source, source.getByteList().getEncoding())) {
-            p += beg;
-            e = p + len;
-        } else {
-            int end = p + source.getByteList().getRealSize();
-            byte[]bytes = source.getByteList().getUnsafeBytes();
-            p = StringSupport.nth(enc, bytes, p, end, beg);
-            if (p == -1) p = end;
-            e = StringSupport.nth(enc, bytes, p, end, len);
-            if (e == -1) e = end;
+
+        source.modify();
+        source.keepCodeRange();
+        ByteList sourceBL = source.getByteList();
+        byte[] sourceBytes = sourceBL.unsafeBytes();
+        int sourceBeg = sourceBL.begin();
+        int sourceEnd = sourceBeg + sourceBL.realSize();
+        boolean singlebyte = isSingleByteOptimizable(source, source.getByteList().getEncoding());
+        int p = nth(enc, sourceBytes, sourceBeg, sourceEnd, beg, singlebyte);
+        if (p == -1) p = sourceEnd;
+        int e = nth(enc, sourceBytes, p, sourceEnd, len, singlebyte);
+        if (e == -1) e = sourceEnd;
+        /* error check */
+        beg = p - sourceBeg; /* physical position */
+        len = e - p; /* physical length */
+        replaceInternal(beg, len, source, repl);
+        associateEncoding(source, enc);
+        int cr = CodeRangeSupport.codeRangeAnd(source.getCodeRange(), repl.getCodeRange());
+        if (cr != CR_BROKEN) source.setCodeRange(cr);
+    }
+
+    // MRI: rb_str_update, first half
+    public static void replaceInternal19(Ruby runtime, int beg, int len, RubyString source, RubyString repl) {
+        source.checkEncoding(repl);
+
+        if (len < 0) throw runtime.newIndexError("negative length " + len);
+
+        source.checkEncoding(repl);
+        int slen = strLengthFromRubyString(source);
+
+        if (slen < beg) {
+            throw runtime.newIndexError("index " + beg + " out of string");
+        }
+        if (beg < 0) {
+            if (-beg > slen) {
+                throw runtime.newIndexError("index " + beg + " out of string");
+            }
+            beg += slen;
+        }
+        if (slen < len || slen < beg + len) {
+            len = slen - beg;
         }
 
-        int cr = source.getCodeRange();
-        if (cr == CR_BROKEN) source.clearCodeRange();
-        replaceInternal(p - source.getByteList().getBegin(), e - p, source, repl);
-        associateEncoding(source, enc);
-        cr = CodeRangeSupport.codeRangeAnd(cr, repl.getCodeRange());
-        if (cr != CR_BROKEN) source.setCodeRange(cr);
+        replaceInternal19(beg, len, source, repl);
+
+        if (repl.isTaint()) source.setTaint(true);
     }
 
     public static boolean isAsciiOnly(CodeRangeable string) {
@@ -1309,7 +1496,7 @@ public final class StringSupport {
                 s++;
             } else {
                 c = codePoint(runtime, enc, bytes, s, send);
-                int cl = codeLength(runtime, enc, c);
+                int cl = codeLength(enc, c);
                 if (trFind(c, squeeze, tables)) {
                     modify = true;
                 } else {
@@ -1327,24 +1514,23 @@ public final class StringSupport {
     }
 
     /**
-     * rb_str_chop
+     * MRI: chopped_length
      */
-    public static int choppedLength19(CodeRangeable rubyString, Ruby runtime) {
-        final ByteList value = rubyString.getByteList();
-        int p = value.getBegin();
-        int end = p + value.getRealSize();
+    public static int choppedLength19(CodeRangeable str, Ruby runtime) {
+        ByteList bl = str.getByteList();
+        Encoding enc = bl.getEncoding();
+        int p, p2, beg, end;
 
-        if (p > end) return 0;
-        byte bytes[] = value.getUnsafeBytes();
-        Encoding enc = value.getEncoding();
-
-        int s = enc.prevCharHead(bytes, p, end, end);
-        if (s == -1) return 0;
-        if (s > p && codePoint(runtime, enc, bytes, s, end) == '\n') {
-            int s2 = enc.prevCharHead(bytes, p, s, end);
-            if (s2 != -1 && codePoint(runtime, enc, bytes, s2, end) == '\r') s = s2;
+        beg = bl.begin();
+        end = beg + bl.realSize();
+        if (beg > end) return 0;
+        p = enc.prevCharHead(bl.unsafeBytes(), beg, end, end);
+        if (p == 0) return 0;
+        if (p > beg && EncodingUtils.encAscget(bl.unsafeBytes(), p, end, null, enc) == '\n') {
+            p2 = enc.prevCharHead(bl.unsafeBytes(), beg, p, end);
+            if (p2 != -1 && EncodingUtils.encAscget(bl.unsafeBytes(),  p2, end, null, enc) == '\r') p = p2;
         }
-        return s - p;
+        return p - beg;
     }
 
     /**
@@ -1389,5 +1575,253 @@ public final class StringSupport {
         if (cr1 == CR_7BIT && (cr2 == CR_7BIT || other.getByteList().getEncoding().isAsciiCompatible())) return true;
         if (cr2 == CR_7BIT && string.getByteList().getEncoding().isAsciiCompatible()) return true;
         return false;
+    }
+
+    public static IRubyObject rbStrEnumerateLines(RubyString str, ThreadContext context, String name, IRubyObject arg, Block block, boolean wantarray) {
+        Ruby runtime = context.runtime;
+
+        Encoding enc;
+        IRubyObject line, rs, orig = str;
+        int ptr, pend, subptr, subend, rsptr, hit, adjusted;
+        int pos, len, rslen;
+        boolean paragraph_mode = false;
+
+        IRubyObject ary = null;
+
+        rs = arg;
+
+        if (block.isGiven()) {
+            if (wantarray) {
+                // this code should be live in 3.0
+                if (false) { // #if STRING_ENUMERATORS_WANTARRAY
+                    runtime.getWarnings().warn("given block not used");
+                    ary = runtime.newEmptyArray();
+                } else {
+                    runtime.getWarnings().warning("passing a block to String#lines is deprecated");
+                    wantarray = false;
+                }
+            }
+        }
+        else {
+            if (wantarray) {
+                ary = runtime.newEmptyArray();
+            } else {
+                return enumeratorize(runtime, str, name, arg);
+            }
+        }
+
+        if (rs.isNil()) {
+            if (wantarray) {
+                ((RubyArray)ary).push(str);
+                return ary;
+            }
+            else {
+                block.yieldSpecific(context, str);
+                return orig;
+            }
+        }
+
+        str = str.newFrozen();
+        byte[] strBytes = str.getByteList().unsafeBytes();
+        ptr = subptr = str.getByteList().begin();
+        pend = ptr + str.size();
+        len = str.size();
+        rs = rs.convertToString();
+        rslen = ((RubyString)rs).size();
+
+        if (rs == context.runtime.getGlobalVariables().get("$/"))
+            enc = str.getEncoding();
+        else
+            enc = str.checkEncoding((RubyString) rs);
+
+        byte[] rsbytes;
+        if (rslen == 0) {
+            rsbytes = RubyIO.PARAGRAPH_SEPARATOR.unsafeBytes();
+            rsptr = RubyIO.PARAGRAPH_SEPARATOR.begin();
+            rslen = 2;
+            paragraph_mode = true;
+        } else {
+
+            rsbytes = ((RubyString)rs).getByteList().unsafeBytes();
+            rsptr = ((RubyString)rs).getByteList().begin();
+        }
+
+        if ((rs == context.runtime.getGlobalVariables().get("$/") || paragraph_mode) && !enc.isAsciiCompatible()) {
+            rs = RubyString.newString(runtime, rsbytes, rsptr, rslen);
+            rs = EncodingUtils.rbStrEncode(context, rs, runtime.getEncodingService().convertEncodingToRubyEncoding(enc), 0, context.nil);
+            rsbytes = ((RubyString)rs).getByteList().unsafeBytes();
+            rsptr = ((RubyString)rs).getByteList().begin();
+            rslen = ((RubyString)rs).getByteList().realSize();
+        }
+
+        while (subptr < pend) {
+            pos = memsearch(rsbytes, rsptr, rslen, strBytes, subptr, pend - subptr, enc);
+            if (pos < 0) break;
+            hit = subptr + pos;
+            adjusted = enc.rightAdjustCharHead(strBytes, subptr, hit, pend);
+            if (hit != adjusted) {
+                subptr = adjusted;
+                continue;
+            }
+            subend = hit + rslen;
+            if (paragraph_mode) {
+                while (subend < pend && enc.isNewLine(strBytes, subend, pend)) {
+                    subend += enc.length(strBytes, subend, pend);
+                }
+            }
+            line = str.substr(runtime, subptr - ptr, subend - subptr);
+            if (wantarray) {
+                ((RubyArray)ary).push(line);
+            } else {
+                block.yieldSpecific(context, line);
+                str.modifyCheck(strBytes, len);
+            }
+            subptr = subend;
+        }
+
+        if (subptr != pend) {
+            line = str.substr(subptr - ptr, pend - subptr);
+            if (wantarray) {
+                ((RubyArray) ary).push(line);
+            } else {
+                block.yieldSpecific(context, line);
+            }
+        }
+
+        return wantarray ? ary : orig;
+    }
+
+    public static int memsearch(byte[] xBytes, int x0, int m, byte[] yBytes, int y0, int n, Encoding enc) {
+        int x = x0, y = y0;
+
+        if (m > n) return -1;
+        else if (m == n) {
+            return ByteList.memcmp(xBytes, x0, yBytes, y0, m) == 0 ? 0 : -1;
+        }
+        else if (m < 1) {
+            return 0;
+        }
+        else if (m == 1) {
+            int ys = memchr(yBytes, y, xBytes[x], n);
+
+            if (ys != -1)
+                return ys - y;
+            else
+                return -1;
+        }
+        else if (m <= 8) { // SIZEOF_VALUE...meaningless here, but this logic catches short strings
+            return rb_memsearch_ss(xBytes, x0, m, yBytes, y0, n);
+        }
+        else if (enc == UTF8Encoding.INSTANCE){
+            return rb_memsearch_qs_utf8(xBytes, x0, m, yBytes, y0, n);
+        }
+        else {
+            return rb_memsearch_qs(xBytes, x0, m, yBytes, y0, n);
+        }
+    }
+
+    private static int rb_memsearch_ss(byte[] xsBytes, int xs, int m, byte[] ysBytes, int ys, int n) {
+        int y;
+
+        if ((y = memmem(ysBytes, ys, n, xsBytes, xs, m)) != -1)
+            return y - ys;
+        else
+            return -1;
+    }
+
+    // Knuth-Morris-Pratt pattern match
+    public static int memmem(byte[] aBytes, int aStart, int aLen, byte[] p, int pStart, int pLen) {
+        int[] f = failure(p, pStart, pLen);
+
+        int j = 0;
+
+        for (int i = 0; i < aLen; i++) {
+            while (j > 0 && p[pStart + j] != aBytes[aStart + i]) j = f[j - 1];
+
+            if (p[pStart + j] == aBytes[aStart + i]) j++;
+
+            if (j == pLen) return aStart + i - pLen + 1;
+        }
+        return -1;
+    }
+
+    private static int[] failure(byte[] p, int pStart, int pLen) {
+        int[] f = new int[pLen];
+
+        int j = 0;
+        for (int i = 1; i < pLen; i++) {
+            while (j>0 && p[pStart + j] != p[pStart + i]) j = f[j - 1];
+
+            if (p[pStart + j] == p[pStart + i]) j++;
+
+            f[i] = j;
+        }
+
+        return f;
+    }
+
+    private static int rb_memsearch_qs(byte[] xsBytes, int xs, int m, byte[] ysBytes, int ys, int n) {
+        int x = xs, xe = xs + m;
+        int y = ys;
+        int qstable[] = new int[256];
+
+        /* Preprocessing */
+        Arrays.fill(qstable, m + 1);
+        for (; x < xe; ++x)
+            qstable[xsBytes[x] & 0xFF] = xe - x;
+        /* Searching */
+        for (; y + m <= ys + n; y += qstable[ysBytes[y + m] & 0xFF]) {
+            if (xsBytes[xs] == ysBytes[y] && ByteList.memcmp(xsBytes, xs, ysBytes, y, m) == 0)
+                return y - ys;
+        }
+        return -1;
+    }
+
+    private static int rb_memsearch_qs_utf8_hash(byte[] xBytes, int x) {
+        int mix = 8353;
+        int h = xBytes[x] & 0xFF;
+        if (h < 0xC0) {
+            return h + 256;
+        }
+        else if (h < 0xE0) {
+            h *= mix;
+            h += xBytes[x + 1];
+        }
+        else if (h < 0xF0) {
+            h *= mix;
+            h += xBytes[x + 1];
+            h *= mix;
+            h += xBytes[x + 2];
+        }
+        else if (h < 0xF5) {
+            h *= mix;
+            h += xBytes[x + 1];
+            h *= mix;
+            h += xBytes[x + 2];
+            h *= mix;
+            h += xBytes[x + 3];
+        }
+        else {
+            return h + 256;
+        }
+        return h;
+    }
+
+    private static int rb_memsearch_qs_utf8(byte[] xsBytes, int xs, int m, byte[] ysBytes, int ys, int n) {
+        int x = xs, xe = xs + m;
+        int y = ys;
+        int qstable[] = new int[512];
+
+        /* Preprocessing */
+        Arrays.fill(qstable, m + 1);
+        for (; x < xe; ++x) {
+            qstable[rb_memsearch_qs_utf8_hash(xsBytes, x)] = xe - x;
+        }
+        /* Searching */
+        for (; y + m <= ys + n; y += qstable[rb_memsearch_qs_utf8_hash(ysBytes, y+m)]) {
+            if (xsBytes[xs] == ysBytes[y] && ByteList.memcmp(xsBytes, xs, ysBytes, y, m) == 0)
+                return y - ys;
+        }
+        return -1;
     }
 }

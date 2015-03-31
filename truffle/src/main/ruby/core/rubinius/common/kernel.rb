@@ -28,6 +28,19 @@
 
 module Kernel
 
+  def Array(obj)
+    ary = Rubinius::Type.check_convert_type obj, Array, :to_ary
+
+    return ary if ary
+
+    if array = Rubinius::Type.check_convert_type(obj, Array, :to_a)
+      array
+    else
+      [obj]
+    end
+  end
+  module_function :Array
+
   def Complex(*args)
     Rubinius.privately do
       Complex.convert(*args)

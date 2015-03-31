@@ -22,6 +22,7 @@
  * Copyright (C) 2006 Ola Bini <ola@ologix.com>
  * Copyright (C) 2007 Nick Sieger <nicksieger@gmail.com>
  *
+ *
  * Some of the code in this class is transliterated from C++ code in Rubinius.
  * 
  * Copyright (c) 2007-2014, Evan Phoenix and contributors
@@ -98,7 +99,16 @@ public abstract class StringPrimitiveNodes {
 
         @Specialization
         public boolean isCharacterAscii(RubyString character) {
-            return StringSupport.isAsciiOnly(character);
+            final ByteList bytes = character.getByteList();
+            final int codepoint = StringSupport.preciseCodePoint(
+                    bytes.getEncoding(),
+                    bytes.getUnsafeBytes(),
+                    bytes.getBegin(),
+                    bytes.getBegin() + bytes.getRealSize());
+
+            final boolean found = codepoint != -1;
+
+            return found && Encoding.isAscii(codepoint);
         }
     }
 
@@ -328,8 +338,8 @@ public abstract class StringPrimitiveNodes {
                 return nil();
             }
 
-            final int p = bytes.getBegin();
-            final int end = p + bytes.getRealSize();
+            final int p = bytes.getBegin() + byteIndex;
+            final int end = bytes.getBegin() + bytes.getRealSize();
             final int c = StringSupport.preciseLength(bytes.getEncoding(), bytes.getUnsafeBytes(), p, end);
 
             if (! StringSupport.MBCLEN_CHARFOUND_P(c)) {
@@ -363,23 +373,30 @@ public abstract class StringPrimitiveNodes {
         private final ConditionProfile startTooLargeProfile = ConditionProfile.createBinaryProfile();
         private final ConditionProfile startTooSmallProfile = ConditionProfile.createBinaryProfile();
 
+        @Child private StringNodes.SizeNode sizeNode;
+
         public StringCompareSubstringPrimitiveNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
+            sizeNode = StringNodesFactory.SizeNodeFactory.create(context, sourceSection, new RubyNode[] { null });
         }
 
         public StringCompareSubstringPrimitiveNode(StringCompareSubstringPrimitiveNode prev) {
             super(prev);
+            sizeNode = prev.sizeNode;
         }
 
         @Specialization
-        public int stringCompareSubstring(RubyString string, RubyString other, int start, int size) {
+        public int stringCompareSubstring(VirtualFrame frame, RubyString string, RubyString other, int start, int size) {
             // Transliterated from Rubinius C++.
 
+            final int stringLength = sizeNode.executeIntegerFixnum(frame, string);
+            final int otherLength = sizeNode.executeIntegerFixnum(frame, other);
+
             if (start < 0) {
-                start += other.length();
+                start += otherLength;
             }
 
-            if (startTooLargeProfile.profile(start > other.length())) {
+            if (startTooLargeProfile.profile(start > otherLength)) {
                 CompilerDirectives.transferToInterpreter();
 
                 throw new RaiseException(
@@ -399,12 +416,12 @@ public abstract class StringPrimitiveNodes {
                         ));
             }
 
-            if (start + size > other.length()) {
-                size = other.length() - start;
+            if (start + size > otherLength) {
+                size = otherLength - start;
             }
 
-            if (size > string.length()) {
-                size = string.length();
+            if (size > stringLength) {
+                size = stringLength;
             }
 
             final ByteList bytes = string.getByteList();

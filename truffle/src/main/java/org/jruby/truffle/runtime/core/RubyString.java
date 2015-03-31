@@ -9,6 +9,7 @@
  */
 package org.jruby.truffle.runtime.core;
 
+import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.interop.ForeignAccessFactory;
 import com.oracle.truffle.api.nodes.Node;
@@ -135,7 +136,15 @@ public class RubyString extends RubyBasicObject implements CodeRangeable {
     }
 
     public int length() {
-        return StringSupport.strLengthFromRubyString(this);
+        if (CompilerDirectives.injectBranchProbability(
+                CompilerDirectives.FASTPATH_PROBABILITY,
+                StringSupport.isSingleByteOptimizable(this, getByteList().getEncoding()))) {
+
+            return getByteList().getRealSize();
+
+        } else {
+            return StringSupport.strLengthFromRubyString(this);
+        }
     }
 
     public int normalizeIndex(int index) {

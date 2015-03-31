@@ -35,6 +35,7 @@ import java.util.Locale;
 import java.util.Map;
 
 import org.jcodings.Encoding;
+import org.jcodings.exception.EncodingException;
 import org.jcodings.specific.UTF8Encoding;
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
@@ -49,6 +50,7 @@ import org.jruby.RubyString;
 import org.jruby.common.IRubyWarnings.ID;
 import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.util.io.EncodingUtils;
 
 
 /**
@@ -225,6 +227,10 @@ public class Sprintf {
 
     public static boolean sprintf(Ruby runtime, ByteList to, CharSequence format, int arg) {
         return rubySprintf(to, format, new Args(runtime, (long)arg));
+    }
+
+    public static boolean sprintf(Ruby runtime, ByteList to, CharSequence format, long arg) {
+        return rubySprintf(to, format, new Args(runtime, arg));
     }
 
     public static boolean sprintf(ByteList to, RubyString format, IRubyObject args) {
@@ -485,29 +491,44 @@ public class Sprintf {
                     }
 
                     int c = 0;
-                    // MRI 1.8.5-p12 doesn't support 1-char strings, but
-                    // YARV 0.4.1 does. I don't think it hurts to include
-                    // this; sprintf('%c','a') is nicer than sprintf('%c','a'[0])
-                    if (arg instanceof RubyString) {
-                        ByteList bytes = ((RubyString)arg).getByteList();
-                        if (bytes.length() == 1) {
-                            c = bytes.getUnsafeBytes()[bytes.begin()];
-                        } else {
-                            raiseArgumentError(args,"%c requires a character");
+                    int n = 0;
+                    IRubyObject tmp = arg.checkStringType19();
+                    if (!tmp.isNil()) {
+                        if (((RubyString)tmp).strLength() != 1) {
+                            throw runtime.newArgumentError("%c requires a character");
                         }
-                    } else {
-                        c = args.intValue(arg);
+                        ByteList bl = ((RubyString)tmp).getByteList();
+                        c = StringSupport.codePoint(runtime, encoding, bl.unsafeBytes(), bl.begin(), bl.begin() + bl.realSize());
+                        n = StringSupport.codeLength(bl.getEncoding(), c);
                     }
-                    if ((flags & FLAG_WIDTH) != 0 && width > 1) {
-                        if ((flags & FLAG_MINUS) != 0) {
-                            buf.append(c);
-                            buf.fill(' ', width-1);
-                        } else {
-                            buf.fill(' ',width-1);
-                            buf.append(c);
+                    else {
+                        // unsigned bits
+                        c = (int)arg.convertToInteger().getLongValue() & 0xFFFFFFFF;
+                        try {
+                            n = StringSupport.codeLength(encoding, c);
+                        } catch (EncodingException e) {
+                            n = -1;
                         }
-                    } else {
-                        buf.append(c);
+                    }
+                    if (n <= 0) {
+                        throw runtime.newArgumentError("invalid character");
+                    }
+                    if ((flags & FLAG_WIDTH) == 0) {
+                        buf.ensure(buf.length() + n);
+                        EncodingUtils.encMbcput(c, buf.unsafeBytes(), buf.realSize(), encoding);
+                        buf.realSize(buf.realSize() + n);
+                    }
+                    else if ((flags & FLAG_MINUS) != 0) {
+                        buf.ensure(buf.length() + n);
+                        EncodingUtils.encMbcput(c, buf.unsafeBytes(), buf.realSize(), encoding);
+                        buf.realSize(buf.realSize() + n);
+                        buf.fill(' ', width - 1);
+                    }
+                    else {
+                        buf.fill(' ', width - 1);
+                        buf.ensure(buf.length() + n);
+                        EncodingUtils.encMbcput(c, buf.unsafeBytes(), buf.realSize(), encoding);
+                        buf.realSize(buf.realSize() + n);
                     }
                     offset++;
                     incomplete = false;

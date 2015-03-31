@@ -1,4 +1,3 @@
 fails:String#split with String splits on multibyte characters
 fails:String#split with String taints the resulting strings if self is tainted
 fails:String#split with Regexp taints the resulting strings if self is tainted
-fails:String#split with Regexp returns an ArgumentError if an invalid UTF-8 string is supplied
