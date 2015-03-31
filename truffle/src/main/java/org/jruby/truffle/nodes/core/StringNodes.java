@@ -461,9 +461,7 @@ public abstract class StringNodes {
     public abstract static class GetIndexNode extends CoreMethodNode {
 
         @Child private ToIntNode toIntNode;
-        @Child private CallDispatchHeadNode getMatchDataIndexNode;
         @Child private CallDispatchHeadNode includeNode;
-        @Child private CallDispatchHeadNode matchNode;
         @Child private CallDispatchHeadNode dupNode;
         @Child private StringPrimitiveNodes.StringSubstringPrimitiveNode substringNode;
 
@@ -476,9 +474,7 @@ public abstract class StringNodes {
         public GetIndexNode(GetIndexNode prev) {
             super(prev);
             toIntNode = prev.toIntNode;
-            getMatchDataIndexNode = prev.getMatchDataIndexNode;
             includeNode = prev.includeNode;
-            matchNode = prev.matchNode;
             dupNode = prev.dupNode;
             substringNode = prev.substringNode;
         }
@@ -567,32 +563,13 @@ public abstract class StringNodes {
 
         @Specialization
         public Object slice(VirtualFrame frame, RubyString string, RubyRegexp regexp, UndefinedPlaceholder capture) {
-            notDesignedForCompilation();
-
             return slice(frame, string, regexp, 0);
         }
 
         @Specialization(guards = "!isUndefinedPlaceholder(arguments[2])")
         public Object slice(VirtualFrame frame, RubyString string, RubyRegexp regexp, Object capture) {
-            notDesignedForCompilation();
-
-            if (matchNode == null) {
-                CompilerDirectives.transferToInterpreter();
-                matchNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext()));
-            }
-
-            final Object matchData = matchNode.call(frame, regexp, "match", null, string);
-
-            if (matchData == nil()) {
-                return matchData;
-            }
-
-            if (getMatchDataIndexNode == null) {
-                CompilerDirectives.transferToInterpreter();
-                getMatchDataIndexNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext()));
-            }
-
-            return getMatchDataIndexNode.call(frame, matchData, "[]", null, capture);
+            // Extract from Rubinius's definition of String#[].
+            return ruby(frame, "match, str = subpattern(index, other); Regexp.last_match = match; str", "index", regexp, "other", capture);
         }
 
         @Specialization
