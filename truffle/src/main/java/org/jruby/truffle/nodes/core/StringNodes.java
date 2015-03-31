@@ -1431,7 +1431,7 @@ public abstract class StringNodes {
     }
 
     @RubiniusOnly
-    @CoreMethod(names = "modify!")
+    @CoreMethod(names = "modify!", raiseIfFrozenSelf = true)
     public abstract static class ModifyBangNode extends CoreMethodNode {
 
         public ModifyBangNode(RubyContext context, SourceSection sourceSection) {
