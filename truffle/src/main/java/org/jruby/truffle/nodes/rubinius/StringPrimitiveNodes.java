@@ -328,8 +328,8 @@ public abstract class StringPrimitiveNodes {
                 return nil();
             }
 
-            final int p = bytes.getBegin();
-            final int end = p + bytes.getRealSize();
+            final int p = bytes.getBegin() + byteIndex;
+            final int end = bytes.getBegin() + bytes.getRealSize();
             final int c = StringSupport.preciseLength(bytes.getEncoding(), bytes.getUnsafeBytes(), p, end);
 
             if (! StringSupport.MBCLEN_CHARFOUND_P(c)) {
