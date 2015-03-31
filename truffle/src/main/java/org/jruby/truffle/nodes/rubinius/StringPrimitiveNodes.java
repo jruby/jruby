@@ -730,24 +730,32 @@ public abstract class StringPrimitiveNodes {
             int p = string.getByteList().getBegin();
             final int e = p + string.getByteList().getRealSize();
             int pp = pattern.getByteList().getBegin();
+            final int pe = pp + pattern.getByteList().getRealSize();
             int s;
+            int ss;
 
             final byte[] stringBytes = string.getByteList().getUnsafeBytes();
             final byte[] patternBytes = pattern.getByteList().getUnsafeBytes();
 
-            // This is a slightly modified version of the loop as it appears in the Rubinius source.  The code there
-            // did an extra memcmp for unknown reasons and that caused the pointer positions to shift.  Removing them
-            // seemed to yield the same results while avoiding a potential ArrayIndexOutOfBounds exception.  This
-            // removal may be misguided, so if there is a parity mismatch that's a good place to start looking.
-            for(s = p; p < e; s = ++p) {
+            for(s = p, ss = pp; p < e; s = ++p) {
                 if (stringBytes[p] != patternBytes[pp]) continue;
 
-                final int c = StringSupport.preciseLength(encoding, stringBytes, s, e);
+                while (p < e && pp < pe && stringBytes[p] == patternBytes[pp]) {
+                    p++;
+                    pp++;
+                }
 
-                if (StringSupport.MBCLEN_CHARFOUND_P(c)) {
-                    return s;
+                if (pp < pe) {
+                    p = s;
+                    pp = ss;
                 } else {
-                    return nil();
+                    final int c = StringSupport.preciseLength(encoding, stringBytes, s, e);
+
+                    if (StringSupport.MBCLEN_CHARFOUND_P(c)) {
+                        return s;
+                    } else {
+                        return nil();
+                    }
                 }
             }
 

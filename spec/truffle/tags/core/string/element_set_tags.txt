@@ -1,5 +1,3 @@
-fails:String#[]= with String index replaces multibyte characters with characters
-fails:String#[]= with String index replaces multibyte characters with multibyte characters
 fails:String#[]= with a Regexp index replaces characters with a multibyte character
 fails:String#[]= with a Regexp index replaces multibyte characters with characters
 fails:String#[]= with a Regexp index replaces multibyte characters with multibyte characters
