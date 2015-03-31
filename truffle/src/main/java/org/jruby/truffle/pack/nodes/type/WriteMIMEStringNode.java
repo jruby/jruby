@@ -16,6 +16,7 @@ import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import org.jruby.truffle.pack.nodes.PackNode;
 import org.jruby.truffle.pack.runtime.Endianness;
+import org.jruby.truffle.pack.runtime.Nil;
 import org.jruby.util.ByteList;
 import org.jruby.util.Pack;
 
@@ -28,6 +29,11 @@ public abstract class WriteMIMEStringNode extends PackNode {
 
     public WriteMIMEStringNode(int length) {
         this.length = length;
+    }
+
+    @Specialization
+    public Object write(VirtualFrame frame, Nil nil) {
+        return null;
     }
 
     @Specialization

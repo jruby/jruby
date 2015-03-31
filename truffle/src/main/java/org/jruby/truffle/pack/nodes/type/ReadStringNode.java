@@ -39,14 +39,33 @@ public abstract class ReadStringNode extends PackNode {
         throw new IllegalStateException();
     }
 
+    @Specialization
+    public Object read(VirtualFrame frame, int[] source) {
+        return readAndConvert(frame, source[advanceSourcePosition(frame)]);
+    }
+
+    @Specialization
+    public Object read(VirtualFrame frame, long[] source) {
+        return readAndConvert(frame, source[advanceSourcePosition(frame)]);
+    }
+
+    @Specialization
+    public Object read(VirtualFrame frame, double[] source) {
+        return readAndConvert(frame, source[advanceSourcePosition(frame)]);
+    }
+
     @Specialization(guards = "!isIRubyArray(source)")
     public Object read(VirtualFrame frame, Object[] source) {
+        return readAndConvert(frame, source[advanceSourcePosition(frame)]);
+    }
+
+    private Object readAndConvert(VirtualFrame frame, Object value) {
         if (toStringNode == null) {
             CompilerDirectives.transferToInterpreter();
             toStringNode = insert(ToStringNodeGen.create(context, new NullNode()));
         }
 
-        return toStringNode.executeToString(frame, source[advanceSourcePosition(frame)]);
+        return toStringNode.executeToString(frame, value);
     }
 
     @Specialization

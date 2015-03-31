@@ -12,6 +12,7 @@ package org.jruby.truffle.pack.nodes;
 import com.oracle.truffle.api.dsl.TypeSystem;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.truffle.pack.runtime.Nil;
+import org.jruby.truffle.runtime.core.RubyArray;
 import org.jruby.truffle.runtime.core.RubyBignum;
 import org.jruby.truffle.runtime.core.RubyNilClass;
 import org.jruby.truffle.runtime.core.RubyString;
@@ -30,6 +31,7 @@ import java.math.BigInteger;
         ByteList.class,
         RubyString.class,
         RubyBignum.class,
+        RubyArray.class,
         RubyNilClass.class,
         int[].class,
         long[].class,
