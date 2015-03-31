@@ -675,30 +675,37 @@ public abstract class StringPrimitiveNodes {
         }
 
         @Specialization
-        public Object stringByteIndex(RubyString string, int characters, int start) {
-            if (string.getByteList().getEncoding().isSingleByte()) {
-                return characters - start;
-            } else {
-                final Encoding encoding = string.getByteList().getEncoding();
-                final int length = string.getByteList().length();
+        public Object stringByteIndex(RubyString string, int index, int start) {
+            // Taken from Rubinius's String::byte_index.
 
-                int count = 0;
+            final ByteList bytes = string.getByteList();
 
-                int i;
+            final Encoding enc = bytes.getEncoding();
+            int p = bytes.getBegin();
+            final int e = p + bytes.getRealSize();
 
-                for(i = 0; i < characters && count < length; i++) {
-                    if(!encoding.isMbcHead(string.getByteList().getUnsafeBytes(), count, length)) {
-                        count++;
-                    } else {
-                        count += encoding.codeToMbcLength(string.getByteList().getUnsafeBytes()[count]);
-                    }
-                }
+            int i, k = index;
 
-                if(i < characters) {
-                    return nil();
+            if (k < 0) {
+                CompilerDirectives.transferToInterpreter();
+                throw new RaiseException(getContext().getCoreLibrary().argumentError("character index is negative", this));
+            }
+
+            for (i = 0; i < k && p < e; i++) {
+                final int c = StringSupport.preciseLength(enc, bytes.getUnsafeBytes(), p, e);
+
+                // If it's an invalid byte, just treat it as a single byte
+                if(! StringSupport.MBCLEN_CHARFOUND_P(c)) {
+                    ++p;
                 } else {
-                    return count;
+                    p += StringSupport.MBCLEN_CHARFOUND_LEN(c);
                 }
+            }
+
+            if (i < k) {
+                return nil();
+            } else {
+                return p;
             }
         }
 
