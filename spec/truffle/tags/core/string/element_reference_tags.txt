@@ -1,2 +1,0 @@
-fails:String#[] with Range calls to_int on range arguments
-fails:String#[] with Range works with Range subclasses

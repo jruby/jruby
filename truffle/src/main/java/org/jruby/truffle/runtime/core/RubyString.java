@@ -85,8 +85,12 @@ public class RubyString extends RubyBasicObject implements CodeRangeable {
         }
     }
 
+    public int normalizeIndex(int length, int index) {
+        return RubyArray.normalizeIndex(length, index);
+    }
+
     public int normalizeIndex(int index) {
-        return RubyArray.normalizeIndex(bytes.length(), index);
+        return normalizeIndex(length(), index);
     }
 
     public int clampExclusiveIndex(int index) {
