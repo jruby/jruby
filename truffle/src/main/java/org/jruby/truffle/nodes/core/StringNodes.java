@@ -1187,6 +1187,9 @@ public abstract class StringNodes {
     @CoreMethod(names = "getbyte", required = 1)
     public abstract static class GetByteNode extends CoreMethodNode {
 
+        private final ConditionProfile negativeIndexProfile = ConditionProfile.createBinaryProfile();
+        private final ConditionProfile indexOutOfBoundsProfile = ConditionProfile.createBinaryProfile();
+
         public GetByteNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
         }
@@ -1196,8 +1199,18 @@ public abstract class StringNodes {
         }
 
         @Specialization
-        public int getByte(RubyString string, int index) {
-            return string.getBytes().get(index);
+        public Object getByte(RubyString string, int index) {
+            final ByteList bytes = string.getByteList();
+
+            if (negativeIndexProfile.profile(index < 0)) {
+                index += bytes.getRealSize();
+            }
+
+            if (indexOutOfBoundsProfile.profile((index < 0) || (index >= bytes.getRealSize()))) {
+                return nil();
+            }
+
+            return string.getBytes().get(index) & 0xff;
         }
     }
 
