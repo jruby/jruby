@@ -22,6 +22,7 @@
  * Copyright (C) 2006 Ola Bini <ola@ologix.com>
  * Copyright (C) 2007 Nick Sieger <nicksieger@gmail.com>
  *
+ *
  * Some of the code in this class is transliterated from C++ code in Rubinius.
  * 
  * Copyright (c) 2007-2014, Evan Phoenix and contributors
@@ -98,7 +99,16 @@ public abstract class StringPrimitiveNodes {
 
         @Specialization
         public boolean isCharacterAscii(RubyString character) {
-            return StringSupport.isAsciiOnly(character);
+            final ByteList bytes = character.getByteList();
+            final int codepoint = StringSupport.preciseCodePoint(
+                    bytes.getEncoding(),
+                    bytes.getUnsafeBytes(),
+                    bytes.getBegin(),
+                    bytes.getBegin() + bytes.getRealSize());
+
+            final boolean found = codepoint != -1;
+
+            return found && Encoding.isAscii(codepoint);
         }
     }
 
