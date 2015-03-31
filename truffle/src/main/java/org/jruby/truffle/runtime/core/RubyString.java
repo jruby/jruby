@@ -65,46 +65,6 @@ public class RubyString extends RubyBasicObject implements CodeRangeable {
         return bytes;
     }
 
-    public static String ljust(String string, int length, String padding) {
-        final StringBuilder builder = new StringBuilder();
-
-        builder.append(string);
-
-        int n = 0;
-
-        while (builder.length() < length) {
-            builder.append(padding.charAt(n));
-
-            n++;
-
-            if (n == padding.length()) {
-                n = 0;
-            }
-        }
-
-        return builder.toString();
-    }
-
-    public static String rjust(String string, int length, String padding) {
-        final StringBuilder builder = new StringBuilder();
-
-        int n = 0;
-
-        while (builder.length() + string.length() < length) {
-            builder.append(padding.charAt(n));
-
-            n++;
-
-            if (n == padding.length()) {
-                n = 0;
-            }
-        }
-
-        builder.append(string);
-
-        return builder.toString();
-    }
-
     public int count(RubyString[] otherStrings) {
         if (bytes.getRealSize() == 0) {
             return 0;
