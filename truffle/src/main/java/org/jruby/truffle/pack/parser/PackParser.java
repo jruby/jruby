@@ -225,7 +225,9 @@ public class PackParser {
 
                         final int length;
 
-                        if (tokenizer.peek() instanceof Integer) {
+                        if (tokenizer.peek('*')) {
+                            length = -1;
+                        } else if (tokenizer.peek() instanceof Integer) {
                             length = (int) tokenizer.next();
                         } else {
                             length = 1;

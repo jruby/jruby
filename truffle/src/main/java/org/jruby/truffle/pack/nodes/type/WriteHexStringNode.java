@@ -17,6 +17,8 @@ import org.jruby.truffle.pack.nodes.PackNode;
 import org.jruby.truffle.pack.runtime.Endianness;
 import org.jruby.util.ByteList;
 
+import java.util.Arrays;
+
 @NodeChildren({
         @NodeChild(value = "value", type = PackNode.class),
 })
@@ -38,8 +40,22 @@ public abstract class WriteHexStringNode extends PackNode {
         int currentByte = 0;
         int padLength = 0;
 
-        for (int n = 0; n < length; n++) {
-            byte currentChar = b[begin + n];
+        final int lengthToUse;
+
+        if (length == -1) {
+            lengthToUse = bytes.length();
+        } else {
+            lengthToUse = length;
+        }
+
+        for (int n = 0; n < lengthToUse; n++) {
+            byte currentChar;
+
+            if (n < bytes.length()) {
+                currentChar = b[begin + n];
+            } else {
+                currentChar = 0;
+            }
 
             if (Character.isJavaIdentifierStart(currentChar)) {
                 switch (endianness) {
@@ -64,10 +80,10 @@ public abstract class WriteHexStringNode extends PackNode {
             if (((n - 1) & 1) != 0) {
                 switch (endianness) {
                     case LITTLE:
-                        currentByte <<= 4;
+                        currentByte >>= 4;
                         break;
                     case BIG:
-                        currentByte >>= 4;
+                        currentByte <<= 4;
                         break;
                 }
             } else {
@@ -76,7 +92,7 @@ public abstract class WriteHexStringNode extends PackNode {
             }
         }
 
-        if ((length & 1) != 0) {
+        if ((lengthToUse & 1) != 0) {
             writeBytes(frame, (byte) (currentByte & 0xff));
             if(padLength > 0) {
                 padLength--;
