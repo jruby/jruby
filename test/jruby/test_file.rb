@@ -267,8 +267,7 @@ class TestFile < Test::Unit::TestCase
     end
 
     def test_mkdir_with_non_file_uri_raises_error
-      assert_raises(Errno::ENOTDIR) { FileUtils.mkdir_p("classpath:/META-INF/jruby.home") }
-      assert !File.directory?("classpath:/META-INF/jruby.home")
+      assert_raises(Errno::ENOTDIR) { FileUtils.mkdir_p("classpath:/META-INF/jruby.home/foo") }
     end
 
     def test_mkdir_with_file_uri_works_as_expected

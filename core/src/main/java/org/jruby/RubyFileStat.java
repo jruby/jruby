@@ -134,7 +134,7 @@ public class RubyFileStat extends RubyObject {
             filename += "/";
         }
 
-        file = JRubyFile.createResource(runtime.getPosix(), runtime.getCurrentDirectory(), filename);
+        file = JRubyFile.createResource(runtime, filename);
         stat = lstat ? file.lstat() : file.stat();
 
         if (stat == null) throw runtime.newErrnoFromInt(file.errno(), filename);

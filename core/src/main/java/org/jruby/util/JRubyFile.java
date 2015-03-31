@@ -64,14 +64,10 @@ public class JRubyFile extends JavaSecuredFile {
     }
 
     public static FileResource createResource(Ruby runtime, String pathname) {
-      return createResource(runtime.getPosix(), runtime, runtime.getCurrentDirectory(), pathname);
+      return createResource(runtime, runtime.getCurrentDirectory(), pathname);
     }
 
-    public static FileResource createResource(POSIX posix, String cwd, String pathname) {
-      return createResource(posix, null, cwd, pathname);
-    }
-
-    public static FileResource createResource(POSIX posix, Ruby runtime, String cwd, String pathname) {
+    public static FileResource createResource(Ruby runtime, String cwd, String pathname) {
         FileResource emptyResource = EmptyFileResource.create(pathname);
         if (emptyResource != null) return emptyResource;
 
@@ -81,10 +77,9 @@ public class JRubyFile extends JavaSecuredFile {
         if (jarResource != null) return jarResource;
 
         if (pathname.contains(":")) { // scheme-oriented resources
-            if (pathname.startsWith("classpath:")) return ClasspathResource.create(pathname);
-
+            pathname = pathname.replace("classpath:/", "uri:classloader:/");
             // replace is needed for maven/jruby-complete/src/it/app_using_classpath_uri to work
-            if (pathname.startsWith("uri:")) return URLResource.create(runtime, pathname.replace("classpath:/", ""));
+            if (pathname.startsWith("uri:")) return URLResource.create(runtime, pathname);
 
             if (pathname.startsWith("file:")) {
                 pathname = pathname.substring(5);
@@ -95,11 +90,11 @@ public class JRubyFile extends JavaSecuredFile {
 
         JRubyFile f = create(cwd, pathname);
         if (cwd != null && cwd.startsWith("uri:")){
-            return createResource(posix, runtime, null, f.getPath());
+            return createResource(runtime, null, f.getPath());
         }
 
         // If any other special resource types fail, count it as a filesystem backed resource.
-        return new RegularFileResource(posix, f);
+        return new RegularFileResource(runtime.getPosix(), f);
     }
 
     public static String normalizeSeps(String path) {
