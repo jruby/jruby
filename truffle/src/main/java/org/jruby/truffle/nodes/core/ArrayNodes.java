@@ -434,7 +434,7 @@ public abstract class ArrayNodes {
                 toIntNode = insert(ToIntNodeFactory.create(getContext(), getSourceSection(), null));
             }
             final int index = toIntNode.executeIntegerFixnum(frame, indexObject);
-            return writeNode.executeWrite(frame, array, index, value);
+            return set(frame, array, index, value, unused);
         }
 
         @Specialization
