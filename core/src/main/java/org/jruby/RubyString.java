@@ -914,6 +914,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
         clearCodeRange();
     }
 
+    @Override
     public void modifyAndKeepCodeRange() {
         modify();
         keepCodeRange();

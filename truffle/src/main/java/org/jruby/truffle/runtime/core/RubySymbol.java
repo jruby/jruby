@@ -138,6 +138,12 @@ public class RubySymbol extends RubyBasicObject implements CodeRangeable {
     }
 
     @Override
+    public final void modifyAndKeepCodeRange() {
+        modify();
+        keepCodeRange();
+    }
+
+    @Override
     public Encoding checkEncoding(CodeRangeable other) {
         // TODO (nirvdrum Jan. 13, 2015): This should check if the encodings are compatible rather than just always succeeding.
         return bytes.getEncoding();

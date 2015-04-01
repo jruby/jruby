@@ -151,6 +151,12 @@ public class RubyString extends RubyBasicObject implements CodeRangeable {
     }
 
     @Override
+    public final void modifyAndKeepCodeRange() {
+        modify();
+        keepCodeRange();
+    }
+
+    @Override
     @TruffleBoundary
     public Encoding checkEncoding(CodeRangeable other) {
         final Encoding encoding = StringSupport.areCompatible(this, other);
