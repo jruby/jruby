@@ -65,6 +65,7 @@ import org.jruby.truffle.runtime.core.*;
 import org.jruby.truffle.runtime.rubinius.RubiniusByteArray;
 import org.jruby.util.ByteList;
 import org.jruby.util.CodeRangeSupport;
+import org.jruby.util.CodeRangeable;
 import org.jruby.util.Pack;
 import org.jruby.util.StringSupport;
 import org.jruby.util.io.EncodingUtils;
@@ -862,7 +863,7 @@ public abstract class StringNodes {
         }
 
         @Specialization
-        public Object deleteBang(VirtualFrame frame, RubyString string, Object[] otherStrings) {
+        public Object deleteBang(VirtualFrame frame, RubyString string, Object... otherStrings) {
             if (string.getBytes().length() == 0) {
                 return nil();
             }
@@ -876,7 +877,7 @@ public abstract class StringNodes {
         }
 
         @CompilerDirectives.TruffleBoundary
-        private Object deleteBangSlow(VirtualFrame frame, RubyString string, Object[] args) {
+        private Object deleteBangSlow(VirtualFrame frame, RubyString string, Object... args) {
             RubyString[] otherStrings = new RubyString[args.length];
 
             for (int i = 0; i < args.length; i++) {
@@ -2016,6 +2017,58 @@ public abstract class StringNodes {
 
         public static boolean reverseIsEqualToSelf(RubyString string) {
             return string.getByteList().getRealSize() <= 1;
+        }
+    }
+
+    @CoreMethod(names = "tr!", required = 2, raiseIfFrozenSelf = true)
+    @NodeChildren({
+        @NodeChild(value = "self"),
+        @NodeChild(value = "fromStr"),
+        @NodeChild(value = "toStr")
+    })
+    public abstract static class TrNode extends RubyNode {
+
+        @Child private DeleteBangNode deleteBangNode;
+
+        public TrNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public TrNode(TrNode prev) {
+            super(prev);
+            deleteBangNode = prev.deleteBangNode;
+        }
+
+        @CreateCast("fromStr") public RubyNode coerceFromStrToString(RubyNode fromStr) {
+            return ToStrNodeFactory.create(getContext(), getSourceSection(), fromStr);
+        }
+
+        @CreateCast("toStr") public RubyNode coerceToStrToString(RubyNode toStr) {
+            return ToStrNodeFactory.create(getContext(), getSourceSection(), toStr);
+        }
+
+        @Specialization
+        public Object tr(VirtualFrame frame, RubyString self, RubyString fromStr, RubyString toStr) {
+            if (self.getByteList().getRealSize() == 0) {
+                return nil();
+            }
+
+            if (toStr.getByteList().getRealSize() == 0) {
+                if (deleteBangNode == null) {
+                    CompilerDirectives.transferToInterpreter();
+                    deleteBangNode = insert(StringNodesFactory.DeleteBangNodeFactory.create(getContext(), getSourceSection(), new RubyNode[] {}));
+                }
+
+                return deleteBangNode.deleteBang(frame, self, fromStr);
+            }
+
+            final CodeRangeable ret = StringSupport.trTransHelper(getContext().getRuntime(), self, fromStr, toStr, false);
+
+            if (ret == null) {
+                return nil();
+            }
+
+            return ret;
         }
     }
 
