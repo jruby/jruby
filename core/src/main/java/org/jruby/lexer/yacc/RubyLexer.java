@@ -147,29 +147,6 @@ public class RubyLexer {
         }
     }
 
-    // FIXME: Also sucks that matchMarker will strip off valuable bytes and not work for this (could be a one-liner)
-    private void detectUTF8BOM() throws IOException {
-        int b1 = nextc();
-        if (b1 == 0xef) {
-            int b2 = nextc();
-            if (b2 == 0xbb) {
-                int b3 = nextc();
-                if (b3 == 0xbf) {
-                    setEncoding(UTF8_ENCODING);
-                } else {
-                    pushback(b3);
-                    pushback(b2);
-                    pushback(b1);
-                }
-            } else {
-                pushback(b2);
-                pushback(b1);
-            }
-        } else {
-            pushback(b1);
-        }
-    }
-
     private int numberLiteralSuffix(int mask) throws IOException {
         int c = nextc();
         
@@ -373,7 +350,10 @@ public class RubyLexer {
         parenNest = 0;
         braceNest = 0;
         tokp = 0;
+
+        parser_prepare();
     }
+
     protected int tokp = 0; // Where last token started
     protected ByteList lexb = null;
     protected int lex_p = 0; // Where current position is in current line
@@ -516,6 +496,28 @@ public class RubyLexer {
         heredoc_end = ruby_sourceline;
         ruby_sourceline = here.line;
         flush();
+    }
+
+    public void parser_prepare() {
+        int c = nextc();
+
+        switch(c) {
+            case '#':
+                if (peek('!')) has_shebang = true;
+                break;
+            case 0xef:
+                if (lex_pend - lex_p >= 2 && p(lex_p) == 0xbb && p(lex_p + 1) == 0xbf) {
+                    setEncoding(UTF8_ENCODING);
+                    lex_p += 2;
+                    lex_pbeg = lex_p;
+                    return;
+                }
+                break;
+            case EOF:
+                return;
+        }
+        pushback(c);
+        current_enc = lex_lastline.getEncoding();
     }
 
     public int nextToken() throws IOException {
@@ -1199,10 +1201,6 @@ public class RubyLexer {
         int c;
         boolean spaceSeen = false;
         boolean commandState;
-
-        // FIXME: Sucks we do this n times versus one since it is only important at beginning of parse but we need to change
-        // setup of parser differently.
-        if (token == 0 && ruby_sourceline == 0) detectUTF8BOM();
         
         if (lex_strterm != null) {
             int tok = lex_strterm.parseString(this);
