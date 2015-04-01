@@ -27,7 +27,6 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.runtime.load;
 
-import jnr.posix.JavaSecuredFile;
 import org.jruby.Ruby;
 
 import java.net.URL;
@@ -63,102 +62,61 @@ public class ClassExtensionLibrary implements Library {
      * @return a ClassExtensionLibrary that will boot the ext, or null if none was found
      */
     static ClassExtensionLibrary tryFind(Ruby runtime, String searchName) {
-        // Create package name, by splitting on / and successively accumulating elements to form a class name
-        String[] elts = searchName.split("/");
+        // Create package name, by splitting on / and joining all but the last elements with a ".", and downcasing them.
+        String[] all = searchName.split("/");
 
-        boolean isAbsolute = new JavaSecuredFile(searchName).isAbsolute();
+        // make service name out of last element
+        String serviceName = buildServiceName(all[all.length - 1]);
 
-        String simpleName = buildSimpleName(elts[elts.length - 1]);
+        // allocate once with plenty of space, to reduce object churn
+        StringBuilder classNameBuilder = new StringBuilder(searchName.length() * 2);
+        StringBuilder classFileBuilder = new StringBuilder(searchName.length() * 2);
 
-        int firstElement = isAbsolute ? elts.length - 1 : 0;
-        for (; firstElement >= 0; firstElement--) {
-            String className = buildClassName(elts, firstElement, elts.length - 1, simpleName);
-            ClassExtensionLibrary library = tryServiceLoad(runtime, className);
+        for (int i = all.length - 1; i >= 0; i--) {
+            buildClassName(classNameBuilder, classFileBuilder, all, i, serviceName);
 
-            if (library != null) return library;
-        }
+            // look for the filename in classloader resources
+            URL resource = runtime.getJRubyClassLoader().getResource(classFileBuilder.toString());
+            if (resource == null) continue;
 
-        return null;
-    }
+            String className = classNameBuilder.toString();
 
-    /**
-     * Build the "simple" part of a service class name from the given require path element
-     * by splitting on "_" and concatenating as CamelCase, plus "Service" suffix.
-     *
-     * @param element the element from which to build a simple service class name
-     * @return the resulting simple service class name
-     */
-    private static String buildSimpleName(String element) {
-        StringBuilder nameBuilder = new StringBuilder(element.length() + "Service".length());
-
-        String[] last = element.split("_");
-        for (String part : last) {
-            if (part.isEmpty()) break;
-
-            nameBuilder
-                    .append(Character.toUpperCase(part.charAt(0)))
-                    .append(part, 1, part.length());
-        }
-        nameBuilder.append("Service");
-
-        return nameBuilder.toString();
-    }
-
-    /**
-     * Build the full class name for a service by joining the specified package elements
-     * with '.' and appending the given simple class name.
-     *
-     * @param elts the array from which to retrieve the package elements
-     * @param firstElement the first element to use
-     * @param end the end index at which to stop building the package name
-     * @param simpleName the simple class name for the service
-     * @return the full class name for the service
-     */
-    private static String buildClassName(String[] elts, int firstElement, int end, String simpleName) {
-        StringBuilder nameBuilder = new StringBuilder();
-        for (int offset = firstElement; offset < end; offset++) {
-            // avoid blank elements from leading or double slashes
-            if (elts[offset].isEmpty()) continue;
-
-            nameBuilder
-                    .append(elts[offset].toLowerCase())
-                    .append('.');
-        }
-
-        nameBuilder.append(simpleName);
-
-        return nameBuilder.toString();
-    }
-
-    /**
-     * Try loading the given service class. Rather than raise ClassNotFoundException for
-     * jars that do not contain any service class, we require that the service class be a
-     * "normal" .class file accessible as a classloader resource. If it can be found
-     * using ClassLoader.getResource, we proceed to attempt to load it as a class.
-     *
-     * @param runtime the Ruby runtime into which the extension service will load
-     * @param className the class name of the service class
-     * @return a ClassExtensionLibrary if the service class was found; null otherwise.
-     */
-    private static ClassExtensionLibrary tryServiceLoad(Ruby runtime, String className) {
-        String classFile = className.replaceAll("\\.", "/") + ".class";
-
-        try {
-            // quietly try to load the class, which must be reachable as a .class resource
-            URL resource = runtime.getJRubyClassLoader().getResource(classFile);
-            if (resource != null) {
+            try {
                 Class theClass = runtime.getJavaSupport().loadJavaClass(className);
                 return new ClassExtensionLibrary(className + ".java", theClass);
+            } catch (ClassNotFoundException cnfe) {
+                // file was found but class couldn't load; continue to next package segment
+                continue;
+            } catch (UnsupportedClassVersionError ucve) {
+                if (runtime.isDebug()) ucve.printStackTrace();
+                throw runtime.newLoadError("JRuby ext built for wrong Java version in `" + className + "': " + ucve, className.toString());
             }
-        } catch (ClassNotFoundException cnfe) {
-            if (runtime.isDebug()) cnfe.printStackTrace();
-        } catch (UnsupportedClassVersionError ucve) {
-            if (runtime.isDebug()) ucve.printStackTrace();
-            throw runtime.newLoadError("JRuby ext built for wrong Java version in `" + className + "': " + ucve, className);
         }
 
-        // The class doesn't exist
+        // not found
         return null;
+    }
+
+    private static void buildClassName(StringBuilder nameBuilder, StringBuilder fileBuilder, String[] all, int i, String serviceName) {
+        nameBuilder.setLength(0);
+        fileBuilder.setLength(0);
+        for (int j = i; j < all.length - 1; j++) {
+            nameBuilder.append(all[j]).append(".");
+            fileBuilder.append(all[j]).append("/");
+        }
+        nameBuilder.append(serviceName);
+        fileBuilder.append(serviceName).append(".class");
+    }
+
+    private static String buildServiceName(String jarName) {
+        String[] last = jarName.split("_");
+        StringBuilder serviceName = new StringBuilder();
+        for (int i = 0, j = last.length; i < j; i++) {
+            if ("".equals(last[i])) break;
+            serviceName.append(Character.toUpperCase(last[i].charAt(0))).append(last[i].substring(1));
+        }
+        serviceName.append("Service");
+        return serviceName.toString();
     }
 
     public ClassExtensionLibrary(String name, Class extension) {
