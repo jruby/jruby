@@ -31,17 +31,24 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.parser;
 
+import java.io.BufferedInputStream;
+import java.io.FilterInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 
+import java.nio.channels.Channels;
 import org.jruby.*;
 import org.jruby.ast.Node;
+import org.jruby.lexer.ByteListLexerSource;
+import org.jruby.lexer.GetsLexerSource;
+import org.jruby.lexer.LexerSource;
 import org.jruby.lexer.yacc.*;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.load.LoadServiceResourceInputStream;
 import org.jruby.util.ByteList;
+import org.jruby.util.ShellLauncher;
 
 /**
  * Serves as a simple facade for all the parsing magic.
@@ -67,14 +74,16 @@ public class Parser {
     public Node parse(String file, ByteList content, DynamicScope blockScope,
             ParserConfiguration configuration) {
         configuration.setDefaultEncoding(content.getEncoding());
-        return parse(file, content.bytes(), blockScope, configuration);
+        RubyArray list = getLines(configuration, runtime, file);
+        LexerSource lexerSource = new ByteListLexerSource(file, configuration.getLineNumber(), content, list);
+        return parse(file, lexerSource, blockScope, configuration);
     }
 
     @SuppressWarnings("unchecked")
     public Node parse(String file, byte[] content, DynamicScope blockScope,
             ParserConfiguration configuration) {
         RubyArray list = getLines(configuration, runtime, file);
-        LexerSource lexerSource = LexerSource.getSource(file, content, list, configuration);
+        LexerSource lexerSource = new ByteListLexerSource(file, configuration.getLineNumber(), new ByteList(content), list);
         return parse(file, lexerSource, blockScope, configuration);
     }
 
@@ -83,9 +92,15 @@ public class Parser {
             ParserConfiguration configuration) {
         RubyArray list = getLines(configuration, runtime, file);
         if (content instanceof LoadServiceResourceInputStream) {
+//            System.out.println("FUCK YES!");
             return parse(file, ((LoadServiceResourceInputStream) content).getBytes(), blockScope, configuration);
         } else {
-            LexerSource lexerSource = LexerSource.getSource(file, content, list, configuration);
+            //System.out.println("FUCK NOOOOOOOO!: " + content.getClass().getSimpleName());
+//            if (content instanceof FilterInputStream) {
+//                System.out.println("YYSHSHJASD: " + ShellLauncher.unwrapFilterInputStream(content));
+//            }
+            RubyIO io = RubyIO.newIO(runtime, Channels.newChannel(content));
+            LexerSource lexerSource = new GetsLexerSource(file, configuration.getLineNumber(), io);
             return parse(file, lexerSource, blockScope, configuration);
         }
     }
@@ -101,19 +116,20 @@ public class Parser {
         }
 
         long startTime = System.nanoTime();
-        RubyParser parser = new RubyParser();
+        RubyParser parser = new RubyParser(lexerSource);
         RubyParserResult result = null;
         parser.setWarnings(runtime.getWarnings());
         try {
-            result = parser.parse(configuration, lexerSource);
+            result = parser.parse(configuration);
             if (result.getEndOffset() >= 0 && configuration.isSaveData()) {
                 IRubyObject verbose = runtime.getVerbose();
                 runtime.setVerbose(runtime.getNil());
-                try {
-                    runtime.defineGlobalConstant("DATA", new RubyFile(runtime, file, lexerSource.getRemainingAsStream()));
-                } catch (IOException e) { // Not sure how to handle suddenly closed IO here?
+                //try {
+                    // FIXME: impl
+                    //runtime.defineGlobalConstant("DATA", new RubyFile(runtime, file, lexerSource.getRemainingAsStream()));
+                //} catch (IOException e) { // Not sure how to handle suddenly closed IO here?
                     runtime.defineGlobalConstant("DATA", runtime.getNil());
-                }
+                //}
                 runtime.setVerbose(verbose);
             	result.setEndOffset(-1);
             }

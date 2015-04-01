@@ -1,36 +1,39 @@
 /*
  ***** BEGIN LICENSE BLOCK *****
- * Version: CPL 1.0/GPL 2.0/LGPL 2.1
+ * Version: EPL 1.0/GPL 2.0/LGPL 2.1
  *
- * The contents of this file are subject to the Common Public
+ * The contents of this file are subject to the Eclipse Public
  * License Version 1.0 (the "License"); you may not use this file
  * except in compliance with the License. You may obtain a copy of
- * the License at http://www.eclipse.org/legal/cpl-v10.html
+ * the License at http://www.eclipse.org/legal/epl-v10.html
  *
  * Software distributed under the License is distributed on an "AS
  * IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
  * implied. See the License for the specific language governing
  * rights and limitations under the License.
  *
- * Copyright (C) 2013 The JRuby Team (jruby@jruby.org)
- * 
+ * Copyright (C) 2004 Jan Arne Petersen <jpetersen@uni-bonn.de>
+ * Copyright (C) 2004-2007 Thomas E Enebo <enebo@acm.org>
+ *
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
  * or the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
  * in which case the provisions of the GPL or the LGPL are applicable instead
  * of those above. If you wish to allow use of your version of this file only
  * under the terms of either the GPL or the LGPL, and not to allow others to
- * use your version of this file under the terms of the CPL, indicate your
+ * use your version of this file under the terms of the EPL, indicate your
  * decision by deleting the provisions above and replace them with the notice
  * and other provisions required by the GPL or the LGPL. If you do not delete
  * the provisions above, a recipient may use your version of this file under
- * the terms of any one of the CPL, the GPL or the LGPL.
+ * the terms of any one of the EPL, the GPL or the LGPL.
  ***** END LICENSE BLOCK *****/
 package org.jruby.ext.ripper;
 
 import org.jcodings.Encoding;
+import org.jruby.lexer.LexerSource;
 import org.jruby.util.ByteList;
 
+import static org.jruby.lexer.LexingCommon.*;
 
 /**
  * A lexing unit for scanning a heredoc element.
@@ -93,7 +96,7 @@ public class HeredocTerm extends StrTerm {
         lexer.heredoc_restore(this);
         lexer.setStrTerm(null);
         
-        return RipperLexer.EOF;        
+        return EOF;
     }
     
     @Override
@@ -101,10 +104,10 @@ public class HeredocTerm extends StrTerm {
         ByteList str = null;
         ByteList eos = nd_lit;
         int len = nd_lit.length() - 1;
-        boolean indent = (flags & RipperLexer.STR_FUNC_INDENT) != 0;
+        boolean indent = (flags & STR_FUNC_INDENT) != 0;
         int c = lexer.nextc();
         
-        if (c == RipperLexer.EOF) return error(lexer, len, str, eos);
+        if (c == EOF) return error(lexer, len, str, eos);
 
         // Found end marker for this heredoc
         if (lexer.was_bol() && lexer.whole_match_p(nd_lit, indent)) {
@@ -113,21 +116,23 @@ public class HeredocTerm extends StrTerm {
             return Tokens.tSTRING_END;
         }
 
-        if ((flags & RipperLexer.STR_FUNC_EXPAND) == 0) {
+        if ((flags & STR_FUNC_EXPAND) == 0) {
             do {
                 ByteList lbuf = lexer.lex_lastline;
                 int p = 0;
                 int pend = lexer.lex_pend;
                 if (pend > p) {
-                    switch(lexer.p(pend-1)) { // ENEBO: This seems wrong.
+                    switch(lexer.p(pend-1)) {
                         case '\n':
                             pend--;
                             if (pend == p || lexer.p(pend-1) == '\r') {
                                 pend++;
                                 break;
                             }
+                            break;
                         case '\r':
                             pend--;
+                            break;
                     }
                 }
                 if (str != null) {
@@ -138,12 +143,8 @@ public class HeredocTerm extends StrTerm {
                 
                 if (pend < lexer.lex_pend) str.append('\n');
                 lexer.lex_goto_eol();
-                if (lexer.nextc() == -1) {
-                    if (str != null) {
-                        str = null;
-                        return error(lexer, len, str, eos);
-                    }
-                }
+                // MRI null checks str in this case but it is unconditionally non-null?
+                if (lexer.nextc() == -1) return error(lexer, len, null, eos);
             } while(!lexer.whole_match_p(eos, indent));
         } else {
             ByteList tok = new ByteList();
@@ -168,7 +169,7 @@ public class HeredocTerm extends StrTerm {
                 Encoding enc[] = new Encoding[1];
                 enc[0] = lexer.getEncoding();
                 
-                if ((c = new StringTerm(flags, '\0', '\n').parseStringIntoBuffer(lexer, src, tok, enc)) == RipperLexer.EOF) {
+                if ((c = new StringTerm(flags, '\0', '\n').parseStringIntoBuffer(lexer, src, tok, enc)) == EOF) {
                     if (lexer.eofp) return error(lexer, len, str, eos);
                     return restore(lexer);
                 }
@@ -179,7 +180,7 @@ public class HeredocTerm extends StrTerm {
                 }
                 tok.append(lexer.nextc());
                 
-                if ((c = lexer.nextc()) == RipperLexer.EOF) return error(lexer, len, str, eos);
+                if ((c = lexer.nextc()) == EOF) return error(lexer, len, str, eos);
             } while (!lexer.whole_match_p(eos, indent));
             str = tok;
         }

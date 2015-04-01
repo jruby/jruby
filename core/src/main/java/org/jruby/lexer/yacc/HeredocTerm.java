@@ -29,11 +29,11 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.lexer.yacc;
 
-import org.jruby.ast.StrNode;
-import org.jruby.lexer.yacc.SyntaxException.PID;
+import org.jcodings.Encoding;
 import org.jruby.parser.Tokens;
 import org.jruby.util.ByteList;
 
+import static org.jruby.lexer.LexingCommon.*;
 
 /**
  * A lexing unit for scanning a heredoc element.
@@ -51,92 +51,125 @@ import org.jruby.util.ByteList;
  */
 public class HeredocTerm extends StrTerm {
     // Marker delimiting heredoc boundary
-    private final ByteList marker;
+    private final ByteList nd_lit;
 
     // Expand variables, Indentation of final marker
     private final int flags;
 
+    protected final int nth;
+
+    protected final int line;
+
     // Portion of line right after beginning marker
-    private final ByteList lastLine;
-    
-    public HeredocTerm(ByteList marker, int func, ByteList lastLine) {
-        this.marker = marker;
+    protected final ByteList lastLine;
+
+    public HeredocTerm(ByteList marker, int func, int nth, int line, ByteList lastLine) {
+        this.nd_lit = marker;
         this.flags = func;
+        this.nth = nth;
+        this.line = line;
         this.lastLine = lastLine;
     }
 
-    public int parseString(RubyLexer lexer, LexerSource src) throws java.io.IOException {
-        boolean indent = (flags & RubyLexer.STR_FUNC_INDENT) != 0;
+    protected int error(RubyLexer lexer, int len, ByteList str, ByteList eos) {
+        lexer.compile_error("can't find string \"" + eos.toString() + "\" anywhere before EOF");
+        return -1;
+    }
 
-        if (src.peek(RubyLexer.EOF)) syntaxError(src);
+    protected int restore(RubyLexer lexer) {
+        lexer.heredoc_restore(this);
+        lexer.setStrTerm(null);
+
+        return EOF;
+    }
+
+    @Override
+    public int parseString(RubyLexer lexer) throws java.io.IOException {
+        ByteList str = null;
+        ByteList eos = nd_lit;
+        int len = nd_lit.length() - 1;
+        boolean indent = (flags & STR_FUNC_INDENT) != 0;
+        int c = lexer.nextc();
+
+        if (c == EOF) return error(lexer, len, str, eos);
 
         // Found end marker for this heredoc
-        if (src.lastWasBeginOfLine() && src.matchMarker(marker, indent, true)) {
-            ISourcePosition position = lexer.getPosition();
-            
-            // Put back lastLine for any elements past start of heredoc marker
-            src.unreadMany(lastLine);
-            
-            lexer.yaccValue = marker;
+        if (lexer.was_bol() && lexer.whole_match_p(nd_lit, indent)) {
+            lexer.heredoc_restore(this);
             return Tokens.tSTRING_END;
         }
 
-        ByteList str = new ByteList();
-        str.setEncoding(lexer.getEncoding());
-        ISourcePosition position;
-        
-        if ((flags & RubyLexer.STR_FUNC_EXPAND) == 0) {
+        if ((flags & STR_FUNC_EXPAND) == 0) {
             do {
-                str.append(src.readLineBytes());
-                str.append('\n');
-                if (src.peek(RubyLexer.EOF)) syntaxError(src);
-                position = lexer.getPosition();
-            } while (!src.matchMarker(marker, indent, true));
-        } else {
-            lexer.newtok();
-            int c = src.read();
-            if (c == '#') {
-                switch (c = src.read()) {
-                case '$':
-                case '@':
-                    src.unread(c);
-                    lexer.setValue("#" + c);
-                    return Tokens.tSTRING_DVAR;
-                case '{':
-                    lexer.setValue("#" + c);
-                    return Tokens.tSTRING_DBEG;
+                ByteList lbuf = lexer.lex_lastline;
+                int p = 0;
+                int pend = lexer.lex_pend;
+                if (pend > p) {
+                    switch (lexer.p(pend - 1)) {
+                        case '\n':
+                            pend--;
+                            if (pend == p || lexer.p(pend - 1) == '\r') {
+                                pend++;
+                                break;
+                            }
+                            break;
+                        case '\r':
+                            pend--;
+                            break;
+                    }
                 }
-                str.append('#');
+                if (str != null) {
+                    str.append(lbuf.makeShared(p, pend - p));
+                } else {
+                    str = new ByteList(lbuf.makeShared(p, pend - p));
+                }
+
+                if (pend < lexer.lex_pend) str.append('\n');
+                lexer.lex_goto_eol();
+                // MRI null checks str in this case but it is unconditionally non-null?
+                if (lexer.nextc() == -1) return error(lexer, len, null, eos);
+            } while (!lexer.whole_match_p(eos, indent));
+        } else {
+            ByteList tok = new ByteList();
+            tok.setEncoding(lexer.getEncoding());
+            if (c == '#') {
+                switch (c = lexer.nextc()) {
+                    case '$':
+                    case '@':
+                        lexer.pushback(c);
+                        return Tokens.tSTRING_DVAR;
+                    case '{':
+                        lexer.commandStart = true;
+                        return Tokens.tSTRING_DBEG;
+                }
+                tok.append('#');
             }
 
-            src.unread(c);
-
-            // MRI has extra pointer which makes our code look a little bit
-            // more strange in
-            // comparison
+            // MRI has extra pointer which makes our code look a little bit more strange in comparison
             do {
-                if ((c = new StringTerm(flags, '\0', '\n').parseStringIntoBuffer(lexer, src, str)) == RubyLexer.EOF) {
-                    syntaxError(src);
+                lexer.pushback(c);
+
+                Encoding enc[] = new Encoding[1];
+                enc[0] = lexer.getEncoding();
+
+                if ((c = new StringTerm(flags, '\0', '\n').parseStringIntoBuffer(lexer, tok, enc)) == EOF) {
+                    if (lexer.eofp) return error(lexer, len, str, eos);
+                    return restore(lexer);
                 }
                 if (c != '\n') {
-                    lexer.yaccValue = lexer.createStrNode(lexer.getPosition(), str, 0);
+                    lexer.setValue(lexer.createStr(tok, 0));
                     return Tokens.tSTRING_CONTENT;
                 }
-                str.append(src.read());
-                
-                if (src.peek(RubyLexer.EOF)) syntaxError(src);
-                position = lexer.getPosition();
-            } while (!src.matchMarker(marker, indent, true));
+                tok.append(lexer.nextc());
+
+                if ((c = lexer.nextc()) == EOF) return error(lexer, len, str, eos);
+            } while (!lexer.whole_match_p(eos, indent));
+            str = tok;
         }
 
-        src.unreadMany(lastLine);
+        lexer.heredoc_restore(this);
         lexer.setStrTerm(new StringTerm(-1, '\0', '\0'));
-        lexer.yaccValue = lexer.createStrNode(position, str, 0);
+        lexer.setValue(lexer.createStr(str, 0));
         return Tokens.tSTRING_CONTENT;
-    }
-    
-    private void syntaxError(LexerSource src) {
-        throw new SyntaxException(PID.STRING_MARKER_MISSING, src.getPosition(), src.getCurrentLine(), 
-                "can't find string \"" + marker + "\" anywhere before EOF", marker);
     }
 }

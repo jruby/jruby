@@ -2,9 +2,10 @@
  * To change this template, choose Tools | Templates
  * and open the template in the editor.
  */
-package org.jruby.ext.ripper;
+package org.jruby.lexer;
 
 import org.jcodings.Encoding;
+import org.jruby.RubyArray;
 import org.jruby.util.ByteList;
 
 /**
@@ -13,7 +14,7 @@ import org.jruby.util.ByteList;
 public class ByteListLexerSource extends LexerSource {
     private ByteList completeSource; // The entire source of the file
     private int offset = 0; // Offset into source overall (mri: lex_gets_ptr)
-    
+
     /**
      * Create our food-source for the lexer.
      * 
@@ -21,8 +22,8 @@ public class ByteListLexerSource extends LexerSource {
      * @param line starting line number for source (used by eval)
      * @param in the ByteList backing the source we want to lex
      */
-    public ByteListLexerSource(String sourceName, int line, ByteList in) {
-        super(sourceName, line);
+    public ByteListLexerSource(String sourceName, int line, ByteList in, RubyArray list) {
+        super(sourceName, line, list);
         this.completeSource = in;
     }
     
@@ -57,5 +58,10 @@ public class ByteListLexerSource extends LexerSource {
         offset = end;
         
         return line;
-    }    
+    }
+
+    @Override
+    public int getOffset() {
+        return offset;
+    }
 }

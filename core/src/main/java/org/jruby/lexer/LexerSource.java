@@ -12,7 +12,10 @@
  * implied. See the License for the specific language governing
  * rights and limitations under the License.
  *
- * Copyright (C) 2013 Thomas E Enebo <enebo@acm.org>
+ * Copyright (C) 2004-2006 Thomas E Enebo <enebo@acm.org>
+ * Copyright (C) 2004 Jan Arne Petersen <jpetersen@uni-bonn.de>
+ * Copyright (C) 2004 Stefan Matthias Aust <sma@3plus4.de>
+ * Copyright (C) 2005 Zach Dennis <zdennis@mktec.com>
  * 
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
@@ -26,9 +29,10 @@
  * the provisions above, a recipient may use your version of this file under
  * the terms of any one of the EPL, the GPL or the LGPL.
  ***** END LICENSE BLOCK *****/
-package org.jruby.ext.ripper;
+package org.jruby.lexer;
 
 import org.jcodings.Encoding;
+import org.jruby.RubyArray;
 import org.jruby.util.ByteList;
 
 /**
@@ -37,14 +41,17 @@ import org.jruby.util.ByteList;
 public abstract class LexerSource {
     // The name of this source (e.g. a filename: foo.rb)
     private final String name; // mri: parser_ruby_sourcefile
-    
+
     // Offset specified where to add to actual offset
     private int lineOffset;
 
-    public LexerSource(String sourceName, int lineOffset) {
+    private RubyArray list;
+
+    public LexerSource(String sourceName, int lineOffset, RubyArray list) {
         this.name = sourceName;
         if (lineOffset != 0) lineOffset--; // make sure first line is line lineoffset (1-index fudging)
         this.lineOffset = lineOffset;
+        this.list = list;
     }
 
     /**
@@ -52,16 +59,18 @@ public abstract class LexerSource {
      * @return the files name
      */
     public String getFilename() {
-    	return name;
+        return name;
     }
-    
+
     public int getLineOffset() {
         return lineOffset;
     }
-    
+
     public abstract Encoding getEncoding();
-    
+
     public abstract void setEncoding(Encoding encoding);
-    
+
     public abstract ByteList gets();
+
+    public abstract int getOffset();
 }

@@ -2,7 +2,7 @@
  * To change this template, choose Tools | Templates
  * and open the template in the editor.
  */
-package org.jruby.ext.ripper;
+package org.jruby.lexer;
 
 import org.jcodings.Encoding;
 import org.jruby.RubyEncoding;
@@ -15,9 +15,11 @@ import org.jruby.util.ByteList;
 public class GetsLexerSource extends LexerSource {
     private IRubyObject io;
     private Encoding encoding;
+    private int offset;
     
     public GetsLexerSource(String sourceName, int line, IRubyObject io) {
-        super(sourceName, line);
+        // FIXME: Does this source needs SCRIPT_LINES support?
+        super(sourceName, line, null);
         
         this.io = io;
         encoding = frobnicateEncoding();
@@ -25,7 +27,8 @@ public class GetsLexerSource extends LexerSource {
 
     // FIXME: Should be a hard failure likely if no encoding is possible
     public final Encoding frobnicateEncoding() {
-        if (!io.respondsTo("encoding")) return null;
+        // Non-ripper IO will not have encoding so we will just use default external
+        if (!io.respondsTo("encoding")) return io.getRuntime().getDefaultExternalEncoding();
         
         IRubyObject encodingObject = io.callMethod(io.getRuntime().getCurrentContext(), "encoding");
 
@@ -50,8 +53,13 @@ public class GetsLexerSource extends LexerSource {
         if (result.isNil()) return null;
         
         ByteList bytelist = result.convertToString().getByteList();
+        offset += bytelist.getRealSize();
         bytelist.setEncoding(encoding);
         return bytelist;
     }
-    
+
+    @Override
+    public int getOffset() {
+        return offset;
+    }
 }
