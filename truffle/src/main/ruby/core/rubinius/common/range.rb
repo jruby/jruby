@@ -243,7 +243,7 @@ class Range
     @begin
   end
 
-  def step(step_size=1) # :yields: object
+  def step_internal(step_size=1) # :yields: object
     return to_enum(:step, step_size) unless block_given?
 
     first = @begin

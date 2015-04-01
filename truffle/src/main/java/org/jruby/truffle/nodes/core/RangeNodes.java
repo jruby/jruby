@@ -281,6 +281,169 @@ public abstract class RangeNodes {
 
     }
 
+    @CoreMethod(names = "step", needsBlock = true, optional = 1, returnsEnumeratorIfNoBlock = true)
+    public abstract static class StepNode extends YieldingCoreMethodNode {
+
+        private final BranchProfile breakProfile = BranchProfile.create();
+        private final BranchProfile nextProfile = BranchProfile.create();
+        private final BranchProfile redoProfile = BranchProfile.create();
+
+        public StepNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public StepNode(StepNode prev) {
+            super(prev);
+        }
+
+        @Specialization(guards = "isStepValid")
+        public Object step(VirtualFrame frame, RubyRange.IntegerFixnumRange range, int step, RubyProc block) {
+            int count = 0;
+
+            try {
+                outer:
+                for (int n = range.getBegin(); n < range.getExclusiveEnd(); n += step) {
+                    while (true) {
+                        if (CompilerDirectives.inInterpreter()) {
+                            count++;
+                        }
+
+                        try {
+                            yield(frame, block, n);
+                            continue outer;
+                        } catch (BreakException e) {
+                            breakProfile.enter();
+                            return e.getResult();
+                        } catch (NextException e) {
+                            nextProfile.enter();
+                            continue outer;
+                        } catch (RedoException e) {
+                            redoProfile.enter();
+                        }
+                    }
+                }
+            } finally {
+                if (CompilerDirectives.inInterpreter()) {
+                    getRootNode().reportLoopCount(count);
+                }
+            }
+
+            return range;
+        }
+
+        @Specialization(guards = "isStepValid")
+        public Object step(VirtualFrame frame, RubyRange.LongFixnumRange range, int step, RubyProc block) {
+            int count = 0;
+
+            try {
+                outer:
+                for (long n = range.getBegin(); n < range.getExclusiveEnd(); n += step) {
+                    while (true) {
+                        if (CompilerDirectives.inInterpreter()) {
+                            count++;
+                        }
+
+                        try {
+                            yield(frame, block, n);
+                            continue outer;
+                        } catch (BreakException e) {
+                            breakProfile.enter();
+                            return e.getResult();
+                        } catch (NextException e) {
+                            nextProfile.enter();
+                            continue outer;
+                        } catch (RedoException e) {
+                            redoProfile.enter();
+                        }
+                    }
+                }
+            } finally {
+                if (CompilerDirectives.inInterpreter()) {
+                    getRootNode().reportLoopCount(count);
+                }
+            }
+
+            return range;
+        }
+
+        @Specialization(guards = {"!isStepValidInt","!isUndefinedPlaceholder(arguments[1])"})
+        public Object stepFallback(VirtualFrame frame, RubyRange.IntegerFixnumRange range, Object step, RubyProc block) {
+            return ruby(frame, "step_internal(step, &block)", "step", step, "block", block);
+        }
+
+        @Specialization(guards = {"!isStepValidInt","!isUndefinedPlaceholder(arguments[1])"})
+        public Object stepFallback(VirtualFrame frame, RubyRange.LongFixnumRange range, Object step, RubyProc block) {
+            return ruby(frame, "step_internal(step, &block)", "step", step, "block", block);
+        }
+
+        @Specialization
+        public Object step(VirtualFrame frame, RubyRange.IntegerFixnumRange range, UndefinedPlaceholder step, UndefinedPlaceholder block) {
+            return ruby(frame, "step_internal");
+        }
+
+        @Specialization
+        public Object step(VirtualFrame frame, RubyRange.IntegerFixnumRange range, UndefinedPlaceholder step, RubyProc block) {
+            return ruby(frame, "step_internal(&block)", "block", block);
+        }
+
+        @Specialization(guards = {"!isInteger(arguments[1])","!isLong(arguments[1])","!isUndefinedPlaceholder(arguments[1])"})
+        public Object step(VirtualFrame frame, RubyRange.IntegerFixnumRange range, Object step, UndefinedPlaceholder block) {
+            return ruby(frame, "step_internal(step)", "step", step);
+        }
+
+        @Specialization
+        public Object step(VirtualFrame frame, RubyRange.LongFixnumRange range, UndefinedPlaceholder step, UndefinedPlaceholder block) {
+            return ruby(frame, "step_internal");
+        }
+
+        @Specialization
+        public Object step(VirtualFrame frame, RubyRange.LongFixnumRange range, UndefinedPlaceholder step, RubyProc block) {
+            return ruby(frame, "step_internal(&block)", "block", block);
+        }
+
+        @Specialization(guards = "!isUndefinedPlaceholder(arguments[1])")
+        public Object step(VirtualFrame frame, RubyRange.LongFixnumRange range, Object step, UndefinedPlaceholder block) {
+            return ruby(frame, "step_internal(step)", "step", step);
+        }
+
+        @Specialization(guards = "!isUndefinedPlaceholder(arguments[1])")
+        public Object step(VirtualFrame frame, RubyRange.ObjectRange range, Object step, RubyProc block) {
+            return ruby(frame, "step_internal(step, &block)", "step", step, "block", block);
+        }
+
+        @Specialization
+        public Object step(VirtualFrame frame, RubyRange.ObjectRange range, UndefinedPlaceholder step, UndefinedPlaceholder block) {
+            return ruby(frame, "step_internal");
+        }
+
+        @Specialization
+        public Object step(VirtualFrame frame, RubyRange.ObjectRange range, UndefinedPlaceholder step, RubyProc block) {
+            return ruby(frame, "step_internal(&block)", "block", block);
+        }
+
+        @Specialization(guards = "!isUndefinedPlaceholder(arguments[1])")
+        public Object step(VirtualFrame frame, RubyRange.ObjectRange range, Object step, UndefinedPlaceholder block) {
+            return ruby(frame, "step_internal(step)", "step", step);
+        }
+
+        public static boolean isStepValidInt(RubyRange.IntegerFixnumRange fixnumRange, Object step, RubyProc proc) {
+            return step instanceof Integer && (int) step > 0;
+        }
+
+        public static boolean isStepValidInt(RubyRange.LongFixnumRange fixnumRange, Object step, RubyProc proc) {
+            return step instanceof Integer && (int) step > 0;
+        }
+
+        public static boolean isStepValid(RubyRange.IntegerFixnumRange fixnumRange, int step, RubyProc proc) {
+            return step > 0;
+        }
+
+        public static boolean isStepValid(RubyRange.LongFixnumRange fixnumRange, int step, RubyProc proc) {
+            return step > 0;
+        }
+
+
+    }
 
     @CoreMethod(names = "to_a", lowerFixnumSelf = true)
     public abstract static class ToANode extends CoreMethodNode {
