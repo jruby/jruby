@@ -2026,15 +2026,15 @@ public abstract class StringNodes {
         @NodeChild(value = "fromStr"),
         @NodeChild(value = "toStr")
     })
-    public abstract static class TrNode extends RubyNode {
+    public abstract static class TrBangNode extends RubyNode {
 
         @Child private DeleteBangNode deleteBangNode;
 
-        public TrNode(RubyContext context, SourceSection sourceSection) {
+        public TrBangNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
         }
 
-        public TrNode(TrNode prev) {
+        public TrBangNode(TrBangNode prev) {
             super(prev);
             deleteBangNode = prev.deleteBangNode;
         }
