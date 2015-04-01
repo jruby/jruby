@@ -2113,7 +2113,7 @@ var_ref         : /*mri:user_variable*/ tIDENTIFIER {
                     support.getConfiguration().getRuntime().getEncodingService().getLocaleEncoding()));
                 }
                 | k__LINE__ {
-                    $$ = new FixnumNode(lexer.getPosition(), lexer.tokline.getLine()+1);
+                    $$ = new FixnumNode(lexer.getPosition(), lexer.tokline.getLine());
                 }
                 | k__ENCODING__ {
                     $$ = new EncodingNode(lexer.getPosition(), lexer.getEncoding());

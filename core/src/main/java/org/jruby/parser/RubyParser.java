@@ -4636,7 +4636,7 @@ states[514] = new ParserState() {
 };
 states[515] = new ParserState() {
   @Override public Object execute(ParserSupport support, RubyLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
-                    yyVal = new FixnumNode(lexer.getPosition(), lexer.tokline.getLine()+1);
+                    yyVal = new FixnumNode(lexer.getPosition(), lexer.tokline.getLine());
     return yyVal;
   }
 };
