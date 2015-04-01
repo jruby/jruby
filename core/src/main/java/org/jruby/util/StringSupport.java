@@ -926,7 +926,7 @@ public final class StringSupport {
         t = sub.begin();
         slen = sub.realSize();
 
-        while (s >= sbeg) {
+        while (s >= sbeg && s + slen <= sbeg + str.realSize()) {
             if (ByteList.memcmp(strBytes, s, subBytes, t, slen) == 0) {
                 return pos;
             }
