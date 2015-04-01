@@ -2062,6 +2062,11 @@ public abstract class StringNodes {
                 return deleteBangNode.deleteBang(frame, self, fromStr);
             }
 
+            return trTransHelper(self, fromStr, toStr);
+        }
+
+        @TruffleBoundary
+        private Object trTransHelper(RubyString self, RubyString fromStr, RubyString toStr) {
             final CodeRangeable ret = StringSupport.trTransHelper(getContext().getRuntime(), self, fromStr, toStr, false);
 
             if (ret == null) {
