@@ -45,6 +45,7 @@ import java.nio.charset.UnsupportedCharsetException;
 import java.util.HashMap;
 
 import org.jcodings.Encoding;
+import org.jcodings.specific.UTF16BEEncoding;
 import org.joni.Matcher;
 import org.joni.Option;
 import org.joni.Regex;
@@ -594,7 +595,7 @@ public class RubyLexer {
         Encoding newEncoding = runtime.getEncodingService().loadEncoding(name);
 
         if (newEncoding == null) throw runtime.newArgumentError("unknown encoding name: " + name.toString());
-        if (!newEncoding.isAsciiCompatible()) compile_error(name.toString() + " is not ASCII compatible");
+        if (!newEncoding.isAsciiCompatible()) throw runtime.newArgumentError(name.toString() + " is not ASCII compatible");
 
         setEncoding(newEncoding);
     }
