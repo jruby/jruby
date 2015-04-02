@@ -1566,6 +1566,74 @@ public abstract class StringNodes {
         }
     }
 
+    @CoreMethod(names = "rstrip!", raiseIfFrozenSelf = true)
+    @ImportGuards(StringGuards.class)
+    public abstract static class RstripBangNode extends CoreMethodNode {
+
+        public RstripBangNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public RstripBangNode(RstripBangNode prev) {
+            super(prev);
+        }
+
+        @Specialization(guards = "isSingleByteOptimizable")
+        public Object rstripBangSingleByte(RubyString string) {
+            // Taken from org.jruby.RubyString#rstrip_bang19 and org.jruby.RubyString#singleByteRStrip19.
+
+            if (string.getByteList().getRealSize() == 0) {
+                return nil();
+            }
+
+            final byte[] bytes = string.getByteList().getUnsafeBytes();
+            final int start = string.getByteList().getBegin();
+            final int end = start + string.getByteList().getRealSize();
+            int endp = end - 1;
+            while (endp >= start && (bytes[endp] == 0 ||
+                    ASCIIEncoding.INSTANCE.isSpace(bytes[endp] & 0xff))) endp--;
+
+            if (endp < end - 1) {
+                string.getByteList().view(0, endp - start + 1);
+                string.keepCodeRange();
+
+                return string;
+            }
+
+            return nil();
+        }
+
+        @Specialization(guards = "!isSingleByteOptimizable")
+        public Object rstripBang(RubyString string) {
+            // Taken from org.jruby.RubyString#rstrip_bang19 and org.jruby.RubyString#multiByteRStrip19.
+
+            if (string.getByteList().getRealSize() == 0) {
+                return nil();
+            }
+
+            final Encoding enc = EncodingUtils.STR_ENC_GET(string);
+            final byte[] bytes = string.getByteList().getUnsafeBytes();
+            final int start = string.getByteList().getBegin();
+            final int end = start + string.getByteList().getRealSize();
+
+            int endp = end;
+            int prev;
+            while ((prev = enc.prevCharHead(bytes, start, endp, end)) != -1) {
+                int point = StringSupport.codePoint(getContext().getRuntime(), enc, bytes, prev, end);
+                if (point != 0 && !ASCIIEncoding.INSTANCE.isSpace(point)) break;
+                endp = prev;
+            }
+
+            if (endp < end) {
+                string.getByteList().view(0, endp - start);
+                string.keepCodeRange();
+
+                return string;
+            }
+            return nil();
+        }
+    }
+
     @CoreMethod(names = "swapcase", taintFromSelf = true)
     public abstract static class SwapcaseNode extends CoreMethodNode {
         public SwapcaseNode(RubyContext context, SourceSection sourceSection) {
@@ -1603,32 +1671,6 @@ public abstract class StringNodes {
             string.set(byteList);
             return string;
         }
-    }
-
-    @CoreMethod(names = "rstrip", taintFromSelf = true)
-    public abstract static class RStripNode extends CoreMethodNode {
-
-        public RStripNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
-        public RStripNode(RStripNode prev) {
-            super(prev);
-        }
-
-        @Specialization
-        public RubyString rstrip(RubyString string) {
-            notDesignedForCompilation();
-
-            String str = string.toString();
-            int last = str.length()-1;
-            while (last >= 0 && " \r\n\t".indexOf(str.charAt(last)) != -1) {
-                last--;
-            }
-
-            return getContext().makeString(str.substring(0, last + 1));
-        }
-
     }
 
     @CoreMethod(names = "dump", taintFromSelf = true)
