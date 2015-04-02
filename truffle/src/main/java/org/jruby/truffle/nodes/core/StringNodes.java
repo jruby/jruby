@@ -1515,57 +1515,6 @@ public abstract class StringNodes {
 
     }
 
-    @CoreMethod(names = "rindex", required = 1, optional = 1, lowerFixnumParameters = 1)
-    public abstract static class RindexNode extends CoreMethodNode {
-
-        @Child private SizeNode sizeNode;
-
-        public RindexNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-            sizeNode = StringNodesFactory.SizeNodeFactory.create(context, sourceSection, new RubyNode[] { null });
-        }
-
-        public RindexNode(RindexNode prev) {
-            super(prev);
-            sizeNode = prev.sizeNode;
-        }
-
-        @Specialization
-        public Object rindex(VirtualFrame frame, RubyString string, RubyString subString, @SuppressWarnings("unused") UndefinedPlaceholder endPosition) {
-            notDesignedForCompilation();
-
-            return rindex(frame, string, subString, sizeNode.executeIntegerFixnum(frame, string));
-        }
-
-        @Specialization
-        public Object rindex(VirtualFrame frame, RubyString string, RubyString subString, int endPosition) {
-            notDesignedForCompilation();
-
-            final int stringLength = sizeNode.executeIntegerFixnum(frame, string);
-            int normalizedEndPosition = endPosition;
-
-            if (endPosition < 0) {
-                normalizedEndPosition = endPosition + stringLength;
-
-                if (normalizedEndPosition < 0) {
-                    return nil();
-                }
-            } else if (endPosition > stringLength) {
-                normalizedEndPosition = stringLength;
-            }
-
-            int result = StringSupport.rindex(string.getBytes(), stringLength, subString.length(),
-                    normalizedEndPosition, subString, string.getBytes().getEncoding()
-            );
-
-            if (result >= 0) {
-                return result;
-            } else {
-                return nil();
-            }
-        }
-    }
-
     @CoreMethod(names = "rstrip!", raiseIfFrozenSelf = true)
     @ImportGuards(StringGuards.class)
     public abstract static class RstripBangNode extends CoreMethodNode {
