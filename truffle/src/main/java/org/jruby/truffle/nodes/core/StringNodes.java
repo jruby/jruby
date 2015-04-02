@@ -734,6 +734,62 @@ public abstract class StringNodes {
 
     }
 
+    @CoreMethod(names = "casecmp", required = 1)
+    @NodeChildren({
+        @NodeChild(value = "string"),
+        @NodeChild(value = "other")
+    })
+    public abstract static class CaseCmpNode extends RubyNode {
+
+        public CaseCmpNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public CaseCmpNode(CaseCmpNode prev) {
+            super(prev);
+        }
+
+        @CreateCast("other") public RubyNode coerceOtherToString(RubyNode other) {
+            return ToStrNodeFactory.create(getContext(), getSourceSection(), other);
+        }
+
+        @Specialization(guards = "bothSingleByteOptimizable")
+        public Object caseCmpSingleByte(RubyString string, RubyString other) {
+            // Taken from org.jruby.RubyString#casecmp19.
+
+            if (StringSupport.areCompatible(string, other) == null) {
+                return nil();
+            }
+
+            return string.getByteList().caseInsensitiveCmp(other.getByteList());
+        }
+
+        @Specialization(guards = "!bothSingleByteOptimizable")
+        public Object caseCmp(RubyString string, RubyString other) {
+            // Taken from org.jruby.RubyString#casecmp19 and
+
+            final Encoding encoding = StringSupport.areCompatible(string, other);
+
+            if (encoding == null) {
+                return nil();
+            }
+
+            return multiByteCasecmp(encoding, string.getByteList(), other.getByteList());
+        }
+
+        @TruffleBoundary
+        private int multiByteCasecmp(Encoding enc, ByteList value, ByteList otherValue) {
+            return StringSupport.multiByteCasecmp(enc, value, otherValue);
+        }
+
+        public static boolean bothSingleByteOptimizable(RubyString string, RubyString other) {
+            final boolean stringSingleByteOptimizable = StringSupport.isSingleByteOptimizable(string, string.getByteList().getEncoding());
+            final boolean otherSingleByteOptimizable = StringSupport.isSingleByteOptimizable(other, other.getByteList().getEncoding());
+
+            return stringSingleByteOptimizable && otherSingleByteOptimizable;
+        }
+    }
+
     @CoreMethod(names = "chop!", raiseIfFrozenSelf = true)
     public abstract static class ChopBangNode extends CoreMethodNode {
 
