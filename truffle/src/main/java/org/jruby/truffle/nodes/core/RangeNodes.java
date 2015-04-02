@@ -14,6 +14,7 @@ import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.utilities.BranchProfile;
+import org.jruby.Ruby;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.nodes.RubyRootNode;
 import org.jruby.truffle.nodes.dispatch.*;
@@ -30,65 +31,7 @@ import org.jruby.truffle.runtime.core.RubyString;
 @CoreClass(name = "Range")
 public abstract class RangeNodes {
 
-    @CoreMethod(names = "==", required = 1)
-    public abstract static class EqualNode extends CoreMethodNode {
 
-        @Child private KernelNodes.SameOrEqualNode equalNode;
-
-        public EqualNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
-        public EqualNode(EqualNode prev) {
-            super(prev);
-        }
-
-        protected boolean equal(VirtualFrame frame, Object a, Object b) {
-            if (equalNode == null) {
-                CompilerDirectives.transferToInterpreterAndInvalidate();
-                equalNode = insert(KernelNodesFactory.SameOrEqualNodeFactory.create(getContext(), getSourceSection(), new RubyNode[]{null, null}));
-            }
-            return equalNode.executeSameOrEqual(frame, a, b);
-
-        }
-
-        @Specialization
-        public boolean equal(RubyRange.IntegerFixnumRange a, RubyRange.IntegerFixnumRange b) {
-            notDesignedForCompilation();
-
-            return a.doesExcludeEnd() == b.doesExcludeEnd() && a.getBegin() == b.getBegin() && a.getEnd() == b.getEnd();
-        }
-
-        @Specialization
-        public boolean equal(RubyRange.IntegerFixnumRange a, RubyRange.LongFixnumRange b) {
-            notDesignedForCompilation();
-
-            return a.doesExcludeEnd() == b.doesExcludeEnd() && a.getBegin() == b.getBegin() && a.getEnd() == b.getEnd();
-        }
-
-        @Specialization
-        public boolean equal(RubyRange.LongFixnumRange a, RubyRange.LongFixnumRange b) {
-            notDesignedForCompilation();
-
-            return a.doesExcludeEnd() == b.doesExcludeEnd() && a.getBegin() == b.getBegin() && a.getEnd() == b.getEnd();
-        }
-
-        @Specialization
-        public boolean equal(RubyRange.LongFixnumRange a, RubyRange.IntegerFixnumRange b) {
-            notDesignedForCompilation();
-
-            return a.doesExcludeEnd() == b.doesExcludeEnd() && a.getBegin() == b.getBegin() && a.getEnd() == b.getEnd();
-        }
-
-        @Specialization
-        public boolean equal(VirtualFrame frame, RubyRange.ObjectRange a, RubyRange.ObjectRange b) {
-            notDesignedForCompilation();
-
-            return a.doesExcludeEnd() == b.doesExcludeEnd() &&
-                    equal(frame, a.getBegin(), b.getBegin()) &&
-                    equal(frame, a.getEnd(), b.getEnd());
-        }
-    }
 
     @CoreMethod(names = {"collect", "map"}, needsBlock = true, lowerFixnumSelf = true)
     public abstract static class CollectNode extends YieldingCoreMethodNode {
@@ -186,6 +129,58 @@ public abstract class RangeNodes {
             return range;
         }
 
+        @Specialization
+        public Object each(VirtualFrame frame, RubyRange.LongFixnumRange range, RubyProc block) {
+            final long exclusiveEnd = range.getExclusiveEnd();
+
+            int count = 0;
+
+            try {
+                outer:
+                for (long n = range.getBegin(); n < exclusiveEnd; n++) {
+                    while (true) {
+                        if (CompilerDirectives.inInterpreter()) {
+                            count++;
+                        }
+
+                        try {
+                            yield(frame, block, n);
+                            continue outer;
+                        } catch (BreakException e) {
+                            breakProfile.enter();
+                            return e.getResult();
+                        } catch (NextException e) {
+                            nextProfile.enter();
+                            continue outer;
+                        } catch (RedoException e) {
+                            redoProfile.enter();
+                        }
+                    }
+                }
+            } finally {
+                if (CompilerDirectives.inInterpreter()) {
+                    getRootNode().reportLoopCount(count);
+                }
+            }
+
+            return range;
+        }
+
+        @Specialization
+        public Object each(VirtualFrame frame, RubyRange.LongFixnumRange range, UndefinedPlaceholder proc) {
+            return ruby(frame, "each_internal(&block)", "block", nil());
+        }
+
+        @Specialization
+        public Object each(VirtualFrame frame, RubyRange.ObjectRange range, UndefinedPlaceholder proc) {
+            return ruby(frame, "each_internal(&block)", "block", nil());
+        }
+
+        @Specialization
+        public Object each(VirtualFrame frame, RubyRange.ObjectRange range, RubyProc proc) {
+            return ruby(frame, "each_internal(&block)", "block", proc);
+        }
+
     }
 
     @CoreMethod(names = "exclude_end?")
@@ -206,7 +201,7 @@ public abstract class RangeNodes {
 
     }
 
-    @CoreMethod(names = { "begin", "first" })
+    @CoreMethod(names = "begin")
     public abstract static class BeginNode extends CoreMethodNode {
 
         public BeginNode(RubyContext context, SourceSection sourceSection) {
@@ -223,61 +218,18 @@ public abstract class RangeNodes {
         }
 
         @Specialization
+        public long each(RubyRange.LongFixnumRange range) {
+            return range.getBegin();
+        }
+
+        @Specialization
         public Object each(RubyRange.ObjectRange range) {
             return range.getBegin();
         }
 
     }
 
-    @CoreMethod(names = {"include?", "==="}, required = 1)
-    public abstract static class IncludeNode extends CoreMethodNode {
-
-        @Child private CallDispatchHeadNode callLess;
-        @Child private CallDispatchHeadNode callGreater;
-        @Child private CallDispatchHeadNode callGreaterEqual;
-
-        public IncludeNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-            callLess = DispatchHeadNodeFactory.createMethodCall(context, false, false, null);
-            callGreater = DispatchHeadNodeFactory.createMethodCall(context, false, false, null);
-            callGreaterEqual = DispatchHeadNodeFactory.createMethodCall(context, false, false, null);
-        }
-
-        public IncludeNode(IncludeNode prev) {
-            super(prev);
-            callLess = prev.callLess;
-            callGreater = prev.callGreater;
-            callGreaterEqual = prev.callGreaterEqual;
-        }
-
-        @Specialization
-        public boolean include(RubyRange.IntegerFixnumRange range, int value) {
-            return value >= range.getBegin() && value < range.getExclusiveEnd();
-        }
-
-        @Specialization
-        public boolean include(VirtualFrame frame, RubyRange.ObjectRange range, Object value) {
-            notDesignedForCompilation();
-
-            if (callLess.callBoolean(frame, value, "<", null, range.getBegin())) {
-                return false;
-            }
-
-            if (range.doesExcludeEnd()) {
-                if (callGreaterEqual.callBoolean(frame, value, ">=", null, range.getEnd())) {
-                    return false;
-                }
-            } else {
-                if (callGreater.callBoolean(frame, value, ">", null, range.getEnd())) {
-                    return false;
-                }
-            }
-
-            return true;
-        }
-    }
-
-    @CoreMethod(names = "initialize", required = 2, optional = 1)
+    @CoreMethod(names = "initialize_internal", required = 2, optional = 1)
     public abstract static class InitializeNode extends CoreMethodNode {
 
         public InitializeNode(RubyContext context, SourceSection sourceSection) {
@@ -301,7 +253,7 @@ public abstract class RangeNodes {
 
     }
 
-    @CoreMethod(names = { "end", "last" })
+    @CoreMethod(names = "end")
     public abstract static class EndNode extends CoreMethodNode {
 
         public EndNode(RubyContext context, SourceSection sourceSection) {
@@ -318,13 +270,18 @@ public abstract class RangeNodes {
         }
 
         @Specialization
+        public long last(RubyRange.LongFixnumRange range) {
+            return range.getEnd();
+        }
+
+        @Specialization
         public Object last(RubyRange.ObjectRange range) {
             return range.getEnd();
         }
 
     }
 
-    @CoreMethod(names = "step", needsBlock = true, required = 1, returnsEnumeratorIfNoBlock = true)
+    @CoreMethod(names = "step", needsBlock = true, optional = 1, returnsEnumeratorIfNoBlock = true)
     public abstract static class StepNode extends YieldingCoreMethodNode {
 
         private final BranchProfile breakProfile = BranchProfile.create();
@@ -339,7 +296,7 @@ public abstract class RangeNodes {
             super(prev);
         }
 
-        @Specialization
+        @Specialization(guards = "isStepValid(range, step, block)")
         public Object step(VirtualFrame frame, RubyRange.IntegerFixnumRange range, int step, RubyProc block) {
             int count = 0;
 
@@ -374,6 +331,118 @@ public abstract class RangeNodes {
             return range;
         }
 
+        @Specialization(guards = "isStepValid(range, step, block)")
+        public Object step(VirtualFrame frame, RubyRange.LongFixnumRange range, int step, RubyProc block) {
+            int count = 0;
+
+            try {
+                outer:
+                for (long n = range.getBegin(); n < range.getExclusiveEnd(); n += step) {
+                    while (true) {
+                        if (CompilerDirectives.inInterpreter()) {
+                            count++;
+                        }
+
+                        try {
+                            yield(frame, block, n);
+                            continue outer;
+                        } catch (BreakException e) {
+                            breakProfile.enter();
+                            return e.getResult();
+                        } catch (NextException e) {
+                            nextProfile.enter();
+                            continue outer;
+                        } catch (RedoException e) {
+                            redoProfile.enter();
+                        }
+                    }
+                }
+            } finally {
+                if (CompilerDirectives.inInterpreter()) {
+                    getRootNode().reportLoopCount(count);
+                }
+            }
+
+            return range;
+        }
+
+        @Specialization(guards = {"!isStepValidInt(range, step, block)","!isUndefinedPlaceholder(step)"})
+        public Object stepFallback(VirtualFrame frame, RubyRange.IntegerFixnumRange range, Object step, RubyProc block) {
+            return ruby(frame, "step_internal(step, &block)", "step", step, "block", block);
+        }
+
+        @Specialization(guards = {"!isStepValidInt(range, step, block)","!isUndefinedPlaceholder(step)"})
+        public Object stepFallback(VirtualFrame frame, RubyRange.LongFixnumRange range, Object step, RubyProc block) {
+            return ruby(frame, "step_internal(step, &block)", "step", step, "block", block);
+        }
+
+        @Specialization
+        public Object step(VirtualFrame frame, RubyRange.IntegerFixnumRange range, UndefinedPlaceholder step, UndefinedPlaceholder block) {
+            return ruby(frame, "step_internal");
+        }
+
+        @Specialization
+        public Object step(VirtualFrame frame, RubyRange.IntegerFixnumRange range, UndefinedPlaceholder step, RubyProc block) {
+            return ruby(frame, "step_internal(&block)", "block", block);
+        }
+
+        @Specialization(guards = {"!isInteger(step)","!isLong(step)","!isUndefinedPlaceholder(step)"})
+        public Object step(VirtualFrame frame, RubyRange.IntegerFixnumRange range, Object step, UndefinedPlaceholder block) {
+            return ruby(frame, "step_internal(step)", "step", step);
+        }
+
+        @Specialization
+        public Object step(VirtualFrame frame, RubyRange.LongFixnumRange range, UndefinedPlaceholder step, UndefinedPlaceholder block) {
+            return ruby(frame, "step_internal");
+        }
+
+        @Specialization
+        public Object step(VirtualFrame frame, RubyRange.LongFixnumRange range, UndefinedPlaceholder step, RubyProc block) {
+            return ruby(frame, "step_internal(&block)", "block", block);
+        }
+
+        @Specialization(guards = "!isUndefinedPlaceholder(step)")
+        public Object step(VirtualFrame frame, RubyRange.LongFixnumRange range, Object step, UndefinedPlaceholder block) {
+            return ruby(frame, "step_internal(step)", "step", step);
+        }
+
+        @Specialization(guards = "!isUndefinedPlaceholder(step)")
+        public Object step(VirtualFrame frame, RubyRange.ObjectRange range, Object step, RubyProc block) {
+            return ruby(frame, "step_internal(step, &block)", "step", step, "block", block);
+        }
+
+        @Specialization
+        public Object step(VirtualFrame frame, RubyRange.ObjectRange range, UndefinedPlaceholder step, UndefinedPlaceholder block) {
+            return ruby(frame, "step_internal");
+        }
+
+        @Specialization
+        public Object step(VirtualFrame frame, RubyRange.ObjectRange range, UndefinedPlaceholder step, RubyProc block) {
+            return ruby(frame, "step_internal(&block)", "block", block);
+        }
+
+        @Specialization(guards = "!isUndefinedPlaceholder(step)")
+        public Object step(VirtualFrame frame, RubyRange.ObjectRange range, Object step, UndefinedPlaceholder block) {
+            return ruby(frame, "step_internal(step)", "step", step);
+        }
+
+        public static boolean isStepValidInt(RubyRange.IntegerFixnumRange fixnumRange, Object step, RubyProc proc) {
+            return step instanceof Integer && (int) step > 0;
+        }
+
+        public static boolean isStepValidInt(RubyRange.LongFixnumRange fixnumRange, Object step, RubyProc proc) {
+            return step instanceof Integer && (int) step > 0;
+        }
+
+        public static boolean isStepValid(RubyRange.IntegerFixnumRange fixnumRange, int step, RubyProc proc) {
+            return step > 0;
+        }
+
+        public static boolean isStepValid(RubyRange.LongFixnumRange fixnumRange, int step, RubyProc proc) {
+            return step > 0;
+        }
+
+
     }
 
     @CoreMethod(names = "to_a", lowerFixnumSelf = true)
@@ -405,40 +474,12 @@ public abstract class RangeNodes {
             }
         }
 
-    }
-
-    @CoreMethod(names = "to_s")
-    public abstract static class ToSNode extends CoreMethodNode {
-
-        @Child private CallDispatchHeadNode toS;
-
-        public ToSNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-            toS = DispatchHeadNodeFactory.createMethodCall(context);
-        }
-
-        public ToSNode(ToSNode prev) {
-            super(prev);
-            toS = prev.toS;
-        }
 
         @Specialization
-        public RubyString toS(RubyRange.IntegerFixnumRange range) {
-            notDesignedForCompilation();
-
-            return getContext().makeString(range.getBegin() + (range.doesExcludeEnd() ? "..." : "..") + range.getEnd());
+        public Object toA(VirtualFrame frame, RubyRange.ObjectRange range) {
+            return ruby(frame, "to_a_internal");
         }
 
-        @Specialization
-        public RubyString toS(VirtualFrame frame, RubyRange.ObjectRange range) {
-            notDesignedForCompilation();
-
-            // TODO(CS): cast?
-            final RubyString begin = (RubyString) toS.call(frame, range.getBegin(), "to_s", null);
-            final RubyString end = (RubyString) toS.call(frame, range.getBegin(), "to_s", null);
-
-            return getContext().makeString(begin + (range.doesExcludeEnd() ? "..." : "..") + end);
-        }
     }
 
 }

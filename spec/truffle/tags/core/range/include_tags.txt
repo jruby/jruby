@@ -1,8 +1,1 @@
-fails:Range#include? returns true if other is an element of self
 fails:Range#include? compares values using <=>
-fails:Range#include? returns false if range is empty
-fails:Range#include? returns false if the range does not contain the argument
-fails:Range#include? on string elements returns false if other is not matched by element.succ
-fails:Range#include? with weird succ when included end value returns false if other is not matched by element.succ
-fails:Range#include? with weird succ when included end value returns false if other is equal as last element but not matched by element.succ
-fails:Range#include? with weird succ when excluded end value returns false if other is not matched by element.succ

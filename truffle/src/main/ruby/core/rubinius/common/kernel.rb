@@ -88,6 +88,46 @@ module Kernel
   end
   private :FloatValue
 
+  def Integer(obj, base=nil)
+    if obj.kind_of? String
+      if obj.empty?
+        raise ArgumentError, "invalid value for Integer: (empty string)"
+      else
+        base ||= 0
+        return obj.to_inum(base, true)
+      end
+    end
+
+    if base
+      raise ArgumentError, "base is only valid for String values"
+    end
+
+    case obj
+      when Integer
+        obj
+      when Float
+        if obj.nan? or obj.infinite?
+          raise FloatDomainError, "unable to coerce #{obj} to Integer"
+        else
+          obj.to_int
+        end
+      when NilClass
+        raise TypeError, "can't convert nil into Integer"
+      else
+        # Can't use coerce_to or try_convert because I think there is an
+        # MRI bug here where it will return the value without checking
+        # the return type.
+        if obj.respond_to? :to_int
+          if val = obj.to_int
+            return val
+          end
+        end
+
+        Rubinius::Type.coerce_to obj, Integer, :to_i
+    end
+  end
+  module_function :Integer
+
   ##
   # MRI uses a macro named StringValue which has essentially the same
   # semantics as obj.coerce_to(String, :to_str), but rather than using that

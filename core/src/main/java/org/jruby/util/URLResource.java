@@ -24,8 +24,8 @@ import org.jruby.util.io.ModeFlags;
 public class URLResource extends AbstractFileResource {
 
     public static String URI = "uri:";
-    public static String CLASSLOADER = "classloader:/";
-    public static String URI_CLASSLOADER = URI + CLASSLOADER;
+    public static String CLASSLOADER = "classloader:";
+    public static String URI_CLASSLOADER = URI + CLASSLOADER + "/";
 
     private final String uri;
 
@@ -150,17 +150,12 @@ public class URLResource extends AbstractFileResource {
     }
 
     public static FileResource createClassloaderURI(Ruby runtime, String pathname) {
-        // retrieve the classloader from the runtime if available otherwise mimic how the runtime got its classloader and
-        // take this
-        ClassLoader cl = runtime != null ? runtime.getJRubyClassLoader() : URLResource.class.getClassLoader();
-        if (cl == null ) {
-            cl = Thread.currentThread().getContextClassLoader();
-        }
+        ClassLoader cl = runtime.getJRubyClassLoader();
         try
         {
             pathname = new URI(pathname.replaceFirst("^/*", "/")).normalize().getPath().replaceAll("^/([.][.]/)*", "");
         } catch (URISyntaxException e) {
-            pathname = pathname.replaceAll("^[.]?/+", "");
+            pathname = pathname.replaceAll("^[.]?/*", "");
         }
         URL url = cl.getResource(pathname);
         String[] files = listClassLoaderFiles(cl, pathname);

@@ -15,7 +15,6 @@ import org.jruby.RubyString;
 import org.jruby.ast.executable.Script;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.load.LoadService.SuffixType;
-import org.jruby.util.ClasspathResource;
 import org.jruby.util.FileResource;
 import org.jruby.util.JRubyFile;
 import org.jruby.util.URLResource;
@@ -133,6 +132,7 @@ class LibrarySearcher {
           return findFileResource(baseName, suffix);
         }
 
+        // search the $LOAD_PATH
         try {
             for (IRubyObject loadPathEntry : loadService.loadPath.toJavaArray()) {
                 FoundLibrary library = findFileResourceWithLoadPath(baseName, suffix, getPath(loadPathEntry));
@@ -142,7 +142,19 @@ class LibrarySearcher {
             t.printStackTrace();
         }
 
-        return null;
+        // inside a classloader the path "." is the place where to find the jruby kernel
+        if (!runtime.getCurrentDirectory().startsWith(URLResource.URI_CLASSLOADER)) {
+
+            // ruby does not load a relative path unless the current working directory is in $LOAD_PATH
+            FoundLibrary library = findFileResourceWithLoadPath(baseName, suffix, ".");
+
+            // we did not find the file on the $LOAD_PATH but in current directory so we need to treat it
+            // as not found (the classloader search below will find it otherwise)
+            if (library != null) return null;
+        }
+
+        // load the jruby kernel and all resource added to $CLASSPATH
+        return findFileResourceWithLoadPath(baseName, suffix, URLResource.URI_CLASSLOADER);
     }
 
     // FIXME: to_path should not be called n times it should only be once and that means a cache which would
@@ -263,12 +275,7 @@ class LibrarySearcher {
         private void loadJar(Ruby runtime, boolean wrap) {
             try {
                 URL url;
-                if (location.startsWith(ClasspathResource.CLASSPATH)){
-                    // get URL directly from the classloader with its StreamHandler set
-                    // by the classloader itself
-                    url = ClasspathResource.getResourceURL(location);
-                }
-                else if (location.startsWith(URLResource.URI)){
+                if (location.startsWith(URLResource.URI)){
                     url = null;
                     runtime.getJRubyClassLoader().addURLNoIndex(URLResource.getResourceURL(runtime, location));
                 }

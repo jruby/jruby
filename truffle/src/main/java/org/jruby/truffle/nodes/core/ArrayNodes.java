@@ -428,6 +428,16 @@ public abstract class ArrayNodes {
             toIntNode = prev.toIntNode;
         }
 
+        @Specialization(guards = {"!isInteger(indexObject)", "!isIntegerFixnumRange(indexObject)"})
+        public Object set(VirtualFrame frame, RubyArray array, Object indexObject, Object value, UndefinedPlaceholder unused) {
+            if (toIntNode == null) {
+                CompilerDirectives.transferToInterpreter();
+                toIntNode = insert(ToIntNodeFactory.create(getContext(), getSourceSection(), null));
+            }
+            final int index = toIntNode.executeIntegerFixnum(frame, indexObject);
+            return set(frame, array, index, value, unused);
+        }
+
         @Specialization
         public Object set(VirtualFrame frame, RubyArray array, int index, Object value, UndefinedPlaceholder unused) {
             final int normalizedIndex = array.normalizeIndex(index);

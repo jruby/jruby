@@ -926,7 +926,7 @@ public final class StringSupport {
         t = sub.begin();
         slen = sub.realSize();
 
-        while (s >= sbeg) {
+        while (s >= sbeg && s + slen <= sbeg + str.realSize()) {
             if (ByteList.memcmp(strBytes, s, subBytes, t, slen) == 0) {
                 return pos;
             }
@@ -1717,6 +1717,239 @@ public final class StringSupport {
         }
         else {
             return rb_memsearch_qs(xBytes, x0, m, yBytes, y0, n);
+        }
+    }
+
+    /**
+     * rb_str_tr / rb_str_tr_bang
+     */
+
+    public static CodeRangeable trTransHelper(Ruby runtime, CodeRangeable self, CodeRangeable srcStr, CodeRangeable replStr, boolean sflag) {
+        // This method does not handle the cases where either srcStr or replStr are empty.  It is the responsibility
+        // of the caller to take the appropriate action in those cases.
+
+        final ByteList srcList = srcStr.getByteList();
+        final ByteList replList = replStr.getByteList();
+
+        int cr = self.getCodeRange();
+        Encoding e1 = self.checkEncoding(srcStr);
+        Encoding e2 = self.checkEncoding(replStr);
+        Encoding enc = e1 == e2 ? e1 : srcStr.checkEncoding(replStr);
+
+        final StringSupport.TR trSrc = new StringSupport.TR(srcList);
+        boolean cflag = false;
+        int[] l = {0};
+
+        if (self.getByteList().getRealSize() > 1 &&
+                EncodingUtils.encAscget(trSrc.buf, trSrc.p, trSrc.pend, l, enc) == '^' &&
+                trSrc.p + 1 < trSrc.pend){
+            cflag = true;
+            trSrc.p++;
+        }
+
+        int c, c0, last = 0;
+        final int[]trans = new int[StringSupport.TRANS_SIZE];
+        final StringSupport.TR trRepl = new StringSupport.TR(replList);
+        boolean modify = false;
+        IntHash<Integer> hash = null;
+        boolean singlebyte = StringSupport.isSingleByteOptimizable(self, EncodingUtils.STR_ENC_GET(self));
+
+        if (cflag) {
+            for (int i=0; i< StringSupport.TRANS_SIZE; i++) {
+                trans[i] = 1;
+            }
+
+            while ((c = StringSupport.trNext(trSrc, runtime, enc)) != -1) {
+                if (c < StringSupport.TRANS_SIZE) {
+                    trans[c] = -1;
+                } else {
+                    if (hash == null) hash = new IntHash<Integer>();
+                    hash.put(c, 1); // QTRUE
+                }
+            }
+            while ((c = StringSupport.trNext(trRepl, runtime, enc)) != -1) {}  /* retrieve last replacer */
+            last = trRepl.now;
+            for (int i=0; i< StringSupport.TRANS_SIZE; i++) {
+                if (trans[i] != -1) {
+                    trans[i] = last;
+                }
+            }
+        } else {
+            for (int i=0; i< StringSupport.TRANS_SIZE; i++) {
+                trans[i] = -1;
+            }
+
+            while ((c = StringSupport.trNext(trSrc, runtime, enc)) != -1) {
+                int r = StringSupport.trNext(trRepl, runtime, enc);
+                if (r == -1) r = trRepl.now;
+                if (c < StringSupport.TRANS_SIZE) {
+                    trans[c] = r;
+                    if (codeLength(enc, r) != 1) singlebyte = false;
+                } else {
+                    if (hash == null) hash = new IntHash<Integer>();
+                    hash.put(c, r);
+                }
+            }
+        }
+
+        if (cr == CR_VALID) {
+            cr = CR_7BIT;
+        }
+        self.modifyAndKeepCodeRange();
+        int s = self.getByteList().getBegin();
+        int send = s + self.getByteList().getRealSize();
+        byte sbytes[] = self.getByteList().getUnsafeBytes();
+
+        if (sflag) {
+            int clen, tlen;
+            int max = self.getByteList().getRealSize();
+            int save = -1;
+            byte[] buf = new byte[max];
+            int t = 0;
+            while (s < send) {
+                boolean mayModify = false;
+                c0 = c = codePoint(runtime, e1, sbytes, s, send);
+                clen = codeLength(e1, c);
+                tlen = enc == e1 ? clen : codeLength(enc, c);
+                s += clen;
+
+                if (c < TRANS_SIZE) {
+                    c = trCode(c, trans, hash, cflag, last, false);
+                } else if (hash != null) {
+                    Integer tmp = hash.get(c);
+                    if (tmp == null) {
+                        if (cflag) {
+                            c = last;
+                        } else {
+                            c = -1;
+                        }
+                    } else if (cflag) {
+                        c = -1;
+                    } else {
+                        c = tmp;
+                    }
+                } else {
+                    c = -1;
+                }
+
+                if (c != -1) {
+                    if (save == c) {
+                        if (cr == CR_7BIT && !Encoding.isAscii(c)) cr = CR_VALID;
+                        continue;
+                    }
+                    save = c;
+                    tlen = codeLength(enc, c);
+                    modify = true;
+                } else {
+                    save = -1;
+                    c = c0;
+                    if (enc != e1) mayModify = true;
+                }
+
+                while (t + tlen >= max) {
+                    max *= 2;
+                    buf = Arrays.copyOf(buf, max);
+                }
+                enc.codeToMbc(c, buf, t);
+                // MRI does not check s < send again because their null terminator can still be compared
+                if (mayModify && (s >= send || ByteList.memcmp(sbytes, s, buf, t, tlen) != 0)) modify = true;
+                if (cr == CR_7BIT && !Encoding.isAscii(c)) cr = CR_VALID;
+                t += tlen;
+            }
+            self.getByteList().setUnsafeBytes(buf);
+            self.getByteList().setRealSize(t);
+        } else if (enc.isSingleByte() || (singlebyte && hash == null)) {
+            while (s < send) {
+                c = sbytes[s] & 0xff;
+                if (trans[c] != -1) {
+                    if (!cflag) {
+                        c = trans[c];
+                        sbytes[s] = (byte)c;
+                    } else {
+                        sbytes[s] = (byte)last;
+                    }
+                    modify = true;
+                }
+                if (cr == CR_7BIT && !Encoding.isAscii(c)) cr = CR_VALID;
+                s++;
+            }
+        } else {
+            int clen, tlen, max = (int)(self.getByteList().realSize() * 1.2);
+            byte[] buf = new byte[max];
+            int t = 0;
+
+            while (s < send) {
+                boolean mayModify = false;
+                c0 = c = codePoint(runtime, e1, sbytes, s, send);
+                clen = codeLength(e1, c);
+                tlen = enc == e1 ? clen : codeLength(enc, c);
+
+                if (c < TRANS_SIZE) {
+                    c = trans[c];
+                } else if (hash != null) {
+                    Integer tmp = hash.get(c);
+                    if (tmp == null) {
+                        if (cflag) {
+                            c = last;
+                        } else {
+                            c = -1;
+                        }
+                    } else if (cflag) {
+                        c = -1;
+                    } else {
+                        c = tmp;
+                    }
+                }
+                else {
+                    c = cflag ? last : -1;
+                }
+                if (c != -1) {
+                    tlen = codeLength(enc, c);
+                    modify = true;
+                } else {
+                    c = c0;
+                    if (enc != e1) mayModify = true;
+                }
+                while (t + tlen >= max) {
+                    max <<= 1;
+                    buf = Arrays.copyOf(buf, max);
+                }
+                // headius: I don't see how s and t could ever be the same, since they refer to different buffers
+//                if (s != t) {
+                enc.codeToMbc(c, buf, t);
+                if (mayModify && ByteList.memcmp(sbytes, s, buf, t, tlen) != 0) {
+                    modify = true;
+                }
+//                }
+
+                if (cr == CR_7BIT && !Encoding.isAscii(c)) cr = CR_VALID;
+                s += clen;
+                t += tlen;
+            }
+            self.getByteList().setUnsafeBytes(buf);
+            self.getByteList().setRealSize(t);
+        }
+
+        if (modify) {
+            if (cr != CR_BROKEN) self.setCodeRange(cr);
+            StringSupport.associateEncoding(self, enc);
+            return self;
+        }
+        return null;
+    }
+
+    private static int trCode(int c, int[]trans, IntHash<Integer> hash, boolean cflag, int last, boolean set) {
+        if (c < StringSupport.TRANS_SIZE) {
+            return trans[c];
+        } else if (hash != null) {
+            Integer tmp = hash.get(c);
+            if (tmp == null) {
+                return cflag ? last : -1;
+            } else {
+                return cflag ? -1 : tmp;
+            }
+        } else {
+            return cflag && set ? last : -1;
         }
     }
 

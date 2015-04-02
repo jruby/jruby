@@ -65,6 +65,7 @@ import org.jruby.truffle.runtime.core.*;
 import org.jruby.truffle.runtime.rubinius.RubiniusByteArray;
 import org.jruby.util.ByteList;
 import org.jruby.util.CodeRangeSupport;
+import org.jruby.util.CodeRangeable;
 import org.jruby.util.Pack;
 import org.jruby.util.StringSupport;
 import org.jruby.util.io.EncodingUtils;
@@ -461,10 +462,9 @@ public abstract class StringNodes {
     public abstract static class GetIndexNode extends CoreMethodNode {
 
         @Child private ToIntNode toIntNode;
-        @Child private CallDispatchHeadNode getMatchDataIndexNode;
         @Child private CallDispatchHeadNode includeNode;
-        @Child private CallDispatchHeadNode matchNode;
         @Child private CallDispatchHeadNode dupNode;
+        @Child private SizeNode sizeNode;
         @Child private StringPrimitiveNodes.StringSubstringPrimitiveNode substringNode;
 
         private final BranchProfile outOfBounds = BranchProfile.create();
@@ -476,10 +476,9 @@ public abstract class StringNodes {
         public GetIndexNode(GetIndexNode prev) {
             super(prev);
             toIntNode = prev.toIntNode;
-            getMatchDataIndexNode = prev.getMatchDataIndexNode;
             includeNode = prev.includeNode;
-            matchNode = prev.matchNode;
             dupNode = prev.dupNode;
+            sizeNode = prev.sizeNode;
             substringNode = prev.substringNode;
         }
 
@@ -497,102 +496,88 @@ public abstract class StringNodes {
 
         @Specialization(guards = { "!isRubyRange(index)", "!isRubyRegexp(index)", "!isRubyString(index)" })
         public Object getIndex(VirtualFrame frame, RubyString string, Object index, UndefinedPlaceholder undefined) {
-            if (toIntNode == null) {
-                CompilerDirectives.transferToInterpreter();
-                toIntNode = insert(ToIntNodeFactory.create(getContext(), getSourceSection(), null));
-            }
-
-            return getIndex(string, toIntNode.executeIntegerFixnum(frame, index), undefined);
+            return getIndex(string, getToIntNode().executeIntegerFixnum(frame, index), undefined);
         }
 
         @Specialization
-        public Object slice(RubyString string, RubyRange.IntegerFixnumRange range, UndefinedPlaceholder undefined) {
-            notDesignedForCompilation();
+        public Object sliceIntegerRange(VirtualFrame frame, RubyString string, RubyRange.IntegerFixnumRange range, UndefinedPlaceholder undefined) {
+            return sliceRange(frame, string, range.getBegin(), range.getEnd(), range.doesExcludeEnd());
+        }
 
-            final String javaString = string.toString();
-            final int begin = string.normalizeIndex(range.getBegin());
+        @Specialization
+        public Object sliceLongRange(VirtualFrame frame, RubyString string, RubyRange.LongFixnumRange range, UndefinedPlaceholder undefined) {
+            // TODO (nirvdrum 31-Mar-15) The begin and end values should be properly lowered, only if possible.
+            return sliceRange(frame, string, (int) range.getBegin(), (int) range.getEnd(), range.doesExcludeEnd());
+        }
 
-            if (begin < 0 || begin > javaString.length()) {
+        @Specialization
+        public Object sliceObjectRange(VirtualFrame frame, RubyString string, RubyRange.ObjectRange range, UndefinedPlaceholder undefined) {
+            // TODO (nirvdrum 31-Mar-15) The begin and end values may return Fixnums beyond int boundaries and we should handle that -- Bignums are always errors.
+            final int coercedBegin = getToIntNode().executeIntegerFixnum(frame, range.getBegin());
+            final int coercedEnd = getToIntNode().executeIntegerFixnum(frame, range.getEnd());
+
+            return sliceRange(frame, string, coercedBegin, coercedEnd, range.doesExcludeEnd());
+        }
+
+        private Object sliceRange(VirtualFrame frame, RubyString string, int begin, int end, boolean doesExcludeEnd) {
+            if (sizeNode == null) {
+                CompilerDirectives.transferToInterpreter();
+                sizeNode = insert(StringNodesFactory.SizeNodeFactory.create(getContext(), getSourceSection(), new RubyNode[]{null}));
+            }
+
+            final int stringLength = sizeNode.executeIntegerFixnum(frame, string);
+            begin = string.normalizeIndex(stringLength, begin);
+
+            if (begin < 0 || begin > stringLength) {
                 outOfBounds.enter();
                 return nil();
             } else {
-                final int end = string.normalizeIndex(range.getEnd());
-                final int excludingEnd = string.clampExclusiveIndex(range.doesExcludeEnd() ? end : end+1);
 
-                if (begin > excludingEnd) {
-                    return getContext().makeString("");
+                if (begin == stringLength) {
+                    return getContext().makeString(string.getLogicalClass(), "", string.getByteList().getEncoding());
                 }
 
-                return getContext().makeString(string.getLogicalClass(),
-                        javaString.substring(begin, excludingEnd),
-                        string.getByteList().getEncoding());
+                end = string.normalizeIndex(stringLength, end);
+                int length = string.clampExclusiveIndex(doesExcludeEnd ? end : end + 1);
+
+                if (length > stringLength) {
+                    length = stringLength;
+                }
+
+                length -= begin;
+
+                if (length < 0) {
+                    length = 0;
+                }
+
+                return getSubstringNode().execute(frame, string, begin, length);
             }
         }
 
         @Specialization
         public Object slice(VirtualFrame frame, RubyString string, int start, int length) {
-            if (substringNode == null) {
-                CompilerDirectives.transferToInterpreter();
-
-                substringNode = insert(StringPrimitiveNodesFactory.StringSubstringPrimitiveNodeFactory.create(
-                        getContext(), getSourceSection(), new RubyNode[] { null, null, null }));
-            }
-
-            return substringNode.execute(frame, string, start, length);
+            return getSubstringNode().execute(frame, string, start, length);
         }
 
         @Specialization(guards = "!isUndefinedPlaceholder(length)")
         public Object slice(VirtualFrame frame, RubyString string, int start, Object length) {
-            notDesignedForCompilation();
-
-            if (toIntNode == null) {
-                CompilerDirectives.transferToInterpreter();
-                toIntNode = insert(ToIntNodeFactory.create(getContext(), getSourceSection(), null));
-            }
-
-            return slice(frame, string, start, toIntNode.executeIntegerFixnum(frame, length));
+            return slice(frame, string, start, getToIntNode().executeIntegerFixnum(frame, length));
         }
 
         @Specialization(guards = { "!isRubyRange(start)", "!isRubyRegexp(start)", "!isRubyString(start)", "!isUndefinedPlaceholder(length)" })
         public Object slice(VirtualFrame frame, RubyString string, Object start, Object length) {
-            notDesignedForCompilation();
-
-            if (toIntNode == null) {
-                CompilerDirectives.transferToInterpreter();
-                toIntNode = insert(ToIntNodeFactory.create(getContext(), getSourceSection(), null));
-            }
-
-            return slice(frame, string, toIntNode.executeIntegerFixnum(frame, start), toIntNode.executeIntegerFixnum(frame, length));
+            return slice(frame, string, getToIntNode().executeIntegerFixnum(frame, start), getToIntNode().executeIntegerFixnum(frame, length));
         }
 
         @Specialization
         public Object slice(VirtualFrame frame, RubyString string, RubyRegexp regexp, UndefinedPlaceholder capture) {
-            notDesignedForCompilation();
-
             return slice(frame, string, regexp, 0);
         }
 
         @Specialization(guards = "!isUndefinedPlaceholder(capture)")
         public Object slice(VirtualFrame frame, RubyString string, RubyRegexp regexp, Object capture) {
-            notDesignedForCompilation();
-
-            if (matchNode == null) {
-                CompilerDirectives.transferToInterpreter();
-                matchNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext()));
-            }
-
-            final Object matchData = matchNode.call(frame, regexp, "match", null, string);
-
-            if (matchData == nil()) {
-                return matchData;
-            }
-
-            if (getMatchDataIndexNode == null) {
-                CompilerDirectives.transferToInterpreter();
-                getMatchDataIndexNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext()));
-            }
-
-            return getMatchDataIndexNode.call(frame, matchData, "[]", null, capture);
+            // Extracted from Rubinius's definition of String#[].
+            return ruby(frame, "match, str = subpattern(index, other); Regexp.last_match = match; str", "index", regexp, "other", capture);
         }
 
         @Specialization
@@ -617,77 +602,25 @@ public abstract class StringNodes {
 
             return nil();
         }
-    }
 
-    @CoreMethod(names = "[]=", required = 2, lowerFixnumParameters = 0, raiseIfFrozenSelf = true)
-    public abstract static class ElementSetNode extends CoreMethodNode {
+        private ToIntNode getToIntNode() {
+            if (toIntNode == null) {
+                CompilerDirectives.transferToInterpreter();
+                toIntNode = insert(ToIntNodeFactory.create(getContext(), getSourceSection(), null));
+            }
 
-        @Child private SizeNode sizeNode;
-        @Child private ToStrNode toStrNode;
-
-        public ElementSetNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-            sizeNode = StringNodesFactory.SizeNodeFactory.create(context, sourceSection, new RubyNode[] { null });
-            toStrNode = ToStrNodeFactory.create(context, sourceSection, null);
+            return toIntNode;
         }
 
-        public ElementSetNode(ElementSetNode prev) {
-            super(prev);
-            sizeNode = prev.sizeNode;
-            toStrNode = prev.toStrNode;
-        }
-
-        @Specialization
-        public RubyString elementSet(VirtualFrame frame, RubyString string, int index, Object replacement) {
-            final RubyString coerced = toStrNode.executeRubyString(frame, replacement);
-            StringNodesHelper.replaceInternal(string, StringNodesHelper.checkIndex(string, index, this), 1, coerced);
-
-            return coerced;
-        }
-
-        @Specialization
-        public RubyString elementSet(VirtualFrame frame, RubyString string, RubyRange.IntegerFixnumRange range, Object replacement) {
-            notDesignedForCompilation();
-
-            int begin = range.getBegin();
-            int end = range.getEnd();
-            final int stringLength = sizeNode.executeIntegerFixnum(frame, string);
-
-            if (begin < 0) {
-                begin += stringLength;
-
-                if (begin < 0) {
-                    CompilerDirectives.transferToInterpreter();
-
-                    throw new RaiseException(getContext().getCoreLibrary().rangeError(range, this));
-                }
-
-            } else if (begin > stringLength) {
+        private StringPrimitiveNodes.StringSubstringPrimitiveNode getSubstringNode() {
+            if (substringNode == null) {
                 CompilerDirectives.transferToInterpreter();
 
-                throw new RaiseException(getContext().getCoreLibrary().rangeError(range, this));
+                substringNode = insert(StringPrimitiveNodesFactory.StringSubstringPrimitiveNodeFactory.create(
+                        getContext(), getSourceSection(), new RubyNode[] { null, null, null }));
             }
 
-            if (end > stringLength) {
-                end = stringLength;
-            } else if (end < 0) {
-                end += stringLength;
-            }
-
-            if (! range.doesExcludeEnd()) {
-                end++;
-            }
-
-            int length = end - begin;
-
-            if (length < 0) {
-                length = 0;
-            }
-
-            final RubyString coerced = toStrNode.executeRubyString(frame, replacement);
-            StringNodesHelper.replaceInternal(string, StringNodesHelper.checkIndex(string, begin, this), length, coerced);
-
-            return coerced;
+            return substringNode;
         }
     }
 
@@ -860,6 +793,10 @@ public abstract class StringNodes {
         public int count(VirtualFrame frame, RubyString string, Object[] otherStrings) {
             notDesignedForCompilation();
 
+            if (string.getByteList().getRealSize() == 0) {
+                return 0;
+            }
+
             if (otherStrings.length == 0) {
                 CompilerDirectives.transferToInterpreter();
                 throw new RaiseException(getContext().getCoreLibrary().argumentErrorEmptyVarargs(this));
@@ -877,7 +814,19 @@ public abstract class StringNodes {
                 otherStrings[i] = toStr.executeRubyString(frame, args[i]);
             }
 
-            return string.count(otherStrings);
+            RubyString otherStr = otherStrings[0];
+            Encoding enc = otherStr.getBytes().getEncoding();
+
+            final boolean[]table = new boolean[StringSupport.TRANS_SIZE + 1];
+            StringSupport.TrTables tables = StringSupport.trSetupTable(otherStr.getBytes(), getContext().getRuntime(), table, null, true, enc);
+            for (int i = 1; i < otherStrings.length; i++) {
+                otherStr = otherStrings[i];
+
+                enc = string.checkEncoding(otherStr, this);
+                tables = StringSupport.trSetupTable(otherStr.getBytes(), getContext().getRuntime(), table, tables, false, enc);
+            }
+
+            return StringSupport.countCommon19(string.getByteList(), getContext().getRuntime(), table, tables, enc);
         }
     }
 
@@ -915,7 +864,7 @@ public abstract class StringNodes {
         }
 
         @Specialization
-        public Object deleteBang(VirtualFrame frame, RubyString string, Object[] otherStrings) {
+        public Object deleteBang(VirtualFrame frame, RubyString string, Object... otherStrings) {
             if (string.getBytes().length() == 0) {
                 return nil();
             }
@@ -929,7 +878,7 @@ public abstract class StringNodes {
         }
 
         @CompilerDirectives.TruffleBoundary
-        private Object deleteBangSlow(VirtualFrame frame, RubyString string, Object[] args) {
+        private Object deleteBangSlow(VirtualFrame frame, RubyString string, Object... args) {
             RubyString[] otherStrings = new RubyString[args.length];
 
             for (int i = 0; i < args.length; i++) {
@@ -1188,6 +1137,9 @@ public abstract class StringNodes {
     @CoreMethod(names = "getbyte", required = 1)
     public abstract static class GetByteNode extends CoreMethodNode {
 
+        private final ConditionProfile negativeIndexProfile = ConditionProfile.createBinaryProfile();
+        private final ConditionProfile indexOutOfBoundsProfile = ConditionProfile.createBinaryProfile();
+
         public GetByteNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
         }
@@ -1197,8 +1149,18 @@ public abstract class StringNodes {
         }
 
         @Specialization
-        public int getByte(RubyString string, int index) {
-            return string.getBytes().get(index);
+        public Object getByte(RubyString string, int index) {
+            final ByteList bytes = string.getByteList();
+
+            if (negativeIndexProfile.profile(index < 0)) {
+                index += bytes.getRealSize();
+            }
+
+            if (indexOutOfBoundsProfile.profile((index < 0) || (index >= bytes.getRealSize()))) {
+                return nil();
+            }
+
+            return string.getBytes().get(index) & 0xff;
         }
     }
 
@@ -1305,8 +1267,6 @@ public abstract class StringNodes {
 
         @Specialization
         public Object initializeCopy(RubyString self, RubyString from) {
-            notDesignedForCompilation();
-
             if (self == from) {
                 return self;
             }
@@ -1399,7 +1359,7 @@ public abstract class StringNodes {
     }
 
     @RubiniusOnly
-    @CoreMethod(names = "modify!")
+    @CoreMethod(names = "modify!", raiseIfFrozenSelf = true)
     public abstract static class ModifyBangNode extends CoreMethodNode {
 
         public ModifyBangNode(RubyContext context, SourceSection sourceSection) {
@@ -2059,6 +2019,98 @@ public abstract class StringNodes {
         }
     }
 
+    @CoreMethod(names = "tr!", required = 2, raiseIfFrozenSelf = true)
+    @NodeChildren({
+        @NodeChild(value = "self"),
+        @NodeChild(value = "fromStr"),
+        @NodeChild(value = "toStr")
+    })
+    public abstract static class TrBangNode extends RubyNode {
+
+        @Child private DeleteBangNode deleteBangNode;
+
+        public TrBangNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public TrBangNode(TrBangNode prev) {
+            super(prev);
+            deleteBangNode = prev.deleteBangNode;
+        }
+
+        @CreateCast("fromStr") public RubyNode coerceFromStrToString(RubyNode fromStr) {
+            return ToStrNodeFactory.create(getContext(), getSourceSection(), fromStr);
+        }
+
+        @CreateCast("toStr") public RubyNode coerceToStrToString(RubyNode toStr) {
+            return ToStrNodeFactory.create(getContext(), getSourceSection(), toStr);
+        }
+
+        @Specialization
+        public Object trBang(VirtualFrame frame, RubyString self, RubyString fromStr, RubyString toStr) {
+            if (self.getByteList().getRealSize() == 0) {
+                return nil();
+            }
+
+            if (toStr.getByteList().getRealSize() == 0) {
+                if (deleteBangNode == null) {
+                    CompilerDirectives.transferToInterpreter();
+                    deleteBangNode = insert(StringNodesFactory.DeleteBangNodeFactory.create(getContext(), getSourceSection(), new RubyNode[] {}));
+                }
+
+                return deleteBangNode.deleteBang(frame, self, fromStr);
+            }
+
+            return StringNodesHelper.trTransHelper(getContext(), self, fromStr, toStr, false);
+        }
+    }
+
+    @CoreMethod(names = "tr_s!", required = 2, raiseIfFrozenSelf = true)
+    @NodeChildren({
+            @NodeChild(value = "self"),
+            @NodeChild(value = "fromStr"),
+            @NodeChild(value = "toStr")
+    })
+    public abstract static class TrSBangNode extends RubyNode {
+
+        @Child private DeleteBangNode deleteBangNode;
+
+        public TrSBangNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public TrSBangNode(TrSBangNode prev) {
+            super(prev);
+            deleteBangNode = prev.deleteBangNode;
+        }
+
+        @CreateCast("fromStr") public RubyNode coerceFromStrToString(RubyNode fromStr) {
+            return ToStrNodeFactory.create(getContext(), getSourceSection(), fromStr);
+        }
+
+        @CreateCast("toStr") public RubyNode coerceToStrToString(RubyNode toStr) {
+            return ToStrNodeFactory.create(getContext(), getSourceSection(), toStr);
+        }
+
+        @Specialization
+        public Object trSBang(VirtualFrame frame, RubyString self, RubyString fromStr, RubyString toStr) {
+            if (self.getByteList().getRealSize() == 0) {
+                return nil();
+            }
+
+            if (toStr.getByteList().getRealSize() == 0) {
+                if (deleteBangNode == null) {
+                    CompilerDirectives.transferToInterpreter();
+                    deleteBangNode = insert(StringNodesFactory.DeleteBangNodeFactory.create(getContext(), getSourceSection(), new RubyNode[] {}));
+                }
+
+                return deleteBangNode.deleteBang(frame, self, fromStr);
+            }
+
+            return StringNodesHelper.trTransHelper(getContext(), self, fromStr, toStr, true);
+        }
+    }
+
     @CoreMethod(names = "unpack", required = 1)
     public abstract static class UnpackNode extends ArrayCoreMethodNode {
 
@@ -2308,6 +2360,17 @@ public abstract class StringNodes {
         @TruffleBoundary
         public static void replaceInternal(RubyString string, int start, int length, RubyString replacement) {
             StringSupport.replaceInternal19(start, length, string, replacement);
+        }
+
+        @TruffleBoundary
+        private static Object trTransHelper(RubyContext context, RubyString self, RubyString fromStr, RubyString toStr, boolean sFlag) {
+            final CodeRangeable ret = StringSupport.trTransHelper(context.getRuntime(), self, fromStr, toStr, sFlag);
+
+            if (ret == null) {
+                return context.getCoreLibrary().getNilObject();
+            }
+
+            return ret;
         }
     }
 

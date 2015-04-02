@@ -1863,7 +1863,7 @@ public class EncodingUtils {
         return enc;
     }
 
-    public static Encoding STR_ENC_GET(RubyString str) {
+    public static Encoding STR_ENC_GET(ByteListHolder str) {
         return getEncoding(str.getByteList());
     }
 }

@@ -1,6 +1,0 @@
-fails:String#getbyte counts from the end of the String if given a negative argument
-fails:String#getbyte returns an Integer between 0 and 255
-fails:String#getbyte regards a multi-byte character as having multiple bytes
-fails:String#getbyte mirrors the output of #bytes
-fails:String#getbyte returns nil for out-of-bound indexes
-fails:String#getbyte regards the empty String as containing no bytes

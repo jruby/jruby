@@ -1,18 +1,3 @@
-fails:String#index calls #to_str to convert the first argument
-fails:String#index calls #to_int to convert the second argument
-fails:String#index with String behaves the same as String#index(char) for one-character strings
-fails:String#index with String returns the index of the first occurrence of the given substring
-fails:String#index with String doesn't set $~
-fails:String#index with String ignores string subclasses
-fails:String#index with String starts the search at the given offset
-fails:String#index with String starts the search at offset + self.length if offset is negative
-fails:String#index with String returns nil if the substring isn't found
-fails:String#index with String returns the character index of a multibyte character
-fails:String#index with String returns the character index after offset
-fails:String#index with String returns the character index after a partial first match
-fails:String#index with Regexp behaves the same as String#index(string) for escaped string regexps
-fails:String#index with Regexp starts the search at offset + self.length if offset is negative
-fails:String#index with Regexp supports \G which matches at the given start offset
 fails:String#index with Regexp returns the character index of a multibyte character
 fails:String#index with Regexp returns the character index after offset
 fails:String#index with Regexp treats the offset as a character index

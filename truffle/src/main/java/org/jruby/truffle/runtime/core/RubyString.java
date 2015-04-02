@@ -66,67 +66,6 @@ public class RubyString extends RubyBasicObject implements CodeRangeable {
         return bytes;
     }
 
-    public static String ljust(String string, int length, String padding) {
-        final StringBuilder builder = new StringBuilder();
-
-        builder.append(string);
-
-        int n = 0;
-
-        while (builder.length() < length) {
-            builder.append(padding.charAt(n));
-
-            n++;
-
-            if (n == padding.length()) {
-                n = 0;
-            }
-        }
-
-        return builder.toString();
-    }
-
-    public static String rjust(String string, int length, String padding) {
-        final StringBuilder builder = new StringBuilder();
-
-        int n = 0;
-
-        while (builder.length() + string.length() < length) {
-            builder.append(padding.charAt(n));
-
-            n++;
-
-            if (n == padding.length()) {
-                n = 0;
-            }
-        }
-
-        builder.append(string);
-
-        return builder.toString();
-    }
-
-    public int count(RubyString[] otherStrings) {
-        if (bytes.getRealSize() == 0) {
-            return 0;
-        }
-
-        RubyString otherStr = otherStrings[0];
-        Encoding enc = otherStr.getBytes().getEncoding();
-
-        final boolean[]table = new boolean[StringSupport.TRANS_SIZE + 1];
-        StringSupport.TrTables tables = StringSupport.trSetupTable(otherStr.getBytes(), getContext().getRuntime(), table, null, true, enc);
-        for (int i = 1; i < otherStrings.length; i++) {
-            otherStr = otherStrings[i];
-
-            // TODO (nirvdrum Dec. 19, 2014): This method should be encoding aware and check that the strings have compatible encodings.  See non-Truffle JRuby for a more complete solution.
-            //enc = checkEncoding(otherStr);
-            tables = StringSupport.trSetupTable(otherStr.getBytes(), getContext().getRuntime(), table, tables, false, enc);
-        }
-
-        return StringSupport.countCommon19(getBytes(), getContext().getRuntime(), table, tables, enc);
-    }
-
     @Override
     @TruffleBoundary
     public String toString() {
@@ -147,8 +86,12 @@ public class RubyString extends RubyBasicObject implements CodeRangeable {
         }
     }
 
+    public int normalizeIndex(int length, int index) {
+        return RubyArray.normalizeIndex(length, index);
+    }
+
     public int normalizeIndex(int index) {
-        return RubyArray.normalizeIndex(bytes.length(), index);
+        return normalizeIndex(length(), index);
     }
 
     public int clampExclusiveIndex(int index) {
@@ -211,6 +154,12 @@ public class RubyString extends RubyBasicObject implements CodeRangeable {
         // TODO (nirvdrum Jan. 13, 2015): This should check whether the underlying ByteList is being shared and copy if necessary.
         bytes.ensure(length);
         bytes.invalidate();
+    }
+
+    @Override
+    public final void modifyAndKeepCodeRange() {
+        modify();
+        keepCodeRange();
     }
 
     @Override

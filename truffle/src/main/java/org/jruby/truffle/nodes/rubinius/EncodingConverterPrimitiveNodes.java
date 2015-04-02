@@ -20,6 +20,7 @@ import org.jcodings.transcode.EConvResult;
 import org.jruby.Ruby;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.runtime.UndefinedPlaceholder;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.RubyArray;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
@@ -167,10 +168,39 @@ public abstract class EncodingConverterPrimitiveNodes {
         }
 
         @Specialization
-        public Object encodingConverterPutback(RubyBasicObject encodingConverter, int maxBytes) {
-            throw new UnsupportedOperationException("not implemented");
+        public RubyString encodingConverterPutback(RubyEncodingConverter encodingConverter, int maxBytes) {
+            // Taken from org.jruby.RubyConverter#putback.
+
+            final EConv ec = encodingConverter.getEConv();
+            final int putbackable = ec.putbackable();
+
+            return putback(encodingConverter, putbackable < maxBytes ? putbackable : maxBytes);
         }
 
+        @Specialization
+        public RubyString encodingConverterPutback(RubyEncodingConverter encodingConverter, UndefinedPlaceholder maxBytes) {
+            // Taken from org.jruby.RubyConverter#putback.
+
+            final EConv ec = encodingConverter.getEConv();
+
+            return putback(encodingConverter, ec.putbackable());
+        }
+
+        private RubyString putback(RubyEncodingConverter encodingConverter, int n) {
+            // Taken from org.jruby.RubyConverter#putback.
+
+            final EConv ec = encodingConverter.getEConv();
+
+            final ByteList bytes = new ByteList(n);
+            ec.putback(bytes.getUnsafeBytes(), bytes.getBegin(), n);
+            bytes.setRealSize(n);
+
+            if (ec.sourceEncoding != null) {
+                bytes.setEncoding(ec.sourceEncoding);
+            }
+
+            return getContext().makeString(bytes);
+        }
     }
 
     @RubiniusPrimitive(name = "encoding_converter_last_error")

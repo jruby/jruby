@@ -514,7 +514,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
     }
 
     private void checkReopenCloexecDup2(Ruby runtime, OpenFile orig, ChannelFD oldfd, ChannelFD newfd) {
-        OpenFile.cloexecDup2(new PosixShim(runtime.getPosix()), oldfd, newfd);
+        OpenFile.cloexecDup2(new PosixShim(runtime), oldfd, newfd);
     }
 
     // rb_io_binmode
@@ -1239,7 +1239,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
 //        #elif defined O_NOINHERIT
 //            flags |= O_NOINHERIT;
 //        #endif
-        PosixShim shim = new PosixShim(runtime.getPosix());
+        PosixShim shim = new PosixShim(runtime);
         ret = shim.open(runtime.getCurrentDirectory(), data.fname, ModeFlags.createModeFlags(data.oflags), data.perm);
         if (ret == null) {
             data.errno = shim.errno;
@@ -3967,7 +3967,7 @@ public class RubyIO extends RubyObject implements IOEncodable {
                 }
         }
 
-        PosixShim posix = new PosixShim(runtime.getPosix());
+        PosixShim posix = new PosixShim(runtime);
         Channel[] fds = posix.pipe();
         if (fds == null)
             throw runtime.newErrnoFromErrno(posix.errno, "opening pipe");

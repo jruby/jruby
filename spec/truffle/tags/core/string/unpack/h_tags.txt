@@ -1,6 +1,4 @@
 fails:String#unpack with format 'H' calls #to_str to coerce the directives string
-fails:String#unpack with format 'H' raises an ArgumentError when the format modifier is '_'
-fails:String#unpack with format 'H' raises an ArgumentError when the format modifier is '!'
 fails:String#unpack with format 'H' decodes one nibble from each byte for each format character starting with the most significant bit
 fails:String#unpack with format 'H' decodes only the number of nibbles in the string when passed a count
 fails:String#unpack with format 'H' decodes multiple differing nibble counts from a single string
@@ -12,8 +10,6 @@ fails:String#unpack with format 'H' adds an empty string for each element reques
 fails:String#unpack with format 'H' ignores NULL bytes between directives
 fails:String#unpack with format 'H' ignores spaces between directives
 fails:String#unpack with format 'h' calls #to_str to coerce the directives string
-fails:String#unpack with format 'h' raises an ArgumentError when the format modifier is '_'
-fails:String#unpack with format 'h' raises an ArgumentError when the format modifier is '!'
 fails:String#unpack with format 'h' decodes one nibble from each byte for each format character starting with the least significant bit
 fails:String#unpack with format 'h' decodes only the number of nibbles in the string when passed a count
 fails:String#unpack with format 'h' decodes multiple differing nibble counts from a single string

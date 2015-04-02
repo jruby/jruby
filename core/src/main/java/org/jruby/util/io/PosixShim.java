@@ -1,16 +1,5 @@
 package org.jruby.util.io;
 
-import jnr.constants.platform.Errno;
-import jnr.constants.platform.Fcntl;
-import jnr.enxio.channels.NativeDeviceChannel;
-import jnr.posix.FileStat;
-import jnr.posix.POSIX;
-import org.jruby.ext.fcntl.FcntlLibrary;
-import org.jruby.platform.Platform;
-import org.jruby.runtime.Helpers;
-import org.jruby.util.JRubyFile;
-import org.jruby.util.ResourceException;
-
 import java.io.Closeable;
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -19,6 +8,18 @@ import java.nio.channels.Channels;
 import java.nio.channels.FileLock;
 import java.nio.channels.OverlappingFileLockException;
 import java.nio.channels.Pipe;
+
+import jnr.constants.platform.Errno;
+import jnr.constants.platform.Fcntl;
+import jnr.posix.FileStat;
+import jnr.posix.POSIX;
+
+import org.jruby.Ruby;
+import org.jruby.ext.fcntl.FcntlLibrary;
+import org.jruby.platform.Platform;
+import org.jruby.runtime.Helpers;
+import org.jruby.util.JRubyFile;
+import org.jruby.util.ResourceException;
 
 /**
  * Representations of as many native posix functions as possible applied to an NIO channel
@@ -33,8 +34,9 @@ public class PosixShim {
     public static final int SEEK_CUR = 1;
     public static final int SEEK_END = 2;
 
-    public PosixShim(POSIX posix) {
-        this.posix = posix;
+    public PosixShim(Ruby runtime) {
+        this.runtime = runtime;
+        this.posix = runtime.getPosix();
     }
     
     // pseudo lseek(2)
@@ -402,7 +404,7 @@ public class PosixShim {
         }
 
         try {
-            return JRubyFile.createResource(posix, cwd, path).openChannel(flags, perm);
+            return JRubyFile.createResource(runtime, cwd, path).openChannel(flags, perm);
         } catch (ResourceException.FileExists e) {
             errno = Errno.EEXIST;
         } catch (ResourceException.FileIsDirectory e) {
@@ -606,6 +608,11 @@ public class PosixShim {
      * The POSIX instance to use for native calls
      */
     private final POSIX posix;
+
+    /**
+     * The current runtime
+     */
+    private final Ruby runtime;
 
     /**
      * An object to synchronize calls to umask

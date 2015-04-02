@@ -1,2 +1,0 @@
-fails:Range#each passes each element to the given block by using #succ
-fails:Range#each passes each Symbol element by using #succ

@@ -41,6 +41,10 @@ class Numeric
     self == other
   end
 
+  def divmod(other)
+    [div(other), self % other]
+  end
+
   #--
   # We deviate from MRI behavior here because we ensure that Fixnum op Bignum
   # => Bignum (possibly normalized to Fixnum)
