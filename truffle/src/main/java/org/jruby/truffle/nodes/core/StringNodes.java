@@ -1266,8 +1266,6 @@ public abstract class StringNodes {
 
         @Specialization
         public Object initializeCopy(RubyString self, RubyString from) {
-            notDesignedForCompilation();
-
             if (self == from) {
                 return self;
             }
