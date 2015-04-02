@@ -31,6 +31,7 @@ import org.joni.Matcher;
 import org.joni.Option;
 import org.joni.Regex;
 import org.joni.Region;
+import org.joni.exception.JOniException;
 import org.jruby.Ruby;
 import org.jruby.RubyBoolean;
 import org.jruby.RubyClass;
@@ -39,6 +40,7 @@ import org.jruby.RubyFixnum;
 import org.jruby.RubyNumeric;
 import org.jruby.RubyObject;
 import org.jruby.RubyRegexp;
+import org.jruby.RubySymbol;
 import org.jruby.RubyString;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
@@ -69,6 +71,9 @@ public class RubyStringScanner extends RubyObject {
     private int end = -1;
     // not to be confused with RubyObject's flags
     private int scannerFlags;
+
+    /* regexp used for last scan */
+    private Regex pattern;
 
     private static final int MATCHED_STR_SCN_F = 1 << 11;     
     
@@ -235,6 +240,8 @@ public class RubyStringScanner extends RubyObject {
         clearMatched();
         int rest = str.getByteList().getRealSize() - pos;
         if (rest < 0) return getRuntime().getNil();
+
+        this.pattern = pattern;
 
         ByteList value = str.getByteList();
         Matcher matcher = pattern.matcher(value.getUnsafeBytes(), value.getBegin() + pos, value.getBegin() + value.getRealSize());
@@ -486,7 +493,17 @@ public class RubyStringScanner extends RubyObject {
         if (!isMatched()) {
             return context.runtime.getNil();
         }
-        int i = RubyNumeric.num2int(idx);
+        
+        int i;
+        if (idx instanceof RubySymbol) {
+          RubyString name = (RubyString)((RubySymbol)idx).id2name();
+          i = nameToBackrefNumber(name);
+        } else if (idx instanceof RubyString) {
+          RubyString name = (RubyString)idx;
+          i = nameToBackrefNumber(name);
+        } else {
+          i = RubyNumeric.num2int(idx);
+        }
         
         int numRegs = regs == null ? 1 : regs.numRegs;
         if (i < 0) i += numRegs;
@@ -501,6 +518,15 @@ public class RubyStringScanner extends RubyObject {
         } else {
             if (regs.beg[i] == -1) return getRuntime().getNil();
             return extractRange(context.runtime, lastPos + regs.beg[i], lastPos + regs.end[i]);
+        }
+    }
+
+    private int nameToBackrefNumber(RubyString str) {
+        ByteList value = str.getByteList();
+        try {
+            return pattern.nameToBackrefNumber(value.getUnsafeBytes(), value.getBegin(), value.getBegin() + value.getRealSize(), regs);
+        } catch (JOniException je) {
+            throw getRuntime().newIndexError(je.getMessage());
         }
     }
 
