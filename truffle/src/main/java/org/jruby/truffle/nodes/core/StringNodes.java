@@ -1327,6 +1327,74 @@ public abstract class StringNodes {
         }
     }
 
+    @CoreMethod(names = "lstrip!", raiseIfFrozenSelf = true)
+    @ImportGuards(StringGuards.class)
+    public abstract static class LstripBangNode extends CoreMethodNode {
+
+        public LstripBangNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public LstripBangNode(LstripBangNode prev) {
+            super(prev);
+        }
+
+        @Specialization(guards = "isSingleByteOptimizable")
+        public Object lstripBangSingleByte(RubyString string) {
+            // Taken from org.jruby.RubyString#lstrip_bang19 and org.jruby.RubyString#singleByteLStrip.
+
+            if (string.getByteList().getRealSize() == 0) {
+                return nil();
+            }
+
+            final int s = string.getByteList().getBegin();
+            final int end = s + string.getByteList().getRealSize();
+            final byte[]bytes = string.getByteList().getUnsafeBytes();
+
+            int p = s;
+            while (p < end && ASCIIEncoding.INSTANCE.isSpace(bytes[p] & 0xff)) p++;
+            if (p > s) {
+                string.getByteList().view(p - s, end - p);
+                string.keepCodeRange();
+
+                return string;
+            }
+
+            return nil();
+        }
+
+        @Specialization(guards = "!isSingleByteOptimizable")
+        public Object lstripBang(RubyString string) {
+            // Taken from org.jruby.RubyString#lstrip_bang19 and org.jruby.RubyString#multiByteLStrip.
+
+            if (string.getByteList().getRealSize() == 0) {
+                return nil();
+            }
+
+            final Encoding enc = EncodingUtils.STR_ENC_GET(string);
+            final int s = string.getByteList().getBegin();
+            final int end = s + string.getByteList().getRealSize();
+            final byte[]bytes = string.getByteList().getUnsafeBytes();
+
+            int p = s;
+
+            while (p < end) {
+                int c = StringSupport.codePoint(getContext().getRuntime(), enc, bytes, p, end);
+                if (!ASCIIEncoding.INSTANCE.isSpace(c)) break;
+                p += StringSupport.codeLength(enc, c);
+            }
+
+            if (p > s) {
+                string.getByteList().view(p - s, end - p);
+                string.keepCodeRange();
+
+                return string;
+            }
+
+            return nil();
+        }
+    }
+
     @CoreMethod(names = "match", required = 1, taintFromSelf = true)
     public abstract static class MatchNode extends CoreMethodNode {
 
