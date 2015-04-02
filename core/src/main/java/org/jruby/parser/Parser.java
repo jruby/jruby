@@ -83,7 +83,8 @@ public class Parser {
     public Node parse(String file, byte[] content, DynamicScope blockScope,
             ParserConfiguration configuration) {
         RubyArray list = getLines(configuration, runtime, file);
-        LexerSource lexerSource = new ByteListLexerSource(file, configuration.getLineNumber(), new ByteList(content), list);
+        ByteList in = new ByteList(content, runtime.getDefaultExternalEncoding());
+        LexerSource lexerSource = new ByteListLexerSource(file, configuration.getLineNumber(), in,  list);
         return parse(file, lexerSource, blockScope, configuration);
     }
 
@@ -92,13 +93,8 @@ public class Parser {
             ParserConfiguration configuration) {
         RubyArray list = getLines(configuration, runtime, file);
         if (content instanceof LoadServiceResourceInputStream) {
-//            System.out.println("FUCK YES!");
             return parse(file, ((LoadServiceResourceInputStream) content).getBytes(), blockScope, configuration);
         } else {
-            //System.out.println("FUCK NOOOOOOOO!: " + content.getClass().getSimpleName());
-//            if (content instanceof FilterInputStream) {
-//                System.out.println("YYSHSHJASD: " + ShellLauncher.unwrapFilterInputStream(content));
-//            }
             RubyIO io = RubyIO.newIO(runtime, Channels.newChannel(content));
             LexerSource lexerSource = new GetsLexerSource(file, configuration.getLineNumber(), io);
             return parse(file, lexerSource, blockScope, configuration);

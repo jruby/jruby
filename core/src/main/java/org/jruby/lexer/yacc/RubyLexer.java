@@ -48,6 +48,7 @@ import org.jcodings.Encoding;
 import org.joni.Matcher;
 import org.joni.Option;
 import org.joni.Regex;
+import org.jruby.Ruby;
 import org.jruby.RubyRegexp;
 import org.jruby.ast.*;
 import org.jruby.common.IRubyWarnings;
@@ -352,7 +353,6 @@ public class RubyLexer {
         resetStacks();
         lex_strterm = null;
         commandStart = true;
-        current_enc = src.getEncoding();
         commandStart = true;
         parenNest = 0;
         braceNest = 0;
@@ -524,6 +524,7 @@ public class RubyLexer {
                 return;
         }
         pushback(c);
+
         current_enc = lex_lastline.getEncoding();
     }
 
@@ -589,17 +590,11 @@ public class RubyLexer {
     }
 
     private void setEncoding(ByteList name) {
-        Encoding newEncoding = parserSupport.getConfiguration().getRuntime().getEncodingService().loadEncoding(name);
+        Ruby runtime = parserSupport.getConfiguration().getRuntime();
+        Encoding newEncoding = runtime.getEncodingService().loadEncoding(name);
 
-        if (newEncoding == null) {
-            compile_error("unknown encoding name: " + name.toString());
-            return;
-        }
-
-        if (!newEncoding.isAsciiCompatible()) {
-            compile_error(name.toString() + " is not ASCII compatible");
-            return;
-        }
+        if (newEncoding == null) throw runtime.newArgumentError("unknown encoding name: " + name.toString());
+        if (!newEncoding.isAsciiCompatible()) compile_error(name.toString() + " is not ASCII compatible");
 
         setEncoding(newEncoding);
     }
@@ -608,7 +603,7 @@ public class RubyLexer {
     // other sources.  I am thinking current_enc should be removed in favor of src since it needs to know encoding to
     // provide next line.
     public void setEncoding(Encoding encoding) {
-        this.current_enc = encoding;
+        current_enc = encoding;
         src.setEncoding(encoding);
         lexb.setEncoding(encoding);
     }
