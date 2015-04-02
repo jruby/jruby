@@ -56,13 +56,13 @@ public abstract class EncodingConverterPrimitiveNodes {
     }
 
     @RubiniusPrimitive(name = "encoding_converter_primitive_convert")
-    public static abstract class EncodingConverterPrimitiveConvertNode extends RubiniusPrimitiveNode {
+    public static abstract class PrimitiveConvertNode extends RubiniusPrimitiveNode {
 
-        public EncodingConverterPrimitiveConvertNode(RubyContext context, SourceSection sourceSection) {
+        public PrimitiveConvertNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
         }
 
-        public EncodingConverterPrimitiveConvertNode(EncodingConverterPrimitiveConvertNode prev) {
+        public PrimitiveConvertNode(PrimitiveConvertNode prev) {
             super(prev);
         }
 
