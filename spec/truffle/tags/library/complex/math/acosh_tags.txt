@@ -1,0 +1,3 @@
+fails:Math#acosh returns the principle value of the inverse hyperbolic cosine for numbers less than 1.0 as a Complex number
+fails:Math.acosh returns the principle value of the inverse hyperbolic cosine for numbers less than 1.0 as a Complex number
+

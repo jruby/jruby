@@ -138,7 +138,7 @@ public class TruffleBridgeImpl implements TruffleBridge {
         loadPath.slowPush(truffleContext.makeString(new File(home, "lib/ruby/truffle/mri").toString()));
 
         // Libraries from RubySL
-        for (String lib : Arrays.asList("rubysl-strscan", "rubysl-stringio")) {
+        for (String lib : Arrays.asList("rubysl-strscan", "rubysl-stringio","rubysl-complex")) {
             loadPath.slowPush(truffleContext.makeString(new File(home, "lib/ruby/truffle/rubysl/" + lib + "/lib").toString()));
         }
 
