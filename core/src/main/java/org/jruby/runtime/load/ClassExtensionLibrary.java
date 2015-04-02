@@ -72,7 +72,7 @@ public class ClassExtensionLibrary implements Library {
         StringBuilder classNameBuilder = new StringBuilder(searchName.length() * 2);
         StringBuilder classFileBuilder = new StringBuilder(searchName.length() * 2);
 
-        for (int i = all.length - 2; i >= 0; i--) {
+        for (int i = all.length - 1; i >= 0; i--) {
             buildClassName(classNameBuilder, classFileBuilder, all, i, serviceName);
 
             // look for the filename in classloader resources
