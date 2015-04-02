@@ -1856,6 +1856,106 @@ public abstract class StringNodes {
         }
     }
 
+    @CoreMethod(names = "squeeze!", argumentsAsArray = true, raiseIfFrozenSelf = true)
+    public abstract static class SqueezeBangNode extends CoreMethodNode {
+
+        private ConditionProfile singleByteOptimizableProfile = ConditionProfile.createBinaryProfile();
+
+        @Child private ToStrNode toStrNode;
+
+        public SqueezeBangNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public SqueezeBangNode(SqueezeBangNode prev) {
+            super(prev);
+            toStrNode = prev.toStrNode;
+        }
+
+        @Specialization(guards = "zeroArgs")
+        public Object squeezeBangZeroArgs(VirtualFrame frame, RubyString string, Object... args) {
+            // Taken from org.jruby.RubyString#squeeze_bang19.
+
+            if (string.getBytes().length() == 0) {
+                return nil();
+            }
+
+            final boolean squeeze[] = new boolean[StringSupport.TRANS_SIZE];
+            for (int i = 0; i < StringSupport.TRANS_SIZE; i++) squeeze[i] = true;
+
+            string.modifyAndKeepCodeRange();
+
+            if (singleByteOptimizableProfile.profile(string.singleByteOptimizable())) {
+                if (StringSupport.squeezeCommonSingleByte(string.getByteList(), squeeze) == null) {
+                    return nil();
+                }
+            } else {
+                if (squeezeCommonMultiByte(string.getByteList(), squeeze, null, string.getByteList().getEncoding(), false) == null) {
+                    return nil();
+                }
+            }
+
+            return string;
+        }
+
+        @Specialization(guards = "!zeroArgs")
+        public Object squeezeBang(VirtualFrame frame, RubyString string, Object... args) {
+            // Taken from org.jruby.RubyString#squeeze_bang19.
+
+            if (string.getBytes().length() == 0) {
+                return nil();
+            }
+
+            if (toStrNode == null) {
+                CompilerDirectives.transferToInterpreterAndInvalidate();
+                toStrNode = insert(ToStrNodeFactory.create(getContext(), getSourceSection(), null));
+            }
+
+            final RubyString[] otherStrings = new RubyString[args.length];
+
+            for (int i = 0; i < args.length; i++) {
+                otherStrings[i] = toStrNode.executeRubyString(frame, args[i]);
+            }
+
+            RubyString otherStr = otherStrings[0];
+            Encoding enc = string.checkEncoding(otherStr, this);
+            final boolean squeeze[] = new boolean[StringSupport.TRANS_SIZE + 1];
+            StringSupport.TrTables tables = StringSupport.trSetupTable(otherStr.getByteList(), getContext().getRuntime(), squeeze, null, true, enc);
+
+            boolean singlebyte = string.singleByteOptimizable() && otherStr.singleByteOptimizable();
+
+            for (int i = 1; i < otherStrings.length; i++) {
+                otherStr = otherStrings[i];
+                enc = string.checkEncoding(otherStr);
+                singlebyte = singlebyte && otherStr.singleByteOptimizable();
+                tables = StringSupport.trSetupTable(otherStr.getByteList(), getContext().getRuntime(), squeeze, tables, false, enc);
+            }
+
+            string.modifyAndKeepCodeRange();
+
+            if (singleByteOptimizableProfile.profile(singlebyte)) {
+                if (StringSupport.squeezeCommonSingleByte(string.getByteList(), squeeze) == null) {
+                    return nil();
+                }
+            } else {
+                if (StringSupport.squeezeCommonMultiByte(getContext().getRuntime(), string.getByteList(), squeeze, tables, enc, true) == null) {
+                    return nil();
+                }
+            }
+
+            return string;
+        }
+
+        @TruffleBoundary
+        private ByteList squeezeCommonMultiByte(ByteList value, boolean squeeze[], StringSupport.TrTables tables, Encoding enc, boolean isArg) {
+            return StringSupport.squeezeCommonMultiByte(getContext().getRuntime(), value, squeeze, null, enc, isArg);
+        }
+
+        public static boolean zeroArgs(RubyString string, Object... args) {
+            return args.length == 0;
+        }
+    }
+
     @CoreMethod(names = "succ", taintFromSelf = true)
     public abstract static class SuccNode extends CoreMethodNode {
 
@@ -2123,7 +2223,7 @@ public abstract class StringNodes {
     @NodeChildren({
         @NodeChild(value = "self"),
         @NodeChild(value = "fromStr"),
-        @NodeChild(value = "toStr")
+        @NodeChild(value = "toStrNode")
     })
     public abstract static class TrBangNode extends RubyNode {
 
@@ -2142,7 +2242,7 @@ public abstract class StringNodes {
             return ToStrNodeFactory.create(getContext(), getSourceSection(), fromStr);
         }
 
-        @CreateCast("toStr") public RubyNode coerceToStrToString(RubyNode toStr) {
+        @CreateCast("toStrNode") public RubyNode coerceToStrToString(RubyNode toStr) {
             return ToStrNodeFactory.create(getContext(), getSourceSection(), toStr);
         }
 
@@ -2169,7 +2269,7 @@ public abstract class StringNodes {
     @NodeChildren({
             @NodeChild(value = "self"),
             @NodeChild(value = "fromStr"),
-            @NodeChild(value = "toStr")
+            @NodeChild(value = "toStrNode")
     })
     public abstract static class TrSBangNode extends RubyNode {
 
@@ -2188,7 +2288,7 @@ public abstract class StringNodes {
             return ToStrNodeFactory.create(getContext(), getSourceSection(), fromStr);
         }
 
-        @CreateCast("toStr") public RubyNode coerceToStrToString(RubyNode toStr) {
+        @CreateCast("toStrNode") public RubyNode coerceToStrToString(RubyNode toStr) {
             return ToStrNodeFactory.create(getContext(), getSourceSection(), toStr);
         }
 
