@@ -25,9 +25,12 @@ import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.RubyArray;
 import org.jruby.truffle.runtime.core.RubyMatchData;
+import org.jruby.truffle.runtime.core.RubyRange;
 import org.jruby.truffle.runtime.core.RubyString;
 import org.jruby.truffle.runtime.core.RubySymbol;
 import org.jruby.util.ByteList;
+
+import java.util.Arrays;
 
 @CoreClass(name = "MatchData")
 public abstract class MatchDataNodes {
@@ -92,7 +95,7 @@ public abstract class MatchDataNodes {
             }
         }
 
-        @Specialization(guards = { "!isRubySymbol(arguments[1])", "!isRubyString(arguments[1])" })
+        @Specialization(guards = {"!isRubySymbol(arguments[1])", "!isRubyString(arguments[1])", "!isIntegerFixnumRange(arguments[1])"})
         public Object getIndex(VirtualFrame frame, RubyMatchData matchData, Object index) {
             notDesignedForCompilation();
 
@@ -102,6 +105,18 @@ public abstract class MatchDataNodes {
             }
 
             return getIndex(matchData, toIntNode.executeIntegerFixnum(frame, index));
+        }
+
+        @Specialization(guards = {"!isRubySymbol(arguments[1])", "!isRubyString(arguments[1])"})
+        public Object getIndex(VirtualFrame frame, RubyMatchData matchData, RubyRange.IntegerFixnumRange range) {
+            final Object[] values = matchData.getValues();
+            final int normalizedIndex = RubyArray.normalizeIndex(values.length, range.getBegin());
+            final int end = RubyArray.normalizeIndex(values.length, range.getEnd());
+            final int exclusiveEnd = RubyArray.clampExclusiveIndex(values.length, range.doesExcludeEnd() ? end : end + 1);
+            final int length = exclusiveEnd - normalizedIndex;
+
+            final Object[] store = Arrays.copyOfRange(values, normalizedIndex, normalizedIndex + length);
+            return new RubyArray(getContext().getCoreLibrary().getArrayClass(), store, length);
         }
 
     }
