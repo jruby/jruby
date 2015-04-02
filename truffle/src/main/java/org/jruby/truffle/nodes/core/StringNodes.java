@@ -1618,7 +1618,7 @@ public abstract class StringNodes {
 
             int endp = end;
             int prev;
-            while ((prev = enc.prevCharHead(bytes, start, endp, end)) != -1) {
+            while ((prev = prevCharHead(enc, bytes, start, endp, end)) != -1) {
                 int point = StringSupport.codePoint(getContext().getRuntime(), enc, bytes, prev, end);
                 if (point != 0 && !ASCIIEncoding.INSTANCE.isSpace(point)) break;
                 endp = prev;
@@ -1631,6 +1631,11 @@ public abstract class StringNodes {
                 return string;
             }
             return nil();
+        }
+
+        @TruffleBoundary
+        private int prevCharHead(Encoding enc, byte[]bytes, int p, int s, int end) {
+            return enc.prevCharHead(bytes, p, s, end);
         }
     }
 
