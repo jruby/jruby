@@ -37,8 +37,10 @@ package org.jruby.lexer.yacc;
 
 import java.io.IOException;
 
+import java.io.UnsupportedEncodingException;
 import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.nio.charset.Charset;
 import java.util.HashMap;
 
 import org.jcodings.Encoding;
@@ -262,7 +264,7 @@ public class RubyLexer {
 
     public boolean tokadd_ident(int c) {
         do {
-            if (!tokenAddMBC(c)) return false;
+            if (!tokadd_mbchar(c)) return false;
             c = nextc();
         } while (isIdentifierChar(c));
         pushback(c);
@@ -278,11 +280,13 @@ public class RubyLexer {
         byte[] bytes = lexb.getUnsafeBytes();
         int begin = lexb.begin();
 
-        // FIXME: charset may be null for encoding java does not suport.
-        // This can use joni transcoding to save as UTF16-LE and then manually transcode back to
-        // raw bytes then it is visible to Ruby again...
-        return new String(bytes, begin + tokp, lex_p - tokp, current_enc.getCharset()).intern();
+        Charset charset = current_enc.getCharset();
+        // FIXME: No registered charset.  We should manually transcode this using jcodings to UTF16-LE internally
+        if (charset == null) {
+            return new String(bytes, begin + tokp, lex_p - tokp);
+        }
 
+        return new String(bytes, begin + tokp, lex_p - tokp, charset).intern();
     }
 
     public int tokenize_ident(int result) {
@@ -920,7 +924,7 @@ public class RubyLexer {
 
             term = c;
             while ((c = nextc()) != EOF && c != term) {
-                if (!tokenAddMBC(c)) return EOF;
+                if (!tokadd_mbchar(c)) return EOF;
             }
 
             if (c == EOF) compile_error("unterminated here document identifier");
@@ -942,7 +946,7 @@ public class RubyLexer {
             term = '"';
             func |= str_dquote;
             do {
-                if (!tokenAddMBC(c)) return EOF;
+                if (!tokadd_mbchar(c)) return EOF;
             } while ((c = nextc()) != EOF && isIdentifierChar(c));
             pushback(c);
             markerValue = createTokenByteList();
@@ -1694,7 +1698,7 @@ public class RubyLexer {
         case '-':
             c = nextc();
             if (isIdentifierChar(c)) {
-                if (!tokenAddMBC(c)) return EOF;
+                if (!tokadd_mbchar(c)) return EOF;
             } else {
                 pushback(c);
                 pushback('-');
@@ -1831,7 +1835,7 @@ public class RubyLexer {
         newtok(true);
         int first = c;
         do {
-            if (!tokenAddMBC(c)) return EOF;
+            if (!tokadd_mbchar(c)) return EOF;
             c = nextc();
         } while (isIdentifierChar(c));
 
@@ -2669,11 +2673,14 @@ public class RubyLexer {
     // mri: parser_tokadd_mbchar
     // This is different than MRI in that we return a boolean since we only care whether it was added
     // or not.  The MRI version returns the byte supplied which is never used as a value.
-    public boolean tokenAddMBC(int first_byte) {
+    public boolean tokadd_mbchar(int first_byte) {
         int length = precise_mbclen();
 
         if (length <= 0) {
-            compile_error("invalid multibyte char (" + getEncoding().getName() + ")");
+            try {
+                System.out.println("STR:" + new String(lexb.bytes(), "UTF-8"));
+            } catch (UnsupportedEncodingException e) {}
+            compile_error("invalid multibyte char (" + current_enc + ")");
             return false;
         }
 
@@ -2691,7 +2698,7 @@ public class RubyLexer {
         int length = precise_mbclen();
 
         if (length <= 0) {
-            compile_error("invalid multibyte char (" + getEncoding().getName() + ")");
+            compile_error("invalid multibyte char (" + current_enc + ")");
             return false;
         }
 
@@ -2712,10 +2719,10 @@ public class RubyLexer {
 
     public int precise_mbclen() {
         byte[] data = lexb.getUnsafeBytes();
-        int p = lex_p - 1;
+        int p = lex_p - 1; // we back up one since we have read past first byte by time we are calling this.
         int begin = lexb.begin();
 
-        return current_enc.length(data, begin+p, lex_pend-p);
+        return current_enc.length(data, begin+p, lex_pend-lex_p);
     }
 
 
