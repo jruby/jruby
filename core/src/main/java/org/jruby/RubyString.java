@@ -1120,7 +1120,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
         RubyString str = _str.convertToString();
         Encoding enc = checkEncoding(str);
         RubyString resultStr = newStringNoCopy(context.runtime, StringSupport.addByteLists(value, str.value),
-                                    enc, CodeRangeSupport.codeRangeAnd(getCodeRange(), str.getCodeRange()));
+                enc, CodeRangeSupport.codeRangeAnd(getCodeRange(), str.getCodeRange()));
         resultStr.infectBy(flags | str.flags);
         return resultStr;
     }
@@ -3303,7 +3303,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
     @JRubyMethod(name = "to_i")
     public IRubyObject to_i19(IRubyObject arg0) {
         long base = checkBase(arg0);
-        return stringToInum19((int)base, false);
+        return stringToInum19((int) base, false);
     }
 
     private long checkBase(IRubyObject arg0) {
@@ -4650,26 +4650,6 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
         return squeeze_bang19(context, args);
     }
 
-    private IRubyObject squeezeCommon(Ruby runtime, boolean squeeze[]) {
-        int s = value.getBegin();
-        int t = s;
-        int send = s + value.getRealSize();
-        byte[]bytes = value.getUnsafeBytes();
-        int save = -1;
-
-        while (s < send) {
-            int c = bytes[s++] & 0xff;
-            if (c != save || !squeeze[c]) bytes[t++] = (byte)(save = c);
-        }
-
-        if (t - value.getBegin() != value.getRealSize()) { // modified
-            value.setRealSize(t - value.getBegin());
-            return this;
-        }
-
-        return runtime.getNil();
-    }
-
     @JRubyMethod(name = "squeeze")
     public IRubyObject squeeze19(ThreadContext context) {
         RubyString str = strDup(context.runtime);
@@ -4703,10 +4683,16 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
 
         modifyAndKeepCodeRange();
         if (singleByteOptimizable()) {
-            return squeezeCommon(runtime, squeeze); // 1.8
+            if (StringSupport.squeezeCommonSingleByte(value, squeeze) == null) {
+                return runtime.getNil();
+            }
         } else {
-            return squeezeCommon19(runtime, squeeze, null, value.getEncoding(), false);
+            if (StringSupport.squeezeCommonMultiByte(runtime, value, squeeze, null, value.getEncoding(), false) == null) {
+                return runtime.getNil();
+            }
         }
+
+        return this;
     }
 
     @JRubyMethod(name = "squeeze!")
@@ -4719,11 +4705,16 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
 
         modifyAndKeepCodeRange();
         if (singleByteOptimizable() && otherStr.singleByteOptimizable()) {
-            return squeezeCommon(runtime, squeeze); // 1.8
+            if(StringSupport.squeezeCommonSingleByte(value, squeeze) == null) {
+                return runtime.getNil();
+            }
         } else {
-            return squeezeCommon19(runtime, squeeze, tables, value.getEncoding(), true);
+            if (StringSupport.squeezeCommonMultiByte(runtime, value, squeeze, tables, value.getEncoding(), true) == null) {
+                return runtime.getNil();
+            }
         }
 
+        return this;
     }
 
     @JRubyMethod(name = "squeeze!", rest = true)
@@ -4749,42 +4740,16 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
 
         modifyAndKeepCodeRange();
         if (singlebyte) {
-            return squeezeCommon(runtime, squeeze); // 1.8
+            if (StringSupport.squeezeCommonSingleByte(value, squeeze) == null) {
+                return runtime.getNil();
+            }
         } else {
-            return squeezeCommon19(runtime, squeeze, tables, enc, true);
-        }
-    }
-
-    private IRubyObject squeezeCommon19(Ruby runtime, boolean squeeze[], StringSupport.TrTables tables, Encoding enc, boolean isArg) {
-        int s = value.getBegin();
-        int t = s;
-        int send = s + value.getRealSize();
-        byte[]bytes = value.getUnsafeBytes();
-        int save = -1;
-        int c;
-
-        while (s < send) {
-            if (enc.isAsciiCompatible() && (c = bytes[s] & 0xff) < 0x80) {
-                if (c != save || (isArg && !squeeze[c])) bytes[t++] = (byte)(save = c);
-                s++;
-            } else {
-                c = codePoint(runtime, enc, bytes, s, send);
-                int cl = codeLength(enc, c);
-                if (c != save || (isArg && !StringSupport.trFind(c, squeeze, tables))) {
-                    if (t != s) enc.codeToMbc(c, bytes, t);
-                    save = c;
-                    t += cl;
-                }
-                s += cl;
+            if (StringSupport.squeezeCommonMultiByte(runtime, value, squeeze, tables, enc, true) == null) {
+                return runtime.getNil();
             }
         }
 
-        if (t - value.getBegin() != value.getRealSize()) { // modified
-            value.setRealSize(t - value.getBegin());
-            return this;
-        }
-
-        return runtime.getNil();
+        return this;
     }
 
     /** rb_str_tr / rb_str_tr_bang

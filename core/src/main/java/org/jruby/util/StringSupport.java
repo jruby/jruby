@@ -1995,6 +1995,58 @@ public final class StringSupport {
         return end - p > oend - op ? 1 : -1;
     }
 
+    public static ByteList squeezeCommonSingleByte(ByteList value, boolean squeeze[]) {
+        int s = value.getBegin();
+        int t = s;
+        int send = s + value.getRealSize();
+        byte[]bytes = value.getUnsafeBytes();
+        int save = -1;
+
+        while (s < send) {
+            int c = bytes[s++] & 0xff;
+            if (c != save || !squeeze[c]) bytes[t++] = (byte)(save = c);
+        }
+
+        if (t - value.getBegin() != value.getRealSize()) { // modified
+            value.setRealSize(t - value.getBegin());
+            return value;
+        }
+
+        return null;
+    }
+
+    public static ByteList squeezeCommonMultiByte(Ruby runtime, ByteList value, boolean squeeze[], TrTables tables, Encoding enc, boolean isArg) {
+        int s = value.getBegin();
+        int t = s;
+        int send = s + value.getRealSize();
+        byte[]bytes = value.getUnsafeBytes();
+        int save = -1;
+        int c;
+
+        while (s < send) {
+            if (enc.isAsciiCompatible() && (c = bytes[s] & 0xff) < 0x80) {
+                if (c != save || (isArg && !squeeze[c])) bytes[t++] = (byte)(save = c);
+                s++;
+            } else {
+                c = codePoint(runtime, enc, bytes, s, send);
+                int cl = codeLength(enc, c);
+                if (c != save || (isArg && !trFind(c, squeeze, tables))) {
+                    if (t != s) enc.codeToMbc(c, bytes, t);
+                    save = c;
+                    t += cl;
+                }
+                s += cl;
+            }
+        }
+
+        if (t - value.getBegin() != value.getRealSize()) { // modified
+            value.setRealSize(t - value.getBegin());
+            return value;
+        }
+
+        return null;
+    }
+
     private static int rb_memsearch_ss(byte[] xsBytes, int xs, int m, byte[] ysBytes, int ys, int n) {
         int y;
 
