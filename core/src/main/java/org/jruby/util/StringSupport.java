@@ -27,7 +27,6 @@ package org.jruby.util;
 
 import static org.jcodings.Encoding.CHAR_INVALID;
 import static org.jruby.RubyEnumerator.enumeratorize;
-import static org.jruby.util.StringSupport.nth;
 
 import org.jcodings.Encoding;
 import org.jcodings.ascii.AsciiTables;
@@ -1951,6 +1950,49 @@ public final class StringSupport {
         } else {
             return cflag && set ? last : -1;
         }
+    }
+
+    public static int multiByteCasecmp(Encoding enc, ByteList value, ByteList otherValue) {
+        byte[]bytes = value.getUnsafeBytes();
+        int p = value.getBegin();
+        int end = p + value.getRealSize();
+
+        byte[]obytes = otherValue.getUnsafeBytes();
+        int op = otherValue.getBegin();
+        int oend = op + otherValue.getRealSize();
+
+        while (p < end && op < oend) {
+            final int c, oc;
+            if (enc.isAsciiCompatible()) {
+                c = bytes[p] & 0xff;
+                oc = obytes[op] & 0xff;
+            } else {
+                c = preciseCodePoint(enc, bytes, p, end);
+                oc = preciseCodePoint(enc, obytes, op, oend);
+            }
+
+            int cl, ocl;
+            if (enc.isAsciiCompatible() && Encoding.isAscii(c) && Encoding.isAscii(oc)) {
+                byte uc = AsciiTables.ToUpperCaseTable[c];
+                byte uoc = AsciiTables.ToUpperCaseTable[oc];
+                if (uc != uoc) {
+                    return uc < uoc ? -1 : 1;
+                }
+                cl = ocl = 1;
+            } else {
+                cl = length(enc, bytes, p, end);
+                ocl = length(enc, obytes, op, oend);
+                // TODO: opt for 2 and 3 ?
+                int ret = caseCmp(bytes, p, obytes, op, cl < ocl ? cl : ocl);
+                if (ret != 0) return ret < 0 ? -1 : 1;
+                if (cl != ocl) return cl < ocl ? -1 : 1;
+            }
+
+            p += cl;
+            op += ocl;
+        }
+        if (end - p == oend - op) return 0;
+        return end - p > oend - op ? 1 : -1;
     }
 
     private static int rb_memsearch_ss(byte[] xsBytes, int xs, int m, byte[] ysBytes, int ys, int n) {

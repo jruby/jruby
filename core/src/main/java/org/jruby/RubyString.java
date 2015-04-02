@@ -1508,51 +1508,18 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
         if (singleByteOptimizable() && otherStr.singleByteOptimizable()) {
             return RubyFixnum.newFixnum(runtime, value.caseInsensitiveCmp(otherStr.value));
         } else {
-            return multiByteCasecmp(runtime, enc, value, otherStr.value);
-        }
-    }
+            final int ret = StringSupport.multiByteCasecmp(enc, value, otherStr.value);
 
-    private IRubyObject multiByteCasecmp(Ruby runtime, Encoding enc, ByteList value, ByteList otherValue) {
-        byte[]bytes = value.getUnsafeBytes();
-        int p = value.getBegin();
-        int end = p + value.getRealSize();
-
-        byte[]obytes = otherValue.getUnsafeBytes();
-        int op = otherValue.getBegin();
-        int oend = op + otherValue.getRealSize();
-
-        while (p < end && op < oend) {
-            final int c, oc;
-            if (enc.isAsciiCompatible()) {
-                c = bytes[p] & 0xff;
-                oc = obytes[op] & 0xff;
-            } else {
-                c = StringSupport.preciseCodePoint(enc, bytes, p, end);
-                oc = StringSupport.preciseCodePoint(enc, obytes, op, oend);
+            if (ret < 0) {
+                return RubyFixnum.minus_one(runtime);
             }
 
-            int cl, ocl;
-            if (enc.isAsciiCompatible() && Encoding.isAscii(c) && Encoding.isAscii(oc)) {
-                byte uc = AsciiTables.ToUpperCaseTable[c];
-                byte uoc = AsciiTables.ToUpperCaseTable[oc];
-                if (uc != uoc) {
-                    return uc < uoc ? RubyFixnum.minus_one(runtime) : RubyFixnum.one(runtime);
-                }
-                cl = ocl = 1;
-            } else {
-                cl = StringSupport.length(enc, bytes, p, end);
-                ocl = StringSupport.length(enc, obytes, op, oend);
-                // TODO: opt for 2 and 3 ?
-                int ret = StringSupport.caseCmp(bytes, p, obytes, op, cl < ocl ? cl : ocl);
-                if (ret != 0) return ret < 0 ? RubyFixnum.minus_one(runtime) : RubyFixnum.one(runtime);
-                if (cl != ocl) return cl < ocl ? RubyFixnum.minus_one(runtime) : RubyFixnum.one(runtime);
+            if (ret > 0) {
+                return RubyFixnum.one(runtime);
             }
 
-            p += cl;
-            op += ocl;
+            return RubyFixnum.zero(runtime);
         }
-        if (end - p == oend - op) return RubyFixnum.zero(runtime);
-        return end - p > oend - op ? RubyFixnum.one(runtime) : RubyFixnum.minus_one(runtime);
     }
 
     /** rb_str_match
