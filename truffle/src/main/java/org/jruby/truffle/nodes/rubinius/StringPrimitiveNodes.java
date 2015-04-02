@@ -22,6 +22,7 @@
  * Copyright (C) 2006 Ola Bini <ola@ologix.com>
  * Copyright (C) 2007 Nick Sieger <nicksieger@gmail.com>
  *
+ *
  * Some of the code in this class is transliterated from C++ code in Rubinius.
  * 
  * Copyright (c) 2007-2014, Evan Phoenix and contributors
@@ -98,7 +99,16 @@ public abstract class StringPrimitiveNodes {
 
         @Specialization
         public boolean isCharacterAscii(RubyString character) {
-            return StringSupport.isAsciiOnly(character);
+            final ByteList bytes = character.getByteList();
+            final int codepoint = StringSupport.preciseCodePoint(
+                    bytes.getEncoding(),
+                    bytes.getUnsafeBytes(),
+                    bytes.getBegin(),
+                    bytes.getBegin() + bytes.getRealSize());
+
+            final boolean found = codepoint != -1;
+
+            return found && Encoding.isAscii(codepoint);
         }
     }
 
@@ -328,8 +338,8 @@ public abstract class StringPrimitiveNodes {
                 return nil();
             }
 
-            final int p = bytes.getBegin();
-            final int end = p + bytes.getRealSize();
+            final int p = bytes.getBegin() + byteIndex;
+            final int end = bytes.getBegin() + bytes.getRealSize();
             final int c = StringSupport.preciseLength(bytes.getEncoding(), bytes.getUnsafeBytes(), p, end);
 
             if (! StringSupport.MBCLEN_CHARFOUND_P(c)) {
@@ -647,8 +657,95 @@ public abstract class StringPrimitiveNodes {
         }
 
         @Specialization
-        public Object stringCharacterIndex(RubyString string, Object indexedString, Object start) {
-            throw new UnsupportedOperationException("string_character_index");
+        public Object stringCharacterIndex(RubyString string, RubyString pattern, int offset) {
+            notDesignedForCompilation();
+
+            if (offset < 0) {
+                return nil();
+            }
+
+            final int total = string.getByteList().length();
+            int p = string.getByteList().getBegin();
+            final int e = p + total;
+            int pp = pattern.getByteList().getBegin();
+            final int pe = pp + pattern.getByteList().length();
+            int s;
+            int ss;
+
+            final byte[] stringBytes = string.getByteList().getUnsafeBytes();
+            final byte[] patternBytes = pattern.getByteList().getUnsafeBytes();
+
+            if (StringSupport.isSingleByteOptimizable(string, string.getByteList().getEncoding())) {
+                for(s = p += offset, ss = pp; p < e; s = ++p) {
+                    if (stringBytes[p] != patternBytes[pp]) continue;
+
+                    while (p < e && pp < pe && stringBytes[p] == patternBytes[pp]) {
+                        p++;
+                        pp++;
+                    }
+
+                    if (pp < pe) {
+                        p = s;
+                        pp = ss;
+                    } else {
+                        return s;
+                    }
+                }
+
+                return nil();
+            }
+
+            final Encoding enc = string.getByteList().getEncoding();
+            int index = 0;
+            int c;
+
+            while(p < e && index < offset) {
+                c = StringSupport.preciseLength(enc, stringBytes, p, e);
+
+                if (StringSupport.MBCLEN_CHARFOUND_P(c)) {
+                    p += c;
+                    index++;
+                } else {
+                    return nil();
+                }
+            }
+
+            for(s = p, ss = pp; p < e; s = p += c, ++index) {
+                c = StringSupport.preciseLength(enc, stringBytes, p, e);
+                if ( !StringSupport.MBCLEN_CHARFOUND_P(c)) return nil();
+
+                if (stringBytes[p] != patternBytes[pp]) continue;
+
+                while (p < e && pp < pe) {
+                    boolean breakOut = false;
+
+                    for (int pc = p + c; p < e && p < pc && pp < pe; ) {
+                        if (stringBytes[p] == patternBytes[pp]) {
+                            ++p;
+                            ++pp;
+                        } else {
+                            breakOut = true;
+                            break;
+                        }
+                    }
+
+                    if (breakOut) {
+                        break;
+                    }
+
+                    c = StringSupport.preciseLength(enc, stringBytes, p, e);
+                    if (! StringSupport.MBCLEN_CHARFOUND_P(c)) break;
+                }
+
+                if (pp < pe) {
+                    p = s;
+                    pp = ss;
+                } else {
+                    return index;
+                }
+            }
+
+            return nil();
         }
 
     }
@@ -665,33 +762,92 @@ public abstract class StringPrimitiveNodes {
         }
 
         @Specialization
-        public Object stringByteIndex(RubyString string, int characters, int start) {
-            if (string.getByteList().getEncoding().isSingleByte()) {
-                return characters - start;
-            } else {
-                final Encoding encoding = string.getByteList().getEncoding();
-                final int length = string.getByteList().length();
+        public Object stringByteIndex(RubyString string, int index, int start) {
+            // Taken from Rubinius's String::byte_index.
 
-                int count = 0;
+            final ByteList bytes = string.getByteList();
 
-                int i;
+            final Encoding enc = bytes.getEncoding();
+            int p = bytes.getBegin();
+            final int e = p + bytes.getRealSize();
 
-                for(i = 0; i < characters && count < length; i++) {
-                    if(!encoding.isMbcHead(string.getByteList().getUnsafeBytes(), count, length)) {
-                        count++;
-                    } else {
-                        count += encoding.codeToMbcLength(string.getByteList().getUnsafeBytes()[count]);
-                    }
-                }
+            int i, k = index;
 
-                if(i < characters) {
-                    return nil();
+            if (k < 0) {
+                CompilerDirectives.transferToInterpreter();
+                throw new RaiseException(getContext().getCoreLibrary().argumentError("character index is negative", this));
+            }
+
+            for (i = 0; i < k && p < e; i++) {
+                final int c = StringSupport.preciseLength(enc, bytes.getUnsafeBytes(), p, e);
+
+                // If it's an invalid byte, just treat it as a single byte
+                if(! StringSupport.MBCLEN_CHARFOUND_P(c)) {
+                    ++p;
                 } else {
-                    return count;
+                    p += StringSupport.MBCLEN_CHARFOUND_LEN(c);
                 }
+            }
+
+            if (i < k) {
+                return nil();
+            } else {
+                return p;
             }
         }
 
+        @Specialization
+        public Object stringByteIndex(RubyString string, RubyString pattern, int offset) {
+            // Taken from Rubinius's String::byte_index.
+
+            final int match_size = pattern.getByteList().length();
+
+            if (offset < 0) {
+                CompilerDirectives.transferToInterpreter();
+                throw new RaiseException(getContext().getCoreLibrary().argumentError("negative start given", this));
+            }
+
+            if (match_size == 0) return offset;
+
+            if (string.scanForCodeRange() == StringSupport.CR_BROKEN) {
+                return nil();
+            }
+
+            final Encoding encoding = string.checkEncoding(pattern, this);
+            int p = string.getByteList().getBegin();
+            final int e = p + string.getByteList().getRealSize();
+            int pp = pattern.getByteList().getBegin();
+            final int pe = pp + pattern.getByteList().getRealSize();
+            int s;
+            int ss;
+
+            final byte[] stringBytes = string.getByteList().getUnsafeBytes();
+            final byte[] patternBytes = pattern.getByteList().getUnsafeBytes();
+
+            for(s = p, ss = pp; p < e; s = ++p) {
+                if (stringBytes[p] != patternBytes[pp]) continue;
+
+                while (p < e && pp < pe && stringBytes[p] == patternBytes[pp]) {
+                    p++;
+                    pp++;
+                }
+
+                if (pp < pe) {
+                    p = s;
+                    pp = ss;
+                } else {
+                    final int c = StringSupport.preciseLength(encoding, stringBytes, s, e);
+
+                    if (StringSupport.MBCLEN_CHARFOUND_P(c)) {
+                        return s;
+                    } else {
+                        return nil();
+                    }
+                }
+            }
+
+            return nil();
+        }
     }
 
     @RubiniusPrimitive(name = "string_previous_byte_index")
@@ -742,6 +898,8 @@ public abstract class StringPrimitiveNodes {
 
         @Specialization
         public RubyString stringCopyFrom(RubyString string, RubyString other, int start, int size, int dest) {
+            // Taken from Rubinius's String::copy_from.
+
             int src = start;
             int dst = dest;
             int cnt = size;
@@ -752,7 +910,10 @@ public abstract class StringPrimitiveNodes {
             if(src < 0) src = 0;
             if(cnt > osz - src) cnt = osz - src;
 
-            int sz = string.getByteList().length();
+            // This bounds checks on the total capacity rather than the virtual
+            // size() of the String. This allows for string adjustment within
+            // the capacity without having to change the virtual size first.
+            int sz = string.getByteList().getUnsafeBytes().length;
             if(dst >= sz) return string;
             if(dst < 0) dst = 0;
             if(cnt > sz - dst) cnt = sz - dst;

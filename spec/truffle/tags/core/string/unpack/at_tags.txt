@@ -1,5 +1,2 @@
 fails:String#unpack with format '@' calls #to_str to coerce the directives string
-fails:String#unpack with format '@' raises an ArgumentError when the format modifier is '_'
-fails:String#unpack with format '@' raises an ArgumentError when the format modifier is '!'
 fails:String#unpack with format '@' positions the read index one beyond the last readable byte in the String
-fails:String#unpack with format '@' raises an ArgumentError if the count exceeds the size of the String

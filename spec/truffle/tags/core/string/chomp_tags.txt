@@ -1,6 +1,0 @@
-fails:String#chomp removes the final carriage return, newline from a multibyte String
-fails:String#chomp removes the final carriage return, newline from a non-ASCII String
-fails:String#chomp removes the final carriage return, newline from a non-ASCII String when the record separator is changed
-fails:String#chomp! removes the final carriage return, newline from a multibyte String
-fails:String#chomp! removes the final carriage return, newline from a non-ASCII String
-fails:String#chomp! removes the final carriage return, newline from a non-ASCII String when the record separator is changed

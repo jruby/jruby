@@ -1,3 +1,0 @@
-fails:Kernel.Rational when passed a String converts the String to a Rational using the same method as String#to_r
-fails:Kernel.Rational when passed a String scales the Rational value of the first argument by the Rational value of the second
-fails:Kernel.Rational when passed a String does not use the same method as Float#to_r

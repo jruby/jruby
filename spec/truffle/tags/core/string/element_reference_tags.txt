@@ -1,3 +1,0 @@
-fails:String#[] with Range calls to_int on range arguments
-fails:String#[] with Range works with Range subclasses
-fails:String#[] with Regexp, index returns nil if there is no capture for the given index

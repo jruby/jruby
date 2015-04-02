@@ -100,6 +100,8 @@ class MSpecScript
   set :core, core
 
   set :library, [
+    "spec/ruby/library/abbrev",
+    "spec/ruby/library/base64",
     "spec/ruby/library/erb",
     "spec/ruby/library/set",
     "spec/ruby/library/strscan",

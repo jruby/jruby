@@ -1,29 +1,2 @@
-fails:String#slice with Range calls to_int on range arguments
-fails:String#slice with Range works with Range subclasses
-fails:String#slice with Regexp, index returns nil if there is no capture for the given index
-fails:String#slice! with index calls to_int on index
 fails:String#slice! with index returns the character given by the character index
-fails:String#slice! with index, length deletes and returns the substring at idx and the given length
-fails:String#slice! with index, length always taints resulting strings when self is tainted
-fails:String#slice! with index, length calls to_int on idx and length
-fails:String#slice! with index, length returns subclass instances
-fails:String#slice! Range calls to_int on range arguments
-fails:String#slice! Range works with Range subclasses
-fails:String#slice! Range returns the substring given by the character offsets of the range
-fails:String#slice! with Regexp deletes and returns the first match from self
-fails:String#slice! with Regexp always taints resulting strings when self or regexp is tainted
-fails:String#slice! with Regexp doesn't taint self when regexp is tainted
-fails:String#slice! with Regexp returns subclass instances
-fails:String#slice! with Regexp sets $~ to MatchData when there is a match and nil when there's none
-fails:String#slice! with Regexp, index deletes and returns the capture for idx from self
-fails:String#slice! with Regexp, index always taints resulting strings when self or regexp is tainted
-fails:String#slice! with Regexp, index doesn't taint self when regexp is tainted
-fails:String#slice! with Regexp, index returns nil if there is no capture for idx
 fails:String#slice! with Regexp, index calls to_int on idx
-fails:String#slice! with Regexp, index returns subclass instances
-fails:String#slice! with String removes and returns the first occurrence of other_str from self
-fails:String#slice! with String taints resulting strings when other is tainted
-fails:String#slice! with String doesn't set $~
-fails:String#slice! with String returns a subclass instance when given a subclass instance
-fails:String#slice! with Regexp, index accepts a Float for capture index
-fails:String#slice! with Regexp, index calls #to_int to convert an Object to capture index
