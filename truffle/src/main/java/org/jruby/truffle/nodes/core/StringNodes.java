@@ -1588,25 +1588,6 @@ public abstract class StringNodes {
         }
     }
 
-    @CoreMethod(names = "swapcase", taintFromSelf = true)
-    public abstract static class SwapcaseNode extends CoreMethodNode {
-        public SwapcaseNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
-        public SwapcaseNode(SwapcaseNode prev) {
-            super(prev);
-        }
-
-        @Specialization
-        public RubyString swapcase(RubyString string) {
-            notDesignedForCompilation();
-
-            ByteList byteList = StringNodesHelper.swapcase(string);
-            return getContext().makeString(string.getLogicalClass(), byteList);
-        }
-    }
-
     @CoreMethod(names = "swapcase!", raiseIfFrozenSelf = true)
     public abstract static class SwapcaseBangNode extends CoreMethodNode {
         public SwapcaseBangNode(RubyContext context, SourceSection sourceSection) {
