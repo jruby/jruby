@@ -1077,6 +1077,11 @@ public abstract class ArrayNodes {
             return found;
         }
 
+        @Specialization(guards = "isNullArray")
+        public Object deleteNull(VirtualFrame frame, RubyArray array, Object value) {
+            return nil();
+        }
+
     }
 
     @CoreMethod(names = "delete_at", required = 1, raiseIfFrozenSelf = true)
