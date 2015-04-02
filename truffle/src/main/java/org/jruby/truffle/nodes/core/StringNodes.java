@@ -2399,6 +2399,8 @@ public abstract class StringNodes {
     @CoreMethod(names = "capitalize!", raiseIfFrozenSelf = true)
     public abstract static class CapitalizeBangNode extends CoreMethodNode {
 
+        private final ConditionProfile dummyEncodingProfile = ConditionProfile.createBinaryProfile();
+
         public CapitalizeBangNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
         }
@@ -2408,48 +2410,76 @@ public abstract class StringNodes {
         }
 
         @Specialization
+        @TruffleBoundary
         public RubyBasicObject capitalizeBang(RubyString string) {
-            notDesignedForCompilation();
+            // Taken from org.jruby.RubyString#capitalize_bang19.
 
-            String javaString = string.toString();
+            final ByteList value = string.getByteList();
+            final Encoding enc = value.getEncoding();
 
-            if (javaString.isEmpty()) {
-                return nil();
-            } else {
-                final ByteList byteListString = StringNodesHelper.capitalize(string);
-                
-                if (string.getByteList().equals(byteListString)) {
-                    return nil();
-                }else {
-                    string.set(byteListString);
-                    return string;
-                }
+            if (dummyEncodingProfile.profile(enc.isDummy())) {
+                CompilerDirectives.transferToInterpreter();
+
+                throw new RaiseException(
+                        getContext().getCoreLibrary().encodingCompatibilityError(
+                                String.format("incompatible encoding with this operation: %s", enc), this));
             }
+
+            if (value.getRealSize() == 0) {
+                return nil();
+            }
+
+            string.modifyAndKeepCodeRange();
+
+            int s = value.getBegin();
+            int end = s + value.getRealSize();
+            byte[]bytes = value.getUnsafeBytes();
+            boolean modify = false;
+
+            int c = StringSupport.codePoint(getContext().getRuntime(), enc, bytes, s, end);
+            if (enc.isLower(c)) {
+                enc.codeToMbc(StringSupport.toUpper(enc, c), bytes, s);
+                modify = true;
+            }
+
+            s += StringSupport.codeLength(enc, c);
+            while (s < end) {
+                c = StringSupport.codePoint(getContext().getRuntime(), enc, bytes, s, end);
+                if (enc.isUpper(c)) {
+                    enc.codeToMbc(StringSupport.toLower(enc, c), bytes, s);
+                    modify = true;
+                }
+                s += StringSupport.codeLength(enc, c);
+            }
+
+            return modify ? string : nil();
         }
     }
 
     @CoreMethod(names = "capitalize", taintFromSelf = true)
     public abstract static class CapitalizeNode extends CoreMethodNode {
 
+        @Child CallDispatchHeadNode capitalizeBangNode;
+        @Child CallDispatchHeadNode dupNode;
+
         public CapitalizeNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
+            capitalizeBangNode = DispatchHeadNodeFactory.createMethodCall(context);
+            dupNode = DispatchHeadNodeFactory.createMethodCall(context);
         }
 
         public CapitalizeNode(CapitalizeNode prev) {
             super(prev);
+            capitalizeBangNode = prev.capitalizeBangNode;
+            dupNode = prev.dupNode;
         }
 
         @Specialization
-        public RubyString capitalize(RubyString string) {
-            notDesignedForCompilation();
-            String javaString = string.toString();
+        public Object capitalize(VirtualFrame frame, RubyString string) {
+            final Object duped = dupNode.call(frame, string, "dup", null);
+            capitalizeBangNode.call(frame, duped, "capitalize!", null);
 
-            if (javaString.isEmpty()) {
-                return string;
-            } else {
-                final ByteList byteListString = StringNodesHelper.capitalize(string);
-                return string.getContext().makeString(string.getLogicalClass(), byteListString);
-            }
+            return duped;
         }
 
     }
@@ -2477,16 +2507,6 @@ public abstract class StringNodes {
     }
 
     public static class StringNodesHelper {
-
-        @TruffleBoundary
-        public static ByteList capitalize(RubyString string) {
-            String javaString = string.toString();
-            String head = javaString.substring(0, 1).toUpperCase(Locale.ENGLISH);
-            String tail = javaString.substring(1, javaString.length()).toLowerCase(Locale.ENGLISH);
-            ByteList byteListString = ByteList.create(head + tail);
-            byteListString.setEncoding(string.getBytes().getEncoding());
-            return byteListString;
-        }
 
         @TruffleBoundary
         public static ByteList upcase(Ruby runtime, ByteList string) {
