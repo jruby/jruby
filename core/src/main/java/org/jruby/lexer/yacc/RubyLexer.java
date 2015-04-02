@@ -41,6 +41,7 @@ import java.io.UnsupportedEncodingException;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.nio.charset.Charset;
+import java.nio.charset.UnsupportedCharsetException;
 import java.util.HashMap;
 
 import org.jcodings.Encoding;
@@ -279,14 +280,16 @@ public class RubyLexer {
     public String createTokenString() {
         byte[] bytes = lexb.getUnsafeBytes();
         int begin = lexb.begin();
+        Charset charset;
 
-        Charset charset = current_enc.getCharset();
-        // FIXME: No registered charset.  We should manually transcode this using jcodings to UTF16-LE internally
-        if (charset == null) {
-            return new String(bytes, begin + tokp, lex_p - tokp);
-        }
+        // FIXME: We should be able to move some faster non-exception cache using Encoding.isDefined
+        try {
+            charset = current_enc.getCharset();
+            if (charset != null) return new String(bytes, begin + tokp, lex_p - tokp, charset).intern();
+        } catch (UnsupportedCharsetException e) {}
 
-        return new String(bytes, begin + tokp, lex_p - tokp, charset).intern();
+
+        return new String(bytes, begin + tokp, lex_p - tokp).intern();
     }
 
     public int tokenize_ident(int result) {
@@ -1668,8 +1671,10 @@ public class RubyLexer {
         case '_':       /* $_: last read line string */
             c = nextc();
             if (isIdentifierChar(c)) {
-                tokadd_ident(c);
+                if (!tokadd_ident(c)) return EOF;
 
+                last_state = lex_state;
+                setState(LexState.EXPR_END);
                 yaccValue = createTokenString();
                 return Tokens.tGVAR;
             }
@@ -2232,11 +2237,10 @@ public class RubyLexer {
             setState(LexState.EXPR_VALUE);
             yaccValue = "?";
             return '?';
-            /*} else if (ismbchar(c)) { // ruby - we don't support them either?
-                rb_warn("multibyte character literal not supported yet; use ?\\" + c);
-                support.unread(c);
-                lexState = LexState.EXPR_BEG;
-                return '?';*/
+        }
+
+        if (!isASCII(c)) {
+            if (!tokadd_mbchar(c)) return EOF;
         } else if (isIdentifierChar(c) && !peek('\n') && isNext_identchar()) {
             newtok(true);
             pushback(c);
@@ -2244,7 +2248,6 @@ public class RubyLexer {
             yaccValue = "?";
             return '?';
         } else if (c == '\\') {
-            newtok(true);
             if (peek('u')) {
                 nextc(); // Eat 'u'
                 ByteList oneCharBL = new ByteList(2);
@@ -2253,7 +2256,7 @@ public class RubyLexer {
                 c = readUTFEscape(oneCharBL, false, false);
                 
                 if (c >= 0x80) {
-                    tokenAddMBC(c, oneCharBL);
+                    tokaddmbc(c, oneCharBL);
                 } else {
                     oneCharBL.append(c);
                 }
@@ -2268,12 +2271,11 @@ public class RubyLexer {
         } else {
             newtok(true);
         }
-        
-        setState(LexState.EXPR_END);
+
         ByteList oneCharBL = new ByteList(1);
         oneCharBL.append(c);
         yaccValue = new StrNode(getPosition(), oneCharBL);
-        
+        setState(LexState.EXPR_END);
         return Tokens.tCHAR;
     }
     
@@ -2671,30 +2673,34 @@ public class RubyLexer {
     }
 
     // mri: parser_tokadd_mbchar
-    // This is different than MRI in that we return a boolean since we only care whether it was added
-    // or not.  The MRI version returns the byte supplied which is never used as a value.
+    /**
+     * This differs from MRI in a few ways.  This version does not apply value to a separate token buffer.
+     * It is for use when we know we will not be omitting or including ant non-syntactical characters.  Use
+     * tokadd_mbchar(int, ByteList) if the string differs from actual source.  Secondly, this returns a boolean
+     * instead of the first byte passed.  MRI only used the return value as a success/failure code to return
+     * EOF.
+     *
+     * Because this version does not use a separate token buffer we only just increment lex_p.  When we reach
+     * end of the token it will just get the bytes directly from source directly.
+     */
     public boolean tokadd_mbchar(int first_byte) {
         int length = precise_mbclen();
 
         if (length <= 0) {
-            try {
-                System.out.println("STR:" + new String(lexb.bytes(), "UTF-8"));
-            } catch (UnsupportedEncodingException e) {}
             compile_error("invalid multibyte char (" + current_enc + ")");
             return false;
         }
 
-//        tokAdd(first_byte);                  // add first byte since we have it.
-        lex_p += length - 1;                         // we already read first byte so advance pointer for remainder
-//        if (length > 1) tokCopy(length - 1); // copy next n bytes over.
+        lex_p += length - 1;  // we already read first byte so advance pointer for remainder
 
         return true;
     }
 
     // mri: parser_tokadd_mbchar
-    // This is different than MRI in that we return a boolean since we only care whether it was added
-    // or not.  The MRI version returns the byte supplied which is never used as a value.
-    public boolean tokenAddMBC(int first_byte, ByteList buffer) {
+    /**
+     * @see RubyLexer::tokadd_mbchar(int)
+     */
+    public boolean tokadd_mbchar(int first_byte, ByteList buffer) {
         int length = precise_mbclen();
 
         if (length <= 0) {
@@ -2709,6 +2715,19 @@ public class RubyLexer {
         return true;
     }
 
+    /**
+     *  This looks deceptively like tokadd_mbchar(int, ByteList) but it differs in that it uses
+     *  the bytelists encoding and the first parameter is a full codepoint and not the first byte
+     *  of a mbc sequence.
+     */
+    public void tokaddmbc(int codepoint, ByteList buffer) {
+        Encoding encoding = buffer.getEncoding();
+        int length = encoding.codeToMbcLength(codepoint);
+        buffer.ensure(buffer.getRealSize() + length);
+        encoding.codeToMbc(codepoint, buffer.getUnsafeBytes(), buffer.begin() + buffer.getRealSize());
+        buffer.setRealSize(buffer.getRealSize() + length);
+    }
+
     public void tokAdd(int first_byte, ByteList buffer) {
         buffer.append((byte) first_byte);
     }
@@ -2719,10 +2738,10 @@ public class RubyLexer {
 
     public int precise_mbclen() {
         byte[] data = lexb.getUnsafeBytes();
-        int p = lex_p - 1; // we back up one since we have read past first byte by time we are calling this.
         int begin = lexb.begin();
 
-        return current_enc.length(data, begin+p, lex_pend-lex_p);
+        // we subtract one since we have read past first byte by time we are calling this.
+        return current_enc.length(data, begin+lex_p-1, begin+lex_pend);
     }
 
 
@@ -2767,12 +2786,7 @@ public class RubyLexer {
     private void readUTF8EscapeIntoBuffer(int codepoint, ByteList buffer, boolean stringLiteral) throws IOException {
         if (codepoint >= 0x80) {
             buffer.setEncoding(UTF8_ENCODING);
-            if (stringLiteral) {
-                int length = UTF8_ENCODING.codeToMbcLength(codepoint);
-                buffer.ensure(buffer.getRealSize() + length);
-                UTF8_ENCODING.codeToMbc(codepoint, buffer.getUnsafeBytes(), buffer.begin() + buffer.getRealSize());
-                buffer.setRealSize(buffer.getRealSize() + length);
-            }
+            if (stringLiteral) tokaddmbc(codepoint, buffer);
         } else if (stringLiteral) {
             buffer.append((char) codepoint);
         }

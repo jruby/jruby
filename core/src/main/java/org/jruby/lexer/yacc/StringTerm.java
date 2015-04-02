@@ -30,7 +30,6 @@ package org.jruby.lexer.yacc;
 import java.io.IOException;
 import org.jcodings.Encoding;
 import org.jruby.ast.RegexpNode;
-import org.jruby.lexer.LexerSource;
 import org.jruby.lexer.yacc.SyntaxException.PID;
 import org.jruby.parser.Tokens;
 import org.jruby.util.ByteList;
@@ -324,7 +323,7 @@ public class StringTerm extends StrTerm {
                             continue;
                         }
 
-                        if (!lexer.tokenAddMBC(c, buffer)) {
+                        if (!lexer.tokadd_mbchar(c, buffer)) {
                             throw new SyntaxException(PID.INVALID_MULTIBYTE_CHAR, lexer.getPosition(),
                                     null, "invalid multibyte char (" + enc[0] + ")");
                         }
@@ -367,7 +366,7 @@ nonascii:       hasNonAscii = true; // Label for comparison with MRI only.
                     continue;
                 }
 
-                if (!lexer.tokenAddMBC(c, buffer)) {
+                if (!lexer.tokadd_mbchar(c, buffer)) {
                     throw new SyntaxException(PID.INVALID_MULTIBYTE_CHAR, lexer.getPosition(),
                             null, "invalid multibyte char (" + enc[0] + ")");
                 }
