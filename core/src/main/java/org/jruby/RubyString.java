@@ -3274,10 +3274,12 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
 
     @JRubyMethod
     public IRubyObject setbyte(ThreadContext context, IRubyObject index, IRubyObject val) {
-        modifyAndKeepCodeRange();
         int i = RubyNumeric.num2int(index);
         int b = RubyNumeric.num2int(val);
-        value.getUnsafeBytes()[checkIndexForRef(i, value.getRealSize())] = (byte)b;
+        int normalizedIndex = checkIndexForRef(i, value.getRealSize());
+
+        modify19();
+        value.getUnsafeBytes()[normalizedIndex] = (byte)b;
         return val;
     }
 
