@@ -2221,14 +2221,14 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
         otherStr.associateEncoding(ascii8bit);
         ByteList otherBL = otherStr.getByteList();
         if (otherBL.length() < 2) {
-            throw context.runtime.newArgumentError("salt too short(need >=2 bytes)");
+            throw context.runtime.newArgumentError("salt too short (need >=2 bytes)");
         }
 
         POSIX posix = context.runtime.getPosix();
         byte[] keyBytes = Arrays.copyOfRange(value.unsafeBytes(), value.begin(), value.realSize());
         byte[] saltBytes = Arrays.copyOfRange(otherBL.unsafeBytes(), otherBL.begin(), otherBL.realSize());
         if (saltBytes[0] == 0 || saltBytes[1] == 0) {
-            throw context.runtime.newArgumentError("salt too short(need >=2 bytes)");
+            throw context.runtime.newArgumentError("salt too short (need >=2 bytes)");
         }
         byte[] cryptedString = posix.crypt(keyBytes, saltBytes);
         // We differ from MRI in that we do not process salt to make it work and we will
