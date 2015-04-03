@@ -1814,7 +1814,12 @@ public abstract class StringNodes {
     }
 
     @CoreMethod(names = "setbyte", required = 2, raiseIfFrozenSelf = true)
-    public abstract static class SetByteNode extends CoreMethodNode {
+    @NodeChildren({
+        @NodeChild(value = "string"),
+        @NodeChild(value = "index"),
+        @NodeChild(value = "value")
+    })
+    public abstract static class SetByteNode extends RubyNode {
 
         public SetByteNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -1822,6 +1827,14 @@ public abstract class StringNodes {
 
         public SetByteNode(SetByteNode prev) {
             super(prev);
+        }
+
+        @CreateCast("index") public RubyNode coerceIndexToInt(RubyNode index) {
+            return new FixnumLowerNode(ToIntNodeFactory.create(getContext(), getSourceSection(), index));
+        }
+
+        @CreateCast("value") public RubyNode coerceValueToInt(RubyNode value) {
+            return new FixnumLowerNode(ToIntNodeFactory.create(getContext(), getSourceSection(), value));
         }
 
         @Specialization
