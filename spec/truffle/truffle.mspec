@@ -104,6 +104,7 @@ class MSpecScript
     "spec/ruby/library/base64",
     "spec/ruby/library/complex",
     "spec/ruby/library/erb",
+    "spec/ruby/library/observer",
     "spec/ruby/library/set",
     "spec/ruby/library/strscan",
     "spec/ruby/library/stringio",
