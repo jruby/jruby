@@ -1825,10 +1825,14 @@ public abstract class StringNodes {
         }
 
         @Specialization
-        public Object setByte(RubyString string, int index, Object value) {
-            notDesignedForCompilation();
+        public int setByte(RubyString string, int index, int value) {
+            final int normalizedIndex = StringNodesHelper.checkIndexForRef(string, index, this);
 
-            throw new UnsupportedOperationException("getbyte not implemented");
+            string.modify();
+            string.clearCodeRange();
+            string.getByteList().getUnsafeBytes()[normalizedIndex] = (byte) value;
+
+            return value;
         }
     }
 
@@ -2573,6 +2577,30 @@ public abstract class StringNodes {
                 }
 
                 index += string.length();
+            }
+
+            return index;
+        }
+
+        public static int checkIndexForRef(RubyString string, int index, RubyNode node) {
+            final int length = string.getByteList().getRealSize();
+
+            if (index >= length) {
+                CompilerDirectives.transferToInterpreter();
+
+                throw new RaiseException(
+                        node.getContext().getCoreLibrary().indexError(String.format("index %d out of string", index), node));
+            }
+
+            if (index < 0) {
+                if (-index > length) {
+                    CompilerDirectives.transferToInterpreter();
+
+                    throw new RaiseException(
+                            node.getContext().getCoreLibrary().indexError(String.format("index %d out of string", index), node));
+                }
+
+                index += length;
             }
 
             return index;
