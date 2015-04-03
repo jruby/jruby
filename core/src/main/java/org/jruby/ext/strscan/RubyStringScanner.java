@@ -36,6 +36,7 @@ import org.jruby.RubyBoolean;
 import org.jruby.RubyClass;
 import org.jruby.RubyException;
 import org.jruby.RubyFixnum;
+import org.jruby.RubyMatchData;
 import org.jruby.RubyNumeric;
 import org.jruby.RubyObject;
 import org.jruby.RubyRegexp;
@@ -50,6 +51,7 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
 import org.jruby.util.StringSupport;
+import org.jruby.util.TypeConverter;
 
 import static org.jruby.runtime.Visibility.PRIVATE;
 
@@ -65,6 +67,7 @@ public class RubyStringScanner extends RubyObject {
     private int lastPos = -1;
 
     private Region regs;
+    private Regex pattern;
     private int beg = -1;
     private int end = -1;
     // not to be confused with RubyObject's flags
@@ -141,6 +144,7 @@ public class RubyStringScanner extends RubyObject {
         scannerFlags = otherScanner.scannerFlags;
 
         regs = otherScanner.regs != null ? otherScanner.regs.clone() : null;
+        pattern = otherScanner.pattern;
         beg = otherScanner.beg;
         end = otherScanner.end;
 
@@ -189,7 +193,7 @@ public class RubyStringScanner extends RubyObject {
     @JRubyMethod(name = {"concat", "<<"}, required = 1)
     public IRubyObject concat(IRubyObject obj) {
         check();
-        str.append(obj); // append will call convertToString()
+        str.append(obj.convertToString());
         return this;
     }
     
@@ -230,7 +234,7 @@ public class RubyStringScanner extends RubyObject {
         if (!(regex instanceof RubyRegexp)) throw runtime.newTypeError("wrong argument type " + regex.getMetaClass() + " (expected Regexp)");
         check();
         
-        Regex pattern = ((RubyRegexp)regex).preparePattern(str);
+        pattern = ((RubyRegexp)regex).preparePattern(str);
 
         clearMatched();
         int rest = str.getByteList().getRealSize() - pos;
@@ -482,26 +486,31 @@ public class RubyStringScanner extends RubyObject {
 
     @JRubyMethod(name = "[]", required = 1)
     public IRubyObject op_aref(ThreadContext context, IRubyObject idx) {
+        Ruby runtime = context.runtime;
         check();
         if (!isMatched()) {
-            return context.runtime.getNil();
+            return context.nil;
         }
-        int i = RubyNumeric.num2int(idx);
+
+        int i;
+
+        if (regs == null) {
+            i = RubyNumeric.fix2int(idx);
+            if (i != 0) return context.nil;
+            if (beg == -1) return context.nil;
+            return extractRange(runtime, lastPos + beg, lastPos + end);
+        }
+
+        i = RubyMatchData.backrefNumber(runtime, pattern, regs, idx);
         
-        int numRegs = regs == null ? 1 : regs.numRegs;
+        int numRegs = regs.numRegs;
         if (i < 0) i += numRegs;
         if (i < 0 || i >= numRegs) {
-            return context.runtime.getNil();
+            return context.nil;
         }
         
-        if (regs == null) {
-            assert i == 0;
-            if (beg == -1) return getRuntime().getNil();
-            return extractRange(context.runtime, lastPos + beg, lastPos + end);
-        } else {
-            if (regs.beg[i] == -1) return getRuntime().getNil();
-            return extractRange(context.runtime, lastPos + regs.beg[i], lastPos + regs.end[i]);
-        }
+        if (regs.beg[i] == -1) return getRuntime().getNil();
+        return extractRange(runtime, lastPos + regs.beg[i], lastPos + regs.end[i]);
     }
 
     @JRubyMethod(name = "pre_match")
