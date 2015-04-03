@@ -67,6 +67,7 @@ import org.jruby.truffle.runtime.rubinius.RubiniusByteArray;
 import org.jruby.util.ByteList;
 import org.jruby.util.CodeRangeSupport;
 import org.jruby.util.CodeRangeable;
+import org.jruby.util.ConvertDouble;
 import org.jruby.util.Pack;
 import org.jruby.util.StringSupport;
 import org.jruby.util.io.EncodingUtils;
@@ -2202,12 +2203,18 @@ public abstract class StringNodes {
         }
 
         @Specialization
+        @TruffleBoundary
         public double toF(RubyString string) {
             try {
-                return Double.parseDouble(string.toString());
+                return convertToDouble(string);
             } catch (NumberFormatException e) {
                 return 0;
             }
+        }
+
+        @TruffleBoundary
+        private double convertToDouble(RubyString string) {
+            return ConvertDouble.byteListToDouble19(string.getByteList(), false);
         }
     }
 
