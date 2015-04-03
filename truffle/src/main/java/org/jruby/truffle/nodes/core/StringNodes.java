@@ -2063,7 +2063,7 @@ public abstract class StringNodes {
 
         @TruffleBoundary
         private boolean squeezeCommonMultiByte(ByteList value, boolean squeeze[], StringSupport.TrTables tables, Encoding enc, boolean isArg) {
-            return StringSupport.multiByteSqueeze(getContext().getRuntime(), value, squeeze, null, enc, isArg);
+            return StringSupport.multiByteSqueeze(getContext().getRuntime(), value, squeeze, tables, enc, isArg);
         }
 
         public static boolean zeroArgs(RubyString string, Object... args) {
