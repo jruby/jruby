@@ -33,7 +33,7 @@ public class ConvertDouble {
      * extra text non-numeric text or multiple sequention underscores.
      */
     public static double byteListToDouble19(ByteList bytes, boolean strict) {
-        return new DoubleConverter().parse(bytes, strict);
+        return new DoubleConverter().parse(bytes, strict, true);
     }
 
     public static class DoubleConverter {
