@@ -1948,6 +1948,12 @@ class String
       replace = replace.force_encoding(Encoding::BINARY)
     end
 
+    # MRI appears to just return a copy of self when the input encoding is
+    # BINARY/ASCII_8BIT.
+    if input.encoding == Encoding::BINARY
+      return input
+    end
+
     converter = Encoding::Converter.new(input.encoding, Encoding::BINARY)
 
     while input.length > 0
@@ -1958,8 +1964,12 @@ class String
       elsif result == :undefined_conversion
         output << converter.primitive_errinfo[3]
       else
+        # Blocks can return strings in any encoding so we'll make sure it's the
+        # same as our buffer for the mean time.
         if block_given?
-          output << yield(converter.primitive_errinfo[3])
+          block_output = yield(converter.primitive_errinfo[3])
+
+          output << block_output.force_encoding(output.encoding)
         else
           output << replace
         end
