@@ -46,6 +46,7 @@ import org.jruby.anno.JRubyMethod;
 import org.jruby.common.IRubyWarnings.ID;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.runtime.Block;
+import org.jruby.runtime.Helpers;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -184,7 +185,7 @@ public class RubyStringScanner extends RubyObject {
 
     @JRubyMethod(name = "string=", required = 1)
     public IRubyObject set_string(ThreadContext context, IRubyObject str) {
-        this.str = (RubyString) str.convertToString().strDup(context.runtime).freeze(context);
+        this.str = RubyString.stringValue(str);
         pos = 0;
         clearMatched();
         return str;
@@ -212,6 +213,13 @@ public class RubyStringScanner extends RubyObject {
         if (i < 0 || i > size) throw getRuntime().newRangeError("index out of range.");
         this.pos = i;
         return RubyFixnum.newFixnum(getRuntime(), i);
+    }
+
+    @JRubyMethod(name = "charpos")
+    public IRubyObject charpos(ThreadContext context) {
+        Ruby runtime = context.runtime;
+        RubyString sub = (RubyString)Helpers.invoke(context, str, "byteslice", runtime.newFixnum(0), runtime.newFixnum(pos));
+        return runtime.newFixnum(sub.strLength());
     }
 
     private IRubyObject extractRange(Ruby runtime, int beg, int end) {
@@ -492,25 +500,22 @@ public class RubyStringScanner extends RubyObject {
             return context.nil;
         }
 
-        int i;
+        int i = RubyMatchData.backrefNumber(runtime, pattern, regs, idx);
+        int numRegs = regs == null ? 1 : regs.numRegs;
 
-        if (regs == null) {
-            i = RubyNumeric.fix2int(idx);
-            if (i != 0) return context.nil;
-            if (beg == -1) return context.nil;
-            return extractRange(runtime, lastPos + beg, lastPos + end);
-        }
-
-        i = RubyMatchData.backrefNumber(runtime, pattern, regs, idx);
-        
-        int numRegs = regs.numRegs;
         if (i < 0) i += numRegs;
         if (i < 0 || i >= numRegs) {
             return context.nil;
         }
-        
-        if (regs.beg[i] == -1) return getRuntime().getNil();
-        return extractRange(runtime, lastPos + regs.beg[i], lastPos + regs.end[i]);
+
+        if (regs == null) {
+            assert i == 0;
+            if (beg == -1) return context.nil;
+            return extractRange(runtime, lastPos + beg, lastPos + end);
+        } else {
+            if (regs.beg[i] == -1) return getRuntime().getNil();
+            return extractRange(context.runtime, lastPos + regs.beg[i], lastPos + regs.end[i]);
+        }
     }
 
     @JRubyMethod(name = "pre_match")
