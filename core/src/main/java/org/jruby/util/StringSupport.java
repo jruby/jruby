@@ -2047,6 +2047,44 @@ public final class StringSupport {
         return null;
     }
 
+    /**
+     * rb_str_swapcase / rb_str_swapcase_bang
+     */
+
+    public static boolean singleByteSwapcase(byte[] bytes, int s, int end) {
+        boolean modify = false;
+        while (s < end) {
+            int c = bytes[s] & 0xff;
+            if (ASCIIEncoding.INSTANCE.isUpper(c)) {
+                bytes[s] = AsciiTables.ToLowerCaseTable[c];
+                modify = true;
+            } else if (ASCIIEncoding.INSTANCE.isLower(c)) {
+                bytes[s] = AsciiTables.ToUpperCaseTable[c];
+                modify = true;
+            }
+            s++;
+        }
+
+        return modify;
+    }
+
+    public static boolean multiByteSwapcase(Ruby runtime, Encoding enc, byte[] bytes, int s, int end) {
+        boolean modify = false;
+        while (s < end) {
+            int c = codePoint(runtime, enc, bytes, s, end);
+            if (enc.isUpper(c)) {
+                enc.codeToMbc(toLower(enc, c), bytes, s);
+                modify = true;
+            } else if (enc.isLower(c)) {
+                enc.codeToMbc(toUpper(enc, c), bytes, s);
+                modify = true;
+            }
+            s += codeLength(enc, c);
+        }
+
+        return modify;
+    }
+
     private static int rb_memsearch_ss(byte[] xsBytes, int xs, int m, byte[] ysBytes, int ys, int n) {
         int y;
 
