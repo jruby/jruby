@@ -17,6 +17,7 @@ import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
 import org.jruby.truffle.runtime.core.RubyMatchData;
+import org.jruby.truffle.runtime.core.RubyNilClass;
 import org.jruby.truffle.runtime.core.RubyRegexp;
 import org.jruby.truffle.runtime.core.RubyString;
 import org.jruby.truffle.runtime.core.RubySymbol;
@@ -237,6 +238,11 @@ public abstract class RegexpNodes {
         @Specialization
         public Object match(RubyRegexp regexp, RubyString string) {
             return regexp.matchCommon(string, false, false);
+        }
+
+        @Specialization
+        public Object match(RubyRegexp regexp, RubyNilClass nil) {
+            return nil();
         }
 
     }
