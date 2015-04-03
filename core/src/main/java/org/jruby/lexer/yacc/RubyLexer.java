@@ -449,7 +449,7 @@ public class RubyLexer {
     }
 
     public int lineno() {
-        return ruby_sourceline + src.getLineOffset();
+        return ruby_sourceline + src.getLineOffset() - 1;
     }
 
     public boolean was_bol() {
@@ -1251,10 +1251,12 @@ public class RubyLexer {
             case '#': {	/* it's a comment */
                 ByteList encodingName = parseMagicComment(parserSupport.getConfiguration().getRuntime(), lexb.makeShared(lex_p, lex_pend - lex_p));
                 // FIXME: boolean to mark we already found a magic comment to stop searching.  When found or we went too far
-                if (encodingName != null) {
-                    setEncoding(encodingName);
-                } else if (comment_at_top()) {
-                    set_file_encoding(lex_p, lex_pend);
+                if (comment_at_top()) {
+                    if (encodingName != null) {
+                        setEncoding(encodingName);
+                    } else {
+                        set_file_encoding(lex_p, lex_pend);
+                    }
                 }
                 lex_p = lex_pend;
             }

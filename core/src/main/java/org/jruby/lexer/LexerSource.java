@@ -49,7 +49,6 @@ public abstract class LexerSource {
 
     public LexerSource(String sourceName, int lineOffset, RubyArray list) {
         this.name = sourceName;
-        if (lineOffset != 0) lineOffset--; // make sure first line is line lineoffset (1-index fudging)
         this.lineOffset = lineOffset;
         this.list = list;
     }

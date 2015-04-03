@@ -413,7 +413,7 @@ public class RipperLexer {
     }
     
     public int lineno() {
-        return ruby_sourceline + src.getLineOffset();
+        return ruby_sourceline + src.getLineOffset() - 1;
     }
     
     public void dispatchHeredocEnd() {
