@@ -50,7 +50,6 @@ import java.util.logging.Logger;
  * a transitive dependency on any runtime JRuby classes.
  */
 @SupportedAnnotationTypes({"org.jruby.anno.JRubyMethod"})
-@SupportedSourceVersion(SourceVersion.RELEASE_6)
 public class AnnotationBinder extends AbstractProcessor {
 
     public static final String POPULATOR_SUFFIX = "$POPULATOR";
@@ -78,6 +77,11 @@ public class AnnotationBinder extends AbstractProcessor {
         }
 
         return true;
+    }
+
+    @Override
+    public SourceVersion getSupportedSourceVersion() {
+        return SourceVersion.latest();
     }
 
     public void processType(TypeElement cd) {
