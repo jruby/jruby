@@ -825,6 +825,11 @@ public abstract class ArrayNodes {
             return new RubyArray(getContext().getCoreLibrary().getArrayClass(), newStore, m);
         }
 
+        @Specialization(guards = "isNullArray")
+        public Object compactNull(RubyArray array) {
+            return new RubyArray(getContext().getCoreLibrary().getArrayClass(), null, 0);
+        }
+
     }
 
     @CoreMethod(names = "compact!", raiseIfFrozenSelf = true)
