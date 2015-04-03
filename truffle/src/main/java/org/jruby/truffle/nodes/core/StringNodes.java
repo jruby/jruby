@@ -2640,21 +2640,6 @@ public abstract class StringNodes {
             return runtime.newString(string).downcase(runtime.getCurrentContext()).getByteList();
         }
 
-        @TruffleBoundary
-        public static ByteList chompWithString(RubyString string, RubyString stringToChomp) {
-
-            String tempString = string.toString();
-
-            if (tempString.endsWith(stringToChomp.toString())) {
-                tempString = tempString.substring(0, tempString.length() - stringToChomp.toString().length());
-            }
-
-            ByteList byteList = ByteList.create(tempString);
-            byteList.setEncoding(string.getBytes().getEncoding());
-
-            return byteList;
-        }
-
         public static int checkIndex(RubyString string, int index, RubyNode node) {
             if (index > string.length()) {
                 CompilerDirectives.transferToInterpreter();
