@@ -36,6 +36,7 @@ import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.utilities.BranchProfile;
 
 import com.oracle.truffle.api.utilities.ConditionProfile;
+import jnr.posix.POSIX;
 import org.jcodings.Encoding;
 import org.jcodings.exception.EncodingException;
 import org.jcodings.specific.ASCIIEncoding;
@@ -883,6 +884,69 @@ public abstract class StringNodes {
 
             return StringSupport.countCommon19(string.getByteList(), getContext().getRuntime(), table, tables, enc);
         }
+    }
+
+    @CoreMethod(names = "crypt", required = 1, taintFromSelf = true, taintFromParameters = 0)
+    @NodeChildren({
+            @NodeChild(value = "string"),
+            @NodeChild(value = "salt")
+    })
+    public abstract static class CryptNode extends RubyNode {
+
+        public CryptNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public CryptNode(CryptNode prev) {
+            super(prev);
+        }
+
+        @CreateCast("salt") public RubyNode coerceSaltToString(RubyNode other) {
+            return ToStrNodeFactory.create(getContext(), getSourceSection(), other);
+        }
+
+        @Specialization
+        public Object crypt(RubyString string, RubyString salt) {
+            // Taken from org.jruby.RubyString#crypt.
+
+            final ByteList value = string.getByteList();
+
+            final Encoding ascii8bit = getContext().getRuntime().getEncodingService().getAscii8bitEncoding();
+            ByteList otherBL = salt.getByteList().dup();
+            final RubyString otherStr = getContext().makeString(otherBL);
+
+            otherStr.modify();
+            StringSupport.associateEncoding(otherStr, ascii8bit);
+
+            if (otherBL.length() < 2) {
+                CompilerDirectives.transferToInterpreter();
+                throw new RaiseException(getContext().getCoreLibrary().argumentError("salt too short (need >= 2 bytes)", this));
+            }
+
+            final POSIX posix = getContext().getRuntime().getPosix();
+            final byte[] keyBytes = Arrays.copyOfRange(value.unsafeBytes(), value.begin(), value.realSize());
+            final byte[] saltBytes = Arrays.copyOfRange(otherBL.unsafeBytes(), otherBL.begin(), otherBL.realSize());
+
+            if (saltBytes[0] == 0 || saltBytes[1] == 0) {
+                CompilerDirectives.transferToInterpreter();
+                throw new RaiseException(getContext().getCoreLibrary().argumentError("salt too short (need >= 2 bytes)", this));
+            }
+
+            final byte[] cryptedString = posix.crypt(keyBytes, saltBytes);
+
+            // We differ from MRI in that we do not process salt to make it work and we will
+            // return any errors via errno.
+            if (cryptedString == null) {
+                CompilerDirectives.transferToInterpreter();
+                throw new RaiseException(getContext().getCoreLibrary().errnoError(posix.errno(), this));
+            }
+
+            final RubyString result = getContext().makeString(new ByteList(cryptedString, 0, cryptedString.length - 1));
+            StringSupport.associateEncoding(result, ascii8bit);
+
+            return result;
+        }
+
     }
 
     @RubiniusOnly
