@@ -1292,7 +1292,8 @@ public abstract class StringNodes {
                         getContext().getCoreLibrary().frozenError(self.getLogicalClass().getName(), this));
             }
 
-            self.set(from.getBytes());
+            // TODO (nirvdrum 03-Apr-15): Rather than dup every time, we should do CoW on String mutations.
+            self.set(from.getBytes().dup());
             self.setCodeRange(from.getCodeRange());
 
             return self;
