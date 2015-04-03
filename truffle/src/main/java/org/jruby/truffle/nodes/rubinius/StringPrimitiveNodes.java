@@ -462,23 +462,78 @@ public abstract class StringPrimitiveNodes {
     }
 
     @RubiniusPrimitive(name = "string_find_character")
+    @ImportGuards(StringGuards.class)
     public static abstract class StringFindCharacterPrimitiveNode extends RubiniusPrimitiveNode {
 
-        @Child private StringNodes.GetIndexNode getIndexNode;
+        @Child private TaintResultNode taintResultNode;
 
         public StringFindCharacterPrimitiveNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-            getIndexNode = StringNodesFactory.GetIndexNodeFactory.create(context, sourceSection, new RubyNode[]{});
         }
 
         public StringFindCharacterPrimitiveNode(StringFindCharacterPrimitiveNode prev) {
             super(prev);
-            getIndexNode = prev.getIndexNode;
+            taintResultNode = prev.taintResultNode;
         }
 
-        @Specialization
-        public Object stringFindCharacter(RubyString string, int index) {
-            return getIndexNode.getIndex(string, index, UndefinedPlaceholder.INSTANCE);
+        @Specialization(guards = "isSingleByte")
+        public Object stringFindCharacterSingleByte(RubyString string, int offset) {
+            // Taken from Rubinius's String::find_character.
+
+            if (offset < 0) {
+                return nil();
+            }
+
+            if (offset >= string.getByteList().getRealSize()) {
+                return nil();
+            }
+
+            final RubyString ret = getContext().makeString(string.getLogicalClass(), new ByteList(string.getByteList().unsafeBytes(), offset, 1));
+
+            ret.getByteList().setEncoding(string.getByteList().getEncoding());
+            ret.setCodeRange(string.getCodeRange());
+            getTaintResultNode().maybeTaint(string, ret);
+
+            return ret;
+        }
+
+        @Specialization(guards = "!isSingleByte")
+        public Object stringFindCharacter(RubyString string, int offset) {
+            // Taken from Rubinius's String::find_character.
+
+            if (offset < 0) {
+                return nil();
+            }
+
+            if (offset >= string.getByteList().getRealSize()) {
+                return nil();
+            }
+
+            final ByteList bytes = string.getByteList();
+            final Encoding enc = bytes.getEncoding();
+            final int clen = StringSupport.preciseLength(enc, bytes.getUnsafeBytes(), bytes.begin(), bytes.begin() + bytes.realSize());
+
+            final RubyString ret;
+            if (StringSupport.MBCLEN_CHARFOUND_P(clen)) {
+                ret = getContext().makeString(string.getLogicalClass(), new ByteList(string.getByteList().unsafeBytes(), offset, clen));
+            } else {
+                ret = getContext().makeString(string.getLogicalClass(), new ByteList(string.getByteList().unsafeBytes(), offset, 1));
+            }
+
+            ret.getByteList().setEncoding(string.getByteList().getEncoding());
+            ret.setCodeRange(string.getCodeRange());
+            getTaintResultNode().maybeTaint(string, ret);
+
+            return ret;
+        }
+
+        private TaintResultNode getTaintResultNode() {
+            if (taintResultNode == null) {
+                CompilerDirectives.transferToInterpreter();
+                taintResultNode = insert(new TaintResultNode(getContext(), getSourceSection(), true, new int[]{}));
+            }
+
+            return taintResultNode;
         }
 
     }

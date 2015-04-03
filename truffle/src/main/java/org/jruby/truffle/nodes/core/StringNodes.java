@@ -483,7 +483,8 @@ public abstract class StringNodes {
             substringNode = prev.substringNode;
         }
 
-        public Object getIndex(RubyString string, int index, UndefinedPlaceholder undefined) {
+        @Specialization
+        public Object getIndex(VirtualFrame frame, RubyString string, int index, UndefinedPlaceholder undefined) {
             int normalizedIndex = string.normalizeIndex(index);
             final ByteList bytes = string.getBytes();
 
@@ -491,13 +492,13 @@ public abstract class StringNodes {
                 outOfBounds.enter();
                 return nil();
             } else {
-                return getContext().makeString(string.getLogicalClass(), bytes.charAt(normalizedIndex), string.getByteList().getEncoding());
+                return getSubstringNode().execute(frame, string, index, 1);
             }
         }
 
         @Specialization(guards = { "!isRubyRange(arguments[1])", "!isRubyRegexp(arguments[1])", "!isRubyString(arguments[1])" })
         public Object getIndex(VirtualFrame frame, RubyString string, Object index, UndefinedPlaceholder undefined) {
-            return getIndex(string, getToIntNode().executeIntegerFixnum(frame, index), undefined);
+            return getIndex(frame, string, getToIntNode().executeIntegerFixnum(frame, index), undefined);
         }
 
         @Specialization
@@ -1096,6 +1097,7 @@ public abstract class StringNodes {
     }
 
     @CoreMethod(names = "each_char", needsBlock = true, returnsEnumeratorIfNoBlock = true)
+    @ImportGuards(StringGuards.class)
     public abstract static class EachCharNode extends YieldingCoreMethodNode {
 
         @Child private CallDispatchHeadNode toEnumNode;
@@ -1116,10 +1118,9 @@ public abstract class StringNodes {
             int len = strByteList.getRealSize();
             Encoding enc = string.getBytes().getEncoding();
 
-            final int stringLength = string.getBytes().length();
             int n;
 
-            for (int i = 0; i < stringLength; i += n) {
+            for (int i = 0; i < len; i += n) {
                 n = StringSupport.encFastMBCLen(ptrBytes, ptr + i, ptr + len, enc);
 
                 yield(frame, block, substr(string, i, n));
@@ -1136,20 +1137,15 @@ public abstract class StringNodes {
             int len = strByteList.getRealSize();
             Encoding enc = string.getBytes().getEncoding();
 
-            final int stringLength = string.getBytes().length();
             int n;
 
-            for (int i = 0; i < stringLength; i += n) {
+            for (int i = 0; i < len; i += n) {
                 n = multiByteStringLength(enc, ptrBytes, ptr + i, ptr + len);
 
                 yield(frame, block, substr(string, i, n));
             }
 
             return string;
-        }
-
-        public static boolean isValidOr7BitEncoding(RubyString string) {
-            return string.isCodeRangeValid() || CodeRangeSupport.isCodeRangeAsciiOnly(string);
         }
 
         @TruffleBoundary
