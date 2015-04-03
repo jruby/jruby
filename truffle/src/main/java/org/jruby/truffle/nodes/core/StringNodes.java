@@ -1710,7 +1710,12 @@ public abstract class StringNodes {
     }
 
     @CoreMethod(names = "swapcase!", raiseIfFrozenSelf = true)
+    @ImportGuards(StringGuards.class)
     public abstract static class SwapcaseBangNode extends CoreMethodNode {
+
+        private final ConditionProfile dummyEncodingProfile = ConditionProfile.createBinaryProfile();
+        private final ConditionProfile singleByteOptimizableProfile = ConditionProfile.createBinaryProfile();
+
         public SwapcaseBangNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
         }
@@ -1720,12 +1725,41 @@ public abstract class StringNodes {
         }
 
         @Specialization
-        public RubyString swapcase(RubyString string) {
-            notDesignedForCompilation();
+        public RubyBasicObject swapcaseSingleByte(RubyString string) {
+            // Taken from org.jruby.RubyString#swapcase_bang19.
 
-            ByteList byteList = StringNodesHelper.swapcase(string);
-            string.set(byteList);
-            return string;
+            final ByteList value = string.getByteList();
+            final Encoding enc = value.getEncoding();
+
+            if (dummyEncodingProfile.profile(enc.isDummy())) {
+                CompilerDirectives.transferToInterpreter();
+
+                throw new RaiseException(
+                        getContext().getCoreLibrary().encodingCompatibilityError(
+                                String.format("incompatible encoding with this operation: %s", enc), this));
+            }
+
+            if (value.getRealSize() == 0) {
+                return nil();
+            }
+
+            string.modifyAndKeepCodeRange();
+
+            final int s = value.getBegin();
+            final int end = s + value.getRealSize();
+            final byte[]bytes = value.getUnsafeBytes();
+
+            if (singleByteOptimizableProfile.profile(StringSupport.isSingleByteOptimizable(string, enc))) {
+                if (StringSupport.singleByteSwapcase(bytes, s, end)) {
+                    return string;
+                }
+            } else {
+                if (StringSupport.multiByteSwapcase(getContext().getRuntime(), enc, bytes, s, end)) {
+                    return string;
+                }
+            }
+
+            return nil();
         }
     }
 
@@ -2613,28 +2647,6 @@ public abstract class StringNodes {
             byteList.setEncoding(string.getBytes().getEncoding());
 
             return byteList;
-        }
-
-        @TruffleBoundary
-        public static ByteList swapcase(RubyString string) {
-            char[] charArray = string.toString().toCharArray();
-            StringBuilder newString = new StringBuilder();
-
-            for (int i = 0; i < charArray.length; i++) {
-                char current = charArray[i];
-
-                if (Character.isLowerCase(current)) {
-                    newString.append(Character.toString(current).toUpperCase(Locale.ENGLISH));
-                } else if (Character.isUpperCase(current)){
-                    newString.append(Character.toString(current).toLowerCase(Locale.ENGLISH));
-                } else {
-                    newString.append(current);
-                }
-            }
-            ByteList byteListString = ByteList.create(newString);
-            byteListString.setEncoding(string.getBytes().getEncoding());
-
-            return byteListString;
         }
 
         public static int checkIndex(RubyString string, int index, RubyNode node) {
