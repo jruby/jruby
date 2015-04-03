@@ -164,7 +164,12 @@ public class ConvertDouble {
             }
         }
 
-        public double parse(ByteList list, boolean strict) {
+        /**
+         * Everything runs in 1.9+ mode now, so the `is19` parameter is vestigial.
+         * However, in order to maintain binary compatibility with extensions we can't
+         * just change the signature either.
+         */
+        public double parse(ByteList list, boolean strict, boolean is19) {
             init(list, strict);
 
             if (skipWhitespace()) return completeCalculation();
