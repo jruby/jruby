@@ -54,6 +54,7 @@ import org.jruby.RubyRegexp;
 import org.jruby.ast.*;
 import org.jruby.common.IRubyWarnings;
 import org.jruby.common.IRubyWarnings.ID;
+import org.jruby.common.RubyWarnings;
 import org.jruby.lexer.LexerSource;
 import org.jruby.lexer.yacc.SyntaxException.PID;
 import org.jruby.parser.ParserSupport;
@@ -358,10 +359,12 @@ public class RubyLexer {
         parenNest = 0;
         braceNest = 0;
         tokp = 0;
+        last_cr_line = -1;
 
         parser_prepare();
     }
 
+    int last_cr_line;
     protected int tokp = 0; // Where last token started
     protected ByteList lexb = null;
     protected int lex_p = 0; // Where current position is in current line
@@ -423,9 +426,15 @@ public class RubyLexer {
 
         int c = p(lex_p);
         lex_p++;
-        if (c == '\r' && peek('\n')) {
-            lex_p++;
-            c = '\n';
+        if (c == '\r') {
+            if (peek('\n')) {
+                lex_p++;
+                c = '\n';
+            } else if (ruby_sourceline > last_cr_line) {
+                last_cr_line = ruby_sourceline;
+                warnings.warn(ID.VOID_VALUE_EXPRESSION, src.getFilename(), ruby_sourceline, "encountered \\\\r in middle of line, treated as a mere space");
+                c = ' ';
+            }
         }
 
 //        System.out.println("C: " + (char) c + ", LEXP: " + lex_p + ", PEND: "+ lex_pend);
@@ -575,7 +584,11 @@ public class RubyLexer {
             }
         }
         int n = lex_pend - (p + len);
-        if (n < 0 || (n > 0 && p(p+len) != '\n' && p(p+len) != '\r')) return false;
+        if (n < 0) return false;
+        if (n > 0 && p(p+len) != '\n') {
+            if (p(p+len) != '\r') return false;
+            if (n == 1 || p(p+len+1) != '\n') return false;
+        }
 
         return strncmp(eos, lexb.makeShared(p, len), len);
     }
