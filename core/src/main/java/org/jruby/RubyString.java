@@ -3358,15 +3358,6 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
         return split19(context, arg0, arg1);
     }
 
-    private void populateCapturesForSplit(Ruby runtime, RubyArray result, Matcher matcher) {
-        Region region = matcher.getRegion();
-        for (int i = 1; i < region.numRegs; i++) {
-            int beg = region.beg[i];
-            if (beg == -1) continue;
-            result.append(makeShared19(runtime, beg, region.end[i] - beg));
-        }
-    }
-
     private void populateCapturesForSplit(Ruby runtime, RubyArray result, RubyMatchData match) {
         for (int i = 1; i < match.numRegs(); i++) {
             int beg = match.begin(i);
