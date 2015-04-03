@@ -1,2 +1,2 @@
-fails:String#scrub with a block replaces invalid byte sequences
-fails:String#scrub with a block replaces invalid byte sequences using a custom encoding
+fails(needs unpack):String#scrub with a block replaces invalid byte sequences
+fails(inherited - rubinius):String#scrub with a block replaces invalid byte sequences using a custom encoding
