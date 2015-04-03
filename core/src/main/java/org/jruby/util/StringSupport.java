@@ -1995,7 +1995,7 @@ public final class StringSupport {
         return end - p > oend - op ? 1 : -1;
     }
 
-    public static ByteList squeezeCommonSingleByte(ByteList value, boolean squeeze[]) {
+    public static boolean singleByteSqueeze(ByteList value, boolean squeeze[]) {
         int s = value.getBegin();
         int t = s;
         int send = s + value.getRealSize();
@@ -2009,13 +2009,13 @@ public final class StringSupport {
 
         if (t - value.getBegin() != value.getRealSize()) { // modified
             value.setRealSize(t - value.getBegin());
-            return value;
+            return true;
         }
 
-        return null;
+        return false;
     }
 
-    public static ByteList squeezeCommonMultiByte(Ruby runtime, ByteList value, boolean squeeze[], TrTables tables, Encoding enc, boolean isArg) {
+    public static boolean multiByteSqueeze(Ruby runtime, ByteList value, boolean squeeze[], TrTables tables, Encoding enc, boolean isArg) {
         int s = value.getBegin();
         int t = s;
         int send = s + value.getRealSize();
@@ -2041,10 +2041,10 @@ public final class StringSupport {
 
         if (t - value.getBegin() != value.getRealSize()) { // modified
             value.setRealSize(t - value.getBegin());
-            return value;
+            return true;
         }
 
-        return null;
+        return false;
     }
 
     /**

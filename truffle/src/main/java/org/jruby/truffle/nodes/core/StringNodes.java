@@ -73,7 +73,6 @@ import org.jruby.util.io.EncodingUtils;
 
 import java.io.UnsupportedEncodingException;
 import java.util.Arrays;
-import java.util.Locale;
 
 @CoreClass(name = "String")
 public abstract class StringNodes {
@@ -2002,11 +2001,11 @@ public abstract class StringNodes {
             string.modifyAndKeepCodeRange();
 
             if (singleByteOptimizableProfile.profile(string.singleByteOptimizable())) {
-                if (StringSupport.squeezeCommonSingleByte(string.getByteList(), squeeze) == null) {
+                if (! StringSupport.singleByteSqueeze(string.getByteList(), squeeze)) {
                     return nil();
                 }
             } else {
-                if (squeezeCommonMultiByte(string.getByteList(), squeeze, null, string.getByteList().getEncoding(), false) == null) {
+                if (! squeezeCommonMultiByte(string.getByteList(), squeeze, null, string.getByteList().getEncoding(), false)) {
                     return nil();
                 }
             }
@@ -2050,11 +2049,11 @@ public abstract class StringNodes {
             string.modifyAndKeepCodeRange();
 
             if (singleByteOptimizableProfile.profile(singlebyte)) {
-                if (StringSupport.squeezeCommonSingleByte(string.getByteList(), squeeze) == null) {
+                if (! StringSupport.singleByteSqueeze(string.getByteList(), squeeze)) {
                     return nil();
                 }
             } else {
-                if (StringSupport.squeezeCommonMultiByte(getContext().getRuntime(), string.getByteList(), squeeze, tables, enc, true) == null) {
+                if (! StringSupport.multiByteSqueeze(getContext().getRuntime(), string.getByteList(), squeeze, tables, enc, true)) {
                     return nil();
                 }
             }
@@ -2063,8 +2062,8 @@ public abstract class StringNodes {
         }
 
         @TruffleBoundary
-        private ByteList squeezeCommonMultiByte(ByteList value, boolean squeeze[], StringSupport.TrTables tables, Encoding enc, boolean isArg) {
-            return StringSupport.squeezeCommonMultiByte(getContext().getRuntime(), value, squeeze, null, enc, isArg);
+        private boolean squeezeCommonMultiByte(ByteList value, boolean squeeze[], StringSupport.TrTables tables, Encoding enc, boolean isArg) {
+            return StringSupport.multiByteSqueeze(getContext().getRuntime(), value, squeeze, null, enc, isArg);
         }
 
         public static boolean zeroArgs(RubyString string, Object... args) {

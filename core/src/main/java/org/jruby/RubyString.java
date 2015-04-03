@@ -4657,11 +4657,11 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
 
         modifyAndKeepCodeRange();
         if (singleByteOptimizable()) {
-            if (StringSupport.squeezeCommonSingleByte(value, squeeze) == null) {
+            if (! StringSupport.singleByteSqueeze(value, squeeze)) {
                 return runtime.getNil();
             }
         } else {
-            if (StringSupport.squeezeCommonMultiByte(runtime, value, squeeze, null, value.getEncoding(), false) == null) {
+            if (! StringSupport.multiByteSqueeze(runtime, value, squeeze, null, value.getEncoding(), false)) {
                 return runtime.getNil();
             }
         }
@@ -4679,11 +4679,11 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
 
         modifyAndKeepCodeRange();
         if (singleByteOptimizable() && otherStr.singleByteOptimizable()) {
-            if(StringSupport.squeezeCommonSingleByte(value, squeeze) == null) {
+            if (! StringSupport.singleByteSqueeze(value, squeeze)) {
                 return runtime.getNil();
             }
         } else {
-            if (StringSupport.squeezeCommonMultiByte(runtime, value, squeeze, tables, value.getEncoding(), true) == null) {
+            if (! StringSupport.multiByteSqueeze(runtime, value, squeeze, tables, value.getEncoding(), true)) {
                 return runtime.getNil();
             }
         }
@@ -4714,11 +4714,11 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
 
         modifyAndKeepCodeRange();
         if (singlebyte) {
-            if (StringSupport.squeezeCommonSingleByte(value, squeeze) == null) {
+            if (! StringSupport.singleByteSqueeze(value, squeeze)) {
                 return runtime.getNil();
             }
         } else {
-            if (StringSupport.squeezeCommonMultiByte(runtime, value, squeeze, tables, enc, true) == null) {
+            if (! StringSupport.multiByteSqueeze(runtime, value, squeeze, tables, enc, true)) {
                 return runtime.getNil();
             }
         }
