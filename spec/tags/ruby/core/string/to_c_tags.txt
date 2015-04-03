@@ -1,1 +1,0 @@
-fails:String#to_c returns a Complex object
