@@ -386,6 +386,8 @@ public abstract class ModuleNodes {
 
                 if (arg instanceof RubySymbol) {
                     accessorName = ((RubySymbol) arg).toString();
+                } else if (arg instanceof RubyString) {
+                    accessorName = ((RubyString) arg).toString();
                 } else {
                     throw new UnsupportedOperationException();
                 }
