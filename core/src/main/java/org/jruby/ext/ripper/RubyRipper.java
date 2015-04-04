@@ -348,7 +348,7 @@ public class RubyRipper extends RubyObject {
             return new ByteListLexerSource(filename, lineno, src.convertToString().getByteList(), null);
         }
 
-        return new GetsLexerSource(filename, lineno, src);
+        return new GetsLexerSource(filename, lineno, src, null);
     }
     
     private IRubyObject filenameAsString(ThreadContext context, IRubyObject filename) {

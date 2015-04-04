@@ -33,6 +33,7 @@ package org.jruby.lexer;
 
 import org.jcodings.Encoding;
 import org.jruby.RubyArray;
+import org.jruby.RubyString;
 import org.jruby.util.ByteList;
 
 /**
@@ -45,12 +46,12 @@ public abstract class LexerSource {
     // Offset specified where to add to actual offset
     private int lineOffset;
 
-    private RubyArray list;
+    protected RubyArray scriptLines;
 
-    public LexerSource(String sourceName, int lineOffset, RubyArray list) {
+    public LexerSource(String sourceName, int lineOffset, RubyArray scriptLines) {
         this.name = sourceName;
         this.lineOffset = lineOffset;
-        this.list = list;
+        this.scriptLines = scriptLines;
     }
 
     /**
@@ -63,6 +64,17 @@ public abstract class LexerSource {
 
     public int getLineOffset() {
         return lineOffset;
+    }
+
+    public void encodeExistingScriptLines(Encoding encoding) {
+        if (scriptLines == null) return;
+
+        int length = scriptLines.getLength();
+        for (int i = 0; i < length; i++) {
+            RubyString line = (RubyString) scriptLines.eltOk(0);
+
+            line.setEncoding(encoding);
+        }
     }
 
     public abstract Encoding getEncoding();

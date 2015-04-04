@@ -5,7 +5,9 @@
 package org.jruby.lexer;
 
 import org.jcodings.Encoding;
+import org.jruby.RubyArray;
 import org.jruby.RubyEncoding;
+import org.jruby.RubyString;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
 
@@ -17,9 +19,9 @@ public class GetsLexerSource extends LexerSource {
     private Encoding encoding;
     private int offset;
     
-    public GetsLexerSource(String sourceName, int line, IRubyObject io) {
+    public GetsLexerSource(String sourceName, int line, IRubyObject io, RubyArray scriptLines) {
         // FIXME: Does this source needs SCRIPT_LINES support?
-        super(sourceName, line, null);
+        super(sourceName, line, scriptLines);
         
         this.io = io;
         encoding = frobnicateEncoding();
@@ -44,6 +46,7 @@ public class GetsLexerSource extends LexerSource {
     @Override
     public void setEncoding(Encoding encoding) {
         this.encoding = encoding;
+        encodeExistingScriptLines(encoding);
     }
 
     @Override
@@ -55,6 +58,9 @@ public class GetsLexerSource extends LexerSource {
         ByteList bytelist = result.convertToString().getByteList();
         offset += bytelist.getRealSize();
         bytelist.setEncoding(encoding);
+
+        if (scriptLines != null) scriptLines.append(RubyString.newString(scriptLines.getRuntime(), bytelist));
+
         return bytelist;
     }
 

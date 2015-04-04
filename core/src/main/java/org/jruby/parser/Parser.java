@@ -91,12 +91,12 @@ public class Parser {
     @SuppressWarnings("unchecked")
     public Node parse(String file, InputStream content, DynamicScope blockScope,
             ParserConfiguration configuration) {
-        RubyArray list = getLines(configuration, runtime, file);
         if (content instanceof LoadServiceResourceInputStream) {
             return parse(file, ((LoadServiceResourceInputStream) content).getBytes(), blockScope, configuration);
         } else {
+            RubyArray list = getLines(configuration, runtime, file);
             RubyIO io = RubyIO.newIO(runtime, Channels.newChannel(content));
-            LexerSource lexerSource = new GetsLexerSource(file, configuration.getLineNumber(), io);
+            LexerSource lexerSource = new GetsLexerSource(file, configuration.getLineNumber(), io, list);
             return parse(file, lexerSource, blockScope, configuration);
         }
     }

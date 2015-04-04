@@ -6,6 +6,7 @@ package org.jruby.lexer;
 
 import org.jcodings.Encoding;
 import org.jruby.RubyArray;
+import org.jruby.RubyString;
 import org.jruby.util.ByteList;
 
 /**
@@ -35,6 +36,7 @@ public class ByteListLexerSource extends LexerSource {
     @Override
     public void setEncoding(Encoding encoding) {
         completeSource.setEncoding(encoding);
+        encodeExistingScriptLines(encoding);
     }
     
     
@@ -56,7 +58,9 @@ public class ByteListLexerSource extends LexerSource {
         ByteList line = completeSource.makeShared(offset, end - offset);
 
         offset = end;
-        
+
+        if (scriptLines != null) scriptLines.append(RubyString.newString(scriptLines.getRuntime(), line));
+
         return line;
     }
 
