@@ -59,7 +59,9 @@ public class StringTerm extends StrTerm {
     }
 
     protected ByteList createByteList(RubyLexer lexer) {
-        return new ByteList(new byte[]{}, lexer.getEncoding());
+        ByteList bytelist = new ByteList(6);
+        bytelist.setEncoding(lexer.getEncoding());
+        return bytelist;
     }
 
     private int endFound(RubyLexer lexer) throws IOException {

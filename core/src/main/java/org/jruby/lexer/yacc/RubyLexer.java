@@ -1867,13 +1867,11 @@ public class RubyLexer {
         } else {
             pushback(c);
         }
-        String tempVal;
-        
+
         int result = 0;
 
         last_state = lex_state;
         if (lastBangOrPredicate) {
-            tempVal = createTokenString();
             result = Tokens.tFID;
         } else {
             if (lex_state == LexState.EXPR_FNAME) {
@@ -1888,23 +1886,20 @@ public class RubyLexer {
                         pushback(c2);
                         pushback(c);
                     }
-                    tempVal = createTokenString();
                 } else {
                     pushback(c);
-                    tempVal = createTokenString();
                 }
-            } else {
-                tempVal = createTokenString();
             }
+
             if (result == 0 && Character.isUpperCase(first)) {
                 result = Tokens.tCONSTANT;
             } else {
                 result = Tokens.tIDENTIFIER;
             }
         }
+        String tempVal = createTokenString();
         
         if (isLabelPossible(commandState)) {
-            tempVal = createTokenString();// FIXME Should this contain :?
             int c2 = nextc();
             if (c2 == ':' && !peek(':')) {
                 setState(LexState.EXPR_LABELARG);
@@ -1915,7 +1910,6 @@ public class RubyLexer {
         }
 
         if (lex_state != LexState.EXPR_DOT) {
-            tempVal = createTokenString();
             Keyword keyword = getKeyword(tempVal); // Is it is a keyword?
 
             if (keyword != null) {

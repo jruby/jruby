@@ -122,7 +122,7 @@ public class LexingCommon {
         int begs[] = matcher.getRegion().beg;
         int ends[] = matcher.getRegion().end;
         String name = magicLine.subSequence(begs[1], ends[1]).toString();
-        if (!name.contains("coding")) return null;
+        if (!name.contains("ccoding")) return null;
 
         return magicLine.makeShared(begs[2], ends[2] - begs[2]);
     }
