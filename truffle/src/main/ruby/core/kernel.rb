@@ -38,10 +38,6 @@ module Kernel
   end
   module_function :printf
 
-  def tap
-    yield self
-    self
-  end
 
   alias_method :trust, :untaint
   alias_method :untrust, :taint

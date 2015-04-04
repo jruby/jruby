@@ -207,4 +207,9 @@ module Kernel
   end
   module_function :srand
 
+  def tap
+    yield self
+    self
+  end
+
 end
