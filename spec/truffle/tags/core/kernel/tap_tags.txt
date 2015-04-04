@@ -1,2 +1,0 @@
-fails:Kernel#tap always yields self and returns self
-fails:Kernel#tap raises a LocalJumpError when no block given
