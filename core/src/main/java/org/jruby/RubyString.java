@@ -4937,7 +4937,7 @@ public class RubyString extends RubyObject implements EncodingCapable, MarshalEn
         Encoding enc;
         RubyArray ary = null;
 
-        str = RubyString.newString(runtime, str.getByteList().dup());
+        str = strDup(runtime);
         ByteList strByteList = str.getByteList();
         ptrBytes = strByteList.unsafeBytes();
         ptr = strByteList.begin();
