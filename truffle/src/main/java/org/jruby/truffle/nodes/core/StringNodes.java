@@ -1100,7 +1100,7 @@ public abstract class StringNodes {
     @ImportGuards(StringGuards.class)
     public abstract static class EachCharNode extends YieldingCoreMethodNode {
 
-        @Child private CallDispatchHeadNode toEnumNode;
+        @Child private TaintResultNode taintResultNode;
 
         public EachCharNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -1108,6 +1108,7 @@ public abstract class StringNodes {
 
         public EachCharNode(EachCharNode prev) {
             super(prev);
+            taintResultNode = prev.taintResultNode;
         }
 
         @Specialization(guards = "isValidOr7BitEncoding")
@@ -1170,7 +1171,14 @@ public abstract class StringNodes {
             final ByteList substringBytes = new ByteList(bytes, beg, end - beg);
             substringBytes.setEncoding(bytes.getEncoding());
 
-            return getContext().makeString(string.getLogicalClass(), substringBytes);
+            if (taintResultNode == null) {
+                CompilerDirectives.transferToInterpreter();
+                taintResultNode = insert(new TaintResultNode(getContext(), getSourceSection(), true, new int[]{}));
+            }
+
+            final RubyString ret = getContext().makeString(string.getLogicalClass(), substringBytes);
+
+            return taintResultNode.maybeTaint(string, ret);
         }
     }
 
