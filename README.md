@@ -13,7 +13,7 @@ Authors: Stefan Matthias Aust, Anders Bengtsson, Geert Bevin, Ola Bini,
  Daiki Ueno, Matthias Veit, Jason Voegele, Sergey Yevtushenko, Robert Yokota,
    and many gracious contributors from the community.
 
-Project Contact: Thomas E Enebo <enebo@acm.org>
+Project Contact: Thomas E Enebo <tom.enebo@gmail.com>
 
 JRuby also uses code generously shared by the creator of the Ruby language, 
 Yukihiro Matsumoto <matz@netlab.co.jp>.
