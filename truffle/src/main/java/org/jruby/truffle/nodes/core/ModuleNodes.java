@@ -971,6 +971,15 @@ public abstract class ModuleNodes {
             return getContext().getSymbolTable().getSymbol(name);
         }
 
+        @Specialization
+        public RubySymbol defineMethod(RubyModule module, String name, RubyUnboundMethod method, UndefinedPlaceholder block) {
+            notDesignedForCompilation();
+
+            module.addMethod(this, method.getMethod().withNewName(name));
+
+            return getContext().getSymbolTable().getSymbol(name);
+        }
+
         private RubySymbol defineMethod(RubyModule module, String name, RubyProc proc) {
             notDesignedForCompilation();
 
