@@ -9,7 +9,7 @@ import org.jruby.truffle.pack.nodes.PackNode;
 @NodeChildren({
         @NodeChild(value = "value", type = PackNode.class),
 })
-public abstract class Write32UnsignedLittleNode extends PackNode {
+public abstract class Write32LittleNode extends PackNode {
 
     @Specialization
     public Object write(VirtualFrame frame, long value) {

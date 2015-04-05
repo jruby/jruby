@@ -495,18 +495,18 @@ public class PackParser {
                     case UNSIGNED:
                         switch (endianness) {
                             case LITTLE:
-                                return Write16UnsignedLittleNodeGen.create(readNode);
+                                return Write16LittleNodeGen.create(readNode);
                             case BIG:
-                                return Write16UnsignedBigNodeGen.create(readNode);
+                                return Write16BigNodeGen.create(readNode);
                         }
                     case SIGNED:
                         switch (endianness) {
                             case LITTLE:
                                 // Can I just use the same node?
-                                return Write16UnsignedLittleNodeGen.create(readNode);
+                                return Write16LittleNodeGen.create(readNode);
                             case BIG:
                                 // Can I just use the same node?
-                                return Write16UnsignedBigNodeGen.create(readNode);
+                                return Write16BigNodeGen.create(readNode);
                         }
                     default:
                         throw new UnsupportedOperationException();
@@ -516,18 +516,18 @@ public class PackParser {
                     case UNSIGNED:
                         switch (endianness) {
                             case LITTLE:
-                                return Write32UnsignedLittleNodeGen.create(readNode);
+                                return Write32LittleNodeGen.create(readNode);
                             case BIG:
-                                return Write32UnsignedBigNodeGen.create(readNode);
+                                return Write32BigNodeGen.create(readNode);
                         }
                     case SIGNED:
                         switch (endianness) {
                             case LITTLE:
                                 // Can I just use the same node?
-                                return Write32UnsignedLittleNodeGen.create(readNode);
+                                return Write32LittleNodeGen.create(readNode);
                             case BIG:
                                 // Can I just use the same node?
-                                return Write32UnsignedBigNodeGen.create(readNode);
+                                return Write32BigNodeGen.create(readNode);
                         }
                     default:
                         throw new UnsupportedOperationException();
@@ -537,18 +537,18 @@ public class PackParser {
                     case UNSIGNED:
                         switch (endianness) {
                             case LITTLE:
-                                return Write64UnsignedLittleNodeGen.create(readNode);
+                                return Write64LittleNodeGen.create(readNode);
                             case BIG:
-                                return Write64UnsignedBigNodeGen.create(readNode);
+                                return Write64BigNodeGen.create(readNode);
                         }
                     case SIGNED:
                         switch (endianness) {
                             case LITTLE:
                                 // Can I just use the same node?
-                                return Write64UnsignedLittleNodeGen.create(readNode);
+                                return Write64LittleNodeGen.create(readNode);
                             case BIG:
                                 // Can I just use the same node?
-                                return Write64UnsignedBigNodeGen.create(readNode);
+                                return Write64BigNodeGen.create(readNode);
                         }
                     default:
                         throw new UnsupportedOperationException();
