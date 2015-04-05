@@ -1,17 +1,15 @@
 package org.jruby.lexer.yacc;
 
-import org.jruby.CompatVersion;
 import org.jruby.Ruby;
 import org.jruby.RubyInstanceConfig;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.util.KCode;
 
 import junit.framework.TestCase;
 
 public class StringTermTest extends TestCase {
 
     /**
-     * @see https://github.com/jruby/jruby/issues/1069
+     * see https://github.com/jruby/jruby/issues/1069
      */
     public void testGH1069() {
         final String testScriptUsingSingleQuote = "# encoding: utf-8\n'\\Ã¢â‚¬â„¢'";
@@ -28,7 +26,7 @@ public class StringTermTest extends TestCase {
     }
 
     /**
-     * @see https://github.com/jruby/jruby/issues/1390
+     * see https://github.com/jruby/jruby/issues/1390
      */
     public void testGH1390() {
         final String testScriptUsingSingleQuote = "# encoding: utf-8\n'\\\\あ'";

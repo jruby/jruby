@@ -234,7 +234,7 @@ public class StringTerm extends StrTerm {
                     if (c == EOF) return EOF;
                     
                     if (!lexer.isASCII()) {
-                        if (expand) buffer.append('\\');
+                        if (!expand) buffer.append('\\');
                         
                         // goto non_ascii
                         hasNonAscii = true;
