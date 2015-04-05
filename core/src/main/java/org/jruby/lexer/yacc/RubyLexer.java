@@ -36,28 +36,29 @@
 package org.jruby.lexer.yacc;
 
 import java.io.IOException;
-
-import java.io.UnsupportedEncodingException;
 import java.math.BigDecimal;
 import java.math.BigInteger;
-import java.nio.ByteBuffer;
-import java.nio.CharBuffer;
 import java.nio.charset.Charset;
-import java.nio.charset.CharsetDecoder;
 import java.nio.charset.UnsupportedCharsetException;
 import java.util.HashMap;
-
 import org.jcodings.Encoding;
-import org.jcodings.specific.UTF16BEEncoding;
 import org.joni.Matcher;
 import org.joni.Option;
 import org.joni.Regex;
 import org.jruby.Ruby;
 import org.jruby.RubyRegexp;
-import org.jruby.ast.*;
+import org.jruby.ast.BackRefNode;
+import org.jruby.ast.BignumNode;
+import org.jruby.ast.ComplexNode;
+import org.jruby.ast.FixnumNode;
+import org.jruby.ast.FloatNode;
+import org.jruby.ast.Node;
+import org.jruby.ast.NthRefNode;
+import org.jruby.ast.NumericNode;
+import org.jruby.ast.RationalNode;
+import org.jruby.ast.StrNode;
 import org.jruby.common.IRubyWarnings;
 import org.jruby.common.IRubyWarnings.ID;
-import org.jruby.common.RubyWarnings;
 import org.jruby.lexer.LexerSource;
 import org.jruby.lexer.yacc.SyntaxException.PID;
 import org.jruby.parser.ParserSupport;
@@ -68,12 +69,36 @@ import org.jruby.util.SafeDoubleParser;
 import org.jruby.util.StringSupport;
 import org.jruby.util.cli.Options;
 
-import static org.jruby.lexer.LexingCommon.*;
+import static org.jruby.lexer.LexingCommon.ASCII8BIT_ENCODING;
+import static org.jruby.lexer.LexingCommon.BEGIN_DOC_MARKER;
+import static org.jruby.lexer.LexingCommon.CODING;
+import static org.jruby.lexer.LexingCommon.END_DOC_MARKER;
+import static org.jruby.lexer.LexingCommon.END_MARKER;
+import static org.jruby.lexer.LexingCommon.EOF;
+import static org.jruby.lexer.LexingCommon.STR_FUNC_INDENT;
+import static org.jruby.lexer.LexingCommon.STR_FUNC_QWORDS;
+import static org.jruby.lexer.LexingCommon.STR_FUNC_REGEXP;
+import static org.jruby.lexer.LexingCommon.SUFFIX_ALL;
+import static org.jruby.lexer.LexingCommon.SUFFIX_I;
+import static org.jruby.lexer.LexingCommon.SUFFIX_R;
+import static org.jruby.lexer.LexingCommon.USASCII_ENCODING;
+import static org.jruby.lexer.LexingCommon.UTF8_ENCODING;
+import static org.jruby.lexer.LexingCommon.isHexChar;
+import static org.jruby.lexer.LexingCommon.isOctChar;
+import static org.jruby.lexer.LexingCommon.parseMagicComment;
+import static org.jruby.lexer.LexingCommon.str_dquote;
+import static org.jruby.lexer.LexingCommon.str_dsym;
+import static org.jruby.lexer.LexingCommon.str_regexp;
+import static org.jruby.lexer.LexingCommon.str_squote;
+import static org.jruby.lexer.LexingCommon.str_ssym;
+import static org.jruby.lexer.LexingCommon.str_xquote;
 
 /*
  * This is a port of the MRI lexer to Java.
  */
 public class RubyLexer {
+    private boolean detailedSourcePositions = Options.PARSER_DETAILED_SOURCE_POSITIONS.load();
+
     private static final HashMap<String, Keyword> map;
 
     static {
@@ -565,9 +590,32 @@ public class RubyLexer {
     }
 
     public ISourcePosition getPosition() {
-        if (tokline != null && lineno() == tokline.getLine()) return tokline;
+        if (detailedSourcePositions) {
+            tokline = new DetailedSourcePosition(src.getFilename(), lineno(), tokp, lex_p - tokp);
+            return tokline;
+        } else {
+            if (tokline != null && lineno() == tokline.getLine()) return tokline;
 
-        return new SimpleSourcePosition(src.getFilename(), lineno());
+            return new SimpleSourcePosition(src.getFilename(), lineno());
+        }
+    }
+
+    public ISourcePosition getPosition(ISourcePosition startPosition) {
+        if (detailedSourcePositions) {
+            if (startPosition == null) {
+                tokline = new DetailedSourcePosition(src.getFilename(), lineno(), tokp, lex_p - tokp);
+            } else {
+                DetailedSourcePosition detailedStartPosition = (DetailedSourcePosition) startPosition;
+                tokline = new DetailedSourcePosition(src.getFilename(), lineno(), detailedStartPosition.getOffset(), 0); // offset - detailedStartPosition.getOffset()
+            }
+            return tokline;
+        } else {
+            if (startPosition != null) return startPosition;
+
+            if (tokline != null && lineno() == tokline.getLine()) return tokline;
+
+            return new SimpleSourcePosition(src.getFilename(), lineno());
+        }
     }
 
     public String getCurrentLine() {

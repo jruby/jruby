@@ -1104,7 +1104,7 @@ public class ParserSupport {
     }
 
     public ISourcePosition getPosition(ISourcePositionHolder start) {
-        return start != null ? start.getPosition() : lexer.getPosition();
+        return start != null ? lexer.getPosition(start.getPosition()) : lexer.getPosition();
     }
 
     public void warn(ID id, ISourcePosition position, String message, Object... data) {
