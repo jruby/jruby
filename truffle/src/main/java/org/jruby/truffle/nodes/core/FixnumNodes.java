@@ -374,6 +374,16 @@ public abstract class FixnumNodes {
             return rationalMulNode.call(frame, b, "*", null, a);
         }
 
+        @Specialization(guards = "isComplex(arguments[1])")
+        public Object mulComplex(VirtualFrame frame, int a, RubyBasicObject b) {
+            return ruby(frame, "b * a", "b", b, "a", a);
+        }
+
+        @Specialization(guards = "isComplex(arguments[1])")
+        public Object mulComplex(VirtualFrame frame, long a, RubyBasicObject b) {
+            return ruby(frame, "b * a", "b", b, "a", a);
+        }
+
     }
 
     @CoreMethod(names = {"/", "__slash__"}, required = 1)
