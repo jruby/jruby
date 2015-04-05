@@ -972,8 +972,14 @@ public abstract class ModuleNodes {
         }
 
         @Specialization
-        public RubySymbol defineMethod(RubyModule module, String name, RubyUnboundMethod method, UndefinedPlaceholder block) {
+        public RubySymbol defineMethod(VirtualFrame frame, RubyModule module, String name, RubyUnboundMethod method, UndefinedPlaceholder block) {
             notDesignedForCompilation();
+
+            if (module instanceof RubyClass && !ModuleOperations.assignableTo((RubyClass) module, method.getOrigin())) {
+                ruby(frame, "raise TypeError, 'bind argument must be a subclass of " + method.getOrigin().getName() + "'");
+            }
+
+            // TODO CS 5-Apr-15 TypeError if the method came from a singleton
 
             module.addMethod(this, method.getMethod().withNewName(name));
 
