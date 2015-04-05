@@ -592,6 +592,17 @@ public abstract class FixnumNodes {
             return ruby(frame, "Complex(a) / b", "a", a, "b", b);
         }
 
+
+        @Specialization(guards = {"!isComplex(arguments[1])", "!isRational(arguments[1])", "!isRubyBignum(arguments[1])"})
+        public Object divFallback(VirtualFrame frame, long a, RubyBasicObject b) {
+            return ruby(frame, "redo_coerced :/, o", "o", b);
+        }
+
+        @Specialization(guards = {"!isComplex(arguments[1])", "!isRational(arguments[1])", "!isRubyBignum(arguments[1])"})
+        public Object divFallback(VirtualFrame frame, int a, RubyBasicObject b) {
+            return ruby(frame, "redo_coerced :/, o", "o", b);
+        }
+
     }
 
     @CoreMethod(names = "%", required = 1)
