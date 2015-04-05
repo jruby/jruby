@@ -2829,10 +2829,14 @@ public abstract class ArrayNodes {
             taintNode = prev.taintNode;
         }
 
-        @Specialization
-        public RubyString pack(VirtualFrame frame, RubyArray array, RubyString format) {
+        @Specialization(guards = "byteListsEqual(format, cachedFormat)")
+        public RubyString pack(VirtualFrame frame, RubyArray array, RubyString format, @Cached("privatizeByteList(format)") ByteList cachedFormat) {
+            System.err.println("running " + hashCode() + " " + format + " " + cachedFormat + " " + (callPackNode == null ? "null" : callPackNode.hashCode()));
+
             if (callPackNode == null) {
                 CompilerDirectives.transferToInterpreter();
+
+                System.err.println("parsing!");
 
                 final CallTarget packCallTarget;
 
@@ -2844,6 +2848,8 @@ public abstract class ArrayNodes {
                 }
 
                 callPackNode = insert(Truffle.getRuntime().createDirectCallNode(packCallTarget));
+            } else {
+                System.err.println("not parsing - using existing call node");
             }
 
             final PackResult result;
@@ -2862,10 +2868,6 @@ public abstract class ArrayNodes {
             } catch (CantCompressNegativeException e) {
                 CompilerDirectives.transferToInterpreter();
                 throw new RaiseException(getContext().getCoreLibrary().argumentError("can't compress negative numbers", this));
-            } finally {
-                // No caching at the moment - so we always want to delete the node for next time
-                CompilerDirectives.transferToInterpreterAndInvalidate();
-                callPackNode = null;
             }
 
             final RubyString string = getContext().makeString(new ByteList(result.getOutput(), 0, result.getOutputLength()));
@@ -2909,6 +2911,16 @@ public abstract class ArrayNodes {
         @Specialization(guards = {"!isRubyString(format)", "!isBoolean(format)", "!isInteger(format)", "!isLong(format)", "!isRubyNilClass(format)"})
         public Object pack(VirtualFrame frame, RubyArray array, Object format) {
             return ruby(frame, "pack(format.to_str)", "format", format);
+        }
+
+        protected ByteList privatizeByteList(RubyString string) {
+            System.err.println("privatising " + string);
+            return string.getByteList().dup();
+        }
+
+        protected boolean byteListsEqual(RubyString string, ByteList byteList) {
+            System.err.println("guarding " + string + " == " + byteList + " = " + string.getByteList().equal(byteList));
+            return string.getByteList().equal(byteList);
         }
 
     }
