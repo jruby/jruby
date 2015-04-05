@@ -136,6 +136,11 @@ public abstract class FixnumNodes {
             return rationalAdd.call(frame, b, "+", null, a);
         }
 
+        @Specialization(guards = "isComplex(arguments[1])")
+        public Object addComplex(VirtualFrame frame, int a, RubyBasicObject b) {
+            return ruby(frame, "b + a", "b", b, "a", a);
+        }
+
         @Specialization(rewriteOn = ArithmeticException.class)
         public long add(long a, int b) {
             return ExactMath.addExact(a, b);
@@ -175,6 +180,11 @@ public abstract class FixnumNodes {
             }
 
             return rationalAdd.call(frame, b, "+", null, a);
+        }
+
+        @Specialization(guards = "isComplex(arguments[1])")
+        public Object addComplex(VirtualFrame frame, long a, RubyBasicObject b) {
+            return ruby(frame, "b + a", "b", b, "a", a);
         }
 
     }
