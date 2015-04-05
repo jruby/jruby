@@ -2813,7 +2813,7 @@ public abstract class ArrayNodes {
 
     }
 
-    @CoreMethod(names = "pack", required = 1, optional = 1, taintFromParameters = 0)
+    @CoreMethod(names = "pack", required = 1, taintFromParameters = 0)
     public abstract static class PackNode extends ArrayCoreMethodNode {
 
         @Child private DirectCallNode callPackNode;
@@ -2830,14 +2830,14 @@ public abstract class ArrayNodes {
         }
 
         @Specialization
-        public RubyString pack(VirtualFrame frame, RubyArray array, RubyString format, boolean extended) {
+        public RubyString pack(VirtualFrame frame, RubyArray array, RubyString format) {
             if (callPackNode == null) {
                 CompilerDirectives.transferToInterpreter();
 
                 final CallTarget packCallTarget;
 
                 try {
-                    packCallTarget = new PackParser(getContext()).parse(format.toString(), extended);
+                    packCallTarget = new PackParser(getContext()).parse(format.toString(), false);
                 } catch (FormatException e) {
                     CompilerDirectives.transferToInterpreter();
                     throw new RaiseException(getContext().getCoreLibrary().argumentError(e.getMessage(), this));
@@ -2887,38 +2887,28 @@ public abstract class ArrayNodes {
         }
 
         @Specialization
-        public RubyString pack(VirtualFrame frame, RubyArray array, RubyString format, UndefinedPlaceholder extended) {
-            return pack(frame, array, format, false);
-        }
-
-        @Specialization
-        public Object pack(VirtualFrame frame, RubyArray array, boolean format, Object extended) {
+        public Object pack(VirtualFrame frame, RubyArray array, boolean format) {
             return ruby(frame, "raise TypeError");
         }
 
         @Specialization
-        public Object pack(VirtualFrame frame, RubyArray array, int format, Object extended) {
+        public Object pack(VirtualFrame frame, RubyArray array, int format) {
             return ruby(frame, "raise TypeError");
         }
 
         @Specialization
-        public Object pack(VirtualFrame frame, RubyArray array, long format, Object extended) {
+        public Object pack(VirtualFrame frame, RubyArray array, long format) {
             return ruby(frame, "raise TypeError");
         }
 
         @Specialization
-        public Object pack(VirtualFrame frame, RubyArray array, RubyNilClass format, Object extended) {
+        public Object pack(VirtualFrame frame, RubyArray array, RubyNilClass format) {
             return ruby(frame, "raise TypeError");
         }
 
         @Specialization(guards = {"!isRubyString(format)", "!isBoolean(format)", "!isInteger(format)", "!isLong(format)", "!isRubyNilClass(format)"})
-        public Object pack(VirtualFrame frame, RubyArray array, Object format, UndefinedPlaceholder extended) {
+        public Object pack(VirtualFrame frame, RubyArray array, Object format) {
             return ruby(frame, "pack(format.to_str)", "format", format);
-        }
-
-        @Specialization(guards = {"!isRubyString(format)", "!isBoolean(format)", "!isInteger(format)", "!isLong(format)", "!isRubyNilClass(format)"})
-        public Object pack(VirtualFrame frame, RubyArray array, Object format, boolean extended) {
-            return ruby(frame, "pack(format.to_str, extended)", "format", format, "extended", extended);
         }
 
     }
