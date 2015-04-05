@@ -582,6 +582,16 @@ public abstract class FixnumNodes {
             return rationalDivNode.call(frame, aRational, "/", null, b);
         }
 
+        @Specialization(guards = "isComplex(arguments[1])")
+        public Object divComplex(VirtualFrame frame, int a, RubyBasicObject b) {
+            return ruby(frame, "Complex(a) / b", "a", a, "b", b);
+        }
+
+        @Specialization(guards = "isComplex(arguments[1])")
+        public Object divComplex(VirtualFrame frame, long a, RubyBasicObject b) {
+            return ruby(frame, "Complex(a) / b", "a", a, "b", b);
+        }
+
     }
 
     @CoreMethod(names = "%", required = 1)
