@@ -40,7 +40,10 @@ import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.nio.ByteBuffer;
+import java.nio.CharBuffer;
 import java.nio.charset.Charset;
+import java.nio.charset.CharsetDecoder;
 import java.nio.charset.UnsupportedCharsetException;
 import java.util.HashMap;
 
@@ -288,11 +291,11 @@ public class RubyLexer {
         // FIXME: We should be able to move some faster non-exception cache using Encoding.isDefined
         try {
             charset = current_enc.getCharset();
-            if (charset != null) return new String(bytes, begin + tokp, lex_p - tokp, charset).intern();
+            if (charset != null) return new String(bytes, begin + tokp, lex_p - tokp, charset);
         } catch (UnsupportedCharsetException e) {}
 
 
-        return new String(bytes, begin + tokp, lex_p - tokp).intern();
+        return new String(bytes, begin + tokp, lex_p - tokp);
     }
 
     public int tokenize_ident(int result) {
@@ -304,7 +307,7 @@ public class RubyLexer {
             setState(LexState.EXPR_END);
         }
 
-        yaccValue = value;
+        yaccValue = value.intern();
         return result;
     }
 
@@ -1686,7 +1689,7 @@ public class RubyLexer {
 
                 last_state = lex_state;
                 setState(LexState.EXPR_END);
-                yaccValue = createTokenString();
+                yaccValue = createTokenString().intern();
                 return Tokens.tGVAR;
             }
             pushback(c);
@@ -1720,7 +1723,7 @@ public class RubyLexer {
                 pushback('-');
                 return '$';
             }
-            yaccValue = createTokenString();
+            yaccValue = createTokenString().intern();
             /* xxx shouldn't check if valid option variable */
             return Tokens.tGVAR;
 
@@ -1744,11 +1747,11 @@ public class RubyLexer {
             } while (Character.isDigit(c));
             pushback(c);
             if (last_state == LexState.EXPR_FNAME) {
-                yaccValue = createTokenString();
+                yaccValue = createTokenString().intern();
                 return Tokens.tGVAR;
             }
 
-            yaccValue = new NthRefNode(getPosition(), Integer.parseInt(createTokenString().substring(1)));
+            yaccValue = new NthRefNode(getPosition(), Integer.parseInt(createTokenString().substring(1).intern()));
             return Tokens.tNTH_REF;
         case '0':
             setState(LexState.EXPR_END);
@@ -1765,7 +1768,7 @@ public class RubyLexer {
 
             tokadd_ident(c);
 
-            return identifierToken(Tokens.tGVAR, createTokenString());  // $blah
+            return identifierToken(Tokens.tGVAR, createTokenString().intern());  // $blah
         }
     }
 
@@ -1903,7 +1906,7 @@ public class RubyLexer {
             int c2 = nextc();
             if (c2 == ':' && !peek(':')) {
                 setState(LexState.EXPR_LABELARG);
-                yaccValue = tempVal;
+                yaccValue = tempVal.intern();
                 return Tokens.tLABEL;
             }
             pushback(c2);
@@ -1943,7 +1946,7 @@ public class RubyLexer {
             setState(LexState.EXPR_END);
         }
         
-        return identifierToken(result, tempVal);
+        return identifierToken(result, tempVal.intern());
     }
 
     private int leftBracket(boolean spaceSeen) throws IOException {
