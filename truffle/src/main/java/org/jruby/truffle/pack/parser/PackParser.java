@@ -18,6 +18,7 @@ import org.jruby.truffle.pack.nodes.control.*;
 import org.jruby.truffle.pack.nodes.type.*;
 import org.jruby.truffle.pack.runtime.Endianness;
 import org.jruby.truffle.pack.runtime.FormatException;
+import org.jruby.truffle.pack.runtime.PackEncoding;
 import org.jruby.truffle.pack.runtime.Signedness;
 import org.jruby.truffle.runtime.RubyContext;
 
@@ -28,6 +29,8 @@ import java.util.List;
 public class PackParser {
 
     private final RubyContext context;
+
+    private PackEncoding encoding = PackEncoding.DEFAULT;
 
     public PackParser(RubyContext context) {
         this.context = context;
@@ -41,7 +44,7 @@ public class PackParser {
 
         final PackTokenizer tokenizer = new PackTokenizer(format, extended);
         final PackNode body = parse(tokenizer, false);
-        return Truffle.getRuntime().createCallTarget(new PackRootNode(describe(format), body));
+        return Truffle.getRuntime().createCallTarget(new PackRootNode(describe(format), encoding, body));
     }
 
     public PackNode parse(PackTokenizer tokenizer, boolean inParens) {
@@ -160,6 +163,8 @@ public class PackParser {
                     case 'A':
                     case 'Z':
                     case 'a': {
+                        encoding = encoding.unifyWith(PackEncoding.ASCII_8BIT);
+
                         boolean padOnNull = true;
                         final byte padding;
 
@@ -294,6 +299,7 @@ public class PackParser {
                         node = WriteUUStringNodeGen.create(length, ReadStringNodeGen.create(context, new SourceNode()));
                     } break;
                     case 'U':
+                        encoding = encoding.unifyWith(PackEncoding.UTF_8);
                         node = WriteUTF8CharacterNodeGen.create(ReadLongNodeGen.create(context, new SourceNode()));
                         break;
                     case 'X':

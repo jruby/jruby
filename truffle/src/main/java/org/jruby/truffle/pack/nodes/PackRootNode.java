@@ -15,6 +15,7 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.RootNode;
 import com.oracle.truffle.api.nodes.UnexpectedResultException;
 import com.oracle.truffle.api.source.NullSourceSection;
+import org.jruby.truffle.pack.runtime.PackEncoding;
 import org.jruby.truffle.pack.runtime.PackFrame;
 import org.jruby.truffle.pack.runtime.PackResult;
 import org.jruby.truffle.runtime.util.ArrayUtils;
@@ -23,14 +24,16 @@ import org.jruby.util.ByteList;
 public class PackRootNode extends RootNode {
 
     private final String description;
+    private final PackEncoding encoding;
 
     @Child private PackNode child;
 
     @CompilerDirectives.CompilationFinal private int expectedLength = ArrayUtils.capacity(0, 0);
 
-    public PackRootNode(String description, PackNode child) {
+    public PackRootNode(String description, PackEncoding encoding, PackNode child) {
         super(new NullSourceSection("pack", description), PackFrame.INSTANCE.getFrameDescriptor());
         this.description = description;
+        this.encoding = encoding;
         this.child = child;
     }
 
@@ -74,7 +77,7 @@ public class PackRootNode extends RootNode {
             throw new IllegalStateException(e);
         }
 
-        return new PackResult(output, outputLength, taint);
+        return new PackResult(output, outputLength, taint, encoding);
     }
 
     @Override

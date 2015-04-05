@@ -12,6 +12,7 @@ import org.jruby.truffle.nodes.dispatch.DispatchNode;
 import org.jruby.truffle.nodes.dispatch.MissingBehavior;
 import org.jruby.truffle.pack.nodes.PackNode;
 import org.jruby.truffle.pack.nodes.SourceNode;
+import org.jruby.truffle.pack.runtime.CantConvertException;
 import org.jruby.truffle.pack.runtime.NoImplicitConversionException;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyBignum;
@@ -121,7 +122,9 @@ public abstract class ToLongNode extends PackNode {
             return toLong(frame, (BigInteger) value);
         }
 
-        throw new UnsupportedOperationException();
+        // TODO CS 5-April-15 missing the (Object#to_int gives String) part
+
+        throw new CantConvertException("can't convert Object to Integer");
     }
 
 }

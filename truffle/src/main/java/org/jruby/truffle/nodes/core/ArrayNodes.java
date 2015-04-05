@@ -25,6 +25,7 @@ import com.oracle.truffle.api.source.SourceSection;
 import com.oracle.truffle.api.utilities.BranchProfile;
 
 import org.jcodings.specific.USASCIIEncoding;
+import org.jcodings.specific.UTF8Encoding;
 import org.jruby.RubyObject;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -2862,6 +2863,12 @@ public abstract class ArrayNodes {
             } catch (CantCompressNegativeException e) {
                 CompilerDirectives.transferToInterpreter();
                 throw new RaiseException(getContext().getCoreLibrary().argumentError("can't compress negative numbers", this));
+            } catch (RangeException e) {
+                CompilerDirectives.transferToInterpreter();
+                throw new RaiseException(getContext().getCoreLibrary().rangeError(e.getMessage(), this));
+            } catch (CantConvertException e) {
+                CompilerDirectives.transferToInterpreter();
+                throw new RaiseException(getContext().getCoreLibrary().typeError(e.getMessage(), this));
             } finally {
                 // No caching at the moment - so we always want to delete the node for next time
                 CompilerDirectives.transferToInterpreterAndInvalidate();
@@ -2872,7 +2879,21 @@ public abstract class ArrayNodes {
 
             if (format.getByteList().length() == 0) {
                 string.forceEncoding(USASCIIEncoding.INSTANCE);
+            } else {
+                switch (result.getEncoding()) {
+                    case DEFAULT:
+                        break;
+                    case ASCII_8BIT:
+                        break;
+                    case UTF_8:
+                        string.forceEncoding(UTF8Encoding.INSTANCE);
+                        break;
+                    default:
+                        throw new UnsupportedOperationException();
+                }
             }
+
+
 
             if (result.isTainted()) {
                 if (taintNode == null) {
