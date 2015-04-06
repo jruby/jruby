@@ -196,6 +196,8 @@ public abstract class EncodingNodes {
     @CoreMethod(names = "default_external_jruby=", onSingleton = true, required = 1)
     public abstract static class SetDefaultExternalNode extends CoreMethodNode {
 
+        @Child private ToStrNode toStrNode;
+
         public SetDefaultExternalNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
         }
@@ -226,6 +228,16 @@ public abstract class EncodingNodes {
         @Specialization
         public RubyEncoding defaultExternal(RubyNilClass nil) {
             throw new RaiseException(getContext().getCoreLibrary().argumentError("default external can not be nil", this));
+        }
+
+        @Specialization(guards = { "!isRubyEncoding", "!isRubyString", "!isRubyNilClass" })
+        public RubyEncoding defaultExternal(VirtualFrame frame, Object encoding) {
+            if (toStrNode == null) {
+                CompilerDirectives.transferToInterpreter();
+                toStrNode = insert(ToStrNodeFactory.create(getContext(), getSourceSection(), null));
+            }
+
+            return defaultExternal(toStrNode.executeRubyString(frame, encoding));
         }
 
     }

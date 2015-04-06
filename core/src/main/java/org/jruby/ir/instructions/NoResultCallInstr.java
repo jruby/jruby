@@ -11,22 +11,24 @@ import org.jruby.runtime.CallType;
 
 public class NoResultCallInstr extends CallBase {
     // FIXME: Removed results undoes specialized callinstrs.  Audit how often and what and make equalivalent versions here.
-    public static NoResultCallInstr create(CallType callType, String name, Operand receiver, Operand[] args, Operand closure) {
+    public static NoResultCallInstr create(CallType callType, String name, Operand receiver, Operand[] args,
+                                           Operand closure, boolean isPotentiallyRefined) {
         if (closure == null && !containsArgSplat(args) && args.length == 1) {
-            return new OneOperandArgNoBlockNoResultCallInstr(callType, name, receiver, args, null);
+            return new OneOperandArgNoBlockNoResultCallInstr(callType, name, receiver, args, null, isPotentiallyRefined);
         }
 
-        return new NoResultCallInstr(Operation.NORESULT_CALL, callType, name, receiver, args, closure);
+        return new NoResultCallInstr(Operation.NORESULT_CALL, callType, name, receiver, args, closure, isPotentiallyRefined);
     }
 
-    public NoResultCallInstr(Operation op, CallType callType, String name, Operand receiver, Operand[] args, Operand closure) {
-        super(op, callType, name, receiver, args, closure);
+    public NoResultCallInstr(Operation op, CallType callType, String name, Operand receiver, Operand[] args,
+                             Operand closure, boolean isPotentiallyRefined) {
+        super(op, callType, name, receiver, args, closure, isPotentiallyRefined);
     }
 
     @Override
     public Instr clone(CloneInfo ii) {
         return new NoResultCallInstr(getOperation(), getCallType(), getName(), getReceiver().cloneForInlining(ii),
-                cloneCallArgs(ii), getClosureArg() == null ? null : getClosureArg().cloneForInlining(ii));
+                cloneCallArgs(ii), getClosureArg() == null ? null : getClosureArg().cloneForInlining(ii), isPotentiallyRefined());
     }
 
     public static NoResultCallInstr decode(IRReaderDecoder d) {
@@ -46,8 +48,9 @@ public class NoResultCallInstr extends CallBase {
         }
 
         Operand closure = hasClosureArg ? d.decodeOperand() : null;
+        boolean isPotentiallyRefined = d.decodeBoolean();
 
-        return NoResultCallInstr.create(CallType.fromOrdinal(callTypeOrdinal), methAddr, receiver, args, closure);
+        return NoResultCallInstr.create(CallType.fromOrdinal(callTypeOrdinal), methAddr, receiver, args, closure, isPotentiallyRefined);
     }
 
     @Override

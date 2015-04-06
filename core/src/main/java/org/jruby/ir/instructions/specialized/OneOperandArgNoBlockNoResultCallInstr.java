@@ -12,14 +12,15 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
 public class OneOperandArgNoBlockNoResultCallInstr extends NoResultCallInstr {
-    public OneOperandArgNoBlockNoResultCallInstr(CallType callType, String name, Operand receiver, Operand[] args, Operand closure) {
-        super(Operation.NORESULT_CALL_1O, callType, name, receiver, args, closure);
+    public OneOperandArgNoBlockNoResultCallInstr(CallType callType, String name, Operand receiver, Operand[] args,
+                                                 Operand closure, boolean isPotentiallyRefined) {
+        super(Operation.NORESULT_CALL_1O, callType, name, receiver, args, closure, isPotentiallyRefined);
     }
 
     @Override
     public Instr clone(CloneInfo ii) {
         return new OneOperandArgNoBlockNoResultCallInstr(getCallType(), getName(), getReceiver().cloneForInlining(ii),
-                cloneCallArgs(ii), getClosureArg() == null ? null : getClosureArg().cloneForInlining(ii));
+                cloneCallArgs(ii), getClosureArg() == null ? null : getClosureArg().cloneForInlining(ii), isPotentiallyRefined());
     }
 
     @Override
