@@ -234,9 +234,8 @@ class LibrarySearcher {
         public void load(Ruby runtime, boolean wrap) {
             InputStream is;
             try {
-                is = new LoadServiceResourceInputStream(resource.inputStream());
-            }
-            catch(IOException e) {
+                is = new BufferedInputStream(resource.inputStream(), 32768);
+            } catch(IOException e) {
                 throw runtime.newLoadError("no such file to load -- " + searchName, searchName);
             }
 
