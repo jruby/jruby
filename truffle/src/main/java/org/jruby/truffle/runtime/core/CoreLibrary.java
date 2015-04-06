@@ -108,6 +108,7 @@ public class CoreLibrary {
     private final RubyClass systemStackErrorClass;
     private final RubyClass threadClass;
     private final RubyClass timeClass;
+    private final RubyClass transcodingClass;
     private final RubyClass trueClass;
     private final RubyClass tupleClass;
     private final RubyClass typeErrorClass;
@@ -310,6 +311,7 @@ public class CoreLibrary {
         byteArrayClass = defineClass(rubiniusModule, objectClass, "ByteArray");
         lookupTableClass = defineClass(rubiniusModule, hashClass, "LookupTable");
         stringDataClass = defineClass(rubiniusModule, objectClass, "StringData");
+        transcodingClass = defineClass(encodingClass, objectClass, "Transcoding");
         tupleClass = defineClass(rubiniusModule, arrayClass, "Tuple");
 
         // Include the core modules
@@ -1192,6 +1194,10 @@ public class CoreLibrary {
 
     public RubyClass getStringDataClass() {
         return stringDataClass;
+    }
+
+    public RubyClass getTranscodingClass() {
+        return transcodingClass;
     }
 
     public RubyClass getTupleClass() {

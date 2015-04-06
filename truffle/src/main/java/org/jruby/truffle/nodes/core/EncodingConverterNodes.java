@@ -110,6 +110,7 @@ public abstract class EncodingConverterNodes {
         @Child private CallDispatchHeadNode toSymNode;
         @Child private CallDispatchHeadNode newLookupTableNode;
         @Child private CallDispatchHeadNode lookupTableWriteNode;
+        @Child private CallDispatchHeadNode newTranscodingNode;
 
         public TranscodingMapNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -117,6 +118,7 @@ public abstract class EncodingConverterNodes {
             toSymNode = DispatchHeadNodeFactory.createMethodCall(context);
             newLookupTableNode = DispatchHeadNodeFactory.createMethodCall(context);
             lookupTableWriteNode = DispatchHeadNodeFactory.createMethodCall(context);
+            newTranscodingNode = DispatchHeadNodeFactory.createMethodCall(context);
         }
 
         public TranscodingMapNode(TranscodingMapNode prev) {
@@ -125,6 +127,7 @@ public abstract class EncodingConverterNodes {
             toSymNode = prev.toSymNode;
             newLookupTableNode = prev.newLookupTableNode;
             lookupTableWriteNode = prev.lookupTableWriteNode;
+            newTranscodingNode = prev.newTranscodingNode;
         }
 
         @Specialization
@@ -145,7 +148,8 @@ public abstract class EncodingConverterNodes {
 
                     final Object upcasedLookupTableKey = upcaseNode.call(frame, getContext().makeString(new ByteList(e.getDestination())), "upcase", null);
                     final Object lookupTableKey = toSymNode.call(frame, upcasedLookupTableKey, "to_sym", null);
-                    lookupTableWriteNode.call(frame, value, "[]=", null, lookupTableKey, true);
+                    final Object lookupTableValue = newTranscodingNode.call(frame, getContext().getCoreLibrary().getTranscodingClass(), "create", null, key, lookupTableKey);
+                    lookupTableWriteNode.call(frame, value, "[]=", null, lookupTableKey, lookupTableValue);
                 }
 
                 lookupTableWriteNode.call(frame, ret, "[]=", null, key, value);
