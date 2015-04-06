@@ -918,6 +918,10 @@ public class BodyTranslator extends Translator {
 
     @Override
     public RubyNode visitConstDeclNode(org.jruby.ast.ConstDeclNode node) {
+        return visitConstDeclNode(node, node.getValueNode().accept(this));
+    }
+
+    private RubyNode visitConstDeclNode(org.jruby.ast.ConstDeclNode node, RubyNode rhs) {
         final SourceSection sourceSection = translate(node.getPosition());
 
         RubyNode moduleNode;
@@ -933,7 +937,7 @@ public class BodyTranslator extends Translator {
             throw new UnsupportedOperationException();
         }
 
-        return new WriteConstantNode(context, sourceSection, node.getName(), moduleNode, node.getValueNode().accept(this));
+        return new WriteConstantNode(context, sourceSection, node.getName(), moduleNode, rhs);
     }
 
     @Override
@@ -2113,6 +2117,8 @@ public class BodyTranslator extends Translator {
             }
         } else if (dummyAssignment instanceof org.jruby.ast.GlobalAsgnNode) {
             return translateGlobalAsgnNode((org.jruby.ast.GlobalAsgnNode) dummyAssignment, rhs);
+        } else if (dummyAssignment instanceof org.jruby.ast.ConstDeclNode) {
+            return visitConstDeclNode((org.jruby.ast.ConstDeclNode) dummyAssignment, rhs);
         } else {
             translated = ((ReadNode) environment.findLocalVarNode(environment.allocateLocalTemp("dummy"), sourceSection)).makeWriteNode(rhs);
         }

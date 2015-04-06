@@ -32,15 +32,6 @@ public class ConvertDouble {
      * Converts supplied ByteList into a double.  strict-mode will not like
      * extra text non-numeric text or multiple sequention underscores.
      */
-    public static double byteListToDouble(ByteList bytes, boolean strict) {
-        return new DoubleConverter().parse(bytes, strict, false);
-    }
-
-    /**
-     * Converts supplied ByteList into a double.  This is almost exactly the
-     * same as byteListToDouble, but leading underscores are no longer skipped
-     * in 1.9 (e.g. __1 == 0.0 in 1.9 while 1.8 parses it as 1.0).
-     */
     public static double byteListToDouble19(ByteList bytes, boolean strict) {
         return new DoubleConverter().parse(bytes, strict, true);
     }
@@ -50,7 +41,6 @@ public class ConvertDouble {
         private int index;
         private int endIndex;
         private boolean isStrict;
-        private boolean is19;
         private char[] chars; // result string we use to parse.
         private int charsIndex;
         private int significantDigitsProcessed;
@@ -72,12 +62,11 @@ public class ConvertDouble {
 
         public DoubleConverter() {}
 
-        public void init(ByteList list, boolean isStrict, boolean is19) {
+        public void init(ByteList list, boolean isStrict) {
             bytes = list.getUnsafeBytes();
             index = list.begin();
             endIndex = index + list.length();
             this.isStrict = isStrict;
-            this.is19 = is19;
             // +2 for added exponent: E...
             // The algorithm trades digits for inc/dec exponent.
             // Worse case is adding E-1 when no exponent,
@@ -175,8 +164,13 @@ public class ConvertDouble {
             }
         }
 
+        /**
+         * Everything runs in 1.9+ mode now, so the `is19` parameter is vestigial.
+         * However, in order to maintain binary compatibility with extensions we can't
+         * just change the signature either.
+         */
         public double parse(ByteList list, boolean strict, boolean is19) {
-            init(list, strict, is19);
+            init(list, strict);
 
             if (skipWhitespace()) return completeCalculation();
             if (parseOptionalSign()) return completeCalculation();
@@ -203,7 +197,7 @@ public class ConvertDouble {
                 byte value = next();
 
                 if (isWhitespace(value)) continue;
-                if (value != '_' || isStrict || is19) return previous();
+                return previous();
             }
 
             return true;

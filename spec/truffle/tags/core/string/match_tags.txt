@@ -1,21 +1,21 @@
-fails:String#=~ behaves the same way as index() when given a regexp
-fails:String#=~ raises a TypeError if a obj is a string
-fails:String#=~ invokes obj.=~ with self if obj is neither a string nor regexp
-fails:String#=~ sets $~ to MatchData when there is a match and nil when there's none
-fails:String#=~ returns the character index of a found match
-fails:String#match matches the pattern against self
-fails:String#match matches a literal Regexp that uses ASCII-only UTF-8 escape sequences
-fails:String#match tries to convert pattern to a string via to_str
-fails:String#match raises a TypeError if pattern is not a regexp or a string
-fails:String#match converts string patterns to regexps without escaping
-fails:String#match returns nil if there's no match
-fails:String#match matches \G at the start of the string
-fails:String#match sets $~ to MatchData of match or nil when there is none
-fails:String#match calls match on the regular expression
-fails:String#match with [pattern, position] when given a positive position matches the pattern against self starting at an optional index
-fails:String#match with [pattern, position] when given a positive position uses the start as a character offset
-fails:String#match with [pattern, position] when given a negative position matches the pattern against self starting at an optional index
-fails:String#match with [pattern, position] when given a negative position uses the start as a character offset
-fails:String#match when passed a block yields the MatchData
-fails:String#match when passed a block returns the block result
-fails:String#match when passed a block does not yield if there is no match
+fails(regexp):String#=~ behaves the same way as index() when given a regexp
+fails(regexp):String#=~ raises a TypeError if a obj is a string
+fails(regexp):String#=~ invokes obj.=~ with self if obj is neither a string nor regexp
+fails(regexp):String#=~ sets $~ to MatchData when there is a match and nil when there's none
+fails(regexp):String#=~ returns the character index of a found match
+fails(regexp):String#match matches the pattern against self
+fails(regexp):String#match matches a literal Regexp that uses ASCII-only UTF-8 escape sequences
+fails(regexp):String#match tries to convert pattern to a string via to_str
+fails(regexp):String#match raises a TypeError if pattern is not a regexp or a string
+fails(regexp):String#match converts string patterns to regexps without escaping
+fails(regexp):String#match returns nil if there's no match
+fails(regexp):String#match matches \G at the start of the string
+fails(regexp):String#match sets $~ to MatchData of match or nil when there is none
+fails(regexp):String#match calls match on the regular expression
+fails(regexp):String#match with [pattern, position] when given a positive position matches the pattern against self starting at an optional index
+fails(regexp):String#match with [pattern, position] when given a positive position uses the start as a character offset
+fails(regexp):String#match with [pattern, position] when given a negative position matches the pattern against self starting at an optional index
+fails(regexp):String#match with [pattern, position] when given a negative position uses the start as a character offset
+fails(regexp):String#match when passed a block yields the MatchData
+fails(regexp):String#match when passed a block returns the block result
+fails(regexp):String#match when passed a block does not yield if there is no match

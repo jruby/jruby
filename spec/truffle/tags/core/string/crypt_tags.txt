@@ -1,7 +1,1 @@
-fails:String#crypt returns a cryptographic hash of self by applying the UNIX crypt algorithm with the specified salt
-fails:String#crypt returns '.' prepended to the string for each NULL byte the salt contains
-fails:String#crypt raises an ArgumentError when the salt is shorter than two characters
-fails:String#crypt calls #to_str to converts the salt arg to a String
-fails:String#crypt taints the result if either salt or self is tainted
-fails:String#crypt doesn't return subclass instances
-fails:String#crypt returns NULL bytes prepended to the string when the salt contains NULL bytes
+fails(inherited):String#crypt returns NULL bytes prepended to the string when the salt contains NULL bytes

@@ -14,6 +14,7 @@ import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.source.Source;
 
+import jnr.constants.platform.Errno;
 import org.jcodings.Encoding;
 import org.jcodings.EncodingDB;
 import org.jcodings.transcode.EConvFlags;
@@ -698,6 +699,18 @@ public class CoreLibrary {
         return argumentError("wrong number of arguments (0 for 1+)", currentNode);
     }
 
+    public RubyException errnoError(int errno, Node currentNode) {
+        CompilerAsserts.neverPartOfCompilation();
+
+        Errno errnoObj = Errno.valueOf(errno);
+        if (errnoObj == null) {
+            return systemCallError(String.format("Unknown Error (%s)", errno), currentNode);
+        }
+
+        // TODO (nirvdrum 03-Apr-15): This should return the correct errno exception class.
+        return systemCallError(errnoObj.description(), currentNode);
+    }
+
     public RubyException indexError(String message, Node currentNode) {
         CompilerAsserts.neverPartOfCompilation();
         return new RubyException(indexErrorClass, context.makeString(message), RubyCallStack.getBacktrace(currentNode));
@@ -952,6 +965,11 @@ public class CoreLibrary {
     public RubyException threadError(String message, Node currentNode) {
         CompilerAsserts.neverPartOfCompilation();
         return new RubyException(threadErrorClass, context.makeString(message), RubyCallStack.getBacktrace(currentNode));
+    }
+
+    public RubyException systemCallError(String message, Node currentNode) {
+        CompilerAsserts.neverPartOfCompilation();
+        return new RubyException(systemCallErrorClass, context.makeString(message), RubyCallStack.getBacktrace(currentNode));
     }
 
     public RubyContext getContext() {

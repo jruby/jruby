@@ -232,9 +232,9 @@ class LibrarySearcher {
 
         @Override
         public void load(Ruby runtime, boolean wrap) {
-            InputStream is = null;
+            InputStream is;
             try {
-                is = new BufferedInputStream(resource.inputStream(), 32768);
+                is = new LoadServiceResourceInputStream(resource.inputStream());
             }
             catch(IOException e) {
                 throw runtime.newLoadError("no such file to load -- " + searchName, searchName);

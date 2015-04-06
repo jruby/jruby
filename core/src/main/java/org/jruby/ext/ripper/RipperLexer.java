@@ -32,42 +32,30 @@ import java.io.IOException;
 import java.math.BigDecimal;
 import java.util.HashMap;
 import org.jcodings.Encoding;
-import org.jcodings.specific.ASCIIEncoding;
-import org.jcodings.specific.USASCIIEncoding;
-import org.jcodings.specific.UTF8Encoding;
 import org.joni.Matcher;
 import org.joni.Option;
 import org.joni.Regex;
 import org.jruby.Ruby;
 import org.jruby.RubyRegexp;
+import org.jruby.lexer.LexerSource;
 import org.jruby.lexer.yacc.StackState;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
 import org.jruby.util.SafeDoubleParser;
 import org.jruby.util.StringSupport;
 
+import static org.jruby.lexer.LexingCommon.*;
+import static org.jruby.lexer.LexingCommon.parseMagicComment;
+
 /**
  *
  * @author enebo
  */
 public class RipperLexer {
-    public static final Encoding UTF8_ENCODING = UTF8Encoding.INSTANCE;
-    public static final Encoding USASCII_ENCODING = USASCIIEncoding.INSTANCE;
-    public static final Encoding ASCII8BIT_ENCODING = ASCIIEncoding.INSTANCE;
-    
-    private static ByteList END_MARKER = new ByteList(new byte[] {'_', '_', 'E', 'N', 'D', '_', '_'});
-    private static ByteList BEGIN_DOC_MARKER = new ByteList(new byte[] {'b', 'e', 'g', 'i', 'n'});
-    private static ByteList END_DOC_MARKER = new ByteList(new byte[] {'e', 'n', 'd'});
-    private static ByteList CODING = new ByteList(new byte[] {'c', 'o', 'd', 'i', 'n', 'g'});
     private static final HashMap<String, Keyword> map;
 
-    private static final int SUFFIX_R = 1<<0;
-    private static final int SUFFIX_I = 1<<1;
-    private static final int SUFFIX_ALL = 3;
-
     static {
-        map = new HashMap<String, Keyword>();
-
+        map = new HashMap<>();
         map.put("end", Keyword.END);
         map.put("else", Keyword.ELSE);
         map.put("case", Keyword.CASE);
@@ -222,12 +210,12 @@ public class RipperLexer {
         WHILE ("while", Tokens.kWHILE, Tokens.kWHILE_MOD, LexState.EXPR_BEG),
         ALIAS ("alias", Tokens.kALIAS, Tokens.kALIAS, LexState.EXPR_FNAME),
         __ENCODING__("__ENCODING__", Tokens.k__ENCODING__, Tokens.k__ENCODING__, LexState.EXPR_END);
-        
+
         public final String name;
         public final int id0;
         public final int id1;
         public final LexState state;
-        
+
         Keyword(String name, int id0, int id1, LexState state) {
             this.name = name;
             this.id0 = id0;
@@ -277,24 +265,8 @@ public class RipperLexer {
     private StrTerm lex_strterm;
     public boolean commandStart;
 
-    // Give a name to a value.  Enebo: This should be used more.
-    static final int EOF = -1; // 0 in MRI
-
-    // ruby constants for strings (should this be moved somewhere else?)
-    static final int STR_FUNC_ESCAPE=0x01;
-    static final int STR_FUNC_EXPAND=0x02;
-    static final int STR_FUNC_REGEXP=0x04;
-    static final int STR_FUNC_QWORDS=0x08;
-    static final int STR_FUNC_SYMBOL=0x10;
     // When the heredoc identifier specifies <<-EOF that indents before ident. are ok (the '-').
     static final int STR_FUNC_INDENT=0x20;
-
-    private static final int str_squote = 0;
-    private static final int str_dquote = STR_FUNC_EXPAND;
-    private static final int str_xquote = STR_FUNC_EXPAND;
-    private static final int str_regexp = STR_FUNC_REGEXP | STR_FUNC_ESCAPE | STR_FUNC_EXPAND;
-    private static final int str_ssym   = STR_FUNC_SYMBOL;
-    private static final int str_dsym   = STR_FUNC_SYMBOL | STR_FUNC_EXPAND;
 
     // Count of nested parentheses (1.9 only)
     private int parenNest = 0;
@@ -441,7 +413,7 @@ public class RipperLexer {
     }
     
     public int lineno() {
-        return ruby_sourceline + src.getLineOffset();
+        return ruby_sourceline + src.getLineOffset() - 1;
     }
     
     public void dispatchHeredocEnd() {
@@ -905,6 +877,7 @@ public class RipperLexer {
                 return 0;
             }
             markerValue = new ByteList();
+            markerValue.setEncoding(current_enc);
             term = '"';
             func |= str_dquote;
             do {
@@ -927,43 +900,6 @@ public class RipperLexer {
         parser.dispatch("on_arg_ambiguous");
     }
 
-
-    /* MRI: magic_comment_marker */
-    /* This impl is a little sucky.  We basically double scan the same bytelist twice.  Once here
-     * and once in parseMagicComment.
-     */
-    private int magicCommentMarker(ByteList str, int begin) {
-        int i = begin;
-        int len = str.length();
-
-        while (i < len) {
-            switch (str.charAt(i)) {
-                case '-':
-                    if (i >= 2 && str.charAt(i - 1) == '*' && str.charAt(i - 2) == '-') return i + 1;
-                    i += 2;
-                    break;
-                case '*':
-                    if (i + 1 >= len) return -1;
-
-                    if (str.charAt(i + 1) != '-') {
-                        i += 4;
-                    } else if (str.charAt(i - 1) != '-') {
-                        i += 2;
-                    } else {
-                        return i + 2;
-                    }
-                    break;
-                default:
-                    i += 3;
-                    break;
-            }
-        }
-        return -1;
-    }
-
-    private static final String magicString = "([^\\s\'\":;]+)\\s*:\\s*(\"(?:\\\\.|[^\"])*\"|[^\"\\s;]+)[\\s;]*";
-    private static final Regex magicRegexp = new Regex(magicString.getBytes(), 0, magicString.length(), 0, Encoding.load("ASCII"));
-    
     private boolean comment_at_top() {
         int p = lex_pbeg;
         int pend = lex_p - 1;
@@ -972,35 +908,6 @@ public class RipperLexer {
             if (!Character.isSpaceChar(p(p))) return false;
             p++;
         }
-        return true;
-    }
-    
-    // MRI: parser_magic_comment
-    protected boolean parseMagicComment(ByteList magicLine) throws IOException {
-        int length = magicLine.length();
-        if (length <= 7) return false;
-        int beg = magicCommentMarker(magicLine, 0);
-        if (beg < 0) return false;
-        int end = magicCommentMarker(magicLine, beg);
-        if (end < 0) return false;
-
-        // We only use a regex if -*- ... -*- is found.  Not too hot a path?
-        int realSize = magicLine.getRealSize();
-        int begin = magicLine.getBegin();
-        Matcher matcher = magicRegexp.matcher(magicLine.getUnsafeBytes(), begin, begin + realSize);
-        int result = RubyRegexp.matcherSearch(getRuntime(), matcher, begin, begin + realSize, Option.NONE);
-        if (result < 0) return false;
-
-        // Regexp is guarateed to have three matches
-        int begs[] = matcher.getRegion().beg;
-        int ends[] = matcher.getRegion().end;
-        String name = magicLine.subSequence(begs[1], ends[1]).toString();
-        if (!name.equalsIgnoreCase("encoding")) return false;
-
-        ByteList val = new ByteList(magicLine.getUnsafeBytes(), begs[2], ends[2] - begs[2]);
-        
-        parser.dispatch("on_magic_comment", parser.getRuntime().newString(name), createStr(val, 0));
-
         return true;
     }
 
@@ -1181,7 +1088,7 @@ public class RipperLexer {
             case Tokens.tLABEL: return "tLABEL("+ ((Token) value()).getValue() +":),";
             case '\n': return "NL";
             case EOF: return "EOF";
-            default: return "'" + (char)token + " [" + (int) token + "',";
+            default: return "'" + (char)token + " [" + token + "',";
         }
     }
     
@@ -1472,17 +1379,20 @@ public class RipperLexer {
                 dispatchScanEvent(Tokens.tSP);
                 continue;
             }
-            case '#':		/* it's a comment */
-                if (!parseMagicComment(lexb.makeShared(lex_p, lex_pend - lex_p))) {
-                    if (comment_at_top()) {
-                        set_file_encoding(lex_p, lex_pend);
-                    }
+            case '#': { /* it's a comment */
+                ByteList encodingName = parseMagicComment(getRuntime(), lexb.makeShared(lex_p, lex_pend - lex_p));
+                // FIXME: boolean to mark we already found a magic comment to stop searching.  When found or we went too far
+                if (encodingName != null) {
+                    setEncoding(encodingName);
+                } else if (comment_at_top()) {
+                    set_file_encoding(lex_p, lex_pend);
                 }
                 lex_p = lex_pend;
                 dispatchScanEvent(Tokens.tCOMMENT);
-                    
+
                 fallthru = true;
-                /* fall through */
+            }
+            /* fall through */
             case '\n':
                 switch (lex_state) {
                     case EXPR_BEG:
@@ -2838,8 +2748,6 @@ public class RipperLexer {
         }
         buffer.setEncoding(UTF8_ENCODING);
     }
-
-    private byte[] mbcBuf = new byte[6];
 
     // mri: parser_tokadd_mbchar
     // This is different than MRI in that we return a boolean since we only care whether it was added

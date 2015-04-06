@@ -32,6 +32,7 @@
 package org.jruby.ext.ripper;
 
 import org.jruby.RubyArray;
+import org.jruby.lexer.LexerSource;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.ext.ripper.RipperLexer.LexState;
@@ -40,7 +41,7 @@ public class RipperParser extends RipperParserBase {
     public RipperParser(ThreadContext context, IRubyObject ripper, LexerSource source) {
         super(context, ripper, source);
     }
-					// line 44 "-"
+					// line 45 "-"
   // %token constants
   public static final int kCLASS = 257;
   public static final int kMODULE = 258;
@@ -4645,6 +4646,6 @@ states[631] = new RipperParserState() {
   }
 };
 }
-					// line 2069 "RipperParser.y"
+					// line 2070 "RipperParser.y"
 }
-					// line 9136 "-"
+					// line 9137 "-"

@@ -200,7 +200,7 @@ public class RubyTime extends RubyObject {
             try {
                 return DateTimeZone.forID(zone);
             } catch (IllegalArgumentException e) {
-                runtime.getWarnings().warn("Unrecognized time zone: "+zone);
+                runtime.getWarnings().warning("Unrecognized time zone: "+zone);
                 return DateTimeZone.UTC;
             }
         }

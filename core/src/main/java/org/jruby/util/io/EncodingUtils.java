@@ -15,6 +15,7 @@ import org.jcodings.transcode.EConvResult;
 import org.jcodings.transcode.Transcoder;
 import org.jcodings.transcode.TranscoderDB;
 import org.jcodings.transcode.Transcoding;
+import org.jcodings.unicode.UnicodeEncoding;
 import org.jcodings.util.CaseInsensitiveBytesHash;
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
@@ -1830,35 +1831,40 @@ public class EncodingUtils {
         return getActualEncoding(str.getEncoding(), str);
     }
 
+    private static final Encoding UTF16Dummy = EncodingDB.getEncodings().get("UTF-16".getBytes()).getEncoding();
+    private static final Encoding UTF32Dummy = EncodingDB.getEncodings().get("UTF-32".getBytes()).getEncoding();
+
     // MRI: get_actual_encoding
     public static Encoding getActualEncoding(Encoding enc, ByteList byteList) {
-        byte[] bytes = byteList.unsafeBytes();
-        int p = byteList.begin();
-        int end = p + byteList.getRealSize();
+        if (enc.isDummy() && enc instanceof UnicodeEncoding) {
+            // handle dummy UTF-16 and UTF-32 by scanning for BOM, as in MRI
+            byte[] bytes = byteList.unsafeBytes();
+            int p = byteList.begin();
+            int end = p + byteList.getRealSize();
 
-        CaseInsensitiveBytesHash<EncodingDB.Entry> encodings = EncodingDB.getEncodings();
-        if (enc == encodings.get("UTF-16".getBytes()).getEncoding() && end - p >= 2) {
-            int c0 = bytes[p] & 0xff;
-            int c1 = bytes[p + 1] & 0xff;
+            if (enc == UTF16Dummy && end - p >= 2) {
+                int c0 = bytes[p] & 0xff;
+                int c1 = bytes[p + 1] & 0xff;
 
-            if (c0 == 0xFE && c1 == 0xFF) {
-                return UTF16BEEncoding.INSTANCE;
-            } else if (c0 == 0xFF && c1 == 0xFE) {
-                return UTF16LEEncoding.INSTANCE;
+                if (c0 == 0xFE && c1 == 0xFF) {
+                    return UTF16BEEncoding.INSTANCE;
+                } else if (c0 == 0xFF && c1 == 0xFE) {
+                    return UTF16LEEncoding.INSTANCE;
+                }
+                return ASCIIEncoding.INSTANCE;
+            } else if (enc == UTF32Dummy && end - p >= 4) {
+                int c0 = bytes[p] & 0xff;
+                int c1 = bytes[p + 1] & 0xff;
+                int c2 = bytes[p + 2] & 0xff;
+                int c3 = bytes[p + 3] & 0xff;
+
+                if (c0 == 0 && c1 == 0 && c2 == 0xFE && c3 == 0xFF) {
+                    return UTF32BEEncoding.INSTANCE;
+                } else if (c3 == 0 && c2 == 0 && c1 == 0xFE && c0 == 0xFF) {
+                    return UTF32LEEncoding.INSTANCE;
+                }
+                return ASCIIEncoding.INSTANCE;
             }
-            return ASCIIEncoding.INSTANCE;
-        } else if (enc == encodings.get("UTF-32".getBytes()).getEncoding() && end - p >= 4) {
-            int c0 = bytes[p] & 0xff;
-            int c1 = bytes[p + 1] & 0xff;
-            int c2 = bytes[p + 2] & 0xff;
-            int c3 = bytes[p + 3] & 0xff;
-
-            if (c0 == 0 && c1 == 0 && c2 == 0xFE && c3 == 0xFF) {
-                return UTF32BEEncoding.INSTANCE;
-            } else if (c3 == 0 && c2 == 0 && c1 == 0xFE && c0 == 0xFF) {
-                return UTF32LEEncoding.INSTANCE;
-            }
-            return ASCIIEncoding.INSTANCE;
         }
         return enc;
     }

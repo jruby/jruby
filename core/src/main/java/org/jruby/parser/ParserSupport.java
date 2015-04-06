@@ -58,6 +58,8 @@ import org.jruby.util.RegexpOptions;
 import org.jruby.util.StringSupport;
 import org.jruby.util.cli.Options;
 
+import static org.jruby.lexer.LexingCommon.*;
+
 /** 
  *
  */
@@ -1260,10 +1262,10 @@ public class ParserSupport {
 
     // TODO: Put somewhere more consolidated (similiar
     private char optionsEncodingChar(Encoding optionEncoding) {
-        if (optionEncoding == RubyLexer.USASCII_ENCODING) return 'n';
+        if (optionEncoding == USASCII_ENCODING) return 'n';
         if (optionEncoding == org.jcodings.specific.EUCJPEncoding.INSTANCE) return 'e';
         if (optionEncoding == org.jcodings.specific.SJISEncoding.INSTANCE) return 's';
-        if (optionEncoding == RubyLexer.UTF8_ENCODING) return 'u';
+        if (optionEncoding == UTF8_ENCODING) return 'u';
 
         return ' ';
     }
@@ -1301,15 +1303,15 @@ public class ParserSupport {
 
             value.setEncoding(optionsEncoding);
         } else if (options.isEncodingNone()) {
-            if (value.getEncoding() == RubyLexer.ASCII8BIT_ENCODING && !is7BitASCII(value)) {
+            if (value.getEncoding() == ASCII8BIT_ENCODING && !is7BitASCII(value)) {
                 compileError(optionsEncoding, value.getEncoding());
             }
-            value.setEncoding(RubyLexer.ASCII8BIT_ENCODING);
-        } else if (lexer.getEncoding() == RubyLexer.USASCII_ENCODING) {
+            value.setEncoding(ASCII8BIT_ENCODING);
+        } else if (lexer.getEncoding() == USASCII_ENCODING) {
             if (!is7BitASCII(value)) {
-                value.setEncoding(RubyLexer.USASCII_ENCODING); // This will raise later
+                value.setEncoding(USASCII_ENCODING); // This will raise later
             } else {
-                value.setEncoding(RubyLexer.ASCII8BIT_ENCODING);
+                value.setEncoding(ASCII8BIT_ENCODING);
             }
         }
     }    

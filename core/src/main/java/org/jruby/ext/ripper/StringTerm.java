@@ -1,35 +1,38 @@
 /***** BEGIN LICENSE BLOCK *****
- * Version: CPL 1.0/GPL 2.0/LGPL 2.1
+ * Version: EPL 1.0/GPL 2.0/LGPL 2.1
  *
- * The contents of this file are subject to the Common Public
+ * The contents of this file are subject to the Eclipse Public
  * License Version 1.0 (the "License"); you may not use this file
  * except in compliance with the License. You may obtain a copy of
- * the License at http://www.eclipse.org/legal/cpl-v10.html
+ * the License at http://www.eclipse.org/legal/epl-v10.html
  *
  * Software distributed under the License is distributed on an "AS
  * IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
  * implied. See the License for the specific language governing
  * rights and limitations under the License.
  *
- * Copyright (C) 2013 The JRuby Team (jruby@jruby.org)
- * 
+ * Copyright (C) 2015 The JRuby Team (jruby@jruby.org)
+ *
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
  * or the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
  * in which case the provisions of the GPL or the LGPL are applicable instead
  * of those above. If you wish to allow use of your version of this file only
  * under the terms of either the GPL or the LGPL, and not to allow others to
- * use your version of this file under the terms of the CPL, indicate your
+ * use your version of this file under the terms of the EPL, indicate your
  * decision by deleting the provisions above and replace them with the notice
  * and other provisions required by the GPL or the LGPL. If you do not delete
  * the provisions above, a recipient may use your version of this file under
- * the terms of any one of the CPL, the GPL or the LGPL.
+ * the terms of any one of the EPL, the GPL or the LGPL.
  ***** END LICENSE BLOCK *****/
 package org.jruby.ext.ripper;
 
 import java.io.IOException;
 import org.jcodings.Encoding;
+import org.jruby.lexer.LexerSource;
 import org.jruby.util.ByteList;
+
+import static org.jruby.lexer.LexingCommon.*;
 
 public class StringTerm extends StrTerm {
     // Expand variables, Indentation of final marker
@@ -56,13 +59,13 @@ public class StringTerm extends StrTerm {
     }
 
     private int endFound(RipperLexer lexer, LexerSource src, ByteList buffer) throws IOException {
-            if ((flags & RipperLexer.STR_FUNC_QWORDS) != 0) {
+            if ((flags & STR_FUNC_QWORDS) != 0) {
                 flags = -1;
                 buffer.append(end);
                 return ' ';
             }
 
-            if ((flags & RipperLexer.STR_FUNC_REGEXP) != 0) {
+            if ((flags & STR_FUNC_REGEXP) != 0) {
                 String options = parseRegexpFlags(lexer, src);
                 buffer.append(options.getBytes());
 
@@ -90,7 +93,7 @@ public class StringTerm extends StrTerm {
         ByteList buffer = createByteList(lexer);        
 
         c = lexer.nextc();
-        if ((flags & RipperLexer.STR_FUNC_QWORDS) != 0 && Character.isWhitespace(c)) {
+        if ((flags & STR_FUNC_QWORDS) != 0 && Character.isWhitespace(c)) {
             do { 
                 buffer.append((char) c);
                 c = lexer.nextc();
@@ -108,7 +111,7 @@ public class StringTerm extends StrTerm {
             return ' ';
         }        
 
-        if ((flags & RipperLexer.STR_FUNC_EXPAND) != 0 && c == '#') {
+        if ((flags & STR_FUNC_EXPAND) != 0 && c == '#') {
             c = lexer.nextc();
             switch (c) {
             case '$':
@@ -125,8 +128,8 @@ public class StringTerm extends StrTerm {
         Encoding enc[] = new Encoding[1];
         enc[0] = lexer.getEncoding();
 
-        if (parseStringIntoBuffer(lexer, src, buffer, enc) == RipperLexer.EOF) {
-            if ((flags & RipperLexer.STR_FUNC_REGEXP) != 0) {
+        if (parseStringIntoBuffer(lexer, src, buffer, enc) == EOF) {
+            if ((flags & STR_FUNC_REGEXP) != 0) {
                 if (lexer.eofp) lexer.compile_error("unterminated regexp meets end of file");
                 return Tokens.tREGEXP_END;
             } else {
@@ -146,7 +149,7 @@ public class StringTerm extends StrTerm {
         int c;
         StringBuilder unknownFlags = new StringBuilder(10);
 
-        for (c = lexer.nextc(); c != RipperLexer.EOF
+        for (c = lexer.nextc(); c != EOF
                 && Character.isLetter(c); c = lexer.nextc()) {
             switch (c) {
                 case 'i': case 'x': case 'm': case 'o': case 'n':
@@ -165,21 +168,21 @@ public class StringTerm extends StrTerm {
         return buf.toString();
     }
 
-    private void mixed_error(RipperLexer lexer, Encoding foundEncoding, Encoding parserEncoding) {
+    private void mixedEscape(RipperLexer lexer, Encoding foundEncoding, Encoding parserEncoding) {
         lexer.compile_error(" mixed within " + parserEncoding);
     }
 
     // mri: parser_tokadd_string
     public int parseStringIntoBuffer(RipperLexer lexer, LexerSource src, ByteList buffer, Encoding enc[]) throws IOException {
-        boolean qwords = (flags & RipperLexer.STR_FUNC_QWORDS) != 0;
-        boolean expand = (flags & RipperLexer.STR_FUNC_EXPAND) != 0;
-        boolean escape = (flags & RipperLexer.STR_FUNC_ESCAPE) != 0;
-        boolean regexp = (flags & RipperLexer.STR_FUNC_REGEXP) != 0;
-        boolean symbol = (flags & RipperLexer.STR_FUNC_SYMBOL) != 0;
+        boolean qwords = (flags & STR_FUNC_QWORDS) != 0;
+        boolean expand = (flags & STR_FUNC_EXPAND) != 0;
+        boolean escape = (flags & STR_FUNC_ESCAPE) != 0;
+        boolean regexp = (flags & STR_FUNC_REGEXP) != 0;
+        boolean symbol = (flags & STR_FUNC_SYMBOL) != 0;
         boolean hasNonAscii = false;
         int c;
 
-        while ((c = lexer.nextc()) != RipperLexer.EOF) {
+        while ((c = lexer.nextc()) != EOF) {
             if (begin != '\0' && c == begin) {
                 nest++;
             } else if (c == end) {
@@ -223,27 +226,27 @@ public class StringTerm extends StrTerm {
                     }
 
                     if (hasNonAscii && buffer.getEncoding() != enc[0]) {
-                        mixed_error(lexer, buffer.getEncoding(), enc[0]);
+                        mixedEscape(lexer, buffer.getEncoding(), enc[0]);
                     }
 
                     continue;
                 default:
-                    if (c == RipperLexer.EOF) return RipperLexer.EOF;
+                    if (c == EOF) return EOF;
                     
                     if (!lexer.isASCII()) {
-                        if (expand) buffer.append('\\');
+                        if (!expand) buffer.append('\\');
                         
                         // goto non_ascii
                         hasNonAscii = true;
 
                         if (buffer.getEncoding() != enc[0]) {
-                            mixed_error(lexer, buffer.getEncoding(), enc[0]);
+                            mixedEscape(lexer, buffer.getEncoding(), enc[0]);
                             continue;
                         }
 
-                        if (!lexer.tokenAddMBC(c, buffer)) { // FIXME: Hack
+                        if (!lexer.tokenAddMBC(c, buffer)) {
                             lexer.compile_error("invalid multibyte char (" + enc[0] + ")");
-                            return RipperLexer.EOF;
+                            return EOF;
                         }
 
                         continue;
@@ -258,7 +261,7 @@ public class StringTerm extends StrTerm {
                         parseEscapeIntoBuffer(lexer, src, buffer);
 
                         if (hasNonAscii && buffer.getEncoding() != enc[0]) {
-                            mixed_error(lexer, buffer.getEncoding(), enc[0]);
+                            mixedEscape(lexer, buffer.getEncoding(), enc[0]);
                         }
                         
                         continue;
@@ -273,16 +276,16 @@ public class StringTerm extends StrTerm {
                     }
                 }
             } else if (!lexer.isASCII()) {
-                hasNonAscii = true;
+nonascii:       hasNonAscii = true; // Label for comparison with MRI only
 
                 if (buffer.getEncoding() != enc[0]) {
-                    mixed_error(lexer, buffer.getEncoding(), enc[0]);
+                    mixedEscape(lexer, buffer.getEncoding(), enc[0]);
                     continue;
                 }
 
-                if (!lexer.tokenAddMBC(c, buffer)) { // FIXME: Hack
+                if (!lexer.tokenAddMBC(c, buffer)) {
                     lexer.compile_error("invalid multibyte char (" + enc[0] + ")");
-                    return RipperLexer.EOF;
+                    return EOF;
                 }
 
                 continue;
@@ -299,7 +302,8 @@ public class StringTerm extends StrTerm {
             if ((c & 0x80) != 0) {
                 hasNonAscii = true;
                 if (buffer.getEncoding() != enc[0]) {
-                    mixed_error(lexer, buffer.getEncoding(), enc[0]);
+                    mixedEscape(lexer, buffer.getEncoding(), enc[0]);
+                    continue;
                 }
             }
             buffer.append(c);
@@ -327,7 +331,7 @@ public class StringTerm extends StrTerm {
         case '\\':
             parseEscapeIntoBuffer(lexer, src, buffer);
             break;
-        case RipperLexer.EOF:
+        case EOF:
             lexer.compile_error("Invalid escape character syntax");
         default:
             buffer.append(c);
@@ -352,10 +356,10 @@ public class StringTerm extends StrTerm {
             buffer.append(c);
             for (int i = 0; i < 2; i++) {
                 c = lexer.nextc();
-                if (c == RipperLexer.EOF) {
+                if (c == EOF) {
                     lexer.compile_error("Invalid escape character syntax");
                 }
-                if (!RipperLexer.isOctChar(c)) {
+                if (!isOctChar(c)) {
                     lexer.pushback(c);
                     break;
                 }
@@ -366,26 +370,26 @@ public class StringTerm extends StrTerm {
             buffer.append('\\');
             buffer.append(c);
             c = lexer.nextc();
-            if (!RipperLexer.isHexChar(c)) {
+            if (!isHexChar(c)) {
                 lexer.compile_error("Invalid escape character syntax");
             }
             buffer.append(c);
             c = lexer.nextc();
-            if (RipperLexer.isHexChar(c)) {
+            if (isHexChar(c)) {
                 buffer.append(c);
             } else {
                 lexer.pushback(c);
             }
             break;
         case 'M':
-            if ((c = lexer.nextc()) != '-') {
+            if ((lexer.nextc()) != '-') {
                 lexer.compile_error("Invalid escape character syntax");
             }
             buffer.append(new byte[] { '\\', 'M', '-' });
             escaped(lexer, src, buffer);
             break;
         case 'C':
-            if ((c = lexer.nextc()) != '-') {
+            if ((lexer.nextc()) != '-') {
                 lexer.compile_error("Invalid escape character syntax");
             }
             buffer.append(new byte[] { '\\', 'C', '-' });
@@ -395,12 +399,11 @@ public class StringTerm extends StrTerm {
             buffer.append(new byte[] { '\\', 'c' });
             escaped(lexer, src, buffer);
             break;
-        case RipperLexer.EOF:
+        case EOF:
             lexer.compile_error("Invalid escape character syntax");
         default:
-            if (c != '\\' || c != end) {
-                buffer.append('\\');
-            }
+            if (c != '\\' || c != end) buffer.append('\\');
+
             buffer.append(c);
         }
     }

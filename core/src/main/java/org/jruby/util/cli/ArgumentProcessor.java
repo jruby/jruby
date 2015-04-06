@@ -374,7 +374,6 @@ public class ArgumentProcessor {
                         checkGraalVersion();
                         config.setCompileMode(RubyInstanceConfig.CompileMode.TRUFFLE);
                         config.setDisableGems(true);
-                        Options.PARSER_DETAILED_SOURCE_POSITIONS.force(Boolean.toString(true));
                     } else if (extendedOption.endsWith("...")) {
                         Options.listPrefix(extendedOption.substring(0, extendedOption.length() - "...".length()));
                         config.setShouldRunInterpreter(false);

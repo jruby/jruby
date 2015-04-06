@@ -394,20 +394,32 @@ public class RubyMatchData extends RubyObject {
     }
 
     private int nameToBackrefNumber(RubyString str) {
+        check();
+        return nameToBackrefNumber(getRuntime(), pattern, regs, str);
+    }
+
+    private static int nameToBackrefNumber(Ruby runtime, Regex pattern, Region regs, RubyString str) {
+        if (pattern == null) {
+            throw runtime.newIndexError("undefined group name reference: " + str);
+        }
         ByteList value = str.getByteList();
         try {
             return pattern.nameToBackrefNumber(value.getUnsafeBytes(), value.getBegin(), value.getBegin() + value.getRealSize(), regs);
         } catch (JOniException je) {
-            throw getRuntime().newIndexError(je.getMessage());
+            throw runtime.newIndexError(je.getMessage());
         }
     }
 
     public final int backrefNumber(IRubyObject obj) {
         check();
+        return backrefNumber(getRuntime(), pattern, regs, obj);
+    }
+
+    public static int backrefNumber(Ruby runtime, Regex pattern, Region regs, IRubyObject obj) {
         if (obj instanceof RubySymbol) {
-            return nameToBackrefNumber((RubyString)((RubySymbol)obj).id2name());
+            return nameToBackrefNumber(runtime, pattern, regs, (RubyString)((RubySymbol)obj).id2name());
         } else if (obj instanceof RubyString) {
-            return nameToBackrefNumber((RubyString)obj);
+            return nameToBackrefNumber(runtime, pattern, regs, (RubyString)obj);
         } else {
             return RubyNumeric.num2int(obj);
         }

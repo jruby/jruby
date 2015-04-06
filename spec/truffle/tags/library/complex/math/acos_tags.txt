@@ -1,0 +1,6 @@
+fails:Math#acos returns the arccosine for Complex numbers
+fails:Math#acos returns the arccosine for numbers greater than 1.0 as a Complex number
+fails:Math#acos returns the arccosine for numbers less than -1.0 as a Complex number
+fails:Math.acos returns the arccosine for Complex numbers
+fails:Math.acos returns the arccosine for numbers greater than 1.0 as a Complex number
+fails:Math.acos returns the arccosine for numbers less than -1.0 as a Complex number

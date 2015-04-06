@@ -116,7 +116,7 @@ import org.jruby.common.IRubyWarnings;
 import org.jruby.common.IRubyWarnings.ID;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.lexer.yacc.ISourcePositionHolder;
-import org.jruby.lexer.yacc.LexerSource;
+import org.jruby.lexer.LexerSource;
 import org.jruby.lexer.yacc.RubyLexer;
 import org.jruby.lexer.yacc.RubyLexer.LexState;
 import org.jruby.lexer.yacc.StrTerm;
@@ -131,14 +131,13 @@ public class RubyParser {
     protected ParserSupport support;
     protected RubyLexer lexer;
 
-    public RubyParser() {
-        this(new ParserSupport());
+    public RubyParser(LexerSource source) {
+        this(new ParserSupport(), source);
     }
 
-    public RubyParser(ParserSupport support) {
+    public RubyParser(ParserSupport support, LexerSource source) {
         this.support = support;
-        lexer = new RubyLexer();
-        lexer.setParserSupport(support);
+        lexer = new RubyLexer(support, source);
         support.setLexer(lexer);
     }
 
@@ -1973,7 +1972,7 @@ qsym_list      : /* none */ {
 string_contents : /* none */ {
                     ByteList aChar = ByteList.create("");
                     aChar.setEncoding(lexer.getEncoding());
-                    $$ = lexer.createStrNode(lexer.getPosition(), aChar, 0);
+                    $$ = lexer.createStr(aChar, 0);
                 }
                 | string_contents string_content {
                     $$ = support.literal_concat($1.getPosition(), $1, $<Node>2);
@@ -2516,15 +2515,11 @@ none_block_pass : /* none */ {
     /** The parse method use an lexer stream and parse it to an AST node 
      * structure
      */
-    public RubyParserResult parse(ParserConfiguration configuration, LexerSource source) throws IOException {
+    public RubyParserResult parse(ParserConfiguration configuration) throws IOException {
         support.reset();
         support.setConfiguration(configuration);
         support.setResult(new RubyParserResult());
         
-        lexer.reset();
-        lexer.setSource(source);
-        lexer.setEncoding(configuration.getDefaultEncoding());
-
         yyparse(lexer, configuration.isDebug() ? new YYDebug() : null);
         
         return support.getResult();

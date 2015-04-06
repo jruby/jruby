@@ -27,7 +27,6 @@ package org.jruby.util;
 
 import static org.jcodings.Encoding.CHAR_INVALID;
 import static org.jruby.RubyEnumerator.enumeratorize;
-import static org.jruby.util.StringSupport.nth;
 
 import org.jcodings.Encoding;
 import org.jcodings.ascii.AsciiTables;
@@ -1951,6 +1950,139 @@ public final class StringSupport {
         } else {
             return cflag && set ? last : -1;
         }
+    }
+
+    public static int multiByteCasecmp(Encoding enc, ByteList value, ByteList otherValue) {
+        byte[]bytes = value.getUnsafeBytes();
+        int p = value.getBegin();
+        int end = p + value.getRealSize();
+
+        byte[]obytes = otherValue.getUnsafeBytes();
+        int op = otherValue.getBegin();
+        int oend = op + otherValue.getRealSize();
+
+        while (p < end && op < oend) {
+            final int c, oc;
+            if (enc.isAsciiCompatible()) {
+                c = bytes[p] & 0xff;
+                oc = obytes[op] & 0xff;
+            } else {
+                c = preciseCodePoint(enc, bytes, p, end);
+                oc = preciseCodePoint(enc, obytes, op, oend);
+            }
+
+            int cl, ocl;
+            if (enc.isAsciiCompatible() && Encoding.isAscii(c) && Encoding.isAscii(oc)) {
+                byte uc = AsciiTables.ToUpperCaseTable[c];
+                byte uoc = AsciiTables.ToUpperCaseTable[oc];
+                if (uc != uoc) {
+                    return uc < uoc ? -1 : 1;
+                }
+                cl = ocl = 1;
+            } else {
+                cl = length(enc, bytes, p, end);
+                ocl = length(enc, obytes, op, oend);
+                // TODO: opt for 2 and 3 ?
+                int ret = caseCmp(bytes, p, obytes, op, cl < ocl ? cl : ocl);
+                if (ret != 0) return ret < 0 ? -1 : 1;
+                if (cl != ocl) return cl < ocl ? -1 : 1;
+            }
+
+            p += cl;
+            op += ocl;
+        }
+        if (end - p == oend - op) return 0;
+        return end - p > oend - op ? 1 : -1;
+    }
+
+    public static boolean singleByteSqueeze(ByteList value, boolean squeeze[]) {
+        int s = value.getBegin();
+        int t = s;
+        int send = s + value.getRealSize();
+        byte[]bytes = value.getUnsafeBytes();
+        int save = -1;
+
+        while (s < send) {
+            int c = bytes[s++] & 0xff;
+            if (c != save || !squeeze[c]) bytes[t++] = (byte)(save = c);
+        }
+
+        if (t - value.getBegin() != value.getRealSize()) { // modified
+            value.setRealSize(t - value.getBegin());
+            return true;
+        }
+
+        return false;
+    }
+
+    public static boolean multiByteSqueeze(Ruby runtime, ByteList value, boolean squeeze[], TrTables tables, Encoding enc, boolean isArg) {
+        int s = value.getBegin();
+        int t = s;
+        int send = s + value.getRealSize();
+        byte[]bytes = value.getUnsafeBytes();
+        int save = -1;
+        int c;
+
+        while (s < send) {
+            if (enc.isAsciiCompatible() && (c = bytes[s] & 0xff) < 0x80) {
+                if (c != save || (isArg && !squeeze[c])) bytes[t++] = (byte)(save = c);
+                s++;
+            } else {
+                c = codePoint(runtime, enc, bytes, s, send);
+                int cl = codeLength(enc, c);
+                if (c != save || (isArg && !trFind(c, squeeze, tables))) {
+                    if (t != s) enc.codeToMbc(c, bytes, t);
+                    save = c;
+                    t += cl;
+                }
+                s += cl;
+            }
+        }
+
+        if (t - value.getBegin() != value.getRealSize()) { // modified
+            value.setRealSize(t - value.getBegin());
+            return true;
+        }
+
+        return false;
+    }
+
+    /**
+     * rb_str_swapcase / rb_str_swapcase_bang
+     */
+
+    public static boolean singleByteSwapcase(byte[] bytes, int s, int end) {
+        boolean modify = false;
+        while (s < end) {
+            int c = bytes[s] & 0xff;
+            if (ASCIIEncoding.INSTANCE.isUpper(c)) {
+                bytes[s] = AsciiTables.ToLowerCaseTable[c];
+                modify = true;
+            } else if (ASCIIEncoding.INSTANCE.isLower(c)) {
+                bytes[s] = AsciiTables.ToUpperCaseTable[c];
+                modify = true;
+            }
+            s++;
+        }
+
+        return modify;
+    }
+
+    public static boolean multiByteSwapcase(Ruby runtime, Encoding enc, byte[] bytes, int s, int end) {
+        boolean modify = false;
+        while (s < end) {
+            int c = codePoint(runtime, enc, bytes, s, end);
+            if (enc.isUpper(c)) {
+                enc.codeToMbc(toLower(enc, c), bytes, s);
+                modify = true;
+            } else if (enc.isLower(c)) {
+                enc.codeToMbc(toUpper(enc, c), bytes, s);
+                modify = true;
+            }
+            s += codeLength(enc, c);
+        }
+
+        return modify;
     }
 
     private static int rb_memsearch_ss(byte[] xsBytes, int xs, int m, byte[] ysBytes, int ys, int n) {

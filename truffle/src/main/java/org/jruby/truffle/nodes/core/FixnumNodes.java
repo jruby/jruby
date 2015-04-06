@@ -136,6 +136,11 @@ public abstract class FixnumNodes {
             return rationalAdd.call(frame, b, "+", null, a);
         }
 
+        @Specialization(guards = "isComplex(b)")
+        public Object addComplex(VirtualFrame frame, int a, RubyBasicObject b) {
+            return ruby(frame, "b + a", "b", b, "a", a);
+        }
+
         @Specialization(rewriteOn = ArithmeticException.class)
         public long add(long a, int b) {
             return ExactMath.addExact(a, b);
@@ -175,6 +180,11 @@ public abstract class FixnumNodes {
             }
 
             return rationalAdd.call(frame, b, "+", null, a);
+        }
+
+        @Specialization(guards = "isComplex(b)")
+        public Object addComplex(VirtualFrame frame, long a, RubyBasicObject b) {
+            return ruby(frame, "b + a", "b", b, "a", a);
         }
 
     }
@@ -364,6 +374,16 @@ public abstract class FixnumNodes {
             return rationalMulNode.call(frame, b, "*", null, a);
         }
 
+        @Specialization(guards = "isComplex(b)")
+        public Object mulComplex(VirtualFrame frame, int a, RubyBasicObject b) {
+            return ruby(frame, "b * a", "b", b, "a", a);
+        }
+
+        @Specialization(guards = "isComplex(b)")
+        public Object mulComplex(VirtualFrame frame, long a, RubyBasicObject b) {
+            return ruby(frame, "b * a", "b", b, "a", a);
+        }
+
     }
 
     @CoreMethod(names = {"/", "__slash__"}, required = 1)
@@ -549,17 +569,14 @@ public abstract class FixnumNodes {
             return 0;
         }
 
-        @Specialization(guards = "isRational(b)")
-        public Object div(VirtualFrame frame, int a, RubyBasicObject b) {
-            if (rationalConvertNode == null) {
-                CompilerDirectives.transferToInterpreter();
-                rationalConvertNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext(), true));
-                rationalDivNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext()));
-            }
+        @Specialization(guards = {"!isRubyBignum(b)"})
+        public Object divFallback(VirtualFrame frame, long a, RubyBasicObject b) {
+            return ruby(frame, "redo_coerced :/, o", "o", b);
+        }
 
-            final Object aRational = rationalConvertNode.call(frame, getContext().getCoreLibrary().getRationalClass(), "convert", null, a, 1);
-
-            return rationalDivNode.call(frame, aRational, "/", null, b);
+        @Specialization(guards = {"!isRubyBignum(b)"})
+        public Object divFallback(VirtualFrame frame, int a, RubyBasicObject b) {
+            return ruby(frame, "redo_coerced :/, o", "o", b);
         }
 
     }

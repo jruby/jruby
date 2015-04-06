@@ -119,7 +119,7 @@ import org.jruby.common.IRubyWarnings;
 import org.jruby.common.IRubyWarnings.ID;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.lexer.yacc.ISourcePositionHolder;
-import org.jruby.lexer.yacc.LexerSource;
+import org.jruby.lexer.LexerSource;
 import org.jruby.lexer.yacc.RubyLexer;
 import org.jruby.lexer.yacc.RubyLexer.LexState;
 import org.jruby.lexer.yacc.StrTerm;
@@ -134,14 +134,13 @@ public class RubyParser {
     protected ParserSupport support;
     protected RubyLexer lexer;
 
-    public RubyParser() {
-        this(new ParserSupport());
+    public RubyParser(LexerSource source) {
+        this(new ParserSupport(), source);
     }
 
-    public RubyParser(ParserSupport support) {
+    public RubyParser(ParserSupport support, LexerSource source) {
         this.support = support;
-        lexer = new RubyLexer();
-        lexer.setParserSupport(support);
+        lexer = new RubyLexer(support, source);
         support.setLexer(lexer);
     }
 
@@ -149,7 +148,7 @@ public class RubyParser {
         support.setWarnings(warnings);
         lexer.setWarnings(warnings);
     }
-					// line 153 "-"
+					// line 152 "-"
   // %token constants
   public static final int kCLASS = 257;
   public static final int kMODULE = 258;
@@ -4409,7 +4408,7 @@ states[477] = new ParserState() {
   @Override public Object execute(ParserSupport support, RubyLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
                     ByteList aChar = ByteList.create("");
                     aChar.setEncoding(lexer.getEncoding());
-                    yyVal = lexer.createStrNode(lexer.getPosition(), aChar, 0);
+                    yyVal = lexer.createStr(aChar, 0);
     return yyVal;
   }
 };
@@ -5246,23 +5245,19 @@ states[634] = new ParserState() {
   }
 };
 }
-					// line 2515 "RubyParser.y"
+					// line 2514 "RubyParser.y"
 
     /** The parse method use an lexer stream and parse it to an AST node 
      * structure
      */
-    public RubyParserResult parse(ParserConfiguration configuration, LexerSource source) throws IOException {
+    public RubyParserResult parse(ParserConfiguration configuration) throws IOException {
         support.reset();
         support.setConfiguration(configuration);
         support.setResult(new RubyParserResult());
         
-        lexer.reset();
-        lexer.setSource(source);
-        lexer.setEncoding(configuration.getDefaultEncoding());
-
         yyparse(lexer, configuration.isDebug() ? new YYDebug() : null);
         
         return support.getResult();
     }
 }
-					// line 9794 "-"
+					// line 9789 "-"

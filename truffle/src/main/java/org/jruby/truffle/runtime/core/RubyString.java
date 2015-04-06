@@ -25,6 +25,7 @@ import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.util.ByteList;
 import org.jruby.util.CodeRangeable;
 import org.jruby.util.StringSupport;
+import org.jruby.util.io.EncodingUtils;
 
 /**
  * Represents the Ruby {@code String} class.
@@ -213,4 +214,7 @@ public class RubyString extends RubyBasicObject implements CodeRangeable {
         return StringSupport.codeRangeScan(bytes.getEncoding(), bytes);
     }
 
+    public boolean singleByteOptimizable() {
+        return StringSupport.isSingleByteOptimizable(this, EncodingUtils.STR_ENC_GET(this));
+    }
 }

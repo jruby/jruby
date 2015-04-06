@@ -1517,9 +1517,6 @@ public final class Ruby implements Constantizable {
         if (profile.allowClass("Struct")) {
             RubyStruct.createStructClass(this);
         }
-        if (profile.allowClass("Tms")) {
-            tmsStruct = RubyStruct.newInstance(structClass, new IRubyObject[]{newString("Tms"), newSymbol("utime"), newSymbol("stime"), newSymbol("cutime"), newSymbol("cstime")}, Block.NULL_BLOCK);
-        }
 
         if (profile.allowClass("Binding")) {
             RubyBinding.createBindingClass(this);

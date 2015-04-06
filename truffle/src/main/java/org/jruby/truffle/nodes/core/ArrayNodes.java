@@ -826,6 +826,11 @@ public abstract class ArrayNodes {
             return new RubyArray(getContext().getCoreLibrary().getArrayClass(), newStore, m);
         }
 
+        @Specialization(guards = "isNullArray(array)")
+        public Object compactNull(RubyArray array) {
+            return new RubyArray(getContext().getCoreLibrary().getArrayClass(), null, 0);
+        }
+
     }
 
     @CoreMethod(names = "compact!", raiseIfFrozenSelf = true)
@@ -1076,6 +1081,11 @@ public abstract class ArrayNodes {
                 array.setStore(store, i);
             }
             return found;
+        }
+
+        @Specialization(guards = "isNullArray(array)")
+        public Object deleteNull(VirtualFrame frame, RubyArray array, Object value) {
+            return nil();
         }
 
     }

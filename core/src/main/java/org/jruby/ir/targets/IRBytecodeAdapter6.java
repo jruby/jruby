@@ -45,6 +45,7 @@ import org.jruby.util.JavaNameMangler;
 import org.jruby.util.RegexpOptions;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.Opcodes;
+import org.objectweb.asm.Type;
 
 import static org.jruby.util.CodegenUtils.ci;
 import static org.jruby.util.CodegenUtils.p;
@@ -177,11 +178,11 @@ public class IRBytecodeAdapter6 extends IRBytecodeAdapter{
         return sb.toString();
     }
 
-    public void pushDRegexp(Runnable callback, RegexpOptions options, int arity) {
+    public void pushDRegexp(final Runnable callback, final RegexpOptions options, final int arity) {
         if (arity > MAX_ARGUMENTS) throw new NotCompilableException("dynamic regexp has more than " + MAX_ARGUMENTS + " elements");
 
         SkinnyMethodAdapter adapter2;
-        String incomingSig = sig(RubyRegexp.class, params(ThreadContext.class, RubyString.class, arity, int.class));
+        final String incomingSig = sig(RubyRegexp.class, params(ThreadContext.class, RubyString.class, arity, int.class));
 
         if (!getClassData().dregexpMethodsDefined.contains(arity)) {
             adapter2 = new SkinnyMethodAdapter(
@@ -203,29 +204,47 @@ public class IRBytecodeAdapter6 extends IRBytecodeAdapter{
             getClassData().dregexpMethodsDefined.add(arity);
         }
 
-        String cacheField = null;
-        Label done = null;
-
         if (options.isOnce()) {
-            // need to cache result forever
-            cacheField = "dregexp" + getClassData().callSiteCount.getAndIncrement();
-            done = new Label();
-            adapter.getClassVisitor().visitField(Opcodes.ACC_PRIVATE | Opcodes.ACC_STATIC, cacheField, ci(RubyRegexp.class), null, null).visitEnd();
-            adapter.getstatic(getClassData().clsName, cacheField, ci(RubyRegexp.class));
-            adapter.dup();
-            adapter.ifnonnull(done);
-            adapter.pop();
-        }
+            // need to cache result forever, but do it under sync to avoid double init
+            final String cacheField = "dregexp" + getClassData().callSiteCount.getAndIncrement();
+            final Label done = new Label();
+            final String clsDesc = "L" + getClassData().clsName.replaceAll("\\.", "/") + ";";
+            adapter.ldc(Type.getType(clsDesc));
+            adapter.monitorenter();
+            adapter.trycatch(p(Throwable.class),
+                    new Runnable() {
+                        public void run() {
+                            adapter.getClassVisitor().visitField(Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC, cacheField, ci(RubyRegexp.class), null, null).visitEnd();
+                            adapter.getstatic(getClassData().clsName, cacheField, ci(RubyRegexp.class));
+                            adapter.dup();
+                            adapter.ifnonnull(done);
+                            adapter.pop();
 
-        // call synthetic method if we still need to build dregexp
-        callback.run();
-        adapter.ldc(options.toEmbeddedOptions());
-        adapter.invokestatic(getClassData().clsName, "dregexp:" + arity, incomingSig);
+                            // call synthetic method if we still need to build dregexp
+                            callback.run();
+                            adapter.ldc(options.toEmbeddedOptions());
+                            adapter.invokestatic(getClassData().clsName, "dregexp:" + arity, incomingSig);
 
-        if (done != null) {
-            adapter.dup();
-            adapter.putstatic(getClassData().clsName, cacheField, ci(RubyRegexp.class));
-            adapter.label(done);
+                            adapter.dup();
+                            adapter.putstatic(getClassData().clsName, cacheField, ci(RubyRegexp.class));
+                            adapter.label(done);
+
+                            adapter.ldc(Type.getType(clsDesc));
+                            adapter.monitorexit();
+                        }
+                    },
+                    new Runnable() {
+                        public void run() {
+                            adapter.ldc(Type.getType(clsDesc));
+                            adapter.monitorexit();
+                            adapter.athrow();
+                        }
+                    });
+        } else {
+            // call synthetic method if we still need to build dregexp
+            callback.run();
+            adapter.ldc(options.toEmbeddedOptions());
+            adapter.invokestatic(getClassData().clsName, "dregexp:" + arity, incomingSig);
         }
     }
 
