@@ -1,0 +1,2 @@
+fails:Matrix#+ raises a Matrix::ErrDimensionMismatch if the matrices are different sizes
+fails:Matrix#+ raises a ExceptionForMatrix::ErrOperationNotDefined if other is a Numeric Type
