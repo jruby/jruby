@@ -1,9 +1,56 @@
-# JRuby -  An implementation of the Ruby language on the JVM
+# JRuby - an implementation of the Ruby language on the JVM
 
 Master: [![Build Status](https://travis-ci.org/jruby/jruby.png?branch=master)](https://travis-ci.org/jruby/jruby) 
 1.7 branch: [![Build Status](https://travis-ci.org/jruby/jruby.png?branch=jruby-1_7)](https://travis-ci.org/jruby/jruby/branches)
 
-Authors: Stefan Matthias Aust, Anders Bengtsson, Geert Bevin, Ola Bini,
+## About
+
+JRuby is an implementation of the [Ruby language](http://www.ruby-lang.org)
+using the JVM.
+
+JRuby aims to be a complete, correct and fast implementation of Ruby.
+
+As well as being a conventional Ruby interpreter, JRuby also has tight integration
+to the Java language to allow you to uses Java classes in your Ruby program and
+to allow JRuby to be embedded into a Java application.
+
+Visit the [JRuby website](http://jruby.org) and the [JRuby wiki](https://github.com/jruby/jruby/wiki)
+for more information.
+
+## Getting JRuby
+
+To run JRuby you will need a JRE (the JVM runtime environment) version 7 or higher.
+
+Your operating system may provide a JRE and JRuby in a package manager, but you may find that this
+version is very old.
+
+An alternative is to use one of the Ruby version managers.
+
+For [`rbenv`](https://github.com/sstephenson/rbenv) you will need the
+[`ruby-build`](https://github.com/sstephenson/ruby-build) plugin. You may find that your system
+package manager can provide these. Then you can run:
+
+```
+$ rbenv install rbenv install jruby-9.0.0.0-dev
+```
+
+For [`rvm`](https://rvm.io) you can simply do:
+
+```
+$ rvm install jruby
+```
+
+You can also [download packages from the JRuby website](http://jruby.org/download) that
+you can unpack and run in place.
+
+## Building JRuby from source
+
+See [BUILDING](BUILDING.md) for information about prerequisites, how to compile JRuby from source
+and how to test it.
+
+## Authors
+
+Stefan Matthias Aust, Anders Bengtsson, Geert Bevin, Ola Bini,
  Piergiuliano Bossi, Johannes Brodwall, Rocky Burt, Paul Butcher,
  Benoit Cerrina, Wyss Clemens, David Corbin, Benoit Daloze, Thomas E Enebo,
  Robert Feldt, Chad Fowler, Russ Freeman, Joey Gibson, Kiel Hodges,
@@ -13,50 +60,13 @@ Authors: Stefan Matthias Aust, Anders Bengtsson, Geert Bevin, Ola Bini,
  Daiki Ueno, Matthias Veit, Jason Voegele, Sergey Yevtushenko, Robert Yokota,
    and many gracious contributors from the community.
 
-Project Contact: Thomas E Enebo <enebo@acm.org>
-
-JRuby also uses code generously shared by the creator of the Ruby language, 
+JRuby uses code generously shared by the creator of the Ruby language, 
 Yukihiro Matsumoto <matz@netlab.co.jp>.
 
-## About
-
-JRuby is an effort to implement the [Ruby language](http://www.ruby-lang.org)
-on top of the JVM.
-
-JRuby is tightly integrated with the JVM to allow both to script
-any Java class and to embed the interpreter into any Java application. 
-See the [docs](docs) directory for more information.
-
-## Prerequisites
-
-* A Java 7-compatible (or higher) Java development kit (JDK)
-* Maven 3+
-* Apache Ant 1.8+ (see https://github.com/jruby/jruby/issues/2236)
-
-## Run
-
-    bin/jruby rubyfile.rb
-
-interprets the file `rubyfile.rb`.
-
-If you checked out from the repository or downloaded the source distribution,
-see the next section to build JRuby first.
-
-## Compiling from source
-
-See [BUILDING](BUILDING.md) for more information.
-
-## Testing
-
-See [BUILDING: Developing and Testing](BUILDING.md#developing-and-testing) for
-more information.
-
-## More Information
-
-Visit http://jruby.org for more information.
-
-Visit http://jruby.github.io/jruby for the Maven Site documentation.
+Project Contact: Thomas E Enebo <enebo@acm.org>
 
 ## License
 
-Read the [COPYING](COPYING) file.
+JRuby is licensed to you under three licenses - the EPL 1.0, GPL 2 and LGPL 2.1.
+Some components have other licenses and copyright. See the [COPYING](COPYING)
+file for more specifics.
