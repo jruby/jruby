@@ -97,8 +97,6 @@ import static org.jruby.lexer.LexingCommon.str_xquote;
  * This is a port of the MRI lexer to Java.
  */
 public class RubyLexer {
-    private boolean detailedSourcePositions = Options.PARSER_DETAILED_SOURCE_POSITIONS.load();
-
     private static final HashMap<String, Keyword> map;
 
     static {
@@ -590,32 +588,16 @@ public class RubyLexer {
     }
 
     public ISourcePosition getPosition() {
-        if (detailedSourcePositions) {
-            tokline = new DetailedSourcePosition(src.getFilename(), lineno(), tokp, lex_p - tokp);
-            return tokline;
-        } else {
-            if (tokline != null && lineno() == tokline.getLine()) return tokline;
-
-            return new SimpleSourcePosition(src.getFilename(), lineno());
-        }
+        if (tokline != null && lineno() == tokline.getLine()) return tokline;
+        return new SimpleSourcePosition(src.getFilename(), lineno());
     }
 
     public ISourcePosition getPosition(ISourcePosition startPosition) {
-        if (detailedSourcePositions) {
-            if (startPosition == null) {
-                tokline = new DetailedSourcePosition(src.getFilename(), lineno(), tokp, lex_p - tokp);
-            } else {
-                DetailedSourcePosition detailedStartPosition = (DetailedSourcePosition) startPosition;
-                tokline = new DetailedSourcePosition(src.getFilename(), lineno(), detailedStartPosition.getOffset(), 0); // offset - detailedStartPosition.getOffset()
-            }
-            return tokline;
-        } else {
-            if (startPosition != null) return startPosition;
+        if (startPosition != null) return startPosition;
 
-            if (tokline != null && lineno() == tokline.getLine()) return tokline;
+        if (tokline != null && lineno() == tokline.getLine()) return tokline;
 
-            return new SimpleSourcePosition(src.getFilename(), lineno());
-        }
+        return new SimpleSourcePosition(src.getFilename(), lineno());
     }
 
     public String getCurrentLine() {

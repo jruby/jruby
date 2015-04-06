@@ -87,7 +87,6 @@ public class MainTestSuite extends TestSuite {
         suite.addTestSuite(TestMethodFactories.class);
         suite.addTestSuite(RubyTimeOutputFormatterTest.class);
         suite.addTestSuite(org.jruby.lexer.yacc.StringTermTest.class);
-        suite.addTestSuite(DetailedSourcePositionTest.class);
         suite.addTestSuite(org.jruby.runtime.load.LoadServiceResourceInputStreamTest.class);
         suite.addTestSuite(TestRubyString.class);
         suite.addTestSuite(TestRubyNKF.class);

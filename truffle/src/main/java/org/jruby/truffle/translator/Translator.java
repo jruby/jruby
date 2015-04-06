@@ -13,7 +13,6 @@ import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.source.Source;
 import com.oracle.truffle.api.source.SourceSection;
 
-import org.jruby.lexer.yacc.DetailedSourcePosition;
 import org.jruby.lexer.yacc.InvalidSourcePosition;
 import org.jruby.truffle.nodes.RubyNode;
 import org.jruby.truffle.runtime.RubyContext;
@@ -58,19 +57,8 @@ public abstract class Translator extends org.jruby.ast.visitor.AbstractNodeVisit
             } else {
                 return parentSourceSection.peek();
             }
-        } else if (sourcePosition instanceof DetailedSourcePosition) {
-            final DetailedSourcePosition detailedSourcePosition = (DetailedSourcePosition) sourcePosition;
-
-            try {
-                return source.createSection(identifier, detailedSourcePosition.getOffset(), detailedSourcePosition.getLength());
-            } catch (IllegalArgumentException e) {
-                // In some cases we still get bad offsets with the detailed source positions
-                return source.createSection(identifier, sourcePosition.getLine() + 1);
-            }
-        } else if (Options.TRUFFLE_ALLOW_SIMPLE_SOURCE_SECTIONS.load()) {
-            return source.createSection(identifier, sourcePosition.getLine() + 1);
         } else {
-            throw new UnsupportedOperationException("Truffle needs detailed source positions unless you know what you are doing and set truffle.allow_simple_source_sections - got " + sourcePosition.getClass());
+            return source.createSection(identifier, sourcePosition.getLine());
         }
     }
 

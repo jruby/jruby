@@ -140,11 +140,7 @@ public class Parser {
                     throw runtime.newArgumentError(e.getMessage());
                 default:
                     int line = e.getPosition().getLine();
-
-                    // Detailed source positions always have the right line number so they don't need to be adjusted.
-                    if (! (e.getPosition() instanceof DetailedSourcePosition)) {
-                        line++;
-                    }
+                    line++;
 
                     StringBuilder buffer = new StringBuilder(100);
                     buffer.append(e.getPosition().getFile()).append(':');
