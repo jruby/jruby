@@ -159,25 +159,4 @@ public abstract class EncodingConverterNodes {
         }
     }
 
-    @RubiniusOnly
-    @CoreMethod(names = "transcoding_path_lookup", onSingleton = true, required = 2)
-    public abstract static class TranscodingPathLookupNode extends CoreMethodNode {
-
-        public TranscodingPathLookupNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
-        public TranscodingPathLookupNode(TranscodingPathLookupNode prev) {
-            super(prev);
-        }
-
-        @Specialization
-        public boolean transcodingPathLookup(RubyString sourceEncodingName, RubyString destinationEncodingName) {
-            final TranscoderDB.Entry entry = TranscoderDB.getEntry(sourceEncodingName.getByteList().getUnsafeBytes(),
-                    destinationEncodingName.getByteList().getUnsafeBytes());
-
-            return entry.getTranscoder() != null;
-        }
-    }
-
 }
