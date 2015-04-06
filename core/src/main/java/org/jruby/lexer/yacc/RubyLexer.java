@@ -813,7 +813,7 @@ public class RubyLexer {
      * mri: is_identchar
      */
     public boolean isIdentifierChar(int c) {
-        return Character.isLetterOrDigit(c) || c == '_' || isMultiByteChar(c);
+        return !eofp && (Character.isLetterOrDigit(c) || c == '_' || isMultiByteChar(c));
     }
 
     public boolean isASCII(int c) {
@@ -1886,7 +1886,7 @@ public class RubyLexer {
         do {
             if (!tokadd_mbchar(c)) return EOF;
             c = nextc();
-        } while (c != EOF && isIdentifierChar(c));
+        } while (isIdentifierChar(c));
 
         boolean lastBangOrPredicate = false;
 
