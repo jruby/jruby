@@ -1176,20 +1176,19 @@ public final class ThreadContext {
         popFrame();
         popRubyClass();
     }
-    
-    // XXX: Again, screwy evaling under previous frame's scope
-    public void preExecuteUnder(RubyModule executeUnderClass, Block block) {
+
+    public void preExecuteUnder(IRubyObject self, RubyModule executeUnderClass, Block block) {
         Frame frame = getCurrentFrame();
-        
+
         pushRubyClass(executeUnderClass);
         DynamicScope scope = getCurrentScope();
         StaticScope sScope = runtime.getStaticScopeFactory().newBlockScope(scope.getStaticScope());
         sScope.setModule(executeUnderClass);
         pushScope(DynamicScope.newDynamicScope(sScope, scope));
-        pushCallFrame(frame.getKlazz(), frame.getName(), frame.getSelf(), block);
+        pushCallFrame(frame.getKlazz(), frame.getName(), self, block);
         getCurrentFrame().setVisibility(getPreviousFrame().getVisibility());
     }
-    
+
     public void postExecuteUnder() {
         popFrame();
         popScope();

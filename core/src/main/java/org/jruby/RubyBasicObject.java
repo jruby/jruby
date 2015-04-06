@@ -1574,7 +1574,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      * with this implementation.
      */
     protected IRubyObject yieldUnder(final ThreadContext context, RubyModule under, IRubyObject[] args, Block block) {
-        context.preExecuteUnder(under, block);
+        context.preExecuteUnder(this, under, block);
 
         IRubyObject savedBindingSelf = block.getBinding().getSelf();
         IRubyObject savedFrameSelf = block.getBinding().getFrame().getSelf();
@@ -1616,7 +1616,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      * with this implementation.
      */
     protected IRubyObject yieldUnder(final ThreadContext context, RubyModule under, Block block) {
-        context.preExecuteUnder(under, block);
+        context.preExecuteUnder(this, under, block);
 
         IRubyObject savedBindingSelf = block.getBinding().getSelf();
         IRubyObject savedFrameSelf = block.getBinding().getFrame().getSelf();
@@ -1759,7 +1759,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
     public IRubyObject evalUnder(final ThreadContext context, RubyModule under, RubyString src, String file, int line) {
         Visibility savedVisibility = context.getCurrentVisibility();
         context.setCurrentVisibility(PUBLIC);
-        context.preExecuteUnder(under, Block.NULL_BLOCK);
+        context.preExecuteUnder(this, under, Block.NULL_BLOCK);
         try {
             return ASTInterpreter.evalSimple(context, this, src,
                     file, line);
