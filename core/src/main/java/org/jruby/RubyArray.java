@@ -40,6 +40,7 @@ package org.jruby;
 import org.jcodings.Encoding;
 import org.jcodings.specific.USASCIIEncoding;
 import org.jcodings.specific.UTF16BEEncoding;
+import org.jcodings.specific.UTF8Encoding;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.common.IRubyWarnings.ID;
@@ -57,6 +58,7 @@ import org.jruby.runtime.encoding.EncodingCapable;
 import org.jruby.runtime.invokedynamic.MethodNames;
 import org.jruby.runtime.marshal.MarshalStream;
 import org.jruby.runtime.marshal.UnmarshalStream;
+import org.jruby.truffle.pack.runtime.*;
 import org.jruby.util.ByteList;
 import org.jruby.util.Pack;
 import org.jruby.util.PerlHash;
@@ -64,18 +66,13 @@ import org.jruby.util.Qsort;
 import org.jruby.util.RecursiveComparator;
 import org.jruby.util.SipHashInline;
 import org.jruby.util.TypeConverter;
+import org.jruby.util.cli.Options;
 
 import java.io.IOException;
 import java.lang.reflect.Array;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Comparator;
-import java.util.IdentityHashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.ListIterator;
-import java.util.RandomAccess;
+import java.util.*;
 import java.util.concurrent.Callable;
+import java.util.concurrent.ConcurrentHashMap;
 
 import static org.jruby.RubyEnumerator.enumeratorize;
 import static org.jruby.RubyEnumerator.enumeratorizeWithSize;
@@ -96,6 +93,8 @@ import static org.jruby.RubyEnumerator.SizeFn;
 @JRubyClass(name="Array")
 public class RubyArray extends RubyObject implements List, RandomAccess {
     public static final int DEFAULT_INSPECT_STR_SIZE = 10;
+
+    private static final boolean TRUFFLE_PACK = Options.TRUFFLE_PACK.load();
 
     public static RubyClass createArrayClass(Ruby runtime) {
         RubyClass arrayc = runtime.defineClass("Array", runtime.getObject(), ARRAY_ALLOCATOR);
@@ -261,6 +260,8 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
     
     private static final ByteList EMPTY_ARRAY_BYTELIST = new ByteList(ByteList.plain("[]"), USASCIIEncoding.INSTANCE);
     private static final ByteList RECURSIVE_ARRAY_BYTELIST = new ByteList(ByteList.plain("[...]"), USASCIIEncoding.INSTANCE);
+
+    private static final Map<ByteList, TrufflePackBridge.Packer> trufflePackerCache = new ConcurrentHashMap<>();
 
     /*
      * plain internal array assignment
@@ -1789,7 +1790,7 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
             len += ((RubyString) tmp).getByteList().length();
         }
 
-        return joinStrings(sepString, begin + realLength, 
+        return joinStrings(sepString, begin + realLength,
                 (RubyString) RubyString.newStringLight(runtime, len).infectBy(this));
     }
 
@@ -4096,11 +4097,78 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
     @JRubyMethod(name = "pack", required = 1)
     public RubyString pack(ThreadContext context, IRubyObject obj) {
         RubyString iFmt = obj.convertToString();
-        try {
-            return Pack.pack(context, context.runtime, this, iFmt);
-        } catch (ArrayIndexOutOfBoundsException aioob) {
-            concurrentModification();
-            return null; // not reached
+
+        if (TRUFFLE_PACK) {
+            TrufflePackBridge.Packer packer = trufflePackerCache.get(iFmt.getByteList());
+
+            if (packer == null) {
+                try {
+                    packer = context.getRuntime().getTrufflePackBridge().compileFormat(iFmt.toString());
+                } catch (FormatException e) {
+                    throw new UnsupportedOperationException();
+                    //throw new RaiseException(getContext().getCoreLibrary().argumentError(e.getMessage(), this));
+                }
+
+                // We can race on this, but it doesn't matter as long as something goes in the cache
+                trufflePackerCache.put(iFmt.getByteList().dup(), packer);
+            }
+
+            final PackResult result;
+
+            try {
+                result = packer.pack(values, realLength);
+            } catch (TooFewArgumentsException e) {
+                throw new UnsupportedOperationException();
+                //throw new RaiseException(getContext().getCoreLibrary().argumentError("too few arguments", this));
+            } catch (NoImplicitConversionException e) {
+                throw new UnsupportedOperationException();
+                //throw new RaiseException(getContext().getCoreLibrary().typeErrorNoImplicitConversion(e.getObject(), e.getTarget(), this));
+            } catch (OutsideOfStringException e) {
+                throw new UnsupportedOperationException();
+                //throw new RaiseException(getContext().getCoreLibrary().argumentError("X outside of string", this));
+            } catch (CantCompressNegativeException e) {
+                throw new UnsupportedOperationException();
+                //throw new RaiseException(getContext().getCoreLibrary().argumentError("can't compress negative numbers", this));
+            } catch (RangeException e) {
+                throw new UnsupportedOperationException();
+                //throw new RaiseException(getContext().getCoreLibrary().rangeError(e.getMessage(), this));
+            } catch (CantConvertException e) {
+                throw new UnsupportedOperationException();
+                //throw new RaiseException(getContext().getCoreLibrary().typeError(e.getMessage(), this));
+            }
+
+            final RubyString string = context.getRuntime().newString(new ByteList(result.getOutput(), 0, result.getOutputLength()));
+
+            if (iFmt.size() == 0) {
+                string.getByteList().setEncoding(USASCIIEncoding.INSTANCE);
+            } else {
+                switch (result.getEncoding()) {
+                    case DEFAULT:
+                    case ASCII_8BIT:
+                        break;
+                    case US_ASCII:
+                        string.getByteList().setEncoding(USASCIIEncoding.INSTANCE);
+                        break;
+                    case UTF_8:
+                        string.getByteList().setEncoding(UTF8Encoding.INSTANCE);
+                        break;
+                    default:
+                        throw new UnsupportedOperationException();
+                }
+            }
+
+            if (result.isTainted()) {
+                string.taint(context.getRuntime());
+            }
+
+            return string;
+        } else {
+            try {
+                return Pack.pack(context, context.runtime, this, iFmt);
+            } catch (ArrayIndexOutOfBoundsException aioob) {
+                concurrentModification();
+                return null; // not reached
+            }
         }
     }
 

@@ -165,6 +165,8 @@ public class Options {
     public static final Option<Integer> TRUFFLE_BACKTRACE_MAX_VALUE_LENGTH = integer(TRUFFLE, "truffle.backtrace.max_value_length", 20, "Max length for values when displayed in a backtrace.");
     public static final Option<Boolean> TRUFFLE_BACKTRACE_GENERATE = bool(TRUFFLE, "truffle.backtrace.generate", true, "Generate backtraces on exceptions.");
 
+    public static final Option<Boolean> TRUFFLE_PACK = bool(TRUFFLE, "truffle.pack", false, "Use Truffle for normal JRuby Array#pack.");
+
     public static final Option<Boolean> NATIVE_ENABLED = bool(NATIVE, "native.enabled", true, "Enable/disable native code, including POSIX features and C exts.");
     public static final Option<Boolean> NATIVE_VERBOSE = bool(NATIVE, "native.verbose", false, "Enable verbose logging of native extension loading.");
     public static final Option<Boolean> FFI_COMPILE_DUMP = bool(NATIVE, "ffi.compile.dump", false, "Dump bytecode-generated FFI stubs to console.");

@@ -917,18 +917,22 @@ public final class Ruby implements Constantizable {
         }
     }
 
-    private TruffleBridge loadTruffleBridge() {
-        /*
-         * It's possible to remove Truffle classes from the JRuby distribution, so we provide a sensible
-         * explanation when the classes are not found.
-         */
+    public TrufflePackBridge getTrufflePackBridge() {
+        synchronized (truffleBridgeMutex) {
+            if (trufflePackBridge == null) {
+                trufflePackBridge = loadTrufflePackBridge();
+            }
+            return trufflePackBridge;
+        }
+    }
 
+    private TruffleBridge loadTruffleBridge() {
         final Class<?> clazz;
 
         try {
             clazz = getJRubyClassLoader().loadClass("org.jruby.truffle.TruffleBridgeImpl");
         } catch (Exception e) {
-            throw new UnsupportedOperationException("Support for Truffle has been removed from this distribution", e);
+            throw new UnsupportedOperationException("Truffle classes not available", e);
         }
 
         final TruffleBridge truffleBridge;
@@ -937,12 +941,33 @@ public final class Ruby implements Constantizable {
             Constructor<?> con = clazz.getConstructor(Ruby.class);
             truffleBridge = (TruffleBridge) con.newInstance(this);
         } catch (Exception e) {
-            throw new UnsupportedOperationException("Error while calling the constructor of Truffle Bridge", e);
+            throw new UnsupportedOperationException("Error while calling the constructor of TruffleBridgeImpl", e);
         }
 
         truffleBridge.init();
 
         return truffleBridge;
+    }
+
+    private TrufflePackBridge loadTrufflePackBridge() {
+        final Class<?> clazz;
+
+        try {
+            clazz = getJRubyClassLoader().loadClass("org.jruby.truffle.pack.TrufflePackBridgeImpl");
+        } catch (Exception e) {
+            throw new UnsupportedOperationException("Truffle classes not available", e);
+        }
+
+        final TrufflePackBridge trufflePackBridge;
+
+        try {
+            Constructor<?> con = clazz.getConstructor();
+            trufflePackBridge = (TrufflePackBridge) con.newInstance();
+        } catch (Exception e) {
+            throw new UnsupportedOperationException("Error while calling the constructor of TrufflePackBridgeImpl", e);
+        }
+
+        return trufflePackBridge;
     }
 
     public void shutdownTruffleBridge() {
@@ -4918,6 +4943,7 @@ public final class Ruby implements Constantizable {
     private final JITCompiler jitCompiler;
 
     private TruffleBridge truffleBridge;
+    private TrufflePackBridge trufflePackBridge;
     private final Object truffleBridgeMutex = new Object();
 
     // Note: this field and the following static initializer

@@ -27,13 +27,5 @@ public interface TruffleBridge {
     Object toTruffle(IRubyObject object);
 
     void shutdown();
-
-    public interface Packer {
-
-        public ByteList pack(Object[] store, int size);
-
-    }
-
-    Packer parsePack(String format, boolean extended);
     
 }
