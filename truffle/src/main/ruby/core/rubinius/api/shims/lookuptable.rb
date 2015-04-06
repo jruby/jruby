@@ -8,5 +8,12 @@
 
 # TODO(CS): isn't this vulnerable to naming conflicts?
 
-class LookupTable < Hash
+module Rubinius
+  class LookupTable < Hash
+    alias_method :lookup_orig, :[]
+
+    def [](key)
+      lookup_orig(key.to_sym)
+    end
+  end
 end
