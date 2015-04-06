@@ -888,19 +888,31 @@ public final class ThreadContext {
     public void postNodeEval() {
         popFrame();
     }
+<<<<<<< HEAD
     
     // XXX: Again, screwy evaling under previous frame's scope
     public void preExecuteUnder(IRubyObject executeUnderObj, RubyModule executeUnderClass, Block block) {
         Frame frame = getCurrentFrame();
         
+=======
+
+    public void preExecuteUnder(IRubyObject self, RubyModule executeUnderClass, Block block) {
+        Frame frame = getCurrentFrame();
+
+        pushRubyClass(executeUnderClass);
+>>>>>>> origin/jruby-1_7
         DynamicScope scope = getCurrentScope();
         StaticScope sScope = runtime.getStaticScopeFactory().newBlockScope(scope.getStaticScope());
         sScope.setModule(executeUnderClass);
         pushScope(DynamicScope.newDynamicScope(sScope, scope));
+<<<<<<< HEAD
         pushCallFrame(frame.getKlazz(), frame.getName(), executeUnderObj, block);
+=======
+        pushCallFrame(frame.getKlazz(), frame.getName(), self, block);
+>>>>>>> origin/jruby-1_7
         getCurrentFrame().setVisibility(getPreviousFrame().getVisibility());
     }
-    
+
     public void postExecuteUnder() {
         popFrame();
         popScope();
