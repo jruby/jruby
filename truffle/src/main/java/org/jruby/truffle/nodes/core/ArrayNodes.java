@@ -2882,8 +2882,10 @@ public abstract class ArrayNodes {
             } else {
                 switch (result.getEncoding()) {
                     case DEFAULT:
-                        break;
                     case ASCII_8BIT:
+                        break;
+                    case US_ASCII:
+                        string.forceEncoding(USASCIIEncoding.INSTANCE);
                         break;
                     case UTF_8:
                         string.forceEncoding(UTF8Encoding.INSTANCE);

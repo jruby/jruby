@@ -17,15 +17,18 @@ import org.jruby.util.ByteList;
 public abstract class ReadStringNode extends PackNode {
 
     private final RubyContext context;
+    private final boolean convertNumbersToStrings;
 
     @Child private ToStringNode toStringNode;
 
-    public ReadStringNode(RubyContext context) {
+    public ReadStringNode(RubyContext context, boolean convertNumbersToStrings) {
         this.context = context;
+        this.convertNumbersToStrings = convertNumbersToStrings;
     }
 
     public ReadStringNode(ReadStringNode prev) {
         context = prev.context;
+        convertNumbersToStrings = prev.convertNumbersToStrings;
         toStringNode = prev.toStringNode;
     }
 
@@ -62,7 +65,7 @@ public abstract class ReadStringNode extends PackNode {
     private Object readAndConvert(VirtualFrame frame, Object value) {
         if (toStringNode == null) {
             CompilerDirectives.transferToInterpreter();
-            toStringNode = insert(ToStringNodeGen.create(context, new NullNode()));
+            toStringNode = insert(ToStringNodeGen.create(context, convertNumbersToStrings, new NullNode()));
         }
 
         return toStringNode.executeToString(frame, value);

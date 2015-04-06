@@ -29,6 +29,7 @@ import java.nio.charset.StandardCharsets;
 public abstract class ToStringNode extends PackNode {
 
     private final RubyContext context;
+    protected final boolean convertNumbersToStrings;
 
     @Child private CallDispatchHeadNode toStrNode;
     @Child private CallDispatchHeadNode toSNode;
@@ -36,13 +37,15 @@ public abstract class ToStringNode extends PackNode {
 
     private final ConditionProfile taintedProfile = ConditionProfile.createBinaryProfile();
 
-    public ToStringNode(RubyContext context) {
+    public ToStringNode(RubyContext context, boolean convertNumbersToStrings) {
         this.context = context;
+        this.convertNumbersToStrings = convertNumbersToStrings;
         isTaintedNode = IsTaintedNodeFactory.create(context, getEncapsulatingSourceSection(), null);
     }
 
     public ToStringNode(ToStringNode prev) {
         context = prev.context;
+        convertNumbersToStrings = prev.convertNumbersToStrings;
         toStrNode = prev.toStrNode;
         isTaintedNode = prev.isTaintedNode;
     }
@@ -57,19 +60,19 @@ public abstract class ToStringNode extends PackNode {
     // TODO CS 31-Mar-15 these boundaries and slow versions are not ideal
 
     @CompilerDirectives.TruffleBoundary
-    @Specialization
+    @Specialization(guards = "convertNumbersToStrings")
     public ByteList toString(int value) {
         return new ByteList(Integer.toString(value).getBytes(StandardCharsets.US_ASCII));
     }
 
     @CompilerDirectives.TruffleBoundary
-    @Specialization
+    @Specialization(guards = "convertNumbersToStrings")
     public ByteList toString(long value) {
         return new ByteList(Long.toString(value).getBytes(StandardCharsets.US_ASCII));
     }
 
     @CompilerDirectives.TruffleBoundary
-    @Specialization
+    @Specialization(guards = "convertNumbersToStrings")
     public ByteList toString(double value) {
         return new ByteList(Double.toString(value).getBytes(StandardCharsets.US_ASCII));
     }

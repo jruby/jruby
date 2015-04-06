@@ -16,12 +16,14 @@ import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import org.jruby.truffle.pack.nodes.PackNode;
 import org.jruby.truffle.pack.runtime.Nil;
+import org.jruby.truffle.pack.runtime.NoImplicitConversionException;
 import org.jruby.util.ByteList;
 import org.jruby.util.Pack;
 import sun.misc.UUEncoder;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.util.Arrays;
 
 @NodeChildren({
         @NodeChild(value = "value", type = PackNode.class),
@@ -29,12 +31,24 @@ import java.io.IOException;
 public abstract class WriteUUStringNode extends PackNode {
 
     private final int length;
+    private final boolean ignoreStar;
 
-    public WriteUUStringNode(int length) {
+    public WriteUUStringNode(int length, boolean ignoreStar) {
         this.length = length;
+        this.ignoreStar = ignoreStar;
     }
 
     @Specialization
+    public Object write(VirtualFrame frame, long bytes) {
+        throw new NoImplicitConversionException(bytes, "String");
+    }
+
+    @Specialization(guards = "isEmpty(bytes)")
+    public Object writeEmpty(VirtualFrame frame, ByteList bytes) {
+        return null;
+    }
+
+    @Specialization(guards = "!isEmpty(bytes)")
     public Object write(VirtualFrame frame, ByteList bytes) {
         writeBytes(frame, encode(bytes));
         return null;
@@ -44,16 +58,13 @@ public abstract class WriteUUStringNode extends PackNode {
     private byte[] encode(ByteList bytes) {
         // TODO CS 30-Mar-15 should write our own optimisable version of UU
 
-        final ByteArrayOutputStream stream = new ByteArrayOutputStream();
-        final UUEncoder encoder = new UUEncoder();
+        final ByteList output = new ByteList();
+        Pack.encodeUM(null, bytes, length, ignoreStar, 'u', output);
+        return output.bytes();
+    }
 
-        try {
-            encoder.encode(bytes.bytes(), stream);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-
-        return stream.toByteArray();
+    protected boolean isEmpty(ByteList bytes) {
+        return bytes.length() == 0;
     }
 
 }

@@ -211,7 +211,7 @@ public class PackParser {
                             appendNull = false;
                         }
 
-                        node = WriteBinaryStringNodeGen.create(pad, padOnNull, width, padding, takeAll, appendNull, ReadStringNodeGen.create(context, new SourceNode()));
+                        node = WriteBinaryStringNodeGen.create(pad, padOnNull, width, padding, takeAll, appendNull, ReadStringNodeGen.create(context, true, new SourceNode()));
                     } break;
                     case 'H':
                     case 'h': {
@@ -238,7 +238,7 @@ public class PackParser {
                             length = 1;
                         }
 
-                        node = WriteHexStringNodeGen.create(endianness, length, ReadStringNodeGen.create(context, new SourceNode()));
+                        node = WriteHexStringNodeGen.create(endianness, length, ReadStringNodeGen.create(context, true, new SourceNode()));
                     } break;
                     case 'B':
                     case 'b': {
@@ -263,7 +263,7 @@ public class PackParser {
                             length = 1;
                         }
 
-                        node = WriteBitStringNodeGen.create(endianness, length, ReadStringNodeGen.create(context, new SourceNode()));
+                        node = WriteBitStringNodeGen.create(endianness, length, ReadStringNodeGen.create(context, true, new SourceNode()));
                     } break;
                     case 'M': {
                         final int length;
@@ -274,29 +274,33 @@ public class PackParser {
                             length = Integer.MAX_VALUE;
                         }
 
-                        node = WriteMIMEStringNodeGen.create(length, ReadStringNodeGen.create(context, new SourceNode()));
+                        node = WriteMIMEStringNodeGen.create(length, ReadStringNodeGen.create(context, true, new SourceNode()));
                     } break;
-                    case 'm': {
-                        final int length;
-
-                        if (tokenizer.peek() instanceof Integer) {
-                            length = (int) tokenizer.next();
-                        } else {
-                            length = Integer.MAX_VALUE;
-                        }
-
-                        node = WriteBase64StringNodeGen.create(length, ReadStringNodeGen.create(context, new SourceNode()));
-                    } break;
+                    case 'm':
                     case 'u': {
-                        final int length;
+                        encoding = encoding.unifyWith(PackEncoding.US_ASCII);
+
+                        int length = 1;
+                        boolean ignoreStar = false;
 
                         if (tokenizer.peek() instanceof Integer) {
                             length = (int) tokenizer.next();
-                        } else {
-                            length = Integer.MAX_VALUE;
+                        } else if (tokenizer.peek('*')) {
+                            tokenizer.next();
+                            length = 0;
+                            ignoreStar = true;
                         }
 
-                        node = WriteUUStringNodeGen.create(length, ReadStringNodeGen.create(context, new SourceNode()));
+                        switch ((char) token) {
+                            case 'm':
+                                node = WriteBase64StringNodeGen.create(length, ignoreStar, ReadStringNodeGen.create(context, false, new SourceNode()));
+                                break;
+                            case 'u':
+                                node = WriteUUStringNodeGen.create(length, ignoreStar, ReadStringNodeGen.create(context, false, new SourceNode()));
+                                break;
+                            default:
+                                throw new UnsupportedOperationException();
+                        }
                     } break;
                     case 'U':
                         encoding = encoding.unifyWith(PackEncoding.UTF_8);

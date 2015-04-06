@@ -3,6 +3,7 @@ package org.jruby.truffle.pack.runtime;
 public enum PackEncoding {
     DEFAULT,
     ASCII_8BIT,
+    US_ASCII,
     UTF_8;
 
     public PackEncoding unifyWith(PackEncoding other) {
@@ -16,8 +17,10 @@ public enum PackEncoding {
 
         switch (this) {
             case ASCII_8BIT:
+            case US_ASCII:
                 switch (other) {
                     case ASCII_8BIT:
+                    case US_ASCII:
                         return ASCII_8BIT;
                     case UTF_8:
                         return ASCII_8BIT;
@@ -27,6 +30,7 @@ public enum PackEncoding {
             case UTF_8:
                 switch (other) {
                     case ASCII_8BIT:
+                    case US_ASCII:
                         return ASCII_8BIT;
                     case UTF_8:
                         return UTF_8;

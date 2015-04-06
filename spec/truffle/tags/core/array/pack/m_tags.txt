@@ -4,8 +4,3 @@ fails:Array#pack with format 'M' encodes a Symbol as a String
 fails:Array#pack with format 'M' encodes an Integer as a String
 fails:Array#pack with format 'M' emits a soft line break when the output exceeds 72 characters when passed '*', 0, 1, or no count modifier
 fails:Array#pack with format 'M' sets the output string to US-ASCII encoding
-fails:Array#pack with format 'm' emits a newline after complete groups of count / 3 input characters when passed a count modifier
-fails:Array#pack with format 'm' implicitly has a count of 45 when passed '*', 1, 2 or no count modifier
-fails:Array#pack with format 'm' does not emit a newline if passed zero as the count modifier
-fails:Array#pack with format 'm' sets the output string to US-ASCII encoding
-fails:Array#pack with format 'm' raises a TypeError if passed an Integer

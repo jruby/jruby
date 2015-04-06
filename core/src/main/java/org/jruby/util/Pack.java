@@ -474,6 +474,25 @@ public class Pack {
         return result;
     }
 
+    public static void encodeUM(Ruby runtime, ByteList lCurElemString, int occurrences, boolean ignoreStar, char type, ByteList result) {
+        if (occurrences == 0 && type == 'm' && !ignoreStar) {
+            encodes(runtime, result, lCurElemString.getUnsafeBytes(),
+                    lCurElemString.getBegin(), lCurElemString.length(),
+                    lCurElemString.length(), (byte) type, false);
+            return;
+        }
+
+        occurrences = occurrences <= 2 ? 45 : occurrences / 3 * 3;
+        if (lCurElemString.length() == 0) return;
+
+        byte[] charsToEncode = lCurElemString.getUnsafeBytes();
+        for (int i = 0; i < lCurElemString.length(); i += occurrences) {
+            encodes(runtime, result, charsToEncode,
+                    i + lCurElemString.getBegin(), lCurElemString.length() - i,
+                    occurrences, (byte)type, true);
+        }
+    }
+
     /**
      * encodes a String in base64 or its uuencode variant.
      * appends the result of the encoding in a StringBuffer
@@ -1995,22 +2014,7 @@ public class Pack {
                         IRubyObject from = list.eltInternal(idx++);
                         if (from == runtime.getNil()) throw runtime.newTypeError(from, "Integer");
                         lCurElemString = from.convertToString().getByteList();
-                        if (occurrences == 0 && type == 'm' && !ignoreStar) {
-                            encodes(runtime, result, lCurElemString.getUnsafeBytes(),
-                                    lCurElemString.getBegin(), lCurElemString.length(),
-                                    lCurElemString.length(), (byte)type, false);
-                            break;
-                        }
-
-                        occurrences = occurrences <= 2 ? 45 : occurrences / 3 * 3;
-                        if (lCurElemString.length() == 0) break;
-
-                        byte[] charsToEncode = lCurElemString.getUnsafeBytes();
-                        for (int i = 0; i < lCurElemString.length(); i += occurrences) {
-                            encodes(runtime, result, charsToEncode,
-                                    i + lCurElemString.getBegin(), lCurElemString.length() - i,
-                                    occurrences, (byte)type, true);
-                        }
+                        encodeUM(runtime, lCurElemString, occurrences, ignoreStar, (char) type, result);
                     }
                     break;
                 case 'M' : {
@@ -2174,7 +2178,7 @@ public class Pack {
      */
     private static void encodeIntLittleEndian(ByteList result, int s) {
         result.append((byte) (s & 0xff)).append((byte) ((s >> 8) & 0xff));
-        result.append((byte) ((s>>16) & 0xff)).append((byte) ((s>>24) &0xff));
+        result.append((byte) ((s>>16) & 0xff)).append((byte) ((s >> 24) & 0xff));
     }
 
     /**
@@ -2380,4 +2384,5 @@ public class Pack {
     private static void encodeShortBigEndian(ByteList result, int s) {
         result.append((byte) ((s & 0xff00) >> 8)).append((byte) (s & 0xff));
     }
+
 }

@@ -15,6 +15,7 @@ import com.oracle.truffle.api.dsl.NodeChildren;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import org.jruby.truffle.pack.nodes.PackNode;
+import org.jruby.truffle.pack.runtime.NoImplicitConversionException;
 import org.jruby.util.ByteList;
 import org.jruby.util.Pack;
 
@@ -26,26 +27,31 @@ import java.util.Base64;
 public abstract class WriteBase64StringNode extends PackNode {
 
     private final int length;
+    private final boolean ignoreStar;
 
-    public WriteBase64StringNode(int length) {
+    public WriteBase64StringNode(int length, boolean ignoreStar) {
         this.length = length;
+        this.ignoreStar = ignoreStar;
+    }
+
+    @Specialization
+    public Object write(VirtualFrame frame, long bytes) {
+        throw new NoImplicitConversionException(bytes, "String");
     }
 
     @Specialization
     public Object write(VirtualFrame frame, ByteList bytes) {
         writeBytes(frame, encode(bytes));
-
-        if (bytes.length() > 0) {
-            writeBytes(frame, (byte) '\n');
-        }
-
         return null;
     }
 
     @CompilerDirectives.TruffleBoundary
     private byte[] encode(ByteList bytes) {
         // TODO CS 30-Mar-15 should write our own optimisable version of Base64
-        return Base64.getEncoder().encode(bytes.bytes());
+
+        final ByteList output = new ByteList();
+        Pack.encodeUM(null, bytes, length, ignoreStar, 'm', output);
+        return output.bytes();
     }
 
 }
