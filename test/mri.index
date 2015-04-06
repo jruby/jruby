@@ -75,8 +75,7 @@ ruby/test_range.rb
 ruby/test_rational.rb
 ruby/test_rational2.rb
 ruby/test_readpartial.rb
-# TODO 2.1 parser? new regexp option?
-#ruby/test_regexp.rb
+ruby/test_regexp.rb
 ruby/test_require.rb
 ruby/test_rubyoptions.rb
 # Removed until we can implement the remaining features (#2143)

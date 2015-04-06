@@ -9,12 +9,15 @@
  */
 package org.jruby.truffle.nodes.rubinius;
 
+import com.oracle.truffle.api.CompilerDirectives;
 import org.joni.Matcher;
 import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.*;
 
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.source.SourceSection;
+import org.jruby.util.StringSupport;
 
 /**
  * Rubinius primitives associated with the Ruby {@code Regexp} class.
@@ -58,6 +61,17 @@ public abstract class RegexpPrimitiveNodes {
         @Specialization
         public Object searchRegion(RubyRegexp regexp, RubyString string, int start, int end, boolean forward) {
             notDesignedForCompilation();
+
+            if (regexp.getRegex() == null) {
+                CompilerDirectives.transferToInterpreter();
+                throw new RaiseException(getContext().getCoreLibrary().typeError("uninitialized Regexp", this));
+            }
+
+            if (string.scanForCodeRange() == StringSupport.CR_BROKEN) {
+                CompilerDirectives.transferToInterpreter();
+                throw new RaiseException(getContext().getCoreLibrary().argumentError(
+                        String.format("invalid byte sequence in %s", string.getByteList().getEncoding()), this));
+            }
 
             final Matcher matcher = regexp.getRegex().matcher(string.getBytes().bytes());
 

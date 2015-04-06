@@ -3,64 +3,23 @@ fails:Kernel.spawn redirects STDERR to the given file if :err => String
 windows(JRUBY-4354):Kernel.spawn executes the given command
 windows(JRUBY-4354):Kernel.spawn returns the process ID of the new process as a Fixnum
 windows(JRUBY-4354):Kernel.spawn returns immediately
-fails:Kernel.spawn returns the process ID of the new process as a Fixnum
-fails:Kernel.spawn returns immediately
-fails:Kernel.spawn redirects STDOUT to the given file descriptior if :out => Fixnum
 fails:Kernel.spawn redirects STDOUT to the given file if :out => String
-fails:Kernel.spawn redirects STDOUT to the given file if :out => IO
-fails:Kernel.spawn redirects STDERR to the given file descriptior if :err => Fixnum
-fails:Kernel.spawn redirects STDERR to the given file descriptor if :err => IO
-fails:Kernel.spawn redirects both STDERR and STDOUT to the given file descriptior
-fails:Kernel.spawn redirects both STDERR and STDOUT to the given IO
-fails(compiler):Kernel.spawn executes the given command
-fails(compiler):Kernel.spawn uses the current working directory as its working directory
 fails(compiler):Kernel.spawn does NOT redirect both STDERR and STDOUT at the time to the given name
-fails(ci):Kernel#spawn executes the given command
-fails:Kernel#spawn returns immediately
-fails:Kernel#spawn unsets environment variables whose value is nil
 fails:Kernel#spawn calls #to_str to convert the environment keys
 fails:Kernel#spawn calls #to_str to convert the environment values
-fails:Kernel#spawn raises an ArgumentError if an environment key includes an equals sign
-fails:Kernel#spawn raises an ArgumentError if an environment key includes a null byte
-fails:Kernel#spawn raises an ArgumentError if an environment value includes a null byte
-fails:Kernel#spawn unsets other environment variables when given a true :unsetenv_others option
-fails:Kernel#spawn unsets other environment variables when given a non-false :unsetenv_others option
 fails:Kernel#spawn joins a new process group if :pgroup => true
 fails:Kernel#spawn joins a new process group if :pgroup => 0
-fails:Kernel#spawn raises an ArgumentError if given a negative :pgroup option
 fails:Kernel#spawn sets the umask if given the :umask option
-fails:Kernel#spawn redirects STDOUT to the given file descriptior if :out => Fixnum
-fails:Kernel#spawn redirects STDOUT to the given file if :out => IO
-fails:Kernel#spawn redirects STDOUT to the given file if :out => String
-fails:Kernel#spawn redirects STDERR to the given file descriptior if :err => Fixnum
-fails:Kernel#spawn redirects STDERR to the given file descriptor if :err => IO
-fails:Kernel#spawn redirects STDERR to the given file if :err => String
-fails:Kernel#spawn redirects both STDERR and STDOUT to the given file descriptior
-fails:Kernel#spawn redirects both STDERR and STDOUT to the given IO
+critical(runs very long before failing):Kernel#spawn redirects STDOUT to the given file if :out => String
+critical(runs very long before failing):Kernel#spawn redirects STDERR to the given file if :err => String
 fails:Kernel#spawn does NOT redirect both STDERR and STDOUT at the time to the given name
-fails:Kernel#spawn closes file descriptors >= 3 in the child process
 fails:Kernel#spawn raises an Errno::EACCES when passed a directory
-fails:Kernel#spawn raises an ArgumentError when passed a string key in options
-fails:Kernel#spawn raises an ArgumentError when passed an unknown option key
-fails:Kernel#spawn with a single argument raises an ArgumentError if the command includes a null byte
-fails:Kernel#spawn with a single argument raises a TypeError if the argument does not respond to #to_str
-fails:Kernel#spawn with multiple arguments raises an ArgumentError if an argument includes a null byte
-fails:Kernel#spawn with multiple arguments raises a TypeError if an argument does not respond to #to_str
 fails:Kernel#spawn with a command array uses the first element as the command name and the second as the argv[0] value
 fails:Kernel.spawn with a command array does not subject the arguments to shell expansion
 fails:Kernel#spawn with a command array calls #to_ary to convert the argument to an Array
-fails:Kernel#spawn with a command array raises an ArgumentError if the Strings in the Array include a null byte
-fails:Kernel#spawn with a command array raises a TypeError if an element in the Array does not respond to #to_str
-fails:Kernel.spawn unsets environment variables whose value is nil
 fails:Kernel.spawn calls #to_str to convert the environment keys
 fails:Kernel.spawn calls #to_str to convert the environment values
-fails:Kernel.spawn raises an ArgumentError if an environment key includes an equals sign
-fails:Kernel.spawn raises an ArgumentError if an environment key includes a null byte
-fails:Kernel.spawn raises an ArgumentError if an environment value includes a null byte
-fails:Kernel.spawn unsets other environment variables when given a true :unsetenv_others option
-fails:Kernel.spawn unsets other environment variables when given a non-false :unsetenv_others option
 fails:Kernel.spawn joins a new process group if :pgroup => 0
-fails:Kernel.spawn raises an ArgumentError if given a negative :pgroup option
 fails:Kernel.spawn sets the umask if given the :umask option
 fails:Kernel.spawn closes file descriptors >= 3 in the child process
 fails:Kernel.spawn raises an Errno::EACCES when passed a directory
@@ -74,55 +33,10 @@ fails:Kernel.spawn with a command array uses the first element as the command na
 fails:Kernel.spawn with a command array calls #to_ary to convert the argument to an Array
 fails:Kernel.spawn with a command array raises an ArgumentError if the Strings in the Array include a null byte
 fails:Kernel.spawn with a command array raises a TypeError if an element in the Array does not respond to #to_str
-fails(only in rake run?):Kernel#spawn returns the process ID of the new process as a Fixnum
-fails:Kernel#spawn returns the process ID of the new process as a Fixnum
 fails:Kernel.spawn does NOT redirect both STDERR and STDOUT at the time to the given name
-fails:Kernel#spawn with multiple arguments preserves whitespace in passed arguments
-fails(only in full runs):Kernel#spawn with multiple arguments calls #to_str to convert the arguments to Strings
 fails(only in full runs):Kernel.spawn with multiple arguments does not subject the arguments to shell expansion
-unstable(intermittent, gh-779):Kernel#spawn with multiple arguments does not subject the arguments to shell expansion
-unstable(intermittent, gh-779):Kernel.spawn with a single argument creates an argument array with shell parsing semantics for whitespace
-unstable(intermittent, gh-779):Kernel.spawn with a command array preserves whitespace in passed arguments
-unstable(intermittent, gh-779):Kernel#spawn with a single argument subjects the specified command to shell expansion
-unstable(intermittent, gh-779):Kernel#spawn with a single argument creates an argument array with shell parsing semantics for whitespace
-unstable(intermittent, gh-779):Kernel#spawn with a single argument calls #to_str to convert the argument to a String
-unstable(intermittent, gh-779):Kernel#spawn with a command array does not subject the arguments to shell expansion
-unstable(intermittent, gh-779):Kernel#spawn with a command array preserves whitespace in passed arguments
-unstable(intermittent, gh-779):Kernel#spawn with a command array calls #to_str to convert the first element to a String
-unstable(intermittent, gh-779):Kernel.spawn with a single argument subjects the specified command to shell expansion
-unstable(intermittent, gh-779):Kernel.spawn with a single argument calls #to_str to convert the argument to a String
-unstable(intermittent, gh-779):Kernel.spawn with multiple arguments preserves whitespace in passed arguments
-unstable(intermittent, gh-779):Kernel.spawn with multiple arguments calls #to_str to convert the arguments to Strings
-unstable(intermittent, gh-779):Kernel.spawn with a command array calls #to_str to convert the first element to a String
-unstable(intermittent, gh-779):Kernel.spawn with a command array calls #to_str to convert the second element to a String
-unstable(intermittent, gh-779):Kernel#spawn sets environment variables in the child environment
-unstable(intermittent, gh-779):Kernel#spawn calls #to_hash to convert the environment
-unstable(intermittent, gh-779):Kernel#spawn does not unset other environment variables when given a false :unsetenv_others option
-unstable(intermittent, gh-779):Kernel#spawn does not unset other environment variables when given a nil :unsetenv_others option
-unstable(intermittent, gh-779):Kernel#spawn does not unset environment variables included in the environment hash
-unstable(intermittent, gh-779):Kernel#spawn joins the current process group by default
-unstable(intermittent, gh-779):Kernel#spawn joins the current process if :pgroup => false
-unstable(intermittent, gh-779):Kernel#spawn joins the current process if :pgroup => nil
-unstable(intermittent, gh-779):Kernel#spawn joins the specified process group if :pgroup => pgid
-unstable(intermittent, gh-779):Kernel#spawn uses the current working directory as its working directory
-unstable(intermittent, gh-779):Kernel#spawn uses the current umask by default
-unstable(intermittent, gh-779):Kernel.spawn sets environment variables in the child environment
-unstable(intermittent, gh-779):Kernel.spawn calls #to_hash to convert the environment
-unstable(intermittent, gh-779):Kernel.spawn does not unset other environment variables when given a false :unsetenv_others option
-unstable(intermittent, gh-779):Kernel.spawn does not unset other environment variables when given a nil :unsetenv_others option
-unstable(intermittent, gh-779):Kernel.spawn does not unset environment variables included in the environment hash
-unstable(intermittent, gh-779):Kernel.spawn joins the current process group by default
-unstable(intermittent, gh-779):Kernel.spawn joins the current process if :pgroup => false
-unstable(intermittent, gh-779):Kernel.spawn joins the current process if :pgroup => nil
-unstable(intermittent, gh-779):Kernel.spawn joins the specified process group if :pgroup => pgid
-unstable(intermittent, gh-779):Kernel.spawn uses the current umask by default
-unstable(intermittent, gh-779):Kernel#spawn with a command array calls #to_str to convert the second element to a String
-fails:Kernel#spawn raises a TypeError if given a symbol as :pgroup option
 fails:Kernel#spawn does not close file descriptors >= 3 in the child process when given a false :close_others option and fds are set close_on_exec=false
-fails:Kernel#spawn when passed :chdir changes to the directory passed for :chdir
-fails:Kernel#spawn when passed :chdir calls #to_path to convert the :chdir value
 fails:Kernel#spawn with Integer option keys maps the key to a file descriptor in the child that inherits the file descriptor from the parent specified by the value
-fails:Kernel.spawn raises a TypeError if given a symbol as :pgroup option
 fails:Kernel.spawn does not close file descriptors >= 3 in the child process when given a false :close_others option and fds are set close_on_exec=false
 fails:Kernel.spawn when passed :chdir changes to the directory passed for :chdir
 fails:Kernel.spawn when passed :chdir calls #to_path to convert the :chdir value

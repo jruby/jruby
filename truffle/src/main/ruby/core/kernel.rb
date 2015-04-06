@@ -38,6 +38,7 @@ module Kernel
   end
   module_function :printf
 
+
   alias_method :trust, :untaint
   alias_method :untrust, :taint
   alias_method :untrusted?, :tainted?

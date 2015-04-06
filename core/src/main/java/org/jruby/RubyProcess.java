@@ -100,7 +100,20 @@ public class RubyProcess {
         // TODO: other clock types
         process.defineConstant("CLOCK_REALTIME", RubySymbol.newSymbol(runtime, CLOCK_REALTIME));
         process.defineConstant("CLOCK_MONOTONIC", RubySymbol.newSymbol(runtime, CLOCK_MONOTONIC));
-        
+
+        RubyClass tmsStruct = RubyStruct.newInstance(
+                runtime.getStructClass(),
+                new IRubyObject[]{
+                        runtime.newString("Tms"),
+                        runtime.newSymbol("utime"),
+                        runtime.newSymbol("stime"),
+                        runtime.newSymbol("cutime"),
+                        runtime.newSymbol("cstime")},
+                Block.NULL_BLOCK);
+
+        process.defineConstant("Tms", tmsStruct);
+        runtime.setTmsStruct(tmsStruct);
+
         return process;
     }
     

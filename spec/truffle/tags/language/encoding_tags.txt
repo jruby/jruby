@@ -1,0 +1,1 @@
+fails:The __ENCODING__ pseudo-variable is the evaluated strings's one inside an eval

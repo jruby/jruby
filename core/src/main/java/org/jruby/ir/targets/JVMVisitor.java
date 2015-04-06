@@ -173,7 +173,7 @@ public class JVMVisitor extends IRVisitor {
             }
 
             // ensure there's at least one instr per block
-            m.adapter.nop();
+            if (bb.getInstrs().size() == 0) m.adapter.nop();
 
             // visit remaining instrs
             for (Instr instr : bb.getInstrs()) {
@@ -1566,8 +1566,7 @@ public class JVMVisitor extends IRVisitor {
 
     @Override
     public void ReceiveSelfInstr(ReceiveSelfInstr receiveselfinstr) {
-        jvmMethod().loadSelf();
-        jvmStoreLocal(receiveselfinstr.getResult());
+        // noop...self is passed in
     }
 
     @Override

@@ -1,7 +1,2 @@
-fails:"UnboundMethod#arity returns positive values for method definition \n    def m(a:) end\n    def n(a:, b:) end\n    def o(a: 1, b:, c:, d: 2) end"
-fails:"UnboundMethod#arity returns positive values for method definition \n    def m(a, b:) end\n    def n(a, b:, &l) end"
-fails:"UnboundMethod#arity returns positive values for method definition \n    def m(a, b, c:, d: 1) end\n    def n(a, b, c:, d: 1, **k, &l) end"
 fails:"UnboundMethod#arity returns negative values for method definition \n    def m(a: 1) end\n    def n(a: 1, b: 2) end"
 fails:"UnboundMethod#arity returns negative values for method definition \n    def m(**k, &l) end\n    def n(*a, **k) end\n    def o(a: 1, b: 2, **k) end"
-fails:"UnboundMethod#arity returns negative values for method definition \n    def m(a=1, *b, c:, d: 2, **k, &l) end"
-fails:"UnboundMethod#arity returns negative values for method definition \n    def m(a, b=1, *c, d, e:, f: 2, **k, &l) end\n    def n(a, b=1, *c, d:, e:, f: 2, **k, &l) end\n    def o(a=0, b=1, *c, d, e:, f: 2, **k, &l) end\n    def p(a=0, b=1, *c, d:, e:, f: 2, **k, &l) end"

@@ -1,2 +1,1 @@
 fails:IO.new raises an error if passed binary/text mode two ways
-fails:IO.new coerces :external_encoding option with #to_str

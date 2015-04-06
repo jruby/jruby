@@ -1,2 +1,0 @@
-fails:String#swapcase is locale insensitive (only upcases a-z and only downcases A-Z)
-fails:String#swapcase! returns nil if no modifications were made

@@ -1,0 +1,1 @@
+fails:Complex#** with Fixnum 0 returns Complex(1)

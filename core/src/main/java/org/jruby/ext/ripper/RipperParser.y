@@ -29,6 +29,7 @@
 package org.jruby.ext.ripper;
 
 import org.jruby.RubyArray;
+import org.jruby.lexer.LexerSource;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.ext.ripper.RipperLexer.LexState;

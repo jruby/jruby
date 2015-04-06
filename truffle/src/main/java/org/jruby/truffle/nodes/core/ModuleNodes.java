@@ -386,6 +386,8 @@ public abstract class ModuleNodes {
 
                 if (arg instanceof RubySymbol) {
                     accessorName = ((RubySymbol) arg).toString();
+                } else if (arg instanceof RubyString) {
+                    accessorName = ((RubyString) arg).toString();
                 } else {
                     throw new UnsupportedOperationException();
                 }
@@ -963,6 +965,21 @@ public abstract class ModuleNodes {
         @Specialization
         public RubySymbol defineMethod(RubyModule module, String name, RubyMethod method, UndefinedPlaceholder block) {
             notDesignedForCompilation();
+
+            module.addMethod(this, method.getMethod().withNewName(name));
+
+            return getContext().getSymbolTable().getSymbol(name);
+        }
+
+        @Specialization
+        public RubySymbol defineMethod(VirtualFrame frame, RubyModule module, String name, RubyUnboundMethod method, UndefinedPlaceholder block) {
+            notDesignedForCompilation();
+
+            if (module instanceof RubyClass && !ModuleOperations.assignableTo((RubyClass) module, method.getOrigin())) {
+                ruby(frame, "raise TypeError, 'bind argument must be a subclass of " + method.getOrigin().getName() + "'");
+            }
+
+            // TODO CS 5-Apr-15 TypeError if the method came from a singleton
 
             module.addMethod(this, method.getMethod().withNewName(name));
 

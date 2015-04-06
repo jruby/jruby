@@ -1,1 +1,0 @@
-fails:OpenStruct#method_missing when called with a method name ending in '=' raises a TypeError when self is frozen

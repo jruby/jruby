@@ -1,1 +1,0 @@
-fails:Time#inspect returns a US-ASCII encoded string

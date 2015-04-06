@@ -52,7 +52,7 @@ public class OpenFile implements Finalizable {
         writeconvAsciicompat = nil;
         writeconvPreEcopts = nil;
         encs.ecopts = nil;
-        posix = new PosixShim(runtime.getPosix());
+        posix = new PosixShim(runtime);
     }
 
     // IO Mode flags

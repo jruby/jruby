@@ -1,0 +1,1 @@
+fails:GetoptLong#initialize sets ordering to PERMUTE if ENV['POSIXLY_CORRECT'] is not set

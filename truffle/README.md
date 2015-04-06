@@ -35,7 +35,6 @@ Download a build of Graal:
 
 * http://lafo.ssw.uni-linz.ac.at/graalvm/openjdk-8-graalvm-b132-macosx-x86_64-0.6.tar.gz
 * http://lafo.ssw.uni-linz.ac.at/graalvm/openjdk-8-graalvm-b132-linux-x86_64-0.6.tar.gz
-* http://lafo.ssw.uni-linz.ac.at/graalvm/openjdk-8-graalvm-b132-windows-x86_64-0.5.tar.gz
 
 You can then run JRuby with GraalVM
 

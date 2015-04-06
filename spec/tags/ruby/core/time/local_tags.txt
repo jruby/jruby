@@ -1,5 +1,1 @@
-fails:Time.local creates a time based on given values, interpreted in the local time zone
-fails:Time.local respects rare old timezones
-fails:Time.local creates a time based on given C-style gmtime arguments, interpreted in the local time zone
-fails:Time.local creates the correct time just before dst change
 fails:Time.local creates the correct time just after dst change

@@ -1,1 +1,0 @@
-fails(JRUBY-5658):Process::Status#termsig for a child that exited normally returns true

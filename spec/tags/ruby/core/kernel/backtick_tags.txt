@@ -1,2 +1,1 @@
-fails:Kernel#` sets $? to the exit status of the executed sub-process
-fails:Kernel#` raises an Errno::ENOENT if the command is not executable
+fails(on Linux, Travis, likely posix_spawn error-after-fork problem):Kernel#` raises an Errno::ENOENT if the command is not executable

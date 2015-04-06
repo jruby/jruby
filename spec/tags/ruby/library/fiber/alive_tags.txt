@@ -1,6 +1,0 @@
-fails:Fiber#alive? returns true for a Fiber that hasn't had #resume called
-fails:Fiber#alive? returns true for a Fiber that's yielded to the caller
-fails:Fiber#alive? returns true when called from its Fiber
-fails:Fiber#alive? doesn't invoke the block associated with the Fiber
-fails:Fiber#alive? returns false for a Fiber that's dead
-fails:Fiber#alive? always returns false for a dead Fiber

@@ -1,6 +1,4 @@
 fails:String#unpack with format 'M' calls #to_str to coerce the directives string
-fails:String#unpack with format 'M' raises an ArgumentError when the format modifier is '_'
-fails:String#unpack with format 'M' raises an ArgumentError when the format modifier is '!'
 fails:String#unpack with format 'M' decodes an empty string
 fails:String#unpack with format 'M' decodes the complete string ignoring newlines when given a single directive
 fails:String#unpack with format 'M' appends empty string to the array for directives exceeding the input size
@@ -16,8 +14,6 @@ fails:String#unpack with format 'M' decodes pre-encoded byte values 62..126
 fails:String#unpack with format 'M' decodes pre-encoded byte values 0..31 except tab and newline
 fails:String#unpack with format 'M' decodes pre-encoded byte values 127..255
 fails:String#unpack with format 'm' calls #to_str to coerce the directives string
-fails:String#unpack with format 'm' raises an ArgumentError when the format modifier is '_'
-fails:String#unpack with format 'm' raises an ArgumentError when the format modifier is '!'
 fails:String#unpack with format 'm' decodes an empty string
 fails:String#unpack with format 'm' decodes the complete string ignoring newlines when given a single directive
 fails:String#unpack with format 'm' ignores the count or '*' modifier and decodes the entire string

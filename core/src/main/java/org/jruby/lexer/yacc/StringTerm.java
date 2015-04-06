@@ -11,8 +11,8 @@
  * implied. See the License for the specific language governing
  * rights and limitations under the License.
  *
- * Copyright (C) 2004 Jan Arne Petersen <jpetersen@uni-bonn.de>
- * 
+ * Copyright (C) 2015 The JRuby Team (jruby@jruby.org)
+ *
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
  * or the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
@@ -36,6 +36,8 @@ import org.jruby.util.ByteList;
 import org.jruby.util.KCode;
 import org.jruby.util.RegexpOptions;
 
+import static org.jruby.lexer.LexingCommon.*;
+
 public class StringTerm extends StrTerm {
     // Expand variables, Indentation of final marker
     private int flags;
@@ -57,21 +59,23 @@ public class StringTerm extends StrTerm {
     }
 
     protected ByteList createByteList(RubyLexer lexer) {
-        return new ByteList(new byte[]{}, lexer.getEncoding());
+        ByteList bytelist = new ByteList(15);
+        bytelist.setEncoding(lexer.getEncoding());
+        return bytelist;
     }
 
-    private int endFound(RubyLexer lexer, LexerSource src) throws IOException {
-            if ((flags & RubyLexer.STR_FUNC_QWORDS) != 0) {
+    private int endFound(RubyLexer lexer) throws IOException {
+            if ((flags & STR_FUNC_QWORDS) != 0) {
                 flags = -1;
                 lexer.getPosition();
                 return ' ';
             }
 
-            if ((flags & RubyLexer.STR_FUNC_REGEXP) != 0) {
-                RegexpOptions options = parseRegexpFlags(lexer, src);
+            if ((flags & STR_FUNC_REGEXP) != 0) {
+                RegexpOptions options = parseRegexpFlags(lexer);
                 ByteList regexpBytelist = ByteList.create("");
 
-                lexer.setValue(new RegexpNode(src.getPosition(), regexpBytelist, options));
+                lexer.setValue(new RegexpNode(lexer.getPosition(), regexpBytelist, options));
                 return Tokens.tREGEXP_END;
             }
 
@@ -80,53 +84,53 @@ public class StringTerm extends StrTerm {
     }
 
     // Return of 0 means failed to find anything.  Non-zero means return that from lexer.
-    private int parsePeekVariableName(RubyLexer lexer, LexerSource src) throws IOException {
-        int c = src.read(); // byte right after #
+    private int parsePeekVariableName(RubyLexer lexer) throws IOException {
+        int c = lexer.nextc(); // byte right after #
         int significant = -1;
         switch (c) {
             case '$': {  // we unread back to before the $ so next lex can read $foo
-                int c2 = src.read();
+                int c2 = lexer.nextc();
 
                 if (c2 == '-') {
-                    int c3 = src.read();
+                    int c3 = lexer.nextc();
 
-                    if (c3 == RubyLexer.EOF) {
-                        src.unread(c3); src.unread(c2);
+                    if (c3 == EOF) {
+                        lexer.pushback(c3); lexer.pushback(c2);
                         return 0;
                     }
 
                     significant = c3;                              // $-0 potentially
-                    src.unread(c3); src.unread(c2);
+                    lexer.pushback(c3); lexer.pushback(c2);
                     break;
                 } else if (lexer.isGlobalCharPunct(c2)) {          // $_ potentially
                     lexer.setValue("#" + (char) c2);
 
-                    src.unread(c2); src.unread(c);
+                    lexer.pushback(c2); lexer.pushback(c);
                     return Tokens.tSTRING_DVAR;
                 }
 
                 significant = c2;                                  // $FOO potentially
-                src.unread(c2);
+                lexer.pushback(c2);
                 break;
             }
             case '@': {  // we unread back to before the @ so next lex can read @foo
-                int c2 = src.read();
+                int c2 = lexer.nextc();
 
                 if (c2 == '@') {
-                    int c3 = src.read();
+                    int c3 = lexer.nextc();
 
-                    if (c3 == RubyLexer.EOF) {
-                        src.unread(c3); src.unread(c2);
+                    if (c3 == EOF) {
+                        lexer.pushback(c3); lexer.pushback(c2);
                         return 0;
                     }
 
                     significant = c3;                                // #@@foo potentially
-                    src.unread(c3); src.unread(c2);
+                    lexer.pushback(c3); lexer.pushback(c2);
                     break;
                 }
 
                 significant = c2;                                    // #@foo potentially
-                src.unread(c2);
+                lexer.pushback(c2);
                 break;
             }
             case '{':
@@ -136,12 +140,12 @@ public class StringTerm extends StrTerm {
             default:
                 // We did not find significant char after # so push it back to
                 // be processed as an ordinary string.
-                src.unread(c);
+                lexer.pushback(c);
                 return 0;
         }
 
         if (significant != -1 && Character.isAlphabetic(significant) || significant == '_') {
-            src.unread(c);
+            lexer.pushback(c);
             lexer.setValue("#" + significant);
             return Tokens.tSTRING_DVAR;
         }
@@ -149,7 +153,7 @@ public class StringTerm extends StrTerm {
         return 0;
     }
 
-    public int parseString(RubyLexer lexer, LexerSource src) throws IOException {
+    public int parseString(RubyLexer lexer) throws IOException {
         boolean spaceSeen = false;
         int c;
 
@@ -160,46 +164,48 @@ public class StringTerm extends StrTerm {
             return Tokens.tSTRING_END;
         }
 
-        c = src.read();
-        if ((flags & RubyLexer.STR_FUNC_QWORDS) != 0 && Character.isWhitespace(c)) {
-            do { c = src.read(); } while (Character.isWhitespace(c));
+        c = lexer.nextc();
+        if ((flags & STR_FUNC_QWORDS) != 0 && Character.isWhitespace(c)) {
+            do { c = lexer.nextc(); } while (Character.isWhitespace(c));
             spaceSeen = true;
         }
 
-        if (c == end && nest == 0) return endFound(lexer, src);
-        
+        if (c == end && nest == 0) return endFound(lexer);
+
         if (spaceSeen) {
-            src.unread(c);
+            lexer.pushback(c);
             lexer.getPosition();
             return ' ';
         }
         
         ByteList buffer = createByteList(lexer);
-        lexer.newtok();
-        if ((flags & RubyLexer.STR_FUNC_EXPAND) != 0 && c == '#') {
-            int token = parsePeekVariableName(lexer, src);
+        lexer.newtok(true);
+        if ((flags & STR_FUNC_EXPAND) != 0 && c == '#') {
+            int token = parsePeekVariableName(lexer);
 
             if (token != 0) return token;
         }
-        src.unread(c);
-        
-        if (parseStringIntoBuffer(lexer, src, buffer) == RubyLexer.EOF) {
-            throw new SyntaxException(PID.STRING_HITS_EOF, src.getPosition(),
-                    src.getCurrentLine(), "unterminated string meets end of file");
+        lexer.pushback(c);
+
+        Encoding enc[] = new Encoding[1];
+        enc[0] = lexer.getEncoding();
+
+        if (parseStringIntoBuffer(lexer, buffer, enc) == EOF) {
+            lexer.compile_error("unterminated string meets end of file");
         }
 
-        lexer.setValue(lexer.createStrNode(lexer.getPosition(), buffer, flags));
+        lexer.setValue(lexer.createStr(buffer, flags));
         return Tokens.tSTRING_CONTENT;
     }
 
-    private RegexpOptions parseRegexpFlags(RubyLexer lexer, LexerSource src) throws IOException {
+    private RegexpOptions parseRegexpFlags(RubyLexer lexer) throws IOException {
         RegexpOptions options = new RegexpOptions();
         int c;
         StringBuilder unknownFlags = new StringBuilder(10);
 
-        lexer.newtok();
-        for (c = src.read(); c != RubyLexer.EOF
-                && Character.isLetter(c); c = src.read()) {
+        lexer.newtok(true);
+        for (c = lexer.nextc(); c != EOF
+                && Character.isLetter(c); c = lexer.nextc()) {
             switch (c) {
             case 'i':
                 options.setIgnorecase(true);
@@ -233,9 +239,9 @@ public class StringTerm extends StrTerm {
                 break;
             }
         }
-        src.unread(c);
+        lexer.pushback(c);
         if (unknownFlags.length() != 0) {
-            throw new SyntaxException(PID.REGEXP_UNKNOWN_OPTION, src.getPosition(), "unknown regexp option"
+            throw new SyntaxException(PID.REGEXP_UNKNOWN_OPTION, lexer.getPosition(), "unknown regexp option"
                     + (unknownFlags.length() > 1 ? "s" : "") + " - "
                     + unknownFlags.toString(), unknownFlags.toString());
         }
@@ -248,36 +254,35 @@ public class StringTerm extends StrTerm {
     }
 
     // mri: parser_tokadd_string
-    public int parseStringIntoBuffer(RubyLexer lexer, LexerSource src, ByteList buffer) throws IOException {
-        boolean qwords = (flags & RubyLexer.STR_FUNC_QWORDS) != 0;
-        boolean expand = (flags & RubyLexer.STR_FUNC_EXPAND) != 0;
-        boolean escape = (flags & RubyLexer.STR_FUNC_ESCAPE) != 0;
-        boolean regexp = (flags & RubyLexer.STR_FUNC_REGEXP) != 0;
-        boolean symbol = (flags & RubyLexer.STR_FUNC_SYMBOL) != 0;
+    public int parseStringIntoBuffer(RubyLexer lexer, ByteList buffer, Encoding enc[]) throws IOException {
+        boolean qwords = (flags & STR_FUNC_QWORDS) != 0;
+        boolean expand = (flags & STR_FUNC_EXPAND) != 0;
+        boolean escape = (flags & STR_FUNC_ESCAPE) != 0;
+        boolean regexp = (flags & STR_FUNC_REGEXP) != 0;
+        boolean symbol = (flags & STR_FUNC_SYMBOL) != 0;
         boolean hasNonAscii = false;
         int c;
-        Encoding encoding = lexer.getEncoding();
 
-        while ((c = src.read()) != RubyLexer.EOF) {
+        while ((c = lexer.nextc()) != EOF) {
             if (begin != '\0' && c == begin) {
                 nest++;
             } else if (c == end) {
                 if (nest == 0) {
-                    src.unread(c);
+                    lexer.pushback(c);
                     break;
                 }
                 nest--;
-            } else if (expand && c == '#' && !src.peek('\n')) {
-                int c2 = src.read();
+            } else if (expand && c == '#' && !lexer.peek('\n')) {
+                int c2 = lexer.nextc();
 
                 if (c2 == '$' || c2 == '@' || c2 == '{') {
-                    src.unread(c2);
-                    src.unread(c);
+                    lexer.pushback(c2);
+                    lexer.pushback(c);
                     break;
                 }
-                src.unread(c2);
+                lexer.pushback(c2);
             } else if (c == '\\') {
-                c = src.read();
+                c = lexer.nextc();
                 switch (c) {
                 case '\n':
                     if (qwords) break;
@@ -301,94 +306,123 @@ public class StringTerm extends StrTerm {
                         lexer.readUTFEscape(buffer, true, symbol);
                     }
 
-                    if (hasNonAscii && buffer.getEncoding() != encoding) {
-                        mixedEscape(lexer, buffer.getEncoding(), encoding);
+                    if (hasNonAscii && buffer.getEncoding() != enc[0]) {
+                        mixedEscape(lexer, buffer.getEncoding(), enc[0]);
                     }
 
                     continue;
                 default:
-                    if (regexp) {
-                        src.unread(c);
-                        parseEscapeIntoBuffer(lexer, encoding, src, buffer);
+                    if (c == EOF) return EOF;
 
-                        if (hasNonAscii && buffer.getEncoding() != encoding) {
-                            mixedEscape(lexer, buffer.getEncoding(), encoding);
+                    if (!lexer.isASCII(c)) {
+                        if (!expand) buffer.append('\\');
+
+                        // goto non_ascii
+                        hasNonAscii = true;
+
+                        if (buffer.getEncoding() != enc[0]) {
+                            mixedEscape(lexer, buffer.getEncoding(), enc[0]);
+                            continue;
+                        }
+
+                        if (!lexer.tokadd_mbchar(c, buffer)) {
+                            throw new SyntaxException(PID.INVALID_MULTIBYTE_CHAR, lexer.getPosition(),
+                                    null, "invalid multibyte char (" + enc[0] + ")");
+                        }
+
+                        continue;
+                        // end of goto non_ascii
+                    }
+
+                    if (regexp) {
+                        if (c == end && !simple_re_meta(c)) {
+                            buffer.append('\\');
+                            buffer.append(c);
+                            continue;
+                        }
+                        lexer.pushback(c);
+                        parseEscapeIntoBuffer(lexer, buffer);
+
+                        if (hasNonAscii && buffer.getEncoding() != enc[0]) {
+                            mixedEscape(lexer, buffer.getEncoding(), enc[0]);
                         }
                         
                         continue;
                     } else if (expand) {
-                        /* add NonAscii to Buffer after backslash */
-                        if (!Encoding.isAscii((byte) c)) {
-                            if (addNonAsciiToBuffer(c, src, encoding, lexer, buffer) == RubyLexer.EOF) return RubyLexer.EOF;
-
-                            continue;
-                        }
-
-                        src.unread(c);
+                        lexer.pushback(c);
                         if (escape) buffer.append('\\');
                         c = lexer.readEscape();
                     } else if (qwords && Character.isWhitespace(c)) {
                         /* ignore backslashed spaces in %w */
                     } else if (c != end && !(begin != '\0' && c == begin)) {
                         buffer.append('\\');
-
-                        /* add NonAscii to Buffer after backslash */
-                        if (!Encoding.isAscii((byte) c)) {
-                            if (addNonAsciiToBuffer(c, src, encoding, lexer, buffer) == RubyLexer.EOF) return RubyLexer.EOF;
-
-                            continue;
-                        }
+                        lexer.pushback(c);;
+                        continue;
                     }
                 }
-            } else if (!Encoding.isAscii((byte) c)) {
-                if (buffer.getEncoding() != encoding) {
-                    mixedEscape(lexer, buffer.getEncoding(), encoding);
+            } else if (!lexer.isASCII(c)) {
+nonascii:       hasNonAscii = true; // Label for comparison with MRI only.
+
+                if (buffer.getEncoding() != enc[0]) {
+                    mixedEscape(lexer, buffer.getEncoding(), enc[0]);
+                    continue;
                 }
-                
-                if (addNonAsciiToBuffer(c, src, encoding, lexer, buffer) == RubyLexer.EOF) return RubyLexer.EOF;
+
+                if (!lexer.tokadd_mbchar(c, buffer)) {
+                    throw new SyntaxException(PID.INVALID_MULTIBYTE_CHAR, lexer.getPosition(),
+                            null, "invalid multibyte char (" + enc[0] + ")");
+                }
 
                 continue;
+                // end of goto non_ascii
             } else if (qwords && Character.isWhitespace(c)) {
-                src.unread(c);
+                lexer.pushback(c);
                 break;
             }
 
-            // Hmm did they change this?
-/*          if (c == '\0' && symbol) {
-                throw new SyntaxException(PID.NUL_IN_SYMBOL, lexer.getPosition(),
-                        src.getCurrentLine(), "symbol cannot contain '\\0'");
-            } else*/ if ((c & 0x80) != 0) {
+            if ((c & 0x80) != 0) {
                 hasNonAscii = true;
-                if (buffer.getEncoding() != encoding) {
-                    mixedEscape(lexer, buffer.getEncoding(), encoding);
+                if (buffer.getEncoding() != enc[0]) {
+                    mixedEscape(lexer, buffer.getEncoding(), enc[0]);
+                    continue;
                 }
             }
             buffer.append(c);
         }
+
+        enc[0] = buffer.getEncoding();
         
         return c;
     }
 
+    private boolean simple_re_meta(int c) {
+        switch(c) {
+            case '$': case '*': case '+': case '.': case '?': case '^': case '|': case ')': case ']': case '}': case '>':
+                return true;
+        }
+
+        return false;
+    }    
+
     // Was a goto in original ruby lexer
-    private void escaped(RubyLexer lexer, Encoding encoding, LexerSource src, ByteList buffer) throws java.io.IOException {
+    private void escaped(RubyLexer lexer, ByteList buffer) throws java.io.IOException {
         int c;
 
-        switch (c = src.read()) {
+        switch (c = lexer.nextc()) {
         case '\\':
-            parseEscapeIntoBuffer(lexer, encoding, src, buffer);
+            parseEscapeIntoBuffer(lexer, buffer);
             break;
-        case RubyLexer.EOF:
-            throw new SyntaxException(PID.INVALID_ESCAPE_SYNTAX, src.getPosition(),
-                    src.getCurrentLine(), "Invalid escape character syntax");
+        case EOF:
+            lexer.compile_error("Invalid escape character syntax");
         default:
             buffer.append(c);
         }
     }
 
-    private void parseEscapeIntoBuffer(RubyLexer lexer, Encoding encoding, LexerSource src, ByteList buffer) throws java.io.IOException {
+    private void parseEscapeIntoBuffer(RubyLexer lexer, ByteList buffer) throws java.io.IOException {
         int c;
 
-        switch (c = src.read()) {
+        switch (c = lexer.nextc()) {
         case '\n':
             break; /* just ignore */
         case '0':
@@ -402,13 +436,12 @@ public class StringTerm extends StrTerm {
             buffer.append('\\');
             buffer.append(c);
             for (int i = 0; i < 2; i++) {
-                c = src.read();
-                if (c == RubyLexer.EOF) {
-                    throw new SyntaxException(PID.INVALID_ESCAPE_SYNTAX, src.getPosition(),
-                            src.getCurrentLine(), "Invalid escape character syntax");
+                c = lexer.nextc();
+                if (c == EOF) {
+                    lexer.compile_error("Invalid escape character syntax");
                 }
-                if (!RubyLexer.isOctChar(c)) {
-                    src.unread(c);
+                if (!isOctChar(c)) {
+                    lexer.pushback(c);
                     break;
                 }
                 buffer.append(c);
@@ -417,62 +450,42 @@ public class StringTerm extends StrTerm {
         case 'x': /* hex constant */
             buffer.append('\\');
             buffer.append(c);
-            c = src.read();
-            if (!RubyLexer.isHexChar(c)) {
-                throw new SyntaxException(PID.INVALID_ESCAPE_SYNTAX, src.getPosition(),
-                        src.getCurrentLine(), "Invalid escape character syntax");
+            c = lexer.nextc();
+            if (!isHexChar(c)) {
+                lexer.compile_error("Invalid escape character syntax");
             }
             buffer.append(c);
-            c = src.read();
-            if (RubyLexer.isHexChar(c)) {
+            c = lexer.nextc();
+            if (isHexChar(c)) {
                 buffer.append(c);
             } else {
-                src.unread(c);
+                lexer.pushback(c);
             }
             break;
         case 'M':
-            if ((c = src.read()) != '-') {
-                throw new SyntaxException(PID.INVALID_ESCAPE_SYNTAX, src.getPosition(),
-                        src.getCurrentLine(), "Invalid escape character syntax");
+            if ((lexer.nextc()) != '-') {
+                lexer.compile_error("Invalid escape character syntax");
             }
             buffer.append(new byte[] { '\\', 'M', '-' });
-            escaped(lexer, encoding, src, buffer);
+            escaped(lexer, buffer);
             break;
         case 'C':
-            if ((c = src.read()) != '-') {
-                throw new SyntaxException(PID.INVALID_ESCAPE_SYNTAX, src.getPosition(),
-                        src.getCurrentLine(), "Invalid escape character syntax");
+            if ((lexer.nextc()) != '-') {
+                lexer.compile_error("Invalid escape character syntax");
             }
             buffer.append(new byte[] { '\\', 'C', '-' });
-            escaped(lexer, encoding, src, buffer);
+            escaped(lexer, buffer);
             break;
         case 'c':
             buffer.append(new byte[] { '\\', 'c' });
-            escaped(lexer, encoding, src, buffer);
+            escaped(lexer, buffer);
             break;
-        case RubyLexer.EOF:
-            throw new SyntaxException(PID.INVALID_ESCAPE_SYNTAX, src.getPosition(),
-                    src.getCurrentLine(), "Invalid escape character syntax");
+        case EOF:
+            lexer.compile_error("Invalid escape character syntax");
         default:
-            if (!Encoding.isAscii((byte) c)) {
-                addNonAsciiToBuffer(c, src, encoding, lexer, buffer);
-            } else {
-                if (c != '\\' || c != end) buffer.append('\\');
+            if (c != '\\' || c != end) buffer.append('\\');
 
-                buffer.append(c);
-            }
+            buffer.append(c);
         }
-    }
-
-    private int addNonAsciiToBuffer(int c, LexerSource src, Encoding encoding, RubyLexer lexer, ByteList buffer) throws SyntaxException, IOException {
-        c = src.readCodepoint(c, encoding);
-
-        if (c == -2) { // FIXME: Hack
-            throw new SyntaxException(PID.INVALID_MULTIBYTE_CHAR, lexer.getPosition(),
-                    null, "invalid multibyte char (" + encoding + ")");
-        }
-
-        // FIXME: We basically go from bytes to codepoint back to bytes to append them...fix this
-        return lexer.tokenAddMBC(c, buffer);
     }
 }

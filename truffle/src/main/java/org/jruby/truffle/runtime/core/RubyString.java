@@ -9,6 +9,7 @@
  */
 package org.jruby.truffle.runtime.core;
 
+import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.interop.ForeignAccessFactory;
 import com.oracle.truffle.api.nodes.Node;
@@ -24,6 +25,7 @@ import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.util.ByteList;
 import org.jruby.util.CodeRangeable;
 import org.jruby.util.StringSupport;
+import org.jruby.util.io.EncodingUtils;
 
 /**
  * Represents the Ruby {@code String} class.
@@ -65,67 +67,6 @@ public class RubyString extends RubyBasicObject implements CodeRangeable {
         return bytes;
     }
 
-    public static String ljust(String string, int length, String padding) {
-        final StringBuilder builder = new StringBuilder();
-
-        builder.append(string);
-
-        int n = 0;
-
-        while (builder.length() < length) {
-            builder.append(padding.charAt(n));
-
-            n++;
-
-            if (n == padding.length()) {
-                n = 0;
-            }
-        }
-
-        return builder.toString();
-    }
-
-    public static String rjust(String string, int length, String padding) {
-        final StringBuilder builder = new StringBuilder();
-
-        int n = 0;
-
-        while (builder.length() + string.length() < length) {
-            builder.append(padding.charAt(n));
-
-            n++;
-
-            if (n == padding.length()) {
-                n = 0;
-            }
-        }
-
-        builder.append(string);
-
-        return builder.toString();
-    }
-
-    public int count(RubyString[] otherStrings) {
-        if (bytes.getRealSize() == 0) {
-            return 0;
-        }
-
-        RubyString otherStr = otherStrings[0];
-        Encoding enc = otherStr.getBytes().getEncoding();
-
-        final boolean[]table = new boolean[StringSupport.TRANS_SIZE + 1];
-        StringSupport.TrTables tables = StringSupport.trSetupTable(otherStr.getBytes(), getContext().getRuntime(), table, null, true, enc);
-        for (int i = 1; i < otherStrings.length; i++) {
-            otherStr = otherStrings[i];
-
-            // TODO (nirvdrum Dec. 19, 2014): This method should be encoding aware and check that the strings have compatible encodings.  See non-Truffle JRuby for a more complete solution.
-            //enc = checkEncoding(otherStr);
-            tables = StringSupport.trSetupTable(otherStr.getBytes(), getContext().getRuntime(), table, tables, false, enc);
-        }
-
-        return StringSupport.countCommon19(getBytes(), getContext().getRuntime(), table, tables, enc);
-    }
-
     @Override
     @TruffleBoundary
     public String toString() {
@@ -135,11 +76,23 @@ public class RubyString extends RubyBasicObject implements CodeRangeable {
     }
 
     public int length() {
-        return StringSupport.strLengthFromRubyString(this);
+        if (CompilerDirectives.injectBranchProbability(
+                CompilerDirectives.FASTPATH_PROBABILITY,
+                StringSupport.isSingleByteOptimizable(this, getByteList().getEncoding()))) {
+
+            return getByteList().getRealSize();
+
+        } else {
+            return StringSupport.strLengthFromRubyString(this);
+        }
+    }
+
+    public int normalizeIndex(int length, int index) {
+        return RubyArray.normalizeIndex(length, index);
     }
 
     public int normalizeIndex(int index) {
-        return RubyArray.normalizeIndex(bytes.length(), index);
+        return normalizeIndex(length(), index);
     }
 
     public int clampExclusiveIndex(int index) {
@@ -205,6 +158,12 @@ public class RubyString extends RubyBasicObject implements CodeRangeable {
     }
 
     @Override
+    public final void modifyAndKeepCodeRange() {
+        modify();
+        keepCodeRange();
+    }
+
+    @Override
     @TruffleBoundary
     public Encoding checkEncoding(CodeRangeable other) {
         final Encoding encoding = StringSupport.areCompatible(this, other);
@@ -255,4 +214,7 @@ public class RubyString extends RubyBasicObject implements CodeRangeable {
         return StringSupport.codeRangeScan(bytes.getEncoding(), bytes);
     }
 
+    public boolean singleByteOptimizable() {
+        return StringSupport.isSingleByteOptimizable(this, EncodingUtils.STR_ENC_GET(this));
+    }
 }

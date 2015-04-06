@@ -4,7 +4,6 @@ import org.jcodings.Encoding;
 import org.jcodings.EncodingDB;
 import org.jcodings.Ptr;
 import org.jcodings.specific.ASCIIEncoding;
-import org.jcodings.specific.USASCIIEncoding;
 import org.jcodings.specific.UTF16BEEncoding;
 import org.jcodings.specific.UTF16LEEncoding;
 import org.jcodings.specific.UTF32BEEncoding;
@@ -16,6 +15,8 @@ import org.jcodings.transcode.EConvResult;
 import org.jcodings.transcode.Transcoder;
 import org.jcodings.transcode.TranscoderDB;
 import org.jcodings.transcode.Transcoding;
+import org.jcodings.unicode.UnicodeEncoding;
+import org.jcodings.util.CaseInsensitiveBytesHash;
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubyBasicObject;
@@ -24,7 +25,6 @@ import org.jruby.RubyEncoding;
 import org.jruby.RubyFixnum;
 import org.jruby.RubyHash;
 import org.jruby.RubyIO;
-import org.jruby.RubyInteger;
 import org.jruby.RubyMethod;
 import org.jruby.RubyNumeric;
 import org.jruby.RubyProc;
@@ -66,7 +66,7 @@ public class EncodingUtils {
         if (!encStr.getEncoding().isAsciiCompatible()) {
             throw context.runtime.newArgumentError("invalid name encoding (non ASCII)");
         }
-        Encoding idx = context.runtime.getEncodingService().getEncodingFromObject(enc);
+        Encoding idx = context.runtime.getEncodingService().getEncodingFromObject(encStr);
         // check for missing encoding is in getEncodingFromObject
         return idx;
     }
@@ -687,7 +687,9 @@ public class EncodingUtils {
         int c;
         int l;
 
-        // if e < p check unnecessary
+        if (e <= p) {
+            return -1;
+        }
 
         if (encAsciicompat(enc)) {
             c = pBytes[p] & 0xFF;
@@ -1338,7 +1340,7 @@ public class EncodingUtils {
         switch ((int)((RubyFixnum)b1).getLongValue()) {
             case 0xEF:
                 if ((b2 = io.getbyte(context)).isNil()) break;
-                if (((RubyFixnum)b2).getLongValue() == 0xBB && !(b3 = io.getbyte(context)).isNil()) {
+                if (b2 instanceof RubyFixnum && ((RubyFixnum)b2).getLongValue() == 0xBB && !(b3 = io.getbyte(context)).isNil()) {
                     if (((RubyFixnum)b3).getLongValue() == 0xBF) {
                         return UTF8Encoding.INSTANCE;
                     }
@@ -1348,16 +1350,16 @@ public class EncodingUtils {
                 break;
             case 0xFE:
                 if ((b2 = io.getbyte(context)).isNil()) break;
-                if (((RubyFixnum)b2).getLongValue() == 0xFF) {
+                if (b2 instanceof RubyFixnum && ((RubyFixnum)b2).getLongValue() == 0xFF) {
                     return UTF16BEEncoding.INSTANCE;
                 }
                 io.ungetbyte(context, b2);
                 break;
             case 0xFF:
                 if ((b2 = io.getbyte(context)).isNil()) break;
-                if (((RubyFixnum)b2).getLongValue() == 0xFE) {
+                if (b2 instanceof RubyFixnum && ((RubyFixnum)b2).getLongValue() == 0xFE) {
                     b3 = io.getbyte(context);
-                    if (((RubyFixnum)b3).getLongValue() == 0 && !(b4 = io.getbyte(context)).isNil()) {
+                    if (b3 instanceof RubyFixnum && ((RubyFixnum)b3).getLongValue() == 0 && !(b4 = io.getbyte(context)).isNil()) {
                         if (((RubyFixnum)b4).getLongValue() == 0) {
                             return UTF32LEEncoding.INSTANCE;
                         }
@@ -1372,9 +1374,9 @@ public class EncodingUtils {
                 break;
             case 0:
                 if ((b2 = io.getbyte(context)).isNil()) break;
-                if (((RubyFixnum)b2).getLongValue() == 0 && !(b3 = io.getbyte(context)).isNil()) {
-                    if (((RubyFixnum)b3).getLongValue() == 0xFE && !(b4 = io.getbyte(context)).isNil()) {
-                        if (((RubyFixnum)b4).getLongValue() == 0xFF) {
+                if (b2 instanceof RubyFixnum && ((RubyFixnum)b2).getLongValue() == 0 && !(b3 = io.getbyte(context)).isNil()) {
+                    if (b3 instanceof RubyFixnum && ((RubyFixnum)b3).getLongValue() == 0xFE && !(b4 = io.getbyte(context)).isNil()) {
+                        if (b4 instanceof RubyFixnum && ((RubyFixnum)b4).getLongValue() == 0xFF) {
                             return UTF32BEEncoding.INSTANCE;
                         }
                         io.ungetbyte(context, b4);
@@ -1810,17 +1812,64 @@ public class EncodingUtils {
             throw context.runtime.newArgumentError("replacement must be valid byte sequence '" + str + "'");
         }
         else if (cr == StringSupport.CR_7BIT) {
-            Encoding e = str.getEncoding();
+            Encoding e = STR_ENC_GET(str);
             if (!enc.isAsciiCompatible()) {
                 throw context.runtime.newEncodingCompatibilityError("incompatible character encodings: " + enc + " and " + e);
             }
         }
         else { /* ENC_CODERANGE_VALID */
-            Encoding e = str.getEncoding();
+            Encoding e = STR_ENC_GET(str);
             if (enc != e) {
                 throw context.runtime.newEncodingCompatibilityError("incompatible character encodings: " + enc + " and " + e);
             }
         }
         return str;
+    }
+
+    // MRI: get_encoding
+    public static Encoding getEncoding(ByteList str) {
+        return getActualEncoding(str.getEncoding(), str);
+    }
+
+    private static final Encoding UTF16Dummy = EncodingDB.getEncodings().get("UTF-16".getBytes()).getEncoding();
+    private static final Encoding UTF32Dummy = EncodingDB.getEncodings().get("UTF-32".getBytes()).getEncoding();
+
+    // MRI: get_actual_encoding
+    public static Encoding getActualEncoding(Encoding enc, ByteList byteList) {
+        if (enc.isDummy() && enc instanceof UnicodeEncoding) {
+            // handle dummy UTF-16 and UTF-32 by scanning for BOM, as in MRI
+            byte[] bytes = byteList.unsafeBytes();
+            int p = byteList.begin();
+            int end = p + byteList.getRealSize();
+
+            if (enc == UTF16Dummy && end - p >= 2) {
+                int c0 = bytes[p] & 0xff;
+                int c1 = bytes[p + 1] & 0xff;
+
+                if (c0 == 0xFE && c1 == 0xFF) {
+                    return UTF16BEEncoding.INSTANCE;
+                } else if (c0 == 0xFF && c1 == 0xFE) {
+                    return UTF16LEEncoding.INSTANCE;
+                }
+                return ASCIIEncoding.INSTANCE;
+            } else if (enc == UTF32Dummy && end - p >= 4) {
+                int c0 = bytes[p] & 0xff;
+                int c1 = bytes[p + 1] & 0xff;
+                int c2 = bytes[p + 2] & 0xff;
+                int c3 = bytes[p + 3] & 0xff;
+
+                if (c0 == 0 && c1 == 0 && c2 == 0xFE && c3 == 0xFF) {
+                    return UTF32BEEncoding.INSTANCE;
+                } else if (c3 == 0 && c2 == 0 && c1 == 0xFE && c0 == 0xFF) {
+                    return UTF32LEEncoding.INSTANCE;
+                }
+                return ASCIIEncoding.INSTANCE;
+            }
+        }
+        return enc;
+    }
+
+    public static Encoding STR_ENC_GET(ByteListHolder str) {
+        return getEncoding(str.getByteList());
     }
 }

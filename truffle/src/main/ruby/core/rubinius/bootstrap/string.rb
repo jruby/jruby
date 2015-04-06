@@ -48,6 +48,11 @@ class String
     raise PrimitiveFailure, "String#find_string primitive failed"
   end
 
+  def find_string_reverse(pattern, start)
+    Rubinius.primitive :string_rindex
+    raise PrimitiveFailure, "String#find_string_reverse primitive failed"
+  end
+
   def chr_at(byte)
     Rubinius.primitive :string_chr_at
     raise ArgumentError, "String#chr_at primitive failed"

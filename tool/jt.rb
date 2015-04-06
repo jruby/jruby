@@ -240,7 +240,6 @@ module Commands
       args.shift
       options += %w[--excl-tag slow]
     end
-    args = [':language', ':core'] if args.empty?
     mspec 'run', *options, *args
   end
 
@@ -276,7 +275,7 @@ module Commands
     bench_args = ["-I#{bench_dir}/lib", "#{bench_dir}/bin/bench"]
     case command
     when 'debug'
-      env_vars = env_vars.merge({'JRUBY_OPTS' => '-J-G:+TraceTruffleCompilation -J-G:+DumpOnError'})
+      env_vars = env_vars.merge({'JRUBY_OPTS' => '-J-G:+TraceTruffleCompilation -J-G:+DumpOnError -J-G:+TruffleCompilationExceptionsAreThrown'})
       bench_args += ['score', 'jruby-9000-dev-truffle-graal', '--show-commands', '--show-samples']
       raise 'specify a single benchmark for run - eg classic-fannkuch-redux' if args.size != 1
     when 'reference'

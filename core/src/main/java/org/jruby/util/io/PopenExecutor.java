@@ -488,7 +488,7 @@ public class PopenExecutor {
         IRubyObject port;
         OpenFile write_fptr;
         IRubyObject write_port;
-        PosixShim posix = new PosixShim(runtime.getPosix());
+        PosixShim posix = new PosixShim(runtime);
 
         Errno e = null;
 

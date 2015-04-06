@@ -1,1 +1,0 @@
-fails:Matrix::EigenvalueDecomposition#eigenvectors returns an array of complex eigenvectors for a rotation matrix

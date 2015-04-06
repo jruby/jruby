@@ -45,6 +45,7 @@ import java.io.ObjectOutputStream;
 import java.util.List;
 import java.util.Set;
 
+import org.jcodings.Encoding;
 import org.jruby.anno.JRubyClass;
 import org.jruby.runtime.Helpers;
 import org.jruby.runtime.Block;
@@ -530,7 +531,19 @@ public class RubyObject extends RubyBasicObject {
      * Prefered over callMethod(context, "inspect")
      */
     public static RubyString inspect(ThreadContext context, IRubyObject object) {
-        return RubyString.objAsString(context, object.callMethod(context, "inspect"));
+        Ruby runtime = context.runtime;
+        RubyString str = RubyString.objAsString(context, object.callMethod(context, "inspect"));
+        Encoding ext = runtime.getDefaultExternalEncoding();
+        if (!ext.isAsciiCompatible()) {
+            if (!str.isAsciiOnly()) {
+                throw runtime.newEncodingCompatibilityError("inspected result must be ASCII only if default external encoding is ASCII incompatible");
+            }
+            return str;
+        }
+        if (str.getEncoding() != ext && !str.isAsciiOnly()) {
+            throw runtime.newEncodingCompatibilityError("inspected result must be ASCII only or use the default external encoding");
+        }
+        return str;
     }
 
     /**

@@ -169,6 +169,7 @@ def print_passes_on(scope, passes)
   end
 
   scope.lexical_scopes.each do |child_scope|
+    child_scope.prepare_for_initial_compilation
     print_passes_on(child_scope, passes)
   end
 end
@@ -194,6 +195,7 @@ def ir_setup(root)
   builder = org.jruby.ir.IRBuilder
 
   scope = builder.build_root(manager, root).scope
+  scope.prepare_for_initial_compilation
   passes = manager.get_compiler_passes(scope)
   [scope, passes]
 end

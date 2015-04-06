@@ -46,6 +46,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import jnr.posix.POSIX;
 import jnr.posix.POSIXFactory;
+
+import org.jruby.Ruby;
 import org.jruby.util.ByteList;
 import org.jruby.util.JRubyFile;
 import org.jruby.util.log.Logger;
@@ -773,7 +775,7 @@ public class ChannelDescriptor {
                 return new ChannelDescriptor(Channels.newChannel(is), flags);
             }
 
-            Channel ch = JRubyFile.createResource(posix, cwd, path).openChannel(flags, perm);
+            Channel ch = JRubyFile.createResource(Ruby.getGlobalRuntime(), cwd, path).openChannel(flags, perm);
             return new ChannelDescriptor(ch, flags);
         } catch (NullPointerException npe) { npe.printStackTrace(); throw npe; }
     }

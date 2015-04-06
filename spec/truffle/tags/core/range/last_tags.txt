@@ -1,9 +1,0 @@
-fails:Range#last returns the specified number of elements from the end
-fails:Range#last returns an empty array for an empty Range
-fails:Range#last returns an empty array when passed zero
-fails:Range#last returns all elements in the range when count exceeds the number of elements
-fails:Range#last calls #to_int to convert the argument
-fails:Range#last raises a TypeError if #to_int does not return an Integer
-fails:Range#last truncates the value when passed a Float
-fails:Range#last raises a TypeError when passed nil
-fails:Range#last raises a TypeError when passed a String

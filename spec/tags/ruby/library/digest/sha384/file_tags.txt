@@ -1,1 +1,1 @@
-fails:Digest::SHA384.file raises a Errno::EISDIR when passed a path that is a directory
+critical(hangs):Digest::SHA384.file raises an Errno::EISDIR when passed a path that is a directory

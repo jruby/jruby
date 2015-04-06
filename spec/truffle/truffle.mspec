@@ -100,10 +100,18 @@ class MSpecScript
   set :core, core
 
   set :library, [
+    "spec/ruby/library/abbrev",
+    "spec/ruby/library/base64",
+    "spec/ruby/library/complex",
     "spec/ruby/library/erb",
+    "spec/ruby/library/getoptlong",
+    "spec/ruby/library/observer",
     "spec/ruby/library/set",
+    "spec/ruby/library/shellwords",
     "spec/ruby/library/strscan",
-    "spec/ruby/library/stringio"
+    "spec/ruby/library/stringio",
+    "spec/ruby/library/thread",
+    "spec/ruby/library/uri"
   ]
 
   set :tags_patterns, [

@@ -27,17 +27,15 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.util;
 
-import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Enumeration;
 import java.util.List;
-import jnr.posix.POSIX;
-import org.jruby.RubyEncoding;
-import org.jruby.RubyFile;
 
+import jnr.posix.POSIX;
+
+import org.jruby.Ruby;
+import org.jruby.RubyEncoding;
 import org.jruby.platform.Platform;
-import java.io.IOException;
 
 /**
  * This class exists as a counterpart to the dir.c file in 
@@ -297,10 +295,10 @@ public class Dir {
         return ok == not ? -1 : pat + 1;
     }
 
-    public static List<ByteList> push_glob(POSIX posix, String cwd, ByteList globByteList, int flags) {
+    public static List<ByteList> push_glob(Ruby runtime, String cwd, ByteList globByteList, int flags) {
         List<ByteList> result = new ArrayList<ByteList>();
         if (globByteList.length() > 0) {
-            push_braces(posix, cwd, result, new GlobPattern(globByteList, flags));
+            push_braces(runtime, cwd, result, new GlobPattern(globByteList, flags));
         }
 
         return result;
@@ -415,7 +413,7 @@ public class Dir {
     /*
      * Process {}'s (example: Dir.glob("{jruby,jython}/README*") 
      */
-    private static int push_braces(POSIX posix, String cwd, List<ByteList> result, GlobPattern pattern) {
+    private static int push_braces(Ruby runtime, String cwd, List<ByteList> result, GlobPattern pattern) {
         pattern.reset();
         int lbrace = pattern.indexOf((byte) '{'); // index of left-most brace
         int rbrace = pattern.findClosingIndexOf(lbrace);// index of right-most brace
@@ -436,7 +434,7 @@ public class Dir {
                     unescaped.append(b);
                 }
             }
-            return push_globs(posix, cwd, result, unescaped.getUnsafeBytes(), unescaped.begin(), unescaped.length(), pattern.flags);
+            return push_globs(runtime, cwd, result, unescaped.getUnsafeBytes(), unescaped.begin(), unescaped.length(), pattern.flags);
         }
 
         // Peel onion...make subpatterns out of outer layer of glob and recall with each subpattern 
@@ -454,16 +452,16 @@ public class Dir {
             buf.append(pattern.bytes, pattern.begin, lbrace - pattern.begin);
             buf.append(pattern.bytes, middleRegionIndex, i - middleRegionIndex);
             buf.append(pattern.bytes, rbrace + 1, pattern.end - (rbrace + 1));
-            int status = push_braces(posix, cwd, result, new GlobPattern(buf.getUnsafeBytes(), buf.getBegin(), buf.getRealSize(),pattern.flags));
+            int status = push_braces(runtime, cwd, result, new GlobPattern(buf.getUnsafeBytes(), buf.getBegin(), buf.getRealSize(),pattern.flags));
             if(status != 0) return status;
         }
         
         return 0; // All braces pushed..
     }
 
-    private static int push_globs(POSIX posix, String cwd, List<ByteList> ary, byte[] pattern, int pbegin, int pend, int pflags) {
+    private static int push_globs(Ruby runtime, String cwd, List<ByteList> ary, byte[] pattern, int pbegin, int pend, int pflags) {
         pflags |= FNM_SYSCASE;
-        return glob_helper(posix, cwd, pattern, pbegin, pend, -1, pflags, glob_caller, new GlobArgs(push_pattern, ary));
+        return glob_helper(runtime, cwd, pattern, pbegin, pend, -1, pflags, glob_caller, new GlobArgs(push_pattern, ary));
     }
 
     public static ArrayList<String> braces(String pattern, int flags, ArrayList<String> patterns) {
@@ -656,7 +654,7 @@ public class Dir {
         return c == '.' && name.charAt(2) == '/';
     }
 
-    private static int addToResultIfExists(POSIX posix, String cwd, byte[] bytes, int begin, int end, int flags, GlobFunc func, GlobArgs arg) {
+    private static int addToResultIfExists(Ruby runtime, String cwd, byte[] bytes, int begin, int end, int flags, GlobFunc func, GlobArgs arg) {
         String fileName = newStringFromUTF8(bytes, begin, end - begin);
 
         // FIXME: Ultimately JRubyFile.createResource should do this but all 1.7.x is only selectively honoring raw
@@ -667,7 +665,7 @@ public class Dir {
             cwd = cwd + "/";
         }
 
-        FileResource file = JRubyFile.createResource(posix, cwd, fileName);
+        FileResource file = JRubyFile.createResource(runtime, cwd, fileName);
 
         if (file.exists()) {
             boolean trailingSlash = bytes[end - 1] == '/';
@@ -703,7 +701,7 @@ public class Dir {
         return 0;
     }
 
-    private static int glob_helper(POSIX posix, String cwd, byte[] bytes, int begin, int end, int sub, int flags, GlobFunc func, GlobArgs arg) {
+    private static int glob_helper(Ruby runtime, String cwd, byte[] bytes, int begin, int end, int sub, int flags, GlobFunc func, GlobArgs arg) {
         int p,m;
         int status = 0;
         byte[] newpath = null;
@@ -725,9 +723,9 @@ public class Dir {
             }
 
             if (isAbsolutePath(bytes, begin, end)) {
-                status = addToResultIfExists(posix, null, bytes, begin, end, flags, func, arg);
+                status = addToResultIfExists(runtime, null, bytes, begin, end, flags, func, arg);
             } else if ((end - begin) > 0) { // Length check is a hack.  We should not be reeiving "" as a filename ever.
-                status = addToResultIfExists(posix, cwd, bytes, begin, end, flags, func, arg);
+                status = addToResultIfExists(runtime, cwd, bytes, begin, end, flags, func, arg);
             }
 
             return status;
@@ -746,7 +744,7 @@ public class Dir {
                     byte[] magic = extract_elem(bytes,p,end);
                     boolean recursive = false;
 
-                    st = JRubyFile.createResource(posix, cwd, newStringFromUTF8(dir));
+                    st = JRubyFile.createResource(runtime, cwd, newStringFromUTF8(dir));
 
                     if (st.isDirectory()) {
                         if(m != -1 && Arrays.equals(magic, DOUBLE_STAR)) {
@@ -755,7 +753,7 @@ public class Dir {
                             buf.length(0);
                             buf.append(base);
                             buf.append(bytes, (base.length > 0 ? m : m + 1), end - (base.length > 0 ? m : m + 1));
-                            status = glob_helper(posix, cwd, buf.getUnsafeBytes(), buf.getBegin(), buf.getRealSize(), n, flags, func, arg);
+                            status = glob_helper(runtime, cwd, buf.getUnsafeBytes(), buf.getBegin(), buf.getRealSize(), n, flags, func, arg);
                             if(status != 0) {
                                 break finalize;
                             }
@@ -776,13 +774,13 @@ public class Dir {
                             buf.append(base);
                             buf.append(isRoot(base) ? EMPTY : SLASH );
                             buf.append(getBytesInUTF8(dirp[i]));
-                            st = JRubyFile.createResource(posix, cwd, newStringFromUTF8(buf.getUnsafeBytes(), buf.getBegin(), buf.getRealSize()));
+                            st = JRubyFile.createResource(runtime, cwd, newStringFromUTF8(buf.getUnsafeBytes(), buf.getBegin(), buf.getRealSize()));
                             if(!st.isSymLink() && st.isDirectory() && !".".equals(dirp[i]) && !"..".equals(dirp[i])) {
                                 int t = buf.getRealSize();
                                 buf.append(SLASH);
                                 buf.append(DOUBLE_STAR);
                                 buf.append(bytes, m, end - m);
-                                status = glob_helper(posix, cwd, buf.getUnsafeBytes(), buf.getBegin(), buf.getRealSize(), t, flags, func, arg);
+                                status = glob_helper(runtime, cwd, buf.getUnsafeBytes(), buf.getBegin(), buf.getRealSize(), t, flags, func, arg);
                                 if(status != 0) {
                                     break;
                                 }
@@ -812,13 +810,13 @@ public class Dir {
                     for (DirGlobber globber : link) {
                         ByteList b = globber.link;
                         if (status == 0) {
-                            st = JRubyFile.createResource(posix, cwd, newStringFromUTF8(b.getUnsafeBytes(), 0, b.getRealSize()));
+                            st = JRubyFile.createResource(runtime, cwd, newStringFromUTF8(b.getUnsafeBytes(), 0, b.getRealSize()));
                             if(st.isDirectory()) {
                                 int len = b.getRealSize();
                                 buf.length(0);
                                 buf.append(b);
                                 buf.append(bytes, m, end - m);
-                                status = glob_helper(posix, cwd, buf.getUnsafeBytes(),0, buf.getRealSize(),len,flags,func,arg);
+                                status = glob_helper(runtime, cwd, buf.getUnsafeBytes(),0, buf.getRealSize(),len,flags,func,arg);
                             }
                         }
                     }

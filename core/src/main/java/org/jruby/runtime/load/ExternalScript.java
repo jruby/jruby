@@ -63,7 +63,7 @@ public class ExternalScript implements Library {
                     name = normalizeSeps(canonicalize(path.getPath()));
                 }
 
-                runtime.loadFile(name, in, wrap);
+                runtime.loadFile(name, new LoadServiceResourceInputStream(in), wrap);
             }
 
 

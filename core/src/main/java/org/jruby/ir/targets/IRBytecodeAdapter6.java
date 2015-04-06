@@ -29,8 +29,10 @@ import org.jruby.compiler.impl.SkinnyMethodAdapter;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.Block;
+import org.jruby.runtime.CallSite;
 import org.jruby.runtime.CallType;
 import org.jruby.runtime.Helpers;
+import org.jruby.runtime.MethodIndex;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.callsite.CachingCallSite;
@@ -43,6 +45,7 @@ import org.jruby.util.JavaNameMangler;
 import org.jruby.util.RegexpOptions;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.Opcodes;
+import org.objectweb.asm.Type;
 
 import static org.jruby.util.CodegenUtils.ci;
 import static org.jruby.util.CodegenUtils.p;
@@ -175,11 +178,11 @@ public class IRBytecodeAdapter6 extends IRBytecodeAdapter{
         return sb.toString();
     }
 
-    public void pushDRegexp(Runnable callback, RegexpOptions options, int arity) {
+    public void pushDRegexp(final Runnable callback, final RegexpOptions options, final int arity) {
         if (arity > MAX_ARGUMENTS) throw new NotCompilableException("dynamic regexp has more than " + MAX_ARGUMENTS + " elements");
 
         SkinnyMethodAdapter adapter2;
-        String incomingSig = sig(RubyRegexp.class, params(ThreadContext.class, RubyString.class, arity, int.class));
+        final String incomingSig = sig(RubyRegexp.class, params(ThreadContext.class, RubyString.class, arity, int.class));
 
         if (!getClassData().dregexpMethodsDefined.contains(arity)) {
             adapter2 = new SkinnyMethodAdapter(
@@ -201,29 +204,47 @@ public class IRBytecodeAdapter6 extends IRBytecodeAdapter{
             getClassData().dregexpMethodsDefined.add(arity);
         }
 
-        String cacheField = null;
-        Label done = null;
-
         if (options.isOnce()) {
-            // need to cache result forever
-            cacheField = "dregexp" + getClassData().callSiteCount.getAndIncrement();
-            done = new Label();
-            adapter.getClassVisitor().visitField(Opcodes.ACC_PRIVATE | Opcodes.ACC_STATIC, cacheField, ci(RubyRegexp.class), null, null).visitEnd();
-            adapter.getstatic(getClassData().clsName, cacheField, ci(RubyRegexp.class));
-            adapter.dup();
-            adapter.ifnonnull(done);
-            adapter.pop();
-        }
+            // need to cache result forever, but do it under sync to avoid double init
+            final String cacheField = "dregexp" + getClassData().callSiteCount.getAndIncrement();
+            final Label done = new Label();
+            final String clsDesc = "L" + getClassData().clsName.replaceAll("\\.", "/") + ";";
+            adapter.ldc(Type.getType(clsDesc));
+            adapter.monitorenter();
+            adapter.trycatch(p(Throwable.class),
+                    new Runnable() {
+                        public void run() {
+                            adapter.getClassVisitor().visitField(Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC, cacheField, ci(RubyRegexp.class), null, null).visitEnd();
+                            adapter.getstatic(getClassData().clsName, cacheField, ci(RubyRegexp.class));
+                            adapter.dup();
+                            adapter.ifnonnull(done);
+                            adapter.pop();
 
-        // call synthetic method if we still need to build dregexp
-        callback.run();
-        adapter.ldc(options.toEmbeddedOptions());
-        adapter.invokestatic(getClassData().clsName, "dregexp:" + arity, incomingSig);
+                            // call synthetic method if we still need to build dregexp
+                            callback.run();
+                            adapter.ldc(options.toEmbeddedOptions());
+                            adapter.invokestatic(getClassData().clsName, "dregexp:" + arity, incomingSig);
 
-        if (done != null) {
-            adapter.dup();
-            adapter.putstatic(getClassData().clsName, cacheField, ci(RubyRegexp.class));
-            adapter.label(done);
+                            adapter.dup();
+                            adapter.putstatic(getClassData().clsName, cacheField, ci(RubyRegexp.class));
+                            adapter.label(done);
+
+                            adapter.ldc(Type.getType(clsDesc));
+                            adapter.monitorexit();
+                        }
+                    },
+                    new Runnable() {
+                        public void run() {
+                            adapter.ldc(Type.getType(clsDesc));
+                            adapter.monitorexit();
+                            adapter.athrow();
+                        }
+                    });
+        } else {
+            // call synthetic method if we still need to build dregexp
+            callback.run();
+            adapter.ldc(options.toEmbeddedOptions());
+            adapter.invokestatic(getClassData().clsName, "dregexp:" + arity, incomingSig);
         }
     }
 
@@ -407,6 +428,10 @@ public class IRBytecodeAdapter6 extends IRBytecodeAdapter{
     }
 
     public void invokeOtherOneFixnum(String name, long fixnum) {
+        if (!MethodIndex.hasFastFixnumOps(name)) {
+            pushFixnum(fixnum);
+            invokeOther(name, 1, false);
+        }
         SkinnyMethodAdapter adapter2;
         String incomingSig = sig(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, JVM.OBJECT));
         String outgoingSig = sig(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, JVM.OBJECT, long.class));
@@ -422,18 +447,18 @@ public class IRBytecodeAdapter6 extends IRBytecodeAdapter{
                 null);
 
         // call site object field
-        adapter.getClassVisitor().visitField(Opcodes.ACC_PRIVATE | Opcodes.ACC_STATIC, methodName, ci(CachingCallSite.class), null, null).visitEnd();
+        adapter.getClassVisitor().visitField(Opcodes.ACC_PRIVATE | Opcodes.ACC_STATIC, methodName, ci(CallSite.class), null, null).visitEnd();
 
         // lazily construct it
-        adapter2.getstatic(getClassData().clsName, methodName, ci(CachingCallSite.class));
+        adapter2.getstatic(getClassData().clsName, methodName, ci(CallSite.class));
         adapter2.dup();
         Label doCall = new Label();
         adapter2.ifnonnull(doCall);
         adapter2.pop();
         adapter2.ldc(name);
-        adapter2.invokestatic(p(IRRuntimeHelpers.class), "newNormalCachingCallSite", sig(NormalCachingCallSite.class, String.class));
+        adapter2.invokestatic(p(MethodIndex.class), "getFastFixnumOpsCallSite", sig(CallSite.class, String.class));
         adapter2.dup();
-        adapter2.putstatic(getClassData().clsName, methodName, ci(CachingCallSite.class));
+        adapter2.putstatic(getClassData().clsName, methodName, ci(CallSite.class));
 
         // use call site to invoke
         adapter2.label(doCall);
@@ -442,7 +467,7 @@ public class IRBytecodeAdapter6 extends IRBytecodeAdapter{
         adapter2.aload(2); // target
         adapter2.ldc(fixnum); // fixnum
 
-        adapter2.invokevirtual(p(CachingCallSite.class), "call", outgoingSig);
+        adapter2.invokevirtual(p(CallSite.class), "call", outgoingSig);
         adapter2.areturn();
         adapter2.end();
 
@@ -451,6 +476,10 @@ public class IRBytecodeAdapter6 extends IRBytecodeAdapter{
     }
 
     public void invokeOtherOneFloat(String name, double flote) {
+        if (!MethodIndex.hasFastFloatOps(name)) {
+            pushFloat(flote);
+            invokeOther(name, 1, false);
+        }
         SkinnyMethodAdapter adapter2;
         String incomingSig = sig(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, JVM.OBJECT));
         String outgoingSig = sig(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, JVM.OBJECT, double.class));
@@ -466,18 +495,18 @@ public class IRBytecodeAdapter6 extends IRBytecodeAdapter{
                 null);
 
         // call site object field
-        adapter.getClassVisitor().visitField(Opcodes.ACC_PRIVATE | Opcodes.ACC_STATIC, methodName, ci(CachingCallSite.class), null, null).visitEnd();
+        adapter.getClassVisitor().visitField(Opcodes.ACC_PRIVATE | Opcodes.ACC_STATIC, methodName, ci(CallSite.class), null, null).visitEnd();
 
         // lazily construct it
-        adapter2.getstatic(getClassData().clsName, methodName, ci(CachingCallSite.class));
+        adapter2.getstatic(getClassData().clsName, methodName, ci(CallSite.class));
         adapter2.dup();
         Label doCall = new Label();
         adapter2.ifnonnull(doCall);
         adapter2.pop();
         adapter2.ldc(name);
-        adapter2.invokestatic(p(IRRuntimeHelpers.class), "newNormalCachingCallSite", sig(NormalCachingCallSite.class, String.class));
+        adapter2.invokestatic(p(MethodIndex.class), "getFastFloatOpsCallSite", sig(CallSite.class, String.class));
         adapter2.dup();
-        adapter2.putstatic(getClassData().clsName, methodName, ci(CachingCallSite.class));
+        adapter2.putstatic(getClassData().clsName, methodName, ci(CallSite.class));
 
         // use call site to invoke
         adapter2.label(doCall);
@@ -486,7 +515,7 @@ public class IRBytecodeAdapter6 extends IRBytecodeAdapter{
         adapter2.aload(2); // target
         adapter2.ldc(flote); // float
 
-        adapter2.invokevirtual(p(CachingCallSite.class), "call", outgoingSig);
+        adapter2.invokevirtual(p(CallSite.class), "call", outgoingSig);
         adapter2.areturn();
         adapter2.end();
 

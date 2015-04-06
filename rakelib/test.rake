@@ -105,6 +105,7 @@ namespace :test do
     end
     t.test_files = files
     t.verbose = true
+    t.ruby_opts << '-I.'
     t.ruby_opts << '-J-ea'
     t.ruby_opts << '-J-cp test:test/target/test-classes:core/target/test-classes'
   end

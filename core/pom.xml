@@ -107,7 +107,7 @@
     <dependency>
       <groupId>com.github.jnr</groupId>
       <artifactId>jnr-posix</artifactId>
-      <version>3.0.10</version>
+      <version>3.0.11-SNAPSHOT</version>
     </dependency>
     <dependency>
       <groupId>com.github.jnr</groupId>
@@ -133,12 +133,12 @@
     <dependency>
       <groupId>org.jruby.joni</groupId>
       <artifactId>joni</artifactId>
-      <version>2.1.5</version>
+      <version>2.1.6-SNAPSHOT</version>
     </dependency>
     <dependency>
       <groupId>org.jruby.extras</groupId>
       <artifactId>bytelist</artifactId>
-      <version>1.0.12</version>
+      <version>1.0.13-SNAPSHOT</version>
     </dependency>
     <dependency>
       <groupId>org.jruby.jcodings</groupId>

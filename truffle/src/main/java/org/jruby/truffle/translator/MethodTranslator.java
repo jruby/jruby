@@ -45,7 +45,7 @@ class MethodTranslator extends BodyTranslator {
 
     public RubyNode compileFunctionNode(SourceSection sourceSection, String methodName, ArgsNode argsNode, org.jruby.ast.Node bodyNode, SharedMethodInfo sharedMethodInfo) {
         if (PRINT_PARSE_TREE_METHOD_NAMES.contains(methodName)) {
-            System.err.println(methodName);
+            System.err.println(sourceSection + " " + methodName);
             System.err.println(sharedMethodInfo.getParseTree().toString(true, 0));
         }
 
@@ -176,12 +176,12 @@ class MethodTranslator extends BodyTranslator {
                 context, sourceSection, environment.getFrameDescriptor(), environment.getSharedMethodInfo(), body);
 
         if (PRINT_AST_METHOD_NAMES.contains(methodName)) {
-            System.err.println(methodName);
+            System.err.println(sourceSection + " " + methodName);
             NodeUtil.printCompactTree(System.err, rootNode);
         }
 
         if (PRINT_FULL_AST_METHOD_NAMES.contains(methodName)) {
-            System.err.println(methodName);
+            System.err.println(sourceSection + " " + methodName);
             NodeUtil.printTree(System.err, rootNode);
         }
 

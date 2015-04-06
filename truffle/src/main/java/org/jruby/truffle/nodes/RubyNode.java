@@ -272,6 +272,11 @@ public abstract class RubyNode extends Node {
         return (object instanceof TruffleObject) && !(isRubyBasicObject(object));
     }
 
+    public boolean isComplex(RubyBasicObject o) {
+        // TODO(BF, 4-4-15) COPIED from isRational - should this be a full is_a? test? We'd need a node for that.
+        return o.getLogicalClass() == getContext().getCoreLibrary().getComplexClass();
+    }
+
     public boolean isNaN(double value) {
         return Double.isNaN(value);
     }

@@ -1,4 +1,0 @@
-fails:Syslog.options returns the logging options
-fails:Syslog.options returns nil when the log is closed
-fails:Syslog.options defaults to LOG_PID | LOG_CONS
-fails:Syslog.options resets after each open call

@@ -396,44 +396,22 @@ public class LoadService {
             return RequireState.ALREADY_LOADED;
         }
 
-        if (!requireLocks.lock(requireName)) {
-            if (circularRequireWarning && runtime.isVerbose()) {
-                warnCircularRequire(requireName);
-            }
-            return RequireState.CIRCULAR;
+        if (!runtime.getProfile().allowRequire(requireName)) {
+            throw runtime.newLoadError("no such file to load -- " + requireName, requireName);
         }
-        try {
-            if (!runtime.getProfile().allowRequire(requireName)) {
-                throw runtime.newLoadError("no such file to load -- " + requireName, requireName);
-            }
 
-            // check for requiredName again now that we're locked
-            if (featureAlreadyLoaded(requireName)) {
-                return RequireState.ALREADY_LOADED;
-            }
-
-            // numbers from loadTimer does not include lock waiting time.
-            long startTime = loadTimer.startLoad(requireName);
-            try {
-                boolean loaded = smartLoadInternal(requireName);
-                return loaded ? RequireState.LOADED : RequireState.ALREADY_LOADED;
-            } finally {
-                loadTimer.endLoad(requireName, startTime);
-            }
-        } finally {
-            requireLocks.unlock(requireName);
-        }
+        return smartLoadInternal(requireName, circularRequireWarning);
     }
     
     protected final RequireLocks requireLocks = new RequireLocks();
 
     private class RequireLocks {
-        private final Map<String, ReentrantLock> pool;
+        private final ConcurrentHashMap<String, ReentrantLock> pool;
         // global lock for require must be fair
         private final ReentrantLock globalLock;
 
         private RequireLocks() {
-            this.pool = new HashMap<String, ReentrantLock>();
+            this.pool = new ConcurrentHashMap<>(8, 0.75f, 2);
             this.globalLock = new ReentrantLock(true);
         }
 
@@ -448,35 +426,19 @@ public class LoadService {
          *         returns false without getting a lock. Otherwise true.
          */
         private boolean lock(String requireName) {
-            ReentrantLock lock;
+            ReentrantLock lock = pool.get(requireName);
 
-            while (true) {
-                synchronized (pool) {
-                    lock = pool.get(requireName);
-                    if (lock == null) {
-                        if (runtime.getInstanceConfig().isGlobalRequireLock()) {
-                            lock = globalLock;
-                        } else {
-                            lock = new ReentrantLock();
-                        }
-                        pool.put(requireName, lock);
-                    } else if (lock.isHeldByCurrentThread()) {
-                        return false;
-                    }
-                }
-
-                lock.lock();
-
-                // repeat until locked object still in requireLocks.
-                synchronized (pool) {
-                    if (pool.get(requireName) == lock) {
-                        // the object is locked && the lock is in the pool
-                        return true;
-                    }
-                    // go next try
-                    lock.unlock();
-                }
+            if (lock == null) {
+                ReentrantLock newLock = new ReentrantLock();
+                lock = pool.putIfAbsent(requireName, newLock);
+                if (lock == null) lock = newLock;
             }
+
+            if (lock.isHeldByCurrentThread()) return false;
+
+            lock.lock();
+
+            return true;
         }
 
         /**
@@ -486,13 +448,11 @@ public class LoadService {
          *            name of the lock to be unlocked.
          */
         private void unlock(String requireName) {
-            synchronized (pool) {
-                ReentrantLock lock = pool.get(requireName);
-                if (lock != null) {
-                    assert lock.isHeldByCurrentThread();
-                    lock.unlock();
-                    pool.remove(requireName);
-                }
+            ReentrantLock lock = pool.get(requireName);
+
+            if (lock != null) {
+                assert lock.isHeldByCurrentThread();
+                lock.unlock();
             }
         }
     }
@@ -516,26 +476,55 @@ public class LoadService {
         return require(file);
     }
 
-    private boolean smartLoadInternal(String file) {
+    private RequireState smartLoadInternal(String file, boolean circularRequireWarning) {
         checkEmptyLoad(file);
-        SearchState state = findFileForLoad(file);
-        if (state == null) {
-            return false;
+
+        // check with short name
+        if (featureAlreadyLoaded(file)) {
+            return RequireState.ALREADY_LOADED;
         }
+
+        SearchState state = findFileForLoad(file);
+
         if (state.library == null) {
             throw runtime.newLoadError("no such file to load -- " + state.searchFile, state.searchFile);
         }
 
         // check with long name
         if (featureAlreadyLoaded(state.loadName)) {
-            return false;
+            return RequireState.ALREADY_LOADED;
         }
 
-        boolean loaded = tryLoadingLibraryOrScript(runtime, state);
-        if (loaded) {
-            addLoadedFeature(file, state.loadName);
+        if (!requireLocks.lock(state.loadName)) {
+            if (circularRequireWarning && runtime.isVerbose()) {
+                warnCircularRequire(state.loadName);
+            }
+            return RequireState.CIRCULAR;
         }
-        return loaded;
+
+        // numbers from loadTimer does not include lock waiting time.
+        long startTime = loadTimer.startLoad(state.loadName);
+
+        try {
+            // check with short name again
+            if (featureAlreadyLoaded(file)) {
+                return RequireState.ALREADY_LOADED;
+            }
+
+            // check with long name again in case it loaded while we were locking
+            if (featureAlreadyLoaded(state.loadName)) {
+                return RequireState.ALREADY_LOADED;
+            }
+
+            boolean loaded = tryLoadingLibraryOrScript(runtime, state);
+            if (loaded) {
+                addLoadedFeature(file, state.loadName);
+            }
+            return loaded ? RequireState.LOADED : RequireState.ALREADY_LOADED;
+        } finally {
+            loadTimer.endLoad(state.loadName, startTime);
+            requireLocks.unlock(state.loadName);
+        }
     }
 
     private static class LoadTimer {

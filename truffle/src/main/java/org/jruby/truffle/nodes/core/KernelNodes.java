@@ -257,44 +257,6 @@ public abstract class KernelNodes {
         }
     }
 
-    @CoreMethod(names = "Array", isModuleFunction = true, argumentsAsArray = true)
-    public abstract static class ArrayNode extends CoreMethodNode {
-
-        @Child ArrayBuilderNode arrayBuilderNode;
-
-        public ArrayNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-            arrayBuilderNode = new ArrayBuilderNode.UninitializedArrayBuilderNode(context);
-        }
-
-        public ArrayNode(ArrayNode prev) {
-            super(prev);
-            arrayBuilderNode = prev.arrayBuilderNode;
-        }
-
-        @Specialization(guards = "isOneArrayElement(args)")
-        public RubyArray arrayOneArrayElement(Object[] args) {
-            return (RubyArray) args[0];
-        }
-
-        @Specialization(guards = "!isOneArrayElement(args)")
-        public RubyArray array(Object[] args) {
-            final int length = args.length;
-            Object store = arrayBuilderNode.start(length);
-
-            for (int n = 0; n < length; n++) {
-                store = arrayBuilderNode.append(store, n, args[n]);
-            }
-
-            return new RubyArray(getContext().getCoreLibrary().getArrayClass(), arrayBuilderNode.finish(store, length), length);
-        }
-
-        protected boolean isOneArrayElement(Object[] args) {
-            return args.length == 1 && args[0] instanceof RubyArray;
-        }
-
-    }
-
     @CoreMethod(names = "at_exit", isModuleFunction = true, needsBlock = true)
     public abstract static class AtExitNode extends CoreMethodNode {
 
@@ -1087,78 +1049,6 @@ public abstract class KernelNodes {
             }
 
             return array;
-        }
-
-    }
-
-    @CoreMethod(names = "Integer", isModuleFunction = true, required = 1)
-    public abstract static class IntegerNode extends CoreMethodNode {
-
-        @Child private DoesRespondDispatchHeadNode toIntRespondTo;
-        @Child private CallDispatchHeadNode toInt;
-        @Child private FixnumOrBignumNode fixnumOrBignum;
-
-        public IntegerNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-            toIntRespondTo = new DoesRespondDispatchHeadNode(context, false, false, MissingBehavior.CALL_METHOD_MISSING, null);
-            toInt = new CallDispatchHeadNode(context, false, false, MissingBehavior.CALL_METHOD_MISSING, null);
-        }
-
-        public IntegerNode(IntegerNode prev) {
-            super(prev);
-            toIntRespondTo = prev.toIntRespondTo;
-            toInt = prev.toInt;
-            fixnumOrBignum = prev.fixnumOrBignum;
-        }
-
-        @Specialization
-        public int integer(int value) {
-            return value;
-        }
-
-        @Specialization
-        public long integer(long value) {
-            return value;
-        }
-
-        @Specialization
-        public RubyBignum integer(RubyBignum value) {
-            return value;
-        }
-
-        @Specialization
-        public int integer(double value) {
-            return (int) value;
-        }
-
-        @Specialization
-        public Object integer(RubyString value) {
-            notDesignedForCompilation();
-
-            if (value.toString().length() == 0) {
-                return 0;
-            }
-
-            try {
-                return Integer.parseInt(value.toString());
-            } catch (NumberFormatException e) {
-                if (fixnumOrBignum == null) {
-                    CompilerDirectives.transferToInterpreter();
-                    fixnumOrBignum = insert(new FixnumOrBignumNode(getContext(), getSourceSection()));
-                }
-
-                return fixnumOrBignum.fixnumOrBignum(new BigInteger(value.toString()));
-            }
-        }
-
-        @Specialization
-        public Object integer(VirtualFrame frame, Object value) {
-            if (toIntRespondTo.doesRespondTo(frame, "to_int", value)) {
-                return toInt.call(frame, value, "to_int", null);
-            } else {
-                CompilerDirectives.transferToInterpreter();
-                throw new RaiseException(getContext().getCoreLibrary().typeErrorCantConvertInto(value, getContext().getCoreLibrary().getIntegerClass(), this));
-            }
         }
 
     }

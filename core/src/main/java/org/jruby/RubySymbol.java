@@ -533,7 +533,7 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, Constanti
             
             if (!enc.isPrint(c)) return false;
             
-            p += codeLength(runtime, enc, c);
+            p += codeLength(enc, c);
         }
         
         return true;

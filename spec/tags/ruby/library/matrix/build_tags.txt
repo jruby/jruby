@@ -1,1 +1,0 @@
-fails:Matrix.build returns an Enumerator is no block is given

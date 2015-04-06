@@ -1,0 +1,16 @@
+describe :queue_num_waiting, :shared => true do
+  it "reports the number of threads waiting on the queue" do
+    q = @object
+    threads = []
+
+    5.times do |i|
+      q.num_waiting.should == i
+      t = Thread.new { q.deq }
+      Thread.pass until t.status == 'sleep'
+      threads << t
+    end
+
+    threads.each { q.enq Object.new }
+    threads.each {|t| t.join }
+  end
+end

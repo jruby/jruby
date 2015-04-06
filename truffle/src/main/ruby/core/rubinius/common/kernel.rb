@@ -28,6 +28,19 @@
 
 module Kernel
 
+  def Array(obj)
+    ary = Rubinius::Type.check_convert_type obj, Array, :to_ary
+
+    return ary if ary
+
+    if array = Rubinius::Type.check_convert_type(obj, Array, :to_a)
+      array
+    else
+      [obj]
+    end
+  end
+  module_function :Array
+
   def Complex(*args)
     Rubinius.privately do
       Complex.convert(*args)
@@ -74,6 +87,57 @@ module Kernel
     end
   end
   private :FloatValue
+
+  def Hash(obj)
+    return {} if obj.nil? || obj == []
+
+    if hash = Rubinius::Type.check_convert_type(obj, Hash, :to_hash)
+      return hash
+    end
+
+    raise TypeError, "can't convert #{obj.class} into Hash"
+  end
+  module_function :Hash
+
+  def Integer(obj, base=nil)
+    if obj.kind_of? String
+      if obj.empty?
+        raise ArgumentError, "invalid value for Integer: (empty string)"
+      else
+        base ||= 0
+        return obj.to_inum(base, true)
+      end
+    end
+
+    if base
+      raise ArgumentError, "base is only valid for String values"
+    end
+
+    case obj
+      when Integer
+        obj
+      when Float
+        if obj.nan? or obj.infinite?
+          raise FloatDomainError, "unable to coerce #{obj} to Integer"
+        else
+          obj.to_int
+        end
+      when NilClass
+        raise TypeError, "can't convert nil into Integer"
+      else
+        # Can't use coerce_to or try_convert because I think there is an
+        # MRI bug here where it will return the value without checking
+        # the return type.
+        if obj.respond_to? :to_int
+          if val = obj.to_int
+            return val
+          end
+        end
+
+        Rubinius::Type.coerce_to obj, Integer, :to_i
+    end
+  end
+  module_function :Integer
 
   ##
   # MRI uses a macro named StringValue which has essentially the same
@@ -142,5 +206,10 @@ module Kernel
     Thread.current.randomizer.swap_seed seed
   end
   module_function :srand
+
+  def tap
+    yield self
+    self
+  end
 
 end
