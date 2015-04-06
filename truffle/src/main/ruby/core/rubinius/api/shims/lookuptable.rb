@@ -13,7 +13,14 @@ module Rubinius
     alias_method :lookup_orig, :[]
 
     def [](key)
-      lookup_orig(key.to_sym)
+      lookup_orig(key_to_sym(key))
+    end
+
+    private
+
+    # Taken from Rubinius LookupTable.
+    def key_to_sym(key)
+      key.kind_of?(String) ? key.to_sym : key
     end
   end
 end
