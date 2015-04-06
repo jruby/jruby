@@ -58,7 +58,7 @@ public abstract class Translator extends org.jruby.ast.visitor.AbstractNodeVisit
                 return parentSourceSection.peek();
             }
         } else {
-            return source.createSection(identifier, sourcePosition.getLine());
+            return source.createSection(identifier, sourcePosition.getLine() + 1);
         }
     }
 
