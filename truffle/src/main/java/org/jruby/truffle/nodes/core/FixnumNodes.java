@@ -569,36 +569,12 @@ public abstract class FixnumNodes {
             return 0;
         }
 
-        @Specialization(guards = "isRational(arguments[1])")
-        public Object div(VirtualFrame frame, int a, RubyBasicObject b) {
-            if (rationalConvertNode == null) {
-                CompilerDirectives.transferToInterpreter();
-                rationalConvertNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext(), true));
-                rationalDivNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext()));
-            }
-
-            final Object aRational = rationalConvertNode.call(frame, getContext().getCoreLibrary().getRationalClass(), "convert", null, a, 1);
-
-            return rationalDivNode.call(frame, aRational, "/", null, b);
-        }
-
-        @Specialization(guards = "isComplex(arguments[1])")
-        public Object divComplex(VirtualFrame frame, int a, RubyBasicObject b) {
-            return ruby(frame, "Complex(a) / b", "a", a, "b", b);
-        }
-
-        @Specialization(guards = "isComplex(arguments[1])")
-        public Object divComplex(VirtualFrame frame, long a, RubyBasicObject b) {
-            return ruby(frame, "Complex(a) / b", "a", a, "b", b);
-        }
-
-
-        @Specialization(guards = {"!isComplex(arguments[1])", "!isRational(arguments[1])", "!isRubyBignum(arguments[1])"})
+        @Specialization(guards = {"!isRubyBignum(arguments[1])"})
         public Object divFallback(VirtualFrame frame, long a, RubyBasicObject b) {
             return ruby(frame, "redo_coerced :/, o", "o", b);
         }
 
-        @Specialization(guards = {"!isComplex(arguments[1])", "!isRational(arguments[1])", "!isRubyBignum(arguments[1])"})
+        @Specialization(guards = {"!isRubyBignum(arguments[1])"})
         public Object divFallback(VirtualFrame frame, int a, RubyBasicObject b) {
             return ruby(frame, "redo_coerced :/, o", "o", b);
         }
