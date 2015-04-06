@@ -21,6 +21,7 @@ import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.runtime.DebugOperations;
 import org.jruby.truffle.runtime.RubyCallStack;
 import org.jruby.truffle.runtime.RubyContext;
+import org.jruby.truffle.runtime.UndefinedPlaceholder;
 import org.jruby.truffle.runtime.control.RaiseException;
 import org.jruby.truffle.runtime.core.*;
 
@@ -729,7 +730,7 @@ public abstract class FloatNodes {
 
     }
 
-    @CoreMethod(names = "round")
+    @CoreMethod(names = "round", optional = 1)
     public abstract static class RoundNode extends CoreMethodNode {
 
         @Child private FixnumOrBignumNode fixnumOrBignum;
@@ -748,7 +749,7 @@ public abstract class FloatNodes {
         }
 
         @Specialization
-        public Object round(double n) {
+        public Object round(double n, UndefinedPlaceholder undefinedPlaceholder) {
             // Algorithm copied from JRuby - not shared as we want to branch profile it
 
             if (Double.isInfinite(n)) {
@@ -782,6 +783,11 @@ public abstract class FloatNodes {
             }
 
             return fixnumOrBignum.fixnumOrBignum(f);
+        }
+
+        @Specialization(guards = "!isUndefinedPlaceholder(arguments[1])")
+        public Object round(VirtualFrame frame, double n, Object ndigits) {
+            return ruby(frame, "round_internal(ndigits)", "ndigits", ndigits);
         }
 
     }
