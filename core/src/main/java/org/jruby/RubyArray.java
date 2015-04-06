@@ -4105,8 +4105,7 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
                 try {
                     packer = context.getRuntime().getTrufflePackBridge().compileFormat(iFmt.toString());
                 } catch (FormatException e) {
-                    throw new UnsupportedOperationException();
-                    //throw new RaiseException(getContext().getCoreLibrary().argumentError(e.getMessage(), this));
+                    throw context.getRuntime().newArgumentError(e.getMessage());
                 }
 
                 // We can race on this, but it doesn't matter as long as something goes in the cache
@@ -4118,23 +4117,18 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
             try {
                 result = packer.pack(values, realLength);
             } catch (TooFewArgumentsException e) {
-                throw new UnsupportedOperationException();
-                //throw new RaiseException(getContext().getCoreLibrary().argumentError("too few arguments", this));
+                throw context.getRuntime().newArgumentError("too few arguments");
             } catch (NoImplicitConversionException e) {
-                throw new UnsupportedOperationException();
                 //throw new RaiseException(getContext().getCoreLibrary().typeErrorNoImplicitConversion(e.getObject(), e.getTarget(), this));
+                throw context.getRuntime().newTypeError("todo");
             } catch (OutsideOfStringException e) {
-                throw new UnsupportedOperationException();
-                //throw new RaiseException(getContext().getCoreLibrary().argumentError("X outside of string", this));
+                throw context.getRuntime().newArgumentError("X outside of string");
             } catch (CantCompressNegativeException e) {
-                throw new UnsupportedOperationException();
-                //throw new RaiseException(getContext().getCoreLibrary().argumentError("can't compress negative numbers", this));
+                throw context.getRuntime().newArgumentError("can't compress negative numbers");
             } catch (RangeException e) {
-                throw new UnsupportedOperationException();
-                //throw new RaiseException(getContext().getCoreLibrary().rangeError(e.getMessage(), this));
+                throw context.getRuntime().newRangeError(e.getMessage());
             } catch (CantConvertException e) {
-                throw new UnsupportedOperationException();
-                //throw new RaiseException(getContext().getCoreLibrary().typeError(e.getMessage(), this));
+                throw context.getRuntime().newTypeError(e.getMessage());
             }
 
             final RubyString string = context.getRuntime().newString(new ByteList(result.getOutput(), 0, result.getOutputLength()));
