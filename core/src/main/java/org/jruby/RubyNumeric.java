@@ -447,7 +447,7 @@ public class RubyNumeric extends RubyObject {
         Ruby runtime = context.runtime;
         IRubyObject result;
 
-        IRubyObject savedError = runtime.getGlobalVariables().get("$!"); // Svae $!
+        IRubyObject savedError = runtime.getGlobalVariables().get("$!"); // Save $!
 
         if (!other.respondsTo("coerce")) {
             if (err) {

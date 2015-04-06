@@ -583,33 +583,41 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
 
     /**
      * Does this object respond to the specified message? Uses a
-     * shortcut if it can be proved that respond_to? haven't been
-     * overridden.
+     * shortcut if it can be proved that respond_to? and respond_to_missing?
+     * haven't been overridden.
      */
     @Override
     public final boolean respondsTo(String name) {
         Ruby runtime = getRuntime();
 
-        DynamicMethod method = getMetaClass().searchMethod("respond_to?");
-        if(method.equals(runtime.getRespondToMethod())) {
+        DynamicMethod respondTo = getMetaClass().searchMethod("respond_to?");
+        DynamicMethod respondToMissing = getMetaClass().searchMethod("respond_to_missing?");
+
+        if(respondTo.equals(runtime.getRespondToMethod()) && respondToMissing.equals(runtime.getRespondToMissingMethod())) {
             // fastest path; builtin respond_to? which just does isMethodBound
             return getMetaClass().isMethodBound(name, false);
-        } else if (!method.isUndefined()) {
-            // medium path, invoke user's respond_to? if defined
+        } else if (!(respondTo.isUndefined() && respondToMissing.isUndefined())) {
+            // medium path, invoke user's respond_to?/respond_to_missing? if defined
+            DynamicMethod method;
+            String methodName;
+            if (respondTo.isUndefined()) {
+                method = respondToMissing;
+                methodName = "respond_to_missing?";
+            } else {
+                method = respondTo;
+                methodName = "respond_to?";
+            }
 
             // We have to check and enforce arity
             Arity arity = method.getArity();
             ThreadContext context = runtime.getCurrentContext();
             if (arity.isFixed() && arity.required() == 1) {
-                return method.call(context, this, metaClass, "respond_to?", runtime.newSymbol(name)).isTrue();
+                return method.call(context, this, metaClass, methodName, runtime.newSymbol(name)).isTrue();
             } else if (arity.isFixed() && arity.required() != 2) {
-                throw runtime.newArgumentError("respond_to? must accept 1 or 2 arguments (requires " + arity.getValue() + ")");
-            } else {
-
+                throw runtime.newArgumentError(methodName + " must accept 1 or 2 arguments (requires " + arity.getValue() + ")");
             }
 
-            return method.call(context, this, metaClass, "respond_to?", runtime.newSymbol(name), runtime.newBoolean(true)).isTrue();
-
+            return method.call(context, this, metaClass, methodName, runtime.newSymbol(name), runtime.newBoolean(true)).isTrue();
         } else {
             // slowest path, full callMethod to hit method_missing if present, or produce error
             return callMethod(runtime.getCurrentContext(), "respond_to?", runtime.newSymbol(name)).isTrue();
