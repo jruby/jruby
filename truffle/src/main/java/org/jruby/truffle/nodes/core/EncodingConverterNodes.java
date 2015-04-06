@@ -128,8 +128,8 @@ public abstract class EncodingConverterNodes {
         }
 
         @Specialization
-        public RubyHash transcodingMap(VirtualFrame frame) {
-            List<KeyValue> entries = new ArrayList<>();
+        public Object transcodingMap(VirtualFrame frame) {
+            final Object ret = newLookupTableNode.call(frame, getContext().getCoreLibrary().getLookupTableClass(), "new", null);
 
             for (CaseInsensitiveBytesHash<TranscoderDB.Entry> sourceEntry : TranscoderDB.transcoders) {
                 Object key = null;
@@ -148,10 +148,10 @@ public abstract class EncodingConverterNodes {
                     lookupTableWriteNode.call(frame, value, "[]=", null, lookupTableKey, true);
                 }
 
-                entries.add(new KeyValue(key, value));
+                lookupTableWriteNode.call(frame, ret, "[]=", null, key, value);
             }
 
-            return HashOperations.verySlowFromEntries(getContext().getCoreLibrary().getHashClass(), entries, true);
+            return ret;
         }
     }
 
