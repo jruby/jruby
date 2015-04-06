@@ -18,8 +18,8 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
 public class ZSuperInstr extends UnresolvedSuperInstr {
-    public ZSuperInstr(Variable result, Operand receiver, Operand[] args, Operand closure) {
-        super(Operation.ZSUPER, result, receiver, args, closure);
+    public ZSuperInstr(Variable result, Operand receiver, Operand[] args, Operand closure, boolean isPotentiallyRefined) {
+        super(Operation.ZSUPER, result, receiver, args, closure, isPotentiallyRefined);
     }
 
     @Override
@@ -32,7 +32,7 @@ public class ZSuperInstr extends UnresolvedSuperInstr {
     @Override
     public Instr clone(CloneInfo ii) {
         return new ZSuperInstr(ii.getRenamedVariable(getResult()), getReceiver().cloneForInlining(ii),
-                cloneCallArgs(ii), getClosureArg() == null ? null : getClosureArg().cloneForInlining(ii));
+                cloneCallArgs(ii), getClosureArg() == null ? null : getClosureArg().cloneForInlining(ii), isPotentiallyRefined());
     }
 
     public static ZSuperInstr decode(IRReaderDecoder d) {
@@ -56,10 +56,11 @@ public class ZSuperInstr extends UnresolvedSuperInstr {
 
         Operand closure = hasClosureArg ? d.decodeOperand() : null;
         if (RubyInstanceConfig.IR_READING_DEBUG) System.out.println("before result");
+        boolean isPotentiallyRefined = d.decodeBoolean();
         Variable result = d.decodeVariable();
         if (RubyInstanceConfig.IR_READING_DEBUG) System.out.println("decoding call, result:  " + result);
 
-        return new ZSuperInstr(result, receiver, args, closure);
+        return new ZSuperInstr(result, receiver, args, closure, isPotentiallyRefined);
     }
 
     @Override

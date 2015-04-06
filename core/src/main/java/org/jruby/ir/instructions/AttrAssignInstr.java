@@ -18,16 +18,16 @@ import static org.jruby.ir.IRFlags.*;
 // Instruction representing Ruby code of the form: "a[i] = 5"
 // which is equivalent to: a.[](i,5)
 public class AttrAssignInstr extends NoResultCallInstr {
-    public static AttrAssignInstr create(Operand obj, String attr, Operand[] args) {
+    public static AttrAssignInstr create(Operand obj, String attr, Operand[] args, boolean isPotentiallyRefined) {
         if (!containsArgSplat(args) && args.length == 1) {
-            return new OneArgOperandAttrAssignInstr(obj, attr, args);
+            return new OneArgOperandAttrAssignInstr(obj, attr, args, isPotentiallyRefined);
         }
 
-        return new AttrAssignInstr(obj, attr, args);
+        return new AttrAssignInstr(obj, attr, args, isPotentiallyRefined);
     }
 
-    public AttrAssignInstr(Operand obj, String attr, Operand[] args) {
-        super(Operation.ATTR_ASSIGN, CallType.UNKNOWN, attr, obj, args, null);
+    public AttrAssignInstr(Operand obj, String attr, Operand[] args, boolean isPotentiallyRefined) {
+        super(Operation.ATTR_ASSIGN, CallType.UNKNOWN, attr, obj, args, null, isPotentiallyRefined);
     }
 
     @Override
@@ -43,7 +43,7 @@ public class AttrAssignInstr extends NoResultCallInstr {
 
     @Override
     public Instr clone(CloneInfo ii) {
-        return new AttrAssignInstr(getReceiver().cloneForInlining(ii), getName(), cloneCallArgs(ii));
+        return new AttrAssignInstr(getReceiver().cloneForInlining(ii), getName(), cloneCallArgs(ii), isPotentiallyRefined());
     }
 
     @Override
@@ -53,10 +53,11 @@ public class AttrAssignInstr extends NoResultCallInstr {
         e.encode(getReceiver());
         e.encode(getName());
         e.encode(getCallArgs());
+        e.encode(isPotentiallyRefined());
     }
 
     public static AttrAssignInstr decode(IRReaderDecoder d) {
-        return create(d.decodeOperand(), d.decodeString(), d.decodeOperandArray());
+        return create(d.decodeOperand(), d.decodeString(), d.decodeOperandArray(), d.decodeBoolean());
     }
 
     @Override

@@ -27,7 +27,6 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.*;
-import org.jruby.util.StringSupport;
 
 import static org.jruby.ir.instructions.RuntimeHelperCall.Methods.*;
 
@@ -857,7 +856,7 @@ public class IRBuilder {
         List<Operand> args = new ArrayList<>();
         Node argsNode = attrAssignNode.getArgsNode();
         Operand lastArg = buildAttrAssignCallArgs(args, argsNode, containsAssignment);
-        addInstr(AttrAssignInstr.create(obj, attrAssignNode.getName(), args.toArray(new Operand[args.size()])));
+        addInstr(AttrAssignInstr.create(obj, attrAssignNode.getName(), args.toArray(new Operand[args.size()]), scope.maybeUsingRefinements()));
         return lastArg;
     }
 
@@ -866,7 +865,7 @@ public class IRBuilder {
         Operand obj = build(attrAssignNode.getReceiverNode());
         Operand[] args = setupCallArgs(attrAssignNode.getArgsNode());
         args = addArg(args, value);
-        addInstr(AttrAssignInstr.create(obj, attrAssignNode.getName(), args));
+        addInstr(AttrAssignInstr.create(obj, attrAssignNode.getName(), args, scope.maybeUsingRefinements()));
         return value;
     }
 
@@ -1268,7 +1267,7 @@ public class IRBuilder {
     private void genInheritanceSearchInstrs(Operand startingModule, Variable constVal, Label foundLabel, boolean noPrivateConstants, String name) {
         addInstr(new InheritanceSearchConstInstr(constVal, startingModule, name, noPrivateConstants));
         addInstr(BNEInstr.create(foundLabel, constVal, UndefinedValue.UNDEFINED));
-        addInstr(new ConstMissingInstr(constVal, startingModule, name));
+        addInstr(new ConstMissingInstr(constVal, startingModule, name, scope.maybeUsingRefinements()));
         addInstr(new LabelInstr(foundLabel));
     }
 
@@ -2431,7 +2430,7 @@ public class IRBuilder {
         Variable result = createTemporaryVariable();
         Operand  receiver = build(forNode.getIterNode());
         Operand  forBlock = buildForIter(forNode);
-        CallInstr callInstr = new CallInstr(CallType.NORMAL, result, "each", receiver, NO_ARGS, forBlock);
+        CallInstr callInstr = new CallInstr(CallType.NORMAL, result, "each", receiver, NO_ARGS, forBlock, scope.maybeUsingRefinements());
         receiveBreakException(forBlock, callInstr);
 
         return result;
@@ -3278,16 +3277,16 @@ public class IRBuilder {
         Variable ret = createTemporaryVariable();
         if (scope instanceof IRMethod && scope.getLexicalParent() instanceof IRClassBody) {
             if (((IRMethod) scope).isInstanceMethod) {
-                superInstr = new InstanceSuperInstr(ret, scope.getCurrentModuleVariable(), getName(), args, block);
+                superInstr = new InstanceSuperInstr(ret, scope.getCurrentModuleVariable(), getName(), args, block, scope.maybeUsingRefinements());
             } else {
-                superInstr = new ClassSuperInstr(ret, scope.getCurrentModuleVariable(), getName(), args, block);
+                superInstr = new ClassSuperInstr(ret, scope.getCurrentModuleVariable(), getName(), args, block, scope.maybeUsingRefinements());
             }
         } else {
             // We dont always know the method name we are going to be invoking if the super occurs in a closure.
             // This is because the super can be part of a block that will be used by 'define_method' to define
             // a new method.  In that case, the method called by super will be determined by the 'name' argument
             // to 'define_method'.
-            superInstr = new UnresolvedSuperInstr(ret, buildSelf(), args, block);
+            superInstr = new UnresolvedSuperInstr(ret, buildSelf(), args, block, scope.maybeUsingRefinements());
         }
         receiveBreakException(block, superInstr);
         return ret;
@@ -3303,7 +3302,7 @@ public class IRBuilder {
     }
 
     private Operand buildSuperInScriptBody() {
-        return addResultInstr(new UnresolvedSuperInstr(createTemporaryVariable(), buildSelf(), NO_ARGS, null));
+        return addResultInstr(new UnresolvedSuperInstr(createTemporaryVariable(), buildSelf(), NO_ARGS, null, scope.maybeUsingRefinements()));
     }
 
     public Operand buildSValue(SValueNode node) {
@@ -3456,7 +3455,7 @@ public class IRBuilder {
                     next = getNewLabel();
                     addInstr(BNEInstr.create(next, new Fixnum(depthFromSuper), scopeDepth));
                     Operand[] args = adjustVariableDepth(getCallArgs(superScope, superBuilder), depthFromSuper);
-                    addInstr(new ZSuperInstr(zsuperResult, buildSelf(), args,  block));
+                    addInstr(new ZSuperInstr(zsuperResult, buildSelf(), args,  block, scope.maybeUsingRefinements()));
                     addInstr(new JumpInstr(allDoneLabel));
 
                     // We may run out of live builds and walk int already built scopes if zsuper in an eval
@@ -3470,7 +3469,7 @@ public class IRBuilder {
                 // If we hit a method, this is known to always succeed
                 if (superScope instanceof IRMethod) {
                     Operand[] args = adjustVariableDepth(getCallArgs(superScope, superBuilder), depthFromSuper);
-                    addInstr(new ZSuperInstr(zsuperResult, buildSelf(), args, block));
+                    addInstr(new ZSuperInstr(zsuperResult, buildSelf(), args, block, scope.maybeUsingRefinements()));
                 } //else {
                 // FIXME: Do or don't ... there is no try
                     /* Control should never get here in the runtime */

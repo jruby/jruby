@@ -21,9 +21,10 @@ import org.jruby.runtime.builtin.IRubyObject;
 public class ConstMissingInstr extends CallInstr implements FixedArityInstr {
     private final String missingConst;
 
-    public ConstMissingInstr(Variable result, Operand currentModule, String missingConst) {
+    public ConstMissingInstr(Variable result, Operand currentModule, String missingConst, boolean isPotentiallyRefined) {
         // FIXME: Missing encoding knowledge of the constant name.
-        super(Operation.CONST_MISSING, CallType.FUNCTIONAL, result, "const_missing", currentModule, new Operand[]{new Symbol(missingConst, USASCIIEncoding.INSTANCE)}, null);
+        super(Operation.CONST_MISSING, CallType.FUNCTIONAL, result, "const_missing", currentModule,
+                new Operand[]{new Symbol(missingConst, USASCIIEncoding.INSTANCE)}, null, isPotentiallyRefined);
 
         this.missingConst = missingConst;
     }
@@ -34,7 +35,7 @@ public class ConstMissingInstr extends CallInstr implements FixedArityInstr {
 
     @Override
     public Instr clone(CloneInfo ii) {
-        return new ConstMissingInstr(ii.getRenamedVariable(result), getReceiver().cloneForInlining(ii), missingConst);
+        return new ConstMissingInstr(ii.getRenamedVariable(result), getReceiver().cloneForInlining(ii), missingConst, isPotentiallyRefined());
     }
 
     @Override
@@ -47,7 +48,7 @@ public class ConstMissingInstr extends CallInstr implements FixedArityInstr {
     }
 
     public static ConstMissingInstr decode(IRReaderDecoder d) {
-        return new ConstMissingInstr(d.decodeVariable(), d.decodeOperand(), d.decodeString());
+        return new ConstMissingInstr(d.decodeVariable(), d.decodeOperand(), d.decodeString(), d.decodeBoolean());
     }
 
     @Override
