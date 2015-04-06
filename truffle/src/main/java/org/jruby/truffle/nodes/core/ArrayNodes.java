@@ -2817,36 +2817,19 @@ public abstract class ArrayNodes {
     @CoreMethod(names = "pack", required = 1, taintFromParameters = 0)
     public abstract static class PackNode extends ArrayCoreMethodNode {
 
-        @Child private DirectCallNode callPackNode;
         @Child private TaintNode taintNode;
 
         public PackNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
         }
 
-        public PackNode(PackNode prev) {
-            super(prev);
-            callPackNode = prev.callPackNode;
-            taintNode = prev.taintNode;
-        }
-
-        @Specialization
-        public RubyString pack(VirtualFrame frame, RubyArray array, RubyString format) {
-            if (callPackNode == null) {
-                CompilerDirectives.transferToInterpreter();
-
-                final CallTarget packCallTarget;
-
-                try {
-                    packCallTarget = new PackParser(getContext()).parse(format.toString(), false);
-                } catch (FormatException e) {
-                    CompilerDirectives.transferToInterpreter();
-                    throw new RaiseException(getContext().getCoreLibrary().argumentError(e.getMessage(), this));
-                }
-
-                callPackNode = insert(Truffle.getRuntime().createDirectCallNode(packCallTarget));
-            }
-
+        @Specialization(guards = "byteListsEqual(format, cachedFormat)")
+        public RubyString packCached(
+                VirtualFrame frame,
+                RubyArray array,
+                RubyString format,
+                @Cached("privatizeByteList(format)") ByteList cachedFormat,
+                @Cached("create(compileFormat(format))") DirectCallNode callPackNode) {
             final PackResult result;
 
             try {
@@ -2869,15 +2852,47 @@ public abstract class ArrayNodes {
             } catch (CantConvertException e) {
                 CompilerDirectives.transferToInterpreter();
                 throw new RaiseException(getContext().getCoreLibrary().typeError(e.getMessage(), this));
-            } finally {
-                // No caching at the moment - so we always want to delete the node for next time
-                CompilerDirectives.transferToInterpreterAndInvalidate();
-                callPackNode = null;
             }
 
+            return finishPack(cachedFormat, result);
+        }
+
+        @Specialization(contains = "packCached")
+        public RubyString packUncached(
+                VirtualFrame frame,
+                RubyArray array,
+                RubyString format) {
+            final PackResult result;
+
+            try {
+                result = (PackResult) compileFormat(format).call(array.getStore(), array.getSize());
+            } catch (TooFewArgumentsException e) {
+                CompilerDirectives.transferToInterpreter();
+                throw new RaiseException(getContext().getCoreLibrary().argumentError("too few arguments", this));
+            } catch (NoImplicitConversionException e) {
+                CompilerDirectives.transferToInterpreter();
+                throw new RaiseException(getContext().getCoreLibrary().typeErrorNoImplicitConversion(e.getObject(), e.getTarget(), this));
+            } catch (OutsideOfStringException e) {
+                CompilerDirectives.transferToInterpreter();
+                throw new RaiseException(getContext().getCoreLibrary().argumentError("X outside of string", this));
+            } catch (CantCompressNegativeException e) {
+                CompilerDirectives.transferToInterpreter();
+                throw new RaiseException(getContext().getCoreLibrary().argumentError("can't compress negative numbers", this));
+            } catch (RangeException e) {
+                CompilerDirectives.transferToInterpreter();
+                throw new RaiseException(getContext().getCoreLibrary().rangeError(e.getMessage(), this));
+            } catch (CantConvertException e) {
+                CompilerDirectives.transferToInterpreter();
+                throw new RaiseException(getContext().getCoreLibrary().typeError(e.getMessage(), this));
+            }
+
+            return finishPack(format.getByteList(), result);
+        }
+
+        private RubyString finishPack(ByteList format, PackResult result) {
             final RubyString string = getContext().makeString(new ByteList(result.getOutput(), 0, result.getOutputLength()));
 
-            if (format.getByteList().length() == 0) {
+            if (format.length() == 0) {
                 string.forceEncoding(USASCIIEncoding.INSTANCE);
             } else {
                 switch (result.getEncoding()) {
@@ -2894,8 +2909,6 @@ public abstract class ArrayNodes {
                         throw new UnsupportedOperationException();
                 }
             }
-
-
 
             if (result.isTainted()) {
                 if (taintNode == null) {
@@ -2932,6 +2945,23 @@ public abstract class ArrayNodes {
         @Specialization(guards = {"!isRubyString(format)", "!isBoolean(format)", "!isInteger(format)", "!isLong(format)", "!isRubyNilClass(format)"})
         public Object pack(VirtualFrame frame, RubyArray array, Object format) {
             return ruby(frame, "pack(format.to_str)", "format", format);
+        }
+
+        protected ByteList privatizeByteList(RubyString string) {
+            return string.getByteList().dup();
+        }
+
+        protected boolean byteListsEqual(RubyString string, ByteList byteList) {
+            return string.getByteList().equal(byteList);
+        }
+
+        protected CallTarget compileFormat(RubyString format) {
+            try {
+                return new PackParser(getContext()).parse(format.toString(), false);
+            } catch (FormatException e) {
+                CompilerDirectives.transferToInterpreter();
+                throw new RaiseException(getContext().getCoreLibrary().argumentError(e.getMessage(), this));
+            }
         }
 
     }
