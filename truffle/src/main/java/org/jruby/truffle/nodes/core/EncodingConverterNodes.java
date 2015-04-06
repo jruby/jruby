@@ -70,6 +70,13 @@ public abstract class EncodingConverterNodes {
             final IRubyObject destinationAsJRubyObj = getContext().toJRuby(destination);
 
             EncodingUtils.econvArgs(runtime.getCurrentContext(), new IRubyObject[]{sourceAsJRubyObj, destinationAsJRubyObj}, encNames, encs, ecflags, ecopts);
+
+            // This method should only be called after the Encoding::Converter instance has already been initialized
+            // by Rubinius.  Rubinius will do the heavy lifting of parsing the options hash and setting the `@options`
+            // ivar to the resulting int for EConv flags.  Since we don't pass the proper data structures to EncodingUtils,
+            // we must override the flags after its had a pass in order to correct the bad flags value.
+            ecflags[0] = (int) self.getInstanceVariable("@options");
+
             EConv econv = EncodingUtils.econvOpenOpts(runtime.getCurrentContext(), encNames[0], encNames[1], ecflags[0], ecopts[0]);
 
             if (econv == null) {
