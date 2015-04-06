@@ -1,4 +1,4 @@
-# JRuby -  A Java implementation of the Ruby language
+# JRuby -  An implementation of the Ruby language on the JVM
 
 Master: [![Build Status](https://travis-ci.org/jruby/jruby.png?branch=master)](https://travis-ci.org/jruby/jruby) 
 1.7 branch: [![Build Status](https://travis-ci.org/jruby/jruby.png?branch=jruby-1_7)](https://travis-ci.org/jruby/jruby/branches)
@@ -20,10 +20,10 @@ Yukihiro Matsumoto <matz@netlab.co.jp>.
 
 ## About
 
-JRuby is the effort to recreate the Ruby (http://www.ruby-lang.org) interpreter
-in Java.
+JRuby is an effort to implement the [Ruby language](http://www.ruby-lang.org)
+on top of the JVM.
 
-The Java version is tightly integrated with Java to allow both to script
+JRuby is tightly integrated with the JVM to allow both to script
 any Java class and to embed the interpreter into any Java application. 
 See the [docs](docs) directory for more information.
 
