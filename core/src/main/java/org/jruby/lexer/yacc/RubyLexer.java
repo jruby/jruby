@@ -1886,7 +1886,7 @@ public class RubyLexer {
         do {
             if (!tokadd_mbchar(c)) return EOF;
             c = nextc();
-        } while (isIdentifierChar(c));
+        } while (c != EOF && isIdentifierChar(c));
 
         boolean lastBangOrPredicate = false;
 
