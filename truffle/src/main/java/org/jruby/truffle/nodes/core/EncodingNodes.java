@@ -204,6 +204,7 @@ public abstract class EncodingNodes {
 
         public SetDefaultExternalNode(SetDefaultExternalNode prev) {
             super(prev);
+            toStrNode = prev.toStrNode;
         }
 
         @Specialization
