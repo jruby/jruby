@@ -17,26 +17,19 @@ import com.oracle.truffle.api.source.SourceSection;
 import org.jcodings.Encoding;
 import org.jcodings.EncodingDB;
 import org.jcodings.transcode.EConv;
-import org.jcodings.transcode.Transcoder;
+import org.jcodings.transcode.EConvFlags;
 import org.jcodings.transcode.TranscoderDB;
 import org.jcodings.util.CaseInsensitiveBytesHash;
 import org.jcodings.util.Hash;
 import org.jruby.Ruby;
-import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.runtime.RubyContext;
-import org.jruby.truffle.runtime.UndefinedPlaceholder;
 import org.jruby.truffle.runtime.core.*;
-import org.jruby.truffle.runtime.hash.HashOperations;
-import org.jruby.truffle.runtime.hash.KeyValue;
 import org.jruby.util.ByteList;
 import org.jruby.util.io.EncodingUtils;
-
-import java.util.ArrayList;
-import java.util.List;
 
 @CoreClass(name = "Encoding::Converter")
 public abstract class EncodingConverterNodes {
@@ -75,7 +68,7 @@ public abstract class EncodingConverterNodes {
             // by Rubinius.  Rubinius will do the heavy lifting of parsing the options hash and setting the `@options`
             // ivar to the resulting int for EConv flags.  Since we don't pass the proper data structures to EncodingUtils,
             // we must override the flags after its had a pass in order to correct the bad flags value.
-            ecflags[0] = (int) self.getInstanceVariable("@options");
+            ecflags[0] = rubiniusToJRubyFlags((int) self.getInstanceVariable("@options"));
 
             EConv econv = EncodingUtils.econvOpenOpts(runtime.getCurrentContext(), encNames[0], encNames[1], ecflags[0], ecopts[0]);
 
@@ -98,6 +91,23 @@ public abstract class EncodingConverterNodes {
             self.setEConv(econv);
 
             return nil();
+        }
+
+        /**
+         * Rubinius and JRuby process Encoding::Converter options flags differently.  Rubinius splits the processing
+         * between initial setup and the replacement value setup, whereas JRuby handles them all during initial setup.
+         * We figure out what flags JRuby additionally expects to be set and set them to satisfy EConv.
+         */
+        private int rubiniusToJRubyFlags(int flags) {
+            if ((flags & EConvFlags.XML_TEXT_DECORATOR) != 0) {
+                flags |= EConvFlags.UNDEF_HEX_CHARREF;
+            }
+
+            if ((flags & EConvFlags.XML_ATTR_CONTENT_DECORATOR) != 0) {
+                flags |= EConvFlags.UNDEF_HEX_CHARREF;
+            }
+
+            return flags;
         }
 
     }
