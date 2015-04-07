@@ -27,6 +27,8 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.javasupport.test;
 
+import java.util.ArrayList;
+
 public class VariableArguments {
 
 	public static final String _LEADING_UNDERSCORE = "_";
@@ -54,8 +56,8 @@ public class VariableArguments {
 
     public void setConstants(String c, String... constants) {
         this.constants = new String[constants.length + 1];
-        this.constants[0] = c;
-        System.arraycopy(constants, 0, this.constants, 1, constants.length);
+        this.constants[ constants.length ] = c;
+        System.arraycopy(constants, 0, this.constants, 0, constants.length);
     }
 
     public void setConstants(String... constants) {
@@ -64,7 +66,24 @@ public class VariableArguments {
 
     public static class VarArgOnly extends VariableArguments {
 
-        public VarArgOnly(String... constants) {
+        public VarArgOnly(Object... constants) {
+            super( strArgs(constants) );
+            this.constants = constants;
+        }
+
+        private static String[] strArgs(final Object... constants) {
+            ArrayList<String> args = new ArrayList<String>();
+            for ( Object constant : constants ) {
+                if ( constant instanceof String ) args.add((String) constant);
+            }
+            return args.toArray( new String[ args.size() ] );
+        }
+
+    }
+
+    public static class StringVarArgOnly extends VariableArguments {
+
+        public StringVarArgOnly(String... constants) {
             super(constants);
         }
 

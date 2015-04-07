@@ -90,14 +90,14 @@ class TestHigherJavasupport < Test::Unit::TestCase
   VarArgsCtor = org.jruby.javasupport.test.VariableArguments
 
   def test_varargs_constructor
-    holder = VarArgsCtor.new
-    assert_equal nil, holder.constants
+    var_ar = VarArgsCtor.new
+    assert_equal nil, var_ar.constants
 
-    holder = VarArgsCtor.new '0'
-    assert_equal '0', holder.constants[0]
+    var_ar = VarArgsCtor.new '0'
+    assert_equal '0', var_ar.constants[0]
 
-    holder = org.jruby.javasupport.test.VariableArguments.new '0', '1'
-    assert_equal '1', holder.constants[1]
+    var_ar = org.jruby.javasupport.test.VariableArguments.new '0', '1'
+    assert_equal '1', var_ar.constants[1]
 
     assert_raises(NameError) do
       org.jruby.javasupport.test.VariableArguments.new '0', 1
@@ -130,27 +130,114 @@ class TestHigherJavasupport < Test::Unit::TestCase
     def initialize(); end
   end
 
+  class RubyVarArgsOnlyCtor3 < VarArgOnly
+    def initialize(*args); super end
+  end
+
+  class RubyVarArgsOnlyCtor4 < VarArgOnly
+    def initialize(*args)
+      super(args.to_java)
+    end
+  end
+
+  StringVarArgOnly = org.jruby.javasupport.test.VariableArguments::StringVarArgOnly
+
+  class RubyVarArgsOnlyCtor5 < StringVarArgOnly
+    # NOTE: do not work (so far) due component type mismatch :
+    #def initialize(*args); super end
+    #def initialize(*args); super(*args) end
+    def initialize(*args)
+      super(args.to_java(:String))
+    end
+  end
+
   def test_varargs_constructor_in_ruby_subclass
-    holder = RubyVarArgsCtor1.new 'foo', 'bar'
-    assert_equal 'foo', holder.constants[0]
-    assert_equal 'bar', holder.constants[1]
+    var_args = RubyVarArgsCtor1.new 'foo', 'bar'
+    assert_equal 'foo', var_args.constants[0]
+    assert_equal 'bar', var_args.constants[1]
 
-    holder = RubyVarArgsCtor2.new
-    assert_equal nil, holder.constants[0]
+    var_args = RubyVarArgsCtor2.new
+    assert_equal nil, var_args.constants[0]
 
-    holder = RubyVarArgsCtor3.new
-    assert_equal nil, holder.constants
+    var_args = RubyVarArgsCtor3.new
+    assert_equal nil, var_args.constants
 
-    holder = RubyVarArgsCtor4.new
-    assert_equal nil, holder.constants
+    var_args = RubyVarArgsCtor4.new
+    assert_equal nil, var_args.constants
 
     #
 
-    holder = RubyVarArgsOnlyCtor1.new
-    assert_equal 0, holder.constants.length
+    var_args = RubyVarArgsOnlyCtor1.new
+    assert_equal 0, var_args.constants.length
 
-    holder = RubyVarArgsOnlyCtor2.new
-    assert_equal 0, holder.constants.length
+    var_args = RubyVarArgsOnlyCtor2.new
+    assert_equal 0, var_args.constants.length
+
+    var_args = RubyVarArgsOnlyCtor3.new
+    assert_equal 0, var_args.constants.length
+
+    var_args = RubyVarArgsOnlyCtor3.new('1')
+    assert_equal 1, var_args.constants.length
+
+    var_args = RubyVarArgsOnlyCtor4.new
+    assert_equal 0, var_args.constants.length
+
+    var_args = RubyVarArgsOnlyCtor4.new(1)
+    assert_equal 1, var_args.constants.length
+
+    var_args = RubyVarArgsOnlyCtor4.new(1, 2)
+    assert_equal 2, var_args.constants.length
+
+    var_args = RubyVarArgsOnlyCtor5.new
+    assert_equal 0, var_args.constants.length
+
+    var_args = RubyVarArgsOnlyCtor5.new('1')
+    assert_equal 1, var_args.constants.length
+  end
+
+  def test_varargs_overloaded_method
+    var_args = VarArgsCtor.new 'foo'
+    var_args.setConstants 'bar'
+    assert_equal 'bar', var_args.constants[0]
+
+    var_args.setConstants 'foo,bar' # (String)
+    assert_equal 'foo', var_args.constants[0]
+    assert_equal 'bar', var_args.constants[1]
+
+    var_args = RubyVarArgsOnlyCtor2.new
+    var_args.setConstants 'foo', 'bar' # (String, String)
+    assert_equal 'foo', var_args.constants[0]
+    assert_equal 'bar', var_args.constants[1]
+
+    var_args.setConstants 'foo', 'bar', 'baz' # (String, String...)
+    assert_equal 'bar', var_args.constants[0]
+    assert_equal 'baz', var_args.constants[1]
+    assert_equal 'foo', var_args.constants[2]
+
+    var_args.setConstants '1', '2', '3', '4', '5'
+    assert_equal '2', var_args.constants[0]
+    assert_equal '1', var_args.constants[4]
+  end
+
+  def test_varargs_only_method
+    a = java.util.Arrays.asList(1)
+    assert_equal 1, a[0]
+    a = java.util.Arrays.asList('1', '2', '3')
+    assert_equal '1', a[0]
+    assert_equal '3', a[2]
+    a = java.util.Arrays.asList('1', 2, 3.0, 4)
+    assert_equal '1', a[0]
+    assert_equal 2, a[1]
+    a = java.util.Arrays.asList([1, 2])
+    assert_equal [1, 2], a[0]
+    a = java.util.Arrays.asList([1, 2], [3])
+    assert_equal [1, 2], a[0]
+    assert_equal [3], a[1]
+    a = java.util.Arrays.asList([1, 2].to_java)
+    assert_equal 1, a[0]
+    assert_equal 2, a[1]
+    a = java.util.Arrays.asList
+    assert_equal 0, a.size
   end
 
   java_import org.jruby.javasupport.test.Room
