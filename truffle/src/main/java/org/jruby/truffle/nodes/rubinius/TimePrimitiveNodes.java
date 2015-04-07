@@ -13,6 +13,7 @@ import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.SourceSection;
+
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
 import org.jruby.truffle.nodes.objectstorage.ReadHeadObjectFieldNode;
@@ -49,7 +50,7 @@ public abstract class TimePrimitiveNodes {
         @Specialization
         public RubyTime timeSNow(VirtualFrame frame, RubyClass timeClass) {
             // TODO CS 4-Mar-15 whenever we get time we have to convert lookup and time zone to a string and look it up - need to cache somehow...
-            return new RubyTime(timeClass, now(readTimeZoneNode.executeRubyString(frame)), null);
+            return new RubyTime(timeClass, now(readTimeZoneNode.executeRubyString(frame)), nil());
         }
         
         @CompilerDirectives.TruffleBoundary
@@ -107,7 +108,7 @@ public abstract class TimePrimitiveNodes {
         public RubyTime timeSSpecificUTC(int seconds, int nanoseconds, boolean isUTC, RubyNilClass offset) {
             // TODO(CS): overflow checks needed?
             final long milliseconds = seconds * 1_000L + (nanoseconds / 1_000_000);
-            return new RubyTime(getContext().getCoreLibrary().getTimeClass(), time(milliseconds), null);
+            return new RubyTime(getContext().getCoreLibrary().getTimeClass(), time(milliseconds), nil());
         }
 
         @Specialization(guards = "!isTrue(arguments[2])")
@@ -124,7 +125,7 @@ public abstract class TimePrimitiveNodes {
         public RubyTime timeSSpecific(VirtualFrame frame, int seconds, int nanoseconds, boolean isUTC, RubyNilClass offset) {
             // TODO(CS): overflow checks needed?
             final long milliseconds = (long) seconds * 1_000 + ((long) nanoseconds / 1_000_000);
-            return new RubyTime(getContext().getCoreLibrary().getTimeClass(), time(milliseconds, readTimeZoneNode.executeRubyString(frame)), null);
+            return new RubyTime(getContext().getCoreLibrary().getTimeClass(), time(milliseconds, readTimeZoneNode.executeRubyString(frame)), offset);
         }
 
         @CompilerDirectives.TruffleBoundary
@@ -297,7 +298,6 @@ public abstract class TimePrimitiveNodes {
             } else if (utcoffset == nil()) {
                 String tz = DebugOperations.send(getContext(), getContext().getCoreLibrary().getENV(), "[]", null, getContext().makeString("TZ")).toString();
                 zone = org.jruby.RubyTime.getTimeZoneFromTZString(getContext().getRuntime(), tz);
-                utcoffset = null;
             } else if (utcoffset instanceof Integer) {
                 zone = DateTimeZone.forOffsetMillis(((int) utcoffset) * 1_000);
             } else if (utcoffset instanceof Long) {
@@ -430,8 +430,9 @@ public abstract class TimePrimitiveNodes {
 
         @Specialization
         public Object timeUTCOffset(RubyTime time) {
-            if (time.getOffset() != null) {
-                return time.getOffset();
+            Object offset = time.getOffset();
+            if (offset != nil()) {
+                return offset;
             } else {
                 return time.getDateTime().getZone().getOffset(time.getDateTime().getMillis()) / 1_000;
             }
