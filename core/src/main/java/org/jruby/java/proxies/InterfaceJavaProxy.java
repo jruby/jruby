@@ -21,37 +21,42 @@ import org.jruby.runtime.builtin.IRubyObject;
  * @author headius
  */
 public class InterfaceJavaProxy extends JavaProxy {
+
     public InterfaceJavaProxy(Ruby runtime, RubyClass klazz) {
         super(runtime, klazz);
     }
 
+    private static final ObjectAllocator ALLOCATOR = new ObjectAllocator() {
+        public IRubyObject allocate(Ruby runtime, RubyClass klazz) {
+            return new InterfaceJavaProxy(runtime, klazz);
+        }
+    };
+
     public static RubyClass createInterfaceJavaProxy(ThreadContext context) {
-        Ruby runtime = context.runtime;
-        
-        RubyClass ifcJavaProxy = runtime.defineClass(
-                "InterfaceJavaProxy",
-                runtime.getJavaSupport().getJavaProxyClass(), new ObjectAllocator() {
-            public IRubyObject allocate(Ruby runtime, RubyClass klazz) {
-                return new InterfaceJavaProxy(runtime, klazz);
-            }
-        });
+        final Ruby runtime = context.runtime;
+        RubyClass InterfaceJavaProxy = runtime.defineClass(
+            "InterfaceJavaProxy", runtime.getJavaSupport().getJavaProxyClass(), ALLOCATOR
+        );
 
-        RubyClass javaIfcExtender = runtime.defineClass(
-                "JavaInterfaceExtender", runtime.getObject(), runtime.getObject().getAllocator());
-        javaIfcExtender.defineAnnotatedMethods(JavaInterfaceExtender.class);
+        RubyClass JavaInterfaceExtended = runtime.defineClass(
+            "JavaInterfaceExtender", runtime.getObject(), runtime.getObject().getAllocator()
+        );
+        JavaInterfaceExtended.defineAnnotatedMethods(JavaInterfaceExtender.class);
 
-        return ifcJavaProxy;
+        return InterfaceJavaProxy;
     }
 
     public static class JavaInterfaceExtender {
         @JRubyMethod(visibility = Visibility.PRIVATE)
         public static IRubyObject initialize(ThreadContext context, IRubyObject self, IRubyObject javaClassName, Block block) {
             Ruby runtime = context.runtime;
-            
+
             self.getInstanceVariables().setInstanceVariable("@java_class", JavaClass.forNameVerbose(runtime, javaClassName.asJavaString()));
             self.getInstanceVariables().setInstanceVariable("@block", RubyProc.newProc(runtime, block, block.type));
 
-            return runtime.getNil();
+            self.getInternalVariables().getInternalVariable("@block");
+
+            return context.nil;
         }
 
         @JRubyMethod

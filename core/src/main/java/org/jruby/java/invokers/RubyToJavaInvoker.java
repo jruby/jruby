@@ -162,31 +162,48 @@ public abstract class RubyToJavaInvoker extends JavaMethod {
 
     protected abstract boolean isMemberVarArgs(Member member);
 
-    static Object convertArg(IRubyObject arg, JavaCallable method, int index) {
-        return arg.toJava(method.getParameterTypes()[index]);
+    //final int getMemberArity(Member member) {
+    //    return getMemberParameterTypes(member).length;
+    //}
+
+    public static Object[] convertArguments(final ParameterTypes method, final IRubyObject[] args) {
+        final Class<?>[] paramTypes = method.getParameterTypes();
+        final Object[] javaArgs; final int len = args.length;
+
+        if ( method.isVarArgs() ) {
+            final int last = paramTypes.length - 1;
+            javaArgs = new Object[ last + 1 ];
+            for ( int i = 0; i < last; i++ ) {
+                javaArgs[i] = args[i].toJava(paramTypes[i]);
+            }
+            javaArgs[ last ] = convertVarArgumentsOnly(paramTypes[ last ], last, args);
+        }
+        else {
+            javaArgs = new Object[len];
+            for ( int i = 0; i < len; i++ ) {
+                javaArgs[i] = args[i].toJava(paramTypes[i]);
+            }
+        }
+        return javaArgs;
     }
 
-    static Object convertVarArgs(IRubyObject[] args, JavaCallable method) {
-        final Class[] types = method.getParameterTypes();
-        final Class<?> varArrayType = types[types.length - 1];
-        final int varStart = types.length - 1;
+    private static Object convertVarArgumentsOnly(final Class<?> varArrayType,
+        final int varStart, final IRubyObject[] args) {
         final int varCount = args.length - varStart;
 
-        if ( args.length == 0 ) {
+        if ( args.length == 0 || varCount <= 0 ) {
             return Array.newInstance(varArrayType.getComponentType(), 0);
         }
 
-        final Object varArgs;
         if ( varCount == 1 && args[varStart] instanceof ArrayJavaProxy ) {
             // we may have a pre-created array to pass; try that first
-            varArgs = args[varStart].toJava(varArrayType);
+            return args[varStart].toJava(varArrayType);
         }
-        else {
-            final Class compType = varArrayType.getComponentType();
-            varArgs = Array.newInstance(compType, varCount);
-            for ( int i = 0; i < varCount; i++ ) {
-                Array.set(varArgs, i, args[varStart + i].toJava(compType));
-            }
+
+        final Class<?> compType = varArrayType.getComponentType();
+        final Object varArgs = Array.newInstance(compType, varCount);
+        for ( int i = 0; i < varCount; i++ ) {
+            Array.set(varArgs, i, args[varStart + i].toJava(compType));
         }
         return varArgs;
     }
