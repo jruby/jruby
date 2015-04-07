@@ -256,33 +256,33 @@ public abstract class TimePrimitiveNodes {
         }
 
         @Specialization
-        public RubyTime timeSFromArray(RubyClass timeClass, RubyNilClass sec, int min, int hour, int mday, int month, int year,
+        public RubyTime timeSFromArray(VirtualFrame frame, RubyClass timeClass, RubyNilClass sec, int min, int hour, int mday, int month, int year,
                                        RubyNilClass nsec, int isdst, boolean fromutc, Object utcoffset) {
-            return timeSFromArray(timeClass, 0, min, hour, mday, month, year, nsec, isdst, fromutc, utcoffset);
+            return timeSFromArray(frame, timeClass, 0, min, hour, mday, month, year, nsec, isdst, fromutc, utcoffset);
         }
 
         @Specialization
-        public RubyTime timeSFromArray(RubyClass timeClass, int sec, int min, int hour, int mday, int month, int year,
+        public RubyTime timeSFromArray(VirtualFrame frame, RubyClass timeClass, int sec, int min, int hour, int mday, int month, int year,
                                        RubyNilClass nsec, int isdst, boolean fromutc, Object utcoffset) {
-            return timeSFromArray(timeClass, sec, min, hour, mday, month, year, 0, isdst, fromutc, utcoffset);
+            return buildTime(frame, timeClass, sec, min, hour, mday, month, year, 0, isdst, fromutc, utcoffset);
         }
 
         @Specialization
-        public RubyTime timeSFromArray(RubyClass timeClass, long sec, int min, int hour, int mday, int month, int year,
+        public RubyTime timeSFromArray(VirtualFrame frame, RubyClass timeClass, long sec, int min, int hour, int mday, int month, int year,
                                        int nsec, int isdst, boolean fromutc, Object utcoffset) {
             // TODO CS 15-Feb-15 that cast
-            return timeSFromArray(timeClass, (int) sec, min, hour, mday, month, year, nsec, isdst, fromutc, utcoffset);
+            return buildTime(frame, timeClass, (int) sec, min, hour, mday, month, year, nsec, isdst, fromutc, utcoffset);
         }
 
         @Specialization
-        public RubyTime timeSFromArray(RubyClass timeClass, int sec, int min, int hour, int mday, int month, int year,
+        public RubyTime timeSFromArray(VirtualFrame frame, RubyClass timeClass, int sec, int min, int hour, int mday, int month, int year,
                                        long nsec, int isdst, boolean fromutc, Object utcoffset) {
             // TODO CS 15-Feb-15 that cast
-            return timeSFromArray(timeClass, sec, min, hour, mday, month, year, (int) nsec, isdst, fromutc, utcoffset);
+            return buildTime(frame, timeClass, sec, min, hour, mday, month, year, (int) nsec, isdst, fromutc, utcoffset);
         }
 
         @Specialization
-        public RubyTime timeSFromArray(RubyClass timeClass, int sec, int min, int hour, int mday, int month, int year,
+        public RubyTime buildTime(VirtualFrame frame, RubyClass timeClass, int sec, int min, int hour, int mday, int month, int year,
                                        int nsec, int isdst, boolean fromutc, Object utcoffset) {
             if (sec < 0 || sec > 59 ||
                     min < 0 || min > 59 ||
@@ -302,8 +302,8 @@ public abstract class TimePrimitiveNodes {
                 zone = DateTimeZone.forOffsetMillis(((int) utcoffset) * 1_000);
             } else if (utcoffset instanceof Long) {
                 zone = DateTimeZone.forOffsetMillis((int) ((long) utcoffset) * 1_000);
-            } else if (utcoffset instanceof RubyBasicObject && isRational((RubyBasicObject) utcoffset)) {
-                final int millis = cast(DebugOperations.send(getContext(), utcoffset, "_offset_to_milliseconds", null));
+            } else if (utcoffset instanceof RubyBasicObject) {
+                final int millis = cast(ruby(frame, "(offset * 1000).to_i", "offset", utcoffset));
                 zone = DateTimeZone.forOffsetMillis(millis);
             } else {
                 throw new UnsupportedOperationException(String.format("%s %s %s %s", isdst, fromutc, utcoffset, utcoffset.getClass()));
@@ -324,30 +324,30 @@ public abstract class TimePrimitiveNodes {
         }
 
         @Specialization
-        public RubyTime timeSFromArray(RubyClass timeClass, double sec, int min, int hour, int mday, int month, int year,
+        public RubyTime timeSFromArray(VirtualFrame frame, RubyClass timeClass, double sec, int min, int hour, int mday, int month, int year,
                                        long nsec, int isdst, boolean fromutc, Object utcoffset) {
-            return timeSFromArray(timeClass, sec, min, hour, mday, month, year, (int) nsec, isdst, fromutc, utcoffset);
+            return timeSFromArray(frame, timeClass, sec, min, hour, mday, month, year, (int) nsec, isdst, fromutc, utcoffset);
         }
 
         @Specialization
-        public RubyTime timeSFromArray(RubyClass timeClass, double sec, int min, int hour, int mday, int month, int year,
+        public RubyTime timeSFromArray(VirtualFrame frame, RubyClass timeClass, double sec, int min, int hour, int mday, int month, int year,
                                        int nsec, long isdst, boolean fromutc, Object utcoffset) {
-            return timeSFromArray(timeClass, sec, min, hour, mday, month, year, nsec, (int) isdst, fromutc, utcoffset);
+            return timeSFromArray(frame, timeClass, sec, min, hour, mday, month, year, nsec, (int) isdst, fromutc, utcoffset);
         }
 
         @Specialization
-        public RubyTime timeSFromArray(RubyClass timeClass, double sec, int min, int hour, int mday, int month, int year,
+        public RubyTime timeSFromArray(VirtualFrame frame, RubyClass timeClass, double sec, int min, int hour, int mday, int month, int year,
                                        RubyNilClass nsec, int isdst, boolean fromutc, Object utcoffset) {
             final int secondsWhole = (int) sec;
             final int nanosecondsFractional = (int) ((sec * 1_000_000_000) - (secondsWhole * 1_000_000_000));
-            return timeSFromArray(timeClass, secondsWhole, min, hour, mday, month, year, nanosecondsFractional, isdst, fromutc, utcoffset);
+            return buildTime(frame, timeClass, secondsWhole, min, hour, mday, month, year, nanosecondsFractional, isdst, fromutc, utcoffset);
         }
 
         @Specialization
-        public RubyTime timeSFromArray(RubyClass timeClass, double sec, int min, int hour, int mday, int month, int year,
+        public RubyTime timeSFromArray(VirtualFrame frame, RubyClass timeClass, double sec, int min, int hour, int mday, int month, int year,
                                        int nsec, int isdst, boolean fromutc, Object utcoffset) {
             final int secondsWhole = (int) sec;
-            return timeSFromArray(timeClass, secondsWhole, min, hour, mday, month, year, nsec, isdst, fromutc, utcoffset);
+            return buildTime(frame, timeClass, secondsWhole, min, hour, mday, month, year, nsec, isdst, fromutc, utcoffset);
         }
 
         private int cast(Object value) {
