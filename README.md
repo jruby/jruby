@@ -8,11 +8,20 @@ Master: [![Build Status](https://travis-ci.org/jruby/jruby.png?branch=master)](h
 JRuby is an implementation of the [Ruby language](http://www.ruby-lang.org)
 using the JVM.
 
-JRuby aims to be a complete, correct and fast implementation of Ruby.
+JRuby aims to be a complete, correct and fast implementation of Ruby, at the same
+time as providing powerful new features such as concurrency without a
+[global-interpreter-lock](http://en.wikipedia.org/wiki/Global_Interpreter_Lock),
+true parallelism, and tight integration to the Java language to allow you to
+uses Java classes in your Ruby program and to allow JRuby to be embedded into a
+Java application.
 
-As well as being a conventional Ruby interpreter, JRuby also has tight integration
-to the Java language to allow you to uses Java classes in your Ruby program and
-to allow JRuby to be embedded into a Java application.
+You can use JRuby simply as a faster version of Ruby, you can use it to run Ruby
+on the JVM and access powerful JVM libraries such as highly tuned concurrency
+primitives, you can use it to embed Ruby as a scripting language in your Java
+program, or many other possibilites.
+
+We're a welcoming community - you can talk to us on [#jruby on Freenode](http://richard.esplins.org/siwi/2011/07/08/getting-started-freenode-irc/).
+There are core team members in the EU and US time zones.
 
 Visit the [JRuby website](http://jruby.org) and the [JRuby wiki](https://github.com/jruby/jruby/wiki)
 for more information.
