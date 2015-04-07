@@ -1,8 +1,10 @@
 package org.jruby.ir;
 
 import java.lang.invoke.MethodType;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import org.jruby.ast.MethodDefNode;
 import org.jruby.ir.interpreter.InterpreterContext;
