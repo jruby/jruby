@@ -86,8 +86,6 @@ public abstract class FixnumNodes {
     @CoreMethod(names = "+", required = 1)
     public abstract static class AddNode extends BignumNodes.BignumCoreMethodNode {
 
-        @Child private CallDispatchHeadNode rationalAdd;
-
         public AddNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
         }
@@ -126,19 +124,9 @@ public abstract class FixnumNodes {
             return fixnumOrBignum(BigInteger.valueOf(a).add(b.bigIntegerValue()));
         }
 
-        @Specialization(guards = "isRational(arguments[1])")
-        public Object add(VirtualFrame frame, int a, RubyBasicObject b) {
-            if (rationalAdd == null) {
-                CompilerDirectives.transferToInterpreterAndInvalidate();
-                rationalAdd = insert(DispatchHeadNodeFactory.createMethodCall(getContext()));
-            }
-
-            return rationalAdd.call(frame, b, "+", null, a);
-        }
-
-        @Specialization(guards = "isComplex(arguments[1])")
-        public Object addComplex(VirtualFrame frame, int a, RubyBasicObject b) {
-            return ruby(frame, "b + a", "b", b, "a", a);
+        @Specialization(guards = "!isRubyBignum(arguments[1])")
+        public Object addCoerced(VirtualFrame frame, int a, RubyBasicObject b) {
+            return ruby(frame, "redo_coerced :+, b", "b", b);
         }
 
         @Specialization(rewriteOn = ArithmeticException.class)
@@ -171,20 +159,9 @@ public abstract class FixnumNodes {
             return fixnumOrBignum(BigInteger.valueOf(a).add(b.bigIntegerValue()));
         }
 
-        @Specialization(guards = "isRational(arguments[1])")
-        public Object add(VirtualFrame frame, long a, RubyBasicObject b) {
-            if (rationalAdd == null) {
-                CompilerDirectives.transferToInterpreterAndInvalidate();
-
-                rationalAdd = insert(DispatchHeadNodeFactory.createMethodCall(getContext()));
-            }
-
-            return rationalAdd.call(frame, b, "+", null, a);
-        }
-
-        @Specialization(guards = "isComplex(arguments[1])")
-        public Object addComplex(VirtualFrame frame, long a, RubyBasicObject b) {
-            return ruby(frame, "b + a", "b", b, "a", a);
+        @Specialization(guards = "!isRubyBignum(arguments[1])")
+        public Object addCoerced(VirtualFrame frame, long a, RubyBasicObject b) {
+            return ruby(frame, "redo_coerced :+, b", "b", b);
         }
 
     }
@@ -192,17 +169,12 @@ public abstract class FixnumNodes {
     @CoreMethod(names = "-", required = 1)
     public abstract static class SubNode extends BignumNodes.BignumCoreMethodNode {
 
-        @Child private CallDispatchHeadNode rationalConvertNode;
-        @Child private CallDispatchHeadNode rationalSubNode;
-
         public SubNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
         }
 
         public SubNode(SubNode prev) {
             super(prev);
-            rationalConvertNode = prev.rationalConvertNode;
-            rationalSubNode = prev.rationalSubNode;
         }
 
         @Specialization(rewriteOn = ArithmeticException.class)
@@ -235,30 +207,9 @@ public abstract class FixnumNodes {
             return a - b;
         }
 
-        @Specialization(guards = "isRational(arguments[1])")
-        public Object sub(VirtualFrame frame, int a, RubyBasicObject b) {
-            if (rationalConvertNode == null) {
-                CompilerDirectives.transferToInterpreter();
-                rationalConvertNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext(), true));
-                rationalSubNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext()));
-            }
-
-            final Object aRational = rationalConvertNode.call(frame, getContext().getCoreLibrary().getRationalClass(), "convert", null, a, 1);
-
-            return rationalSubNode.call(frame, aRational, "-", null, b);
-        }
-
-        @Specialization(guards = "isRational(arguments[1])")
-        public Object sub(VirtualFrame frame, long a, RubyBasicObject b) {
-            if (rationalConvertNode == null) {
-                CompilerDirectives.transferToInterpreter();
-                rationalConvertNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext(), true));
-                rationalSubNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext()));
-            }
-
-            final Object aRational = rationalConvertNode.call(frame, getContext().getCoreLibrary().getRationalClass(), "convert", null, a, 1);
-
-            return rationalSubNode.call(frame, aRational, "-", null, b);
+        @Specialization(guards = "!isRubyBignum(arguments[1])")
+        public Object subCoerced(VirtualFrame frame, int a, RubyBasicObject b) {
+            return ruby(frame, "redo_coerced :-, b", "b", b);
         }
 
         @Specialization(rewriteOn = ArithmeticException.class)
@@ -291,12 +242,15 @@ public abstract class FixnumNodes {
             return fixnumOrBignum(BigInteger.valueOf(a).subtract(b.bigIntegerValue()));
         }
 
+        @Specialization(guards = "!isRubyBignum(arguments[1])")
+        public Object subCoerced(VirtualFrame frame, long a, RubyBasicObject b) {
+            return ruby(frame, "redo_coerced :-, b", "b", b);
+        }
+
     }
 
     @CoreMethod(names = "*", required = 1)
     public abstract static class MulNode extends BignumNodes.BignumCoreMethodNode {
-
-        @Child private CallDispatchHeadNode rationalMulNode;
 
         public MulNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
@@ -304,7 +258,6 @@ public abstract class FixnumNodes {
 
         public MulNode(MulNode prev) {
             super(prev);
-            rationalMulNode = prev.rationalMulNode;
         }
 
         @Specialization(rewriteOn = ArithmeticException.class)
@@ -337,6 +290,11 @@ public abstract class FixnumNodes {
         @Specialization
         public Object mul(int a, RubyBignum b) {
             return fixnumOrBignum(BigInteger.valueOf(a).multiply(b.bigIntegerValue()));
+        }
+
+        @Specialization(guards = "!isRubyBignum(arguments[1])")
+        public Object mulCoerced(VirtualFrame frame, int a, RubyBasicObject b) {
+            return ruby(frame, "redo_coerced :*, b", "b", b);
         }
 
         @Specialization(rewriteOn = ArithmeticException.class)
@@ -372,38 +330,14 @@ public abstract class FixnumNodes {
             return fixnumOrBignum(BigInteger.valueOf(a).multiply(b.bigIntegerValue()));
         }
 
-        @Specialization(guards = "isRational(arguments[1])")
-        public Object mul(VirtualFrame frame, int a, RubyBasicObject b) {
-            return mulRational(frame, (long) a, b);
+        @Specialization(guards = "!isRubyBignum(arguments[1])")
+        public Object mulCoerced(VirtualFrame frame, long a, RubyBasicObject b) {
+            return ruby(frame, "redo_coerced :*, b", "b", b);
         }
-
-        @Specialization(guards = "isRational(arguments[1])")
-        public Object mulRational(VirtualFrame frame, long a, RubyBasicObject b) {
-            if (rationalMulNode == null) {
-                CompilerDirectives.transferToInterpreterAndInvalidate();
-                rationalMulNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext()));
-            }
-
-            return rationalMulNode.call(frame, b, "*", null, a);
-        }
-
-        @Specialization(guards = "isComplex(arguments[1])")
-        public Object mulComplex(VirtualFrame frame, int a, RubyBasicObject b) {
-            return ruby(frame, "b * a", "b", b, "a", a);
-        }
-
-        @Specialization(guards = "isComplex(arguments[1])")
-        public Object mulComplex(VirtualFrame frame, long a, RubyBasicObject b) {
-            return ruby(frame, "b * a", "b", b, "a", a);
-        }
-
     }
 
     @CoreMethod(names = {"/", "__slash__"}, required = 1)
     public abstract static class DivNode extends CoreMethodNode {
-
-        @Child private CallDispatchHeadNode rationalConvertNode;
-        @Child private CallDispatchHeadNode rationalDivNode;
 
         private final BranchProfile bGreaterZero = BranchProfile.create();
         private final BranchProfile bGreaterZeroAGreaterEqualZero = BranchProfile.create();
@@ -420,8 +354,6 @@ public abstract class FixnumNodes {
 
         public DivNode(DivNode prev) {
             super(prev);
-            rationalConvertNode = prev.rationalConvertNode;
-            rationalDivNode = prev.rationalDivNode;
         }
 
         @Specialization(rewriteOn = UnexpectedResultException.class)
@@ -503,6 +435,11 @@ public abstract class FixnumNodes {
             return 0;
         }
 
+        @Specialization(guards = "!isRubyBignum(arguments[1])")
+        public Object divCoerced(VirtualFrame frame, int a, RubyBasicObject b) {
+            return ruby(frame, "redo_coerced :/, b", "b", b);
+        }
+
         @Specialization(rewriteOn = UnexpectedResultException.class)
         public long div(long a, int b) throws UnexpectedResultException {
             return div(a, (long) b);
@@ -582,14 +519,9 @@ public abstract class FixnumNodes {
             return 0;
         }
 
-        @Specialization(guards = {"!isRubyBignum(arguments[1])"})
-        public Object divFallback(VirtualFrame frame, long a, RubyBasicObject b) {
-            return ruby(frame, "redo_coerced :/, o", "o", b);
-        }
-
-        @Specialization(guards = {"!isRubyBignum(arguments[1])"})
-        public Object divFallback(VirtualFrame frame, int a, RubyBasicObject b) {
-            return ruby(frame, "redo_coerced :/, o", "o", b);
+        @Specialization(guards = "!isRubyBignum(arguments[1])")
+        public Object divCoerced(VirtualFrame frame, long a, RubyBasicObject b) {
+            return ruby(frame, "redo_coerced :/, b", "b", b);
         }
 
     }
