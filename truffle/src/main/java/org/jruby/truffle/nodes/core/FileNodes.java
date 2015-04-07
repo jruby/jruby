@@ -254,31 +254,6 @@ public abstract class FileNodes {
 
     }
 
-    @CoreMethod(names = {"exist?", "exists?"}, onSingleton = true, required = 1)
-    @NodeChild(value = "path")
-    public abstract static class ExistsNode extends RubyNode {
-
-        public ExistsNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
-        public ExistsNode(ExistsNode prev) {
-            super(prev);
-        }
-
-        @CreateCast("path") public RubyNode coercePathToString(RubyNode path) {
-            return ToStrNodeFactory.create(getContext(), getSourceSection(), path);
-        }
-
-        @Specialization
-        public boolean exists(RubyString path) {
-            notDesignedForCompilation();
-
-            return new File(path.toString()).exists();
-        }
-
-    }
-
     @CoreMethod(names = "expand_path", onSingleton = true, required = 1, optional = 1)
     public abstract static class ExpandPathNode extends CoreMethodNode {
 
