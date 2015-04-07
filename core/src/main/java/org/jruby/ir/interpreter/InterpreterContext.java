@@ -1,8 +1,6 @@
 package org.jruby.ir.interpreter;
 
-import java.util.Collection;
 import java.util.List;
-import org.jruby.ir.IRClosure;
 import org.jruby.ir.IRFlags;
 import org.jruby.ir.IRMetaClassBody;
 import org.jruby.ir.IRMethod;
@@ -76,6 +74,10 @@ public class InterpreterContext {
         }
 
         return linearizedInstrArray;
+    }
+
+    public int getRequiredArgsCount() {
+        return getStaticScope().getRequiredArgs();
     }
 
     public IRScope getScope() {

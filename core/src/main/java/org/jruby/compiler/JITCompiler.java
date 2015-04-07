@@ -302,7 +302,9 @@ public class JITCompiler implements JITCompilerMBean {
                                     PUBLIC_LOOKUP.findStatic(sourceClass, jittedName, signatures.get(-1)),
                                     method.getIRMethod(),
                                     method.getVisibility(),
-                                    method.getImplementationClass()));
+                                    method.getImplementationClass(),
+                                    method.getIRMethod().receivesKeywordArgs()));
+
                 } else {
                     // also specific-arity
                     for (Map.Entry<Integer, MethodType> entry : signatures.entrySet()) {
@@ -315,7 +317,8 @@ public class JITCompiler implements JITCompilerMBean {
                                         entry.getKey(),
                                         method.getIRMethod(),
                                         method.getVisibility(),
-                                        method.getImplementationClass()));
+                                        method.getImplementationClass(),
+                                        method.getIRMethod().receivesKeywordArgs()));
                         break;
                     }
                 }
