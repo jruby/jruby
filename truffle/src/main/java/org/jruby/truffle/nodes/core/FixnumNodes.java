@@ -724,6 +724,17 @@ public abstract class FixnumNodes {
         public boolean less(long a, RubyBignum b) {
             return BigInteger.valueOf(a).compareTo(b.bigIntegerValue()) < 0;
         }
+
+        @Specialization(guards = {"!isRubyBignum(arguments[1])", "!isInteger(arguments[1])", "!isLong(arguments[1])", "!isDouble(arguments[1])"})
+        public Object less(VirtualFrame frame, int a, Object b) {
+            return ruby(frame, "b, a = math_coerce other, :compare_error; a < b", "other", b);
+        }
+
+        @Specialization(guards = {"!isRubyBignum(arguments[1])", "!isInteger(arguments[1])", "!isLong(arguments[1])", "!isDouble(arguments[1])"})
+        public Object less(VirtualFrame frame, long a, Object b) {
+            return ruby(frame, "b, a = math_coerce other, :compare_error; a < b", "other", b);
+        }
+
     }
 
     @CoreMethod(names = "<=", required = 1, unsupportedOperationBehavior = UnsupportedOperationBehavior.ARGUMENT_ERROR)
