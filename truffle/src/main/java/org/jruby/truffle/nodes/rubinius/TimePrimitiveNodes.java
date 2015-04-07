@@ -291,25 +291,26 @@ public abstract class TimePrimitiveNodes {
                 throw new RaiseException(getContext().getCoreLibrary().argumentErrorOutOfRange(this));
             }
 
-            if (isdst == -1 && !fromutc && utcoffset instanceof Integer) {
-                final DateTime dateTime = new DateTime(year, month, mday, hour, min, sec, nsec / 1_000_000, DateTimeZone.forOffsetMillis(((int) utcoffset) * 1_000));
-                return new RubyTime(timeClass, dateTime, utcoffset);
-            } else if (isdst == -1 && !fromutc && utcoffset instanceof Long) {
-                final DateTime dateTime = new DateTime(year, month, mday, hour, min, sec, nsec / 1_000_000, DateTimeZone.forOffsetMillis((int) ((long) utcoffset) * 1_000));
-                return new RubyTime(timeClass, dateTime, utcoffset);
-            } else if (isdst == -1 && !fromutc && utcoffset instanceof RubyBasicObject && isRational((RubyBasicObject) utcoffset)) {
-                // TODO CS 15-Feb-15 debug send and cast
+            final DateTimeZone zone;
+            if (fromutc) {
+                zone = DateTimeZone.UTC;
+            } else if (utcoffset == nil()) {
+                String tz = DebugOperations.send(getContext(), getContext().getCoreLibrary().getENV(), "[]", null, getContext().makeString("TZ")).toString();
+                zone = org.jruby.RubyTime.getTimeZoneFromTZString(getContext().getRuntime(), tz);
+                utcoffset = null;
+            } else if (utcoffset instanceof Integer) {
+                zone = DateTimeZone.forOffsetMillis(((int) utcoffset) * 1_000);
+            } else if (utcoffset instanceof Long) {
+                zone = DateTimeZone.forOffsetMillis((int) ((long) utcoffset) * 1_000);
+            } else if (utcoffset instanceof RubyBasicObject && isRational((RubyBasicObject) utcoffset)) {
                 final int millis = cast(DebugOperations.send(getContext(), utcoffset, "_offset_to_milliseconds", null));
-                final DateTime dateTime = new DateTime(year, month, mday, hour, min, sec, nsec / 1_000_000, DateTimeZone.forOffsetMillis(millis));
-                return new RubyTime(timeClass, dateTime, utcoffset);
-            } else if (isdst == -1 && !fromutc && utcoffset == nil()) {
-                // TODO CS 14-Feb-15 uses debug send
-                final DateTimeZone zone = org.jruby.RubyTime.getTimeZoneFromTZString(getContext().getRuntime(),
-                        DebugOperations.send(getContext(), getContext().getCoreLibrary().getENV(), "[]", null, getContext().makeString("TZ")).toString());
+                zone = DateTimeZone.forOffsetMillis(millis);
+            } else {
+                throw new UnsupportedOperationException(String.format("%s %s %s %s", isdst, fromutc, utcoffset, utcoffset.getClass()));
+            }
+
+            if (isdst == -1) {
                 final DateTime dateTime = new DateTime(year, month, mday, hour, min, sec, nsec / 1_000_000, zone);
-                return new RubyTime(timeClass, dateTime, null);
-            } else if (isdst == -1 && fromutc && utcoffset == nil()) {
-                final DateTime dateTime = new DateTime(year, month, mday, hour, min, sec, nsec / 1_000_000, DateTimeZone.UTC);
                 return new RubyTime(timeClass, dateTime, utcoffset);
             } else {
                 throw new UnsupportedOperationException(String.format("%s %s %s %s", isdst, fromutc, utcoffset, utcoffset.getClass()));
