@@ -75,7 +75,8 @@ module JITSpecUtils
         handle,
         method,
         oj.runtime.Visibility::PUBLIC,
-        currModule)
+        currModule,
+        false)
   end
 
   def compile_run(src, filename, line)
