@@ -40,6 +40,24 @@ class File < IO
     alias_method :exists?,  :exist?
   end
 
+  ##
+  # Returns nil if file_name doesn‘t exist or has zero size,
+  # the size of the file otherwise.
+  def self.size?(io_or_path)
+    s = 0
+
+    io = Rubinius::Type.try_convert io_or_path, IO, :to_io
+
+    if io.is_a? IO
+      s = Stat.fstat(io.fileno).size
+    else
+      st = Stat.stat io_or_path
+      s = st.size if st
+    end
+
+    s > 0 ? s : nil
+  end
+
 end
 
 File::Stat = Rubinius::Stat

@@ -13,6 +13,7 @@ import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.object.HiddenKey;
 import com.oracle.truffle.api.source.SourceSection;
 import jnr.posix.FileStat;
+import org.jruby.truffle.nodes.objectstorage.ReadHeadObjectFieldNode;
 import org.jruby.truffle.nodes.objectstorage.WriteHeadObjectFieldNode;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
@@ -52,6 +53,29 @@ public abstract class StatPrimitiveNodes {
         @Specialization(guards = "!isRubyString(arguments[1])")
         public Object stat(RubyBasicObject rubyStat, Object path) {
             return null;
+        }
+
+    }
+
+    @RubiniusPrimitive(name = "stat_size")
+    public static abstract class StatSizePrimitiveNode extends RubiniusPrimitiveNode {
+
+        @Child private ReadHeadObjectFieldNode readStatNode;
+
+        public StatSizePrimitiveNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+            readStatNode = new ReadHeadObjectFieldNode(STAT_IDENTIFIER);
+        }
+
+        public StatSizePrimitiveNode(StatSizePrimitiveNode prev) {
+            super(prev);
+            readStatNode = prev.readStatNode;
+        }
+
+        @Specialization
+        public long stat(RubyBasicObject rubyStat) {
+            final FileStat stat = (FileStat) readStatNode.execute(rubyStat);
+            return stat.st_size();
         }
 
     }

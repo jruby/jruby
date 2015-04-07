@@ -537,38 +537,6 @@ public abstract class FileNodes {
 
     }
 
-    @CoreMethod(names = "size?", onSingleton = true, required = 1)
-    public abstract static class SizeNode extends CoreMethodNode {
-
-        public SizeNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
-        public SizeNode(SizeNode prev) {
-            super(prev);
-        }
-
-        @Specialization
-        public Object read(RubyString file) {
-            notDesignedForCompilation();
-
-            final File f = new File(file.toString());
-
-            if (!f.exists()) {
-                return nil();
-            }
-
-            final long size = f.length();
-
-            if (size == 0) {
-                return nil();
-            }
-
-            return size;
-        }
-
-    }
-
     @CoreMethod(names = "symlink?", onSingleton = true, required = 1)
     public abstract static class SymlinkQueryNode extends CoreMethodNode {
 
