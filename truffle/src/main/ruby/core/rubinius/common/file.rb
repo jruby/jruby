@@ -58,6 +58,44 @@ class File < IO
     s > 0 ? s : nil
   end
 
+  ##
+  # Returns true if the named file is a directory, false otherwise.
+  #
+  # File.directory?(".")
+  def self.directory?(io_or_path)
+    io = Rubinius::Type.try_convert io_or_path, IO, :to_io
+
+    if io.is_a? IO
+      Stat.fstat(io.fileno).directory?
+    else
+      st = Stat.stat io_or_path
+      st ? st.directory? : false
+    end
+  end
+
+  ##
+  # Returns true if the named file exists and is a regular file.
+  def self.file?(path)
+    st = Stat.stat path
+    st ? st.file? : false
+  end
+
+  ##
+  # Returns true if the named file is executable by the
+  # effective user id of this process.
+  def self.executable?(path)
+    st = Stat.stat path
+    st ? st.executable? : false
+  end
+
+  ##
+  # Returns true if the named file is readable by the effective
+  # user id of this process.
+  def self.readable?(path)
+    st = Stat.stat path
+    st ? st.readable? : false
+  end
+
 end
 
 File::Stat = Rubinius::Stat

@@ -57,25 +57,76 @@ public abstract class StatPrimitiveNodes {
 
     }
 
-    @RubiniusPrimitive(name = "stat_size")
-    public static abstract class StatSizePrimitiveNode extends RubiniusPrimitiveNode {
+    public static abstract class StatReadPrimitiveNode extends RubiniusPrimitiveNode {
 
         @Child private ReadHeadObjectFieldNode readStatNode;
 
-        public StatSizePrimitiveNode(RubyContext context, SourceSection sourceSection) {
+        public StatReadPrimitiveNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
             readStatNode = new ReadHeadObjectFieldNode(STAT_IDENTIFIER);
         }
 
-        public StatSizePrimitiveNode(StatSizePrimitiveNode prev) {
+        public StatReadPrimitiveNode(StatReadPrimitiveNode prev) {
             super(prev);
             readStatNode = prev.readStatNode;
         }
 
+        public FileStat getStat(RubyBasicObject rubyStat) {
+            return (FileStat) readStatNode.execute(rubyStat);
+        }
+
+    }
+
+    @RubiniusPrimitive(name = "stat_size")
+    public static abstract class StatSizePrimitiveNode extends StatReadPrimitiveNode {
+
+        public StatSizePrimitiveNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public StatSizePrimitiveNode(StatSizePrimitiveNode prev) {
+            super(prev);
+        }
+
         @Specialization
-        public long stat(RubyBasicObject rubyStat) {
-            final FileStat stat = (FileStat) readStatNode.execute(rubyStat);
-            return stat.st_size();
+        public long size(RubyBasicObject rubyStat) {
+            return getStat(rubyStat).st_size();
+        }
+
+    }
+
+    @RubiniusPrimitive(name = "stat_mode")
+    public static abstract class StatModePrimitiveNode extends StatReadPrimitiveNode {
+
+        public StatModePrimitiveNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public StatModePrimitiveNode(StatModePrimitiveNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public int mode(RubyBasicObject rubyStat) {
+            return getStat(rubyStat).mode();
+        }
+
+    }
+
+    @RubiniusPrimitive(name = "stat_uid")
+    public static abstract class StatUIDPrimitiveNode extends StatReadPrimitiveNode {
+
+        public StatUIDPrimitiveNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public StatUIDPrimitiveNode(StatUIDPrimitiveNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public int uid(RubyBasicObject rubyStat) {
+            return getStat(rubyStat).uid();
         }
 
     }

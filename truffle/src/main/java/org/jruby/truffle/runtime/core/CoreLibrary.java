@@ -309,6 +309,8 @@ public class CoreLibrary {
         defineModule(truffleModule, "Primitive");
 
         rubiniusModule = defineModule("Rubinius");
+        defineModule(defineModule(defineModule(rubiniusModule, "FFI"), "Platform"), "POSIX");
+
         byteArrayClass = defineClass(rubiniusModule, objectClass, "ByteArray");
         lookupTableClass = defineClass(rubiniusModule, hashClass, "LookupTable");
         stringDataClass = defineClass(rubiniusModule, objectClass, "StringData");
