@@ -2765,6 +2765,7 @@ public class Helpers {
         RubyArray parms = RubyArray.newEmptyArray(runtime);
 
         for (String param : parameterList) {
+            if (param == null) continue; // FIXME: How does this happen?
             if (param.equals("NONE")) break;
 
             RubyArray elem = RubyArray.newEmptyArray(runtime);
@@ -2822,8 +2823,13 @@ public class Helpers {
             String type = argDesc[i];
             i++;
             String name = argDesc[i];
-            String encoded = type.charAt(0) + name;
-            tmp[i] = encoded;
+            if (type.equals("keyreq")) {
+                tmp[i] = "K" + name;
+            } else if (type.equals("keyrest")) {
+                tmp[i] = "e" + name;
+            } else {
+                tmp[i] = type.charAt(0) + name;
+            }
         }
 
         return tmp;
