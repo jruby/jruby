@@ -248,6 +248,19 @@ public abstract class FixnumNodes {
             return rationalSubNode.call(frame, aRational, "-", null, b);
         }
 
+        @Specialization(guards = "isRational(arguments[1])")
+        public Object sub(VirtualFrame frame, long a, RubyBasicObject b) {
+            if (rationalConvertNode == null) {
+                CompilerDirectives.transferToInterpreter();
+                rationalConvertNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext(), true));
+                rationalSubNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext()));
+            }
+
+            final Object aRational = rationalConvertNode.call(frame, getContext().getCoreLibrary().getRationalClass(), "convert", null, a, 1);
+
+            return rationalSubNode.call(frame, aRational, "-", null, b);
+        }
+
         @Specialization(rewriteOn = ArithmeticException.class)
         public long sub(long a, int b) {
             return ExactMath.subtractExact(a, b);
