@@ -237,17 +237,12 @@ public abstract class BignumNodes {
     @CoreMethod(names = "<", required = 1)
     public abstract static class LessNode extends CoreMethodNode {
 
-        @Child private CallDispatchHeadNode rationalConvertNode;
-        @Child private CallDispatchHeadNode rationalLessNode;
-
         public LessNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
         }
 
         public LessNode(LessNode prev) {
             super(prev);
-            rationalConvertNode = prev.rationalConvertNode;
-            rationalLessNode = prev.rationalLessNode;
         }
 
         @Specialization
@@ -270,18 +265,11 @@ public abstract class BignumNodes {
             return a.bigIntegerValue().compareTo(b.bigIntegerValue()) < 0;
         }
 
-        @Specialization(guards = "isRational(arguments[1])")
-        public Object pow(VirtualFrame frame, Object a, RubyBasicObject b) {
-            if (rationalConvertNode == null) {
-                CompilerDirectives.transferToInterpreter();
-                rationalConvertNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext(), true));
-                rationalLessNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext()));
-            }
-
-            final Object aRational = rationalConvertNode.call(frame, getContext().getCoreLibrary().getRationalClass(), "convert", null, a, 1);
-
-            return rationalLessNode.call(frame, aRational, "<", null, b);
+        @Specialization(guards = "!isRubyBignum(arguments[1])")
+        public Object lessCoerced(VirtualFrame frame, RubyBignum a, RubyBasicObject b) {
+            return ruby(frame, "redo_coerced :<, b", "b", b);
         }
+
     }
 
     @CoreMethod(names = "<=", required = 1)

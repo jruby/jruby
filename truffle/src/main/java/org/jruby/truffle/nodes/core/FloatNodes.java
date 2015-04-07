@@ -115,17 +115,12 @@ public abstract class FloatNodes {
     @CoreMethod(names = "*", required = 1)
     public abstract static class MulNode extends CoreMethodNode {
 
-        @Child private CallDispatchHeadNode rationalConvertNode;
-        @Child private CallDispatchHeadNode rationalPowNode;
-
         public MulNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
         }
 
         public MulNode(MulNode prev) {
             super(prev);
-            rationalConvertNode = prev.rationalConvertNode;
-            rationalPowNode = prev.rationalPowNode;
         }
 
         @Specialization
@@ -148,17 +143,9 @@ public abstract class FloatNodes {
             return a * b.bigIntegerValue().doubleValue();
         }
 
-        @Specialization(guards = "isRational(arguments[1])")
-        public Object mul(VirtualFrame frame, double a, RubyBasicObject b) {
-            if (rationalConvertNode == null) {
-                CompilerDirectives.transferToInterpreter();
-                rationalConvertNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext(), true));
-                rationalPowNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext()));
-            }
-
-            final Object aRational = rationalConvertNode.call(frame, getContext().getCoreLibrary().getRationalClass(), "convert", null, a, 1);
-
-            return rationalPowNode.call(frame, aRational, "*", null, b);
+        @Specialization(guards = "!isRubyBignum(arguments[1])")
+        public Object mulCoerced(VirtualFrame frame, double a, RubyBasicObject b) {
+            return ruby(frame, "redo_coerced :*, b", "b", b);
         }
 
     }
@@ -169,8 +156,6 @@ public abstract class FloatNodes {
         @Child private CallDispatchHeadNode complexConvertNode;
         @Child private CallDispatchHeadNode complexPowNode;
 
-        @Child private CallDispatchHeadNode rationalPowNode;
-
         private final ConditionProfile complexProfile = ConditionProfile.createBinaryProfile();
 
         public PowNode(RubyContext context, SourceSection sourceSection) {
@@ -179,7 +164,6 @@ public abstract class FloatNodes {
 
         public PowNode(PowNode prev) {
             super(prev);
-            rationalPowNode = prev.rationalPowNode;
         }
 
         @Specialization
@@ -214,14 +198,9 @@ public abstract class FloatNodes {
             return Math.pow(a, b.bigIntegerValue().doubleValue());
         }
 
-        @Specialization(guards = "isRational(arguments[1])")
-        public Object pow(VirtualFrame frame, double a, RubyBasicObject b) {
-            if (rationalPowNode == null) {
-                CompilerDirectives.transferToInterpreter();
-                rationalPowNode = insert(DispatchHeadNodeFactory.createMethodCall(getContext(), true));
-            }
-
-            return rationalPowNode.call(frame, a, "pow_rational", null, b);
+        @Specialization(guards = "!isRubyBignum(arguments[1])")
+        public Object powCoerced(VirtualFrame frame, double a, RubyBasicObject b) {
+            return ruby(frame, "redo_coerced :**, b", "b", b);
         }
 
     }
