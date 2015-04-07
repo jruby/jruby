@@ -229,10 +229,7 @@ public class LoadService {
             if (jrubyHome != null) {
                 // siteDir has to come first, because rubygems insert paths after it
                 // and we must to prefer Gems to rubyLibDir/rubySharedLibDir (same as MRI)
-                String siteDir = RbConfigLibrary.getSiteDir(runtime);
-                if (new File(siteDir).exists()) {
-                    addPath(siteDir);
-                }
+                addPath(RbConfigLibrary.getSiteDir(runtime));
                 // if vendorDirGeneral is different than siteDirGeneral,
                 // add vendorDir, too
                 // adding {vendor,site}{Lib,Arch}Dir dirs is not necessary,
@@ -244,6 +241,8 @@ public class LoadService {
                 if (rubygemsDir != null) {
                     addPath(rubygemsDir);
                 }
+                addPath(RbConfigLibrary.getRubySharedLibDir(runtime));
+                // TODO: merge
                 addPath(RbConfigLibrary.getRubyLibDir(runtime));
             }
 
