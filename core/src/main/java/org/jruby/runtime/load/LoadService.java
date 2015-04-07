@@ -229,10 +229,12 @@ public class LoadService {
             if (jrubyHome != null) {
                 // siteDir has to come first, because rubygems insert paths after it
                 // and we must to prefer Gems to rubyLibDir/rubySharedLibDir (same as MRI)
-                String siteDir = RbConfigLibrary.getSiteDir(runtime);
-                if (new File(siteDir).exists()) {
-                    addPath(siteDir);
-                }
+                // NOTE: this path *must* be added, whether it exists or not, because RubyGems
+                // uses it to know where to insert gem paths into the load path. Removing it
+                // causes all gem paths to be inserted at the beginning, overriding paths
+                // added via -I.
+                addPath(RbConfigLibrary.getSiteDir(runtime));
+
                 // if vendorDirGeneral is different than siteDirGeneral,
                 // add vendorDir, too
                 // adding {vendor,site}{Lib,Arch}Dir dirs is not necessary,
