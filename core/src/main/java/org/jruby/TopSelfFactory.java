@@ -31,6 +31,7 @@
 package org.jruby;
 
 import org.jruby.internal.runtime.methods.JavaMethod;
+import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
@@ -101,6 +102,23 @@ public final class TopSelfFactory {
             public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0, IRubyObject arg1, Block block) {
                 if (klass == singletonClass) warnWrapper(context);
                 return klass.define_method(context, arg0, arg1, block);
+            }
+        });
+
+        singletonClass.addMethod("using", new JavaMethod.JavaMethodN(singletonClass, Visibility.PRIVATE) {
+            @Override
+            public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args) {
+                Arity.checkArgumentCount(context.runtime, args, 1, 1);
+                RubyModule cref = context.getCurrentStaticScope().getModule();
+                // unclear what the equivalent check would be for us
+//                rb_control_frame_t * prev_cfp = previous_frame(GET_THREAD());
+//
+//                if (CREF_NEXT(cref) || (prev_cfp && prev_cfp->me)) {
+//                    rb_raise(rb_eRuntimeError,
+//                            "main.using is permitted only at toplevel");
+//                }
+                RubyModule.usingModule(context, cref, args[0]);
+                return self;
             }
         });
         

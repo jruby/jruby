@@ -641,14 +641,14 @@ public class RubyModule extends RubyObject {
     }
 
     // mri: rb_using_module
-    public void usingModule(ThreadContext context, RubyModule cref, IRubyObject refinedModule) {
+    public static void usingModule(ThreadContext context, RubyModule cref, IRubyObject refinedModule) {
         if (!(refinedModule instanceof RubyModule))throw context.runtime.newTypeError(refinedModule, context.runtime.getModule());
 
         usingModuleRecursive(cref, (RubyModule) refinedModule);
     }
 
     // mri: using_module_recursive
-    private void usingModuleRecursive(RubyModule cref, RubyModule refinedModule) {
+    private static void usingModuleRecursive(RubyModule cref, RubyModule refinedModule) {
         RubyClass superClass = refinedModule.getSuperClass();
 
         // For each superClass of the refined module also use their refinements for the given cref
@@ -670,7 +670,7 @@ public class RubyModule extends RubyObject {
     // 1. class being refined has never had any refines happen to it yet: return itself
     // 2. class has been refined: return already existing refinementwrapper (chain of modules to call against)
     // 3. refinement is already in the refinementwrapper so we do not need to add it to the wrapper again: return null
-    private RubyModule getAlreadyRefinementWrapper(RubyModule cref, RubyClass classWeAreRefining, RubyModule refinement) {
+    private static RubyModule getAlreadyRefinementWrapper(RubyModule cref, RubyClass classWeAreRefining, RubyModule refinement) {
         // We have already encountered at least one refine on this class.  Return that wrapper.
         RubyModule moduleWrapperForRefinment = cref.refinements.get(classWeAreRefining);
         if (moduleWrapperForRefinment == null) return classWeAreRefining;
@@ -688,7 +688,7 @@ public class RubyModule extends RubyObject {
      * conflict if the same module was used in two places but the cref must be a lexically containing
      * module so it cannot live in two files.
      */
-    private void usingRefinement(RubyModule cref, RubyClass classWeAreRefining, RubyModule refinement) {
+    private static void usingRefinement(RubyModule cref, RubyClass classWeAreRefining, RubyModule refinement) {
         // Our storage cubby in cref for all known refinements
         if (cref.refinements == Collections.EMPTY_MAP) cref.refinements = new HashMap<>();
 
@@ -696,13 +696,13 @@ public class RubyModule extends RubyObject {
         if (superClass == null) return; // already been refined and added to refinementwrapper
 
         refinement.setFlag(IS_OVERLAID_F, true);
-        RubyModule lookup = new IncludedModuleWrapper(getRuntime(), (RubyClass) superClass, refinement);
+        RubyModule lookup = new IncludedModuleWrapper(cref.getRuntime(), (RubyClass) superClass, refinement);
         RubyModule iclass = lookup;
         lookup.refinedClass = classWeAreRefining;
 
         for (refinement = refinement.getSuperClass(); refinement != null && refinement != classWeAreRefining; refinement = refinement.getSuperClass()) {
             refinement.setFlag(IS_OVERLAID_F, true);
-            RubyClass newInclude = new IncludedModuleWrapper(getRuntime(), lookup.getSuperClass(), refinement);
+            RubyClass newInclude = new IncludedModuleWrapper(cref.getRuntime(), lookup.getSuperClass(), refinement);
             lookup.setSuperClass(newInclude);
             lookup = newInclude;
             lookup.refinedClass = classWeAreRefining;
