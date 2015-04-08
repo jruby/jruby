@@ -1,6 +1,7 @@
-`bootstrap` and `common` contains the Ruby component of the Rubinius kernel (core library)
-implementation, in some cases modified. We have taken files from version 2.4.1
-of Rubinius. This code was written by Evan Phoenix, Brian Shirai, et al.
+`bootstrap`, `common`, `delta` and `platform` contains the Ruby component of the
+Rubinius kernel (core library) implementation, in some cases modified. We have
+taken files from version 2.4.1 of Rubinius. This code was written by Evan
+Phoenix, Brian Shirai, et al.
 
 https://github.com/rubinius/rubinius
 

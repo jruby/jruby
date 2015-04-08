@@ -113,6 +113,24 @@ public abstract class StatPrimitiveNodes {
 
     }
 
+    @RubiniusPrimitive(name = "stat_gid")
+    public static abstract class StatGIDPrimitiveNode extends StatReadPrimitiveNode {
+
+        public StatGIDPrimitiveNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public StatGIDPrimitiveNode(StatGIDPrimitiveNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public int gid(RubyBasicObject rubyStat) {
+            return getStat(rubyStat).gid();
+        }
+
+    }
+
     @RubiniusPrimitive(name = "stat_uid")
     public static abstract class StatUIDPrimitiveNode extends StatReadPrimitiveNode {
 

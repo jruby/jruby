@@ -198,6 +198,20 @@ require_relative 'core/rubinius/delta/struct'
 #require_relative 'core/rubinius/delta/pack'
 #require_relative 'core/rubinius/delta/metrics'
 
+# Load platform (ordered according to Rubinius' load_order.txt)
+
+require_relative 'core/rubinius/platform/ffi'
+#require_relative 'core/rubinius/platform/enum'
+#require_relative 'core/rubinius/platform/library'
+require_relative 'core/rubinius/platform/pointer_accessors'
+require_relative 'core/rubinius/platform/pointer'
+#require_relative 'core/rubinius/platform/env'
+#require_relative 'core/rubinius/platform/file'
+#require_relative 'core/rubinius/platform/math'
+#require_relative 'core/rubinius/platform/posix'
+#require_relative 'core/rubinius/platform/struct'
+#require_relative 'core/rubinius/platform/union'
+
 # Load JRuby+Truffle classes
 
 require_relative 'core/array'

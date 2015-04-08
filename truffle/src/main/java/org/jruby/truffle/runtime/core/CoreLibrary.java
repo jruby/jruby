@@ -28,6 +28,7 @@ import org.jruby.truffle.nodes.core.MutexNodes;
 import org.jruby.truffle.nodes.core.ProcessNodes;
 import org.jruby.truffle.nodes.methods.SetMethodDeclarationContext;
 import org.jruby.truffle.nodes.objects.Allocator;
+import org.jruby.truffle.nodes.rubinius.NativeFunctionPrimitiveNodes;
 import org.jruby.truffle.runtime.RubyCallStack;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.backtrace.Backtrace;
@@ -122,6 +123,7 @@ public class CoreLibrary {
     private final RubyModule mathModule;
     private final RubyModule objectSpaceModule;
     private final RubyModule rubiniusModule;
+    private final RubyModule rubiniusFFIModule;
     private final RubyModule signalModule;
     private final RubyModule truffleModule;
     private final RubyModule truffleDebugModule;
@@ -309,7 +311,8 @@ public class CoreLibrary {
         defineModule(truffleModule, "Primitive");
 
         rubiniusModule = defineModule("Rubinius");
-        defineModule(defineModule(defineModule(rubiniusModule, "FFI"), "Platform"), "POSIX");
+        rubiniusFFIModule = defineModule(rubiniusModule, "FFI");
+        defineModule(defineModule(rubiniusFFIModule, "Platform"), "POSIX");
 
         byteArrayClass = defineClass(rubiniusModule, objectClass, "ByteArray");
         lookupTableClass = defineClass(rubiniusModule, hashClass, "LookupTable");
@@ -488,6 +491,7 @@ public class CoreLibrary {
     }
 
     public void initializeAfterMethodsAdded() {
+        initializeRubiniusFFI();
         initializeRubiniusConfig();
 
         // ENV is supposed to be an object that actually updates the environment, and sees any updates
@@ -513,6 +517,29 @@ public class CoreLibrary {
                 loadingCoreLibrary = false;
             }
         }
+    }
+
+    private void initializeRubiniusFFI() {
+        rubiniusFFIModule.setConstant(null, "TYPE_CHAR", NativeFunctionPrimitiveNodes.TYPE_CHAR);
+        rubiniusFFIModule.setConstant(null, "TYPE_UCHAR", NativeFunctionPrimitiveNodes.TYPE_UCHAR);
+        rubiniusFFIModule.setConstant(null, "TYPE_BOOL", NativeFunctionPrimitiveNodes.TYPE_BOOL);
+        rubiniusFFIModule.setConstant(null, "TYPE_SHORT", NativeFunctionPrimitiveNodes.TYPE_SHORT);
+        rubiniusFFIModule.setConstant(null, "TYPE_USHORT", NativeFunctionPrimitiveNodes.TYPE_USHORT);
+        rubiniusFFIModule.setConstant(null, "TYPE_INT", NativeFunctionPrimitiveNodes.TYPE_INT);
+        rubiniusFFIModule.setConstant(null, "TYPE_UINT", NativeFunctionPrimitiveNodes.TYPE_UINT);
+        rubiniusFFIModule.setConstant(null, "TYPE_LONG", NativeFunctionPrimitiveNodes.TYPE_LONG);
+        rubiniusFFIModule.setConstant(null, "TYPE_ULONG", NativeFunctionPrimitiveNodes.TYPE_ULONG);
+        rubiniusFFIModule.setConstant(null, "TYPE_LL", NativeFunctionPrimitiveNodes.TYPE_LL);
+        rubiniusFFIModule.setConstant(null, "TYPE_ULL", NativeFunctionPrimitiveNodes.TYPE_ULL);
+        rubiniusFFIModule.setConstant(null, "TYPE_FLOAT", NativeFunctionPrimitiveNodes.TYPE_FLOAT);
+        rubiniusFFIModule.setConstant(null, "TYPE_DOUBLE", NativeFunctionPrimitiveNodes.TYPE_DOUBLE);
+        rubiniusFFIModule.setConstant(null, "TYPE_PTR", NativeFunctionPrimitiveNodes.TYPE_PTR);
+        rubiniusFFIModule.setConstant(null, "TYPE_VOID", NativeFunctionPrimitiveNodes.TYPE_VOID);
+        rubiniusFFIModule.setConstant(null, "TYPE_STRING", NativeFunctionPrimitiveNodes.TYPE_STRING);
+        rubiniusFFIModule.setConstant(null, "TYPE_STRPTR", NativeFunctionPrimitiveNodes.TYPE_STRPTR);
+        rubiniusFFIModule.setConstant(null, "TYPE_CHARARR", NativeFunctionPrimitiveNodes.TYPE_CHARARR);
+        rubiniusFFIModule.setConstant(null, "TYPE_ENUM", NativeFunctionPrimitiveNodes.TYPE_ENUM);
+        rubiniusFFIModule.setConstant(null, "TYPE_VARARGS", NativeFunctionPrimitiveNodes.TYPE_VARARGS);
     }
 
     private void initializeRubiniusConfig() {
