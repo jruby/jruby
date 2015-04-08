@@ -20,6 +20,7 @@ import org.jruby.truffle.nodes.core.CoreMethodNode;
 import org.jruby.truffle.nodes.objectstorage.ReadHeadObjectFieldNode;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyBasicObject;
+import org.jruby.truffle.runtime.core.RubyString;
 import org.jruby.truffle.runtime.rubinius.RubiniusByteArray;
 import org.jruby.util.unsafe.UnsafeHolder;
 import sun.misc.Unsafe;
@@ -87,6 +88,24 @@ public abstract class PosixNodes {
             final long address = getAddress(pointer);
             UnsafeHolder.U.setMemory(address, length, (byte) c);
             return pointer;
+        }
+
+    }
+
+    @CoreMethod(names = "unlink", isModuleFunction = true, required = 1)
+    public abstract static class UnlinkNode extends PointerPrimitiveNodes.ReadAddressPrimitiveNode {
+
+        public UnlinkNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public UnlinkNode(UnlinkNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public int unlink(RubyString path) {
+            return getContext().getRuntime().getPosix().unlink(path.toString());
         }
 
     }

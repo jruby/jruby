@@ -121,31 +121,6 @@ public abstract class FileNodes {
 
     }
 
-    @CoreMethod(names = { "delete", "unlink" }, onSingleton = true, required = 1)
-    public abstract static class DeleteNode extends CoreMethodNode {
-
-        public DeleteNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
-        public DeleteNode(DeleteNode prev) {
-            super(prev);
-        }
-
-        @Specialization
-        public int delete(RubyString file) {
-            notDesignedForCompilation();
-
-            if (!new File(file.toString()).delete()) {
-                // TODO(CS, 12-Jan-15) handle failure
-                throw new UnsupportedOperationException();
-            }
-
-            return 1;
-        }
-
-    }
-
     @CoreMethod(names = "dirname", onSingleton = true, required = 1)
     public abstract static class DirnameNode extends CoreMethodNode {
 

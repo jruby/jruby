@@ -29,15 +29,15 @@
 class File < IO
   include Enumerable
 
+  FFI = Rubinius::FFI
+  
+  POSIX = FFI::Platform::POSIX
+
   ##
   # Return true if the named file exists.
   def self.exist?(path)
     st = Stat.stat(path)
     st ? true : false
-  end
-
-  class << self
-    alias_method :exists?,  :exist?
   end
 
   ##
@@ -94,6 +94,25 @@ class File < IO
   def self.readable?(path)
     st = Stat.stat path
     st ? st.readable? : false
+  end
+
+  ##
+  # Deletes the named files, returning the number of names
+  # passed as arguments. Raises an exception on any error.
+  #
+  # See also Dir::rmdir.
+  def self.unlink(*paths)
+    paths.each do |path|
+      n = POSIX.unlink Rubinius::Type.coerce_to_path(path)
+      Errno.handle if n == -1
+    end
+
+    paths.size
+  end
+
+  class << self
+    alias_method :delete,   :unlink
+    alias_method :exists?,  :exist?
   end
 
 end
