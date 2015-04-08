@@ -1,14 +1,5 @@
 fails:File::Constants matches mode constants
-fails:File::Constants the open mode constants
 fails:File::Constants lock mode constants
-fails:File::Constants File::RDONLY
-fails:File::Constants File::WRONLY
-fails:File::Constants File::CREAT
-fails:File::Constants File::RDWR
-fails:File::Constants File::APPEND
-fails:File::Constants File::TRUNC
-fails:File::Constants File::NOCTTY
-fails:File::Constants File::NONBLOCK
 fails:File::Constants File::LOCK_EX
 fails:File::Constants File::LOCK_NB
 fails:File::Constants File::LOCK_SH

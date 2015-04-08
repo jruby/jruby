@@ -1,3 +1,1 @@
 fails:File::Stat#sticky? returns true if the named file has the sticky bit, otherwise false
-fails:File::Stat#sticky? accepts an object that has a #to_path method
-fails:File::Stat#sticky? needs to be reviewed for spec completeness
