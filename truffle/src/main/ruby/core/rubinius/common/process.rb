@@ -26,7 +26,7 @@
 
 # Only part of Rubinius' process.rb
 
-class Process
+module Process
 
   FFI = Rubinius::FFI
 
