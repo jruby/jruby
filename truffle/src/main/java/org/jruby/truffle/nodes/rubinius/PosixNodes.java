@@ -139,6 +139,11 @@ public abstract class PosixNodes {
 
         @Specialization
         public RubyBasicObject memset(RubyBasicObject pointer, int c, int length) {
+            return memset(pointer, c, (long) length);
+        }
+
+        @Specialization
+        public RubyBasicObject memset(RubyBasicObject pointer, int c, long length) {
             final long address = getAddress(pointer);
             UnsafeHolder.U.setMemory(address, length, (byte) c);
             return pointer;
