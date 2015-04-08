@@ -20,9 +20,6 @@ class MSpecScript
     # require 'socket'
     "^spec/ruby/core/file/socket_spec.rb",
 
-    # FileTest in describe
-    "^spec/ruby/core/filetest",
-
     # STDOUT.tty?
     "^spec/ruby/core/io/tty_spec.rb",
     "^spec/ruby/core/io/isatty_spec.rb",

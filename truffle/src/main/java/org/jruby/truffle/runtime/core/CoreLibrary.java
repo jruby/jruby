@@ -273,6 +273,7 @@ public class CoreLibrary {
         encodingClass = defineClass("Encoding", new RubyEncoding.EncodingAllocator());
         falseClass = defineClass("FalseClass");
         fiberClass = defineClass("Fiber", new RubyFiber.FiberAllocator());
+        defineModule("FileTest");
         hashClass = defineClass("Hash", new RubyHash.HashAllocator());
         matchDataClass = defineClass("MatchData");
         methodClass = defineClass("Method");
