@@ -573,6 +573,7 @@ public class RubyModule extends RubyObject {
     private RubyModule createNewRefinedModule(ThreadContext context, RubyClass classWeAreRefining) {
         RubyModule newRefinement = new RubyModule(context.runtime, classWeAreRefining);
         newRefinement.setFlag(REFINED_MODULE_F, true);
+        newRefinement.setFlag(RubyObject.USER7_F, false); // Refinement modules should not do implementer check
         newRefinement.refinedClass = classWeAreRefining;
         newRefinement.definedAt = this;
         refinements.put(classWeAreRefining, newRefinement);
