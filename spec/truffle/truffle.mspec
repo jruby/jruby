@@ -30,9 +30,6 @@ class MSpecScript
     # require 'fcntl'
     "^spec/ruby/core/io/reopen_spec.rb",
 
-    # autoload in describe
-    "^spec/ruby/core/kernel/autoload_spec.rb",
-
     # seem side-effecting when not run in isolation
     "^spec/ruby/core/marshal/dump_spec.rb",
     "^spec/ruby/core/marshal/float_spec.rb",

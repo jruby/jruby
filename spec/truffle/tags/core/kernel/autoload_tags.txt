@@ -1,2 +1,3 @@
-fails:Kernel.autoload sets the autoload constant in Object's metaclass's constant table
+fails:Kernel.autoload sets the autoload constant in Object's constant table
 fails:Kernel.autoload calls #to_path on non-String filenames
+slow:Kernel#autoload when Object is frozen raises a RuntimeError before defining the constant
