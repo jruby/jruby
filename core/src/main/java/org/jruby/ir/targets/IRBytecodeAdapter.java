@@ -307,7 +307,7 @@ public abstract class IRBytecodeAdapter {
      * @param arity arity of the call
      * @param hasClosure whether a closure will be on the stack for passing
      */
-    public abstract void invokeOther(String name, int arity, boolean hasClosure);
+    public abstract void invokeOther(String name, int arity, boolean hasClosure, boolean isPotentiallyRefined);
 
     /**
      * Invoke a fixnum-receiving method on an object other than self.
@@ -338,7 +338,7 @@ public abstract class IRBytecodeAdapter {
      * @param hasClosure whether a closure will be on the stack for passing
      * @param callType
      */
-    public abstract void invokeSelf(String name, int arity, boolean hasClosure, CallType callType);
+    public abstract void invokeSelf(String name, int arity, boolean hasClosure, CallType callType, boolean isPotentiallyRefined);
 
     /**
      * Invoke a superclass method from an instance context.

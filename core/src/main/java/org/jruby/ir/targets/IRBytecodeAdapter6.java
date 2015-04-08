@@ -38,6 +38,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.callsite.CachingCallSite;
 import org.jruby.runtime.callsite.FunctionalCachingCallSite;
 import org.jruby.runtime.callsite.NormalCachingCallSite;
+import org.jruby.runtime.callsite.RefinedCachingCallSite;
 import org.jruby.runtime.callsite.VariableCachingCallSite;
 import org.jruby.runtime.ivars.VariableAccessor;
 import org.jruby.util.ByteList;
@@ -279,11 +280,11 @@ public class IRBytecodeAdapter6 extends IRBytecodeAdapter{
         });
     }
 
-    public void invokeOther(String name, int arity, boolean hasClosure) {
-        invoke(name, arity, hasClosure, CallType.NORMAL);
+    public void invokeOther(String name, int arity, boolean hasClosure, boolean isPotentiallyRefined) {
+        invoke(name, arity, hasClosure, CallType.NORMAL, isPotentiallyRefined);
     }
 
-    public void invoke(String name, int arity, boolean hasClosure, CallType callType) {
+    public void invoke(String name, int arity, boolean hasClosure, CallType callType, boolean isPotentiallyRefined) {
         if (arity > MAX_ARGUMENTS) throw new NotCompilableException("call to `" + name + "' has more than " + MAX_ARGUMENTS + " arguments");
 
         SkinnyMethodAdapter adapter2;
@@ -349,20 +350,28 @@ public class IRBytecodeAdapter6 extends IRBytecodeAdapter{
         adapter2.pop();
         adapter2.ldc(name);
         Class<? extends CachingCallSite> siteClass;
-        switch (callType) {
-            case NORMAL:
-                siteClass = NormalCachingCallSite.class;
-                break;
-            case FUNCTIONAL:
-                siteClass = FunctionalCachingCallSite.class;
-                break;
-            case VARIABLE:
-                siteClass = VariableCachingCallSite.class;
-                break;
-            default:
-                throw new RuntimeException("BUG: Unexpected call type " + callType + " in JVM6 invoke logic");
+        String signature;
+        if (isPotentiallyRefined) {
+            siteClass = RefinedCachingCallSite.class;
+            signature = sig(siteClass, String.class, String.class);
+            adapter2.ldc(callType.name());
+        } else {
+            switch (callType) {
+                case NORMAL:
+                    siteClass = NormalCachingCallSite.class;
+                    break;
+                case FUNCTIONAL:
+                    siteClass = FunctionalCachingCallSite.class;
+                    break;
+                case VARIABLE:
+                    siteClass = VariableCachingCallSite.class;
+                    break;
+                default:
+                    throw new RuntimeException("BUG: Unexpected call type " + callType + " in JVM6 invoke logic");
+            }
+            signature = sig(siteClass, String.class);
         }
-        adapter2.invokestatic(p(IRRuntimeHelpers.class), "new" + siteClass.getSimpleName(), sig(siteClass, String.class));
+        adapter2.invokestatic(p(IRRuntimeHelpers.class), "new" + siteClass.getSimpleName(), signature);
         adapter2.dup();
         adapter2.putstatic(getClassData().clsName, methodName, ci(CachingCallSite.class));
 
@@ -430,7 +439,7 @@ public class IRBytecodeAdapter6 extends IRBytecodeAdapter{
     public void invokeOtherOneFixnum(String name, long fixnum) {
         if (!MethodIndex.hasFastFixnumOps(name)) {
             pushFixnum(fixnum);
-            invokeOther(name, 1, false);
+            invokeOther(name, 1, false, false);
         }
         SkinnyMethodAdapter adapter2;
         String incomingSig = sig(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, JVM.OBJECT));
@@ -478,7 +487,7 @@ public class IRBytecodeAdapter6 extends IRBytecodeAdapter{
     public void invokeOtherOneFloat(String name, double flote) {
         if (!MethodIndex.hasFastFloatOps(name)) {
             pushFloat(flote);
-            invokeOther(name, 1, false);
+            invokeOther(name, 1, false, false);
         }
         SkinnyMethodAdapter adapter2;
         String incomingSig = sig(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, JVM.OBJECT));
@@ -523,10 +532,10 @@ public class IRBytecodeAdapter6 extends IRBytecodeAdapter{
         adapter.invokestatic(getClassData().clsName, methodName, incomingSig);
     }
 
-    public void invokeSelf(String name, int arity, boolean hasClosure, CallType callType) {
+    public void invokeSelf(String name, int arity, boolean hasClosure, CallType callType, boolean isPotentiallyRefined) {
         if (arity > MAX_ARGUMENTS) throw new NotCompilableException("call to `" + name + "' has more than " + MAX_ARGUMENTS + " arguments");
 
-        invoke(name, arity, hasClosure, callType);
+        invoke(name, arity, hasClosure, callType, isPotentiallyRefined);
     }
 
     public void invokeInstanceSuper(String name, int arity, boolean hasClosure, boolean[] splatmap) {

@@ -32,6 +32,7 @@ import org.jruby.runtime.*;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.callsite.FunctionalCachingCallSite;
 import org.jruby.runtime.callsite.NormalCachingCallSite;
+import org.jruby.runtime.callsite.RefinedCachingCallSite;
 import org.jruby.runtime.callsite.VariableCachingCallSite;
 import org.jruby.runtime.ivars.VariableAccessor;
 import org.jruby.util.ByteList;
@@ -1170,7 +1171,9 @@ public class IRRuntimeHelpers {
             newMethod = new MixedModeIRMethod(method, Visibility.PUBLIC, rubyClass);
         }
         rubyClass.addMethod(method.getName(), newMethod);
-        obj.callMethod(context, "singleton_method_added", context.runtime.fastNewSymbol(method.getName()));
+        if (!rubyClass.isRefinement()) {
+            obj.callMethod(context, "singleton_method_added", context.runtime.fastNewSymbol(method.getName()));
+        }
     }
 
     @JIT
@@ -1178,7 +1181,9 @@ public class IRRuntimeHelpers {
         RubyClass rubyClass = checkClassForDef(context, method, obj);
 
         rubyClass.addMethod(method.getName(), new CompiledIRMethod(handle, method, Visibility.PUBLIC, rubyClass, method.receivesKeywordArgs()));
-        obj.callMethod(context, "singleton_method_added", context.runtime.fastNewSymbol(method.getName()));
+        if (!rubyClass.isRefinement()) {
+            obj.callMethod(context, "singleton_method_added", context.runtime.fastNewSymbol(method.getName()));
+        }
     }
 
     @JIT
@@ -1186,7 +1191,9 @@ public class IRRuntimeHelpers {
         RubyClass rubyClass = checkClassForDef(context, method, obj);
 
         rubyClass.addMethod(method.getName(), new CompiledIRMethod(variable, specific, specificArity, method, Visibility.PUBLIC, rubyClass, method.receivesKeywordArgs()));
-        obj.callMethod(context, "singleton_method_added", context.runtime.fastNewSymbol(method.getName()));
+        if (!rubyClass.isRefinement()) {
+            obj.callMethod(context, "singleton_method_added", context.runtime.fastNewSymbol(method.getName()));
+        }
     }
 
     private static RubyClass checkClassForDef(ThreadContext context, IRScope method, IRubyObject obj) {
@@ -1339,6 +1346,11 @@ public class IRRuntimeHelpers {
     @JIT
     public static VariableCachingCallSite newVariableCachingCallSite(String name) {
         return new VariableCachingCallSite(name);
+    }
+
+    @JIT
+    public static RefinedCachingCallSite newRefinedCachingCallSite(String name, String callType) {
+        return new RefinedCachingCallSite(name, CallType.valueOf(callType));
     }
 
     @JIT
