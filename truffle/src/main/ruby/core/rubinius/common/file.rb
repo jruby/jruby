@@ -115,6 +115,12 @@ class File < IO
     alias_method :exists?,  :exist?
   end
 
+  def self.path(obj)
+    return obj.to_path if obj.respond_to? :to_path
+
+    StringValue(obj)
+  end
+
 end
 
 File::Stat = Rubinius::Stat

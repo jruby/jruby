@@ -289,26 +289,6 @@ public abstract class FileNodes {
 
     }
 
-    @CoreMethod(names = "path", onSingleton = true, required = 1)
-    public abstract static class PathNode extends CoreMethodNode {
-
-        public PathNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
-        public PathNode(PathNode prev) {
-            super(prev);
-        }
-
-        @Specialization
-        public RubyString path(RubyString path) {
-            notDesignedForCompilation();
-
-            return getContext().makeString(path.toString());
-        }
-
-    }
-
     @CoreMethod(names = "puts", required = 1)
     public abstract static class PutsNode extends CoreMethodNode {
 
