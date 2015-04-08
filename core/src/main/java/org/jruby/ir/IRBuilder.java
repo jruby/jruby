@@ -2476,16 +2476,24 @@ public class IRBuilder {
 
     public Operand buildHash(HashNode hashNode) {
         List<KeyValuePair<Operand, Operand>> args = new ArrayList<>();
-        Operand splatKeywordArgument = null;
         boolean hasAssignments = hashNode.containsVariableAssignment();
+        Variable hash = null;
 
         for (KeyValuePair<Node, Node> pair: hashNode.getPairs()) {
             Node key = pair.getKey();
             Operand keyOperand;
 
-            if (key == null) { // splat kwargs [e.g. foo(a: 1, **splat)] key is null and will be in last pair of hash
-                splatKeywordArgument = build(pair.getValue());
-                break;
+            if (key == null) {                          // Splat kwarg [e.g. {**splat1, a: 1, **splat2)]
+                if (hash == null) {                     // No hash yet. Define so order is preserved.
+                    hash = copyAndReturnValue(new Hash(args));
+                    args = new ArrayList<>();           // Used args but we may find more after the splat so we reset
+                } else if (!args.isEmpty()) {
+                    addInstr(new RuntimeHelperCall(hash, MERGE_KWARGS, new Operand[] { hash, new Hash(args) }));
+                    args = new ArrayList<>();
+                }
+                Operand splat = buildWithOrder(pair.getValue(), hasAssignments);
+                addInstr(new RuntimeHelperCall(hash, MERGE_KWARGS, new Operand[] { hash, splat}));
+                continue;
             } else {
                 keyOperand = buildWithOrder(key, hasAssignments);
             }
@@ -2493,13 +2501,13 @@ public class IRBuilder {
             args.add(new KeyValuePair<>(keyOperand, buildWithOrder(pair.getValue(), hasAssignments)));
         }
 
-        if (splatKeywordArgument != null) { // splat kwargs merge with any explicit kwargs
-            Variable tmp = createTemporaryVariable();
-            addInstr(new RuntimeHelperCall(tmp, MERGE_KWARGS, new Operand[] { splatKeywordArgument, new Hash(args)}));
-            return tmp;
-        } else {
-            return copyAndReturnValue(new Hash(args));
+        if (hash == null) {           // non-**arg ordinary hash
+            hash = copyAndReturnValue(new Hash(args));
+        } else if (!args.isEmpty()) { // ordinary hash values encountered after a **arg
+            addInstr(new RuntimeHelperCall(hash, MERGE_KWARGS, new Operand[] { hash, new Hash(args) }));
         }
+
+        return hash;
     }
 
     // Translate "r = if (cond); .. thenbody ..; else; .. elsebody ..; end" to
