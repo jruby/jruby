@@ -30,9 +30,6 @@ class MSpecScript
     # require 'fcntl'
     "^spec/ruby/core/io/reopen_spec.rb",
 
-    # __method__ in fixtures
-    "^spec/ruby/core/kernel/__method___spec.rb",
-
     # autoload in describe
     "^spec/ruby/core/kernel/autoload_spec.rb",
 
