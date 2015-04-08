@@ -907,12 +907,12 @@ public abstract class FixnumNodes {
         }
 
         @Specialization(guards = {
-                "!isInteger(arguments[1])",
-                "!isLong(arguments[1])",
-                "!isDouble(arguments[1])",
-                "!isRubyBignum(arguments[1])"})
-        public RubyNilClass compare(Object a, Object b) {
-            return nil();
+            "!isInteger(arguments[1])",
+            "!isLong(arguments[1])",
+            "!isDouble(arguments[1])",
+            "!isRubyBignum(arguments[1])"})
+        public Object compare(VirtualFrame frame, Object a, Object b) {
+            return ruby(frame, "begin; b, a = math_coerce(other, :compare_error); a <=> b; rescue ArgumentError; nil; end", "other", b);
         }
 
     }
