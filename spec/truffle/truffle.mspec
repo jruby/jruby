@@ -17,14 +17,6 @@ class MSpecScript
     # Can't load these - so tags aren't enough to exclude them. The problem is
     # either fixtures or syntax. Some of them are probably easy fixes.
 
-    # as_superuser, as_user, Process.euid
-    "^spec/ruby/core/file/chown_spec.rb",
-    "^spec/ruby/core/file/lchown_spec.rb",
-    "^spec/ruby/core/process/euid_spec.rb",
-    "^spec/ruby/core/process/kill_spec.rb",
-    "^spec/ruby/core/process/setpriority_spec.rb",
-    "^spec/ruby/core/process/uid_spec.rb",
-
     # require 'socket'
     "^spec/ruby/core/file/socket_spec.rb",
 
