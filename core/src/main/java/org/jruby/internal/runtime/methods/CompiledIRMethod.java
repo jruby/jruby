@@ -11,8 +11,6 @@ import org.jruby.runtime.PositionAware;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.util.log.Logger;
-import org.jruby.util.log.LoggerFactory;
 
 import java.lang.invoke.MethodHandle;
 
@@ -29,6 +27,7 @@ public class CompiledIRMethod extends JavaMethod implements MethodArgs2, Positio
     private String[] parameterList;
     private final StaticScope staticScope;
     private final boolean hasExplicitCallProtocol;
+    private final boolean hasKwargs;
 
     public CompiledIRMethod(MethodHandle variable, IRScope method, Visibility visibility,
                             RubyModule implementationClass, boolean hasKwargs) {
@@ -48,6 +47,7 @@ public class CompiledIRMethod extends JavaMethod implements MethodArgs2, Positio
         this.arity = calculateArity();
         this.staticScope = method.getStaticScope();
         this.hasExplicitCallProtocol = method.hasExplicitCallProtocol();
+        this.hasKwargs = hasKwargs;
 
         setHandle(variable);
     }
@@ -102,7 +102,7 @@ public class CompiledIRMethod extends JavaMethod implements MethodArgs2, Positio
         try {
             if (!hasExplicitCallProtocol) return callNoProtocol(context, self, clazz, name, args, block);
 
-            if (specificArity == -1) IRRuntimeHelpers.frobnicateKwargsArgument(context, arity.required(), args);
+            if (hasKwargs) IRRuntimeHelpers.frobnicateKwargsArgument(context, arity.required(), args);
 
             return (IRubyObject)this.variable.invokeExact(context, staticScope, self, args, block, implementationClass, name);
         } catch (Throwable t) {
@@ -177,7 +177,7 @@ public class CompiledIRMethod extends JavaMethod implements MethodArgs2, Positio
         RubyModule implementationClass = this.implementationClass;
         pre(context, staticScope, implementationClass, self, name, block);
 
-        if (specificArity == -1) IRRuntimeHelpers.frobnicateKwargsArgument(context, arity.required(), args);
+        if (hasKwargs) IRRuntimeHelpers.frobnicateKwargsArgument(context, arity.required(), args);
 
         try {
             return (IRubyObject)this.variable.invokeExact(context, staticScope, self, args, block, implementationClass, name);
@@ -244,7 +244,7 @@ public class CompiledIRMethod extends JavaMethod implements MethodArgs2, Positio
 
     @Override
     public DynamicMethod dup() {
-        return new CompiledIRMethod(variable, specific, specificArity, method, visibility, implementationClass, specificArity == -1);
+        return new CompiledIRMethod(variable, specific, specificArity, method, visibility, implementationClass, hasKwargs);
     }
 
     public String getFile() {

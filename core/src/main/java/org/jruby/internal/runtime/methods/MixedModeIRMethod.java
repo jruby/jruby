@@ -1,11 +1,8 @@
 package org.jruby.internal.runtime.methods;
 
-import java.util.List;
-
 import org.jruby.MetaClass;
 import org.jruby.Ruby;
 import org.jruby.RubyClass;
-import org.jruby.RubyHash;
 import org.jruby.RubyModule;
 import org.jruby.ir.*;
 import org.jruby.ir.interpreter.InterpreterContext;
@@ -109,18 +106,6 @@ public class MixedModeIRMethod extends DynamicMethod implements IRMethodArgs, Po
         return method.getInterpreterContext();
     }
 
-    protected IRubyObject frobnicateKwarg(ThreadContext context, int requiredArguments, int argCount, IRubyObject arg) {
-        if (argCount > requiredArguments && arg != null && arg instanceof RubyHash) {
-            RubyHash kwargs = (RubyHash) arg;
-            kwargs = (RubyHash) kwargs.dup(context);
-            kwargs.setFrozen(false);
-            return kwargs;
-        }
-
-        return arg;
-    }
-
-
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args, Block block) {
         if (IRRuntimeHelpers.isDebug()) doDebug();
@@ -130,8 +115,6 @@ public class MixedModeIRMethod extends DynamicMethod implements IRMethodArgs, Po
         DynamicMethod jittedMethod = box.actualMethod;
 
         if (jittedMethod != null) {
-            InterpreterContext ic = method.getInterpreterContext();
-            if (ic.receivesKeywordArguments()) IRRuntimeHelpers.frobnicateKwargsArgument(context, ic.getRequiredArgsCount(), args);
             return jittedMethod.call(context, self, clazz, name, args, block);
         } else {
             return INTERPRET_METHOD(context, ensureInstrsReady(), getImplementationClass().getMethodLocation(), self, name, args, block);
@@ -202,9 +185,6 @@ public class MixedModeIRMethod extends DynamicMethod implements IRMethodArgs, Po
         DynamicMethod jittedMethod = box.actualMethod;
 
         if (jittedMethod != null) {
-            InterpreterContext ic = method.getInterpreterContext();
-            if (ic.receivesKeywordArguments()) arg0 = frobnicateKwarg(context, ic.getRequiredArgsCount(), 1, arg0);
-
             return jittedMethod.call(context, self, clazz, name, arg0, block);
         } else {
             return INTERPRET_METHOD(context, ensureInstrsReady(), getImplementationClass().getMethodLocation(), self, name, arg0, block);
@@ -240,8 +220,6 @@ public class MixedModeIRMethod extends DynamicMethod implements IRMethodArgs, Po
         DynamicMethod jittedMethod = box.actualMethod;
 
         if (jittedMethod != null) {
-            InterpreterContext ic = method.getInterpreterContext();
-            if (ic.receivesKeywordArguments()) arg1 = frobnicateKwarg(context, ic.getRequiredArgsCount(), 2, arg1);
             return jittedMethod.call(context, self, clazz, name, arg0, arg1, block);
         } else {
             return INTERPRET_METHOD(context, ensureInstrsReady(), getImplementationClass().getMethodLocation(), self, name, arg0, arg1, block);
@@ -277,8 +255,6 @@ public class MixedModeIRMethod extends DynamicMethod implements IRMethodArgs, Po
         DynamicMethod jittedMethod = box.actualMethod;
 
         if (jittedMethod != null) {
-            InterpreterContext ic = method.getInterpreterContext();
-            if (ic.receivesKeywordArguments()) arg2 = frobnicateKwarg(context, ic.getRequiredArgsCount(), 2, arg2);
             return jittedMethod.call(context, self, clazz, name, arg0, arg1, arg2, block);
         } else {
             return INTERPRET_METHOD(context, ensureInstrsReady(), getImplementationClass().getMethodLocation(), self, name, arg0, arg1, arg2, block);
