@@ -28,8 +28,28 @@
 
 class Process
 
+  FFI = Rubinius::FFI
+
   def self.times
     Struct::Tms.new(*cpu_times)
+  end
+
+  @maxgroups = 32
+  class << self
+    attr_reader :maxgroups
+    def maxgroups=(m)
+      @maxgroups = m
+    end
+  end
+
+  def self.groups
+    g = []
+    FFI::MemoryPointer.new(:int, @maxgroups) { |p|
+      num_groups = FFI::Platform::POSIX.getgroups(@maxgroups, p)
+      Errno.handle if num_groups == -1
+      g = p.read_array_of_int(num_groups)
+    }
+    g
   end
 
 end

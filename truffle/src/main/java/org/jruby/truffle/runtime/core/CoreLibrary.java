@@ -15,6 +15,7 @@ import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.source.Source;
 
 import jnr.constants.platform.Errno;
+import jnr.posix.FileStat;
 import org.jcodings.Encoding;
 import org.jcodings.EncodingDB;
 import org.jcodings.transcode.EConvFlags;
@@ -27,6 +28,7 @@ import org.jruby.truffle.nodes.core.MutexNodes;
 import org.jruby.truffle.nodes.core.ProcessNodes;
 import org.jruby.truffle.nodes.methods.SetMethodDeclarationContext;
 import org.jruby.truffle.nodes.objects.Allocator;
+import org.jruby.truffle.nodes.rubinius.NativeFunctionPrimitiveNodes;
 import org.jruby.truffle.runtime.RubyCallStack;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.backtrace.Backtrace;
@@ -121,6 +123,7 @@ public class CoreLibrary {
     private final RubyModule mathModule;
     private final RubyModule objectSpaceModule;
     private final RubyModule rubiniusModule;
+    private final RubyModule rubiniusFFIModule;
     private final RubyModule signalModule;
     private final RubyModule truffleModule;
     private final RubyModule truffleDebugModule;
@@ -308,6 +311,9 @@ public class CoreLibrary {
         defineModule(truffleModule, "Primitive");
 
         rubiniusModule = defineModule("Rubinius");
+        rubiniusFFIModule = defineModule(rubiniusModule, "FFI");
+        defineModule(defineModule(rubiniusFFIModule, "Platform"), "POSIX");
+
         byteArrayClass = defineClass(rubiniusModule, objectClass, "ByteArray");
         lookupTableClass = defineClass(rubiniusModule, hashClass, "LookupTable");
         stringDataClass = defineClass(rubiniusModule, objectClass, "StringData");
@@ -485,6 +491,9 @@ public class CoreLibrary {
     }
 
     public void initializeAfterMethodsAdded() {
+        initializeRubiniusFFI();
+        initializeRubiniusConfig();
+
         // ENV is supposed to be an object that actually updates the environment, and sees any updates
 
         envHash = getSystemEnv();
@@ -508,6 +517,65 @@ public class CoreLibrary {
                 loadingCoreLibrary = false;
             }
         }
+    }
+
+    private void initializeRubiniusFFI() {
+        rubiniusFFIModule.setConstant(null, "TYPE_CHAR", NativeFunctionPrimitiveNodes.TYPE_CHAR);
+        rubiniusFFIModule.setConstant(null, "TYPE_UCHAR", NativeFunctionPrimitiveNodes.TYPE_UCHAR);
+        rubiniusFFIModule.setConstant(null, "TYPE_BOOL", NativeFunctionPrimitiveNodes.TYPE_BOOL);
+        rubiniusFFIModule.setConstant(null, "TYPE_SHORT", NativeFunctionPrimitiveNodes.TYPE_SHORT);
+        rubiniusFFIModule.setConstant(null, "TYPE_USHORT", NativeFunctionPrimitiveNodes.TYPE_USHORT);
+        rubiniusFFIModule.setConstant(null, "TYPE_INT", NativeFunctionPrimitiveNodes.TYPE_INT);
+        rubiniusFFIModule.setConstant(null, "TYPE_UINT", NativeFunctionPrimitiveNodes.TYPE_UINT);
+        rubiniusFFIModule.setConstant(null, "TYPE_LONG", NativeFunctionPrimitiveNodes.TYPE_LONG);
+        rubiniusFFIModule.setConstant(null, "TYPE_ULONG", NativeFunctionPrimitiveNodes.TYPE_ULONG);
+        rubiniusFFIModule.setConstant(null, "TYPE_LL", NativeFunctionPrimitiveNodes.TYPE_LL);
+        rubiniusFFIModule.setConstant(null, "TYPE_ULL", NativeFunctionPrimitiveNodes.TYPE_ULL);
+        rubiniusFFIModule.setConstant(null, "TYPE_FLOAT", NativeFunctionPrimitiveNodes.TYPE_FLOAT);
+        rubiniusFFIModule.setConstant(null, "TYPE_DOUBLE", NativeFunctionPrimitiveNodes.TYPE_DOUBLE);
+        rubiniusFFIModule.setConstant(null, "TYPE_PTR", NativeFunctionPrimitiveNodes.TYPE_PTR);
+        rubiniusFFIModule.setConstant(null, "TYPE_VOID", NativeFunctionPrimitiveNodes.TYPE_VOID);
+        rubiniusFFIModule.setConstant(null, "TYPE_STRING", NativeFunctionPrimitiveNodes.TYPE_STRING);
+        rubiniusFFIModule.setConstant(null, "TYPE_STRPTR", NativeFunctionPrimitiveNodes.TYPE_STRPTR);
+        rubiniusFFIModule.setConstant(null, "TYPE_CHARARR", NativeFunctionPrimitiveNodes.TYPE_CHARARR);
+        rubiniusFFIModule.setConstant(null, "TYPE_ENUM", NativeFunctionPrimitiveNodes.TYPE_ENUM);
+        rubiniusFFIModule.setConstant(null, "TYPE_VARARGS", NativeFunctionPrimitiveNodes.TYPE_VARARGS);
+    }
+
+    private void initializeRubiniusConfig() {
+        final List<KeyValue> config = new ArrayList<>();
+
+        config.add(new KeyValue(context.makeString("hash.hamt"), false));
+
+        config.add(new KeyValue(context.makeString("rbx.platform.file.S_IRUSR"), FileStat.S_IRUSR));
+        config.add(new KeyValue(context.makeString("rbx.platform.file.S_IWUSR"), FileStat.S_IWUSR));
+        config.add(new KeyValue(context.makeString("rbx.platform.file.S_IXUSR"), FileStat.S_IXUSR));
+        config.add(new KeyValue(context.makeString("rbx.platform.file.S_IRGRP"), FileStat.S_IRGRP));
+        config.add(new KeyValue(context.makeString("rbx.platform.file.S_IWGRP"), FileStat.S_IWGRP));
+        config.add(new KeyValue(context.makeString("rbx.platform.file.S_IXGRP"), FileStat.S_IXGRP));
+        config.add(new KeyValue(context.makeString("rbx.platform.file.S_IROTH"), FileStat.S_IROTH));
+        config.add(new KeyValue(context.makeString("rbx.platform.file.S_IWOTH"), FileStat.S_IWOTH));
+        config.add(new KeyValue(context.makeString("rbx.platform.file.S_IXOTH"), FileStat.S_IXOTH));
+        config.add(new KeyValue(context.makeString("rbx.platform.file.S_IFMT"), FileStat.S_IFMT));
+        config.add(new KeyValue(context.makeString("rbx.platform.file.S_IFIFO"), FileStat.S_IFIFO));
+        config.add(new KeyValue(context.makeString("rbx.platform.file.S_IFCHR"), FileStat.S_IFCHR));
+        config.add(new KeyValue(context.makeString("rbx.platform.file.S_IFDIR"), FileStat.S_IFDIR));
+        config.add(new KeyValue(context.makeString("rbx.platform.file.S_IFBLK"), FileStat.S_IFBLK));
+        config.add(new KeyValue(context.makeString("rbx.platform.file.S_IFREG"), FileStat.S_IFREG));
+        config.add(new KeyValue(context.makeString("rbx.platform.file.S_IFLNK"), FileStat.S_IFLNK));
+        config.add(new KeyValue(context.makeString("rbx.platform.file.S_IFSOCK"), FileStat.S_IFSOCK));
+        config.add(new KeyValue(context.makeString("rbx.platform.file.S_ISUID"), FileStat.S_ISUID));
+        config.add(new KeyValue(context.makeString("rbx.platform.file.S_ISGID"), FileStat.S_ISGID));
+        config.add(new KeyValue(context.makeString("rbx.platform.file.S_ISVTX"), FileStat.S_ISVTX));
+
+        /*
+         * There is also rbx.platform.file.S_IFWHT, which I think is from FreeBSD. We don't support
+         * this as it isn't part of jnr-posix.
+         */
+
+        final RubyHash configHash = HashOperations.verySlowFromEntries(getHashClass(), config, false);
+
+        rubiniusModule.setConstant(null, "Config", configHash);
     }
 
     public void loadRubyCore(String fileName) {

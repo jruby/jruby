@@ -56,6 +56,9 @@ public class RubiniusPrimitiveManager {
         nodeFactories.addAll(ModulePrimitiveNodesFactory.getFactories());
         nodeFactories.addAll(RandomPrimitiveNodesFactory.getFactories());
         nodeFactories.addAll(ArrayPrimitiveNodesFactory.getFactories());
+        nodeFactories.addAll(StatPrimitiveNodesFactory.getFactories());
+        nodeFactories.addAll(PointerPrimitiveNodesFactory.getFactories());
+        nodeFactories.addAll(NativeFunctionPrimitiveNodesFactory.getFactories());
         nodeFactories.addAll(UndefinedPrimitiveNodesFactory.getFactories());
 
         final Map<String, RubiniusPrimitiveConstructor> primitives = new HashMap<>();
