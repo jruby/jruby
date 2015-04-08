@@ -562,6 +562,8 @@ public class RubyBigDecimal extends RubyNumeric {
                     return new RubyBigDecimal(runtime, (RubyClass)recv, new BigDecimal(((RubyFixnum)args[0]).getLongValue(), context));
                 } else if (args[0] instanceof RubyBignum) {
                     return new RubyBigDecimal(runtime, (RubyClass)recv, new BigDecimal(((RubyBignum)args[0]).getBigIntegerValue(), context));
+                } else if (!runtime.is1_8()) {
+                    context = MathContext.UNLIMITED;
                 }
                 // fall through to String coercion below
             }

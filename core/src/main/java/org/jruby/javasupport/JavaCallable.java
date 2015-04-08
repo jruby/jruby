@@ -31,8 +31,10 @@
 package org.jruby.javasupport;
 
 import java.lang.annotation.Annotation;
+import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Member;
+import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.Type;
 
@@ -43,12 +45,14 @@ import org.jruby.RubyClass;
 import org.jruby.RubyFixnum;
 import org.jruby.RubyString;
 import org.jruby.anno.JRubyMethod;
+import org.jruby.exceptions.RaiseException;
 import org.jruby.runtime.Helpers;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.cli.Options;
 import static org.jruby.javasupport.JavaClass.toRubyArray;
 
 public abstract class JavaCallable extends JavaAccessibleObject implements ParameterTypes {
+
     protected final Class<?>[] parameterTypes;
 
     private static final boolean REWRITE_JAVA_TRACE = Options.REWRITE_JAVA_TRACE.load();
@@ -62,15 +66,20 @@ public abstract class JavaCallable extends JavaAccessibleObject implements Param
         result.defineAnnotatedMethods(JavaCallable.class);
     }
 
-    public abstract int getArity();
+    public final int getArity() { return parameterTypes.length; }
+
+    public final Class<?>[] getParameterTypes() { return parameterTypes; }
+
+    //public abstract int getArity();
+    //public abstract Class<?>[] getParameterTypes();
     public abstract int getModifiers();
-    public abstract Class<?>[] getParameterTypes();
     public abstract Class<?>[] getExceptionTypes();
     public abstract Type[] getGenericExceptionTypes();
     public abstract Type[] getGenericParameterTypes();
     public abstract Annotation[][] getParameterAnnotations();
     public abstract boolean isVarArgs();
     public abstract String toGenericString();
+
     /**
      * @return the name used in the head of the string returned from inspect()
      */
@@ -81,14 +90,8 @@ public abstract class JavaCallable extends JavaAccessibleObject implements Param
         return getRuntime().newFixnum(getArity());
     }
 
-    @JRubyMethod
-    public final RubyArray argument_types() {
-        return toRubyArray(getRuntime(), getParameterTypes());
-    }
-
-    // same as argument_types, but matches name in java.lang.reflect.Constructor/Method
-    @JRubyMethod
-    public RubyArray parameter_types() {
+    @JRubyMethod(name = { "argument_types", "parameter_types" })
+    public final RubyArray parameter_types() {
         return toRubyArray(getRuntime(), getParameterTypes());
     }
 
@@ -122,60 +125,108 @@ public abstract class JavaCallable extends JavaAccessibleObject implements Param
         return getRuntime().newString(toGenericString());
     }
 
-    @JRubyMethod
-    public IRubyObject inspect() {
-        StringBuilder result = new StringBuilder();
-        result.append(nameOnInspection());
-        Class<?>[] parameterTypes = getParameterTypes();
-        for (int i = 0; i < parameterTypes.length; i++) {
-            result.append(parameterTypes[i].getName());
-            if (i < parameterTypes.length - 1) {
-                result.append(',');
-            }
-        }
-        result.append(")>");
-        return getRuntime().newString(result.toString());
-    }
-
-
     @JRubyMethod(name = "public?")
     public RubyBoolean public_p() {
         return RubyBoolean.newBoolean(getRuntime(), Modifier.isPublic(getModifiers()));
     }
 
-    protected void checkArity(int length) {
-        if (length != getArity()) {
+    protected final void checkArity(final int length) {
+        if ( length != getArity() ) {
             throw getRuntime().newArgumentError(length, getArity());
         }
     }
 
-    protected static String dumpArgTypes(Object[] arguments) {
-        StringBuilder str = new StringBuilder("[");
-        for (int i = 0; i < arguments.length; i++) {
-            if (i > 0) {
-                str.append(",");
-            }
-            if (arguments[i] == null) {
-                str.append("null");
-            } else {
-                str.append(arguments[i].getClass().getName());
-            }
-        }
-        str.append("]");
-        return str.toString();
+    final Object[] convertArguments(final IRubyObject[] args) {
+        return convertArguments(args, 0);
     }
 
-    protected IRubyObject handleThrowable(Throwable t, Member target) {
+    final Object[] convertArguments(final IRubyObject[] args, int offset) {
+        final Object[] arguments = new Object[ args.length - offset ];
+        final Class<?>[] types = parameterTypes;
+        for ( int i = arguments.length; --i >= 0; ) {
+            arguments[i] = args[ i + offset ].toJava( types[i] );
+        }
+        return arguments;
+    }
+
+    protected final IRubyObject handleThrowable(final Throwable ex, final Member target) {
         if (REWRITE_JAVA_TRACE) {
-            Helpers.rewriteStackTraceAndThrow(t, getRuntime());
+            Helpers.rewriteStackTrace(getRuntime(), ex);
         }
 
-        Helpers.throwException(t);
-        // not reached
-        return getRuntime().getNil();
+        Helpers.throwException(ex);
+        return null; // not reached
     }
 
-    protected IRubyObject handleInvocationTargetEx(InvocationTargetException ite, Member target) {
-        return handleThrowable(ite.getTargetException(), target);
+    protected final IRubyObject handleInvocationTargetEx(final InvocationTargetException ex, Member target) {
+        return handleThrowable(ex.getTargetException(), target);
     }
+
+    final IRubyObject handleIllegalAccessEx(final IllegalAccessException ex, Member target) throws RaiseException {
+        throw getRuntime().newTypeError("illegal access on '" + target.getName() + "': " + ex.getMessage());
+    }
+
+    final IRubyObject handleIllegalAccessEx(final IllegalAccessException ex, Constructor target)  throws RaiseException {
+        throw getRuntime().newTypeError("illegal access on constructor for type '" + target.getDeclaringClass().getSimpleName() + "': " + ex.getMessage());
+    }
+
+    final IRubyObject handlelIllegalArgumentEx(final IllegalArgumentException ex, Method target, Object... arguments) throws RaiseException {
+        final StringBuilder msg = new StringBuilder(64);
+        msg.append("for method ").append( target.getDeclaringClass().getSimpleName() )
+           .append('.').append( target.getName() );
+        msg.append(" expected "); dumpParameterTypes(msg);
+        msg.append("; got: "); dumpArgTypes(arguments, msg);
+        msg.append("; error: ").append( ex.getMessage() );
+        throw getRuntime().newTypeError( msg.toString() );
+    }
+
+    final IRubyObject handlelIllegalArgumentEx(final IllegalArgumentException ex, Constructor target, Object... arguments) throws RaiseException {
+        return handlelIllegalArgumentEx(ex, target, true, arguments);
+    }
+
+    final IRubyObject handlelIllegalArgumentEx(final IllegalArgumentException ex, Constructor target, final boolean targetInfo, Object... arguments) throws RaiseException {
+        final StringBuilder msg = new StringBuilder(64);
+        if ( targetInfo ) {
+            msg.append("for constructor of type ").append( target.getDeclaringClass().getSimpleName() );
+        }
+        msg.append(" expected "); dumpParameterTypes(msg);
+        msg.append("; got: "); dumpArgTypes(arguments, msg);
+        msg.append("; error: ").append( ex.getMessage() );
+        throw getRuntime().newTypeError( msg.toString() );
+    }
+
+    private void dumpParameterTypes(final StringBuilder str) {
+        str.append('[');
+        inspectParameterTypes(str, this, false);
+        str.append(']');
+    }
+
+    static CharSequence dumpArgTypes(final Object[] args, final StringBuilder str) {
+        str.append('[');
+        for ( int i = 0; i < args.length; i++ ) {
+            if ( i > 0 ) str.append(',');
+            if ( args[i] == null ) str.append("null");
+            else str.append( args[i].getClass().getName() );
+        }
+        str.append(']');
+        return str;
+    }
+
+    public static StringBuilder inspectParameterTypes(
+        final StringBuilder str, final ParameterTypes target) {
+        return inspectParameterTypes(str, target, true);
+    }
+
+    private static StringBuilder inspectParameterTypes(
+        final StringBuilder str, final ParameterTypes target, final boolean brackets) {
+        if ( brackets ) str.append('(');
+        final Class<?>[] types = target.getParameterTypes();
+        for ( int i = 0; i < types.length; i++ ) {
+            str.append( types[i].getName() );
+            if ( i < types.length - 1 ) str.append(',');
+        }
+        if ( brackets ) str.append(')');
+        return str;
+    }
+
 }

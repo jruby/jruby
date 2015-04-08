@@ -14,7 +14,7 @@ package org.jruby.javasupport;
  * rights and limitations under the License.
  *
  * Copyright (C) 2006 Thomas E Enebo <enebo@acm.org>
- * 
+ *
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
  * or the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
@@ -61,22 +61,22 @@ import org.jruby.util.ClassCache;
 public class JavaEmbedUtils {
     /**
      * Get an instance of a JRuby runtime.  Provide any loadpaths you want used at startup.
-     * 
-     * @param loadPaths to specify where to look for Ruby modules. 
+     *
+     * @param loadPaths to specify where to look for Ruby modules.
      * @return an instance
      */
-    public static Ruby initialize(List loadPaths) {
+    public static Ruby initialize(List<String> loadPaths) {
         return initialize(loadPaths, new RubyInstanceConfig());
     }
-    
+
     /**
      * Get an instance of a JRuby runtime.  Provide any loadpaths you want used at startup.
-     * 
+     *
      * @param loadPaths to specify where to look for Ruby modules.
-     * @param classCache to use as a common repository for cached classes 
+     * @param classCache to use as a common repository for cached classes
      * @return an instance
      */
-    public static Ruby initialize(List loadPaths, ClassCache classCache) {
+    public static Ruby initialize(List<String> loadPaths, ClassCache classCache) {
         RubyInstanceConfig config = new RubyInstanceConfig();
         if (classCache != null) {
             config.setClassCache(classCache);
@@ -90,23 +90,23 @@ public class JavaEmbedUtils {
      * @param config a runtime configuration instance
      * @return an instance
      */
-    public static Ruby initialize(List loadPaths, RubyInstanceConfig config) {
+    public static Ruby initialize(List<String> loadPaths, RubyInstanceConfig config) {
         Ruby runtime = Ruby.newInstance(config);
-        runtime.getLoadService().addPaths((List<String>)loadPaths);
+        runtime.getLoadService().addPaths(loadPaths);
         runtime.getLoadService().require("java");
 
         return runtime;
     }
-    
+
     /**
      * Generate a class cache.  This will end up setting max cache size per JRuby preferences
      * (e.g. jruby.jit.max).
-     * 
+     *
      * @param loader use the provided classloader to create the cache
      * @return
      */
     public static ClassCache createClassCache(ClassLoader loader) {
-        return new ClassCache(loader, new RubyInstanceConfig().getJitMax()); 
+        return new ClassCache(loader, new RubyInstanceConfig().getJitMax());
     }
 
     public static RubyObjectAdapter newObjectAdapter() {
@@ -231,7 +231,7 @@ public class JavaEmbedUtils {
 
     /**
      * Dispose of the runtime you initialized.
-     * 
+     *
      * @param runtime to be disposed of
      */
     public static void terminate(Ruby runtime) {
@@ -240,7 +240,7 @@ public class JavaEmbedUtils {
 
     /**
      * Convenience function for embedders
-     * 
+     *
      * @param runtime environment where the invoke will occur
      * @param receiver is the instance that will receive the method call
      * @param method is method to be called
@@ -289,8 +289,8 @@ public class JavaEmbedUtils {
         if (value instanceof IRubyObject) return (IRubyObject) value;
 
         IRubyObject result = JavaUtil.convertJavaToUsableRubyObject(runtime, value);
-        
-        return result instanceof JavaObject ? Java.wrap(runtime, result) : result; 
+
+        return result instanceof JavaObject ? Java.wrap(runtime, result) : result;
     }
 
     public static IRubyObject javaToRuby(Ruby runtime, boolean value) {

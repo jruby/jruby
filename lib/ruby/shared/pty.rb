@@ -5,8 +5,8 @@ module PTY
   module LibUtil
     extend FFI::Library
     ffi_lib FFI::Library::LIBC
-    # forkpty(3) is in libutil on linux, libc on MacOS/BSD
-    if FFI::Platform.linux?
+    # forkpty(3) is in libutil on linux and BSD, libc on MacOS
+    if FFI::Platform.linux? || (FFI::Platform.bsd? && !FFI::Platform.mac?)
       ffi_lib 'libutil'
     end
     attach_function :forkpty, [ :buffer_out, :buffer_out, :buffer_in, :buffer_in ], :pid_t

@@ -4,12 +4,6 @@ before_script:
   - "export PATH=`pwd`/bin:$PATH"
   - echo $HOME
 
-sudo: false
-
-cache:
-  directories:
-    - $HOME/.m2
-
 jdk: openjdk6
 
 env:

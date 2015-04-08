@@ -20,7 +20,7 @@ public final class EventHookTest extends TestCase {
     public void testLineNumbersForNativeTracer() {
         RubyInstanceConfig config = new RubyInstanceConfig();
         config.processArguments(new String[]{"--debug"});
-        Ruby rt = JavaEmbedUtils.initialize(Collections.emptyList(), config);
+        Ruby rt = JavaEmbedUtils.initialize(Collections.<String>emptyList(), config);
         NativeTracer tracer = new NativeTracer();
         rt.addEventHook(tracer);
         RubyRuntimeAdapter evaler = JavaEmbedUtils.newRuntimeAdapter();
@@ -29,9 +29,9 @@ public final class EventHookTest extends TestCase {
     }
 
     private final static class NativeTracer extends EventHook {
-        
+
         List<Integer> lines;
-        
+
         NativeTracer() {
             this.lines = new ArrayList<Integer>();
         }

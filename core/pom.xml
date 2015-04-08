@@ -57,7 +57,7 @@
     <dependency>
       <groupId>com.github.jnr</groupId>
       <artifactId>jnr-enxio</artifactId>
-      <version>0.7</version>
+      <version>0.8-SNAPSHOT</version>
       <type>jar</type>
     </dependency>
     <dependency>
@@ -68,7 +68,7 @@
     <dependency>
       <groupId>com.github.jnr</groupId>
       <artifactId>jnr-unixsocket</artifactId>
-      <version>0.6</version>
+      <version>0.7-SNAPSHOT</version>
       <type>jar</type>
     </dependency>
     <dependency>
@@ -92,7 +92,7 @@
     <dependency>
       <groupId>org.jruby.jcodings</groupId>
       <artifactId>jcodings</artifactId>
-      <version>1.0.10</version>
+      <version>1.0.13-SNAPSHOT</version>
       <type>jar</type>
     </dependency>
     <dependency>
