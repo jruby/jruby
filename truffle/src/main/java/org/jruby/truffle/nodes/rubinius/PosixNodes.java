@@ -28,7 +28,25 @@ import sun.misc.Unsafe;
 @CoreClass(name = "Rubinius::FFI::Platform::POSIX")
 public abstract class PosixNodes {
 
-    @CoreMethod(names = "geteuid", isModuleFunction = true, needsSelf = false)
+    @CoreMethod(names = "getegid", isModuleFunction = true)
+    public abstract static class GetEGIDNode extends CoreMethodNode {
+
+        public GetEGIDNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public GetEGIDNode(GetEGIDNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public int getEGID() {
+            return getContext().getRuntime().getPosix().getegid();
+        }
+
+    }
+
+    @CoreMethod(names = "geteuid", isModuleFunction = true)
     public abstract static class GetEUIDNode extends CoreMethodNode {
 
         public GetEUIDNode(RubyContext context, SourceSection sourceSection) {
@@ -46,7 +64,25 @@ public abstract class PosixNodes {
 
     }
 
-    @CoreMethod(names = "getgroups", isModuleFunction = true, needsSelf = false, required = 2)
+    @CoreMethod(names = "getgid", isModuleFunction = true)
+    public abstract static class GetGIDNode extends CoreMethodNode {
+
+        public GetGIDNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public GetGIDNode(GetGIDNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public int getGID() {
+            return getContext().getRuntime().getPosix().getgid();
+        }
+
+    }
+
+    @CoreMethod(names = "getgroups", isModuleFunction = true, required = 2)
     public abstract static class GetGroupsNode extends PointerPrimitiveNodes.ReadAddressPrimitiveNode {
 
         public GetGroupsNode(RubyContext context, SourceSection sourceSection) {
@@ -68,6 +104,24 @@ public abstract class PosixNodes {
             }
 
             return groups.length;
+        }
+
+    }
+
+    @CoreMethod(names = "getuid", isModuleFunction = true)
+    public abstract static class GetUIDNode extends CoreMethodNode {
+
+        public GetUIDNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public GetUIDNode(GetUIDNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public int getUID() {
+            return getContext().getRuntime().getPosix().getuid();
         }
 
     }
