@@ -544,7 +544,15 @@ public class IRRuntimeHelpers {
 
         Object lastArg = args[args.length - 1];
 
-        return !(lastArg instanceof RubyHash) ? null : (RubyHash) lastArg;
+        if (lastArg instanceof RubyHash) return (RubyHash) lastArg;
+
+        if (((IRubyObject) lastArg).respondsTo("to_hash")) {
+            lastArg = ((IRubyObject) lastArg).callMethod(((IRubyObject) lastArg).getRuntime().getCurrentContext(), "to_hash");
+
+            if (lastArg instanceof RubyHash) return (RubyHash) lastArg;
+        }
+
+        return null;
     }
 
     public static void checkForExtraUnwantedKeywordArgs(final ThreadContext context, RubyHash keywordArgs) {
