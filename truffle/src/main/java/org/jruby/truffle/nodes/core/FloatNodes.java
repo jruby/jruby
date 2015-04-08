@@ -110,6 +110,11 @@ public abstract class FloatNodes {
             return a - b.bigIntegerValue().doubleValue();
         }
 
+        @Specialization(guards = "!isRubyBignum(arguments[1])")
+        public Object subCoerced(VirtualFrame frame, double a, RubyBasicObject b) {
+            return ruby(frame, "redo_coerced :-, b", "b", b);
+        }
+
     }
 
     @CoreMethod(names = "*", required = 1)
