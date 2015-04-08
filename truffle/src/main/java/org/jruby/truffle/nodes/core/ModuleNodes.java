@@ -1748,7 +1748,7 @@ public abstract class ModuleNodes {
 
             final InternalMethod method = ModuleOperations.lookupMethod(module, name);
             if (method == null) {
-                throw new RaiseException(getContext().getCoreLibrary().noMethodError(name, module, this));
+                throw new RaiseException(getContext().getCoreLibrary().noMethodErrorOnModule(name, module, this));
             }
             module.undefMethod(this, method);
             return module;

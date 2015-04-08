@@ -910,9 +910,19 @@ public class CoreLibrary {
         return new RubyException(context.getCoreLibrary().getNoMethodErrorClass(), context.makeString(message), RubyCallStack.getBacktrace(currentNode));
     }
 
-    public RubyException noMethodError(String name, RubyModule module, Node currentNode) {
+    public RubyException noMethodErrorOnModule(String name, RubyModule module, Node currentNode) {
         CompilerAsserts.neverPartOfCompilation();
         return noMethodError(String.format("undefined method `%s' for %s", name, module.getName()), currentNode);
+    }
+
+    public RubyException noMethodErrorOnReceiver(String name, Object receiver, Node currentNode) {
+        CompilerAsserts.neverPartOfCompilation();
+        RubyClass logicalClass = getLogicalClass(receiver);
+        String repr = logicalClass.getName();
+        if (receiver instanceof RubyModule) {
+            repr = ((RubyModule) receiver).getName() + ":" + repr;
+        }
+        return noMethodError(String.format("undefined method `%s' for %s", name, repr), currentNode);
     }
 
     public RubyException privateMethodError(String name, RubyModule module, Node currentNode) {
