@@ -2059,7 +2059,9 @@ public class Helpers {
             addModuleMethod(containingClass, name, method, context, sym);
         }
 
-        callNormalMethodHook(containingClass, context, sym);
+        if (!containingClass.isRefinement()) {
+            callNormalMethodHook(containingClass, context, sym);
+        }
 
         return sym;
     }

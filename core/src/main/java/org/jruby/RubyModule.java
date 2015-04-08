@@ -4308,6 +4308,10 @@ public class RubyModule extends RubyObject {
         return set;
     }
 
+    public boolean isRefinement() {
+        return (flags & REFINED_MODULE_F) == REFINED_MODULE_F;
+    }
+
     /**
      * Return true if the given method is defined on this class and is a builtin
      * (defined in Java at boot).

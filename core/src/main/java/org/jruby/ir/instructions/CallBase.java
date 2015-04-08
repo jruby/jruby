@@ -11,6 +11,7 @@ import org.jruby.ir.transformations.inlining.CloneInfo;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.*;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.runtime.callsite.RefinedCachingCallSite;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -46,7 +47,7 @@ public abstract class CallBase extends Instr implements ClosureAcceptingInstr {
         hasClosure = closure != null;
         this.name = name;
         this.callType = callType;
-        this.callSite = getCallSiteFor(callType, name);
+        this.callSite = getCallSiteFor(callType, name, potentiallyRefined);
         containsArgSplat = containsArgSplat(args);
         flagsComputed = false;
         canBeEval = true;
@@ -147,8 +148,10 @@ public abstract class CallBase extends Instr implements ClosureAcceptingInstr {
         return dontInline;
     }
 
-    private static CallSite getCallSiteFor(CallType callType, String name) {
+    private static CallSite getCallSiteFor(CallType callType, String name, boolean potentiallyRefined) {
         assert callType != null: "Calltype should never be null";
+
+        if (potentiallyRefined) return new RefinedCachingCallSite(name, callType);
 
         switch (callType) {
             case NORMAL: return MethodIndex.getCallSite(name);
