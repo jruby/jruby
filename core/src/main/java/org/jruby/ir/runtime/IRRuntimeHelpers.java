@@ -507,16 +507,16 @@ public class IRRuntimeHelpers {
     }
 
     public static void checkArity(ThreadContext context, Object[] args, int required, int opt, int rest,
-                                  boolean receivesKwargs, int restKey) {
+                                  boolean receivesKwargs, int restKey, Block.Type blockType) {
         int argsLength = args.length;
-        RubyHash keywordArgs = (RubyHash) extractKwargsHash(args, required, receivesKwargs);
+        RubyHash keywordArgs = extractKwargsHash(args, required, receivesKwargs);
 
         if (restKey == -1 && keywordArgs != null) checkForExtraUnwantedKeywordArgs(context, keywordArgs);
 
         // keyword arguments value is not used for arity checking.
         if (keywordArgs != null) argsLength -= 1;
 
-        if (argsLength < required || (rest == -1 && argsLength > (required + opt))) {
+        if ((blockType == null || blockType.checkArity) && (argsLength < required || (rest == -1 && argsLength > (required + opt)))) {
 //            System.out.println("NUMARGS: " + argsLength + ", REQUIRED: " + required + ", OPT: " + opt + ", AL: " + args.length + ",RKW: " + receivesKwargs );
 //            System.out.println("ARGS[0]: " + args[0]);
 

@@ -91,7 +91,7 @@ public class StartupInterpreterEngine extends InterpreterEngine {
                             currDynScope = interpreterContext.newDynamicScope(context);
                             context.pushScope(currDynScope);
                         } else {
-                            processBookKeepingOp(context, instr, operation, name, args, self, block, implClass, rescuePCs);
+                            processBookKeepingOp(context, instr, operation, name, args, self, block, blockType, implClass, rescuePCs);
                         }
                         break;
                     case OTHER_OP:
