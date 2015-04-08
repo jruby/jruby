@@ -552,8 +552,8 @@ public class RubyModule extends RubyObject {
         if (!block.isGiven()) throw context.runtime.newArgumentError("no block given");
         if (block.isEscaped()) throw context.runtime.newArgumentError("can't pass a Proc as a block to Module#refine");
         if (!(classArg instanceof RubyClass)) throw context.runtime.newTypeError(classArg, context.runtime.getClassClass());
-        if (refinements == null) refinements = new HashMap<>();
-        if (activatedRefinements == null) activatedRefinements = new HashMap<>();
+        if (refinements == Collections.EMPTY_MAP) refinements = new HashMap<>();
+        if (activatedRefinements == Collections.EMPTY_MAP) activatedRefinements = new HashMap<>();
 
         RubyClass classWeAreRefining = (RubyClass) classArg;
         RubyModule refinement = refinements.get(classWeAreRefining);
@@ -690,7 +690,7 @@ public class RubyModule extends RubyObject {
      */
     private void usingRefinement(RubyModule cref, RubyClass classWeAreRefining, RubyModule refinement) {
         // Our storage cubby in cref for all known refinements
-        if (cref.refinements == null) cref.refinements = new HashMap<>();
+        if (cref.refinements == Collections.EMPTY_MAP) cref.refinements = new HashMap<>();
 
         RubyModule superClass = getAlreadyRefinementWrapper(cref, classWeAreRefining, refinement);
         if (superClass == null) return; // already been refined and added to refinementwrapper
@@ -4373,10 +4373,10 @@ public class RubyModule extends RubyObject {
     private volatile Map<String, IRubyObject> classVariables = Collections.EMPTY_MAP;
 
     /** Refinements added to this module are stored here **/
-    private volatile Map<RubyClass, RubyModule> refinements = null;
+    private volatile Map<RubyClass, RubyModule> refinements = Collections.EMPTY_MAP;
 
     /** A list of refinement hosts for this refinement */
-    private volatile Map<RubyClass, IncludedModuleWrapper> activatedRefinements = null;
+    private volatile Map<RubyClass, IncludedModuleWrapper> activatedRefinements = Collections.EMPTY_MAP;
 
     /** The class this refinement refines */
     volatile RubyClass refinedClass = null;
