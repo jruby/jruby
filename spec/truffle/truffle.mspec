@@ -90,6 +90,7 @@ class MSpecScript
     "spec/ruby/library/base64",
     "spec/ruby/library/complex",
     "spec/ruby/library/date",
+    "spec/ruby/library/datetime",
     "spec/ruby/library/erb",
     "spec/ruby/library/getoptlong",
     "spec/ruby/library/observer",
