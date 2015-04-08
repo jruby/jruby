@@ -1010,7 +1010,7 @@ public class Helpers {
     }
 
     public static IRubyObject isExceptionHandled(RubyException currentException, IRubyObject exception, ThreadContext context) {
-        return isExceptionHandled((IRubyObject)currentException, exception, context);
+        return isExceptionHandled((IRubyObject) currentException, exception, context);
     }
 
     public static IRubyObject isExceptionHandled(IRubyObject currentException, IRubyObject exception, ThreadContext context) {
