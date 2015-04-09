@@ -249,8 +249,8 @@ public class RubyProc extends RubyObject implements DataType {
         if (args == null) return IRubyObject.NULL_ARRAY;
 
         if (type == Block.Type.LAMBDA) {
-            if (blockBody instanceof InterpretedIRBlockBody) {
-                ((InterpretedIRBlockBody) blockBody).getSignature().checkArity(context.runtime, args);
+            if (blockBody instanceof IRBlockBody) {
+                ((IRBlockBody) blockBody).getSignature().checkArity(context.runtime, args);
             } else {
                 arity.checkArity(context.runtime, args.length);
             }
