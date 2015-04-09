@@ -999,6 +999,27 @@ public abstract class ModuleNodes {
 
     }
 
+    @CoreMethod(names = "extend_object", required = 1)
+    public abstract static class ExtendObjectNode extends CoreMethodNode {
+
+        public ExtendObjectNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public ExtendObjectNode(ExtendObjectNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public RubyBasicObject extendObject(RubyModule module, RubyBasicObject object) {
+            notDesignedForCompilation();
+
+            object.getSingletonClass(this).include(this, module);
+            return module;
+        }
+
+    }
+
     @CoreMethod(names = "initialize", needsBlock = true)
     public abstract static class InitializeNode extends CoreMethodNode {
 

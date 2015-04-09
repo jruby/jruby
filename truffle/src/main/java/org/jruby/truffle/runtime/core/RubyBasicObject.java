@@ -157,11 +157,6 @@ public class RubyBasicObject {
         return getOperations().getFieldNames(this);
     }
 
-    public void extend(RubyModule module, Node currentNode) {
-        RubyNode.notDesignedForCompilation();
-        getSingletonClass(currentNode).include(currentNode, module);
-    }
-
     public Object getInstanceVariable(String name) {
         RubyNode.notDesignedForCompilation();
 

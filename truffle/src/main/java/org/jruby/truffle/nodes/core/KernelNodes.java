@@ -669,30 +669,6 @@ public abstract class KernelNodes {
 
     }
 
-    @CoreMethod(names = "extend", argumentsAsArray = true, required = 1)
-    public abstract static class ExtendNode extends CoreMethodNode {
-
-        public ExtendNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
-        public ExtendNode(ExtendNode prev) {
-            super(prev);
-        }
-
-        @Specialization
-        public RubyBasicObject extend(RubyBasicObject self, Object[] args) {
-            notDesignedForCompilation();
-
-            for (int n = 0; n < args.length; n++) {
-                self.extend((RubyModule) args[n], this);
-            }
-
-            return self;
-        }
-
-    }
-
     @CoreMethod(names = "fork", isModuleFunction = true, argumentsAsArray = true)
     public abstract static class ForkNode extends CoreMethodNode {
 
