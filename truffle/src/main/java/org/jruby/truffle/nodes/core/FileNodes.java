@@ -252,7 +252,7 @@ public abstract class FileNodes {
         }
     }
 
-    @CoreMethod(names = "open", onSingleton = true, needsBlock = true, required = 2)
+    @CoreMethod(names = "open", onSingleton = true, needsBlock = true, required = 1, optional = 1)
     public abstract static class OpenNode extends YieldingCoreMethodNode {
 
         public OpenNode(RubyContext context, SourceSection sourceSection) {
@@ -261,6 +261,16 @@ public abstract class FileNodes {
 
         public OpenNode(OpenNode prev) {
             super(prev);
+        }
+
+        @Specialization
+        public Object open(RubyString fileName, UndefinedPlaceholder mode, UndefinedPlaceholder block) {
+            return open(fileName, getContext().makeString("r"), block);
+        }
+
+        @Specialization
+        public Object open(VirtualFrame frame, RubyString fileName, UndefinedPlaceholder mode, RubyProc block) {
+            return open(frame, fileName, getContext().makeString("r"), block);
         }
 
         @Specialization

@@ -20,10 +20,6 @@ class MSpecScript
     # require 'socket'
     "^spec/ruby/core/file/socket_spec.rb",
 
-    # STDOUT.tty?
-    "^spec/ruby/core/io/tty_spec.rb",
-    "^spec/ruby/core/io/isatty_spec.rb",
-
     # require 'fcntl'
     "^spec/ruby/core/io/reopen_spec.rb",
 

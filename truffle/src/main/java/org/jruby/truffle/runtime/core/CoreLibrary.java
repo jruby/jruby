@@ -227,11 +227,12 @@ public class CoreLibrary {
         defineClass(errnoModule, systemCallErrorClass, "EACCES");
         edomClass = defineClass(errnoModule, systemCallErrorClass, "EDOM");
         defineClass(errnoModule, systemCallErrorClass, "EEXIST");
+        einvalClass = defineClass(errnoModule, systemCallErrorClass, "EINVAL");
         enoentClass = defineClass(errnoModule, systemCallErrorClass, "ENOENT");
         enotemptyClass = defineClass(errnoModule, systemCallErrorClass, "ENOTEMPTY");
+        defineClass(errnoModule, systemCallErrorClass, "ENXIO");
         defineClass(errnoModule, systemCallErrorClass, "EPERM");
         defineClass(errnoModule, systemCallErrorClass, "EXDEV");
-        einvalClass = defineClass(errnoModule, systemCallErrorClass, "EINVAL");
 
         // ScriptError
         RubyClass scriptErrorClass = defineClass(exceptionClass, "ScriptError");
