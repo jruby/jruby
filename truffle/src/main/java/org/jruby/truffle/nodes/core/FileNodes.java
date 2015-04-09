@@ -121,51 +121,6 @@ public abstract class FileNodes {
 
     }
 
-    @CoreMethod(names = { "delete", "unlink" }, onSingleton = true, required = 1)
-    public abstract static class DeleteNode extends CoreMethodNode {
-
-        public DeleteNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
-        public DeleteNode(DeleteNode prev) {
-            super(prev);
-        }
-
-        @Specialization
-        public int delete(RubyString file) {
-            notDesignedForCompilation();
-
-            if (!new File(file.toString()).delete()) {
-                // TODO(CS, 12-Jan-15) handle failure
-                throw new UnsupportedOperationException();
-            }
-
-            return 1;
-        }
-
-    }
-
-    @CoreMethod(names = "directory?", onSingleton = true, required = 1)
-    public abstract static class DirectoryNode extends CoreMethodNode {
-
-        public DirectoryNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
-        public DirectoryNode(DirectoryNode prev) {
-            super(prev);
-        }
-
-        @Specialization
-        public boolean directory(RubyString path) {
-            notDesignedForCompilation();
-
-            return new File(path.toString()).isDirectory();
-        }
-
-    }
-
     @CoreMethod(names = "dirname", onSingleton = true, required = 1)
     public abstract static class DirnameNode extends CoreMethodNode {
 
@@ -234,51 +189,6 @@ public abstract class FileNodes {
 
     }
 
-    @CoreMethod(names = "executable?", onSingleton = true, required = 1)
-    public abstract static class ExecutableNode extends CoreMethodNode {
-
-        public ExecutableNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
-        public ExecutableNode(ExecutableNode prev) {
-            super(prev);
-        }
-
-        @Specialization
-        public boolean executable(RubyString path) {
-            notDesignedForCompilation();
-
-            return new File(path.toString()).canExecute();
-        }
-
-    }
-
-    @CoreMethod(names = {"exist?", "exists?"}, onSingleton = true, required = 1)
-    @NodeChild(value = "path")
-    public abstract static class ExistsNode extends RubyNode {
-
-        public ExistsNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
-        public ExistsNode(ExistsNode prev) {
-            super(prev);
-        }
-
-        @CreateCast("path") public RubyNode coercePathToString(RubyNode path) {
-            return ToStrNodeFactory.create(getContext(), getSourceSection(), path);
-        }
-
-        @Specialization
-        public boolean exists(RubyString path) {
-            notDesignedForCompilation();
-
-            return new File(path.toString()).exists();
-        }
-
-    }
-
     @CoreMethod(names = "expand_path", onSingleton = true, required = 1, optional = 1)
     public abstract static class ExpandPathNode extends CoreMethodNode {
 
@@ -300,26 +210,6 @@ public abstract class FileNodes {
             notDesignedForCompilation();
 
             return getContext().makeString(RubyFile.expandPath(path.toString(), dir.toString()));
-        }
-
-    }
-
-    @CoreMethod(names = "file?", onSingleton = true, required = 1)
-    public abstract static class FileNode extends CoreMethodNode {
-
-        public FileNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
-        public FileNode(FileNode prev) {
-            super(prev);
-        }
-
-        @Specialization
-        public boolean file(RubyString path) {
-            notDesignedForCompilation();
-
-            return new File(path.toString()).isFile();
         }
 
     }
@@ -362,7 +252,7 @@ public abstract class FileNodes {
         }
     }
 
-    @CoreMethod(names = "open", onSingleton = true, needsBlock = true, required = 2)
+    @CoreMethod(names = "open", onSingleton = true, needsBlock = true, required = 1, optional = 1)
     public abstract static class OpenNode extends YieldingCoreMethodNode {
 
         public OpenNode(RubyContext context, SourceSection sourceSection) {
@@ -371,6 +261,16 @@ public abstract class FileNodes {
 
         public OpenNode(OpenNode prev) {
             super(prev);
+        }
+
+        @Specialization
+        public Object open(RubyString fileName, UndefinedPlaceholder mode, UndefinedPlaceholder block) {
+            return open(fileName, getContext().makeString("r"), block);
+        }
+
+        @Specialization
+        public Object open(VirtualFrame frame, RubyString fileName, UndefinedPlaceholder mode, RubyProc block) {
+            return open(frame, fileName, getContext().makeString("r"), block);
         }
 
         @Specialization
@@ -395,26 +295,6 @@ public abstract class FileNodes {
             }
 
             return file;
-        }
-
-    }
-
-    @CoreMethod(names = "path", onSingleton = true, required = 1)
-    public abstract static class PathNode extends CoreMethodNode {
-
-        public PathNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
-        public PathNode(PathNode prev) {
-            super(prev);
-        }
-
-        @Specialization
-        public RubyString path(RubyString path) {
-            notDesignedForCompilation();
-
-            return getContext().makeString(path.toString());
         }
 
     }
@@ -507,26 +387,6 @@ public abstract class FileNodes {
 
     }
 
-    @CoreMethod(names = "readable?", onSingleton = true, needsSelf = false, required = 1)
-    public abstract static class ReadableQueryNode extends CoreMethodNode {
-
-        public ReadableQueryNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
-        public ReadableQueryNode(ReadableQueryNode prev) {
-            super(prev);
-        }
-
-        @Specialization
-        public boolean isReadable(RubyString file) {
-            notDesignedForCompilation();
-
-            return new File(file.toString()).canRead();
-        }
-
-    }
-
     @CoreMethod(names = "realpath", onSingleton = true, required = 1, optional = 1)
     public abstract static class RealpathNode extends CoreMethodNode {
 
@@ -558,38 +418,6 @@ public abstract class FileNodes {
             } catch (IOException e) {
                 throw new UnsupportedOperationException("realpath - " + file);
             }
-        }
-
-    }
-
-    @CoreMethod(names = "size?", onSingleton = true, required = 1)
-    public abstract static class SizeNode extends CoreMethodNode {
-
-        public SizeNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
-        public SizeNode(SizeNode prev) {
-            super(prev);
-        }
-
-        @Specialization
-        public Object read(RubyString file) {
-            notDesignedForCompilation();
-
-            final File f = new File(file.toString());
-
-            if (!f.exists()) {
-                return nil();
-            }
-
-            final long size = f.length();
-
-            if (size == 0) {
-                return nil();
-            }
-
-            return size;
         }
 
     }

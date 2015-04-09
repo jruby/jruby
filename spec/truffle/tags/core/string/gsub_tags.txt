@@ -1,6 +1,2 @@
-fails:String#gsub with pattern and replacement treats \+ as an empty string if there was no captures
-fails:String#gsub with pattern and block sets $~ for access from the block
-fails:String#gsub with pattern and block restores $~ after leaving the block
-passes:String#gsub with pattern and block converts the block's return value to a string using to_s
-fails:String#gsub with pattern and replacement respects $KCODE when the pattern collapses
-fails:String#gsub with pattern and replacement handles pattern collapse without $KCODE
+fails(regexp):String#gsub with pattern and block sets $~ for access from the block
+fails(regexp):String#gsub with pattern and block restores $~ after leaving the block

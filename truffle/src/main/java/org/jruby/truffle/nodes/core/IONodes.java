@@ -31,6 +31,7 @@ import java.io.BufferedInputStream;
 import java.io.BufferedReader;
 import java.io.EOFException;
 import java.io.File;
+import java.io.FileDescriptor;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -223,6 +224,34 @@ public abstract class IONodes {
         @CompilerDirectives.TruffleBoundary
         private void write(PrintStream stream, byte[] bytes, int offset, int length) throws InterruptedException {
             stream.write(bytes, offset, length);
+        }
+
+    }
+
+    @CoreMethod(names = { "tty?", "isatty" })
+    public abstract static class IsATTYNode extends CoreMethodNode {
+
+        public IsATTYNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public IsATTYNode(IsATTYNode prev) {
+            super(prev);
+        }
+
+        @Specialization
+        public boolean isatty(Object self) {
+            notDesignedForCompilation();
+
+            Object stdout = getContext().getCoreLibrary().getObjectClass().getConstants().get("STDOUT").getValue();
+            if (self != stdout) {
+                throw new UnsupportedOperationException("Only STDOUT.tty? supported");
+            }
+
+            // TODO (eregon 8-Apr-15) get the actual fd
+            final FileDescriptor fd = FileDescriptor.out;
+
+            return getContext().getRuntime().getPosix().isatty(fd);
         }
 
     }

@@ -1,0 +1,1 @@
+fails:Matrix#regular? raises an error for rectangular matrices

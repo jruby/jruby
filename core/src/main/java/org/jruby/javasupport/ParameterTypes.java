@@ -36,4 +36,6 @@ public interface ParameterTypes {
     Class<?>[] getParameterTypes();
     Class<?>[] getExceptionTypes();
     boolean isVarArgs();
+
+    int getArity();
 }

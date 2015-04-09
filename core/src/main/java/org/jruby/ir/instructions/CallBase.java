@@ -11,9 +11,9 @@ import org.jruby.ir.transformations.inlining.CloneInfo;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.*;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.runtime.callsite.RefinedCachingCallSite;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
@@ -36,8 +36,10 @@ public abstract class CallBase extends Instr implements ClosureAcceptingInstr {
     private boolean dontInline;
     private boolean containsArgSplat;
     private boolean procNew;
+    private boolean potentiallyRefined;
 
-    protected CallBase(Operation op, CallType callType, String name, Operand receiver, Operand[] args, Operand closure) {
+    protected CallBase(Operation op, CallType callType, String name, Operand receiver, Operand[] args, Operand closure,
+                       boolean potentiallyRefined) {
         super(op, getOperands(receiver, args, closure));
 
         this.callSiteId = callSiteCounter++;
@@ -45,7 +47,7 @@ public abstract class CallBase extends Instr implements ClosureAcceptingInstr {
         hasClosure = closure != null;
         this.name = name;
         this.callType = callType;
-        this.callSite = getCallSiteFor(callType, name);
+        this.callSite = getCallSiteFor(callType, name, potentiallyRefined);
         containsArgSplat = containsArgSplat(args);
         flagsComputed = false;
         canBeEval = true;
@@ -53,6 +55,7 @@ public abstract class CallBase extends Instr implements ClosureAcceptingInstr {
         targetRequiresCallersFrame = true;
         dontInline = false;
         procNew = false;
+        this.potentiallyRefined = potentiallyRefined;
     }
 
     @Override
@@ -145,8 +148,10 @@ public abstract class CallBase extends Instr implements ClosureAcceptingInstr {
         return dontInline;
     }
 
-    private static CallSite getCallSiteFor(CallType callType, String name) {
+    private static CallSite getCallSiteFor(CallType callType, String name, boolean potentiallyRefined) {
         assert callType != null: "Calltype should never be null";
+
+        if (potentiallyRefined) return new RefinedCachingCallSite(name, callType);
 
         switch (callType) {
             case NORMAL: return MethodIndex.getCallSite(name);
@@ -177,6 +182,10 @@ public abstract class CallBase extends Instr implements ClosureAcceptingInstr {
         }
 
         return true;
+    }
+
+    public boolean isPotentiallyRefined() {
+        return potentiallyRefined;
     }
 
     @Override

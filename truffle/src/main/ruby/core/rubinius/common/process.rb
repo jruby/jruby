@@ -26,10 +26,54 @@
 
 # Only part of Rubinius' process.rb
 
-class Process
+module Process
+
+  FFI = Rubinius::FFI
 
   def self.times
     Struct::Tms.new(*cpu_times)
+  end
+
+  @maxgroups = 32
+  class << self
+    attr_reader :maxgroups
+    def maxgroups=(m)
+      @maxgroups = m
+    end
+  end
+
+  def self.uid
+    ret = FFI::Platform::POSIX.getuid
+    Errno.handle if ret == -1
+    ret
+  end
+
+  def self.gid
+    ret = FFI::Platform::POSIX.getgid
+    Errno.handle if ret == -1
+    ret
+  end
+
+  def self.euid
+    ret = FFI::Platform::POSIX.geteuid
+    Errno.handle if ret == -1
+    ret
+  end
+
+  def self.egid
+    ret = FFI::Platform::POSIX.getegid
+    Errno.handle if ret == -1
+    ret
+  end
+
+  def self.groups
+    g = []
+    FFI::MemoryPointer.new(:int, @maxgroups) { |p|
+      num_groups = FFI::Platform::POSIX.getgroups(@maxgroups, p)
+      Errno.handle if num_groups == -1
+      g = p.read_array_of_int(num_groups)
+    }
+    g
   end
 
 end

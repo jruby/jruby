@@ -1,0 +1,3 @@
+fails:Matrix::LUPDecomposition#solve for rectangular matrices raises an error for singular matrices
+fails:Matrix::LUPDecomposition#solve for rectangular matrices for non singular matrices raises an error when given a matrix of the wrong size
+fails:Matrix::LUPDecomposition#solve for rectangular matrices for non singular matrices raises an error when given a vector of the wrong size

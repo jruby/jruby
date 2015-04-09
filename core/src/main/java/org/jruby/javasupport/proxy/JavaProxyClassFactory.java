@@ -28,6 +28,10 @@
 
 package org.jruby.javasupport.proxy;
 
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
@@ -56,6 +60,7 @@ import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.FieldVisitor;
 import org.objectweb.asm.Label;
+import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
 import org.objectweb.asm.commons.GeneratorAdapter;
@@ -256,7 +261,7 @@ public class JavaProxyClassFactory {
         ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_MAXS);
 
         // start class
-        cw.visit(Opcodes.V1_3, Opcodes.ACC_PUBLIC | Opcodes.ACC_FINAL | Opcodes.ACC_SUPER,
+        cw.visit(Opcodes.V1_5, Opcodes.ACC_PUBLIC | Opcodes.ACC_FINAL | Opcodes.ACC_SUPER,
                 toInternalClassName(className), /*signature*/ null,
                 toInternalClassName(superClass),
                 interfaceNamesForProxyClass(interfaces));
@@ -346,7 +351,7 @@ public class JavaProxyClassFactory {
         if (!md.generateProxyMethod()) return;
 
         org.objectweb.asm.commons.Method m = md.getMethod();
-        Type[] ex = toType(md.getExceptions());
+        Type[] ex = toTypes(md.getExceptions());
 
         String field_name = "__mth$" + md.getName() + md.scrambledSignature();
 
@@ -363,8 +368,8 @@ public class JavaProxyClassFactory {
         clazzInit.putStatic(selfType, field_name, PROXY_METHOD_TYPE);
 
         org.objectweb.asm.commons.Method sm = new org.objectweb.asm.commons.Method(
-                "__super$" + m.getName(), m.getReturnType(), m
-                        .getArgumentTypes());
+                "__super$" + m.getName(), m.getReturnType(), m.getArgumentTypes()
+        );
 
         //
         // construct the proxy method
@@ -373,8 +378,7 @@ public class JavaProxyClassFactory {
                 ex, cw);
 
         ga.loadThis();
-        ga.getField(selfType, INVOCATION_HANDLER_FIELD_NAME,
-                INVOCATION_HANDLER_TYPE);
+        ga.getField(selfType, INVOCATION_HANDLER_FIELD_NAME, INVOCATION_HANDLER_TYPE);
 
         // if the method is extending something, then we have
         // to test if the handler is initialized...
@@ -396,7 +400,7 @@ public class JavaProxyClassFactory {
 
         if (m.getArgumentTypes().length == 0) {
             // load static empty array
-            ga.getStatic(JAVA_PROXY_TYPE, "NO_ARGS", Type.getType(Object[].class));
+            ga.getStatic(JAVA_PROXY_TYPE, "NO_ARGS", toType(Object[].class));
         } else {
             // box arguments
             ga.loadArgArray();
@@ -422,16 +426,15 @@ public class JavaProxyClassFactory {
         ga.visitTryCatchBlock(before, after, rethrow, "java/lang/Error");
         ga.visitTryCatchBlock(before, after, rethrow, "java/lang/RuntimeException");
 
-        Type thr = Type.getType(Throwable.class);
+        Type thr = toType(Throwable.class);
         Label handler = ga.mark();
-        Type udt = Type.getType(UndeclaredThrowableException.class);
+        Type udt = toType(UndeclaredThrowableException.class);
         int loc = ga.newLocal(thr);
         ga.storeLocal(loc, thr);
         ga.newInstance(udt);
         ga.dup();
         ga.loadLocal(loc, thr);
-        ga.invokeConstructor(udt, org.objectweb.asm.commons.Method
-                .getMethod("void <init>(java.lang.Throwable)"));
+        ga.invokeConstructor(udt, org.objectweb.asm.commons.Method.getMethod("void <init>(java.lang.Throwable)"));
         ga.throwException();
 
         ga.visitTryCatchBlock(before, after, handler, "java/lang/Throwable");
@@ -464,24 +467,26 @@ public class JavaProxyClassFactory {
         String name1 = "<init>";
         String signature = null;
         Class[] superConstructorExceptions = constructor.getExceptionTypes();
+        boolean superConstructorVarArgs = constructor.isVarArgs();
 
         org.objectweb.asm.commons.Method super_m = new org.objectweb.asm.commons.Method(
-                name1, Type.VOID_TYPE, toType(superConstructorParameterTypes));
+                name1, Type.VOID_TYPE, toTypes(superConstructorParameterTypes));
         org.objectweb.asm.commons.Method m = new org.objectweb.asm.commons.Method(
-                name1, Type.VOID_TYPE, toType(newConstructorParameterTypes));
+                name1, Type.VOID_TYPE, toTypes(newConstructorParameterTypes));
 
-        GeneratorAdapter ga = new GeneratorAdapter(access, m, signature,
-                toType(superConstructorExceptions), cw);
+        String[] exceptionNames = toInternalNames( superConstructorExceptions );
+        MethodVisitor mv = cw.visitMethod(access, m.getName(), m.getDescriptor(), signature, exceptionNames);
+        // marking with @SafeVarargs so that we can correctly detect proxied var-arg consturctors :
+        if ( superConstructorVarArgs ) mv.visitAnnotation(Type.getDescriptor(VarArgs.class), true);
+        GeneratorAdapter ga = new GeneratorAdapter(access, m, mv);
 
         ga.loadThis();
         ga.loadArgs(0, superConstructorParameterTypes.length);
-        ga.invokeConstructor(Type.getType(constructor.getDeclaringClass()),
-                super_m);
+        ga.invokeConstructor(toType(constructor.getDeclaringClass()), super_m);
 
         ga.loadThis();
         ga.loadArg(superConstructorParameterTypes.length);
-        ga.putField(selfType, INVOCATION_HANDLER_FIELD_NAME,
-                INVOCATION_HANDLER_TYPE);
+        ga.putField(selfType, INVOCATION_HANDLER_FIELD_NAME, INVOCATION_HANDLER_TYPE);
 
         // do a void return
         ga.returnValue();
@@ -489,6 +494,14 @@ public class JavaProxyClassFactory {
 
         return newConstructorParameterTypes;
     }
+
+    static boolean isVarArgs(final Constructor<?> ctor) {
+        return ctor.isVarArgs() || ctor.getAnnotation(VarArgs.class) != null;
+    }
+
+    //static boolean isVarArgs(final Method method) {
+    //    return method.isVarArgs() || method.getAnnotation(VarArgs.class) != null;
+    //}
 
     private static String toInternalClassName(Class clazz) {
         return toInternalClassName(clazz.getName());
@@ -498,12 +511,25 @@ public class JavaProxyClassFactory {
         return name.replace('.', '/');
     }
 
-    private static Type[] toType(Class[] parameterTypes) {
-        Type[] result = new Type[parameterTypes.length];
-        for (int i = 0; i < result.length; i++) {
-            result[i] = Type.getType(parameterTypes[i]);
+    private static Type toType(Class clazz) {
+        return Type.getType(clazz);
+    }
+
+    private static Type[] toTypes(Class[] params) {
+        Type[] types = new Type[params.length];
+        for (int i = 0; i < types.length; i++) {
+            types[i] = Type.getType(params[i]);
         }
-        return result;
+        return types;
+    }
+
+    private static String[] toInternalNames(final Class[] params) {
+        if (params == null) return null;
+        String[] names = new String[params.length];
+        for (int i = 0; i < names.length; ++i) {
+            names[i] = Type.getType(params[i]).getInternalName();
+        }
+        return names;
     }
 
     private static Map<MethodKey, MethodData> collectMethods(
@@ -775,5 +801,13 @@ public class JavaProxyClassFactory {
         if ( idx == -1 ) return "org.jruby.proxy";
         return "org.jruby.proxy." + clazzName.substring(0, idx);
     }
+
+    /**
+     * Variable arguments marker for generated constructor.
+     * @note could have used @SafeVarargs but it's Java 7+
+     */
+    @Retention(RetentionPolicy.RUNTIME)
+    @Target({ElementType.CONSTRUCTOR, ElementType.METHOD})
+    public static @interface VarArgs {}
 
 }

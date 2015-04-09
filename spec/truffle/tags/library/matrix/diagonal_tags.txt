@@ -1,0 +1,1 @@
+fails:Matrix.diagonal? raises an error for rectangular matrices

@@ -40,7 +40,6 @@ import org.jruby.java.addons.KernelJavaAddons;
 
 import java.lang.reflect.Constructor;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -111,6 +110,7 @@ import org.jruby.util.IdUtil;
 import org.jruby.util.cli.Options;
 import org.jruby.util.collections.IntHashMap;
 import static org.jruby.java.dispatch.CallableSelector.newCallableCache;
+import static org.jruby.java.invokers.RubyToJavaInvoker.convertArguments;
 
 @JRubyModule(name = "Java")
 public class Java implements Library {
@@ -725,6 +725,7 @@ public class Java implements Library {
         return context.nil;
     }
 
+    // called for Ruby sub-classes of a Java class
     private static void setupJavaSubclass(final ThreadContext context, final RubyClass subclass) {
 
         subclass.getInstanceVariables().setInstanceVariable("@java_proxy_class", context.nil);
@@ -756,12 +757,8 @@ public class Java implements Library {
                 }
 
                 final int argsLength = args.length;
-                final RubyArray constructors = ((JavaProxyClass) proxyClass).constructors();
-                ArrayList<JavaProxyConstructor> forArity = new ArrayList<JavaProxyConstructor>(constructors.size());
-                for ( int i = 0; i < constructors.size(); i++ ) {
-                    JavaProxyConstructor constructor = (JavaProxyConstructor) constructors.eltInternal(i);
-                    if ( constructor.getArity() == argsLength ) forArity.add(constructor);
-                }
+                final JavaProxyConstructor[] constructors = ((JavaProxyClass) proxyClass).getConstructors();
+                ArrayList<JavaProxyConstructor> forArity = findCallablesForArity(argsLength, constructors);
 
                 if ( forArity.size() == 0 ) {
                     throw context.runtime.newArgumentError("wrong number of arguments for constructor");
@@ -776,16 +773,31 @@ public class Java implements Library {
                     throw context.runtime.newArgumentError("wrong number of arguments for constructor");
                 }
 
-                final Object[] javaArgs = new Object[argsLength];
-                Class[] parameterTypes = matching.getParameterTypes();
-                for ( int i = 0; i < argsLength; i++ ) {
-                    javaArgs[i] = args[i].toJava(parameterTypes[i]);
-                }
-
+                final Object[] javaArgs = convertArguments(matching, args);
                 JavaObject newObject = matching.newInstance(self, javaArgs);
+
                 return JavaUtilities.set_java_object(self, self, newObject);
             }
         });
+    }
+
+    // NOTE: move to RubyToJavaInvoker for re-use ?!
+    static <T extends ParameterTypes> ArrayList<T> findCallablesForArity(final int arity, final T[] callables) {
+        final ArrayList<T> forArity = new ArrayList<T>(callables.length);
+        for ( int i = 0; i < callables.length; i++ ) {
+            final T callable = callables[i];
+            final int callableArity = callable.getArity();
+
+            if ( callableArity == arity ) forArity.add(callable);
+            // for arity 2 :
+            // - callable arity 1 ([]...) is OK
+            // - callable arity 2 (arg1, []...) is OK
+            // - callable arity 3 (arg1, arg2, []...) is OK
+            else if ( callable.isVarArgs() && callableArity - 1 <= arity ) {
+                forArity.add(callable);
+            }
+        }
+        return forArity;
     }
 
     // package scheme 2: separate module for each full package name, constructed

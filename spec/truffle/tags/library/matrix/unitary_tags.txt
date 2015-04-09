@@ -1,0 +1,1 @@
+fails:Matrix.unitary? raises an error for rectangular matrices

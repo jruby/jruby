@@ -26,7 +26,7 @@
 
 # Only part of Rubinius' process.rb
 
-class Process
+module Process
   def self.time
     Rubinius.primitive :vm_time
     raise PrimitiveFailure, "Process.time primitive failed"

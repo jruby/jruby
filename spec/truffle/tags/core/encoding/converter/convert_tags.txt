@@ -1,2 +1,1 @@
-fails:Encoding::Converter#convert raises UndefinedConversionError if the String contains characters invalid for the target encoding
 fails:Encoding::Converter#convert raises an ArgumentError if called on a finished stream

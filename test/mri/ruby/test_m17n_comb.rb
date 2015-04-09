@@ -731,7 +731,8 @@ class TestM17NComb < Test::Unit::TestCase
   end
 
   def test_str_crypt
-    strict_crypt = nil
+    strict_crypt = true # default to skipping non-alphanum salt
+
     # glibc 2.16 or later denies salt contained other than [0-9A-Za-z./] #7312
     if defined? Etc::CS_GNU_LIBC_VERSION
       glibcver = Etc.confstr(Etc::CS_GNU_LIBC_VERSION).scan(/\d+/).map(&:to_i)

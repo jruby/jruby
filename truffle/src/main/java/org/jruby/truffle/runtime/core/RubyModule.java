@@ -333,7 +333,7 @@ public class RubyModule extends RubyBasicObject implements ModuleChain {
 
         if (method == null) {
             CompilerDirectives.transferToInterpreter();
-            throw new RaiseException(getContext().getCoreLibrary().noMethodError(oldName, this, currentNode));
+            throw new RaiseException(getContext().getCoreLibrary().noMethodErrorOnModule(oldName, this, currentNode));
         }
 
         addMethod(currentNode, method.withNewName(newName));

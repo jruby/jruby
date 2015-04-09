@@ -1,7 +1,5 @@
 package org.jruby.internal.runtime.methods;
 
-import java.util.List;
-
 import org.jruby.MetaClass;
 import org.jruby.Ruby;
 import org.jruby.RubyClass;

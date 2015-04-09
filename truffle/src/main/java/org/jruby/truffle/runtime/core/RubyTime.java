@@ -26,6 +26,7 @@ public class RubyTime extends RubyBasicObject {
     public RubyTime(RubyClass timeClass, DateTime dateTime, Object offset) {
         super(timeClass);
         this.dateTime = dateTime;
+        assert offset != null;
         this.offset = offset;
     }
 
@@ -51,6 +52,7 @@ public class RubyTime extends RubyBasicObject {
     }
 
     public void setOffset(Object offset) {
+        assert offset != null;
         this.offset = offset;
     }
 

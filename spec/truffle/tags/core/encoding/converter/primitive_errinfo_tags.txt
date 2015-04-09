@@ -1,3 +1,2 @@
-fails:Encoding::Converter#primitive_errinfo returns the status of the last primitive conversion, even if it was successful and the previous one wasn't
 fails:Encoding::Converter#primitive_errinfo returns the state, source encoding, target encoding, erroneous bytes, and the read-again bytes when #convert last raised InvalidByteSequenceError
 fails:Encoding::Converter#primitive_errinfo returns the state, source encoding, target encoding, erroneous bytes, and the read-again bytes when #finish last raised InvalidByteSequenceError

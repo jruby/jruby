@@ -165,8 +165,10 @@ public class StringFormatter {
                             longValue = (int) value;
                         } else if (value instanceof Long) {
                             longValue = (long) value;
+                        } else if (value instanceof Double) {
+                            longValue = (long) (double) value;
                         } else {
-                            throw new UnsupportedOperationException();
+                            throw new UnsupportedOperationException(value.getClass().getName());
                         }
 
                         stream.printf(formatBuilder.toString(), longValue);

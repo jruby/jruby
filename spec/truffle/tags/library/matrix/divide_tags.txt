@@ -1,0 +1,1 @@
+fails:Matrix#/ raises a Matrix::ErrDimensionMismatch if the matrices are different sizes

@@ -1,12 +1,12 @@
-fails:String#scan scans for occurrences of the string if pattern is a string
-fails:String#scan tries to convert pattern to a string via to_str
-fails:String#scan taints the results if the String argument is tainted
-fails:String#scan taints the results when passed a String argument if self is tainted
-fails:String#scan taints the results if the Regexp argument is tainted
-fails:String#scan taints the results when passed a Regexp argument if self is tainted
-fails:String#scan with pattern and block sets $~ for access from the block
-fails:String#scan with pattern and block restores $~ after leaving the block
-fails:String#scan with pattern and block taints the results if the String argument is tainted
-fails:String#scan with pattern and block taints the results when passed a String argument if self is tainted
-fails:String#scan with pattern and block taints the results if the Regexp argument is tainted
-fails:String#scan with pattern and block taints the results when passed a Regexp argument if self is tainted
+fails(regexp):String#scan scans for occurrences of the string if pattern is a string
+fails(regexp):String#scan tries to convert pattern to a string via to_str
+fails(regexp):String#scan taints the results if the String argument is tainted
+fails(regexp):String#scan taints the results when passed a String argument if self is tainted
+fails(regexp):String#scan taints the results if the Regexp argument is tainted
+fails(regexp):String#scan taints the results when passed a Regexp argument if self is tainted
+fails(regexp):String#scan with pattern and block sets $~ for access from the block
+fails(regexp):String#scan with pattern and block restores $~ after leaving the block
+fails(regexp):String#scan with pattern and block taints the results if the String argument is tainted
+fails(regexp):String#scan with pattern and block taints the results when passed a String argument if self is tainted
+fails(regexp):String#scan with pattern and block taints the results if the Regexp argument is tainted
+fails(regexp):String#scan with pattern and block taints the results when passed a Regexp argument if self is tainted
