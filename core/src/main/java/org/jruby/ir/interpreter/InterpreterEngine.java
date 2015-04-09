@@ -247,9 +247,8 @@ public class InterpreterEngine {
                 setResult(temp, currDynScope, instr.getResult(), result);
                 return;
             case RECV_POST_REQD_ARG:
-                result = ((ReceivePostReqdArgInstr)instr).receivePostReqdArg(args, acceptsKeywordArgument);
-                // For blocks, missing arg translates to nil
-                setResult(temp, currDynScope, instr.getResult(), result == null ? context.nil : result);
+                result = ((ReceivePostReqdArgInstr)instr).receivePostReqdArg(context, args, acceptsKeywordArgument);
+                setResult(temp, currDynScope, instr.getResult(), result);
                 return;
             case RECV_RUBY_EXC:
                 setResult(temp, currDynScope, instr.getResult(), IRRuntimeHelpers.unwrapRubyException(exception));
