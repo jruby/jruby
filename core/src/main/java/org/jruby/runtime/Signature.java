@@ -289,7 +289,7 @@ public class Signature {
     }
 
     public String toString() {
-        return "signature(pre=" + pre + ",opt=" + opt + ",post=" + post + ",rest=" + rest + ",kwargs=" + kwargs + ")";
+        return "signature(pre=" + pre + ",opt=" + opt + ",post=" + post + ",rest=" + rest + ",kwargs=" + kwargs + ",kwreq=" + requiredKwargs + ",kwrest=" + restKwargs + ")";
     }
 
     public void checkArity(Ruby runtime, IRubyObject[] args) {
