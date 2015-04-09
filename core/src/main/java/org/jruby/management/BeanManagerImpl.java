@@ -3,6 +3,9 @@ package org.jruby.management;
 import java.lang.management.ManagementFactory;
 import java.lang.reflect.Method;
 import java.security.AccessControlException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+
 import javax.management.InstanceAlreadyExistsException;
 import javax.management.InstanceNotFoundException;
 import javax.management.MBeanRegistrationException;
@@ -19,13 +22,16 @@ public class BeanManagerImpl implements BeanManager {
 
     private static final Logger LOG = LoggerFactory.getLogger("BeanManagerImpl");
 
+    private static final SimpleDateFormat FORMAT = new SimpleDateFormat("yyyyMMddHHmmssSSS");
+
     public final String base;
     
     private final boolean managementEnabled;
     
     public BeanManagerImpl(Ruby ruby, boolean managementEnabled) {
         this.managementEnabled = managementEnabled;
-        this.base = "org.jruby:type=Runtime,name=" + ruby.getRuntimeNumber() + ",";
+        this.base = "org.jruby:type=Runtime,name=" + FORMAT.format(new Date()) +
+                ruby.getRuntimeNumber() + ",";
     }
     
     public void register(JITCompilerMBean jitCompiler) {
