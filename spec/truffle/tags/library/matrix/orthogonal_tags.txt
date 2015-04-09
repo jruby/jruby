@@ -1,1 +1,0 @@
-fails:Matrix.orthogonal? raises an error for rectangular matrices

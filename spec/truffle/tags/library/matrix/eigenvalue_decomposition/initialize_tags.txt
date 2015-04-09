@@ -1,1 +1,0 @@
-fails:Matrix::EigenvalueDecomposition#initialize raises an error if matrix is not square

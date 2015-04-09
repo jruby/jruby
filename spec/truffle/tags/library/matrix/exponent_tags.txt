@@ -1,2 +1,0 @@
-fails:Matrix#** given an integer _n_ raises a ErrDimensionMismatch for non square matrices
-fails:Matrix#** given an integer _n_ that is <= 0 raises a ErrDimensionMismatch for irregular matrices
