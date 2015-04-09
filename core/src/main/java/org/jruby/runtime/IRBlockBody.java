@@ -78,9 +78,8 @@ public abstract class IRBlockBody extends ContextAwareBlockBody {
     @Override
     public IRubyObject yieldSpecific(ThreadContext context, Binding binding, Type type) {
         IRubyObject[] args = IRubyObject.NULL_ARRAY;
-        if (type == Type.LAMBDA) {
-            signature.checkArity(context.runtime, args);
-        }
+        if (type == Type.LAMBDA) signature.checkArity(context.runtime, args);
+
         return commonYieldPath(context, args, null, binding, type, Block.NULL_BLOCK);
     }
 
@@ -147,10 +146,8 @@ public abstract class IRBlockBody extends ContextAwareBlockBody {
 
     @Override
     public IRubyObject doYield(ThreadContext context, IRubyObject[] args, IRubyObject self, Binding binding, Type type) {
-        args = (args == null) ? IRubyObject.NULL_ARRAY : args;
-        if (type == Type.LAMBDA) {
-            signature.checkArity(context.runtime, args);
-        }
+        if (type == Type.LAMBDA) signature.checkArity(context.runtime, args);
+
         return commonYieldPath(context, args, self, binding, type, Block.NULL_BLOCK);
     }
 
@@ -162,16 +159,6 @@ public abstract class IRBlockBody extends ContextAwareBlockBody {
     }
 
     protected abstract IRubyObject commonYieldPath(ThreadContext context, IRubyObject[] args, IRubyObject self, Binding binding, Type type, Block block);
-
-    protected void blockArgWarning(Ruby ruby, int length) {
-        ruby.getWarnings().warn(ID.MULTIPLE_VALUES_FOR_BLOCK, "multiple values for a block parameter (" +
-                    length + " for 1)");
-    }
-
-    protected IRubyObject[] convertToRubyArray(ThreadContext context, IRubyObject[] args) {
-        return (args.length == 0) ? context.runtime.getSingleNilArray()
-                                  : new IRubyObject[] {context.runtime.newArrayNoCopy(args)};
-    }
 
     @Override
     public IRubyObject[] prepareArgumentsForCall(ThreadContext context, IRubyObject[] args, Type type) {
