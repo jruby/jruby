@@ -8,7 +8,6 @@
     <version>1.7.20-SNAPSHOT</version>
   </parent>
   <artifactId>jruby</artifactId>
-  <packaging>bundle</packaging>
   <name>JRuby Main Maven Artifact</name>
   <properties>
     <jruby.home>${basedir}/../..</jruby.home>

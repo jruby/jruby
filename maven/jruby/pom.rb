@@ -5,7 +5,7 @@ project 'JRuby Main Maven Artifact' do
   model_version '4.0.0'
   id "org.jruby:jruby:#{version}"
   inherit "org.jruby:jruby-artifacts:#{version}"
-  packaging 'bundle'
+  packaging 'jar'
 
   properties( 'tesla.dump.pom' => 'pom.xml',
               'tesla.dump.readonly' => true,
