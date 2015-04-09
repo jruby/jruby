@@ -183,7 +183,7 @@ public abstract class IRBlockBody extends ContextAwareBlockBody {
             if (args.length == 1) {
                 // Convert value to arg-array, unwrapping where necessary
                 args = IRRuntimeHelpers.convertValueIntoArgArray(context, args[0], arity, (type == Type.NORMAL) && (args[0] instanceof RubyArray));
-            } else if (arity().getValue() == 1) {
+            } else if (arity().getValue() == 1 && !getSignature().restKwargs()) {
                // discard excess arguments
                 args = (args.length == 0) ? context.runtime.getSingleNilArray() : new IRubyObject[] { args[0] };
             }

@@ -36,7 +36,9 @@ public class Signature {
     private final boolean kwargs;
     private final Arity arity;
 
+    // FIXME: three booleans for kwargs?  Even if we keep these we should make it cheaper to get these values from Iter/friends
     private boolean requiredKwargs;
+    private boolean restKwargs;
 
     public Signature(int pre, int opt, int post, Rest rest, boolean kwargs) {
         this.pre = pre;
@@ -56,13 +58,14 @@ public class Signature {
         }
     }
 
-    public Signature(int pre, int opt, int post, Rest rest, boolean kwargs, boolean requiredKwargs) {
+    public Signature(int pre, int opt, int post, Rest rest, boolean kwargs, boolean requiredKwargs, boolean restKwargs) {
         this.pre = pre;
         this.opt = opt;
         this.post = post;
         this.rest = rest;
         this.kwargs = kwargs;
         this.requiredKwargs = requiredKwargs;
+        this.restKwargs = restKwargs;
 
         // NOTE: Some logic to *assign* variables still uses Arity, which treats Rest.ANON (the
         //       |a,| form) as a rest arg for destructuring purposes. However ANON does *not*
@@ -75,9 +78,12 @@ public class Signature {
         }
     }
 
-    private int getRequiredKeywordCount() {
-        if (requiredKwargs) return 1;
-        return 0;
+    public int getRequiredKeywordCount() {
+        return requiredKwargs ? 1 : 0;
+    }
+
+    public boolean restKwargs() {
+        return restKwargs;
     }
 
     public int pre() { return pre; }
@@ -129,7 +135,7 @@ public class Signature {
         return new Signature(pre, opt, post, rest, kwargs);
     }
 
-    public static Signature from(int pre, int opt, int post, Rest rest, boolean kwargs, boolean requiredKwargs) {
+    public static Signature from(int pre, int opt, int post, Rest rest, boolean kwargs, boolean requiredKwargs, boolean restKwargs) {
         if (opt == 0 && post == 0 && !kwargs) {
             switch (pre) {
                 case 0:
@@ -166,7 +172,7 @@ public class Signature {
                     break;
             }
         }
-        return new Signature(pre, opt, post, rest, kwargs, requiredKwargs);
+        return new Signature(pre, opt, post, rest, kwargs, requiredKwargs, restKwargs);
     }
 
     public static Signature from(IterNode iter) {
@@ -185,7 +191,8 @@ public class Signature {
             rest = restFromArg(restArg);
         }
 
-       return Signature.from(args.getPreCount(), args.getOptionalArgsCount(), args.getPostCount(), rest, args.hasKwargs(), hasRequiredKeywordArg(args));
+       return Signature.from(args.getPreCount(), args.getOptionalArgsCount(), args.getPostCount(), rest,
+               args.hasKwargs(), hasRequiredKeywordArg(args), args.hasKeyRest());
     }
 
     private static boolean hasRequiredKeywordArg(ArgsNode args) {
@@ -200,7 +207,6 @@ public class Signature {
         }
         return false;
     }
-
 
     private static boolean isRequiredKeywordArgumentValueNode(Node asgnNode) {
         return asgnNode.childNodes().get(0) instanceof RequiredKeywordArgumentValueNode;
