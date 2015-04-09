@@ -254,17 +254,37 @@ public class Signature {
         return Signature.NO_ARGUMENTS;
     }
 
+    private static final int MAX_ENCODED_ARGS_EXPONENT = 8;
+    private static final int MAX_ENCODED_ARGS_MASK = 0xFF;
+    private static final int ENCODE_RESTKWARGS_SHIFT = 0;
+    private static final int ENCODE_REQKWARGS_SHIFT = ENCODE_RESTKWARGS_SHIFT + 1;
+    private static final int ENCODE_KWARGS_SHIFT = ENCODE_REQKWARGS_SHIFT + 1;
+    private static final int ENCODE_REST_SHIFT = ENCODE_KWARGS_SHIFT + 1;
+    private static final int ENCODE_POST_SHIFT = ENCODE_REST_SHIFT + MAX_ENCODED_ARGS_EXPONENT;
+    private static final int ENCODE_OPT_SHIFT = ENCODE_POST_SHIFT + MAX_ENCODED_ARGS_EXPONENT;
+    private static final int ENCODE_PRE_SHIFT = ENCODE_OPT_SHIFT + MAX_ENCODED_ARGS_EXPONENT;
+
     public long encode() {
-        return ((long)pre << 48) | ((long)opt << 32) | ((long)post << 16) | (rest.ordinal() << 8) | (kwargs?1:0);
+        return
+                ((long)pre << ENCODE_PRE_SHIFT) |
+                        ((long)opt << ENCODE_OPT_SHIFT) |
+                        ((long)post << ENCODE_POST_SHIFT) |
+                        (rest.ordinal() << ENCODE_REST_SHIFT) |
+                        ((kwargs?1:0) << ENCODE_KWARGS_SHIFT) |
+                        ((requiredKwargs?1:0) << ENCODE_REQKWARGS_SHIFT) |
+                        ((restKwargs?1:0) << ENCODE_RESTKWARGS_SHIFT);
     }
 
     public static Signature decode(long l) {
         return Signature.from(
-                (int)(l >> 48) & 0xFFFF,
-                (int)(l >> 32) & 0xFFFF,
-                (int)(l >> 16) & 0xFFFF,
-                Rest.values()[(int)((l >> 8) & 0xFF)],
-                (l & 0xFF)==1 ? true : false
+                (int)(l >> ENCODE_PRE_SHIFT) & MAX_ENCODED_ARGS_MASK,
+                (int)(l >> ENCODE_OPT_SHIFT) & MAX_ENCODED_ARGS_MASK,
+                (int)(l >> ENCODE_POST_SHIFT) & MAX_ENCODED_ARGS_MASK,
+                Rest.values()[(int)((l >> ENCODE_REST_SHIFT) & MAX_ENCODED_ARGS_MASK)],
+                ((int)(l >> ENCODE_KWARGS_SHIFT) & 0x1)==1 ? true : false,
+                ((int)(l >> ENCODE_REQKWARGS_SHIFT) & 0x1)==1 ? true : false,
+                ((int)(l >> ENCODE_RESTKWARGS_SHIFT) & 0x1)==1 ? true : false
+
         );
     }
 
