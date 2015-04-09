@@ -489,6 +489,7 @@ public class IRRuntimeHelpers {
         }
     }
 
+    @JIT
     public static Block getBlockFromObject(ThreadContext context, Object value) {
         Block block;
         if (value instanceof Block) {
