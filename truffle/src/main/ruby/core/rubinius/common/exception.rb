@@ -26,6 +26,18 @@
 
 # Only part of Rubinius' exception.rb
 
+
+class NoMethodError < NameError
+  attr_reader :name
+  attr_reader :args
+
+  def initialize(*arguments)
+    super(arguments.shift)
+    @name = arguments.shift
+    @args = arguments.shift
+  end
+end
+
 class StopIteration < IndexError
 end
 
