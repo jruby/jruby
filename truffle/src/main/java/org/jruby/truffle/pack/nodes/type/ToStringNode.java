@@ -15,6 +15,9 @@ import com.oracle.truffle.api.dsl.NodeChildren;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.utilities.ConditionProfile;
+import org.jruby.truffle.nodes.RubyNode;
+import org.jruby.truffle.nodes.core.KernelNodes;
+import org.jruby.truffle.nodes.core.KernelNodesFactory;
 import org.jruby.truffle.nodes.dispatch.CallDispatchHeadNode;
 import org.jruby.truffle.nodes.dispatch.DispatchHeadNodeFactory;
 import org.jruby.truffle.nodes.dispatch.DispatchNode;
@@ -43,17 +46,21 @@ public abstract class ToStringNode extends PackNode {
     private final RubyContext context;
     protected final boolean convertNumbersToStrings;
     private final String conversionMethod;
+    private final boolean inspectOnConversionFailure;
 
     @Child private CallDispatchHeadNode toStrNode;
     @Child private CallDispatchHeadNode toSNode;
+    @Child private KernelNodes.ToSNode inspectNode;
     @Child private IsTaintedNode isTaintedNode;
 
     private final ConditionProfile taintedProfile = ConditionProfile.createBinaryProfile();
 
-    public ToStringNode(RubyContext context, boolean convertNumbersToStrings, String conversionMethod) {
+    public ToStringNode(RubyContext context, boolean convertNumbersToStrings,
+                        String conversionMethod, boolean inspectOnConversionFailure) {
         this.context = context;
         this.convertNumbersToStrings = convertNumbersToStrings;
         this.conversionMethod = conversionMethod;
+        this.inspectOnConversionFailure = inspectOnConversionFailure;
         isTaintedNode = IsTaintedNodeFactory.create(context, getEncapsulatingSourceSection(), null);
     }
 
@@ -134,6 +141,16 @@ public abstract class ToStringNode extends PackNode {
             }
 
             return ((RubyString) value).getByteList();
+        }
+
+        if (inspectOnConversionFailure) {
+            if (inspectNode == null) {
+                CompilerDirectives.transferToInterpreter();
+                inspectNode = insert(KernelNodesFactory.ToSNodeFactory.create(context,
+                        getEncapsulatingSourceSection(), new RubyNode[]{null}));
+            }
+
+            return inspectNode.toS(frame, object).getByteList();
         }
 
         CompilerDirectives.transferToInterpreter();
