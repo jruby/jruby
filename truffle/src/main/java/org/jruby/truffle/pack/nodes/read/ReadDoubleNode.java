@@ -14,6 +14,7 @@ import com.oracle.truffle.api.dsl.NodeChild;
 import com.oracle.truffle.api.dsl.NodeChildren;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
+import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.truffle.pack.nodes.PackNode;
 import org.jruby.truffle.pack.nodes.SourceNode;
 import org.jruby.truffle.runtime.RubyContext;
@@ -55,6 +56,16 @@ public abstract class ReadDoubleNode extends PackNode {
     @Specialization
     public double read(VirtualFrame frame, double[] source) {
         return source[advanceSourcePosition(frame)];
+    }
+
+    @Specialization
+    public double read(VirtualFrame frame, IRubyObject[] source) {
+        return toDouble(source[advanceSourcePosition(frame)]);
+    }
+
+    @CompilerDirectives.TruffleBoundary
+    private double toDouble(IRubyObject object) {
+        return object.convertToFloat().getDoubleValue();
     }
 
 }

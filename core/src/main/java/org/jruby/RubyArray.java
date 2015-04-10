@@ -4150,7 +4150,7 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
                 }
             }
 
-            if (result.isTainted()) {
+            if (result.isTainted() || iFmt.isTaint()) {
                 string.taint(context.getRuntime());
             }
 
