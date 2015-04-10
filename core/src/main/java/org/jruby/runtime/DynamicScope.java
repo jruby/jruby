@@ -100,6 +100,11 @@ public abstract class DynamicScope {
         return parent;
     }
 
+    @Deprecated
+    public DynamicScope getNextCapturedScope() {  // Used by ruby-debug-ide
+        return getParentScope();
+    }
+
     /**
      * Returns the n-th parent scope of this scope.
      * May return <code>null</code>.
