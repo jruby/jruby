@@ -39,7 +39,6 @@ package org.jruby;
 
 import org.jcodings.Encoding;
 import org.jcodings.specific.USASCIIEncoding;
-import org.jcodings.specific.UTF16BEEncoding;
 import org.jcodings.specific.UTF8Encoding;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
@@ -59,12 +58,11 @@ import org.jruby.runtime.invokedynamic.MethodNames;
 import org.jruby.runtime.marshal.MarshalStream;
 import org.jruby.runtime.marshal.UnmarshalStream;
 import org.jruby.truffle.pack.runtime.*;
+import org.jruby.truffle.pack.runtime.exceptions.*;
 import org.jruby.util.ByteList;
 import org.jruby.util.Pack;
-import org.jruby.util.PerlHash;
 import org.jruby.util.Qsort;
 import org.jruby.util.RecursiveComparator;
-import org.jruby.util.SipHashInline;
 import org.jruby.util.TypeConverter;
 import org.jruby.util.cli.Options;
 
@@ -77,7 +75,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import static org.jruby.RubyEnumerator.enumeratorize;
 import static org.jruby.RubyEnumerator.enumeratorizeWithSize;
 import static org.jruby.runtime.Helpers.invokedynamic;
-import static org.jruby.runtime.Helpers.memchr;
 import static org.jruby.runtime.Visibility.PRIVATE;
 import static org.jruby.runtime.invokedynamic.MethodNames.HASH;
 import static org.jruby.runtime.invokedynamic.MethodNames.OP_CMP;
@@ -4107,6 +4104,8 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
                 } catch (FormatException e) {
                     throw context.getRuntime().newArgumentError(e.getMessage());
                 }
+
+                // TODO CS 10-Apr-15 how do we limit the size of the cache
 
                 // We can race on this, but it doesn't matter as long as something goes in the cache
                 trufflePackerCache.put(iFmt.getByteList().dup(), packer);

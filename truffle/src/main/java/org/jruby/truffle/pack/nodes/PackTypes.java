@@ -20,6 +20,9 @@ import org.jruby.util.ByteList;
 
 import java.math.BigInteger;
 
+/**
+ * This is a combination of generic, pack-specific, Truffle and JRuby types.
+ */
 @TypeSystem({
         Nil.class,
         boolean.class,

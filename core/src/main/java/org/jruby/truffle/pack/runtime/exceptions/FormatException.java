@@ -7,11 +7,11 @@
  * GNU General Public License version 2
  * GNU Lesser General Public License version 2.1
  */
-package org.jruby.truffle.pack.runtime;
+package org.jruby.truffle.pack.runtime.exceptions;
 
-public class RangeException extends RuntimeException {
+public class FormatException extends RuntimeException {
 
-    public RangeException(String message) {
+    public FormatException(String message) {
         super(message);
     }
 }

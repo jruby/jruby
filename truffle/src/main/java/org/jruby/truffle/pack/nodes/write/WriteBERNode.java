@@ -1,4 +1,13 @@
-package org.jruby.truffle.pack.nodes.type;
+/*
+ * Copyright (c) 2015 Oracle and/or its affiliates. All rights reserved. This
+ * code is released under a tri EPL/GPL/LGPL license. You can use it,
+ * redistribute it and/or modify it under the terms of the:
+ *
+ * Eclipse Public License version 1.0
+ * GNU General Public License version 2
+ * GNU Lesser General Public License version 2.1
+ */
+package org.jruby.truffle.pack.nodes.write;
 
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.dsl.NodeChild;
@@ -6,12 +15,16 @@ import com.oracle.truffle.api.dsl.NodeChildren;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import org.jruby.truffle.pack.nodes.PackNode;
-import org.jruby.truffle.pack.runtime.CantCompressNegativeException;
-import org.jruby.truffle.runtime.core.RubyBignum;
+import org.jruby.truffle.pack.runtime.exceptions.CantCompressNegativeException;
 import org.jruby.util.ByteList;
 
 import java.math.BigInteger;
 
+/**
+ * Write a BER-compressed integer.
+ * <p>
+ * BER is 'basic encoding rules', which is part of ASN.1.
+ */
 @NodeChildren({
         @NodeChild(value = "value", type = PackNode.class),
 })
@@ -43,7 +56,9 @@ public abstract class WriteBERNode extends PackNode {
 
     @CompilerDirectives.TruffleBoundary
     private ByteList encode(Object from) {
-        // TODO CS 30-Mar-15 should write our own optimisable version of BER
+        // TODO CS 30-Mar-15 should write our own optimizable version of BER
+
+        // BER logic copied from jruby.util.Pack - see copyright and authorship there
 
         ByteList buf = new ByteList();
 

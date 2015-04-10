@@ -15,17 +15,26 @@ import org.jruby.truffle.pack.nodes.PackNode;
 import org.jruby.truffle.pack.nodes.PackRootNode;
 import org.jruby.truffle.pack.nodes.SourceNode;
 import org.jruby.truffle.pack.nodes.control.*;
-import org.jruby.truffle.pack.nodes.type.*;
+import org.jruby.truffle.pack.nodes.read.ReadDoubleNodeGen;
+import org.jruby.truffle.pack.nodes.read.ReadLongNodeGen;
+import org.jruby.truffle.pack.nodes.read.ReadLongOrBigIntegerNodeGen;
+import org.jruby.truffle.pack.nodes.read.ReadStringNodeGen;
+import org.jruby.truffle.pack.nodes.type.AsLongNodeGen;
+import org.jruby.truffle.pack.nodes.type.AsSinglePrecisionNodeGen;
+import org.jruby.truffle.pack.nodes.write.*;
 import org.jruby.truffle.pack.runtime.Endianness;
-import org.jruby.truffle.pack.runtime.FormatException;
 import org.jruby.truffle.pack.runtime.PackEncoding;
 import org.jruby.truffle.pack.runtime.Signedness;
+import org.jruby.truffle.pack.runtime.exceptions.FormatException;
 import org.jruby.truffle.runtime.RubyContext;
 
 import java.nio.ByteOrder;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * Parses a pack format expression into a tree of Truffle nodes.
+ */
 public class PackParser {
 
     private final RubyContext context;
@@ -471,6 +480,10 @@ public class PackParser {
         return format;
     }
 
+    /**
+     * Provide a simple string describing the format expression that is short
+     * enough to be used in Truffle and Graal diagnostics.
+     */
     private String describe(String format) {
         format = format.replace("\\s+", "");
 

@@ -13,14 +13,15 @@ import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.frame.FrameSlotTypeException;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.RootNode;
-import com.oracle.truffle.api.nodes.UnexpectedResultException;
 import com.oracle.truffle.api.source.NullSourceSection;
 import org.jruby.truffle.pack.runtime.PackEncoding;
 import org.jruby.truffle.pack.runtime.PackFrame;
 import org.jruby.truffle.pack.runtime.PackResult;
 import org.jruby.truffle.runtime.util.ArrayUtils;
-import org.jruby.util.ByteList;
 
+/**
+ * The node at the root of a pack expression.
+ */
 public class PackRootNode extends RootNode {
 
     private final String description;

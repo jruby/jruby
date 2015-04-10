@@ -11,8 +11,20 @@ package org.jruby.truffle.pack.nodes.control;
 
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.frame.VirtualFrame;
+import com.oracle.truffle.api.nodes.ExplodeLoop;
 import org.jruby.truffle.pack.nodes.PackNode;
 
+/**
+ * Repeats a child node N times.
+ * <p>
+ * Note that there is no {@link ExplodeLoop} annotation on our {@link #execute}
+ * method. This is because in general the problem with format expressions is
+ * finding loops and recreating them - not removing them when we have them.
+ * <p>
+ * N is often very large - for example the number of pixels in an image.
+ * <pre>
+ * [1, 2, 3].pack('C3') # =>  "\x01\x02\x03"
+ */
 public class NNode extends PackNode {
 
     private final int repeats;

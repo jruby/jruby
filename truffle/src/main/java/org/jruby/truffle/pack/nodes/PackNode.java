@@ -9,26 +9,34 @@
  */
 package org.jruby.truffle.pack.nodes;
 
+import com.oracle.truffle.api.CompilerAsserts;
 import com.oracle.truffle.api.CompilerDirectives;
+import com.oracle.truffle.api.dsl.ImportStatic;
 import com.oracle.truffle.api.dsl.TypeSystemReference;
 import com.oracle.truffle.api.frame.FrameSlotTypeException;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.Node;
-import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.truffle.pack.runtime.PackFrame;
-import org.jruby.truffle.pack.runtime.TooFewArgumentsException;
-import org.jruby.truffle.runtime.core.RubyBignum;
-import org.jruby.truffle.runtime.core.RubyString;
+import org.jruby.truffle.pack.runtime.exceptions.TooFewArgumentsException;
 import org.jruby.util.ByteList;
 
-import java.math.BigInteger;
 import java.util.Arrays;
 
+/**
+ * The root of the pack nodes.
+ * <p>
+ * Contains methods to change the state of the parser which is stored in the
+ * frame.
+ */
+@ImportStatic(PackGuards.class)
 @TypeSystemReference(PackTypes.class)
 public abstract class PackNode extends Node {
 
     public abstract Object execute(VirtualFrame frame);
 
+    /**
+     * Get the length of the source array.
+     */
     public int getSourceLength(VirtualFrame frame) {
         try {
             return frame.getInt(PackFrame.INSTANCE.getSourceLengthSlot());
@@ -37,6 +45,9 @@ public abstract class PackNode extends Node {
         }
     }
 
+    /**
+     * Set the current position we are reading from in the source array.
+     */
     protected int getSourcePosition(VirtualFrame frame) {
         try {
             return frame.getInt(PackFrame.INSTANCE.getSourcePositionSlot());
@@ -45,10 +56,17 @@ public abstract class PackNode extends Node {
         }
     }
 
+    /**
+     * Set the current position we will read from next in the source array.
+     */
     protected void setSourcePosition(VirtualFrame frame, int position) {
         frame.setInt(PackFrame.INSTANCE.getSourcePositionSlot(), position);
     }
 
+    /**
+     * Advanced the position we are reading from in the source array by one
+     * element.
+     */
     protected int advanceSourcePosition(VirtualFrame frame) {
         final int sourcePosition = getSourcePosition(frame);
 
@@ -62,6 +80,9 @@ public abstract class PackNode extends Node {
         return sourcePosition;
     }
 
+    /**
+     * Get the output array we are writing to.
+     */
     protected byte[] getOutput(VirtualFrame frame) {
         try {
             return (byte[]) frame.getObject(PackFrame.INSTANCE.getOutputSlot());
@@ -70,10 +91,19 @@ public abstract class PackNode extends Node {
         }
     }
 
+    /**
+     * Set the output array we are writing to. This should never be used in the
+     * compiled code - having to change the output array to resize is is a
+     * deoptimizing action.
+     */
     protected void setOutput(VirtualFrame frame, byte[] output) {
+        CompilerAsserts.neverPartOfCompilation();
         frame.setObject(PackFrame.INSTANCE.getOutputSlot(), output);
     }
 
+    /**
+     * Get the current position we are writing to the in the output array.
+     */
     protected int getOutputPosition(VirtualFrame frame) {
         try {
             return frame.getInt(PackFrame.INSTANCE.getOutputPositionSlot());
@@ -82,27 +112,44 @@ public abstract class PackNode extends Node {
         }
     }
 
+    /**
+     * Set the current position we are writing to in the output array.
+     */
     protected void setOutputPosition(VirtualFrame frame, int position) {
         frame.setInt(PackFrame.INSTANCE.getOutputPositionSlot(), position);
     }
 
+    /**
+     * Set the output to be tainted.
+     */
     protected void setTainted(VirtualFrame frame) {
         frame.setBoolean(PackFrame.INSTANCE.getTaintSlot(), true);
     }
 
+    /**
+     * Write an array of bytes to the output.
+     */
     protected void writeBytes(VirtualFrame frame, byte... values) {
         writeBytes(frame, values, 0, values.length);
     }
 
+    /**
+     * Write a {@link ByteList} to the output.
+     */
     protected void writeBytes(VirtualFrame frame, ByteList values) {
         writeBytes(frame, values.getUnsafeBytes(), values.begin(), values.length());
     }
 
+    /**
+     * Write a range of an array of bytes to the output.
+     */
     protected void writeBytes(VirtualFrame frame, byte[] values, int valuesStart, int valuesLength) {
         byte[] output = getOutput(frame);
         final int outputPosition = getOutputPosition(frame);
 
         if (outputPosition + valuesLength > output.length) {
+            // If we ran out of output byte[], deoptimize and next time we'll allocate more
+
             CompilerDirectives.transferToInterpreterAndInvalidate();
             output = Arrays.copyOf(output, (output.length + valuesLength) * 2);
             setOutput(frame, output);
@@ -110,42 +157,6 @@ public abstract class PackNode extends Node {
 
         System.arraycopy(values, valuesStart, output, outputPosition, valuesLength);
         setOutputPosition(frame, outputPosition + valuesLength);
-    }
-
-    protected boolean isNull(Object object) {
-        return object == null;
-    }
-
-    protected boolean isRubyString(Object object) {
-        return object instanceof RubyString;
-    }
-
-    protected boolean isRubyNilClass(Object object) {
-        return object instanceof RubyString;
-    }
-
-    protected boolean isBoolean(Object object) {
-        return object instanceof Boolean;
-    }
-
-    protected boolean isInteger(Object object) {
-        return object instanceof Integer;
-    }
-
-    protected boolean isLong(Object object) {
-        return object instanceof Long;
-    }
-
-    protected boolean isBigInteger(Object object) {
-        return object instanceof BigInteger;
-    }
-
-    protected boolean isRubyBignum(Object object) {
-        return object instanceof RubyBignum;
-    }
-
-    protected boolean isIRubyArray(Object[] array) {
-        return array instanceof IRubyObject[];
     }
 
 }

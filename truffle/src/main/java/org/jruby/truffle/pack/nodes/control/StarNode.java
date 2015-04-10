@@ -13,6 +13,11 @@ import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import org.jruby.truffle.pack.nodes.PackNode;
 
+/**
+ * Keep applying a child node as long as there is still source to read.
+ * <pre>
+ * [1, 2, 3].pack('C*') # =>  "\x01\x02\x03"
+ */
 public class StarNode extends PackNode {
 
     @Child private PackNode child;

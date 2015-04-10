@@ -26,7 +26,6 @@ import com.oracle.truffle.api.utilities.BranchProfile;
 
 import org.jcodings.specific.USASCIIEncoding;
 import org.jcodings.specific.UTF8Encoding;
-import org.jruby.RubyObject;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.truffle.nodes.CoreSourceSection;
@@ -47,6 +46,7 @@ import org.jruby.truffle.nodes.objects.TaintNodeFactory;
 import org.jruby.truffle.nodes.yield.YieldDispatchHeadNode;
 import org.jruby.truffle.pack.parser.PackParser;
 import org.jruby.truffle.pack.runtime.*;
+import org.jruby.truffle.pack.runtime.exceptions.*;
 import org.jruby.truffle.runtime.*;
 import org.jruby.truffle.runtime.control.BreakException;
 import org.jruby.truffle.runtime.control.NextException;
@@ -61,7 +61,6 @@ import org.jruby.util.ByteList;
 import org.jruby.util.Memo;
 
 import java.util.Arrays;
-import java.util.Comparator;
 
 @CoreClass(name = "Array")
 public abstract class ArrayNodes {

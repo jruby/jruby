@@ -12,8 +12,15 @@ package org.jruby.truffle.pack.nodes.control;
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import org.jruby.truffle.pack.nodes.PackNode;
-import org.jruby.truffle.pack.runtime.OutsideOfStringException;
+import org.jruby.truffle.pack.runtime.exceptions.OutsideOfStringException;
 
+/**
+ * Moves the output position to a particular location - similar to seek
+ * absolute in a file stream.
+ * <pre>
+ * [0xabcd, 0x1234].pack('NN') # => "\x00\x00\xAB\xCD\x00\x00\x124"
+ * [0xabcd, 0x1234].pack('NXN') # => "\x00\x00\xAB\x00\x00\x124"
+ */
 public class BackNode extends PackNode {
 
     @Override

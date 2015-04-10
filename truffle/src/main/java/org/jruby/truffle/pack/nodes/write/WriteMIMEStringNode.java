@@ -7,7 +7,7 @@
  * GNU General Public License version 2
  * GNU Lesser General Public License version 2.1
  */
-package org.jruby.truffle.pack.nodes.type;
+package org.jruby.truffle.pack.nodes.write;
 
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.dsl.NodeChild;
@@ -15,26 +15,28 @@ import com.oracle.truffle.api.dsl.NodeChildren;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import org.jruby.truffle.pack.nodes.PackNode;
-import org.jruby.truffle.pack.runtime.NoImplicitConversionException;
+import org.jruby.truffle.pack.runtime.Nil;
 import org.jruby.util.ByteList;
 import org.jruby.util.Pack;
 
+/**
+ * Read a string that contains MIME encoded data and write as actual binary
+ * data.
+ */
 @NodeChildren({
         @NodeChild(value = "value", type = PackNode.class),
 })
-public abstract class WriteBase64StringNode extends PackNode {
+public abstract class WriteMIMEStringNode extends PackNode {
 
     private final int length;
-    private final boolean ignoreStar;
 
-    public WriteBase64StringNode(int length, boolean ignoreStar) {
+    public WriteMIMEStringNode(int length) {
         this.length = length;
-        this.ignoreStar = ignoreStar;
     }
 
     @Specialization
-    public Object write(VirtualFrame frame, long bytes) {
-        throw new NoImplicitConversionException(bytes, "String");
+    public Object write(Nil nil) {
+        return null;
     }
 
     @Specialization
@@ -44,12 +46,11 @@ public abstract class WriteBase64StringNode extends PackNode {
     }
 
     @CompilerDirectives.TruffleBoundary
-    private byte[] encode(ByteList bytes) {
-        // TODO CS 30-Mar-15 should write our own optimisable version of Base64
-
+    private ByteList encode(ByteList bytes) {
+        // TODO CS 30-Mar-15 should write our own optimizable version of MIME
         final ByteList output = new ByteList();
-        Pack.encodeUM(null, bytes, length, ignoreStar, 'm', output);
-        return output.bytes();
+        Pack.qpencode(output, bytes, length);
+        return output;
     }
 
 }

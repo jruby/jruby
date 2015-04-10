@@ -9,22 +9,35 @@
  */
 package org.jruby.truffle.pack.parser;
 
-import org.jruby.truffle.pack.runtime.FormatException;
+import org.jruby.truffle.pack.runtime.exceptions.FormatException;
 
+/**
+ * Tokenizes a pack format expression into a stream of objects. All tokens
+ * are represented as {@link Character} objects except for count tokens which
+ * are {@link Integer}.
+ */
 public class PackTokenizer {
 
-    private static final String simpleTokens = "CSLIQcsliqnNvVAaZUXx*<>!_@DdFfEeGgPpHhMmuwBb";
+    private static final String SIMPLE_TOKENS = "CSLIQcsliqnNvVAaZUXx*<>!_@DdFfEeGgPpHhMmuwBb";
 
     private final String format;
     private final boolean extended;
     private int position;
     private Object peek;
 
+    /**
+     * Construct a tokenizer.
+     * @param format the pack expression
+     * @param extended whether to support the extended format with parens
+     */
     public PackTokenizer(String format, boolean extended) {
         this.format = format;
         this.extended = extended;
     }
 
+    /**
+     * Peeks at the next token and returns if it is a given character.
+     */
     public boolean peek(char c) {
         final Object peek = peek();
 
@@ -65,9 +78,9 @@ public class PackTokenizer {
         final String chars;
 
         if (extended) {
-            chars = simpleTokens + "()";
+            chars = SIMPLE_TOKENS + "()";
         } else {
-            chars = simpleTokens;
+            chars = SIMPLE_TOKENS;
         }
 
         if (chars.indexOf(c) > -1) {

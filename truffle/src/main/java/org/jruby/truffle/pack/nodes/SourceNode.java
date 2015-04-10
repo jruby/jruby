@@ -15,6 +15,10 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.Node;
 import org.jruby.truffle.pack.runtime.PackFrame;
 
+/**
+ * Reads the source array from the frame - written as a node so that we can
+ * write DSL specializations based on the type of that array.
+ */
 @TypeSystemReference(PackTypes.class)
 public class SourceNode extends Node {
 

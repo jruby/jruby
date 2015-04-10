@@ -7,11 +7,16 @@
  * GNU General Public License version 2
  * GNU Lesser General Public License version 2.1
  */
-package org.jruby.truffle.pack.nodes.type;
+package org.jruby.truffle.pack.nodes.write;
 
 import com.oracle.truffle.api.frame.VirtualFrame;
 import org.jruby.truffle.pack.nodes.PackNode;
 
+/**
+ * Write a null byte.
+ * <pre>
+ * [1, 2, 3].pack('x') # =>  "\x00"
+ */
 public class NullNode extends PackNode {
 
     @Override

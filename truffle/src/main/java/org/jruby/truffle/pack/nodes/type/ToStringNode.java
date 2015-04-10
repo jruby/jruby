@@ -1,3 +1,12 @@
+/*
+ * Copyright (c) 2015 Oracle and/or its affiliates. All rights reserved. This
+ * code is released under a tri EPL/GPL/LGPL license. You can use it,
+ * redistribute it and/or modify it under the terms of the:
+ *
+ * Eclipse Public License version 1.0
+ * GNU General Public License version 2
+ * GNU Lesser General Public License version 2.1
+ */
 package org.jruby.truffle.pack.nodes.type;
 
 import com.oracle.truffle.api.CompilerDirectives;
@@ -14,7 +23,7 @@ import org.jruby.truffle.nodes.objects.IsTaintedNode;
 import org.jruby.truffle.nodes.objects.IsTaintedNodeFactory;
 import org.jruby.truffle.pack.nodes.PackNode;
 import org.jruby.truffle.pack.runtime.Nil;
-import org.jruby.truffle.pack.runtime.NoImplicitConversionException;
+import org.jruby.truffle.pack.runtime.exceptions.NoImplicitConversionException;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyArray;
 import org.jruby.truffle.runtime.core.RubyNilClass;
@@ -23,6 +32,9 @@ import org.jruby.util.ByteList;
 
 import java.nio.charset.StandardCharsets;
 
+/**
+ * Convert a value to a string.
+ */
 @NodeChildren({
         @NodeChild(value = "value", type = PackNode.class),
 })
@@ -41,13 +53,6 @@ public abstract class ToStringNode extends PackNode {
         this.context = context;
         this.convertNumbersToStrings = convertNumbersToStrings;
         isTaintedNode = IsTaintedNodeFactory.create(context, getEncapsulatingSourceSection(), null);
-    }
-
-    public ToStringNode(ToStringNode prev) {
-        context = prev.context;
-        convertNumbersToStrings = prev.convertNumbersToStrings;
-        toStrNode = prev.toStrNode;
-        isTaintedNode = prev.isTaintedNode;
     }
 
     public abstract Object executeToString(VirtualFrame frame, Object object);

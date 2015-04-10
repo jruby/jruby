@@ -14,6 +14,11 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.ExplodeLoop;
 import org.jruby.truffle.pack.nodes.PackNode;
 
+/**
+ * Run a sequence of child nodes.
+ * <pre>
+ * [1, 2, 3].pack('CCC') # =>  "\x01\x02\x03"
+ */
 public class SequenceNode extends PackNode {
 
     @Children private final PackNode[] children;

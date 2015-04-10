@@ -7,17 +7,22 @@
  * GNU General Public License version 2
  * GNU Lesser General Public License version 2.1
  */
-package org.jruby.truffle.pack.nodes.type;
+package org.jruby.truffle.pack.nodes.write;
 
 import com.oracle.truffle.api.dsl.NodeChild;
 import com.oracle.truffle.api.dsl.NodeChildren;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
-import com.oracle.truffle.api.nodes.ExplodeLoop;
 import org.jruby.truffle.pack.nodes.PackNode;
 import org.jruby.truffle.pack.runtime.Nil;
 import org.jruby.util.ByteList;
 
+/**
+ * Read and write a binary string - so except for padding this is basically a copy
+ * operation.
+ * <pre>
+ * ["\xABCDEF"].pack('A3') => "\xABCD"
+ */
 @NodeChildren({
         @NodeChild(value = "value", type = PackNode.class),
 })

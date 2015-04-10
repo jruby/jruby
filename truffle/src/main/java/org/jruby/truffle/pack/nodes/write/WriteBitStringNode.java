@@ -7,7 +7,7 @@
  * GNU General Public License version 2
  * GNU Lesser General Public License version 2.1
  */
-package org.jruby.truffle.pack.nodes.type;
+package org.jruby.truffle.pack.nodes.write;
 
 import com.oracle.truffle.api.dsl.NodeChild;
 import com.oracle.truffle.api.dsl.NodeChildren;
@@ -17,6 +17,12 @@ import org.jruby.truffle.pack.nodes.PackNode;
 import org.jruby.truffle.pack.runtime.Endianness;
 import org.jruby.util.ByteList;
 
+/**
+ * Read a string that contains a binary string (literally a string of binary
+ * digits written using 1 and 0 characters) and write as actual binary data.
+ * <pre>
+ * ["01101111", "01101011"].pack('B8B8') => "ok"
+ */
 @NodeChildren({
         @NodeChild(value = "value", type = PackNode.class),
 })
@@ -32,12 +38,12 @@ public abstract class WriteBitStringNode extends PackNode {
 
     @Specialization
     public Object write(VirtualFrame frame, ByteList bytes) {
+        // Bit string logic copied from jruby.util.Pack - see copyright and authorship there
+
         final byte[] b = bytes.unsafeBytes();
         int begin = bytes.begin();
 
         int currentByte = 0;
-
-        int padLength = 0;
 
         for (int n = 0; n < length; n++) {
             byte currentChar = b[begin + n];
