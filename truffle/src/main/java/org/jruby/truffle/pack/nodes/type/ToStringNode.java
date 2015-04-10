@@ -42,6 +42,7 @@ public abstract class ToStringNode extends PackNode {
 
     private final RubyContext context;
     protected final boolean convertNumbersToStrings;
+    private final String conversionMethod;
 
     @Child private CallDispatchHeadNode toStrNode;
     @Child private CallDispatchHeadNode toSNode;
@@ -49,9 +50,10 @@ public abstract class ToStringNode extends PackNode {
 
     private final ConditionProfile taintedProfile = ConditionProfile.createBinaryProfile();
 
-    public ToStringNode(RubyContext context, boolean convertNumbersToStrings) {
+    public ToStringNode(RubyContext context, boolean convertNumbersToStrings, String conversionMethod) {
         this.context = context;
         this.convertNumbersToStrings = convertNumbersToStrings;
+        this.conversionMethod = conversionMethod;
         isTaintedNode = IsTaintedNodeFactory.create(context, getEncapsulatingSourceSection(), null);
     }
 
@@ -117,14 +119,14 @@ public abstract class ToStringNode extends PackNode {
         throw new NoImplicitConversionException(array, "String");
     }
 
-    @Specialization(guards = "!isRubyString(object)")
+    @Specialization(guards = {"!isRubyString(object)", "!isRubyArray(object)"})
     public ByteList toString(VirtualFrame frame, Object object) {
         if (toStrNode == null) {
             CompilerDirectives.transferToInterpreter();
             toStrNode = insert(DispatchHeadNodeFactory.createMethodCall(context, true, MissingBehavior.RETURN_MISSING));
         }
 
-        final Object value = toStrNode.call(frame, object, "to_str", null);
+        final Object value = toStrNode.call(frame, object, conversionMethod, null);
 
         if (value instanceof RubyString) {
             if (taintedProfile.profile(isTaintedNode.executeIsTainted(value))) {

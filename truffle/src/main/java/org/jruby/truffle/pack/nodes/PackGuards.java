@@ -10,6 +10,7 @@
 package org.jruby.truffle.pack.nodes;
 
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.truffle.runtime.core.RubyArray;
 import org.jruby.truffle.runtime.core.RubyBignum;
 import org.jruby.truffle.runtime.core.RubyString;
 
@@ -19,10 +20,6 @@ public class PackGuards {
 
     public static boolean isNull(Object object) {
         return object == null;
-    }
-
-    public static boolean isRubyString(Object object) {
-        return object instanceof RubyString;
     }
 
     public static boolean isRubyNilClass(Object object) {
@@ -47,6 +44,14 @@ public class PackGuards {
 
     public static boolean isRubyBignum(Object object) {
         return object instanceof RubyBignum;
+    }
+
+    public static boolean isRubyString(Object object) {
+        return object instanceof RubyString;
+    }
+
+    public static boolean isRubyArray(Object object) {
+        return object instanceof RubyArray;
     }
 
     public static boolean isIRubyArray(Object[] array) {

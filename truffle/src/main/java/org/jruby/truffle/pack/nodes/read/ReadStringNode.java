@@ -33,12 +33,14 @@ public abstract class ReadStringNode extends PackNode {
 
     private final RubyContext context;
     private final boolean convertNumbersToStrings;
+    private final String conversionMethod;
 
     @Child private ToStringNode toStringNode;
 
-    public ReadStringNode(RubyContext context, boolean convertNumbersToStrings) {
+    public ReadStringNode(RubyContext context, boolean convertNumbersToStrings, String conversionMethod) {
         this.context = context;
         this.convertNumbersToStrings = convertNumbersToStrings;
+        this.conversionMethod = conversionMethod;
     }
 
     @Specialization(guards = "isNull(source)")
@@ -74,7 +76,7 @@ public abstract class ReadStringNode extends PackNode {
     private Object readAndConvert(VirtualFrame frame, Object value) {
         if (toStringNode == null) {
             CompilerDirectives.transferToInterpreter();
-            toStringNode = insert(ToStringNodeGen.create(context, convertNumbersToStrings, new NullNode()));
+            toStringNode = insert(ToStringNodeGen.create(context, convertNumbersToStrings, conversionMethod, new NullNode()));
         }
 
         return toStringNode.executeToString(frame, value);

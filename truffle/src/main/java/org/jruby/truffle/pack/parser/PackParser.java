@@ -220,7 +220,7 @@ public class PackParser {
                             appendNull = false;
                         }
 
-                        node = WriteBinaryStringNodeGen.create(pad, padOnNull, width, padding, takeAll, appendNull, ReadStringNodeGen.create(context, true, new SourceNode()));
+                        node = WriteBinaryStringNodeGen.create(pad, padOnNull, width, padding, takeAll, appendNull, ReadStringNodeGen.create(context, true, "to_str", new SourceNode()));
                     } break;
                     case 'H':
                     case 'h': {
@@ -247,7 +247,7 @@ public class PackParser {
                             length = 1;
                         }
 
-                        node = WriteHexStringNodeGen.create(endianness, length, ReadStringNodeGen.create(context, true, new SourceNode()));
+                        node = WriteHexStringNodeGen.create(endianness, length, ReadStringNodeGen.create(context, true, "to_str", new SourceNode()));
                     } break;
                     case 'B':
                     case 'b': {
@@ -272,7 +272,7 @@ public class PackParser {
                             length = 1;
                         }
 
-                        node = WriteBitStringNodeGen.create(endianness, length, ReadStringNodeGen.create(context, true, new SourceNode()));
+                        node = WriteBitStringNodeGen.create(endianness, length, ReadStringNodeGen.create(context, true, "to_str", new SourceNode()));
                     } break;
                     case 'M': {
                         final int length;
@@ -283,7 +283,7 @@ public class PackParser {
                             length = Integer.MAX_VALUE;
                         }
 
-                        node = WriteMIMEStringNodeGen.create(length, ReadStringNodeGen.create(context, true, new SourceNode()));
+                        node = WriteMIMEStringNodeGen.create(length, ReadStringNodeGen.create(context, true, "to_s", new SourceNode()));
                     } break;
                     case 'm':
                     case 'u': {
@@ -302,10 +302,10 @@ public class PackParser {
 
                         switch ((char) token) {
                             case 'm':
-                                node = WriteBase64StringNodeGen.create(length, ignoreStar, ReadStringNodeGen.create(context, false, new SourceNode()));
+                                node = WriteBase64StringNodeGen.create(length, ignoreStar, ReadStringNodeGen.create(context, false, "to_str", new SourceNode()));
                                 break;
                             case 'u':
-                                node = WriteUUStringNodeGen.create(length, ignoreStar, ReadStringNodeGen.create(context, false, new SourceNode()));
+                                node = WriteUUStringNodeGen.create(length, ignoreStar, ReadStringNodeGen.create(context, false, "to_str", new SourceNode()));
                                 break;
                             default:
                                 throw new UnsupportedOperationException();
