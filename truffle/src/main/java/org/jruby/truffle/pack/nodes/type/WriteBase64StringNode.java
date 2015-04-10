@@ -19,8 +19,6 @@ import org.jruby.truffle.pack.runtime.NoImplicitConversionException;
 import org.jruby.util.ByteList;
 import org.jruby.util.Pack;
 
-import java.util.Base64;
-
 @NodeChildren({
         @NodeChild(value = "value", type = PackNode.class),
 })
