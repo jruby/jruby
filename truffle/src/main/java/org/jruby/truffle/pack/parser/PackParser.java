@@ -279,6 +279,8 @@ public class PackParser {
                                 ReadStringNodeGen.create(context, true, "to_str", false, new SourceNode()));
                     } break;
                     case 'M': {
+                        encoding = encoding.unifyWith(PackEncoding.US_ASCII);
+                        
                         final int length;
 
                         if (tokenizer.peek() instanceof Integer) {
