@@ -267,15 +267,22 @@ public class PackParser {
                                 throw new UnsupportedOperationException();
                         }
 
+                        final boolean star;
                         final int length;
 
                         if (tokenizer.peek() instanceof Integer) {
+                            star = false;
                             length = (int) tokenizer.next();
+                        } else if (tokenizer.peek('*')) {
+                            star = true;
+                            length = 0;
+                            tokenizer.next();
                         } else {
+                            star = false;
                             length = 1;
                         }
 
-                        node = WriteBitStringNodeGen.create(endianness, length,
+                        node = WriteBitStringNodeGen.create(endianness, star, length,
                                 ReadStringNodeGen.create(context, true, "to_str", false, new SourceNode()));
                     } break;
                     case 'M': {

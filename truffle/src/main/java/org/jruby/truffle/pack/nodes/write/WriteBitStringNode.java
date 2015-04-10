@@ -29,10 +29,12 @@ import org.jruby.util.ByteList;
 public abstract class WriteBitStringNode extends PackNode {
 
     private final Endianness endianness;
+    private final boolean star;
     private final int length;
 
-    public WriteBitStringNode(Endianness endianness, int length) {
+    public WriteBitStringNode(Endianness endianness, boolean star, int length) {
         this.endianness = endianness;
+        this.star = star;
         this.length = length;
     }
 
@@ -40,21 +42,32 @@ public abstract class WriteBitStringNode extends PackNode {
     public Object write(VirtualFrame frame, ByteList bytes) {
         // Bit string logic copied from jruby.util.Pack - see copyright and authorship there
 
-        final byte[] b = bytes.unsafeBytes();
-        int begin = bytes.begin();
+        final ByteList lCurElemString = bytes;
+
+        int occurrences;
+
+        if (star) {
+            occurrences = lCurElemString.length();
+        } else {
+            occurrences = length;
+        }
 
         int currentByte = 0;
+        int padLength = 0;
 
-        for (int n = 0; n < length; n++) {
-            byte currentChar = b[begin + n];
+        if (occurrences > lCurElemString.length()) {
+            padLength = (occurrences - lCurElemString.length()) / 2 + (occurrences + lCurElemString.length()) % 2;
+            occurrences = lCurElemString.length();
+        }
 
-            switch (endianness) {
-                case LITTLE: {
-                    if ((currentChar & 1) != 0) {//if the low bit is set
+        switch (endianness) {
+            case LITTLE: {
+                for (int i = 0; i < occurrences;) {
+                    if ((lCurElemString.charAt(i++) & 1) != 0) {//if the low bit is set
                         currentByte |= 128; //set the high bit of the result
                     }
 
-                    if (((n - 1) & 7) == 0) {
+                    if ((i & 7) == 0) {
                         writeBytes(frame, (byte) (currentByte & 0xff));
                         currentByte = 0;
                         continue;
@@ -62,12 +75,20 @@ public abstract class WriteBitStringNode extends PackNode {
 
                     //if the index is not a multiple of 8, we are not on a byte boundary
                     currentByte >>= 1; //shift the byte
-                } break;
-                case BIG: {
-                    currentByte |= currentChar & 1;
+                }
+
+                if ((occurrences & 7) != 0) { //if the length is not a multiple of 8
+                    currentByte >>= 7 - (occurrences & 7); //we need to pad the last byte
+                    writeBytes(frame, (byte) (currentByte & 0xff));
+                }
+            } break;
+
+            case BIG: {
+                for (int i = 0; i < occurrences;) {
+                    currentByte |= lCurElemString.charAt(i++) & 1;
 
                     // we filled up current byte; append it and create next one
-                    if (((n - 1) & 7) == 0) {
+                    if ((i & 7) == 0) {
                         writeBytes(frame, (byte) (currentByte & 0xff));
                         currentByte = 0;
                         continue;
@@ -75,24 +96,16 @@ public abstract class WriteBitStringNode extends PackNode {
 
                     //if the index is not a multiple of 8, we are not on a byte boundary
                     currentByte <<= 1;
-                } break;
-            }
+                }
+
+                if ((occurrences & 7) != 0) { //if the length is not a multiple of 8
+                    currentByte <<= 7 - (occurrences & 7); //we need to pad the last byte
+                    writeBytes(frame, (byte) (currentByte & 0xff));
+                }
+            } break;
         }
 
-        switch (endianness) {
-            case LITTLE: {
-                if ((length & 7) != 0) { //if the length is not a multiple of 8
-                    currentByte >>= 7 - (length & 7); //we need to pad the last byte
-                    writeBytes(frame, (byte) (currentByte & 0xff));
-                }
-            } break;
-            case BIG: {
-                if ((length & 7) != 0) { //if the length is not a multiple of 8
-                    currentByte <<= 7 - (length & 7); //we need to pad the last byte
-                    writeBytes(frame, (byte) (currentByte & 0xff));
-                }
-            } break;
-        }
+        writeNullBytes(frame, padLength);
 
         return null;
     }

@@ -16,6 +16,7 @@ import com.oracle.truffle.api.dsl.TypeSystemReference;
 import com.oracle.truffle.api.frame.FrameSlotTypeException;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.Node;
+import com.oracle.truffle.api.utilities.ConditionProfile;
 import org.jruby.truffle.pack.runtime.PackFrame;
 import org.jruby.truffle.pack.runtime.exceptions.TooFewArgumentsException;
 import org.jruby.util.ByteList;
@@ -31,6 +32,8 @@ import java.util.Arrays;
 @ImportStatic(PackGuards.class)
 @TypeSystemReference(PackTypes.class)
 public abstract class PackNode extends Node {
+
+    private ConditionProfile writeMoreThanZeroBytes = ConditionProfile.createBinaryProfile();
 
     public abstract Object execute(VirtualFrame frame);
 
@@ -144,19 +147,37 @@ public abstract class PackNode extends Node {
      * Write a range of an array of bytes to the output.
      */
     protected void writeBytes(VirtualFrame frame, byte[] values, int valuesStart, int valuesLength) {
-        byte[] output = getOutput(frame);
+        byte[] output = ensureCapacity(frame, valuesLength);
         final int outputPosition = getOutputPosition(frame);
-
-        if (outputPosition + valuesLength > output.length) {
-            // If we ran out of output byte[], deoptimize and next time we'll allocate more
-
-            CompilerDirectives.transferToInterpreterAndInvalidate();
-            output = Arrays.copyOf(output, (output.length + valuesLength) * 2);
-            setOutput(frame, output);
-        }
-
         System.arraycopy(values, valuesStart, output, outputPosition, valuesLength);
         setOutputPosition(frame, outputPosition + valuesLength);
     }
+
+    /**
+     * Write null bytes to the output.
+     */
+    protected void writeNullBytes(VirtualFrame frame, int length) {
+        if (writeMoreThanZeroBytes.profile(length > 0)) {
+            ensureCapacity(frame, length);
+            final int outputPosition = getOutputPosition(frame);
+            setOutputPosition(frame, outputPosition + length);
+        }
+    }
+
+    private byte[] ensureCapacity(VirtualFrame frame, int length) {
+        byte[] output = getOutput(frame);
+        final int outputPosition = getOutputPosition(frame);
+
+        if (outputPosition + length > output.length) {
+            // If we ran out of output byte[], deoptimize and next time we'll allocate more
+
+            CompilerDirectives.transferToInterpreterAndInvalidate();
+            output = Arrays.copyOf(output, (output.length + length) * 2);
+            setOutput(frame, output);
+        }
+
+        return output;
+    }
+
 
 }
