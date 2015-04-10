@@ -280,13 +280,17 @@ public class PackParser {
                     } break;
                     case 'M': {
                         encoding = encoding.unifyWith(PackEncoding.US_ASCII);
-                        
-                        final int length;
+
+                        int length;
 
                         if (tokenizer.peek() instanceof Integer) {
                             length = (int) tokenizer.next();
+
+                            if (length <= 1) {
+                                length = 72;
+                            }
                         } else {
-                            length = Integer.MAX_VALUE;
+                            length = 72;
                         }
 
                         node = WriteMIMEStringNodeGen.create(length,
