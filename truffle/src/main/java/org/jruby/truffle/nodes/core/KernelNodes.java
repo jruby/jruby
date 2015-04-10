@@ -1906,14 +1906,7 @@ public abstract class KernelNodes {
                 final String format = args[0].toString();
                 final List<Object> values = Arrays.asList(args).subList(1, args.length);
 
-                final RubyThread runningThread = getContext().getThreadManager().leaveGlobalLock();
-
-                try {
-                    // TODO(CS): this is only safe if values' toString() are pure.
-                    StringFormatter.format(getContext(), printStream, format, values);
-                } finally {
-                    getContext().getThreadManager().enterGlobalLock(runningThread);
-                }
+                StringFormatter.format(getContext(), printStream, format, values);
             }
 
             return getContext().makeString(new ByteList(outputStream.toByteArray()));
