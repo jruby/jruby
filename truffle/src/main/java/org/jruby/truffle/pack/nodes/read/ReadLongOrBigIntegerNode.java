@@ -15,6 +15,7 @@ import com.oracle.truffle.api.dsl.NodeChildren;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.utilities.ConditionProfile;
+import org.jruby.RubyInteger;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.truffle.pack.nodes.PackNode;
 import org.jruby.truffle.pack.nodes.SourceNode;
@@ -88,13 +89,19 @@ public abstract class ReadLongOrBigIntegerNode extends PackNode {
     }
 
     @Specialization
-    public long read(VirtualFrame frame, IRubyObject[] source) {
-        return toLong(source[advanceSourcePosition(frame)]);
+    public Object read(VirtualFrame frame, IRubyObject[] source) {
+        return toLongOrBigInteger(source[advanceSourcePosition(frame)]);
     }
 
     @CompilerDirectives.TruffleBoundary
-    private long toLong(IRubyObject object) {
-        return object.convertToInteger().getLongValue();
+    private Object toLongOrBigInteger(IRubyObject object) {
+        final RubyInteger integer = object.convertToInteger();
+
+        if (integer instanceof org.jruby.RubyBignum) {
+            return integer.getBigIntegerValue().longValue();
+        } else {
+            return integer.getLongValue();
+        }
     }
 
 }
