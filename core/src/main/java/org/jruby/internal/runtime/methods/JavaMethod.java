@@ -50,6 +50,10 @@ public abstract class JavaMethod extends DynamicMethod implements Cloneable, Met
     private static String[] TWO_REQ = new String[] { "q", "q" };
     private static String[] THREE_REQ = new String[] { "q", "q", "q" };
 
+    private static String[] ONE_REQ = new String[] { "q" };
+    private static String[] TWO_REQ = new String[] { "q", "q" };
+    private static String[] THREE_REQ = new String[] { "q", "q", "q" };
+
     public static final Class[][] METHODS = {
         {JavaMethodZero.class, JavaMethodZeroOrOne.class, JavaMethodZeroOrOneOrTwo.class, JavaMethodZeroOrOneOrTwoOrThree.class},
         {null, JavaMethodOne.class, JavaMethodOneOrTwo.class, JavaMethodOneOrTwoOrThree.class},
