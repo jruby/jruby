@@ -66,10 +66,10 @@ public abstract class ReadDoubleNode extends PackNode {
 
     @CompilerDirectives.TruffleBoundary
     private double toDouble(IRubyObject object) {
-        if (object.isNil()) {
-            throw new WrongArgumentTypeException("NilClass", "Float");
+        if (object instanceof org.jruby.RubyNumeric) {
+            return ((org.jruby.RubyNumeric) object).getDoubleValue();
         } else {
-            return object.convertToFloat().getDoubleValue();
+            throw new WrongArgumentTypeException(object.getMetaClass().getName(), "Float");
         }
     }
 
