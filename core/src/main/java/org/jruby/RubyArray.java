@@ -92,6 +92,7 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
     public static final int DEFAULT_INSPECT_STR_SIZE = 10;
 
     private static final boolean TRUFFLE_PACK = Options.TRUFFLE_PACK.load();
+    private static final int TRUFFLE_PACK_MAX_CACHE = Options.TRUFFLE_PACK_MAX_CACHE.load();
 
     public static RubyClass createArrayClass(Ruby runtime) {
         RubyClass arrayc = runtime.defineClass("Array", runtime.getObject(), ARRAY_ALLOCATOR);
@@ -258,7 +259,13 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
     private static final ByteList EMPTY_ARRAY_BYTELIST = new ByteList(ByteList.plain("[]"), USASCIIEncoding.INSTANCE);
     private static final ByteList RECURSIVE_ARRAY_BYTELIST = new ByteList(ByteList.plain("[...]"), USASCIIEncoding.INSTANCE);
 
-    private static final Map<ByteList, TrufflePackBridge.Packer> trufflePackerCache = new ConcurrentHashMap<>();
+    private static final Map<ByteList, TrufflePackBridge.Packer> trufflePackerCache = new LinkedHashMap<ByteList, TrufflePackBridge.Packer>() {
+
+        @Override
+        protected boolean removeEldestEntry(Map.Entry<ByteList, TrufflePackBridge.Packer> eldest) {
+            return size() >= TRUFFLE_PACK_MAX_CACHE;
+        }
+    };
 
     /*
      * plain internal array assignment
@@ -4096,19 +4103,20 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
         RubyString iFmt = obj.convertToString();
 
         if (TRUFFLE_PACK) {
-            TrufflePackBridge.Packer packer = trufflePackerCache.get(iFmt.getByteList());
+            TrufflePackBridge.Packer packer;
 
-            if (packer == null) {
-                try {
-                    packer = context.getRuntime().getTrufflePackBridge().compileFormat(iFmt.toString());
-                } catch (FormatException e) {
-                    throw context.getRuntime().newArgumentError(e.getMessage());
+            synchronized (trufflePackerCache) {
+                packer = trufflePackerCache.get(iFmt.getByteList());
+
+                if (packer == null) {
+                    try {
+                        packer = context.getRuntime().getTrufflePackBridge().compileFormat(iFmt.toString());
+                    } catch (FormatException e) {
+                        throw context.getRuntime().newArgumentError(e.getMessage());
+                    }
+
+                    trufflePackerCache.put(iFmt.getByteList().dup(), packer);
                 }
-
-                // TODO CS 10-Apr-15 how do we limit the size of the cache
-
-                // We can race on this, but it doesn't matter as long as something goes in the cache
-                trufflePackerCache.put(iFmt.getByteList().dup(), packer);
             }
 
             final PackResult result;

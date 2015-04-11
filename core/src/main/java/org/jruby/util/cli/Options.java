@@ -166,6 +166,7 @@ public class Options {
     public static final Option<Boolean> TRUFFLE_BACKTRACE_GENERATE = bool(TRUFFLE, "truffle.backtrace.generate", true, "Generate backtraces on exceptions.");
 
     public static final Option<Boolean> TRUFFLE_PACK = bool(TRUFFLE, "truffle.pack", false, "Use Truffle for normal JRuby Array#pack.");
+    public static final Option<Integer> TRUFFLE_PACK_MAX_CACHE = integer(TRUFFLE, "truffle.pack.max_cache", 64, "Maximum cache size for the Truffle implementation of Array#pack.");
 
     public static final Option<Boolean> NATIVE_ENABLED = bool(NATIVE, "native.enabled", true, "Enable/disable native code, including POSIX features and C exts.");
     public static final Option<Boolean> NATIVE_VERBOSE = bool(NATIVE, "native.verbose", false, "Enable verbose logging of native extension loading.");
