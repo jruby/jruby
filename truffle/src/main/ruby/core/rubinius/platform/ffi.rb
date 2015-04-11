@@ -195,10 +195,9 @@ module FFI
 
   # Load all the platform dependent types
 
-  # MODIFIED 
-  #Rubinius::Config.section("rbx.platform.typedef.") do |key, value|
-  #  add_typedef(find_type(value.to_sym), key.substring(21, key.length).to_sym)
-  #end
+  Rubinius::Config.section("rbx.platform.typedef.") do |key, value|
+    add_typedef(find_type(value.to_sym), key.substring(21, key.length).to_sym)
+  end
 
   # It's a class to be compat with the ffi gem.
   class Type
