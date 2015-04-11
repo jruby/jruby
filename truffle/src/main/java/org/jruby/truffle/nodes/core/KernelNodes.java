@@ -1209,7 +1209,11 @@ public abstract class KernelNodes {
             final InternalMethod method = ModuleOperations.lookupMethod(getContext().getCoreLibrary().getMetaClass(object), name);
 
             if (method == null) {
-                throw new UnsupportedOperationException();
+                throw new RaiseException(
+                    getContext().getCoreLibrary().nameErrorUndefinedMethod(
+                        name,
+                        getContext().getCoreLibrary().getLogicalClass(object).getName(),
+                        this));
             }
 
             return new RubyMethod(getContext().getCoreLibrary().getMethodClass(), object, method);
