@@ -9,7 +9,7 @@
  */
 package org.jruby.truffle.pack.runtime.exceptions;
 
-public class RangeException extends RuntimeException {
+public class RangeException extends PackException {
 
     public RangeException(String message) {
         super(message);

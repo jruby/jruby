@@ -9,7 +9,7 @@
  */
 package org.jruby.truffle.pack.runtime.exceptions;
 
-public class CantConvertException extends RuntimeException {
+public class CantConvertException extends PackException {
 
     public CantConvertException(String message) {
         super(message);

@@ -9,6 +9,6 @@
  */
 package org.jruby.truffle.pack.runtime.exceptions;
 
-public class CantCompressNegativeException extends RuntimeException {
+public class CantCompressNegativeException extends PackException {
 
 }

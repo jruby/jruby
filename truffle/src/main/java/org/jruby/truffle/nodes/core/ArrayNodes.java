@@ -2811,24 +2811,9 @@ public abstract class ArrayNodes {
 
             try {
                 result = (PackResult) callPackNode.call(frame, new Object[]{array.getStore(), array.getSize()});
-            } catch (TooFewArgumentsException e) {
+            } catch (PackException e) {
                 CompilerDirectives.transferToInterpreter();
-                throw new RaiseException(getContext().getCoreLibrary().argumentError("too few arguments", this));
-            } catch (NoImplicitConversionException e) {
-                CompilerDirectives.transferToInterpreter();
-                throw new RaiseException(getContext().getCoreLibrary().typeErrorNoImplicitConversion(e.getObject(), e.getTarget(), this));
-            } catch (OutsideOfStringException e) {
-                CompilerDirectives.transferToInterpreter();
-                throw new RaiseException(getContext().getCoreLibrary().argumentError("X outside of string", this));
-            } catch (CantCompressNegativeException e) {
-                CompilerDirectives.transferToInterpreter();
-                throw new RaiseException(getContext().getCoreLibrary().argumentError("can't compress negative numbers", this));
-            } catch (RangeException e) {
-                CompilerDirectives.transferToInterpreter();
-                throw new RaiseException(getContext().getCoreLibrary().rangeError(e.getMessage(), this));
-            } catch (CantConvertException e) {
-                CompilerDirectives.transferToInterpreter();
-                throw new RaiseException(getContext().getCoreLibrary().typeError(e.getMessage(), this));
+                throw handleException(e);
             }
 
             return finishPack(cachedFormat, result);
@@ -2843,27 +2828,30 @@ public abstract class ArrayNodes {
 
             try {
                 result = (PackResult) compileFormat(format).call(array.getStore(), array.getSize());
-            } catch (TooFewArgumentsException e) {
+            } catch (PackException e) {
                 CompilerDirectives.transferToInterpreter();
-                throw new RaiseException(getContext().getCoreLibrary().argumentError("too few arguments", this));
-            } catch (NoImplicitConversionException e) {
-                CompilerDirectives.transferToInterpreter();
-                throw new RaiseException(getContext().getCoreLibrary().typeErrorNoImplicitConversion(e.getObject(), e.getTarget(), this));
-            } catch (OutsideOfStringException e) {
-                CompilerDirectives.transferToInterpreter();
-                throw new RaiseException(getContext().getCoreLibrary().argumentError("X outside of string", this));
-            } catch (CantCompressNegativeException e) {
-                CompilerDirectives.transferToInterpreter();
-                throw new RaiseException(getContext().getCoreLibrary().argumentError("can't compress negative numbers", this));
-            } catch (RangeException e) {
-                CompilerDirectives.transferToInterpreter();
-                throw new RaiseException(getContext().getCoreLibrary().rangeError(e.getMessage(), this));
-            } catch (CantConvertException e) {
-                CompilerDirectives.transferToInterpreter();
-                throw new RaiseException(getContext().getCoreLibrary().typeError(e.getMessage(), this));
+                throw handleException(e);
             }
 
             return finishPack(format.getByteList(), result);
+        }
+
+        private RuntimeException handleException(PackException exception) {
+            try {
+                throw exception;
+            } catch (TooFewArgumentsException e) {
+                return new RaiseException(getContext().getCoreLibrary().argumentError("too few arguments", this));
+            } catch (NoImplicitConversionException e) {
+                return new RaiseException(getContext().getCoreLibrary().typeErrorNoImplicitConversion(e.getObject(), e.getTarget(), this));
+            } catch (OutsideOfStringException e) {
+                return new RaiseException(getContext().getCoreLibrary().argumentError("X outside of string", this));
+            } catch (CantCompressNegativeException e) {
+                return new RaiseException(getContext().getCoreLibrary().argumentError("can't compress negative numbers", this));
+            } catch (RangeException e) {
+                return new RaiseException(getContext().getCoreLibrary().rangeError(e.getMessage(), this));
+            } catch (CantConvertException e) {
+                return new RaiseException(getContext().getCoreLibrary().typeError(e.getMessage(), this));
+            }
         }
 
         private RubyString finishPack(ByteList format, PackResult result) {

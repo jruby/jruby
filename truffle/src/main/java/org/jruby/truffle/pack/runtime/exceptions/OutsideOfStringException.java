@@ -9,5 +9,5 @@
  */
 package org.jruby.truffle.pack.runtime.exceptions;
 
-public class OutsideOfStringException extends RuntimeException {
+public class OutsideOfStringException extends PackException {
 }

@@ -9,7 +9,7 @@
  */
 package org.jruby.truffle.pack.runtime.exceptions;
 
-public class WrongArgumentTypeException extends RuntimeException {
+public class WrongArgumentTypeException extends PackException {
 
     private final String got;
     private final String expected;

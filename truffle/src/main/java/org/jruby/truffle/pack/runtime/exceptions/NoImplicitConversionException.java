@@ -9,7 +9,7 @@
  */
 package org.jruby.truffle.pack.runtime.exceptions;
 
-public class NoImplicitConversionException extends RuntimeException {
+public class NoImplicitConversionException extends PackException {
 
     private final Object object;
     private final String target;

@@ -9,9 +9,12 @@
  */
 package org.jruby.truffle.pack.runtime.exceptions;
 
-public class FormatException extends PackException {
+public class PackException extends RuntimeException {
 
-    public FormatException(String message) {
+    public PackException() {
+    }
+
+    public PackException(String message) {
         super(message);
     }
 }

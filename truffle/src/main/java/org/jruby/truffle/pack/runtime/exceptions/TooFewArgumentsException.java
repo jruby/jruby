@@ -9,5 +9,5 @@
  */
 package org.jruby.truffle.pack.runtime.exceptions;
 
-public class TooFewArgumentsException extends RuntimeException {
+public class TooFewArgumentsException extends PackException {
 }
