@@ -98,7 +98,7 @@ public abstract class ReadLongOrBigIntegerNode extends PackNode {
         final RubyInteger integer = object.convertToInteger();
 
         if (integer instanceof org.jruby.RubyBignum) {
-            return integer.getBigIntegerValue().longValue();
+            return integer.getBigIntegerValue();
         } else {
             return integer.getLongValue();
         }
