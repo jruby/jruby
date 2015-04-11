@@ -17,6 +17,7 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.truffle.pack.nodes.PackNode;
 import org.jruby.truffle.pack.nodes.SourceNode;
+import org.jruby.truffle.pack.runtime.exceptions.WrongArgumentTypeException;
 import org.jruby.truffle.runtime.RubyContext;
 
 /**
@@ -65,7 +66,11 @@ public abstract class ReadDoubleNode extends PackNode {
 
     @CompilerDirectives.TruffleBoundary
     private double toDouble(IRubyObject object) {
-        return object.convertToFloat().getDoubleValue();
+        if (object.isNil()) {
+            throw new WrongArgumentTypeException("NilClass", "Float");
+        } else {
+            return object.convertToFloat().getDoubleValue();
+        }
     }
 
 }

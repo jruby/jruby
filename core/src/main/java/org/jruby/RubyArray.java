@@ -4128,6 +4128,8 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
                 throw context.getRuntime().newRangeError(e.getMessage());
             } catch (CantConvertException e) {
                 throw context.getRuntime().newTypeError(e.getMessage());
+            } catch (WrongArgumentTypeException e) {
+                throw context.getRuntime().newTypeError("wrong argument type " + e.getGot() + " (expected " + e.getExpected() + ")");
             }
 
             final RubyString string = context.getRuntime().newString(new ByteList(result.getOutput(), 0, result.getOutputLength()));
