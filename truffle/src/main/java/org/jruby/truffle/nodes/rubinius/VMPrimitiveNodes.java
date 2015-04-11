@@ -36,6 +36,8 @@ import com.oracle.truffle.api.source.SourceSection;
 
 import java.lang.management.ManagementFactory;
 import java.lang.management.ThreadMXBean;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Rubinius primitives associated with the VM.
@@ -471,6 +473,58 @@ public abstract class VMPrimitiveNodes {
 
             SignalOperations.watchSignal(signal, new ProcSignalHandler(getContext(), proc));
             return true;
+        }
+
+    }
+
+    @RubiniusPrimitive(name = "vm_get_config_item", needsSelf = false)
+    public abstract static class VMGetConfigItemPrimitiveNode extends RubiniusPrimitiveNode {
+
+        public VMGetConfigItemPrimitiveNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public VMGetConfigItemPrimitiveNode(VMGetConfigItemPrimitiveNode prev) {
+            super(prev);
+        }
+
+        @CompilerDirectives.TruffleBoundary
+        @Specialization
+        public Object get(RubyString key) {
+            final Object value = getContext().getRubiniusConfiguration().get(key.toString());
+
+            if (value == null) {
+                return nil();
+            } else {
+                return value;
+            }
+        }
+
+    }
+
+    @RubiniusPrimitive(name = "vm_get_config_section", needsSelf = false)
+    public abstract static class VMGetConfigSectionPrimitiveNode extends RubiniusPrimitiveNode {
+
+        public VMGetConfigSectionPrimitiveNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        public VMGetConfigSectionPrimitiveNode(VMGetConfigSectionPrimitiveNode prev) {
+            super(prev);
+        }
+
+        @CompilerDirectives.TruffleBoundary
+        @Specialization
+        public RubyArray getSection(RubyString section) {
+            final List<RubyArray> sectionKeyValues = new ArrayList<>();
+
+            for (String key : getContext().getRubiniusConfiguration().getSection(section.toString())) {
+                sectionKeyValues.add(RubyArray.fromObjects(getContext().getCoreLibrary().getArrayClass(),
+                        getContext().makeString(key),
+                        getContext().getRubiniusConfiguration().get(key)));
+            }
+
+            return RubyArray.fromObjects(getContext().getCoreLibrary().getArrayClass(), sectionKeyValues.toArray());
         }
 
     }

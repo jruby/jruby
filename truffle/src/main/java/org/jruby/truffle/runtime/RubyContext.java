@@ -43,7 +43,9 @@ import org.jruby.util.cli.Options;
 
 import java.io.File;
 import java.math.BigInteger;
+import java.util.HashMap;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Random;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -70,6 +72,7 @@ public class RubyContext extends ExecutionContext {
     private final CompilerOptions compilerOptions;
     private final RubiniusPrimitiveManager rubiniusPrimitiveManager;
     private final InstrumentationServerManager instrumentationServerManager;
+    private final RubiniusConfiguration rubiniusConfiguration = new RubiniusConfiguration();
 
     private final AtomicLong nextObjectID = new AtomicLong(ObjectIDOperations.FIRST_OBJECT_ID);
 
@@ -513,4 +516,7 @@ public class RubyContext extends ExecutionContext {
         return rubiniusPrimitiveManager;
     }
 
+    public RubiniusConfiguration getRubiniusConfiguration() {
+        return rubiniusConfiguration;
+    }
 }
