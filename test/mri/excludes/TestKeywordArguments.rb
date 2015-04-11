@@ -1,5 +1,1 @@
-exclude :test_implicit_hash_conversion, "JIT-only"
-exclude :test_lambda, "JIT-only"
-exclude :test_p6, "JIT-only"
 exclude :test_required_keyword_with_reserved, "needs investigation"
-exclude :test_rest_keyrest, "needs investigation"

@@ -78,9 +78,8 @@ public abstract class IRBlockBody extends ContextAwareBlockBody {
     @Override
     public IRubyObject yieldSpecific(ThreadContext context, Binding binding, Type type) {
         IRubyObject[] args = IRubyObject.NULL_ARRAY;
-        if (type == Type.LAMBDA) {
-            signature.checkArity(context.runtime, args);
-        }
+        if (type == Type.LAMBDA) signature.checkArity(context.runtime, args);
+
         return commonYieldPath(context, args, null, binding, type, Block.NULL_BLOCK);
     }
 
@@ -147,10 +146,8 @@ public abstract class IRBlockBody extends ContextAwareBlockBody {
 
     @Override
     public IRubyObject doYield(ThreadContext context, IRubyObject[] args, IRubyObject self, Binding binding, Type type) {
-        args = (args == null) ? IRubyObject.NULL_ARRAY : args;
-        if (type == Type.LAMBDA) {
-            signature.checkArity(context.runtime, args);
-        }
+        if (type == Type.LAMBDA) signature.checkArity(context.runtime, args);
+
         return commonYieldPath(context, args, self, binding, type, Block.NULL_BLOCK);
     }
 
@@ -163,16 +160,6 @@ public abstract class IRBlockBody extends ContextAwareBlockBody {
 
     protected abstract IRubyObject commonYieldPath(ThreadContext context, IRubyObject[] args, IRubyObject self, Binding binding, Type type, Block block);
 
-    protected void blockArgWarning(Ruby ruby, int length) {
-        ruby.getWarnings().warn(ID.MULTIPLE_VALUES_FOR_BLOCK, "multiple values for a block parameter (" +
-                    length + " for 1)");
-    }
-
-    protected IRubyObject[] convertToRubyArray(ThreadContext context, IRubyObject[] args) {
-        return (args.length == 0) ? context.runtime.getSingleNilArray()
-                                  : new IRubyObject[] {context.runtime.newArrayNoCopy(args)};
-    }
-
     @Override
     public IRubyObject[] prepareArgumentsForCall(ThreadContext context, IRubyObject[] args, Type type) {
         if (type == Type.LAMBDA) {
@@ -183,7 +170,7 @@ public abstract class IRBlockBody extends ContextAwareBlockBody {
             if (args.length == 1) {
                 // Convert value to arg-array, unwrapping where necessary
                 args = IRRuntimeHelpers.convertValueIntoArgArray(context, args[0], arity, (type == Type.NORMAL) && (args[0] instanceof RubyArray));
-            } else if (arity().getValue() == 1) {
+            } else if (arity().getValue() == 1 && !getSignature().restKwargs()) {
                // discard excess arguments
                 args = (args.length == 0) ? context.runtime.getSingleNilArray() : new IRubyObject[] { args[0] };
             }

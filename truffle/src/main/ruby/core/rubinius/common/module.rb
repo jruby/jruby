@@ -1,4 +1,4 @@
- # Copyright (c) 2007-2014, Evan Phoenix and contributors
+# Copyright (c) 2007-2014, Evan Phoenix and contributors
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -24,24 +24,24 @@
 # OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-# Only part of Rubinius' exception.rb
+# Only part of Rubinius' module.rb
 
+##
+# Some terminology notes:
+#
+# [Encloser] The Class or Module inside which this one is defined or, in the
+#            event we are at top-level, Object.
+#
+# [Direct superclass] Whatever is next in the chain of superclass invocations.
+#                     This may be either an included Module, a Class or nil.
+#
+# [Superclass] The real semantic superclass and thus only applies to Class
+#              objects.
 
-class NoMethodError < NameError
-  attr_reader :name
-  attr_reader :args
+class Module
 
-  def initialize(*arguments)
-    super(arguments.shift)
-    @name = arguments.shift
-    @args = arguments.shift
+  def extended(name)
   end
-end
+  private :extended
 
-class StopIteration < IndexError
-end
-
-class StopIteration
-  attr_accessor :result
-  private :result=
 end

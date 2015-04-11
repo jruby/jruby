@@ -56,9 +56,12 @@ public abstract class FixnumNodes {
             return ExactMath.subtractExact(0, value);
         }
 
-        @Specialization
-        public long negWithOverflow(int value) {
-            return -(long) (value);
+        @Specialization(contains = "neg")
+        public Object negWithOverflow(int value) {
+            if (value == Integer.MIN_VALUE) {
+                return -((long) value);
+            }
+            return -value;
         }
 
         @Specialization(rewriteOn = ArithmeticException.class)

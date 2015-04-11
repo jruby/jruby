@@ -87,6 +87,7 @@ class MSpecScript
     "spec/ruby/library/erb",
     "spec/ruby/library/getoptlong",
     "spec/ruby/library/observer",
+    "spec/ruby/library/openstruct",
     "spec/ruby/library/matrix",
     "spec/ruby/library/set",
     "spec/ruby/library/shellwords",

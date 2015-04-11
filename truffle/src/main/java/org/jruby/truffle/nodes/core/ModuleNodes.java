@@ -894,6 +894,23 @@ public abstract class ModuleNodes {
 
     }
 
+    @CoreMethod(names = "extend_object", required = 1)
+    public abstract static class ExtendObjectNode extends CoreMethodNode {
+
+        public ExtendObjectNode(RubyContext context, SourceSection sourceSection) {
+            super(context, sourceSection);
+        }
+
+        @Specialization
+        public RubyBasicObject extendObject(RubyModule module, RubyBasicObject object) {
+            notDesignedForCompilation();
+
+            object.getSingletonClass(this).include(this, module);
+            return module;
+        }
+
+    }
+
     @CoreMethod(names = "initialize", needsBlock = true)
     public abstract static class InitializeNode extends CoreMethodNode {
 
@@ -1473,7 +1490,7 @@ public abstract class ModuleNodes {
 
     }
 
-    @CoreMethod(names = "remove_method", required = 1)
+    @CoreMethod(names = "remove_method", argumentsAsArray = true, visibility = Visibility.PRIVATE)
     public abstract static class RemoveMethodNode extends CoreMethodNode {
 
         public RemoveMethodNode(RubyContext context, SourceSection sourceSection) {
@@ -1481,18 +1498,24 @@ public abstract class ModuleNodes {
         }
 
         @Specialization
-        public RubyModule removeMethod(RubyModule module, RubyString name) {
+        public RubyModule removeMethod(RubyModule module, Object[] args) {
             notDesignedForCompilation();
 
-            module.removeMethod(this, name.toString());
-            return module;
-        }
+            for (Object arg : args) {
+                final String name;
 
-        @Specialization
-        public RubyModule removeMethod(RubyModule module, RubySymbol name) {
-            notDesignedForCompilation();
+                if (arg instanceof RubySymbol) {
+                    name = ((RubySymbol) arg).toString();
+                } else if (arg instanceof RubyString) {
+                    name = ((RubyString) arg).toString();
+                } else {
+                    // TODO BF 9-APR-2015 the MRI message calls inspect for error message i think
+                    throw new RaiseException(getContext().getCoreLibrary().typeError(" is not a symbol", this));
+                }
+                module.removeMethod(this, name);
 
-            module.removeMethod(this, name.toString());
+            }
+
             return module;
         }
 

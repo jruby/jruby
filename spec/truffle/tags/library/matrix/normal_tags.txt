@@ -1,1 +1,0 @@
-fails:Matrix.normal? raises an error for rectangular matrices

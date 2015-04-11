@@ -497,7 +497,6 @@ public class CoreLibrary {
 
     public void initializeAfterMethodsAdded() {
         initializeRubiniusFFI();
-        initializeRubiniusConfig();
 
         // ENV is supposed to be an object that actually updates the environment, and sees any updates
 
@@ -545,42 +544,6 @@ public class CoreLibrary {
         rubiniusFFIModule.setConstant(null, "TYPE_CHARARR", NativeFunctionPrimitiveNodes.TYPE_CHARARR);
         rubiniusFFIModule.setConstant(null, "TYPE_ENUM", NativeFunctionPrimitiveNodes.TYPE_ENUM);
         rubiniusFFIModule.setConstant(null, "TYPE_VARARGS", NativeFunctionPrimitiveNodes.TYPE_VARARGS);
-    }
-
-    private void initializeRubiniusConfig() {
-        final List<KeyValue> config = new ArrayList<>();
-
-        config.add(new KeyValue(context.makeString("hash.hamt"), false));
-
-        config.add(new KeyValue(context.makeString("rbx.platform.file.S_IRUSR"), FileStat.S_IRUSR));
-        config.add(new KeyValue(context.makeString("rbx.platform.file.S_IWUSR"), FileStat.S_IWUSR));
-        config.add(new KeyValue(context.makeString("rbx.platform.file.S_IXUSR"), FileStat.S_IXUSR));
-        config.add(new KeyValue(context.makeString("rbx.platform.file.S_IRGRP"), FileStat.S_IRGRP));
-        config.add(new KeyValue(context.makeString("rbx.platform.file.S_IWGRP"), FileStat.S_IWGRP));
-        config.add(new KeyValue(context.makeString("rbx.platform.file.S_IXGRP"), FileStat.S_IXGRP));
-        config.add(new KeyValue(context.makeString("rbx.platform.file.S_IROTH"), FileStat.S_IROTH));
-        config.add(new KeyValue(context.makeString("rbx.platform.file.S_IWOTH"), FileStat.S_IWOTH));
-        config.add(new KeyValue(context.makeString("rbx.platform.file.S_IXOTH"), FileStat.S_IXOTH));
-        config.add(new KeyValue(context.makeString("rbx.platform.file.S_IFMT"), FileStat.S_IFMT));
-        config.add(new KeyValue(context.makeString("rbx.platform.file.S_IFIFO"), FileStat.S_IFIFO));
-        config.add(new KeyValue(context.makeString("rbx.platform.file.S_IFCHR"), FileStat.S_IFCHR));
-        config.add(new KeyValue(context.makeString("rbx.platform.file.S_IFDIR"), FileStat.S_IFDIR));
-        config.add(new KeyValue(context.makeString("rbx.platform.file.S_IFBLK"), FileStat.S_IFBLK));
-        config.add(new KeyValue(context.makeString("rbx.platform.file.S_IFREG"), FileStat.S_IFREG));
-        config.add(new KeyValue(context.makeString("rbx.platform.file.S_IFLNK"), FileStat.S_IFLNK));
-        config.add(new KeyValue(context.makeString("rbx.platform.file.S_IFSOCK"), FileStat.S_IFSOCK));
-        config.add(new KeyValue(context.makeString("rbx.platform.file.S_ISUID"), FileStat.S_ISUID));
-        config.add(new KeyValue(context.makeString("rbx.platform.file.S_ISGID"), FileStat.S_ISGID));
-        config.add(new KeyValue(context.makeString("rbx.platform.file.S_ISVTX"), FileStat.S_ISVTX));
-
-        /*
-         * There is also rbx.platform.file.S_IFWHT, which I think is from FreeBSD. We don't support
-         * this as it isn't part of jnr-posix.
-         */
-
-        final RubyHash configHash = HashOperations.verySlowFromEntries(getHashClass(), config, false);
-
-        rubiniusModule.setConstant(null, "Config", configHash);
     }
 
     public void loadRubyCore(String fileName) {

@@ -1,4 +1,4 @@
- # Copyright (c) 2007-2014, Evan Phoenix and contributors
+# Copyright (c) 2007-2014, Evan Phoenix and contributors
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -24,24 +24,39 @@
 # OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-# Only part of Rubinius' exception.rb
+module Rubinius
+  class Configuration
+    def initialize
+    end
 
+    private :initialize
 
-class NoMethodError < NameError
-  attr_reader :name
-  attr_reader :args
+    def get_variable(name)
+      Rubinius.primitive :vm_get_config_item
+      raise PrimitiveFailure, "Rubinius::Configuration#get_variable primitive failed"
+    end
 
-  def initialize(*arguments)
-    super(arguments.shift)
-    @name = arguments.shift
-    @args = arguments.shift
+    def get_section(section)
+      Rubinius.primitive :vm_get_config_section
+      raise PrimitiveFailure, "Rubinius::Configuration#get_section primitive failed"
+    end
+
+    def section(section)
+      ary = get_section(section)
+      i = 0
+      while i < ary.size
+        tup = ary[i]
+        yield tup[0], tup[1]
+        i += 1
+      end
+    end
+
+    def [](name)
+      get_variable(name)
+    end
+
+    alias_method :get, :[]
   end
-end
 
-class StopIteration < IndexError
-end
-
-class StopIteration
-  attr_accessor :result
-  private :result=
+  Config = Configuration.new
 end

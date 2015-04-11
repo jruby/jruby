@@ -1,1 +1,0 @@
-fails:Vector#inner_product raises an error for mismatched vectors

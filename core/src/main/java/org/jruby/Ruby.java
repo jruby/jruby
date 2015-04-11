@@ -5073,7 +5073,7 @@ public final class Ruby implements Constantizable {
     private EnumMap<DefinedMessage, RubyString> definedMessages = new EnumMap<DefinedMessage, RubyString>(DefinedMessage.class);
     private EnumMap<RubyThread.Status, RubyString> threadStatuses = new EnumMap<RubyThread.Status, RubyString>(RubyThread.Status.class);
 
-    private interface ObjectSpacer {
+    public interface ObjectSpacer {
         public void addToObjectSpace(Ruby runtime, boolean useObjectSpace, IRubyObject object);
     }
 

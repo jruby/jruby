@@ -1,1 +1,0 @@
-fails:Matrix.symmetric? raises an error for rectangular matrices

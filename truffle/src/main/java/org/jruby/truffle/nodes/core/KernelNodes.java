@@ -598,26 +598,6 @@ public abstract class KernelNodes {
 
     }
 
-    @CoreMethod(names = "extend", argumentsAsArray = true, required = 1)
-    public abstract static class ExtendNode extends CoreMethodNode {
-
-        public ExtendNode(RubyContext context, SourceSection sourceSection) {
-            super(context, sourceSection);
-        }
-
-        @Specialization
-        public RubyBasicObject extend(RubyBasicObject self, Object[] args) {
-            notDesignedForCompilation();
-
-            for (int n = 0; n < args.length; n++) {
-                self.extend((RubyModule) args[n], this);
-            }
-
-            return self;
-        }
-
-    }
-
     @CoreMethod(names = "fork", isModuleFunction = true, argumentsAsArray = true)
     public abstract static class ForkNode extends CoreMethodNode {
 
@@ -1286,12 +1266,19 @@ public abstract class KernelNodes {
             throw new RaiseException((RubyException) exception);
         }
 
+        @Specialization
+        public Object raise(VirtualFrame frame, RubyClass exceptionClass, RubyString message, RubyArray backtrace) {
+            // TODO (eregon 9 Apr. 2015): handle "backtrace".
+            return raise(frame, exceptionClass, message, UndefinedPlaceholder.INSTANCE);
+        }
+
+        // NOTE (eregon 9 Mar. 2015):
         // This provokes an error under standard Ruby:
         //   TypeError: backtrace must be Array of String
-        // but is used in Rubinius in coerce_to_failed for instance.
+        // but is used in Rubinius in #coerce_to_failed for instance.
         @Specialization
         public Object raise(VirtualFrame frame, RubyClass exceptionClass, RubyString message, RubyException backtrace) {
-            // TODO (9 Mar. 2015): handle "backtrace" as an MRI "cause".
+            // TODO (eregon 9 Mar. 2015): handle "backtrace" as an MRI "cause".
             return raise(frame, exceptionClass, message, UndefinedPlaceholder.INSTANCE);
         }
 

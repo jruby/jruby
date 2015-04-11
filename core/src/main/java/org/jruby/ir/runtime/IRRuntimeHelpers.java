@@ -489,6 +489,7 @@ public class IRRuntimeHelpers {
         }
     }
 
+    @JIT
     public static Block getBlockFromObject(ThreadContext context, Object value) {
         Block block;
         if (value instanceof Block) {
@@ -790,11 +791,12 @@ public class IRRuntimeHelpers {
         return context.runtime.newArray(restArgs);
     }
 
-    public static IRubyObject receivePostReqdArg(IRubyObject[] args, int preReqdArgsCount, int postReqdArgsCount, int argIndex, boolean acceptsKeywordArgument) {
+    @JIT
+    public static IRubyObject receivePostReqdArg(ThreadContext context, IRubyObject[] args, int preReqdArgsCount, int postReqdArgsCount, int argIndex, boolean acceptsKeywordArgument) {
         boolean kwargs = extractKwargsHash(args, preReqdArgsCount + postReqdArgsCount, acceptsKeywordArgument) != null;
         int n = kwargs ? args.length - 1 : args.length;
         int remaining = n - preReqdArgsCount;
-        if (remaining <= argIndex) return null;  // For blocks!
+        if (remaining <= argIndex) return context.nil;
 
         return (remaining > postReqdArgsCount) ? args[n - postReqdArgsCount + argIndex] : args[preReqdArgsCount + argIndex];
     }
