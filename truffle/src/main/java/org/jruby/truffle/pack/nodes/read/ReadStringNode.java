@@ -88,12 +88,18 @@ public abstract class ReadStringNode extends PackNode {
 
     @Specialization
     public ByteList read(VirtualFrame frame, IRubyObject[] source) {
-        return toString(source[advanceSourcePosition(frame)]);
+        final org.jruby.RubyString string = toString(source[advanceSourcePosition(frame)]);
+
+        if (string.isTaint()) {
+            setTainted(frame);
+        }
+
+        return string.getByteList();
     }
 
     @CompilerDirectives.TruffleBoundary
-    private ByteList toString(IRubyObject object) {
-        return object.convertToString().getByteList();
+    private org.jruby.RubyString toString(IRubyObject object) {
+        return object.convertToString();
     }
 
 }
