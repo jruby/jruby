@@ -25,7 +25,6 @@ import org.jruby.truffle.nodes.dispatch.MissingBehavior;
 import org.jruby.truffle.nodes.objects.IsTaintedNode;
 import org.jruby.truffle.nodes.objects.IsTaintedNodeFactory;
 import org.jruby.truffle.pack.nodes.PackNode;
-import org.jruby.truffle.pack.runtime.Nil;
 import org.jruby.truffle.pack.runtime.exceptions.NoImplicitConversionException;
 import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyArray;
@@ -67,8 +66,8 @@ public abstract class ToStringNode extends PackNode {
     public abstract Object executeToString(VirtualFrame frame, Object object);
 
     @Specialization
-    public Nil toString(VirtualFrame frame, RubyNilClass nil) {
-        return Nil.INSTANCE;
+    public RubyNilClass toString(VirtualFrame frame, RubyNilClass nil) {
+        return nil;
     }
 
     // TODO CS 31-Mar-15 these boundaries and slow versions are not ideal

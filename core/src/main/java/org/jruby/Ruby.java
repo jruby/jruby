@@ -917,15 +917,6 @@ public final class Ruby implements Constantizable {
         }
     }
 
-    public TrufflePackBridge getTrufflePackBridge() {
-        synchronized (truffleBridgeMutex) {
-            if (trufflePackBridge == null) {
-                trufflePackBridge = loadTrufflePackBridge();
-            }
-            return trufflePackBridge;
-        }
-    }
-
     private TruffleBridge loadTruffleBridge() {
         final Class<?> clazz;
 
@@ -947,27 +938,6 @@ public final class Ruby implements Constantizable {
         truffleBridge.init();
 
         return truffleBridge;
-    }
-
-    private TrufflePackBridge loadTrufflePackBridge() {
-        final Class<?> clazz;
-
-        try {
-            clazz = getJRubyClassLoader().loadClass("org.jruby.truffle.pack.TrufflePackBridgeImpl");
-        } catch (Exception e) {
-            throw new UnsupportedOperationException("Truffle classes not available", e);
-        }
-
-        final TrufflePackBridge trufflePackBridge;
-
-        try {
-            Constructor<?> con = clazz.getConstructor();
-            trufflePackBridge = (TrufflePackBridge) con.newInstance();
-        } catch (Exception e) {
-            throw new UnsupportedOperationException("Error while calling the constructor of TrufflePackBridgeImpl", e);
-        }
-
-        return trufflePackBridge;
     }
 
     public void shutdownTruffleBridge() {
@@ -4943,7 +4913,6 @@ public final class Ruby implements Constantizable {
     private final JITCompiler jitCompiler;
 
     private TruffleBridge truffleBridge;
-    private TrufflePackBridge trufflePackBridge;
     private final Object truffleBridgeMutex = new Object();
 
     // Note: this field and the following static initializer

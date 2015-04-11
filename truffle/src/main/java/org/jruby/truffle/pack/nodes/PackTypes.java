@@ -10,25 +10,19 @@
 package org.jruby.truffle.pack.nodes;
 
 import com.oracle.truffle.api.dsl.TypeSystem;
-import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.truffle.pack.runtime.Nil;
 import org.jruby.truffle.runtime.core.RubyArray;
 import org.jruby.truffle.runtime.core.RubyBignum;
 import org.jruby.truffle.runtime.core.RubyNilClass;
 import org.jruby.truffle.runtime.core.RubyString;
 import org.jruby.util.ByteList;
 
-import java.math.BigInteger;
-
 /**
- * This is a combination of generic, pack-specific, Truffle and JRuby types.
+ * This is a combination of generic, pack-specific and Truffle types.
  */
 @TypeSystem({
-        Nil.class,
         boolean.class,
         int.class,
         long.class,
-        BigInteger.class,
         float.class,
         double.class,
         ByteList.class,
@@ -39,8 +33,7 @@ import java.math.BigInteger;
         int[].class,
         long[].class,
         double[].class,
-        Object[].class,
-        IRubyObject[].class
+        Object[].class
 })
 public class PackTypes {
 

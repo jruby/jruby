@@ -25,8 +25,6 @@ import org.jruby.truffle.runtime.RubyContext;
 import org.jruby.truffle.runtime.core.RubyBignum;
 import org.jruby.truffle.runtime.core.RubyNilClass;
 
-import java.math.BigInteger;
-
 /**
  * Convert a value to a {@code long}.
  */
@@ -41,7 +39,7 @@ public abstract class ToLongNode extends PackNode {
 
     @CompilerDirectives.CompilationFinal private boolean seenInt;
     @CompilerDirectives.CompilationFinal private boolean seenLong;
-    @CompilerDirectives.CompilationFinal private boolean seenBigInteger;
+    @CompilerDirectives.CompilationFinal private boolean seenBignum;
 
     public ToLongNode(RubyContext context) {
         this.context = context;
@@ -72,12 +70,6 @@ public abstract class ToLongNode extends PackNode {
     }
 
     @Specialization
-    public long toLong(VirtualFrame frame, BigInteger object) {
-        // A truncated value is exactly what we want
-        return object.longValue();
-    }
-
-    @Specialization
     public long toLong(VirtualFrame frame, RubyNilClass nil) {
         CompilerDirectives.transferToInterpreter();
         throw new NoImplicitConversionException(nil, "Integer");
@@ -100,8 +92,8 @@ public abstract class ToLongNode extends PackNode {
             return toLong(frame, (long) value);
         }
 
-        if (seenBigInteger && value instanceof BigInteger) {
-            return toLong(frame, (BigInteger) value);
+        if (seenBignum && value instanceof RubyBignum) {
+            return toLong(frame, (RubyBignum) value);
         }
 
         CompilerDirectives.transferToInterpreterAndInvalidate();
@@ -120,9 +112,9 @@ public abstract class ToLongNode extends PackNode {
             return toLong(frame, (long) value);
         }
 
-        if (value instanceof BigInteger) {
-            seenBigInteger = true;
-            return toLong(frame, (BigInteger) value);
+        if (value instanceof RubyBignum) {
+            seenBignum = true;
+            return toLong(frame, (RubyBignum) value);
         }
 
         // TODO CS 5-April-15 missing the (Object#to_int gives String) part

@@ -66,7 +66,7 @@ public abstract class ReadLongNode extends PackNode {
         return (long) source[advanceSourcePosition(frame)];
     }
 
-    @Specialization(guards = "!isIRubyArray(source)")
+    @Specialization
     public long read(VirtualFrame frame, Object[] source) {
         if (toLongNode == null) {
             CompilerDirectives.transferToInterpreter();
@@ -74,22 +74,6 @@ public abstract class ReadLongNode extends PackNode {
         }
 
         return toLongNode.executeToLong(frame, source[advanceSourcePosition(frame)]);
-    }
-
-    @Specialization
-    public long read(VirtualFrame frame, IRubyObject[] source) {
-        return toLong(source[advanceSourcePosition(frame)]);
-    }
-
-    @CompilerDirectives.TruffleBoundary
-    private long toLong(IRubyObject object) {
-        final RubyInteger integer = object.convertToInteger();
-
-        if (integer instanceof RubyBignum) {
-            return integer.getBigIntegerValue().longValue();
-        } else {
-            return integer.getLongValue();
-        }
     }
 
 }

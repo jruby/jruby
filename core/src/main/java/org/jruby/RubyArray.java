@@ -57,14 +57,11 @@ import org.jruby.runtime.encoding.EncodingCapable;
 import org.jruby.runtime.invokedynamic.MethodNames;
 import org.jruby.runtime.marshal.MarshalStream;
 import org.jruby.runtime.marshal.UnmarshalStream;
-import org.jruby.truffle.pack.runtime.*;
-import org.jruby.truffle.pack.runtime.exceptions.*;
 import org.jruby.util.ByteList;
 import org.jruby.util.Pack;
 import org.jruby.util.Qsort;
 import org.jruby.util.RecursiveComparator;
 import org.jruby.util.TypeConverter;
-import org.jruby.util.cli.Options;
 
 import java.io.IOException;
 import java.lang.reflect.Array;
@@ -90,9 +87,6 @@ import static org.jruby.RubyEnumerator.SizeFn;
 @JRubyClass(name="Array")
 public class RubyArray extends RubyObject implements List, RandomAccess {
     public static final int DEFAULT_INSPECT_STR_SIZE = 10;
-
-    private static final boolean TRUFFLE_PACK = Options.TRUFFLE_PACK.load();
-    private static final int TRUFFLE_PACK_MAX_CACHE = Options.TRUFFLE_PACK_MAX_CACHE.load();
 
     public static RubyClass createArrayClass(Ruby runtime) {
         RubyClass arrayc = runtime.defineClass("Array", runtime.getObject(), ARRAY_ALLOCATOR);
@@ -258,14 +252,6 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
     
     private static final ByteList EMPTY_ARRAY_BYTELIST = new ByteList(ByteList.plain("[]"), USASCIIEncoding.INSTANCE);
     private static final ByteList RECURSIVE_ARRAY_BYTELIST = new ByteList(ByteList.plain("[...]"), USASCIIEncoding.INSTANCE);
-
-    private static final Map<ByteList, TrufflePackBridge.Packer> trufflePackerCache = new LinkedHashMap<ByteList, TrufflePackBridge.Packer>() {
-
-        @Override
-        protected boolean removeEldestEntry(Map.Entry<ByteList, TrufflePackBridge.Packer> eldest) {
-            return size() >= TRUFFLE_PACK_MAX_CACHE;
-        }
-    };
 
     /*
      * plain internal array assignment
@@ -4102,76 +4088,11 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
     public RubyString pack(ThreadContext context, IRubyObject obj) {
         RubyString iFmt = obj.convertToString();
 
-        if (TRUFFLE_PACK) {
-            TrufflePackBridge.Packer packer;
-
-            synchronized (trufflePackerCache) {
-                packer = trufflePackerCache.get(iFmt.getByteList());
-
-                if (packer == null) {
-                    try {
-                        packer = context.getRuntime().getTrufflePackBridge().compileFormat(iFmt.toString());
-                    } catch (FormatException e) {
-                        throw context.getRuntime().newArgumentError(e.getMessage());
-                    }
-
-                    trufflePackerCache.put(iFmt.getByteList().dup(), packer);
-                }
-            }
-
-            final PackResult result;
-
-            try {
-                result = packer.pack(values, realLength);
-            } catch (TooFewArgumentsException e) {
-                throw context.getRuntime().newArgumentError("too few arguments");
-            } catch (NoImplicitConversionException e) {
-                //throw new RaiseException(getContext().getCoreLibrary().typeErrorNoImplicitConversion(e.getObject(), e.getTarget(), this));
-                throw context.getRuntime().newTypeError("todo");
-            } catch (OutsideOfStringException e) {
-                throw context.getRuntime().newArgumentError("X outside of string");
-            } catch (CantCompressNegativeException e) {
-                throw context.getRuntime().newArgumentError("can't compress negative numbers");
-            } catch (RangeException e) {
-                throw context.getRuntime().newRangeError(e.getMessage());
-            } catch (CantConvertException e) {
-                throw context.getRuntime().newTypeError(e.getMessage());
-            } catch (WrongArgumentTypeException e) {
-                throw context.getRuntime().newTypeError("wrong argument type " + e.getGot() + " (expected " + e.getExpected() + ")");
-            }
-
-            final RubyString string = context.getRuntime().newString(new ByteList(result.getOutput(), 0, result.getOutputLength()));
-
-            if (iFmt.size() == 0) {
-                string.getByteList().setEncoding(USASCIIEncoding.INSTANCE);
-            } else {
-                switch (result.getEncoding()) {
-                    case DEFAULT:
-                    case ASCII_8BIT:
-                        break;
-                    case US_ASCII:
-                        string.getByteList().setEncoding(USASCIIEncoding.INSTANCE);
-                        break;
-                    case UTF_8:
-                        string.getByteList().setEncoding(UTF8Encoding.INSTANCE);
-                        break;
-                    default:
-                        throw new UnsupportedOperationException();
-                }
-            }
-
-            if (result.isTainted() || iFmt.isTaint()) {
-                string.taint(context.getRuntime());
-            }
-
-            return string;
-        } else {
-            try {
-                return Pack.pack(context, context.runtime, this, iFmt);
-            } catch (ArrayIndexOutOfBoundsException aioob) {
-                concurrentModification();
-                return null; // not reached
-            }
+        try {
+            return Pack.pack(context, context.runtime, this, iFmt);
+        } catch (ArrayIndexOutOfBoundsException aioob) {
+            concurrentModification();
+            return null; // not reached
         }
     }
 

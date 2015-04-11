@@ -15,7 +15,7 @@ import com.oracle.truffle.api.dsl.NodeChildren;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import org.jruby.truffle.pack.nodes.PackNode;
-import org.jruby.truffle.pack.runtime.Nil;
+import org.jruby.truffle.runtime.core.RubyNilClass;
 import org.jruby.util.ByteList;
 import org.jruby.util.Pack;
 
@@ -35,7 +35,7 @@ public abstract class WriteMIMEStringNode extends PackNode {
     }
 
     @Specialization
-    public Object write(Nil nil) {
+    public Object write(RubyNilClass nil) {
         return null;
     }
 

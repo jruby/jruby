@@ -72,12 +72,12 @@ public abstract class ReadLongOrBigIntegerNode extends PackNode {
         return (long) source[advanceSourcePosition(frame)];
     }
 
-    @Specialization(guards = "!isIRubyArray(source)")
+    @Specialization
     public Object read(VirtualFrame frame, Object[] source) {
         final Object value = source[advanceSourcePosition(frame)];
 
         if (bignumProfile.profile(value instanceof RubyBignum)) {
-            return ((RubyBignum) value).bigIntegerValue();
+            return value;
         } else {
             if (toLongNode == null) {
                 CompilerDirectives.transferToInterpreter();
@@ -85,22 +85,6 @@ public abstract class ReadLongOrBigIntegerNode extends PackNode {
             }
 
             return toLongNode.executeToLong(frame, value);
-        }
-    }
-
-    @Specialization
-    public Object read(VirtualFrame frame, IRubyObject[] source) {
-        return toLongOrBigInteger(source[advanceSourcePosition(frame)]);
-    }
-
-    @CompilerDirectives.TruffleBoundary
-    private Object toLongOrBigInteger(IRubyObject object) {
-        final RubyInteger integer = object.convertToInteger();
-
-        if (integer instanceof org.jruby.RubyBignum) {
-            return integer.getBigIntegerValue();
-        } else {
-            return integer.getLongValue();
         }
     }
 

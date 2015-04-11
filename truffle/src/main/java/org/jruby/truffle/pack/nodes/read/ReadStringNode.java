@@ -71,7 +71,7 @@ public abstract class ReadStringNode extends PackNode {
         return readAndConvert(frame, source[advanceSourcePosition(frame)]);
     }
 
-    @Specialization(guards = "!isIRubyArray(source)")
+    @Specialization
     public Object read(VirtualFrame frame, Object[] source) {
         return readAndConvert(frame, source[advanceSourcePosition(frame)]);
     }
@@ -84,22 +84,6 @@ public abstract class ReadStringNode extends PackNode {
         }
 
         return toStringNode.executeToString(frame, value);
-    }
-
-    @Specialization
-    public ByteList read(VirtualFrame frame, IRubyObject[] source) {
-        final org.jruby.RubyString string = toString(source[advanceSourcePosition(frame)]);
-
-        if (string.isTaint()) {
-            setTainted(frame);
-        }
-
-        return string.getByteList();
-    }
-
-    @CompilerDirectives.TruffleBoundary
-    private org.jruby.RubyString toString(IRubyObject object) {
-        return object.convertToString();
     }
 
 }

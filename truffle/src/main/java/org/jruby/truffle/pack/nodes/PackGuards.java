@@ -54,8 +54,4 @@ public class PackGuards {
         return object instanceof RubyArray;
     }
 
-    public static boolean isIRubyArray(Object[] array) {
-        return array instanceof IRubyObject[];
-    }
-
 }
