@@ -47,11 +47,6 @@ public abstract class DispatchNode extends RubyNode {
         assert dispatchAction != null;
     }
 
-    public DispatchNode(DispatchNode prev) {
-        super(prev);
-        dispatchAction = prev.dispatchAction;
-    }
-
     protected abstract boolean guard(Object methodName, Object receiver);
 
     protected DispatchNode getNext() {

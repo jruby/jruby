@@ -44,12 +44,6 @@ public abstract class ArrayCastNode extends RubyNode {
         this.nilBehavior = nilBehavior;
     }
 
-    public ArrayCastNode(ArrayCastNode prev) {
-        super(prev);
-        toArrayNode = prev.toArrayNode;
-        nilBehavior = prev.nilBehavior;
-    }
-
     protected abstract RubyNode getChild();
 
     @Specialization

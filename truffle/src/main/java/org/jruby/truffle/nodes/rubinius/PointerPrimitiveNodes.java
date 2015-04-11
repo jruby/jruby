@@ -36,11 +36,6 @@ public abstract class PointerPrimitiveNodes {
             writeAddressNode = new WriteHeadObjectFieldNode(PointerPrimitiveNodes.ADDRESS_IDENTIFIER);
         }
 
-        public WriteAddressPrimitiveNode(WriteAddressPrimitiveNode prev) {
-            super(prev);
-            writeAddressNode = prev.writeAddressNode;
-        }
-
         public long writeAddress(RubyBasicObject pointer, long address) {
             writeAddressNode.execute(pointer, address);
             return address;
@@ -55,11 +50,6 @@ public abstract class PointerPrimitiveNodes {
         public ReadAddressPrimitiveNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
             readAddressNode = new ReadHeadObjectFieldNode(PointerPrimitiveNodes.ADDRESS_IDENTIFIER);
-        }
-
-        public ReadAddressPrimitiveNode(ReadAddressPrimitiveNode prev) {
-            super(prev);
-            readAddressNode = prev.readAddressNode;
         }
 
         public long getAddress(RubyBasicObject pointer) {
@@ -77,10 +67,6 @@ public abstract class PointerPrimitiveNodes {
 
         public PointerMallocPrimitiveNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-        }
-
-        public PointerMallocPrimitiveNode(PointerMallocPrimitiveNode prev) {
-            super(prev);
         }
 
         @Specialization
@@ -104,10 +90,6 @@ public abstract class PointerPrimitiveNodes {
             super(context, sourceSection);
         }
 
-        public PointerFreePrimitiveNode(PointerFreePrimitiveNode prev) {
-            super(prev);
-        }
-
         @Specialization
         public long free(RubyBasicObject pointer) {
             final long address = getAddress(pointer);
@@ -122,10 +104,6 @@ public abstract class PointerPrimitiveNodes {
 
         public PointerSetAddressPrimitiveNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-        }
-
-        public PointerSetAddressPrimitiveNode(PointerSetAddressPrimitiveNode prev) {
-            super(prev);
         }
 
         @Specialization
@@ -150,12 +128,6 @@ public abstract class PointerPrimitiveNodes {
             super(context, sourceSection);
             writeAddressNode = new WriteHeadObjectFieldNode(ADDRESS_IDENTIFIER);
             readAddressNode = new ReadHeadObjectFieldNode(PointerPrimitiveNodes.ADDRESS_IDENTIFIER);
-        }
-
-        public PointerAddPrimitiveNode(PointerAddPrimitiveNode prev) {
-            super(prev);
-            writeAddressNode = prev.writeAddressNode;
-            readAddressNode = prev.readAddressNode;
         }
 
         @Specialization
@@ -190,10 +162,6 @@ public abstract class PointerPrimitiveNodes {
 
         public PointerReadIntPrimitiveNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-        }
-
-        public PointerReadIntPrimitiveNode(PointerReadIntPrimitiveNode prev) {
-            super(prev);
         }
 
         @Specialization(guards = "isSigned(signed)")

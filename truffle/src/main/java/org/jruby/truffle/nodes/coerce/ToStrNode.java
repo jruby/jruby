@@ -32,11 +32,6 @@ public abstract class ToStrNode extends RubyNode {
         toStrNode = DispatchHeadNodeFactory.createMethodCall(context);
     }
 
-    public ToStrNode(ToStrNode prev) {
-        super(prev);
-        toStrNode = prev.toStrNode;
-    }
-
     @Specialization
     public RubyString coerceRubyString(RubyString string) {
         return string;

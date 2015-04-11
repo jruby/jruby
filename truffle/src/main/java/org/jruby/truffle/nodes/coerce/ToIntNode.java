@@ -35,10 +35,6 @@ public abstract class ToIntNode extends RubyNode {
         super(context, sourceSection);
     }
 
-    public ToIntNode(ToIntNode prev) {
-        super(prev);
-    }
-
     @Specialization
     public int coerceInt(int value) {
         return value;

@@ -44,10 +44,6 @@ public abstract class BasicObjectNodes {
             super(context, sourceSection);
         }
 
-        public NotNode(NotNode prev) {
-            super(prev);
-        }
-
         @CreateCast("operand") public RubyNode createCast(RubyNode operand) {
             return BooleanCastNodeFactory.create(getContext(), getSourceSection(), operand);
         }
@@ -65,10 +61,6 @@ public abstract class BasicObjectNodes {
 
         public EqualNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-        }
-
-        public EqualNode(EqualNode prev) {
-            super(prev);
         }
 
         @Specialization public boolean equal(boolean a, boolean b) { return a == b; }
@@ -115,11 +107,6 @@ public abstract class BasicObjectNodes {
             equalNode = DispatchHeadNodeFactory.createMethodCall(context, false, false, null);
         }
 
-        public NotEqualNode(NotEqualNode prev) {
-            super(prev);
-            equalNode = prev.equalNode;
-        }
-
         @Specialization
         public boolean equal(VirtualFrame frame, Object a, Object b) {
             return !equalNode.callBoolean(frame, a, "==", null, b);
@@ -132,10 +119,6 @@ public abstract class BasicObjectNodes {
 
         public ReferenceEqualNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-        }
-
-        public ReferenceEqualNode(ReferenceEqualNode prev) {
-            super(prev);
         }
 
         public abstract boolean executeReferenceEqual(VirtualFrame frame, Object a, Object b);
@@ -181,10 +164,6 @@ public abstract class BasicObjectNodes {
             super(context, sourceSection);
         }
 
-        public InitializeNode(InitializeNode prev) {
-            super(prev);
-        }
-
         @Specialization
         public RubyNilClass initialize() {
             return nil();
@@ -200,11 +179,6 @@ public abstract class BasicObjectNodes {
         public InstanceEvalNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
             yield = new YieldDispatchHeadNode(context);
-        }
-
-        public InstanceEvalNode(InstanceEvalNode prev) {
-            super(prev);
-            yield = prev.yield;
         }
 
         @Specialization
@@ -230,10 +204,6 @@ public abstract class BasicObjectNodes {
             super(context, sourceSection);
         }
 
-        public InstanceExecNode(InstanceExecNode prev) {
-            super(prev);
-        }
-
         @Specialization
         public Object instanceExec(VirtualFrame frame, Object receiver, Object[] arguments, RubyProc block) {
             notDesignedForCompilation();
@@ -255,10 +225,6 @@ public abstract class BasicObjectNodes {
 
         public MethodMissingNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-        }
-
-        public MethodMissingNode(MethodMissingNode prev) {
-            super(prev);
         }
 
         @Specialization
@@ -317,11 +283,6 @@ public abstract class BasicObjectNodes {
             if (DispatchNode.DISPATCH_METAPROGRAMMING_ALWAYS_UNCACHED) {
                 dispatchNode.forceUncached();
             }
-        }
-
-        public SendNode(SendNode prev) {
-            super(prev);
-            dispatchNode = prev.dispatchNode;
         }
 
         @Specialization

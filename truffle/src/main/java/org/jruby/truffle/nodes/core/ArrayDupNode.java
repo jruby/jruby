@@ -32,10 +32,6 @@ public abstract class ArrayDupNode extends RubyNode {
         super(context, sourceSection);
     }
 
-    public ArrayDupNode(ArrayDupNode prev) {
-        super(prev);
-    }
-
     public abstract RubyArray executeDup(VirtualFrame frame, RubyArray array);
 
     @Specialization(guards = "isNull(from)")

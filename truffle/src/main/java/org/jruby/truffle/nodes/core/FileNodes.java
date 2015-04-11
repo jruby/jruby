@@ -43,10 +43,6 @@ public abstract class FileNodes {
             super(context, sourceSection);
         }
 
-        public AbsolutePathNode(AbsolutePathNode prev) {
-            super(prev);
-        }
-
         @Specialization
         public RubyString absolutePath(RubyString path) {
             notDesignedForCompilation();
@@ -67,10 +63,6 @@ public abstract class FileNodes {
 
         public BasenameNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-        }
-
-        public BasenameNode(BasenameNode prev) {
-            super(prev);
         }
 
         @Specialization
@@ -107,10 +99,6 @@ public abstract class FileNodes {
             super(context, sourceSection);
         }
 
-        public CloseNode(CloseNode prev) {
-            super(prev);
-        }
-
         @Specialization
         public RubyNilClass close(RubyFile file) {
             notDesignedForCompilation();
@@ -126,10 +114,6 @@ public abstract class FileNodes {
 
         public DirnameNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-        }
-
-        public DirnameNode(DirnameNode prev) {
-            super(prev);
         }
 
         @Specialization
@@ -152,10 +136,6 @@ public abstract class FileNodes {
 
         public EachLineNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-        }
-
-        public EachLineNode(EachLineNode prev) {
-            super(prev);
         }
 
         @Specialization
@@ -196,10 +176,6 @@ public abstract class FileNodes {
             super(context, sourceSection);
         }
 
-        public ExpandPathNode(ExpandPathNode prev) {
-            super(prev);
-        }
-
         @Specialization
         public RubyString expandPath(RubyString path, @SuppressWarnings("unused") UndefinedPlaceholder dir) {
             return getContext().makeString(RubyFile.expandPath(getContext(), path.toString()));
@@ -219,10 +195,6 @@ public abstract class FileNodes {
 
         public JoinNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-        }
-
-        public JoinNode(JoinNode prev) {
-            super(prev);
         }
 
         @Specialization
@@ -257,10 +229,6 @@ public abstract class FileNodes {
 
         public OpenNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-        }
-
-        public OpenNode(OpenNode prev) {
-            super(prev);
         }
 
         @Specialization
@@ -306,10 +274,6 @@ public abstract class FileNodes {
             super(context, sourceSection);
         }
 
-        public PutsNode(PutsNode prev) {
-            super(prev);
-        }
-
         @Specialization
         public RubyNilClass puts(RubyFile file, RubyString string) {
             notDesignedForCompilation();
@@ -335,10 +299,6 @@ public abstract class FileNodes {
             super(context, sourceSection);
         }
 
-        public ReadFunctionNode(ReadFunctionNode prev) {
-            super(prev);
-        }
-
         @Specialization
         public RubyString read(RubyString file) {
             notDesignedForCompilation();
@@ -354,10 +314,6 @@ public abstract class FileNodes {
 
         public ReadNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-        }
-
-        public ReadNode(ReadNode prev) {
-            super(prev);
         }
 
         @Specialization
@@ -394,10 +350,6 @@ public abstract class FileNodes {
             super(context, sourceSection);
         }
 
-        public RealpathNode(RealpathNode prev) {
-            super(prev);
-        }
-
         @Specialization
         public RubyString realpath(RubyString path, UndefinedPlaceholder dir) {
             return getContext().makeString(realpath(path.toString(), null));
@@ -429,10 +381,6 @@ public abstract class FileNodes {
             super(context, sourceSection);
         }
 
-        public SymlinkQueryNode(SymlinkQueryNode prev) {
-            super(prev);
-        }
-
         @Specialization
         public boolean symlinkQuery(RubyString fileName) {
             notDesignedForCompilation();
@@ -461,10 +409,6 @@ public abstract class FileNodes {
 
         public WriteNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-        }
-
-        public WriteNode(WriteNode prev) {
-            super(prev);
         }
 
         @Specialization

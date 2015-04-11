@@ -21,10 +21,6 @@ public abstract class UnaryCoreMethodNode extends RubyNode {
         super(context, sourceSection);
     }
 
-    public UnaryCoreMethodNode(UnaryCoreMethodNode prev) {
-        super(prev);
-    }
-
     public abstract RubyNode getOperand();
 
 }

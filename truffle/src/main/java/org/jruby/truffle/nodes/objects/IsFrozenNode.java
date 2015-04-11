@@ -32,11 +32,6 @@ public abstract class IsFrozenNode extends RubyNode {
 
     public abstract boolean executeIsFrozen(Object object);
 
-    public IsFrozenNode(IsFrozenNode prev) {
-        super(prev);
-        readFrozenNode = prev.readFrozenNode;
-    }
-
     @Specialization
     public boolean isFrozen(boolean object) {
         return true;

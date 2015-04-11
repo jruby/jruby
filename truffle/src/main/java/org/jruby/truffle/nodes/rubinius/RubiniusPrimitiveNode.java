@@ -21,8 +21,4 @@ public abstract class RubiniusPrimitiveNode extends RubyNode {
         super(context, sourceSection);
     }
 
-    public RubiniusPrimitiveNode(RubiniusPrimitiveNode prev) {
-        super(prev);
-    }
-
 }

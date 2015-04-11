@@ -31,10 +31,6 @@ public abstract class ToAryNode extends RubyNode {
         super(context, sourceSection);
     }
 
-    public ToAryNode(ToAryNode prev) {
-        super(prev);
-    }
-
     @Specialization
     public RubyArray coerceRubyArray(RubyArray rubyArray) {
         return rubyArray;

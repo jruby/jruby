@@ -28,10 +28,6 @@ public abstract class ModulePrimitiveNodes {
             super(context, sourceSection);
         }
 
-        public ModuleMirrorPrimitiveNode(ModuleMirrorPrimitiveNode prev) {
-            super(prev);
-        }
-
         @Specialization
         public RubyModule moduleMirror(RubyString string) {
             if (stringMirror == null) {

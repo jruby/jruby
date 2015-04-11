@@ -34,10 +34,6 @@ public abstract class BindingNodes {
             super(context, sourceSection);
         }
 
-        public InitializeCopyNode(InitializeCopyNode prev) {
-            super(prev);
-        }
-
         @Specialization
         public Object initializeCopy(RubyBinding self, RubyBinding from) {
             notDesignedForCompilation();
@@ -69,10 +65,6 @@ public abstract class BindingNodes {
             super(context, sourceSection);
         }
 
-        public LocalVariableGetNode(LocalVariableGetNode prev) {
-            super(prev);
-        }
-
         @Specialization
         public Object localVariableGet(RubyBinding binding, RubySymbol symbol) {
             notDesignedForCompilation();
@@ -95,10 +87,6 @@ public abstract class BindingNodes {
 
         public LocalVariableSetNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-        }
-
-        public LocalVariableSetNode(LocalVariableSetNode prev) {
-            super(prev);
         }
 
         @Specialization
@@ -134,10 +122,6 @@ public abstract class BindingNodes {
 
         public LocalVariablesNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-        }
-
-        public LocalVariablesNode(LocalVariablesNode prev) {
-            super(prev);
         }
 
         @Specialization

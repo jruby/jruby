@@ -52,12 +52,6 @@ public abstract class CmpIntNode extends RubyNode {
         super(context, sourceSection);
     }
 
-    public CmpIntNode(CmpIntNode prev) {
-        super(prev);
-        gtNode = prev.gtNode;
-        ltNode = prev.ltNode;
-    }
-
     @Specialization
     public int cmpInt(int value, Object receiver, Object other) {
         if (value > 0) {

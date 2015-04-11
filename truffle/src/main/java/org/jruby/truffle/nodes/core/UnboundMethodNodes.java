@@ -39,10 +39,6 @@ public abstract class UnboundMethodNodes {
             super(context, sourceSection);
         }
 
-        public ArityNode(ArityNode prev) {
-            super(prev);
-        }
-
         @Specialization
         public int arity(RubyUnboundMethod method) {
             return method.getMethod().getSharedMethodInfo().getArity().getArityNumber();
@@ -57,11 +53,6 @@ public abstract class UnboundMethodNodes {
 
         public BindNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-        }
-
-        public BindNode(BindNode prev) {
-            super(prev);
-            metaClassNode = prev.metaClassNode;
         }
 
         private RubyClass metaClass(VirtualFrame frame, Object object) {
@@ -99,10 +90,6 @@ public abstract class UnboundMethodNodes {
             super(context, sourceSection);
         }
 
-        public NameNode(NameNode prev) {
-            super(prev);
-        }
-
         @Specialization
         public RubySymbol name(RubyUnboundMethod unboundMethod) {
             notDesignedForCompilation();
@@ -120,10 +107,6 @@ public abstract class UnboundMethodNodes {
             super(context, sourceSection);
         }
 
-        public OriginNode(OriginNode prev) {
-            super(prev);
-        }
-
         @Specialization
         public RubyModule origin(RubyUnboundMethod unboundMethod) {
             return unboundMethod.getOrigin();
@@ -138,10 +121,6 @@ public abstract class UnboundMethodNodes {
             super(context, sourceSection);
         }
 
-        public OwnerNode(OwnerNode prev) {
-            super(prev);
-        }
-
         @Specialization
         public RubyModule owner(RubyUnboundMethod unboundMethod) {
             return unboundMethod.getMethod().getDeclaringModule();
@@ -154,10 +133,6 @@ public abstract class UnboundMethodNodes {
 
         public SourceLocationNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-        }
-
-        public SourceLocationNode(SourceLocationNode prev) {
-            super(prev);
         }
 
         @Specialization

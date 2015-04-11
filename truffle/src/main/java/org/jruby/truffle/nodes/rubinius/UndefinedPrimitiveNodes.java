@@ -29,10 +29,6 @@ public abstract class UndefinedPrimitiveNodes {
             super(context, sourceSection);
         }
 
-        public UndefinedPrimitiveNode(UndefinedPrimitiveNode prev) {
-            super(prev);
-        }
-
         @Specialization
         public Object undefined(Object... args) {
             throw new UnsupportedOperationException("Undefined Rubinius primitive.");

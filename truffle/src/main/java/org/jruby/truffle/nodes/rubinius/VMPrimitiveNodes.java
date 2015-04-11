@@ -54,11 +54,6 @@ public abstract class VMPrimitiveNodes {
             dispatchNode = new YieldDispatchHeadNode(context);
         }
 
-        public CatchNode(CatchNode prev) {
-            super(prev);
-            dispatchNode = prev.dispatchNode;
-        }
-
         private boolean areSame(VirtualFrame frame, Object left, Object right) {
             if (referenceEqualNode == null) {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
@@ -103,10 +98,6 @@ public abstract class VMPrimitiveNodes {
             super(context, sourceSection);
         }
 
-        public VMGCStartPrimitiveNode(VMGCStartPrimitiveNode prev) {
-            super(prev);
-        }
-
         @Specialization
         public RubyNilClass vmGCStart() {
             final RubyThread runningThread = getContext().getThreadManager().leaveGlobalLock();
@@ -129,10 +120,6 @@ public abstract class VMPrimitiveNodes {
             super(context, sourceSection);
         }
 
-        public VMGetModuleNamePrimitiveNode(VMGetModuleNamePrimitiveNode prev) {
-            super(prev);
-        }
-
         @Specialization
         public RubyString vmGetModuleName(RubyModule module) {
             notDesignedForCompilation();
@@ -151,11 +138,6 @@ public abstract class VMPrimitiveNodes {
             classNode = ClassNodeFactory.create(context, sourceSection, null);
         }
 
-        public VMObjectClassPrimitiveNode(VMObjectClassPrimitiveNode prev) {
-            super(prev);
-            classNode = prev.classNode;
-        }
-
         @Specialization
         public RubyClass vmObjectClass(VirtualFrame frame, Object object) {
             return classNode.executeGetClass(frame, object);
@@ -168,10 +150,6 @@ public abstract class VMPrimitiveNodes {
 
         public VMObjectEqualPrimitiveNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-        }
-
-        public VMObjectEqualPrimitiveNode(VMObjectEqualPrimitiveNode prev) {
-            super(prev);
         }
 
         @Specialization
@@ -246,11 +224,6 @@ public abstract class VMPrimitiveNodes {
             isANode = KernelNodesFactory.IsANodeFactory.create(context, sourceSection, new RubyNode[] { null, null });
         }
 
-        public VMObjectKindOfPrimitiveNode(VMObjectKindOfPrimitiveNode prev) {
-            super(prev);
-            isANode = prev.isANode;
-        }
-
         @Specialization
         public boolean vmObjectKindOf(VirtualFrame frame, Object object, RubyModule rubyClass) {
             return isANode.executeIsA(frame, object, rubyClass);
@@ -266,11 +239,6 @@ public abstract class VMPrimitiveNodes {
         public VMObjectRespondToPrimitiveNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
             respondToNode = KernelNodesFactory.RespondToNodeFactory.create(context, sourceSection, new RubyNode[] { null, null, null });
-        }
-
-        public VMObjectRespondToPrimitiveNode(VMObjectRespondToPrimitiveNode prev) {
-            super(prev);
-            respondToNode = prev.respondToNode;
         }
 
         @Specialization
@@ -290,11 +258,6 @@ public abstract class VMPrimitiveNodes {
             singletonClassNode = KernelNodesFactory.SingletonClassMethodNodeFactory.create(context, sourceSection, new RubyNode[] { null });
         }
 
-        public VMObjectSingletonClassPrimitiveNode(VMObjectSingletonClassPrimitiveNode prev) {
-            super(prev);
-            singletonClassNode = prev.singletonClassNode;
-        }
-
         @Specialization
         public Object vmObjectClass(VirtualFrame frame, Object object) {
             return singletonClassNode.singletonClass(frame, object);
@@ -307,10 +270,6 @@ public abstract class VMPrimitiveNodes {
 
         public VMSetModuleNamePrimitiveNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-        }
-
-        public VMSetModuleNamePrimitiveNode(VMSetModuleNamePrimitiveNode prev) {
-            super(prev);
         }
 
         @Specialization
@@ -327,10 +286,6 @@ public abstract class VMPrimitiveNodes {
             super(context, sourceSection);
         }
 
-        public VMObjectSingletonClassObjectPrimitiveNode(VMObjectSingletonClassObjectPrimitiveNode prev) {
-            super(prev);
-        }
-
         @Specialization
         public Object vmSingletonClassObject(Object object) {
             notDesignedForCompilation();
@@ -344,10 +299,6 @@ public abstract class VMPrimitiveNodes {
 
         public ThrowNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-        }
-
-        public ThrowNode(ThrowNode prev) {
-            super(prev);
         }
 
         @Specialization
@@ -366,10 +317,6 @@ public abstract class VMPrimitiveNodes {
             super(context, sourceSection);
         }
 
-        public TimeNode(TimeNode prev) {
-            super(prev);
-        }
-
         @Specialization
         public long time() {
             return System.currentTimeMillis() / 1000;
@@ -382,10 +329,6 @@ public abstract class VMPrimitiveNodes {
 
         public TimesNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-        }
-
-        public TimesNode(TimesNode prev) {
-            super(prev);
         }
 
         @Specialization
@@ -439,10 +382,6 @@ public abstract class VMPrimitiveNodes {
 
         public VMWatchSignalPrimitiveNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-        }
-
-        public VMWatchSignalPrimitiveNode(VMWatchSignalPrimitiveNode prev) {
-            super(prev);
         }
 
         @Specialization

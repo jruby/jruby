@@ -46,12 +46,6 @@ public abstract class FixnumPrimitiveNodes {
             toF = DispatchHeadNodeFactory.createMethodCall(context);
         }
 
-        public FixnumCoercePrimitiveNode(FixnumCoercePrimitiveNode prev) {
-            super(prev);
-            toFRespond = prev.toFRespond;
-            toF = prev.toF;
-        }
-
         @Specialization
         public RubyArray coerce(int a, int b) {
             return new RubyArray(getContext().getCoreLibrary().getArrayClass(), new int[]{b, a}, 2);
@@ -91,10 +85,6 @@ public abstract class FixnumPrimitiveNodes {
 
         public FixnumPowPrimitiveNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-        }
-
-        public FixnumPowPrimitiveNode(FixnumPowPrimitiveNode prev) {
-            super(prev);
         }
 
         @Specialization(guards = "canShiftIntoInt(a, b)")

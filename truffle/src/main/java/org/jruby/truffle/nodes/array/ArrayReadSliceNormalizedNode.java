@@ -35,10 +35,6 @@ public abstract class ArrayReadSliceNormalizedNode extends RubyNode {
         super(context, sourceSection);
     }
 
-    public ArrayReadSliceNormalizedNode(ArrayReadSliceNormalizedNode prev) {
-        super(prev);
-    }
-
     public abstract Object executeReadSlice(VirtualFrame frame, RubyArray array, int index, int length);
 
     // Index out of bounds or negative length always gives you nil

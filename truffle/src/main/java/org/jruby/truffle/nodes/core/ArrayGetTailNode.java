@@ -33,11 +33,6 @@ public abstract class ArrayGetTailNode extends RubyNode {
         this.index = index;
     }
 
-    public ArrayGetTailNode(ArrayGetTailNode prev) {
-        super(prev);
-        index = prev.index;
-    }
-
     @Specialization(guards = "isNull(array)")
     public RubyArray getTailNull(RubyArray array) {
         notDesignedForCompilation();

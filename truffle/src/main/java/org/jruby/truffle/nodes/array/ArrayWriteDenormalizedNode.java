@@ -32,11 +32,6 @@ public abstract class ArrayWriteDenormalizedNode extends RubyNode {
         super(context, sourceSection);
     }
 
-    public ArrayWriteDenormalizedNode(ArrayWriteDenormalizedNode prev) {
-        super(prev);
-        writeNode = prev.writeNode;
-    }
-
     public abstract Object executeWrite(VirtualFrame frame, RubyArray array, int index, Object value);
 
     @Specialization

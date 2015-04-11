@@ -52,14 +52,6 @@ public abstract class CachedDispatchNode extends DispatchNode {
         this.next = next;
     }
 
-    public CachedDispatchNode(CachedDispatchNode prev) {
-        super(prev);
-        cachedName = prev.cachedName;
-        cachedNameAsSymbol = prev.cachedNameAsSymbol;
-        next = prev.next;
-        indirect = prev.indirect;
-    }
-
     @Override
     protected DispatchNode getNext() {
         return next;

@@ -27,10 +27,6 @@ public abstract class EncodingPrimitiveNodes {
             super(context, sourceSection);
         }
 
-        public EncodingGetObjectEncodingNode(EncodingGetObjectEncodingNode prev) {
-            super(prev);
-        }
-
         @Specialization
         public RubyEncoding encodingGetObjectEncoding(RubyString string) {
             notDesignedForCompilation();

@@ -34,10 +34,6 @@ public abstract class BignumPrimitiveNodes {
             super(context, sourceSection);
         }
 
-        public BignumPowPrimitiveNode(BignumPowPrimitiveNode prev) {
-            super(prev);
-        }
-
         @Specialization
         public RubyBignum pow(RubyBignum a, int b) {
             return pow(a, (long) b);

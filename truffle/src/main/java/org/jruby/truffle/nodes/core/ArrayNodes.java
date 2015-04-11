@@ -71,10 +71,6 @@ public abstract class ArrayNodes {
             super(context, sourceSection);
         }
 
-        public AddNode(AddNode prev) {
-            super(prev);
-        }
-
         @CreateCast("b") public RubyNode coerceOtherToAry(RubyNode other) {
             return ToAryNodeFactory.create(getContext(), getSourceSection(), other);
         }
@@ -183,12 +179,6 @@ public abstract class ArrayNodes {
 
         public MulNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-        }
-
-        public MulNode(MulNode prev) {
-            super(prev);
-            respondToToStrNode = prev.respondToToStrNode;
-            toIntNode = prev.toIntNode;
         }
 
         @Specialization(guards = "isNull(array)")
@@ -326,14 +316,6 @@ public abstract class ArrayNodes {
             super(context, sourceSection);
         }
 
-        public IndexNode(IndexNode prev) {
-            super(prev);
-            readNode = prev.readNode;
-            readSliceNode = prev.readSliceNode;
-            readNormalizedSliceNode = prev.readNormalizedSliceNode;
-            fallbackNode = prev.fallbackNode;
-        }
-
         @Specialization
         public Object index(VirtualFrame frame, RubyArray array, int index, UndefinedPlaceholder undefined) {
             if (readNode == null) {
@@ -418,14 +400,6 @@ public abstract class ArrayNodes {
 
         public IndexSetNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-        }
-
-        public IndexSetNode(IndexSetNode prev) {
-            super(prev);
-            writeNode = prev.writeNode;
-            readSliceNode = prev.readSliceNode;
-            popNode = prev.popNode;
-            toIntNode = prev.toIntNode;
         }
 
         @Specialization(guards = {"!isInteger(indexObject)", "!isIntegerFixnumRange(indexObject)"})
@@ -736,11 +710,6 @@ public abstract class ArrayNodes {
             super(context, sourceSection);
         }
 
-        public AtNode(AtNode prev) {
-            super(prev);
-            readNode = prev.readNode;
-        }
-
         @CreateCast("index") public RubyNode coerceOtherToInt(RubyNode index) {
             return ToIntNodeFactory.create(getContext(), getSourceSection(), index);
         }
@@ -764,10 +733,6 @@ public abstract class ArrayNodes {
             super(context, sourceSection);
         }
 
-        public ClearNode(ClearNode prev) {
-            super(prev);
-        }
-
         @Specialization
         public RubyArray clear(RubyArray array) {
             array.setStore(array.getStore(), 0);
@@ -782,10 +747,6 @@ public abstract class ArrayNodes {
 
         public CompactNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-        }
-
-        public CompactNode(CompactNode prev) {
-            super(prev);
         }
 
         @Specialization(guards = "isIntArray(array)")
@@ -840,10 +801,6 @@ public abstract class ArrayNodes {
             super(context, sourceSection);
         }
 
-        public CompactBangNode(CompactBangNode prev) {
-            super(prev);
-        }
-
         @Specialization(guards = "!isObject(array)")
         public RubyNilClass compactNotObjects(RubyArray array) {
             return nil();
@@ -884,10 +841,6 @@ public abstract class ArrayNodes {
 
         public ConcatNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-        }
-
-        public ConcatNode(ConcatNode prev) {
-            super(prev);
         }
 
         public abstract RubyArray executeConcat(RubyArray array, RubyArray other);
@@ -1002,12 +955,6 @@ public abstract class ArrayNodes {
             equalNode = KernelNodesFactory.SameOrEqualNodeFactory.create(context, sourceSection, new RubyNode[]{null,null});
         }
 
-        public DeleteNode(DeleteNode prev) {
-            super(prev);
-            equalNode = prev.equalNode;
-            isFrozenNode = prev.isFrozenNode;
-        }
-
         @Specialization(guards = "isIntegerFixnum(array)")
         public Object deleteIntegerFixnum(VirtualFrame frame, RubyArray array, Object value) {
             final int[] store = (int[]) array.getStore();
@@ -1103,10 +1050,6 @@ public abstract class ArrayNodes {
 
         public DeleteAtNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-        }
-
-        public DeleteAtNode(DeleteAtNode prev) {
-            super(prev);
         }
 
         @CreateCast("index") public RubyNode coerceOtherToInt(RubyNode index) {
@@ -1303,11 +1246,6 @@ public abstract class ArrayNodes {
             super(context, sourceSection);
         }
 
-        public EachNode(EachNode prev) {
-            super(prev);
-            toEnumNode = prev.toEnumNode;
-        }
-
         @Specialization
         public Object eachEnumerator(VirtualFrame frame, RubyArray array, UndefinedPlaceholder block) {
             if (toEnumNode == null) {
@@ -1485,10 +1423,6 @@ public abstract class ArrayNodes {
             super(context, sourceSection);
         }
 
-        public EachWithIndexNode(EachWithIndexNode prev) {
-            super(prev);
-        }
-
         @Specialization(guards = "isNull(array)")
         public RubyArray eachWithEmpty(VirtualFrame frame, RubyArray array, RubyProc block) {
             return array;
@@ -1659,11 +1593,6 @@ public abstract class ArrayNodes {
             equalNode = KernelNodesFactory.SameOrEqualNodeFactory.create(context, sourceSection, new RubyNode[]{null,null});
         }
 
-        public IncludeNode(IncludeNode prev) {
-            super(prev);
-            equalNode = prev.equalNode;
-        }
-
         @Specialization(guards = "isNull(array)")
         public boolean includeNull(VirtualFrame frame, RubyArray array, Object value) {
             return false;
@@ -1751,13 +1680,6 @@ public abstract class ArrayNodes {
         public InitializeNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
             arrayBuilder = new ArrayBuilderNode.UninitializedArrayBuilderNode(context);
-        }
-
-        public InitializeNode(InitializeNode prev) {
-            super(prev);
-            arrayBuilder = prev.arrayBuilder;
-            toIntNode = prev.toIntNode;
-            respondToToAryNode = prev.respondToToAryNode;
         }
 
         @Specialization(guards = {"!isInteger(object)", "!isLong(object)", "!isUndefinedPlaceholder(object)", "!isRubyArray(object)"})
@@ -1983,10 +1905,6 @@ public abstract class ArrayNodes {
             super(context, sourceSection);
         }
 
-        public InitializeCopyNode(InitializeCopyNode prev) {
-            super(prev);
-        }
-
         @CreateCast("from") public RubyNode coerceOtherToAry(RubyNode other) {
             return ToAryNodeFactory.create(getContext(), getSourceSection(), other);
         }
@@ -2047,11 +1965,6 @@ public abstract class ArrayNodes {
         public InjectNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
             dispatch = DispatchHeadNodeFactory.createMethodCall(context, MissingBehavior.CALL_METHOD_MISSING);
-        }
-
-        public InjectNode(InjectNode prev) {
-            super(prev);
-            dispatch = prev.dispatch;
         }
 
         @Specialization(guards = "isIntegerFixnum(array)")
@@ -2189,11 +2102,6 @@ public abstract class ArrayNodes {
             super(context, sourceSection);
         }
 
-        public InsertNode(InsertNode prev) {
-            super(prev);
-            this.toIntNode = prev.toIntNode;
-        }
-
         @Specialization(guards = {"isNull(array)", "isIntIndexAndOtherSingleObjectArg(array, values)"})
         public Object insertNull(RubyArray array, Object[] values) {
             notDesignedForCompilation();
@@ -2281,11 +2189,6 @@ public abstract class ArrayNodes {
         public MapNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
             arrayBuilder = new ArrayBuilderNode.UninitializedArrayBuilderNode(context);
-        }
-
-        public MapNode(MapNode prev) {
-            super(prev);
-            arrayBuilder = prev.arrayBuilder;
         }
 
         @Specialization(guards = "isNull(array)")
@@ -2460,11 +2363,6 @@ public abstract class ArrayNodes {
             super(context, sourceSection);
         }
 
-        public MapInPlaceNode(MapInPlaceNode prev) {
-            super(prev);
-            writeNode = prev.writeNode;
-        }
-
         @Specialization(guards = "isNull(array)")
         public RubyArray mapInPlaceNull(RubyArray array, RubyProc block) {
             return array;
@@ -2571,12 +2469,6 @@ public abstract class ArrayNodes {
             maxBlock = context.getCoreLibrary().getArrayMaxBlock();
         }
 
-        public MaxNode(MaxNode prev) {
-            super(prev);
-            eachNode = prev.eachNode;
-            maxBlock = prev.maxBlock;
-        }
-
         @Specialization
         public Object max(VirtualFrame frame, RubyArray array) {
             // TODO: can we just write to the frame instead of having this indirect object?
@@ -2608,11 +2500,6 @@ public abstract class ArrayNodes {
         public MaxBlockNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
             compareNode = DispatchHeadNodeFactory.createMethodCall(context);
-        }
-
-        public MaxBlockNode(MaxBlockNode prev) {
-            super(prev);
-            compareNode = prev.compareNode;
         }
 
         @Specialization
@@ -2684,12 +2571,6 @@ public abstract class ArrayNodes {
             minBlock = context.getCoreLibrary().getArrayMinBlock();
         }
 
-        public MinNode(MinNode prev) {
-            super(prev);
-            eachNode = prev.eachNode;
-            minBlock = prev.minBlock;
-        }
-
         @Specialization
         public Object min(VirtualFrame frame, RubyArray array) {
             // TODO: can we just write to the frame instead of having this indirect object?
@@ -2721,11 +2602,6 @@ public abstract class ArrayNodes {
         public MinBlockNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
             compareNode = DispatchHeadNodeFactory.createMethodCall(context);
-        }
-
-        public MinBlockNode(MinBlockNode prev) {
-            super(prev);
-            compareNode = prev.compareNode;
         }
 
         @Specialization
@@ -2794,11 +2670,6 @@ public abstract class ArrayNodes {
             super(context, sourceSection);
         }
 
-        public PackNode(PackNode prev) {
-            super(prev);
-            toStringNode = prev.toStringNode;
-        }
-        
         // TODO CS 3-Mar-15 to be honest these two specialisations are a bit sneaky - we'll get rid of them ASAP
 
         @Specialization(guards = {"arrayIsInts(array)", "formatIsXN2000(array, format)"})
@@ -2954,11 +2825,6 @@ public abstract class ArrayNodes {
 
         public PopNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-        }
-
-        public PopNode(PopNode prev) {
-            super(prev);
-            this.toIntNode = prev.toIntNode;
         }
 
         public abstract Object executePop(VirtualFrame frame, RubyArray array, Object n);
@@ -3379,10 +3245,6 @@ public abstract class ArrayNodes {
             super(context, sourceSection);
         }
 
-        public PushNode(PushNode prev) {
-            super(prev);
-        }
-
         @Specialization(guards = {"isNull(array)", "isSingleIntegerFixnum(array, values)"})
         public RubyArray pushEmptySingleIntegerFixnum(RubyArray array, Object... values) {
             array.setStore(new int[]{(int) values[0]}, 1);
@@ -3539,10 +3401,6 @@ public abstract class ArrayNodes {
             super(context, sourceSection);
         }
 
-        public PushOneNode(PushOneNode prev) {
-            super(prev);
-        }
-
         @Specialization(guards = "isNull(array)")
         public RubyArray pushEmpty(RubyArray array, Object value) {
             array.setStore(new Object[]{value}, 1);
@@ -3614,11 +3472,6 @@ public abstract class ArrayNodes {
         public RejectNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
             arrayBuilder = new ArrayBuilderNode.UninitializedArrayBuilderNode(context);
-        }
-
-        public RejectNode(RejectNode prev) {
-            super(prev);
-            arrayBuilder = prev.arrayBuilder;
         }
 
         @Specialization(guards = "isNull(array)")
@@ -3700,10 +3553,6 @@ public abstract class ArrayNodes {
 
         public DeleteIfNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-        }
-
-        public DeleteIfNode(DeleteIfNode prev) {
-            super(prev);
         }
 
         @Specialization(guards = "isNullArray(array)")
@@ -3820,10 +3669,6 @@ public abstract class ArrayNodes {
 
         public RejectInPlaceNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-        }
-
-        public RejectInPlaceNode(RejectInPlaceNode prev) {
-            super(prev);
         }
 
         @Specialization(guards = "isNullArray(array)")
@@ -3953,10 +3798,6 @@ public abstract class ArrayNodes {
             super(context, sourceSection);
         }
 
-        public ReplaceNode(ReplaceNode prev) {
-            super(prev);
-        }
-
         @CreateCast("other") public RubyNode coerceOtherToAry(RubyNode index) {
             return ToAryNodeFactory.create(getContext(), getSourceSection(), index);
         }
@@ -4012,11 +3853,6 @@ public abstract class ArrayNodes {
         public SelectNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
             arrayBuilder = new ArrayBuilderNode.UninitializedArrayBuilderNode(context);
-        }
-
-        public SelectNode(SelectNode prev) {
-            super(prev);
-            arrayBuilder = prev.arrayBuilder;
         }
 
         @Specialization(guards = "isNull(array)")
@@ -4099,10 +3935,6 @@ public abstract class ArrayNodes {
 
         public ShiftNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-        }
-
-        public ShiftNode(ShiftNode prev) {
-            super(prev);
         }
 
         public abstract Object executeShift(VirtualFrame frame, RubyArray array, Object n);
@@ -4558,10 +4390,6 @@ public abstract class ArrayNodes {
             super(context, sourceSection);
         }
 
-        public SizeNode(SizeNode prev) {
-            super(prev);
-        }
-
         @Specialization
         public int size(RubyArray array) {
             return array.getSize();
@@ -4579,12 +4407,6 @@ public abstract class ArrayNodes {
             super(context, sourceSection);
             compareDispatchNode = DispatchHeadNodeFactory.createMethodCall(context);
             yieldNode = new YieldDispatchHeadNode(context);
-        }
-
-        public SortNode(SortNode prev) {
-            super(prev);
-            compareDispatchNode = prev.compareDispatchNode;
-            yieldNode = prev.yieldNode;
         }
 
         @Specialization(guards = "isNull(array)")
@@ -4709,10 +4531,6 @@ public abstract class ArrayNodes {
             super(context, sourceSection);
         }
 
-        public UnshiftNode(UnshiftNode prev) {
-            super(prev);
-        }
-
         @Specialization
         public RubyArray unshift(RubyArray array, Object... args) {
             notDesignedForCompilation();
@@ -4728,10 +4546,6 @@ public abstract class ArrayNodes {
 
         public ZipNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-        }
-
-        public ZipNode(ZipNode prev) {
-            super(prev);
         }
 
         @Specialization(guards = {"isObject(array)", "isOtherSingleIntegerFixnumArray(array, others)"})

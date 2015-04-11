@@ -42,10 +42,6 @@ public abstract class ProcNodes {
             super(context, sourceSection);
         }
 
-        public ArityNode(ArityNode prev) {
-            super(prev);
-        }
-
         @Specialization
         public int arity(RubyProc proc) {
             return proc.getSharedMethodInfo().getArity().getArityNumber();
@@ -58,10 +54,6 @@ public abstract class ProcNodes {
 
         public BindingNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-        }
-
-        public BindingNode(BindingNode prev) {
-            super(prev);
         }
 
         @Specialization
@@ -85,11 +77,6 @@ public abstract class ProcNodes {
             yieldNode = new YieldDispatchHeadNode(context);
         }
 
-        public CallNode(CallNode prev) {
-            super(prev);
-            yieldNode = prev.yieldNode;
-        }
-
         @Specialization
         public Object call(VirtualFrame frame, RubyProc proc, Object[] args, UndefinedPlaceholder block) {
             return yieldNode.dispatch(frame, proc, args);
@@ -107,10 +94,6 @@ public abstract class ProcNodes {
 
         public InitializeNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-        }
-
-        public InitializeNode(InitializeNode prev) {
-            super(prev);
         }
 
         @Specialization
@@ -165,10 +148,6 @@ public abstract class ProcNodes {
             super(context, sourceSection);
         }
 
-        public LambdaNode(LambdaNode prev) {
-            super(prev);
-        }
-
         @Specialization
         public boolean lambda(RubyProc proc) {
             return proc.getType() == RubyProc.Type.LAMBDA;
@@ -181,10 +160,6 @@ public abstract class ProcNodes {
 
         public ParametersNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-        }
-
-        public ParametersNode(ParametersNode prev) {
-            super(prev);
         }
 
         @CompilerDirectives.TruffleBoundary
@@ -205,10 +180,6 @@ public abstract class ProcNodes {
 
         public SourceLocationNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-        }
-
-        public SourceLocationNode(SourceLocationNode prev) {
-            super(prev);
         }
 
         @Specialization

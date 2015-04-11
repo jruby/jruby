@@ -28,10 +28,6 @@ public abstract class StringToSymbolNode extends RubyNode {
         super(context, sourceSection);
     }
 
-    public StringToSymbolNode(StringToSymbolNode prev) {
-        super(prev);
-    }
-
     @CompilerDirectives.TruffleBoundary
     @Specialization
     public RubySymbol doString(RubyString string) {

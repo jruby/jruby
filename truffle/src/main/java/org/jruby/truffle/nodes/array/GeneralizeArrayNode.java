@@ -35,10 +35,6 @@ public abstract class GeneralizeArrayNode extends RubyNode {
         super(context, sourceSection);
     }
 
-    public GeneralizeArrayNode(GeneralizeArrayNode prev) {
-        super(prev);
-    }
-
     public abstract Object executeGeneralize(VirtualFrame frame, RubyArray array, int requiredCapacity);
 
     // TODO CS 9-Feb-15 should use ArrayUtils.capacity?

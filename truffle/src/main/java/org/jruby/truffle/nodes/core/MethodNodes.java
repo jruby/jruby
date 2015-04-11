@@ -45,10 +45,6 @@ public abstract class MethodNodes {
             super(context, sourceSection);
         }
 
-        public EqualNode(EqualNode prev) {
-            super(prev);
-        }
-
         protected boolean areSame(VirtualFrame frame, Object left, Object right) {
             if (referenceEqualNode == null) {
                 CompilerDirectives.transferToInterpreterAndInvalidate();
@@ -76,10 +72,6 @@ public abstract class MethodNodes {
             super(context, sourceSection);
         }
 
-        public ArityNode(ArityNode prev) {
-            super(prev);
-        }
-
         @Specialization
         public int arity(RubyMethod method) {
             return method.getMethod().getSharedMethodInfo().getArity().getArityNumber();
@@ -95,11 +87,6 @@ public abstract class MethodNodes {
         public CallNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
             callNode = Truffle.getRuntime().createIndirectCallNode();
-        }
-
-        public CallNode(CallNode prev) {
-            super(prev);
-            callNode = prev.callNode;
         }
 
         @Specialization
@@ -131,10 +118,6 @@ public abstract class MethodNodes {
             super(context, sourceSection);
         }
 
-        public NameNode(NameNode prev) {
-            super(prev);
-        }
-
         @Specialization
         public RubySymbol name(RubyMethod method) {
             notDesignedForCompilation();
@@ -151,10 +134,6 @@ public abstract class MethodNodes {
             super(context, sourceSection);
         }
 
-        public OwnerNode(OwnerNode prev) {
-            super(prev);
-        }
-
         @Specialization
         public RubyModule owner(RubyMethod method) {
             return method.getMethod().getDeclaringModule();
@@ -169,10 +148,6 @@ public abstract class MethodNodes {
             super(context, sourceSection);
         }
 
-        public ReceiverNode(ReceiverNode prev) {
-            super(prev);
-        }
-
         @Specialization
         public Object receiver(RubyMethod method) {
             return method.getReceiver();
@@ -185,10 +160,6 @@ public abstract class MethodNodes {
 
         public SourceLocationNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-        }
-
-        public SourceLocationNode(SourceLocationNode prev) {
-            super(prev);
         }
 
         @Specialization
@@ -216,11 +187,6 @@ public abstract class MethodNodes {
         public UnbindNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
             classNode = ClassNodeFactory.create(context, sourceSection, null);
-        }
-
-        public UnbindNode(UnbindNode prev) {
-            super(prev);
-            classNode = prev.classNode;
         }
 
         @Specialization

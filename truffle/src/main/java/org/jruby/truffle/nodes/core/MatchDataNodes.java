@@ -44,10 +44,6 @@ public abstract class MatchDataNodes {
             super(context, sourceSection);
         }
 
-        public GetIndexNode(GetIndexNode prev) {
-            super(prev);
-        }
-
         @Specialization
         public Object getIndex(RubyMatchData matchData, int index) {
             notDesignedForCompilation();
@@ -130,10 +126,6 @@ public abstract class MatchDataNodes {
             super(context, sourceSection);
         }
 
-        public BeginNode(BeginNode prev) {
-            super(prev);
-        }
-
         @Specialization
         public Object begin(RubyMatchData matchData, int index) {
             notDesignedForCompilation();
@@ -158,10 +150,6 @@ public abstract class MatchDataNodes {
             super(context, sourceSection);
         }
 
-        public CapturesNode(CapturesNode prev) {
-            super(prev);
-        }
-
         @Specialization
         public RubyArray toA(RubyMatchData matchData) {
             notDesignedForCompilation();
@@ -177,10 +165,6 @@ public abstract class MatchDataNodes {
 
         public EndNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-        }
-
-        public EndNode(EndNode prev) {
-            super(prev);
         }
 
         @Specialization
@@ -206,10 +190,6 @@ public abstract class MatchDataNodes {
             super(context, sourceSection);
         }
 
-        public LengthNode(LengthNode prev) {
-            super(prev);
-        }
-
         @Specialization
         public int length(RubyMatchData matchData) {
             return matchData.getValues().length;
@@ -222,10 +202,6 @@ public abstract class MatchDataNodes {
 
         public PreMatchNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-        }
-
-        public PreMatchNode(PreMatchNode prev) {
-            super(prev);
         }
 
         @Specialization
@@ -242,10 +218,6 @@ public abstract class MatchDataNodes {
             super(context, sourceSection);
         }
 
-        public PostMatchNode(PostMatchNode prev) {
-            super(prev);
-        }
-
         @Specialization
         public RubyString postMatch(RubyMatchData matchData) {
             return matchData.getPost();
@@ -258,10 +230,6 @@ public abstract class MatchDataNodes {
 
         public ToANode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-        }
-
-        public ToANode(ToANode prev) {
-            super(prev);
         }
 
         @Specialization
@@ -279,10 +247,6 @@ public abstract class MatchDataNodes {
             super(context, sourceSection);
         }
 
-        public ToSNode(ToSNode prev) {
-            super(prev);
-        }
-
         @Specialization
         public RubyString toS(RubyMatchData matchData) {
             notDesignedForCompilation();
@@ -297,10 +261,6 @@ public abstract class MatchDataNodes {
 
         public ValuesAtNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-        }
-
-        public ValuesAtNode(ValuesAtNode prev) {
-            super(prev);
         }
 
         @Specialization
@@ -324,10 +284,6 @@ public abstract class MatchDataNodes {
 
         public RubiniusSourceNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-        }
-
-        public RubiniusSourceNode(RubiniusSourceNode prev) {
-            super(prev);
         }
 
         @Specialization

@@ -35,10 +35,6 @@ public abstract class ObjectSpaceNodes {
             super(context, sourceSection);
         }
 
-        public ID2RefNode(ID2RefNode prev) {
-            super(prev);
-        }
-
         @Specialization
         public Object id2Ref(int id) {
             return id2Ref((long) id);
@@ -94,10 +90,6 @@ public abstract class ObjectSpaceNodes {
             super(context, sourceSection);
         }
 
-        public EachObjectNode(EachObjectNode prev) {
-            super(prev);
-        }
-
         @Specialization
         public int eachObject(VirtualFrame frame, @SuppressWarnings("unused") UndefinedPlaceholder ofClass, RubyProc block) {
             notDesignedForCompilation();
@@ -143,10 +135,6 @@ public abstract class ObjectSpaceNodes {
             super(context, sourceSection);
         }
 
-        public DefineFinalizerNode(DefineFinalizerNode prev) {
-            super(prev);
-        }
-
         @Specialization
         public RubyArray defineFinalizer(Object object, RubyProc finalizer) {
             notDesignedForCompilation();
@@ -161,10 +149,6 @@ public abstract class ObjectSpaceNodes {
 
         public UndefineFinalizerNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-        }
-
-        public UndefineFinalizerNode(UndefineFinalizerNode prev) {
-            super(prev);
         }
 
         @Specialization

@@ -29,10 +29,6 @@ public abstract class ExceptionNodes {
             super(context, sourceSection);
         }
 
-        public InitializeNode(InitializeNode prev) {
-            super(prev);
-        }
-
         @Specialization
         public RubyNilClass initialize(RubyException exception, UndefinedPlaceholder message) {
             notDesignedForCompilation();
@@ -58,10 +54,6 @@ public abstract class ExceptionNodes {
             super(context, sourceSection);
         }
 
-        public BacktraceNode(BacktraceNode prev) {
-            super(prev);
-        }
-
         @Specialization
         public RubyArray backtrace(RubyException exception) {
             return exception.asRubyStringArray();
@@ -76,10 +68,6 @@ public abstract class ExceptionNodes {
             super(context, sourceSection);
         }
 
-        public MessageNode(MessageNode prev) {
-            super(prev);
-        }
-
         @Specialization
         public RubyString message(RubyException exception) {
             return exception.getMessage();
@@ -92,10 +80,6 @@ public abstract class ExceptionNodes {
 
         public ToSNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-        }
-
-        public ToSNode(ToSNode prev) {
-            super(prev);
         }
 
         @Specialization

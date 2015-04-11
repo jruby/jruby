@@ -35,10 +35,6 @@ public abstract class PosixNodes {
             super(context, sourceSection);
         }
 
-        public GetEGIDNode(GetEGIDNode prev) {
-            super(prev);
-        }
-
         @Specialization
         public int getEGID() {
             return getContext().getRuntime().getPosix().getegid();
@@ -51,10 +47,6 @@ public abstract class PosixNodes {
 
         public GetEUIDNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-        }
-
-        public GetEUIDNode(GetEUIDNode prev) {
-            super(prev);
         }
 
         @Specialization
@@ -71,10 +63,6 @@ public abstract class PosixNodes {
             super(context, sourceSection);
         }
 
-        public GetGIDNode(GetGIDNode prev) {
-            super(prev);
-        }
-
         @Specialization
         public int getGID() {
             return getContext().getRuntime().getPosix().getgid();
@@ -87,10 +75,6 @@ public abstract class PosixNodes {
 
         public GetGroupsNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-        }
-
-        public GetGroupsNode(GetGroupsNode prev) {
-            super(prev);
         }
 
         @Specialization
@@ -115,10 +99,6 @@ public abstract class PosixNodes {
             super(context, sourceSection);
         }
 
-        public GetUIDNode(GetUIDNode prev) {
-            super(prev);
-        }
-
         @Specialization
         public int getUID() {
             return getContext().getRuntime().getPosix().getuid();
@@ -131,10 +111,6 @@ public abstract class PosixNodes {
 
         public MemsetNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-        }
-
-        public MemsetNode(MemsetNode prev) {
-            super(prev);
         }
 
         @Specialization
@@ -156,10 +132,6 @@ public abstract class PosixNodes {
 
         public UnlinkNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-        }
-
-        public UnlinkNode(UnlinkNode prev) {
-            super(prev);
         }
 
         @Specialization

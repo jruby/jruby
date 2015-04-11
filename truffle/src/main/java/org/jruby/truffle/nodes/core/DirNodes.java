@@ -37,10 +37,6 @@ public abstract class DirNodes {
             super(context, sourceSection);
         }
 
-        public ChdirNode(ChdirNode prev) {
-            super(prev);
-        }
-
         @Specialization
         public Object chdir(VirtualFrame frame, RubyString path, RubyProc block) {
             notDesignedForCompilation();
@@ -70,10 +66,6 @@ public abstract class DirNodes {
             super(context, sourceSection);
         }
 
-        public DeleteNode(DeleteNode prev) {
-            super(prev);
-        }
-
         @Specialization
         public int delete(RubyString path) {
             notDesignedForCompilation();
@@ -100,10 +92,6 @@ public abstract class DirNodes {
             super(context, sourceSection);
         }
 
-        public ExistsNode(ExistsNode prev) {
-            super(prev);
-        }
-
         @Specialization
         public boolean exists(RubyString path) {
             notDesignedForCompilation();
@@ -118,10 +106,6 @@ public abstract class DirNodes {
 
         public GlobNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-        }
-
-        public GlobNode(GlobNode prev) {
-            super(prev);
         }
 
         @Specialization
@@ -199,10 +183,6 @@ public abstract class DirNodes {
             super(context, sourceSection);
         }
 
-        public MkdirNode(MkdirNode prev) {
-            super(prev);
-        }
-
         @Specialization
         public int mkdir(RubyString path) {
             notDesignedForCompilation();
@@ -223,10 +203,6 @@ public abstract class DirNodes {
 
         public PwdNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-        }
-
-        public PwdNode(PwdNode prev) {
-            super(prev);
         }
 
         @Specialization

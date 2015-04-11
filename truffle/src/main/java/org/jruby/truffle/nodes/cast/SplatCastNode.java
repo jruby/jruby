@@ -54,16 +54,6 @@ public abstract class SplatCastNode extends RubyNode {
         this.useToAry = useToAry;
     }
 
-    public SplatCastNode(SplatCastNode prev) {
-        super(prev);
-        dup = prev.dup;
-        nilBehavior = prev.nilBehavior;
-        respondToToA = prev.respondToToA;
-        respondToCast = prev.respondToCast;
-        toA = prev.toA;
-        useToAry = prev.useToAry;
-    }
-
     protected abstract RubyNode getChild();
 
     @Specialization

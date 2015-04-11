@@ -41,10 +41,6 @@ public abstract class IntegerNodes {
             super(context, sourceSection);
         }
 
-        public DownToNode(DownToNode prev) {
-            super(prev);
-        }
-
         @Specialization
         public Object downto(VirtualFrame frame, int from, int to, RubyProc block) {
             int count = 0;
@@ -99,11 +95,6 @@ public abstract class IntegerNodes {
 
         public TimesNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-        }
-
-        public TimesNode(TimesNode prev) {
-            super(prev);
-            fixnumOrBignum = prev.fixnumOrBignum;
         }
 
         @Specialization
@@ -225,10 +216,6 @@ public abstract class IntegerNodes {
             super(context, sourceSection);
         }
 
-        public ToINode(ToINode prev) {
-            super(prev);
-        }
-
         @Specialization
         public int toI(int n) {
             return n;
@@ -255,10 +242,6 @@ public abstract class IntegerNodes {
 
         public UpToNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-        }
-
-        public UpToNode(UpToNode prev) {
-            super(prev);
         }
 
         @Specialization

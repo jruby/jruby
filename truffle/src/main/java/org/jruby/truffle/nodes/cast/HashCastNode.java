@@ -35,11 +35,6 @@ public abstract class HashCastNode extends RubyNode {
         toHashNode = DispatchHeadNodeFactory.createMethodCall(context, MissingBehavior.RETURN_MISSING);
     }
 
-    public HashCastNode(HashCastNode prev) {
-        super(prev);
-        toHashNode = prev.toHashNode;
-    }
-
     protected abstract RubyNode getChild();
 
     @Specialization

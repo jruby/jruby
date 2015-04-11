@@ -35,10 +35,6 @@ public abstract class ObjectPrimitiveNodes {
             super(context, sourceSection);
         }
 
-        public ObjectIDPrimitiveNode(ObjectIDPrimitiveNode prev) {
-            super(prev);
-        }
-
         public abstract Object executeObjectID(VirtualFrame frame, Object value);
 
         @Specialization
@@ -111,12 +107,6 @@ public abstract class ObjectPrimitiveNodes {
         
         public ObjectInfectPrimitiveNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-        }
-
-        public ObjectInfectPrimitiveNode(ObjectInfectPrimitiveNode prev) {
-            super(prev);
-            isTaintedNode = prev.isTaintedNode;
-            taintNode = prev.taintNode;
         }
 
         @Specialization

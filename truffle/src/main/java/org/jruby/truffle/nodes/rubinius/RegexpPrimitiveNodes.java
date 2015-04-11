@@ -33,10 +33,6 @@ public abstract class RegexpPrimitiveNodes {
             super(context, sourceSection);
         }
 
-        public RegexpInitializePrimitiveNode(RegexpInitializePrimitiveNode prev) {
-            super(prev);
-        }
-
         @Specialization
         public RubyRegexp initialize(RubyRegexp regexp, RubyString pattern, int options) {
             notDesignedForCompilation();
@@ -52,10 +48,6 @@ public abstract class RegexpPrimitiveNodes {
 
         public RegexpSearchRegionPrimitiveNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-        }
-
-        public RegexpSearchRegionPrimitiveNode(RegexpSearchRegionPrimitiveNode prev) {
-            super(prev);
         }
 
         @Specialization
@@ -87,10 +79,6 @@ public abstract class RegexpPrimitiveNodes {
             super(context, sourceSection);
         }
 
-        public RegexpSetLastMatchPrimitiveNode(RegexpSetLastMatchPrimitiveNode prev) {
-            super(prev);
-        }
-
         @Specialization
         public Object setLastMatch(RubyClass regexpClass, Object matchData) {
             notDesignedForCompilation();
@@ -108,10 +96,6 @@ public abstract class RegexpPrimitiveNodes {
 
         public RegexpSetBlockLastMatchPrimitiveNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-        }
-
-        public RegexpSetBlockLastMatchPrimitiveNode(RegexpSetBlockLastMatchPrimitiveNode prev) {
-            super(prev);
         }
 
         @Specialization

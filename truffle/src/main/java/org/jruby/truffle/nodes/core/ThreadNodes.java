@@ -36,10 +36,6 @@ public abstract class ThreadNodes {
             super(context, sourceSection);
         }
 
-        public AliveNode(AliveNode prev) {
-            super(prev);
-        }
-
         @Specialization
         public boolean alive(RubyThread thread) {
             return thread.getStatus() != Status.ABORTING && thread.getStatus() != Status.DEAD;
@@ -52,10 +48,6 @@ public abstract class ThreadNodes {
 
         public CurrentNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-        }
-
-        public CurrentNode(CurrentNode prev) {
-            super(prev);
         }
 
         @Specialization
@@ -74,10 +66,6 @@ public abstract class ThreadNodes {
             super(context, sourceSection);
         }
 
-        public ExitModuleNode(ExitModuleNode prev) {
-            super(prev);
-        }
-
         @Specialization
         public RubyNilClass exit() {
             getContext().getThreadManager().getCurrentThread().exit();
@@ -91,10 +79,6 @@ public abstract class ThreadNodes {
 
         public KillNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-        }
-
-        public KillNode(KillNode prev) {
-            super(prev);
         }
 
         @Specialization
@@ -122,10 +106,6 @@ public abstract class ThreadNodes {
             super(context, sourceSection);
         }
 
-        public InitializeNode(InitializeNode prev) {
-            super(prev);
-        }
-
         @Specialization
         public RubyNilClass initialize(RubyThread thread, RubyProc block) {
             notDesignedForCompilation();
@@ -141,10 +121,6 @@ public abstract class ThreadNodes {
 
         public JoinNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-        }
-
-        public JoinNode(JoinNode prev) {
-            super(prev);
         }
 
         @Specialization
@@ -191,10 +167,6 @@ public abstract class ThreadNodes {
             super(context, sourceSection);
         }
 
-        public MainNode(MainNode prev) {
-            super(prev);
-        }
-
         @Specialization
         public RubyThread main() {
             return getContext().getThreadManager().getRootThread();
@@ -210,11 +182,6 @@ public abstract class ThreadNodes {
         public PassNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
             threadPassNode = new ThreadPassNode(context, sourceSection);
-        }
-
-        public PassNode(PassNode prev) {
-            super(prev);
-            threadPassNode = prev.threadPassNode;
         }
 
         @Specialization
@@ -233,11 +200,6 @@ public abstract class ThreadNodes {
         public RaiseNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
             initialize = DispatchHeadNodeFactory.createMethodCall(context);
-        }
-
-        public RaiseNode(RaiseNode prev) {
-            super(prev);
-            initialize = prev.initialize;
         }
 
         @Specialization
@@ -285,10 +247,6 @@ public abstract class ThreadNodes {
             super(context, sourceSection);
         }
 
-        public RunNode(RunNode prev) {
-            super(prev);
-        }
-
         @Specialization
         public RubyThread run(final RubyThread thread) {
             notDesignedForCompilation();
@@ -305,10 +263,6 @@ public abstract class ThreadNodes {
 
         public StatusNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-        }
-
-        public StatusNode(StatusNode prev) {
-            super(prev);
         }
 
         @Specialization
@@ -336,10 +290,6 @@ public abstract class ThreadNodes {
             super(context, sourceSection);
         }
 
-        public StopNode(StopNode prev) {
-            super(prev);
-        }
-
         @Specialization
         public boolean stop(RubyThread self) {
             notDesignedForCompilation();
@@ -354,10 +304,6 @@ public abstract class ThreadNodes {
 
         public ValueNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-        }
-
-        public ValueNode(ValueNode prev) {
-            super(prev);
         }
 
         @Specialization
@@ -376,10 +322,6 @@ public abstract class ThreadNodes {
 
         public WakeupNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-        }
-
-        public WakeupNode(WakeupNode prev) {
-            super(prev);
         }
 
         @Specialization

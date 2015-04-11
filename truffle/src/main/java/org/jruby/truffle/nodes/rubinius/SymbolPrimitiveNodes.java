@@ -35,10 +35,6 @@ public abstract class SymbolPrimitiveNodes {
             super(context, sourceSection);
         }
 
-        public SymbolIsConstantPrimitiveNode(SymbolIsConstantPrimitiveNode prev) {
-            super(prev);
-        }
-
         @Specialization
         public boolean symbolIsConstant(RubySymbol symbol) {
             notDesignedForCompilation();

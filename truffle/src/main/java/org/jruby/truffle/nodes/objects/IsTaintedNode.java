@@ -29,11 +29,6 @@ public abstract class IsTaintedNode extends RubyNode {
         super(context, sourceSection);
     }
 
-    public IsTaintedNode(IsTaintedNode prev) {
-        super(prev);
-        readTaintNode = prev.readTaintNode;
-    }
-
     public abstract boolean executeIsTainted(Object object);
 
     @Specialization

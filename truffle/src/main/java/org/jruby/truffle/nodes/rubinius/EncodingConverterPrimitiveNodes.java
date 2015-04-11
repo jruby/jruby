@@ -48,10 +48,6 @@ public abstract class EncodingConverterPrimitiveNodes {
             super(context, sourceSection);
         }
 
-        public EncodingConverterAllocateNode(EncodingConverterAllocateNode prev) {
-            super(prev);
-        }
-
         @Specialization
         public Object encodingConverterAllocate(RubyEncoding fromEncoding, RubyEncoding toEncoding, RubyHash options) {
             return new RubyEncodingConverter(getContext().getCoreLibrary().getEncodingConverterClass(), null);
@@ -64,10 +60,6 @@ public abstract class EncodingConverterPrimitiveNodes {
 
         public PrimitiveConvertNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-        }
-
-        public PrimitiveConvertNode(PrimitiveConvertNode prev) {
-            super(prev);
         }
 
         @Specialization
@@ -167,10 +159,6 @@ public abstract class EncodingConverterPrimitiveNodes {
             super(context, sourceSection);
         }
 
-        public EncodingConverterPutbackNode(EncodingConverterPutbackNode prev) {
-            super(prev);
-        }
-
         @Specialization
         public RubyString encodingConverterPutback(RubyEncodingConverter encodingConverter, int maxBytes) {
             // Taken from org.jruby.RubyConverter#putback.
@@ -217,12 +205,6 @@ public abstract class EncodingConverterPrimitiveNodes {
             super(context, sourceSection);
             newLookupTableNode = DispatchHeadNodeFactory.createMethodCall(context);
             lookupTableWriteNode = DispatchHeadNodeFactory.createMethodCall(context);
-        }
-
-        public EncodingConverterLastErrorNode(EncodingConverterLastErrorNode prev) {
-            super(prev);
-            newLookupTableNode = prev.newLookupTableNode;
-            lookupTableWriteNode = prev.lookupTableWriteNode;
         }
 
         @Specialization
@@ -273,10 +255,6 @@ public abstract class EncodingConverterPrimitiveNodes {
 
         public EncodingConverterErrinfoNode(RubyContext context, SourceSection sourceSection) {
             super(context, sourceSection);
-        }
-
-        public EncodingConverterErrinfoNode(EncodingConverterErrinfoNode prev) {
-            super(prev);
         }
 
         @Specialization

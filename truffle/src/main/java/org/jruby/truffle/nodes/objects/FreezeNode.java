@@ -29,11 +29,6 @@ public abstract class FreezeNode extends RubyNode {
         super(context, sourceSection);
     }
 
-    public FreezeNode(FreezeNode prev) {
-        super(prev);
-        writeFrozenNode = prev.writeFrozenNode;
-    }
-
     public abstract Object executeFreeze(Object object);
 
     @Specialization
